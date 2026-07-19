@@ -110,6 +110,14 @@ describe('sessionEdits', () => {
     expect(edits['/music/a.wav'].coverRemoved).toBe(true)
   })
 
+  // A per-tag delete staged in the inspector must survive a crash/reopen exactly like
+  // metaCleared does — otherwise a restored session silently forgets which foreign
+  // tags the user marked for removal.
+  it('remembers foreign tags marked for removal', () => {
+    const edits = sessionEdits([track({ foreignRemoved: ['SERATO_MARKERS_V2'] })])
+    expect(edits['/music/a.wav'].foreignRemoved).toEqual(['SERATO_MARKERS_V2'])
+  })
+
   // Transient per-session state (conversion status, analysis verdicts, review
   // suggestions) re-derives on import; persisting it would only bloat the file.
   it('stores only the editable fields', () => {

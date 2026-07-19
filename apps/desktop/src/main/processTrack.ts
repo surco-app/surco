@@ -49,6 +49,7 @@ export interface ProcessTrackDeps {
     declick?: DeclickMode,
     trim?: TrimRange,
     clearExtras?: boolean,
+    foreignRemoved?: string[],
   ) => Promise<{ normalizeSkipped: boolean; declickedSamples?: number }>
   // Lets a cancel reach the encode already in flight for this job, not just ones
   // not yet started. Registered around the convertAudio call and unregistered in
@@ -216,6 +217,7 @@ export async function runProcessTrack(
         job.declick ?? settings.declick,
         job.trim,
         job.clearExtras,
+        job.foreignRemoved,
       ))
     } finally {
       deps.unregisterActiveConversion(job.id)

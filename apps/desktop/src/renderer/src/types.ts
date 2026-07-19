@@ -1,5 +1,6 @@
 import type {
   DeclickMode,
+  ForeignTag,
   NormalizeConfig,
   OutputFormat,
   ProcessStage,
@@ -61,6 +62,12 @@ export interface TrackItem {
   // that a normal convert preserves-on-empty (the cover rides coverRemoved above).
   // Cleared the moment any field is edited again, so a retag doesn't keep wiping.
   metaCleared?: boolean
+  // Los tags de terceros que el fichero lleva y la app no gestiona, leídos al importar.
+  // El inspector de metadatos avanzados los muestra. Solo lectura en fase 1.
+  foreignTags?: ForeignTag[]
+  // Los nombres de tags foráneos que el usuario ha marcado para borrar en el inspector.
+  // Se aplican al exportar (siempre, haya o no clearExtras). Vacío = no se borra ninguno.
+  foreignRemoved?: string[]
   // The spectrogram/cutoff verdict, not stored on the canonical track but merged in
   // from the React Query cache at the App boundary so the quality triage and the list
   // can read each track's verdict. Undefined until its analysis lands in the cache.

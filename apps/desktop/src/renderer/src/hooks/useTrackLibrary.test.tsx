@@ -284,6 +284,111 @@ describe('useTrackLibrary import batching', () => {
   })
 })
 
+describe('useTrackLibrary foreign tags', () => {
+  // The inspector shows the third-party tags a file carries (SERATO_MARKERS_V2,
+  // MUSICBRAINZ_*…) so the user can review and delete them. The read already returns
+  // them (Task 2); this asserts they land on the track row instead of being dropped.
+  it('keeps the foreign tags the read returns on the track', async () => {
+    const foreign = [{ name: 'SERATO_MARKERS_V2', value: 'x' }]
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '' },
+        duration: 180,
+        cover: null,
+        foreignTags: foreign,
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() => result.current.addPaths(['/m/a.wav']))
+
+    expect(result.current.tracks[0]?.foreignTags).toEqual(foreign)
+  })
+
+  // Bulk "clear everything" flags every selected track's own foreign tags as removed,
+  // not a shared list: patchTracks applies one flat patch to every id, which would
+  // either drop one track's foreign tags or wrongly stamp another's onto it.
+  it('clearExtrasTracks marks each track with its own foreignRemoved', async () => {
+    setApi({
+      readMeta: vi
+        .fn()
+        .mockResolvedValueOnce({
+          tags: { title: '', artist: '' },
+          duration: 180,
+          cover: null,
+          foreignTags: [{ name: 'SERATO_MARKERS_V2', value: 'x' }],
+        })
+        .mockResolvedValueOnce({
+          tags: { title: '', artist: '' },
+          duration: 180,
+          cover: null,
+          foreignTags: [{ name: 'TRAKTOR4', value: 'y' }],
+        }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() => result.current.addPaths(['/m/a.wav', '/m/b.wav']))
+    const [a, b] = result.current.tracks
+    act(() => result.current.clearExtrasTracks([a.id, b.id]))
+
+    const [ra, rb] = result.current.tracks
+    expect(ra.foreignRemoved).toEqual(['SERATO_MARKERS_V2'])
+    expect(ra.coverRemoved).toBe(true)
+    expect(ra.metaCleared).toBe(true)
+    expect(rb.foreignRemoved).toEqual(['TRAKTOR4'])
+  })
+
+  // A per-tag delete staged before a crash/reopen must come back on the restored row,
+  // exactly like metaCleared — otherwise the reopened session silently forgets which
+  // foreign tags the user had already marked for removal.
+  it('restores foreignRemoved from a saved session edit', async () => {
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '' },
+        duration: 180,
+        cover: null,
+        foreignTags: [{ name: 'SERATO_MARKERS_V2', value: 'x' }],
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() =>
+      result.current.addPaths(['/m/a.wav'], {
+        '/m/a.wav': { meta: { title: 'Restored' } as never, foreignRemoved: ['SERATO_MARKERS_V2'] },
+      }),
+    )
+
+    expect(result.current.tracks[0]?.foreignRemoved).toEqual(['SERATO_MARKERS_V2'])
+  })
+})
+
 describe('useTrackLibrary meta read failures', () => {
   // A file whose tags can't be read still gets a row (parsed from its name), but the user
   // must be told the difference between "this file has no tags" and "the read failed" —

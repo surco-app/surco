@@ -7,6 +7,7 @@ import {
   type Id3v2Tag,
   type Id3v2TextInformationFrame,
   Id3v2UserTextInformationFrame,
+  type Mpeg4AppleTag,
   PictureType,
   File as TagFile,
   TagTypes,
@@ -33,6 +34,16 @@ function addForeignFrame(file: string, description: string, value: string): void
   const txxx = Id3v2UserTextInformationFrame.fromDescription(description)
   txxx.text = [value]
   id3.addFrame(txxx)
+  f.save()
+  f.dispose()
+}
+
+// Injects a foreign iTunes freeform ("----") atom under the standard MEAN every
+// tagger uses, modelling a third-party tool's leftover (e.g. a ReplayGain scanner)
+// that clearExtras/foreignRemoved must be able to reach on an m4a.
+function addForeignItunesAtom(file: string, name: string, value: string): void {
+  const f = TagFile.createFromPath(file)
+  ;(f.tag as Mpeg4AppleTag).setItunesStrings('com.apple.iTunes', name, value)
   f.save()
   f.dispose()
 }
@@ -190,6 +201,40 @@ describe('writeTags', () => {
     f.dispose()
   })
 
+  // "Empty every metadata field" must reach m4a's iTunes atoms too, not just the fields
+  // the app manages — a foreign freeform atom a third-party tool left behind (e.g. a
+  // ReplayGain scanner) used to survive clearExtras because the M4A branch had no
+  // cleanup loop at all. tag.clear() wipes the whole ILST box, so it must run before
+  // the generic field assignments above repopulate the managed ones.
+  it('clears a foreign iTunes atom on an m4a when clearExtras is set', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildM4aSeed(dir)
+    addForeignItunesAtom(file, 'FOREIGN_TAG', 'left by a third-party tool')
+
+    writeTags(file, meta, undefined, false, undefined, undefined, true)
+
+    const f = TagFile.createFromPath(file)
+    expect((f.tag as Mpeg4AppleTag).getFirstItunesString('com.apple.iTunes', 'FOREIGN_TAG')).toBeFalsy()
+    expect(f.tag.title).toBe('Till I Come')
+    f.dispose()
+  })
+
+  // The inspector's per-tag delete must also reach m4a: setItunesStrings with no data
+  // clears exactly the named atom, the same MEAN/NAME route TagLib's own managed
+  // freeform fields (ReplayGain, MusicBrainz ids…) already use to write them.
+  it('removes a single foreign iTunes atom named in foreignRemoved on an m4a', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildM4aSeed(dir)
+    addForeignItunesAtom(file, 'FOREIGN_TAG', 'left by a third-party tool')
+
+    writeTags(file, meta, undefined, false, undefined, undefined, false, ['FOREIGN_TAG'])
+
+    const f = TagFile.createFromPath(file)
+    expect((f.tag as Mpeg4AppleTag).getFirstItunesString('com.apple.iTunes', 'FOREIGN_TAG')).toBeFalsy()
+    expect(f.tag.title).toBe('Till I Come')
+    f.dispose()
+  })
+
   // The conversion path writes ID3v2.3 (-id3v2_version 3); the in-place mp3/aiff edit must
   // too, or a v2.4 source would stay v2.4 and trip the CDJ/rekordbox/Serato setups that
   // mishandle it.
@@ -287,9 +332,9 @@ describe('writeTags', () => {
   })
 
   // "Clear metadata" means clear everything the app manages, not just the text fields:
-  // the rating (which convert deliberately preserves) and the embedded cover must go
-  // too. Traktor's cue blob is not a managed field, so it must still survive.
-  it('wipes the rating and cover but keeps the cue frame when clearExtras is set', () => {
+  // the rating (which convert deliberately preserves), the embedded cover, and even
+  // Traktor's cue blob — "clear everything" means everything, cues included.
+  it('wipes the rating, cover and cue frame when clearExtras is set', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
     const file = buildSeed(dir)
     const cover = buildCover(dir)
@@ -307,13 +352,13 @@ describe('writeTags', () => {
     expect(apic).toHaveLength(0)
     f.dispose()
     const bytes = readFileSync(file)
-    expect(bytes.includes(Buffer.from('TRAKTOR4'))).toBe(true)
+    expect(bytes.includes(Buffer.from('TRAKTOR4'))).toBe(false)
   })
 
   // "Empty every metadata field" must reach frames the app never wrote — a foreign
   // TXXX like "NOTES" (left by Medieval CUE Splitter) survived the managed-field
   // overwrite and read as junk users couldn't clear. clearExtras now strips every
-  // frame that isn't a Traktor cue, so the file is truly empty but the beatgrid stays.
+  // frame, cues included, so the file is truly empty.
   it('strips a foreign frame the app never wrote when clearExtras is set', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
     const file = buildSeed(dir)
@@ -327,7 +372,7 @@ describe('writeTags', () => {
     const f = TagFile.createFromPath(file)
     expect(userText(f.getTag(TagTypes.Id3v2, false) as Id3v2Tag, 'NOTES')).toBeUndefined()
     f.dispose()
-    expect(readFileSync(file).includes(Buffer.from('TRAKTOR4'))).toBe(true)
+    expect(readFileSync(file).includes(Buffer.from('TRAKTOR4'))).toBe(false)
   })
 
   // A foreign frame is not metadata the user asked to change on a normal convert, so a
@@ -343,6 +388,25 @@ describe('writeTags', () => {
     expect(
       userText(f.getTag(TagTypes.Id3v2, false) as Id3v2Tag, 'NOTES')?.text.join(''),
     ).toBe('Medieval CUE Splitter (www.medieval.it)')
+    f.dispose()
+  })
+
+  // The inspector lets the user pick individual foreign tags to drop without wiping
+  // everything else — unlike clearExtras, this must fire on a plain write too, and
+  // must not touch a managed frame (the title) that happens to survive alongside it.
+  it('removes a single foreign frame named in foreignRemoved and keeps managed frames', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+    addForeignFrame(file, 'REPLAYGAIN_TRACK_GAIN', '-6.6 dB')
+
+    writeTags(file, meta, undefined, false, undefined, undefined, false, [
+      'REPLAYGAIN_TRACK_GAIN',
+    ])
+
+    const f = TagFile.createFromPath(file)
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
+    expect(userText(id3, 'REPLAYGAIN_TRACK_GAIN')).toBeUndefined()
+    expect(f.tag.title).toBe('Till I Come')
     f.dispose()
   })
 

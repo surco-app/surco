@@ -55,6 +55,7 @@ import { DiscogsPanel } from './DiscogsPanel'
 import { BulkActionSection, OverwriteNotice } from './EditorBulkPanels'
 import { FORMATS } from './ExportButton'
 import type { InsertSource } from './FieldInsertMenu'
+import { ForeignTagsInspector } from './ForeignTagsInspector'
 import { MetadataForm } from './MetadataForm'
 import { NormalizeSection } from './NormalizeSection'
 import { OutputNameSection } from './OutputNameSection'
@@ -495,9 +496,10 @@ export const Editor = memo(function Editor({
   // current item.meta on every call (useStableCallback mirrors the latest closure),
   // so a memoized Field keeps one onChange reference across keystrokes in other fields.
   const setField = useStableCallback((key: keyof TrackItem['meta'], value: string): void => {
-    // Editing any field ends the "everything was cleared" state, so a later convert
-    // stops wiping the rating — mirrors how setting a cover resets coverRemoved.
-    onChange({ meta: { ...item.meta, [key]: value }, metaCleared: false })
+    // Editing a field no longer cancels "clear all": metaCleared persists until the
+    // user explicitly undoes it, so a convert after a partial re-fill still wipes the
+    // foreign tags the clear was meant to drop.
+    onChange({ meta: { ...item.meta, [key]: value } })
   })
 
   // What the per-field insert menu can offer: every visible text field of THIS
@@ -565,6 +567,7 @@ export const Editor = memo(function Editor({
         inLibraryResolved: false,
         coverRemoved: true,
         metaCleared: true,
+        foreignRemoved: (item.foreignTags ?? []).map((t) => t.name),
       })
   }
 
@@ -939,6 +942,16 @@ export const Editor = memo(function Editor({
               />
             </div>
           </SectionBody>
+          {!isMulti && (
+            <ForeignTagsInspector
+              foreignTags={item.foreignTags ?? []}
+              foreignRemoved={item.foreignRemoved ?? []}
+              onRemove={(name) => {
+                const current = item.foreignRemoved ?? []
+                if (!current.includes(name)) onChange({ foreignRemoved: [...current, name] })
+              }}
+            />
+          )}
 
           {/* The sections below the metadata form render in the user's order
               (Settings → Editor); the form itself is the editor's fixed header. Each

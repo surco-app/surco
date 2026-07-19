@@ -1,7 +1,10 @@
 import type { DeclickMode, NormalizeConfig } from '../../../shared/types'
 import type { TrackItem } from '../types'
 
-type SignatureFields = Pick<TrackItem, 'meta' | 'outputName' | 'coverUrl' | 'coverPath' | 'trim'>
+type SignatureFields = Pick<
+  TrackItem,
+  'meta' | 'outputName' | 'coverUrl' | 'coverPath' | 'trim' | 'foreignRemoved'
+>
 
 // A change-detecting proxy for the cover, never the cover itself. An embedded cover is a
 // ~40–110 KB base64 data URL; putting it verbatim in the signature meant stringifying that
@@ -27,6 +30,9 @@ export function trackSignature(track: SignatureFields): string {
     track.coverPath ?? '',
     // Normalized so a trim with an unset bound and an absent trim read identically.
     track.trim ? [track.trim.startSec ?? null, track.trim.endSec ?? null] : null,
+    // Same normalization: an absent foreignRemoved and an empty array must read
+    // identically, like the trim above.
+    track.foreignRemoved ?? [],
   ])
 }
 

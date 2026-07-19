@@ -194,6 +194,7 @@ export function useTrackProcessing({
           ...coverSourceOf(track),
           removeCover: track.coverRemoved,
           clearExtras: track.metaCleared,
+          foreignRemoved: track.foreignRemoved,
           format: formatOverride,
           normalize: normalizeOverride,
           declick: declickOverride,

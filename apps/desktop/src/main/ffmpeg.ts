@@ -17,6 +17,7 @@ import type {
   ConversionQuality,
   CoverRead,
   DeclickMode,
+  ForeignTag,
   KeyResult,
   LoudnessResult,
   MetaRead,
@@ -66,7 +67,7 @@ import {
   volumedetectArgs,
   volumeFilter,
 } from './normalize'
-import { TAG_FIELDS } from './tagFields'
+import { MANAGED_ALIASES, TAG_FIELDS } from './tagFields'
 import { readTagFormats } from './tagFormats'
 import { preservesCuesInPlace } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
@@ -198,6 +199,30 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
     meta[field.key] = field.parse ? field.parse(raw) : raw
   }
   return meta
+}
+
+// Como tagsFromProbe, pero al revés: recoge las claves que la app NO gestiona. Recorre las
+// mismas fuentes (format.tags + los stream.tags no-vídeo, saltando la descripción de la
+// carátula que vive en el stream de vídeo), y devuelve cada par cuyo nombre en minúsculas
+// no está en MANAGED_ALIASES. El `encoder` que ffmpeg estampa se descarta: no es metadato
+// del usuario. La primera aparición de un nombre gana, para no duplicar un tag que aparezca
+// en varias fuentes.
+export function foreignTagsFromProbe(data: ProbeTags): ForeignTag[] {
+  const sources: Record<string, unknown>[] = [
+    data.format?.tags,
+    ...(data.streams ?? []).filter((s) => s.codec_type !== 'video').map((s) => s.tags),
+  ].filter((t): t is Record<string, unknown> => Boolean(t))
+  const seen = new Set<string>()
+  const foreign: ForeignTag[] = []
+  for (const tags of sources) {
+    for (const [key, value] of Object.entries(tags)) {
+      const lower = key.toLowerCase()
+      if (lower === 'encoder' || MANAGED_ALIASES.has(lower) || seen.has(lower)) continue
+      seen.add(lower)
+      foreign.push({ name: key, value: String(value ?? '') })
+    }
+  }
+  return foreign
 }
 
 // The container's total duration in seconds, for the track row's time readout.
@@ -374,11 +399,12 @@ export async function readMeta(input: string): Promise<MetaRead> {
       tags: tagsFromProbe(data),
       duration: Number.isFinite(seconds) ? seconds : null,
       cover: await extractCover(input, dims),
+      foreignTags: foreignTagsFromProbe(data),
     }
   } catch {
     // A probe failure leaves an editable row with no tags/duration/cover — the same
     // degraded state the three granular reads reached when each failed on its own.
-    return { tags: {} as TrackMetadata, duration: null, cover: null }
+    return { tags: {} as TrackMetadata, duration: null, cover: null, foreignTags: [] }
   }
 }
 
@@ -600,6 +626,7 @@ export function convertArgs(
   coverPath?: string,
   audioFilter?: string,
   clearExtras?: boolean,
+  foreignRemoved?: string[],
 ): string[] {
   // WAV is a single-stream RIFF container, so ffmpeg refuses to mux an attached
   // picture into it ("WAVE files have exactly one stream"). The cover still
@@ -650,6 +677,12 @@ export function convertArgs(
     const value = meta.rating?.trim() && rating > 0 ? formatRatingTag(rating) : ''
     args.push('-metadata', `RATING=${value}`)
   }
+  // El usuario marcó estos tags de terceros para borrar en el inspector: un -metadata
+  // NOMBRE= vacío los elimina del fichero exportado. Se aplica siempre — es una intención
+  // explícita sobre tags concretos, independiente del "borrar todo" (-map_metadata -1, que
+  // ya se los lleva por delante cuando está activo, así que estos clears son redundantes
+  // pero inofensivos en ese caso).
+  for (const name of foreignRemoved ?? []) args.push('-metadata', `${name}=`)
   args.push(output)
   return args
 }
@@ -920,6 +953,9 @@ export async function convertAudio(
   // The "clear metadata" intent: wipe the rating along with every other field
   // (see writeTags). The cover already clears through removeCover.
   clearExtras?: boolean,
+  // The specific third-party tags the inspector's user marked for deletion
+  // (SERATO_MARKERS_V2, TRAKTOR4, …), independent of clearExtras. See writeTags.
+  foreignRemoved?: string[],
 ): Promise<{ normalizeSkipped: boolean; declickedSamples?: number }> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
@@ -995,11 +1031,12 @@ export async function convertAudio(
         coverPath,
         removeCover,
         clearExtras,
+        foreignRemoved,
       })
     } else {
       const { stderr } = await run(
         ffmpegPath,
-        convertArgs(input, tmp, plan, meta, coverPath, audioFilter, clearExtras),
+        convertArgs(input, tmp, plan, meta, coverPath, audioFilter, clearExtras, foreignRemoved),
         {
           maxBuffer: 1024 * 1024 * 32,
           onChild,
@@ -1013,7 +1050,15 @@ export async function convertAudio(
         // and grouping — and which ffmpeg reads back as a video stream on re-import.
         // M4A takes the same pass: TagLib writes the iTunes atoms (bpm, key, cover)
         // that ffmpeg's mp4 muxer has no -metadata names for.
-        await runInWorker({ type: 'writeTags', file: tmp, meta, coverPath, removeCover, clearExtras })
+        await runInWorker({
+          type: 'writeTags',
+          file: tmp,
+          meta,
+          coverPath,
+          removeCover,
+          clearExtras,
+          foreignRemoved,
+        })
       } else if ((meta.rating?.trim() || clearExtras) && (ext === '.mp3' || ext === '.aiff')) {
         // ffmpeg can't emit a POPM frame, so a re-encoded MP3/AIFF needs a TagLib
         // pass to write the Traktor rating. Only done when there's a rating (or a
@@ -1027,6 +1072,7 @@ export async function convertAudio(
           meta,
           coverPath,
           clearExtras,
+          foreignRemoved,
           cueSource: input,
           cueShift: cueShiftFor(trim, trimAf !== undefined),
         })

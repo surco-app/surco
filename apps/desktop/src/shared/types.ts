@@ -314,6 +314,8 @@ export interface SessionEdit {
   coverRemoved?: boolean
   // Rides along so a restored "cleared" track still wipes its rating on convert.
   metaCleared?: boolean
+  // The per-tag inspector deletes, so a restored track still drops them on convert.
+  foreignRemoved?: string[]
   // The match flags ride along so the auto-match sweep doesn't re-probe a restored
   // track and overwrite the very metadata the restore just brought back.
   matched?: boolean
@@ -396,10 +398,19 @@ export interface CoverRead {
 // One import-time read of a file's tags, duration and cover together: the three used to
 // be separate IPC calls that each re-probed the same file, so a big drop spawned four
 // processes per track where two now suffice.
+// Un tag que el fichero lleva pero que la app no gestiona (SERATO_MARKERS_V2, TRAKTOR4,
+// MUSICBRAINZ_*, REPLAYGAIN_*…). El inspector los muestra y permite borrarlos. El valor
+// puede venir truncado por ffprobe en blobs enormes; se muestra tal cual (solo lectura).
+export interface ForeignTag {
+  name: string
+  value: string
+}
+
 export interface MetaRead {
   tags: TrackMetadata
   duration: number | null
   cover: CoverRead | null
+  foreignTags: ForeignTag[]
 }
 
 export interface ProcessJob {
@@ -420,6 +431,9 @@ export interface ProcessJob {
   // convert preserves-on-empty) must go too. Set alongside removeCover so a cleared
   // record keeps none of the tags the app manages. See writeTags.
   clearExtras?: boolean
+  // Los tags de terceros que el usuario marcó para borrar en el inspector. Se aplican al
+  // exportar tanto en la ruta ffmpeg (convertArgs) como en la TagLib (writeTags).
+  foreignRemoved?: string[]
   format?: OutputFormat
   // Per-track normalization override; falls back to the Settings default when
   // undefined. Captured when the conversion starts, like format.

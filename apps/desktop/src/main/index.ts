@@ -739,6 +739,7 @@ function registerIpc(): void {
         declick,
         trim,
         clearExtras,
+        foreignRemoved,
       ) => {
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
         // The quality knobs are global preferences, so they're read here (at job time)
@@ -772,6 +773,7 @@ function registerIpc(): void {
               declick,
               trim,
               clearExtras,
+              foreignRemoved,
             ),
           { labelParams: { track } },
         )

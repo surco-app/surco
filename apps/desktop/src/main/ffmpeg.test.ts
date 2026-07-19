@@ -1,4 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import ffmpegStatic from 'ffmpeg-static'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
@@ -10,6 +15,7 @@ import {
   coverArgs,
   coverFilter,
   cutoffFilter,
+  foreignTagsFromProbe,
   formatMatchesInput,
   parseAstats,
   parseBands,
@@ -17,6 +23,7 @@ import {
   planConversion,
   previewWavArgs,
   propertiesFromProbe,
+  readMeta,
   stripPictureArgs,
   tagsFromProbe,
 } from './ffmpeg'
@@ -266,6 +273,36 @@ describe('convertArgs', () => {
     const i = args.indexOf('-c:a')
     expect(args.slice(i, i + 4)).toEqual(['-c:a', 'libmp3lame', '-b:a', '320k'])
     expect(convertArgs('/in.mp3', '/o.mp3', { codec: 'copy' }, meta)).not.toContain('-b:a')
+  })
+
+  it('vacía cada tag foráneo pedido con -metadata NOMBRE=', () => {
+    const args = convertArgs(
+      '/in.flac',
+      '/o.flac',
+      { codec: 'flac' },
+      meta,
+      undefined,
+      undefined,
+      false,
+      ['SERATO_MARKERS_V2', 'TRAKTOR4'],
+    )
+    const joined = args.join(' ')
+    expect(joined).toContain('-metadata SERATO_MARKERS_V2=')
+    expect(joined).toContain('-metadata TRAKTOR4=')
+  })
+
+  it('no añade clears de foráneos cuando la lista está vacía', () => {
+    const args = convertArgs(
+      '/in.flac',
+      '/o.flac',
+      { codec: 'flac' },
+      meta,
+      undefined,
+      undefined,
+      false,
+      [],
+    )
+    expect(args.join(' ')).not.toContain('SERATO_MARKERS_V2')
   })
 })
 
@@ -1169,6 +1206,40 @@ describe('tagsFromProbe', () => {
   })
 })
 
+describe('foreignTagsFromProbe', () => {
+  it('devuelve los tags no gestionados y omite los gestionados y el encoder', () => {
+    const data = {
+      format: {
+        tags: {
+          TITLE: 'Original',
+          ARTIST: 'Artista',
+          SERATO_MARKERS_V2: 'YXBwbGlj',
+          TRAKTOR4: 'dlVHblob',
+          MUSICBRAINZ_TRACKID: '7c2136cc',
+          encoder: 'Lavf60.16.100',
+        },
+      },
+    }
+    const foreign = foreignTagsFromProbe(data)
+    const names = foreign.map((t) => t.name.toUpperCase())
+    expect(names).toContain('SERATO_MARKERS_V2')
+    expect(names).toContain('TRAKTOR4')
+    expect(names).toContain('MUSICBRAINZ_TRACKID')
+    expect(names).not.toContain('TITLE')
+    expect(names).not.toContain('ARTIST')
+    expect(names.map((n) => n.toLowerCase())).not.toContain('encoder')
+  })
+
+  it('omite la descripción de la carátula del stream de vídeo', () => {
+    const data = {
+      format: { tags: { SERATO_ANALYSIS: 'x' } },
+      streams: [{ codec_type: 'video', tags: { comment: 'Cover (front)' } }],
+    }
+    const foreign = foreignTagsFromProbe(data)
+    expect(foreign.map((t) => t.name)).toEqual(['SERATO_ANALYSIS'])
+  })
+})
+
 describe('propertiesFromProbe', () => {
   const file = {
     sizeBytes: 58_400_000,
@@ -1418,5 +1489,65 @@ describe('buildSpectrum', () => {
         }),
       ),
     ).rejects.toBe(boom)
+  })
+})
+
+describe('readMeta', () => {
+  const FF = ffmpegStatic as unknown as string
+  const testDir = mkdtempSync(join(tmpdir(), 'surco-readmeta-'))
+  let flacWithForeignTag: string
+  let cleanFlac: string
+
+  beforeAll(() => {
+    flacWithForeignTag = join(testDir, 'foreign.flac')
+    execFileSync(FF, [
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=0.5',
+      '-metadata',
+      'title=Test Track',
+      '-metadata',
+      'artist=Test Artist',
+      '-metadata',
+      'SERATO_MARKERS_V2=YXBwbGlj',
+      flacWithForeignTag,
+    ])
+
+    cleanFlac = join(testDir, 'clean.flac')
+    execFileSync(FF, [
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=0.5',
+      '-metadata',
+      'title=Clean Track',
+      cleanFlac,
+    ])
+  })
+
+  it('includes foreignTags in the result with foreign tags present', async () => {
+    const result = await readMeta(flacWithForeignTag)
+
+    expect(result).toHaveProperty('foreignTags')
+    expect(result.foreignTags).toBeInstanceOf(Array)
+    expect(result.foreignTags.some((t) => t.name === 'SERATO_MARKERS_V2')).toBe(true)
+  })
+
+  it('includes an empty foreignTags array when no foreign tags are present', async () => {
+    const result = await readMeta(cleanFlac)
+
+    expect(result).toHaveProperty('foreignTags')
+    expect(result.foreignTags).toBeInstanceOf(Array)
+    expect(result.foreignTags.length).toBe(0)
+  })
+
+  it('includes an empty foreignTags array on read failure', async () => {
+    const result = await readMeta('/nonexistent/path/to/file.flac')
+
+    expect(result).toHaveProperty('foreignTags')
+    expect(result.foreignTags).toEqual([])
   })
 })
