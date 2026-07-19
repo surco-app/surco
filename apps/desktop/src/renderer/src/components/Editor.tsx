@@ -846,8 +846,8 @@ export const Editor = memo(function Editor({
             summaryTestId="form-summary"
             right={
               <div className="flex flex-col items-end gap-2">
-                {/* Fila 1 — estado: el badge de biblioteca (state, no acción), que sigue
-                    visible con la sección plegada. Misma lógica yes/no/checking de antes. */}
+                {/* Row 1 — status: the library badge (state, not an action), which stays
+                    visible while the section is folded. Same yes/no/checking logic as before. */}
                 {!isMulti && inLibrary === 'yes' && (
                   <SectionPill
                     tone="neutral"
@@ -881,10 +881,9 @@ export const Editor = memo(function Editor({
                     {tr('editor.checkingLibrary')}
                   </SectionPill>
                 )}
-                {/* Fila 2 — acciones: dos grupos etiquetados. "Archivo" actúa sobre el
-                    nombre del fichero (copiar/buscar), "Etiquetas" sobre los metadatos
-                    (borrar/rellenar). Solo con la sección abierta; el grupo de fichero solo
-                    en single (igual que antes). */}
+                {/* Row 2 — actions: two labelled groups. "File" acts on the file name
+                    (copy/search), "Tags" on the metadata (clear/fill). Only while the
+                    section is open; the file group only in single-select (as before). */}
                 {formOpen && (
                   <div className="flex items-center gap-3">
                     {!isMulti && (

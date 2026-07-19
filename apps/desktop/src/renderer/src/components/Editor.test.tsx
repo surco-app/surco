@@ -2320,10 +2320,11 @@ describe('Editor Apple Music library badge', () => {
     )
   })
 
-  // With Engine DJ as the destination the same badge reads the Engine library — and
-  // names it, so the user never wonders which library "already in" refers to. Not
-  // macOS-gated: the Engine database is plain SQLite on every platform.
-  it('names Engine DJ when it is the destination library', () => {
+  // With Engine DJ as the destination the same badge reads the Engine library. Its text is
+  // the short "In library" (which library it means now rides the icon/tooltip, not the text),
+  // so the assertion checks the badge still shows for an Engine-owned track. Not macOS-gated:
+  // the Engine database is plain SQLite on every platform.
+  it('shows the library badge when Engine DJ is the destination library', () => {
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       addToAppleMusic: false,
       addToEngineDj: true,
