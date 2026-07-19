@@ -261,7 +261,7 @@ export function useTrackLibrary({
     const saved = restoredEdits.current.get(path)
     restoredEdits.current.delete(path)
     try {
-      const { tags, duration, cover } = await window.api.readMeta(path)
+      const { tags, duration, cover, foreignTags } = await window.api.readMeta(path)
       const s = searchFromTags(parseFileName(path), tags)
       const readMeta: TrackMetadata = {
         ...base.meta,
@@ -273,6 +273,7 @@ export function useTrackLibrary({
       const patch: Partial<TrackItem> = {
         query: s.query,
         duration: duration ?? undefined,
+        foreignTags,
         coverUrl: cover?.thumbUrl,
         embeddedCover: cover?.thumbUrl,
         embeddedCoverDims:

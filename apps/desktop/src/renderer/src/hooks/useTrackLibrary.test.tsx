@@ -284,6 +284,37 @@ describe('useTrackLibrary import batching', () => {
   })
 })
 
+describe('useTrackLibrary foreign tags', () => {
+  // The inspector shows the third-party tags a file carries (SERATO_MARKERS_V2,
+  // MUSICBRAINZ_*…) so the user can review and delete them. The read already returns
+  // them (Task 2); this asserts they land on the track row instead of being dropped.
+  it('keeps the foreign tags the read returns on the track', async () => {
+    const foreign = [{ name: 'SERATO_MARKERS_V2', value: 'x' }]
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '' },
+        duration: 180,
+        cover: null,
+        foreignTags: foreign,
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() => result.current.addPaths(['/m/a.wav']))
+
+    expect(result.current.tracks[0]?.foreignTags).toEqual(foreign)
+  })
+})
+
 describe('useTrackLibrary meta read failures', () => {
   // A file whose tags can't be read still gets a row (parsed from its name), but the user
   // must be told the difference between "this file has no tags" and "the read failed" —
