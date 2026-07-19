@@ -481,7 +481,8 @@
     "rating": "Note",
     "mood": "Ambiance",
     "energy": "Énergie",
-    "suggestionsLabel": "Suggestions"
+    "suggestionsLabel": "Suggestions",
+    "suggestionsMore": "Afficher {{count}} de plus"
   },
   "declick": {
     "title": "Réparation des clics de vinyle",

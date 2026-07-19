@@ -167,4 +167,53 @@ describe('Field suggestion chips layout', () => {
     expect(container.className).toContain('flex-wrap')
     expect(container.className).not.toContain('overflow-x-auto')
   })
+
+  it('muestra solo los tres primeros chips y agrupa el resto en +N', () => {
+    render(
+      <Field
+        name="genre"
+        label="Genre"
+        value=""
+        onChange={() => {}}
+        suggestions={['Electronic', 'asia records', 'eurobeat', 'happy music', 'italo dance']}
+      />,
+    )
+    expect(screen.getByTestId('chip-Electronic')).toBeInTheDocument()
+    expect(screen.getByTestId('chip-asia records')).toBeInTheDocument()
+    expect(screen.getByTestId('chip-eurobeat')).toBeInTheDocument()
+    // The 4th and 5th are hidden behind the "+2" chip until expanded.
+    expect(screen.queryByTestId('chip-happy music')).not.toBeInTheDocument()
+    expect(screen.getByTestId('chip-more')).toHaveTextContent('2')
+  })
+
+  it('despliega el resto al pulsar +N', () => {
+    render(
+      <Field
+        name="genre"
+        label="Genre"
+        value=""
+        onChange={() => {}}
+        suggestions={['Electronic', 'asia records', 'eurobeat', 'happy music', 'italo dance']}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('chip-more'))
+    expect(screen.getByTestId('chip-happy music')).toBeInTheDocument()
+    expect(screen.getByTestId('chip-italo dance')).toBeInTheDocument()
+    // Expanded, the "+N" chip is gone (or flips to a collapse control).
+    expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
+  })
+
+  it('no muestra +N cuando hay tres o menos sugerencias', () => {
+    render(
+      <Field
+        name="genre"
+        label="Genre"
+        value=""
+        onChange={() => {}}
+        suggestions={['Electronic', 'asia records', 'eurobeat']}
+      />,
+    )
+    expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
+    expect(screen.getByTestId('chip-eurobeat')).toBeInTheDocument()
+  })
 })

@@ -481,7 +481,8 @@
     "rating": "Puntuación",
     "mood": "Estado de ánimo",
     "energy": "Energía",
-    "suggestionsLabel": "Sugerencias"
+    "suggestionsLabel": "Sugerencias",
+    "suggestionsMore": "Mostrar {{count}} más"
   },
   "declick": {
     "title": "Reparación de clicks de vinilo",

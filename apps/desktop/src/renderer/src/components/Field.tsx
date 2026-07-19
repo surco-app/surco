@@ -12,6 +12,9 @@ import { Tooltip } from './Tooltip'
 // the field instant and runs that walk once per edit instead of once per keypress.
 const COMMIT_DEBOUNCE_MS = 200
 
+// How many suggestion chips show before the rest collapse behind a "+N" chip.
+const SUGGESTION_PREVIEW = 3
+
 interface FieldProps {
   name: string
   label: string
@@ -51,6 +54,9 @@ export const Field = memo(function Field({
   const { t: tr } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  // Suggestion chips collapse to the first few + a "+N" chip so a long list (a genre with
+  // ten Discogs styles) doesn't push the form down; clicking "+N" reveals the rest.
+  const [chipsExpanded, setChipsExpanded] = useState(false)
   // The text the input shows while the user types, kept local so a keystroke doesn't
   // touch the global track array (and its O(n) pipeline) until they pause or leave.
   const [draft, setDraft] = useState(value)
@@ -192,7 +198,9 @@ export const Field = memo(function Field({
           <span className="text-[10px] font-semibold uppercase tracking-wide text-fg-faint">
             {tr('fields.suggestionsLabel')}
           </span>
-          {suggestions.map((s) => {
+          {/* Show the first SUGGESTION_PREVIEW chips; the rest hide behind a "+N" chip until
+              the user expands the list. Once expanded it stays open for this field's mount. */}
+          {(chipsExpanded ? suggestions : suggestions.slice(0, SUGGESTION_PREVIEW)).map((s) => {
             const on = multiSuggestions ? csvHas(draft, s) : draft === s
             return (
               <button
@@ -210,6 +218,19 @@ export const Field = memo(function Field({
               </button>
             )
           })}
+          {!chipsExpanded && suggestions.length > SUGGESTION_PREVIEW && (
+            <button
+              type="button"
+              data-testid="chip-more"
+              onClick={() => setChipsExpanded(true)}
+              aria-label={tr('fields.suggestionsMore', {
+                count: suggestions.length - SUGGESTION_PREVIEW,
+              })}
+              className="press shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] px-2 py-0.5 text-[10px] text-[var(--color-accent)] transition-colors hover:bg-[var(--color-panel-2)]"
+            >
+              +{suggestions.length - SUGGESTION_PREVIEW}
+            </button>
+          )}
         </span>
       )}
     </label>
