@@ -454,7 +454,8 @@
     "sectionMaximize": "Agrandir la section",
     "sectionRestore": "Restaurer la section",
     "otherTagsTitle": "Autres métadonnées",
-    "otherTagsSummary": "{{count}} tags"
+    "otherTagsSummary": "{{count}} tags",
+    "otherTagsRemove": "Supprimer {{name}}"
   },
   "fields": {
     "title": "Titre",

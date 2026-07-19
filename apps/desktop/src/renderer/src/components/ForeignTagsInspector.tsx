@@ -70,7 +70,7 @@ export function ForeignTagsInspector({
                 <button
                   type="button"
                   data-testid="foreign-tag-remove"
-                  aria-label={tag.name}
+                  aria-label={tr('editor.otherTagsRemove', { name: tag.name })}
                   onClick={() => onRemove(tag.name)}
                   className="press flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-fg-muted opacity-0 transition-opacity hover:bg-[var(--color-panel-2)] hover:text-fg focus-visible:opacity-100 group-hover:opacity-100"
                 >

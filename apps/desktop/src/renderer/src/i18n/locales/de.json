@@ -454,7 +454,8 @@
     "sectionMaximize": "Abschnitt maximieren",
     "sectionRestore": "Abschnitt wiederherstellen",
     "otherTagsTitle": "Weitere Metadaten",
-    "otherTagsSummary": "{{count}} Tags"
+    "otherTagsSummary": "{{count}} Tags",
+    "otherTagsRemove": "{{name}} entfernen"
   },
   "fields": {
     "title": "Titel",

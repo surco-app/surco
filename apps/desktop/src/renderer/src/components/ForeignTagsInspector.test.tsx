@@ -42,6 +42,22 @@ describe('ForeignTagsInspector', () => {
     expect(onRemove).toHaveBeenCalledWith('SERATO_MARKERS_V2')
   })
 
+  it('da al botón de borrar un nombre accesible con acción y tag', () => {
+    render(
+      <ForeignTagsInspector
+        foreignTags={[{ name: 'SERATO_MARKERS_V2', value: 'x' }]}
+        foreignRemoved={[]}
+        onRemove={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Other metadata' }))
+    // Not just the tag name: a screen reader must hear the action, or "SERATO_MARKERS_V2,
+    // button" reads as a label, not a delete control.
+    expect(screen.getByTestId('foreign-tag-remove')).toHaveAccessibleName(
+      'Remove SERATO_MARKERS_V2',
+    )
+  })
+
   it('muestra tachado un tag ya en foreignRemoved', () => {
     render(
       <ForeignTagsInspector

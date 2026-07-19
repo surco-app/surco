@@ -454,7 +454,8 @@
     "sectionMaximize": "Maximize the section",
     "sectionRestore": "Restore the section",
     "otherTagsTitle": "Other metadata",
-    "otherTagsSummary": "{{count}} tags"
+    "otherTagsSummary": "{{count}} tags",
+    "otherTagsRemove": "Remove {{name}}"
   },
   "fields": {
     "title": "Title",
