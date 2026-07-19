@@ -14,7 +14,7 @@ import {
 } from 'node-taglib-sharp'
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
-import { copyCueFrames, preservesCuesInPlace, writeTags } from './tags'
+import { copyCueFrames, preservesCuesInPlace, readItunesGrouping, writeTags } from './tags'
 import { buildTraktorTree, readTraktorCueStart, traktorCue } from './traktor4Fixture'
 
 // Strips the GEOB cue frame from a file, to model the output of a normalizing
@@ -116,6 +116,30 @@ function buildSeed(dir: string): string {
   const mpegFrame = Buffer.concat([Buffer.from([0xff, 0xfb, 0x90, 0x00]), Buffer.alloc(413)])
   const audio = Buffer.concat(Array(20).fill(mpegFrame))
   const path = join(dir, 'seed.mp3')
+  writeFileSync(path, Buffer.concat([header, body, audio]))
+  return path
+}
+
+// Builds an MP3 whose grouping lives ONLY in iTunes' proprietary GRP1 frame (a raw text
+// frame: [encoding byte][Latin1 text]) — the state a file re-saved by Apple Music reaches.
+// GRP1 isn't a standard identifier, so it's written as raw bytes like buildSeed's own frames
+// rather than through TagLib's frame API (which doesn't know GRP1).
+function buildSeedWithGrp1(dir: string, grouping: string): string {
+  const syncsafe = (n: number) =>
+    Buffer.from([(n >> 21) & 0x7f, (n >> 14) & 0x7f, (n >> 7) & 0x7f, n & 0x7f])
+  const frame = (id: string, data: Buffer) => {
+    const head = Buffer.alloc(10)
+    head.write(id, 0, 'latin1')
+    head.writeUInt32BE(data.length, 4)
+    return Buffer.concat([head, data])
+  }
+  const tit2 = frame('TIT2', Buffer.concat([Buffer.from([0]), Buffer.from('Old Title', 'latin1')]))
+  const grp1 = frame('GRP1', Buffer.concat([Buffer.from([0]), Buffer.from(grouping, 'latin1')]))
+  const body = Buffer.concat([tit2, grp1])
+  const header = Buffer.concat([Buffer.from('ID3'), Buffer.from([3, 0, 0]), syncsafe(body.length)])
+  const mpegFrame = Buffer.concat([Buffer.from([0xff, 0xfb, 0x90, 0x00]), Buffer.alloc(413)])
+  const audio = Buffer.concat(Array(20).fill(mpegFrame))
+  const path = join(dir, 'grp1.mp3')
   writeFileSync(path, Buffer.concat([header, body, audio]))
   return path
 }
@@ -735,5 +759,19 @@ describe('copyCueFrames', () => {
 
     expect(() => copyCueFrames(source, out)).not.toThrow()
     expect(readFileSync(out).includes(Buffer.from('TRAKTORCUEBLOB'))).toBe(false)
+  })
+
+  // A file re-saved by Apple Music keeps its grouping only in iTunes' GRP1 frame, which
+  // ffprobe/ffmpeg don't surface — so readMeta reads it back through readItunesGrouping.
+  it('reads the grouping from the iTunes GRP1 frame', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeedWithGrp1(dir, 'Bases, Cantaditas')
+    expect(readItunesGrouping(file)).toBe('Bases, Cantaditas')
+  })
+
+  it('returns empty when there is no GRP1 frame', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+    expect(readItunesGrouping(file)).toBe('')
   })
 })

@@ -9,6 +9,7 @@ import {
   Id3v2PrivateFrame,
   type Id3v2Tag,
   Id3v2TextInformationFrame,
+  type Id3v2UnknownFrame,
   Id3v2UserTextInformationFrame,
   type Mpeg4AppleTag,
   Picture,
@@ -16,7 +17,6 @@ import {
   File as TagFile,
   TagTypes,
 } from 'node-taglib-sharp'
-import { shiftTraktorCues } from './traktor4'
 import {
   starsToRating,
   starsToWmpRating,
@@ -24,6 +24,7 @@ import {
   WMP_RATING_USER,
 } from '../shared/rating'
 import type { TrackMetadata } from '../shared/types'
+import { shiftTraktorCues } from './traktor4'
 
 // Every ID3 container we write gets v2.3, pinned per tag rather than through the
 // global Id3v2Settings so a library upgrade can't silently change other tag kinds.
@@ -44,12 +45,50 @@ const ID3_IN_PLACE = new Set(['.mp3', '.aiff'])
 // read that internal name as leftover junk, so we override it with the album name —
 // the cover is the release's, not the track's. Album-less files fall back to "cover".
 function coverName(meta: TrackMetadata): string {
-  const base = meta.album.replace(/[/\\:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim()
+  const base = meta.album
+    .replace(/[/\\:*?"<>|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
   return `${base || 'cover'}.jpg`
 }
 
 export function preservesCuesInPlace(ext: string): boolean {
   return ID3_IN_PLACE.has(ext.toLowerCase())
+}
+
+// iTunes/Apple Music stores grouping in its own GRP1 frame, not the standard TIT1 that
+// Surco (and TagLib's `grouping` property) writes. TagLib doesn't recognise GRP1 — it comes
+// back as an UnknownFrame — and neither the bundled ffprobe nor ffmpeg surface it, so a file
+// re-saved by Apple Music has a grouping the normal probe read misses. This reads that frame
+// directly: an ID3 text frame body is [encoding byte][text], so the byte picks the encoding
+// and the rest is the string, trailing NUL stripped. Best-effort — returns '' when there's
+// no GRP1, the file can't be opened, or the frame is malformed, so readMeta only uses it as a
+// fallback when the probe gave no grouping.
+export function readItunesGrouping(file: string): string {
+  try {
+    const f = TagFile.createFromPath(file)
+    try {
+      const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+      const grp1 = id3?.frames.find((fr) => fr.frameId.toString() === 'GRP1')
+      if (!grp1) return ''
+      const bytes = (grp1 as Id3v2UnknownFrame).data.toByteArray()
+      if (bytes.length < 2) return ''
+      const encoding = bytes[0]
+      const text = Buffer.from(bytes.slice(1))
+      // 0 = Latin1, 1/2 = UTF-16 (with/without BOM), 3 = UTF-8. iTunes writes Latin1 or UTF-8.
+      const decoded =
+        encoding === 3
+          ? text.toString('utf8')
+          : encoding === 1 || encoding === 2
+            ? text.toString('utf16le')
+            : text.toString('latin1')
+      return decoded.replace(/\0+$/, '')
+    } finally {
+      f.dispose()
+    }
+  } catch {
+    return ''
+  }
 }
 
 // A trim moved the audio under the stored cues: shift every position back by
@@ -304,7 +343,9 @@ export function writeTags(
     for (const name of foreignRemoved) {
       setUserText(id3, name, '')
       const upper = name.toUpperCase()
-      for (const fr of id3.frames.filter((frame) => frame.frameId.toString().toUpperCase() === upper)) {
+      for (const fr of id3.frames.filter(
+        (frame) => frame.frameId.toString().toUpperCase() === upper,
+      )) {
         id3.removeFrame(fr)
       }
     }
