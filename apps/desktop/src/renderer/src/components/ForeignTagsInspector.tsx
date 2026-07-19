@@ -58,16 +58,22 @@ export function ForeignTagsInspector({
                 data-removed={removed}
                 className="group flex items-center gap-3 bg-[var(--color-field)] px-3 py-2"
               >
-                <span
-                  className={`shrink-0 font-mono text-[11px] ${removed ? 'text-fg-muted line-through opacity-60' : 'text-fg-dim'}`}
-                >
-                  {tag.name}
-                </span>
-                <span
-                  className={`min-w-0 flex-1 truncate text-right font-mono text-[11px] ${removed ? 'text-fg-muted line-through opacity-60' : 'text-fg'}`}
-                >
-                  {tag.value}
-                </span>
+                {/* Name over value: the tag name is what the user recognises, so it leads on
+                    its own line; the raw value (often a long base64 blob) sits under it,
+                    dimmed as secondary reference. Gives each row air and a clear hierarchy
+                    instead of cramming both onto one line. */}
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span
+                    className={`truncate font-mono text-[11px] ${removed ? 'text-fg-muted line-through opacity-60' : 'text-fg-dim'}`}
+                  >
+                    {tag.name}
+                  </span>
+                  <span
+                    className={`truncate font-mono text-[11px] ${removed ? 'text-fg-muted line-through opacity-60' : 'text-fg-muted'}`}
+                  >
+                    {tag.value}
+                  </span>
+                </div>
                 {/* One toggle: an X marks a live tag for deletion, an undo arrow restores a
                     struck-through one. A live tag's X only shows on hover so the card stays
                     clean; a marked tag's restore button stays visible always, since that's

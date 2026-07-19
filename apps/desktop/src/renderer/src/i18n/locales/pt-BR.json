@@ -429,8 +429,6 @@
     "notInLibrary": "Fora da biblioteca",
     "notInLibraryEngine": "Fora da biblioteca",
     "checkingLibrary": "Verificando…",
-    "actionsFile": "Arquivo",
-    "actionsTags": "Tags",
     "convertAll": "Converter ({{count}}) · {{format}}",
     "editingMultiple": "Editando {{count}} faixas",
     "multipleValues": "Vários valores",
@@ -482,7 +480,8 @@
     "compilation": "Coletânea",
     "rating": "Avaliação",
     "mood": "Clima",
-    "energy": "Energia"
+    "energy": "Energia",
+    "suggestionsLabel": "Sugestões"
   },
   "declick": {
     "title": "Reparo de clicks de vinil",

@@ -1,5 +1,6 @@
 import type React from 'react'
 import { memo, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
 import { Tooltip } from './Tooltip'
@@ -47,6 +48,7 @@ export const Field = memo(function Field({
   cleanResult,
   formatResult,
 }: FieldProps): React.JSX.Element {
+  const { t: tr } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   // The text the input shows while the user types, kept local so a keystroke doesn't
@@ -182,8 +184,14 @@ export const Field = memo(function Field({
       {suggestions && suggestions.length > 0 && (
         <span
           data-testid="field-suggestions"
-          className="mt-1.5 flex gap-1.5 overflow-x-auto"
+          className="mt-1.5 flex flex-wrap items-center gap-1.5"
         >
+          {/* A quiet "Suggestions" label anchors the chips to their field, so they read as
+              this field's suggestions rather than a stray row. The chips wrap onto new lines
+              (never a horizontal scroll rail), growing the field down instead. */}
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-fg-faint">
+            {tr('fields.suggestionsLabel')}
+          </span>
           {suggestions.map((s) => {
             const on = multiSuggestions ? csvHas(draft, s) : draft === s
             return (

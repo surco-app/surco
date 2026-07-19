@@ -429,8 +429,6 @@
     "notInLibrary": "Nicht in Mediathek",
     "notInLibraryEngine": "Nicht in Mediathek",
     "checkingLibrary": "Wird geprüft…",
-    "actionsFile": "Datei",
-    "actionsTags": "Tags",
     "convertAll": "Konvertieren ({{count}}) · {{format}}",
     "editingMultiple": "{{count}} Tracks werden bearbeitet",
     "multipleValues": "Mehrere Werte",
@@ -482,7 +480,8 @@
     "compilation": "Compilation",
     "rating": "Bewertung",
     "mood": "Stimmung",
-    "energy": "Energie"
+    "energy": "Energie",
+    "suggestionsLabel": "Vorschläge"
   },
   "declick": {
     "title": "Vinyl-Klick-Reparatur",

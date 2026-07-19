@@ -1448,10 +1448,15 @@ describe('Editor export control', () => {
     expect(screen.getByTestId('copy-filename-btn')).toBeInTheDocument()
   })
 
-  it('muestra las etiquetas de los grupos de acciones en el header', () => {
+  // The header collapsed to a single row: the action buttons keep their tooltips/aria-labels
+  // (so the File/Tags meaning survives), but the inline text labels are gone — the row reads
+  // as one line, like OUTPUT and PROPERTIES, instead of two stacked rows.
+  it('shows the header action buttons without inline group labels', () => {
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav')
-    expect(screen.getByTestId('actions-file-label')).toBeInTheDocument()
-    expect(screen.getByTestId('actions-tags-label')).toBeInTheDocument()
+    expect(screen.getByTestId('copy-filename-btn')).toBeInTheDocument()
+    expect(screen.getByTestId('clear-meta-btn')).toBeInTheDocument()
+    expect(screen.queryByTestId('actions-file-label')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('actions-tags-label')).not.toBeInTheDocument()
   })
 
   it('exports in the settings default format when the main button is clicked', () => {

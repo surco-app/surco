@@ -845,9 +845,13 @@ export const Editor = memo(function Editor({
             }
             summaryTestId="form-summary"
             right={
-              <div className="flex flex-col items-end gap-2">
-                {/* Row 1 — status: the library badge (state, not an action), which stays
-                    visible while the section is folded. Same yes/no/checking logic as before. */}
+              // One row: the library badge (state) sits by the title, the two action groups
+              // (file: copy/search — tags: clear/fill/format) follow to the right, split by a
+              // divider. The buttons keep their own tooltips/aria-labels, so dropping the inline
+              // File/Tags text costs no meaning while the header reads as a single line, like
+              // OUTPUT and PROPERTIES. Same yes/no/checking and formOpen/isMulti conditions as
+              // before — only the layout collapsed from two stacked rows to one.
+              <div className="flex items-center gap-3">
                 {!isMulti && inLibrary === 'yes' && (
                   <SectionPill
                     tone="neutral"
@@ -881,40 +885,20 @@ export const Editor = memo(function Editor({
                     {tr('editor.checkingLibrary')}
                   </SectionPill>
                 )}
-                {/* Row 2 — actions: two labelled groups. "File" acts on the file name
-                    (copy/search), "Tags" on the metadata (clear/fill). Only while the
-                    section is open; the file group only in single-select (as before). */}
+                {formOpen && !isMulti && (
+                  <div className="flex items-center gap-1.5">
+                    {copyFilenameButton}
+                    {searchWebButton}
+                  </div>
+                )}
+                {formOpen && !isMulti && (
+                  <div aria-hidden="true" className="h-5 w-px self-center bg-[var(--color-line)]" />
+                )}
                 {formOpen && (
-                  <div className="flex items-center gap-3">
-                    {!isMulti && (
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          data-testid="actions-file-label"
-                          className="text-[10px] font-semibold uppercase tracking-wide text-fg-faint"
-                        >
-                          {tr('editor.actionsFile')}
-                        </span>
-                        {copyFilenameButton}
-                        {searchWebButton}
-                      </div>
-                    )}
-                    {!isMulti && (
-                      <div
-                        aria-hidden="true"
-                        className="h-5 w-px self-center bg-[var(--color-line)]"
-                      />
-                    )}
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        data-testid="actions-tags-label"
-                        className="text-[10px] font-semibold uppercase tracking-wide text-fg-faint"
-                      >
-                        {tr('editor.actionsTags')}
-                      </span>
-                      {clearButton}
-                      {deriveButton}
-                      {titleFormatButton}
-                    </div>
+                  <div className="flex items-center gap-1.5">
+                    {clearButton}
+                    {deriveButton}
+                    {titleFormatButton}
                   </div>
                 )}
               </div>

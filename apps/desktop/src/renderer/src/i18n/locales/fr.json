@@ -429,8 +429,6 @@
     "notInLibrary": "Absent de la bibliothèque",
     "notInLibraryEngine": "Absent de la bibliothèque",
     "checkingLibrary": "Vérification…",
-    "actionsFile": "Fichier",
-    "actionsTags": "Tags",
     "convertAll": "Convertir ({{count}}) · {{format}}",
     "editingMultiple": "Édition de {{count}} morceaux",
     "multipleValues": "Valeurs multiples",
@@ -482,7 +480,8 @@
     "compilation": "Compilation",
     "rating": "Note",
     "mood": "Ambiance",
-    "energy": "Énergie"
+    "energy": "Énergie",
+    "suggestionsLabel": "Suggestions"
   },
   "declick": {
     "title": "Réparation des clics de vinyle",

@@ -429,8 +429,6 @@
     "notInLibrary": "Not in library",
     "notInLibraryEngine": "Not in library",
     "checkingLibrary": "Checking…",
-    "actionsFile": "File",
-    "actionsTags": "Tags",
     "convertAll": "Convert ({{count}}) · {{format}}",
     "editingMultiple": "Editing {{count}} tracks",
     "multipleValues": "Multiple values",
@@ -482,7 +480,8 @@
     "compilation": "Compilation",
     "rating": "Rating",
     "mood": "Mood",
-    "energy": "Energy"
+    "energy": "Energy",
+    "suggestionsLabel": "Suggestions"
   },
   "declick": {
     "title": "Vinyl click repair",
