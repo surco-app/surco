@@ -429,6 +429,8 @@
     "notInLibrary": "Fora da biblioteca",
     "notInLibraryEngine": "Fora da biblioteca",
     "checkingLibrary": "Verificando…",
+    "actionsFile": "Arquivo",
+    "actionsTags": "Tags",
     "convertAll": "Converter ({{count}}) · {{format}}",
     "editingMultiple": "Editando {{count}} faixas",
     "multipleValues": "Vários valores",

@@ -429,6 +429,8 @@
     "notInLibrary": "No en biblioteca",
     "notInLibraryEngine": "No en biblioteca",
     "checkingLibrary": "Comprobando…",
+    "actionsFile": "Archivo",
+    "actionsTags": "Etiquetas",
     "convertAll": "Convertir ({{count}}) · {{format}}",
     "editingMultiple": "Editando {{count}} pistas",
     "multipleValues": "Varios valores",

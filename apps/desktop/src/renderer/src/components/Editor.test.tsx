@@ -1347,6 +1347,12 @@ describe('Editor export control', () => {
     expect(screen.getByTestId('copy-filename-btn')).toBeInTheDocument()
   })
 
+  it('muestra las etiquetas de los grupos de acciones en el header', () => {
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav')
+    expect(screen.getByTestId('actions-file-label')).toBeInTheDocument()
+    expect(screen.getByTestId('actions-tags-label')).toBeInTheDocument()
+  })
+
   it('exports in the settings default format when the main button is clicked', () => {
     const { onProcess } = renderEditor({ id: 'a' }, 'wav')
     fireEvent.click(screen.getByTestId('process-btn'))
