@@ -453,7 +453,8 @@
     "searchWebHint": "Search Google for the file name",
     "sectionMaximize": "Maximize the section",
     "sectionRestore": "Restore the section",
-    "otherTags": "Other metadata ({{count}})"
+    "otherTagsTitle": "Other metadata",
+    "otherTagsSummary": "{{count}} tags"
   },
   "fields": {
     "title": "Title",

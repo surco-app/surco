@@ -13,6 +13,20 @@ describe('ForeignTagsInspector', () => {
     expect(screen.queryByTestId('foreign-tags-toggle')).toBeNull()
   })
 
+  it('muestra el conteo en el summary de la cabecera', () => {
+    render(
+      <ForeignTagsInspector
+        foreignTags={[
+          { name: 'SERATO_MARKERS_V2', value: 'x' },
+          { name: 'TRAKTOR4', value: 'y' },
+        ]}
+        foreignRemoved={[]}
+        onRemove={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('foreign-tags-summary')).toHaveTextContent('2')
+  })
+
   it('lista los foráneos al abrir el toggle y permite borrar uno', () => {
     const onRemove = vi.fn()
     render(
@@ -22,7 +36,7 @@ describe('ForeignTagsInspector', () => {
         onRemove={onRemove}
       />,
     )
-    fireEvent.click(screen.getByTestId('foreign-tags-toggle'))
+    fireEvent.click(screen.getByRole('button', { name: 'Other metadata' }))
     expect(screen.getByTestId('foreign-tags-list')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('foreign-tag-remove'))
     expect(onRemove).toHaveBeenCalledWith('SERATO_MARKERS_V2')
@@ -36,7 +50,7 @@ describe('ForeignTagsInspector', () => {
         onRemove={vi.fn()}
       />,
     )
-    fireEvent.click(screen.getByTestId('foreign-tags-toggle'))
+    fireEvent.click(screen.getByRole('button', { name: 'Other metadata' }))
     expect(screen.getByTestId('foreign-tag-row')).toHaveAttribute('data-removed', 'true')
   })
 })
