@@ -10,6 +10,7 @@ import {
   type Id3v2Tag,
   Id3v2TextInformationFrame,
   Id3v2UserTextInformationFrame,
+  type Mpeg4AppleTag,
   Picture,
   PictureType,
   File as TagFile,
@@ -225,6 +226,8 @@ function setRating(tag: Id3v2Tag, stars: string, clear: boolean): void {
 // matching copyCueFrames' scope. `clearExtras` is the "clear metadata" intent: it
 // wipes the rating that would otherwise be preserved-on-empty (the cover already
 // goes via removeCover), so a cleared file keeps none of the fields we manage.
+// `foreignRemoved` names the third-party tags the inspector's per-tag delete marked —
+// applied on both ID3 and m4a regardless of clearExtras, unlike the fields above.
 export function writeTags(
   file: string,
   meta: TrackMetadata,
@@ -233,10 +236,16 @@ export function writeTags(
   cueSource?: string,
   cueShift?: CueShift,
   clearExtras = false,
+  foreignRemoved: string[] = [],
 ): void {
   const f = TagFile.createFromPath(file)
   try {
     const tag = f.tag
+    // M4A carries iTunes atoms in a single ILST box with no per-frame overwrite
+    // semantics like ID3's frame IDs — Tag.clear() (AppleTag: _ilstBox.clearChildren())
+    // is the only way to reach a foreign atom the app doesn't manage, so on clearExtras
+    // it must run before the generic assignments below repopulate the managed atoms.
+    if (extname(file).toLowerCase() === '.m4a' && clearExtras) tag.clear()
     tag.title = meta.title
     tag.performers = toArray(meta.artist)
     tag.album = meta.album
@@ -267,6 +276,12 @@ export function writeTags(
         picture.type = PictureType.FrontCover
         f.tag.pictures = [picture]
       }
+      // Foreign tags the user marked in the inspector: same "----" freeform route
+      // TagLib itself uses to write every managed atom it doesn't have a dedicated
+      // box for (ReplayGain, MusicBrainz ids…), under the MEAN every tagger writes.
+      // Applies always, like the ID3 route below — independent of clearExtras.
+      const apple = f.tag as Mpeg4AppleTag
+      for (const name of foreignRemoved) apple.setItunesStrings('com.apple.iTunes', name)
       f.save()
       return
     }
@@ -284,6 +299,16 @@ export function writeTags(
     // merge below still re-injects them for a carry-over conversion.
     if (clearExtras)
       for (const frame of id3.frames.filter((fr) => !isTraktorCue(fr))) id3.removeFrame(frame)
+    // The foreign tags the user marked in the inspector: remove them by name. Covers
+    // the free-text TXXX route (setUserText with '' clears it) and any frame whose id
+    // matches the name outright. Applies always, not just on clearExtras.
+    for (const name of foreignRemoved) {
+      setUserText(id3, name, '')
+      const upper = name.toUpperCase()
+      for (const fr of id3.frames.filter((frame) => frame.frameId.toString().toUpperCase() === upper)) {
+        id3.removeFrame(fr)
+      }
+    }
     // The catalog number has no standard frame, so it rides the de-facto TXXX
     // "CATALOGNUMBER" one — the same key the ffmpeg path writes.
     setUserText(id3, 'CATALOGNUMBER', meta.catalogNumber)
