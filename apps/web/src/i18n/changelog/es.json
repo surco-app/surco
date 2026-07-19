@@ -51,6 +51,10 @@
       {
         "text": "El paso de audio de la bienvenida está afinado al flujo del DJ.",
         "in": "0.63.3"
+      },
+      {
+        "text": "El botón para regenerar el nombre del archivo vuelve a ser un icono limpio junto al de personalizar, y las etiquetas de ayuda ya no se quedan pegadas sobre un botón después de pulsarlo.",
+        "in": "0.63.4"
       }
     ]
   },

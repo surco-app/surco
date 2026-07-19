@@ -51,6 +51,10 @@
       {
         "text": "The welcome flow's audio step is tuned to the DJ's workflow.",
         "in": "0.63.3"
+      },
+      {
+        "text": "The regenerate-filename button is a clean icon again next to the customize one, and help labels no longer stay stuck over a button after you click it.",
+        "in": "0.63.4"
       }
     ]
   },
