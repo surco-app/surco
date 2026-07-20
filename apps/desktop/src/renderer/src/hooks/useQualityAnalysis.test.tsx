@@ -28,6 +28,21 @@ function wrapper(): ({ children }: { children: React.ReactNode }) => React.JSX.E
   return ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>
 }
 
+function setApi(over: Record<string, unknown>): void {
+  ;(window as unknown as { api: unknown }).api = {
+    spectrogram: vi.fn().mockResolvedValue(spectrum),
+    waveform: vi.fn().mockResolvedValue(null),
+    waveformScan: vi.fn().mockResolvedValue(null),
+    loudness: vi.fn().mockResolvedValue(null),
+    clicks: vi.fn().mockResolvedValue(null),
+    bpm: vi.fn().mockResolvedValue(null),
+    key: vi.fn().mockResolvedValue(null),
+    properties: vi.fn().mockResolvedValue(null),
+    onWindowFocus: () => () => {},
+    ...over,
+  }
+}
+
 afterEach(() => vi.restoreAllMocks())
 
 describe('useQualityAnalysis', () => {
@@ -36,7 +51,7 @@ describe('useQualityAnalysis', () => {
   // (those with a spectrum) alone, then return to idle.
   it('analyzes only the not-yet-measured tracks and ends idle', async () => {
     const spectrogram = vi.fn().mockResolvedValue(spectrum)
-    ;(window as unknown as { api: unknown }).api = { spectrogram, waveform: vi.fn().mockResolvedValue(null), waveformScan: vi.fn().mockResolvedValue(null), onWindowFocus: () => () => {} }
+    setApi({ spectrogram })
     const targetsRef = {
       current: [
         track('a'),
@@ -60,14 +75,8 @@ describe('useQualityAnalysis', () => {
   // that scan too, or one "analyze all" would fill the silence bucket collection-wide
   // but leave the clipping bucket empty for every track the user never opened.
   it('decodes the clip scan for each not-yet-measured track', async () => {
-    const spectrogram = vi.fn().mockResolvedValue(spectrum)
     const waveformScan = vi.fn().mockResolvedValue(null)
-    ;(window as unknown as { api: unknown }).api = {
-      spectrogram,
-      waveform: vi.fn().mockResolvedValue(null),
-      waveformScan,
-      onWindowFocus: () => () => {},
-    }
+    setApi({ waveformScan })
     const targetsRef = { current: [track('a'), track('b', { spectrum }), track('c')] }
     const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
       wrapper: wrapper(),
@@ -87,7 +96,7 @@ describe('useQualityAnalysis', () => {
       release = r
     })
     const spectrogram = vi.fn().mockReturnValue(gate)
-    ;(window as unknown as { api: unknown }).api = { spectrogram, waveform: vi.fn().mockResolvedValue(null), waveformScan: vi.fn().mockResolvedValue(null), onWindowFocus: () => () => {} }
+    setApi({ spectrogram })
     const targetsRef = { current: [track('a')] }
     const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
       wrapper: wrapper(),
@@ -114,7 +123,7 @@ describe('useQualityAnalysis', () => {
       if (path === '/music/b.wav') throw new Error('unreadable')
       return spectrum
     })
-    ;(window as unknown as { api: unknown }).api = { spectrogram, waveform: vi.fn().mockResolvedValue(null), waveformScan: vi.fn().mockResolvedValue(null), onWindowFocus: () => () => {} }
+    setApi({ spectrogram })
     const targetsRef = { current: [track('a'), track('b'), track('c')] }
     const onErrors = vi.fn()
     const { result } = renderHook(() => useQualityAnalysis({ targetsRef, onErrors }), {
@@ -132,7 +141,7 @@ describe('useQualityAnalysis', () => {
   // only when something actually failed, so a good folder shows no "0 failed" noise.
   it('does not report errors when every file analyzes cleanly', async () => {
     const spectrogram = vi.fn().mockResolvedValue(spectrum)
-    ;(window as unknown as { api: unknown }).api = { spectrogram, waveform: vi.fn().mockResolvedValue(null), waveformScan: vi.fn().mockResolvedValue(null), onWindowFocus: () => () => {} }
+    setApi({ spectrogram })
     const targetsRef = { current: [track('a'), track('b')] }
     const onErrors = vi.fn()
     const { result } = renderHook(() => useQualityAnalysis({ targetsRef, onErrors }), {
@@ -143,5 +152,24 @@ describe('useQualityAnalysis', () => {
     await waitFor(() => expect(result.current.analysis).toBeNull())
 
     expect(onErrors).not.toHaveBeenCalled()
+  })
+
+  it('runs the full analysis set for each not-yet-measured track', async () => {
+    const loudness = vi.fn().mockResolvedValue(null)
+    const clicks = vi.fn().mockResolvedValue(null)
+    const bpm = vi.fn().mockResolvedValue(null)
+    const key = vi.fn().mockResolvedValue(null)
+    const properties = vi.fn().mockResolvedValue(null)
+    setApi({ loudness, clicks, bpm, key, properties })
+    const targetsRef = { current: [track('a'), track('b', { spectrum }), track('c')] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), { wrapper: wrapper() })
+
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+
+    for (const probe of [loudness, clicks, bpm, key, properties]) {
+      const paths = probe.mock.calls.map((c) => c[0]).sort()
+      expect(paths).toEqual(['/music/a.wav', '/music/c.wav'])
+    }
   })
 })

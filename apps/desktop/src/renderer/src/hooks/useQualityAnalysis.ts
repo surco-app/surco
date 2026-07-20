@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useRef, useState } from 'react'
+import { analysisOptions } from '../lib/analysisQueries'
 import { mapWithConcurrency } from '../lib/concurrency'
 import { createFocusGate } from '../lib/focusGate'
 import { tracksToAnalyze } from '../lib/triage'
@@ -74,6 +75,21 @@ export function useQualityAnalysis({ targetsRef, onErrors }: Params): QualityAna
         // collection-wide instead of only for tracks the user opened or played.
         await queryClient.fetchQuery(waveformOptions(t.inputPath))
         await queryClient.fetchQuery(waveformScanOptions(t.inputPath))
+        const rest = [
+          analysisOptions('loudness', t.inputPath, () => window.api.loudness(t.inputPath, 'low')),
+          analysisOptions('clicks', t.inputPath, () => window.api.clicks(t.inputPath, 'low')),
+          analysisOptions('bpm', t.inputPath, () => window.api.bpm(t.inputPath, 'low')),
+          analysisOptions('key', t.inputPath, () => window.api.key(t.inputPath, 'low')),
+          analysisOptions('properties', t.inputPath, () => window.api.properties(t.inputPath)),
+        ]
+        for (const opts of rest) {
+          try {
+            await queryClient.fetchQuery(opts)
+          } catch {
+            // One analysis failing (e.g. bpm on a beatless rip) must not skip the others
+            // of the same track — each fills its own cache entry independently.
+          }
+        }
       } catch {
         // A single file ffmpeg can't read must not abort the whole sweep — count it so
         // the run can report the total at the end instead of swallowing it.
