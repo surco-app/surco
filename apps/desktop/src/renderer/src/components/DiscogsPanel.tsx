@@ -405,10 +405,13 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                                 t === appliedTrack || t === matchedTrack ? 'true' : undefined
                               }
                               onClick={() => selectTrack(t)}
-                              className={`flex w-full items-center gap-3 py-1.5 pr-3 pl-4 text-left hover:bg-[var(--color-panel-2)] ${
+                              className={`flex w-full items-center gap-3 py-1.5 pr-3 pl-4 text-left ${
+                                // Same solid selection-blue as the library row, so the applied
+                                // track reads with equal weight in both columns (was a faint
+                                // tint that looked second-class next to the filled library row).
                                 t === appliedTrack || t === matchedTrack
-                                  ? 'bg-[var(--color-accent-soft)]'
-                                  : ''
+                                  ? 'is-applied bg-[var(--color-row-selected)]'
+                                  : 'hover:bg-[var(--color-panel-2)]'
                               }`}
                             >
                               <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">

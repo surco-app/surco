@@ -304,12 +304,13 @@ const TrackRow = memo(function TrackRow({
         onMouseEnter={() => onPrefetch(t.id)}
         onFocus={() => onPrefetch(t.id)}
         className={`group/row relative flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] transition-colors ${
-          // One solid-accent focal for the primary row (the one open in the editor) — it reads
+          // One solid-fill focal for the primary row (the one open in the editor) — it reads
           // as "this is what you're editing" at a glance, the way Finder/Mail fill the active
-          // row. A multi-selected-but-not-primary row gets the quiet accent tint; everything
-          // else is panel with a grey hover, so the blue never fights itself across the list.
+          // row. It uses the dedicated selection blue (deeper than the light accent, so it
+          // doesn't wash out in dark). A multi-selected-but-not-primary row gets the quiet
+          // accent tint; everything else is panel with a grey hover, so blue never fights itself.
           primary
-            ? 'is-primary bg-[var(--color-accent)] shadow-none'
+            ? 'is-primary bg-[var(--color-row-selected)] shadow-none'
             : selected
               ? 'bg-[var(--color-accent-soft)]/85'
               : 'bg-[var(--color-panel)]/50 hover:bg-[var(--color-panel-2)]/85'

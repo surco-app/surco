@@ -27,6 +27,13 @@
      3:1 bar, and it was the same white in both themes. Dark ink on the light fills, white
      on the dark ones; every filled pair then clears AA (4.5:1) with room to spare. */
   --color-on-accent: #16161e;
+  /* The fill for a selected library/tracklist row. The plain accent is a deliberately LIGHT
+     blue in dark mode, which washes out as a large filled surface over the near-black panel —
+     it reads grey, not selected. A deeper, more saturated blue gives the selection the
+     "this row is active" punch a small accent glyph doesn't need, with white text on top. In
+     light mode the accent is already a strong dark blue, so the row fill just reuses it. */
+  --color-row-selected: #3b63d6;
+  --color-on-row-selected: #ffffff;
   --color-scrollbar: rgba(192, 202, 245, 0.13);
   --color-scrollbar-hover: rgba(192, 202, 245, 0.24);
 }
@@ -55,6 +62,8 @@
   --color-warn: #8f5e15;
   --color-danger: #8c4351;
   --color-on-accent: #ffffff;
+  --color-row-selected: #2959aa;
+  --color-on-row-selected: #ffffff;
   --color-scrollbar: rgba(20, 22, 38, 0.18);
   --color-scrollbar-hover: rgba(20, 22, 38, 0.3);
 }
@@ -441,20 +450,30 @@ textarea {
   display: none;
 }
 
-/* The primary library row is a solid-accent fill (see TrackList). Its text and format badge
-   were coloured for a dark panel — grey-on-blue is unreadable — so on the filled row they
-   flip to ink: the title full-strength, the secondary text (artist, duration) softened, and
-   the format badge's border/tint keyed off ink too. One rule so no descendant is missed. */
+/* The primary library row is a solid selection-blue fill (see TrackList). Its text and format
+   badge were coloured for a dark panel — grey-on-blue is unreadable — so on the filled row
+   they flip to the on-selection colour (white in both themes): the title full-strength, the
+   secondary text (artist, duration) softened, and the format badge keyed off it too. One rule
+   so no descendant is missed. */
 .is-primary [data-fit] .text-fg,
 .is-primary [data-testid='track-duration-slot'] {
-  color: var(--color-ink);
+  color: var(--color-on-row-selected);
 }
 .is-primary [data-fit] .text-fg-dim {
-  color: color-mix(in srgb, var(--color-ink) 78%, transparent);
+  color: color-mix(in srgb, var(--color-on-row-selected) 78%, transparent);
 }
 .is-primary [data-testid='track-format'] {
-  color: color-mix(in srgb, var(--color-ink) 82%, transparent);
-  border-color: color-mix(in srgb, var(--color-ink) 30%, transparent);
+  color: color-mix(in srgb, var(--color-on-row-selected) 85%, transparent);
+  border-color: color-mix(in srgb, var(--color-on-row-selected) 38%, transparent);
+}
+
+/* The applied tracklist row (Discogs column) shares the same solid selection-blue fill, so its
+   text flips the same way: title full-strength, the position number softened. */
+.is-applied .text-fg {
+  color: var(--color-on-row-selected);
+}
+.is-applied .text-fg-dim {
+  color: color-mix(in srgb, var(--color-on-row-selected) 72%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
