@@ -94,7 +94,15 @@ export function TrackListHeader({
   onTrashSuspects,
 }: Props): React.JSX.Element {
   return (
-    <div className="sticky top-0 z-10 border-b border-[var(--color-line)] bg-[var(--color-panel)]">
+    // The ref measures the WHOLE sticky header (search + filter + sort), not just the filter
+    // bar: keyboard paging offsets the selected row by this height so it lands clear of the
+    // header. Measuring only the filter bar left the row tucked under the search/sort rows
+    // above it — cut off at the top. offsetHeight re-reads on every page, so it tracks the
+    // header's real height at any window size.
+    <div
+      ref={qualityFilterRef}
+      className="sticky top-0 z-10 border-b border-[var(--color-line)] bg-[var(--color-panel)]"
+    >
       <div className="flex items-center gap-1.5 px-1.5 pt-2">
         <SearchInput
           className="flex-1"
@@ -120,7 +128,6 @@ export function TrackListHeader({
         />
       </div>
       <QualityFilterBar
-        filterRef={qualityFilterRef}
         librarySource={librarySource}
         value={filterSelection}
         onChange={setFilterSelection}

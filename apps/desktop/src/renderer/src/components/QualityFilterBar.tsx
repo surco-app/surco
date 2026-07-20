@@ -3,6 +3,7 @@ import {
   Check,
   ChevronDown,
   CircleCheckBig,
+  Copy as CopyIcon,
   Disc3,
   FileAudio,
   List,
@@ -16,7 +17,6 @@ import {
   Trash2,
   TriangleAlert,
   Zap,
-  Copy as CopyIcon,
 } from 'lucide-react'
 import type React from 'react'
 import { Fragment, useEffect, useRef, useState } from 'react'
@@ -87,8 +87,9 @@ function attentionDot(mode: Mode, tally: Tally): string | null {
 }
 
 interface Props {
-  // The sticky filter header, measured by App when paging the scroll position.
-  filterRef: React.RefObject<HTMLDivElement | null>
+  // Optional ref on the filter bar. Keyboard paging now measures the whole sticky header
+  // (in TrackListHeader) rather than this bar alone, so it's usually left unset.
+  filterRef?: React.RefObject<HTMLDivElement | null>
   // Which library the membership buckets read (the conversion destination's), so their
   // labels name the right one — "In Engine DJ" when conversions land there.
   librarySource: LibrarySource
@@ -199,7 +200,12 @@ export function QualityFilterBar({
   // Focus an active option when the menu opens (the first set axis, or "All" when nothing
   // is), so the arrows continue from the current choice like a native select.
   const focusMode =
-    value.quality ?? value.conversion ?? value.library ?? value.duplicates ?? value.attention ?? 'all'
+    value.quality ??
+    value.conversion ??
+    value.library ??
+    value.duplicates ??
+    value.attention ??
+    'all'
   useEffect(() => {
     if (!open) return
     listRef.current
