@@ -172,4 +172,34 @@ describe('useQualityAnalysis', () => {
       expect(paths).toEqual(['/music/a.wav', '/music/c.wav'])
     }
   })
+
+  it('picks up tracks appended to targets while a sweep is running', async () => {
+    let release: (v: SpectrumResult) => void = () => {}
+    const gate = new Promise<SpectrumResult>((r) => {
+      release = r
+    })
+    let first = true
+    const spectrogram = vi.fn((): Promise<SpectrumResult> => {
+      if (first) {
+        first = false
+        return gate
+      }
+      return Promise.resolve(spectrum)
+    })
+    setApi({ spectrogram })
+    const targetsRef = { current: [track('a')] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), { wrapper: wrapper() })
+
+    act(() => result.current.analyzeAllQuality())
+    // A new import lands while 'a' is still decoding.
+    targetsRef.current = [track('a', { spectrum }), track('b')]
+    await act(async () => {
+      release(spectrum)
+      await gate
+    })
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+
+    const measured = spectrogram.mock.calls.map((c) => c[0]).sort()
+    expect(measured).toEqual(['/music/a.wav', '/music/b.wav'])
+  })
 })

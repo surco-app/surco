@@ -47,6 +47,10 @@ export function useQualityAnalysis({ targetsRef, onErrors }: Params): QualityAna
   // Pauses the sweep while the window is in the background (fed by the main process's
   // blur/focus events) so it stops spawning ffmpeg until the app returns.
   const focusGate = useRef(createFocusGate())
+  // IDs this run has already measured, kept across a finally-triggered relaunch (see below)
+  // so a track whose targetsRef entry hasn't yet caught up with its fetched spectrum isn't
+  // re-queued forever. Cleared whenever a sweep starts fresh (not a relaunch).
+  const measuredRef = useRef<Set<string>>(new Set())
 
   useWindowFocus((focused) => focusGate.current.set(focused))
 
@@ -54,7 +58,7 @@ export function useQualityAnalysis({ targetsRef, onErrors }: Params): QualityAna
   // (each is an ffmpeg pass) and cancellable; fetchQuery fills the shared cache the
   // list reads its verdicts from, and dedups with a concurrent hover for the same file.
   const analyzeAllQuality = useCallback((): void => {
-    const targets = tracksToAnalyze(targetsRef.current, new Set())
+    const targets = tracksToAnalyze(targetsRef.current, measuredRef.current)
     if (runningRef.current || targets.length === 0) return
     runningRef.current = true
     analyzeCancel.current = false
@@ -96,12 +100,22 @@ export function useQualityAnalysis({ targetsRef, onErrors }: Params): QualityAna
         failed += 1
       } finally {
         done += 1
+        measuredRef.current.add(t.id)
         setAnalysis((a) => (a ? { ...a, done } : a))
       }
     }).finally(() => {
       runningRef.current = false
-      setAnalysis(null)
       if (failed > 0) onErrorsRef.current?.(failed)
+      // A drop that landed mid-sweep added rows to targetsRef the running pass never saw;
+      // re-evaluate (excluding what this run already measured, since targetsRef's own
+      // objects may not have caught up with the fetched spectrum yet) and drain before
+      // idling, so an import during analysis isn't stranded.
+      if (!analyzeCancel.current && tracksToAnalyze(targetsRef.current, measuredRef.current).length > 0) {
+        analyzeAllQuality()
+        return
+      }
+      measuredRef.current = new Set()
+      setAnalysis(null)
     })
   }, [queryClient, targetsRef])
 
