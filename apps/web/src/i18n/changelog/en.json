@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.66",
+    "date": "July 20, 2026",
+    "title": "Metadata sorted into groups",
+    "items": [
+      {
+        "text": "Metadata now groups into collapsible sections (Identity, Catalog, DJ, Order): open only the one you need, and each tells you how many of its fields are filled. Even with every field turned on, the editor stays short and tidy instead of turning into an endless list.",
+        "in": "0.66.0"
+      }
+    ]
+  },
+  {
     "version": "0.65",
     "date": "July 20, 2026",
     "title": "A clearer, tidier editor",

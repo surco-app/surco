@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.66",
+    "date": "20 de julio de 2026",
+    "title": "Metadatos ordenados por grupos",
+    "items": [
+      {
+        "text": "Los metadatos se agrupan ahora en secciones plegables (Identidad, Catálogo, DJ, Orden): abres solo la que necesitas y cada una te dice cuántos campos lleva rellenos. Aunque tengas todos los campos activos, el editor se mantiene corto y ordenado en vez de convertirse en una lista interminable.",
+        "in": "0.66.0"
+      }
+    ]
+  },
+  {
     "version": "0.65",
     "date": "20 de julio de 2026",
     "title": "Un editor más claro y ordenado",
