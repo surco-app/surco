@@ -1102,6 +1102,10 @@ describe('Editor multi-select', () => {
     const { onChangeAllMeta } = renderMulti({
       visibleFields: ['title', 'album', 'composer', 'originalYear', 'compilation'],
     })
+    // Catalog/DJ/Order groups start collapsed — open them to reach their fields.
+    fireEvent.click(screen.getByTestId('field-group-catalog'))
+    fireEvent.click(screen.getByTestId('field-group-dj'))
+    fireEvent.click(screen.getByTestId('field-group-order'))
     expect(screen.getByTestId('field-composer')).toBeInTheDocument()
     expect(screen.getByTestId('field-originalYear')).toBeInTheDocument()
     const box = screen.getByTestId('field-compilation')
@@ -1328,20 +1332,16 @@ describe('Editor export control', () => {
   // Other Metadata is now a section of its own — it shows for a single track that carries
   // foreign tags, independent of the metadata form's own fold state.
   it('renders Other Metadata as a section when the track has foreign tags', () => {
-    renderEditor(
-      { id: 'a', foreignTags: [{ name: 'SERATO_MARKERS_V2', value: 'x' }] },
-      'wav',
-      {
-        editorSections: [
-          { id: 'form', open: true },
-          { id: 'otherTags', open: false },
-          { id: 'properties', open: false },
-          { id: 'quality', open: false },
-          { id: 'normalize', open: false },
-          { id: 'output', open: false },
-        ],
-      },
-    )
+    renderEditor({ id: 'a', foreignTags: [{ name: 'SERATO_MARKERS_V2', value: 'x' }] }, 'wav', {
+      editorSections: [
+        { id: 'form', open: true },
+        { id: 'otherTags', open: false },
+        { id: 'properties', open: false },
+        { id: 'quality', open: false },
+        { id: 'normalize', open: false },
+        { id: 'output', open: false },
+      ],
+    })
     expect(screen.getByTestId('foreign-tags-toggle')).toBeInTheDocument()
   })
 
@@ -1364,20 +1364,16 @@ describe('Editor export control', () => {
   // Hiding the section in Settings removes it from the editor even for a track that has
   // foreign tags — the eye toggle is how a DJ drops a section they never use.
   it('does not render Other Metadata when the section is hidden', () => {
-    renderEditor(
-      { id: 'a', foreignTags: [{ name: 'SERATO_MARKERS_V2', value: 'x' }] },
-      'wav',
-      {
-        editorSections: [
-          { id: 'form', open: true },
-          { id: 'otherTags', open: false, hidden: true },
-          { id: 'properties', open: false },
-          { id: 'quality', open: false },
-          { id: 'normalize', open: false },
-          { id: 'output', open: false },
-        ],
-      },
-    )
+    renderEditor({ id: 'a', foreignTags: [{ name: 'SERATO_MARKERS_V2', value: 'x' }] }, 'wav', {
+      editorSections: [
+        { id: 'form', open: true },
+        { id: 'otherTags', open: false, hidden: true },
+        { id: 'properties', open: false },
+        { id: 'quality', open: false },
+        { id: 'normalize', open: false },
+        { id: 'output', open: false },
+      ],
+    })
     expect(screen.queryByTestId('foreign-tags-toggle')).not.toBeInTheDocument()
   })
 
@@ -2421,9 +2417,7 @@ describe('Editor Apple Music library badge', () => {
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       libraryIndex: owned,
     })
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
-      'In library',
-    )
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In library')
   })
 
   // With Engine DJ as the destination the same badge reads the Engine library. Its text is
@@ -2436,9 +2430,7 @@ describe('Editor Apple Music library badge', () => {
       addToEngineDj: true,
       libraryIndex: owned,
     })
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
-      'In library',
-    )
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In library')
   })
 
   // The complement: a song not found in the snapshot reassures the user it's safe to add.
@@ -2447,9 +2439,7 @@ describe('Editor Apple Music library badge', () => {
     renderEditor({ id: 'a', meta: { title: 'Unknown', artist: 'Nobody' } }, 'wav', {
       libraryIndex: owned,
     })
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
-      'Not in library',
-    )
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in library')
   })
 
   // A track Surco itself added carries its library copy's persistent ID, so it reads as
@@ -2461,9 +2451,7 @@ describe('Editor Apple Music library badge', () => {
       'wav',
       { libraryIndex: null },
     )
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
-      'In library',
-    )
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In library')
   })
 
   // Until the snapshot arrives there is no verdict to show, so the badge stays hidden
@@ -2541,9 +2529,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
       },
     )
     // The file's own artist tag isn't in the library, so the badge starts negative.
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
-      'Not in library',
-    )
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in library')
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     const result = await screen.findByTestId('discogs-result')
@@ -2551,9 +2537,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     await screen.findAllByTestId('discogs-track')
     // The release's canonical "The Artist — Track Two (Remix)" is owned, so the badge flips
     // even though the file tag never matched on its own.
-    expect(await screen.findByTestId('apple-music-status')).toHaveTextContent(
-      'In library',
-    )
+    expect(await screen.findByTestId('apple-music-status')).toHaveTextContent('In library')
   })
 
   // The suggestion must not manufacture a false positive: an owned-looking release whose
@@ -2573,9 +2557,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     const result = await screen.findByTestId('discogs-result')
     if (result.getAttribute('aria-expanded') !== 'true') fireEvent.click(result)
     await screen.findAllByTestId('discogs-track')
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
-      'Not in library',
-    )
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in library')
   })
 
   // The bug this guards: while Discogs is still searching, its match could yet prove the
@@ -2642,9 +2624,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     await screen.findByTestId('discogs-result')
     await waitFor(() =>
-      expect(screen.getByTestId('apple-music-status')).toHaveTextContent(
-        'Not in library',
-      ),
+      expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in library'),
     )
   })
 })
@@ -2664,7 +2644,9 @@ describe('Editor insert from field', () => {
     expect(screen.queryByTestId('field-insert-option-artist')).toBeNull()
     fireEvent.click(screen.getByTestId('field-insert-option-year'))
     expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ meta: expect.objectContaining({ title: 'Pepito de los palotes2025' }) }),
+      expect.objectContaining({
+        meta: expect.objectContaining({ title: 'Pepito de los palotes2025' }),
+      }),
     )
   })
 
@@ -2744,6 +2726,8 @@ describe('Editor insert from field', () => {
     renderEditor({ id: 't1', meta: { title: 'Pepito de los palotes', year: '2025' } }, 'wav', {
       visibleFields: ['title', 'publisher', 'year'],
     })
+    // publisher sits in the Catalog group, which starts collapsed — open it first.
+    fireEvent.click(screen.getByTestId('field-group-catalog'))
     expect(screen.getByTestId('field-insert-title')).toBeInTheDocument()
     expect(screen.getByTestId('field-insert-publisher')).toBeInTheDocument()
     expect(screen.queryByTestId('field-insert-year')).toBeNull()
@@ -2807,9 +2791,7 @@ describe('Editor maximized section', () => {
     // toggle off declick/loudness (as it used to be) made "which sections zoom?"
     // arbitrary. A text-only section like File name has nothing to blow up.
     for (const id of ['editor-trim', 'editor-declick', 'editor-normalize']) {
-      expect(
-        within(screen.getByTestId(id)).getByTestId('section-maximize'),
-      ).toBeInTheDocument()
+      expect(within(screen.getByTestId(id)).getByTestId('section-maximize')).toBeInTheDocument()
     }
     // The File name section draws no wave, so it never grows the maximize toggle.
     const output = screen.getByTestId('output-name').closest('div[class*="border-t"]')
