@@ -74,7 +74,11 @@ function NumberField({
 // The normalization picker, shared by Settings (global default) and the Editor
 // (per-track override). Pure controlled component: it never reaches for ffmpeg or
 // settings, it just edits a NormalizeConfig.
-export function NormalizeControls({ value, onChange, showCueWarning = true }: Props): React.JSX.Element {
+export function NormalizeControls({
+  value,
+  onChange,
+  showCueWarning = true,
+}: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // Focus targets for the Custom chip, so picking "Custom" drops the caret straight
   // into the field the user is about to tune.
@@ -107,7 +111,7 @@ export function NormalizeControls({ value, onChange, showCueWarning = true }: Pr
     }`
   return (
     <div>
-      <div className="inline-flex gap-1 rounded-lg bg-[var(--color-field)] p-1">
+      <div className="inline-flex gap-1">
         {MODES.map((mode) => (
           <button
             key={mode}
@@ -115,13 +119,13 @@ export function NormalizeControls({ value, onChange, showCueWarning = true }: Pr
             data-testid={`normalize-mode-${mode}`}
             aria-pressed={value.mode === mode}
             onClick={() => onChange({ ...value, mode })}
-            // Same raised-pill active state as the shared SegmentedControl — this mode
-            // switch predates it and maps a config object, so it stays hand-rolled but
-            // must not drift from the control it looks identical to.
-            className={`rounded-md px-3 py-1.5 text-sm transition-all ${
+            // Same active state as the shared SegmentedControl — this mode switch predates it
+            // and maps a config object, so it stays hand-rolled but must not drift from the
+            // control it looks identical to (no background track, active segment filled).
+            className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
               value.mode === mode
-                ? 'bg-[var(--color-panel-2)] text-fg shadow-sm ring-1 ring-[var(--color-line)]'
-                : 'text-fg-muted hover:text-fg'
+                ? 'bg-[var(--color-panel-2)] text-fg'
+                : 'text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg'
             }`}
           >
             {tr(`normalize.mode.${mode}`)}
