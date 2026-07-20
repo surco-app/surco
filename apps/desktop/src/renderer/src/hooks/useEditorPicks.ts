@@ -25,8 +25,9 @@ export interface EditorPicks {
 //
 // Gathered here because they were four refs, four writers and a reset smeared across App,
 // and because one of those writers is not what it looks like: onNormalizeChange also
-// PERSISTS the two peak checkboxes to Settings. That is deliberate (they are lasting
-// preferences, unlike the mode and targets), but as a hidden write inside a ref-mirror it
+// PERSISTS the normalize values (the peak/loudness inputs and the two checkboxes) back
+// to the global default, so the next track inherits them. Deliberate — they are lasting
+// preferences, unlike the per-track mode — but as a hidden write inside a ref-mirror it
 // was the last place a reader would think to look for a settings save.
 export function useEditorPicks(
   settings: Settings | null,
@@ -46,16 +47,30 @@ export function useEditorPicks(
   })
   const onNormalizeChange = useStableCallback((n: NormalizeConfig) => {
     normalizeRef.current = n
-    // The two peak checkboxes are lasting preferences (user feedback: a relaunch must
-    // find them as they were left), unlike mode/targets which stay one-shot per track —
-    // so an editor toggle writes just those flags back to Settings. The mount report
-    // arrives with the Settings-seeded value, so it never writes.
+    // The values — the peak/loudness inputs AND the two checkboxes — are lasting
+    // preferences (user feedback: the next track, and a relaunch, must find them as
+    // they were left), so an editor edit writes them back to the global default. The
+    // MODE is the exception: it stays one-shot per track (a track switching to peak
+    // must not flip the global), so we keep the stored `mode` untouched. The mount
+    // report arrives with the Settings-seeded values, so the guard skips its write.
     const cur = settings?.normalize
     if (!cur) return
-    const removeDc = n.peakRemoveDc === true
-    const perChannel = n.peakPerChannel === true
-    if ((cur.peakRemoveDc === true) !== removeDc || (cur.peakPerChannel === true) !== perChannel)
-      saveSettings({ normalize: { ...cur, peakRemoveDc: removeDc, peakPerChannel: perChannel } })
+    const next: NormalizeConfig = {
+      mode: cur.mode,
+      targetLufs: n.targetLufs,
+      truePeakDb: n.truePeakDb,
+      peakDb: n.peakDb,
+      peakRemoveDc: n.peakRemoveDc === true,
+      peakPerChannel: n.peakPerChannel === true,
+    }
+    if (
+      cur.targetLufs !== next.targetLufs ||
+      cur.truePeakDb !== next.truePeakDb ||
+      cur.peakDb !== next.peakDb ||
+      (cur.peakRemoveDc === true) !== next.peakRemoveDc ||
+      (cur.peakPerChannel === true) !== next.peakPerChannel
+    )
+      saveSettings({ normalize: next })
   })
   const onDeclickChange = useStableCallback((d: DeclickMode) => {
     declickRef.current = d

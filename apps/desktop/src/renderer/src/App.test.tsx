@@ -1213,6 +1213,26 @@ describe('App normalize peak preferences', () => {
     )
   })
 
+  // The regression: the peak/loudness INPUT is a lasting value too, not just the
+  // checkboxes — editing it in a track must persist to Settings (mode preserved) so
+  // the next track inherits it, exactly like the checkboxes already do.
+  it('persists an editor input change back to Settings, mode preserved', async () => {
+    const saveSettings = vi.fn().mockResolvedValue(settings())
+    setApi({ saveSettings, getSettings: vi.fn().mockResolvedValue(settings(normalizeOpen)) })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+    fireEvent.click(await screen.findByTestId('normalize-mode-peak'))
+    fireEvent.change(screen.getByTestId('normalize-peak'), { target: { value: '-1.5' } })
+    await waitFor(() =>
+      expect(saveSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          normalize: expect.objectContaining({ mode: 'none', peakDb: -1.5 }),
+        }),
+      ),
+    )
+  })
+
   // The per-track mode pick stays one-shot: switching to peak alone must not touch
   // Settings, or every editor visit would flip the global default.
   it('never writes Settings for a bare per-track mode switch', async () => {
