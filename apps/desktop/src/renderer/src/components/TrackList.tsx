@@ -19,7 +19,7 @@ import { formatTime } from '../lib/duration'
 import { STAGE_PROGRESS } from '../lib/progress'
 import type { ClickMods } from '../lib/selection'
 import { sourceFormat, type TrackQuality, trackQuality } from '../lib/triage'
-import type { TrackItem, TrackStatus } from '../types'
+import type { TrackItem } from '../types'
 import { Tooltip } from './Tooltip'
 import { TrackContextMenu } from './TrackContextMenu'
 
@@ -57,17 +57,12 @@ type MenuState = { track: TrackItem; x: number; y: number }
 // each row's first paint mid-scroll. Past it, skipping off-screen work wins again.
 const DEFER_PAINT_MIN_ROWS = 150
 
-// Only the live/problem states reach this map now: idle renders nothing and done gets its
-// own check badge below. Kept exhaustive so the lookup stays total over TrackStatus.
-const statusColor: Record<TrackStatus, string> = {
-  idle: 'bg-fg-faint',
-  processing: 'bg-warn animate-pulse',
-  done: 'bg-good',
-  error: 'bg-danger',
-}
-
+// A hollow ring, not a filled dot: the conversion state shares the green/amber/red palette
+// with the quality stripe/glyph on the same row, so a solid coin read as a second alarm. As a
+// thin outline it still carries its colour but sits back a weight, keeping the two axes —
+// conversion (this corner) and quality (the left stripe) — from competing.
 const badgeBase =
-  'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-[var(--color-panel)]'
+  'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 bg-[var(--color-panel)] ring-2 ring-[var(--color-panel)]'
 
 function StatusBadge({
   track,
@@ -78,20 +73,25 @@ function StatusBadge({
 }): React.JSX.Element | null {
   // Stale wins over done: a converted track edited afterwards shows steady amber (unlike the
   // processing pulse) so pending Updates stay visible and can be batched for later.
-  if (stale) return <span className={`${badgeBase} bg-warn`} />
+  if (stale) return <span className={`${badgeBase} border-warn`} />
   // done lands as a check on a Tokyo Night accent coin — an unmistakable "converted" mark,
-  // set apart from the round transient/problem dots by its shape. The check uses the ink token
-  // so it keeps contrast on the accent in both the light and dark themes.
+  // set apart from the ring states by its shape and fill. The check uses the ink token so it
+  // keeps contrast on the accent in both the light and dark themes.
   if (track.status === 'done')
     return (
       <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--color-accent)] ring-2 ring-[var(--color-panel)]">
         <Check aria-hidden className="h-2.5 w-2.5 text-[var(--color-ink)]" strokeWidth={3} />
       </span>
     )
-  // idle is the default for nearly every imported row, so a constant grey dot says nothing; a
-  // clean corner now reads as "not converted yet" and lets the live states stand out.
+  // idle is the default for nearly every imported row, so a constant dot says nothing; a clean
+  // corner now reads as "not converted yet" and lets the live states stand out.
   if (track.status === 'idle') return null
-  return <span className={`${badgeBase} ${statusColor[track.status]}`} />
+  // processing (a pulsing amber ring) and error (a red ring).
+  return (
+    <span
+      className={`${badgeBase} ${track.status === 'processing' ? 'animate-pulse border-warn' : 'border-danger'}`}
+    />
+  )
 }
 
 // The verdicts that actually render a glyph — every TrackQuality except 'unanalyzed',
