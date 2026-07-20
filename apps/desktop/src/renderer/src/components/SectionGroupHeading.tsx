@@ -4,17 +4,15 @@ import type React from 'react'
 // flat list of same-weight sections; without a marker the eye can't tell where
 // "describe the file" ends and "operate on the audio" begins.
 //
-// It carries a short accent tick before the label so a PHASE marker reads as a
-// different KIND of element than a section's own uppercase subheads (Properties'
-// "AUDIO"/"FILE" table captions, Loudness' "SIGNAL") — those share this exact size
-// and case, and a purely tonal difference left the two colliding (a group "AUDIO"
-// sitting right above a table "AUDIO"). The tick is the structural cue text weight
-// alone can't give; the label itself sits at fg-muted so the top-level phase reads
-// with more presence than the fg-dim captions nested under it, not less.
+// The label leads, then a hairline runs from its side out to the panel edge — the trailing
+// rule is what marks a PHASE as a different KIND of element than a section's own uppercase
+// subheads (Properties' "AUDIO"/"FILE" captions, Loudness' "LOUDNESS"), which carry no such
+// line. This replaced a full-width rule that used to cross the whole panel ABOVE the label:
+// stacked a few pixels from each section's own hairlines, it read as too many lines. One
+// short line beside the word, and generous space below it, does the separating instead.
 //
-// This heading owns the group's top separator, so the first section under it drops
-// its own border-t — one rule, not two stacked lines. Rendered by Editor whenever the
-// group changes down the user-ordered list, so a reordered list still labels correctly.
+// Rendered by Editor whenever the group changes down the user-ordered list, so a reordered
+// list still labels correctly.
 export function SectionGroupHeading({
   label,
   testid,
@@ -26,17 +24,15 @@ export function SectionGroupHeading({
   first?: boolean
 }): React.JSX.Element {
   return (
-    <div
-      data-testid={testid}
-      className={`flex items-center gap-2 ${first ? 'mb-3' : 'mt-8 border-t border-[var(--color-line)] pt-7'}`}
-    >
-      <span
-        aria-hidden="true"
-        className="h-3 w-0.5 shrink-0 rounded-full bg-[var(--color-accent)]/60"
-      />
-      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-fg-muted">
+    <div data-testid={testid} className={`flex items-center gap-3 ${first ? 'mb-4' : 'mt-9 mb-5'}`}>
+      {/* The phase label leads, then a hairline runs from its side out to the panel edge.
+          It replaces the full-width top rule that used to cross the whole panel: one short
+          line beside the word instead of a heavy band above it, so a column of phases reads
+          as a sequence of labels, not a stack of dividers. */}
+      <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.14em] text-fg-dim">
         {label}
       </span>
+      <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-line)]" />
     </div>
   )
 }

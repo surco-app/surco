@@ -17,7 +17,7 @@ import {
 import { SectionSubhead } from './SectionSubhead'
 import { Tooltip } from './Tooltip'
 
-// Per-grade colour for the analysis stat cells, reusing the good/warn/danger tokens
+// Per-grade colour for the analysis rows, reusing the good/warn/danger tokens
 // (Tokyo Night). The dot is a solid status light; the value text carries the same
 // colour so the verdict reads at a glance.
 const GRADE_DOT: Record<Grade, string> = {
@@ -36,10 +36,9 @@ interface Props {
   onShowHelp: () => void
 }
 
-// The EBU R128 figures as colour-graded pills, grouped Loudness / Signal. The
-// astats-derived checks each appear only when measured (null = mono, a dead channel,
-// or an unparseable reading), so an immeasurable pill drops out rather than showing
-// "−∞ dB" / "NaN%".
+// The EBU R128 figures as a colour-graded table. The astats-derived checks each appear
+// only when measured (null = mono, a dead channel, or an unparseable reading), so an
+// immeasurable row drops out rather than showing "−∞ dB" / "NaN%".
 export function LoudnessReadout({ loudness: loud, onShowHelp }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const cell = (id: string, label: string, value: string, grade: Grade, hint: string) => ({
@@ -49,9 +48,9 @@ export function LoudnessReadout({ loudness: loud, onShowHelp }: Props): React.JS
     grade,
     hint,
   })
-  // One flat row of pills — Loudness and Signal used to be separate labelled groups
-  // stacked in two rows; merged into a single auto-fit grid they all sit on one line,
-  // each pill dropping out when its figure is immeasurable (null).
+  // One flat list — Loudness and Signal used to be separate labelled groups stacked in two
+  // grids; merged, they fill one two-column table, each row dropping out when its figure is
+  // immeasurable (null).
   const cells = [
     cell(
       'lufs',
@@ -124,26 +123,33 @@ export function LoudnessReadout({ loudness: loud, onShowHelp }: Props): React.JS
           <Tooltip label={tr('editor.loudnessHelpTitle')} align="start" />
         </button>
       </div>
-      <div className="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(6.5rem,1fr))]">
-        {cells.map((c) => (
-          <div
-            key={c.id}
-            data-testid={`loudness-pill-${c.id}`}
-            data-grade={c.grade}
-            className="group relative rounded-lg bg-[var(--color-field)] px-3 py-2"
-          >
-            <div className="flex items-center gap-1.5">
-              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${GRADE_DOT[c.grade]}`} />
-              <span className="truncate text-[10px] uppercase tracking-wide text-fg-dim">
-                {c.label}
+      {/* Same table as PropertiesReadout — two label·value pairs per row, 1px gaps over the
+          line-coloured backing drawing the rules and the column seam — so the two sections
+          read as one family. What Properties doesn't carry is the verdict: a status dot on
+          the label and the grade colour on the value keep the good/warn/danger reading that
+          the old stat cards had, inside the tighter table. An odd count (noise floor makes
+          seven) stretches the last cell across both columns so no half-cell is left empty. */}
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-[var(--color-line)]">
+        {cells.map((c, i) => {
+          const lastOdd = i === cells.length - 1 && cells.length % 2 === 1
+          return (
+            <div
+              key={c.id}
+              data-testid={`loudness-pill-${c.id}`}
+              data-grade={c.grade}
+              className={`group relative flex items-center justify-between gap-3 bg-[var(--color-field)] px-3 py-2 ${lastOdd ? 'col-span-2' : ''}`}
+            >
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${GRADE_DOT[c.grade]}`} />
+                <span className="truncate text-xs text-fg-dim">{c.label}</span>
               </span>
+              <span className={`shrink-0 text-sm font-medium tabular-nums ${GRADE_TEXT[c.grade]}`}>
+                {c.value}
+              </span>
+              <Tooltip label={c.hint} />
             </div>
-            <div className={`mt-0.5 text-sm font-medium tabular-nums ${GRADE_TEXT[c.grade]}`}>
-              {c.value}
-            </div>
-            <Tooltip label={c.hint} />
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
