@@ -178,62 +178,71 @@ function Lane({
 
   return (
     <div className="min-w-0 flex-1">
-      <div className="mb-1 flex flex-nowrap items-center gap-1.5">
+      {/* Wrap, don't clip: at a narrow editor width the label + nudges + audition/clear +
+          zoom stepper don't all fit across half the panel, and a nowrap row pushed the last
+          control (the zoom +) off the right edge. Letting the row wrap drops whatever doesn't
+          fit onto a second line instead. The nudge trio (arrows + time field) is boxed as one
+          unit so it never splits mid-cluster; audition/clear and the zoom stepper are already
+          single units. */}
+      <div className="mb-1 flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
         <SectionSubhead className="min-w-0 flex-1 truncate">
           {tr(side === 'start' ? 'trim.laneStart' : 'trim.laneEnd')}
         </SectionSubhead>
         {/* The cut's own time, and the place to set it: type the second you want,
             or step it a frame at a time with the arrows either side — the same nudge
-            the field's arrow keys do, for the hand that stays on the mouse. */}
-        <button
-          type="button"
-          data-testid={`trim-nudge-back-${side}`}
-          aria-label={tr('trim.nudgeBack')}
-          disabled={cutSec === undefined}
-          onClick={() => onKeyStep(-fineStepSec)}
-          className="press relative flex h-7 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
-        >
-          <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
-          <Tooltip label={tr('trim.nudgeBack')} />
-        </button>
-        <input
-          data-testid={`trim-cut-time-${side}`}
-          type="text"
-          inputMode="decimal"
-          aria-label={tr(side === 'start' ? 'trim.handleStart' : 'trim.handleEnd')}
-          value={timeText ?? `${cut.toFixed(3)}`}
-          onChange={(e) => setTimeText(e.target.value)}
-          onBlur={commitTime}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              commitTime()
-            }
-            // The arrows nudge from the field, where the value is. Left/right move
-            // the cut the way it reads on the wave — earlier is left, later is right
-            // — and up/down do the same, so whichever pair the hand reaches for works.
-            if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
-              e.preventDefault()
-              onKeyStep(e.shiftKey ? COARSE_STEP_SEC : fineStepSec)
-            }
-            if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
-              e.preventDefault()
-              onKeyStep(e.shiftKey ? -COARSE_STEP_SEC : -fineStepSec)
-            }
-          }}
-          className="h-7 w-16 shrink-0 rounded-md border border-[var(--color-line)] bg-transparent px-1.5 text-center text-[10px] tabular-nums text-fg-muted outline-none focus:border-accent focus:text-fg"
-        />
-        <button
-          type="button"
-          data-testid={`trim-nudge-forward-${side}`}
-          aria-label={tr('trim.nudgeForward')}
-          disabled={cutSec === undefined}
-          onClick={() => onKeyStep(fineStepSec)}
-          className="press relative flex h-7 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
-        >
-          <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-          <Tooltip label={tr('trim.nudgeForward')} />
-        </button>
+            the field's arrow keys do, for the hand that stays on the mouse. Boxed so the
+            arrows never wrap away from the field they nudge. */}
+        <span className="flex shrink-0 items-center gap-1.5">
+          <button
+            type="button"
+            data-testid={`trim-nudge-back-${side}`}
+            aria-label={tr('trim.nudgeBack')}
+            disabled={cutSec === undefined}
+            onClick={() => onKeyStep(-fineStepSec)}
+            className="press relative flex h-7 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
+            <Tooltip label={tr('trim.nudgeBack')} />
+          </button>
+          <input
+            data-testid={`trim-cut-time-${side}`}
+            type="text"
+            inputMode="decimal"
+            aria-label={tr(side === 'start' ? 'trim.handleStart' : 'trim.handleEnd')}
+            value={timeText ?? `${cut.toFixed(3)}`}
+            onChange={(e) => setTimeText(e.target.value)}
+            onBlur={commitTime}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                commitTime()
+              }
+              // The arrows nudge from the field, where the value is. Left/right move
+              // the cut the way it reads on the wave — earlier is left, later is right
+              // — and up/down do the same, so whichever pair the hand reaches for works.
+              if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+                e.preventDefault()
+                onKeyStep(e.shiftKey ? COARSE_STEP_SEC : fineStepSec)
+              }
+              if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+                e.preventDefault()
+                onKeyStep(e.shiftKey ? -COARSE_STEP_SEC : -fineStepSec)
+              }
+            }}
+            className="h-7 w-16 shrink-0 rounded-md border border-[var(--color-line)] bg-transparent px-1.5 text-center text-[10px] tabular-nums text-fg-muted outline-none focus:border-accent focus:text-fg"
+          />
+          <button
+            type="button"
+            data-testid={`trim-nudge-forward-${side}`}
+            aria-label={tr('trim.nudgeForward')}
+            disabled={cutSec === undefined}
+            onClick={() => onKeyStep(fineStepSec)}
+            className="press relative flex h-7 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
+          >
+            <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+            <Tooltip label={tr('trim.nudgeForward')} />
+          </button>
+        </span>
         {/* This cut's own actions: hear it, clear it. They used to sit in a row above
             BOTH lanes, so the "hear the end" button lived a panel away from the end
             it played. */}
