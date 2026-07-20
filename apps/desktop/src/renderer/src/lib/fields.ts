@@ -58,6 +58,29 @@ export function groupOfField(key: string): FieldGroupId | undefined {
   return FIELD_GROUPS.find((g) => g.fields.includes(key as keyof TrackMetadata))?.id
 }
 
+// The fixed group render order for the collapsible metadata form: the four defined groups,
+// then a trailing bucket for any key not in FIELD_GROUPS (a future/unknown tag) so a field
+// can never be dropped. Empty buckets are omitted so a group with no shown fields draws no
+// header.
+const GROUP_ORDER: FieldGroupId[] = ['identity', 'catalog', 'dj', 'order']
+
+export interface FieldGroupBucket<T> {
+  id: FieldGroupId | 'other'
+  items: T[]
+}
+
+// Splits a flat list of fields into one bucket per category, in fixed order, keeping each
+// field's relative order within its bucket. This is what lets the form show one collapsible
+// section per group (each group once) regardless of the user's manual field order — the
+// stronger, always-on form of sortFieldsByGroup that the metadata panel now renders through.
+export function groupFields<T extends { key: string }>(fields: T[]): FieldGroupBucket<T>[] {
+  const of = (key: string): FieldGroupId | 'other' => groupOfField(key) ?? 'other'
+  const order: (FieldGroupId | 'other')[] = [...GROUP_ORDER, 'other']
+  return order
+    .map((id) => ({ id, items: fields.filter((f) => of(f.key) === id) }))
+    .filter((b) => b.items.length > 0)
+}
+
 // Reorders the shown fields into group order (identity → catalog → dj → order), keeping
 // each group's own order. Only reorders — it never shows or hides a field, so the user's
 // selection is untouched. An uncatalogued key keeps its place at the end so a reorder can

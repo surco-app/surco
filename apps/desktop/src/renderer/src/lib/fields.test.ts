@@ -5,6 +5,7 @@ import {
   DEFAULT_REQUIRED_FIELDS,
   FIELD_DEFS,
   FIELD_GROUPS,
+  groupFields,
   groupHeaderBefore,
   groupOfField,
   missingRequired,
@@ -172,5 +173,27 @@ describe('DEFAULT_REQUIRED_FIELDS', () => {
     // but not gated by default: a white label or promo with no release on Discogs
     // should still convert. Users add their own required fields in Settings.
     expect(DEFAULT_REQUIRED_FIELDS).toEqual(['title', 'artist'])
+  })
+})
+
+describe('groupFields', () => {
+  it('splits into fixed group order, dropping empty buckets, preserving intra-group order', () => {
+    const input = [
+      { key: 'comment' }, // order
+      { key: 'title' }, // identity
+      { key: 'catalogNumber' }, // catalog
+      { key: 'artist' }, // identity
+      { key: 'trackNumber' }, // order
+    ]
+    const out = groupFields(input)
+    expect(out.map((b) => b.id)).toEqual(['identity', 'catalog', 'order'])
+    expect(out[0].items.map((i) => i.key)).toEqual(['title', 'artist'])
+    expect(out[2].items.map((i) => i.key)).toEqual(['comment', 'trackNumber'])
+  })
+
+  it('puts uncatalogued keys in a trailing other bucket', () => {
+    const out = groupFields([{ key: 'title' }, { key: 'futureTag' }])
+    expect(out.map((b) => b.id)).toEqual(['identity', 'other'])
+    expect(out[1].items.map((i) => i.key)).toEqual(['futureTag'])
   })
 })
