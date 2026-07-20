@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.65",
+    "date": "20 de julio de 2026",
+    "title": "Un editor más claro y ordenado",
+    "items": [
+      {
+        "text": "La pista que estás editando se resalta con un azul sólido, tanto en tu biblioteca como en la lista de pistas del lanzamiento, así que de un vistazo sabes en qué estás trabajando.",
+        "in": "0.65.0"
+      },
+      {
+        "text": "El estado de calidad de cada pista se ve ahora como una franja de color en el borde de la fila: recorres la lista y detectas las pistas que piden atención sin fijarte en cada icono.",
+        "in": "0.65.0"
+      },
+      {
+        "text": "Al elegir un lanzamiento, una banda nueva separa con claridad la búsqueda de la elección de pista y te dice cuántas pistas tiene.",
+        "in": "0.65.0"
+      },
+      {
+        "text": "El mini-reproductor se ancla abajo en su propia barra en vez de flotar sobre la lista, así que ya no tapa tus pistas mientras escuchas.",
+        "in": "0.65.0"
+      }
+    ]
+  },
+  {
     "version": "0.64",
     "date": "19 de julio de 2026",
     "title": "Todos los metadatos, a la vista y bajo control",

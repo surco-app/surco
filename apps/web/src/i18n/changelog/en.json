@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.65",
+    "date": "July 20, 2026",
+    "title": "A clearer, tidier editor",
+    "items": [
+      {
+        "text": "The track you're editing is highlighted with a solid blue, both in your library and in the release's tracklist, so you can see at a glance what you're working on.",
+        "in": "0.65.0"
+      },
+      {
+        "text": "Each track's quality now shows as a colour stripe on the row's edge: scan the list and spot the tracks that want attention without reading every icon.",
+        "in": "0.65.0"
+      },
+      {
+        "text": "When you pick a release, a new band clearly separates searching from choosing the track, and tells you how many tracks it has.",
+        "in": "0.65.0"
+      },
+      {
+        "text": "The mini-player docks at the bottom in its own bar instead of floating over the list, so it no longer covers your tracks while you listen.",
+        "in": "0.65.0"
+      }
+    ]
+  },
+  {
     "version": "0.64",
     "date": "July 19, 2026",
     "title": "Every tag, visible and under control",
