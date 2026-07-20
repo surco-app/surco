@@ -96,4 +96,18 @@ describe('flacHasUnreadablePicture', () => {
     paths.push(p)
     expect(await flacHasUnreadablePicture(p)).toBe(true)
   })
+
+  it('flags a FLAC carrying more than one PICTURE block, which Chromium refuses even when each MIME is valid', async () => {
+    // Bandcamp FLACs sometimes ship two embedded covers (front + back). Each MIME is
+    // valid, so the empty-MIME screen passes them — but Chromium's <audio> demuxer only
+    // expects one picture and aborts opening the whole file, so the track plays nothing.
+    // A second valid picture is therefore just as much a "strip it to play" case.
+    const p = await flacFile(
+      'two-pictures.flac',
+      STREAMINFO,
+      block(6, pictureBody('image/jpeg'), false),
+      block(6, pictureBody('image/jpeg'), true),
+    )
+    expect(await flacHasUnreadablePicture(p)).toBe(true)
+  })
 })
