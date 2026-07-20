@@ -12,8 +12,8 @@ import {
 import type React from 'react'
 import { memo, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useStableCallback } from '../hooks/useStableCallback'
 import type { OutputFormat } from '../../../shared/types'
+import { useStableCallback } from '../hooks/useStableCallback'
 import { isStale } from '../lib/dirty'
 import { formatTime } from '../lib/duration'
 import { STAGE_PROGRESS } from '../lib/progress'
@@ -120,7 +120,24 @@ const qualityLabel: Record<RowVerdict, string> = {
   transcoded: 'editor.qualityTranscode',
 }
 
-function QualityMark({ verdict, label }: { verdict: RowVerdict; label: string }): React.JSX.Element {
+// The same verdict as a colour stripe down the row's left edge — ambient, scannable severity
+// you read without parsing the small glyph at the right (which stays, for its shape and
+// tooltip). good is deliberately absent: a clean file needs no mark, so only warn/bad/reject
+// paint a stripe and a page of good rows stays calm. transcoded/processed share bad's red.
+const qualityStripe: Partial<Record<RowVerdict, string>> = {
+  warn: 'bg-warn',
+  bad: 'bg-danger',
+  processed: 'bg-danger',
+  transcoded: 'bg-danger',
+}
+
+function QualityMark({
+  verdict,
+  label,
+}: {
+  verdict: RowVerdict
+  label: string
+}): React.JSX.Element {
   const { Icon, className } = qualityIcon[verdict]
   return (
     <span data-testid="track-quality" data-quality={verdict} className="group/dot relative flex">
@@ -237,7 +254,7 @@ const TrackRow = memo(function TrackRow({
       // painting the whole small list once keeps scrolling on already-rasterized content.
       className={`group relative ${
         setSize >= DEFER_PAINT_MIN_ROWS
-          ? '[content-visibility:auto] [contain-intrinsic-size:auto_48px]'
+          ? '[content-visibility:auto] [contain-intrinsic-size:auto_44px]'
           : ''
       }`}
       draggable
@@ -286,16 +303,27 @@ const TrackRow = memo(function TrackRow({
         }}
         onMouseEnter={() => onPrefetch(t.id)}
         onFocus={() => onPrefetch(t.id)}
-        className={`relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left shadow-[inset_0_0_0_1px_var(--color-line)] transition-colors ${
-          selected
-            ? 'bg-[var(--color-accent-soft)]/85'
-            : 'bg-[var(--color-panel)]/50 hover:bg-[var(--color-panel-2)]/85'
-        } ${
+        className={`group/row relative flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] transition-colors ${
+          // One solid-accent focal for the primary row (the one open in the editor) — it reads
+          // as "this is what you're editing" at a glance, the way Finder/Mail fill the active
+          // row. A multi-selected-but-not-primary row gets the quiet accent tint; everything
+          // else is panel with a grey hover, so the blue never fights itself across the list.
           primary
-            ? 'before:absolute before:top-1/2 before:left-0 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-[var(--color-accent)]'
-            : ''
+            ? 'is-primary bg-[var(--color-accent)] shadow-none'
+            : selected
+              ? 'bg-[var(--color-accent-soft)]/85'
+              : 'bg-[var(--color-panel)]/50 hover:bg-[var(--color-panel-2)]/85'
         }`}
       >
+        {/* Severity stripe at the left edge: ambient, scannable — a page of rows shows which
+            ones want attention before you read a single glyph. Hidden on the primary row,
+            whose solid-accent fill already owns that edge. */}
+        {!primary && quality !== 'unanalyzed' && qualityStripe[quality] && (
+          <span
+            aria-hidden="true"
+            className={`absolute top-1/2 left-0 h-6 w-[3px] -translate-y-1/2 rounded-r-full ${qualityStripe[quality]}`}
+          />
+        )}
         {/* The cover doubles as the scan target — DJs recognise a track by its art faster
             than by its name — so the leading slot shows the artwork with the processing
             status demoted to a small ringed dot on its corner. */}
@@ -310,14 +338,14 @@ const TrackRow = memo(function TrackRow({
               // which, combined with content-visibility below, lands mid-scroll and janks.
               loading="lazy"
               decoding="async"
-              className="h-8 w-8 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
+              className="h-7 w-7 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
             />
           ) : (
             <span
               data-testid="track-cover-placeholder"
-              className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-white/10"
+              className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-white/10"
             >
-              <Music className="h-4 w-4 text-fg-faint" aria-hidden="true" />
+              <Music className="h-3.5 w-3.5 text-fg-faint" aria-hidden="true" />
             </span>
           )}
           <StatusBadge track={t} stale={stale} />

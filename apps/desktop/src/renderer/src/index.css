@@ -441,6 +441,22 @@ textarea {
   display: none;
 }
 
+/* The primary library row is a solid-accent fill (see TrackList). Its text and format badge
+   were coloured for a dark panel — grey-on-blue is unreadable — so on the filled row they
+   flip to ink: the title full-strength, the secondary text (artist, duration) softened, and
+   the format badge's border/tint keyed off ink too. One rule so no descendant is missed. */
+.is-primary [data-fit] .text-fg,
+.is-primary [data-testid='track-duration-slot'] {
+  color: var(--color-ink);
+}
+.is-primary [data-fit] .text-fg-dim {
+  color: color-mix(in srgb, var(--color-ink) 78%, transparent);
+}
+.is-primary [data-testid='track-format'] {
+  color: color-mix(in srgb, var(--color-ink) 82%, transparent);
+  border-color: color-mix(in srgb, var(--color-ink) 30%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,
