@@ -1,183 +1,180 @@
-# Recordar los valores de normalización del Editor entre pistas y sesiones
+# Separar la plantilla de normalización de su activación automática
 
 ## Problema
 
 En el Editor, el panel de normalización de cada pista se siembra desde el default
-global de Settings (`Editor.tsx:317`, `useState(normalize)`, con `normalize`
-leído de `useAppSettings()` → `settings.normalize`).
+global (`Editor.tsx:317`, `useState(normalize)`, con `normalize` de
+`useAppSettings()`). Los usuarios reportan una regresión: al ajustar en una pista
+el valor de Peak/Loudness (p. ej. Peak custom −1,5) y los checkboxes, esos valores
+no reaparecen en la siguiente pista — vuelven a −1 / −14.
 
-Hoy, cuando el usuario ajusta el panel en una pista:
+### La causa raíz: `mode` hace dos trabajos en conflicto
 
-- Los **dos checkboxes** (`peakRemoveDc`, `peakPerChannel`) SÍ se persisten en
-  disco, porque `useEditorPicks.onNormalizeChange` (`useEditorPicks.ts:47-59`)
-  escribe esos dos flags de vuelta a `settings.normalize`.
-- El **input** (`peakDb` en modo Peak; `targetLufs`/`truePeakDb` en modo Loudness)
-  NO se persiste. Al cambiar de pista, `normalizeCfg` se re-siembra desde
-  `settings.normalize` y el input vuelve a su valor anterior (−1 / −14).
+El campo `normalize.mode` (`none`/`loudness`/`peak`) mezcla dos preguntas
+distintas:
 
-Esto es una regresión: el usuario espera que, tras ajustar Peak custom a −1.5 (o
-2, o lo que sea) en una pista, la siguiente pista —al pulsar Peak— reencuentre ese
-valor y sus checkboxes tal como los dejó.
+1. **¿Cuál es el preset de valores por defecto** (Peak −1 con estos checkboxes,
+   o Loudness −14)?
+2. **¿La normalización arranca activa** en cada pista, o en `off`?
 
-### Por qué no basta con "añadir el input a lo que ya se guarda"
+Por eso el usuario no puede expresar lo que quiere. Si configura sus valores
+custom de Peak como default, tiene que poner `mode: 'peak'` — lo que **fuerza que
+cada pista abra normalizando**. No hay forma de decir: *"mi plantilla por defecto
+es Peak −1 con estos checkboxes, pero cada pista arranca en off; solo cuando pulse
+Peak quiero ver mis valores"*.
 
-`settings.normalize` cumple **dos** propósitos a la vez hoy:
+El intento anterior (un campo `editorNormalize` como "memoria oculta del Editor")
+se descarta: introducía un tercer estado sutil y desacoplaba el Editor de Settings
+de una forma que el usuario no quiere. El usuario aclaró que:
 
-1. Es el **default de conversión** que se muestra y edita en
-   **Settings → Conversion** (`ConversionTab.tsx:112`).
-2. Es la **semilla** de cada pista en el Editor.
-
-Su campo `mode` está pensado para el propósito 1: si el usuario pone
-`mode: 'peak'` en Settings → Conversion, es una decisión deliberada de que TODAS
-las conversiones normalicen a Peak — y como el Editor siembra el objeto entero
-(`useState(normalize)`, `mode` incluido), cada pista abre con Peak activo. Eso es
-correcto para el propósito 1.
-
-Pero el usuario quiere lo contrario para el trasteo en el Editor: cada pista debe
-abrir con la normalización en `off`, y solo repoblar los valores al pulsar
-Peak/Loudness. El `mode` NO debe recordarse desde el Editor.
-
-Por tanto, persistir los valores del Editor dentro de `settings.normalize`
-tendría dos efectos colaterales inaceptables:
-
-- Contaminaría el default de conversión global con ajustes puntuales de una pista.
-- Para arrastrar el input habría que arrastrar también el `mode`, arriesgándose a
-  activar la normalización en todas las pistas de golpe.
+- El override por pista debe ser **temporal** (muere con la pista, nunca escribe el
+  global).
+- Los valores que reaparecen al pulsar Peak deben ser **el default global
+  configurado en Settings**, no una memoria aparte.
 
 ## Diseño
 
-Separar los dos propósitos en dos campos independientes de `Settings`:
+Separar los dos trabajos del `mode` en Settings → Conversion:
 
-- **`settings.normalize`** — sin cambios. Sigue siendo el default de conversión de
-  Settings → Conversion. Su `mode` sí activa la normalización globalmente, a
-  propósito. **El Editor nunca lo escribe.**
-- **`settings.editorNormalize`** (nuevo) — la memoria de trasteo del Editor.
-  Guarda `peakDb`, `targetLufs`, `truePeakDb`, `peakRemoveDc`, `peakPerChannel`.
-  **Su `mode` es siempre `'none'`**, de modo que cada pista abre en `off` y nunca
-  activa la normalización en bloque; solo repuebla los valores cuando el usuario
-  pulsa Peak/Loudness.
+- **`normalize`** (sin cambios de forma) — la **plantilla** de valores por defecto:
+  `mode` (qué preset), `peakDb`, `targetLufs`, `truePeakDb`, `peakRemoveDc`,
+  `peakPerChannel`. El usuario la configura libremente en Settings → Conversion.
+- **`normalizeAuto: boolean`** (nuevo, default `false`) — si la plantilla se
+  **aplica automáticamente** a cada pista, o si cada pista arranca en `off`.
+
+### Comportamiento
+
+**Al abrir cada pista** (siembra en `Editor.tsx`):
+
+- `normalizeAuto === true` → la pista abre con la plantilla tal cual (`normalize`
+  íntegro, `mode` incluido). Si la plantilla es Peak −1, la pista abre normalizando
+  a Peak −1.
+- `normalizeAuto === false` → la pista abre con `{ ...normalize, mode: 'none' }`:
+  arranca en `off`, PERO conserva `peakDb`/`targetLufs`/`truePeakDb`/checkboxes de
+  la plantilla. Así, al pulsar Peak, aparecen los valores configurados. **Este es
+  el arreglo del bug.**
+
+**El override por pista es temporal:** cambiar cualquier cosa en el panel de una
+pista (modo, input, checkboxes) afecta solo a esa pista y **nunca escribe el
+global**. El único sitio para cambiar el default es Settings → Conversion.
+
+**El flag `normalizeAuto` solo vive en Settings → Conversion.** El Editor no lo
+muestra; el Editor solo tiene su segmentado temporal por pista.
+
+### Cambio de comportamiento respecto a hoy
+
+Hoy, tocar los dos checkboxes en el Editor **escribía el global** vía
+`useEditorPicks.onNormalizeChange` (`useEditorPicks.ts:47-59`). Con el override
+temporal, esto **deja de ocurrir**: `onNormalizeChange` ya no persiste nada, solo
+mantiene el ref para el atajo de teclado de conversión. Más coherente y
+predecible.
 
 ### Flujo de datos
 
 ```
 settings.json
-  normalize:        { mode, targetLufs, truePeakDb, peakDb, ... }  ← Settings → Conversion (NO cambia)
-  editorNormalize:  { mode:'none', targetLufs, truePeakDb, peakDb, peakRemoveDc, peakPerChannel }  ← Editor
+  normalize:     { mode, peakDb, targetLufs, truePeakDb, peakRemoveDc, peakPerChannel }  ← plantilla
+  normalizeAuto: false                                                                    ← nuevo
 
-Editor abre pista   → siembra normalizeCfg desde settings.editorNormalize (mode='none')
-Editor ajusta valor → escribe settings.editorNormalize (mode forzado a 'none')
-Settings→Conversion → lee/escribe settings.normalize como hasta ahora
+Settings → Conversion  → edita normalize (segmentado + valores) y normalizeAuto (checkbox)
+Editor abre pista      → siembra normalizeCfg:
+                           normalizeAuto ? normalize : { ...normalize, mode: 'none' }
+Editor ajusta pista    → solo normalizeCfg (temporal); NO escribe settings
 ```
 
-### Componentes y cambios
+## Componentes y cambios
 
-Reutiliza el tipo `NormalizeConfig` existente para el nuevo campo — misma forma,
-cero tipos nuevos.
-
-1. **`shared/types.ts`** — añadir `editorNormalize: NormalizeConfig` a la interfaz
-   `Settings`, junto a `normalize`.
+1. **`shared/types.ts`** — añadir `normalizeAuto: boolean` a `Settings`.
 
 2. **`main/settings.ts`**
-   - `defaults`: añadir `editorNormalize: { mode: 'none', targetLufs: -14,
-     truePeakDb: -1, peakDb: -1 }` (mismos valores base que `normalize`).
-   - `mergeSettings`: añadir el spread-merge robusto
-     `editorNormalize: { ...base.editorNormalize, ...patch.editorNormalize }`,
-     igual que la línea existente para `normalize` (`settings.ts:169`), para que un
-     `settings.json` viejo rellene campos ausentes desde defaults.
-   - `editorNormalize` NO va en `LOCAL_KEYS` → es sincronizable, coherente con
-     `normalize`.
+   - `defaults`: `normalizeAuto: false`.
+   - `normalizeAuto` es un booleano plano → el spread superficial de `mergeSettings`
+     ya lo cubre; NO necesita línea propia de merge.
+   - No va en `LOCAL_KEYS` → sincronizable, coherente con `normalize`.
 
 3. **`renderer/src/lib/settingsContext.tsx`**
-   - `DEFAULTS`: añadir `editorNormalize` con el mismo objeto que `normalize`.
-   - `resolveSettings`: añadir
-     `editorNormalize: settings.editorNormalize ?? DEFAULTS.editorNormalize`.
+   - `DEFAULTS`: `normalizeAuto: false`.
+   - `resolveSettings`: `normalizeAuto: settings.normalizeAuto ?? DEFAULTS.normalizeAuto`.
 
-4. **`renderer/src/components/Editor.tsx`**
-   - Desestructurar `editorNormalize` de `useAppSettings()` en lugar de `normalize`.
-     La única lectura de `normalize` en este componente es la siembra de la línea
-     317 (las otras dos coincidencias de "normalize" son strings de UI de secciones,
-     no la variable), así que la sustitución es directa: `normalize` deja de usarse.
-   - Sembrar `normalizeCfg` desde `editorNormalize`
-     (`useState(editorNormalize)`, `Editor.tsx:317`). Como `editorNormalize.mode`
-     es siempre `'none'`, cada pista abre en `off` con los valores recordados.
+4. **`renderer/src/lib/settingsDraft.ts`** — `SyncedDraft` enumera los campos
+   sincronizables explícitamente (`normalize` está en la línea 39) y `pickSynced`
+   los copia uno a uno (línea 95). Añadir `normalizeAuto: boolean` a la interfaz
+   `SyncedDraft` y `normalizeAuto: s.normalizeAuto` en `pickSynced`. Verificar
+   además la función inversa (la que arma el patch a guardar) e incluirlo si
+   enumera campos explícitamente.
 
-5. **`renderer/src/hooks/useEditorPicks.ts`** — `onNormalizeChange`:
-   - En vez de escribir solo los dos checkboxes a `settings.normalize`, escribe la
-     config completa de valores a `settings.editorNormalize`, **forzando
-     `mode: 'none'`**:
-     ```
-     saveSettings({ editorNormalize: {
-       mode: 'none',
-       targetLufs: n.targetLufs,
-       truePeakDb: n.truePeakDb,
-       peakDb: n.peakDb,
-       peakRemoveDc: n.peakRemoveDc === true,
-       peakPerChannel: n.peakPerChannel === true,
-     }})
-     ```
-   - Comparar contra `settings.editorNormalize` (no `settings.normalize`) para el
-     guard, de modo que el **mount report** —que llega con la config recién sembrada
-     desde `editorNormalize`— no dispare una escritura redundante.
-   - El guard compara los cinco campos de valor. `mode` no participa en la
-     comparación (siempre `'none'` en el campo persistido), así que cambiar el modo
-     en una pista jamás persiste nada.
-   - Actualizar el comentario del bloque para describir el nuevo destino y contrato.
+5. **`renderer/src/components/settings/ConversionTab.tsx`**
+   - Bajo `<NormalizeControls value={synced.normalize} ... />` (línea 112), añadir
+     un checkbox controlado para `normalizeAuto`
+     (`onChange={(v) => patch('normalizeAuto', v)}`), con su copy i18n
+     (`normalize.auto`).
 
-### Punto delicado: el mount report
+6. **`renderer/src/components/Editor.tsx`**
+   - Desestructurar también `normalizeAuto` de `useAppSettings()`.
+   - Sembrar `normalizeCfg` (línea 317) con:
+     `normalizeAuto ? normalize : { ...normalize, mode: 'none' }`.
 
-`Editor.tsx:325-330` dispara `onNormalizeChange(normalizeCfg)` en el montaje con
-la config recién sembrada. El guard en `onNormalizeChange` debe comparar contra
-`settings.editorNormalize` para que ese report inicial —idéntico a lo ya
-persistido— no re-escriba en cada apertura de pista. Se mantiene el guard,
-ampliado a los cinco campos de valor.
+7. **`renderer/src/hooks/useEditorPicks.ts`** — `onNormalizeChange`:
+   - Reducir a solo `normalizeRef.current = n` (mantener el ref para el atajo de
+     conversión). Eliminar la escritura a Settings. Actualizar el comentario de
+     bloque, que hoy describe ese write.
+   - `saveSettings` solo se usa en esa línea 58 dentro de `useEditorPicks`
+     (verificado). Al eliminar la escritura, el parámetro queda sin uso: quitarlo de
+     la firma (`useEditorPicks.ts:31-34`) y del argumento en `App.tsx:395`.
+
+8. **i18n** (`en`, `es`, `fr`, `de`, `pt-BR`) — añadir `normalize.auto` (label del
+   checkbox) en los cinco locales. Ajustar `normalize.hint` si procede para reflejar
+   que el default ahora depende del flag.
+
+## Copy propuesta (en.json)
+
+- `normalize.auto`: "Apply to every track by default" (o equivalente). El hint
+  existente "Off by default…" (`en.json:552`) pasa a describir el flag: cuando está
+  desmarcado, off por defecto; cada pista puede activarlo.
 
 ## Testing (TDD)
 
-Los tests de este comportamiento viven en `App.test.tsx`, bajo
-`describe('App normalize peak preferences')` (líneas 1182-1230). NO hay un
-`useEditorPicks.test.tsx` propio.
+### `main/settings.test.ts`
+- Un `settings.json` viejo sin `normalizeAuto` → `getSettings().normalizeAuto`
+  es `false` (default del spread-merge).
 
-### Tests existentes a actualizar (parte del cambio, no solo añadidos)
+### `App.test.tsx` (`describe('App normalize peak preferences')`, líneas 1182-1230)
+Reemplazar los dos tests actuales (que asumían que el Editor escribe el global):
 
-- **`persists an editor checkbox toggle back to Settings`** (línea 1193): hoy
-  espera `saveSettings({ normalize: { mode:'none', ..., peakRemoveDc:true,
-  peakPerChannel:false } })`. Debe pasar a esperar
-  `saveSettings({ editorNormalize: { mode:'none', targetLufs:-14, truePeakDb:-1,
-  peakDb:-1, peakRemoveDc:true, peakPerChannel:false } })`. (El `mode:'none'` ya
-  se forzaba antes vía `{ ...cur }` con `cur.mode==='none'`; ahora es explícito.)
-- **`never writes Settings for a bare per-track mode switch`** (línea 1218): su
-  assert `not.toHaveBeenCalledWith({ normalize: anything })` debe pasar a
-  comprobar `editorNormalize` en vez de `normalize`.
+- **`normalizeAuto=false` (default) → la pista abre en None** aunque la plantilla
+  sea Peak. Abrir una pista con `settings({ normalize: { mode:'peak', peakDb:-1,5, … } })`
+  y `normalizeAuto` ausente/`false`: el segmentado de la pista muestra None
+  (`normalize-mode-none` con `aria-pressed`), y al pulsar `normalize-mode-peak` el
+  input `normalize-peak` vale −1,5 (la plantilla). Este es el arreglo del bug.
+- **`normalizeAuto=true` → la pista abre en Peak** con los valores de la plantilla.
+- **Ajustar el panel en una pista NO llama a `saveSettings`** con `normalize` ni
+  con nada: el override es temporal.
 
-### Tests nuevos (rojo primero)
-
-- **Ajustar `peakDb`** (input en modo Peak) persiste `editorNormalize` con
-  `mode:'none'` y el nuevo `peakDb`, sin tocar `settings.normalize`. Este es el
-  caso central de la regresión (hoy el input no persiste en absoluto).
-- **Ajustar `targetLufs`/`truePeakDb`** (modo Loudness) persiste igual a
-  `editorNormalize`.
-- **Mount report con valores iguales** a `settings.editorNormalize` NO escribe
-  (sin escritura redundante al abrir pista).
-- **Verificación de aislamiento**: ajustar valores en el Editor nunca llama a
-  `saveSettings` con `normalize` — Settings → Conversion no se ve afectado.
+### `ConversionTab` (test del tab, si existe)
+- Marcar el checkbox `normalize-auto` llama a `patch('normalizeAuto', true)`.
 
 ## Alcance de archivos
 
 Producción:
-- `apps/desktop/src/shared/types.ts` — campo `editorNormalize` en `Settings`.
-- `apps/desktop/src/main/settings.ts` — default + merge.
+- `apps/desktop/src/shared/types.ts` — `normalizeAuto` en `Settings`.
+- `apps/desktop/src/main/settings.ts` — default.
 - `apps/desktop/src/renderer/src/lib/settingsContext.tsx` — default + resolve.
-- `apps/desktop/src/renderer/src/components/Editor.tsx` — siembra desde `editorNormalize`.
-- `apps/desktop/src/renderer/src/hooks/useEditorPicks.ts` — persiste a `editorNormalize`.
+- `apps/desktop/src/renderer/src/lib/settingsDraft.ts` — si aplica.
+- `apps/desktop/src/renderer/src/components/settings/ConversionTab.tsx` — checkbox.
+- `apps/desktop/src/renderer/src/components/Editor.tsx` — siembra condicional.
+- `apps/desktop/src/renderer/src/hooks/useEditorPicks.ts` — override temporal.
+- `apps/desktop/src/renderer/src/App.tsx` — si se simplifica la firma de `useEditorPicks`.
+- i18n: `en/es/fr/de/pt-BR.json` — `normalize.auto`.
 
 Tests:
-- `apps/desktop/src/renderer/src/App.test.tsx` — actualizar los dos tests de
-  `App normalize peak preferences` y añadir los casos nuevos.
+- `apps/desktop/src/main/settings.test.ts`
+- `apps/desktop/src/renderer/src/App.test.tsx`
+- Test de `ConversionTab` si existe.
 
 ## Fuera de alcance (YAGNI)
 
-- **UI en Settings para `editorNormalize`**: no se expone; es memoria interna.
-- **Recordar el `mode` del Editor**: deliberadamente NO; cada pista abre en `off`.
-- **Migración de datos**: un `settings.json` sin `editorNormalize` obtiene el
-  default vía `mergeSettings`; no hace falta migración explícita.
-- **`NormalizeControls.tsx`**: no se toca; sigue siendo un componente puro.
+- **Campo `editorNormalize` / "memoria del Editor"**: descartado.
+- **Recordar overrides por pista entre sesiones**: no; son temporales por diseño.
+- **Mostrar `normalizeAuto` en el Editor**: no; vive solo en Settings.
+- **Migración de datos**: `normalizeAuto` ausente → `false` vía merge; sin migración.
+- **`NormalizeControls.tsx`**: no se toca; sigue siendo puro.
