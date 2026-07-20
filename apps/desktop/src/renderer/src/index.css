@@ -466,14 +466,27 @@ textarea {
   color: color-mix(in srgb, var(--color-on-row-selected) 85%, transparent);
   border-color: color-mix(in srgb, var(--color-on-row-selected) 38%, transparent);
 }
+/* The right-hand glyphs (quality verdict, match sparkles) carry their own accent/semantic
+   colour, which on the blue fill either vanishes (accent-on-blue) or clashes (amber-on-blue).
+   On the selected row they flip to the on-selection colour so the shape still reads; the
+   colour cue they'd normally give is redundant here — the row is already the one in focus. */
+.is-primary [data-testid='track-quality'],
+.is-primary [data-testid='track-automatched'],
+.is-primary [data-testid='track-match-review'] {
+  color: var(--color-on-row-selected);
+}
 
 /* The applied tracklist row (Discogs column) shares the same solid selection-blue fill, so its
-   text flips the same way: title full-strength, the position number softened. */
+   text and its suggestion sparkle flip the same way: title full-strength, the position number
+   softened, and the sparkle to white so amber-on-blue stops clashing. */
 .is-applied .text-fg {
   color: var(--color-on-row-selected);
 }
 .is-applied .text-fg-dim {
   color: color-mix(in srgb, var(--color-on-row-selected) 72%, transparent);
+}
+.is-applied [data-testid='track-confidence'] {
+  color: var(--color-on-row-selected);
 }
 
 @media (prefers-reduced-motion: reduce) {
