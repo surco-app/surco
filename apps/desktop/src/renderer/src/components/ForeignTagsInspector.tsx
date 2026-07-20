@@ -43,20 +43,24 @@ export function ForeignTagsInspector({
       />
       <SectionBody open={open}>
         {/* Carded rows like PropertiesReadout: 1px gaps over the line-coloured backing draw
-            the separators without per-row borders. One column (not two): a foreign value can
-            be a long base64 blob that a half-width cell would clip. */}
+            the separators (row rules and the column seam) without per-cell borders. Two
+            columns pack the tags two-up; a foreign value is often a long base64 blob, so it
+            truncates with an ellipsis rather than blowing out the half-width cell. */}
         <ul
           data-testid="foreign-tags-list"
-          className="mt-3 grid grid-cols-1 gap-px overflow-hidden rounded-lg bg-[var(--color-line)]"
+          className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-[var(--color-line)]"
         >
-          {foreignTags.map((tag) => {
+          {foreignTags.map((tag, i) => {
             const removed = foreignRemoved.includes(tag.name)
+            // An odd count leaves a lone last tag; stretch it across both columns so the
+            // grid never shows an empty half-cell.
+            const lastOdd = i === foreignTags.length - 1 && foreignTags.length % 2 === 1
             return (
               <li
                 key={tag.name}
                 data-testid="foreign-tag-row"
                 data-removed={removed}
-                className="group flex items-center gap-3 bg-[var(--color-field)] px-3 py-2"
+                className={`group flex items-center gap-3 bg-[var(--color-field)] px-3 py-2 ${lastOdd ? 'col-span-2' : ''}`}
               >
                 {/* Name over value: the tag name is what the user recognises, so it leads on
                     its own line; the raw value (often a long base64 blob) sits under it,

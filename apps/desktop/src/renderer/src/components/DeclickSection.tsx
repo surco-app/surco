@@ -13,6 +13,7 @@ import { DeclickControls } from './DeclickControls'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
+import { SectionSubhead } from './SectionSubhead'
 import { Tooltip } from './Tooltip'
 import { AFTER_COLOR, Strip, ZOOM_MAX, zoomLabel } from './WaveformCompare'
 import { ZoomStepper } from './ZoomStepper'
@@ -215,9 +216,7 @@ export function DeclickSection({
           {!isMulti && (
             <div className="mt-4">
               <div className="mb-1.5 flex items-center justify-between gap-2">
-                <span className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
-                  {tr('declick.waveTitle')}
-                </span>
+                <SectionSubhead>{tr('declick.waveTitle')}</SectionSubhead>
                 <ZoomStepper
                   label={zoomLabel(zoom)}
                   onOut={() => setZoom((z) => Math.max(1, z / 2))}

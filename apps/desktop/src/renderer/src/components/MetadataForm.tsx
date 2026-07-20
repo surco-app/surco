@@ -7,6 +7,7 @@ import { groupHeaderBefore } from '../lib/fields'
 import type { TrackItem } from '../types'
 import { CoverPicker } from './CoverPicker'
 import { Field } from './Field'
+import { SECTION_SUBHEAD } from './SectionSubhead'
 import { StarRating } from './StarRating'
 
 // Re-exported from lib so the form and its callers keep a single import site for the
@@ -109,7 +110,7 @@ export function MetadataForm({
                 {header && (
                   <h3
                     data-testid={`field-group-${header}`}
-                    className="col-span-1 mt-2 mb-1 text-xs font-semibold uppercase tracking-wide text-fg-faint first:mt-0 @[26rem]:col-span-2"
+                    className={`col-span-1 mt-2 mb-2 first:mt-0 @[26rem]:col-span-2 ${SECTION_SUBHEAD}`}
                   >
                     {tr(`fieldGroups.${header}`)}
                   </h3>

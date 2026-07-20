@@ -15,14 +15,15 @@ import type { TrimRange, WaveformResult } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
 import { useWaveformWindow } from '../hooks/useWaveformWindow'
-import { drawWaveform } from '../lib/waveform'
 import { detectOnsets, detectTrim, refineOnset } from '../lib/trim'
+import { drawWaveform } from '../lib/waveform'
 import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
+import { SectionSubhead } from './SectionSubhead'
 import { Tooltip } from './Tooltip'
-import { ZoomStepper } from './ZoomStepper'
 import { TrimSkeleton } from './TrimSkeleton'
 import { AFTER_COLOR } from './WaveformCompare'
+import { ZoomStepper } from './ZoomStepper'
 
 // A handle can never cross to within a second of the other: a trim that eats the
 // whole track is always a mistake, and the floor keeps the handles grabbable.
@@ -171,14 +172,16 @@ function Lane({
   // The dropped audio, shaded: for the head lane everything BEFORE the cut, for the
   // tail lane everything after — the kept audio stays lit.
   const shadeWidth =
-    side === 'start' ? Math.max(0, Math.min(100, pct(cut))) : Math.max(0, Math.min(100, 100 - pct(cut)))
+    side === 'start'
+      ? Math.max(0, Math.min(100, pct(cut)))
+      : Math.max(0, Math.min(100, 100 - pct(cut)))
 
   return (
     <div className="min-w-0 flex-1">
       <div className="mb-1 flex flex-nowrap items-center gap-1.5">
-        <span className="min-w-0 flex-1 truncate text-[10px] font-medium uppercase tracking-wider text-fg-dim">
+        <SectionSubhead className="min-w-0 flex-1 truncate">
           {tr(side === 'start' ? 'trim.laneStart' : 'trim.laneEnd')}
-        </span>
+        </SectionSubhead>
         {/* The cut's own time, and the place to set it: type the second you want,
             or step it a frame at a time with the arrows either side — the same nudge
             the field's arrow keys do, for the hand that stays on the mouse. */}
@@ -412,7 +415,13 @@ function Lane({
 // minutes in between are not this section's business. The detection only suggests:
 // the cut is whatever seconds the user confirmed, which is what the track stores
 // and the conversion applies verbatim.
-export function TrimSection({ value, open, onToggle, onChange, inputPath }: Props): React.JSX.Element {
+export function TrimSection({
+  value,
+  open,
+  onToggle,
+  onChange,
+  inputPath,
+}: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // The waveform decodes the full file, so it waits for the selection to rest and
   // for the section to actually be open — same gating as the loudness strip.
@@ -818,7 +827,10 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                   they were an "end" button sitting a panel away from the end. */}
               <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
                 {shown ? (
-                  <span data-testid="trim-cuts" className="min-w-0 truncate text-[10px] tabular-nums text-fg-dim">
+                  <span
+                    data-testid="trim-cuts"
+                    className="min-w-0 truncate text-[10px] tabular-nums text-fg-dim"
+                  >
                     <span className="font-medium uppercase tracking-wider">
                       {tr('trim.cutsLabel')}
                     </span>
@@ -827,7 +839,10 @@ export function TrimSection({ value, open, onToggle, onChange, inputPath }: Prop
                 ) : (
                   wave &&
                   !suggestion && (
-                    <span data-testid="trim-detected" className="min-w-0 truncate text-[10px] text-fg-dim">
+                    <span
+                      data-testid="trim-detected"
+                      className="min-w-0 truncate text-[10px] text-fg-dim"
+                    >
                       {tr('trim.nothing')}
                     </span>
                   )

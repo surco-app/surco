@@ -1,8 +1,8 @@
 import { Pencil, RefreshCw } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import type { OutputFormat } from '../../../shared/types'
 import { formatExtension } from '../../../shared/format'
+import type { OutputFormat } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
@@ -83,7 +83,7 @@ export function OutputNameSection({
         }
       />
       <SectionBody open={open}>
-        <label className="relative mt-3 block">
+        <label className="relative mt-4 block">
           <input
             data-testid="output-name"
             value={item.outputName ?? defaultOutputName}

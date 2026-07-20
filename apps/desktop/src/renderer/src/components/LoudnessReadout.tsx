@@ -14,6 +14,7 @@ import {
   gradeNoiseFloor,
   gradeTruePeak,
 } from '../lib/quality'
+import { SectionSubhead } from './SectionSubhead'
 import { Tooltip } from './Tooltip'
 
 // Per-grade colour for the analysis stat cells, reusing the good/warn/danger tokens
@@ -48,119 +49,102 @@ export function LoudnessReadout({ loudness: loud, onShowHelp }: Props): React.JS
     grade,
     hint,
   })
-  const groups = [
-    {
-      id: 'loudness',
-      label: tr('editor.loudnessGroupLoudness'),
-      cells: [
-        cell(
-          'lufs',
-          tr('editor.loudnessLufsLabel'),
-          `${formatDb(loud.integratedLufs)} LUFS`,
-          gradeLufs(loud.integratedLufs),
-          tr('editor.loudnessLufsHint'),
-        ),
-        cell(
-          'peak',
-          tr('editor.loudnessPeakLabel'),
-          `${formatDb(loud.truePeakDb)} dBTP`,
-          gradeTruePeak(loud.truePeakDb),
-          tr('editor.loudnessPeakHint'),
-        ),
-        cell(
-          'range',
-          tr('editor.loudnessRangeLabel'),
-          `${formatDb(loud.lra)} LU`,
-          gradeLra(loud.lra),
-          tr('editor.loudnessRangeHint'),
-        ),
-        loud.crestDb !== null &&
-          cell(
-            'crest',
-            tr('editor.loudnessCrestLabel'),
-            `${formatDb(loud.crestDb)} dB`,
-            gradeCrest(loud.crestDb),
-            tr('editor.loudnessCrestHint'),
-          ),
-      ].filter((c) => c !== false),
-    },
-    {
-      id: 'signal',
-      label: tr('editor.loudnessGroupSignal'),
-      cells: [
-        loud.channelBalanceDb !== null &&
-          cell(
-            'balance',
-            tr('editor.loudnessBalanceLabel'),
-            `${formatDb(loud.channelBalanceDb)} dB`,
-            gradeBalance(loud.channelBalanceDb),
-            tr('editor.loudnessBalanceHint'),
-          ),
-        loud.dcOffset !== null &&
-          cell(
-            'dc',
-            tr('editor.loudnessDcLabel'),
-            formatPercent(loud.dcOffset),
-            gradeDcOffset(loud.dcOffset),
-            tr('editor.loudnessDcHint'),
-          ),
-        loud.noiseFloorDb !== null &&
-          cell(
-            'noise',
-            tr('editor.loudnessNoiseLabel'),
-            `${formatDb(loud.noiseFloorDb)} dB`,
-            gradeNoiseFloor(loud.noiseFloorDb),
-            tr('editor.loudnessNoiseHint'),
-          ),
-      ].filter((c) => c !== false),
-    },
-  ].filter((g) => g.cells.length > 0)
+  // One flat row of pills — Loudness and Signal used to be separate labelled groups
+  // stacked in two rows; merged into a single auto-fit grid they all sit on one line,
+  // each pill dropping out when its figure is immeasurable (null).
+  const cells = [
+    cell(
+      'lufs',
+      tr('editor.loudnessLufsLabel'),
+      `${formatDb(loud.integratedLufs)} LUFS`,
+      gradeLufs(loud.integratedLufs),
+      tr('editor.loudnessLufsHint'),
+    ),
+    cell(
+      'peak',
+      tr('editor.loudnessPeakLabel'),
+      `${formatDb(loud.truePeakDb)} dBTP`,
+      gradeTruePeak(loud.truePeakDb),
+      tr('editor.loudnessPeakHint'),
+    ),
+    cell(
+      'range',
+      tr('editor.loudnessRangeLabel'),
+      `${formatDb(loud.lra)} LU`,
+      gradeLra(loud.lra),
+      tr('editor.loudnessRangeHint'),
+    ),
+    loud.crestDb !== null &&
+      cell(
+        'crest',
+        tr('editor.loudnessCrestLabel'),
+        `${formatDb(loud.crestDb)} dB`,
+        gradeCrest(loud.crestDb),
+        tr('editor.loudnessCrestHint'),
+      ),
+    loud.channelBalanceDb !== null &&
+      cell(
+        'balance',
+        tr('editor.loudnessBalanceLabel'),
+        `${formatDb(loud.channelBalanceDb)} dB`,
+        gradeBalance(loud.channelBalanceDb),
+        tr('editor.loudnessBalanceHint'),
+      ),
+    loud.dcOffset !== null &&
+      cell(
+        'dc',
+        tr('editor.loudnessDcLabel'),
+        formatPercent(loud.dcOffset),
+        gradeDcOffset(loud.dcOffset),
+        tr('editor.loudnessDcHint'),
+      ),
+    loud.noiseFloorDb !== null &&
+      cell(
+        'noise',
+        tr('editor.loudnessNoiseLabel'),
+        `${formatDb(loud.noiseFloorDb)} dB`,
+        gradeNoiseFloor(loud.noiseFloorDb),
+        tr('editor.loudnessNoiseHint'),
+      ),
+  ].filter((c) => c !== false)
   return (
-    <div data-testid="loudness-readout" className="mt-3 space-y-3">
-      {groups.map((group, gi) => (
-        <div key={group.id}>
-          {/* The help sits right against the label it explains — pushed to the far
-              edge it read as help for the whole section, not for these figures. */}
-          <div className="mb-1.5 flex items-center gap-1">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
-              {group.label}
-            </span>
-            {gi === 0 && (
-              <button
-                type="button"
-                data-testid="loudness-help-toggle"
-                aria-label={tr('editor.loudnessHelpTitle')}
-                onClick={onShowHelp}
-                className="press group relative flex h-5 w-5 items-center justify-center rounded-full text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
-              >
-                <Info className="h-3.5 w-3.5" aria-hidden="true" />
-                <Tooltip label={tr('editor.loudnessHelpTitle')} align="start" />
-              </button>
-            )}
+    <div data-testid="loudness-readout" className="mt-3">
+      {/* The lone help affordance now that the group headings are gone: a compact info
+          button above the flat pill row, explaining the figures beneath it. */}
+      <div className="mb-1.5 flex items-center gap-1">
+        <SectionSubhead>{tr('editor.loudnessGroupLoudness')}</SectionSubhead>
+        <button
+          type="button"
+          data-testid="loudness-help-toggle"
+          aria-label={tr('editor.loudnessHelpTitle')}
+          onClick={onShowHelp}
+          className="press group relative flex h-5 w-5 items-center justify-center rounded-full text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+        >
+          <Info className="h-3.5 w-3.5" aria-hidden="true" />
+          <Tooltip label={tr('editor.loudnessHelpTitle')} align="start" />
+        </button>
+      </div>
+      <div className="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(6.5rem,1fr))]">
+        {cells.map((c) => (
+          <div
+            key={c.id}
+            data-testid={`loudness-pill-${c.id}`}
+            data-grade={c.grade}
+            className="group relative rounded-lg bg-[var(--color-field)] px-3 py-2"
+          >
+            <div className="flex items-center gap-1.5">
+              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${GRADE_DOT[c.grade]}`} />
+              <span className="truncate text-[10px] uppercase tracking-wide text-fg-dim">
+                {c.label}
+              </span>
+            </div>
+            <div className={`mt-0.5 text-sm font-medium tabular-nums ${GRADE_TEXT[c.grade]}`}>
+              {c.value}
+            </div>
+            <Tooltip label={c.hint} />
           </div>
-          <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(6.5rem,1fr))]">
-            {group.cells.map((c) => (
-              <div
-                key={c.id}
-                data-testid={`loudness-pill-${c.id}`}
-                data-grade={c.grade}
-                className="group relative rounded-lg bg-[var(--color-field)] px-3 py-2"
-              >
-                <div className="flex items-center gap-1.5">
-                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${GRADE_DOT[c.grade]}`} />
-                  <span className="truncate text-[10px] uppercase tracking-wide text-fg-dim">
-                    {c.label}
-                  </span>
-                </div>
-                <div className={`mt-0.5 text-sm font-medium tabular-nums ${GRADE_TEXT[c.grade]}`}>
-                  {c.value}
-                </div>
-                <Tooltip label={c.hint} />
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   )
 }
