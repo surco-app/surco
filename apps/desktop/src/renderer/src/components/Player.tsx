@@ -215,7 +215,7 @@ export function Player({
       data-testid="player"
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
-      className="group/player absolute inset-x-3 bottom-3 z-20 animate-player-in overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-panel-2)] shadow-lg shadow-black/30"
+      className="group/player shrink-0 animate-player-in overflow-hidden border-t border-[var(--color-line)] bg-[var(--color-panel-2)] shadow-[0_-4px_16px_rgba(0,0,0,0.18)]"
     >
       {/* Cover on the left; to its right a two-line stack: the title gets a whole line of its
           own (so it rarely truncates, marquees on hover when it must), and below it the artist

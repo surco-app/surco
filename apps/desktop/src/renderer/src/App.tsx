@@ -1583,12 +1583,9 @@ export default function App(): React.JSX.Element {
           <div className="flex min-h-0 flex-1">
             <aside
               style={{ width: sidebar.width }}
-              className="relative shrink-0 bg-[var(--color-panel)]"
+              className="relative flex min-h-0 shrink-0 flex-col bg-[var(--color-panel)]"
             >
-              <div
-                ref={listScrollRef}
-                className={`h-full overflow-y-auto ${playerVisible && playerTrack ? 'pb-32' : ''}`}
-              >
+              <div ref={listScrollRef} className="min-h-0 flex-1 overflow-y-auto">
                 {tracks.length === 0 ? (
                   // Empty list: the drop hint plus the Add files button, so the action that fills
                   // this column is reachable here even before there's a header to host it.
