@@ -11,6 +11,7 @@ import {
   type SyncedDraft,
 } from '../lib/settingsDraft'
 import { SETTINGS_TAB_ICONS, SETTINGS_TABS, type SettingsTab } from '../lib/settingsTabs'
+import { useScrollAffordance } from '../hooks/useScrollAffordance'
 import { FieldsEditor } from './FieldsEditor'
 import { ModalShell } from './ModalShell'
 import { ArtworkTab } from './settings/ArtworkTab'
@@ -46,6 +47,10 @@ export function SettingsModal({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [tab, setTab] = useState<SettingsTab>(initialTab ?? 'general')
+  // A bottom fade cues that a tab scrolls — Conversion's normalization block sat below
+  // the fold with no hint. Recomputed on `tab` so swapping to a shorter/taller tab
+  // refreshes it without a scroll event.
+  const { ref: bodyRef, moreBelow } = useScrollAffordance([tab])
   // Roving-tabindex navigation for the tablist: arrows (and Home/End) move the
   // selection and focus together, wrapping around, per the ARIA tabs pattern.
   const tabRefs = useRef<Partial<Record<SettingsTab, HTMLButtonElement | null>>>({})
@@ -173,11 +178,13 @@ export function SettingsModal({
         </div>
       </div>
 
+      <div className="relative flex min-h-[280px] flex-1 flex-col">
       <div
+        ref={bodyRef}
         role="tabpanel"
         id="settings-tabpanel"
         aria-labelledby={`settings-tab-${tab}`}
-        className="-mr-2 min-h-[280px] flex-1 overflow-x-hidden overflow-y-auto pr-2"
+        className="-mr-2 flex-1 overflow-x-hidden overflow-y-auto pr-2"
       >
         {tab === 'general' && (
           <GeneralTab
@@ -224,8 +231,17 @@ export function SettingsModal({
         )}
         {tab === 'stats' && <StatsTab settings={settings} />}
       </div>
+        {/* Fades the cut-off last line into the panel while there's more below, then
+            clears at the end — the "keep scrolling" cue the faint scrollbar didn't give. */}
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-x-0 bottom-0 mr-2 h-10 bg-gradient-to-t from-[var(--color-panel)] to-transparent transition-opacity duration-200 ${
+            moreBelow ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      </div>
 
-      <div className="mt-6 flex shrink-0 justify-end gap-2">
+      <div className="-mx-6 mt-6 flex shrink-0 justify-end gap-2 border-t border-[var(--color-line)] px-6 pt-4">
         <button
           type="button"
           onClick={onClose}
