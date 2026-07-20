@@ -459,6 +459,8 @@
     "otherTagsRestore": "Restaurer {{name}}"
   },
   "fields": {
+    "groupFilled_one": "{{count}} rempli",
+    "groupFilled_other": "{{count}} remplis",
     "title": "Titre",
     "artist": "Artiste",
     "albumArtist": "Artiste de l'album",
@@ -972,6 +974,7 @@
     "identity": "Identité",
     "catalog": "Catalogue",
     "dj": "DJ",
-    "order": "Ordre"
+    "order": "Ordre",
+    "other": "Autres"
   }
 }
