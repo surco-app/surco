@@ -121,7 +121,7 @@ export const Toolbar = memo(function Toolbar({
         // aria-label/aria-pressed, matching SegmentedControl's plain-div grouping.
         <div
           data-testid="focus-presets"
-          className="ml-3 inline-flex items-center gap-0.5 rounded-lg bg-[var(--color-field)] p-0.5"
+          className="ml-3 inline-flex items-center gap-1"
           style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         >
           {FOCUS_PRESETS.map(({ id }) => {
@@ -135,8 +135,10 @@ export const Toolbar = memo(function Toolbar({
                 aria-pressed={active}
                 onClick={() => onFocusPreset(id)}
                 aria-label={tr(`header.focus.${id}`)}
-                className={`press group relative flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
-                  active ? 'bg-[var(--color-panel-2)] text-fg' : 'text-fg-muted hover:text-fg'
+                className={`press group relative flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
+                  active
+                    ? 'bg-[var(--color-panel-2)] text-fg'
+                    : 'text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg'
                 }`}
               >
                 <Icon className="h-4 w-4" aria-hidden="true" />
