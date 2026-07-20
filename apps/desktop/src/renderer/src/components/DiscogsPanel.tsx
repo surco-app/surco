@@ -349,7 +349,11 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                             className="group/dot relative flex shrink-0 text-[var(--color-accent)]"
                           >
                             <Sparkles className="h-3 w-3" aria-hidden="true" />
-                            <Tooltip label={tr('editor.matchSuggested')} align="start" scope="dot" />
+                            <Tooltip
+                              label={tr('editor.matchSuggested')}
+                              align="start"
+                              scope="dot"
+                            />
                           </span>
                         )}
                       </span>
@@ -370,9 +374,20 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                   </button>
                   <CollapsibleTracks open={expanded}>
                     <div className="pb-1">
-                      <p className="px-3 pt-1 pb-1 text-[10px] font-medium uppercase tracking-wide text-fg-faint">
-                        {isMulti ? tr('match.title') : tr('editor.chooseTrack')}
-                      </p>
+                      {/* A phase band, not a lone caption: a field-coloured strip with rules
+                          top and bottom marks the shift from "search a release" (the cards
+                          above) to "pick the track to apply" (the numbered list below), and
+                          states the track count so the change of context is unmistakable. */}
+                      <div className="flex items-center justify-between gap-2 border-y border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-fg-dim">
+                          {isMulti ? tr('match.title') : tr('editor.chooseTrack')}
+                        </span>
+                        {release && (
+                          <span className="shrink-0 text-[10px] font-normal tracking-normal text-fg-faint tabular-nums">
+                            {tr('editor.chooseTrackCount', { count: release.tracklist.length })}
+                          </span>
+                        )}
+                      </div>
                       {loaded && release ? (
                         isMulti && selectedTracks && onApplyMatches ? (
                           <AlbumMatchRows

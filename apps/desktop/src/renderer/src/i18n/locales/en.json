@@ -266,6 +266,8 @@
     "searchClear": "Clear search",
     "tokenTip": "Search works out of the box. Add your own Discogs token in <0>Settings</0> for a higher, private rate limit.",
     "chooseTrack": "Choose the track to apply",
+    "chooseTrackCount_one": "{{count}} track",
+    "chooseTrackCount_other": "{{count}} tracks",
     "matchSuggested": "Suggested",
     "chooseAlbumHint": "Choose an album from the list to see its tracks.",
     "noResults": "No albums matched your search.",

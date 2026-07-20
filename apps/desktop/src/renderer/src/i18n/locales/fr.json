@@ -266,6 +266,8 @@
     "searchClear": "Effacer la recherche",
     "tokenTip": "La recherche fonctionne sans rien configurer. Ajoute ton propre token Discogs dans les <0>Réglages</0> pour une limite plus élevée et privée.",
     "chooseTrack": "Choisis le morceau à appliquer",
+    "chooseTrackCount_one": "{{count}} morceau",
+    "chooseTrackCount_other": "{{count}} morceaux",
     "matchSuggested": "Suggéré",
     "chooseAlbumHint": "Choisis un album dans la liste pour voir ses morceaux.",
     "noResults": "Aucun album ne correspond à ta recherche.",
