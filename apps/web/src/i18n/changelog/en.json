@@ -7,6 +7,10 @@
       {
         "text": "Metadata now groups into collapsible sections (Identity, Catalog, DJ, Order): open only the one you need, and each tells you how many of its fields are filled. Even with every field turned on, the editor stays short and tidy instead of turning into an endless list.",
         "in": "0.66.0"
+      },
+      {
+        "text": "Some FLACs with two embedded covers (common in Bandcamp downloads) wouldn't play; they now play fine.",
+        "in": "0.66.1"
       }
     ]
   },

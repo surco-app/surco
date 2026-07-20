@@ -7,6 +7,10 @@
       {
         "text": "Los metadatos se agrupan ahora en secciones plegables (Identidad, Catálogo, DJ, Orden): abres solo la que necesitas y cada una te dice cuántos campos lleva rellenos. Aunque tengas todos los campos activos, el editor se mantiene corto y ordenado en vez de convertirse en una lista interminable.",
         "in": "0.66.0"
+      },
+      {
+        "text": "Algunos FLAC con dos carátulas incrustadas (habitual en descargas de Bandcamp) no se reproducían; ahora suenan sin problema.",
+        "in": "0.66.1"
       }
     ]
   },
