@@ -33,6 +33,9 @@ const LoudnessHelpModal = lazy(() =>
 const FindReplaceModal = lazy(() =>
   import('./FindReplaceModal').then((m) => ({ default: m.FindReplaceModal })),
 )
+const StripNumberingModal = lazy(() =>
+  import('./StripNumberingModal').then((m) => ({ default: m.StripNumberingModal })),
+)
 const RenameModal = lazy(() =>
   import('./RenameModal').then((m) => ({ default: m.RenameModal })),
 )
@@ -139,6 +142,13 @@ export function Overlays({
       {activeModal?.type === 'loudnessHelp' && <LoudnessHelpModal onClose={close} />}
       {activeModal?.type === 'findReplace' && (
         <FindReplaceModal
+          tracks={bulkTracks}
+          onApply={deriveTracksUndoable}
+          onClose={close}
+        />
+      )}
+      {activeModal?.type === 'stripNumbering' && (
+        <StripNumberingModal
           tracks={bulkTracks}
           onApply={deriveTracksUndoable}
           onClose={close}

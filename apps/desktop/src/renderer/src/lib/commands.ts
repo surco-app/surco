@@ -222,6 +222,8 @@ export interface CommandDeps {
   deriveTags: () => void
   // Stamps 1..N (list order) onto the bulk scope's track numbers.
   numberTracks: () => void
+  // Opens the preview for dropping the leading track number from the bulk scope's titles.
+  openStripNumbering: () => void
   // Rewrites the selection's titles from the settings' title format (one-shot).
   applyTitleFormat: () => void
   // Rebuilds the selection's file names from the Settings → Naming pattern.
@@ -299,6 +301,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     clearMeta,
     deriveTags,
     numberTracks,
+    openStripNumbering,
     applyTitleFormat,
     regenerateNames,
     trimDetected,
@@ -360,6 +363,17 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('number-tracks'),
       enabled: bulkTracks.length > 1,
       run: numberTracks,
+    },
+    {
+      // Drops the leading track number from the bulk scope's titles ("1. Shake It",
+      // "A1 - Deep Cut"). Opens a preview rather than applying blind: it rewrites a
+      // whole scope, and the numbering it strips is not always obvious at a glance.
+      id: 'strip-numbering',
+      group: 'tags',
+      title: tr('commands.stripNumbering'),
+      hint: hintFor('strip-numbering'),
+      enabled: bulkTracks.length > 0,
+      run: openStripNumbering,
     },
     {
       // Rewrites the selection's titles from the settings' title format — the bulk twin

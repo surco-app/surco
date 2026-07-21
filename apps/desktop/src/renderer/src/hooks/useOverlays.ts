@@ -23,6 +23,7 @@ export type ActiveModal =
   | { type: 'help' }
   | { type: 'loudnessHelp' }
   | { type: 'findReplace' }
+  | { type: 'stripNumbering' }
   | { type: 'rename' }
   | { type: 'export' }
   | { type: 'palette' }
@@ -38,6 +39,7 @@ export interface Overlays {
   openHelp: () => void
   openLoudnessHelp: () => void
   openFindReplace: () => void
+  openStripNumbering: () => void
   openRename: () => void
   openExport: () => void
   openPalette: () => void
@@ -69,6 +71,7 @@ export function useOverlays(): Overlays {
   const openHelp = useCallback(() => setActiveModal({ type: 'help' }), [])
   const openLoudnessHelp = useCallback(() => setActiveModal({ type: 'loudnessHelp' }), [])
   const openFindReplace = useCallback(() => setActiveModal({ type: 'findReplace' }), [])
+  const openStripNumbering = useCallback(() => setActiveModal({ type: 'stripNumbering' }), [])
   const openRename = useCallback(() => setActiveModal({ type: 'rename' }), [])
   const openExport = useCallback(() => setActiveModal({ type: 'export' }), [])
   const openPalette = useCallback(() => setActiveModal({ type: 'palette' }), [])
@@ -94,6 +97,7 @@ export function useOverlays(): Overlays {
     openHelp,
     openLoudnessHelp,
     openFindReplace,
+    openStripNumbering,
     openRename,
     openExport,
     openPalette,

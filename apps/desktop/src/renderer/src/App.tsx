@@ -1459,6 +1459,7 @@ export default function App(): React.JSX.Element {
       askTrashSelected: onTrashSelected,
       openSettings,
       openFindReplace: overlays.openFindReplace,
+      openStripNumbering: overlays.openStripNumbering,
       openExport: overlays.openExport,
       openRename: overlays.openRename,
       openActivity: () => setActivityOpen(true),

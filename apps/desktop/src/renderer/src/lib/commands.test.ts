@@ -80,6 +80,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     bulkTracks: [],
     openSettings: () => {},
     openFindReplace: () => {},
+    openStripNumbering: () => {},
     openExport: () => {},
     openRename: () => {},
     openActivity: () => {},
@@ -533,6 +534,20 @@ describe('buildCommands editor + theme entries', () => {
     expect(command.enabled).toBe(true)
     command.run()
     expect(numberTracks).toHaveBeenCalledOnce()
+  })
+
+  // Stripping numbering needs tracks in scope but not a multi-selection: cleaning a
+  // single "1. Shake It" is a legitimate one-track fix.
+  it('gates strip-numbering on a non-empty scope and opens the preview', () => {
+    const openStripNumbering = vi.fn()
+    const empty = makeDeps({ openStripNumbering, bulkTracks: [] })
+    expect(commandById(empty, 'strip-numbering').enabled).toBe(false)
+
+    const one = makeDeps({ openStripNumbering, bulkTracks: [track()] })
+    const command = commandById(one, 'strip-numbering')
+    expect(command.enabled).toBe(true)
+    command.run()
+    expect(openStripNumbering).toHaveBeenCalledOnce()
   })
 
   // Undo is only offered while there is something recorded to roll back — a dead entry

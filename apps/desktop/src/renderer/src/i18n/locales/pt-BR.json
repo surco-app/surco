@@ -209,6 +209,7 @@
     "fillAll": "Preencher tudo a partir do nome",
     "deriveTags": "Preencher metadados do nome",
     "numberTracks": "Numerar faixas na ordem da lista",
+    "stripNumbering": "Remover a numeração do título",
     "applyTitleFormat": "Aplicar o formato do título à seleção",
     "regenerateNames": "Regenerar os nomes de arquivo da seleção com os metadados",
     "trimDetected": "Cortar o silêncio detectado na seleção",
@@ -876,6 +877,13 @@
     "noMatches": "Nenhuma correspondência em faixa alguma.",
     "summary": "{{fields}} campos em {{tracks}} faixas",
     "apply": "Substituir em {{count}}"
+  },
+  "stripNumbering": {
+    "title": "Remover a numeração do título",
+    "hint": "Remove o número da faixa do início do título (\"1.\", \"A1 -\").",
+    "noMatches": "Nenhum título tem numeração.",
+    "summary": "{{count}} de {{total}} títulos serão alterados",
+    "apply": "Remover em {{count}}"
   },
   "donateNudge": {
     "title": "Seu Surco até agora",

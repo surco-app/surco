@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
-import { sanitizeMeta } from './hygiene'
+import { sanitizeMeta, stripTitleNumbering } from './hygiene'
 
 function meta(patch: Partial<TrackMetadata>): TrackMetadata {
   return {
@@ -61,5 +61,49 @@ describe('sanitizeMeta', () => {
     const r = sanitizeMeta(input, { trim: false, zeroPad: false })
     expect(r.title).toBe('  x  ')
     expect(r.trackNumber).toBe('3')
+  })
+})
+
+describe('stripTitleNumbering', () => {
+  it('strips a leading number and the space it leaves behind', () => {
+    // The reported bug: deleting "1." by hand through find/replace left " Shake It"
+    // with an orphan leading space, because the space belonged to neither side.
+    expect(stripTitleNumbering('1. Shake It')).toBe('Shake It')
+  })
+
+  it('strips a vinyl position without eating the title, unlike a blind find/replace', () => {
+    // Searching "1." to clean "1. Deep Cut" also matched inside "A1. Deep Cut" and left
+    // a stray "A" glued to the title. Anchoring to the start is what makes both safe.
+    expect(stripTitleNumbering('A1. Deep Cut')).toBe('Deep Cut')
+    expect(stripTitleNumbering('A1 Deep Cut')).toBe('Deep Cut')
+  })
+
+  it('accepts the separators rips actually use', () => {
+    expect(stripTitleNumbering('01 - Last One')).toBe('Last One')
+    expect(stripTitleNumbering('1) Last One')).toBe('Last One')
+    expect(stripTitleNumbering('(1) Last One')).toBe('Last One')
+  })
+
+  it('keeps a bare leading number, which is indistinguishable from a real title', () => {
+    // "05 Last One" is numbering and "7 Seconds" is not, yet they have the same shape.
+    // Preserving both is the safe half of that trade: a missed prefix is an edit away,
+    // a destroyed title is not.
+    expect(stripTitleNumbering('05 Last One')).toBe('05 Last One')
+  })
+
+  it('never strips a number that is the title itself', () => {
+    // "Quitar numeración" must not empty the tag: these are the whole title.
+    expect(stripTitleNumbering('1999')).toBe('1999')
+    expect(stripTitleNumbering('7 Seconds')).toBe('7 Seconds')
+    expect(stripTitleNumbering('99 Problems')).toBe('99 Problems')
+  })
+
+  it('only strips at the start, so a number mid-title survives', () => {
+    expect(stripTitleNumbering('Track 1. Reprise')).toBe('Track 1. Reprise')
+  })
+
+  it('leaves a title that carries no numbering exactly as it is', () => {
+    expect(stripTitleNumbering('Shake It')).toBe('Shake It')
+    expect(stripTitleNumbering('')).toBe('')
   })
 })

@@ -209,6 +209,7 @@
     "fillAll": "Remplir tous les tags depuis le nom du fichier",
     "deriveTags": "Remplir les métadonnées depuis le nom",
     "numberTracks": "Numéroter les morceaux dans l'ordre de la liste",
+    "stripNumbering": "Supprimer la numérotation du titre",
     "applyTitleFormat": "Appliquer le format du titre à la sélection",
     "regenerateNames": "Régénérer les noms de fichiers de la sélection depuis les métadonnées",
     "trimDetected": "Rogner le silence détecté sur la sélection",
@@ -876,6 +877,13 @@
     "noMatches": "Aucune correspondance dans aucun morceau.",
     "summary": "{{fields}} champs dans {{tracks}} morceaux",
     "apply": "Remplacer dans {{count}}"
+  },
+  "stripNumbering": {
+    "title": "Supprimer la numérotation du titre",
+    "hint": "Retire le numéro de piste au début du titre (« 1. », « A1 - »).",
+    "noMatches": "Aucun titre ne porte de numérotation.",
+    "summary": "{{count}} titres sur {{total}} seront modifiés",
+    "apply": "Supprimer sur {{count}}"
   },
   "donateNudge": {
     "title": "Ton Surco jusqu'ici",

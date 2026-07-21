@@ -209,6 +209,7 @@
     "fillAll": "Rellenar todo desde el nombre",
     "deriveTags": "Rellenar metadatos del nombre",
     "numberTracks": "Numerar pistas en orden de lista",
+    "stripNumbering": "Quitar la numeración del título",
     "applyTitleFormat": "Aplicar el formato del título a la selección",
     "regenerateNames": "Regenerar los nombres de archivo de la selección con los metadatos",
     "trimDetected": "Recortar el silencio detectado en la selección",
@@ -876,6 +877,13 @@
     "noMatches": "Sin coincidencias en ninguna pista.",
     "summary": "{{fields}} campos en {{tracks}} pistas",
     "apply": "Reemplazar en {{count}}"
+  },
+  "stripNumbering": {
+    "title": "Quitar la numeración del título",
+    "hint": "Quita el número de pista del principio del título («1.», «A1 -»).",
+    "noMatches": "Ningún título lleva numeración.",
+    "summary": "{{count}} de {{total}} títulos cambiarán",
+    "apply": "Quitar en {{count}}"
   },
   "donateNudge": {
     "title": "Tu Surco hasta ahora",

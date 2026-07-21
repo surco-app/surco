@@ -209,6 +209,7 @@
     "fillAll": "Fill all tags from file name",
     "deriveTags": "Fill metadata from file name",
     "numberTracks": "Number tracks in list order",
+    "stripNumbering": "Remove numbering from title",
     "applyTitleFormat": "Apply the title format to the selection",
     "regenerateNames": "Regenerate the selection's file names from metadata",
     "trimDetected": "Trim detected silence on the selection",
@@ -876,6 +877,13 @@
     "noMatches": "No matches in any track.",
     "summary": "{{fields}} fields in {{tracks}} tracks",
     "apply": "Replace in {{count}}"
+  },
+  "stripNumbering": {
+    "title": "Remove numbering from title",
+    "hint": "Strips the track number from the front of the title (\"1.\", \"A1 -\").",
+    "noMatches": "No title carries numbering.",
+    "summary": "{{count}} of {{total}} titles will change",
+    "apply": "Remove on {{count}}"
   },
   "donateNudge": {
     "title": "Your Surco so far",

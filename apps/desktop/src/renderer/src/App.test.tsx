@@ -1292,7 +1292,9 @@ describe('App track numbering', () => {
 
     fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
     const input = await screen.findByTestId('palette-input')
-    fireEvent.change(input, { target: { value: 'Number' } })
+    // "Number" alone also matches "Remove numbering from title"; filter on the phrase
+    // that belongs to this command only, so the palette resolves to a single entry.
+    fireEvent.change(input, { target: { value: 'Number tracks' } })
     fireEvent.click(screen.getByTestId('palette-item'))
 
     // Track No. sits in the Order group, which starts collapsed and re-collapses when the

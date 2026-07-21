@@ -209,6 +209,7 @@
     "fillAll": "Alle Tags aus dem Dateinamen füllen",
     "deriveTags": "Metadaten aus dem Dateinamen füllen",
     "numberTracks": "Tracks in Listenreihenfolge nummerieren",
+    "stripNumbering": "Nummerierung aus dem Titel entfernen",
     "applyTitleFormat": "Titelformat auf die Auswahl anwenden",
     "regenerateNames": "Dateinamen der Auswahl aus den Metadaten neu erzeugen",
     "trimDetected": "Erkannte Stille in der Auswahl abschneiden",
@@ -876,6 +877,13 @@
     "noMatches": "Keine Treffer in irgendeinem Track.",
     "summary": "{{fields}} Felder in {{tracks}} Tracks",
     "apply": "In {{count}} ersetzen"
+  },
+  "stripNumbering": {
+    "title": "Nummerierung aus dem Titel entfernen",
+    "hint": "Entfernt die Tracknummer am Anfang des Titels („1.“, „A1 -“).",
+    "noMatches": "Kein Titel trägt eine Nummerierung.",
+    "summary": "{{count}} von {{total}} Titeln werden geändert",
+    "apply": "Bei {{count}} entfernen"
   },
   "donateNudge": {
     "title": "Dein Surco bisher",
