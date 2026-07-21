@@ -217,6 +217,9 @@ function setApi(over: Record<string, unknown> = {}): void {
     }),
     properties: vi.fn().mockResolvedValue(null),
     loudness: vi.fn().mockResolvedValue(null),
+    bpm: vi.fn().mockResolvedValue(null),
+    key: vi.fn().mockResolvedValue(null),
+    waveformScan: vi.fn().mockResolvedValue(null),
     search: vi.fn().mockResolvedValue([]),
     getRelease: vi.fn().mockResolvedValue(null),
     spectrogram: vi.fn().mockResolvedValue(spectrum),
@@ -371,6 +374,24 @@ describe('App quality triage', () => {
 
     setFocus(true)
     await waitFor(() => expect(spectrogram.mock.calls.length).toBeGreaterThan(baseline))
+  })
+
+  // With autoAnalyze on, importing must warm every heavy analysis on disk — not just the
+  // spectrum the old prefetch warmed — so reopening the crate never re-decodes. loudness is
+  // one of the sweep-only probes, so its call proves the full sweep ran, not the old path.
+  it('runs the full analysis sweep on import when autoAnalyze is on', async () => {
+    const loudness = vi.fn().mockResolvedValue(null)
+    setApi({
+      loudness,
+      readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+      getSettings: vi.fn().mockResolvedValue(settings({ autoAnalyze: true })),
+    })
+    await renderApp()
+    await addTwoTracks()
+    await waitFor(() => {
+      const paths = loudness.mock.calls.map((c) => c[0]).sort()
+      expect(paths).toEqual(['/music/a.wav', '/music/b.wav'])
+    })
   })
 })
 
@@ -2230,13 +2251,18 @@ describe('App auto-analyze on import', () => {
   // user's back — that cost is exactly why the setting is opt-in.
   it('does not analyze imports while the setting is off', async () => {
     const spectrogram = vi.fn().mockResolvedValue(spectrum)
-    setApi({ spectrogram })
+    const loudness = vi.fn().mockResolvedValue(null)
+    setApi({ spectrogram, loudness })
     await renderApp()
     await addTwoTracks()
     // The auto-selected first row's editor measures itself (its own high-priority query);
     // the unselected second row is what the off setting must leave untouched.
     await waitFor(() => expect(spectrogram).toHaveBeenCalled())
     expect(spectrogram).not.toHaveBeenCalledWith('/music/b.wav', expect.anything())
+    // loudness is only probed by the sweep (the Quality section gates its own loudness
+    // probe on being open, which the editor isn't by default) — never called confirms no
+    // sweep ran at all, not just that it skipped the unselected row.
+    expect(loudness).not.toHaveBeenCalled()
   })
 })
 

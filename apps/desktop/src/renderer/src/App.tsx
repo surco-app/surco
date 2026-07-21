@@ -492,12 +492,13 @@ export default function App(): React.JSX.Element {
       // is actually on screen, so an active filter holds back the rows it hides. Change the
       // filter and the newly-shown rows get matched; already-matched ones are never re-probed.
       if (settings?.autoMatch && autoMatchAvailable(settings)) enqueueAutoMatch([t], true)
-      // Auto-analyze warms the same shared spectrum cache as the sweep and the hover
-      // prefetch, at low priority so the selected track's own decode still preempts it.
-      // Unlike the hover path it ignores the quality-section fold — this is an explicit
-      // "always triage my imports" setting, not incidental pointer traffic.
-      if (settings?.autoAnalyze && settings.showSpectrum)
-        void queryClient.prefetchQuery(spectrogramOptions(t.inputPath))
+      // Auto-analyze runs the full background sweep so a reopened crate has every heavy
+      // analysis already on disk — the sweep reads bulkTracksRef (the visible rows) and
+      // skips any already measured, so this stays a cheap re-trigger per import. Passing t
+      // explicitly covers the track this call is for even before bulkTracksRef's render has
+      // caught up with it (see analyzeAllQuality). Ignores the quality-section fold: this is
+      // an explicit "always analyze my imports" setting.
+      if (settings?.autoAnalyze) analyzeAllQuality([t])
     },
     onDuplicatesSkipped: (count) => setNotice(tr('notices.duplicatesSkipped', { count })),
     onMetaReadFailed: (count) => setNotice(tr('notices.metaReadFailed', { count })),
@@ -1020,7 +1021,7 @@ export default function App(): React.JSX.Element {
     askFillAll(bulkTracksRef.current, { fromSelection: selectedTracks.length > 1 }),
   )
   const onFindReplace = useStableCallback(overlays.openFindReplace)
-  const onAnalyzeAll = useStableCallback(analyzeAllQuality)
+  const onAnalyzeAll = useStableCallback(() => analyzeAllQuality())
   const onAutoMatchAll = useStableCallback(() => enqueueAutoMatch(bulkTracks, false))
   const onOpenExport = useStableCallback(overlays.openExport)
   const onClearAll = useStableCallback(() => askClearAll(visibleTracksRef.current))
