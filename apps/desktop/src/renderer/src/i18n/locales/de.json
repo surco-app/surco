@@ -442,6 +442,7 @@
     "caseLower": "kleinschreibung",
     "caseUpper": "GROSSSCHREIBUNG",
     "baseTitle": "Basistitel",
+    "stripNumbering": "Nummerierung entfernen",
     "applyTitleFormat": "Format",
     "applyTitleFormatHint": "Titelformat auf die Auswahl anwenden",
     "deriveFromName": "Aus Dateinamen füllen",

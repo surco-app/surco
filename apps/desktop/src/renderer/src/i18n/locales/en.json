@@ -442,6 +442,7 @@
     "caseLower": "lowercase",
     "caseUpper": "UPPERCASE",
     "baseTitle": "Base title",
+    "stripNumbering": "Remove numbering",
     "applyTitleFormat": "Format",
     "applyTitleFormatHint": "Apply the title format to the selection",
     "deriveFromName": "Fill from filename",

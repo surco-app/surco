@@ -18,10 +18,12 @@ function Harness({
   sources = SOURCES,
   initial = 'Pepito de los palotes',
   cleanResult,
+  fieldName = 'title',
 }: {
   sources?: InsertSource[]
   initial?: string
   cleanResult?: string
+  fieldName?: string
 }): React.JSX.Element {
   const ref = useRef<HTMLInputElement>(null)
   const [value, setValue] = useState(initial)
@@ -34,7 +36,7 @@ function Harness({
         onChange={(e) => setValue(e.target.value)}
       />
       <FieldInsertMenu
-        fieldName="title"
+        fieldName={fieldName}
         sources={sources}
         value={value}
         cleanResult={cleanResult}
@@ -49,8 +51,8 @@ function host(): HTMLInputElement {
   return screen.getByTestId('host') as HTMLInputElement
 }
 
-function openMenu(): void {
-  const trigger = screen.getByTestId('field-insert-title')
+function openMenu(fieldName = 'title'): void {
+  const trigger = screen.getByTestId(`field-insert-${fieldName}`)
   fireEvent.mouseDown(trigger)
   fireEvent.click(trigger)
 }
@@ -205,5 +207,35 @@ describe('FieldInsertMenu case transforms', () => {
     render(<Harness initial="My Weapon" />)
     openMenu()
     expect(screen.queryByTestId('field-insert-option-clean')).toBeNull()
+  })
+})
+
+describe('FieldInsertMenu strip numbering', () => {
+  // The reported case: a rip title with a separator-less leading number and no tagged
+  // track position. The in-field menu strips it (loose form), previewing the result so
+  // the one-click clean is informed — this is exactly what ⌘K leaves alone in bulk.
+  it('offers a strip-numbering row on the title that previews and applies the clean value', () => {
+    render(<Harness initial="01 Label Red (Apokaliptip Remix)" />)
+    openMenu()
+    const row = screen.getByTestId('field-insert-option-strip-numbering')
+    expect(row).toHaveTextContent('Label Red (Apokaliptip Remix)')
+    fireEvent.click(row)
+    expect(host().value).toBe('Label Red (Apokaliptip Remix)')
+  })
+
+  // A dead row is worse than no row: an un-numbered title must not offer a strip that
+  // changes nothing, mirroring how the case rows self-hide.
+  it('hides the strip-numbering row when the title carries no numbering', () => {
+    render(<Harness initial="Label Red" />)
+    openMenu()
+    expect(screen.queryByTestId('field-insert-option-strip-numbering')).toBeNull()
+  })
+
+  // Only titles wear rip numbering; offering the row on artist/album/genre would be
+  // noise, so the field name gates it even when the value happens to start with a number.
+  it('never offers the strip-numbering row on a non-title field', () => {
+    render(<Harness fieldName="artist" initial="01 DJ Pepito" />)
+    openMenu('artist')
+    expect(screen.queryByTestId('field-insert-option-strip-numbering')).toBeNull()
   })
 })
