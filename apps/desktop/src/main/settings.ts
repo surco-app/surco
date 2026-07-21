@@ -19,8 +19,9 @@ export const defaults: Settings = {
   // No format filter by default: search shows every Discogs release format.
   discogsFormats: [],
   discogsMaxResults: DEFAULT_DISCOGS_MAX_RESULTS,
-  // Search Discogs only by default; Bandcamp is opt-in (Settings → Search).
-  searchProviders: ['discogs'],
+  // Search Discogs and Bandcamp by default for the widest coverage (pressings plus
+  // self-released and Bandcamp-exclusive material); either can be turned off in Settings.
+  searchProviders: ['discogs', 'bandcamp'],
   // The classic rip stamps everyone's files carry; whole-word matching keeps "rip" from
   // biting into a real title word ("Tripping"), and the list is the user's to edit.
   searchIgnoreWords: ['vinyl', 'rip'],
@@ -67,7 +68,9 @@ export const defaults: Settings = {
   activityPanel: null,
   resultsWidth: null,
   showWaveform: true,
-  autoAnalyze: false,
+  // On by default so the audio-quality read (spotting fakes and transcodes) surfaces on
+  // import without the user having to discover it; it can be turned off in Settings.
+  autoAnalyze: true,
   autoMatch: false,
   continuousPlayback: false,
   keyNotation: 'camelot',
