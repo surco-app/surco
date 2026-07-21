@@ -1,5 +1,36 @@
 [
   {
+    "version": "0.67",
+    "date": "July 21, 2026",
+    "title": "Everything analyzed on import, and a more direct editor",
+    "items": [
+      {
+        "text": "When you import with automatic analysis on, Surco now precomputes all eight analyses for each track at once, not just the spectrum. Open a track and everything is ready: spectrogram, dynamics and the rest show instantly instead of being computed on the spot.",
+        "in": "0.67.0"
+      },
+      {
+        "text": "The editor remembers your normalization values across tracks and across sessions: set them once and they stick, no need to re-enter them for every track.",
+        "in": "0.67.0"
+      },
+      {
+        "text": "The metadata form is a single list again, in the order you choose, with no collapsible sections to open. You see and edit all your fields at a glance.",
+        "in": "0.67.0"
+      },
+      {
+        "text": "Settings are reorganized into a vertical sidebar with sections on the left, grouped by topic, so you find each option without hunting for it.",
+        "in": "0.67.0"
+      },
+      {
+        "text": "New action to strip leading numbering from the title in one click, for when the name carries a number you don't need.",
+        "in": "0.67.0"
+      },
+      {
+        "text": "In Stats, match origin now shows as a proportion bar, so you see at a glance where your results come from.",
+        "in": "0.67.0"
+      }
+    ]
+  },
+  {
     "version": "0.66",
     "date": "July 20, 2026",
     "title": "Metadata sorted into groups",

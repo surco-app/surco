@@ -1,5 +1,36 @@
 [
   {
+    "version": "0.67",
+    "date": "21 de julio de 2026",
+    "title": "Todo analizado al importar y un editor más directo",
+    "items": [
+      {
+        "text": "Al importar con el análisis automático activado, Surco precalcula de una vez los ocho análisis de cada pista, no solo el espectro. Cuando abres una pista todo está ya listo: espectrograma, dinámica y el resto se ven al instante en vez de esperar a que se calculen.",
+        "in": "0.67.0"
+      },
+      {
+        "text": "El editor recuerda tus valores de normalización entre pistas y entre sesiones: ajústalos una vez y se mantienen, sin volver a ponerlos en cada tema.",
+        "in": "0.67.0"
+      },
+      {
+        "text": "El formulario de metadatos vuelve a ser una sola lista, en el orden que tú eliges, sin secciones plegables que abrir. Ves y editas todos tus campos de un vistazo.",
+        "in": "0.67.0"
+      },
+      {
+        "text": "Los ajustes se reorganizan en una barra lateral con las secciones a la izquierda, agrupadas por temas, para que encuentres cada opción sin dar vueltas.",
+        "in": "0.67.0"
+      },
+      {
+        "text": "Nueva acción para quitar la numeración del principio del título con un clic, cuando el nombre trae un número que no necesitas.",
+        "in": "0.67.0"
+      },
+      {
+        "text": "En Stats, el origen de las coincidencias se muestra ahora como una barra de proporción, así ves de un vistazo de dónde salen tus resultados.",
+        "in": "0.67.0"
+      }
+    ]
+  },
+  {
     "version": "0.66",
     "date": "20 de julio de 2026",
     "title": "Metadatos ordenados por grupos",
