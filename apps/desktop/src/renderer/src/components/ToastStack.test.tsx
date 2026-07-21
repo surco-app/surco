@@ -24,20 +24,15 @@ describe('ToastStack', () => {
     expect(region).toBeEmptyDOMElement()
   })
 
-  // A centred modal owns the bottom-right corner with its Cancel/Save bar; a toast pinned
-  // there covers the primary action. While an overlay is open the stack moves to the
-  // bottom-left so the modal's actions stay reachable.
-  it('anchors the stack bottom-left while an overlay is open, bottom-right otherwise', () => {
-    const { container, rerender } = render(
-      <ToastStack toasts={[]} onExpire={vi.fn()} onClose={vi.fn()} />,
-    )
+  // The stack always sits in the same corner — bottom-right — so a toast never surprises
+  // the user by appearing somewhere else. It stays put even when a modal is open (its
+  // Cancel/Save bar can sit under a toast; a predictable position wins over dodging it).
+  it('always anchors the stack bottom-right', () => {
+    const { container } = render(<ToastStack toasts={[]} onExpire={vi.fn()} onClose={vi.fn()} />)
     const region = container.firstElementChild as HTMLElement
     expect(region.className).toContain('right-5')
+    expect(region.className).toContain('bottom-5')
     expect(region.className).not.toContain('left-5')
-
-    rerender(<ToastStack toasts={[]} overlayOpen onExpire={vi.fn()} onClose={vi.fn()} />)
-    expect(region.className).toContain('left-5')
-    expect(region.className).not.toContain('right-5')
   })
 
   it('stacks every queued toast so a notice and a prompt show at once', () => {

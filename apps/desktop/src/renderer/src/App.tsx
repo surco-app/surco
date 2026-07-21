@@ -1804,12 +1804,7 @@ export default function App(): React.JSX.Element {
             revealSelection={revealSelection}
           />
 
-          <ToastStack
-            toasts={toasts}
-            overlayOpen={overlayOpen}
-            onExpire={expireToast}
-            onClose={closeToast}
-          />
+          <ToastStack toasts={toasts} onExpire={expireToast} onClose={closeToast} />
           {activityOpen && (
             <ActivityPanel
               rows={activityRows}
