@@ -588,6 +588,11 @@
       "shortcuts": "Kürzel",
       "stats": "Statistiken"
     },
+    "tabGroups": {
+      "editing": "Bearbeitung",
+      "output": "Ausgabe",
+      "app": "App"
+    },
     "shortcuts": {
       "intro": "Klick auf ein Kürzel und drück dann die neuen Tasten. Esc bricht ab.",
       "recording": "Tasten drücken…",

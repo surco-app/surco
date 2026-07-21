@@ -588,6 +588,11 @@
       "shortcuts": "Atajos",
       "stats": "Estadísticas"
     },
+    "tabGroups": {
+      "editing": "Edición",
+      "output": "Salida",
+      "app": "App"
+    },
     "shortcuts": {
       "intro": "Pulsa un atajo y luego las teclas nuevas. Esc cancela.",
       "recording": "Pulsa las teclas…",

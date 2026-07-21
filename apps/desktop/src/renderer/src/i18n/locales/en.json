@@ -588,6 +588,11 @@
       "shortcuts": "Shortcuts",
       "stats": "Stats"
     },
+    "tabGroups": {
+      "editing": "Editing",
+      "output": "Output",
+      "app": "App"
+    },
     "shortcuts": {
       "intro": "Click a shortcut, then press the new keys. Esc cancels.",
       "recording": "Press keys…",

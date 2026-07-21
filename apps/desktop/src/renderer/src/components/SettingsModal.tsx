@@ -10,7 +10,12 @@ import {
   pickSynced,
   type SyncedDraft,
 } from '../lib/settingsDraft'
-import { SETTINGS_TAB_ICONS, SETTINGS_TABS, type SettingsTab } from '../lib/settingsTabs'
+import {
+  SETTINGS_TAB_GROUPS,
+  SETTINGS_TAB_ICONS,
+  SETTINGS_TABS,
+  type SettingsTab,
+} from '../lib/settingsTabs'
 import { useScrollAffordance } from '../hooks/useScrollAffordance'
 import { FieldsEditor } from './FieldsEditor'
 import { ModalShell } from './ModalShell'
@@ -153,36 +158,48 @@ export function SettingsModal({
         aria-label={tr('header.settings')}
         className="flex w-[188px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-panel-2)] p-3"
       >
-        {SETTINGS_TABS.map((id, idx) => {
-          const Icon = SETTINGS_TAB_ICONS[id]
-          return (
-            <button
-              key={id}
-              ref={(el) => {
-                tabRefs.current[id] = el
-              }}
-              type="button"
-              role="tab"
-              id={`settings-tab-${id}`}
-              data-testid={`settings-tab-${id}`}
-              aria-selected={tab === id}
-              aria-controls="settings-tabpanel"
-              tabIndex={tab === id ? 0 : -1}
-              onClick={() => setTab(id)}
-              onKeyDown={(e) => onTabKeyDown(e, idx)}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                tab === id
-                  ? // accent-soft (not field) so the selected tab reads against the panel-2
-                    // sidebar in light too, where field and panel-2 are nearly the same grey.
-                    'bg-[var(--color-accent-soft)] font-medium text-[var(--color-accent)]'
-                  : 'text-fg-muted hover:bg-[var(--color-panel)] hover:text-fg'
-              }`}
-            >
-              <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
-              {tr(`settings.tabs.${id}`)}
-            </button>
-          )
-        })}
+        {SETTINGS_TAB_GROUPS.map((group) => (
+          <div key={group.heading ?? 'main'} className="flex flex-col gap-0.5">
+            {group.heading && (
+              <p className="mt-3 mb-1 px-3 text-[10px] font-medium uppercase tracking-wider text-fg-faint">
+                {tr(`settings.tabGroups.${group.heading}`)}
+              </p>
+            )}
+            {group.tabs.map((id) => {
+              const Icon = SETTINGS_TAB_ICONS[id]
+              // The keyboard handler walks the flat SETTINGS_TABS order, so the button
+              // reports its index there, not its position within the group.
+              const idx = SETTINGS_TABS.indexOf(id)
+              return (
+                <button
+                  key={id}
+                  ref={(el) => {
+                    tabRefs.current[id] = el
+                  }}
+                  type="button"
+                  role="tab"
+                  id={`settings-tab-${id}`}
+                  data-testid={`settings-tab-${id}`}
+                  aria-selected={tab === id}
+                  aria-controls="settings-tabpanel"
+                  tabIndex={tab === id ? 0 : -1}
+                  onClick={() => setTab(id)}
+                  onKeyDown={(e) => onTabKeyDown(e, idx)}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                    tab === id
+                      ? // accent-soft (not field) so the selected tab reads against the panel-2
+                        // sidebar in light too, where field and panel-2 are nearly the same grey.
+                        'bg-[var(--color-accent-soft)] font-medium text-[var(--color-accent)]'
+                      : 'text-fg-muted hover:bg-[var(--color-panel)] hover:text-fg'
+                  }`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
+                  {tr(`settings.tabs.${id}`)}
+                </button>
+              )
+            })}
+          </div>
+        ))}
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col p-6">

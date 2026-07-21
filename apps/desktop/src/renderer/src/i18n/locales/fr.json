@@ -588,6 +588,11 @@
       "shortcuts": "Raccourcis",
       "stats": "Statistiques"
     },
+    "tabGroups": {
+      "editing": "Édition",
+      "output": "Sortie",
+      "app": "App"
+    },
     "shortcuts": {
       "intro": "Clique sur un raccourci, puis appuie sur les nouvelles touches. Échap annule.",
       "recording": "Appuie sur les touches…",

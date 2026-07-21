@@ -140,6 +140,17 @@ describe('SettingsModal tablist', () => {
     fireEvent.keyDown(screen.getByTestId('settings-tab-general'), { key: 'ArrowUp' })
     expect(screen.getByTestId('settings-tab-stats')).toHaveFocus()
   })
+
+  // The sidebar groups the tabs under headings, but the arrow keys still walk the whole
+  // list — a group boundary is a visual divider, not a stop. Down from the last tab of one
+  // group lands on the first of the next.
+  it('crosses group boundaries with the arrow keys', () => {
+    open()
+    const search = screen.getByTestId('settings-tab-search')
+    search.focus()
+    fireEvent.keyDown(search, { key: 'ArrowDown' })
+    expect(screen.getByTestId('settings-tab-editor')).toHaveFocus()
+  })
 })
 
 describe('SettingsModal save', () => {
