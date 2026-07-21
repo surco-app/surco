@@ -602,6 +602,7 @@
       "analyzed": "Morceaux analysés",
       "discogsMatches": "Trouvés sur Discogs",
       "bandcampMatches": "Trouvés sur Bandcamp",
+      "matchSources": "D'où viennent les correspondances",
       "timeSaved": "Tu as économisé environ {{time}}",
       "perTrack": "≈ {{minutes}} min de travail manuel par morceau",
       "empty": "Rien de converti pour l'instant. Dès que tu commences, tu verras ici combien de temps Surco te fait gagner.",

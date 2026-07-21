@@ -48,6 +48,26 @@ describe('StatsTab', () => {
     expect(screen.getByTestId('stats-bandcampMatches')).toHaveTextContent('17')
   })
 
+  // The two match tallies aren't independent trivia — together they answer "where did
+  // my metadata come from", so they read as one proportion. The split bar sizes each
+  // source to its share of the matches found, with the raw counts still legible.
+  it('splits the match sources by their share of the matches found', () => {
+    render(
+      <StatsTab
+        settings={withStats({
+          conversionCount: 40,
+          stats: { ...zeroStats, discogsMatches: 30, bandcampMatches: 10 },
+        })}
+      />,
+    )
+    const split = screen.getByTestId('stats-match-split')
+    // Discogs is 30 of 40 matches → its segment fills three-quarters of the bar.
+    const discogs = screen.getByTestId('stats-match-discogs')
+    expect(discogs).toHaveStyle({ width: '75%' })
+    expect(split).toHaveTextContent('30')
+    expect(split).toHaveTextContent('10')
+  })
+
   // The milestone bar gives the counter a goal — 385 of the way to 500 must read as
   // real progress toward a named target, the hook that keeps the tab worth reopening.
   it('shows progress toward the next conversion milestone', () => {

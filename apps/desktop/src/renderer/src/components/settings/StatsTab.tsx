@@ -17,15 +17,78 @@ interface Props {
   settings: Settings
 }
 
-// One cell per lifetime tally; the label comes from settings.stats.<key> so the
-// grid, the i18n files and the persisted Settings shape share the same key names.
-const CELLS: { key: keyof LifetimeStats; icon: typeof FolderDown }[] = [
+// The "what Surco did for me" tallies, one tile each; the label comes from
+// settings.stats.<key> so the grid, the i18n files and the persisted Settings shape share
+// the same key names. The two match counts live apart in the source split below, since
+// together they read as one proportion, not two more equal boxes.
+const ACTIVITY_CELLS: { key: keyof LifetimeStats; icon: typeof FolderDown }[] = [
   { key: 'imported', icon: FolderDown },
   { key: 'listened', icon: Headphones },
   { key: 'analyzed', icon: AudioLines },
+]
+
+// The whole activity tally set, still the one source of truth for "has anything happened"
+// and for the share card's cells.
+const CELLS: { key: keyof LifetimeStats; icon: typeof FolderDown }[] = [
+  ...ACTIVITY_CELLS,
   { key: 'discogsMatches', icon: Disc3 },
   { key: 'bandcampMatches', icon: Store },
 ]
+
+// Discogs vs Bandcamp as a share of all matches found — one bar, sized to each source's
+// slice, with the raw counts beside their swatches. When no match has landed yet the bar
+// stays flat and empty rather than dividing by zero.
+function MatchSplit({
+  discogs,
+  bandcamp,
+  heading,
+  discogsLabel,
+  bandcampLabel,
+}: {
+  discogs: number
+  bandcamp: number
+  heading: string
+  discogsLabel: string
+  bandcampLabel: string
+}): React.JSX.Element {
+  const total = discogs + bandcamp
+  const discogsPct = total > 0 ? (discogs / total) * 100 : 0
+  return (
+    <div
+      data-testid="stats-match-split"
+      className="rounded-xl border border-[var(--color-line)] bg-[var(--color-panel-2)] px-4 py-3 text-left"
+    >
+      <p className="text-xs font-medium text-fg-muted">{heading}</p>
+      <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-[var(--color-field)]">
+        <div
+          data-testid="stats-match-discogs"
+          className="h-full bg-[var(--color-accent)]"
+          style={{ width: `${discogsPct}%` }}
+        />
+        <div className="h-full flex-1 bg-[var(--color-fg-dim)]/40" />
+      </div>
+      <div className="mt-2 flex justify-between text-xs">
+        <span className="inline-flex items-center gap-1.5 text-fg-muted">
+          <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" aria-hidden="true" />
+          {discogsLabel}
+          <span data-testid="stats-discogsMatches" className="font-semibold tabular-nums text-fg">
+            {discogs}
+          </span>
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-fg-muted">
+          <span
+            className="h-2 w-2 rounded-full bg-[var(--color-fg-dim)]/40"
+            aria-hidden="true"
+          />
+          {bandcampLabel}
+          <span data-testid="stats-bandcampMatches" className="font-semibold tabular-nums text-fg">
+            {bandcamp}
+          </span>
+        </span>
+      </div>
+    </div>
+  )
+}
 
 export function StatsTab({ settings }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -103,20 +166,31 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
         </>
       )}
       {anyActivity ? (
-        <div className="mt-3 grid w-full max-w-xl grid-cols-5 gap-1.5">
-          {CELLS.map(({ key, icon: Icon }) => (
-            <div
-              key={key}
-              data-testid={`stats-${key}`}
-              className="rounded-lg border border-[var(--color-line)] px-1 py-1.5"
-            >
-              <Icon size={14} className="mx-auto text-fg-dim" aria-hidden="true" />
-              <p className="mt-1 text-lg font-semibold tabular-nums text-fg">{stats[key]}</p>
-              <p className="text-[10px] leading-tight text-fg-muted">
-                {tr(`settings.stats.${key}`)}
-              </p>
-            </div>
-          ))}
+        <div className="mt-4 flex w-full max-w-xl flex-col gap-3">
+          {/* The three "what Surco did" tallies read as equals; the number leads, the
+              label sits under it. */}
+          <div className="grid grid-cols-3 gap-2">
+            {ACTIVITY_CELLS.map(({ key, icon: Icon }) => (
+              <div
+                key={key}
+                data-testid={`stats-${key}`}
+                className="rounded-xl border border-[var(--color-line)] bg-[var(--color-panel-2)] px-3 py-3"
+              >
+                <Icon size={15} className="mx-auto text-fg-dim" aria-hidden="true" />
+                <p className="mt-1.5 text-2xl font-semibold tabular-nums text-fg">{stats[key]}</p>
+                <p className="mt-0.5 text-xs leading-tight text-fg-muted">
+                  {tr(`settings.stats.${key}`)}
+                </p>
+              </div>
+            ))}
+          </div>
+          <MatchSplit
+            discogs={stats.discogsMatches}
+            bandcamp={stats.bandcampMatches}
+            heading={tr('settings.stats.matchSources')}
+            discogsLabel={tr('settings.stats.discogsMatches')}
+            bandcampLabel={tr('settings.stats.bandcampMatches')}
+          />
         </div>
       ) : (
         <p data-testid="stats-empty" className="max-w-xs text-sm text-fg-muted">
