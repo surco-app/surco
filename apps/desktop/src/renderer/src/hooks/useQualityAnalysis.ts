@@ -158,6 +158,11 @@ export function useQualityAnalysis({ targetsRef, onErrors }: Params): QualityAna
 
   const cancelAnalysis = useCallback((): void => {
     analyzeCancel.current = true
+    // Drop imports queued but not yet swept and forget this run's measured ids, mirroring
+    // cancelAutoMatch clearing its queue — so a cancel leaves no stale entries for the next
+    // analyzeAllQuality call to resurrect.
+    pendingRef.current.clear()
+    measuredRef.current = new Set()
   }, [])
 
   return { analysis, analyzeAllQuality, cancelAnalysis }

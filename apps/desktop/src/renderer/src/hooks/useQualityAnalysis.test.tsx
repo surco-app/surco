@@ -202,4 +202,69 @@ describe('useQualityAnalysis', () => {
     const measured = spectrogram.mock.calls.map((c) => c[0]).sort()
     expect(measured).toEqual(['/music/a.wav', '/music/b.wav'])
   })
+
+  // cancelAnalysis must leave no trace of the run it stopped: an import queued via
+  // pendingRef (Task 3's explicit-candidates path) but not yet swept must not resurrect
+  // itself the next time analyzeAllQuality runs, the same way cancelAutoMatch clears its
+  // own queue on cancel.
+  it('drops a queued-but-unswept import when the sweep is cancelled', async () => {
+    let release: (v: SpectrumResult) => void = () => {}
+    const gate = new Promise<SpectrumResult>((r) => {
+      release = r
+    })
+    const spectrogram = vi.fn((path: string): Promise<SpectrumResult> => {
+      if (path === '/music/a.wav') return gate
+      return Promise.resolve(spectrum)
+    })
+    setApi({ spectrogram })
+    const targetsRef = { current: [track('a')] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), { wrapper: wrapper() })
+
+    act(() => result.current.analyzeAllQuality())
+    // An import lands mid-sweep, queued via pendingRef since targetsRef hasn't caught up yet.
+    act(() => result.current.analyzeAllQuality([track('z')]))
+    act(() => result.current.cancelAnalysis())
+    await act(async () => {
+      release(spectrum)
+      await gate
+    })
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+
+    spectrogram.mockClear()
+    targetsRef.current = []
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+
+    expect(spectrogram).not.toHaveBeenCalledWith('/music/z.wav')
+  })
+
+  // The Task-3 mechanism: an import's onMetaLoaded can call analyzeAllQuality with an
+  // explicit track before targetsRef's render has caught up with it. That track must
+  // survive the runningRef guard (via pendingRef) and be drained by the finally's relaunch
+  // once the in-flight sweep finishes, not be dropped on the floor.
+  it('drains a track handed to analyzeAllQuality explicitly while a sweep is running', async () => {
+    let release: (v: SpectrumResult) => void = () => {}
+    const gate = new Promise<SpectrumResult>((r) => {
+      release = r
+    })
+    const spectrogram = vi.fn((path: string): Promise<SpectrumResult> => {
+      if (path === '/music/a.wav') return gate
+      return Promise.resolve(spectrum)
+    })
+    setApi({ spectrogram })
+    const targetsRef = { current: [track('a')] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), { wrapper: wrapper() })
+
+    act(() => result.current.analyzeAllQuality())
+    // 'b' isn't in targetsRef yet — mirrors onMetaLoaded firing ahead of the render.
+    act(() => result.current.analyzeAllQuality([track('b')]))
+    await act(async () => {
+      release(spectrum)
+      await gate
+    })
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+
+    const measured = spectrogram.mock.calls.map((c) => c[0]).sort()
+    expect(measured).toEqual(['/music/a.wav', '/music/b.wav'])
+  })
 })

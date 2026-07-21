@@ -2249,13 +2249,18 @@ describe('App auto-analyze on import', () => {
   // user's back — that cost is exactly why the setting is opt-in.
   it('does not analyze imports while the setting is off', async () => {
     const spectrogram = vi.fn().mockResolvedValue(spectrum)
-    setApi({ spectrogram })
+    const loudness = vi.fn().mockResolvedValue(null)
+    setApi({ spectrogram, loudness })
     await renderApp()
     await addTwoTracks()
     // The auto-selected first row's editor measures itself (its own high-priority query);
     // the unselected second row is what the off setting must leave untouched.
     await waitFor(() => expect(spectrogram).toHaveBeenCalled())
     expect(spectrogram).not.toHaveBeenCalledWith('/music/b.wav', expect.anything())
+    // loudness is only probed by the sweep (the Quality section gates its own loudness
+    // probe on being open, which the editor isn't by default) — never called confirms no
+    // sweep ran at all, not just that it skipped the unselected row.
+    expect(loudness).not.toHaveBeenCalled()
   })
 })
 
