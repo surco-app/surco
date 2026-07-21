@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.68",
+    "date": "21 de julio de 2026",
+    "title": "Copia de seguridad de tu configuración y mejores ajustes de fábrica",
+    "items": [
+      {
+        "text": "Ya puedes exportar toda tu configuración a un fichero y volver a importarla cuando quieras: tu copia de seguridad completa, con todo incluido, lista para restaurar en cualquier momento o llevártela a otro equipo.",
+        "in": "0.68.0"
+      },
+      {
+        "text": "Tu token de Discogs viaja ahora con la carpeta de configuración compartida, así que si sincronizas tus ajustes entre varios Mac (por iCloud o Dropbox) el acceso a Discogs se mantiene en todos sin volver a configurarlo.",
+        "in": "0.68.0"
+      },
+      {
+        "text": "En instalaciones nuevas Surco analiza la calidad del audio nada más importar y busca en Discogs y Bandcamp a la vez, para que detectes recomprimidos y encuentres tus lanzamientos desde el primer momento, sin tocar ningún ajuste.",
+        "in": "0.68.0"
+      }
+    ]
+  },
+  {
     "version": "0.67",
     "date": "21 de julio de 2026",
     "title": "Todo analizado al importar y un editor más directo",

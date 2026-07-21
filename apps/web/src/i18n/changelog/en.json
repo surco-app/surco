@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.68",
+    "date": "July 21, 2026",
+    "title": "Back up your settings, and smarter defaults",
+    "items": [
+      {
+        "text": "You can now export your whole configuration to a file and import it back whenever you want: a complete backup with everything included, ready to restore any time or carry over to another machine.",
+        "in": "0.68.0"
+      },
+      {
+        "text": "Your Discogs token now travels with the shared settings folder, so if you sync your preferences across several Macs (via iCloud or Dropbox) your Discogs access follows to all of them without setting it up again.",
+        "in": "0.68.0"
+      },
+      {
+        "text": "Fresh installs now analyze audio quality the moment you import and search Discogs and Bandcamp together, so you catch transcodes and find your releases from the very first track, without touching a single setting.",
+        "in": "0.68.0"
+      }
+    ]
+  },
+  {
     "version": "0.67",
     "date": "July 21, 2026",
     "title": "Everything analyzed on import, and a more direct editor",
