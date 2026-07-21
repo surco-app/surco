@@ -27,6 +27,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app } from 'electron'
 import {
+  defaults,
   getConfigDir,
   getSettings,
   recordConversion,
@@ -39,6 +40,22 @@ import {
 import type { Settings } from '../shared/types'
 
 afterAll(() => rmSync(app.getPath('userData'), { recursive: true, force: true }))
+
+describe('defaults for a fresh install', () => {
+  // Quality analysis (spotting fakes and transcodes) is Surco's signature read, but a
+  // new user won't find the toggle. Analyzing on import surfaces it the first time a
+  // track lands, instead of hiding the app's best feature behind an off switch.
+  it('analyzes audio quality on import out of the box', () => {
+    expect(defaults.autoAnalyze).toBe(true)
+  })
+
+  // A fresh install searches both sources so a DJ reaches pressings (Discogs) and
+  // self-released / Bandcamp-exclusive material in one query, without first knowing
+  // Bandcamp exists as an opt-in under Settings.
+  it('searches both Discogs and Bandcamp by default', () => {
+    expect(defaults.searchProviders).toEqual(['discogs', 'bandcamp'])
+  })
+})
 
 describe('recordConversion', () => {
   // The Stats tab is only as honest as this counter: each completed conversion
