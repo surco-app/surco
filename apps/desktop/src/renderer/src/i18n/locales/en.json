@@ -969,12 +969,5 @@
     "autoMatchNoneDetail": "No candidate reached the minimum confidence.\nCandidates probed:\n{{candidates}}",
     "autoMatchNoCandidates": "The search returned no candidates to probe.",
     "probeClicks": "Counting clicks"
-  },
-  "fieldGroups": {
-    "identity": "Identity",
-    "catalog": "Catalog",
-    "dj": "DJ",
-    "order": "Order",
-    "other": "Other"
   }
 }
