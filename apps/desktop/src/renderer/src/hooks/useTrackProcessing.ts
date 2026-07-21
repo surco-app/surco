@@ -17,6 +17,7 @@ import { DEFAULT_REQUIRED_FIELDS, missingRequired } from '../lib/fields'
 import { sanitizeMeta } from '../lib/hygiene'
 import { cleanIpcError } from '../lib/ipcError'
 import { renderOutputName } from '../lib/outputName'
+import { declickForJob, normalizeForJob } from '../lib/reapply'
 import type { TrackItem } from '../types'
 import { useStableCallback } from './useStableCallback'
 
@@ -196,8 +197,8 @@ export function useTrackProcessing({
           clearExtras: track.metaCleared,
           foreignRemoved: track.foreignRemoved,
           format: formatOverride,
-          normalize: normalizeOverride,
-          declick: declickOverride,
+          normalize: normalizeForJob(track, normalizeOverride),
+          declick: declickForJob(track, declickOverride),
           trim: track.trim,
           overwriteOriginal: overwriteOverride ?? destination?.overwriteOriginal,
           addToAppleMusic: destination?.addToAppleMusic,
