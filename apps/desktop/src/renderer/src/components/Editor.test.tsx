@@ -1102,10 +1102,6 @@ describe('Editor multi-select', () => {
     const { onChangeAllMeta } = renderMulti({
       visibleFields: ['title', 'album', 'composer', 'originalYear', 'compilation'],
     })
-    // Catalog/DJ/Order groups start collapsed — open them to reach their fields.
-    fireEvent.click(screen.getByTestId('field-group-catalog'))
-    fireEvent.click(screen.getByTestId('field-group-dj'))
-    fireEvent.click(screen.getByTestId('field-group-order'))
     expect(screen.getByTestId('field-composer')).toBeInTheDocument()
     expect(screen.getByTestId('field-originalYear')).toBeInTheDocument()
     const box = screen.getByTestId('field-compilation')
@@ -2726,8 +2722,6 @@ describe('Editor insert from field', () => {
     renderEditor({ id: 't1', meta: { title: 'Pepito de los palotes', year: '2025' } }, 'wav', {
       visibleFields: ['title', 'publisher', 'year'],
     })
-    // publisher sits in the Catalog group, which starts collapsed — open it first.
-    fireEvent.click(screen.getByTestId('field-group-catalog'))
     expect(screen.getByTestId('field-insert-title')).toBeInTheDocument()
     expect(screen.getByTestId('field-insert-publisher')).toBeInTheDocument()
     expect(screen.queryByTestId('field-insert-year')).toBeNull()
