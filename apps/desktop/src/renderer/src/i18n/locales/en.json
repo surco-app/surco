@@ -577,10 +577,12 @@
     "tabs": {
       "general": "General",
       "search": "Search",
-      "conversion": "Conversion",
+      "conversion": "Format",
+      "processing": "Processing",
       "destination": "Output",
       "naming": "Naming",
       "editor": "Editor",
+      "layout": "Sections",
       "artwork": "Artwork",
       "fields": "Fields",
       "shortcuts": "Shortcuts",

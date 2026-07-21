@@ -19,7 +19,9 @@ import { ConversionTab } from './settings/ConversionTab'
 import { DestinationTab } from './settings/DestinationTab'
 import { EditorTab } from './settings/EditorTab'
 import { GeneralTab } from './settings/GeneralTab'
+import { LayoutTab } from './settings/LayoutTab'
 import { NamingTab } from './settings/NamingTab'
+import { ProcessingTab } from './settings/ProcessingTab'
 import { SearchTab } from './settings/SearchTab'
 import { ShortcutsTab } from './settings/ShortcutsTab'
 import { StatsTab } from './settings/StatsTab'
@@ -207,6 +209,7 @@ export function SettingsModal({
           <SearchTab synced={synced} local={local} patch={patch} patchLocal={patchLocal} />
         )}
         {tab === 'conversion' && <ConversionTab synced={synced} patch={patch} />}
+        {tab === 'processing' && <ProcessingTab synced={synced} patch={patch} />}
         {tab === 'destination' && (
           <DestinationTab
             synced={synced}
@@ -218,6 +221,7 @@ export function SettingsModal({
         )}
         {tab === 'naming' && <NamingTab synced={synced} patch={patch} />}
         {tab === 'editor' && <EditorTab synced={synced} patch={patch} />}
+        {tab === 'layout' && <LayoutTab synced={synced} patch={patch} />}
         {tab === 'artwork' && <ArtworkTab synced={synced} patch={patch} />}
         {tab === 'fields' && (
           <FieldsEditor

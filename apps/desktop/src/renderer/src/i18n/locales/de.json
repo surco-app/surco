@@ -577,10 +577,12 @@
     "tabs": {
       "general": "Allgemein",
       "search": "Suche",
-      "conversion": "Konvertierung",
+      "conversion": "Format",
+      "processing": "Verarbeitung",
       "destination": "Ausgabe",
       "naming": "Benennung",
       "editor": "Editor",
+      "layout": "Abschnitte",
       "artwork": "Cover",
       "fields": "Felder",
       "shortcuts": "Kürzel",

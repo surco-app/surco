@@ -61,14 +61,6 @@ function renderTab(over: Partial<SyncedDraft> = {}) {
   return patch
 }
 
-describe('ConversionTab click repair', () => {
-  it('stages the repair mode through the draft patch, whatever the format', () => {
-    const patch = renderTab()
-    fireEvent.click(screen.getByTestId('declick-mode-standard'))
-    expect(patch).toHaveBeenCalledWith('declick', 'standard')
-  })
-})
-
 describe('ConversionTab MP3 quality', () => {
   // The encoder choice only means something while MP3 is the pick; surfacing it under
   // AIFF would read as a knob that does nothing.

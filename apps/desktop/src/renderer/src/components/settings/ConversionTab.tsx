@@ -3,10 +3,8 @@ import { useTranslation } from 'react-i18next'
 import type { OutputFormat } from '../../../../shared/types'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
-import { DeclickControls } from '../DeclickControls'
-import { NormalizeControls } from '../NormalizeControls'
 import { SegmentedControl } from '../SegmentedControl'
-import { SettingsField, SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
+import { SettingsField, SettingsSection } from './SettingsPrimitives'
 
 const FORMATS: OutputFormat[] = ['aiff', 'alac', 'mp3', 'wav', 'flac']
 
@@ -87,20 +85,6 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
             </SettingsField>
           )}
         </div>
-      </SettingsSection>
-
-      {/* Above normalization, matching the order the conversion applies them in:
-          repair the clicks first, then size the loudness/peak gain on the result. */}
-      <SettingsSection>
-        <SettingsLabel>{tr('declick.title')}</SettingsLabel>
-        <SettingsHint className="mt-2 mb-3">{tr('declick.hint')}</SettingsHint>
-        <DeclickControls value={synced.declick} onChange={(d) => patch('declick', d)} />
-      </SettingsSection>
-
-      <SettingsSection>
-        <SettingsLabel>{tr('normalize.title')}</SettingsLabel>
-        <SettingsHint className="mt-2 mb-3">{tr('normalize.hint')}</SettingsHint>
-        <NormalizeControls value={synced.normalize} onChange={(n) => patch('normalize', n)} />
       </SettingsSection>
     </>
   )

@@ -577,10 +577,12 @@
     "tabs": {
       "general": "General",
       "search": "Búsqueda",
-      "conversion": "Conversión",
+      "conversion": "Formato",
+      "processing": "Procesado",
       "destination": "Destino",
       "naming": "Nombres",
       "editor": "Editor",
+      "layout": "Secciones",
       "artwork": "Carátula",
       "fields": "Campos",
       "shortcuts": "Atajos",

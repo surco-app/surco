@@ -577,10 +577,12 @@
     "tabs": {
       "general": "Général",
       "search": "Recherche",
-      "conversion": "Conversion",
+      "conversion": "Format",
+      "processing": "Traitement",
       "destination": "Sortie",
       "naming": "Noms",
       "editor": "Éditeur",
+      "layout": "Sections",
       "artwork": "Pochette",
       "fields": "Champs",
       "shortcuts": "Raccourcis",

@@ -1,8 +1,10 @@
 import {
+  AudioWaveform,
   ChartColumn,
   FolderOutput,
   Image,
   Keyboard,
+  LayoutList,
   List,
   type LucideIcon,
   RefreshCw,
@@ -20,25 +22,29 @@ export type SettingsTab =
   | 'general'
   | 'search'
   | 'conversion'
+  | 'processing'
   | 'destination'
   | 'naming'
   | 'editor'
+  | 'layout'
   | 'fields'
   | 'artwork'
   | 'shortcuts'
   | 'stats'
 
 // Ordered by workflow: app setup, where metadata comes from, how you edit it
-// (editor prefs, its fields, the artwork), then producing the file (what → its
-// name → where it lands), then utilities. Stats trails last as the one
-// read-only, informational tab.
+// (editor prefs → its section layout → its fields → the artwork), then producing the file
+// (format → its audio processing → its name → where it lands), then utilities. Stats
+// trails last as the one read-only, informational tab.
 export const SETTINGS_TABS: SettingsTab[] = [
   'general',
   'search',
   'editor',
+  'layout',
   'fields',
   'artwork',
   'conversion',
+  'processing',
   'naming',
   'destination',
   'shortcuts',
@@ -49,9 +55,11 @@ export const SETTINGS_TAB_ICONS: Record<SettingsTab, LucideIcon> = {
   general: SlidersHorizontal,
   search: Search,
   conversion: RefreshCw,
+  processing: AudioWaveform,
   destination: FolderOutput,
   naming: Tag,
   editor: SquarePen,
+  layout: LayoutList,
   fields: List,
   artwork: Image,
   shortcuts: Keyboard,
