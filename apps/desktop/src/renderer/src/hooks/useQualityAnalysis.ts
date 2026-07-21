@@ -113,16 +113,34 @@ export function useQualityAnalysis({ targetsRef, onErrors }: Params): QualityAna
         // collection-wide instead of only for tracks the user opened or played.
         await queryClient.fetchQuery(waveformOptions(t.inputPath))
         await queryClient.fetchQuery(waveformScanOptions(t.inputPath))
+        // Each probe returns a different result type, so the fetchQuery calls are wrapped
+        // as thunks: kept in one array they'd unify to a union of option shapes fetchQuery
+        // can't accept, whereas each thunk keeps its own probe type monomorphic at its call.
         const rest = [
-          analysisOptions('loudness', t.inputPath, () => window.api.loudness(t.inputPath, 'low')),
-          analysisOptions('clicks', t.inputPath, () => window.api.clicks(t.inputPath, 'low')),
-          analysisOptions('bpm', t.inputPath, () => window.api.bpm(t.inputPath, 'low')),
-          analysisOptions('key', t.inputPath, () => window.api.key(t.inputPath, 'low')),
-          analysisOptions('properties', t.inputPath, () => window.api.properties(t.inputPath)),
+          () =>
+            queryClient.fetchQuery(
+              analysisOptions('loudness', t.inputPath, () => window.api.loudness(t.inputPath, 'low')),
+            ),
+          () =>
+            queryClient.fetchQuery(
+              analysisOptions('clicks', t.inputPath, () => window.api.clicks(t.inputPath, 'low')),
+            ),
+          () =>
+            queryClient.fetchQuery(
+              analysisOptions('bpm', t.inputPath, () => window.api.bpm(t.inputPath, 'low')),
+            ),
+          () =>
+            queryClient.fetchQuery(
+              analysisOptions('key', t.inputPath, () => window.api.key(t.inputPath, 'low')),
+            ),
+          () =>
+            queryClient.fetchQuery(
+              analysisOptions('properties', t.inputPath, () => window.api.properties(t.inputPath)),
+            ),
         ]
-        for (const opts of rest) {
+        for (const run of rest) {
           try {
-            await queryClient.fetchQuery(opts)
+            await run()
           } catch {
             // One analysis failing (e.g. bpm on a beatless rip) must not skip the others
             // of the same track — each fills its own cache entry independently.

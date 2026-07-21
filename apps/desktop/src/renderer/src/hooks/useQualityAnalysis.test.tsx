@@ -179,7 +179,7 @@ describe('useQualityAnalysis', () => {
       release = r
     })
     let first = true
-    const spectrogram = vi.fn((): Promise<SpectrumResult> => {
+    const spectrogram = vi.fn((_path: string): Promise<SpectrumResult> => {
       if (first) {
         first = false
         return gate
