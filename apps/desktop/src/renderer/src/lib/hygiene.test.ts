@@ -178,6 +178,12 @@ describe('stripTitleNumberingLoose', () => {
     expect(stripTitleNumberingLoose('A1 Deep Cut')).toBe('Deep Cut')
     expect(stripTitleNumberingLoose('(1) Last One')).toBe('Last One')
     expect(stripTitleNumberingLoose('1) Last One')).toBe('Last One')
+    // Parenthesized position, zero-padded inside the parens ("(02) Heads Label Red"):
+    // the closing paren is the separator, so it strips whatever the number's width.
+    expect(stripTitleNumberingLoose('(02) Heads Label Red (Apokaliptip Remix)')).toBe(
+      'Heads Label Red (Apokaliptip Remix)',
+    )
+    expect(stripTitleNumberingLoose('(2) Heads')).toBe('Heads')
   })
 
   it('never empties a title that is only a number', () => {

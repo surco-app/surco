@@ -252,6 +252,17 @@ describe('FieldInsertMenu strip numbering', () => {
     expect(screen.queryByTestId('field-insert-option-strip-numbering')).toBeNull()
   })
 
+  // A parenthesized position with a zero inside ("(02) Heads Label Red"): the closing
+  // paren makes it unambiguous numbering, so the row appears and previews the clean value.
+  it('offers the row for a parenthesized zero-padded position', () => {
+    render(<Harness initial="(02) Heads Label Red (Apokaliptip Remix)" />)
+    openMenu()
+    const row = screen.getByTestId('field-insert-option-strip-numbering')
+    expect(row).toHaveTextContent('Heads Label Red (Apokaliptip Remix)')
+    fireEvent.click(row)
+    expect(host().value).toBe('Heads Label Red (Apokaliptip Remix)')
+  })
+
   // Only titles wear rip numbering; offering the row on artist/album/genre would be
   // noise, so the field name gates it even when the value happens to start with a number.
   it('never offers the strip-numbering row on a non-title field', () => {
