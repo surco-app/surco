@@ -119,22 +119,25 @@ describe('SettingsModal tablist', () => {
     )
   }
 
-  // The tabs are an ARIA tablist, so a keyboard user moves between them with the
-  // arrow keys (and Home/End) the way every native macOS segmented control behaves —
-  // not by Tabbing through eight separate buttons.
-  it('moves between tabs with the arrow and Home/End keys', () => {
+  // The tabs are a vertical ARIA tablist down the side, so Up/Down move between them
+  // (Home/End jump to the ends) the way a native macOS Settings sidebar behaves — not by
+  // Tabbing through ten separate buttons.
+  it('moves between tabs with the up/down and Home/End keys, wrapping around', () => {
     open()
+    const list = screen.getByRole('tablist')
+    expect(list).toHaveAttribute('aria-orientation', 'vertical')
     const general = screen.getByTestId('settings-tab-general')
     expect(general).toHaveAttribute('role', 'tab')
     expect(general).toHaveAttribute('aria-selected', 'true')
     general.focus()
-    fireEvent.keyDown(general, { key: 'ArrowRight' })
+    fireEvent.keyDown(general, { key: 'ArrowDown' })
     const search = screen.getByTestId('settings-tab-search')
     expect(search).toHaveAttribute('aria-selected', 'true')
     expect(search).toHaveFocus()
     fireEvent.keyDown(search, { key: 'Home' })
     expect(screen.getByTestId('settings-tab-general')).toHaveFocus()
-    fireEvent.keyDown(screen.getByTestId('settings-tab-general'), { key: 'ArrowLeft' })
+    // Up from the first tab wraps to the last.
+    fireEvent.keyDown(screen.getByTestId('settings-tab-general'), { key: 'ArrowUp' })
     expect(screen.getByTestId('settings-tab-stats')).toHaveFocus()
   })
 })
