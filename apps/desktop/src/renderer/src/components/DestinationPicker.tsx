@@ -36,7 +36,7 @@ export function DestinationPicker({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   return (
-    <div role="radiogroup" aria-label={tr('settings.destination')} className="flex flex-col gap-2">
+    <div role="radiogroup" aria-label={tr('settings.destination')} className="flex flex-col gap-4">
       {destinations.map((d) => {
         const disabled = flacOnly && d === 'appleMusic'
         return (
@@ -58,22 +58,22 @@ export function DestinationPicker({
               <span className="text-sm">
                 {tr(`settings.destinations.${d}`)}
                 {d === 'appleMusic' && (
-                  <span className="block text-xs text-fg-dim">
+                  <span className="mt-0.5 block text-xs leading-relaxed text-fg-dim">
                     {tr('settings.destinationAppleMusicHint')}
                   </span>
                 )}
                 {d === 'engineDj' && (
-                  <span className="block text-xs text-fg-dim">
+                  <span className="mt-0.5 block text-xs leading-relaxed text-fg-dim">
                     {tr('settings.destinationEngineDjHint')}
                   </span>
                 )}
                 {d === 'beside' && (
-                  <span className="block text-xs text-fg-dim">
+                  <span className="mt-0.5 block text-xs leading-relaxed text-fg-dim">
                     {tr('settings.destinationBesideHint')}
                   </span>
                 )}
                 {d === 'overwrite' && (
-                  <span className="block text-xs text-fg-dim">
+                  <span className="mt-0.5 block text-xs leading-relaxed text-fg-dim">
                     {tr('settings.destinationOverwriteHint')}
                   </span>
                 )}

@@ -7,7 +7,14 @@ import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { SegmentedControl } from '../SegmentedControl'
 import { Tooltip } from '../Tooltip'
-import { SettingsHint, SettingsLabel } from './SettingsPrimitives'
+import {
+  SettingsCheckboxField,
+  SettingsField,
+  SettingsGroup,
+  SettingsHint,
+  SettingsLabel,
+  SettingsSection,
+} from './SettingsPrimitives'
 
 interface Props {
   synced: SyncedDraft
@@ -45,91 +52,80 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
   }
   return (
     <>
-      <SettingsLabel htmlFor="settings-grouping" className="mb-1.5">
-        {tr('settings.grouping')}
-      </SettingsLabel>
-      <input
-        id="settings-grouping"
-        data-testid="settings-grouping"
-        value={synced.grouping}
-        onChange={(e) => patch('grouping', e.target.value)}
-        placeholder={tr('settings.groupingPlaceholder')}
-        className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
-      />
-      <SettingsHint className="mt-1.5 mb-5">{tr('settings.groupingHint')}</SettingsHint>
+      <SettingsSection first>
+        <div className="flex flex-col gap-5">
+          <SettingsField
+            label={tr('settings.grouping')}
+            htmlFor="settings-grouping"
+            hint={tr('settings.groupingHint')}
+          >
+            <input
+              id="settings-grouping"
+              data-testid="settings-grouping"
+              value={synced.grouping}
+              onChange={(e) => patch('grouping', e.target.value)}
+              placeholder={tr('settings.groupingPlaceholder')}
+              className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+            />
+          </SettingsField>
+          <SettingsField
+            label={tr('settings.genre')}
+            htmlFor="settings-genre"
+            hint={tr('settings.genreHint')}
+          >
+            <input
+              id="settings-genre"
+              data-testid="settings-genre"
+              value={synced.genre}
+              onChange={(e) => patch('genre', e.target.value)}
+              placeholder={tr('settings.genrePlaceholder')}
+              className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+            />
+          </SettingsField>
+        </div>
+      </SettingsSection>
 
-      <SettingsLabel htmlFor="settings-genre" className="mb-1.5">
-        {tr('settings.genre')}
-      </SettingsLabel>
-      <input
-        id="settings-genre"
-        data-testid="settings-genre"
-        value={synced.genre}
-        onChange={(e) => patch('genre', e.target.value)}
-        placeholder={tr('settings.genrePlaceholder')}
-        className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
-      />
-      <SettingsHint className="mt-1.5 mb-5">{tr('settings.genreHint')}</SettingsHint>
-
-      <div className="space-y-3 border-t border-[var(--color-line)] pt-5">
-        <div>
-          <label className="flex cursor-pointer items-center gap-3">
-            <input
-              data-testid="settings-show-spectrum"
-              type="checkbox"
-              checked={synced.showSpectrum}
-              onChange={(e) => patch('showSpectrum', e.target.checked)}
-              className="h-4 w-4 accent-[var(--color-accent)]"
-            />
-            <span className="text-sm">{tr('settings.showSpectrum')}</span>
-          </label>
-          <SettingsHint className="mt-1.5">{tr('settings.showSpectrumHint')}</SettingsHint>
-        </div>
-        {/* Only meaningful while the quality analysis above is on — disabled (not hidden)
-            when it isn't, so the option stays discoverable. */}
-        <div className={synced.showSpectrum ? '' : 'opacity-50'}>
-          <label className="flex cursor-pointer items-center gap-3">
-            <input
-              data-testid="settings-auto-analyze"
-              type="checkbox"
-              checked={synced.autoAnalyze}
-              disabled={!synced.showSpectrum}
-              onChange={(e) => patch('autoAnalyze', e.target.checked)}
-              className="h-4 w-4 accent-[var(--color-accent)]"
-            />
-            <span className="text-sm">{tr('settings.autoAnalyze')}</span>
-          </label>
-          <SettingsHint className="mt-1.5">{tr('settings.autoAnalyzeHint')}</SettingsHint>
-        </div>
-        <div>
-          <label className="flex cursor-pointer items-center gap-3">
-            <input
-              data-testid="settings-show-loudness"
-              type="checkbox"
-              checked={synced.showLoudness}
-              onChange={(e) => patch('showLoudness', e.target.checked)}
-              className="h-4 w-4 accent-[var(--color-accent)]"
-            />
-            <span className="text-sm">{tr('settings.showLoudness')}</span>
-          </label>
-          <SettingsHint className="mt-1.5">{tr('settings.showLoudnessHint')}</SettingsHint>
-        </div>
-        <div>
-          <SettingsLabel className="mb-1.5">{tr('settings.keyNotation')}</SettingsLabel>
-          <SegmentedControl
-            options={['camelot', 'musical'] as const}
-            value={synced.keyNotation}
-            onChange={(id) => patch('keyNotation', id)}
-            testidPrefix="settings-key-notation"
-            labelFor={(id) => tr(`settings.keyNotations.${id}`)}
+      <SettingsSection>
+        <SettingsGroup>
+          <SettingsCheckboxField
+            testid="settings-show-spectrum"
+            checked={synced.showSpectrum}
+            onChange={(v) => patch('showSpectrum', v)}
+            label={tr('settings.showSpectrum')}
+            hint={tr('settings.showSpectrumHint')}
           />
-          <SettingsHint className="mt-1.5">{tr('settings.keyNotationHint')}</SettingsHint>
-        </div>
-      </div>
+          {/* Only meaningful while the quality analysis above is on — disabled (not hidden)
+              when it isn't, so the option stays discoverable. */}
+          <SettingsCheckboxField
+            testid="settings-auto-analyze"
+            checked={synced.autoAnalyze}
+            onChange={(v) => patch('autoAnalyze', v)}
+            disabled={!synced.showSpectrum}
+            label={tr('settings.autoAnalyze')}
+            hint={tr('settings.autoAnalyzeHint')}
+          />
+          <SettingsCheckboxField
+            testid="settings-show-loudness"
+            checked={synced.showLoudness}
+            onChange={(v) => patch('showLoudness', v)}
+            label={tr('settings.showLoudness')}
+            hint={tr('settings.showLoudnessHint')}
+          />
+          <SettingsField label={tr('settings.keyNotation')} hint={tr('settings.keyNotationHint')}>
+            <SegmentedControl
+              options={['camelot', 'musical'] as const}
+              value={synced.keyNotation}
+              onChange={(id) => patch('keyNotation', id)}
+              testidPrefix="settings-key-notation"
+              labelFor={(id) => tr(`settings.keyNotations.${id}`)}
+            />
+          </SettingsField>
+        </SettingsGroup>
+      </SettingsSection>
 
-      <div className="mt-5 border-t border-[var(--color-line)] pt-5">
+      <SettingsSection>
         <SettingsLabel>{tr('settings.sections.title')}</SettingsLabel>
-        <SettingsHint className="mt-1.5 mb-3">{tr('settings.sections.hint')}</SettingsHint>
+        <SettingsHint className="mt-2 mb-3">{tr('settings.sections.hint')}</SettingsHint>
         <div className="space-y-1.5">
           {sections.map((section, i) => {
             const movable = section.id !== 'form'
@@ -257,7 +253,7 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
             )
           })}
         </div>
-      </div>
+      </SettingsSection>
     </>
   )
 }

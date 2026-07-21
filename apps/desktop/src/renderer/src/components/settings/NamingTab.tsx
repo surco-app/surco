@@ -1,5 +1,4 @@
 import type React from 'react'
-import { CheckboxRow } from './CheckboxRow'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrackMetadata } from '../../../../shared/types'
@@ -8,6 +7,12 @@ import { renderOutputName, renderTitle } from '../../lib/outputName'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { FieldInsertMenu } from '../FieldInsertMenu'
+import {
+  SettingsCheckboxField,
+  SettingsGroup,
+  SettingsLabel,
+  SettingsSection,
+} from './SettingsPrimitives'
 
 // A representative track so the filename preview shows real-looking output
 // instead of empty braces, and every token has something to render. All values
@@ -84,9 +89,9 @@ function FormatField({
 
   return (
     <>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-fg-muted">
+      <SettingsLabel htmlFor={id} className="mb-2">
         {label}
-      </label>
+      </SettingsLabel>
       <span className="group relative block">
         <input
           ref={inputRef}
@@ -128,29 +133,31 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
 
   return (
     <>
-      <FormatField
-        id="settings-title-format"
-        label={tr('settings.titleFormat')}
-        value={synced.titleFormat}
-        placeholder="({trackNumber}) {title} ({year})"
-        hint={<p className="mt-2 text-xs text-fg-dim">{tr('settings.titleFormatHint')}</p>}
-        preview={
-          synced.titleFormat.trim() !== ''
-            ? renderTitle(synced.titleFormat, SAMPLE_META) || '—'
-            : undefined
-        }
-        previewTestId="settings-title-format-preview"
-        onChange={(v) => patch('titleFormat', v)}
-      />
+      <SettingsSection first>
+        <FormatField
+          id="settings-title-format"
+          label={tr('settings.titleFormat')}
+          value={synced.titleFormat}
+          placeholder="({trackNumber}) {title} ({year})"
+          hint={<p className="mt-2 text-xs leading-relaxed text-fg-dim">{tr('settings.titleFormatHint')}</p>}
+          preview={
+            synced.titleFormat.trim() !== ''
+              ? renderTitle(synced.titleFormat, SAMPLE_META) || '—'
+              : undefined
+          }
+          previewTestId="settings-title-format-preview"
+          onChange={(v) => patch('titleFormat', v)}
+        />
+      </SettingsSection>
 
-      <div className="mt-5 border-t border-[var(--color-line)] pt-5">
+      <SettingsSection>
         <FormatField
           id="settings-filename-format"
           label={tr('settings.filenameFormat')}
           value={synced.filenameFormat}
           placeholder="{artist} - {title}"
           hint={
-            <p className="mt-2 text-xs text-fg-dim">
+            <p className="mt-2 text-xs leading-relaxed text-fg-dim">
               {tr('settings.filenameFolderHint')}{' '}
               <span className="font-mono text-fg-muted">
                 {'{discogsReleaseId}/{artist} - {title}'}
@@ -161,38 +168,31 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
           previewTestId="settings-format-preview"
           onChange={(v) => patch('filenameFormat', v)}
         />
-      </div>
+      </SettingsSection>
 
-      <div className="mt-5 space-y-3 border-t border-[var(--color-line)] pt-5">
-        <label className="flex cursor-pointer items-start gap-3">
-          <input
-            data-testid="settings-auto-apply-filename"
-            type="checkbox"
+      <SettingsSection>
+        <SettingsGroup>
+          <SettingsCheckboxField
+            testid="settings-auto-apply-filename"
             checked={synced.autoApplyFilename}
-            onChange={(e) => patch('autoApplyFilename', e.target.checked)}
-            className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+            onChange={(v) => patch('autoApplyFilename', v)}
+            label={tr('settings.autoApplyFilename')}
+            hint={tr('settings.autoApplyFilenameHint')}
           />
-          <span className="text-sm">
-            {tr('settings.autoApplyFilename')}
-            <span className="mt-0.5 block text-xs text-fg-dim">
-              {tr('settings.autoApplyFilenameHint')}
-            </span>
-          </span>
-        </label>
-        <CheckboxRow
-        testid="settings-trim"
-        checked={synced.trimWhitespace}
-        onChange={(v) => patch('trimWhitespace', v)}
-        label={tr('settings.trimWhitespace')}
-      />
-        <CheckboxRow
-        testid="settings-zeropad"
-        checked={synced.zeroPadTrack}
-        onChange={(v) => patch('zeroPadTrack', v)}
-        label={tr('settings.zeroPadTrack')}
-      />
-      </div>
-
+          <SettingsCheckboxField
+            testid="settings-trim"
+            checked={synced.trimWhitespace}
+            onChange={(v) => patch('trimWhitespace', v)}
+            label={tr('settings.trimWhitespace')}
+          />
+          <SettingsCheckboxField
+            testid="settings-zeropad"
+            checked={synced.zeroPadTrack}
+            onChange={(v) => patch('zeroPadTrack', v)}
+            label={tr('settings.zeroPadTrack')}
+          />
+        </SettingsGroup>
+      </SettingsSection>
     </>
   )
 }

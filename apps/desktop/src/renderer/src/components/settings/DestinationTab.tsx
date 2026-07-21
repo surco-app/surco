@@ -5,6 +5,7 @@ import { isMacOS } from '../../lib/platform'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { DestinationPicker } from '../DestinationPicker'
+import { SettingsField, SettingsHint, SettingsLabel } from './SettingsPrimitives'
 
 // Apple Music automation only exists on macOS, so the destination is meaningless on
 // other platforms where a track simply finishes in the output folder.
@@ -76,12 +77,9 @@ export function DestinationTab({
   // the whole group.
   const engineDetail = (
     <div>
-      <label
-        htmlFor="settings-engine-library"
-        className="mb-1.5 block text-sm font-medium text-fg-muted"
-      >
+      <SettingsLabel htmlFor="settings-engine-library" className="mb-2">
         {tr('settings.engineLibraryDir')}
-      </label>
+      </SettingsLabel>
       <div className="flex gap-2">
         <input
           id="settings-engine-library"
@@ -98,13 +96,10 @@ export function DestinationTab({
           {tr('common.change')}
         </button>
       </div>
-      <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.engineLibraryDirHint')}</p>
-      <label
-        htmlFor="settings-engine-playlist"
-        className="mt-3 mb-1.5 block text-sm font-medium text-fg-muted"
-      >
+      <SettingsHint className="mt-2">{tr('settings.engineLibraryDirHint')}</SettingsHint>
+      <SettingsLabel htmlFor="settings-engine-playlist" className="mt-4 mb-2">
         {tr('settings.engineDjPlaylist')}
-      </label>
+      </SettingsLabel>
       <input
         id="settings-engine-playlist"
         data-testid="settings-engine-playlist"
@@ -112,25 +107,24 @@ export function DestinationTab({
         onChange={(e) => patch('engineDjPlaylist', e.target.value)}
         className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm"
       />
-      <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.engineDjPlaylistHint')}</p>
+      <SettingsHint className="mt-2">{tr('settings.engineDjPlaylistHint')}</SettingsHint>
     </div>
   )
   return (
     <>
-      <span className="mb-1.5 block text-sm font-medium text-fg-muted">
-        {tr('settings.destination')}
-      </span>
-      <DestinationPicker
-        destinations={DESTINATIONS.filter((d) => isMac || d !== 'appleMusic')}
-        value={destination}
-        onChange={chooseDestination}
-        flacOnly={flacOnly}
-        testidPrefix="settings-destination"
-        radioName="destination"
-        details={{ folder: folderDetail, engineDj: engineDetail }}
-      />
+      <SettingsField label={tr('settings.destination')}>
+        <DestinationPicker
+          destinations={DESTINATIONS.filter((d) => isMac || d !== 'appleMusic')}
+          value={destination}
+          onChange={chooseDestination}
+          flacOnly={flacOnly}
+          testidPrefix="settings-destination"
+          radioName="destination"
+          details={{ folder: folderDetail, engineDj: engineDetail }}
+        />
+      </SettingsField>
       {isMac && flacOnly && (
-        <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.appleMusicFlacNote')}</p>
+        <SettingsHint className="mt-2">{tr('settings.appleMusicFlacNote')}</SettingsHint>
       )}
     </>
   )
