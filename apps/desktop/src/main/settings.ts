@@ -87,12 +87,12 @@ const defaults: Settings = {
 }
 
 // Settings that never leave this machine, even when the user points the settings
-// folder at a cloud-synced location: the Discogs token is a secret that must not
-// land in iCloud/Dropbox in plain text, autoMatch is gated on that token, and the
-// rest are machine-bound (a local path, onboarding state, this Mac's stats).
+// folder at a cloud-synced location: a local output path and Engine library path
+// don't exist on another Mac, per-machine tallies would corrupt if two Macs wrote
+// the same file, and onboarding/changelog/pixel state is meaningful only locally.
+// (The Discogs token DOES sync now — it's identical across the user's Macs, and the
+// user accepts it living in their own cloud in plain text.)
 const LOCAL_KEYS = [
-  'discogsToken',
-  'autoMatch',
   'outputDir',
   'engineLibraryDir',
   'hasSeenOnboarding',

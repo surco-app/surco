@@ -177,17 +177,15 @@ describe('configurable settings folder', () => {
     expect(getSettings().keyNotation).toBe('camelot')
   })
 
-  // The Discogs token must never land in a cloud-synced folder, and machine-bound
-  // values (output path, onboarding, stats, the token-gated autoMatch) make no sense
-  // shared between Macs — they all stay in the local userData file.
-  it('keeps the token and per-machine values out of the synced file', () => {
+  // Machine-bound values (output path, onboarding, stats) make no sense shared
+  // between Macs — they stay local. The Discogs token now syncs (identical on both
+  // Macs, user accepts it in their own cloud), but autoMatch still syncs with it.
+  it('keeps per-machine values out of the synced file but allows the token through', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))
     setConfigDir(dir)
     saveSettings({ discogsToken: 'secret', autoMatch: true, outputDir: '/Volumes/USB' })
     const synced = read(syncedFile(dir))
     for (const key of [
-      'discogsToken',
-      'autoMatch',
       'outputDir',
       'hasSeenOnboarding',
       'conversionCount',
@@ -195,7 +193,10 @@ describe('configurable settings folder', () => {
     ]) {
       expect(synced).not.toHaveProperty(key)
     }
-    expect(read(localFile()).discogsToken).toBe('secret')
+    expect(synced.discogsToken).toBe('secret')
+    expect(synced.autoMatch).toBe(true)
+    expect(read(localFile()).outputDir).toBe('/Volumes/USB')
+    expect(read(localFile()).discogsToken).toBeUndefined()
     expect(getSettings().discogsToken).toBe('secret')
     expect(getSettings().outputDir).toBe('/Volumes/USB')
   })
@@ -229,5 +230,27 @@ describe('shortcutOverrides', () => {
     expect(getSettings().shortcutOverrides).toEqual({})
     saveSettings({ shortcutOverrides: { add: ['mod', 'shift', 'a'] } })
     expect(getSettings().shortcutOverrides).toEqual({ add: ['mod', 'shift', 'a'] })
+  })
+})
+
+describe('token sync', () => {
+  // El usuario usa dos Macs con la carpeta de config en iCloud. El token de Discogs
+  // es idéntico en ambas, así que debe viajar en el fichero compartido — no quedarse
+  // atrás en cada máquina. Las rutas locales sí se quedan: no existen en la otra Mac.
+  it('writes the Discogs token to the synced folder but keeps outputDir local', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    setConfigDir(dir)
+    saveSettings({ discogsToken: 'abc123', outputDir: '/Users/me/Music' })
+
+    const synced = JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf-8'))
+    const local = JSON.parse(readFileSync(join(app.getPath('userData'), 'settings.json'), 'utf-8'))
+
+    expect(synced.discogsToken).toBe('abc123')
+    expect(synced.outputDir).toBeUndefined()
+    expect(local.outputDir).toBe('/Users/me/Music')
+    expect(local.discogsToken).toBeUndefined()
+
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
   })
 })
