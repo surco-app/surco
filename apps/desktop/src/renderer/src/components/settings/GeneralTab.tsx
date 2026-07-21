@@ -19,6 +19,8 @@ interface Props {
   defaultDir: string | null
   onChangeConfigDir: () => void
   onResetConfigDir: () => void
+  onExportSettings: () => void
+  onImportSettings: () => void
 }
 
 export function GeneralTab({
@@ -29,6 +31,8 @@ export function GeneralTab({
   defaultDir,
   onChangeConfigDir,
   onResetConfigDir,
+  onExportSettings,
+  onImportSettings,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
 
@@ -98,6 +102,29 @@ export function GeneralTab({
                 {tr('settings.configDirReset')}
               </button>
             )}
+          </div>
+        </SettingsField>
+
+        <SettingsField label={tr('settings.backup')} hint={tr('settings.backupHint')}>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              data-testid="settings-export"
+              onClick={onExportSettings}
+              className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+            >
+              {tr('settings.exportConfig')}
+            </button>
+            <button
+              type="button"
+              data-testid="settings-import"
+              onClick={() => {
+                if (window.confirm(tr('settings.importConfirm'))) onImportSettings()
+              }}
+              className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+            >
+              {tr('settings.importConfig')}
+            </button>
           </div>
         </SettingsField>
 

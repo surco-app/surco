@@ -11,7 +11,7 @@ import { DEFAULT_DECLICK, normalizeDeclick } from '../shared/declick'
 import { DEFAULT_EDITOR_SECTIONS } from '../shared/editorSections'
 import type { Settings } from '../shared/types'
 
-const defaults: Settings = {
+export const defaults: Settings = {
   theme: 'system',
   // Follow the OS locale by default; the user can pin English or Spanish.
   language: 'system',
@@ -87,12 +87,12 @@ const defaults: Settings = {
 }
 
 // Settings that never leave this machine, even when the user points the settings
-// folder at a cloud-synced location: the Discogs token is a secret that must not
-// land in iCloud/Dropbox in plain text, autoMatch is gated on that token, and the
-// rest are machine-bound (a local path, onboarding state, this Mac's stats).
+// folder at a cloud-synced location: a local output path and Engine library path
+// don't exist on another Mac, per-machine tallies would corrupt if two Macs wrote
+// the same file, and onboarding/changelog/pixel state is meaningful only locally.
+// (The Discogs token DOES sync now — it's identical across the user's Macs, and the
+// user accepts it living in their own cloud in plain text.)
 const LOCAL_KEYS = [
-  'discogsToken',
-  'autoMatch',
   'outputDir',
   'engineLibraryDir',
   'hasSeenOnboarding',
@@ -180,7 +180,20 @@ export function getSettings(): Settings {
   // With a custom folder active, the local file only contributes its machine-bound
   // keys; everything else comes from the shared file so another Mac's edits win.
   const { local: localOnly } = split(mergeSettings(defaults, local))
-  return mergeSettings(mergeSettings(defaults, readJson(sf) as Partial<Settings>), localOnly)
+  const synced = readJson(sf) as Partial<Settings>
+  // Read-time migration: discogsToken used to be a LOCAL_KEY, so a user who set up
+  // sync before that change has the token stranded in their local file only. If the
+  // synced file has no token KEY at all, adopt the stranded local token rather than
+  // losing it to the default '' — the next save/setConfigDir naturally moves it into
+  // the synced file for good. Test for the key's absence, not its truthiness: a synced
+  // '' is a token the user deliberately cleared, which must not be resurrected from a
+  // local leftover.
+  const recoveredToken =
+    !('discogsToken' in synced) && local.discogsToken ? local.discogsToken : undefined
+  return mergeSettings(mergeSettings(defaults, synced), {
+    ...localOnly,
+    ...(recoveredToken ? { discogsToken: recoveredToken } : {}),
+  })
 }
 
 // Write-then-rename: a crash or full disk mid-write must never truncate the live
@@ -207,12 +220,7 @@ export function sanitizeSettingsPatch(patch: Partial<Settings>): Partial<Setting
   return clean
 }
 
-export function saveSettings(patch: Partial<Settings>): Settings {
-  const next = { ...getSettings(), ...patch }
-  // Auto-match can't be left on without the prerequisites met (a source, plus a Discogs
-  // token whenever Discogs is one), whatever the UI sent — so clearing the token or the
-  // last source also turns it off.
-  if (!autoMatchAvailable(next)) next.autoMatch = false
+function persist(next: Settings): Settings {
   const sf = syncedFile()
   if (!sf) {
     writeAtomic(localFile(), next)
@@ -222,6 +230,28 @@ export function saveSettings(patch: Partial<Settings>): Settings {
   writeAtomic(sf, synced)
   writeAtomic(localFile(), local)
   return next
+}
+
+export function saveSettings(patch: Partial<Settings>): Settings {
+  const next = { ...getSettings(), ...patch }
+  // Auto-match can't be left on without the prerequisites met (a source, plus a Discogs
+  // token whenever Discogs is one), whatever the UI sent — so clearing the token or the
+  // last source also turns it off.
+  if (!autoMatchAvailable(next)) next.autoMatch = false
+  return persist(next)
+}
+
+// Backup restore: unlike saveSettings (which merges the patch over the current
+// settings), this rebuilds from defaults so keys absent in the imported file fall
+// back to their default instead of keeping the value being replaced. Persistence
+// (and the local/synced split) is otherwise identical to saveSettings. The imported
+// file is sanitized like a renderer patch: an imported backup must not resurrect or
+// corrupt this machine's lifetime tallies, so stats/conversionCount always fall back
+// to their defaults instead of taking whatever the backup file says.
+export function replaceSettings(imported: Partial<Settings>): Settings {
+  const next = mergeSettings(defaults, sanitizeSettingsPatch(imported))
+  if (!autoMatchAvailable(next)) next.autoMatch = false
+  return persist(next)
 }
 
 // Moves the settings folder. A new folder that already holds a settings.json is

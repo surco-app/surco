@@ -31,10 +31,12 @@ import {
   getSettings,
   recordConversion,
   recordStat,
+  replaceSettings,
   sanitizeSettingsPatch,
   saveSettings,
   setConfigDir,
 } from './settings'
+import type { Settings } from '../shared/types'
 
 afterAll(() => rmSync(app.getPath('userData'), { recursive: true, force: true }))
 
@@ -177,17 +179,15 @@ describe('configurable settings folder', () => {
     expect(getSettings().keyNotation).toBe('camelot')
   })
 
-  // The Discogs token must never land in a cloud-synced folder, and machine-bound
-  // values (output path, onboarding, stats, the token-gated autoMatch) make no sense
-  // shared between Macs — they all stay in the local userData file.
-  it('keeps the token and per-machine values out of the synced file', () => {
+  // Machine-bound values (output path, onboarding, stats) make no sense shared
+  // between Macs — they stay local. The Discogs token now syncs (identical on both
+  // Macs, user accepts it in their own cloud), but autoMatch still syncs with it.
+  it('keeps per-machine values out of the synced file but allows the token through', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))
     setConfigDir(dir)
     saveSettings({ discogsToken: 'secret', autoMatch: true, outputDir: '/Volumes/USB' })
     const synced = read(syncedFile(dir))
     for (const key of [
-      'discogsToken',
-      'autoMatch',
       'outputDir',
       'hasSeenOnboarding',
       'conversionCount',
@@ -195,7 +195,10 @@ describe('configurable settings folder', () => {
     ]) {
       expect(synced).not.toHaveProperty(key)
     }
-    expect(read(localFile()).discogsToken).toBe('secret')
+    expect(synced.discogsToken).toBe('secret')
+    expect(synced.autoMatch).toBe(true)
+    expect(read(localFile()).outputDir).toBe('/Volumes/USB')
+    expect(read(localFile()).discogsToken).toBeUndefined()
     expect(getSettings().discogsToken).toBe('secret')
     expect(getSettings().outputDir).toBe('/Volumes/USB')
   })
@@ -229,5 +232,117 @@ describe('shortcutOverrides', () => {
     expect(getSettings().shortcutOverrides).toEqual({})
     saveSettings({ shortcutOverrides: { add: ['mod', 'shift', 'a'] } })
     expect(getSettings().shortcutOverrides).toEqual({ add: ['mod', 'shift', 'a'] })
+  })
+})
+
+describe('replaceSettings', () => {
+  // An imported backup is an untrusted input boundary, same as a renderer patch: a
+  // corrupted file with string values under stats/conversionCount must not resurrect
+  // or corrupt this machine's lifetime tallies. recordStat/recordConversion then do
+  // `cur.stats[key] + n` / `cur.conversionCount + 1`, which would silently switch to
+  // string concatenation ('HACKED' + 5, '999' + 1) instead of throwing.
+  it('resets stats and conversionCount to their defaults instead of taking corrupt imported values', () => {
+    replaceSettings({
+      theme: 'dark',
+      stats: { imported: 'HACKED' } as unknown as Settings['stats'],
+      conversionCount: '999' as unknown as number,
+    })
+    expect(getSettings().stats.imported).toBe(0)
+    expect(getSettings().conversionCount).toBe(0)
+    expect(getSettings().theme).toBe('dark')
+  })
+})
+
+describe('token sync', () => {
+  // El usuario usa dos Macs con la carpeta de config en iCloud. El token de Discogs
+  // es idéntico en ambas, así que debe viajar en el fichero compartido — no quedarse
+  // atrás en cada máquina. Las rutas locales sí se quedan: no existen en la otra Mac.
+  it('writes the Discogs token to the synced folder but keeps outputDir local', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    setConfigDir(dir)
+    saveSettings({ discogsToken: 'abc123', outputDir: '/Users/me/Music' })
+
+    const synced = JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf-8'))
+    const local = JSON.parse(readFileSync(join(app.getPath('userData'), 'settings.json'), 'utf-8'))
+
+    expect(synced.discogsToken).toBe('abc123')
+    expect(synced.outputDir).toBeUndefined()
+    expect(local.outputDir).toBe('/Users/me/Music')
+    expect(local.discogsToken).toBeUndefined()
+
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  // Antes de esta rama discogsToken era una LOCAL_KEY, así que un usuario con carpeta
+  // sincronizada lo tenía SOLO en el fichero local, nunca en el sincronizado. Tras
+  // pasar a synced, un fichero local rezagado con el token ya no cae en localOnly, y
+  // el synced (aún sin token) gana con el default ''. Sin esta migración de lectura,
+  // el token desaparece en el primer arranque tras actualizar.
+  it('recovers a pre-upgrade token left behind in the local file when the synced file has none', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ discogsToken: 'PRE-UPGRADE-TOKEN' }),
+    )
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ theme: 'dark' }))
+    setConfigDir(dir)
+
+    expect(getSettings().discogsToken).toBe('PRE-UPGRADE-TOKEN')
+
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  // No-regresión: si el fichero sincronizado ya trae su propio token, ese debe ganar
+  // sobre cualquier resto rezagado en el local.
+  it('keeps the synced token when the synced file already has one', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ discogsToken: 'PRE-UPGRADE-TOKEN' }),
+    )
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ discogsToken: 'SYNCED-TOKEN' }))
+    setConfigDir(dir)
+
+    expect(getSettings().discogsToken).toBe('SYNCED-TOKEN')
+
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  // Un token vacío en el synced es un borrado deliberado (el usuario revocó su acceso a
+  // Discogs), no una ausencia a migrar. La recuperación mira la PRESENCIA de la clave,
+  // no si es truthy, para no resucitar el token desde un resto rezagado en el local.
+  it('does not resurrect a token the user cleared to empty in the synced file', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ discogsToken: 'OLD-STALE-TOKEN' }),
+    )
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ discogsToken: '' }))
+    setConfigDir(dir)
+
+    expect(getSettings().discogsToken).toBe('')
+
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  // Sin token en ninguno de los dos ficheros, el resultado es el default vacío — no hay
+  // nada que recuperar ni que preservar.
+  it('leaves the token empty when neither file has one', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ outputDir: '/Users/me/Music' }),
+    )
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ theme: 'dark' }))
+    setConfigDir(dir)
+
+    expect(getSettings().discogsToken).toBe('')
+
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
   })
 })

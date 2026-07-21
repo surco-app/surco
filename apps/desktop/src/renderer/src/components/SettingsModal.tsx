@@ -131,6 +131,22 @@ export function SettingsModal({
     if (dir) await moveConfigDir(dir)
   }
 
+  async function exportSettings(): Promise<void> {
+    await window.api.exportSettings()
+  }
+
+  async function importSettings(): Promise<void> {
+    const result = await window.api.importSettings()
+    if (!result) return
+    if (!result.ok) {
+      window.alert(result.error)
+      return
+    }
+    onSettingsReplaced(result.settings)
+    setSynced(pickSynced(result.settings))
+    onPreviewTheme(result.settings.theme)
+  }
+
   function save(): void {
     onSave(buildSettingsPatch(synced, local))
     onClose()
@@ -220,6 +236,8 @@ export function SettingsModal({
             defaultDir={defaultDir}
             onChangeConfigDir={changeConfigDir}
             onResetConfigDir={() => moveConfigDir(null)}
+            onExportSettings={exportSettings}
+            onImportSettings={importSettings}
           />
         )}
         {tab === 'search' && (

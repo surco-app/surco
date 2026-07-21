@@ -767,3 +767,117 @@ describe('SettingsModal analysis cache', () => {
     expect(await screen.findByTestId('settings-cache-clear')).toBeDisabled()
   })
 })
+
+describe('SettingsModal backup', () => {
+  // Export just hands the file dialog to main; no confirmation or app refresh needed
+  // since it never changes local state.
+  it('exports settings without confirmation', async () => {
+    const api = window.api as unknown as Record<string, unknown>
+    const exportSettings = vi.fn(async () => '/tmp/surco-settings.json')
+    api.exportSettings = exportSettings
+    const confirmSpy = vi.spyOn(window, 'confirm')
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-export'))
+    expect(exportSettings).toHaveBeenCalledTimes(1)
+    expect(confirmSpy).not.toHaveBeenCalled()
+  })
+
+  // Import replaces the whole settings file, so it must be gated behind a destructive
+  // confirmation — declining it must not touch anything.
+  it('does not import when the destructive confirmation is declined', () => {
+    const api = window.api as unknown as Record<string, unknown>
+    const importSettings = vi.fn()
+    api.importSettings = importSettings
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-import'))
+    expect(importSettings).not.toHaveBeenCalled()
+  })
+
+  // Confirming a successful import must refresh the app exactly like moveConfigDir:
+  // replace settings, re-sync the staged draft, and preview the adopted theme.
+  it('applies an imported file and refreshes the app on confirmation', async () => {
+    const api = window.api as unknown as Record<string, unknown>
+    const imported = { ...settings, theme: 'dark' as const, keyNotation: 'musical' as const }
+    api.importSettings = vi.fn(async () => ({ ok: true, settings: imported }))
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const onSettingsReplaced = vi.fn()
+    const onPreviewTheme = vi.fn()
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={onPreviewTheme}
+        onSettingsReplaced={onSettingsReplaced}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-import'))
+    await Promise.resolve()
+    expect(onSettingsReplaced).toHaveBeenCalledWith(imported)
+    expect(onPreviewTheme).toHaveBeenCalledWith('dark')
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSettingsReplaced).toHaveBeenCalledWith(
+      expect.objectContaining({ keyNotation: 'musical' }),
+    )
+  })
+
+  // A failed import (corrupt/incompatible file) must surface the error instead of
+  // silently discarding the user's current settings.
+  it('alerts on a failed import and leaves settings untouched', async () => {
+    const api = window.api as unknown as Record<string, unknown>
+    api.importSettings = vi.fn(async () => ({ ok: false, error: 'Invalid file' }))
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {})
+    const onSettingsReplaced = vi.fn()
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={onSettingsReplaced}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-import'))
+    await Promise.resolve()
+    expect(alertSpy).toHaveBeenCalledWith('Invalid file')
+    expect(onSettingsReplaced).not.toHaveBeenCalled()
+  })
+
+  // Cancelling the file picker resolves with null; nothing should happen.
+  it('does nothing when the import file picker is cancelled', async () => {
+    const api = window.api as unknown as Record<string, unknown>
+    api.importSettings = vi.fn(async () => null)
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const onSettingsReplaced = vi.fn()
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={onSettingsReplaced}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-import'))
+    await Promise.resolve()
+    expect(onSettingsReplaced).not.toHaveBeenCalled()
+  })
+})
