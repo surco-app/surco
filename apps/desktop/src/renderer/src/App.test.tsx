@@ -217,6 +217,9 @@ function setApi(over: Record<string, unknown> = {}): void {
     }),
     properties: vi.fn().mockResolvedValue(null),
     loudness: vi.fn().mockResolvedValue(null),
+    bpm: vi.fn().mockResolvedValue(null),
+    key: vi.fn().mockResolvedValue(null),
+    waveformScan: vi.fn().mockResolvedValue(null),
     search: vi.fn().mockResolvedValue([]),
     getRelease: vi.fn().mockResolvedValue(null),
     spectrogram: vi.fn().mockResolvedValue(spectrum),
@@ -371,6 +374,24 @@ describe('App quality triage', () => {
 
     setFocus(true)
     await waitFor(() => expect(spectrogram.mock.calls.length).toBeGreaterThan(baseline))
+  })
+
+  // With autoAnalyze on, importing must warm every heavy analysis on disk — not just the
+  // spectrum the old prefetch warmed — so reopening the crate never re-decodes. loudness is
+  // one of the sweep-only probes, so its call proves the full sweep ran, not the old path.
+  it('runs the full analysis sweep on import when autoAnalyze is on', async () => {
+    const loudness = vi.fn().mockResolvedValue(null)
+    setApi({
+      loudness,
+      readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+      getSettings: vi.fn().mockResolvedValue(settings({ autoAnalyze: true })),
+    })
+    await renderApp()
+    await addTwoTracks()
+    await waitFor(() => {
+      const paths = loudness.mock.calls.map((c) => c[0]).sort()
+      expect(paths).toEqual(['/music/a.wav', '/music/b.wav'])
+    })
   })
 })
 
