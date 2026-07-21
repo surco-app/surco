@@ -3,6 +3,7 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { InsertSource } from '../lib/fieldSpecs'
+import { stripTitleNumberingLoose } from '../lib/hygiene'
 import { titleCase } from '../lib/textCase'
 import { Tooltip } from './Tooltip'
 
@@ -70,6 +71,18 @@ export function FieldInsertMenu({
     { key: 'case-lower', label: tr('editor.caseLower'), result: value.toLocaleLowerCase() },
     { key: 'case-upper', label: tr('editor.caseUpper'), result: value.toLocaleUpperCase() },
   ].filter((t) => t.result !== value)
+
+  // Only the title carries rip numbering ("01 Label Red"), so the strip row is offered
+  // there alone. The loose strip reaches the separator-less bare number the bulk ⌘K
+  // command leaves alone — safe in a menu that previews the result on one visible title.
+  // Guarded like the case rows: an un-numbered title (result unchanged) gets no dead row.
+  const stripped = fieldName === 'title' ? stripTitleNumberingLoose(value) : value
+  if (stripped !== value)
+    transforms.push({
+      key: 'strip-numbering',
+      label: tr('editor.stripNumbering'),
+      result: stripped,
+    })
 
   // "Base title" sits with the case rows because it too rewrites the field in
   // place; the editor only passes it when stripping actually drops a parenthetical,

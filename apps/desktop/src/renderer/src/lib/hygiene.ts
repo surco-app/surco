@@ -9,6 +9,12 @@ const TITLE_NUMBERING = /^\(?(?:[A-Za-z]\d+|\d+)\)?\s*[.\-)]\s*|^[A-Za-z]\d+\s+/
 // A bare leading number, the shape the anchored pattern above refuses to touch on its own.
 const BARE_LEADING_NUMBER = /^(\d+)\s+/
 
+// The loose form the in-field ⋯ menu uses: any leading number (with an optional vinyl
+// side letter and separator) followed by whitespace. Unlike TITLE_NUMBERING it strips a
+// separator-less bare number ("01 Label Red") without a track number to confirm it —
+// safe here because the menu shows the before→after and a wrong strip is one undo away.
+const LOOSE_LEADING_NUMBER = /^\(?(?:[A-Za-z]?\d+)\)?\s*[.\-)]?\s+/
+
 // Strips that numbering, closing the gap it leaves. Doing both in one step is the point:
 // removing "1." by hand leaves " Shake It" with an orphan leading space, which is half the
 // bug this replaces. A title that is only a number ("1999") is left alone — emptying the tag
@@ -24,6 +30,16 @@ export function stripTitleNumbering(title: string, trackNumber = ''): string {
     stripped = title.replace(BARE_LEADING_NUMBER, '')
   }
   const clean = stripped.trim()
+  return clean ? clean : title
+}
+
+// The looser strip behind the in-field ⋯ menu: it drops a leading number even without a
+// separator or a confirming track number, the case the bulk command deliberately leaves
+// alone. A title that is only a number is still left intact — emptying the tag is never
+// the intent. The user sees the before→after preview and can undo, so the extra reach
+// (which would also touch "7 Seconds") is a safe trade here that it is not in bulk.
+export function stripTitleNumberingLoose(title: string): string {
+  const clean = title.replace(LOOSE_LEADING_NUMBER, '').trim()
   return clean ? clean : title
 }
 

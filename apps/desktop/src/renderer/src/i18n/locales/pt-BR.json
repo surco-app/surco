@@ -442,6 +442,7 @@
     "caseLower": "minúsculas",
     "caseUpper": "MAIÚSCULAS",
     "baseTitle": "Título base",
+    "stripNumbering": "Remover numeração",
     "applyTitleFormat": "Formato",
     "applyTitleFormatHint": "Aplicar o formato do título à seleção",
     "deriveFromName": "Preencher do nome",

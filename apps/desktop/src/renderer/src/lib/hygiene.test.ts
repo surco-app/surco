@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
-import { sanitizeMeta, stripTitleNumbering } from './hygiene'
+import { sanitizeMeta, stripTitleNumbering, stripTitleNumberingLoose } from './hygiene'
 
 function meta(patch: Partial<TrackMetadata>): TrackMetadata {
   return {
@@ -133,5 +133,40 @@ describe('stripTitleNumbering', () => {
   it('leaves a title that carries no numbering exactly as it is', () => {
     expect(stripTitleNumbering('Shake It')).toBe('Shake It')
     expect(stripTitleNumbering('')).toBe('')
+  })
+})
+
+describe('stripTitleNumberingLoose', () => {
+  // The in-field ⋯ menu acts on one title the user is looking at, with a before→after
+  // preview and undo a keystroke away — so it can strip a separator-less bare number
+  // that the cautious bulk command leaves alone. This is the reported case: "01 Label
+  // Red (Apokaliptip Remix)" with no dot and no tagged track number never cleaned.
+  it('strips a separator-less leading number with no track number to confirm it', () => {
+    expect(stripTitleNumberingLoose('01 Label Red (Apokaliptip Remix)')).toBe(
+      'Label Red (Apokaliptip Remix)',
+    )
+    expect(stripTitleNumberingLoose('05 Last One')).toBe('Last One')
+  })
+
+  it('still handles every case the cautious strip already did', () => {
+    // The loose strip is a superset: separators, vinyl positions and the space they
+    // leave behind must clean exactly as before, so the menu never regresses.
+    expect(stripTitleNumberingLoose('1. Shake It')).toBe('Shake It')
+    expect(stripTitleNumberingLoose('A1 - Deep Cut')).toBe('Deep Cut')
+    expect(stripTitleNumberingLoose('(1) Last One')).toBe('Last One')
+  })
+
+  it('never empties a title that is only a number', () => {
+    // Emptying the tag is never the intent behind "remove numbering", even loosely.
+    expect(stripTitleNumberingLoose('1999')).toBe('1999')
+  })
+
+  it('leaves an un-numbered title untouched', () => {
+    expect(stripTitleNumberingLoose('Shake It')).toBe('Shake It')
+    expect(stripTitleNumberingLoose('')).toBe('')
+  })
+
+  it('only strips at the start, so a mid-title number survives', () => {
+    expect(stripTitleNumberingLoose('Track 1. Reprise')).toBe('Track 1. Reprise')
   })
 })
