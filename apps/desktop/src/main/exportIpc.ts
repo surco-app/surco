@@ -2,11 +2,16 @@ import { writeFile } from 'node:fs/promises'
 import { dialog, ipcMain } from 'electron'
 import { buildSeratoCrate } from '../shared/serato'
 import { activity } from './activity'
+import { getSettings } from './settings'
 
 // The DJ-software export dialogs, split out of index.ts's registerIpc by domain (the
 // audioIpc.ts precedent): each picks a destination, writes the bytes the renderer
 // produced, and reports the write to the activity feed. None of them touch window or
 // session state, which is what makes the domain self-contained.
+export function serializeSettingsForExport(): string {
+  return JSON.stringify(getSettings(), null, 2)
+}
+
 export function registerExportIpc(): void {
   // Writes a rekordbox collection XML the user can import (File ▸ Import Collection).
   // Returns the saved path, or null when the save dialog is cancelled.
@@ -104,6 +109,23 @@ export function registerExportIpc(): void {
     await activity.track('export', 'activity.exportM3u', () => writeFile(filePath, m3u, 'utf8'), {
       detail: filePath,
     })
+    return filePath
+  })
+
+  ipcMain.handle('dialog:exportSettings', async () => {
+    const { canceled, filePath } = await dialog.showSaveDialog({
+      title: 'Exporta la configuración',
+      defaultPath: 'surco-config.json',
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+    })
+    if (canceled || !filePath) return null
+    const json = serializeSettingsForExport()
+    await activity.track(
+      'export',
+      'activity.exportSettings',
+      () => writeFile(filePath, json, 'utf8'),
+      { detail: filePath },
+    )
     return filePath
   })
 

@@ -972,6 +972,7 @@
     "exportTraktor": "Exportiere zu Traktor",
     "exportSerato": "Exportiere zu Serato DJ",
     "exportM3u": "Exportiere M3U8-Playlist",
+    "exportSettings": "Exportiere die Einstellungen",
     "resultCount_one": "{{count}} Ergebnis",
     "resultCount_other": "{{count}} Ergebnisse",
     "trackCount_one": "{{count}} Track",

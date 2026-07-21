@@ -106,6 +106,7 @@ export interface Api {
   exportTraktor: (nml: string) => Promise<string | null>
   exportSerato: (tracks: { inputPath: string; outputPath?: string }[]) => Promise<string | null>
   exportM3u: (m3u: string) => Promise<string | null>
+  exportSettings: () => Promise<string | null>
   exportQualityReport: (dataUrl: string, baseName: string) => Promise<string | null>
   exportStatsImage: (dataUrl: string) => Promise<string | null>
   prepareCoverDrag: (src: {
