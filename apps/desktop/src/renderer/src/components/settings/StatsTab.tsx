@@ -65,7 +65,7 @@ function MatchSplit({
           className="h-full bg-[var(--color-accent)]"
           style={{ width: `${discogsPct}%` }}
         />
-        <div className="h-full flex-1 bg-[var(--color-fg-dim)]/40" />
+        <div className="h-full flex-1 bg-[var(--color-fg-dim)]/70" />
       </div>
       <div className="mt-2 flex justify-between text-xs">
         <span className="inline-flex items-center gap-1.5 text-fg-muted">
@@ -77,7 +77,7 @@ function MatchSplit({
         </span>
         <span className="inline-flex items-center gap-1.5 text-fg-muted">
           <span
-            className="h-2 w-2 rounded-full bg-[var(--color-fg-dim)]/40"
+            className="h-2 w-2 rounded-full bg-[var(--color-fg-dim)]/70"
             aria-hidden="true"
           />
           {bandcampLabel}
