@@ -62,7 +62,47 @@ describe('FindReplaceModal a11y', () => {
     type('find-replace-replace', 'Radio Edit')
     fireEvent.submit(screen.getByTestId('find-replace-find').closest('form') as HTMLFormElement)
     expect(onApply).toHaveBeenCalledWith([{ id: 'a', meta: { title: 'Snap (Radio Edit)' } }])
-    expect(onClose).toHaveBeenCalled()
+    expect(onClose).not.toHaveBeenCalled()
+  })
+})
+
+// Cleaning a messy rip means several passes in a row — strip "1.", then "2.", then "3.".
+// Closing the panel on every apply forced a reopen between each one, so the panel now stays
+// up and resets itself for the next pattern.
+describe('FindReplaceModal chained replacements', () => {
+  it('clears both fields after applying so the next pattern can be typed straight away', () => {
+    renderModal([track('a', { title: '1. Snap' })])
+    type('find-replace-find', '1. ')
+    type('find-replace-replace', '')
+    fireEvent.click(screen.getByTestId('find-replace-apply'))
+    expect(screen.getByTestId('find-replace-find')).toHaveValue('')
+    expect(screen.getByTestId('find-replace-replace')).toHaveValue('')
+  })
+
+  it('returns focus to the find field after applying', () => {
+    renderModal([track('a', { title: '1. Snap' })])
+    type('find-replace-find', '1. ')
+    fireEvent.click(screen.getByTestId('find-replace-apply'))
+    expect(screen.getByTestId('find-replace-find')).toHaveFocus()
+  })
+
+  it('keeps the panel open across repeated applies', () => {
+    const { onApply, onClose } = renderModal([track('a', { title: '1. Snap 2. Crackle' })])
+    type('find-replace-find', '1. ')
+    fireEvent.click(screen.getByTestId('find-replace-apply'))
+    type('find-replace-find', '2. ')
+    fireEvent.click(screen.getByTestId('find-replace-apply'))
+    expect(onApply).toHaveBeenCalledTimes(2)
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  // Once a replacement has landed, "Cancel" would be a lie — there is nothing left to cancel.
+  it('relabels the dismiss button from Cancel to Close after the first apply', () => {
+    renderModal([track('a', { title: '1. Snap' })])
+    expect(screen.getByTestId('find-replace-cancel')).toHaveTextContent('Cancel')
+    type('find-replace-find', '1. ')
+    fireEvent.click(screen.getByTestId('find-replace-apply'))
+    expect(screen.getByTestId('find-replace-cancel')).toHaveTextContent('Close')
   })
 })
 
@@ -80,7 +120,7 @@ describe('FindReplaceModal', () => {
       { id: 'a', meta: { title: 'Snap (Radio Edit)' } },
       { id: 'b', meta: { title: 'Get Wicked (Radio Edit)' } },
     ])
-    expect(onClose).toHaveBeenCalled()
+    expect(onClose).not.toHaveBeenCalled()
   })
 
   it('supports regex with $1 capture groups', () => {

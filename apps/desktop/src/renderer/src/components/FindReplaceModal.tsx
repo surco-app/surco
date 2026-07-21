@@ -25,6 +25,7 @@ export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX
   const [replace, setReplace] = useState('')
   const [regex, setRegex] = useState(false)
   const [caseSensitive, setCaseSensitive] = useState(false)
+  const [applied, setApplied] = useState(false)
   const findInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -62,10 +63,17 @@ export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX
       .slice(0, PREVIEW_LIMIT)
   }, [patches, tracks])
 
+  // Cleaning a rip takes several passes ("1. ", then "2. ", then "3. "), so applying keeps the
+  // panel up and resets it for the next pattern instead of closing — the user dismisses it when
+  // they are done. `tracks` is live state from App, so the preview recomputes against the text
+  // that was just rewritten.
   function apply(): void {
     if (!patches.length) return
     onApply(patches)
-    onClose()
+    setApplied(true)
+    setFind('')
+    setReplace('')
+    findInputRef.current?.focus()
   }
 
   return (
@@ -197,7 +205,7 @@ export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX
           onClick={onClose}
           className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-panel-2)]"
         >
-          {tr('common.cancel')}
+          {applied ? tr('common.close') : tr('common.cancel')}
         </button>
         <button
           type="submit"

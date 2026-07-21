@@ -2002,6 +2002,10 @@ describe('App metadata undo', () => {
       expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Dub Mix'),
     )
 
+    // The panel stays open for chained replacements, and global shortcuts are suppressed while
+    // a modal is up — so dismissing it is part of reaching undo, exactly as the user would.
+    fireEvent.click(screen.getByTestId('find-replace-cancel'))
+
     fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
     expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Deep Mix')
     expect(screen.getByText('Metadata restored on 2 tracks')).toBeInTheDocument()
