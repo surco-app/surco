@@ -281,6 +281,45 @@ async function addTwoTracks(): Promise<HTMLElement[]> {
   return screen.getAllByTestId('track-row')
 }
 
+describe('App sidebar divider', () => {
+  // Hover the divider and let the tooltip's delay elapse; the portal tooltip only mounts
+  // once the delay fires, so the assertion reads it after advancing the timer.
+  function hoverDivider(): void {
+    // The sidebar divider is the first separator; a second appears next to the editor
+    // once a track is open.
+    const divider = screen.getAllByRole('separator')[0]
+    fireEvent.pointerEnter(divider)
+    fireEvent.pointerMove(divider, { clientX: 10, clientY: 10 })
+    act(() => vi.advanceTimersByTime(500))
+  }
+
+  // Double-clicking the divider fits the panel to the track names. An empty list has no
+  // names to fit to, so the fit gesture is a no-op — the divider must not advertise it
+  // with a hover hint until there are rows to measure.
+  it('hides the fit hint while the list is empty', async () => {
+    await renderApp()
+    vi.useFakeTimers()
+    try {
+      hoverDivider()
+      expect(screen.queryByRole('tooltip')).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('offers the fit hint once the list has tracks', async () => {
+    await renderApp()
+    await addTwoTracks()
+    vi.useFakeTimers()
+    try {
+      hoverDivider()
+      expect(screen.getByRole('tooltip')).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
 describe('App quality triage', () => {
   // The "analyze quality" sweep exists to triage a whole dropped crate for fake-lossless
   // rips at once: every track gets measured and flagged with a verdict dot, so the user

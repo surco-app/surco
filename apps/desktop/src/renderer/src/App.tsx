@@ -1695,8 +1695,10 @@ export default function App(): React.JSX.Element {
 
             <ResizeHandle
               onPointerDown={sidebar.onPointerDown}
-              onDoubleClick={autoFitSidebar}
-              title={tr('sidebar.fitHint')}
+              // Fitting to content only means something once there are track names to
+              // measure; on an empty list the gesture is a no-op, so drop it and its hint.
+              onDoubleClick={tracks.length > 0 ? autoFitSidebar : undefined}
+              title={tracks.length > 0 ? tr('sidebar.fitHint') : undefined}
             />
 
             <main className="min-w-0 flex-1 bg-[var(--color-panel)]">
