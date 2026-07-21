@@ -128,5 +128,4 @@ export function registerExportIpc(): void {
     )
     return filePath
   })
-
 }
