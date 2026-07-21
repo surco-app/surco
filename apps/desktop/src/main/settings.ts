@@ -180,7 +180,17 @@ export function getSettings(): Settings {
   // With a custom folder active, the local file only contributes its machine-bound
   // keys; everything else comes from the shared file so another Mac's edits win.
   const { local: localOnly } = split(mergeSettings(defaults, local))
-  return mergeSettings(mergeSettings(defaults, readJson(sf) as Partial<Settings>), localOnly)
+  const synced = readJson(sf) as Partial<Settings>
+  // Read-time migration: discogsToken used to be a LOCAL_KEY, so a user who set up
+  // sync before that change has the token stranded in their local file only. If the
+  // synced file has since been created without it, adopt the stranded local token
+  // rather than losing it to the default '' — the next save/setConfigDir naturally
+  // moves it into the synced file for good.
+  const recoveredToken = !synced.discogsToken && local.discogsToken ? local.discogsToken : undefined
+  return mergeSettings(mergeSettings(defaults, synced), {
+    ...localOnly,
+    ...(recoveredToken ? { discogsToken: recoveredToken } : {}),
+  })
 }
 
 // Write-then-rename: a crash or full disk mid-write must never truncate the live
@@ -231,9 +241,12 @@ export function saveSettings(patch: Partial<Settings>): Settings {
 // Backup restore: unlike saveSettings (which merges the patch over the current
 // settings), this rebuilds from defaults so keys absent in the imported file fall
 // back to their default instead of keeping the value being replaced. Persistence
-// (and the local/synced split) is otherwise identical to saveSettings.
+// (and the local/synced split) is otherwise identical to saveSettings. The imported
+// file is sanitized like a renderer patch: an imported backup must not resurrect or
+// corrupt this machine's lifetime tallies, so stats/conversionCount always fall back
+// to their defaults instead of taking whatever the backup file says.
 export function replaceSettings(imported: Partial<Settings>): Settings {
-  const next = mergeSettings(defaults, imported)
+  const next = mergeSettings(defaults, sanitizeSettingsPatch(imported))
   if (!autoMatchAvailable(next)) next.autoMatch = false
   return persist(next)
 }

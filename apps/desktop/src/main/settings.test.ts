@@ -31,10 +31,12 @@ import {
   getSettings,
   recordConversion,
   recordStat,
+  replaceSettings,
   sanitizeSettingsPatch,
   saveSettings,
   setConfigDir,
 } from './settings'
+import type { Settings } from '../shared/types'
 
 afterAll(() => rmSync(app.getPath('userData'), { recursive: true, force: true }))
 
@@ -233,6 +235,24 @@ describe('shortcutOverrides', () => {
   })
 })
 
+describe('replaceSettings', () => {
+  // An imported backup is an untrusted input boundary, same as a renderer patch: a
+  // corrupted file with string values under stats/conversionCount must not resurrect
+  // or corrupt this machine's lifetime tallies. recordStat/recordConversion then do
+  // `cur.stats[key] + n` / `cur.conversionCount + 1`, which would silently switch to
+  // string concatenation ('HACKED' + 5, '999' + 1) instead of throwing.
+  it('resets stats and conversionCount to their defaults instead of taking corrupt imported values', () => {
+    replaceSettings({
+      theme: 'dark',
+      stats: { imported: 'HACKED' } as unknown as Settings['stats'],
+      conversionCount: '999' as unknown as number,
+    })
+    expect(getSettings().stats.imported).toBe(0)
+    expect(getSettings().conversionCount).toBe(0)
+    expect(getSettings().theme).toBe('dark')
+  })
+})
+
 describe('token sync', () => {
   // El usuario usa dos Macs con la carpeta de config en iCloud. El token de Discogs
   // es idéntico en ambas, así que debe viajar en el fichero compartido — no quedarse
@@ -249,6 +269,43 @@ describe('token sync', () => {
     expect(synced.outputDir).toBeUndefined()
     expect(local.outputDir).toBe('/Users/me/Music')
     expect(local.discogsToken).toBeUndefined()
+
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  // Antes de esta rama discogsToken era una LOCAL_KEY, así que un usuario con carpeta
+  // sincronizada lo tenía SOLO en el fichero local, nunca en el sincronizado. Tras
+  // pasar a synced, un fichero local rezagado con el token ya no cae en localOnly, y
+  // el synced (aún sin token) gana con el default ''. Sin esta migración de lectura,
+  // el token desaparece en el primer arranque tras actualizar.
+  it('recovers a pre-upgrade token left behind in the local file when the synced file has none', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ discogsToken: 'PRE-UPGRADE-TOKEN' }),
+    )
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ theme: 'dark' }))
+    setConfigDir(dir)
+
+    expect(getSettings().discogsToken).toBe('PRE-UPGRADE-TOKEN')
+
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  // No-regresión: si el fichero sincronizado ya trae su propio token, ese debe ganar
+  // sobre cualquier resto rezagado en el local.
+  it('keeps the synced token when the synced file already has one', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ discogsToken: 'PRE-UPGRADE-TOKEN' }),
+    )
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ discogsToken: 'SYNCED-TOKEN' }))
+    setConfigDir(dir)
+
+    expect(getSettings().discogsToken).toBe('SYNCED-TOKEN')
 
     setConfigDir(null)
     rmSync(dir, { recursive: true, force: true })
