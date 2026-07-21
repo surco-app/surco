@@ -60,6 +60,7 @@ const api: Api = {
     ipcRenderer.invoke('dialog:exportSerato', tracks),
   exportM3u: (m3u: string): Promise<string | null> => ipcRenderer.invoke('dialog:exportM3u', m3u),
   exportSettings: (): Promise<string | null> => ipcRenderer.invoke('dialog:exportSettings'),
+  importSettings: () => ipcRenderer.invoke('dialog:importSettings'),
   exportQualityReport: (dataUrl: string, baseName: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:exportQualityReport', dataUrl, baseName),
   exportStatsImage: (dataUrl: string): Promise<string | null> =>

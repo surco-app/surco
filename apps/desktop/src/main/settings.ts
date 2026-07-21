@@ -11,7 +11,7 @@ import { DEFAULT_DECLICK, normalizeDeclick } from '../shared/declick'
 import { DEFAULT_EDITOR_SECTIONS } from '../shared/editorSections'
 import type { Settings } from '../shared/types'
 
-const defaults: Settings = {
+export const defaults: Settings = {
   theme: 'system',
   // Follow the OS locale by default; the user can pin English or Spanish.
   language: 'system',
@@ -207,12 +207,7 @@ export function sanitizeSettingsPatch(patch: Partial<Settings>): Partial<Setting
   return clean
 }
 
-export function saveSettings(patch: Partial<Settings>): Settings {
-  const next = { ...getSettings(), ...patch }
-  // Auto-match can't be left on without the prerequisites met (a source, plus a Discogs
-  // token whenever Discogs is one), whatever the UI sent — so clearing the token or the
-  // last source also turns it off.
-  if (!autoMatchAvailable(next)) next.autoMatch = false
+function persist(next: Settings): Settings {
   const sf = syncedFile()
   if (!sf) {
     writeAtomic(localFile(), next)
@@ -222,6 +217,25 @@ export function saveSettings(patch: Partial<Settings>): Settings {
   writeAtomic(sf, synced)
   writeAtomic(localFile(), local)
   return next
+}
+
+export function saveSettings(patch: Partial<Settings>): Settings {
+  const next = { ...getSettings(), ...patch }
+  // Auto-match can't be left on without the prerequisites met (a source, plus a Discogs
+  // token whenever Discogs is one), whatever the UI sent — so clearing the token or the
+  // last source also turns it off.
+  if (!autoMatchAvailable(next)) next.autoMatch = false
+  return persist(next)
+}
+
+// Backup restore: unlike saveSettings (which merges the patch over the current
+// settings), this rebuilds from defaults so keys absent in the imported file fall
+// back to their default instead of keeping the value being replaced. Persistence
+// (and the local/synced split) is otherwise identical to saveSettings.
+export function replaceSettings(imported: Partial<Settings>): Settings {
+  const next = mergeSettings(defaults, imported)
+  if (!autoMatchAvailable(next)) next.autoMatch = false
+  return persist(next)
 }
 
 // Moves the settings folder. A new folder that already holds a settings.json is
