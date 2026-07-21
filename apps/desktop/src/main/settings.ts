@@ -183,10 +183,13 @@ export function getSettings(): Settings {
   const synced = readJson(sf) as Partial<Settings>
   // Read-time migration: discogsToken used to be a LOCAL_KEY, so a user who set up
   // sync before that change has the token stranded in their local file only. If the
-  // synced file has since been created without it, adopt the stranded local token
-  // rather than losing it to the default '' — the next save/setConfigDir naturally
-  // moves it into the synced file for good.
-  const recoveredToken = !synced.discogsToken && local.discogsToken ? local.discogsToken : undefined
+  // synced file has no token KEY at all, adopt the stranded local token rather than
+  // losing it to the default '' — the next save/setConfigDir naturally moves it into
+  // the synced file for good. Test for the key's absence, not its truthiness: a synced
+  // '' is a token the user deliberately cleared, which must not be resurrected from a
+  // local leftover.
+  const recoveredToken =
+    !('discogsToken' in synced) && local.discogsToken ? local.discogsToken : undefined
   return mergeSettings(mergeSettings(defaults, synced), {
     ...localOnly,
     ...(recoveredToken ? { discogsToken: recoveredToken } : {}),

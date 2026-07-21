@@ -310,4 +310,39 @@ describe('token sync', () => {
     setConfigDir(null)
     rmSync(dir, { recursive: true, force: true })
   })
+
+  // Un token vacío en el synced es un borrado deliberado (el usuario revocó su acceso a
+  // Discogs), no una ausencia a migrar. La recuperación mira la PRESENCIA de la clave,
+  // no si es truthy, para no resucitar el token desde un resto rezagado en el local.
+  it('does not resurrect a token the user cleared to empty in the synced file', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ discogsToken: 'OLD-STALE-TOKEN' }),
+    )
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ discogsToken: '' }))
+    setConfigDir(dir)
+
+    expect(getSettings().discogsToken).toBe('')
+
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  // Sin token en ninguno de los dos ficheros, el resultado es el default vacío — no hay
+  // nada que recuperar ni que preservar.
+  it('leaves the token empty when neither file has one', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ outputDir: '/Users/me/Music' }),
+    )
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ theme: 'dark' }))
+    setConfigDir(dir)
+
+    expect(getSettings().discogsToken).toBe('')
+
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
 })
