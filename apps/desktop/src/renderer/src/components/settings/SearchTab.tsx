@@ -39,7 +39,7 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
       <SettingsSection first>
       <SettingsEyebrow className="mb-1.5">{tr('settings.searchProviders')}</SettingsEyebrow>
       <SettingsHint className="mb-3">{tr('settings.searchProvidersHint')}</SettingsHint>
-      <div className="mb-4 flex flex-wrap gap-x-5 gap-y-2" data-testid="settings-search-providers">
+      <div className="flex flex-wrap gap-x-5 gap-y-2" data-testid="settings-search-providers">
         {SEARCH_PROVIDERS.map((p) => (
           <label key={p} className="flex cursor-pointer items-center gap-2">
             <input
@@ -60,10 +60,11 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
           </label>
         ))}
       </div>
+      </SettingsSection>
 
-      {/* Auto-match belongs with the sources it sweeps (its hint even names them), so it
-          shares their section instead of paying a whole separator of its own — one of the
-          cuts that let this tab fit without scrolling. */}
+      {/* Auto-match is a behaviour (when matches get applied), not a source, so it sits in
+          its own section apart from the Discogs/Bandcamp source checkboxes. */}
+      <SettingsSection>
       <label
         className={`flex items-center gap-3 ${
           autoReady ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -79,7 +80,7 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
         />
         <span className="text-sm">{tr('settings.autoMatch')}</span>
       </label>
-      <SettingsHint className="mt-1.5">
+      <SettingsHint className="mt-1.5 pl-7">
         {synced.searchProviders.length === 0
           ? tr('settings.autoMatchNeedsSource')
           : autoReady
