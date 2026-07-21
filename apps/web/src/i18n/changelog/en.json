@@ -11,6 +11,10 @@
       {
         "text": "When you export a track over itself, Surco no longer re-applies the normalization and declick that export already baked in. Editing just the metadata stops reprocessing the audio, so you don't lose a generation on lossy formats or stack gain on top of gain.",
         "in": "0.69.0"
+      },
+      {
+        "text": "Find & Replace no longer closes every time you apply: the panel stays open with its fields cleared, ready for the next change. Cleaning up a folder in several passes now happens in one go, without reopening it over and over.",
+        "in": "0.69.1"
       }
     ]
   },

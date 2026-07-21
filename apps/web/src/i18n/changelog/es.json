@@ -11,6 +11,10 @@
       {
         "text": "Si vuelves a exportar una pista sobre sí misma, Surco ya no aplica otra vez la normalización ni el declick que esa exportación dejó grabados. Editar solo los metadatos deja de reprocesar el audio, así que no pierdes una generación en formatos con pérdida ni acumulas ganancia sobre ganancia.",
         "in": "0.69.0"
+      },
+      {
+        "text": "Buscar y reemplazar ya no se cierra cada vez que aplicas: el panel se queda abierto y con los campos limpios, listo para el siguiente cambio. Limpiar una carpeta a base de varias pasadas seguidas se hace del tirón, sin volver a abrirlo una y otra vez.",
+        "in": "0.69.1"
       }
     ]
   },
