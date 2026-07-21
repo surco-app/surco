@@ -638,7 +638,7 @@
     "configDir": "Dossier de configuration",
     "configDirDefault": "Dossier par défaut de l'app",
     "configDirReset": "Réinitialiser",
-    "configDirHint": "Choisis un dossier dans iCloud Drive ou Dropbox pour partager ces préférences entre tes Mac. S'applique immédiatement ; le token Discogs et les statistiques de ce Mac ne quittent jamais cette machine.",
+    "configDirHint": "Choisis un dossier dans iCloud Drive ou Dropbox pour partager ces préférences entre tes Mac. S'applique immédiatement ; les statistiques de ce Mac ne quittent jamais cette machine.",
     "cache": "Cache d'analyse",
     "cacheClear": "Vider le cache",
     "cacheHint": "Toutes les analyses de chaque morceau sont enregistrées sur disque pour que rouvrir ta bibliothèque soit instantané. {{count}} fichiers · {{size}}. Le vider oblige juste la prochaine ouverture à les recalculer.",

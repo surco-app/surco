@@ -638,7 +638,7 @@
     "configDir": "Pasta de configurações",
     "configDirDefault": "Pasta padrão do app",
     "configDirReset": "Restaurar",
-    "configDirHint": "Escolha uma pasta no iCloud Drive ou Dropbox para compartilhar essas preferências entre seus Macs. Aplica na hora; o token do Discogs e as estatísticas deste Mac nunca saem desta máquina.",
+    "configDirHint": "Escolha uma pasta no iCloud Drive ou Dropbox para compartilhar essas preferências entre seus Macs. Aplica na hora; as estatísticas deste Mac nunca saem desta máquina.",
     "cache": "Cache de análise",
     "cacheClear": "Esvaziar cache",
     "cacheHint": "Todas as análises de cada faixa são salvas em disco para reabrir sua biblioteca na hora. {{count}} arquivos · {{size}}. Esvaziar só faz a próxima abertura recalculá-los.",

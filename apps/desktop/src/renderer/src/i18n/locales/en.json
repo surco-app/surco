@@ -638,7 +638,7 @@
     "configDir": "Settings folder",
     "configDirDefault": "App default folder",
     "configDirReset": "Reset",
-    "configDirHint": "Pick a folder in iCloud Drive or Dropbox to share these preferences across your Macs. Applies immediately; the Discogs token and this Mac's stats never leave this machine.",
+    "configDirHint": "Pick a folder in iCloud Drive or Dropbox to share these preferences across your Macs. Applies immediately; this Mac's stats and paths stay local.",
     "cache": "Analysis cache",
     "cacheClear": "Empty cache",
     "cacheHint": "Every track's analysis is saved to disk so reopening your library is instant. {{count}} files · {{size}}. Emptying it just makes the next open recompute them.",
