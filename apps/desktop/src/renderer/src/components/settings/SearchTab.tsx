@@ -6,6 +6,7 @@ import type { Settings } from '../../../../shared/types'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchLocal, PatchSynced } from '../../lib/settingsTabs'
 import { Select } from '../Select'
+import { SettingsEyebrow, SettingsHint, SettingsLabel } from './SettingsPrimitives'
 
 // The catalog sources offered as search-provider checkboxes (Settings → Search).
 const SEARCH_PROVIDERS: Settings['searchProviders'] = ['discogs', 'bandcamp']
@@ -30,10 +31,8 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
   })
   return (
     <>
-      <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-fg-dim">
-        {tr('settings.searchProviders')}
-      </p>
-      <p className="mb-3 text-xs text-fg-dim">{tr('settings.searchProvidersHint')}</p>
+      <SettingsEyebrow className="mb-1.5">{tr('settings.searchProviders')}</SettingsEyebrow>
+      <SettingsHint className="mb-3">{tr('settings.searchProvidersHint')}</SettingsHint>
       <div className="mb-3 flex flex-wrap gap-x-5 gap-y-2" data-testid="settings-search-providers">
         {SEARCH_PROVIDERS.map((p) => (
           <label key={p} className="flex cursor-pointer items-center gap-2">
@@ -74,13 +73,13 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
         />
         <span className="text-sm">{tr('settings.autoMatch')}</span>
       </label>
-      <p className="mt-1.5 text-xs text-fg-dim">
+      <SettingsHint className="mt-1.5">
         {synced.searchProviders.length === 0
           ? tr('settings.autoMatchNeedsSource')
           : autoReady
             ? tr('settings.autoMatchHint')
             : tr('settings.autoMatchNeedsToken')}
-      </p>
+      </SettingsHint>
 
       {/* A one-value select doesn't need a full-width stacked block: the label and hint
           take the left, the control sits on the right, one row instead of three. */}
@@ -89,8 +88,8 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
             justify-between, the select used to give up 2px and poke past the panel,
             summoning a horizontal scrollbar over the whole tab. */}
         <div className="min-w-0">
-          <p className="mb-1 text-sm font-medium text-fg-muted">{tr('settings.maxResults')}</p>
-          <p className="text-xs text-fg-dim">{tr('settings.maxResultsHint')}</p>
+          <SettingsLabel className="mb-1">{tr('settings.maxResults')}</SettingsLabel>
+          <SettingsHint>{tr('settings.maxResultsHint')}</SettingsHint>
         </div>
         <div className="shrink-0">
           <Select
@@ -107,13 +106,10 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
       </div>
 
       <div className="mt-5 border-t border-[var(--color-line)] pt-4">
-        <label
-          htmlFor="settings-ignore-words"
-          className="mb-1 block text-sm font-medium text-fg-muted"
-        >
+        <SettingsLabel htmlFor="settings-ignore-words" className="mb-1">
           {tr('settings.searchIgnoreWords')}
-        </label>
-        <p className="mb-2.5 text-xs text-fg-dim">{tr('settings.searchIgnoreWordsHint')}</p>
+        </SettingsLabel>
+        <SettingsHint className="mb-2.5">{tr('settings.searchIgnoreWordsHint')}</SettingsHint>
         <input
           id="settings-ignore-words"
           data-testid="settings-ignore-words"
@@ -125,21 +121,16 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
       </div>
 
       <div className="mt-5 border-t border-[var(--color-line)] pt-4">
-        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-fg-dim">
-          {tr('settings.discogsSection')}
-        </p>
+        <SettingsEyebrow className="mb-3">{tr('settings.discogsSection')}</SettingsEyebrow>
         {!discogsOn && (
-          <p data-testid="settings-discogs-disabled" className="mb-4 text-xs text-fg-dim">
+          <SettingsHint data-testid="settings-discogs-disabled" className="mb-4">
             {tr('settings.discogsDisabledHint')}
-          </p>
+          </SettingsHint>
         )}
         <div className={discogsOn ? '' : 'opacity-50'}>
-          <label
-            htmlFor="settings-token"
-            className="mb-1.5 block text-sm font-medium text-fg-muted"
-          >
+          <SettingsLabel htmlFor="settings-token" className="mb-1.5">
             {tr('settings.discogsToken')}
-          </label>
+          </SettingsLabel>
           <input
             id="settings-token"
             data-testid="settings-token"
@@ -149,7 +140,7 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
             placeholder={tr('settings.tokenPlaceholder')}
             className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)] disabled:cursor-not-allowed"
           />
-          <p className="mt-1.5 mb-5 text-xs text-fg-dim">
+          <SettingsHint className="mt-1.5 mb-5">
             {tr('settings.tokenWhy')} {tr('settings.tokenHelp')}{' '}
             <a
               href="https://www.discogs.com/settings/developers"
@@ -159,12 +150,10 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
             >
               discogs.com/settings/developers
             </a>
-          </p>
+          </SettingsHint>
 
-          <p className="mb-1.5 text-sm font-medium text-fg-muted">
-            {tr('settings.discogsFormats')}
-          </p>
-          <p className="mb-3 text-xs text-fg-dim">{tr('settings.discogsFormatsHint')}</p>
+          <SettingsLabel className="mb-1.5">{tr('settings.discogsFormats')}</SettingsLabel>
+          <SettingsHint className="mb-3">{tr('settings.discogsFormatsHint')}</SettingsHint>
           <div className="flex flex-wrap gap-x-5 gap-y-2" data-testid="settings-discogs-formats">
             {DISCOGS_FORMATS.map((f) => (
               <label
