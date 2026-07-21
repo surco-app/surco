@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.69",
+    "date": "July 21, 2026",
+    "title": "Cleaner titles, and exports that don't stack up",
+    "items": [
+      {
+        "text": "Remove numbering is now on the Title field menu too, and it recognizes many more numbering styles: with a dash, with a dot, in parentheses, or stuck to the name with no separator at all. It also tells track numbers apart from numbers that belong to the title, so 3 Heads and 2 Unlimited stay exactly as they are.",
+        "in": "0.69.0"
+      },
+      {
+        "text": "When you export a track over itself, Surco no longer re-applies the normalization and declick that export already baked in. Editing just the metadata stops reprocessing the audio, so you don't lose a generation on lossy formats or stack gain on top of gain.",
+        "in": "0.69.0"
+      }
+    ]
+  },
+  {
     "version": "0.68",
     "date": "July 21, 2026",
     "title": "Back up your settings, and smarter defaults",

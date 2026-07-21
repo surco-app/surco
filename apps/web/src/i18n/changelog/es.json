@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.69",
+    "date": "21 de julio de 2026",
+    "title": "Títulos más limpios y exportaciones que no se pisan",
+    "items": [
+      {
+        "text": "Quitar numeración ya está también en el menú del campo Título y reconoce muchas más formas de numerar: con guion, con punto, entre paréntesis o pegada al nombre sin separador. Y distingue la numeración de pista de los números que forman parte del título, así que 3 Heads o 2 Unlimited se quedan como están.",
+        "in": "0.69.0"
+      },
+      {
+        "text": "Si vuelves a exportar una pista sobre sí misma, Surco ya no aplica otra vez la normalización ni el declick que esa exportación dejó grabados. Editar solo los metadatos deja de reprocesar el audio, así que no pierdes una generación en formatos con pérdida ni acumulas ganancia sobre ganancia.",
+        "in": "0.69.0"
+      }
+    ]
+  },
+  {
     "version": "0.68",
     "date": "21 de julio de 2026",
     "title": "Copia de seguridad de tu configuración y mejores ajustes de fábrica",
