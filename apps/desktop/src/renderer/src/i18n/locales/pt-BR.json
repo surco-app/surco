@@ -978,12 +978,5 @@
     "autoMatchNoneDetail": "Nenhum candidato atingiu a confiança mínima.\nCandidatos sondados:\n{{candidates}}",
     "autoMatchNoCandidates": "A busca não retornou candidatos para sondar.",
     "probeClicks": "Contando clicks"
-  },
-  "fieldGroups": {
-    "identity": "Identidade",
-    "catalog": "Catálogo",
-    "dj": "DJ",
-    "order": "Ordem",
-    "other": "Outros"
   }
 }

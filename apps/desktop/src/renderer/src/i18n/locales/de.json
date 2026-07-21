@@ -978,12 +978,5 @@
     "autoMatchNoneDetail": "Kein Kandidat erreichte die nötige Konfidenz.\nGeprüfte Kandidaten:\n{{candidates}}",
     "autoMatchNoCandidates": "Die Suche lieferte keine Kandidaten zum Prüfen.",
     "probeClicks": "Klicks werden gezählt"
-  },
-  "fieldGroups": {
-    "identity": "Identität",
-    "catalog": "Katalog",
-    "dj": "DJ",
-    "order": "Reihenfolge",
-    "other": "Weitere"
   }
 }

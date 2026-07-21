@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { FieldSpec } from '../lib/fieldSpecs'
 import type { TrackItem } from '../types'
@@ -45,22 +45,29 @@ function renderForm(fields: FieldSpec[]): void {
   )
 }
 
-describe('MetadataForm groups', () => {
-  it('shows each group once and starts with only identity open', () => {
-    renderForm([spec('title', 'X'), spec('catalogNumber', 'C'), spec('bpm')])
-    expect(screen.getByTestId('field-group-body-identity')).toBeInTheDocument()
-    expect(screen.getByTestId('field-group-catalog')).toBeInTheDocument()
-    expect(screen.queryByTestId('field-group-body-catalog')).toBeNull()
+describe('MetadataForm', () => {
+  // The form is a flat list now: every shown field renders in the order it arrives
+  // (the user's own field order), with no group headers or collapse toggles between
+  // them. Grouping the fields into collapsible sections fought the user's manual
+  // ordering — a field dragged across a group boundary snapped back — so it's gone.
+  it('renders every field in the order received, with no group headers', () => {
+    renderForm([spec('catalogNumber', 'C'), spec('title', 'X'), spec('bpm')])
+    expect(screen.getByTestId('field-catalogNumber')).toBeInTheDocument()
+    expect(screen.getByTestId('field-title')).toBeInTheDocument()
+    expect(screen.getByTestId('field-bpm')).toBeInTheDocument()
+    expect(screen.queryByTestId('field-group-catalog')).toBeNull()
+    expect(screen.queryByTestId('field-group-body-identity')).toBeNull()
   })
 
-  it('toggles a collapsed group open on header click', () => {
-    renderForm([spec('title', 'X'), spec('catalogNumber', 'C')])
-    fireEvent.click(screen.getByTestId('field-group-catalog'))
-    expect(screen.getByTestId('field-group-body-catalog')).toBeInTheDocument()
-  })
-
-  it('counts fields with a non-empty value', () => {
-    renderForm([spec('title', 'X'), spec('catalogNumber', 'C'), spec('isrc', '')])
-    expect(screen.getByTestId('field-group-count-catalog')).toHaveTextContent('1 filled')
+  it('keeps the field order verbatim across group boundaries', () => {
+    // catalogNumber (a Catalog field) placed between title and artist (Identity)
+    // stays exactly where the user put it — no re-bucketing.
+    renderForm([spec('title', 'X'), spec('catalogNumber', 'C'), spec('artist', 'A')])
+    const nodes = screen.getAllByTestId(/^field-/)
+    expect(nodes.map((n) => n.getAttribute('data-testid'))).toEqual([
+      'field-title',
+      'field-catalogNumber',
+      'field-artist',
+    ])
   })
 })

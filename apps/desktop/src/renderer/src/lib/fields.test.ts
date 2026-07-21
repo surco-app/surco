@@ -5,8 +5,6 @@ import {
   DEFAULT_REQUIRED_FIELDS,
   FIELD_DEFS,
   FIELD_GROUPS,
-  groupFields,
-  groupHeaderBefore,
   groupOfField,
   missingRequired,
   moveItem,
@@ -143,57 +141,11 @@ describe('sortFieldsByGroup', () => {
   })
 })
 
-describe('groupHeaderBefore', () => {
-  const order = ['title', 'artist', 'catalogNumber', 'bpm']
-
-  it('marks a header at the first field of each group so the form shows one header per section', () => {
-    // identity opens at index 0, then a new header wherever the group changes.
-    expect(groupHeaderBefore(order, 0)).toBe('identity')
-    expect(groupHeaderBefore(order, 2)).toBe('catalog')
-    expect(groupHeaderBefore(order, 3)).toBe('dj')
-  })
-
-  it('returns undefined for a field that continues the current group so no duplicate header renders', () => {
-    expect(groupHeaderBefore(order, 1)).toBeUndefined()
-  })
-
-  it('re-emits a header when the same group reappears after another, since a manual order can interleave', () => {
-    // A user who hand-orders title, bpm, artist gets identity, dj, then identity again —
-    // the header follows the actual layout rather than assuming groups are contiguous.
-    const interleaved = ['title', 'bpm', 'artist']
-    expect(groupHeaderBefore(interleaved, 0)).toBe('identity')
-    expect(groupHeaderBefore(interleaved, 1)).toBe('dj')
-    expect(groupHeaderBefore(interleaved, 2)).toBe('identity')
-  })
-})
-
 describe('DEFAULT_REQUIRED_FIELDS', () => {
   it('blocks only on title and artist, the bare minimum that identifies a track', () => {
     // Everything else (album artist, album, year, genre, grouping) is recommended
     // but not gated by default: a white label or promo with no release on Discogs
     // should still convert. Users add their own required fields in Settings.
     expect(DEFAULT_REQUIRED_FIELDS).toEqual(['title', 'artist'])
-  })
-})
-
-describe('groupFields', () => {
-  it('splits into fixed group order, dropping empty buckets, preserving intra-group order', () => {
-    const input = [
-      { key: 'comment' }, // order
-      { key: 'title' }, // identity
-      { key: 'catalogNumber' }, // catalog
-      { key: 'artist' }, // identity
-      { key: 'trackNumber' }, // order
-    ]
-    const out = groupFields(input)
-    expect(out.map((b) => b.id)).toEqual(['identity', 'catalog', 'order'])
-    expect(out[0].items.map((i) => i.key)).toEqual(['title', 'artist'])
-    expect(out[2].items.map((i) => i.key)).toEqual(['comment', 'trackNumber'])
-  })
-
-  it('puts uncatalogued keys in a trailing other bucket', () => {
-    const out = groupFields([{ key: 'title' }, { key: 'futureTag' }])
-    expect(out.map((b) => b.id)).toEqual(['identity', 'other'])
-    expect(out[1].items.map((i) => i.key)).toEqual(['futureTag'])
   })
 })

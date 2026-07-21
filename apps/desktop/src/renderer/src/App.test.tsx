@@ -1357,18 +1357,10 @@ describe('App track numbering', () => {
     fireEvent.change(input, { target: { value: 'Number tracks' } })
     fireEvent.click(screen.getByTestId('palette-item'))
 
-    // Track No. sits in the Order group, which starts collapsed and re-collapses when the
-    // editor remounts on each row switch, so open it after every selection.
-    const openOrder = async (): Promise<void> => {
-      const header = await screen.findByTestId('field-group-order')
-      fireEvent.click(header)
-    }
     fireEvent.click(rows[0])
     await waitFor(() => expect(screen.getByTestId('field-title')).toBeInTheDocument())
-    await openOrder()
     await waitFor(() => expect(screen.getByTestId('field-trackNumber')).toHaveValue('1'))
     fireEvent.click(rows[1])
-    await openOrder()
     await waitFor(() => expect(screen.getByTestId('field-trackNumber')).toHaveValue('2'))
 
     fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
