@@ -65,8 +65,8 @@ interface MetadataFormProps {
 }
 
 // The metadata form body: the rating row (single-track only), the cover well and the
-// fields — grouped into one collapsible section per category (Identity / Catalog / DJ /
-// Order), each shown once, fed pre-resolved field specs.
+// fields — a flat list in the user's own order, capped to a scrollable height so a long
+// field set never pushes the sections below it out of view, fed pre-resolved field specs.
 export function MetadataForm({
   item,
   isMulti,
