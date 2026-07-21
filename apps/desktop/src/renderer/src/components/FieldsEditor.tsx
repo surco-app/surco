@@ -55,7 +55,10 @@ export function FieldsEditor({
     organizedTimer.current = setTimeout(() => setOrganized(false), ORGANIZED_FEEDBACK_MS)
   }
   return (
-    <div className="max-h-[340px] space-y-4 overflow-y-auto pr-1">
+    // No own height cap or scroll: the settings tab panel scrolls, so the list fills the
+    // panel's full height and a long field list scrolls there instead of inside a short
+    // 340px window that left the panel half-empty below it.
+    <div className="space-y-4">
       <div>
         <div className="mb-2 flex items-center justify-between">
           <p className="text-xs font-medium uppercase tracking-wide text-fg-dim">
