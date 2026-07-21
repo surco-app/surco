@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import type { Release } from '../../../shared/types'
 import { buildFieldSpecs, type FieldSpec } from '../lib/fieldSpecs'
 import type { TrackItem } from '../types'
-import { useScrollAffordance } from '../hooks/useScrollAffordance'
 import { CoverPicker } from './CoverPicker'
 import { Field } from './Field'
 import { StarRating } from './StarRating'
@@ -65,8 +64,9 @@ interface MetadataFormProps {
 }
 
 // The metadata form body: the rating row (single-track only), the cover well and the
-// fields — a flat list in the user's own order, capped to a scrollable height so a long
-// field set never pushes the sections below it out of view, fed pre-resolved field specs.
+// fields — a flat list in the user's own order, rendered inline in the editor's single
+// scroll (no inner scroller) so browsing never fights a second scroll region, fed
+// pre-resolved field specs.
 export function MetadataForm({
   item,
   isMulti,
@@ -80,7 +80,6 @@ export function MetadataForm({
   fields,
 }: MetadataFormProps): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const { ref: scrollRef, moreBelow } = useScrollAffordance([fields])
   return (
     <div className="mt-4 @container">
       {!isMulti && (
@@ -101,31 +100,15 @@ export function MetadataForm({
           onApplyCoverAll={onApplyCoverAll}
         />
 
-        <div className="relative min-w-0 flex-1">
-          <div
-            ref={scrollRef}
-            data-testid="metadata-fields"
-            className="max-h-[420px] overflow-y-auto"
-          >
-            <div className="grid grid-cols-1 gap-x-4 gap-y-3 @[26rem]:grid-cols-2">
-              {fields.map((f) => (
-                <div
-                  key={f.key}
-                  className={f.wide || f.key === 'compilation' ? '@[26rem]:col-span-2' : ''}
-                >
-                  {renderField(f)}
-                </div>
-              ))}
+        <div className="grid min-w-0 flex-1 grid-cols-1 gap-x-4 gap-y-3 @[26rem]:grid-cols-2">
+          {fields.map((f) => (
+            <div
+              key={f.key}
+              className={f.wide || f.key === 'compilation' ? '@[26rem]:col-span-2' : ''}
+            >
+              {renderField(f)}
             </div>
-          </div>
-          {/* Fades the cut-off field into the panel while more sit below the fold,
-              then clears at the very bottom — the same cue Settings' tabs use. */}
-          <div
-            aria-hidden="true"
-            className={`pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-[var(--color-panel)] to-transparent transition-opacity duration-200 ${
-              moreBelow ? 'opacity-100' : 'opacity-0'
-            }`}
-          />
+          ))}
         </div>
       </div>
     </div>
