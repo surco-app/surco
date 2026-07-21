@@ -18,10 +18,14 @@ const TOAST_LEAVE_MS = 200
 // carries a duration; prompts and failures stay until acted on.
 export function ToastStack({
   toasts,
+  overlayOpen = false,
   onExpire,
   onClose,
 }: {
   toasts: Toast[]
+  // A centred modal claims the bottom-right corner with its Cancel/Save bar. While one is
+  // open the stack moves to the bottom-left so a toast never sits over the primary action.
+  overlayOpen?: boolean
   // Bookkeeping removal for the auto-dismiss timer (no side effects).
   onExpire: (id: string) => void
   // The user clicked ✕ — remove the card and run the toast's own onDismiss.
@@ -76,7 +80,10 @@ export function ToastStack({
   // arrives or screen readers miss the first toast. Empty it has zero size, so the
   // fixed corner div never intercepts a click.
   return (
-    <div aria-live="polite" className="fixed bottom-5 right-5 z-50 flex flex-col gap-2">
+    <div
+      aria-live="polite"
+      className={`fixed bottom-5 z-50 flex flex-col gap-2 ${overlayOpen ? 'left-5' : 'right-5'}`}
+    >
       {cards.map(({ toast, leaving }) => (
         <ToastCard
           key={toast.id}
