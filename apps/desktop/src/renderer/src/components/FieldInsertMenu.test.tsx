@@ -223,10 +223,31 @@ describe('FieldInsertMenu strip numbering', () => {
     expect(host().value).toBe('Label Red (Apokaliptip Remix)')
   })
 
+  // The reported second case: the position and the title BOTH start with a number
+  // ("02 3 Heads Label Red"). The row must strip only the "02" and keep "3 Heads" — the
+  // preview proves it before the click.
+  it('strips only the position when the title itself starts with a number', () => {
+    render(<Harness initial="02 3 Heads Label Red" />)
+    openMenu()
+    const row = screen.getByTestId('field-insert-option-strip-numbering')
+    expect(row).toHaveTextContent('3 Heads Label Red')
+    fireEvent.click(row)
+    expect(host().value).toBe('3 Heads Label Red')
+  })
+
   // A dead row is worse than no row: an un-numbered title must not offer a strip that
   // changes nothing, mirroring how the case rows self-hide.
   it('hides the strip-numbering row when the title carries no numbering', () => {
     render(<Harness initial="Label Red" />)
+    openMenu()
+    expect(screen.queryByTestId('field-insert-option-strip-numbering')).toBeNull()
+  })
+
+  // The band-name trap: "3 Heads" has a leading digit but no zero and no separator, so
+  // it is a title, not a position. The row must not appear — offering "3 Heads → Heads"
+  // would invite mangling the tag.
+  it('does not offer the row for a bare number that is part of the title', () => {
+    render(<Harness initial="3 Heads" />)
     openMenu()
     expect(screen.queryByTestId('field-insert-option-strip-numbering')).toBeNull()
   })

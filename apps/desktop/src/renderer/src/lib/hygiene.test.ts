@@ -138,22 +138,46 @@ describe('stripTitleNumbering', () => {
 
 describe('stripTitleNumberingLoose', () => {
   // The in-field ⋯ menu acts on one title the user is looking at, with a before→after
-  // preview and undo a keystroke away — so it can strip a separator-less bare number
-  // that the cautious bulk command leaves alone. This is the reported case: "01 Label
-  // Red (Apokaliptip Remix)" with no dot and no tagged track number never cleaned.
-  it('strips a separator-less leading number with no track number to confirm it', () => {
+  // preview and undo a keystroke away — so it strips track numbering the cautious bulk
+  // command leaves alone. "Numbering" is a shape, not just any leading digit: a
+  // separator, a vinyl side letter, or a zero-padded prefix ("01", "02") mark a
+  // position, while a bare digit with no zero and no separator is part of the title.
+  it('strips the reported separator-less zero-padded number', () => {
+    // "01 Label Red (Apokaliptip Remix)": no dot, no tagged position — the case that
+    // never cleaned. The leading zero is the tell that "01" is a position, not a word.
     expect(stripTitleNumberingLoose('01 Label Red (Apokaliptip Remix)')).toBe(
       'Label Red (Apokaliptip Remix)',
     )
     expect(stripTitleNumberingLoose('05 Last One')).toBe('Last One')
   })
 
-  it('still handles every case the cautious strip already did', () => {
-    // The loose strip is a superset: separators, vinyl positions and the space they
-    // leave behind must clean exactly as before, so the menu never regresses.
+  it('strips only the position when the title itself starts with a number', () => {
+    // "02 3 Heads Label Red": the "02" is the position, "3 Heads" is the artist. Strip
+    // the zero-padded prefix and stop — the "3" of "3 Heads" is not numbering.
+    expect(stripTitleNumberingLoose('02 3 Heads Label Red')).toBe('3 Heads Label Red')
+  })
+
+  it('leaves a bare number that is part of the title, with no zero and no separator', () => {
+    // The whole reason the loose strip is not "drop any leading digit": these are band
+    // and title names, not positions. Stripping them would mangle the tag, and the menu
+    // must not even offer that.
+    expect(stripTitleNumberingLoose('3 Heads')).toBe('3 Heads')
+    expect(stripTitleNumberingLoose('3 Heads Label Red')).toBe('3 Heads Label Red')
+    expect(stripTitleNumberingLoose('2 Unlimited')).toBe('2 Unlimited')
+    expect(stripTitleNumberingLoose('808 State')).toBe('808 State')
+    expect(stripTitleNumberingLoose('7 Seconds')).toBe('7 Seconds')
+    expect(stripTitleNumberingLoose('1 Nombre')).toBe('1 Nombre')
+  })
+
+  it('still handles every case a separator or vinyl side already made unambiguous', () => {
+    // Separators, parens and vinyl positions clean exactly as the cautious strip does —
+    // the loose form only ADDS the zero-padded case, it never regresses these.
     expect(stripTitleNumberingLoose('1. Shake It')).toBe('Shake It')
+    expect(stripTitleNumberingLoose('01 - Nombre')).toBe('Nombre')
     expect(stripTitleNumberingLoose('A1 - Deep Cut')).toBe('Deep Cut')
+    expect(stripTitleNumberingLoose('A1 Deep Cut')).toBe('Deep Cut')
     expect(stripTitleNumberingLoose('(1) Last One')).toBe('Last One')
+    expect(stripTitleNumberingLoose('1) Last One')).toBe('Last One')
   })
 
   it('never empties a title that is only a number', () => {

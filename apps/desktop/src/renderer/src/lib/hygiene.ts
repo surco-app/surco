@@ -9,11 +9,16 @@ const TITLE_NUMBERING = /^\(?(?:[A-Za-z]\d+|\d+)\)?\s*[.\-)]\s*|^[A-Za-z]\d+\s+/
 // A bare leading number, the shape the anchored pattern above refuses to touch on its own.
 const BARE_LEADING_NUMBER = /^(\d+)\s+/
 
-// The loose form the in-field ⋯ menu uses: any leading number (with an optional vinyl
-// side letter and separator) followed by whitespace. Unlike TITLE_NUMBERING it strips a
-// separator-less bare number ("01 Label Red") without a track number to confirm it —
-// safe here because the menu shows the before→after and a wrong strip is one undo away.
-const LOOSE_LEADING_NUMBER = /^\(?(?:[A-Za-z]?\d+)\)?\s*[.\-)]?\s+/
+// The three shapes the in-field ⋯ menu treats as track numbering. Numbering is a shape,
+// not any leading digit: "3 Heads" and "2 Unlimited" are names, so a bare digit with no
+// zero and no separator is left alone. What DOES mark a position:
+//   1. a separator after the number ("1. ", "01 - ", "(1) ", "1) "), optional open paren,
+//   2. a vinyl side letter ("A1 Deep Cut"), even without a separator,
+//   3. a zero-padded prefix ("01", "02", "05") — the leading zero is the tell a rip
+//      stamps, and it is what rescues the reported "01 Label Red" that has no separator.
+const NUMBERING_SEPARATOR = /^\(?(?:[A-Za-z]?\d+)\)?\s*[.\-)]\s+/
+const NUMBERING_VINYL = /^[A-Za-z]\d+\s+/
+const NUMBERING_ZERO_PADDED = /^0\d*\s+/
 
 // Strips that numbering, closing the gap it leaves. Doing both in one step is the point:
 // removing "1." by hand leaves " Shake It" with an orphan leading space, which is half the
@@ -33,13 +38,21 @@ export function stripTitleNumbering(title: string, trackNumber = ''): string {
   return clean ? clean : title
 }
 
-// The looser strip behind the in-field ⋯ menu: it drops a leading number even without a
-// separator or a confirming track number, the case the bulk command deliberately leaves
-// alone. A title that is only a number is still left intact — emptying the tag is never
-// the intent. The user sees the before→after preview and can undo, so the extra reach
-// (which would also touch "7 Seconds") is a safe trade here that it is not in bulk.
+// The looser strip behind the in-field ⋯ menu: it drops a separator-less zero-padded
+// prefix ("01 Label Red") that the bulk command needs a tagged position to touch, while
+// still refusing a bare digit that is part of the title ("3 Heads", "2 Unlimited"). The
+// first matching shape wins and only its match is removed, so "02 3 Heads" loses the "02"
+// and keeps the "3 Heads". A title that is only a number is left intact — emptying the
+// tag is never the intent behind "remove numbering".
 export function stripTitleNumberingLoose(title: string): string {
-  const clean = title.replace(LOOSE_LEADING_NUMBER, '').trim()
+  let stripped = title
+  for (const pattern of [NUMBERING_SEPARATOR, NUMBERING_VINYL, NUMBERING_ZERO_PADDED]) {
+    if (pattern.test(title)) {
+      stripped = title.replace(pattern, '')
+      break
+    }
+  }
+  const clean = stripped.trim()
   return clean ? clean : title
 }
 
