@@ -18,7 +18,9 @@ const PREVIEW_LIMIT = 6
 // Drops the track number rips glue to the front of the title ("1. Shake It", "A1 - Deep Cut").
 // This exists because doing it through find/replace cannot work: searching "1." also matches
 // inside "A1." and mangles vinyl positions, and deleting the number by hand leaves an orphan
-// space. Anchoring to the start and closing the gap are one operation here.
+// space. Anchoring to the start and closing the gap are one operation here. Each track's own
+// tagged position goes in too, so separator-less rips ("05 Last One") clear without a numeric
+// title ("7 Seconds") being mistaken for a prefix.
 // App scopes `tracks` the same way find/replace does, so an active filter never rewrites
 // hidden rows, and the preview shows what changes before anything is committed.
 export function StripNumberingModal({ tracks, onApply, onClose }: Props): React.JSX.Element {
@@ -29,7 +31,7 @@ export function StripNumberingModal({ tracks, onApply, onClose }: Props): React.
       tracks
         .map((t) => ({
           id: t.id,
-          title: stripTitleNumbering(t.meta.title ?? ''),
+          title: stripTitleNumbering(t.meta.title ?? '', t.meta.trackNumber ?? ''),
           before: t.meta.title ?? '',
         }))
         .filter((p) => p.title !== p.before)

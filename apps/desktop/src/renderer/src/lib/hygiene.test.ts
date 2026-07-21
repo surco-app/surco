@@ -84,11 +84,39 @@ describe('stripTitleNumbering', () => {
     expect(stripTitleNumbering('(1) Last One')).toBe('Last One')
   })
 
-  it('keeps a bare leading number, which is indistinguishable from a real title', () => {
+  it('keeps a bare leading number when nothing confirms it is a position', () => {
     // "05 Last One" is numbering and "7 Seconds" is not, yet they have the same shape.
-    // Preserving both is the safe half of that trade: a missed prefix is an edit away,
-    // a destroyed title is not.
+    // With no track number to check against, preserving both is the safe half of that
+    // trade: a missed prefix is an edit away, a destroyed title is not.
     expect(stripTitleNumbering('05 Last One')).toBe('05 Last One')
+  })
+
+  it('strips a bare leading number once the track number confirms it', () => {
+    // The separator-less rips ("05 Last One") that the anchored pattern alone cannot
+    // touch. The tagged position is the evidence that turns a guess into a fact, so
+    // matching it — 5 vs "05" — is what makes the strip safe.
+    expect(stripTitleNumbering('05 Last One', '5')).toBe('Last One')
+    expect(stripTitleNumbering('5 Last One', '05')).toBe('Last One')
+    expect(stripTitleNumbering('05 Last One', 'A5')).toBe('Last One')
+  })
+
+  it('keeps a bare number that disagrees with the track number', () => {
+    // "7 Seconds" on track 3 is a title, not a position: no match, no strip. This is
+    // the whole point of checking rather than pattern-matching the text.
+    expect(stripTitleNumbering('7 Seconds', '3')).toBe('7 Seconds')
+    expect(stripTitleNumbering('99 Problems', '2')).toBe('99 Problems')
+  })
+
+  it('strips a separator prefix regardless of the track number', () => {
+    // "1." is unambiguous on its own, so a stale or missing position must not veto it —
+    // the track number is extra evidence for the bare case, not a gate on every case.
+    expect(stripTitleNumbering('1. Shake It', '7')).toBe('Shake It')
+    expect(stripTitleNumbering('1. Shake It', '')).toBe('Shake It')
+  })
+
+  it('still refuses to empty a title that is only its own track number', () => {
+    // Track 1999 of nothing: stripping leaves nothing, so the title stands.
+    expect(stripTitleNumbering('1999', '1999')).toBe('1999')
   })
 
   it('never strips a number that is the title itself', () => {

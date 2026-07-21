@@ -27,7 +27,7 @@ const emptyMeta: TrackMetadata = {
   remixArtist: '',
 }
 
-function track(id: string, title: string): TrackItem {
+function track(id: string, title: string, trackNumber = ''): TrackItem {
   return {
     id,
     inputPath: `/m/${id}`,
@@ -35,7 +35,7 @@ function track(id: string, title: string): TrackItem {
     listLabel: title,
     query: '',
     status: 'idle',
-    meta: { ...emptyMeta, title },
+    meta: { ...emptyMeta, title, trackNumber },
   }
 }
 
@@ -66,6 +66,14 @@ describe('StripNumberingModal', () => {
       { id: 'b', meta: { title: 'Deep Cut' } },
     ])
     expect(onClose).toHaveBeenCalled()
+  })
+
+  it('uses each track’s own position to clear separator-less numbering', () => {
+    // The rips that read "05 Last One": only the track's tagged position tells them
+    // apart from a title like "7 Seconds", so the modal must feed it through.
+    const { onApply } = renderModal([track('a', '05 Last One', '5'), track('b', '7 Seconds', '3')])
+    fireEvent.click(screen.getByTestId('strip-numbering-apply'))
+    expect(onApply).toHaveBeenCalledWith([{ id: 'a', meta: { title: 'Last One' } }])
   })
 
   it('previews before→after so a bulk rewrite is never applied blind', () => {
