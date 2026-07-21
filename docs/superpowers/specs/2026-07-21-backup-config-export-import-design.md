@@ -47,7 +47,7 @@ Backup completo y restaurable de una máquina. Sin filtrar ninguna clave: token,
   1. `dialog.showOpenDialog` (filtro `.json`).
   2. **Validar:** parsear JSON; comprobar que es un objeto con al menos una clave conocida de `Settings`. Si no parsea o no tiene pinta de settings de Surco → devolver error claro (la UI muestra un mensaje, no aplica nada).
   3. **Confirmar:** `dialog.showMessageBox` de confirmación — *"Esto reemplazará toda tu configuración actual. ¿Continuar?"*. Reemplazar-todo es destructivo, así que la confirmación es obligatoria.
-  4. **Aplicar:** reemplazo real. El objeto importado pasa por `mergeSettings(defaults, importado)` para rellenar **solo** claves ausentes (backup de una versión antigua de Surco), pero **no conserva nada de la config actual**. El resultado se persiste con `saveSettings` (`settings.ts:210`), que ya aplica el split local/synced según haya carpeta activa — así el import escribe token/rutas/stats en el sitio correcto sin lógica nueva. Nota: `saveSettings` puede apagar `autoMatch` si sus prerrequisitos no se cumplen en esta máquina, lo cual es correcto.
+  4. **Aplicar:** reemplazo real. El objeto importado pasa por `mergeSettings(defaults, importado)` para rellenar **solo** claves ausentes (backup de una versión antigua de Surco), pero **no conserva nada de la config actual**. Importante: NO se usa `saveSettings` para esto, porque `saveSettings` hace `{ ...getSettings(), ...patch }` (fusiona con lo actual, no reemplaza). Se añade una función nueva `replaceSettings(imported)` en `settings.ts` que parte de `defaults` (no del estado actual) y persiste con el mismo split local/synced que `saveSettings`. Puede apagar `autoMatch` si sus prerrequisitos no se cumplen en esta máquina, lo cual es correcto.
   5. Devolver el `Settings` resultante.
 - **IPC:** nuevo handler `dialog:importSettings` en `exportIpc.ts` (o su seam natural; el nombre `dialog:` mantiene la convención del fichero).
 - **Recarga de UI:** el renderer aplica el resultado vía `onSettingsReplaced(next)` — el mismo mecanismo que ya usa `moveConfigDir` en `SettingsModal.tsx:118-127` para refrescar la app tras reemplazar settings de golpe (incluye `setSynced(pickSynced(next))` y `onPreviewTheme(next.theme)`).
@@ -74,6 +74,10 @@ Que `discogsToken` (y su dependiente `autoMatch`) se escriban en el `settings.js
 ### Comentario a actualizar (obligatorio)
 
 `settings.ts:89-92` afirma explícitamente que el token *"es un secreto que no debe acabar en iCloud/Dropbox en texto plano"*. Al hacer este cambio ese comentario deja de ser cierto. Se reescribe para reflejar la nueva decisión consciente del usuario (backup completo, incluido el token, en su cloud propio). No se deja un comentario que contradice el código.
+
+### Texto de la UI a actualizar (i18n)
+
+El hint de la carpeta de config (`settings.configDirHint`, en los 5 locales) dice literalmente que *"el token de Discogs... nunca sale de esta máquina"*. Tras este cambio es falso, así que se actualiza en `en`, `es`, `de`, `fr`, `pt-BR` para mencionar solo las estadísticas/rutas como locales.
 
 ---
 
