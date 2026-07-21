@@ -294,6 +294,10 @@ export const Toolbar = memo(function Toolbar({
           <kbd className="font-sans">{isMac ? '⌘' : 'Ctrl'}</kbd>
           <kbd className="font-sans">K</kbd>
         </button>
+        {/* Split the command launcher from the app-level views (stats, activity, settings)
+            so the header reads as three groups — track actions · command · app — instead
+            of one undifferentiated run of icons. */}
+        <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
         <button
           type="button"
           data-testid="open-stats"
