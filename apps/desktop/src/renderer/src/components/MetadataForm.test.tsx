@@ -50,13 +50,16 @@ describe('MetadataForm', () => {
   // (the user's own field order), with no group headers or collapse toggles between
   // them. Grouping the fields into collapsible sections fought the user's manual
   // ordering — a field dragged across a group boundary snapped back — so it's gone.
-  it('renders every field in the order received, with no group headers', () => {
+  // It renders inline in the editor's single scroll too — no capped inner scroller,
+  // so a long field set never traps the wheel in a second scroll region.
+  it('renders every field in the order received, with no group headers or inner scroller', () => {
     renderForm([spec('catalogNumber', 'C'), spec('title', 'X'), spec('bpm')])
     expect(screen.getByTestId('field-catalogNumber')).toBeInTheDocument()
     expect(screen.getByTestId('field-title')).toBeInTheDocument()
     expect(screen.getByTestId('field-bpm')).toBeInTheDocument()
     expect(screen.queryByTestId('field-group-catalog')).toBeNull()
     expect(screen.queryByTestId('field-group-body-identity')).toBeNull()
+    expect(screen.queryByTestId('metadata-fields')).toBeNull()
   })
 
   it('keeps the field order verbatim across group boundaries', () => {
