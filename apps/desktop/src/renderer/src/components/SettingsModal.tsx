@@ -170,7 +170,9 @@ export function SettingsModal({
               onKeyDown={(e) => onTabKeyDown(e, idx)}
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                 tab === id
-                  ? 'bg-[var(--color-field)] font-medium text-[var(--color-accent)]'
+                  ? // accent-soft (not field) so the selected tab reads against the panel-2
+                    // sidebar in light too, where field and panel-2 are nearly the same grey.
+                    'bg-[var(--color-accent-soft)] font-medium text-[var(--color-accent)]'
                   : 'text-fg-muted hover:bg-[var(--color-panel)] hover:text-fg'
               }`}
             >
