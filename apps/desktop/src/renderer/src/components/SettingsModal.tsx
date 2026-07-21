@@ -51,14 +51,15 @@ export function SettingsModal({
   // the fold with no hint. Recomputed on `tab` so swapping to a shorter/taller tab
   // refreshes it without a scroll event.
   const { ref: bodyRef, moreBelow } = useScrollAffordance([tab])
-  // Roving-tabindex navigation for the tablist: arrows (and Home/End) move the
-  // selection and focus together, wrapping around, per the ARIA tabs pattern.
+  // Roving-tabindex navigation for the vertical tablist: Up/Down (and Home/End) move the
+  // selection and focus together, wrapping around, per the ARIA tabs pattern. Left/Right
+  // stay wired as aliases so muscle memory from the old horizontal row still works.
   const tabRefs = useRef<Partial<Record<SettingsTab, HTMLButtonElement | null>>>({})
   function onTabKeyDown(e: React.KeyboardEvent, idx: number): void {
     const last = SETTINGS_TABS.length - 1
     let next = -1
-    if (e.key === 'ArrowRight') next = idx === last ? 0 : idx + 1
-    else if (e.key === 'ArrowLeft') next = idx === 0 ? last : idx - 1
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') next = idx === last ? 0 : idx + 1
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') next = idx === 0 ? last : idx - 1
     else if (e.key === 'Home') next = 0
     else if (e.key === 'End') next = last
     if (next === -1) return
@@ -139,46 +140,51 @@ export function SettingsModal({
       label={tr('header.settings')}
       align="top"
       onSubmit={save}
-      className="flex max-h-[84vh] w-[680px] flex-col rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
+      className="flex max-h-[84vh] w-[780px] overflow-hidden rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)]"
     >
-      <div className="-mx-6 -mt-6 mb-5 shrink-0 border-b border-[var(--color-line)] px-4 pt-5 pb-3">
-        <div
-          role="tablist"
-          aria-label={tr('header.settings')}
-          className="flex justify-center gap-2"
-        >
-          {SETTINGS_TABS.map((id, idx) => {
-            const Icon = SETTINGS_TAB_ICONS[id]
-            return (
-              <button
-                key={id}
-                ref={(el) => {
-                  tabRefs.current[id] = el
-                }}
-                type="button"
-                role="tab"
-                id={`settings-tab-${id}`}
-                data-testid={`settings-tab-${id}`}
-                aria-selected={tab === id}
-                aria-controls="settings-tabpanel"
-                tabIndex={tab === id ? 0 : -1}
-                onClick={() => setTab(id)}
-                onKeyDown={(e) => onTabKeyDown(e, idx)}
-                className={`flex w-[4.5rem] flex-col items-center gap-1.5 rounded-lg px-1 py-2 text-xs transition-colors ${
-                  tab === id
-                    ? 'bg-[var(--color-field)] text-[var(--color-accent)]'
-                    : 'text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg'
-                }`}
-              >
-                <Icon className="h-6 w-6" strokeWidth={1.7} aria-hidden="true" />
-                {tr(`settings.tabs.${id}`)}
-              </button>
-            )
-          })}
-        </div>
+      {/* A vertical nav down the side reads like macOS System Settings and scales past the
+          point a single centred row of ten tabs starts to crowd — every label gets its
+          full width, and adding a tab costs a row, not horizontal space it doesn't have. */}
+      <div
+        role="tablist"
+        aria-orientation="vertical"
+        aria-label={tr('header.settings')}
+        className="flex w-[188px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-panel-2)] p-3"
+      >
+        {SETTINGS_TABS.map((id, idx) => {
+          const Icon = SETTINGS_TAB_ICONS[id]
+          return (
+            <button
+              key={id}
+              ref={(el) => {
+                tabRefs.current[id] = el
+              }}
+              type="button"
+              role="tab"
+              id={`settings-tab-${id}`}
+              data-testid={`settings-tab-${id}`}
+              aria-selected={tab === id}
+              aria-controls="settings-tabpanel"
+              tabIndex={tab === id ? 0 : -1}
+              onClick={() => setTab(id)}
+              onKeyDown={(e) => onTabKeyDown(e, idx)}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                tab === id
+                  ? 'bg-[var(--color-field)] font-medium text-[var(--color-accent)]'
+                  : 'text-fg-muted hover:bg-[var(--color-panel)] hover:text-fg'
+              }`}
+            >
+              <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
+              {tr(`settings.tabs.${id}`)}
+            </button>
+          )
+        })}
       </div>
 
-      <div className="relative flex min-h-[280px] flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col p-6">
+      {/* A steady floor so a sparse tab (Output, Stats) keeps the same frame as a dense
+          one (Conversion) instead of the whole dialog snapping shorter when you switch. */}
+      <div className="relative flex min-h-[500px] flex-1 flex-col">
       <div
         ref={bodyRef}
         role="tabpanel"
@@ -257,6 +263,7 @@ export function SettingsModal({
         >
           {tr('common.save')}
         </button>
+      </div>
       </div>
     </ModalShell>
   )

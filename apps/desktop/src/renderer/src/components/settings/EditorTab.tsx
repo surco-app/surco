@@ -7,6 +7,7 @@ import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { SegmentedControl } from '../SegmentedControl'
 import { Tooltip } from '../Tooltip'
+import { SettingsHint, SettingsLabel } from './SettingsPrimitives'
 
 interface Props {
   synced: SyncedDraft
@@ -44,9 +45,9 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
   }
   return (
     <>
-      <label htmlFor="settings-grouping" className="mb-1.5 block text-sm font-medium text-fg-muted">
+      <SettingsLabel htmlFor="settings-grouping" className="mb-1.5">
         {tr('settings.grouping')}
-      </label>
+      </SettingsLabel>
       <input
         id="settings-grouping"
         data-testid="settings-grouping"
@@ -55,11 +56,11 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
         placeholder={tr('settings.groupingPlaceholder')}
         className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
       />
-      <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.groupingHint')}</p>
+      <SettingsHint className="mt-1.5 mb-5">{tr('settings.groupingHint')}</SettingsHint>
 
-      <label htmlFor="settings-genre" className="mb-1.5 block text-sm font-medium text-fg-muted">
+      <SettingsLabel htmlFor="settings-genre" className="mb-1.5">
         {tr('settings.genre')}
-      </label>
+      </SettingsLabel>
       <input
         id="settings-genre"
         data-testid="settings-genre"
@@ -68,7 +69,7 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
         placeholder={tr('settings.genrePlaceholder')}
         className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
       />
-      <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.genreHint')}</p>
+      <SettingsHint className="mt-1.5 mb-5">{tr('settings.genreHint')}</SettingsHint>
 
       <div className="space-y-3 border-t border-[var(--color-line)] pt-5">
         <div>
@@ -82,7 +83,7 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
             />
             <span className="text-sm">{tr('settings.showSpectrum')}</span>
           </label>
-          <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.showSpectrumHint')}</p>
+          <SettingsHint className="mt-1.5">{tr('settings.showSpectrumHint')}</SettingsHint>
         </div>
         {/* Only meaningful while the quality analysis above is on — disabled (not hidden)
             when it isn't, so the option stays discoverable. */}
@@ -98,7 +99,7 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
             />
             <span className="text-sm">{tr('settings.autoAnalyze')}</span>
           </label>
-          <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.autoAnalyzeHint')}</p>
+          <SettingsHint className="mt-1.5">{tr('settings.autoAnalyzeHint')}</SettingsHint>
         </div>
         <div>
           <label className="flex cursor-pointer items-center gap-3">
@@ -111,12 +112,10 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
             />
             <span className="text-sm">{tr('settings.showLoudness')}</span>
           </label>
-          <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.showLoudnessHint')}</p>
+          <SettingsHint className="mt-1.5">{tr('settings.showLoudnessHint')}</SettingsHint>
         </div>
         <div>
-          <span className="mb-1.5 block text-sm font-medium text-fg-muted">
-            {tr('settings.keyNotation')}
-          </span>
+          <SettingsLabel className="mb-1.5">{tr('settings.keyNotation')}</SettingsLabel>
           <SegmentedControl
             options={['camelot', 'musical'] as const}
             value={synced.keyNotation}
@@ -124,15 +123,13 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
             testidPrefix="settings-key-notation"
             labelFor={(id) => tr(`settings.keyNotations.${id}`)}
           />
-          <p className="mt-1.5 text-xs text-fg-dim">{tr('settings.keyNotationHint')}</p>
+          <SettingsHint className="mt-1.5">{tr('settings.keyNotationHint')}</SettingsHint>
         </div>
       </div>
 
       <div className="mt-5 border-t border-[var(--color-line)] pt-5">
-        <span className="block text-sm font-medium text-fg-muted">
-          {tr('settings.sections.title')}
-        </span>
-        <p className="mt-1.5 mb-3 text-xs text-fg-dim">{tr('settings.sections.hint')}</p>
+        <SettingsLabel>{tr('settings.sections.title')}</SettingsLabel>
+        <SettingsHint className="mt-1.5 mb-3">{tr('settings.sections.hint')}</SettingsHint>
         <div className="space-y-1.5">
           {sections.map((section, i) => {
             const movable = section.id !== 'form'

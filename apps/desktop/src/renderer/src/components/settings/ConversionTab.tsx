@@ -6,6 +6,7 @@ import type { PatchSynced } from '../../lib/settingsTabs'
 import { DeclickControls } from '../DeclickControls'
 import { NormalizeControls } from '../NormalizeControls'
 import { SegmentedControl } from '../SegmentedControl'
+import { SettingsHint, SettingsLabel } from './SettingsPrimitives'
 
 const FORMATS: OutputFormat[] = ['aiff', 'alac', 'mp3', 'wav', 'flac']
 
@@ -21,9 +22,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   return (
     <>
-      <span className="mb-1.5 block text-sm font-medium text-fg-muted">
-        {tr('settings.outputFormat')}
-      </span>
+      <SettingsLabel className="mb-1.5">{tr('settings.outputFormat')}</SettingsLabel>
       <SegmentedControl
         options={FORMATS}
         value={synced.outputFormat}
@@ -31,15 +30,13 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
         testidPrefix="settings-format"
         labelFor={(id) => tr(`settings.formats.${id}`)}
       />
-      <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.outputFormatHint')}</p>
+      <SettingsHint className="mt-1.5 mb-5">{tr('settings.outputFormatHint')}</SettingsHint>
 
       {/* Contextual like the FLAC note: the encoder choice only matters while MP3 is
           the pick, though it applies to every MP3 export (the editor's ad-hoc ones too). */}
       {synced.outputFormat === 'mp3' && (
         <>
-          <span className="mb-1.5 block text-sm font-medium text-fg-muted">
-            {tr('settings.mp3Quality')}
-          </span>
+          <SettingsLabel className="mb-1.5">{tr('settings.mp3Quality')}</SettingsLabel>
           <SegmentedControl
             options={['320', '256', '192', '160', '128', 'v0', 'v2'] as const}
             value={synced.mp3Quality}
@@ -47,7 +44,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
             testidPrefix="settings-mp3-quality"
             labelFor={(id) => tr(`settings.mp3Qualities.${id}`)}
           />
-          <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.mp3QualityHint')}</p>
+          <SettingsHint className="mt-1.5 mb-5">{tr('settings.mp3QualityHint')}</SettingsHint>
         </>
       )}
 
@@ -55,9 +52,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
           MP3 the control would read as a knob that does nothing. */}
       {synced.outputFormat !== 'mp3' && (
         <>
-          <span className="mb-1.5 block text-sm font-medium text-fg-muted">
-            {tr('settings.bitDepth')}
-          </span>
+          <SettingsLabel className="mb-1.5">{tr('settings.bitDepth')}</SettingsLabel>
           <SegmentedControl
             options={['source', '16', '24'] as const}
             value={synced.outputBitDepth}
@@ -65,13 +60,11 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
             testidPrefix="settings-bit-depth"
             labelFor={(id) => tr(`settings.bitDepths.${id}`)}
           />
-          <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.bitDepthHint')}</p>
+          <SettingsHint className="mt-1.5 mb-5">{tr('settings.bitDepthHint')}</SettingsHint>
         </>
       )}
 
-      <span className="mb-1.5 block text-sm font-medium text-fg-muted">
-        {tr('settings.sampleRate')}
-      </span>
+      <SettingsLabel className="mb-1.5">{tr('settings.sampleRate')}</SettingsLabel>
       <SegmentedControl
         options={['source', '44100', '48000'] as const}
         value={synced.outputSampleRate}
@@ -79,13 +72,11 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
         testidPrefix="settings-sample-rate"
         labelFor={(id) => tr(`settings.sampleRates.${id}`)}
       />
-      <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.sampleRateHint')}</p>
+      <SettingsHint className="mt-1.5 mb-5">{tr('settings.sampleRateHint')}</SettingsHint>
 
       {synced.outputFormat === 'flac' && (
         <>
-          <span className="mb-1.5 block text-sm font-medium text-fg-muted">
-            {tr('settings.flacCompression')}
-          </span>
+          <SettingsLabel className="mb-1.5">{tr('settings.flacCompression')}</SettingsLabel>
           <SegmentedControl
             options={['0', '5', '8'] as const}
             value={synced.flacCompression}
@@ -93,22 +84,22 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
             testidPrefix="settings-flac-compression"
             labelFor={(id) => tr(`settings.flacCompressions.${id}`)}
           />
-          <p className="mt-1.5 mb-5 text-xs text-fg-dim">{tr('settings.flacCompressionHint')}</p>
+          <SettingsHint className="mt-1.5 mb-5">{tr('settings.flacCompressionHint')}</SettingsHint>
         </>
       )}
 
       {/* Above normalization, matching the order the conversion applies them in:
           repair the clicks first, then size the loudness/peak gain on the result. */}
-      <p className="mt-5 mb-1.5 border-t border-[var(--color-line)] pt-5 text-sm font-medium text-fg-muted">
+      <SettingsLabel className="mt-5 mb-1.5 border-t border-[var(--color-line)] pt-5">
         {tr('declick.title')}
-      </p>
-      <p className="mb-3 text-xs text-fg-dim">{tr('declick.hint')}</p>
+      </SettingsLabel>
+      <SettingsHint className="mb-3">{tr('declick.hint')}</SettingsHint>
       <DeclickControls value={synced.declick} onChange={(d) => patch('declick', d)} />
 
-      <p className="mt-5 mb-1.5 border-t border-[var(--color-line)] pt-5 text-sm font-medium text-fg-muted">
+      <SettingsLabel className="mt-5 mb-1.5 border-t border-[var(--color-line)] pt-5">
         {tr('normalize.title')}
-      </p>
-      <p className="mb-3 text-xs text-fg-dim">{tr('normalize.hint')}</p>
+      </SettingsLabel>
+      <SettingsHint className="mb-3">{tr('normalize.hint')}</SettingsHint>
       <NormalizeControls value={synced.normalize} onChange={(n) => patch('normalize', n)} />
     </>
   )
