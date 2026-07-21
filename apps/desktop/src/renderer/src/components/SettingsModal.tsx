@@ -182,9 +182,7 @@ export function SettingsModal({
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col p-6">
-      {/* A steady floor so a sparse tab (Output, Stats) keeps the same frame as a dense
-          one (Conversion) instead of the whole dialog snapping shorter when you switch. */}
-      <div className="relative flex min-h-[500px] flex-1 flex-col">
+      <div className="relative flex min-h-[280px] flex-1 flex-col">
       <div
         ref={bodyRef}
         role="tabpanel"

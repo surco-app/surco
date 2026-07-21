@@ -626,7 +626,7 @@
       "es": "Español",
       "de": "Deutsch",
       "fr": "Français",
-      "pt-BR": "Português (Brasil)"
+      "pt-BR": "Português"
     },
     "configDir": "Dossier de configuration",
     "configDirDefault": "Dossier par défaut de l'app",
