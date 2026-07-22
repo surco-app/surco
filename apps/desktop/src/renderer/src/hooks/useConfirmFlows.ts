@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import type {
   DeclickMode,
+  FormatSetting,
   NormalizeConfig,
-  OutputFormat,
   Settings,
   TrackMetadata,
 } from '../../../shared/types'
@@ -25,7 +25,7 @@ interface Params {
   deriveTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   processAll: (
     targets: TrackItem[],
-    format?: OutputFormat,
+    format?: FormatSetting,
     normalize?: NormalizeConfig,
     destination?: Destination,
     declick?: DeclickMode,
@@ -56,7 +56,7 @@ export interface ConfirmFlows {
   askRemoveFromList: (targets: TrackItem[]) => void
   askConvertAll: (
     targets: TrackItem[],
-    format?: OutputFormat,
+    format?: FormatSetting,
     normalize?: NormalizeConfig,
     destination?: Destination,
     declick?: DeclickMode,
@@ -257,7 +257,7 @@ export function useConfirmFlows({
   // because conversion only writes new files.
   function askConvertAll(
     targets: TrackItem[],
-    format?: OutputFormat,
+    format?: FormatSetting,
     normalize?: NormalizeConfig,
     destination?: Destination,
     declick?: DeclickMode,

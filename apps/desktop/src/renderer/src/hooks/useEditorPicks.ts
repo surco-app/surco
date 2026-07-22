@@ -1,15 +1,15 @@
 import type React from 'react'
 import { useRef } from 'react'
-import type { DeclickMode, NormalizeConfig, OutputFormat, Settings } from '../../../shared/types'
+import type { DeclickMode, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
 import type { Destination } from '../lib/destination'
 import { useStableCallback } from './useStableCallback'
 
 export interface EditorPicks {
-  formatRef: React.RefObject<OutputFormat | null>
+  formatRef: React.RefObject<FormatSetting | null>
   destinationRef: React.RefObject<Destination | null>
   normalizeRef: React.RefObject<NormalizeConfig | null>
   declickRef: React.RefObject<DeclickMode | null>
-  onFormatChange: (format: OutputFormat) => void
+  onFormatChange: (format: FormatSetting) => void
   onDestinationChange: (destination: Destination) => void
   onNormalizeChange: (n: NormalizeConfig) => void
   onDeclickChange: (d: DeclickMode) => void
@@ -34,12 +34,12 @@ export function useEditorPicks(
   saveSettings: (patch: Partial<Settings>) => void,
 ): EditorPicks {
   // The format picked in the editor's split-button menu, for THIS track only.
-  const formatRef = useRef<OutputFormat | null>(null)
+  const formatRef = useRef<FormatSetting | null>(null)
   const destinationRef = useRef<Destination | null>(null)
   const normalizeRef = useRef<NormalizeConfig | null>(null)
   const declickRef = useRef<DeclickMode | null>(null)
 
-  const onFormatChange = useStableCallback((format: OutputFormat) => {
+  const onFormatChange = useStableCallback((format: FormatSetting) => {
     formatRef.current = format
   })
   const onDestinationChange = useStableCallback((destination: Destination) => {

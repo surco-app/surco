@@ -2,13 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { resolveJobFormat } from '../../../shared/format'
-import type {
-  DeclickMode,
-  FormatSetting,
-  NormalizeConfig,
-  OutputFormat,
-  Settings,
-} from '../../../shared/types'
+import type { DeclickMode, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
 import { removeAnalysisQueries } from '../lib/analysisQueries'
 import {
   type BatchOutcome,
@@ -72,7 +66,7 @@ export interface TrackProcessing {
   ) => Promise<BatchOutcome>
   processAll: (
     targets: TrackItem[],
-    formatOverride?: OutputFormat,
+    formatOverride?: FormatSetting,
     normalizeOverride?: NormalizeConfig,
     destinationOverride?: Destination,
     declickOverride?: DeclickMode,
@@ -355,7 +349,7 @@ export function useTrackProcessing({
   const processAll = useStableCallback(
     async (
       targets: TrackItem[],
-      formatOverride?: OutputFormat,
+      formatOverride?: FormatSetting,
       normalizeOverride?: NormalizeConfig,
       destinationOverride?: Destination,
       declickOverride?: DeclickMode,

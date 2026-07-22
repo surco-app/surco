@@ -2,8 +2,8 @@ import { Check, ChevronDown } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
-import type { OutputFormat, ProcessStage } from '../../../shared/types'
+import { FORMAT_SETTINGS, OUTPUT_FORMATS } from '../../../shared/outputFormats'
+import type { FormatSetting, OutputFormat, ProcessStage } from '../../../shared/types'
 import type { Destination } from '../lib/destination'
 import { exportButtonLabel } from '../lib/exportLabel'
 import { STAGE_PROGRESS } from '../lib/progress'
@@ -16,7 +16,7 @@ interface ExportButtonProps {
   status: TrackItem['status']
   stale: boolean
   done: boolean
-  outputFormat: OutputFormat
+  outputFormat: FormatSetting
   exportedFormat: OutputFormat | null
   withAppleMusic: boolean
   withEngineDj: boolean
@@ -45,12 +45,12 @@ interface ExportButtonProps {
   // Like the format, picking one only relabels the button for this track.
   destination: Destination
   destinations: readonly Destination[]
-  onProcess: (format: OutputFormat) => void
+  onProcess: (format: FormatSetting) => void
   // When given, the button stays live while converting: clicking it cancels the in-flight
   // job instead of firing another convert. Single-only — multi cancels via the toolbar
   // batch pill — so it's absent (an inert progress bar) in the multi/quiet uses.
   onCancel?: () => void
-  onSelectFormat: (format: OutputFormat) => void
+  onSelectFormat: (format: FormatSetting) => void
   onSelectDestination: (destination: Destination) => void
 }
 
@@ -98,6 +98,11 @@ export function ExportButton({
     return () => document.removeEventListener('mousedown', onDown)
   }, [open])
 
+  // 'source' names no real format, so its display text is the translated setting label
+  // ("Same as source") rather than the uppercased extension every real format shows.
+  const formatLabel =
+    outputFormat === 'source' ? tr('settings.formats.source') : outputFormat.toUpperCase()
+
   const labelSpec = exportButtonLabel({
     processing,
     quiet,
@@ -107,7 +112,7 @@ export function ExportButton({
     done,
     withAppleMusic,
     withEngineDj,
-    format: outputFormat.toUpperCase(),
+    format: formatLabel,
     exportedFormat: exportedFormat?.toUpperCase() ?? null,
   })
   // The in-flight view mirrors the track list's row: the stage names what's
@@ -120,10 +125,10 @@ export function ExportButton({
   // track is actually converting — the multi/quiet uses keep the inert bar.
   const cancellable = !quiet && processing && !!onCancel
   const label = liveStage
-    ? tr(`trackList.stage.${liveStage}`, { format: outputFormat.toUpperCase() })
+    ? tr(`trackList.stage.${liveStage}`, { format: formatLabel })
     : tr(labelSpec.key, labelSpec.options)
 
-  function pick(format: OutputFormat): void {
+  function pick(format: FormatSetting): void {
     setOpen(false)
     onSelectFormat(format)
   }
@@ -205,7 +210,10 @@ export function ExportButton({
           <p className="px-3 pt-1 pb-0.5 text-[11px] font-medium tracking-wide text-fg-dim uppercase">
             {tr('editor.menuFormat')}
           </p>
-          {FORMATS.map((id) => (
+          {/* "Same as source" only means something over several files at once — a single
+              track's own format IS its own format, so resolving it there is equivalent
+              and more informative. Offered only when converting a selection (count set). */}
+          {(count !== undefined ? FORMAT_SETTINGS : FORMATS).map((id) => (
             <button
               key={id}
               type="button"

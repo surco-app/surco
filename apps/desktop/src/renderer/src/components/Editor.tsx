@@ -8,6 +8,7 @@ import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../sha
 import { emptyMetadata } from '../../../shared/metadata'
 import type {
   DeclickMode,
+  FormatSetting,
   NormalizeConfig,
   OutputFormat,
   ReleaseTrack,
@@ -84,7 +85,7 @@ interface Props {
     patches: { id: string; patch: ReleaseMetaPatch }[],
     provider: SearchProviderId,
   ) => void
-  onProcessAll?: (format: OutputFormat) => void
+  onProcessAll?: (format: FormatSetting) => void
   onAddAllToAppleMusic?: () => void
   // Multi-select writes: a field edited in the shared form goes to every selected track,
   // and a dropped/picked cover is stamped onto all of them.
@@ -119,7 +120,7 @@ interface Props {
   onReencode?: (format: OutputFormat) => void
   // Reports the format chosen in the split-button menu so the keyboard convert
   // shortcuts (⌘⏎ / ⌘⇧⏎) export in it too, instead of the Settings default.
-  onFormatChange?: (format: OutputFormat) => void
+  onFormatChange?: (format: FormatSetting) => void
   // Reports the destination chosen in the split-button menu, mirroring onFormatChange:
   // App pins it in a ref so every convert entry point sends this track where the
   // button says, not where Settings points.
@@ -289,6 +290,27 @@ export const Editor = memo(function Editor({
   // against this track right away — everything downstream (onProcess, in-place
   // checks) works with a real OutputFormat, never the setting itself.
   const [format, setFormat] = useState(resolveJobFormat(outputFormat, item.inputPath, 'aiff'))
+  // The menu's raw pick, offered unresolved only in multi-select: 'source' means
+  // nothing against the anchor track alone, so it must reach processAll as the
+  // setting it is and get resolved per track there (useTrackProcessing.processOne).
+  // Single-select never offers 'source' in the menu, so this always mirrors `format`
+  // there — it exists purely to carry the multi-select pick past the anchor-only
+  // `format` above.
+  const [formatPick, setFormatPick] = useState<FormatSetting>(isMulti ? outputFormat : format)
+  // The selection can widen from one track to several (shift-click extends past the
+  // same anchor) without the editor remounting — key={item.id} only changes when the
+  // anchor itself does. Without this, formatPick would keep the single-track seed
+  // (already resolved against the anchor) instead of the raw setting multi-select
+  // needs to offer 'source' and carry it unresolved to processAll.
+  const wasMulti = useRef(isMulti)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reacts only to the single/multi transition — format/outputFormat/onFormatChange are read at that moment, not tracked continuously.
+  useEffect(() => {
+    if (wasMulti.current === isMulti) return
+    wasMulti.current = isMulti
+    const seeded = isMulti ? outputFormat : format
+    setFormatPick(seeded)
+    onFormatChange?.(seeded)
+  }, [isMulti])
   // The chosen destination, same one-shot contract as the format: seeded from the
   // Settings booleans, updated only by the split-button menu, reset by the per-track
   // remount, never written back to Settings.
@@ -325,7 +347,7 @@ export const Editor = memo(function Editor({
   // mirror right by construction, with no selection-watching reset in App.
   // biome-ignore lint/correctness/useExhaustiveDependencies: deliberately mount-only — the change handlers report every later pick.
   useEffect(() => {
-    onFormatChange?.(format)
+    onFormatChange?.(formatPick)
     onDestinationChange?.(destination)
     onNormalizeChange?.(normalizeCfg)
     onDeclickChange?.(declickCfg)
@@ -589,7 +611,12 @@ export const Editor = memo(function Editor({
   // aggregate values from selectionStatus.
   const multiTracks = selectedTracks ?? []
   const footerStatus = selectionStatus(item, selectedTracks, done)
-  const musicExt = isMulti ? format : exportedFormat
+  // In multi-select this reads the raw pick (possibly 'source'), never the anchor's
+  // resolved format: a mixed batch can't know in advance whether every track lands on
+  // a Music-ineligible format. 'source' !== 'flac' lets the gate stay open, and any
+  // FLAC tracks the batch actually produces skip the add silently on their own — the
+  // same per-track skip shouldAddToAppleMusic already does for a plain FLAC pick.
+  const musicExt = isMulti ? formatPick : exportedFormat
   // Required fields are flagged the moment they are empty, not only after a failed
   // convert: with the convert button disabled below, that click can't surface the
   // reason any more, so the field's amber dot and the button's own tooltip — which
@@ -1184,13 +1211,16 @@ export const Editor = memo(function Editor({
           addToEngineDj={picked.addToEngineDj}
           destination={destination}
           destinations={destinationChoices}
-          format={format}
+          format={isMulti ? formatPick : format}
           exportedFormat={exportedFormat}
           musicExt={musicExt}
           normalizeCfg={normalizeCfg}
           onOpenNormalize={() => setSectionOpen('normalize', true)}
           onSelectFormat={(f) => {
-            setFormat(f)
+            setFormatPick(f)
+            // 'source' is only ever offered in the multi menu, so a real pick always
+            // resolves for the single-track state everything else here still reads.
+            if (f !== 'source') setFormat(f)
             onFormatChange?.(f)
             // Music can't ingest FLAC: picking it while Apple Music is the destination
             // silently falls back to the output folder — the same pin Settings applies —
@@ -1205,7 +1235,10 @@ export const Editor = memo(function Editor({
             onDestinationChange?.(d)
           }}
           onExportCollection={onExportCollection}
-          onProcess={isMulti ? (f) => onProcessAll?.(f) : onProcess}
+          // Single-select's menu never offers 'source' (format stays a real OutputFormat
+          // there), so onProcess only ever sees one at runtime — the cast just satisfies
+          // the shared FormatSetting signature ConvertFooter needs for the multi branch.
+          onProcess={isMulti ? (f) => onProcessAll?.(f) : (f) => onProcess(f as OutputFormat)}
           // Single-only: a running multi converts through the toolbar's batch pill, which
           // owns that cancel. Passing it in multi would cancel just the primary track.
           onCancel={isMulti ? undefined : onCancel}

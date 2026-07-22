@@ -1237,6 +1237,39 @@ describe('App multi-select convert', () => {
     const converted = processTrack.mock.calls.map((c) => c[0].inputPath).sort()
     expect(converted).toEqual(['/music/a.wav', '/music/b.wav'])
   })
+
+  // "Same as source" promises every file keeps its own format through a mixed batch. The
+  // editor resolves 'source' against the anchor track before it ever reaches processAll, so
+  // a WAV+MP3+FLAC selection collapsed onto whichever format the anchor happened to be —
+  // silently re-encoding (and degrading) the other two. Each job must carry ITS OWN track's
+  // format, never the anchor's.
+  it('keeps each track in its own format when Default format is "Same as source" over a mixed multi-selection', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x', inPlace: false })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ outputFormat: 'source' })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3', '/music/c.flac']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    // Selects all three: the anchor (a.wav) plus b.mp3 and c.flac via range-select.
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[2], { shiftKey: true })
+    const convert = await screen.findByTestId('process-btn')
+    fireEvent.click(convert)
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(3))
+    const byInput = Object.fromEntries(
+      processTrack.mock.calls.map((c) => [c[0].inputPath as string, c[0].format as string]),
+    )
+    expect(byInput).toEqual({
+      '/music/a.wav': 'wav',
+      '/music/b.mp3': 'mp3',
+      '/music/c.flac': 'flac',
+    })
+  })
 })
 
 describe('App normalize peak preferences', () => {

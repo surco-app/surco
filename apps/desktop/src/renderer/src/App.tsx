@@ -8,6 +8,7 @@ import { emptyMetadata } from '../../shared/metadata'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import type {
   DeclickMode,
+  FormatSetting,
   NormalizeConfig,
   OutputFormat,
   SearchProviderId,
@@ -1051,7 +1052,7 @@ export default function App(): React.JSX.Element {
         updateTrack(p.id, { ...p.patch, matched: true, matchProvider: provider })
     },
   )
-  const onProcessAllSelected = useStableCallback((format: OutputFormat) =>
+  const onProcessAllSelected = useStableCallback((format: FormatSetting) =>
     askConvertAll(
       selectedTracks,
       format,
@@ -1151,7 +1152,7 @@ export default function App(): React.JSX.Element {
   const convertSelected = useStableCallback(
     (
       id: string,
-      format?: OutputFormat,
+      format?: FormatSetting,
       normalize?: NormalizeConfig,
       forceReencode?: boolean,
       destination?: Destination,

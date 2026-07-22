@@ -1,5 +1,5 @@
 import { resolveJobFormat } from '../../../shared/format'
-import type { DeclickMode, NormalizeConfig, OutputFormat, Settings } from '../../../shared/types'
+import type { DeclickMode, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { canAddToAppleMusic } from './appleMusic'
@@ -148,7 +148,7 @@ export interface CommandDeps {
   batching: boolean
   cancelBatch: () => void
   // The editor's split-button picks, read at run time so ⌘⏎ honors them.
-  editorFormatRef: { readonly current: OutputFormat | null }
+  editorFormatRef: { readonly current: FormatSetting | null }
   editorDestinationRef: { readonly current: Destination | null }
   editorNormalizeRef: { readonly current: NormalizeConfig | null }
   editorDeclickRef: { readonly current: DeclickMode | null }
@@ -172,7 +172,7 @@ export interface CommandDeps {
   seek: (delta: number) => void
   processOne: (
     id: string,
-    format?: OutputFormat,
+    format?: FormatSetting,
     normalize?: NormalizeConfig,
     forceReencode?: boolean,
     destination?: Destination,
@@ -183,7 +183,7 @@ export interface CommandDeps {
   ) => unknown
   askConvertAll: (
     targets: TrackItem[],
-    format?: OutputFormat,
+    format?: FormatSetting,
     normalize?: NormalizeConfig,
     destination?: Destination,
     declick?: DeclickMode,
