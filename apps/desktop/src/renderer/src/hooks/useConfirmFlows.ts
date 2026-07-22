@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { reencodesLossyInPlace } from '../../../shared/format'
 import type {
   DeclickMode,
   FormatSetting,
@@ -11,8 +12,52 @@ import { eligibleForBatch } from '../lib/batch'
 import { deriveTagPatches } from '../lib/deriveTags'
 import type { Destination } from '../lib/destination'
 import { DEFAULT_REQUIRED_FIELDS } from '../lib/fields'
+import { declickForJob, normalizeForJob } from '../lib/reapply'
 import type { TrackItem } from '../types'
 import type { ConfirmModal } from './useOverlays'
+
+// Whether a track's own filters (normalize, trim, declick) will actually reach the
+// job — mirrors processTrack's job.normalize ?? settings.normalize fallback, so a job
+// with no picks of its own (nothing selected) is checked against the same filter the
+// main process will actually run, then normalizeForJob/declickForJob's skip of a
+// filter already baked into an in-place export, so a track that reads its own prior
+// export doesn't trip the warning for work that already happened and won't run again.
+function hasActiveFilters(
+  track: TrackItem,
+  normalize: NormalizeConfig | undefined,
+  declick: DeclickMode | undefined,
+  settings: Settings | null,
+): boolean {
+  const effectiveNormalize = normalizeForJob(track, normalize ?? settings?.normalize)
+  const effectiveDeclick = declickForJob(track, declick ?? settings?.declick)
+  return (
+    (effectiveNormalize !== undefined && effectiveNormalize.mode !== 'none') ||
+    (effectiveDeclick !== undefined && effectiveDeclick !== 'off') ||
+    track.trim !== undefined
+  )
+}
+
+// Whether converting this track under the given format/overwrite would re-encode an
+// MP3 over itself while an active filter forces planConversion off its stream-copy
+// shortcut — the lossy generation loss BUG 2 exists to catch, whether the in-place
+// write comes from 'source' resolving to the file's own format or from overwrite mode.
+function risksLossyReencode(
+  track: TrackItem,
+  format: FormatSetting | undefined,
+  overwriteOriginal: boolean | undefined,
+  normalize: NormalizeConfig | undefined,
+  declick: DeclickMode | undefined,
+  settings: Settings | null,
+): boolean {
+  if (!format) return false
+  return reencodesLossyInPlace(
+    format,
+    track.inputPath,
+    overwriteOriginal ?? false,
+    hasActiveFilters(track, normalize, declick, settings),
+    'aiff',
+  )
+}
 
 interface Params {
   settings: Settings | null
@@ -64,7 +109,18 @@ export interface ConfirmFlows {
   // The single-track counterpart of askConvertAll: it decides overwrite the same way,
   // then runs the conversion the caller wired (donate nudge, re-encode) rather than the
   // batch path — so one convert and a batch convert confirm the same irreversible write.
-  askConvertOne: (run: () => void, opts?: { destination?: Destination }) => void
+  // track/format/normalize/declick are the same lossy-in-place check askConvertAll runs
+  // per target — passed here because a single convert has only one track to check.
+  askConvertOne: (
+    run: () => void,
+    opts?: {
+      destination?: Destination
+      track?: TrackItem
+      format?: FormatSetting
+      normalize?: NormalizeConfig
+      declick?: DeclickMode
+    },
+  ) => void
 }
 
 // The destructive/overwriting actions that confirm before firing: trash, delete original,
@@ -267,20 +323,40 @@ export function useConfirmFlows({
     // overwrite needs no confirmation (the run only writes new files), and one
     // back onto it must still ask.
     const overwriting = destination ? destination === 'overwrite' : settings?.overwriteOriginal
-    if (!overwriting) {
+    // 'source' resolving to a track's own mp3 is in-place regardless of overwrite, so
+    // the lossy re-encode risk is checked even when overwriting is off — it is the
+    // one case where a non-overwrite run still rewrites the original.
+    const lossyReencode = targets.some((t) =>
+      risksLossyReencode(t, format, overwriting, normalize, declick, settings),
+    )
+    if (!overwriting && !lossyReencode) {
       void processAll(targets, format, normalize, destination, declick)
       return
     }
-    openConfirm({
-      title: tr('confirm.convertInPlaceTitle'),
-      message: tr('confirm.convertInPlaceMessage', {
-        count: eligibleForBatch(targets, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
-          .length,
-      }),
-      confirmLabel: tr('confirm.convertInPlaceConfirm'),
-      destructive: true,
-      onConfirm: () => void processAll(targets, format, normalize, destination, declick),
-    })
+    const count = eligibleForBatch(
+      targets,
+      settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+    ).length
+    // The lossy-reencode wording explains the quality-loss reason and wins whenever it
+    // applies, overwrite or not — a plain "originals are replaced" dialog would leave
+    // out exactly the risk (a generational MP3 re-encode) the user needs to weigh.
+    openConfirm(
+      lossyReencode
+        ? {
+            title: tr('confirm.convertLossyReencodeTitle'),
+            message: tr('confirm.convertLossyReencodeMessage', { count }),
+            confirmLabel: tr('confirm.convertLossyReencodeConfirm'),
+            destructive: true,
+            onConfirm: () => void processAll(targets, format, normalize, destination, declick),
+          }
+        : {
+            title: tr('confirm.convertInPlaceTitle'),
+            message: tr('confirm.convertInPlaceMessage', { count }),
+            confirmLabel: tr('confirm.convertInPlaceConfirm'),
+            destructive: true,
+            onConfirm: () => void processAll(targets, format, normalize, destination, declick),
+          },
+    )
   }
 
   // A single in-place convert unlinks its source just as a batch does, so it asks the
@@ -288,21 +364,52 @@ export function useConfirmFlows({
   // editor button and the process-current command) via the run callback, which carries
   // the donate nudge and re-encode the batch path doesn't. Away from overwrite it fires
   // straight through — only new files are written.
-  function askConvertOne(run: () => void, opts: { destination?: Destination } = {}): void {
+  function askConvertOne(
+    run: () => void,
+    opts: {
+      destination?: Destination
+      track?: TrackItem
+      format?: FormatSetting
+      normalize?: NormalizeConfig
+      declick?: DeclickMode
+    } = {},
+  ): void {
     const overwriting = opts.destination
       ? opts.destination === 'overwrite'
       : settings?.overwriteOriginal
-    if (!overwriting) {
+    // Same 'source'-resolves-to-mp3 case as askConvertAll: in place regardless of
+    // overwrite, so it's checked even when overwriting is off.
+    const lossyReencode = opts.track
+      ? risksLossyReencode(
+          opts.track,
+          opts.format,
+          overwriting,
+          opts.normalize,
+          opts.declick,
+          settings,
+        )
+      : false
+    if (!overwriting && !lossyReencode) {
       run()
       return
     }
-    openConfirm({
-      title: tr('confirm.convertInPlaceTitle'),
-      message: tr('confirm.convertInPlaceMessage', { count: 1 }),
-      confirmLabel: tr('confirm.convertInPlaceConfirm'),
-      destructive: true,
-      onConfirm: run,
-    })
+    openConfirm(
+      lossyReencode
+        ? {
+            title: tr('confirm.convertLossyReencodeTitle'),
+            message: tr('confirm.convertLossyReencodeMessage', { count: 1 }),
+            confirmLabel: tr('confirm.convertLossyReencodeConfirm'),
+            destructive: true,
+            onConfirm: run,
+          }
+        : {
+            title: tr('confirm.convertInPlaceTitle'),
+            message: tr('confirm.convertInPlaceMessage', { count: 1 }),
+            confirmLabel: tr('confirm.convertInPlaceConfirm'),
+            destructive: true,
+            onConfirm: run,
+          },
+    )
   }
 
   return {

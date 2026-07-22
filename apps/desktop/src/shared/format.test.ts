@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { editsInPlace, formatExtension, formatMatchesInput, resolveJobFormat } from './format'
+import {
+  editsInPlace,
+  formatExtension,
+  formatMatchesInput,
+  reencodesLossyInPlace,
+  resolveJobFormat,
+} from './format'
 
 describe('formatExtension', () => {
   // ALAC is the one format whose name is not its extension: it lives in an MPEG-4
@@ -83,5 +89,40 @@ describe('resolveJobFormat', () => {
   it('returns a concrete setting untouched', () => {
     expect(resolveJobFormat('mp3', '/music/song.flac', 'aiff')).toBe('mp3')
     expect(resolveJobFormat('alac', '/music/song.m4a', 'aiff')).toBe('alac')
+  })
+})
+
+describe('reencodesLossyInPlace', () => {
+  // 'source' on an .mp3 resolves to mp3, which formatMatchesInput always treats as
+  // in-place — with a filter active that in-place write is a re-encode over the only
+  // copy, permanently losing a generation of quality.
+  it('flags source mode rewriting an mp3 with an active filter', () => {
+    expect(reencodesLossyInPlace('source', '/music/song.mp3', false, true, 'aiff')).toBe(true)
+  })
+
+  // Overwrite mode reaches the same in-place mp3 rewrite through the other branch of
+  // editsInPlace; the risk to the original is identical either way.
+  it('flags overwrite mode rewriting an mp3 with an active filter', () => {
+    expect(reencodesLossyInPlace('mp3', '/music/song.mp3', true, true, 'aiff')).toBe(true)
+  })
+
+  // No filter means planConversion's copyOk stays true: a plain byte copy with a tag
+  // rewrite, nothing is re-encoded, so there is nothing to warn about.
+  it('does not flag an in-place mp3 rewrite with no active filter', () => {
+    expect(reencodesLossyInPlace('source', '/music/song.mp3', false, false, 'aiff')).toBe(false)
+  })
+
+  // A fresh copy elsewhere (not in place) never touches the only existing copy, so a
+  // degraded re-encode there is not a data-loss event.
+  it('does not flag an mp3 re-encode that is not in place', () => {
+    expect(reencodesLossyInPlace('mp3', '/music/other.wav', false, true, 'aiff')).toBe(false)
+  })
+
+  // Every other OutputFormat is lossless; re-encoding one over itself loses no
+  // generation, so only mp3 is worth warning about.
+  it('does not flag lossless formats even in place with a filter', () => {
+    expect(reencodesLossyInPlace('wav', '/music/song.wav', false, true, 'aiff')).toBe(false)
+    expect(reencodesLossyInPlace('flac', '/music/song.flac', true, true, 'aiff')).toBe(false)
+    expect(reencodesLossyInPlace('aiff', '/music/song.aiff', false, true, 'aiff')).toBe(false)
   })
 })

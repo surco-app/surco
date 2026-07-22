@@ -42,6 +42,14 @@ export function editsInPlace(
   return (overwriteOriginal && format !== 'alac') || formatMatchesInput(format, inputPath)
 }
 
+// Whether 'source' has a real OutputFormat to keep a file in. Surco imports .opus,
+// .ogg, .oga, .aac, .m4a and .mp4, none of which INPUT_EXT maps to — resolveJobFormat
+// would fall back and transcode those, which the renderer's 'source' skip (see
+// useTrackProcessing.processOne) uses this to catch before that fallback ever fires.
+export function hasFormatEquivalent(inputPath: string): boolean {
+  return (Object.keys(INPUT_EXT) as OutputFormat[]).some((f) => formatMatchesInput(f, inputPath))
+}
+
 // Turns the Default format setting into the format a single job will actually use.
 // 'source' keeps each file in the format it already has, which is what lets a mixed
 // batch be tagged without re-encoding — planConversion stream-copies when input and
@@ -59,4 +67,21 @@ export function resolveJobFormat(
     formatMatchesInput(f, inputPath),
   )
   return match ?? fallback
+}
+
+// Whether a run would re-encode an MP3 over itself while an active filter (normalize,
+// trim or declick) is forcing planConversion off its stream-copy shortcut (see
+// ffmpeg.ts's copyOk). MP3 is the only lossy OutputFormat, so it is the only case where
+// that forced re-encode permanently degrades the sole copy of the file — every other
+// format is lossless and gains nothing from a warning here.
+export function reencodesLossyInPlace(
+  setting: FormatSetting,
+  inputPath: string,
+  overwriteOriginal: boolean,
+  filtersActive: boolean,
+  fallback: OutputFormat,
+): boolean {
+  if (!filtersActive) return false
+  const resolved = resolveJobFormat(setting, inputPath, fallback)
+  return resolved === 'mp3' && editsInPlace(resolved, inputPath, overwriteOriginal)
 }

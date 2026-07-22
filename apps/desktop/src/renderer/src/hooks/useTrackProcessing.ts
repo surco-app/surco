@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { resolveJobFormat } from '../../../shared/format'
+import { hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
 import type { DeclickMode, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
 import { removeAnalysisQueries } from '../lib/analysisQueries'
 import {
@@ -42,6 +42,11 @@ interface Params {
   // Surfaced when the click repair interpolated samples, with the count — the user's
   // confirmation that the pass did real work. Not fired on a clean track (0 repaired).
   onDeclicked?: (name: string, count: number) => void
+  // Surfaced when 'source' skipped a track for having no output format equivalent
+  // (.opus/.ogg/.oga/.aac/.m4a/.mp4). A batch run shows this through batchSummary's "N
+  // skipped" count, but a single-track convert has no summary to show it in — without
+  // this the row just falls back to idle and the convert reads as if it did nothing.
+  onFormatSkipped?: (name: string) => void
   // Fired once after a convert-all run that produced at least one conversion — the
   // moment of value the donate nudge rides. Fires per run, never per track, so a
   // thirty-track batch triggers one evaluation, not thirty.
@@ -90,6 +95,7 @@ export function useTrackProcessing({
   updateTrack,
   onNormalizeSkipped,
   onDeclicked,
+  onFormatSkipped,
   onConversion,
   onProcessError,
   concurrency = CONVERT_CONCURRENCY,
@@ -152,14 +158,24 @@ export function useTrackProcessing({
         })
         return 'failed'
       }
+      const pickedFormat = formatOverride ?? settings?.outputFormat ?? 'aiff'
+      // 'source' promises to keep each file in its own format; a file whose format
+      // resolveJobFormat can't express (Surco imports .opus/.ogg/.oga/.aac/.m4a/.mp4,
+      // none of which have an OutputFormat) has nothing to keep it as. Converting it
+      // anyway would fall back to a fixed format and, under overwrite, delete the
+      // original once the fallback landed in its place — the opposite of what 'source'
+      // means. Skipping is the only way to honor the promise: if the format can't be
+      // kept, the file isn't touched. A concrete format pick is a deliberate override,
+      // so it still converts normally.
+      if (pickedFormat === 'source' && !hasFormatEquivalent(track.inputPath)) {
+        updateTrack(id, { status: 'idle', stage: undefined })
+        onFormatSkipped?.(track.listLabel)
+        return 'skipped'
+      }
       // The single point where the Default format setting becomes a real format. It has
       // to happen here, per track: 'source' is meaningless to the main process, and
       // sending `undefined` would make it read the setting itself and see 'source' too.
-      const jobFormat = resolveJobFormat(
-        formatOverride ?? settings?.outputFormat ?? 'aiff',
-        track.inputPath,
-        'aiff',
-      )
+      const jobFormat = resolveJobFormat(pickedFormat, track.inputPath, 'aiff')
       // Re-processing an edited (stale) track resets the Apple Music state too, since
       // the file it referred to is being rewritten — the user may want to add it again.
       // musicPersistentId deliberately survives the reset: it is what turns that next

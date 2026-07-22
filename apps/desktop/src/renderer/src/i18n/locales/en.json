@@ -117,6 +117,7 @@
   "notices": {
     "duplicatesSkipped": "Already in the list, skipped: {{count}}",
     "normalizeSkipped": "Couldn't measure the loudness of “{{name}}” — converted without normalization.",
+    "formatSkipped": "“{{name}}” has no equivalent output format for Same as source — skipped.",
     "declicked": "Repaired clicks in {{count}} samples of “{{name}}”.",
     "qualityErrors": "Couldn't analyze {{count}} file(s) — left unmeasured.",
     "copiedMeta": "Metadata copied",
@@ -947,7 +948,11 @@
     "convertInPlaceTitle": "Overwrite the original files?",
     "convertInPlaceMessage_one": "Overwrite original is on: this rewrites the source file in place. The original is replaced and cannot be recovered.",
     "convertInPlaceMessage_other": "Overwrite original is on: this rewrites {{count}} source files in place. The originals are replaced and cannot be recovered.",
-    "convertInPlaceConfirm": "Overwrite and convert"
+    "convertInPlaceConfirm": "Overwrite and convert",
+    "convertLossyReencodeTitle": "Re-encode the original MP3?",
+    "convertLossyReencodeMessage_one": "This filter re-encodes the source MP3 in place. MP3 is lossy, so re-encoding it over itself degrades its quality and cannot be undone.",
+    "convertLossyReencodeMessage_other": "This filter re-encodes {{count}} source MP3s in place. MP3 is lossy, so re-encoding them over themselves degrades their quality and cannot be undone.",
+    "convertLossyReencodeConfirm": "Re-encode and convert"
   },
   "activity": {
     "title": "Activity",
