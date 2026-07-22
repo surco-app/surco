@@ -132,6 +132,34 @@ describe('Player', () => {
     expect(screen.getByTestId('player-cover-placeholder')).toBeInTheDocument()
   })
 
+  // The cover is drawn as a vinyl disc that spins while sound is actually coming out.
+  // animation-play-state (not conditional animation) is the contract: pausing must freeze
+  // the record in place like a real turntable, not snap it back to 0°.
+  it('spins the vinyl while playing', () => {
+    renderUI(<Player {...props({ paused: false, loading: false })} />)
+    expect(screen.getByTestId('player-vinyl')).toHaveStyle({ animationPlayState: 'running' })
+  })
+
+  it('freezes the vinyl when paused', () => {
+    renderUI(<Player {...props({ paused: true })} />)
+    expect(screen.getByTestId('player-vinyl')).toHaveStyle({ animationPlayState: 'paused' })
+  })
+
+  // While buffering from a network drive no audio is advancing, so a spinning record
+  // would claim playback that isn't happening.
+  it('freezes the vinyl while loading', () => {
+    renderUI(<Player {...props({ paused: false, loading: true })} />)
+    expect(screen.getByTestId('player-vinyl')).toHaveStyle({ animationPlayState: 'paused' })
+  })
+
+  // Coverless tracks get the same disc with a plain label, so the player never regresses
+  // to the old flat square just because a file has no art.
+  it('renders the disc for coverless tracks too', () => {
+    renderUI(<Player {...props({ track: track({ embeddedCover: undefined }) })} />)
+    expect(screen.getByTestId('player-vinyl')).toBeInTheDocument()
+    expect(screen.getByTestId('player-cover-placeholder')).toBeInTheDocument()
+  })
+
   // The default full volume is the silent norm, so the slider stands alone; the readout
   // only earns its space once the user has turned it down, where the exact figure helps.
   it('hides the volume readout at full volume', () => {

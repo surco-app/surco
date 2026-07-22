@@ -243,6 +243,29 @@ textarea {
   }
 }
 
+/* The player cover as a vinyl record: near-black disc, faint concentric grooves from a
+   repeating gradient (the center is hidden under the label image, so the rings only need
+   to read on the outer half). Spins at a calm 4s/rev while playing; Player.tsx freezes it
+   in place with animation-play-state so pausing never resets the rotation. */
+.player-vinyl {
+  background:
+    repeating-radial-gradient(circle at 50%, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 3px),
+    radial-gradient(circle at 50%, #1a1a1c 0 68%, #0e0e10 100%);
+  animation: vinyl-spin 4s linear infinite;
+}
+
+@keyframes vinyl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-vinyl {
+    animation: none;
+  }
+}
+
 /* The player volume slider: a thin track with a small accent thumb so the control reads as
    a volume fader rather than a default chunky range input. Chromium (Electron) only, hence
    the -webkit- pseudo-elements. */
