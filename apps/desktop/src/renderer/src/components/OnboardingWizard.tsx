@@ -3,17 +3,15 @@ import type React from 'react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { autoMatchAvailable } from '../../../shared/autoMatch'
-import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
 import type { SearchProviderId, Settings } from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
 import { type AudioIntent, buildOnboardingPatch } from '../lib/onboarding'
 import { isMacOS } from '../lib/platform'
 import { formatKHz } from '../lib/quality'
 import { DestinationPicker } from './DestinationPicker'
-import { SegmentedControl } from './SegmentedControl'
+import { FormatSettingControl } from './FormatSettingControl'
 import { useFocusTrap } from './useFocusTrap'
 
-const FORMATS = OUTPUT_FORMATS
 const SEARCH_PROVIDERS: SearchProviderId[] = ['discogs', 'bandcamp']
 // The optional audio intents, in the order they're offered. Correct metadata is the
 // product's core, so it's shown as an always-on row above these rather than a choice.
@@ -37,11 +35,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [step, setStep] = useState(0)
   const [token, setToken] = useState(settings.discogsToken)
   const [searchProviders, setSearchProviders] = useState(settings.searchProviders)
-  // No track is loaded yet to resolve 'source' against, so onboarding narrows straight
-  // to the app default — the same fallback resolveJobFormat uses when nothing matches.
-  const [outputFormat, setOutputFormat] = useState(
-    settings.outputFormat === 'source' ? 'aiff' : settings.outputFormat,
-  )
+  const [outputFormat, setOutputFormat] = useState(settings.outputFormat)
   const [outputDir, setOutputDir] = useState(settings.outputDir)
   // Seed from the one intent that maps to an existing default (the spectrum). The rest
   // start unpicked so a first-run editor is minimal until the DJ opts in.
@@ -52,9 +46,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [addToAppleMusic, setAddToAppleMusic] = useState(settings.addToAppleMusic)
   const [keepOutputCopy, setKeepOutputCopy] = useState(settings.keepOutputCopy)
   const [overwriteOriginal, setOverwriteOriginal] = useState(settings.overwriteOriginal)
-  const [convertBesideOriginal, setConvertBesideOriginal] = useState(
-    settings.convertBesideOriginal,
-  )
+  const [convertBesideOriginal, setConvertBesideOriginal] = useState(settings.convertBesideOriginal)
   const [addToEngineDj, setAddToEngineDj] = useState(settings.addToEngineDj)
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(dialogRef)
@@ -104,9 +96,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
     setAddToEngineDj(next.addToEngineDj)
   }
   function toggleIntent(intent: AudioIntent, on: boolean): void {
-    setAudioIntents((prev) =>
-      on ? [...prev, intent] : prev.filter((i) => i !== intent),
-    )
+    setAudioIntents((prev) => (on ? [...prev, intent] : prev.filter((i) => i !== intent)))
   }
 
   return (
@@ -232,12 +222,10 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                   {tr('settings.outputFormat')}
                 </h2>
                 <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.formatBody')}</p>
-                <SegmentedControl
-                  options={FORMATS}
+                <FormatSettingControl
                   value={outputFormat}
                   onChange={setOutputFormat}
                   testidPrefix="onboarding-format"
-                  labelFor={(id) => tr(`settings.formats.${id}`)}
                 />
                 <p className="mt-3 text-xs text-fg-dim">{tr('settings.outputFormatHint')}</p>
 
@@ -310,10 +298,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                     </span>
                   </label>
                   {AUDIO_INTENTS.map((intent) => (
-                    <label
-                      key={intent}
-                      className="flex cursor-pointer items-start gap-3"
-                    >
+                    <label key={intent} className="flex cursor-pointer items-start gap-3">
                       <input
                         data-testid={`onboarding-intent-${intent}`}
                         type="checkbox"

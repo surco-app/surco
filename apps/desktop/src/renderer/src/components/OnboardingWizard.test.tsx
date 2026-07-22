@@ -8,9 +8,10 @@ vi.hoisted(() => {
   ;(globalThis.window as unknown as { api: unknown }).api = { platform: 'darwin' }
 })
 
-import i18n from '../i18n'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
+import { FORMAT_SETTINGS } from '../../../shared/outputFormats'
 import type { Settings } from '../../../shared/types'
+import i18n from '../i18n'
 import { OnboardingWizard } from './OnboardingWizard'
 
 afterEach(cleanup)
@@ -201,9 +202,7 @@ describe('OnboardingWizard audio intents', () => {
     fireEvent.click(screen.getByTestId('onboarding-next')) // finish
     const patch = onFinish.mock.calls[0][0] as Partial<Settings>
     expect(patch.showSpectrum).toBe(false)
-    const hidden = (patch.editorSections ?? [])
-      .filter((s) => s.hidden)
-      .map((s) => s.id)
+    const hidden = (patch.editorSections ?? []).filter((s) => s.hidden).map((s) => s.id)
     expect(hidden).toEqual(expect.arrayContaining(['trim', 'declick', 'normalize']))
   })
 
@@ -215,9 +214,7 @@ describe('OnboardingWizard audio intents', () => {
     fireEvent.click(screen.getByTestId('onboarding-intent-restore'))
     fireEvent.click(screen.getByTestId('onboarding-next')) // finish
     const patch = onFinish.mock.calls[0][0] as Partial<Settings>
-    const shown = (patch.editorSections ?? [])
-      .filter((s) => !s.hidden)
-      .map((s) => s.id)
+    const shown = (patch.editorSections ?? []).filter((s) => !s.hidden).map((s) => s.id)
     expect(shown).toEqual(expect.arrayContaining(['trim', 'declick']))
   })
 })
@@ -230,6 +227,47 @@ describe('OnboardingWizard auto-match', () => {
     expect(screen.getByTestId('onboarding-auto-match')).toBeDisabled()
     fireEvent.change(screen.getByTestId('onboarding-token'), { target: { value: 'tok' } })
     expect(screen.getByTestId('onboarding-auto-match')).toBeEnabled()
+  })
+})
+
+describe('OnboardingWizard format', () => {
+  function openFormatStep(
+    current: Settings = settings,
+    onFinish: (patch: Partial<Settings>) => void = () => {},
+  ) {
+    render(<OnboardingWizard settings={current} onFinish={onFinish} />)
+    fireEvent.click(screen.getByTestId('onboarding-next')) // welcome → token
+    fireEvent.click(screen.getByTestId('onboarding-next')) // token → format
+  }
+
+  // The wizard and Settings render the same format choice; when they drift, a value
+  // added in Settings silently never reaches new users (exactly how 'source' went
+  // missing here). Asserting against FORMAT_SETTINGS itself means a future format
+  // can't be added to one surface without the other.
+  it('offers every format Settings offers, Same as source first', () => {
+    openFormatStep()
+    for (const f of FORMAT_SETTINGS) {
+      expect(screen.getByTestId(`onboarding-format-${f}`)).toBeInTheDocument()
+    }
+    const group = screen.getByTestId('onboarding-format-source').parentElement as HTMLElement
+    expect(group.querySelector('[data-testid^="onboarding-format-"]')).toBe(
+      screen.getByTestId('onboarding-format-source'),
+    )
+  })
+
+  it('persists Same as source when picked', () => {
+    const onFinish = vi.fn()
+    openFormatStep(settings, onFinish)
+    fireEvent.click(screen.getByTestId('onboarding-format-source'))
+    for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ outputFormat: 'source' }))
+  })
+
+  // Re-running the wizard used to narrow a stored 'source' to AIFF, silently dropping
+  // the user's choice on the very screen meant to confirm it.
+  it('keeps a stored Same as source selected on re-run', () => {
+    openFormatStep({ ...settings, outputFormat: 'source' })
+    expect(screen.getByTestId('onboarding-format-source')).toHaveAttribute('aria-pressed', 'true')
   })
 })
 

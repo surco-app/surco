@@ -1,8 +1,8 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import { FORMAT_SETTINGS } from '../../../../shared/outputFormats'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
+import { FormatSettingControl } from '../FormatSettingControl'
 import { SegmentedControl } from '../SegmentedControl'
 import { SettingsField, SettingsSection } from './SettingsPrimitives'
 
@@ -21,12 +21,10 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
       <SettingsSection first>
         <div className="flex flex-col gap-5">
           <SettingsField label={tr('settings.outputFormat')} hint={tr('settings.outputFormatHint')}>
-            <SegmentedControl
-              options={FORMAT_SETTINGS}
+            <FormatSettingControl
               value={synced.outputFormat}
               onChange={(id) => patch('outputFormat', id)}
               testidPrefix="settings-format"
-              labelFor={(id) => tr(`settings.formats.${id}`)}
             />
           </SettingsField>
 
