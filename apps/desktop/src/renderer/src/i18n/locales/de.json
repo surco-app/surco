@@ -117,6 +117,7 @@
   "notices": {
     "duplicatesSkipped": "Schon in der Liste, übersprungen: {{count}}",
     "normalizeSkipped": "Die Loudness von „{{name}}“ konnte nicht gemessen werden — ohne Normalisierung konvertiert.",
+    "formatSkipped": "„{{name}}“ hat kein passendes Ausgabeformat für Wie die Quelle — übersprungen.",
     "declicked": "Klicks in {{count}} Samples von „{{name}}“ repariert.",
     "qualityErrors": "{{count}} Datei(en) konnten nicht analysiert werden — bleiben ungemessen.",
     "copiedMeta": "Metadaten kopiert",

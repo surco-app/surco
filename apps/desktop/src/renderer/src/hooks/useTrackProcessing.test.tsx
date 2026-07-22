@@ -1040,6 +1040,31 @@ describe('useTrackProcessing', () => {
       expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ status: 'idle' }))
     })
 
+    // A batch run surfaces this same skip through batchSummary's "N skipped" count, but a
+    // single-track convert (the editor button, ⌘⏎) never goes through that summary — with
+    // nothing else on screen, the row just falls back to idle and the click reads as if it
+    // did nothing. The single-convert caller must get an explicit callback to tell the user.
+    it('reports the track name when skipped for having no format equivalent', async () => {
+      setApi({ processTrack: vi.fn() })
+      const settings = { outputFormat: 'source', overwriteOriginal: false } as Settings
+      const track1 = track({ id: 'a', inputPath: '/music/a.opus' })
+      const onFormatSkipped = vi.fn()
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: [track1],
+            settings,
+            updateTrack: vi.fn(),
+            onFormatSkipped,
+          }),
+        { wrapper: withClient() },
+      )
+      await act(async () => {
+        await result.current.processOne('a')
+      })
+      expect(onFormatSkipped).toHaveBeenCalledWith(track1.listLabel)
+    })
+
     // The same skip applies to every extension Surco imports but can't export: .ogg,
     // .oga, .aac, .m4a and .mp4 all fall back the same way .opus does.
     it.each(['ogg', 'oga', 'aac', 'm4a', 'mp4'])(

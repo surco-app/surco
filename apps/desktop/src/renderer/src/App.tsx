@@ -743,6 +743,9 @@ export default function App(): React.JSX.Element {
     // Only when the repair actually touched samples: a clean track reporting "0
     // clicks" on every convert would train the user to ignore the notice.
     onDeclicked: (name, count) => setNotice(tr('notices.declicked', { name, count })),
+    // A batch run shows this skip through batchSummary's "N skipped" count, but a
+    // single-track convert (the editor button, ⌘⏎) has no summary to show it in.
+    onFormatSkipped: (name) => setNotice(tr('notices.formatSkipped', { name })),
     // Keyed so a bulk run failing on every track (e.g. Engine DJ open) raises one
     // card, not thirty; persistent like every failure toast.
     onProcessError: (message) =>
