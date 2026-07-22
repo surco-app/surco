@@ -4,7 +4,7 @@ import {
   type EditorSectionId,
   type EditorSectionPref,
 } from '../../../shared/editorSections'
-import type { OutputFormat, SearchProviderId, Settings } from '../../../shared/types'
+import type { FormatSetting, SearchProviderId, Settings } from '../../../shared/types'
 
 // What the DJ says they do with a track's audio, asked as plain intent rather than by
 // naming the editor's sections directly. Each intent reveals the sections that serve it
@@ -49,7 +49,7 @@ export interface OnboardingChoices {
   discogsToken: string
   // The catalogs the editor search queries (Discogs and/or Bandcamp).
   searchProviders: SearchProviderId[]
-  outputFormat: OutputFormat
+  outputFormat: FormatSetting
   // Where folder-copy conversions land, changeable right under the destination radio.
   outputDir: string
   // What the DJ does with the audio, which decides the editor's visible sections and
