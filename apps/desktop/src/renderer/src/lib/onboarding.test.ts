@@ -1,7 +1,92 @@
 import { describe, expect, it } from 'vitest'
-import type { EditorSectionId } from '../../../shared/editorSections'
-import type { SearchProviderId } from '../../../shared/types'
-import { buildOnboardingPatch, deriveEditorSections, shouldShowOnboarding } from './onboarding'
+import { DEFAULT_EDITOR_SECTIONS, type EditorSectionId } from '../../../shared/editorSections'
+import type { Settings } from '../../../shared/types'
+import {
+  type AudioIntent,
+  buildOnboardingPatch,
+  deriveEditorSections,
+  shouldShowOnboarding,
+} from './onboarding'
+import {
+  buildSettingsPatch,
+  type LocalDraft,
+  pickLocal,
+  pickSynced,
+  type SyncedDraft,
+} from './settingsDraft'
+
+// A full baseline so the drafts helper can seed exactly the way both surfaces do
+// (pickSynced/pickLocal); each test overrides only the fields its assertion is about.
+const settings: Settings = {
+  theme: 'system',
+  language: 'system',
+  discogsToken: '',
+  discogsFormats: [],
+  discogsMaxResults: 10,
+  searchProviders: ['discogs'],
+  searchIgnoreWords: [],
+  outputDir: '/out',
+  outputFormat: 'aiff',
+  addToAppleMusic: false,
+  keepOutputCopy: true,
+  overwriteOriginal: false,
+  convertBesideOriginal: false,
+  addToEngineDj: false,
+  engineLibraryDir: '/music/Engine Library',
+  engineDjPlaylist: 'Surco',
+  filenameFormat: '{artist} - {title}',
+  titleFormat: '',
+  autoApplyFilename: false,
+  groupingPresets: [],
+  genrePresets: [],
+  trimWhitespace: true,
+  zeroPadTrack: true,
+  visibleFields: [],
+  requiredFields: [],
+  coverMaxSize: 1200,
+  coverSquare: false,
+  coverUpscale: false,
+  replaceLowResCover: false,
+  flacFinderCovers: false,
+  mp3Quality: '320',
+  outputBitDepth: 'source',
+  outputSampleRate: 'source',
+  flacCompression: '5',
+  showSpectrum: false,
+  activityPanel: null,
+  resultsWidth: null,
+  autoAnalyze: false,
+  showWaveform: true,
+  showLoudness: true,
+  autoMatch: false,
+  continuousPlayback: false,
+  keyNotation: 'camelot',
+  normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+  declick: 'off',
+  shortcutOverrides: {},
+  editorSections: DEFAULT_EDITOR_SECTIONS,
+  commandUsage: {},
+  hasSeenOnboarding: false,
+  conversionCount: 0,
+  stats: { imported: 0, listened: 0, analyzed: 0, discogsMatches: 0, bandcampMatches: 0 },
+  donateNudgeDismissed: false,
+  donateNudgeLastShown: '',
+  lastSeenChangelogVersion: '',
+}
+
+function drafts(
+  over: {
+    synced?: Partial<SyncedDraft>
+    local?: Partial<LocalDraft>
+    audioIntents?: AudioIntent[]
+  } = {},
+): { synced: SyncedDraft; local: LocalDraft; audioIntents: AudioIntent[] } {
+  return {
+    synced: { ...pickSynced(settings), ...over.synced },
+    local: { ...pickLocal(settings), ...over.local },
+    audioIntents: over.audioIntents ?? [],
+  }
+}
 
 // Helpers to read the derived section list by concern rather than by index, so the
 // tests survive a reorder of DEFAULT_EDITOR_SECTIONS.
@@ -22,35 +107,38 @@ describe('shouldShowOnboarding', () => {
 })
 
 describe('buildOnboardingPatch', () => {
-  // Finishing must persist the three choices AND mark the wizard seen in the
+  // Finishing must persist the staged choices AND mark the wizard seen in the
   // same write, so the picks take effect and the wizard never reappears.
   it('persists the chosen settings and marks onboarding seen', () => {
-    const patch = buildOnboardingPatch({
-      discogsToken: 'abc123',
-      searchProviders: ['discogs'],
-      outputFormat: 'wav',
-      outputDir: '/out',
-      audioIntents: [],
-      autoMatch: true,
-      addToAppleMusic: true,
-      overwriteOriginal: false,
-      convertBesideOriginal: false,
-      addToEngineDj: false,
-      keepOutputCopy: false,
-    })
-    expect(patch).toEqual({
-      discogsToken: 'abc123',
-      searchProviders: ['discogs'],
-      outputFormat: 'wav',
-      outputDir: '/out',
+    const patch = buildOnboardingPatch(
+      drafts({
+        synced: { outputFormat: 'wav', searchProviders: ['discogs'] },
+        local: { token: 'abc123', outputDir: '/out', autoMatch: true },
+      }),
+    )
+    expect(patch).toEqual(
+      expect.objectContaining({
+        discogsToken: 'abc123',
+        searchProviders: ['discogs'],
+        outputFormat: 'wav',
+        outputDir: '/out',
+        showSpectrum: false,
+        editorSections: deriveEditorSections([]),
+        autoMatch: true,
+        hasSeenOnboarding: true,
+      }),
+    )
+  })
+
+  // The convergence contract: the wizard's persistence IS the Settings save path plus
+  // its own three fields. A serialization rule added to buildSettingsPatch (a trim, a
+  // clamp, a gate) reaches the wizard without anyone remembering to copy it.
+  it('serializes through buildSettingsPatch so the two save paths cannot drift', () => {
+    const d = drafts({ local: { token: ' tok ', autoMatch: true } })
+    expect(buildOnboardingPatch(d)).toEqual({
+      ...buildSettingsPatch(d.synced, d.local),
       showSpectrum: false,
       editorSections: deriveEditorSections([]),
-      autoMatch: true,
-      addToAppleMusic: true,
-      overwriteOriginal: false,
-      convertBesideOriginal: false,
-      addToEngineDj: false,
-      keepOutputCopy: false,
       hasSeenOnboarding: true,
     })
   })
@@ -58,23 +146,11 @@ describe('buildOnboardingPatch', () => {
   // A stray space around a pasted token breaks Discogs auth, so it is cleaned like
   // the settings form does.
   it('trims the token', () => {
-    const patch = buildOnboardingPatch({
-      discogsToken: '  tok  ',
-      searchProviders: ['discogs'],
-      outputFormat: 'aiff',
-    outputDir: '/out',
-      audioIntents: [],
-      autoMatch: false,
-      addToAppleMusic: true,
-      overwriteOriginal: false,
-    convertBesideOriginal: false,
-      addToEngineDj: false,
-      keepOutputCopy: true,
-    })
+    const patch = buildOnboardingPatch(drafts({ local: { token: '  tok  ' } }))
     expect(patch.discogsToken).toBe('tok')
   })
 
-  // Skipping (null choices) must still mark the wizard seen, but must NOT write
+  // Skipping (null drafts) must still mark the wizard seen, but must NOT write
   // empty values over the defaults the user never touched.
   it('marks onboarding seen without overwriting defaults when skipped', () => {
     expect(buildOnboardingPatch(null)).toEqual({ hasSeenOnboarding: true })
@@ -84,37 +160,20 @@ describe('buildOnboardingPatch', () => {
   // wizard without entering a token must never persist as on, or a folder drop would hammer the
   // shared key and earn 429s.
   it('refuses to enable auto-match when no token was entered', () => {
-    const patch = buildOnboardingPatch({
-      discogsToken: '   ',
-      searchProviders: ['discogs'],
-      outputFormat: 'aiff',
-    outputDir: '/out',
-      audioIntents: [],
-      autoMatch: true,
-      addToAppleMusic: false,
-      overwriteOriginal: false,
-    convertBesideOriginal: false,
-      addToEngineDj: false,
-      keepOutputCopy: true,
-    })
+    const patch = buildOnboardingPatch(
+      drafts({
+        synced: { searchProviders: ['discogs'] },
+        local: { token: '   ', autoMatch: true },
+      }),
+    )
     expect(patch.autoMatch).toBe(false)
   })
 
   // Bandcamp needs no token, so a Bandcamp-only setup can persist auto-match on.
   it('enables auto-match for a Bandcamp-only setup without a token', () => {
-    const patch = buildOnboardingPatch({
-      discogsToken: '',
-      searchProviders: ['bandcamp'],
-      outputFormat: 'aiff',
-    outputDir: '/out',
-      audioIntents: [],
-      autoMatch: true,
-      addToAppleMusic: false,
-      overwriteOriginal: false,
-    convertBesideOriginal: false,
-      addToEngineDj: false,
-      keepOutputCopy: true,
-    })
+    const patch = buildOnboardingPatch(
+      drafts({ synced: { searchProviders: ['bandcamp'] }, local: { token: '', autoMatch: true } }),
+    )
     expect(patch.autoMatch).toBe(true)
     expect(patch.searchProviders).toEqual(['bandcamp'])
   })
@@ -122,19 +181,9 @@ describe('buildOnboardingPatch', () => {
   // The destination chosen in the wizard's format step must reach settings, so a new
   // macOS user who picks "Apple Music only" doesn't silently keep the folder copy too.
   it('persists the chosen output destination', () => {
-    const patch = buildOnboardingPatch({
-      discogsToken: '',
-      searchProviders: ['discogs'],
-      outputFormat: 'aiff',
-    outputDir: '/out',
-      audioIntents: [],
-      autoMatch: false,
-      addToAppleMusic: true,
-      overwriteOriginal: false,
-    convertBesideOriginal: false,
-      addToEngineDj: false,
-      keepOutputCopy: false,
-    })
+    const patch = buildOnboardingPatch(
+      drafts({ synced: { addToAppleMusic: true, keepOutputCopy: false } }),
+    )
     expect(patch.addToAppleMusic).toBe(true)
     expect(patch.keepOutputCopy).toBe(false)
   })
@@ -142,23 +191,12 @@ describe('buildOnboardingPatch', () => {
   // Engine DJ chosen in the wizard must reach settings like any other destination, or a
   // Denon user's first conversions would silently skip their Engine library.
   it('persists Engine DJ as the destination', () => {
-    const patch = buildOnboardingPatch({
-      discogsToken: '',
-      searchProviders: ['discogs'],
-      outputFormat: 'aiff',
-    outputDir: '/out',
-      audioIntents: [],
-      autoMatch: false,
-      addToAppleMusic: false,
-      overwriteOriginal: false,
-    convertBesideOriginal: false,
-      addToEngineDj: true,
-      keepOutputCopy: true,
-    })
+    const patch = buildOnboardingPatch(
+      drafts({ synced: { addToEngineDj: true, keepOutputCopy: true } }),
+    )
     expect(patch.addToEngineDj).toBe(true)
     expect(patch.keepOutputCopy).toBe(true)
   })
-
 })
 
 describe('deriveEditorSections', () => {
@@ -225,38 +263,14 @@ describe('buildOnboardingPatch with audio intents', () => {
   // The quality intent is the single control that turns on the spectrogram analysis;
   // without it a metadata-only DJ isn't paying for the FFT pass.
   it('enables the spectrum only for the quality intent', () => {
-    const base = {
-      discogsToken: '',
-      searchProviders: ['discogs'] as SearchProviderId[],
-      outputFormat: 'aiff' as const,
-      outputDir: '/out',
-      autoMatch: false,
-      addToAppleMusic: false,
-      overwriteOriginal: false,
-      convertBesideOriginal: false,
-      addToEngineDj: false,
-      keepOutputCopy: true,
-    }
-    expect(buildOnboardingPatch({ ...base, audioIntents: [] }).showSpectrum).toBe(false)
-    expect(buildOnboardingPatch({ ...base, audioIntents: ['quality'] }).showSpectrum).toBe(true)
+    expect(buildOnboardingPatch(drafts({ audioIntents: [] })).showSpectrum).toBe(false)
+    expect(buildOnboardingPatch(drafts({ audioIntents: ['quality'] })).showSpectrum).toBe(true)
   })
 
   // The finished patch carries the derived section layout so the very first editor a
   // new DJ opens already matches the workflow they described.
   it('persists the derived editor sections', () => {
-    const patch = buildOnboardingPatch({
-      discogsToken: '',
-      searchProviders: ['discogs'],
-      outputFormat: 'aiff',
-      outputDir: '/out',
-      audioIntents: ['restore'],
-      autoMatch: false,
-      addToAppleMusic: false,
-      overwriteOriginal: false,
-      convertBesideOriginal: false,
-      addToEngineDj: false,
-      keepOutputCopy: true,
-    })
+    const patch = buildOnboardingPatch(drafts({ audioIntents: ['restore'] }))
     expect(patch.editorSections).toEqual(deriveEditorSections(['restore']))
   })
 

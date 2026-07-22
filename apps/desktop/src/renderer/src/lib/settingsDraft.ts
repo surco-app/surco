@@ -56,6 +56,18 @@ export interface LocalDraft {
   autoMatch: boolean
 }
 
+// Machine-local fields (token, folders, auto-match) aren't moved by a config-dir
+// switch; seeded here so the Settings modal and the onboarding wizard stage the
+// same field list.
+export function pickLocal(s: Settings): LocalDraft {
+  return {
+    token: s.discogsToken,
+    outputDir: s.outputDir,
+    engineLibraryDir: s.engineLibraryDir,
+    autoMatch: s.autoMatch,
+  }
+}
+
 export function pickSynced(s: Settings): SyncedDraft {
   return {
     theme: s.theme,
