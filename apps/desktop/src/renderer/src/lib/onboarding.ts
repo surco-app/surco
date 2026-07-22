@@ -47,7 +47,7 @@ export function deriveEditorSections(intents: AudioIntent[]): EditorSectionPref[
 
 // The wizard stages its edits in the same drafts the Settings modal uses, plus the
 // audio-intent question that only exists here.
-export interface OnboardingDrafts {
+interface OnboardingDrafts {
   synced: SyncedDraft
   local: LocalDraft
   // What the DJ does with the audio, which decides the editor's visible sections and

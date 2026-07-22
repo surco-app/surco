@@ -11,7 +11,7 @@ export const STAGE_PROGRESS: Record<ProcessStage, number> = {
   engineDj: 0.85,
 }
 
-export interface SweepProgress {
+interface SweepProgress {
   done: number
   total: number
 }

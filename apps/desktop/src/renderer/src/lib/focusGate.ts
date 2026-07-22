@@ -1,4 +1,4 @@
-export interface FocusGate {
+interface FocusGate {
   // Fed by the main process's window blur/focus events.
   set(focused: boolean): void
   // Resolves now if focused, otherwise parks until focus returns. A background

@@ -59,7 +59,7 @@ interface Params {
   concurrency?: number
 }
 
-export interface TrackProcessing {
+interface TrackProcessing {
   processOne: (
     id: string,
     formatOverride?: FormatSetting,

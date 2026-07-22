@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { mediaUrl } from '../../../shared/media'
 
-export type AbSide = 'original' | 'repaired'
+type AbSide = 'original' | 'repaired'
 
 // How far the silent leg may drift before it is snapped back. Small enough that a switch
 // always lands on the same musical instant (a click is milliseconds wide, so a drifted

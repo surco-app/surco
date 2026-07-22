@@ -20,7 +20,7 @@ export function windowFor(
   return { startSec: Number(startSec.toFixed(3)), durSec: Number(durSec.toFixed(3)) }
 }
 
-export interface WaveformWindow {
+interface WaveformWindow {
   peaks: number[]
   // The RMS body for this window, same grid as peaks — the two-layer draw stays
   // consistent between the overview strip and the deep-zoom re-decode over it.

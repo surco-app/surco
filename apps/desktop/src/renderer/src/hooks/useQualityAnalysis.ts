@@ -20,7 +20,7 @@ interface Params {
   onErrors?: (count: number) => void
 }
 
-export interface QualityAnalysis {
+interface QualityAnalysis {
   // Progress of the "analyze quality" run (null when idle).
   analysis: { done: number; total: number } | null
   // tracks is folded into the sweep's targets alongside targetsRef, for a caller (an

@@ -58,7 +58,7 @@ interface Params {
   reportActivity: (report: LocalActivityReport) => void
 }
 
-export interface AutoMatchSweep {
+interface AutoMatchSweep {
   // Progress of the sweep (null when idle), for the toolbar pill and the top bar.
   matching: { done: number; total: number } | null
   enqueueAutoMatch: (candidates: TrackItem[], visibleOnly: boolean) => void

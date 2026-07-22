@@ -3,7 +3,7 @@ import type { Settings } from '../../../shared/types'
 // The shape of apps/web/src/i18n/changelog/*.json, which the desktop imports
 // directly so the popup and the web page can never drift apart. Plain-string items
 // predate version stamping and are web-only history.
-export type ChangelogItem = string | { text: string; in: string }
+type ChangelogItem = string | { text: string; in: string }
 
 export interface ChangelogRelease {
   version: string
@@ -12,7 +12,7 @@ export interface ChangelogRelease {
   items: ChangelogItem[]
 }
 
-export interface WhatsNewRelease {
+interface WhatsNewRelease {
   version: string
   title: string
   items: string[]

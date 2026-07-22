@@ -19,7 +19,7 @@ const NOISE: RegExp[] = [
   /\b(?:hq|hd|vbr|cbr|lossless|kbps)\b/gi,
 ]
 
-export function squeeze(s: string): string {
+function squeeze(s: string): string {
   return s
     .replace(/\s+([)\]])/g, '$1')
     .replace(/\s{2,}/g, ' ')

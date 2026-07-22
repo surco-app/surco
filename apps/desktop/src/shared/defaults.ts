@@ -32,7 +32,6 @@ export const SEARCH_PROVIDERS: readonly SearchProviderId[] = ['discogs', 'bandca
 // server-side `format` query param — so they double as the stored setting values and
 // need no translation table to compare against. ('File' is Discogs' name for digital.)
 export const DISCOGS_FORMATS = ['Vinyl', 'CD', 'File', 'Cassette'] as const
-export type DiscogsFormat = (typeof DISCOGS_FORMATS)[number]
 
 // How many search results the editor's results column shows by default, and the presets
 // offered in Settings → Search. Kept low so the relevant releases sit on screen instead of

@@ -1,7 +1,7 @@
 import { type UseQueryResult, useQuery } from '@tanstack/react-query'
 import { analysisOptions } from '../lib/analysisQueries'
 
-export interface TrackClicks {
+interface TrackClicks {
   count: number
   marks: number[]
   scannedSec: number

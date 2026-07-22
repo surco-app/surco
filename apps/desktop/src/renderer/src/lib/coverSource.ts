@@ -1,6 +1,6 @@
 import type { TrackItem } from '../types'
 
-export interface CoverSourceFields {
+interface CoverSourceFields {
   coverUrl?: string
   coverPath?: string
   coverFromFile?: string

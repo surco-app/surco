@@ -11,7 +11,7 @@ import { suspectTracks } from './triage'
 // The palette's section for a command, Raycast-style: a fixed set of buckets so 47
 // commands read as six short lists instead of one wall. 'tracks' is reserved for the
 // go-to-track jumps filterTrackCommands builds.
-export type CommandGroup =
+type CommandGroup =
   | 'tags'
   | 'convert'
   | 'library'

@@ -1,6 +1,6 @@
 import type { TrackMetadata } from '../../../shared/types'
 
-export interface FieldDef {
+interface FieldDef {
   key: keyof TrackMetadata
   wide?: boolean
 }
@@ -36,9 +36,9 @@ export const FIELD_DEFS: FieldDef[] = [
 // its release/catalog data, the DJ-facing analysis, and its ordering within a set.
 // Fixed on purpose — the user chooses which fields to show, not which group they
 // live in, so the layout stays predictable across tracks.
-export type FieldGroupId = 'identity' | 'catalog' | 'dj' | 'order'
+type FieldGroupId = 'identity' | 'catalog' | 'dj' | 'order'
 
-export interface FieldGroup {
+interface FieldGroup {
   id: FieldGroupId
   fields: (keyof TrackMetadata)[]
 }

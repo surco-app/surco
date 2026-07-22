@@ -6,7 +6,7 @@ const OS_LABEL: Record<string, string> = {
   linux: 'Linux',
 }
 
-export interface FeedbackContext {
+interface FeedbackContext {
   version: string
   platform: string
   error?: string

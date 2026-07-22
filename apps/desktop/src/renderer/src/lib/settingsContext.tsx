@@ -23,7 +23,7 @@ import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './fields'
 // The slice of Settings the editor tree reads, resolved: settings arrive null for the
 // first frames, so every field carries its default here — in ONE place, instead of a
 // `?? fallback` per prop at every consumer (the 17-prop wall App used to pass Editor).
-export interface ResolvedSettings {
+interface ResolvedSettings {
   discogsToken: string
   // Whether the background sweep auto-matches on import. The editor reads it so opening a
   // track only auto-applies a confident match when the user left auto-match on — off means
@@ -94,7 +94,7 @@ const DEFAULTS: ResolvedSettings = {
   resultsWidth: null,
 }
 
-export function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
+function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
   if (!settings) return DEFAULTS
   return {
     discogsToken: settings.discogsToken ?? DEFAULTS.discogsToken,

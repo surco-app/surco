@@ -2,7 +2,7 @@
 // 2★ = 102, 3★ = 153, 4★ = 204, 5★ = 255. The byte goes in the ID3 POPM frame
 // (MP3/AIFF/WAV); on FLAC, Traktor writes the whole POPM string
 // "<user>|<byte>|<playcount>" into a Vorbis RATING comment.
-export const RATING_STEP = 51
+const RATING_STEP = 51
 export const TRAKTOR_RATING_USER = 'traktor@native-instruments.de'
 
 export function starsToRating(stars: number): number {

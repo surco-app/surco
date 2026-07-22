@@ -8,7 +8,7 @@ export interface RateLimiter {
 }
 
 // The bit of wall-clock the limiter needs, injected so tests can drive virtual time.
-export interface RateClock {
+interface RateClock {
   now: () => number
   delay: (ms: number) => Promise<void>
 }

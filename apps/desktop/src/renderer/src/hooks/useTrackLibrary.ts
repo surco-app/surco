@@ -80,12 +80,12 @@ interface Params {
 // Tracks that appeared in a watched folder after it was loaded, waiting on the user to
 // confirm. root is the folder they live under (its basename labels the prompt); paths are
 // the not-yet-loaded audio files. null when there is nothing to offer.
-export interface PendingNew {
+interface PendingNew {
   root: string
   paths: string[]
 }
 
-export interface TrackLibrary {
+interface TrackLibrary {
   tracks: TrackItem[]
   pendingNew: PendingNew | null
   loadPending: () => void

@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { type AppStore, useAppStore } from '../lib/appStore'
 import type { FilterSelection } from '../lib/triage'
 
-export interface TriageFilters {
+interface TriageFilters {
   // The six axes bundled for the filter bar, which toggles one per click.
   filterSelection: FilterSelection
   filterActive: boolean

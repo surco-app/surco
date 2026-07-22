@@ -21,7 +21,7 @@ interface Params {
   qualityFilterRef: RefObject<HTMLDivElement | null>
 }
 
-export interface ListNavigation {
+interface ListNavigation {
   moveSelection: (delta: number) => void
   // Home/End — jump to the first or last visible row.
   jumpSelection: (to: 'first' | 'last') => void

@@ -33,7 +33,7 @@ export function cacheLookup(client: QueryClient): (key: readonly unknown[]) => Q
 // build and the single-slot patch so a rebuilt slot is byte-for-byte identical to a patched
 // one. Lives here (not inline in the hook) so a test can count slot reads: a full build reads
 // N, a probe patch reads 1 — the assertion that a sweep tick doesn't walk the whole list.
-export function readSlot(inputPath: string, at: (key: readonly unknown[]) => Query | undefined) {
+function readSlot(inputPath: string, at: (key: readonly unknown[]) => Query | undefined) {
   const q = at(spectrogramOptions(inputPath).queryKey)
   return {
     spectrum: {

@@ -92,7 +92,7 @@ interface Params {
   tracksRef: { current: TrackItem[] }
 }
 
-export interface ConfirmFlows {
+interface ConfirmFlows {
   askTrash: (targets: TrackItem[]) => void
   askDeleteOriginal: (track: TrackItem) => void
   askRemoveOldMusicCopy: (track: TrackItem, stale: StaleLibraryCopy) => void

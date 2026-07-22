@@ -7,7 +7,7 @@ import { type Chord, chordEquals } from './shortcuts'
 // `suppressWhileTyping` keeps a mod-combo from firing while a text field is focused —
 // only ⌘⌫ (remove) needs it, so ⌫ stays a backspace mid-edit instead of deleting the
 // track. Bare-key chords are always suppressed while typing regardless of this flag.
-export interface ShortcutDef {
+interface ShortcutDef {
   id: string
   chord: Chord
   suppressWhileTyping?: boolean

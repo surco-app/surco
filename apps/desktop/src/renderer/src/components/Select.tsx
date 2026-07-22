@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 
-export interface SelectOption {
+interface SelectOption {
   value: string
   label: string
   // Optional leading glyph, so a menu (e.g. the track sort) reads at a glance like the

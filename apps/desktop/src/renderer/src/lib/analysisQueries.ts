@@ -52,7 +52,7 @@ export function cancellableAnalysisOptions<T>(
 // break that premise — an in-place export rewriting the file, and a track leaving the
 // list (whose cached spectrogram image would otherwise be retained forever) — and both
 // must evict through here so no family is ever missed.
-export const ANALYSIS_QUERY_KEYS = [
+const ANALYSIS_QUERY_KEYS = [
   'properties',
   'loudness',
   'spectrogram',

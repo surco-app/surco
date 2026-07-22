@@ -21,7 +21,7 @@ interface Params {
   setNotice: (message: string) => void
 }
 
-export interface MetadataClipboard {
+interface MetadataClipboard {
   onCopyMeta: (track: TrackItem) => void
   onPasteMeta: (track: TrackItem) => void
   onCopyPath: (track: TrackItem) => void

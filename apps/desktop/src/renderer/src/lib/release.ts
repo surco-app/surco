@@ -87,7 +87,7 @@ export interface TrackMatchTarget {
   discogsReleaseId?: string
 }
 
-export interface ScoredTrack {
+interface ScoredTrack {
   track: ReleaseTrack
   confidence: number
 }

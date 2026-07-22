@@ -16,7 +16,7 @@ interface Params {
   onSaveError: () => void
 }
 
-export interface SettingsState {
+interface SettingsState {
   settings: Settings | null
   // Direct writer for flows that replace the whole object at once (the Settings
   // modal's config-dir adoption).

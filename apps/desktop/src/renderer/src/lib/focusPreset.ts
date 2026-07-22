@@ -7,7 +7,7 @@
 // earlier 'balanced' at 315 was only 15px from 'edit' and looked like the same state.
 export type FocusPresetId = 'match' | 'balanced' | 'edit'
 
-export interface FocusPreset {
+interface FocusPreset {
   id: FocusPresetId
   resultsWidth: number
 }

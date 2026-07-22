@@ -3,7 +3,7 @@ import type { TrackMetadata } from '../../../shared/types'
 // The free-text tags find/replace runs over — where bulk cleanup of rips actually happens.
 // Pure-numeric fields (year, track/disc number, bpm) are left out so a search like "0" can't
 // mangle them.
-export const FIND_REPLACE_FIELDS: (keyof TrackMetadata)[] = [
+const FIND_REPLACE_FIELDS: (keyof TrackMetadata)[] = [
   'title',
   'artist',
   'album',
@@ -17,7 +17,7 @@ export const FIND_REPLACE_FIELDS: (keyof TrackMetadata)[] = [
   'remixArtist',
 ]
 
-export interface FindReplaceOptions {
+interface FindReplaceOptions {
   regex?: boolean
   caseSensitive?: boolean
 }

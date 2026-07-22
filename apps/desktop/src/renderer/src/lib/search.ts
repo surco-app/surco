@@ -1,7 +1,7 @@
 import type { TrackMetadata } from '../../../shared/types'
 import type { ParsedName } from './filename'
 
-export interface ResolvedSearch {
+interface ResolvedSearch {
   title: string
   artist: string
   query: string

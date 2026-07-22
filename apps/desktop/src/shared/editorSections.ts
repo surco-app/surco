@@ -2,7 +2,7 @@
 // state (Settings → Editor). Lives in shared so the renderer and the persisted
 // default settings (main/settings) reference the same list and can never drift.
 
-export const EDITOR_SECTION_IDS = [
+const EDITOR_SECTION_IDS = [
   'form',
   'otherTags',
   'properties',
@@ -20,7 +20,7 @@ export type EditorSectionId = (typeof EDITOR_SECTION_IDS)[number]
 // operate on its audio, name the output. Derived per section, not a fixed layout, so
 // a reordered list still labels correctly (a moved audio section carries its "AUDIO"
 // heading with it) rather than forcing sections into fixed buckets.
-export type EditorSectionGroup = 'metadata' | 'audio' | 'output'
+type EditorSectionGroup = 'metadata' | 'audio' | 'output'
 
 export const EDITOR_SECTION_GROUP: Record<EditorSectionId, EditorSectionGroup> = {
   form: 'metadata',

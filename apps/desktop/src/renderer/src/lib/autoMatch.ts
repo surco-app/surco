@@ -249,7 +249,7 @@ export interface SearchApi {
   providers?: SearchProviderId[]
 }
 
-export type AutoMatch = ProbeMatch
+type AutoMatch = ProbeMatch
 
 // Tries the file's own stored release before any text search: loads it directly by id,
 // scores its tracklist the same way a probed search result would, and accepts anything

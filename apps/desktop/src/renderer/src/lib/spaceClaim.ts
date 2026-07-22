@@ -7,7 +7,7 @@
 // here, and the keyboard-shortcut hook consults this before running the global
 // command. Module-level (not context) because the claim must survive the
 // editor's per-track remount, like the fold/maximize stores next door.
-export type ClaimedKey = 'play'
+type ClaimedKey = 'play'
 
 type Handlers = Partial<Record<ClaimedKey, () => void>>
 

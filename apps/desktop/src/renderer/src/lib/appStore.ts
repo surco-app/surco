@@ -17,7 +17,7 @@ export interface AppError {
 // ref-mirror, and so view chunks can subscribe to just their slice instead of being fed
 // prop walls. Domain data (tracks, settings, analysis) stays in its own hooks; this is
 // only the view's own bookkeeping. Grown one slice at a time as App migrates onto it.
-export interface AppState {
+interface AppState {
   // Free-text filter over the imported tracks, combined with the quality chip.
   search: string
   // Display order of the (filtered) list. Defaults to the drop order.

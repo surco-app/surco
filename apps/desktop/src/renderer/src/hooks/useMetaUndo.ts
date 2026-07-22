@@ -33,7 +33,7 @@ interface MetaSnapshot {
   cover?: { url: TrackItem['coverUrl']; path: TrackItem['coverPath'] }
 }
 
-export interface MetaUndo {
+interface MetaUndo {
   // Snapshots the given tracks' tags before a batch operation overwrites them;
   // cover: true also snapshots the artwork for operations that overwrite it.
   record: (targets: TrackItem[], opts?: { cover?: boolean }) => void

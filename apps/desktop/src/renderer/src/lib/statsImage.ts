@@ -25,7 +25,7 @@ const CELL_ORDER: (keyof LifetimeStats)[] = [
   'bandcampMatches',
 ]
 
-export interface StatsImageCell {
+interface StatsImageCell {
   key: keyof LifetimeStats
   value: number
 }
@@ -36,7 +36,7 @@ export function statsImageCells(stats: LifetimeStats): StatsImageCell[] {
   return CELL_ORDER.filter((key) => stats[key] > 0).map((key) => ({ key, value: stats[key] }))
 }
 
-export interface StatsImageInput {
+interface StatsImageInput {
   title: string
   // 0 hides the hero block (activity without conversions still deserves a card).
   conversionCount: number

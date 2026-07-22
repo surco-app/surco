@@ -18,7 +18,7 @@ export const DEFAULT_GEOMETRY: PanelGeometry = {
   size: { width: 320, height: 360 },
 }
 
-export type SavedPanelGeometry = { x: number; y: number; width: number; height: number } | null
+type SavedPanelGeometry = { x: number; y: number; width: number; height: number } | null
 
 // Restores the saved geometry, defaulting on junk and clamping into the current
 // viewport — the window may have shrunk (or the panel was left on a bigger screen)

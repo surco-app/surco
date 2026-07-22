@@ -28,7 +28,7 @@ export type AppleMusicIndex = Map<string, LibraryEntry[]>
 // an exact title+artist clears it comfortably, a wrong artist or a different base title
 // falls well short, and two different versions of one title (same base, distinct suffixes,
 // far-apart durations) land just under it. See libraryMatchScore.
-export const LIBRARY_MATCH_THRESHOLD = 0.7
+const LIBRARY_MATCH_THRESHOLD = 0.7
 
 // Weights for the three library signals, renormalised over whichever are present (duration
 // is absent when either side lacks one). Artist is a near-gate: a wrong artist alone can't

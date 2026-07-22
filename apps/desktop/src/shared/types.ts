@@ -30,7 +30,7 @@ export type OutputSampleRate = 'source' | '44100' | '48000'
 
 // FLAC -compression_level: a pure size/speed trade-off, the decoded audio is
 // identical at every level.
-export type FlacCompression = '0' | '5' | '8'
+type FlacCompression = '0' | '5' | '8'
 
 // The quality knobs a conversion reads, bundled so the encode planner receives one
 // coherent snapshot of the settings.

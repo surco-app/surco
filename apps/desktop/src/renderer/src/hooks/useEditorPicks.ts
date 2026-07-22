@@ -4,7 +4,7 @@ import type { DeclickMode, FormatSetting, NormalizeConfig, Settings } from '../.
 import type { Destination } from '../lib/destination'
 import { useStableCallback } from './useStableCallback'
 
-export interface EditorPicks {
+interface EditorPicks {
   formatRef: React.RefObject<FormatSetting | null>
   destinationRef: React.RefObject<Destination | null>
   normalizeRef: React.RefObject<NormalizeConfig | null>

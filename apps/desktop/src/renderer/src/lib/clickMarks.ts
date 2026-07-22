@@ -1,7 +1,7 @@
 // The repair section's pure geometry: which click marks to draw over the visible
 // window, and where the "jump to the next click" key lands.
 
-export interface ClickMark {
+interface ClickMark {
   sec: number
   pct: number
 }

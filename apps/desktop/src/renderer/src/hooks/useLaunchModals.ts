@@ -15,7 +15,7 @@ interface Params {
   setSettings: (s: Settings) => void
 }
 
-export interface LaunchModals {
+interface LaunchModals {
   // The launch decision, fed to useSettings' onFirstLoad: onboarding for a fresh
   // install, otherwise the post-update what's-new popup when there is news.
   decideOnLoad: (s: Settings) => void

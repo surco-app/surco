@@ -4,7 +4,7 @@
 // table from theme tokens here keeps the color source in one place (index.css) and lets the
 // image re-tint instantly on a theme switch without re-rendering with ffmpeg.
 
-export type Rgb = readonly [number, number, number]
+type Rgb = readonly [number, number, number]
 export type Ramp = { r: string; g: string; b: string }
 
 export function parseColor(value: string): Rgb {

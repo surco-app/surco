@@ -28,7 +28,7 @@ export function reportVerdictColor(verdict: Verdict): string {
   return REPORT.danger
 }
 
-export interface DuotoneLut {
+interface DuotoneLut {
   r: Uint8ClampedArray
   g: Uint8ClampedArray
   b: Uint8ClampedArray
@@ -64,7 +64,7 @@ export function applyDuotone(data: Uint8ClampedArray, lut: DuotoneLut): void {
   }
 }
 
-export interface QualityReportInput {
+interface QualityReportInput {
   spectrum: SpectrumResult
   // "Artist — Title" (or the file name when untagged) — the report's headline.
   heading: string
