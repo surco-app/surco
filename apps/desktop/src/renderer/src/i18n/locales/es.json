@@ -28,9 +28,6 @@
       "balanced": "Columnas equilibradas",
       "edit": "Ensanchar el editor"
     },
-    "convert": "Convertir",
-    "convertSelectedHint": "Convierte las pistas seleccionadas",
-    "convertSelectedEmptyHint": "Selecciona pistas en la lista para convertirlas",
     "batchConverted": "{{count}} convertidas",
     "batchSkipped": "{{count}} saltadas",
     "batchFailed": "{{count}} con error",
@@ -50,7 +47,6 @@
     "autoMatchNoToken": "Añade un token de Discogs en Ajustes para auto-emparejar",
     "addToken": "Añadir token",
     "autoMatchingCount": "Auto-emparejando… {{done}}/{{total}}",
-    "export": "Exportar a software DJ",
     "clearAll": "Vaciar la lista"
   },
   "sidebar": {
@@ -151,8 +147,7 @@
   "newTracks": {
     "prompt_one": "{{count}} pista nueva en «{{folder}}»",
     "prompt_other": "{{count}} pistas nuevas en «{{folder}}»",
-    "load": "Cargar",
-    "dismiss": "Descartar"
+    "load": "Cargar"
   },
   "lastSession": {
     "prompt_one": "¿Reabrir la última sesión? ({{count}} pista)",
@@ -281,7 +276,6 @@
     "coverDropActive": "Suelta la imagen",
     "coverAlt": "Carátula",
     "coverView": "Ver la carátula a tamaño completo",
-    "coverTitle": "Arrastra una imagen para usarla como carátula",
     "coverCopy": "Copiar carátula",
     "coverPaste": "Pegar carátula",
     "coverExport": "Exportar carátula",
@@ -378,7 +372,6 @@
     "spectrumAlt": "Espectrograma de frecuencias de la pista",
     "spectrumCutoff": "corte ~{{cutoff}}",
     "spectrumHighs": "agudos hasta ~{{cutoff}}",
-    "output": "Salida:",
     "outputName": "Nombre del archivo",
     "outputNameHintInPlace": "Mismo formato que el original: actualiza el archivo original y lo renombra — no se crea ninguna copia en la carpeta de salida.",
     "overwriteTitle": "Sobrescribe el original",
@@ -399,7 +392,6 @@
     "update": "Actualizar",
     "updateMusic": "Actualizar + Apple Music",
     "processing": "Procesando…",
-    "doneReveal": "✓ Hecho — mostrar archivo",
     "exportedAs": "✓ Exportado como {{format}}",
     "exportedCount_one": "✓ {{count}} pista exportada",
     "exportedCount_other": "✓ {{count}} pistas exportadas",
@@ -504,10 +496,8 @@
       "standard": "Repara los clicks cortos de la aguja.",
       "strong": "Atrapa también pops largos; puede suavizar transitorios."
     },
-    "estimate": "Clicks audibles estimados en esta pista: ~{{count}}",
     "estimatePill": "~{{count}} clicks",
     "estimateNonePill": "Sin clicks",
-    "estimateNone": "Sin clicks audibles detectados en esta pista.",
     "waveTitle": "Clics encontrados",
     "markLabel": "Clic en el segundo {{sec}} — saltar aquí",
     "unscanned": "Analizados los primeros {{minutes}} minutos; los clics posteriores no se marcan.",
@@ -538,7 +528,6 @@
     "cutStart": "{{seconds}} del inicio",
     "cutEnd": "{{seconds}} del final",
     "nothing": "No se detecta silencio al inicio ni al final.",
-    "clear": "Restablecer",
     "clearSide": "Quitar este corte",
     "applyStart": "Recortar {{seconds}} del inicio",
     "applyEnd": "Recortar {{seconds}} del final",
@@ -828,7 +817,6 @@
   "onboarding": {
     "welcomeTitle": "Te damos la bienvenida a Surco",
     "welcomeBody": "Vamos a configurar lo esencial. Tardas menos de un minuto y podrás cambiarlo todo después en Ajustes.",
-    "tokenBody": "Surco etiqueta tus pistas con datos de Discogs y funciona sin configurar nada. Si quieres, pega un token personal gratuito para tener tu propio límite, más alto.",
     "formatBody": "Elige a qué formato exporta Surco tus pistas.",
     "audioTitle": "¿Qué haces con tus pistas?",
     "audioBody": "Surco muestra solo las secciones del editor que tu flujo necesita. Elige lo que encaje: puedes cambiarlo cuando quieras en Ajustes.",

@@ -28,9 +28,6 @@
       "balanced": "Colunas equilibradas",
       "edit": "Alargar o editor"
     },
-    "convert": "Converter",
-    "convertSelectedHint": "Converte as faixas selecionadas",
-    "convertSelectedEmptyHint": "Selecione faixas na lista para convertê-las",
     "batchConverted": "{{count}} convertidas",
     "batchSkipped": "{{count}} puladas",
     "batchFailed": "{{count}} com erro",
@@ -50,7 +47,6 @@
     "autoMatchNoToken": "Adicione um token do Discogs em Ajustes para auto-associar",
     "addToken": "Adicionar token",
     "autoMatchingCount": "Auto-associando… {{done}}/{{total}}",
-    "export": "Exportar para software de DJ",
     "clearAll": "Limpar a lista"
   },
   "sidebar": {
@@ -151,8 +147,7 @@
   "newTracks": {
     "prompt_one": "{{count}} faixa nova em “{{folder}}”",
     "prompt_other": "{{count}} faixas novas em “{{folder}}”",
-    "load": "Carregar",
-    "dismiss": "Descartar"
+    "load": "Carregar"
   },
   "lastSession": {
     "prompt_one": "Reabrir a última sessão? ({{count}} faixa)",
@@ -281,7 +276,6 @@
     "coverDropActive": "Solte a imagem",
     "coverAlt": "Capa",
     "coverView": "Ver a capa em tamanho real",
-    "coverTitle": "Arraste uma imagem para usá-la como capa",
     "coverCopy": "Copiar capa",
     "coverPaste": "Colar capa",
     "coverExport": "Exportar capa",
@@ -378,7 +372,6 @@
     "spectrumAlt": "Espectrograma de frequências da faixa",
     "spectrumCutoff": "corte ~{{cutoff}}",
     "spectrumHighs": "agudos até ~{{cutoff}}",
-    "output": "Saída:",
     "outputName": "Nome do arquivo",
     "outputNameHintInPlace": "Mesmo formato do original: atualiza o arquivo original no lugar e o renomeia — nenhuma cópia é criada na pasta de saída.",
     "overwriteTitle": "Sobrescreve o original",
@@ -399,7 +392,6 @@
     "update": "Atualizar",
     "updateMusic": "Atualizar + Apple Music",
     "processing": "Processando…",
-    "doneReveal": "✓ Pronto — mostrar arquivo",
     "exportedAs": "✓ Exportado como {{format}}",
     "exportedCount_one": "✓ {{count}} faixa exportada",
     "exportedCount_other": "✓ {{count}} faixas exportadas",
@@ -504,10 +496,8 @@
       "standard": "Repara os clicks curtos da agulha.",
       "strong": "Captura também estalos longos; pode suavizar transientes."
     },
-    "estimate": "Clicks audíveis estimados nesta faixa: ~{{count}}",
     "estimatePill": "~{{count}} clicks",
     "estimateNonePill": "Sem clicks",
-    "estimateNone": "Nenhum click audível detectado nesta faixa.",
     "waveTitle": "Cliques encontrados",
     "markLabel": "Clique em {{sec}} s — ir para cá",
     "unscanned": "Analisados os primeiros {{minutes}} minutos; cliques posteriores não são marcados.",
@@ -538,7 +528,6 @@
     "cutStart": "{{seconds}} do início",
     "cutEnd": "{{seconds}} do final",
     "nothing": "Nenhum silêncio detectado no início ou no final.",
-    "clear": "Redefinir",
     "clearSide": "Remover este corte",
     "applyStart": "Cortar {{seconds}} do início",
     "applyEnd": "Cortar {{seconds}} do final",
@@ -828,7 +817,6 @@
   "onboarding": {
     "welcomeTitle": "Boas-vindas ao Surco",
     "welcomeBody": "Vamos configurar o essencial. Leva menos de um minuto e você pode mudar tudo depois em Ajustes.",
-    "tokenBody": "O Surco etiqueta suas faixas com dados do Discogs e funciona sem configurar nada. Se quiser, cole um token pessoal gratuito para ter seu próprio limite, mais alto.",
     "formatBody": "Escolha para qual formato o Surco exporta suas faixas.",
     "audioTitle": "O que você faz com suas faixas?",
     "audioBody": "O Surco mostra só as seções do editor que seu fluxo precisa. Escolha o que se encaixa — você pode mudar isso quando quiser em Ajustes.",
