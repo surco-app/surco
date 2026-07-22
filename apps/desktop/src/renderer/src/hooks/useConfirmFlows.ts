@@ -17,16 +17,19 @@ import type { TrackItem } from '../types'
 import type { ConfirmModal } from './useOverlays'
 
 // Whether a track's own filters (normalize, trim, declick) will actually reach the
-// job — mirrors normalizeForJob/declickForJob's skip of a filter already baked into an
-// in-place export, so a track that reads its own prior export doesn't trip the warning
-// for work that already happened and won't run again.
+// job — mirrors processTrack's job.normalize ?? settings.normalize fallback, so a job
+// with no picks of its own (nothing selected) is checked against the same filter the
+// main process will actually run, then normalizeForJob/declickForJob's skip of a
+// filter already baked into an in-place export, so a track that reads its own prior
+// export doesn't trip the warning for work that already happened and won't run again.
 function hasActiveFilters(
   track: TrackItem,
   normalize: NormalizeConfig | undefined,
   declick: DeclickMode | undefined,
+  settings: Settings | null,
 ): boolean {
-  const effectiveNormalize = normalizeForJob(track, normalize)
-  const effectiveDeclick = declickForJob(track, declick)
+  const effectiveNormalize = normalizeForJob(track, normalize ?? settings?.normalize)
+  const effectiveDeclick = declickForJob(track, declick ?? settings?.declick)
   return (
     (effectiveNormalize !== undefined && effectiveNormalize.mode !== 'none') ||
     (effectiveDeclick !== undefined && effectiveDeclick !== 'off') ||
@@ -44,13 +47,14 @@ function risksLossyReencode(
   overwriteOriginal: boolean | undefined,
   normalize: NormalizeConfig | undefined,
   declick: DeclickMode | undefined,
+  settings: Settings | null,
 ): boolean {
   if (!format) return false
   return reencodesLossyInPlace(
     format,
     track.inputPath,
     overwriteOriginal ?? false,
-    hasActiveFilters(track, normalize, declick),
+    hasActiveFilters(track, normalize, declick, settings),
     'aiff',
   )
 }
@@ -323,7 +327,7 @@ export function useConfirmFlows({
     // the lossy re-encode risk is checked even when overwriting is off — it is the
     // one case where a non-overwrite run still rewrites the original.
     const lossyReencode = targets.some((t) =>
-      risksLossyReencode(t, format, overwriting, normalize, declick),
+      risksLossyReencode(t, format, overwriting, normalize, declick, settings),
     )
     if (!overwriting && !lossyReencode) {
       void processAll(targets, format, normalize, destination, declick)
@@ -376,7 +380,14 @@ export function useConfirmFlows({
     // Same 'source'-resolves-to-mp3 case as askConvertAll: in place regardless of
     // overwrite, so it's checked even when overwriting is off.
     const lossyReencode = opts.track
-      ? risksLossyReencode(opts.track, opts.format, overwriting, opts.normalize, opts.declick)
+      ? risksLossyReencode(
+          opts.track,
+          opts.format,
+          overwriting,
+          opts.normalize,
+          opts.declick,
+          settings,
+        )
       : false
     if (!overwriting && !lossyReencode) {
       run()

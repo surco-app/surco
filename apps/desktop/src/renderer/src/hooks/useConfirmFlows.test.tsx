@@ -282,6 +282,57 @@ describe('useConfirmFlows lossy in-place re-encode', () => {
     expect(opened).toHaveLength(0)
     expect(run).toHaveBeenCalledTimes(1)
   })
+
+  // With nothing selected the editor reports no picks, so App passes normalize/declick
+  // as undefined — exactly like processTrack falling back to settings.normalize when
+  // the job carries none. A filter configured only in Settings degrades the file the
+  // same as one chosen in the editor, so it must trip the same warning.
+  it('confirms a batch convert-all with no picks when Settings normalize is on', () => {
+    const mp3 = track('a', { inputPath: '/a.mp3', fileName: 'a.mp3' })
+    const { flows, opened } = setup([mp3], {
+      settings: {
+        overwriteOriginal: false,
+        normalize: { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+      } as Settings,
+    })
+    flows.askConvertAll([mp3], 'source', undefined, undefined, undefined)
+    expect(opened).toHaveLength(1)
+    expect(opened[0].destructive).toBe(true)
+  })
+
+  // Same fallback, for declick instead of normalize, and through the single-convert path.
+  it('confirms a single convert with no picks when Settings declick is on', () => {
+    const mp3 = track('a', { inputPath: '/a.mp3', fileName: 'a.mp3' })
+    const { flows, opened } = setup([mp3], {
+      settings: { overwriteOriginal: false, declick: 'standard' } as Settings,
+    })
+    const run = vi.fn()
+    flows.askConvertOne(run, { track: mp3, format: 'source' })
+    expect(opened).toHaveLength(1)
+    expect(opened[0].destructive).toBe(true)
+    expect(run).not.toHaveBeenCalled()
+  })
+
+  // The deliberate exemption must survive the settings fallback: a track reading its
+  // own prior in-place export skips the filter (it is already baked in and won't run
+  // again), even when Settings still has normalize turned on globally.
+  it('does not confirm when the track reads its own export, even with Settings normalize on', () => {
+    const mp3 = track('a', {
+      inputPath: '/a.mp3',
+      fileName: 'a.mp3',
+      outputPath: '/a.mp3',
+      status: 'done',
+      processedNormalize: { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+    })
+    const { flows, opened } = setup([mp3], {
+      settings: {
+        overwriteOriginal: false,
+        normalize: { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+      } as Settings,
+    })
+    flows.askConvertAll([mp3], 'source', undefined, undefined, undefined)
+    expect(opened).toHaveLength(0)
+  })
 })
 
 describe('useConfirmFlows fill-all selection scope', () => {
