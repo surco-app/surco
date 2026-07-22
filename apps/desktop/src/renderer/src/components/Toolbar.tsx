@@ -179,10 +179,20 @@ export const Toolbar = memo(function Toolbar({
             className="press group relative flex h-8 items-center gap-1.5 rounded-lg border border-[var(--color-accent)] px-2.5 text-xs font-medium tabular-nums text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
           >
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            {tr('header.convertingCount', {
-              done: batchProgress.done,
-              total: batchProgress.total,
-            })}
+            {/* A status region like the import pill's: the visible counter alone is
+                silent to a screen reader, and the button's own name is the cancel action. */}
+            <span
+              role="status"
+              aria-label={tr('header.convertingCount', {
+                done: batchProgress.done,
+                total: batchProgress.total,
+              })}
+            >
+              {tr('header.convertingCount', {
+                done: batchProgress.done,
+                total: batchProgress.total,
+              })}
+            </span>
             <Tooltip label={tr('header.cancelConvert')} align="end" />
           </button>
         )}
@@ -231,7 +241,15 @@ export const Toolbar = memo(function Toolbar({
                 aria-hidden="true"
               />
               {matching && (
-                <span data-testid="auto-match-progress" className="text-xs tabular-nums">
+                <span
+                  data-testid="auto-match-progress"
+                  role="status"
+                  aria-label={tr('header.autoMatchingCount', {
+                    done: matching.done,
+                    total: matching.total,
+                  })}
+                  className="text-xs tabular-nums"
+                >
                   {matching.done}/{matching.total}
                 </span>
               )}
@@ -267,7 +285,15 @@ export const Toolbar = memo(function Toolbar({
                 aria-hidden="true"
               />
               {analysis && (
-                <span data-testid="analyze-progress" className="text-xs tabular-nums">
+                <span
+                  data-testid="analyze-progress"
+                  role="status"
+                  aria-label={tr('header.analyzingCount', {
+                    done: analysis.done,
+                    total: analysis.total,
+                  })}
+                  className="text-xs tabular-nums"
+                >
                   {analysis.done}/{analysis.total}
                 </span>
               )}

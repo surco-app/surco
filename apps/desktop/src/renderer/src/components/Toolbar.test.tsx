@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import '../i18n'
+import i18n from '../i18n'
 import { Toolbar } from './Toolbar'
 
 afterEach(cleanup)
@@ -115,6 +115,26 @@ describe('Toolbar', () => {
   it('shows the metadata-read progress while importing', () => {
     renderBar({ importing: { done: 212, total: 319 } })
     expect(screen.getByTestId('import-progress')).toHaveTextContent('212/319')
+  })
+
+  // The other three counters were visible-only: without sight, a 500-track run is
+  // silence between the click and the final toast. Each live counter is a named status
+  // region — the exact pattern the import pill already had — so a screen reader hears
+  // the sweep advance.
+  it('announces the batch, auto-match and analyze progress as status regions', () => {
+    renderBar({
+      batching: true,
+      batchProgress: { done: 3, total: 12 },
+      matching: { done: 1, total: 4 },
+      analysis: { done: 2, total: 10 },
+    })
+    for (const name of [
+      i18n.t('header.convertingCount', { done: 3, total: 12 }),
+      i18n.t('header.autoMatchingCount', { done: 1, total: 4 }),
+      i18n.t('header.analyzingCount', { done: 2, total: 10 }),
+    ]) {
+      expect(screen.getByRole('status', { name })).toBeInTheDocument()
+    }
   })
 
   // A focus preset reparks both columns in one click — the reason the control exists over
