@@ -19,6 +19,7 @@ import '../i18n'
 import type { TrackMetadata } from '../../../shared/types'
 import { trackSignature } from '../lib/dirty'
 import type { TrackItem } from '../types'
+import { TrackContextMenu } from './TrackContextMenu'
 import { TrackList } from './TrackList'
 
 beforeEach(() => {
@@ -89,14 +90,25 @@ function renderList(
       onActivate={onActivate}
       onRemove={onRemove}
       onPrefetch={onPrefetch}
-      onSearch={onSearch}
-      onSearchWeb={onSearchWeb}
-      onStartOver={onStartOver}
-      onTrash={onTrash}
-      onCopyMeta={onCopyMeta}
-      onCopyPath={onCopyPath}
-      onPasteMeta={onPasteMeta}
-      canPasteMeta={canPasteMeta}
+      // Composed here exactly as App composes it: the list owns when/where the menu
+      // opens, the caller owns what it offers.
+      renderMenu={(menu, close) => (
+        <TrackContextMenu
+          track={menu.track}
+          x={menu.x}
+          y={menu.y}
+          onClose={close}
+          onSearch={onSearch}
+          onSearchWeb={onSearchWeb}
+          onStartOver={onStartOver}
+          onCopyMeta={onCopyMeta}
+          onCopyPath={onCopyPath}
+          onPasteMeta={onPasteMeta}
+          canPasteMeta={canPasteMeta}
+          onRemove={onRemove}
+          onTrash={onTrash}
+        />
+      )}
     />,
   )
   return {

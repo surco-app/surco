@@ -21,7 +21,6 @@ import type { ClickMods } from '../lib/selection'
 import { sourceFormat, type TrackQuality, trackQuality } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { Tooltip } from './Tooltip'
-import { TrackContextMenu } from './TrackContextMenu'
 
 interface Props {
   tracks: TrackItem[]
@@ -33,14 +32,10 @@ interface Props {
   onActivate: (track: TrackItem) => void
   onRemove: (id: string) => void
   onPrefetch: (id: string) => void
-  onSearch: (id: string) => void
-  onSearchWeb: (track: TrackItem) => void
-  onStartOver: (track: TrackItem) => void
-  onCopyMeta: (track: TrackItem) => void
-  onCopyPath: (track: TrackItem) => void
-  onPasteMeta: (track: TrackItem) => void
-  canPasteMeta: boolean
-  onTrash: (track: TrackItem) => void
+  // The right-click menu for a row. The list owns when and where it opens; the caller
+  // owns what it offers, so its handlers reach the menu without passing through here.
+  // Must be identity-stable (useStableCallback in App) — the list is memoized.
+  renderMenu: (menu: MenuState, close: () => void) => React.ReactNode
   // Optional viewport tracking: the scroll pane each row observes against and a callback
   // reporting when a row enters or leaves it, so App can gate auto-match to the rows on screen.
   scrollRootRef?: RefObject<HTMLElement | null>
@@ -50,7 +45,7 @@ interface Props {
   rowRegistry?: RefObject<Map<string, HTMLButtonElement>>
 }
 
-type MenuState = { track: TrackItem; x: number; y: number }
+export type MenuState = { track: TrackItem; x: number; y: number }
 
 // Rows below this count all get painted up front (see the content-visibility note on the
 // row wrapper): a small crate scrolls over already-rasterized content instead of paying
@@ -527,14 +522,7 @@ export const TrackList = memo(function TrackList({
   onActivate,
   onRemove,
   onPrefetch,
-  onSearch,
-  onSearchWeb,
-  onStartOver,
-  onCopyMeta,
-  onCopyPath,
-  onPasteMeta,
-  canPasteMeta,
-  onTrash,
+  renderMenu,
   scrollRootRef,
   onVisible,
   rowRegistry,
@@ -564,6 +552,7 @@ export const TrackList = memo(function TrackList({
     (track: TrackItem, x: number, y: number) => setMenu({ track, x, y }),
     [],
   )
+  const closeMenu = useCallback(() => setMenu(null), [])
   // Reads the live selection at drag time through a ref, so the handler stays stable and
   // the memoized rows don't all re-render whenever the selection changes.
   const dragState = useRef({ tracks, selectedIds })
@@ -642,23 +631,7 @@ export const TrackList = memo(function TrackList({
           />
         ))}
       </div>
-      {menu && (
-        <TrackContextMenu
-          track={menu.track}
-          x={menu.x}
-          y={menu.y}
-          onClose={() => setMenu(null)}
-          onSearch={onSearch}
-          onSearchWeb={onSearchWeb}
-          onStartOver={onStartOver}
-          onCopyMeta={onCopyMeta}
-          onCopyPath={onCopyPath}
-          onPasteMeta={onPasteMeta}
-          canPasteMeta={canPasteMeta}
-          onRemove={onRemove}
-          onTrash={onTrash}
-        />
-      )}
+      {menu && renderMenu(menu, closeMenu)}
     </>
   )
 })

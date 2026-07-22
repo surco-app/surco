@@ -26,7 +26,8 @@ import { ResizeHandle, useResizableWidth } from './components/ResizeHandle'
 import { ToastStack } from './components/ToastStack'
 import { Toolbar } from './components/Toolbar'
 import { TopProgressBar } from './components/TopProgressBar'
-import { TrackList } from './components/TrackList'
+import { TrackContextMenu } from './components/TrackContextMenu'
+import { type MenuState as TrackMenuState, TrackList } from './components/TrackList'
 import { TrackListHeader } from './components/TrackListHeader'
 import { useActivityLog } from './hooks/useActivityLog'
 import { useAutoMatch } from './hooks/useAutoMatch'
@@ -1297,6 +1298,28 @@ export default function App(): React.JSX.Element {
   const onSearchWeb = useStableCallback(() => {
     if (selected) searchTrackWeb(selected)
   })
+  // What the right-click menu offers is App's decision (its actions route through the
+  // confirm dialog, the toasts and the clipboard state up here); when and where it opens
+  // stays TrackList's. Stable so the memoized list never re-renders for a handler change.
+  const renderTrackMenu = useStableCallback(
+    (menu: TrackMenuState, close: () => void): React.ReactNode => (
+      <TrackContextMenu
+        track={menu.track}
+        x={menu.x}
+        y={menu.y}
+        onClose={close}
+        onSearch={onSearchTrack}
+        onSearchWeb={searchTrackWeb}
+        onStartOver={startOverTrack}
+        onCopyMeta={onCopyMeta}
+        onCopyPath={onCopyPath}
+        onPasteMeta={onPasteMeta}
+        canPasteMeta={copiedMeta !== null}
+        onRemove={removeFromList}
+        onTrash={onTrashRow}
+      />
+    ),
+  )
   // ⌘K twins of the Editor's Eraser / Tag buttons, acting on the current selection so they
   // work without the editor focused. clearMeta mirrors clearAllMeta (single-track clear also
   // un-matches and re-probes); deriveTags mirrors deriveFromNames over the selection.
@@ -1675,14 +1698,7 @@ export default function App(): React.JSX.Element {
                         onActivate={toggleTrack}
                         onRemove={removeFromList}
                         onPrefetch={handlePrefetch}
-                        onSearch={onSearchTrack}
-                        onSearchWeb={searchTrackWeb}
-                        onStartOver={startOverTrack}
-                        onCopyMeta={onCopyMeta}
-                        onCopyPath={onCopyPath}
-                        onPasteMeta={onPasteMeta}
-                        canPasteMeta={copiedMeta !== null}
-                        onTrash={onTrashRow}
+                        renderMenu={renderTrackMenu}
                         scrollRootRef={listScrollRef}
                         onVisible={onTrackVisible}
                         rowRegistry={rowEls}
