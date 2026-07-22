@@ -111,6 +111,75 @@ describe('useSettings modal-open refresh', () => {
   })
 })
 
+describe('useSettings optimistic saves', () => {
+  // The player-bar toggles (continuous playback, waveform) flip through saveSettings and
+  // used to wait for the disk round-trip that theme and resultsWidth already skip — on a
+  // slow config volume the click visibly lagged. Every patch now applies optimistically:
+  // the UI answers in the click's frame and the disk write catches up in the background.
+  it('applies a boolean toggle immediately, before the disk write resolves', async () => {
+    const initial = settings({ conversionCount: 1, continuousPlayback: false })
+    let resolveSave: (s: Settings) => void = () => {}
+    const save = new Promise<Settings>((r) => {
+      resolveSave = r
+    })
+    const getSettings = vi.fn().mockResolvedValue(initial)
+    const saveSettings = vi.fn().mockReturnValue(save)
+    // biome-ignore lint/suspicious/noExplicitAny: minimal bridge stub for the hook under test
+    ;(window as any).api = { getSettings, saveSettings }
+
+    const noop = (): void => {}
+    const { result } = renderHook(() =>
+      useSettings({ settingsOpen: false, onFirstLoad: noop, onLoadError: noop, onSaveError: noop }),
+    )
+    await waitFor(() => expect(result.current.settings).toEqual(initial))
+
+    act(() => result.current.saveSettings({ continuousPlayback: true }))
+
+    expect(result.current.settings?.continuousPlayback).toBe(true)
+
+    await act(async () => {
+      resolveSave(settings({ conversionCount: 1, continuousPlayback: true }))
+      await save
+    })
+    expect(result.current.settings?.continuousPlayback).toBe(true)
+  })
+
+  // The flip side of optimism: a failed write used to leave the optimistic value on
+  // screen with only a toast, so the UI showed a choice the next launch would quietly
+  // revert. The patched fields roll back to their pre-save values — and only those, so
+  // a concurrent save of other fields keeps its own optimistic state.
+  it('rolls the patched fields back when the save fails', async () => {
+    const initial = settings({ conversionCount: 1, theme: 'light', continuousPlayback: true })
+    let rejectSave: (e: Error) => void = () => {}
+    const save = new Promise<Settings>((_, reject) => {
+      rejectSave = reject
+    })
+    const getSettings = vi.fn().mockResolvedValue(initial)
+    const saveSettings = vi.fn().mockReturnValue(save)
+    // biome-ignore lint/suspicious/noExplicitAny: minimal bridge stub for the hook under test
+    ;(window as any).api = { getSettings, saveSettings }
+
+    const noop = (): void => {}
+    const onSaveError = vi.fn()
+    const { result } = renderHook(() =>
+      useSettings({ settingsOpen: false, onFirstLoad: noop, onLoadError: noop, onSaveError }),
+    )
+    await waitFor(() => expect(result.current.settings).toEqual(initial))
+
+    act(() => result.current.saveSettings({ theme: 'dark' }))
+    expect(result.current.settings?.theme).toBe('dark')
+
+    await act(async () => {
+      rejectSave(new Error('disk full'))
+      await save.catch(() => {})
+    })
+
+    expect(result.current.settings?.theme).toBe('light')
+    expect(result.current.settings?.continuousPlayback).toBe(true)
+    expect(onSaveError).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('useSettings optimistic layout width', () => {
   // A focus preset (and a divider drag) writes resultsWidth through saveSettings, which
   // round-trips to disk before returning. On a slow config volume that round-trip is

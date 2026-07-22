@@ -93,24 +93,36 @@ export function useSettings({
   }, [settings?.language])
 
   function saveSettings(patch: Partial<Settings>): void {
-    // Apply the theme optimistically so clearing the live preview on close
-    // doesn't flash the old theme while the persisted value round-trips.
-    if (patch.theme !== undefined) {
-      setSettings((s) => (s ? { ...s, theme: patch.theme as ThemePref } : s))
-    }
-    // Same for the results-column width a focus preset or divider drag writes: on a slow
-    // config volume the disk round-trip is visible lag, so the column would only repark
-    // once the write lands. Applying it now moves the column in the click's own frame.
-    if (patch.resultsWidth !== undefined) {
-      const resultsWidth = patch.resultsWidth
-      setSettings((s) => (s ? { ...s, resultsWidth } : s))
-    }
+    // Apply the whole patch optimistically: on a slow config volume the disk round-trip
+    // is visible lag, so a toggle or the theme would only respond once the write lands.
+    // Started as special cases for theme and resultsWidth; every field the UI can flip
+    // deserves the same click-frame answer. The resolved write reconciles below.
+    let prev: Settings | null = null
+    setSettings((s) => {
+      if (!s) return s
+      prev = s
+      return { ...s, ...patch }
+    })
     window.api
       .saveSettings(patch)
       .then(setSettings)
-      // A silent failure here leaves the UI showing a choice that was never
-      // persisted — the next launch quietly reverts it.
-      .catch(() => latest.current.onSaveError())
+      .catch(() => {
+        // The optimistic value never hit disk, so leaving it on screen would show a
+        // choice the next launch quietly reverts. Roll back just the patched fields —
+        // a concurrent save of other fields keeps its own optimistic state.
+        const before = prev
+        if (before) {
+          setSettings((s) => {
+            if (!s) return s
+            const reverted = { ...s }
+            for (const key of Object.keys(patch) as (keyof Settings)[]) {
+              ;(reverted as Record<keyof Settings, unknown>)[key] = before[key]
+            }
+            return reverted
+          })
+        }
+        latest.current.onSaveError()
+      })
   }
 
   return { settings, setSettings, saveSettings, setThemePreview }
