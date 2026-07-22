@@ -9,6 +9,12 @@ export type LanguagePref = 'system' | 'en' | 'es' | 'de' | 'fr' | 'pt-BR'
 
 export type OutputFormat = 'aiff' | 'mp3' | 'wav' | 'flac' | 'alac'
 
+// The Default format setting, which accepts one thing OutputFormat deliberately cannot:
+// 'source' is a rule for picking a format per file, not a format. It stays on this side
+// of the IPC — resolveJobFormat turns it into a real OutputFormat before a job is built,
+// so the main process only ever sees formats it knows how to mux.
+export type FormatSetting = OutputFormat | 'source'
+
 // MP3 encoder quality: fixed CBR rates (320 the DJ-pool default, the lower steps for
 // space-constrained USBs), or LAME's VBR presets — V0 ≈ 245 kbps transparent, V2 ≈ 190
 // kbps — whose variable rate some old CDJ firmwares dislike.

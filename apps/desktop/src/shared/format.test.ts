@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { editsInPlace, formatExtension, formatMatchesInput } from './format'
+import { editsInPlace, formatExtension, formatMatchesInput, resolveJobFormat } from './format'
 
 describe('formatExtension', () => {
   // ALAC is the one format whose name is not its extension: it lives in an MPEG-4
@@ -44,5 +44,44 @@ describe('editsInPlace', () => {
   it('never lets overwrite mode force ALAC in place', () => {
     expect(editsInPlace('alac', '/music/song.m4a', true)).toBe(false)
     expect(editsInPlace('alac', '/music/song.wav', true)).toBe(false)
+  })
+})
+
+describe('resolveJobFormat', () => {
+  // "Same as source" is a rule for picking a format, not a format: the job that
+  // reaches the main process must always name a real one, or ffmpeg's format chain
+  // falls through to AIFF and silently rewrites the user's file as something else.
+  it('resolves each supported extension to its own format', () => {
+    expect(resolveJobFormat('source', '/music/song.mp3', 'aiff')).toBe('mp3')
+    expect(resolveJobFormat('source', '/music/song.wav', 'aiff')).toBe('wav')
+    expect(resolveJobFormat('source', '/music/song.flac', 'aiff')).toBe('flac')
+    expect(resolveJobFormat('source', '/music/song.aiff', 'aiff')).toBe('aiff')
+  })
+
+  // .aif rips are as common as .aiff and must keep their own format rather than
+  // falling back — the existing exportedFormat in Editor.tsx gets this wrong.
+  it('resolves .aif to aiff', () => {
+    expect(resolveJobFormat('source', '/music/song.aif', 'mp3')).toBe('aiff')
+  })
+
+  // An .m4a may hold lossy AAC, not ALAC. Calling it "already ALAC" would let an
+  // overwrite re-encode the user's only copy and present it as lossless.
+  it('never resolves .m4a to alac', () => {
+    expect(resolveJobFormat('source', '/music/song.m4a', 'aiff')).toBe('aiff')
+  })
+
+  // Surco imports more extensions than it can export; these always transcoded and
+  // still do, rather than blocking the file.
+  it('falls back for inputs with no matching output format', () => {
+    expect(resolveJobFormat('source', '/music/song.opus', 'aiff')).toBe('aiff')
+    expect(resolveJobFormat('source', '/music/song.ogg', 'wav')).toBe('wav')
+    expect(resolveJobFormat('source', '/music/song.aac', 'aiff')).toBe('aiff')
+    expect(resolveJobFormat('source', '/music/no-extension', 'aiff')).toBe('aiff')
+  })
+
+  // A pinned format is the user overriding the rule; the source file has no say.
+  it('returns a concrete setting untouched', () => {
+    expect(resolveJobFormat('mp3', '/music/song.flac', 'aiff')).toBe('mp3')
+    expect(resolveJobFormat('alac', '/music/song.m4a', 'aiff')).toBe('alac')
   })
 })
