@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.70",
+    "date": "22 de julio de 2026",
+    "title": "Igual que el origen: etiqueta sin reconvertir",
+    "items": [
+      {
+        "text": "«Igual que el origen» llega al formato por defecto: cada archivo conserva su propio formato, así que un lote mixto de WAV, FLAC y MP3 recibe sus metadatos de Discogs o Bandcamp sin reconvertirse. Con los filtros de audio apagados, los bytes de audio no se tocan — solo se reescriben las etiquetas y la carátula. Funciona con todos los destinos, también al sobrescribir el original, y se puede elegir desde el asistente de bienvenida.",
+        "in": "0.70.0"
+      },
+      {
+        "text": "Protecciones nuevas para tus archivos: una pista cuyo formato no se puede conservar (.opus, .m4a…) se salta con aviso en vez de convertirse a otra cosa — y sobrescribiendo, tu original nunca se borra. Y si un filtro obligaría a recodificar un MP3 sobre sí mismo, Surco pide confirmación antes de perder calidad, también cuando el filtro viene de los Ajustes.",
+        "in": "0.70.0"
+      },
+      {
+        "text": "Cambiar el formato o el destino en Ajustes ya llega al editor abierto al momento: el botón de convertir refleja lo que de verdad va a pasar, sin tener que cerrar y reabrir la pista.",
+        "in": "0.70.0"
+      }
+    ]
+  },
+  {
     "version": "0.69",
     "date": "21 de julio de 2026",
     "title": "Títulos más limpios y exportaciones que no se pisan",

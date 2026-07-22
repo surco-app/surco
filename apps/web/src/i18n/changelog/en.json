@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.70",
+    "date": "July 22, 2026",
+    "title": "Same as source: tag without re-encoding",
+    "items": [
+      {
+        "text": "“Same as source” joins the default format: every file keeps its own format, so a mixed batch of WAV, FLAC and MP3 takes its Discogs or Bandcamp metadata without being re-encoded. With the audio filters off, the audio bytes are never touched — only the tags and the artwork are rewritten. It works with every destination, including overwriting the original, and can be picked right from the welcome wizard.",
+        "in": "0.70.0"
+      },
+      {
+        "text": "New protections for your files: a track whose format can't be kept (.opus, .m4a…) is skipped with a notice instead of being converted to something else — and under overwrite, your original is never deleted. And if a filter would force an MP3 to be re-encoded over itself, Surco asks for confirmation before losing quality, including when the filter comes from Settings.",
+        "in": "0.70.0"
+      },
+      {
+        "text": "Changing the format or destination in Settings now reaches the open editor instantly: the convert button reflects what will actually happen, no need to close and reopen the track.",
+        "in": "0.70.0"
+      }
+    ]
+  },
+  {
     "version": "0.69",
     "date": "July 21, 2026",
     "title": "Cleaner titles, and exports that don't stack up",
