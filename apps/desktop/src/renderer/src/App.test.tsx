@@ -2085,6 +2085,20 @@ describe("App what's new popup", () => {
     await flush()
   })
 
+  // The stamp used to be a fire-and-forget write: on failure the UI stayed silent and
+  // the popup would fire again next launch. Routed through the same save path as every
+  // other settings write, a failure surfaces the persistent error card.
+  it('surfaces the error card when stamping the changelog version fails', async () => {
+    setApi({
+      version: '0.33.1',
+      getSettings: vi.fn().mockResolvedValue(settings({ lastSeenChangelogVersion: '0.33.0' })),
+      saveSettings: vi.fn().mockRejectedValue(new Error('disk full')),
+    })
+    await renderApp()
+    expect(await screen.findByTestId('app-error')).toBeInTheDocument()
+    await flush()
+  })
+
   // A fresh install has nothing to announce (onboarding owns that launch), but the
   // version is still stamped silently — otherwise the second launch would "discover"
   // the current changelog and pop it at a user who didn't update anything.
