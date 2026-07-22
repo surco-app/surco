@@ -230,7 +230,7 @@ export function Player({
             snaps back to 0°. */}
         <span
           data-testid="player-vinyl"
-          className="player-vinyl relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full outline outline-1 -outline-offset-1 outline-white/10"
+          className="player-vinyl relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full outline outline-1 -outline-offset-1 outline-white/15"
           style={{ animationPlayState: !paused && !loading ? 'running' : 'paused' }}
         >
           {track.embeddedCover ? (
