@@ -37,6 +37,7 @@ import { useEditorPicks } from './hooks/useEditorPicks'
 import { editorSectionOpen, useMaximizedSection } from './hooks/useEditorSections'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useListNavigation } from './hooks/useListNavigation'
+import { useMetadataClipboard } from './hooks/useMetadataClipboard'
 import { useMetaUndo } from './hooks/useMetaUndo'
 import { type SettingsTab, useOverlays } from './hooks/useOverlays'
 import { usePlayer } from './hooks/usePlayer'
@@ -1076,44 +1077,19 @@ export default function App(): React.JSX.Element {
   // convert wipes its cover and rating, not just the text fields — and its own
   // foreign tags, which differ per track so a flat patchTracks patch can't carry them.
   const onClearExtras = useStableCallback((ids: string[]) => clearExtrasTracks(ids))
-  // Copy a track's whole tag set, then stamp it onto whichever track the user pastes
-  // onto — the fast way to share release-level metadata across a crate.
-  const onCopyMeta = useStableCallback((track: TrackItem) => {
-    setCopiedMeta({ meta: track.meta, coverUrl: track.coverUrl, coverPath: track.coverPath })
-    setNotice(tr('notices.copiedMeta'))
-  })
-  const onPasteMeta = useStableCallback((track: TrackItem) => {
-    if (!copiedMeta) return
-    recordMetaUndo([track.id], { cover: true })
-    updateTracksMeta([track.id], copiedMeta.meta)
-    // A hand-picked cover is a blob: URL that is freed once no row shows it; if the
-    // source row left the list since the copy, paste the tags but skip the dead image.
-    const { coverUrl, coverPath } = copiedMeta
-    const coverAlive =
-      !!coverUrl &&
-      (!coverUrl.startsWith('blob:') || tracksRef.current.some((t) => t.coverUrl === coverUrl))
-    // The displaced cover is NOT revoked here (unlike onApplyCoverAll): the undo
-    // snapshot above may restore it, and revoking would hand ⌘Z a dead blob URL.
-    if (coverAlive) patchTracks([track.id], { coverUrl, coverPath })
-    setNotice(tr('notices.pastedMeta'))
-  })
-  // Copies the source path to the clipboard. Routed through App (rather than the menu's
-  // own window.api call) so it can confirm with the same toast the other copies show.
-  const onCopyPath = useStableCallback((track: TrackItem) => {
-    void window.api.copyText(track.inputPath)
-    setNotice(tr('notices.copiedPath'))
-  })
-  const onApplyCoverAll = useStableCallback((coverUrl: string, coverPath?: string) => {
-    const ids = new Set(selectedIds)
-    const displaced: (string | undefined)[] = []
-    const kept: (string | undefined)[] = []
-    // One pass: the selected rows give up their covers, the rest keep theirs.
-    for (const t of tracksRef.current) (ids.has(t.id) ? displaced : kept).push(t.coverUrl)
-    patchTracks(selectedIds, { coverUrl, coverPath })
-    // The selected tracks just took the new cover; free each old blob only if no
-    // unselected track still shows it (a prior apply-to-all can share one blob).
-    revokeDisplacedCovers(displaced, kept)
-  })
+  const { onCopyMeta, onPasteMeta, onCopyPath, onApplyCoverAll, onCopyFilename } =
+    useMetadataClipboard({
+      copiedMeta,
+      setCopiedMeta,
+      tracksRef,
+      selectedIds,
+      selected,
+      filenameFormat: settings?.filenameFormat ?? '{artist} - {title}',
+      recordMetaUndo,
+      updateTracksMeta,
+      patchTracks,
+      setNotice,
+    })
   // Stable like the other editor props: saveSettings is recreated per render,
   // and an unstable identity here would re-render the memoized Editor per keystroke.
   const onResultsWidthChange = useStableCallback((width: number) =>
@@ -1275,17 +1251,6 @@ export default function App(): React.JSX.Element {
   // Editor/command prop so the memoized editor never re-renders for it.
   const onTrimDetectedAll = useStableCallback(() => {
     void onTrimDetected()
-  })
-  // Copies the Settings-pattern name to the OS clipboard so the user can paste the track
-  // into Google or Soulseek. A "/" in the pattern means a subfolder, so drop everything but
-  // the last segment — the file name, not its directory, is what you search for.
-  const onCopyFilename = useStableCallback(() => {
-    if (!selected) return
-    const name = renderOutputName(settings?.filenameFormat ?? '{artist} - {title}', selected.meta)
-    if (name) {
-      void window.api.copyText(name.split('/').pop() ?? name)
-      setNotice(tr('notices.copiedFilename'))
-    }
   })
   // The copy button's one-click twin: opens a Google search for the same name in the
   // default browser. window.open routes through the main process's window-open handler
