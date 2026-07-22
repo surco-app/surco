@@ -1,10 +1,10 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import { autoMatchAvailable } from '../../../../shared/autoMatch'
 import { DISCOGS_FORMATS, DISCOGS_MAX_RESULTS_OPTIONS } from '../../../../shared/defaults'
 import type { Settings } from '../../../../shared/types'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchLocal, PatchSynced } from '../../lib/settingsTabs'
+import { AutoMatchControl } from '../AutoMatchControl'
 import { Select } from '../Select'
 import {
   SettingsEyebrow,
@@ -28,12 +28,6 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
   // The token and format filter only act on Discogs results, so they're grouped under a
   // Discogs heading and disabled when Discogs isn't a chosen source.
   const discogsOn = synced.searchProviders.includes('discogs')
-  // Auto-match is a global search setting (it can apply Bandcamp matches too), gated only on
-  // having a source — plus a Discogs token when Discogs is one of them.
-  const autoReady = autoMatchAvailable({
-    searchProviders: synced.searchProviders,
-    discogsToken: local.token,
-  })
   return (
     <>
       <SettingsSection first>
@@ -65,28 +59,13 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
       {/* Auto-match is a behaviour (when matches get applied), not a source, so it sits in
           its own section apart from the Discogs/Bandcamp source checkboxes. */}
       <SettingsSection>
-      <label
-        className={`flex items-center gap-3 ${
-          autoReady ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-        }`}
-      >
-        <input
-          data-testid="settings-auto-match"
-          type="checkbox"
-          checked={local.autoMatch && autoReady}
-          disabled={!autoReady}
-          onChange={(e) => patchLocal('autoMatch', e.target.checked)}
-          className="h-4 w-4 accent-[var(--color-accent)]"
-        />
-        <span className="text-sm">{tr('settings.autoMatch')}</span>
-      </label>
-      <SettingsHint className="mt-1.5 pl-7">
-        {synced.searchProviders.length === 0
-          ? tr('settings.autoMatchNeedsSource')
-          : autoReady
-            ? tr('settings.autoMatchHint')
-            : tr('settings.autoMatchNeedsToken')}
-      </SettingsHint>
+      <AutoMatchControl
+        checked={local.autoMatch}
+        onChange={(checked) => patchLocal('autoMatch', checked)}
+        searchProviders={synced.searchProviders}
+        discogsToken={local.token}
+        testid="settings-auto-match"
+      />
       </SettingsSection>
 
       {/* A one-value select doesn't need a full-width stacked block: the label and hint

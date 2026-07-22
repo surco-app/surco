@@ -2,12 +2,12 @@ import { AudioLines } from 'lucide-react'
 import type React from 'react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { autoMatchAvailable } from '../../../shared/autoMatch'
 import type { SearchProviderId, Settings } from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
 import { type AudioIntent, buildOnboardingPatch } from '../lib/onboarding'
 import { isMacOS } from '../lib/platform'
 import { formatKHz } from '../lib/quality'
+import { AutoMatchControl } from './AutoMatchControl'
 import { DestinationPicker } from './DestinationPicker'
 import { FormatSettingControl } from './FormatSettingControl'
 import { useFocusTrap } from './useFocusTrap'
@@ -53,8 +53,6 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
   const isLast = step === STEPS.length - 1
   const discogsOn = searchProviders.includes('discogs')
-  // Auto-match needs a source, plus a Discogs token whenever Discogs is one of them.
-  const autoReady = autoMatchAvailable({ searchProviders, discogsToken: token })
 
   function finish(): void {
     onFinish(
@@ -191,28 +189,15 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                   </div>
                 )}
 
-                <label
-                  className={`mt-5 flex items-center gap-3 border-t border-[var(--color-line)] pt-4 ${
-                    autoReady ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-                  }`}
-                >
-                  <input
-                    data-testid="onboarding-auto-match"
-                    type="checkbox"
-                    checked={autoMatch && autoReady}
-                    disabled={!autoReady}
-                    onChange={(e) => setAutoMatch(e.target.checked)}
-                    className="h-4 w-4 accent-[var(--color-accent)]"
+                <div className="mt-5 border-t border-[var(--color-line)] pt-4">
+                  <AutoMatchControl
+                    checked={autoMatch}
+                    onChange={setAutoMatch}
+                    searchProviders={searchProviders}
+                    discogsToken={token}
+                    testid="onboarding-auto-match"
                   />
-                  <span className="text-sm">
-                    {tr('settings.autoMatch')}
-                    <span className="mt-0.5 block text-xs text-fg-dim">
-                      {autoReady
-                        ? tr('onboarding.autoMatchBody')
-                        : tr('onboarding.autoMatchNeedsToken')}
-                    </span>
-                  </span>
-                </label>
+                </div>
               </>
             )}
 

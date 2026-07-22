@@ -228,6 +228,16 @@ describe('OnboardingWizard auto-match', () => {
     fireEvent.change(screen.getByTestId('onboarding-token'), { target: { value: 'tok' } })
     expect(screen.getByTestId('onboarding-auto-match')).toBeEnabled()
   })
+
+  // With every source unticked the blocker is the missing source, not the token — Settings
+  // already explains it that way, and a wizard that says "add a token" would send the user
+  // hunting for a field that isn't even shown (it only renders while Discogs is on).
+  it('explains that auto-match needs a source when every provider is unticked', () => {
+    openTokenStep()
+    fireEvent.click(screen.getByTestId('onboarding-provider-discogs'))
+    expect(screen.getByTestId('onboarding-auto-match')).toBeDisabled()
+    expect(screen.getByText(i18n.t('settings.autoMatchNeedsSource'))).toBeInTheDocument()
+  })
 })
 
 describe('OnboardingWizard format', () => {
