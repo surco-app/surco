@@ -249,8 +249,11 @@ textarea {
    the band between the label (50%) and the rim. Spins at a calm 4s/rev while playing;
    Player.tsx freezes it in place with animation-play-state so pausing never resets the
    rotation. The conic wedges are flat tonal segments that sweep around as it turns:
-   without them a coverless disc is radially symmetric and rotation is invisible. */
+   without them a coverless disc is radially symmetric and rotation is invisible.
+   The disc colour is a token so the light theme can swap the near-black for its slate
+   ink — a pure black circle on the light panels read as a foreign blob. */
 .player-vinyl {
+  --vinyl-disc: #16161a;
   background:
     conic-gradient(
       from 0deg,
@@ -270,8 +273,12 @@ textarea {
       rgba(255, 255, 255, 0.08) 84% 87%,
       transparent 87%
     )
-    #16161a;
+    var(--vinyl-disc);
   animation: vinyl-spin 4s linear infinite;
+}
+
+:root[data-theme="light"] .player-vinyl {
+  --vinyl-disc: #2c3043;
 }
 
 @keyframes vinyl-spin {
