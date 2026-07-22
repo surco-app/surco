@@ -2,7 +2,7 @@ import { AudioLines } from 'lucide-react'
 import type React from 'react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { SearchProviderId, Settings } from '../../../shared/types'
+import type { Settings } from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
 import { type AudioIntent, buildOnboardingPatch } from '../lib/onboarding'
 import { isMacOS } from '../lib/platform'
@@ -11,9 +11,9 @@ import { AutoMatchControl } from './AutoMatchControl'
 import { DestinationPicker } from './DestinationPicker'
 import { DiscogsTokenField } from './DiscogsTokenField'
 import { FormatSettingControl } from './FormatSettingControl'
+import { SearchProvidersControl } from './SearchProvidersControl'
 import { useFocusTrap } from './useFocusTrap'
 
-const SEARCH_PROVIDERS: SearchProviderId[] = ['discogs', 'bandcamp']
 // The optional audio intents, in the order they're offered. Correct metadata is the
 // product's core, so it's shown as an always-on row above these rather than a choice.
 const AUDIO_INTENTS: AudioIntent[] = ['restore', 'level', 'quality']
@@ -138,27 +138,12 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                   {tr('settings.searchProviders')}
                 </h2>
                 <p className="mb-4 text-sm text-fg-dim">{tr('settings.searchProvidersHint')}</p>
-                <div
-                  className="flex flex-wrap gap-x-5 gap-y-2"
-                  data-testid="onboarding-search-providers"
-                >
-                  {SEARCH_PROVIDERS.map((p) => (
-                    <label key={p} className="flex cursor-pointer items-center gap-2">
-                      <input
-                        data-testid={`onboarding-provider-${p}`}
-                        type="checkbox"
-                        checked={searchProviders.includes(p)}
-                        onChange={(e) =>
-                          setSearchProviders((prev) =>
-                            e.target.checked ? [...prev, p] : prev.filter((x) => x !== p),
-                          )
-                        }
-                        className="h-4 w-4 accent-[var(--color-accent)]"
-                      />
-                      <span className="text-sm">{tr(`settings.provider.${p}`)}</span>
-                    </label>
-                  ))}
-                </div>
+                <SearchProvidersControl
+                  value={searchProviders}
+                  onChange={setSearchProviders}
+                  testid="onboarding-search-providers"
+                  testidPrefix="onboarding-provider"
+                />
 
                 {discogsOn && (
                   <div className="mt-5 border-t border-[var(--color-line)] pt-4">

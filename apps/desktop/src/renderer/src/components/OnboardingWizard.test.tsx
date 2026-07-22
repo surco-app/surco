@@ -8,6 +8,7 @@ vi.hoisted(() => {
   ;(globalThis.window as unknown as { api: unknown }).api = { platform: 'darwin' }
 })
 
+import { SEARCH_PROVIDERS } from '../../../shared/defaults'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import { FORMAT_SETTINGS } from '../../../shared/outputFormats'
 import type { Settings } from '../../../shared/types'
@@ -216,6 +217,17 @@ describe('OnboardingWizard audio intents', () => {
     const patch = onFinish.mock.calls[0][0] as Partial<Settings>
     const shown = (patch.editorSections ?? []).filter((s) => !s.hidden).map((s) => s.id)
     expect(shown).toEqual(expect.arrayContaining(['trim', 'declick']))
+  })
+})
+
+describe('OnboardingWizard search providers', () => {
+  // The same guard the format step has: both surfaces render from SEARCH_PROVIDERS
+  // itself, so a catalog source added for Settings can't silently skip new users.
+  it('offers every catalog source Settings offers', () => {
+    openTokenStep()
+    for (const p of SEARCH_PROVIDERS) {
+      expect(screen.getByTestId(`onboarding-provider-${p}`)).toBeInTheDocument()
+    }
   })
 })
 
