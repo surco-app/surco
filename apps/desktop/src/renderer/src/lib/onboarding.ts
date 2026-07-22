@@ -1,10 +1,10 @@
-import { autoMatchAvailable } from '../../../shared/autoMatch'
 import {
   DEFAULT_EDITOR_SECTIONS,
   type EditorSectionId,
   type EditorSectionPref,
 } from '../../../shared/editorSections'
-import type { FormatSetting, SearchProviderId, Settings } from '../../../shared/types'
+import type { Settings } from '../../../shared/types'
+import { buildSettingsPatch, type LocalDraft, type SyncedDraft } from './settingsDraft'
 
 // What the DJ says they do with a track's audio, asked as plain intent rather than by
 // naming the editor's sections directly. Each intent reveals the sections that serve it
@@ -45,28 +45,14 @@ export function deriveEditorSections(intents: AudioIntent[]): EditorSectionPref[
   }))
 }
 
-export interface OnboardingChoices {
-  discogsToken: string
-  // The catalogs the editor search queries (Discogs and/or Bandcamp).
-  searchProviders: SearchProviderId[]
-  outputFormat: FormatSetting
-  // Where folder-copy conversions land, changeable right under the destination radio.
-  outputDir: string
+// The wizard stages its edits in the same drafts the Settings modal uses, plus the
+// audio-intent question that only exists here.
+export interface OnboardingDrafts {
+  synced: SyncedDraft
+  local: LocalDraft
   // What the DJ does with the audio, which decides the editor's visible sections and
   // whether the spectrogram is on.
   audioIntents: AudioIntent[]
-  autoMatch: boolean
-  // The output destination, mirroring the Settings booleans (Apple Music is only offered
-  // on macOS; Engine DJ and overwrite are offered everywhere).
-  addToAppleMusic: boolean
-  keepOutputCopy: boolean
-  // Rewrites the source files in place instead of producing copies (destructive).
-  overwriteOriginal: boolean
-  // Writes each conversion as a fresh file next to its source, original kept.
-  convertBesideOriginal: boolean
-  // Registers converted tracks in the Engine DJ library; its folder and playlist keep
-  // their defaults here, tunable later in Settings.
-  addToEngineDj: boolean
 }
 
 export function shouldShowOnboarding(settings: Pick<Settings, 'hasSeenOnboarding'>): boolean {
@@ -75,28 +61,16 @@ export function shouldShowOnboarding(settings: Pick<Settings, 'hasSeenOnboarding
 
 // Passing null means the user skipped: we only flag the wizard as seen so it
 // never reappears, leaving the existing (default) settings untouched.
-export function buildOnboardingPatch(choices: OnboardingChoices | null): Partial<Settings> {
-  if (!choices) return { hasSeenOnboarding: true }
-  const discogsToken = choices.discogsToken.trim()
+export function buildOnboardingPatch(drafts: OnboardingDrafts | null): Partial<Settings> {
+  if (!drafts) return { hasSeenOnboarding: true }
   return {
-    discogsToken,
-    searchProviders: choices.searchProviders,
-    outputFormat: choices.outputFormat,
-    outputDir: choices.outputDir,
+    // The shared serialization — trim/clamp/gating rules included — so a field (or a
+    // rule) added to the Settings save path can never miss the wizard's.
+    ...buildSettingsPatch(drafts.synced, drafts.local),
     // The spectrogram is the payload of the "check quality" intent; without it a
     // metadata-only DJ isn't paying for the analysis pass.
-    showSpectrum: choices.audioIntents.includes('quality'),
-    editorSections: deriveEditorSections(choices.audioIntents),
-    // Auto-match can only persist as on when its prerequisites are met (a source, plus a
-    // Discogs token whenever Discogs is one), never just because the checkbox was left ticked.
-    autoMatch:
-      choices.autoMatch &&
-      autoMatchAvailable({ searchProviders: choices.searchProviders, discogsToken }),
-    addToAppleMusic: choices.addToAppleMusic,
-    keepOutputCopy: choices.keepOutputCopy,
-    overwriteOriginal: choices.overwriteOriginal,
-    addToEngineDj: choices.addToEngineDj,
-    convertBesideOriginal: choices.convertBesideOriginal,
+    showSpectrum: drafts.audioIntents.includes('quality'),
+    editorSections: deriveEditorSections(drafts.audioIntents),
     hasSeenOnboarding: true,
   }
 }

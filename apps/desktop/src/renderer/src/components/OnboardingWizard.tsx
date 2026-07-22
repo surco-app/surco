@@ -7,6 +7,7 @@ import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination
 import { type AudioIntent, buildOnboardingPatch } from '../lib/onboarding'
 import { isMacOS } from '../lib/platform'
 import { formatKHz } from '../lib/quality'
+import { type LocalDraft, pickLocal, pickSynced, type SyncedDraft } from '../lib/settingsDraft'
 import { AutoMatchControl } from './AutoMatchControl'
 import { DestinationPicker } from './DestinationPicker'
 import { DiscogsTokenField } from './DiscogsTokenField'
@@ -35,61 +36,48 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   // destination that only exists on macOS.
   const isMac = isMacOS()
   const [step, setStep] = useState(0)
-  const [token, setToken] = useState(settings.discogsToken)
-  const [searchProviders, setSearchProviders] = useState(settings.searchProviders)
-  const [outputFormat, setOutputFormat] = useState(settings.outputFormat)
-  const [outputDir, setOutputDir] = useState(settings.outputDir)
+  // The same two staged drafts the Settings modal keeps: every field the wizard offers
+  // exists in Settings too, so staging them in the shared shape means the seeding and
+  // the save serialization can never diverge between the two surfaces.
+  const [synced, setSynced] = useState<SyncedDraft>(() => pickSynced(settings))
+  const [local, setLocal] = useState<LocalDraft>(() => pickLocal(settings))
   // Seed from the one intent that maps to an existing default (the spectrum). The rest
   // start unpicked so a first-run editor is minimal until the DJ opts in.
   const [audioIntents, setAudioIntents] = useState<AudioIntent[]>(
     settings.showSpectrum ? ['quality'] : [],
   )
-  const [autoMatch, setAutoMatch] = useState(settings.autoMatch)
-  const [addToAppleMusic, setAddToAppleMusic] = useState(settings.addToAppleMusic)
-  const [keepOutputCopy, setKeepOutputCopy] = useState(settings.keepOutputCopy)
-  const [overwriteOriginal, setOverwriteOriginal] = useState(settings.overwriteOriginal)
-  const [convertBesideOriginal, setConvertBesideOriginal] = useState(settings.convertBesideOriginal)
-  const [addToEngineDj, setAddToEngineDj] = useState(settings.addToEngineDj)
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(dialogRef)
 
   const isLast = step === STEPS.length - 1
-  const discogsOn = searchProviders.includes('discogs')
+  const discogsOn = synced.searchProviders.includes('discogs')
 
+  function patch<K extends keyof SyncedDraft>(key: K, value: SyncedDraft[K]): void {
+    setSynced((p) => ({ ...p, [key]: value }))
+  }
+  function patchLocal<K extends keyof LocalDraft>(key: K, value: LocalDraft[K]): void {
+    setLocal((p) => ({ ...p, [key]: value }))
+  }
   function finish(): void {
-    onFinish(
-      buildOnboardingPatch({
-        discogsToken: token,
-        searchProviders,
-        outputFormat,
-        outputDir,
-        audioIntents,
-        autoMatch,
-        addToAppleMusic,
-        keepOutputCopy,
-        overwriteOriginal,
-        addToEngineDj,
-        convertBesideOriginal,
-      }),
-    )
+    onFinish(buildOnboardingPatch({ synced, local, audioIntents }))
   }
 
   // FLAC can't go to Apple Music, so the destination pins to the output folder while
   // it's the format. chooseDestination maps the single radio back onto the stored booleans.
   const destination = toDestination(
-    addToAppleMusic,
-    outputFormat === 'flac',
-    overwriteOriginal,
-    addToEngineDj,
-    convertBesideOriginal,
+    synced.addToAppleMusic,
+    synced.outputFormat === 'flac',
+    synced.overwriteOriginal,
+    synced.addToEngineDj,
+    synced.convertBesideOriginal,
   )
   function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
     const next = fromDestination(d)
-    setAddToAppleMusic(next.addToAppleMusic)
-    setKeepOutputCopy(next.keepOutputCopy)
-    setOverwriteOriginal(next.overwriteOriginal)
-    setConvertBesideOriginal(next.convertBesideOriginal)
-    setAddToEngineDj(next.addToEngineDj)
+    patch('addToAppleMusic', next.addToAppleMusic)
+    patch('keepOutputCopy', next.keepOutputCopy)
+    patch('overwriteOriginal', next.overwriteOriginal)
+    patch('convertBesideOriginal', next.convertBesideOriginal)
+    patch('addToEngineDj', next.addToEngineDj)
   }
   function toggleIntent(intent: AudioIntent, on: boolean): void {
     setAudioIntents((prev) => (on ? [...prev, intent] : prev.filter((i) => i !== intent)))
@@ -136,8 +124,8 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                 </h2>
                 <p className="mb-4 text-sm text-fg-dim">{tr('settings.searchProvidersHint')}</p>
                 <SearchProvidersControl
-                  value={searchProviders}
-                  onChange={setSearchProviders}
+                  value={synced.searchProviders}
+                  onChange={(value) => patch('searchProviders', value)}
                   testid="onboarding-search-providers"
                   testidPrefix="onboarding-provider"
                 />
@@ -145,8 +133,8 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                 {discogsOn && (
                   <div className="mt-5 border-t border-[var(--color-line)] pt-4">
                     <DiscogsTokenField
-                      value={token}
-                      onChange={setToken}
+                      value={local.token}
+                      onChange={(value) => patchLocal('token', value)}
                       testid="onboarding-token"
                     />
                   </div>
@@ -154,10 +142,10 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
                 <div className="mt-5 border-t border-[var(--color-line)] pt-4">
                   <AutoMatchControl
-                    checked={autoMatch}
-                    onChange={setAutoMatch}
-                    searchProviders={searchProviders}
-                    discogsToken={token}
+                    checked={local.autoMatch}
+                    onChange={(checked) => patchLocal('autoMatch', checked)}
+                    searchProviders={synced.searchProviders}
+                    discogsToken={local.token}
                     testid="onboarding-auto-match"
                   />
                 </div>
@@ -171,8 +159,8 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                 </h2>
                 <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.formatBody')}</p>
                 <FormatSettingControl
-                  value={outputFormat}
-                  onChange={setOutputFormat}
+                  value={synced.outputFormat}
+                  onChange={(value) => patch('outputFormat', value)}
                   testidPrefix="onboarding-format"
                 />
                 <p className="mt-3 text-xs text-fg-dim">{tr('settings.outputFormatHint')}</p>
@@ -185,7 +173,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                     destinations={DESTINATIONS.filter((d) => isMac || d !== 'appleMusic')}
                     value={destination}
                     onChange={chooseDestination}
-                    flacOnly={outputFormat === 'flac'}
+                    flacOnly={synced.outputFormat === 'flac'}
                     testidPrefix="onboarding-destination"
                     radioName="onboarding-destination"
                     details={{
@@ -194,8 +182,8 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                       // under the choice it applies to, exactly like Settings.
                       folder: (
                         <OutputFolderField
-                          value={outputDir}
-                          onChange={setOutputDir}
+                          value={local.outputDir}
+                          onChange={(dir) => patchLocal('outputDir', dir)}
                           testid="onboarding-output"
                         />
                       ),

@@ -7,6 +7,7 @@ import { DONATE_URL } from '../lib/donate'
 import {
   buildSettingsPatch,
   type LocalDraft,
+  pickLocal,
   pickSynced,
   type SyncedDraft,
 } from '../lib/settingsDraft'
@@ -81,12 +82,7 @@ export function SettingsModal({
   const [synced, setSynced] = useState<SyncedDraft>(() => pickSynced(settings))
   // Machine-local fields (local.token, output folder, auto-match) aren't moved by a
   // config-dir switch, so their staged edits survive one.
-  const [local, setLocal] = useState<LocalDraft>(() => ({
-    token: settings.discogsToken,
-    outputDir: settings.outputDir,
-    engineLibraryDir: settings.engineLibraryDir,
-    autoMatch: settings.autoMatch,
-  }))
+  const [local, setLocal] = useState<LocalDraft>(() => pickLocal(settings))
   function patch<K extends keyof SyncedDraft>(key: K, value: SyncedDraft[K]): void {
     setSynced((p) => ({ ...p, [key]: value }))
   }
