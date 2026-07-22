@@ -124,9 +124,9 @@ describe('Player', () => {
     expect(screen.getByTestId('player-cover')).toHaveAttribute('src', 'file:///original.jpg')
   })
 
-  // A file with no embedded art shows a music-note placeholder, not an empty black square
-  // that reads as a broken image — matching the track list's own rows.
-  it('shows a music-note placeholder when the track has no embedded cover', () => {
+  // A file with no embedded art shows a plain brand-color label on the vinyl, not an
+  // empty black square that reads as a broken image.
+  it('shows a plain label placeholder when the track has no embedded cover', () => {
     renderUI(<Player {...props({ track: track({ embeddedCover: undefined }) })} />)
     expect(screen.queryByTestId('player-cover')).toBeNull()
     expect(screen.getByTestId('player-cover-placeholder')).toBeInTheDocument()

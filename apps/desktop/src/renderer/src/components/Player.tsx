@@ -3,7 +3,6 @@ import {
   Crosshair,
   Infinity as InfinityIcon,
   LoaderCircle,
-  Music,
   Pause,
   Play,
   Volume2,
@@ -248,10 +247,8 @@ export function Player({
             ) : (
               <span
                 data-testid="player-cover-placeholder"
-                className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-accent)] ring-1 ring-black/40"
-              >
-                <Music className="h-3 w-3 text-[var(--color-on-accent)]" aria-hidden="true" />
-              </span>
+                className="h-5 w-5 rounded-full bg-[var(--color-accent)] ring-1 ring-black/40"
+              />
             )}
             <span
               aria-hidden="true"
