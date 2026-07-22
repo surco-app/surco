@@ -134,6 +134,7 @@ function renderEditor(
   onDeriveTags: ReturnType<typeof vi.fn>
   onApplyTitleFormat: ReturnType<typeof vi.fn>
   onFormatChange: ReturnType<typeof vi.fn>
+  onDestinationChange: ReturnType<typeof vi.fn>
   onTrashOriginal: ReturnType<typeof vi.fn>
   onRemoveOldMusicCopy: ReturnType<typeof vi.fn>
   onOpenSettings: ReturnType<typeof vi.fn>
@@ -150,6 +151,7 @@ function renderEditor(
   const onDeriveTags = vi.fn()
   const onApplyTitleFormat = vi.fn()
   const onFormatChange = vi.fn()
+  const onDestinationChange = vi.fn()
   const onTrashOriginal = vi.fn()
   const onRemoveOldMusicCopy = vi.fn()
   const onOpenSettings = vi.fn()
@@ -168,6 +170,7 @@ function renderEditor(
       onProcess={onProcess}
       onReencode={onReencode}
       onFormatChange={onFormatChange}
+      onDestinationChange={onDestinationChange}
       onDeriveTags={onDeriveTags}
       onApplyTitleFormat={onApplyTitleFormat}
       onAddToAppleMusic={vi.fn()}
@@ -217,6 +220,7 @@ function renderEditor(
     onDeriveTags,
     onApplyTitleFormat,
     onFormatChange,
+    onDestinationChange,
     onTrashOriginal,
     onRemoveOldMusicCopy,
     onOpenSettings,
@@ -1507,6 +1511,19 @@ describe('Editor export control', () => {
   it('resolves a "same as source" default against the track before seeding', () => {
     const { onFormatChange } = renderEditor({ id: 'a' }, 'source')
     expect(onFormatChange).toHaveBeenCalledWith('wav')
+  })
+
+  // Apple Music can't ingest FLAC. With "Same as source" and Apple Music configured,
+  // a .flac track must seed the 'folder' destination — checking the raw setting
+  // ('source') instead of the resolved format wrongly reads it as non-FLAC and seeds
+  // 'appleMusic', offering an import the format can't survive.
+  it('seeds the folder destination for a "same as source" FLAC track with Apple Music configured', () => {
+    const { onDestinationChange } = renderEditor(
+      { id: 'a', inputPath: '/music/a.flac', fileName: 'a.flac' },
+      'source',
+      { addToAppleMusic: true },
+    )
+    expect(onDestinationChange).toHaveBeenCalledWith('folder')
   })
 
   it('reports the picked format so the keyboard shortcut can match it', () => {

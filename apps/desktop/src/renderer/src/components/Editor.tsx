@@ -295,7 +295,7 @@ export const Editor = memo(function Editor({
   const [destination, setDestination] = useState(() =>
     toDestination(
       addToAppleMusic,
-      outputFormat === 'flac',
+      format === 'flac',
       overwriteOriginal,
       addToEngineDj,
       convertBesideOriginal,
