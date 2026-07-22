@@ -6,6 +6,7 @@ import {
   DEFAULT_DISCOGS_MAX_RESULTS,
   DEFAULT_FIELDS,
   DEFAULT_REQUIRED_FIELDS,
+  SEARCH_PROVIDERS,
 } from '../shared/defaults'
 import { DEFAULT_DECLICK, normalizeDeclick } from '../shared/declick'
 import { DEFAULT_EDITOR_SECTIONS } from '../shared/editorSections'
@@ -20,9 +21,9 @@ export const defaults: Settings = {
   // No format filter by default: search shows every Discogs release format.
   discogsFormats: [],
   discogsMaxResults: DEFAULT_DISCOGS_MAX_RESULTS,
-  // Search Discogs and Bandcamp by default for the widest coverage (pressings plus
-  // self-released and Bandcamp-exclusive material); either can be turned off in Settings.
-  searchProviders: ['discogs', 'bandcamp'],
+  // Search every offered source by default for the widest coverage (pressings plus
+  // self-released and Bandcamp-exclusive material); any can be turned off in Settings.
+  searchProviders: [...SEARCH_PROVIDERS],
   // The classic rip stamps everyone's files carry; whole-word matching keeps "rip" from
   // biting into a real title word ("Tripping"), and the list is the user's to edit.
   searchIgnoreWords: ['vinyl', 'rip'],

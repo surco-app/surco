@@ -1,10 +1,11 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import { autoMatchAvailable } from '../../../../shared/autoMatch'
 import { DISCOGS_FORMATS, DISCOGS_MAX_RESULTS_OPTIONS } from '../../../../shared/defaults'
-import type { Settings } from '../../../../shared/types'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchLocal, PatchSynced } from '../../lib/settingsTabs'
+import { AutoMatchControl } from '../AutoMatchControl'
+import { DiscogsTokenField } from '../DiscogsTokenField'
+import { SearchProvidersControl } from '../SearchProvidersControl'
 import { Select } from '../Select'
 import {
   SettingsEyebrow,
@@ -12,9 +13,6 @@ import {
   SettingsLabel,
   SettingsSection,
 } from './SettingsPrimitives'
-
-// The catalog sources offered as search-provider checkboxes (Settings → Search).
-const SEARCH_PROVIDERS: Settings['searchProviders'] = ['discogs', 'bandcamp']
 
 interface Props {
   synced: SyncedDraft
@@ -28,65 +26,29 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
   // The token and format filter only act on Discogs results, so they're grouped under a
   // Discogs heading and disabled when Discogs isn't a chosen source.
   const discogsOn = synced.searchProviders.includes('discogs')
-  // Auto-match is a global search setting (it can apply Bandcamp matches too), gated only on
-  // having a source — plus a Discogs token when Discogs is one of them.
-  const autoReady = autoMatchAvailable({
-    searchProviders: synced.searchProviders,
-    discogsToken: local.token,
-  })
   return (
     <>
       <SettingsSection first>
       <SettingsEyebrow className="mb-1.5">{tr('settings.searchProviders')}</SettingsEyebrow>
       <SettingsHint className="mb-3">{tr('settings.searchProvidersHint')}</SettingsHint>
-      <div className="flex flex-wrap gap-x-5 gap-y-2" data-testid="settings-search-providers">
-        {SEARCH_PROVIDERS.map((p) => (
-          <label key={p} className="flex cursor-pointer items-center gap-2">
-            <input
-              data-testid={`settings-provider-${p}`}
-              type="checkbox"
-              checked={synced.searchProviders.includes(p)}
-              onChange={(e) =>
-                patch(
-                  'searchProviders',
-                  e.target.checked
-                    ? [...synced.searchProviders, p]
-                    : synced.searchProviders.filter((x) => x !== p),
-                )
-              }
-              className="h-4 w-4 accent-[var(--color-accent)]"
-            />
-            <span className="text-sm">{tr(`settings.provider.${p}`)}</span>
-          </label>
-        ))}
-      </div>
+      <SearchProvidersControl
+        value={synced.searchProviders}
+        onChange={(value) => patch('searchProviders', value)}
+        testid="settings-search-providers"
+        testidPrefix="settings-provider"
+      />
       </SettingsSection>
 
       {/* Auto-match is a behaviour (when matches get applied), not a source, so it sits in
           its own section apart from the Discogs/Bandcamp source checkboxes. */}
       <SettingsSection>
-      <label
-        className={`flex items-center gap-3 ${
-          autoReady ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-        }`}
-      >
-        <input
-          data-testid="settings-auto-match"
-          type="checkbox"
-          checked={local.autoMatch && autoReady}
-          disabled={!autoReady}
-          onChange={(e) => patchLocal('autoMatch', e.target.checked)}
-          className="h-4 w-4 accent-[var(--color-accent)]"
-        />
-        <span className="text-sm">{tr('settings.autoMatch')}</span>
-      </label>
-      <SettingsHint className="mt-1.5 pl-7">
-        {synced.searchProviders.length === 0
-          ? tr('settings.autoMatchNeedsSource')
-          : autoReady
-            ? tr('settings.autoMatchHint')
-            : tr('settings.autoMatchNeedsToken')}
-      </SettingsHint>
+      <AutoMatchControl
+        checked={local.autoMatch}
+        onChange={(checked) => patchLocal('autoMatch', checked)}
+        searchProviders={synced.searchProviders}
+        discogsToken={local.token}
+        testid="settings-auto-match"
+      />
       </SettingsSection>
 
       {/* A one-value select doesn't need a full-width stacked block: the label and hint
@@ -137,29 +99,14 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
           </SettingsHint>
         )}
         <div className={discogsOn ? '' : 'opacity-50'}>
-          <SettingsLabel htmlFor="settings-token" className="mb-2">
-            {tr('settings.discogsToken')}
-          </SettingsLabel>
-          <input
-            id="settings-token"
-            data-testid="settings-token"
-            value={local.token}
-            disabled={!discogsOn}
-            onChange={(e) => patchLocal('token', e.target.value)}
-            placeholder={tr('settings.tokenPlaceholder')}
-            className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)] disabled:cursor-not-allowed"
-          />
-          <SettingsHint className="mt-2 mb-5">
-            {tr('settings.tokenWhy')} {tr('settings.tokenHelp')}{' '}
-            <a
-              href="https://www.discogs.com/settings/developers"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[var(--color-accent)] hover:underline"
-            >
-              discogs.com/settings/developers
-            </a>
-          </SettingsHint>
+          <div className="mb-5">
+            <DiscogsTokenField
+              value={local.token}
+              onChange={(value) => patchLocal('token', value)}
+              testid="settings-token"
+              disabled={!discogsOn}
+            />
+          </div>
 
           <SettingsLabel className="mb-2">{tr('settings.discogsFormats')}</SettingsLabel>
           <SettingsHint className="mb-3">{tr('settings.discogsFormatsHint')}</SettingsHint>

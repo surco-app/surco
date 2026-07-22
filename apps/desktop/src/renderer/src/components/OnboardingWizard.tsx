@@ -2,17 +2,18 @@ import { AudioLines } from 'lucide-react'
 import type React from 'react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { autoMatchAvailable } from '../../../shared/autoMatch'
-import type { SearchProviderId, Settings } from '../../../shared/types'
+import type { Settings } from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
 import { type AudioIntent, buildOnboardingPatch } from '../lib/onboarding'
 import { isMacOS } from '../lib/platform'
 import { formatKHz } from '../lib/quality'
+import { AutoMatchControl } from './AutoMatchControl'
 import { DestinationPicker } from './DestinationPicker'
+import { DiscogsTokenField } from './DiscogsTokenField'
 import { FormatSettingControl } from './FormatSettingControl'
+import { SearchProvidersControl } from './SearchProvidersControl'
 import { useFocusTrap } from './useFocusTrap'
 
-const SEARCH_PROVIDERS: SearchProviderId[] = ['discogs', 'bandcamp']
 // The optional audio intents, in the order they're offered. Correct metadata is the
 // product's core, so it's shown as an always-on row above these rather than a choice.
 const AUDIO_INTENTS: AudioIntent[] = ['restore', 'level', 'quality']
@@ -53,8 +54,6 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
   const isLast = step === STEPS.length - 1
   const discogsOn = searchProviders.includes('discogs')
-  // Auto-match needs a source, plus a Discogs token whenever Discogs is one of them.
-  const autoReady = autoMatchAvailable({ searchProviders, discogsToken: token })
 
   function finish(): void {
     onFinish(
@@ -139,80 +138,32 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                   {tr('settings.searchProviders')}
                 </h2>
                 <p className="mb-4 text-sm text-fg-dim">{tr('settings.searchProvidersHint')}</p>
-                <div
-                  className="flex flex-wrap gap-x-5 gap-y-2"
-                  data-testid="onboarding-search-providers"
-                >
-                  {SEARCH_PROVIDERS.map((p) => (
-                    <label key={p} className="flex cursor-pointer items-center gap-2">
-                      <input
-                        data-testid={`onboarding-provider-${p}`}
-                        type="checkbox"
-                        checked={searchProviders.includes(p)}
-                        onChange={(e) =>
-                          setSearchProviders((prev) =>
-                            e.target.checked ? [...prev, p] : prev.filter((x) => x !== p),
-                          )
-                        }
-                        className="h-4 w-4 accent-[var(--color-accent)]"
-                      />
-                      <span className="text-sm">{tr(`settings.provider.${p}`)}</span>
-                    </label>
-                  ))}
-                </div>
+                <SearchProvidersControl
+                  value={searchProviders}
+                  onChange={setSearchProviders}
+                  testid="onboarding-search-providers"
+                  testidPrefix="onboarding-provider"
+                />
 
                 {discogsOn && (
                   <div className="mt-5 border-t border-[var(--color-line)] pt-4">
-                    <label
-                      htmlFor="onboarding-token"
-                      className="mb-1.5 block text-sm font-medium text-fg-muted"
-                    >
-                      {tr('settings.discogsToken')}
-                    </label>
-                    <input
-                      id="onboarding-token"
-                      data-testid="onboarding-token"
+                    <DiscogsTokenField
                       value={token}
-                      onChange={(e) => setToken(e.target.value)}
-                      placeholder={tr('settings.tokenPlaceholder')}
-                      className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+                      onChange={setToken}
+                      testid="onboarding-token"
                     />
-                    <p className="mt-1.5 text-xs text-fg-dim">
-                      {tr('settings.tokenHelp')}{' '}
-                      <a
-                        href="https://www.discogs.com/settings/developers"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[var(--color-accent)] hover:underline"
-                      >
-                        discogs.com/settings/developers
-                      </a>
-                    </p>
                   </div>
                 )}
 
-                <label
-                  className={`mt-5 flex items-center gap-3 border-t border-[var(--color-line)] pt-4 ${
-                    autoReady ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-                  }`}
-                >
-                  <input
-                    data-testid="onboarding-auto-match"
-                    type="checkbox"
-                    checked={autoMatch && autoReady}
-                    disabled={!autoReady}
-                    onChange={(e) => setAutoMatch(e.target.checked)}
-                    className="h-4 w-4 accent-[var(--color-accent)]"
+                <div className="mt-5 border-t border-[var(--color-line)] pt-4">
+                  <AutoMatchControl
+                    checked={autoMatch}
+                    onChange={setAutoMatch}
+                    searchProviders={searchProviders}
+                    discogsToken={token}
+                    testid="onboarding-auto-match"
                   />
-                  <span className="text-sm">
-                    {tr('settings.autoMatch')}
-                    <span className="mt-0.5 block text-xs text-fg-dim">
-                      {autoReady
-                        ? tr('onboarding.autoMatchBody')
-                        : tr('onboarding.autoMatchNeedsToken')}
-                    </span>
-                  </span>
-                </label>
+                </div>
               </>
             )}
 

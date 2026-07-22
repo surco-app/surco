@@ -8,6 +8,7 @@ vi.hoisted(() => {
   ;(globalThis.window as unknown as { api: unknown }).api = { platform: 'darwin' }
 })
 
+import { SEARCH_PROVIDERS } from '../../../shared/defaults'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import { FORMAT_SETTINGS } from '../../../shared/outputFormats'
 import type { Settings } from '../../../shared/types'
@@ -219,6 +220,27 @@ describe('OnboardingWizard audio intents', () => {
   })
 })
 
+describe('OnboardingWizard search providers', () => {
+  // The same guard the format step has: both surfaces render from SEARCH_PROVIDERS
+  // itself, so a catalog source added for Settings can't silently skip new users.
+  it('offers every catalog source Settings offers', () => {
+    openTokenStep()
+    for (const p of SEARCH_PROVIDERS) {
+      expect(screen.getByTestId(`onboarding-provider-${p}`)).toBeInTheDocument()
+    }
+  })
+})
+
+describe('OnboardingWizard token field', () => {
+  // The wizard's token field must tell the same story Settings tells: without the
+  // "why" line a new user has no reason to leave the wizard for discogs.com, and the
+  // two surfaces drift the moment one wording changes.
+  it('explains why a personal token helps, with the same words Settings uses', () => {
+    openTokenStep()
+    expect(screen.getByText(i18n.t('settings.tokenWhy'), { exact: false })).toBeInTheDocument()
+  })
+})
+
 describe('OnboardingWizard auto-match', () => {
   // Auto-match needs the user's own Discogs token (its own rate-limit bucket) and spends a lot
   // of requests, so the wizard can't let it be turned on until a token is entered.
@@ -227,6 +249,16 @@ describe('OnboardingWizard auto-match', () => {
     expect(screen.getByTestId('onboarding-auto-match')).toBeDisabled()
     fireEvent.change(screen.getByTestId('onboarding-token'), { target: { value: 'tok' } })
     expect(screen.getByTestId('onboarding-auto-match')).toBeEnabled()
+  })
+
+  // With every source unticked the blocker is the missing source, not the token — Settings
+  // already explains it that way, and a wizard that says "add a token" would send the user
+  // hunting for a field that isn't even shown (it only renders while Discogs is on).
+  it('explains that auto-match needs a source when every provider is unticked', () => {
+    openTokenStep()
+    fireEvent.click(screen.getByTestId('onboarding-provider-discogs'))
+    expect(screen.getByTestId('onboarding-auto-match')).toBeDisabled()
+    expect(screen.getByText(i18n.t('settings.autoMatchNeedsSource'))).toBeInTheDocument()
   })
 })
 

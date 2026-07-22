@@ -128,6 +128,22 @@ describe('buildSettingsPatch', () => {
     )
   })
 
+  // Bandcamp needs no token, so the Search tab enables the toggle for a Bandcamp-only
+  // setup — and Save must not silently undo the choice the UI just allowed. The gate is
+  // autoMatchAvailable, the same rule the toggle, the wizard and the main process apply.
+  it('keeps auto-match on for a Bandcamp-only setup without a token', () => {
+    const draft = pickSynced({ ...settings, searchProviders: ['bandcamp'] })
+    expect(buildSettingsPatch(draft, { ...local, token: '', autoMatch: true }).autoMatch).toBe(true)
+  })
+
+  // With zero sources there is nothing to match against; a token alone can't back it.
+  it('forces auto-match off when no source is selected, even with a token', () => {
+    const draft = pickSynced({ ...settings, searchProviders: [] })
+    expect(buildSettingsPatch(draft, { ...local, token: 'tok', autoMatch: true }).autoMatch).toBe(
+      false,
+    )
+  })
+
   // The token is stored trimmed so stray paste whitespace can't break the auth header.
   it('trims the token', () => {
     const draft = pickSynced({ ...settings })
