@@ -94,11 +94,6 @@ export function SettingsModal({
     setLocal((p) => ({ ...p, [key]: value }))
   }
 
-  async function changeDir(): Promise<void> {
-    const dir = await window.api.pickOutputDir()
-    if (dir) patchLocal('outputDir', dir)
-  }
-
   async function changeEngineDir(): Promise<void> {
     const dir = await window.api.pickEngineLibraryDir()
     if (dir) patchLocal('engineLibraryDir', dir)
@@ -250,7 +245,7 @@ export function SettingsModal({
             synced={synced}
             local={local}
             patch={patch}
-            onChangeDir={changeDir}
+            onOutputDirChange={(dir) => patchLocal('outputDir', dir)}
             onChangeEngineDir={changeEngineDir}
           />
         )}

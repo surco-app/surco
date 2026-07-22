@@ -119,9 +119,9 @@ describe('OnboardingWizard destination', () => {
       vi.fn(async () => '/dj/converted')
     const onFinish = vi.fn()
     openFormatStep(onFinish)
-    expect(screen.getByTestId('onboarding-output-dir')).toHaveValue('/out')
+    expect(screen.getByTestId('onboarding-output')).toHaveValue('/out')
     fireEvent.click(screen.getByTestId('onboarding-output-change'))
-    expect(await screen.findByTestId('onboarding-output-dir')).toHaveValue('/dj/converted')
+    expect(await screen.findByTestId('onboarding-output')).toHaveValue('/dj/converted')
     for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
     expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ outputDir: '/dj/converted' }))
   })
@@ -130,7 +130,7 @@ describe('OnboardingWizard destination', () => {
     openFormatStep()
     fireEvent.click(screen.getByTestId('onboarding-destination-beside'))
     // Kept mounted for the collapse animation; inert is what "hidden" means here.
-    expect(screen.getByTestId('onboarding-output-dir').closest('[inert]')).not.toBeNull()
+    expect(screen.getByTestId('onboarding-output').closest('[inert]')).not.toBeNull()
   })
 
   // Apple Music can't ingest FLAC, so choosing it pins the destination to the always-valid
@@ -140,6 +140,9 @@ describe('OnboardingWizard destination', () => {
     fireEvent.click(screen.getByTestId('onboarding-format-flac'))
     expect(screen.getByTestId('onboarding-destination-folder')).toBeChecked()
     expect(screen.getByTestId('onboarding-destination-appleMusic')).toBeDisabled()
+    // The greyed radio alone doesn't say WHY — the same note Settings shows names
+    // the limitation here too.
+    expect(screen.getByText(i18n.t('settings.appleMusicFlacNote'))).toBeInTheDocument()
   })
 
   // Engine DJ is a first-class destination in Settings; a new user setting Surco up for a

@@ -36,66 +36,80 @@ export function DestinationPicker({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   return (
-    <div role="radiogroup" aria-label={tr('settings.destination')} className="flex flex-col gap-4">
-      {destinations.map((d) => {
-        const disabled = flacOnly && d === 'appleMusic'
-        return (
-          <div key={d} className="flex flex-col">
-            <label
-              className={`flex items-start gap-3 ${
-                disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
-              }`}
-            >
-              <input
-                data-testid={`${testidPrefix}-${d}`}
-                type="radio"
-                name={radioName}
-                checked={value === d}
-                disabled={disabled}
-                onChange={() => onChange(d)}
-                className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
-              />
-              <span className="text-sm">
-                {tr(`settings.destinations.${d}`)}
-                {d === 'appleMusic' && (
-                  <span className="mt-0.5 block text-xs leading-relaxed text-fg-dim">
-                    {tr('settings.destinationAppleMusicHint')}
-                  </span>
-                )}
-                {d === 'engineDj' && (
-                  <span className="mt-0.5 block text-xs leading-relaxed text-fg-dim">
-                    {tr('settings.destinationEngineDjHint')}
-                  </span>
-                )}
-                {d === 'beside' && (
-                  <span className="mt-0.5 block text-xs leading-relaxed text-fg-dim">
-                    {tr('settings.destinationBesideHint')}
-                  </span>
-                )}
-                {d === 'overwrite' && (
-                  <span className="mt-0.5 block text-xs leading-relaxed text-fg-dim">
-                    {tr('settings.destinationOverwriteHint')}
-                  </span>
-                )}
-              </span>
-            </label>
-            {details?.[d] && (
-              <div
-                inert={value !== d || undefined}
-                className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none ${
-                  value === d ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+    <>
+      <div
+        role="radiogroup"
+        aria-label={tr('settings.destination')}
+        className="flex flex-col gap-4"
+      >
+        {destinations.map((d) => {
+          const disabled = flacOnly && d === 'appleMusic'
+          return (
+            <div key={d} className="flex flex-col">
+              <label
+                className={`flex items-start gap-3 ${
+                  disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
                 }`}
               >
-                {/* The row's spacing lives INSIDE the overflow clip (pt-2, not the
+                <input
+                  data-testid={`${testidPrefix}-${d}`}
+                  type="radio"
+                  name={radioName}
+                  checked={value === d}
+                  disabled={disabled}
+                  onChange={() => onChange(d)}
+                  className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+                />
+                <span className="text-sm">
+                  {tr(`settings.destinations.${d}`)}
+                  {d === 'appleMusic' && (
+                    <span className="mt-0.5 block text-xs leading-relaxed text-fg-dim">
+                      {tr('settings.destinationAppleMusicHint')}
+                    </span>
+                  )}
+                  {d === 'engineDj' && (
+                    <span className="mt-0.5 block text-xs leading-relaxed text-fg-dim">
+                      {tr('settings.destinationEngineDjHint')}
+                    </span>
+                  )}
+                  {d === 'beside' && (
+                    <span className="mt-0.5 block text-xs leading-relaxed text-fg-dim">
+                      {tr('settings.destinationBesideHint')}
+                    </span>
+                  )}
+                  {d === 'overwrite' && (
+                    <span className="mt-0.5 block text-xs leading-relaxed text-fg-dim">
+                      {tr('settings.destinationOverwriteHint')}
+                    </span>
+                  )}
+                </span>
+              </label>
+              {details?.[d] && (
+                <div
+                  inert={value !== d || undefined}
+                  className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none ${
+                    value === d ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                  }`}
+                >
+                  {/* The row's spacing lives INSIDE the overflow clip (pt-2, not the
                     parent's gap), so a collapsed detail contributes zero height. */}
-                <div className="overflow-hidden">
-                  <div className="pt-2 pl-7">{details[d]}</div>
+                  <div className="overflow-hidden">
+                    <div className="pt-2 pl-7">{details[d]}</div>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )
-      })}
-    </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      {/* The greyed-out Apple Music radio alone doesn't say WHY — this names the FLAC
+        limitation. Rendered here (not by each caller) so the disabled state and its
+        explanation can't drift apart; destinations already encode "Apple Music offered". */}
+      {flacOnly && destinations.includes('appleMusic') && (
+        <p className="mt-2 text-xs leading-relaxed text-fg-dim">
+          {tr('settings.appleMusicFlacNote')}
+        </p>
+      )}
+    </>
   )
 }
