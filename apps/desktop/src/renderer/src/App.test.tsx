@@ -1278,6 +1278,98 @@ describe('App multi-select convert', () => {
   })
 })
 
+// The Default format x input-extension matrix from the user's own single-track convert
+// click. The editor always resolves 'source' to a concrete OutputFormat before it ever
+// reaches onProcess (Editor.tsx's `format` state, seeded via resolveJobFormat) — only the
+// multi-select path threads the raw FormatSetting through (see Editor.tsx's isMulti
+// branch and onProcessAll), which is why 'source' multi-select and the .opus skip are
+// covered separately below via multi-select, matching how the app actually reaches them.
+// This fills the concrete-format cells across every importable extension.
+describe('App Default format x input extension matrix', () => {
+  it.each([
+    ['aiff', 'wav', 'aiff'],
+    ['aiff', 'mp3', 'aiff'],
+    ['aiff', 'flac', 'aiff'],
+    ['aiff', 'aiff', 'aiff'],
+    ['mp3', 'wav', 'mp3'],
+    ['mp3', 'mp3', 'mp3'],
+    ['mp3', 'flac', 'mp3'],
+    ['mp3', 'aiff', 'mp3'],
+    ['flac', 'wav', 'flac'],
+    ['flac', 'mp3', 'flac'],
+    ['flac', 'flac', 'flac'],
+    ['flac', 'aiff', 'flac'],
+  ] as const)(
+    'Default format %s over a .%s file sends format %s',
+    async (settingFormat, inputExt, expectedFormat) => {
+      const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x', inPlace: false })
+      setApi({
+        getSettings: vi.fn().mockResolvedValue(settings({ outputFormat: settingFormat })),
+        pickFiles: vi.fn().mockResolvedValue([`/music/a.${inputExt}`]),
+        readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+        processTrack,
+      })
+      await renderApp()
+      const rows = await addOneTrack()
+      fireEvent.click(rows[0])
+      const convert = await screen.findByTestId('process-btn')
+      fireEvent.click(convert)
+      await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+      expect(processTrack.mock.calls[0][0].format).toBe(expectedFormat)
+    },
+  )
+
+  // 'source' over a mixed wav+flac+aiff multi-selection: the existing multi-select
+  // 'source' test above already covers wav/mp3/flac; this rounds out aiff, the one
+  // formatMatchesInput branch it doesn't touch.
+  it('keeps a .aiff track in the multi-selection on its own format under "Same as source"', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x', inPlace: false })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ outputFormat: 'source' })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.aiff']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { shiftKey: true })
+    const convert = await screen.findByTestId('process-btn')
+    fireEvent.click(convert)
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
+    const byInput = Object.fromEntries(
+      processTrack.mock.calls.map((c) => [c[0].inputPath as string, c[0].format as string]),
+    )
+    expect(byInput).toEqual({ '/music/a.wav': 'wav', '/music/b.aiff': 'aiff' })
+  })
+
+  // .opus has no output equivalent under 'source' — only reachable from the App through
+  // a multi-select convert (isMulti keeps the raw FormatSetting), same as the mixed-batch
+  // test above. This pins the skip exactly as the user hits it: added, selected alongside
+  // a real track, converted — the .opus row must be left alone while its sibling proceeds.
+  it('skips a .opus track inside a multi-select convert under "Same as source"', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x', inPlace: false })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ outputFormat: 'source' })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.opus']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { shiftKey: true })
+    const convert = await screen.findByTestId('process-btn')
+    fireEvent.click(convert)
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    expect(processTrack.mock.calls[0][0].inputPath).toBe('/music/a.wav')
+  })
+})
+
 describe('App editor format/destination reseed', () => {
   // The editor seeds `format` from the Default format setting only once, on mount —
   // changing the setting in Settings while the editor is still open on the same track
