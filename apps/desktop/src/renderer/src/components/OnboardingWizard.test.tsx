@@ -219,6 +219,16 @@ describe('OnboardingWizard audio intents', () => {
   })
 })
 
+describe('OnboardingWizard token field', () => {
+  // The wizard's token field must tell the same story Settings tells: without the
+  // "why" line a new user has no reason to leave the wizard for discogs.com, and the
+  // two surfaces drift the moment one wording changes.
+  it('explains why a personal token helps, with the same words Settings uses', () => {
+    openTokenStep()
+    expect(screen.getByText(i18n.t('settings.tokenWhy'), { exact: false })).toBeInTheDocument()
+  })
+})
+
 describe('OnboardingWizard auto-match', () => {
   // Auto-match needs the user's own Discogs token (its own rate-limit bucket) and spends a lot
   // of requests, so the wizard can't let it be turned on until a token is entered.
