@@ -11,6 +11,7 @@ import { AutoMatchControl } from './AutoMatchControl'
 import { DestinationPicker } from './DestinationPicker'
 import { DiscogsTokenField } from './DiscogsTokenField'
 import { FormatSettingControl } from './FormatSettingControl'
+import { OutputFolderField } from './OutputFolderField'
 import { SearchProvidersControl } from './SearchProvidersControl'
 import { useFocusTrap } from './useFocusTrap'
 
@@ -82,10 +83,6 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
     addToEngineDj,
     convertBesideOriginal,
   )
-  async function changeDir(): Promise<void> {
-    const dir = await window.api.pickOutputDir()
-    if (dir) setOutputDir(dir)
-  }
   function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
     const next = fromDestination(d)
     setAddToAppleMusic(next.addToAppleMusic)
@@ -196,31 +193,14 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                       // after converting — show it (and let them change it) right
                       // under the choice it applies to, exactly like Settings.
                       folder: (
-                        <div className="flex gap-2">
-                          <input
-                            data-testid="onboarding-output-dir"
-                            aria-label={tr('settings.outputDir')}
-                            value={outputDir}
-                            readOnly
-                            className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
-                          />
-                          <button
-                            type="button"
-                            data-testid="onboarding-output-change"
-                            onClick={() => void changeDir()}
-                            className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
-                          >
-                            {tr('common.change')}
-                          </button>
-                        </div>
+                        <OutputFolderField
+                          value={outputDir}
+                          onChange={setOutputDir}
+                          testid="onboarding-output"
+                        />
                       ),
                     }}
                   />
-                  {isMac && outputFormat === 'flac' && (
-                    <p className="mt-1.5 text-xs text-fg-dim">
-                      {tr('settings.appleMusicFlacNote')}
-                    </p>
-                  )}
                 </div>
               </>
             )}

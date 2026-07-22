@@ -5,6 +5,7 @@ import { isMacOS } from '../../lib/platform'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { DestinationPicker } from '../DestinationPicker'
+import { OutputFolderField } from '../OutputFolderField'
 import { SettingsField, SettingsHint, SettingsLabel } from './SettingsPrimitives'
 
 // Apple Music automation only exists on macOS, so the destination is meaningless on
@@ -15,7 +16,7 @@ interface Props {
   synced: SyncedDraft
   local: LocalDraft
   patch: PatchSynced
-  onChangeDir: () => void
+  onOutputDirChange: (dir: string) => void
   onChangeEngineDir: () => void
 }
 
@@ -27,7 +28,7 @@ export function DestinationTab({
   synced,
   local,
   patch,
-  onChangeDir,
+  onOutputDirChange,
   onChangeEngineDir,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -54,23 +55,7 @@ export function DestinationTab({
   // unrelated global path — under Apple Music or overwrite there is no folder copy for
   // it to describe.
   const folderDetail = (
-    <div className="flex gap-2">
-      <input
-        id="settings-output"
-        data-testid="settings-output"
-        aria-label={tr('settings.outputDir')}
-        value={local.outputDir}
-        readOnly
-        className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
-      />
-      <button
-        type="button"
-        onClick={onChangeDir}
-        className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
-      >
-        {tr('common.change')}
-      </button>
-    </div>
+    <OutputFolderField value={local.outputDir} onChange={onOutputDirChange} testid="settings-output" />
   )
   // Engine DJ's fields nest under its radio exactly like the output folder does — the
   // two destination details read as one pattern instead of one inline and one trailing
@@ -123,9 +108,6 @@ export function DestinationTab({
           details={{ folder: folderDetail, engineDj: engineDetail }}
         />
       </SettingsField>
-      {isMac && flacOnly && (
-        <SettingsHint className="mt-2">{tr('settings.appleMusicFlacNote')}</SettingsHint>
-      )}
     </>
   )
 }
