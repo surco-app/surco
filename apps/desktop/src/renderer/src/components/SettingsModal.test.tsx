@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // SettingsModal reads window.api.platform at module load, so stub it before the
@@ -92,6 +92,28 @@ function openNaming() {
   )
   fireEvent.click(screen.getByTestId('settings-tab-naming'))
 }
+
+describe('SettingsModal settings export', () => {
+  // A failed export used to reject into the void: the click did nothing visible and no
+  // file was written. It reports through the same alert path a failed import already uses.
+  it('reports an export failure instead of failing silently', async () => {
+    ;(window.api as unknown as { exportSettings: () => Promise<string | null> }).exportSettings =
+      vi.fn().mockRejectedValue(new Error('disk full'))
+    const alert = vi.spyOn(window, 'alert').mockImplementation(() => {})
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-export'))
+    await waitFor(() => expect(alert).toHaveBeenCalledWith(expect.stringContaining('disk full')))
+    alert.mockRestore()
+  })
+})
 
 describe('SettingsModal cover size clamp', () => {
   // An invalid cap used to save silently as 1200 — the typed value just vanished on

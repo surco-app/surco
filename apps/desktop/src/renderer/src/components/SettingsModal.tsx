@@ -132,7 +132,13 @@ export function SettingsModal({
   }
 
   async function exportSettings(): Promise<void> {
-    await window.api.exportSettings()
+    try {
+      await window.api.exportSettings()
+    } catch (e) {
+      // Same surface a failed import uses: without it the click rejects into the void
+      // and no file was written.
+      window.alert(e instanceof Error ? e.message : String(e))
+    }
   }
 
   async function importSettings(): Promise<void> {

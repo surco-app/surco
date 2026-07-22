@@ -220,7 +220,9 @@ export default function App(): React.JSX.Element {
       // onboarding instead — so the popup fires once per update and a brand-new
       // user's second launch can't "discover" the current changelog.
       if (s.lastSeenChangelogVersion !== window.api.version) {
-        void window.api.saveSettings({ lastSeenChangelogVersion: window.api.version })
+        // Through the hook's save (not a bare window.api call) so a failed stamp
+        // rolls back and surfaces the error card instead of rejecting into the void.
+        saveSettings({ lastSeenChangelogVersion: window.api.version })
       }
     },
     onLoadError: () => setAppError({ kind: 'settingsLoad' }),
@@ -237,7 +239,7 @@ export default function App(): React.JSX.Element {
     if (!shouldShowDonateNudge(s, new Date(), Math.random())) return
     setSettings(s)
     overlays.openDonateNudge()
-    void window.api.saveSettings({ donateNudgeLastShown: new Date().toISOString() })
+    saveSettings({ donateNudgeLastShown: new Date().toISOString() })
   })
   // Quality triage filter, free-text search and display order — read from the store with a
   // stable setter each (field comments live in appStore).
