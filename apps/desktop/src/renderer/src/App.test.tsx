@@ -284,6 +284,12 @@ async function addTwoTracks(): Promise<HTMLElement[]> {
   return screen.getAllByTestId('track-row')
 }
 
+async function addOneTrack(): Promise<HTMLElement[]> {
+  fireEvent.click(await screen.findByTestId('add-files'))
+  await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+  return screen.getAllByTestId('track-row')
+}
+
 describe('App sidebar divider', () => {
   // Hover the divider and let the tooltip's delay elapse; the portal tooltip only mounts
   // once the delay fires, so the assertion reads it after advancing the timer.
@@ -1269,6 +1275,78 @@ describe('App multi-select convert', () => {
       '/music/b.mp3': 'mp3',
       '/music/c.flac': 'flac',
     })
+  })
+})
+
+describe('App editor format/destination reseed', () => {
+  // The editor seeds `format` from the Default format setting only once, on mount —
+  // changing the setting in Settings while the editor is still open on the same track
+  // used to leave it stale. That isn't just a stale label: the stale format is what the
+  // convert button actually sends, so a FLAC-seeded editor kept rewriting the source
+  // .flac in place instead of producing the AIFF the user just asked for in Settings.
+  it("reseeds the open editor's format when Default format changes in Settings", async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    const base = settings({ outputFormat: 'flac', addToAppleMusic: true })
+    setApi({
+      platform: 'darwin',
+      getSettings: vi.fn().mockResolvedValue(base),
+      // Mirrors what main actually does: persist the patch and hand back the merged
+      // settings — the modal's Save button round-trips through this, same as the app.
+      saveSettings: vi.fn((patch) => Promise.resolve({ ...base, ...patch })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.flac']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    const rows = await addOneTrack()
+    fireEvent.click(rows[0])
+    // Same format as the source .flac: the button offers to update it in place.
+    expect(await screen.findByTestId('process-btn')).toHaveTextContent('Update')
+
+    fireEvent.click(screen.getByTestId('open-settings'))
+    fireEvent.click(await screen.findByTestId('settings-tab-conversion'))
+    fireEvent.click(screen.getByTestId('settings-format-aiff'))
+    fireEvent.click(screen.getByTestId('settings-save'))
+
+    await waitFor(() =>
+      expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF + Apple Music'),
+    )
+    fireEvent.click(screen.getByTestId('process-btn'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    expect(processTrack.mock.calls[0][0].format).toBe('aiff')
+  })
+
+  // Same one-shot seeding bug on the other axis: the destination picker (Apple
+  // Music/folder/Engine/beside/overwrite) is seeded from Settings once too. Left
+  // stale, a track that just started as a folder export keeps going to the folder
+  // even after the user switches the Settings destination to Apple Music.
+  it("reseeds the open editor's destination when the destination setting changes in Settings", async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    const base = settings({ outputFormat: 'aiff', addToAppleMusic: false })
+    setApi({
+      platform: 'darwin',
+      getSettings: vi.fn().mockResolvedValue(base),
+      saveSettings: vi.fn((patch) => Promise.resolve({ ...base, ...patch })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    const rows = await addOneTrack()
+    fireEvent.click(rows[0])
+    expect(await screen.findByTestId('process-btn')).toHaveTextContent('Convert to AIFF')
+
+    fireEvent.click(screen.getByTestId('open-settings'))
+    fireEvent.click(await screen.findByTestId('settings-tab-destination'))
+    fireEvent.click(screen.getByTestId('settings-destination-appleMusic'))
+    fireEvent.click(screen.getByTestId('settings-save'))
+
+    await waitFor(() =>
+      expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF + Apple Music'),
+    )
+    fireEvent.click(screen.getByTestId('process-btn'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    expect(processTrack.mock.calls[0][0].addToAppleMusic).toBe(true)
   })
 })
 
