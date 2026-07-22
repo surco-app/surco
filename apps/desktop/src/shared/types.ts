@@ -126,7 +126,7 @@ export interface Settings {
   // both. User-curated in Settings → Search, edited as comma-separated text.
   searchIgnoreWords: string[]
   outputDir: string
-  outputFormat: OutputFormat
+  outputFormat: FormatSetting
   addToAppleMusic: boolean
   // Whether a converted file is kept in the output folder. Default true. When false
   // and the track is added to Apple Music, Surco drops the output-folder copy after a

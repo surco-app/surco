@@ -975,4 +975,44 @@ describe('useTrackProcessing', () => {
     // The source file was not touched by a regular conversion — its probes stay.
     expect(client.getQueryData(['waveform', '/m/a.wav'])).toBeDefined()
   })
+
+  describe('Same as source', () => {
+    // The whole point of the feature: one batch, one setting, and every file keeps its
+    // own format — which is exactly what a single global format could never express.
+    it('sends each track its own format when the setting is source', async () => {
+      const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x' })
+      setApi({ processTrack })
+      const settings = { outputFormat: 'source', overwriteOriginal: false } as Settings
+      const tracks = [
+        track({ id: 'a', inputPath: '/music/a.flac' }),
+        track({ id: 'b', inputPath: '/music/b.mp3' }),
+      ]
+      const { result } = renderHook(
+        () => useTrackProcessing({ tracks, settings, updateTrack: vi.fn() }),
+        { wrapper: withClient() },
+      )
+      await act(async () => {
+        await result.current.processAll(tracks)
+      })
+      const formats = processTrack.mock.calls.map(([job]) => job.format)
+      expect(formats).toEqual(['flac', 'mp3'])
+    })
+
+    // 'source' is not a format ffmpeg knows: its format chain ends in an implicit else
+    // that assumes AIFF, so a leaked value would silently rewrite the file as AIFF.
+    it('never lets source reach the job', async () => {
+      const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a' })
+      setApi({ processTrack })
+      const settings = { outputFormat: 'source', overwriteOriginal: false } as Settings
+      const tracks = [track({ id: 'a', inputPath: '/music/a.opus' })]
+      const { result } = renderHook(
+        () => useTrackProcessing({ tracks, settings, updateTrack: vi.fn() }),
+        { wrapper: withClient() },
+      )
+      await act(async () => {
+        await result.current.processAll(tracks)
+      })
+      expect(processTrack.mock.calls[0][0].format).toBe('aiff')
+    })
+  })
 })

@@ -9,10 +9,10 @@ import {
 } from '../../../shared/editorSections'
 import type {
   DeclickMode,
+  FormatSetting,
   KeyNotation,
   NormalizeConfig,
   OutputBitDepth,
-  OutputFormat,
   OutputSampleRate,
   SearchProviderId,
   Settings,
@@ -29,7 +29,7 @@ export interface ResolvedSettings {
   // track only auto-applies a confident match when the user left auto-match on — off means
   // no metadata is written without a deliberate click.
   autoMatch: boolean
-  outputFormat: OutputFormat
+  outputFormat: FormatSetting
   // The quality pins, read by the editor's "re-encode this one" offer: a same-format
   // source that doesn't meet them gets the explicit action instead of a silent re-encode.
   outputBitDepth: OutputBitDepth
