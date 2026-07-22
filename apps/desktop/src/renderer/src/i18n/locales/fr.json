@@ -947,7 +947,11 @@
     "convertInPlaceTitle": "Écraser les fichiers originaux ?",
     "convertInPlaceMessage_one": "Écraser l'original est activé : le fichier source est réécrit sur place. L'original est remplacé et irrécupérable.",
     "convertInPlaceMessage_other": "Écraser l'original est activé : {{count}} fichiers source sont réécrits sur place. Les originaux sont remplacés et irrécupérables.",
-    "convertInPlaceConfirm": "Écraser et convertir"
+    "convertInPlaceConfirm": "Écraser et convertir",
+    "convertLossyReencodeTitle": "Réencoder le MP3 original ?",
+    "convertLossyReencodeMessage_one": "Ce filtre réencode le MP3 source sur place. Le MP3 étant avec perte, le réencoder sur lui-même dégrade sa qualité de façon irréversible.",
+    "convertLossyReencodeMessage_other": "Ce filtre réencode {{count}} MP3 source sur place. Le MP3 étant avec perte, les réencoder sur eux-mêmes dégrade leur qualité de façon irréversible.",
+    "convertLossyReencodeConfirm": "Réencoder et convertir"
   },
   "activity": {
     "title": "Activité",

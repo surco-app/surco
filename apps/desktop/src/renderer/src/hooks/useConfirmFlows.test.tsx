@@ -8,7 +8,7 @@ import '../i18n'
 import { useConfirmFlows } from './useConfirmFlows'
 import type { ConfirmModal } from './useOverlays'
 
-function track(id: string): TrackItem {
+function track(id: string, over: Partial<TrackItem> = {}): TrackItem {
   return {
     id,
     inputPath: `/${id}.wav`,
@@ -17,6 +17,7 @@ function track(id: string): TrackItem {
     query: '',
     status: 'idle',
     meta: { ...emptyMetadata(), title: id, artist: 'A' },
+    ...over,
   }
 }
 
@@ -200,6 +201,86 @@ describe('useConfirmFlows single-track overwrite', () => {
     flows.askConvertOne(run)
     expect(opened[0].destructive).toBe(true)
     expect(run).not.toHaveBeenCalled()
+  })
+})
+
+describe('useConfirmFlows lossy in-place re-encode', () => {
+  // 'source' on an .mp3 resolves to mp3 and formatMatchesInput calls that in-place —
+  // with normalize active planConversion loses copyOk and re-encodes the only copy,
+  // permanently degrading it. The user asked to keep the file's format, not to have it
+  // silently quality-downgraded, so this must ask before firing, exactly like overwrite.
+  it('confirms a batch convert that would re-encode an mp3 in place under source with normalize on', () => {
+    const mp3 = track('a', { inputPath: '/a.mp3', fileName: 'a.mp3' })
+    const { flows, opened } = setup([mp3])
+    flows.askConvertAll([mp3], 'source', {
+      mode: 'peak',
+      targetLufs: -14,
+      truePeakDb: -1,
+      peakDb: -1,
+    })
+    expect(opened[0].destructive).toBe(true)
+  })
+
+  // Same in-place mp3 rewrite, but nothing alters the samples: planConversion keeps
+  // copyOk and just stream-copies + rewrites tags, so there is no quality loss to warn
+  // about and the batch must fire straight through like any non-destructive convert.
+  it('does not confirm a batch convert of an in-place mp3 under source with no filters active', () => {
+    const mp3 = track('a', { inputPath: '/a.mp3', fileName: 'a.mp3' })
+    const { flows, opened } = setup([mp3])
+    flows.askConvertAll([mp3], 'source')
+    expect(opened).toHaveLength(0)
+  })
+
+  // A .wav has no lossy generation to lose, so even in place with a filter running it
+  // must not trip the mp3-only warning.
+  it('does not confirm a batch convert of an in-place wav under source with normalize on', () => {
+    const wav = track('a', { inputPath: '/a.wav', fileName: 'a.wav' })
+    const { flows, opened } = setup([wav])
+    flows.askConvertAll([wav], 'source', {
+      mode: 'peak',
+      targetLufs: -14,
+      truePeakDb: -1,
+      peakDb: -1,
+    })
+    expect(opened).toHaveLength(0)
+  })
+
+  // A trim counts as an active filter exactly like normalize: it also forces
+  // planConversion off the stream-copy path (see reapply.ts's declick/normalize
+  // comment on what "alters samples" means for copyOk).
+  it('confirms a single convert that would re-encode an mp3 in place under source with a trim staged', () => {
+    const mp3 = track('a', { inputPath: '/a.mp3', fileName: 'a.mp3', trim: { startSec: 1 } })
+    const { flows, opened } = setup([mp3])
+    const run = vi.fn()
+    flows.askConvertOne(run, { track: mp3, format: 'source' })
+    expect(opened[0].destructive).toBe(true)
+    expect(run).not.toHaveBeenCalled()
+  })
+
+  // A concrete mp3 pick under overwrite is the same in-place lossy re-encode as
+  // 'source' resolving to mp3 — the warning must fire either way the format got there.
+  // The lossy-specific wording wins over the generic overwrite dialog here: only it
+  // names the actual risk (a lossy generation lost), which the plain "replaced and
+  // cannot be recovered" copy never mentions.
+  it('confirms a single convert that would re-encode an mp3 in place under overwrite with declick on, with the lossy wording', () => {
+    const mp3 = track('a', { inputPath: '/a.mp3', fileName: 'a.mp3' })
+    const { flows, opened } = setup([mp3], { settings: { overwriteOriginal: true } as Settings })
+    const run = vi.fn()
+    flows.askConvertOne(run, { track: mp3, format: 'mp3', declick: 'standard' })
+    expect(opened[0].destructive).toBe(true)
+    expect(opened[0].title).toBe('Re-encode the original MP3?')
+    expect(run).not.toHaveBeenCalled()
+  })
+
+  // No filter, no warning: a plain in-place mp3 convert is a byte copy, and the single
+  // path must stay one-click just as it does for any other non-destructive convert.
+  it('does not confirm a single convert of an in-place mp3 under source with no filters active', () => {
+    const mp3 = track('a', { inputPath: '/a.mp3', fileName: 'a.mp3' })
+    const { flows, opened } = setup([mp3])
+    const run = vi.fn()
+    flows.askConvertOne(run, { track: mp3, format: 'source' })
+    expect(opened).toHaveLength(0)
+    expect(run).toHaveBeenCalledTimes(1)
   })
 })
 

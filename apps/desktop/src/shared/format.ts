@@ -68,3 +68,20 @@ export function resolveJobFormat(
   )
   return match ?? fallback
 }
+
+// Whether a run would re-encode an MP3 over itself while an active filter (normalize,
+// trim or declick) is forcing planConversion off its stream-copy shortcut (see
+// ffmpeg.ts's copyOk). MP3 is the only lossy OutputFormat, so it is the only case where
+// that forced re-encode permanently degrades the sole copy of the file — every other
+// format is lossless and gains nothing from a warning here.
+export function reencodesLossyInPlace(
+  setting: FormatSetting,
+  inputPath: string,
+  overwriteOriginal: boolean,
+  filtersActive: boolean,
+  fallback: OutputFormat,
+): boolean {
+  if (!filtersActive) return false
+  const resolved = resolveJobFormat(setting, inputPath, fallback)
+  return resolved === 'mp3' && editsInPlace(resolved, inputPath, overwriteOriginal)
+}

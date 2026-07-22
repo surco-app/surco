@@ -1178,7 +1178,13 @@ export default function App(): React.JSX.Element {
             if (outcome === 'converted') void maybeShowDonateNudge()
           })
         },
-        { destination },
+        {
+          destination,
+          track: tracksRef.current.find((t) => t.id === id),
+          format,
+          normalize,
+          declick,
+        },
       )
     },
   )

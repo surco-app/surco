@@ -947,7 +947,11 @@
     "convertInPlaceTitle": "¿Sobrescribir los archivos originales?",
     "convertInPlaceMessage_one": "Sobrescribir el original está activado: esto reescribe el archivo de origen en su sitio. El original se reemplaza y no se puede recuperar.",
     "convertInPlaceMessage_other": "Sobrescribir el original está activado: esto reescribe {{count}} archivos de origen en su sitio. Los originales se reemplazan y no se pueden recuperar.",
-    "convertInPlaceConfirm": "Sobrescribir y convertir"
+    "convertInPlaceConfirm": "Sobrescribir y convertir",
+    "convertLossyReencodeTitle": "¿Recodificar el MP3 original?",
+    "convertLossyReencodeMessage_one": "Este filtro recodifica el MP3 de origen en su sitio. El MP3 es un formato con pérdida, así que recodificarlo sobre sí mismo degrada su calidad y no se puede deshacer.",
+    "convertLossyReencodeMessage_other": "Este filtro recodifica {{count}} MP3 de origen en su sitio. El MP3 es un formato con pérdida, así que recodificarlos sobre sí mismos degrada su calidad y no se puede deshacer.",
+    "convertLossyReencodeConfirm": "Recodificar y convertir"
   },
   "activity": {
     "title": "Actividad",

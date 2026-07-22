@@ -947,7 +947,11 @@
     "convertInPlaceTitle": "Originaldateien überschreiben?",
     "convertInPlaceMessage_one": "„Original überschreiben“ ist aktiv: Die Quelldatei wird direkt überschrieben. Das Original wird ersetzt und ist nicht wiederherstellbar.",
     "convertInPlaceMessage_other": "„Original überschreiben“ ist aktiv: {{count}} Quelldateien werden direkt überschrieben. Die Originale werden ersetzt und sind nicht wiederherstellbar.",
-    "convertInPlaceConfirm": "Überschreiben und konvertieren"
+    "convertInPlaceConfirm": "Überschreiben und konvertieren",
+    "convertLossyReencodeTitle": "Original-MP3 neu kodieren?",
+    "convertLossyReencodeMessage_one": "Dieser Filter kodiert die MP3-Quelldatei direkt neu. MP3 ist verlustbehaftet, daher verschlechtert eine Neukodierung über sich selbst die Qualität unwiderruflich.",
+    "convertLossyReencodeMessage_other": "Dieser Filter kodiert {{count}} MP3-Quelldateien direkt neu. MP3 ist verlustbehaftet, daher verschlechtert eine Neukodierung über sich selbst die Qualität unwiderruflich.",
+    "convertLossyReencodeConfirm": "Neu kodieren und konvertieren"
   },
   "activity": {
     "title": "Aktivität",

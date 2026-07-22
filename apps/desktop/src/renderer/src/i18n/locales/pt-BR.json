@@ -947,7 +947,11 @@
     "convertInPlaceTitle": "Sobrescrever os arquivos originais?",
     "convertInPlaceMessage_one": "Sobrescrever o original está ativado: isso reescreve o arquivo de origem no lugar. O original é substituído e não pode ser recuperado.",
     "convertInPlaceMessage_other": "Sobrescrever o original está ativado: isso reescreve {{count}} arquivos de origem no lugar. Os originais são substituídos e não podem ser recuperados.",
-    "convertInPlaceConfirm": "Sobrescrever e converter"
+    "convertInPlaceConfirm": "Sobrescrever e converter",
+    "convertLossyReencodeTitle": "Recodificar o MP3 original?",
+    "convertLossyReencodeMessage_one": "Este filtro recodifica o MP3 de origem no lugar. Como o MP3 tem perdas, recodificá-lo sobre si mesmo degrada a qualidade de forma irreversível.",
+    "convertLossyReencodeMessage_other": "Este filtro recodifica {{count}} MP3 de origem no lugar. Como o MP3 tem perdas, recodificá-los sobre si mesmos degrada a qualidade de forma irreversível.",
+    "convertLossyReencodeConfirm": "Recodificar e converter"
   },
   "activity": {
     "title": "Atividade",
