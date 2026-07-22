@@ -323,6 +323,58 @@ export const Editor = memo(function Editor({
       convertBesideOriginal,
     ),
   )
+  // Changing the Default format (or the destination) in Settings while this same
+  // track's editor is still open must reach it — otherwise `format` stays whatever
+  // the track mounted with, and it's not just a stale label: it's what the convert
+  // button actually sends, so a FLAC-seeded editor would keep rewriting a .flac
+  // source in place instead of producing the format just chosen in Settings. The
+  // user accepted the trade-off: any one-shot pick made in this track's own
+  // split-button menu is lost the moment a Settings save reseeds it. Compared
+  // against the raw Settings values (not the resolved `picked`/`format` state),
+  // since those are this effect's own output and would always look "changed".
+  const lastSettings = useRef({
+    outputFormat,
+    addToAppleMusic,
+    overwriteOriginal,
+    addToEngineDj,
+    convertBesideOriginal,
+  })
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reacts only to the Settings values changing — item/isMulti/format are read at that moment, not tracked continuously.
+  useEffect(() => {
+    const prev = lastSettings.current
+    const formatSettingChanged = outputFormat !== prev.outputFormat
+    const destinationSettingsChanged =
+      addToAppleMusic !== prev.addToAppleMusic ||
+      overwriteOriginal !== prev.overwriteOriginal ||
+      addToEngineDj !== prev.addToEngineDj ||
+      convertBesideOriginal !== prev.convertBesideOriginal
+    if (!formatSettingChanged && !destinationSettingsChanged) return
+    lastSettings.current = {
+      outputFormat,
+      addToAppleMusic,
+      overwriteOriginal,
+      addToEngineDj,
+      convertBesideOriginal,
+    }
+    const seededFormat = formatSettingChanged
+      ? resolveJobFormat(outputFormat, item.inputPath, 'aiff')
+      : format
+    if (formatSettingChanged) {
+      setFormat(seededFormat)
+      const seededPick = isMulti ? outputFormat : seededFormat
+      setFormatPick(seededPick)
+      onFormatChange?.(seededPick)
+    }
+    const seededDestination = toDestination(
+      addToAppleMusic,
+      seededFormat === 'flac',
+      overwriteOriginal,
+      addToEngineDj,
+      convertBesideOriginal,
+    )
+    setDestination(seededDestination)
+    onDestinationChange?.(seededDestination)
+  }, [outputFormat, addToAppleMusic, overwriteOriginal, addToEngineDj, convertBesideOriginal])
   // The facets the picked destination means, replacing the raw Settings reads below
   // so the in-place warnings, the button label and the membership badge all describe
   // the conversion the button will actually run.
