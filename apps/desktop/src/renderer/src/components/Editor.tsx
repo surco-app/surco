@@ -138,7 +138,6 @@ interface Props {
   // Confirmation lives in App, so the link just signals intent; the copy's label rides
   // along so the dialog can name the entry it is about to delete.
   onRemoveOldMusicCopy?: (stale: StaleLibraryCopy) => void
-  onOpenSettings: (tab?: 'general' | 'search' | 'naming') => void
   // Persists the results column's width (Settings.resultsWidth): the panel
   // remounts per track, so the width must round-trip through settings to stick.
   onResultsWidthChange: (width: number) => void
@@ -195,7 +194,6 @@ export const Editor = memo(function Editor({
   onAddToAppleMusic,
   onTrashOriginal,
   onRemoveOldMusicCopy,
-  onOpenSettings,
   onResultsWidthChange,
   onShowLoudnessHelp,
   onOpenRename,
@@ -894,7 +892,6 @@ export const Editor = memo(function Editor({
         onApplyMatches={onApplyMatches}
         selectTrack={selectTrack}
         searchInputRef={searchInputRef}
-        onOpenSettings={onOpenSettings}
         formatFilter={discogsFormats}
         resultsWidth={resultsWidth}
         onResultsWidthChange={onResultsWidthChange}
