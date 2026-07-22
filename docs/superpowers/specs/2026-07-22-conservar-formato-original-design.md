@@ -1,4 +1,4 @@
-# Conservar el formato original
+# Same as source: conservar el formato de cada fichero
 
 ## Problema
 
@@ -18,9 +18,18 @@ recodifica la mayoría. La capacidad existe; no hay forma de pedirla.
 
 ## Qué se construye
 
-Un valor nuevo en el selector de formato de salida de Settings: **"Conservar el
-original"**, junto a AIFF / ALAC / MP3 / WAV / FLAC. Es un ajuste global y se recuerda
-entre sesiones.
+Un valor nuevo en `Default format` (Settings → Output → Format,
+`renderer/src/components/settings/ConversionTab.tsx:25`): **"Same as source"**, junto a
+AIFF / ALAC / MP3 / WAV / FLAC. Es un ajuste global y se recuerda entre sesiones.
+
+La etiqueta reutiliza deliberadamente el literal que **Bit depth** y **Sample rate** ya
+usan en ese mismo panel, con el mismo significado: no impongas un valor, respeta el del
+fichero. Los tres controles se leen así como un sistema coherente.
+
+Va **primero** en el `SegmentedControl`, como en los otros dos controles:
+`Same as source | AIFF | ALAC | MP3 | WAV | FLAC`. Pero **AIFF sigue siendo el valor por
+defecto** de la app — la posición da coherencia visual sin cambiar el comportamiento de
+nadie, ni de usuarios nuevos ni existentes.
 
 Elegirlo significa: cada fichero sale en su propio formato.
 
@@ -34,7 +43,7 @@ Elegirlo significa: cada fichero sale en su propio formato.
 
 ## Principio de diseño
 
-**"Conservar el original" es una regla para elegir formato, no un formato.**
+**"Same as source" es una regla para elegir formato, no un formato.**
 
 Meterla en el enum `OutputFormat` sería meter una regla donde el resto del código espera
 un valor, y rompe en muchos sitios a la vez (ver Alternativas). Por eso el valor nunca
@@ -66,7 +75,7 @@ type FormatSetting = OutputFormat | 'source'
 `ProcessJob.format` permanece `OutputFormat`.
 
 El override puntual de formato que ya existe (`formatOverride`, el menú del split-button de
-`ExportButton` y el estado del editor) **sigue siendo `OutputFormat`**: "conservar" es un
+`ExportButton` y el estado del editor) **sigue siendo `OutputFormat`**: "Same as source" es un
 ajuste global por decisión de producto, no una elección por conversión. Un override puntual
 siempre nombra un formato concreto y gana sobre el ajuste, como hoy.
 
@@ -132,8 +141,15 @@ Sitios que leen `settings.outputFormat` para decidir qué mostrar:
 - **`renderer/src/components/DeclickSection.tsx:410`** — el aviso ámbar de pérdida de cues
   sale cuando el formato no está en `CUES_SURVIVE = ['mp3','aiff']`. Con `'source'` no debe
   salir siempre: MP3→MP3 y AIFF→AIFF conservan los cues.
-- **i18n** — clave nueva `settings.formats.source` en los 5 locales
-  (`en`, `es`, `de`, `fr`, `pt-BR`).
+- **i18n** — clave nueva `settings.formats.source` ("Same as source") en los 5 locales
+  (`en`, `es`, `de`, `fr`, `pt-BR`), siguiendo el literal que ya usan `bitDepth` y
+  `sampleRate` en cada idioma para que los tres controles coincidan.
+- **`settings.outputFormatHint`** — el hint actual es *"AIFF/WAV/FLAC are lossless (FLAC
+  compressed); MP3 is smaller. A file already in the format is copied without
+  re-encoding."* Ya describe la mecánica que hace posible la feature; con "Same as source"
+  esa mecánica deja de ser un caso afortunado y pasa a ser la promesa del modo. El hint
+  debe explicar que "Same as source" mantiene el formato de cada fichero y no reconvierte,
+  en el mismo registro que los hints de `bitDepth` y `sampleRate`.
 
 ## Comportamiento heredado que se conserva
 
@@ -153,7 +169,7 @@ La auditoría del código identificó que propagar `'source'` hasta el motor cau
 
 - **Pérdida de datos.** `editsInPlace` (`shared/format.ts:37`) es
   `(overwriteOriginal && format !== 'alac') || formatMatchesInput(format, inputPath)`. Con
-  un formato "conservar", `formatMatchesInput` sería true por definición, así que
+  un formato "Same as source", `formatMatchesInput` sería true por definición, así que
   `editsInPlace` daría true incluso con destino "carpeta de salida". Eso marca `inPlace` en
   `main/inplace.ts:70`, y `main/processTrack.ts:229` llama `removeRenamedOriginal`, que hace
   `unlink` del fuente — saltándose la confirmación destructiva que hoy solo cubre el modo
