@@ -223,42 +223,34 @@ export function Player({
           items-start aligns the cover's top with the title (the visual anchor): the bold title
           carries the weight up top, so centring the square cover read as if it had sagged. */}
       <div className="flex items-start gap-2.5 px-3 pt-2.5">
-        {/* The cover as a 40px vinyl: CSS-groove disc, the art clipped into the center
-            label (brand-accent label when the file has no art), a spindle dot on top. It
-            spins only while sound is actually playing — paused or buffering freezes it in
-            place via animation-play-state, so like a real record it never snaps back to 0°.
-            The specular sheen sits on a static sibling overlay, not on the disc: it is the
-            light, so the grooves and label rotate underneath while it stays put. */}
-        <span className="relative h-10 w-10 shrink-0">
-          <span
-            data-testid="player-vinyl"
-            className="player-vinyl relative flex h-full w-full items-center justify-center rounded-full outline outline-1 -outline-offset-1 outline-white/10"
-            style={{ animationPlayState: !paused && !loading ? 'running' : 'paused' }}
-          >
-            {track.embeddedCover ? (
-              <img
-                data-testid="player-cover"
-                src={track.embeddedCover}
-                alt=""
-                // Same as the list covers: keep the base64 JPEG decode off the main thread.
-                decoding="async"
-                className="h-5 w-5 rounded-full object-cover ring-1 ring-black/40"
-              />
-            ) : (
-              <span
-                data-testid="player-cover-placeholder"
-                className="h-5 w-5 rounded-full bg-[var(--color-accent)] ring-1 ring-black/40"
-              />
-            )}
-            <span
-              aria-hidden="true"
-              className="absolute top-1/2 left-1/2 h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/80"
+        {/* The cover as a 40px vinyl: flat disc with thin groove rings, the art clipped
+            into the center label (brand-accent label when the file has no art), a spindle
+            dot on top. It spins only while sound is actually playing — paused or buffering
+            freezes it in place via animation-play-state, so like a real record it never
+            snaps back to 0°. */}
+        <span
+          data-testid="player-vinyl"
+          className="player-vinyl relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full outline outline-1 -outline-offset-1 outline-white/10"
+          style={{ animationPlayState: !paused && !loading ? 'running' : 'paused' }}
+        >
+          {track.embeddedCover ? (
+            <img
+              data-testid="player-cover"
+              src={track.embeddedCover}
+              alt=""
+              // Same as the list covers: keep the base64 JPEG decode off the main thread.
+              decoding="async"
+              className="h-5 w-5 rounded-full object-cover ring-1 ring-black/40"
             />
-          </span>
+          ) : (
+            <span
+              data-testid="player-cover-placeholder"
+              className="h-5 w-5 rounded-full bg-[var(--color-accent)] ring-1 ring-black/40"
+            />
+          )}
           <span
-            data-testid="player-vinyl-sheen"
             aria-hidden="true"
-            className="player-vinyl-sheen pointer-events-none absolute inset-0 rounded-full"
+            className="absolute top-1/2 left-1/2 h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/80"
           />
         </span>
 

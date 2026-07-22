@@ -160,15 +160,6 @@ describe('Player', () => {
     expect(screen.getByTestId('player-cover-placeholder')).toBeInTheDocument()
   })
 
-  // The specular sheen is the light hitting the record, not part of it: if it lived
-  // inside the rotating disc it would spin with the grooves and the gloss would read
-  // as a printed smudge instead of a reflection.
-  it('keeps the light sheen off the spinning disc', () => {
-    renderUI(<Player {...props()} />)
-    const sheen = screen.getByTestId('player-vinyl-sheen')
-    expect(screen.getByTestId('player-vinyl')).not.toContainElement(sheen)
-  })
-
   // The default full volume is the silent norm, so the slider stands alone; the readout
   // only earns its space once the user has turned it down, where the exact figure helps.
   it('hides the volume readout at full volume', () => {

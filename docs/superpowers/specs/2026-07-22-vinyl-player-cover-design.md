@@ -31,6 +31,16 @@ with subtle grooves, the track's cover art clipped into a circular center label
   `Music` icon in `var(--color-on-accent)` — instead of the panel gray.
 - Cover label: unchanged image, plus a thin dark ring seating it on the disc.
 
+### Iteration 3 (same day, flat design)
+
+- The app is flat design: the static specular sheen overlay and the radial
+  depth shading are removed — the disc is a solid near-black circle with flat
+  groove rings. Coverless label also dropped its `Music` icon (plain accent
+  circle, spindle dot only).
+- Rotation stays visible via the conic wedges on the rotating disc: flat tonal
+  segments (5–7% white) that sweep as it turns. Without them a coverless disc
+  is radially symmetric and spinning changes no pixel.
+
 ## Motion
 
 - CSS keyframe `vinyl-spin`, linear, infinite, ~4s per revolution (real 33⅓rpm
