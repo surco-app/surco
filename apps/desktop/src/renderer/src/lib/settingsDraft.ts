@@ -1,3 +1,4 @@
+import { autoMatchAvailable } from '../../../shared/autoMatch'
 import { normalizeEditorSections } from '../../../shared/editorSections'
 import type { Settings } from '../../../shared/types'
 
@@ -113,7 +114,7 @@ const DEFAULT_COVER_MAX_SIZE = 1200
 // Serializes the staged draft into the Settings patch to persist: presets parsed from
 // comma text into trimmed arrays, the cover cap clamped to a non-negative number (the
 // default when unparseable), the filename format trimmed with the default restored when
-// blank, and auto-match forced off when there's no token to run it. Pure so these
+// blank, and auto-match forced off when its sources can't back it. Pure so these
 // parse/clamp/gate rules are tested directly rather than only through the modal's Save.
 export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Partial<Settings> {
   const {
@@ -138,8 +139,11 @@ export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Part
     genrePresets: splitPresets(genre),
     searchIgnoreWords: splitPresets(searchIgnoreWords),
     coverMaxSize: Number.isFinite(max) && max >= 0 ? max : DEFAULT_COVER_MAX_SIZE,
-    // Auto-match needs a token to run, so a token-less save can't leave it enabled.
-    autoMatch: token !== '' && local.autoMatch,
+    // Gated on the same rule the toggle, the wizard and the main process apply — a lax
+    // token-only gate here once dropped a Bandcamp-only save the UI had just allowed.
+    autoMatch:
+      local.autoMatch &&
+      autoMatchAvailable({ searchProviders: synced.searchProviders, discogsToken: token }),
   }
 }
 
