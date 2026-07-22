@@ -224,23 +224,37 @@ export function Player({
           items-start aligns the cover's top with the title (the visual anchor): the bold title
           carries the weight up top, so centring the square cover read as if it had sagged. */}
       <div className="flex items-start gap-2.5 px-3 pt-2.5">
-        {track.embeddedCover ? (
-          <img
-            data-testid="player-cover"
-            src={track.embeddedCover}
-            alt=""
-            // Same as the list covers: keep the base64 JPEG decode off the main thread.
-            decoding="async"
-            className="h-10 w-10 shrink-0 rounded-lg object-cover outline outline-1 -outline-offset-1 outline-white/10"
-          />
-        ) : (
+        {/* The cover as a 40px vinyl: CSS-groove disc, the art clipped into the center
+            label, a spindle dot on top. It spins only while sound is actually playing —
+            paused or buffering freezes it in place via animation-play-state, so like a
+            real record it never snaps back to 0°. */}
+        <span
+          data-testid="player-vinyl"
+          className="player-vinyl relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full outline outline-1 -outline-offset-1 outline-white/10"
+          style={{ animationPlayState: !paused && !loading ? 'running' : 'paused' }}
+        >
+          {track.embeddedCover ? (
+            <img
+              data-testid="player-cover"
+              src={track.embeddedCover}
+              alt=""
+              // Same as the list covers: keep the base64 JPEG decode off the main thread.
+              decoding="async"
+              className="h-5 w-5 rounded-full object-cover"
+            />
+          ) : (
+            <span
+              data-testid="player-cover-placeholder"
+              className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-panel)]"
+            >
+              <Music className="h-3 w-3 text-fg-faint" aria-hidden="true" />
+            </span>
+          )}
           <span
-            data-testid="player-cover-placeholder"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-panel)] outline outline-1 -outline-offset-1 outline-white/10"
-          >
-            <Music className="h-4 w-4 text-fg-faint" aria-hidden="true" />
-          </span>
-        )}
+            aria-hidden="true"
+            className="absolute top-1/2 left-1/2 h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/80"
+          />
+        </span>
 
         <div className="flex min-w-0 flex-1 flex-col">
           <span data-testid="player-title" className="min-w-0">
