@@ -85,6 +85,7 @@ import {
   reanchorToVisible,
   type Selection,
 } from './lib/selection'
+import { OpenSettingsProvider } from './lib/openSettingsContext'
 import { SettingsProvider } from './lib/settingsContext'
 import { formatShortcut } from './lib/shortcuts'
 import { matchStatKey } from './lib/stats'
@@ -1561,308 +1562,309 @@ export default function App(): React.JSX.Element {
 
   return (
     <SettingsProvider settings={settings}>
-      <ToastProvider value={toastReporter}>
-        {/* Drag-and-drop is a pointer-only convenience; the "Add files" button is the
+      <OpenSettingsProvider open={onOpenSettings}>
+        <ToastProvider value={toastReporter}>
+          {/* Drag-and-drop is a pointer-only convenience; the "Add files" button is the
           keyboard-accessible path to the same action. */}
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control */}
-        <div
-          className="flex h-screen flex-col"
-          onDragOver={(e) => {
-            e.preventDefault()
-            setDragging(true)
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={onDrop}
-        >
-          {/* Music preview playback — there is no speech to caption. The clock
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control */}
+          <div
+            className="flex h-screen flex-col"
+            onDragOver={(e) => {
+              e.preventDefault()
+              setDragging(true)
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={onDrop}
+          >
+            {/* Music preview playback — there is no speech to caption. The clock
           (currentTime/duration/paused) is read by LivePlayer, which subscribes to
           this element directly so playback re-renders only the card. */}
-          {/* biome-ignore lint/a11y/useMediaCaption: audio is a music preview, captions don't apply */}
-          <audio ref={audioRef} hidden onEnded={onTrackEnded} />
-          {/* Names the window for screen readers; visually redundant with the title bar. */}
-          <h1 className="sr-only">Surco</h1>
-          {/* The Toolbar's own bottom border doubles as the progress track: the bar sits on
+            {/* biome-ignore lint/a11y/useMediaCaption: audio is a music preview, captions don't apply */}
+            <audio ref={audioRef} hidden onEnded={onTrackEnded} />
+            {/* Names the window for screen readers; visually redundant with the title bar. */}
+            <h1 className="sr-only">Surco</h1>
+            {/* The Toolbar's own bottom border doubles as the progress track: the bar sits on
           that divider so a long sweep lights up the line between the toolbar and the list. */}
-          <div className="relative">
-            {progress && <TopProgressBar fraction={progress.fraction} />}
-            <Toolbar
-              isMac={isMac}
-              hintFor={hintFor}
-              trackCount={tracks.length}
-              focusPreset={focusPreset}
-              onFocusPreset={applyFocusPreset}
-              importing={importProgress}
-              batchSummary={batchSummary}
-              batching={batching}
-              batchProgress={batchProgress}
-              analysis={analysis}
-              allAnalyzed={allAnalyzed}
-              matching={matching}
-              hasToken={!!settings?.discogsToken}
-              needsToken={needsToken}
-              autoMatchable={autoMatchable}
-              onAnalyzeAll={onAnalyzeAll}
-              onCancelAnalyze={cancelAnalysis}
-              onAutoMatch={onAutoMatchAll}
-              onCancelAutoMatch={cancelAutoMatch}
-              onFixToken={onFixToken}
-              onCancelBatch={cancelBatch}
-              onPalette={onOpenPalette}
-              onStats={onOpenStats}
-              onActivity={onToggleActivity}
-              activityRunning={activityRows.some((r) => r.status === 'running')}
-              onSettings={onOpenSettings}
-            />
-          </div>
-
-          <div className="flex min-h-0 flex-1">
-            <aside
-              style={{ width: sidebar.width }}
-              className="relative flex min-h-0 shrink-0 flex-col bg-[var(--color-panel)]"
-            >
-              <div ref={listScrollRef} className="min-h-0 flex-1 overflow-y-auto">
-                {tracks.length === 0 ? (
-                  // Empty list: the drop hint plus the Add files button, so the action that fills
-                  // this column is reachable here even before there's a header to host it.
-                  <div className="flex flex-col items-center gap-3 p-6 text-center">
-                    <p className="text-xs text-fg-faint">{tr('sidebar.dropHint')}</p>
-                    <button
-                      type="button"
-                      data-testid="add-files"
-                      onClick={onAdd}
-                      className="press flex h-8 items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
-                    >
-                      {tr('header.add')}
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <TrackListHeader
-                      tr={tr}
-                      hintFor={hintFor}
-                      search={search}
-                      setSearch={setSearch}
-                      trackSearchRef={trackSearchRef}
-                      qualityFilterRef={qualityFilterRef}
-                      filterSelection={filterSelection}
-                      setFilterSelection={setFilterSelection}
-                      librarySource={librarySource}
-                      qualityTally={qualityTally}
-                      formatTally={formatTally}
-                      sortBy={sortBy}
-                      setSortBy={setSortBy}
-                      sortDir={sortDir}
-                      toggleSortDir={toggleSortDir}
-                      tracks={tracks}
-                      visibleTracks={visibleTracks}
-                      selectedId={selectedId}
-                      selectedIds={selectedIds}
-                      selectedPosition={selectedPosition}
-                      onAdd={onAdd}
-                      onSelectAllTracks={onSelectAllTracks}
-                      scrollToSelected={scrollToSelected}
-                      onFillAll={onFillAll}
-                      onFindReplace={onFindReplace}
-                      onClearAll={onClearAll}
-                      onTrashSelected={onTrashSelected}
-                      onTrashSuspects={onTrashSuspects}
-                    />
-                    {visibleTracks.length === 0 ? (
-                      <div className="flex flex-col items-center gap-3 p-6 text-center">
-                        <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
-                        {(search || filterActive) && (
-                          <button
-                            type="button"
-                            data-testid="reset-view"
-                            onClick={() => {
-                              setSearch('')
-                              setFilterSelection(EMPTY_FILTER)
-                            }}
-                            className="press rounded-md border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1 text-xs text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)]"
-                          >
-                            {tr('sidebar.search.reset')}
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <TrackList
-                        tracks={visibleTracks}
-                        selectedId={selectedId}
-                        selectedIds={selectedIdSet}
-                        outputFormat={
-                          settings?.outputFormat === 'source'
-                            ? 'aiff'
-                            : (settings?.outputFormat ?? 'aiff')
-                        }
-                        onSelect={onSelectTrack}
-                        onActivate={toggleTrack}
-                        onRemove={removeFromList}
-                        onPrefetch={handlePrefetch}
-                        renderMenu={renderTrackMenu}
-                        scrollRootRef={listScrollRef}
-                        onVisible={onTrackVisible}
-                        rowRegistry={rowEls}
-                      />
-                    )}
-                  </>
-                )}
-              </div>
-              {playerVisible && playerTrack && (
-                <LivePlayer
-                  track={playerTrack}
-                  audioRef={audioRef}
-                  continuous={settings?.continuousPlayback ?? false}
-                  onToggleContinuous={() =>
-                    saveSettings({ continuousPlayback: !(settings?.continuousPlayback ?? false) })
-                  }
-                  showWaveform={settings?.showWaveform ?? true}
-                  onToggleWaveform={() =>
-                    saveSettings({ showWaveform: !(settings?.showWaveform ?? true) })
-                  }
-                  onReveal={() => revealSelection(playerTrack.id)}
-                  onClose={closePlayer}
-                />
-              )}
-            </aside>
-
-            <ResizeHandle
-              onPointerDown={sidebar.onPointerDown}
-              // Fitting to content only means something once there are track names to
-              // measure; on an empty list the gesture is a no-op, so drop it and its hint.
-              onDoubleClick={tracks.length > 0 ? autoFitSidebar : undefined}
-              title={tracks.length > 0 ? tr('sidebar.fitHint') : undefined}
-            />
-
-            <main className="min-w-0 flex-1 bg-[var(--color-panel)]">
-              {selected ? (
-                // Its own boundary so a render bug in the editor degrades to "this panel
-                // crashed" — the imported crate and the list stay alive. Keyed by track,
-                // which both remounts the editor per track (its state-seeding contract)
-                // and clears a tripped fallback on the next track switch.
-                <ErrorBoundary
-                  key={selected.id}
-                  className="flex h-full flex-col gap-4 overflow-auto p-8 text-sm"
-                >
-                  <Editor
-                    item={selected}
-                    libraryIndex={libraryIndex}
-                    searchInputRef={searchInputRef}
-                    selectedTracks={selectedTracks}
-                    onApplyMatches={onApplyMatches}
-                    onProcessAll={onProcessAllSelected}
-                    onAddAllToAppleMusic={onAddAllSelectedToAppleMusic}
-                    onChangeAllMeta={onChangeAllMeta}
-                    onApplyCoverAll={onApplyCoverAll}
-                    onDeriveTags={deriveTracksUndoable}
-                    onApplyTitleFormat={applyTitleFormat}
-                    onRecordUndo={recordMetaUndo}
-                    onClearExtras={onClearExtras}
-                    onFieldFocusChange={onFieldFocusChange}
-                    onChange={onEditorChange}
-                    onProcess={onProcessSelected}
-                    onCancel={onCancelSelected}
-                    onReencode={onReencodeSelected}
-                    onFormatChange={onFormatChange}
-                    onDestinationChange={onDestinationChange}
-                    onNormalizeChange={onNormalizeChange}
-                    onDeclickChange={onDeclickChange}
-                    onAddToAppleMusic={onAddSelectedToAppleMusic}
-                    onTrashOriginal={onTrashOriginal}
-                    onRemoveOldMusicCopy={onRemoveOldMusicCopy}
-                    onOpenSettings={onOpenSettings}
-                    onResultsWidthChange={onResultsWidthChange}
-                    onShowLoudnessHelp={onShowLoudnessHelp}
-                    onOpenRename={onOpenRename}
-                    onRegenerateName={onRegenerateName}
-                    onTrimDetectedAll={onTrimDetectedAll}
-                    onCopyFilename={onCopyFilename}
-                    onSearchWeb={onSearchWeb}
-                    onExportCollection={onOpenExport}
-                  />
-                </ErrorBoundary>
-              ) : (
-                <div className="flex h-full items-center justify-center p-10 text-center">
-                  <div className="max-w-sm">
-                    <AudioLines
-                      aria-hidden="true"
-                      strokeWidth={1.75}
-                      className="mx-auto mb-5 h-12 w-12 text-fg-faint"
-                    />
-                    <p className="text-[15px] font-medium text-balance text-fg-muted">
-                      {tr('empty.title')}
-                    </p>
-                    <p className="mt-1.5 text-sm text-pretty text-fg-dim">
-                      {tr(
-                        window.api.platform === 'darwin'
-                          ? 'empty.subtitle'
-                          : 'empty.subtitleNoMusic',
-                      )}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </main>
-          </div>
-
-          {dragging && (
-            <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-[var(--color-accent)]/10 ring-2 ring-inset ring-[var(--color-accent)]">
-              <span className="rounded-xl bg-[var(--color-panel)] px-6 py-3 text-lg font-medium">
-                {tr('drop.release')}
-              </span>
+            <div className="relative">
+              {progress && <TopProgressBar fraction={progress.fraction} />}
+              <Toolbar
+                isMac={isMac}
+                hintFor={hintFor}
+                trackCount={tracks.length}
+                focusPreset={focusPreset}
+                onFocusPreset={applyFocusPreset}
+                importing={importProgress}
+                batchSummary={batchSummary}
+                batching={batching}
+                batchProgress={batchProgress}
+                analysis={analysis}
+                allAnalyzed={allAnalyzed}
+                matching={matching}
+                hasToken={!!settings?.discogsToken}
+                needsToken={needsToken}
+                autoMatchable={autoMatchable}
+                onAnalyzeAll={onAnalyzeAll}
+                onCancelAnalyze={cancelAnalysis}
+                onAutoMatch={onAutoMatchAll}
+                onCancelAutoMatch={cancelAutoMatch}
+                onFixToken={onFixToken}
+                onCancelBatch={cancelBatch}
+                onPalette={onOpenPalette}
+                onStats={onOpenStats}
+                onActivity={onToggleActivity}
+                activityRunning={activityRows.some((r) => r.status === 'running')}
+                onSettings={onOpenSettings}
+              />
             </div>
-          )}
 
-          {/* The lazy overlays load their chunk on first open; fallback={null} because an
+            <div className="flex min-h-0 flex-1">
+              <aside
+                style={{ width: sidebar.width }}
+                className="relative flex min-h-0 shrink-0 flex-col bg-[var(--color-panel)]"
+              >
+                <div ref={listScrollRef} className="min-h-0 flex-1 overflow-y-auto">
+                  {tracks.length === 0 ? (
+                    // Empty list: the drop hint plus the Add files button, so the action that fills
+                    // this column is reachable here even before there's a header to host it.
+                    <div className="flex flex-col items-center gap-3 p-6 text-center">
+                      <p className="text-xs text-fg-faint">{tr('sidebar.dropHint')}</p>
+                      <button
+                        type="button"
+                        data-testid="add-files"
+                        onClick={onAdd}
+                        className="press flex h-8 items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
+                      >
+                        {tr('header.add')}
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <TrackListHeader
+                        tr={tr}
+                        hintFor={hintFor}
+                        search={search}
+                        setSearch={setSearch}
+                        trackSearchRef={trackSearchRef}
+                        qualityFilterRef={qualityFilterRef}
+                        filterSelection={filterSelection}
+                        setFilterSelection={setFilterSelection}
+                        librarySource={librarySource}
+                        qualityTally={qualityTally}
+                        formatTally={formatTally}
+                        sortBy={sortBy}
+                        setSortBy={setSortBy}
+                        sortDir={sortDir}
+                        toggleSortDir={toggleSortDir}
+                        tracks={tracks}
+                        visibleTracks={visibleTracks}
+                        selectedId={selectedId}
+                        selectedIds={selectedIds}
+                        selectedPosition={selectedPosition}
+                        onAdd={onAdd}
+                        onSelectAllTracks={onSelectAllTracks}
+                        scrollToSelected={scrollToSelected}
+                        onFillAll={onFillAll}
+                        onFindReplace={onFindReplace}
+                        onClearAll={onClearAll}
+                        onTrashSelected={onTrashSelected}
+                        onTrashSuspects={onTrashSuspects}
+                      />
+                      {visibleTracks.length === 0 ? (
+                        <div className="flex flex-col items-center gap-3 p-6 text-center">
+                          <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
+                          {(search || filterActive) && (
+                            <button
+                              type="button"
+                              data-testid="reset-view"
+                              onClick={() => {
+                                setSearch('')
+                                setFilterSelection(EMPTY_FILTER)
+                              }}
+                              className="press rounded-md border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1 text-xs text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)]"
+                            >
+                              {tr('sidebar.search.reset')}
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <TrackList
+                          tracks={visibleTracks}
+                          selectedId={selectedId}
+                          selectedIds={selectedIdSet}
+                          outputFormat={
+                            settings?.outputFormat === 'source'
+                              ? 'aiff'
+                              : (settings?.outputFormat ?? 'aiff')
+                          }
+                          onSelect={onSelectTrack}
+                          onActivate={toggleTrack}
+                          onRemove={removeFromList}
+                          onPrefetch={handlePrefetch}
+                          renderMenu={renderTrackMenu}
+                          scrollRootRef={listScrollRef}
+                          onVisible={onTrackVisible}
+                          rowRegistry={rowEls}
+                        />
+                      )}
+                    </>
+                  )}
+                </div>
+                {playerVisible && playerTrack && (
+                  <LivePlayer
+                    track={playerTrack}
+                    audioRef={audioRef}
+                    continuous={settings?.continuousPlayback ?? false}
+                    onToggleContinuous={() =>
+                      saveSettings({ continuousPlayback: !(settings?.continuousPlayback ?? false) })
+                    }
+                    showWaveform={settings?.showWaveform ?? true}
+                    onToggleWaveform={() =>
+                      saveSettings({ showWaveform: !(settings?.showWaveform ?? true) })
+                    }
+                    onReveal={() => revealSelection(playerTrack.id)}
+                    onClose={closePlayer}
+                  />
+                )}
+              </aside>
+
+              <ResizeHandle
+                onPointerDown={sidebar.onPointerDown}
+                // Fitting to content only means something once there are track names to
+                // measure; on an empty list the gesture is a no-op, so drop it and its hint.
+                onDoubleClick={tracks.length > 0 ? autoFitSidebar : undefined}
+                title={tracks.length > 0 ? tr('sidebar.fitHint') : undefined}
+              />
+
+              <main className="min-w-0 flex-1 bg-[var(--color-panel)]">
+                {selected ? (
+                  // Its own boundary so a render bug in the editor degrades to "this panel
+                  // crashed" — the imported crate and the list stay alive. Keyed by track,
+                  // which both remounts the editor per track (its state-seeding contract)
+                  // and clears a tripped fallback on the next track switch.
+                  <ErrorBoundary
+                    key={selected.id}
+                    className="flex h-full flex-col gap-4 overflow-auto p-8 text-sm"
+                  >
+                    <Editor
+                      item={selected}
+                      libraryIndex={libraryIndex}
+                      searchInputRef={searchInputRef}
+                      selectedTracks={selectedTracks}
+                      onApplyMatches={onApplyMatches}
+                      onProcessAll={onProcessAllSelected}
+                      onAddAllToAppleMusic={onAddAllSelectedToAppleMusic}
+                      onChangeAllMeta={onChangeAllMeta}
+                      onApplyCoverAll={onApplyCoverAll}
+                      onDeriveTags={deriveTracksUndoable}
+                      onApplyTitleFormat={applyTitleFormat}
+                      onRecordUndo={recordMetaUndo}
+                      onClearExtras={onClearExtras}
+                      onFieldFocusChange={onFieldFocusChange}
+                      onChange={onEditorChange}
+                      onProcess={onProcessSelected}
+                      onCancel={onCancelSelected}
+                      onReencode={onReencodeSelected}
+                      onFormatChange={onFormatChange}
+                      onDestinationChange={onDestinationChange}
+                      onNormalizeChange={onNormalizeChange}
+                      onDeclickChange={onDeclickChange}
+                      onAddToAppleMusic={onAddSelectedToAppleMusic}
+                      onTrashOriginal={onTrashOriginal}
+                      onRemoveOldMusicCopy={onRemoveOldMusicCopy}
+                      onResultsWidthChange={onResultsWidthChange}
+                      onShowLoudnessHelp={onShowLoudnessHelp}
+                      onOpenRename={onOpenRename}
+                      onRegenerateName={onRegenerateName}
+                      onTrimDetectedAll={onTrimDetectedAll}
+                      onCopyFilename={onCopyFilename}
+                      onSearchWeb={onSearchWeb}
+                      onExportCollection={onOpenExport}
+                    />
+                  </ErrorBoundary>
+                ) : (
+                  <div className="flex h-full items-center justify-center p-10 text-center">
+                    <div className="max-w-sm">
+                      <AudioLines
+                        aria-hidden="true"
+                        strokeWidth={1.75}
+                        className="mx-auto mb-5 h-12 w-12 text-fg-faint"
+                      />
+                      <p className="text-[15px] font-medium text-balance text-fg-muted">
+                        {tr('empty.title')}
+                      </p>
+                      <p className="mt-1.5 text-sm text-pretty text-fg-dim">
+                        {tr(
+                          window.api.platform === 'darwin'
+                            ? 'empty.subtitle'
+                            : 'empty.subtitleNoMusic',
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </main>
+            </div>
+
+            {dragging && (
+              <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-[var(--color-accent)]/10 ring-2 ring-inset ring-[var(--color-accent)]">
+                <span className="rounded-xl bg-[var(--color-panel)] px-6 py-3 text-lg font-medium">
+                  {tr('drop.release')}
+                </span>
+              </div>
+            )}
+
+            {/* The lazy overlays load their chunk on first open; fallback={null} because an
           overlay arriving a frame late is invisible (it fades in anyway). */}
-          <Overlays
-            activeModal={activeModal}
-            settings={settings}
-            selected={selected}
-            bulkTracks={bulkTracks}
-            visibleTracks={visibleTracks}
-            getCommands={getCommands}
-            editorFormatRef={editorFormatRef}
-            close={overlays.close}
-            closeIfPalette={overlays.closeIfPalette}
-            closeSettings={closeSettings}
-            saveSettings={saveSettings}
-            setSettings={setSettings}
-            setThemePreview={setThemePreview}
-            finishOnboarding={finishOnboarding}
-            deriveTracksUndoable={deriveTracksUndoable}
-            updateTrack={updateTrack}
-            revealSelection={revealSelection}
-          />
-
-          <ToastStack toasts={toasts} onExpire={expireToast} onClose={closeToast} />
-          {activityOpen && (
-            <ActivityPanel
-              rows={activityRows}
-              onClear={clearActivity}
-              onClose={() => setActivityOpen(false)}
-              onCopy={(text) => {
-                void window.api.copyText(text)
-                setNotice(tr('notices.copiedActivity'))
-              }}
-              geometry={clampPanelGeometry(settings?.activityPanel, {
-                width: window.innerWidth,
-                height: window.innerHeight,
-              })}
-              onGeometryChange={(g) =>
-                saveSettings({
-                  activityPanel: {
-                    x: g.pos.x,
-                    y: g.pos.y,
-                    width: g.size.width,
-                    height: g.size.height,
-                  },
-                })
-              }
+            <Overlays
+              activeModal={activeModal}
+              settings={settings}
+              selected={selected}
+              bulkTracks={bulkTracks}
+              visibleTracks={visibleTracks}
+              getCommands={getCommands}
+              editorFormatRef={editorFormatRef}
+              close={overlays.close}
+              closeIfPalette={overlays.closeIfPalette}
+              closeSettings={closeSettings}
+              saveSettings={saveSettings}
+              setSettings={setSettings}
+              setThemePreview={setThemePreview}
+              finishOnboarding={finishOnboarding}
+              deriveTracksUndoable={deriveTracksUndoable}
+              updateTrack={updateTrack}
+              revealSelection={revealSelection}
             />
-          )}
-          {confettiBurst > 0 && <Confetti key={confettiBurst} />}
-        </div>
-      </ToastProvider>
+
+            <ToastStack toasts={toasts} onExpire={expireToast} onClose={closeToast} />
+            {activityOpen && (
+              <ActivityPanel
+                rows={activityRows}
+                onClear={clearActivity}
+                onClose={() => setActivityOpen(false)}
+                onCopy={(text) => {
+                  void window.api.copyText(text)
+                  setNotice(tr('notices.copiedActivity'))
+                }}
+                geometry={clampPanelGeometry(settings?.activityPanel, {
+                  width: window.innerWidth,
+                  height: window.innerHeight,
+                })}
+                onGeometryChange={(g) =>
+                  saveSettings({
+                    activityPanel: {
+                      x: g.pos.x,
+                      y: g.pos.y,
+                      width: g.size.width,
+                      height: g.size.height,
+                    },
+                  })
+                }
+              />
+            )}
+            {confettiBurst > 0 && <Confetti key={confettiBurst} />}
+          </div>
+        </ToastProvider>
+      </OpenSettingsProvider>
     </SettingsProvider>
   )
 }

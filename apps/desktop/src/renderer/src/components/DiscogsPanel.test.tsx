@@ -44,7 +44,6 @@ function renderPanel(b: DiscogsBrowser) {
       onApplyMatches={undefined}
       selectTrack={vi.fn()}
       searchInputRef={createRef<HTMLInputElement>()}
-      onOpenSettings={vi.fn()}
       formatFilter={[]}
       resultsWidth={315}
       onResultsWidthChange={vi.fn()}

@@ -5,6 +5,7 @@ import { Trans, useTranslation } from 'react-i18next'
 import type { ReleaseTrack, SearchProviderId } from '../../../shared/types'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { DEFAULT_RESULTS_WIDTH } from '../lib/focusPreset'
+import { useOpenSettings } from '../lib/openSettingsContext'
 import type { ReleaseMetaPatch } from '../lib/release'
 import { contentDeficit } from '../lib/resize'
 import type { TrackItem } from '../types'
@@ -36,7 +37,6 @@ interface Props {
     | undefined
   selectTrack: (track: ReleaseTrack) => void
   searchInputRef: React.RefObject<HTMLInputElement | null>
-  onOpenSettings: (tab?: 'general' | 'search' | 'naming') => void
   // The release formats search is restricted to (Settings → Search). Empty = no filter.
   // Shown as a hint so a thinned or empty result set reads as the filter at work.
   formatFilter: string[]
@@ -66,12 +66,12 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   onApplyMatches,
   selectTrack,
   searchInputRef,
-  onOpenSettings,
   formatFilter,
   resultsWidth,
   onResultsWidthChange,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const onOpenSettings = useOpenSettings()
   const {
     query,
     setQuery,

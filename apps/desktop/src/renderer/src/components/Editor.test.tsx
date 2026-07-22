@@ -18,6 +18,7 @@ import { resetEditorSections } from '../hooks/useEditorSections'
 import i18n from '../i18n'
 import { type AppleMusicIndex, buildLibraryIndex } from '../lib/appleMusicLibrary'
 import { createQueryClient } from '../lib/queryClient'
+import { OpenSettingsProvider } from '../lib/openSettingsContext'
 import { SettingsProvider } from '../lib/settingsContext'
 import type { TrackItem } from '../types'
 import { Editor } from './Editor'
@@ -162,30 +163,33 @@ function renderEditor(
   const onSearchWeb = vi.fn()
   const onExportCollection = vi.fn()
   renderWithQuery(
-    <Editor
-      item={item(over)}
-      libraryIndex={props.libraryIndex ?? null}
-      searchInputRef={createRef<HTMLInputElement>()}
-      onChange={onChange}
-      onProcess={onProcess}
-      onReencode={onReencode}
-      onFormatChange={onFormatChange}
-      onDestinationChange={onDestinationChange}
-      onDeriveTags={onDeriveTags}
-      onApplyTitleFormat={onApplyTitleFormat}
-      onAddToAppleMusic={vi.fn()}
-      onTrashOriginal={onTrashOriginal}
-      onRemoveOldMusicCopy={onRemoveOldMusicCopy}
-      onOpenSettings={onOpenSettings}
-      onResultsWidthChange={vi.fn()}
-      onShowLoudnessHelp={onShowLoudnessHelp}
-      onOpenRename={onOpenRename}
-      onRegenerateName={onRegenerateName}
-      onTrimDetectedAll={vi.fn()}
-      onCopyFilename={onCopyFilename}
-      onSearchWeb={onSearchWeb}
-      onExportCollection={onExportCollection}
-    />,
+    // The panel reads "open Settings" from context now, so the spy rides a provider
+    // exactly as App mounts it.
+    <OpenSettingsProvider open={onOpenSettings}>
+      <Editor
+        item={item(over)}
+        libraryIndex={props.libraryIndex ?? null}
+        searchInputRef={createRef<HTMLInputElement>()}
+        onChange={onChange}
+        onProcess={onProcess}
+        onReencode={onReencode}
+        onFormatChange={onFormatChange}
+        onDestinationChange={onDestinationChange}
+        onDeriveTags={onDeriveTags}
+        onApplyTitleFormat={onApplyTitleFormat}
+        onAddToAppleMusic={vi.fn()}
+        onTrashOriginal={onTrashOriginal}
+        onRemoveOldMusicCopy={onRemoveOldMusicCopy}
+        onResultsWidthChange={vi.fn()}
+        onShowLoudnessHelp={onShowLoudnessHelp}
+        onOpenRename={onOpenRename}
+        onRegenerateName={onRegenerateName}
+        onTrimDetectedAll={vi.fn()}
+        onCopyFilename={onCopyFilename}
+        onSearchWeb={onSearchWeb}
+        onExportCollection={onExportCollection}
+      />
+    </OpenSettingsProvider>,
     {
       outputFormat,
       // The membership badge follows the conversion destination now; Apple Music (the
@@ -690,7 +694,6 @@ function MultiHarness() {
         onChange={vi.fn()}
         onProcess={vi.fn()}
         onAddToAppleMusic={vi.fn()}
-        onOpenSettings={vi.fn()}
         onShowLoudnessHelp={vi.fn()}
         onOpenRename={vi.fn()}
         onRegenerateName={vi.fn()}
@@ -1005,7 +1008,6 @@ describe('Editor multi-select', () => {
         onChange={vi.fn()}
         onProcess={vi.fn()}
         onAddToAppleMusic={vi.fn()}
-        onOpenSettings={vi.fn()}
         onShowLoudnessHelp={vi.fn()}
         onOpenRename={vi.fn()}
         onRegenerateName={vi.fn()}
