@@ -902,8 +902,10 @@ function registerIpc(): void {
 
   // startDrag must hand the OS a file that already exists, and it can't run after
   // an await inside dragstart, so the renderer prepares the processed cover ahead
-  // of the gesture and hands back its path. The temp file is left for the OS to
-  // reap — deleting it here would race the in-flight drag that copies from it.
+  // of the gesture and hands back its path. Deleting it here would race the
+  // in-flight drag that copies from it, so it rides the tmp manifest instead: the
+  // next launch sweeps it (Windows never purges %TEMP% on its own). Allowed in
+  // mediaAccess because cover:drag validates the path it gets back against it.
   ipcMain.handle('cover:prepareDrag', async (_e, src: CoverSource) => {
     const settings = getSettings()
     const prepared = await prepareProcessedCover(src, {
@@ -911,6 +913,10 @@ function registerIpc(): void {
       square: settings.coverSquare,
       upscale: settings.coverUpscale,
     })
+    if (prepared) {
+      tmpManifest.track(prepared.path)
+      mediaAccess.allow(prepared.path)
+    }
     return prepared?.path ?? null
   })
 
@@ -945,7 +951,10 @@ function registerIpc(): void {
     return null
   })
 
+  // Same allowlist the shell:* channels apply: a drag hands the OS a file path, so
+  // only paths this app itself produced (prepareDrag's covers) may ride it.
   ipcMain.on('cover:drag', (e, path: string) => {
+    if (!mediaAccess.isAllowed(path)) return
     e.sender.startDrag({
       file: path,
       icon: nativeImage.createFromPath(path).resize({ width: 128, height: 128 }),
@@ -956,7 +965,9 @@ function registerIpc(): void {
   // prepare pass — hand the OS the untouched path so a row can be dropped straight
   // onto Spek (or any app) to inspect the original track.
   ipcMain.on('track:drag', (e, { paths, coverUrl }: { paths: string[]; coverUrl?: string }) => {
-    if (paths.length === 0) return
+    // Every draggable row is a track the app handed the renderer, so an unknown path
+    // here can only be a forged message — refuse the whole drag like shell:* refuses.
+    if (paths.length === 0 || !paths.every((p) => mediaAccess.isAllowed(p))) return
     // `files` carries the whole selection; `file` is the (required) single-item field
     // Electron ignores once `files` is set. One icon represents the whole drag.
     e.sender.startDrag({ file: paths[0], files: paths, icon: trackDragIcon(coverUrl) })
