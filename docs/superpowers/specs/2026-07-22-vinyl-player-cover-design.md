@@ -21,6 +21,16 @@ with subtle grooves, the track's cover art clipped into a circular center label
 - No embedded cover: same disc, plain label in `var(--color-panel)` with the
   small `Music` icon, mirroring the current placeholder.
 
+### Iteration 2 (same day, after user reference SVGs)
+
+- Specular sheen: two soft diagonal light reflections (top-left, bottom-right)
+  on a static overlay that does NOT rotate — the sheen is the light source, so
+  it stays put while the grooves and label spin underneath. The rotating disc
+  becomes an inner element; the outer wrapper carries the sheen overlay.
+- Coverless label: Surco brand colors — `var(--color-accent)` fill with the
+  `Music` icon in `var(--color-on-accent)` — instead of the panel gray.
+- Cover label: unchanged image, plus a thin dark ring seating it on the disc.
+
 ## Motion
 
 - CSS keyframe `vinyl-spin`, linear, infinite, ~4s per revolution (real 33⅓rpm
