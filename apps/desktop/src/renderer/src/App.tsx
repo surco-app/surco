@@ -12,7 +12,6 @@ import type {
   NormalizeConfig,
   OutputFormat,
   SearchProviderId,
-  Settings,
   ThemePref,
   TrackMetadata,
 } from '../../shared/types'
@@ -36,6 +35,7 @@ import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
 import { useEditorPicks } from './hooks/useEditorPicks'
 import { editorSectionOpen, useMaximizedSection } from './hooks/useEditorSections'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import { useLaunchModals } from './hooks/useLaunchModals'
 import { useListNavigation } from './hooks/useListNavigation'
 import { useMetadataClipboard } from './hooks/useMetadataClipboard'
 import { useMetaUndo } from './hooks/useMetaUndo'
@@ -51,18 +51,16 @@ import { NEW_TRACKS_PROMPT_TIMEOUT_MS, useTrackLibrary } from './hooks/useTrackL
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { useTracksView, type ViewCacheEntry } from './hooks/useTracksView'
 import { waveformOptions } from './hooks/useWaveform'
-import { nextLocale, resolveLocale } from './i18n/locale'
+import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries } from './lib/analysisQueries'
 import type { AppleMusicIndex, StaleLibraryCopy } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
 import { acceptReviewPatch, type MatchCleanup, tracksToAutoMatch } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
-import { changelogReleases } from './lib/changelog'
 import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { deriveTagPatches } from './lib/deriveTags'
 import type { Destination } from './lib/destination'
-import { shouldShowDonateNudge } from './lib/donateNudge'
 import { DEFAULT_REQUIRED_FIELDS } from './lib/fields'
 import {
   activeFocusPreset,
@@ -72,7 +70,6 @@ import {
 } from './lib/focusPreset'
 import { isTypingTarget } from './lib/keymap'
 import { librarySourceOf } from './lib/librarySource'
-import { shouldShowOnboarding } from './lib/onboarding'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
 import { isMacOS } from './lib/platform'
@@ -104,7 +101,6 @@ import {
   type TrackSort,
 } from './lib/triage'
 import { detectTrim } from './lib/trim'
-import { selectWhatsNew } from './lib/whatsNew'
 import type { CopiedTags, TrackItem } from './types'
 
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
@@ -202,45 +198,16 @@ export default function App(): React.JSX.Element {
   const settingsOpen = activeModal?.type === 'settings'
   const { settings, setSettings, saveSettings, setThemePreview } = useSettings({
     settingsOpen,
-    onFirstLoad: (s) => {
-      if (shouldShowOnboarding(s)) {
-        overlays.openOnboarding()
-      } else {
-        // Post-update news: the changelog items shipped between the version this
-        // machine last saw and the one now running (lib/whatsNew decides whether there
-        // is anything). The modal only gets the last-seen stamp — it re-selects the
-        // localized items itself, so the news follows a language switch live.
-        const news = selectWhatsNew(
-          changelogReleases(resolveLocale(s.language)),
-          s,
-          window.api.version,
-        )
-        if (news) overlays.openWhatsNew(s.lastSeenChangelogVersion)
-      }
-      // Stamped on every version change — including the fresh install that showed
-      // onboarding instead — so the popup fires once per update and a brand-new
-      // user's second launch can't "discover" the current changelog.
-      if (s.lastSeenChangelogVersion !== window.api.version) {
-        // Through the hook's save (not a bare window.api call) so a failed stamp
-        // rolls back and surfaces the error card instead of rejecting into the void.
-        saveSettings({ lastSeenChangelogVersion: window.api.version })
-      }
-    },
+    // Fired async after the first read lands, so closing over the hook defined right
+    // below is safe — the launch decision itself lives in useLaunchModals.
+    onFirstLoad: (s) => decideOnLoad(s),
     onLoadError: () => setAppError({ kind: 'settingsLoad' }),
     onSaveError: () => setAppError({ kind: 'settingsSave' }),
   })
-  // Evaluated after a conversion run — the moment of value, when the savings summary
-  // means something. Re-reads settings so the conversion just recorded in main is
-  // counted and the modal shows the live total; never stomps an open modal. The
-  // showing is stamped immediately (not on close) so a quick quit still counts toward
-  // the cooldown and it can never appear twice in a row.
-  const maybeShowDonateNudge = useStableCallback(async () => {
-    if (activeModal !== null) return
-    const s = await window.api.getSettings()
-    if (!shouldShowDonateNudge(s, new Date(), Math.random())) return
-    setSettings(s)
-    overlays.openDonateNudge()
-    saveSettings({ donateNudgeLastShown: new Date().toISOString() })
+  const { decideOnLoad, maybeShowDonateNudge, finishOnboarding } = useLaunchModals({
+    overlays,
+    saveSettings,
+    setSettings,
   })
   // Quality triage filter, free-text search and display order — read from the store with a
   // stable setter each (field comments live in appStore).
@@ -790,11 +757,6 @@ export default function App(): React.JSX.Element {
   function closeSettings(): void {
     overlays.close()
     setThemePreview(null)
-  }
-
-  function finishOnboarding(patch: Partial<Settings>): void {
-    saveSettings(patch)
-    overlays.close()
   }
 
   const sidebar = useResizableWidth(300, 300, 600)
