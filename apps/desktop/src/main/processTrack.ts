@@ -1,5 +1,6 @@
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
+import { resolveJobFormat } from '../shared/format'
 import type {
   DeclickMode,
   NormalizeConfig,
@@ -123,7 +124,10 @@ export async function runProcessTrack(
     const coverPath = prepared?.path
 
     stage('converting')
-    const format = job.format ?? settings.outputFormat
+    // job.format is always set by the renderer's job builder; this fallback only
+    // guards the type, since settings.outputFormat may be 'source' and 'source' must
+    // never reach the conversion pipeline.
+    const format = job.format ?? resolveJobFormat(settings.outputFormat, job.inputPath, 'aiff')
     // Every destination facet prefers the job's pin over the live setting (see the
     // ProcessJob comments): the editor's one-shot destination pick and the batch pin
     // both ride the job, so a Settings change can't redirect a conversion in flight.

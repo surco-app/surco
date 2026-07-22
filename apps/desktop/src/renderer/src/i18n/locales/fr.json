@@ -683,13 +683,14 @@
     "outputDir": "Dossier de sortie",
     "outputFormat": "Format par défaut",
     "formats": {
+      "source": "Comme la source",
       "aiff": "AIFF",
       "alac": "ALAC",
       "mp3": "MP3",
       "wav": "WAV",
       "flac": "FLAC"
     },
-    "outputFormatHint": "AIFF/WAV/FLAC sont sans perte (FLAC compressé) ; le MP3 est plus léger. Un fichier déjà dans le format est copié sans ré-encodage.",
+    "outputFormatHint": "« Comme la source » garde chaque fichier dans son propre format, donc un lot mixte n'est jamais ré-encodé. AIFF/WAV/FLAC sont sans perte (FLAC compressé) ; le MP3 est plus léger. Un fichier déjà dans le format est copié sans ré-encodage.",
     "mp3Quality": "Qualité MP3",
     "mp3Qualities": {
       "320": "320",

@@ -2,6 +2,7 @@ import { Check, ChevronDown } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
 import type { OutputFormat, ProcessStage } from '../../../shared/types'
 import type { Destination } from '../lib/destination'
 import { exportButtonLabel } from '../lib/exportLabel'
@@ -9,7 +10,7 @@ import { STAGE_PROGRESS } from '../lib/progress'
 import type { TrackItem } from '../types'
 import { Tooltip } from './Tooltip'
 
-export const FORMATS: OutputFormat[] = ['aiff', 'alac', 'mp3', 'wav', 'flac']
+export const FORMATS = OUTPUT_FORMATS
 
 interface ExportButtonProps {
   status: TrackItem['status']

@@ -1,12 +1,10 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import type { OutputFormat } from '../../../../shared/types'
+import { FORMAT_SETTINGS } from '../../../../shared/outputFormats'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { SegmentedControl } from '../SegmentedControl'
 import { SettingsField, SettingsSection } from './SettingsPrimitives'
-
-const FORMATS: OutputFormat[] = ['aiff', 'alac', 'mp3', 'wav', 'flac']
 
 interface Props {
   synced: SyncedDraft
@@ -24,7 +22,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
         <div className="flex flex-col gap-5">
           <SettingsField label={tr('settings.outputFormat')} hint={tr('settings.outputFormatHint')}>
             <SegmentedControl
-              options={FORMATS}
+              options={FORMAT_SETTINGS}
               value={synced.outputFormat}
               onChange={(id) => patch('outputFormat', id)}
               testidPrefix="settings-format"
@@ -34,7 +32,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
 
           {/* Contextual like the FLAC note: the encoder choice only matters while MP3 is
               the pick, though it applies to every MP3 export (the editor's ad-hoc ones too). */}
-          {synced.outputFormat === 'mp3' && (
+          {(synced.outputFormat === 'mp3' || synced.outputFormat === 'source') && (
             <SettingsField label={tr('settings.mp3Quality')} hint={tr('settings.mp3QualityHint')}>
               <SegmentedControl
                 options={['320', '256', '192', '160', '128', 'v0', 'v2'] as const}
@@ -70,7 +68,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
             />
           </SettingsField>
 
-          {synced.outputFormat === 'flac' && (
+          {(synced.outputFormat === 'flac' || synced.outputFormat === 'source') && (
             <SettingsField
               label={tr('settings.flacCompression')}
               hint={tr('settings.flacCompressionHint')}

@@ -683,13 +683,14 @@
     "outputDir": "Output folder",
     "outputFormat": "Default format",
     "formats": {
+      "source": "Same as source",
       "aiff": "AIFF",
       "alac": "ALAC",
       "mp3": "MP3",
       "wav": "WAV",
       "flac": "FLAC"
     },
-    "outputFormatHint": "AIFF/WAV/FLAC are lossless (FLAC compressed); MP3 is smaller. A file already in the format is copied without re-encoding.",
+    "outputFormatHint": "“Same as source” keeps each file in its own format, so a mixed batch is never re-encoded. AIFF/WAV/FLAC are lossless (FLAC compressed); MP3 is smaller. A file already in the format is copied without re-encoding.",
     "mp3Quality": "MP3 quality",
     "mp3Qualities": {
       "320": "320",

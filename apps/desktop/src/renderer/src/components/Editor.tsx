@@ -4,7 +4,7 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
-import { editsInPlace, formatMatchesInput } from '../../../shared/format'
+import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
 import type {
   DeclickMode,
@@ -285,15 +285,17 @@ export const Editor = memo(function Editor({
   // The chosen export format, seeded from the Settings default. The format menu
   // only updates this; conversion waits for a deliberate click on the main button.
   // The Editor remounts per track (key={track.id}), so each track starts from the
-  // default rather than inheriting the last track's pick.
-  const [format, setFormat] = useState(outputFormat)
+  // default rather than inheriting the last track's pick. 'source' is resolved
+  // against this track right away — everything downstream (onProcess, in-place
+  // checks) works with a real OutputFormat, never the setting itself.
+  const [format, setFormat] = useState(resolveJobFormat(outputFormat, item.inputPath, 'aiff'))
   // The chosen destination, same one-shot contract as the format: seeded from the
   // Settings booleans, updated only by the split-button menu, reset by the per-track
   // remount, never written back to Settings.
   const [destination, setDestination] = useState(() =>
     toDestination(
       addToAppleMusic,
-      outputFormat === 'flac',
+      format === 'flac',
       overwriteOriginal,
       addToEngineDj,
       convertBesideOriginal,

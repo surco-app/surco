@@ -1656,7 +1656,11 @@ export default function App(): React.JSX.Element {
                         tracks={visibleTracks}
                         selectedId={selectedId}
                         selectedIds={selectedIdSet}
-                        outputFormat={settings?.outputFormat ?? 'aiff'}
+                        outputFormat={
+                          settings?.outputFormat === 'source'
+                            ? 'aiff'
+                            : (settings?.outputFormat ?? 'aiff')
+                        }
                         onSelect={onSelectTrack}
                         onActivate={toggleTrack}
                         onRemove={removeFromList}

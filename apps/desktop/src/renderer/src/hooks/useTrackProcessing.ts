@@ -1,7 +1,14 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { DeclickMode, NormalizeConfig, OutputFormat, Settings } from '../../../shared/types'
+import { resolveJobFormat } from '../../../shared/format'
+import type {
+  DeclickMode,
+  FormatSetting,
+  NormalizeConfig,
+  OutputFormat,
+  Settings,
+} from '../../../shared/types'
 import { removeAnalysisQueries } from '../lib/analysisQueries'
 import {
   type BatchOutcome,
@@ -56,7 +63,7 @@ interface Params {
 export interface TrackProcessing {
   processOne: (
     id: string,
-    formatOverride?: OutputFormat,
+    formatOverride?: FormatSetting,
     normalizeOverride?: NormalizeConfig,
     overwriteOverride?: boolean,
     forceReencode?: boolean,
@@ -123,7 +130,7 @@ export function useTrackProcessing({
   const processOne = useStableCallback(
     async (
       id: string,
-      formatOverride?: OutputFormat,
+      formatOverride?: FormatSetting,
       normalizeOverride?: NormalizeConfig,
       overwriteOverride?: boolean,
       forceReencode?: boolean,
@@ -151,6 +158,14 @@ export function useTrackProcessing({
         })
         return 'failed'
       }
+      // The single point where the Default format setting becomes a real format. It has
+      // to happen here, per track: 'source' is meaningless to the main process, and
+      // sending `undefined` would make it read the setting itself and see 'source' too.
+      const jobFormat = resolveJobFormat(
+        formatOverride ?? settings?.outputFormat ?? 'aiff',
+        track.inputPath,
+        'aiff',
+      )
       // Re-processing an edited (stale) track resets the Apple Music state too, since
       // the file it referred to is being rewritten — the user may want to add it again.
       // musicPersistentId deliberately survives the reset: it is what turns that next
@@ -159,7 +174,7 @@ export function useTrackProcessing({
         status: 'processing',
         error: undefined,
         stage: undefined,
-        format: formatOverride ?? settings?.outputFormat ?? 'aiff',
+        format: jobFormat,
         musicStatus: undefined,
         musicError: undefined,
       })
@@ -196,7 +211,7 @@ export function useTrackProcessing({
           removeCover: track.coverRemoved,
           clearExtras: track.metaCleared,
           foreignRemoved: track.foreignRemoved,
-          format: formatOverride,
+          format: jobFormat,
           normalize: normalizeForJob(track, normalizeOverride),
           declick: declickForJob(track, declickOverride),
           trim: track.trim,
@@ -353,7 +368,7 @@ export function useTrackProcessing({
       // queued track converts under the settings the run started with, so a Settings
       // change mid-batch can't fork the run into another format or into unconfirmed
       // in-place rewrites. The rest (covers, destinations) stays live-read.
-      const pinnedFormat = formatOverride ?? settings?.outputFormat
+      const pinnedFormat: FormatSetting | undefined = formatOverride ?? settings?.outputFormat
       // A destination override IS the overwrite decision for the whole run (its facet
       // set includes overwriteOriginal), so the setting-derived pin only applies when
       // no destination was picked.

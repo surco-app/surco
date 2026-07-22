@@ -162,6 +162,38 @@ describe('nested settings from an older install', () => {
   })
 })
 
+describe('outputFormat from a synced settings.json', () => {
+  const localFile = (): string => join(app.getPath('userData'), 'settings.json')
+
+  // A Mac running an older Surco (or a rolled-back build) that predates 'source'
+  // reads a synced outputFormat it doesn't recognize as an OutputFormat.
+  // formatMatchesInput indexes INPUT_EXT by format and crashes on an unknown key;
+  // if any path dodges that crash, ffmpeg.ts's format chain falls through to an
+  // unconditional AIFF, silently re-encoding the user's MP3/WAV/FLAC files. Reading
+  // an unrecognized value must fall back to the safe default instead of reaching
+  // the conversion pipeline at all.
+  it.each(['ogg', 'source-x', null, 42])(
+    'falls back to aiff for an unrecognized stored value (%s)',
+    (bogus) => {
+      writeFileSync(localFile(), JSON.stringify({ outputFormat: bogus }))
+      expect(getSettings().outputFormat).toBe('aiff')
+    },
+  )
+
+  it('keeps a valid source value intact', () => {
+    writeFileSync(localFile(), JSON.stringify({ outputFormat: 'source' }))
+    expect(getSettings().outputFormat).toBe('source')
+  })
+
+  it.each(['aiff', 'alac', 'mp3', 'wav', 'flac'])(
+    'keeps a valid %s value intact',
+    (format) => {
+      writeFileSync(localFile(), JSON.stringify({ outputFormat: format }))
+      expect(getSettings().outputFormat).toBe(format)
+    },
+  )
+})
+
 describe('saveSettings atomicity', () => {
   // A crash or full disk mid-write must never truncate the live settings file:
   // getSettings' corrupt-file fallback would then silently reset every preference,

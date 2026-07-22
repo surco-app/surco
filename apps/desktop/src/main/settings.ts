@@ -9,7 +9,8 @@ import {
 } from '../shared/defaults'
 import { DEFAULT_DECLICK, normalizeDeclick } from '../shared/declick'
 import { DEFAULT_EDITOR_SECTIONS } from '../shared/editorSections'
-import type { Settings } from '../shared/types'
+import { FORMAT_SETTINGS } from '../shared/outputFormats'
+import type { FormatSetting, Settings } from '../shared/types'
 
 export const defaults: Settings = {
   theme: 'system',
@@ -110,6 +111,17 @@ const LOCAL_KEYS = [
   'resultsWidth',
 ] as const satisfies readonly (keyof Settings)[]
 
+// Repairs any stored value into a valid format: a synced settings.json can carry an
+// outputFormat this install doesn't recognize yet (an older build reading ahead of a
+// 'source' write, or a hand-edited/corrupt file), and formatMatchesInput indexes
+// INPUT_EXT by format with no fallback, so an unknown value crashes the conversion
+// pipeline instead of falling back to the default.
+function normalizeOutputFormat(value: unknown): FormatSetting {
+  if (typeof value === 'string' && (FORMAT_SETTINGS as readonly string[]).includes(value))
+    return value as FormatSetting
+  return defaults.outputFormat
+}
+
 function localFile(): string {
   return join(app.getPath('userData'), 'settings.json')
 }
@@ -173,6 +185,7 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
     // Not a spread-merge like the two above: a 0.49-0.50 file stores declick as a
     // bare mode string, which normalizeDeclick upgrades (and repairs) instead.
     declick: normalizeDeclick(patch.declick ?? base.declick),
+    outputFormat: normalizeOutputFormat(patch.outputFormat ?? base.outputFormat),
   }
 }
 

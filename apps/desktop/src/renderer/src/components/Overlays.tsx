@@ -159,7 +159,9 @@ export function Overlays({
           meta={selected.meta}
           initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
           extension={formatExtension(
-            editorFormatRef.current ?? settings?.outputFormat ?? 'aiff',
+            editorFormatRef.current ??
+              (settings?.outputFormat !== 'source' ? settings?.outputFormat : undefined) ??
+              'aiff',
           )}
           onApply={(outputName) => updateTrack(selected.id, { outputName })}
           onClose={close}

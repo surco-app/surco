@@ -1,4 +1,4 @@
-import type { OutputFormat } from './types'
+import type { FormatSetting, OutputFormat } from './types'
 
 // AIFF rips use both .aif and .aiff; everything else is a single extension. These
 // mirror the input-detection ffmpeg.ts uses to decide on a stream copy.
@@ -40,4 +40,23 @@ export function editsInPlace(
   overwriteOriginal = false,
 ): boolean {
   return (overwriteOriginal && format !== 'alac') || formatMatchesInput(format, inputPath)
+}
+
+// Turns the Default format setting into the format a single job will actually use.
+// 'source' keeps each file in the format it already has, which is what lets a mixed
+// batch be tagged without re-encoding — planConversion stream-copies when input and
+// output formats agree. Inputs with no matching output format (Surco imports .opus,
+// .ogg, .aac and .mp4, which no OutputFormat represents) fall back and transcode, the
+// same as they do today. ALAC is never resolved from an .m4a source: INPUT_EXT.alac
+// deliberately matches nothing, since the container may hold lossy AAC.
+export function resolveJobFormat(
+  setting: FormatSetting,
+  inputPath: string,
+  fallback: OutputFormat,
+): OutputFormat {
+  if (setting !== 'source') return setting
+  const match = (Object.keys(INPUT_EXT) as OutputFormat[]).find((f) =>
+    formatMatchesInput(f, inputPath),
+  )
+  return match ?? fallback
 }
