@@ -3,7 +3,8 @@ import type React from 'react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { autoMatchAvailable } from '../../../shared/autoMatch'
-import type { OutputFormat, SearchProviderId, Settings } from '../../../shared/types'
+import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
+import type { SearchProviderId, Settings } from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
 import { type AudioIntent, buildOnboardingPatch } from '../lib/onboarding'
 import { isMacOS } from '../lib/platform'
@@ -12,7 +13,7 @@ import { DestinationPicker } from './DestinationPicker'
 import { SegmentedControl } from './SegmentedControl'
 import { useFocusTrap } from './useFocusTrap'
 
-const FORMATS: OutputFormat[] = ['aiff', 'alac', 'mp3', 'wav', 'flac']
+const FORMATS = OUTPUT_FORMATS
 const SEARCH_PROVIDERS: SearchProviderId[] = ['discogs', 'bandcamp']
 // The optional audio intents, in the order they're offered. Correct metadata is the
 // product's core, so it's shown as an always-on row above these rather than a choice.
@@ -36,7 +37,11 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [step, setStep] = useState(0)
   const [token, setToken] = useState(settings.discogsToken)
   const [searchProviders, setSearchProviders] = useState(settings.searchProviders)
-  const [outputFormat, setOutputFormat] = useState(settings.outputFormat)
+  // No track is loaded yet to resolve 'source' against, so onboarding narrows straight
+  // to the app default — the same fallback resolveJobFormat uses when nothing matches.
+  const [outputFormat, setOutputFormat] = useState(
+    settings.outputFormat === 'source' ? 'aiff' : settings.outputFormat,
+  )
   const [outputDir, setOutputDir] = useState(settings.outputDir)
   // Seed from the one intent that maps to an existing default (the spectrum). The rest
   // start unpicked so a first-run editor is minimal until the DJ opts in.

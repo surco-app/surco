@@ -683,13 +683,14 @@
     "outputDir": "Carpeta de salida",
     "outputFormat": "Formato por defecto",
     "formats": {
+      "source": "Igual que el origen",
       "aiff": "AIFF",
       "alac": "ALAC",
       "mp3": "MP3",
       "wav": "WAV",
       "flac": "FLAC"
     },
-    "outputFormatHint": "AIFF/WAV/FLAC sin pérdida (FLAC comprimido); MP3 ocupa menos. Un archivo ya en ese formato se copia sin reconvertir.",
+    "outputFormatHint": "«Igual que el origen» mantiene cada archivo en su propio formato, así que un lote mixto nunca se reconvierte. AIFF/WAV/FLAC sin pérdida (FLAC comprimido); MP3 ocupa menos. Un archivo ya en ese formato se copia sin reconvertir.",
     "mp3Quality": "Calidad MP3",
     "mp3Qualities": {
       "320": "320",

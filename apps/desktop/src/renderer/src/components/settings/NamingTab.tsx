@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatExtension } from '../../../../shared/format'
 import type { TrackMetadata } from '../../../../shared/types'
 import { FIELD_DEFS } from '../../lib/fields'
 import { renderOutputName, renderTitle } from '../../lib/outputName'
@@ -164,7 +165,9 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
               </span>
             </p>
           }
-          preview={`${renderOutputName(synced.filenameFormat, SAMPLE_META) || '—'}.${synced.outputFormat}`}
+          preview={`${renderOutputName(synced.filenameFormat, SAMPLE_META) || '—'}.${formatExtension(
+            synced.outputFormat === 'source' ? 'aiff' : synced.outputFormat,
+          )}`}
           previewTestId="settings-format-preview"
           onChange={(v) => patch('filenameFormat', v)}
         />

@@ -6,10 +6,10 @@ import type React from 'react'
 import { createRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
+  FormatSetting,
   KeyNotation,
   LoudnessResult,
   NormalizeConfig,
-  OutputFormat,
   Settings,
   TrackMetadata,
   TrackProperties,
@@ -106,7 +106,7 @@ function item(
 
 function renderEditor(
   over: Partial<Omit<TrackItem, 'meta'>> & { id: string; meta?: Partial<TrackMetadata> },
-  outputFormat: OutputFormat = 'wav',
+  outputFormat: FormatSetting = 'wav',
   props: {
     requiredFields?: string[]
     visibleFields?: string[]
@@ -1498,6 +1498,14 @@ describe('Editor export control', () => {
   // per track, so the seed lands without App watching the selection separately.
   it('reports the seeded format up on mount', () => {
     const { onFormatChange } = renderEditor({ id: 'a' }, 'wav')
+    expect(onFormatChange).toHaveBeenCalledWith('wav')
+  })
+
+  // 'source' can never reach onProcess/onFormatChange (both OutputFormat-typed) or
+  // the in-place/re-encode checks, which all key off the item's own extension —
+  // the editor must resolve it against the track before seeding, same as a job would.
+  it('resolves a "same as source" default against the track before seeding', () => {
+    const { onFormatChange } = renderEditor({ id: 'a' }, 'source')
     expect(onFormatChange).toHaveBeenCalledWith('wav')
   })
 

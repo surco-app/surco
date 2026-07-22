@@ -683,13 +683,14 @@
     "outputDir": "Ausgabeordner",
     "outputFormat": "Standardformat",
     "formats": {
+      "source": "Wie die Quelle",
       "aiff": "AIFF",
       "alac": "ALAC",
       "mp3": "MP3",
       "wav": "WAV",
       "flac": "FLAC"
     },
-    "outputFormatHint": "AIFF/WAV/FLAC sind verlustfrei (FLAC komprimiert); MP3 ist kleiner. Eine Datei, die schon im Format vorliegt, wird ohne Neucodierung kopiert.",
+    "outputFormatHint": "„Wie die Quelle“ behält jede Datei in ihrem eigenen Format, sodass ein gemischter Stapel nie neu kodiert wird. AIFF/WAV/FLAC sind verlustfrei (FLAC komprimiert); MP3 ist kleiner. Eine Datei, die schon im Format vorliegt, wird ohne Neucodierung kopiert.",
     "mp3Quality": "MP3-Qualität",
     "mp3Qualities": {
       "320": "320",

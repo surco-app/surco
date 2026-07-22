@@ -119,4 +119,21 @@ describe('ConversionTab MP3 quality', () => {
     renderTab({ outputFormat: 'alac' })
     expect(screen.getByTestId('settings-format-alac')).toBeInTheDocument()
   })
+
+  // The format list is FORMAT_SETTINGS now (source + every OutputFormat); with a plain
+  // OutputFormat[] list, picking 'source' would leave every segment unmarked.
+  it('marks "Same as source" as the active segment when it is the pick', () => {
+    renderTab({ outputFormat: 'source' })
+    expect(screen.getByTestId('settings-format-source')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('settings-format-aiff')).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  // With 'source' picked, any of the batch's files could be MP3, lossless PCM or FLAC —
+  // so all three quality blocks must be visible at once instead of mutually exclusive.
+  it('shows every quality block at once when the format is "same as source"', () => {
+    renderTab({ outputFormat: 'source' })
+    expect(screen.getByTestId('settings-mp3-quality-320')).toBeInTheDocument()
+    expect(screen.getByTestId('settings-bit-depth-16')).toBeInTheDocument()
+    expect(screen.getByTestId('settings-flac-compression-8')).toBeInTheDocument()
+  })
 })

@@ -1,3 +1,4 @@
+import { resolveJobFormat } from '../../../shared/format'
 import type { DeclickMode, NormalizeConfig, OutputFormat, Settings } from '../../../shared/types'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
@@ -674,7 +675,12 @@ export function buildCommands(deps: CommandDeps): Command[] {
       title: tr('commands.addAppleMusic'),
       hint: hintFor('add-apple-music'),
       enabled:
-        !!selected && canAddToAppleMusic(selected, platform, settings?.outputFormat ?? 'aiff'),
+        !!selected &&
+        canAddToAppleMusic(
+          selected,
+          platform,
+          resolveJobFormat(settings?.outputFormat ?? 'aiff', selected.inputPath, 'aiff'),
+        ),
       run: () => selected && addTrackToAppleMusic(selected.id),
     },
     {
