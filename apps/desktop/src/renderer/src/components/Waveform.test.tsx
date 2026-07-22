@@ -6,8 +6,14 @@ import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WaveformResult } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
+import { drawWaveform } from '../lib/waveform'
 import '../i18n'
 import { Waveform } from './Waveform'
+
+vi.mock('../lib/waveform', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../lib/waveform')>()
+  return { ...mod, drawWaveform: vi.fn(mod.drawWaveform) }
+})
 
 const wave: WaveformResult = {
   peaks: [0.1, 0.9, 0.4, 1],
@@ -72,6 +78,44 @@ describe('Waveform', () => {
       ({ left: 0, width: 1000, top: 0, height: 96, right: 1000, bottom: 96, x: 0, y: 0 }) as DOMRect
     fireEvent.pointerDown(strip, { clientX: 250, pointerId: 1 })
     expect(onScrub).toHaveBeenCalledWith(15)
+  })
+
+  // The strip's bars must follow the theme accent instead of a hard-coded blue: the
+  // fixed rgba(96,165,250) washed out against the light theme's pale panels. The theme
+  // lives only in <html data-theme> (no React store), so the strip re-reads the token
+  // and repaints when that attribute flips mid-session.
+  it('paints the bars with the theme accent and repaints on theme change', async () => {
+    setWaveform(wave)
+    document.documentElement.style.setProperty('--color-accent', '#2959aa')
+    try {
+      renderWithQuery(
+        <Waveform
+          inputPath="/m/a.wav"
+          audioRef={{ current: null }}
+          active={false}
+          onScrub={vi.fn()}
+        />,
+      )
+      await waitFor(() =>
+        expect(drawWaveform).toHaveBeenCalledWith(
+          expect.anything(),
+          wave.peaks,
+          expect.objectContaining({ color: 'rgba(41, 89, 170, 0.8)' }),
+        ),
+      )
+      document.documentElement.style.setProperty('--color-accent', '#7aa2f7')
+      document.documentElement.setAttribute('data-theme', 'dark')
+      await waitFor(() =>
+        expect(drawWaveform).toHaveBeenCalledWith(
+          expect.anything(),
+          wave.peaks,
+          expect.objectContaining({ color: 'rgba(122, 162, 247, 0.8)' }),
+        ),
+      )
+    } finally {
+      document.documentElement.style.removeProperty('--color-accent')
+      document.documentElement.removeAttribute('data-theme')
+    }
   })
 
   it('scrubs against the playback duration before the peaks finish decoding', async () => {

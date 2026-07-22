@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useWaveform } from '../hooks/useWaveform'
+import { parseColor } from '../lib/spectrumColors'
 import { drawWaveform } from '../lib/waveform'
 import { WaveformSkeleton } from './WaveformSkeleton'
 
@@ -36,9 +37,26 @@ export function Waveform({
   const durationSec = audioDurationSec || wave?.durationSec || 0
   const loading = isFetching && !wave
 
+  // The bars take the theme accent rather than drawWaveform's fixed blue, which washed
+  // out against the light theme's pale panels. The theme is written one-way to
+  // <html data-theme> with no React store (same situation as useSpectrumDuotone), so
+  // repaint by observing that attribute and re-reading the token.
   useEffect(() => {
     const canvas = canvasRef.current
-    if (canvas && wave) drawWaveform(canvas, wave.peaks, { rms: wave.rms })
+    if (!canvas || !wave) return
+    const draw = (): void => {
+      const [r, g, b] = parseColor(
+        getComputedStyle(document.documentElement).getPropertyValue('--color-accent'),
+      )
+      drawWaveform(canvas, wave.peaks, { color: `rgba(${r}, ${g}, ${b}, 0.8)`, rms: wave.rms })
+    }
+    draw()
+    const observer = new MutationObserver(draw)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    })
+    return () => observer.disconnect()
   }, [wave])
 
   // Track the player's position only while it streams this track; any other
