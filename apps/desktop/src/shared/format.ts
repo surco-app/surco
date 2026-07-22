@@ -42,6 +42,14 @@ export function editsInPlace(
   return (overwriteOriginal && format !== 'alac') || formatMatchesInput(format, inputPath)
 }
 
+// Whether 'source' has a real OutputFormat to keep a file in. Surco imports .opus,
+// .ogg, .oga, .aac, .m4a and .mp4, none of which INPUT_EXT maps to — resolveJobFormat
+// would fall back and transcode those, which the renderer's 'source' skip (see
+// useTrackProcessing.processOne) uses this to catch before that fallback ever fires.
+export function hasFormatEquivalent(inputPath: string): boolean {
+  return (Object.keys(INPUT_EXT) as OutputFormat[]).some((f) => formatMatchesInput(f, inputPath))
+}
+
 // Turns the Default format setting into the format a single job will actually use.
 // 'source' keeps each file in the format it already has, which is what lets a mixed
 // batch be tagged without re-encoding — planConversion stream-copies when input and

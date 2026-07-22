@@ -999,12 +999,13 @@ describe('useTrackProcessing', () => {
     })
 
     // 'source' is not a format ffmpeg knows: its format chain ends in an implicit else
-    // that assumes AIFF, so a leaked value would silently rewrite the file as AIFF.
+    // that assumes AIFF, so a leaked value would silently rewrite the file as AIFF —
+    // which is exactly the transcode the skip below now prevents from ever being sent.
     it('never lets source reach the job', async () => {
       const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a' })
       setApi({ processTrack })
       const settings = { outputFormat: 'source', overwriteOriginal: false } as Settings
-      const tracks = [track({ id: 'a', inputPath: '/music/a.opus' })]
+      const tracks = [track({ id: 'a', inputPath: '/music/a.wav' })]
       const { result } = renderHook(
         () => useTrackProcessing({ tracks, settings, updateTrack: vi.fn() }),
         { wrapper: withClient() },
@@ -1012,7 +1013,94 @@ describe('useTrackProcessing', () => {
       await act(async () => {
         await result.current.processAll(tracks)
       })
-      expect(processTrack.mock.calls[0][0].format).toBe('aiff')
+      expect(processTrack.mock.calls[0][0].format).toBe('wav')
     })
+
+    // Surco imports .opus but no OutputFormat can hold it, so 'source' has nothing to
+    // keep it as — the old fallback silently transcoded to AIFF, and with overwrite on
+    // that AIFF then replaced the source, deleting the user's only copy of the original.
+    // The user asked to keep every file in its own format; a file that can't be kept
+    // must be left alone, not converted anyway and reported as a success.
+    it('skips a file whose format has no output equivalent instead of transcoding it', async () => {
+      const processTrack = vi.fn()
+      setApi({ processTrack })
+      const settings = { outputFormat: 'source', overwriteOriginal: true } as Settings
+      const track1 = track({ id: 'a', inputPath: '/music/a.opus' })
+      const updateTrack = vi.fn()
+      const { result } = renderHook(
+        () => useTrackProcessing({ tracks: [track1], settings, updateTrack }),
+        { wrapper: withClient() },
+      )
+      let outcome: string | undefined
+      await act(async () => {
+        outcome = await result.current.processOne('a')
+      })
+      expect(outcome).toBe('skipped')
+      expect(processTrack).not.toHaveBeenCalled()
+      expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ status: 'idle' }))
+    })
+
+    // The same skip applies to every extension Surco imports but can't export: .ogg,
+    // .oga, .aac, .m4a and .mp4 all fall back the same way .opus does.
+    it.each(['ogg', 'oga', 'aac', 'm4a', 'mp4'])(
+      'skips a .%s file under source for the same reason',
+      async (ext) => {
+        const processTrack = vi.fn()
+        setApi({ processTrack })
+        const settings = { outputFormat: 'source', overwriteOriginal: false } as Settings
+        const track1 = track({ id: 'a', inputPath: `/music/a.${ext}` })
+        const { result } = renderHook(
+          () => useTrackProcessing({ tracks: [track1], settings, updateTrack: vi.fn() }),
+          { wrapper: withClient() },
+        )
+        let outcome: string | undefined
+        await act(async () => {
+          outcome = await result.current.processOne('a')
+        })
+        expect(outcome).toBe('skipped')
+        expect(processTrack).not.toHaveBeenCalled()
+      },
+    )
+
+    // A concrete format pick is a deliberate override of "keep the source format" — an
+    // .opus converting to AIFF is exactly what the user asked for, so it must proceed.
+    it('still converts a file with no equivalent format when a concrete format is chosen', async () => {
+      const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' })
+      setApi({ processTrack })
+      const settings = { outputFormat: 'aiff', overwriteOriginal: true } as Settings
+      const track1 = track({ id: 'a', inputPath: '/music/a.opus' })
+      const { result } = renderHook(
+        () => useTrackProcessing({ tracks: [track1], settings, updateTrack: vi.fn() }),
+        { wrapper: withClient() },
+      )
+      let outcome: string | undefined
+      await act(async () => {
+        outcome = await result.current.processOne('a')
+      })
+      expect(outcome).toBe('converted')
+      expect(processTrack).toHaveBeenCalledWith(expect.objectContaining({ format: 'aiff' }))
+    })
+
+    // The formats 'source' CAN keep (wav/flac/mp3/aiff) must never be caught by the
+    // same-format equivalence check — only the truly unsupported extensions skip.
+    it.each(['wav', 'flac', 'mp3', 'aiff'])(
+      'does not skip a .%s file under source, which has a real equivalent',
+      async (ext) => {
+        const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a' })
+        setApi({ processTrack })
+        const settings = { outputFormat: 'source', overwriteOriginal: false } as Settings
+        const track1 = track({ id: 'a', inputPath: `/music/a.${ext}` })
+        const { result } = renderHook(
+          () => useTrackProcessing({ tracks: [track1], settings, updateTrack: vi.fn() }),
+          { wrapper: withClient() },
+        )
+        let outcome: string | undefined
+        await act(async () => {
+          outcome = await result.current.processOne('a')
+        })
+        expect(outcome).toBe('converted')
+        expect(processTrack).toHaveBeenCalled()
+      },
+    )
   })
 })

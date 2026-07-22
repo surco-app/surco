@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { resolveJobFormat } from '../../../shared/format'
+import { hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
 import type { DeclickMode, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
 import { removeAnalysisQueries } from '../lib/analysisQueries'
 import {
@@ -152,14 +152,23 @@ export function useTrackProcessing({
         })
         return 'failed'
       }
+      const pickedFormat = formatOverride ?? settings?.outputFormat ?? 'aiff'
+      // 'source' promises to keep each file in its own format; a file whose format
+      // resolveJobFormat can't express (Surco imports .opus/.ogg/.oga/.aac/.m4a/.mp4,
+      // none of which have an OutputFormat) has nothing to keep it as. Converting it
+      // anyway would fall back to a fixed format and, under overwrite, delete the
+      // original once the fallback landed in its place — the opposite of what 'source'
+      // means. Skipping is the only way to honor the promise: if the format can't be
+      // kept, the file isn't touched. A concrete format pick is a deliberate override,
+      // so it still converts normally.
+      if (pickedFormat === 'source' && !hasFormatEquivalent(track.inputPath)) {
+        updateTrack(id, { status: 'idle', stage: undefined })
+        return 'skipped'
+      }
       // The single point where the Default format setting becomes a real format. It has
       // to happen here, per track: 'source' is meaningless to the main process, and
       // sending `undefined` would make it read the setting itself and see 'source' too.
-      const jobFormat = resolveJobFormat(
-        formatOverride ?? settings?.outputFormat ?? 'aiff',
-        track.inputPath,
-        'aiff',
-      )
+      const jobFormat = resolveJobFormat(pickedFormat, track.inputPath, 'aiff')
       // Re-processing an edited (stale) track resets the Apple Music state too, since
       // the file it referred to is being rewritten — the user may want to add it again.
       // musicPersistentId deliberately survives the reset: it is what turns that next
