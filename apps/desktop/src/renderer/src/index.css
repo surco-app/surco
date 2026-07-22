@@ -246,9 +246,20 @@ textarea {
 /* The player cover as a vinyl record: near-black disc, faint concentric grooves from a
    repeating gradient (the center is hidden under the label image, so the rings only need
    to read on the outer half). Spins at a calm 4s/rev while playing; Player.tsx freezes it
-   in place with animation-play-state so pausing never resets the rotation. */
+   in place with animation-play-state so pausing never resets the rotation. The conic
+   wedges are the groove shimmer — glints that ride the surface and sweep around as it
+   turns. Without them a coverless disc is radially symmetric and rotation is invisible;
+   the fixed light reflection lives on the static sheen overlay instead. */
 .player-vinyl {
   background:
+    conic-gradient(
+      from 0deg,
+      transparent 0deg 30deg,
+      rgba(255, 255, 255, 0.07) 55deg,
+      transparent 80deg 200deg,
+      rgba(255, 255, 255, 0.05) 225deg,
+      transparent 250deg 360deg
+    ),
     repeating-radial-gradient(circle at 50%, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 3px),
     radial-gradient(circle at 50%, #1a1a1c 0 68%, #0e0e10 100%);
   animation: vinyl-spin 4s linear infinite;
