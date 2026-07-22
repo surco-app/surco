@@ -39,6 +39,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useListNavigation } from './hooks/useListNavigation'
 import { useMetadataClipboard } from './hooks/useMetadataClipboard'
 import { useMetaUndo } from './hooks/useMetaUndo'
+import { useTriageFilters } from './hooks/useTriageFilters'
 import { type SettingsTab, useOverlays } from './hooks/useOverlays'
 import { usePlayer } from './hooks/usePlayer'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
@@ -94,7 +95,6 @@ import { ToastProvider, type ToastReporter } from './lib/toastContext'
 import { dismissToast, dismissToastByExpiry, dismissToastByUser, pushToast } from './lib/toastQueue'
 import {
   EMPTY_FILTER,
-  type FilterSelection,
   filterWithSticky,
   formatBuckets,
   matchesSearch,
@@ -244,55 +244,8 @@ export default function App(): React.JSX.Element {
   })
   // Quality triage filter, free-text search and display order — read from the store with a
   // stable setter each (field comments live in appStore).
-  const qualityFilter = useAppStore(store, (s) => s.qualityFilter)
-  const conversionFilter = useAppStore(store, (s) => s.conversionFilter)
-  const libraryFilter = useAppStore(store, (s) => s.libraryFilter)
-  const duplicatesFilter = useAppStore(store, (s) => s.duplicatesFilter)
-  const attentionFilter = useAppStore(store, (s) => s.attentionFilter)
-  const formatFilter = useAppStore(store, (s) => s.formatFilter)
-  // The four filter axes bundled for the bar, which toggles one per click; split back onto
-  // the store fields here so each axis stays an independently-readable slice.
-  const filterSelection = useMemo<FilterSelection>(
-    () => ({
-      quality: qualityFilter,
-      conversion: conversionFilter,
-      library: libraryFilter,
-      duplicates: duplicatesFilter,
-      attention: attentionFilter,
-      format: formatFilter,
-    }),
-    [
-      qualityFilter,
-      conversionFilter,
-      libraryFilter,
-      duplicatesFilter,
-      attentionFilter,
-      formatFilter,
-    ],
-  )
-  const filterActive =
-    qualityFilter !== null ||
-    conversionFilter !== null ||
-    libraryFilter !== null ||
-    duplicatesFilter !== null ||
-    attentionFilter !== null ||
-    formatFilter !== null
-  const setFilterSelection = useCallback(
-    (next: FilterSelection) =>
-      store.setState({
-        qualityFilter: next.quality,
-        conversionFilter: next.conversion,
-        libraryFilter: next.library,
-        duplicatesFilter: next.duplicates,
-        attentionFilter: next.attention,
-        formatFilter: next.format,
-      }),
-    [store],
-  )
-  const setFormatFilter = useCallback(
-    (f: string | null) => store.setState({ formatFilter: f }),
-    [store],
-  )
+  const { filterSelection, filterActive, formatFilter, setFilterSelection, setFormatFilter } =
+    useTriageFilters(store)
   const search = useAppStore(store, (s) => s.search)
   const setSearch = useCallback((v: string) => store.setState({ search: v }), [store])
   // The text box stays driven by `search` (instant keystrokes); the expensive filter/sort
