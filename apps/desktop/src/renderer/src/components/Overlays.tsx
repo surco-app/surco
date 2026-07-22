@@ -1,6 +1,6 @@
 import type React from 'react'
 import { lazy, Suspense } from 'react'
-import type { OutputFormat, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
+import type { FormatSetting, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
 import { ConfirmDialog } from './ConfirmDialog'
 import type { Command } from '../lib/commands'
 import { formatExtension } from '../../../shared/format'
@@ -58,7 +58,7 @@ interface Props {
   // free and every other overlay ignores it.
   getCommands: () => Command[]
   // The editor's one-shot format pick, which decides the extension the rename preview shows.
-  editorFormatRef: React.RefObject<OutputFormat | null>
+  editorFormatRef: React.RefObject<FormatSetting | null>
   close: () => void
   // Dismisses the palette only if it is STILL the active modal: a command's run() may have
   // opened another overlay, and closing blindly would clobber it.
@@ -159,7 +159,7 @@ export function Overlays({
           meta={selected.meta}
           initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
           extension={formatExtension(
-            editorFormatRef.current ??
+            (editorFormatRef.current !== 'source' ? editorFormatRef.current : undefined) ??
               (settings?.outputFormat !== 'source' ? settings?.outputFormat : undefined) ??
               'aiff',
           )}

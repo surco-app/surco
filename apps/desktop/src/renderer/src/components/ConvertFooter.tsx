@@ -1,7 +1,7 @@
 import { SlidersVertical } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import type { NormalizeConfig, OutputFormat } from '../../../shared/types'
+import type { FormatSetting, NormalizeConfig, OutputFormat } from '../../../shared/types'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import type { Destination } from '../lib/destination'
 import { openFeedback } from '../lib/feedback'
@@ -35,18 +35,18 @@ interface ConvertFooterProps {
   // offers, pre-filtered by the editor (platform, configured overwrite).
   destination: Destination
   destinations: readonly Destination[]
-  format: OutputFormat
+  format: FormatSetting
   exportedFormat: OutputFormat | null
   // The format whose Apple Music eligibility gates the add button: the pick in multi
   // mode (what will be written), the exported file's in single.
-  musicExt: OutputFormat | null
+  musicExt: FormatSetting | null
   normalizeCfg: NormalizeConfig
   onOpenNormalize: () => void
-  onSelectFormat: (format: OutputFormat) => void
+  onSelectFormat: (format: FormatSetting) => void
   onSelectDestination: (destination: Destination) => void
   // Pre-resolved by the editor: converts the selection in multi mode, the open track
   // in single, so the footer never forks on it.
-  onProcess: (format: OutputFormat) => void
+  onProcess: (format: FormatSetting) => void
   // Cancels the in-flight single conversion; the primary button turns into a cancel while
   // it runs. Undefined in multi, where the toolbar batch pill owns the cancel.
   onCancel?: () => void

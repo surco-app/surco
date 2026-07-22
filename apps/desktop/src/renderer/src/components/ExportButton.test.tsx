@@ -173,4 +173,39 @@ describe('ExportButton', () => {
       vi.useRealTimers()
     }
   })
+
+  // "Same as source" only means something over several files at once — a single track's
+  // own format is just its own format, so resolving it there is equivalent and more
+  // informative. The menu must offer it only when converting a selection (count set).
+  it('offers "Same as source" in the format menu only over a multi-selection', () => {
+    render(<ExportButton {...baseProps} incomplete={false} count={2} />)
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.getByTestId('process-format-source')).toBeInTheDocument()
+  })
+
+  it('does not offer "Same as source" in the single-track format menu', () => {
+    render(<ExportButton {...baseProps} incomplete={false} />)
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.queryByTestId('process-format-source')).not.toBeInTheDocument()
+  })
+
+  // Picking 'source' must reach the caller unresolved — the whole point is that
+  // processAll resolves it per track, not the editor resolving it against one.
+  it('reports a "source" pick without resolving it', () => {
+    const onSelectFormat = vi.fn()
+    render(
+      <ExportButton {...baseProps} incomplete={false} count={2} onSelectFormat={onSelectFormat} />,
+    )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('process-format-source'))
+    expect(onSelectFormat).toHaveBeenCalledWith('source')
+  })
+
+  // With 'source' picked, the button must show the translated "Same as source" label,
+  // never the raw setting uppercased ("SOURCE" means nothing to the user).
+  it('shows the translated label for "Same as source", not the raw setting', () => {
+    render(<ExportButton {...baseProps} incomplete={false} count={2} outputFormat="source" />)
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Same as source')
+    expect(screen.getByTestId('process-btn')).not.toHaveTextContent('SOURCE')
+  })
 })
