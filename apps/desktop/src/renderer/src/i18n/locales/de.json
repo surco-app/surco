@@ -28,9 +28,6 @@
       "balanced": "Ausgewogene Spalten",
       "edit": "Editor verbreitern"
     },
-    "convert": "Konvertieren",
-    "convertSelectedHint": "Konvertiert die ausgewählten Tracks",
-    "convertSelectedEmptyHint": "Wähl Tracks in der Liste aus, um sie zu konvertieren",
     "batchConverted": "{{count}} konvertiert",
     "batchSkipped": "{{count}} übersprungen",
     "batchFailed": "{{count}} fehlgeschlagen",
@@ -50,7 +47,6 @@
     "autoMatchNoToken": "Füg in den Einstellungen einen Discogs-Token hinzu, um automatisch abzugleichen",
     "addToken": "Token hinzufügen",
     "autoMatchingCount": "Gleiche automatisch ab… {{done}}/{{total}}",
-    "export": "An DJ-Software exportieren",
     "clearAll": "Liste leeren"
   },
   "sidebar": {
@@ -151,8 +147,7 @@
   "newTracks": {
     "prompt_one": "{{count}} neuer Track in „{{folder}}“",
     "prompt_other": "{{count}} neue Tracks in „{{folder}}“",
-    "load": "Laden",
-    "dismiss": "Verwerfen"
+    "load": "Laden"
   },
   "lastSession": {
     "prompt_one": "Letzte Sitzung wieder öffnen? ({{count}} Track)",
@@ -281,7 +276,6 @@
     "coverDropActive": "Bild loslassen",
     "coverAlt": "Cover",
     "coverView": "Cover in voller Größe ansehen",
-    "coverTitle": "Zieh ein Bild hierher, um es als Cover zu verwenden",
     "coverCopy": "Cover kopieren",
     "coverPaste": "Cover einfügen",
     "coverExport": "Cover exportieren",
@@ -378,7 +372,6 @@
     "spectrumAlt": "Frequenz-Spektrogramm des Tracks",
     "spectrumCutoff": "Cutoff ~{{cutoff}}",
     "spectrumHighs": "Höhen bis ~{{cutoff}}",
-    "output": "Ausgabe:",
     "outputName": "Dateiname",
     "outputNameHintInPlace": "Gleiches Format wie die Quelle: Die Originaldatei wird direkt aktualisiert und umbenannt — es landet keine Kopie im Ausgabeordner.",
     "overwriteTitle": "Überschreibt das Original",
@@ -399,7 +392,6 @@
     "update": "Aktualisieren",
     "updateMusic": "Aktualisieren + Apple Music",
     "processing": "Wird verarbeitet…",
-    "doneReveal": "✓ Fertig — Datei zeigen",
     "exportedAs": "✓ Exportiert als {{format}}",
     "exportedCount_one": "✓ {{count}} Track exportiert",
     "exportedCount_other": "✓ {{count}} Tracks exportiert",
@@ -504,10 +496,8 @@
       "standard": "Repariert kurze Nadel-Klicks.",
       "strong": "Erfasst auch lange Knackser; kann harte Transienten abschwächen."
     },
-    "estimate": "Geschätzte hörbare Klicks in diesem Track: ~{{count}}",
     "estimatePill": "~{{count}} Klicks",
     "estimateNonePill": "Keine Klicks",
-    "estimateNone": "Keine hörbaren Klicks in diesem Track erkannt.",
     "waveTitle": "Gefundene Klicks",
     "markLabel": "Klick bei {{sec}} s — hierher springen",
     "unscanned": "Die ersten {{minutes}} Minuten wurden analysiert; spätere Klicks werden nicht markiert.",
@@ -538,7 +528,6 @@
     "cutStart": "{{seconds}} am Anfang",
     "cutEnd": "{{seconds}} am Ende",
     "nothing": "Keine Stille am Anfang oder Ende erkannt.",
-    "clear": "Zurücksetzen",
     "clearSide": "Diesen Schnitt entfernen",
     "applyStart": "{{seconds}} am Anfang abschneiden",
     "applyEnd": "{{seconds}} am Ende abschneiden",
@@ -828,7 +817,6 @@
   "onboarding": {
     "welcomeTitle": "Willkommen bei Surco",
     "welcomeBody": "Richten wir das Wichtigste ein. Dauert keine Minute, und alles lässt sich später in den Einstellungen ändern.",
-    "tokenBody": "Surco taggt deine Tracks mit Daten von Discogs und funktioniert ohne Einrichtung. Optional kannst du einen kostenlosen persönlichen Token einfügen — für dein eigenes, höheres Limit.",
     "formatBody": "Wähl das Format, in das Surco deine Tracks exportiert.",
     "audioTitle": "Was machst du mit deinen Tracks?",
     "audioBody": "Surco zeigt nur die Editor-Bereiche, die dein Workflow braucht. Wähl, was passt — du kannst es jederzeit in den Einstellungen ändern.",

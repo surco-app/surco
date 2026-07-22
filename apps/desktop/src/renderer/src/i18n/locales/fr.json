@@ -28,9 +28,6 @@
       "balanced": "Colonnes équilibrées",
       "edit": "Élargir l’éditeur"
     },
-    "convert": "Convertir",
-    "convertSelectedHint": "Convertit les morceaux sélectionnés",
-    "convertSelectedEmptyHint": "Sélectionne des morceaux dans la liste pour les convertir",
     "batchConverted": "{{count}} convertis",
     "batchSkipped": "{{count}} ignorés",
     "batchFailed": "{{count}} en échec",
@@ -50,7 +47,6 @@
     "autoMatchNoToken": "Ajoute un token Discogs dans les Réglages pour auto-associer",
     "addToken": "Ajouter un token",
     "autoMatchingCount": "Association auto… {{done}}/{{total}}",
-    "export": "Exporter vers un logiciel DJ",
     "clearAll": "Vider la liste"
   },
   "sidebar": {
@@ -151,8 +147,7 @@
   "newTracks": {
     "prompt_one": "{{count}} nouveau morceau dans « {{folder}} »",
     "prompt_other": "{{count}} nouveaux morceaux dans « {{folder}} »",
-    "load": "Charger",
-    "dismiss": "Ignorer"
+    "load": "Charger"
   },
   "lastSession": {
     "prompt_one": "Rouvrir ta dernière session ? ({{count}} morceau)",
@@ -281,7 +276,6 @@
     "coverDropActive": "Dépose l'image",
     "coverAlt": "Pochette",
     "coverView": "Voir la pochette en taille réelle",
-    "coverTitle": "Glisse une image pour l'utiliser comme pochette",
     "coverCopy": "Copier la pochette",
     "coverPaste": "Coller la pochette",
     "coverExport": "Exporter la pochette",
@@ -378,7 +372,6 @@
     "spectrumAlt": "Spectrogramme de fréquences du morceau",
     "spectrumCutoff": "coupure ~{{cutoff}}",
     "spectrumHighs": "aigus jusqu'à ~{{cutoff}}",
-    "output": "Sortie :",
     "outputName": "Nom du fichier",
     "outputNameHintInPlace": "Même format que la source : le fichier original est mis à jour sur place et renommé — aucune copie n'est écrite dans le dossier de sortie.",
     "overwriteTitle": "Écrase l'original",
@@ -399,7 +392,6 @@
     "update": "Mettre à jour",
     "updateMusic": "Mettre à jour + Apple Music",
     "processing": "Traitement…",
-    "doneReveal": "✓ Terminé — afficher le fichier",
     "exportedAs": "✓ Exporté en {{format}}",
     "exportedCount_one": "✓ {{count}} morceau exporté",
     "exportedCount_other": "✓ {{count}} morceaux exportés",
@@ -504,10 +496,8 @@
       "standard": "Répare les clics courts de la pointe.",
       "strong": "Capte aussi les craquements longs ; peut adoucir les transitoires."
     },
-    "estimate": "Clics audibles estimés dans ce morceau : ~{{count}}",
     "estimatePill": "~{{count}} clics",
     "estimateNonePill": "Aucun clic",
-    "estimateNone": "Aucun clic audible détecté dans ce morceau.",
     "waveTitle": "Clics détectés",
     "markLabel": "Clic à {{sec}} s — aller ici",
     "unscanned": "Les {{minutes}} premières minutes ont été analysées ; les clics suivants ne sont pas marqués.",
@@ -538,7 +528,6 @@
     "cutStart": "{{seconds}} au début",
     "cutEnd": "{{seconds}} à la fin",
     "nothing": "Aucun silence détecté au début ou à la fin.",
-    "clear": "Réinitialiser",
     "clearSide": "Supprimer cette coupe",
     "applyStart": "Rogner {{seconds}} au début",
     "applyEnd": "Rogner {{seconds}} à la fin",
@@ -828,7 +817,6 @@
   "onboarding": {
     "welcomeTitle": "Bienvenue dans Surco",
     "welcomeBody": "Configurons l'essentiel. Ça prend moins d'une minute, et tu pourras tout changer plus tard dans les Réglages.",
-    "tokenBody": "Surco tague tes morceaux avec les données de Discogs et fonctionne sans aucune configuration. Si tu veux, colle un token personnel gratuit pour avoir ta propre limite, plus élevée.",
     "formatBody": "Choisis le format vers lequel Surco exporte tes morceaux.",
     "audioTitle": "Que fais-tu avec tes morceaux ?",
     "audioBody": "Surco n'affiche que les sections de l'éditeur dont ton flux a besoin. Choisis ce qui te convient — modifiable à tout moment dans les Réglages.",
