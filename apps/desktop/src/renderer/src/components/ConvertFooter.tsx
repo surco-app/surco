@@ -22,7 +22,7 @@ interface ConvertFooterProps {
   done: boolean
   incomplete: boolean
   // Why the convert is blocked (the empty required fields), surfaced as the button's
-  // tooltip. Single-track only; undefined when nothing is missing.
+  // tooltip. In multi it covers the whole selection; undefined when nothing is missing.
   incompleteReason?: string
   willEditInPlace: boolean
   // The explicit re-encode offer, resolved by the editor: the source's mismatching
@@ -283,7 +283,7 @@ export function ConvertFooter({
               exportedFormat={isMulti ? null : exportedFormat}
               withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
               withEngineDj={addToEngineDj}
-              incomplete={!isMulti && incomplete}
+              incomplete={incomplete}
               incompleteReason={incompleteReason}
               inPlace={!isMulti && willEditInPlace}
               destination={destination}

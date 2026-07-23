@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type React from 'react'
 import { createRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -967,6 +967,9 @@ describe('Editor multi-select', () => {
       music?: boolean
       loudness?: boolean
       visibleFields?: string[]
+      requiredFields?: string[]
+      metaA?: Partial<TrackMetadata>
+      metaB?: Partial<TrackMetadata>
     } = {},
   ) {
     if (opts.platform)
@@ -981,7 +984,7 @@ describe('Editor multi-select', () => {
       fileName: 'kumara - one.flac',
       status,
       outputPath: opts.done ? '/out/a.aiff' : undefined,
-      meta: { title: 'A', album: 'Shared' },
+      meta: { title: 'A', album: 'Shared', ...opts.metaA },
       spectrum: { image: '', cutoffHz: null, sampleRateHz: 44100, processed: false },
     })
     const b = item({
@@ -989,7 +992,7 @@ describe('Editor multi-select', () => {
       fileName: 'cortina - two.flac',
       status,
       outputPath: opts.done ? '/out/b.aiff' : undefined,
-      meta: { title: 'B', album: 'Shared' },
+      meta: { title: 'B', album: 'Shared', ...opts.metaB },
     })
     renderWithQuery(
       <Editor
@@ -1018,6 +1021,7 @@ describe('Editor multi-select', () => {
       {
         addToAppleMusic: opts.music ?? false,
         visibleFields: opts.visibleFields ?? ['title', 'album'],
+        requiredFields: opts.requiredFields ?? ['title'],
         showSpectrum: true,
         showLoudness: opts.loudness ?? false,
       },
@@ -1057,6 +1061,51 @@ describe('Editor multi-select', () => {
     const { onProcessAll } = renderMulti()
     fireEvent.click(screen.getByTestId('process-btn'))
     expect(onProcessAll).toHaveBeenCalledWith('aiff')
+  })
+
+  // "Convert (2)" must convert 2 or say why it can't. The batch silently drops tracks
+  // with empty required fields (eligibleForBatch), so a selection where any track is
+  // incomplete used to run an empty batch — the click looked like it did nothing.
+  // The gate mirrors the single-track button: disabled until the selection is complete.
+  it('disables the convert button while any selected track is missing a required field', () => {
+    const { onProcessAll } = renderMulti({
+      requiredFields: ['artist'],
+      metaA: { artist: 'Kumara' },
+    })
+    const btn = screen.getByTestId('process-btn')
+    expect(btn).toBeDisabled()
+    fireEvent.click(btn)
+    expect(onProcessAll).not.toHaveBeenCalled()
+  })
+
+  it('enables the convert button once every selected track has the required fields', () => {
+    renderMulti({
+      requiredFields: ['artist'],
+      metaA: { artist: 'Kumara' },
+      metaB: { artist: 'Cortina' },
+    })
+    expect(screen.getByTestId('process-btn')).toBeEnabled()
+  })
+
+  // The disabled button must explain itself: the tooltip names the fields still
+  // empty somewhere in the selection, same phrasing as the single-track gate.
+  it('names the missing fields on the blocked convert button', () => {
+    vi.useFakeTimers()
+    try {
+      renderMulti({ requiredFields: ['artist'], metaA: { artist: 'Kumara' } })
+      // jsdom's synthetic PointerEvent drops clientX/clientY, so drive the tooltip with
+      // MouseEvents as pointer events — same dance as the ExportButton tooltip test.
+      const wrap = screen.getByTestId('process-btn-wrap')
+      for (const type of ['pointerenter', 'pointermove']) {
+        wrap.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
+      }
+      act(() => vi.advanceTimersByTime(400))
+      expect(screen.getByRole('tooltip')).toHaveTextContent(
+        i18n.t('editor.missingRequired', { fields: i18n.t('fields.artist') }),
+      )
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   // Bulk edits write ONE value to every track, but each track's fields differ, so

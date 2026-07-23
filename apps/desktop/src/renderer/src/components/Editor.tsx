@@ -671,8 +671,13 @@ export const Editor = memo(function Editor({
   // convert: with the convert button disabled below, that click can't surface the
   // reason any more, so the field's amber dot and the button's own tooltip — which
   // names exactly what's missing — are what tell the user why. The tooltip reuses the
-  // same phrasing the blocked-convert error would have shown.
-  const missing = missingRequired(item.meta, requiredFields)
+  // same phrasing the blocked-convert error would have shown. Multi-select gates on
+  // the whole selection (the union of every track's empty fields): "Convert (N)"
+  // promises N conversions, and eligibleForBatch would silently drop incomplete
+  // tracks — with all N incomplete, the click ran an empty batch that looked dead.
+  const missing = isMulti
+    ? [...new Set(multiTracks.flatMap((t) => missingRequired(t.meta, requiredFields)))]
+    : missingRequired(item.meta, requiredFields)
   const incomplete = missing.length > 0
   const incompleteReason = incomplete
     ? tr('editor.missingRequired', {
