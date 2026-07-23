@@ -23,6 +23,10 @@
       {
         "text": "Converting several tracks at once no longer fizzles out with no explanation: if any of them is missing a required field, the button disables itself and tells you exactly what is left to fill in, just like with a single track.",
         "in": "0.71.1"
+      },
+      {
+        "text": "Apple Music on macOS 26: when Music gets stuck and stops importing (a known system bug), Surco now recovers the track if it did get imported and otherwise tells you what happened and how to get unstuck, instead of failing with a cryptic error.",
+        "in": "0.71.2"
       }
     ]
   },

@@ -23,6 +23,10 @@
       {
         "text": "Convertir varias pistas a la vez ya no se queda en nada sin explicación: si a alguna le falta un campo obligatorio, el botón se desactiva y te dice exactamente qué falta por rellenar, igual que con una sola pista.",
         "in": "0.71.1"
+      },
+      {
+        "text": "Apple Music en macOS 26: cuando Música se atasca y deja de importar (un fallo conocido del sistema), Surco ahora recupera la pista si llegó a importarse y, si no, te explica qué ha pasado y cómo salir en lugar de fallar con un error críptico.",
+        "in": "0.71.2"
       }
     ]
   },
