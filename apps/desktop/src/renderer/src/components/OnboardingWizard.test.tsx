@@ -221,6 +221,34 @@ describe('OnboardingWizard audio intents', () => {
     const shown = (patch.editorSections ?? []).filter((s) => !s.hidden).map((s) => s.id)
     expect(shown).toEqual(expect.arrayContaining(['trim', 'declick']))
   })
+
+  // A re-run opens with the checkboxes reading the DJ's current editor, so Finish
+  // without touching anything cannot change the layout.
+  it('seeds the audio intents from the current editor on a re-run', () => {
+    const rerun: Settings = {
+      ...settings,
+      hasSeenOnboarding: true,
+      showSpectrum: false,
+      editorSections: DEFAULT_EDITOR_SECTIONS.map((s) =>
+        s.id === 'trim' || s.id === 'declick' ? { ...s, hidden: true } : s,
+      ),
+    }
+    render(<OnboardingWizard settings={rerun} onFinish={vi.fn()} />)
+    for (let i = 0; i < 3; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    expect(screen.getByTestId('onboarding-intent-restore')).not.toBeChecked()
+    expect(screen.getByTestId('onboarding-intent-level')).toBeChecked()
+    expect(screen.getByTestId('onboarding-intent-quality')).not.toBeChecked()
+  })
+
+  it('finishing an untouched re-run leaves the editor layout as it was', () => {
+    const onFinish = vi.fn()
+    const rerun: Settings = { ...settings, hasSeenOnboarding: true }
+    render(<OnboardingWizard settings={rerun} onFinish={onFinish} />)
+    for (let i = 0; i < 3; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    fireEvent.click(screen.getByTestId('onboarding-next'))
+    expect(onFinish).toHaveBeenCalledOnce()
+    expect(onFinish.mock.calls[0][0].editorSections).toEqual(rerun.editorSections)
+  })
 })
 
 describe('OnboardingWizard search providers', () => {

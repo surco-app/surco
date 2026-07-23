@@ -4,7 +4,7 @@ import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Settings } from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
-import { type AudioIntent, buildOnboardingPatch } from '../lib/onboarding'
+import { type AudioIntent, buildOnboardingPatch, seedAudioIntents } from '../lib/onboarding'
 import { isMacOS } from '../lib/platform'
 import { formatKHz } from '../lib/quality'
 import { type LocalDraft, pickLocal, pickSynced, type SyncedDraft } from '../lib/settingsDraft'
@@ -41,11 +41,10 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   // the save serialization can never diverge between the two surfaces.
   const [synced, setSynced] = useState<SyncedDraft>(() => pickSynced(settings))
   const [local, setLocal] = useState<LocalDraft>(() => pickLocal(settings))
-  // Seed from the one intent that maps to an existing default (the spectrum). The rest
-  // start unpicked so a first-run editor is minimal until the DJ opts in.
-  const [audioIntents, setAudioIntents] = useState<AudioIntent[]>(
-    settings.showSpectrum ? ['quality'] : [],
-  )
+  // Seeded once from the settings the wizard opened with; kept so finish can diff
+  // what the DJ actually toggled (a re-run only applies those changes).
+  const [seededIntents] = useState<AudioIntent[]>(() => seedAudioIntents(settings))
+  const [audioIntents, setAudioIntents] = useState<AudioIntent[]>(seededIntents)
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(dialogRef)
 
@@ -59,7 +58,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
     setLocal((p) => ({ ...p, [key]: value }))
   }
   function finish(): void {
-    onFinish(buildOnboardingPatch({ synced, local, audioIntents }))
+    onFinish(buildOnboardingPatch({ synced, local, audioIntents, seededIntents, settings }))
   }
 
   // FLAC can't go to Apple Music, so the destination pins to the output folder while

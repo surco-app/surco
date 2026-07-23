@@ -46,13 +46,39 @@ export function deriveEditorSections(intents: AudioIntent[]): EditorSectionPref[
 }
 
 // The wizard stages its edits in the same drafts the Settings modal uses, plus the
-// audio-intent question that only exists here.
+// audio-intent question that only exists here. seededIntents and the settings the
+// wizard opened with make a re-run diffable: only what the DJ toggled is applied.
 interface OnboardingDrafts {
   synced: SyncedDraft
   local: LocalDraft
   // What the DJ does with the audio, which decides the editor's visible sections and
   // whether the spectrogram is on.
   audioIntents: AudioIntent[]
+  seededIntents: AudioIntent[]
+  settings: Pick<Settings, 'hasSeenOnboarding' | 'editorSections'>
+}
+
+// A re-run edits the DJ's own layout instead of rebuilding it: only the intents that
+// changed against their seeded value touch the hidden flag of the sections they
+// govern. Order, folds and ungoverned sections (otherTags) pass through untouched, so
+// finishing an untouched wizard is a no-op.
+function applyIntentDelta(
+  current: EditorSectionPref[],
+  seeded: AudioIntent[],
+  picked: AudioIntent[],
+): EditorSectionPref[] {
+  const hideBySection = new Map<EditorSectionId, boolean>()
+  for (const intent of Object.keys(INTENT_SECTIONS) as AudioIntent[]) {
+    if (seeded.includes(intent) === picked.includes(intent)) continue
+    for (const id of INTENT_SECTIONS[intent]) hideBySection.set(id, !picked.includes(intent))
+  }
+  return current.map((section) => {
+    const hide = hideBySection.get(section.id)
+    if (hide === undefined) return section
+    // hidden is only ever present as true (normalizeEditorSections' shape) — reveal
+    // by dropping the key, not by writing hidden: false.
+    return { id: section.id, open: section.open, ...(hide ? { hidden: true } : {}) }
+  })
 }
 
 export function shouldShowOnboarding(settings: Pick<Settings, 'hasSeenOnboarding'>): boolean {
@@ -78,7 +104,7 @@ export function seedAudioIntents(
 }
 
 // Passing null means the user skipped: we only flag the wizard as seen so it
-// never reappears, leaving the existing (default) settings untouched.
+// never reappears, leaving the existing settings untouched.
 export function buildOnboardingPatch(drafts: OnboardingDrafts | null): Partial<Settings> {
   if (!drafts) return { hasSeenOnboarding: true }
   return {
@@ -88,7 +114,11 @@ export function buildOnboardingPatch(drafts: OnboardingDrafts | null): Partial<S
     // The spectrogram is the payload of the "check quality" intent; without it a
     // metadata-only DJ isn't paying for the analysis pass.
     showSpectrum: drafts.audioIntents.includes('quality'),
-    editorSections: deriveEditorSections(drafts.audioIntents),
+    // First run builds the layout from the defaults (the shipped new-user behavior,
+    // otherTags included); a re-run applies only what the DJ toggled onto their own.
+    editorSections: drafts.settings.hasSeenOnboarding
+      ? applyIntentDelta(drafts.settings.editorSections, drafts.seededIntents, drafts.audioIntents)
+      : deriveEditorSections(drafts.audioIntents),
     hasSeenOnboarding: true,
   }
 }

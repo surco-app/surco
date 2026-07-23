@@ -80,12 +80,19 @@ function drafts(
     synced?: Partial<SyncedDraft>
     local?: Partial<LocalDraft>
     audioIntents?: AudioIntent[]
+    seededIntents?: AudioIntent[]
+    settings?: Pick<Settings, 'hasSeenOnboarding' | 'editorSections'>
   } = {},
-): { synced: SyncedDraft; local: LocalDraft; audioIntents: AudioIntent[] } {
+): NonNullable<Parameters<typeof buildOnboardingPatch>[0]> {
   return {
     synced: { ...pickSynced(settings), ...over.synced },
     local: { ...pickLocal(settings), ...over.local },
     audioIntents: over.audioIntents ?? [],
+    seededIntents: over.seededIntents ?? [],
+    settings: over.settings ?? {
+      hasSeenOnboarding: false,
+      editorSections: DEFAULT_EDITOR_SECTIONS,
+    },
   }
 }
 
@@ -320,5 +327,72 @@ describe('seedAudioIntents', () => {
     expect(
       seedAudioIntents({ ...settings, hasSeenOnboarding: true, editorSections: sections }),
     ).toEqual(['restore'])
+  })
+})
+
+describe('buildOnboardingPatch on a re-run', () => {
+  // A layout the DJ arranged by hand: reordered, refolded, otherTags and the
+  // vinyl-repair pair hidden. The re-run must treat it as sacred.
+  const customized = [
+    { id: 'form', open: true },
+    { id: 'otherTags', open: true, hidden: true },
+    { id: 'quality', open: false },
+    { id: 'properties', open: true },
+    { id: 'normalize', open: true },
+    { id: 'trim', open: false, hidden: true },
+    { id: 'declick', open: false, hidden: true },
+    { id: 'output', open: false },
+  ] satisfies Settings['editorSections']
+  const rerun = { hasSeenOnboarding: true, editorSections: customized }
+
+  // The core promise of the menu entry: reopen, press Finish, nothing changes.
+  it('leaves the section layout untouched when no intent was toggled', () => {
+    const patch = buildOnboardingPatch(
+      drafts({ audioIntents: ['level'], seededIntents: ['level'], settings: rerun }),
+    )
+    expect(patch.editorSections).toEqual(customized)
+  })
+
+  // Toggling one intent on reveals exactly its sections — order, folds and the
+  // sections no intent governs (otherTags) survive byte for byte.
+  it('reveals only the toggled-on intent sections, preserving everything else', () => {
+    const patch = buildOnboardingPatch(
+      drafts({ audioIntents: ['level', 'restore'], seededIntents: ['level'], settings: rerun }),
+    )
+    expect(patch.editorSections).toEqual([
+      { id: 'form', open: true },
+      { id: 'otherTags', open: true, hidden: true },
+      { id: 'quality', open: false },
+      { id: 'properties', open: true },
+      { id: 'normalize', open: true },
+      { id: 'trim', open: false },
+      { id: 'declick', open: false },
+      { id: 'output', open: false },
+    ])
+  })
+
+  // Toggling one intent off hides its sections and nothing else: trim/declick keep
+  // the hidden they already had, untouched by the unchanged restore intent.
+  it('hides only the toggled-off intent sections', () => {
+    const patch = buildOnboardingPatch(
+      drafts({ audioIntents: [], seededIntents: ['level'], settings: rerun }),
+    )
+    expect(patch.editorSections).toEqual([
+      { id: 'form', open: true },
+      { id: 'otherTags', open: true, hidden: true },
+      { id: 'quality', open: false },
+      { id: 'properties', open: true },
+      { id: 'normalize', open: true, hidden: true },
+      { id: 'trim', open: false, hidden: true },
+      { id: 'declick', open: false, hidden: true },
+      { id: 'output', open: false },
+    ])
+  })
+
+  // First run still rebuilds from the defaults (hiding otherTags): the shipped
+  // new-user behavior must not change because re-runs exist.
+  it('keeps deriving from defaults on a first run', () => {
+    const patch = buildOnboardingPatch(drafts({ audioIntents: ['restore'] }))
+    expect(patch.editorSections).toEqual(deriveEditorSections(['restore']))
   })
 })
