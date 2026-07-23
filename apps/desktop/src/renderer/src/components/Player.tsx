@@ -307,14 +307,20 @@ export function Player({
               {/* Hairline marking off the transport from the two settings toggles. */}
               <span aria-hidden="true" className="mx-0.5 h-3.5 w-px bg-[var(--color-line)]" />
 
+              {/* Active toggles wear a soft accent chip, not just an accent icon: with
+                  the wave and its played half already accent-blue, a lone blue glyph
+                  disappears among them — the fill is what says "on". The background is
+                  fully conditional so the two bg utilities never compete. */}
               <button
                 type="button"
                 data-testid="player-continuous"
                 onClick={onToggleContinuous}
                 aria-label={t('player.continuous')}
                 aria-pressed={continuous}
-                className={`press relative flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-line-strong)] ${
-                  continuous ? 'text-[var(--color-accent)]' : 'text-fg-faint hover:text-fg'
+                className={`press relative flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+                  continuous
+                    ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20'
+                    : 'text-fg-faint hover:bg-[var(--color-line-strong)] hover:text-fg'
                 }`}
               >
                 <InfinityIcon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -327,8 +333,10 @@ export function Player({
                 onClick={onToggleWaveform}
                 aria-label={t('player.waveform')}
                 aria-pressed={showWaveform}
-                className={`press relative flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-line-strong)] ${
-                  showWaveform ? 'text-[var(--color-accent)]' : 'text-fg-faint hover:text-fg'
+                className={`press relative flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+                  showWaveform
+                    ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20'
+                    : 'text-fg-faint hover:bg-[var(--color-line-strong)] hover:text-fg'
                 }`}
               >
                 <AudioLines className="h-3.5 w-3.5" aria-hidden="true" />
