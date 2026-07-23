@@ -395,4 +395,24 @@ describe('buildOnboardingPatch on a re-run', () => {
     const patch = buildOnboardingPatch(drafts({ audioIntents: ['restore'] }))
     expect(patch.editorSections).toEqual(deriveEditorSections(['restore']))
   })
+
+  // A store that predates declick (upgraded install): seedAudioIntents reads the
+  // absent section as visible, so restore seeds picked; toggling restore off must
+  // hide both sections it governs, not just the one physically in the stored list.
+  it('hides declick too when the stored list predates it and restore is toggled off', () => {
+    const stale = DEFAULT_EDITOR_SECTIONS.filter((s) => s.id !== 'declick')
+    const patch = buildOnboardingPatch(
+      drafts({
+        audioIntents: ['level'],
+        seededIntents: ['restore', 'level'],
+        settings: { hasSeenOnboarding: true, editorSections: stale },
+      }),
+    )
+    const ids = (patch.editorSections ?? []).map((s) => s.id)
+    const trim = patch.editorSections?.find((s) => s.id === 'trim')
+    const declick = patch.editorSections?.find((s) => s.id === 'declick')
+    expect(trim?.hidden).toBe(true)
+    expect(declick?.hidden).toBe(true)
+    expect(ids.indexOf('declick')).toBe(ids.indexOf('trim') + 1)
+  })
 })

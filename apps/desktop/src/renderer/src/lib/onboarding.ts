@@ -2,6 +2,7 @@ import {
   DEFAULT_EDITOR_SECTIONS,
   type EditorSectionId,
   type EditorSectionPref,
+  normalizeEditorSections,
 } from '../../../shared/editorSections'
 import type { Settings } from '../../../shared/types'
 import { buildSettingsPatch, type LocalDraft, type SyncedDraft } from './settingsDraft'
@@ -116,8 +117,15 @@ export function buildOnboardingPatch(drafts: OnboardingDrafts | null): Partial<S
     showSpectrum: drafts.audioIntents.includes('quality'),
     // First run builds the layout from the defaults (the shipped new-user behavior,
     // otherTags included); a re-run applies only what the DJ toggled onto their own.
+    // Normalized first: a store that predates a section (upgraded install) would
+    // otherwise miss that section's hide entirely, since applyIntentDelta only ever
+    // touches sections already in the list it's given.
     editorSections: drafts.settings.hasSeenOnboarding
-      ? applyIntentDelta(drafts.settings.editorSections, drafts.seededIntents, drafts.audioIntents)
+      ? applyIntentDelta(
+          normalizeEditorSections(drafts.settings.editorSections),
+          drafts.seededIntents,
+          drafts.audioIntents,
+        )
       : deriveEditorSections(drafts.audioIntents),
     hasSeenOnboarding: true,
   }
