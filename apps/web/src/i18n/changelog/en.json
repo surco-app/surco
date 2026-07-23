@@ -19,6 +19,10 @@
       {
         "text": "Damaged audio files no longer freeze the app: analysis marks them as unreadable and moves on with the rest, and a WAV with a broken header is repaired on the fly so it can still play.",
         "in": "0.71.0"
+      },
+      {
+        "text": "Converting several tracks at once no longer fizzles out with no explanation: if any of them is missing a required field, the button disables itself and tells you exactly what is left to fill in, just like with a single track.",
+        "in": "0.71.1"
       }
     ]
   },

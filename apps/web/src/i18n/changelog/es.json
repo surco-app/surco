@@ -19,6 +19,10 @@
       {
         "text": "Los archivos de audio dañados ya no congelan la aplicación: el análisis los marca como ilegibles y sigue con el resto, y un WAV con la cabecera rota se repara al vuelo para poder reproducirlo.",
         "in": "0.71.0"
+      },
+      {
+        "text": "Convertir varias pistas a la vez ya no se queda en nada sin explicación: si a alguna le falta un campo obligatorio, el botón se desactiva y te dice exactamente qué falta por rellenar, igual que con una sola pista.",
+        "in": "0.71.1"
       }
     ]
   },
