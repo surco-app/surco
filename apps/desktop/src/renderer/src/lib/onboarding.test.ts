@@ -5,6 +5,7 @@ import {
   type AudioIntent,
   buildOnboardingPatch,
   deriveEditorSections,
+  seedAudioIntents,
   shouldShowOnboarding,
 } from './onboarding'
 import {
@@ -278,5 +279,46 @@ describe('buildOnboardingPatch with audio intents', () => {
   // never silently hides sections the user didn't ask to hide.
   it('does not touch editor sections when skipped', () => {
     expect(buildOnboardingPatch(null).editorSections).toBeUndefined()
+  })
+})
+
+describe('seedAudioIntents', () => {
+  // First run keeps the shipped behavior: intents start unpicked (except the
+  // spectrum-backed one) so a brand-new editor stays minimal until the DJ opts in.
+  it('seeds only the spectrum-backed intent on a first run', () => {
+    expect(seedAudioIntents(settings)).toEqual([])
+    expect(seedAudioIntents({ ...settings, showSpectrum: true })).toEqual(['quality'])
+  })
+
+  // A re-run must open with the checkboxes reflecting what the DJ already has,
+  // so finishing without touching anything can be a no-op.
+  it('seeds intents from the visible sections on a re-run', () => {
+    const rerun = { ...settings, hasSeenOnboarding: true }
+    expect(seedAudioIntents(rerun)).toEqual(['restore', 'level'])
+    expect(seedAudioIntents({ ...rerun, showSpectrum: true })).toEqual([
+      'restore',
+      'level',
+      'quality',
+    ])
+  })
+
+  // restore owns two sections; a hand-arranged half state (only declick visible)
+  // seeds it unpicked, so leaving it untouched preserves the mixed state.
+  it('does not seed restore from a mixed hand-arranged state', () => {
+    const sections = DEFAULT_EDITOR_SECTIONS.map((s) =>
+      s.id === 'trim' ? { ...s, hidden: true } : s,
+    )
+    expect(
+      seedAudioIntents({ ...settings, hasSeenOnboarding: true, editorSections: sections }),
+    ).toEqual(['level'])
+  })
+
+  it('does not seed level when normalize is hidden', () => {
+    const sections = DEFAULT_EDITOR_SECTIONS.map((s) =>
+      s.id === 'normalize' ? { ...s, hidden: true } : s,
+    )
+    expect(
+      seedAudioIntents({ ...settings, hasSeenOnboarding: true, editorSections: sections }),
+    ).toEqual(['restore'])
   })
 })

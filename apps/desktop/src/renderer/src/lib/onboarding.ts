@@ -59,6 +59,24 @@ export function shouldShowOnboarding(settings: Pick<Settings, 'hasSeenOnboarding
   return !settings.hasSeenOnboarding
 }
 
+// What the intent checkboxes start as. First run: unpicked (except the spectrum-backed
+// quality) so the new DJ's editor stays minimal until they opt in. Re-run: read back
+// from the sections each intent governs, so finishing untouched changes nothing —
+// restore owns two sections and only seeds picked when both are visible, leaving a
+// hand-arranged half state alone.
+export function seedAudioIntents(
+  settings: Pick<Settings, 'hasSeenOnboarding' | 'showSpectrum' | 'editorSections'>,
+): AudioIntent[] {
+  if (!settings.hasSeenOnboarding) return settings.showSpectrum ? ['quality'] : []
+  const visible = (id: EditorSectionId): boolean =>
+    settings.editorSections.find((s) => s.id === id)?.hidden !== true
+  const intents: AudioIntent[] = []
+  if (visible('trim') && visible('declick')) intents.push('restore')
+  if (visible('normalize')) intents.push('level')
+  if (settings.showSpectrum) intents.push('quality')
+  return intents
+}
+
 // Passing null means the user skipped: we only flag the wizard as seen so it
 // never reappears, leaving the existing (default) settings untouched.
 export function buildOnboardingPatch(drafts: OnboardingDrafts | null): Partial<Settings> {
