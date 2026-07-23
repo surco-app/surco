@@ -1,6 +1,7 @@
 import { app, ipcMain, shell } from 'electron'
 import type { AppleMusicAddJob, AppleMusicUpdateJob, TrackMetadata } from '../shared/types'
 import { activity } from './activity'
+import { loadLibraryCache, saveLibraryCache } from './appleMusicLibraryCache'
 import {
   addToAppleMusic,
   appleMusicLimiter,
@@ -27,15 +28,32 @@ function trackLabel(meta: TrackMetadata): string {
 export function registerAppleMusicIpc(): void {
   // The whole-library snapshot the renderer matches the crate against to flag which
   // tracks are already owned; empty off macOS, where there is no library to read.
+  // Each successful dump is persisted so the next session can seed its index from
+  // disk while this (seconds-long on a big library) dump re-runs.
   ipcMain.handle('applemusic:library', () =>
     process.platform === 'darwin'
-      ? activity.track('applemusic', 'activity.appleMusicLibrary', dumpAppleMusicLibrary, {
-          summary: (lib) => ({
-            detailKey: 'activity.trackCount',
-            detailParams: { count: lib.length },
-          }),
-        })
+      ? activity.track(
+          'applemusic',
+          'activity.appleMusicLibrary',
+          async () => {
+            const lib = await dumpAppleMusicLibrary()
+            saveLibraryCache(lib)
+            return lib
+          },
+          {
+            summary: (lib) => ({
+              detailKey: 'activity.trackCount',
+              detailParams: { count: lib.length },
+            }),
+          },
+        )
       : [],
+  )
+
+  // The previous session's persisted snapshot — a plain file read, no osascript, no
+  // activity row. Null (no cache yet) tells the renderer to just wait for the dump.
+  ipcMain.handle('applemusic:libraryCached', () =>
+    process.platform === 'darwin' ? loadLibraryCache() : null,
   )
 
   // Adds an already-converted track to Apple Music on demand — the tail of

@@ -75,6 +75,8 @@ const api: Api = {
     ipcRenderer.invoke('search:release', ref, provider, priority),
   loadAppleMusicLibrary: (): Promise<AppleMusicLookupCandidate[]> =>
     ipcRenderer.invoke('applemusic:library'),
+  loadAppleMusicLibraryCached: (): Promise<AppleMusicLookupCandidate[] | null> =>
+    ipcRenderer.invoke('applemusic:libraryCached'),
   loadEngineLibrary: (): Promise<AppleMusicLookupCandidate[]> =>
     ipcRenderer.invoke('engine:library'),
   addToAppleMusic: (job) => ipcRenderer.invoke('applemusic:add', job),

@@ -76,6 +76,10 @@ export interface Api {
   // The whole Apple Music library as title/artist pairs, matched against the crate in
   // the renderer to flag already-owned tracks. Empty off macOS.
   loadAppleMusicLibrary: () => Promise<AppleMusicLookupCandidate[]>
+  // The previous session's Apple Music snapshot read straight from disk — no
+  // osascript — to seed the membership index while the fresh dump runs. Null when
+  // no snapshot exists yet (first run, or the file was unreadable).
+  loadAppleMusicLibraryCached: () => Promise<AppleMusicLookupCandidate[] | null>
   // The Engine DJ library's rows in the same candidate shape, for the same membership
   // check when Engine DJ is the conversion destination. Empty when no library exists.
   loadEngineLibrary: () => Promise<AppleMusicLookupCandidate[]>

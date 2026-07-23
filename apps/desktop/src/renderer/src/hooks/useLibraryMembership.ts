@@ -15,7 +15,9 @@ const REFRESH_AFTER_MS = 5 * 60_000
 // Query so its identity stays stable across renders (the App merge keys its view cache
 // on it). Returns null with no source (destination is the folder / overwrite), before
 // any track is loaded, or until the snapshot lands — those rows then carry an undefined
-// library verdict and sit in neither filter bucket.
+// library verdict and sit in neither filter bucket. For Apple Music, the previous
+// session's disk snapshot seeds this as placeholder data so verdicts appear at once
+// instead of after the seconds-long dump.
 //
 // The library changes outside Surco (songs added in Music, imports in Engine), so the
 // snapshot can drift. A track Surco itself added is flagged from its own record
@@ -30,6 +32,16 @@ export function useLibraryMembership(
 ): AppleMusicIndex | null {
   const queryClient = useQueryClient()
   const queryKey = ['library-membership', source]
+  // The previous session's persisted dump, read from disk in one IPC — Apple Music
+  // only, because the seconds-long osascript dump is what it exists to hide (the
+  // Engine read is a local SQLite file, already instant). Null (no snapshot yet)
+  // simply leaves the main query placeholder-less.
+  const { data: cachedSnapshot } = useQuery({
+    queryKey: ['library-membership-cached', source],
+    queryFn: () => window.api.loadAppleMusicLibraryCached(),
+    enabled: source === 'appleMusic' && trackCount > 0,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
   const { data } = useQuery({
     queryKey,
     queryFn: () =>
@@ -37,6 +49,10 @@ export function useLibraryMembership(
     enabled: source !== null && trackCount > 0,
     staleTime: Number.POSITIVE_INFINITY,
     select: buildLibraryIndex,
+    // Stale-while-revalidate across sessions: the disk snapshot stands in until the
+    // fresh dump resolves and replaces it — verdicts appear at once instead of after
+    // seconds of blank filter buckets.
+    placeholderData: cachedSnapshot ?? undefined,
   })
   useWindowFocus((focused) => {
     if (!focused || source === null) return
