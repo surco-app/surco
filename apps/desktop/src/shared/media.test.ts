@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { mediaMimeType, mediaPathFromUrl, mediaUrl, parseRange } from './media'
+import {
+  isRecoveryUrl,
+  mediaMimeType,
+  mediaPathFromUrl,
+  mediaRecoveryUrl,
+  mediaUrl,
+  parseRange,
+} from './media'
 
 describe('media url round-trip', () => {
   // The whole point of the custom scheme is that one encoded URL survives the
@@ -18,6 +25,23 @@ describe('media url round-trip', () => {
       expect(mediaPathFromUrl(mediaUrl(path))).toBe(path)
     })
   }
+})
+
+describe('recovery url', () => {
+  // A damaged file makes Chromium's demuxer abort the element while ffmpeg decodes
+  // past the corruption, so the retry has to tell main "serve me the repaired
+  // transcode" — the flag must survive the round-trip without touching the path.
+  it('marks the retry stream and still round-trips the path', () => {
+    const url = mediaRecoveryUrl('/m/damaged.flac')
+    expect(isRecoveryUrl(url)).toBe(true)
+    expect(mediaPathFromUrl(url)).toBe('/m/damaged.flac')
+  })
+
+  it('does not mistake a plain stream, or a literal "?" in the path, for a retry', () => {
+    expect(isRecoveryUrl(mediaUrl('/m/a.flac'))).toBe(false)
+    expect(isRecoveryUrl(mediaUrl('/m/a?recover=1.mp3'))).toBe(false)
+    expect(mediaPathFromUrl(mediaRecoveryUrl('/m/a?b&c=d.mp3'))).toBe('/m/a?b&c=d.mp3')
+  })
 })
 
 describe('mediaMimeType', () => {

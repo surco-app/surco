@@ -20,6 +20,20 @@ export function mediaPathFromUrl(url: string): string {
   return decodeURIComponent(new URL(url).pathname.replace(/^\//, ''))
 }
 
+// The retry after the element rejects a stream (a damaged file Chromium's demuxer
+// aborts on but ffmpeg decodes past): same path, flagged so main serves a repaired
+// transcode instead of the original bytes. A literal "?" in the path can't collide —
+// mediaUrl percent-encodes it, so only this real query string reads as the flag.
+const RECOVER = 'recover'
+
+export function mediaRecoveryUrl(path: string): string {
+  return `${mediaUrl(path)}?${RECOVER}=1`
+}
+
+export function isRecoveryUrl(url: string): boolean {
+  return new URL(url).searchParams.has(RECOVER)
+}
+
 const MIME: Record<string, string> = {
   mp3: 'audio/mpeg',
   wav: 'audio/wav',

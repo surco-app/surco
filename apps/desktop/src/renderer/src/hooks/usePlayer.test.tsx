@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mediaUrl } from '../../../shared/media'
+import { isRecoveryUrl, mediaPathFromUrl, mediaUrl } from '../../../shared/media'
 import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { usePlayer } from './usePlayer'
@@ -11,7 +11,7 @@ import { usePlayer } from './usePlayer'
 afterEach(cleanup)
 
 beforeEach(() => {
-  ;(window as unknown as { api: unknown }).api = { recordStat: vi.fn() }
+  ;(window as unknown as { api: unknown }).api = { recordStat: vi.fn(), logError: vi.fn() }
 })
 
 function track(id: string, inputPath: string): TrackItem {
@@ -79,6 +79,39 @@ describe('usePlayer', () => {
     expect(audio.pause).toHaveBeenCalled()
     expect(audio.play).toHaveBeenCalledTimes(1)
     expect(audio.getAttribute('src')).toBeNull()
+  })
+})
+
+// A damaged file (mid-stream corruption is common in shared rips) kills the whole
+// element with a MediaError while every other player sails past the bad frames. The
+// element's error event is the only signal there is; without a retry through the
+// recovery transcode the card just sits silent at 0:00 with no hint of why.
+describe('usePlayer decode-failure recovery', () => {
+  function playedTrack(inputPath: string): HTMLAudioElement {
+    render(<Harness tracks={[track('a', inputPath)]} />)
+    const audio = screen.getByTestId('audio') as HTMLAudioElement
+    audio.play = vi.fn().mockResolvedValue(undefined)
+    audio.pause = vi.fn()
+    audio.load = vi.fn()
+    fireEvent.click(screen.getByTestId('toggle'))
+    return audio
+  }
+
+  it('retries a stream the element rejected through the recovery transcode', () => {
+    const audio = playedTrack('/m/damaged.flac')
+    expect(isRecoveryUrl(audio.src)).toBe(false)
+    fireEvent.error(audio)
+    expect(isRecoveryUrl(audio.src)).toBe(true)
+    expect(mediaPathFromUrl(audio.src)).toBe('/m/damaged.flac')
+    expect(audio.play).toHaveBeenCalledTimes(2)
+  })
+
+  it('gives up when the recovery stream fails too, instead of retrying forever', () => {
+    const audio = playedTrack('/m/hopeless.flac')
+    fireEvent.error(audio)
+    fireEvent.error(audio)
+    expect(isRecoveryUrl(audio.src)).toBe(true)
+    expect(audio.play).toHaveBeenCalledTimes(2)
   })
 })
 

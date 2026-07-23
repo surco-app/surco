@@ -18,7 +18,13 @@ import {
 } from 'electron'
 import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
-import { MEDIA_SCHEME, mediaMimeType, mediaPathFromUrl, parseRange } from '../shared/media'
+import {
+  isRecoveryUrl,
+  MEDIA_SCHEME,
+  mediaMimeType,
+  mediaPathFromUrl,
+  parseRange,
+} from '../shared/media'
 import { resolveBindings } from '../shared/shortcutDefaults'
 import { chordToAccelerator } from '../shared/shortcuts'
 import type { CoverExportJob, ProcessJob, SessionEdit, Settings } from '../shared/types'
@@ -50,7 +56,7 @@ import { createMediaAccess } from './mediaAccess'
 import { keymapMenuClick } from './menuCommand'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { createOutputReservations } from './outputReservations'
-import { cleanupPlaybackTemps, resolvePlayable } from './playback'
+import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
 import { runProcessTrack } from './processTrack'
 import { getProvider } from './providers'
 import { loadLastSession, saveLastSession } from './session'
@@ -1089,9 +1095,13 @@ app.whenReady().then(() => {
     const requested = mediaPathFromUrl(req.url)
     if (!mediaAccess.isAllowed(requested)) return new Response('Forbidden', { status: 403 })
     // AIFF can't be decoded by the <audio> element, so resolvePlayable swaps it
-    // for a transcoded WAV (every other format streams untouched). The size,
-    // MIME and ranges below all come from the file we actually serve.
-    const filePath = await resolvePlayable(requested)
+    // for a transcoded WAV (every other format streams untouched). The recovery
+    // flag is the renderer retrying a stream the element rejected — a damaged
+    // file re-encoded whole to a WAV it can take. The size, MIME and ranges
+    // below all come from the file we actually serve.
+    const filePath = isRecoveryUrl(req.url)
+      ? await resolveRecovered(requested)
+      : await resolvePlayable(requested)
     const { size } = await stat(filePath)
     const type = mediaMimeType(filePath)
     const range = parseRange(req.headers.get('range'), size)

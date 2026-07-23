@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
-import { cleanupPlaybackTemps, resolvePlayable } from './playback'
+import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
 
 function deps(over: Record<string, unknown> = {}) {
   let n = 0
@@ -103,6 +103,45 @@ describe('resolvePlayable', () => {
     await expect(resolvePlayable('/retry-pic.flac', d)).rejects.toThrow('ffmpeg died')
     await expect(resolvePlayable('/retry-pic.flac', d)).resolves.toBe('/tmp/play-1.flac')
     expect(stripPicture).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('resolveRecovered', () => {
+  // A shared rip with mid-stream corruption plays everywhere except the <audio>
+  // element: Chromium's demuxer aborts on the first frame it can't timestamp,
+  // while ffmpeg decodes past the damage. The recovery path re-encodes the whole
+  // file to a WAV the element can take, traded for the retry click only.
+  it('re-encodes the damaged source to a temp WAV the element can decode', async () => {
+    const d = deps()
+    const out = await resolveRecovered('/damaged.flac', d)
+    expect(out).toBe('/tmp/play-0.wav')
+    expect(d.transcode).toHaveBeenCalledWith('/damaged.flac', '/tmp/play-0.wav')
+  })
+
+  it('re-encodes once and reuses it across the range requests one playback fires', async () => {
+    const d = deps()
+    const a = await resolveRecovered('/reuse-recover.flac', d)
+    const b = await resolveRecovered('/reuse-recover.flac', d)
+    expect(a).toBe(b)
+    expect(d.transcode).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps its cache apart from the plain resolve, which must keep serving the original', async () => {
+    const d = deps()
+    expect(await resolvePlayable('/mixed.flac', d)).toBe('/mixed.flac')
+    expect(await resolveRecovered('/mixed.flac', d)).toBe('/tmp/play-0.wav')
+    expect(await resolvePlayable('/mixed.flac', d)).toBe('/mixed.flac')
+  })
+
+  it('does not cache a failed re-encode, so a transient ffmpeg error can be retried', async () => {
+    const transcode = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('ffmpeg died'))
+      .mockResolvedValueOnce(undefined)
+    const d = deps({ transcode })
+    await expect(resolveRecovered('/retry-recover.flac', d)).rejects.toThrow('ffmpeg died')
+    await expect(resolveRecovered('/retry-recover.flac', d)).resolves.toBe('/tmp/play-1.wav')
+    expect(transcode).toHaveBeenCalledTimes(2)
   })
 })
 

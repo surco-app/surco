@@ -1,6 +1,6 @@
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { mediaUrl } from '../../../shared/media'
+import { isRecoveryUrl, mediaRecoveryUrl, mediaUrl } from '../../../shared/media'
 import type { TrackItem } from '../types'
 
 interface Params {
@@ -113,6 +113,31 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
       setPlayerVisible(true)
     }
   }, [playingId, playerVisible])
+
+  // A damaged file (mid-stream corruption is common in shared rips) makes Chromium's
+  // demuxer abort the whole element with a MediaError, while ffmpeg — and every other
+  // player — decodes past the bad frames. The element's error event is the only signal,
+  // so retry the same track through the recovery transcode; if that stream fails too,
+  // stop there rather than loop, leaving the log as the trail. Empty [] deps: the
+  // element App renders is the same node for the app's whole life.
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    const onError = (): void => {
+      const path = playingPathRef.current
+      if (!path || !audio.src) return
+      const detail = audio.error?.message ?? 'unknown'
+      if (isRecoveryUrl(audio.src)) {
+        window.api.logError(`playback: recovery stream for ${path} failed too (${detail})`)
+        return
+      }
+      window.api.logError(`playback: element rejected ${path} (${detail}), retrying repaired`)
+      audio.src = mediaRecoveryUrl(path)
+      audio.play().catch(() => {})
+    }
+    audio.addEventListener('error', onError)
+    return () => audio.removeEventListener('error', onError)
+  }, [])
 
   // Pressing play on an AIFF (Surco's default DJ format) stalls: Chromium can't
   // decode AIFF, so the surco:// handler transcodes the whole file to a temp WAV
