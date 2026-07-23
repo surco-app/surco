@@ -29,6 +29,7 @@ interface MenuStrings {
   help: string
   faq: string
   guide: string
+  setupAssistant: string
   website: string
   // The About panel's credits block: authorship and the people whose ideas and
   // feedback shape Surco.
@@ -74,6 +75,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     help: 'Ayuda',
     faq: 'Preguntas frecuentes',
     guide: 'Guía de uso',
+    setupAssistant: 'Asistente de configuración…',
     website: 'Sitio web de Surco',
     aboutCredits:
       'Hecha con cariño por Vicent Gozalbes\nvigosan@gmail.com\n\nGracias a @djotas y a quienes\naportan ideas y feedback.\n\ngetsurco.app',
@@ -117,6 +119,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     help: 'Help',
     faq: 'Frequently Asked Questions',
     guide: 'User guide',
+    setupAssistant: 'Setup assistant…',
     website: 'Surco website',
     aboutCredits:
       'Made with care by Vicent Gozalbes\nvigosan@gmail.com\n\nThanks to @djotas and everyone\nwho shares ideas and feedback.\n\ngetsurco.app',
@@ -160,6 +163,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     help: 'Hilfe',
     faq: 'Häufige Fragen',
     guide: 'Benutzerhandbuch',
+    setupAssistant: 'Einrichtungsassistent…',
     website: 'Surco-Website',
     aboutCredits:
       'Mit Sorgfalt gemacht von Vicent Gozalbes\nvigosan@gmail.com\n\nDanke an @djotas und alle, die Ideen\nund Feedback beisteuern.\n\ngetsurco.app',
@@ -203,6 +207,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     help: 'Aide',
     faq: 'Questions fréquentes',
     guide: "Guide d'utilisation",
+    setupAssistant: 'Assistant de configuration…',
     website: 'Site web de Surco',
     aboutCredits:
       'Fait avec soin par Vicent Gozalbes\nvigosan@gmail.com\n\nMerci à @djotas et à toutes les personnes\nqui partagent idées et retours.\n\ngetsurco.app',
@@ -246,6 +251,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     help: 'Ajuda',
     faq: 'Perguntas frequentes',
     guide: 'Guia de uso',
+    setupAssistant: 'Assistente de configuração…',
     website: 'Site do Surco',
     aboutCredits:
       'Feito com carinho por Vicent Gozalbes\nvigosan@gmail.com\n\nObrigado a @djotas e a todos que\ncompartilham ideias e feedback.\n\ngetsurco.app',
