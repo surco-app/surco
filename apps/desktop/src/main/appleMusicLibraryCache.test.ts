@@ -78,6 +78,20 @@ describe('appleMusicLibraryCache', () => {
     ])
   })
 
+  // An empty library is a real state, distinct from a broken file: it round-trips
+  // as [] so the renderer can build an (empty) index instead of waiting for the dump.
+  it('round-trips a genuinely empty library', () => {
+    saveLibraryCache([])
+    expect(loadLibraryCache()).toEqual([])
+  })
+
+  // A non-empty file whose every row is garbage is a corrupt snapshot, not an empty
+  // library — [] here would flag the whole crate as not-owned until the dump lands.
+  it('returns null when every row of a non-empty file is malformed', () => {
+    writeFileSync(cacheFile(), JSON.stringify(['a', 'b']))
+    expect(loadLibraryCache()).toBeNull()
+  })
+
   // The cache is an optimization: if the disk write fails the dump result must still
   // reach the renderer, so save swallows the failure instead of throwing.
   it('does not throw when the write fails', () => {

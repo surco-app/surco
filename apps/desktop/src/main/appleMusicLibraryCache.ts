@@ -42,6 +42,8 @@ export function saveLibraryCache(candidates: AppleMusicLookupCandidate[]): void 
 
 // Null — not [] — when there is no usable snapshot: an empty array would flag the
 // whole crate as not-owned, null means "no placeholder, wait for the dump".
+// A non-empty file whose every row was dropped is corrupt, not an empty library,
+// so it degrades to null too; only a genuinely empty saved library round-trips as [].
 export function loadLibraryCache(): AppleMusicLookupCandidate[] | null {
   try {
     const raw: unknown = JSON.parse(readFileSync(cachePath(), 'utf-8'))
@@ -51,6 +53,7 @@ export function loadLibraryCache(): AppleMusicLookupCandidate[] | null {
       const candidate = sanitizeCandidate(entry)
       if (candidate) candidates.push(candidate)
     }
+    if (raw.length > 0 && candidates.length === 0) return null
     return candidates
   } catch {
     return null
