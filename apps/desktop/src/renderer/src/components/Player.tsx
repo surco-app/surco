@@ -180,8 +180,8 @@ export function Player({
   const { t } = useTranslation()
   const sectionRef = useRef<HTMLDivElement>(null)
   const sectionHeightRef = useRef<number | undefined>(undefined)
-  // The volume and time pills only surface while the pointer is over the card, then
-  // fade back out, so the resting player stays just cover + name + controls + wave.
+  // The volume pill only surfaces while the pointer is over the card, then fades back
+  // out; the clock stays put — where the track stands is primary playback information.
   const [hovered, setHovered] = useState(false)
 
   // The tall waveform strip and the slim transport row are different heights, so flipping
@@ -366,11 +366,12 @@ export function Player({
 
       {/* The waveform runs full-bleed to the card edges (the rounded card clips its
           corners) so the whole width is scrubbable. The clock and the volume slider float
-          over its corners as pills that fade in on hover; the clock is pointer-events-none so
-          a click underneath still reaches the wave, while the volume pill takes pointer events
-          for its slider. Hidden by the toggle, the whole strip is unmounted so its full-file
-          decode never runs — the point of the preference. The wrapper clips and animates the
-          height as the two layouts swap (see useLayoutEffect). */}
+          over its corners as pills — the volume fades in on hover, the clock is always
+          there; the clock is pointer-events-none so a click underneath still reaches the
+          wave, while the volume pill takes pointer events for its slider. Hidden by the
+          toggle, the whole strip is unmounted so its full-file decode never runs — the
+          point of the preference. The wrapper clips and animates the height as the two
+          layouts swap (see useLayoutEffect). */}
       <div ref={sectionRef} className="player-section overflow-hidden">
         {showWaveform ? (
           <div className="relative mt-2">
@@ -392,9 +393,7 @@ export function Player({
             />
             <span
               data-testid="player-time"
-              className={`pointer-events-none absolute top-1 right-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm transition-opacity duration-200 ${
-                hovered ? 'opacity-100' : 'opacity-0'
-              }`}
+              className="pointer-events-none absolute top-1 right-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm"
             >
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>

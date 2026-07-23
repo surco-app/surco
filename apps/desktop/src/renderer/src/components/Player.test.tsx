@@ -312,17 +312,18 @@ describe('Player', () => {
     expect(screen.getByTestId('player-volume')).toHaveTextContent('80%')
   })
 
-  // Both pills are hidden until the pointer is over the card, then fade in.
-  it('reveals the pills on hover and hides them otherwise', () => {
+  // The volume pill stays hidden until the pointer is over the card; the clock does
+  // not — where the track stands is primary playback information, not a hover detail.
+  it('keeps the clock visible without hover while only the volume pill fades in', () => {
     renderUI(<Player {...props()} />)
     const card = screen.getByTestId('player')
     expect(screen.getByTestId('player-volume-pill')).toHaveClass('opacity-0')
-    expect(screen.getByTestId('player-time')).toHaveClass('opacity-0')
+    expect(screen.getByTestId('player-time')).not.toHaveClass('opacity-0')
     fireEvent.pointerEnter(card)
     expect(screen.getByTestId('player-volume-pill')).toHaveClass('opacity-100')
-    expect(screen.getByTestId('player-time')).toHaveClass('opacity-100')
     fireEvent.pointerLeave(card)
-    expect(screen.getByTestId('player-time')).toHaveClass('opacity-0')
+    expect(screen.getByTestId('player-volume-pill')).toHaveClass('opacity-0')
+    expect(screen.getByTestId('player-time')).not.toHaveClass('opacity-0')
   })
 })
 
