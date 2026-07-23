@@ -1197,6 +1197,22 @@ describe('Editor multi-select', () => {
     fireEvent.click(screen.getByTestId('process-btn'))
     expect(onProcessAll).toHaveBeenCalledWith('aiff')
   })
+
+  // Same silent-empty-batch hole as the main convert button, through the done branch:
+  // a required field emptied (or made required) after converting leaves every track
+  // done, so the quiet Re-export shows — and eligibleForBatch would drop the whole
+  // selection, running a batch of zero. The quiet button carries the same gate.
+  it('disables the quiet re-export while a selected track is missing a required field', () => {
+    const { onProcessAll } = renderMulti({
+      done: true,
+      requiredFields: ['artist'],
+      metaA: { artist: 'Kumara' },
+    })
+    const btn = screen.getByTestId('process-btn')
+    expect(btn).toBeDisabled()
+    fireEvent.click(btn)
+    expect(onProcessAll).not.toHaveBeenCalled()
+  })
 })
 
 describe('Editor export control', () => {

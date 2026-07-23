@@ -239,7 +239,11 @@ export function ConvertFooter({
                 exportedFormat={isMulti ? null : exportedFormat}
                 withAppleMusic={false}
                 withEngineDj={false}
-                incomplete={false}
+                // A field emptied (or made required) after converting would send the
+                // re-export into the same silently-empty batch the main button gates
+                // against, so the quiet variant carries the identical block.
+                incomplete={incomplete}
+                incompleteReason={incompleteReason}
                 inPlace={false}
                 destination={destination}
                 destinations={destinations}
