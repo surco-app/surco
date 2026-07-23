@@ -29,6 +29,7 @@ export function Waveform({
   onScrub: (seconds: number) => void
 }): React.JSX.Element | null {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const playedCanvasRef = useRef<HTMLCanvasElement>(null)
   const [playheadSec, setPlayheadSec] = useState<number | null>(null)
 
   const { data: wave, isFetching } = useWaveform(inputPath, true)
@@ -44,13 +45,21 @@ export function Waveform({
   // <html data-theme> with no React store (same situation as useSpectrumDuotone), so
   // repaint by observing that attribute and re-reading the token.
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas || !wave) return
+    if (!wave) return
     const draw = (): void => {
       const [r, g, b] = parseColor(
         getComputedStyle(document.documentElement).getPropertyValue('--color-accent'),
       )
-      drawWaveform(canvas, wave.peaks, { color: `rgba(${r}, ${g}, ${b}, 0.8)`, rms: wave.rms })
+      // Both layers get the identical envelope: the played/pending contrast comes
+      // from CSS (opacity + clip-path), never from a second draw pass.
+      for (const ref of [canvasRef, playedCanvasRef]) {
+        if (ref.current) {
+          drawWaveform(ref.current, wave.peaks, {
+            color: `rgba(${r}, ${g}, ${b}, 0.8)`,
+            rms: wave.rms,
+          })
+        }
+      }
     }
     draw()
     const observer = new MutationObserver(draw)
@@ -92,7 +101,7 @@ export function Waveform({
   return (
     <div
       data-testid="waveform"
-      className="relative cursor-pointer"
+      className="relative cursor-pointer bg-black/15"
       onPointerDown={(e) => {
         e.currentTarget.setPointerCapture(e.pointerId)
         scrubFrom(e.clientX, e.currentTarget)
@@ -101,11 +110,24 @@ export function Waveform({
         if (e.currentTarget.hasPointerCapture(e.pointerId)) scrubFrom(e.clientX, e.currentTarget)
       }}
     >
+      {/* The wave is two stacked copies of the same raster, each drawn once: the dimmed
+          base is the pending remainder (the ground colour rides the wrapper so the fade
+          doesn't wash it), and the full-strength copy above clips to the played fraction.
+          Progress then reads peripherally — SoundCloud/Serato's played/pending contrast —
+          and each ~4 Hz tick just moves an inline clip-path, never a canvas repaint. */}
       <canvas
         ref={canvasRef}
         width={CANVAS_W}
         height={CANVAS_H}
-        className="block h-16 w-full bg-black/15"
+        className="block h-16 w-full opacity-35"
+      />
+      <canvas
+        ref={playedCanvasRef}
+        data-testid="waveform-played"
+        width={CANVAS_W}
+        height={CANVAS_H}
+        className="pointer-events-none absolute inset-0 block h-full w-full"
+        style={{ clipPath: `inset(0 ${100 - pct(playheadSec ?? 0)}% 0 0)` }}
       />
       {loading && <WaveformSkeleton testid="waveform-loading" />}
       {playheadSec !== null && durationSec > 0 && (

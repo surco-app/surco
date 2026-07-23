@@ -187,6 +187,40 @@ describe('Waveform', () => {
     )
     await screen.findByTestId('waveform')
     expect(screen.queryByTestId('waveform-playhead')).not.toBeInTheDocument()
+    // With no playback here there is no "played" portion either: the full-strength
+    // layer clips to nothing and only the dimmed wave shows.
+    expect(screen.getByTestId('waveform-played')).toHaveStyle({ clipPath: 'inset(0 100% 0 0)' })
+  })
+
+  it('paints the played portion full-strength over a dimmed remainder', async () => {
+    // Progress must read peripherally — the played/pending contrast (the
+    // SoundCloud/Serato convention) — instead of forcing the eye to hunt for the
+    // 2px playhead line on a uniform strip.
+    const audio = {
+      currentTime: 15,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    } as unknown as HTMLAudioElement
+    setWaveform(wave)
+    // Earlier tests drew the same shared envelope; drop their calls so the counts
+    // below see only this render.
+    vi.mocked(drawWaveform).mockClear()
+    renderWithQuery(
+      <Waveform inputPath="/m/a.wav" audioRef={{ current: audio }} active onScrub={vi.fn()} />,
+    )
+    // 15 s of 60 s → the full-strength layer keeps the left quarter; the inset trims
+    // the pending 75% off its right edge. A clip-path tween composites at ~4 Hz
+    // without redrawing the canvas, like the playhead's translateX.
+    const played = await screen.findByTestId('waveform-played')
+    await waitFor(() => expect(played).toHaveStyle({ clipPath: 'inset(0 75% 0 0)' }))
+    // Both layers carry the same envelope, drawn once each; the pending side dims via
+    // CSS opacity rather than a second colour, so the two can never disagree. The
+    // skeleton also funnels through drawWaveform, so count only the real envelope.
+    const envelopeCalls = (): Parameters<typeof drawWaveform>[] =>
+      vi.mocked(drawWaveform).mock.calls.filter((c) => c[1] === wave.peaks)
+    await waitFor(() => expect(envelopeCalls()).toHaveLength(2))
+    const [dimCall, playedCall] = envelopeCalls()
+    expect(playedCall[2]).toEqual(dimCall[2])
   })
 
   it('renders nothing when the file has no decodable audio', async () => {
