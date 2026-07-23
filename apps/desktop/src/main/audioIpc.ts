@@ -225,8 +225,10 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   ipcMain.handle('audio:bpm', async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
     try {
       // Unlike a null loudness (a parse failure worth retrying), a null here is
-      // a real measurement — beatless material — so it is cached too; only a
-      // decode error (which throws) is left uncached for a later retry.
+      // a real measurement — beatless material, or a corrupt file whose decode
+      // overruns its buffer ceiling on every attempt (see decodeAnalysisPcm) —
+      // so it is cached too; only a transient decode error (which throws) is
+      // left uncached for a later retry.
       return await cachedAnalysis(
         'bpm',
         inputPath,
@@ -244,8 +246,9 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
 
   ipcMain.handle('audio:key', async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
     try {
-      // Same caching contract as audio:bpm: a null (atonal material) is a real
-      // measurement and is cached; only a decode error retries.
+      // Same caching contract as audio:bpm: a null (atonal material, or the
+      // corrupt-file overrun) is a real measurement and is cached; only a
+      // transient decode error retries.
       return await cachedAnalysis(
         'key',
         inputPath,

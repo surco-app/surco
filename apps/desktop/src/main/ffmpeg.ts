@@ -47,6 +47,7 @@ import {
   UPSAMPLE_PROBE_BELOW_HZ,
 } from './cutoff'
 import { declickRepairedArgs, parseDeclickedSamples, parseProgressSeconds } from './declick'
+import { isPcmOverrun, slimDecodeError } from './decodeError'
 import {
   detectFftKnee,
   detectFlatShelf,
@@ -1588,12 +1589,20 @@ async function decodePcm(
   args.push('-i', input)
   if (opts.seconds !== undefined) args.push('-t', String(opts.seconds))
   args.push('-ac', '1', '-ar', String(opts.sampleRate), '-f', 'f32le', '-')
-  const { stdout } = await run(ffmpegPath, args, {
-    encoding: 'buffer',
-    maxBuffer: 1024 * 1024 * opts.maxBufferMb,
-    timeout: ANALYSIS_TIMEOUT_MS,
-    signal: opts.signal,
-  })
+  let stdout: Buffer
+  try {
+    // A failed decode rejects with the child's whole stdout attached — tens of MB of
+    // PCM. The handlers up the stack log these errors, and serializing that payload
+    // froze the main process (see decodeError.ts); rethrow slim before it can spread.
+    ;({ stdout } = await run(ffmpegPath, args, {
+      encoding: 'buffer',
+      maxBuffer: 1024 * 1024 * opts.maxBufferMb,
+      timeout: ANALYSIS_TIMEOUT_MS,
+      signal: opts.signal,
+    }))
+  } catch (err) {
+    throw slimDecodeError(err)
+  }
   const bytes = stdout.length - (stdout.length % 4)
   const pcm = new Uint8Array(bytes)
   pcm.set(stdout.subarray(0, bytes))
@@ -1608,11 +1617,23 @@ async function decodePcm(
 // same 11025/240s PCM — two ffmpeg passes where one will do. Single-flight the decode:
 // concurrent callers for the same file share the in-flight promise, and the entry is
 // dropped on settle so a later re-decode (e.g. after the file changes) isn't pinned.
-const inFlightAnalysisPcm = new Map<string, Promise<Float32Array>>()
-function decodeAnalysisPcm(input: string): Promise<Float32Array> {
+// A null means the decode overran its buffer ceiling: a corrupt file whose broken frames
+// garble ffmpeg's `-t` accounting (a healthy 240 s window can't reach 16 MB at this rate).
+// That failure is deterministic on every retry, so it surfaces as "unmeasurable" — the
+// same cacheable null as beatless/atonal material — instead of throwing, which would
+// re-decode tens of MB on every selection of the same broken track.
+const inFlightAnalysisPcm = new Map<string, Promise<Float32Array | null>>()
+function decodeAnalysisPcm(input: string): Promise<Float32Array | null> {
   const pending = inFlightAnalysisPcm.get(input)
   if (pending) return pending
-  const decode = decodePcm(input, { sampleRate: TEMPO_SAMPLE_RATE, seconds: 240, maxBufferMb: 16 })
+  const decode = decodePcm(input, {
+    sampleRate: TEMPO_SAMPLE_RATE,
+    seconds: 240,
+    maxBufferMb: 16,
+  }).catch((err) => {
+    if (isPcmOverrun(err)) return null
+    throw err
+  })
   inFlightAnalysisPcm.set(input, decode)
   const clear = (): void => {
     inFlightAnalysisPcm.delete(input)
@@ -1627,11 +1648,13 @@ function decodeAnalysisPcm(input: string): Promise<Float32Array> {
 // (not transferred), so the shared single-flight decode stays valid for the other detector.
 export async function measureBpm(input: string): Promise<BpmResult | null> {
   const pcm = await decodeAnalysisPcm(input)
+  if (pcm === null) return null
   return runInWorker<BpmResult | null>({ type: 'bpm', pcm, sampleRate: TEMPO_SAMPLE_RATE })
 }
 
 export async function measureKey(input: string): Promise<KeyResult | null> {
   const pcm = await decodeAnalysisPcm(input)
+  if (pcm === null) return null
   return runInWorker<KeyResult | null>({ type: 'key', pcm, sampleRate: TEMPO_SAMPLE_RATE })
 }
 
