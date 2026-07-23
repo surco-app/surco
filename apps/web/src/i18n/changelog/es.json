@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.71",
+    "date": "23 de julio de 2026",
+    "title": "Un vinilo que gira, el asistente siempre a mano y a prueba de archivos dañados",
+    "items": [
+      {
+        "text": "La carátula del reproductor es ahora un vinilo que gira mientras suena la pista, con la galleta en los colores de Surco cuando el archivo no trae carátula. La onda del reproductor toma además el color de acento de tu tema, también en el tema claro.",
+        "in": "0.71.0"
+      },
+      {
+        "text": "El asistente de configuración se puede volver a abrir cuando quieras desde el menú Ayuda o la paleta de comandos. Parte de tus ajustes actuales y solo aplica lo que cambies, así que rehacerlo nunca te desconfigura el resto.",
+        "in": "0.71.0"
+      },
+      {
+        "text": "Las sugerencias de metadatos se ajustan al ancho de la ventana en una sola línea: se muestran las que caben y un «+N» agrupa las demás.",
+        "in": "0.71.0"
+      },
+      {
+        "text": "Los archivos de audio dañados ya no congelan la aplicación: el análisis los marca como ilegibles y sigue con el resto, y un WAV con la cabecera rota se repara al vuelo para poder reproducirlo.",
+        "in": "0.71.0"
+      }
+    ]
+  },
+  {
     "version": "0.70",
     "date": "22 de julio de 2026",
     "title": "Igual que el origen: etiqueta sin reconvertir",

@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.71",
+    "date": "July 23, 2026",
+    "title": "A spinning vinyl, the assistant always at hand, and no freezes on damaged files",
+    "items": [
+      {
+        "text": "The player's artwork is now a vinyl record that spins while the track plays, with a Surco-colored label when the file carries no cover. The player waveform also picks up your theme's accent color, in the light theme too.",
+        "in": "0.71.0"
+      },
+      {
+        "text": "The setup assistant can be reopened anytime from the Help menu or the command palette. It starts from your current settings and only applies what you change, so re-running it never undoes the rest.",
+        "in": "0.71.0"
+      },
+      {
+        "text": "Metadata suggestions now adapt to the window width on a single line: the ones that fit are shown and a “+N” groups the rest.",
+        "in": "0.71.0"
+      },
+      {
+        "text": "Damaged audio files no longer freeze the app: analysis marks them as unreadable and moves on with the rest, and a WAV with a broken header is repaired on the fly so it can still play.",
+        "in": "0.71.0"
+      }
+    ]
+  },
+  {
     "version": "0.70",
     "date": "July 22, 2026",
     "title": "Same as source: tag without re-encoding",
