@@ -1,6 +1,7 @@
 import type React from 'react'
 import { memo, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useChipOverflow } from '../hooks/useChipOverflow'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
 import { Tooltip } from './Tooltip'
@@ -11,9 +12,6 @@ import { Tooltip } from './Tooltip'
 // per keystroke is what made typing lag. Buffering here and committing on a pause keeps
 // the field instant and runs that walk once per edit instead of once per keypress.
 const COMMIT_DEBOUNCE_MS = 200
-
-// How many suggestion chips show before the rest collapse behind a "+N" chip.
-const SUGGESTION_PREVIEW = 2
 
 interface FieldProps {
   name: string
@@ -57,6 +55,10 @@ export const Field = memo(function Field({
   // Suggestion chips collapse to the first few + a "+N" chip so a long list (a genre with
   // ten Discogs styles) doesn't push the form down; clicking "+N" reveals the rest.
   const [chipsExpanded, setChipsExpanded] = useState(false)
+  const { containerRef, measureRef, visibleCount } = useChipOverflow(
+    suggestions ?? [],
+    !chipsExpanded && (suggestions?.length ?? 0) > 0,
+  )
   // The text the input shows while the user types, kept local so a keystroke doesn't
   // touch the global track array (and its O(n) pipeline) until they pause or leave.
   const [draft, setDraft] = useState(value)
@@ -189,12 +191,17 @@ export const Field = memo(function Field({
       )}
       {suggestions && suggestions.length > 0 && (
         <span
+          ref={containerRef}
           data-testid="field-suggestions"
-          className="mt-1.5 flex flex-wrap items-center gap-1.5"
+          // Colapsada, la fila es UNA línea pase lo que pase: nowrap + overflow-hidden, y el
+          // corte medido (useChipOverflow) decide cuántos chips entran dejando hueco al "+N" —
+          // el corte fijo de antes saltaba a una segunda línea en columnas estrechas y
+          // desperdiciaba hueco en las anchas. Expandida vuelve al wrap multilínea.
+          className={`relative mt-1.5 flex items-center gap-1.5 ${
+            chipsExpanded ? 'flex-wrap' : 'flex-nowrap overflow-hidden'
+          }`}
         >
-          {/* Show the first SUGGESTION_PREVIEW chips; the rest hide behind a "+N" chip until
-              the user expands the list. Once expanded it stays open for this field's mount. */}
-          {(chipsExpanded ? suggestions : suggestions.slice(0, SUGGESTION_PREVIEW)).map((s) => {
+          {(chipsExpanded ? suggestions : suggestions.slice(0, visibleCount)).map((s) => {
             const on = multiSuggestions ? csvHas(draft, s) : draft === s
             return (
               <button
@@ -202,7 +209,11 @@ export const Field = memo(function Field({
                 type="button"
                 data-testid={`chip-${s}`}
                 onClick={() => commit(multiSuggestions ? toggleCsv(draft, s) : on ? '' : s)}
-                className={`press shrink-0 rounded-full border px-2 py-0.5 text-[10px] transition-colors ${
+                // Colapsado, el chip puede encoger y truncar con elipsis — solo pasa en el caso
+                // mínimo-1 (ni un chip cabe entero); si el corte dice que cabe, no encoge nada.
+                className={`press rounded-full border px-2 py-0.5 text-[10px] transition-colors ${
+                  chipsExpanded ? 'shrink-0' : 'min-w-0 truncate'
+                } ${
                   on
                     ? 'border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)]'
                     : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-panel-2)]'
@@ -212,18 +223,38 @@ export const Field = memo(function Field({
               </button>
             )
           })}
-          {!chipsExpanded && suggestions.length > SUGGESTION_PREVIEW && (
+          {!chipsExpanded && suggestions.length > visibleCount && (
             <button
               type="button"
               data-testid="chip-more"
               onClick={() => setChipsExpanded(true)}
               aria-label={tr('fields.suggestionsMore', {
-                count: suggestions.length - SUGGESTION_PREVIEW,
+                count: suggestions.length - visibleCount,
               })}
               className="press shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] px-2 py-0.5 text-[10px] text-[var(--color-accent)] transition-colors hover:bg-[var(--color-panel-2)]"
             >
-              +{suggestions.length - SUGGESTION_PREVIEW}
+              +{suggestions.length - visibleCount}
             </button>
+          )}
+          {!chipsExpanded && (
+            // Fila gemela de medición: todos los chips más la sonda "+N" (con el mayor resto
+            // posible, el caso más ancho), invisible y fuera del flujo. Debe replicar las clases
+            // de tamaño de los chips reales (borde, padding, fuente) o las medidas mienten.
+            // Sin testids: duplicaría los selectores chip-* de los chips reales.
+            <span
+              ref={measureRef}
+              aria-hidden="true"
+              className="invisible absolute top-0 left-0 flex items-center gap-1.5 whitespace-nowrap"
+            >
+              {suggestions.map((s) => (
+                <span key={s} className="rounded-full border px-2 py-0.5 text-[10px]">
+                  {s}
+                </span>
+              ))}
+              <span className="rounded-full border px-2 py-0.5 text-[10px]">
+                +{suggestions.length - 1}
+              </span>
+            </span>
           )}
         </span>
       )}

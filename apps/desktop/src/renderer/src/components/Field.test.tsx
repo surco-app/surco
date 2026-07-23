@@ -152,67 +152,83 @@ describe('Field suggestion loading chip', () => {
   })
 })
 
+// jsdom no hace layout: para ejercitar el corte medido se inyectan anchos — el contenedor
+// de chips por su testid, cualquier otro elemento (chips reales y fila de medición) con un
+// ancho fijo por chip.
+function mockChipWidths(containerWidth: number, chipWidth: number): void {
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    const width = this.dataset.testid === 'field-suggestions' ? containerWidth : chipWidth
+    return {
+      width,
+      height: 0,
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      toJSON: () => ({}),
+    } as DOMRect
+  })
+}
+
+const FIVE = ['Electronic', 'asia records', 'eurobeat', 'happy music', 'italo dance']
+
+// WHY: el corte fijo en 2 chips saltaba a una segunda línea en columnas estrechas y
+// desperdiciaba hueco en las anchas; ahora el corte se mide. Colapsada, la fila es UNA
+// línea siempre; cuántos chips enseña depende del ancho real.
 describe('Field suggestion chips layout', () => {
-  it('envuelve las sugerencias sin scroll horizontal', () => {
-    render(
-      <Field
-        name="genre"
-        label="Genre"
-        value=""
-        onChange={() => {}}
-        suggestions={['Electronic', 'asia records', 'eurobeat', 'happy music', 'italo dance']}
-      />,
-    )
+  afterEach(() => vi.restoreAllMocks())
+
+  it('la fila colapsada es una sola línea sin scroll horizontal', () => {
+    render(<Field name="genre" label="Genre" value="" onChange={() => {}} suggestions={FIVE} />)
     const container = screen.getByTestId('field-suggestions')
-    expect(container.className).toContain('flex-wrap')
+    expect(container.className).toContain('flex-nowrap')
+    expect(container.className).toContain('overflow-hidden')
     expect(container.className).not.toContain('overflow-x-auto')
   })
 
-  it('muestra solo los dos primeros chips y agrupa el resto en +N', () => {
-    render(
-      <Field
-        name="genre"
-        label="Genre"
-        value=""
-        onChange={() => {}}
-        suggestions={['Electronic', 'asia records', 'eurobeat', 'happy music', 'italo dance']}
-      />,
-    )
+  it('corta donde el ancho manda y agrupa el resto en +N', () => {
+    // chips de 80, contenedor 260: caben 2 + "+N" (80+6+80+6+80 = 252 ≤ 260)
+    mockChipWidths(260, 80)
+    render(<Field name="genre" label="Genre" value="" onChange={() => {}} suggestions={FIVE} />)
     expect(screen.getByTestId('chip-Electronic')).toBeInTheDocument()
     expect(screen.getByTestId('chip-asia records')).toBeInTheDocument()
-    // The 3rd onward hide behind the "+3" chip until expanded.
     expect(screen.queryByTestId('chip-eurobeat')).not.toBeInTheDocument()
-    expect(screen.getByTestId('chip-more')).toHaveTextContent('3')
+    expect(screen.getByTestId('chip-more')).toHaveTextContent('+3')
   })
 
-  it('despliega el resto al pulsar +N', () => {
-    render(
-      <Field
-        name="genre"
-        label="Genre"
-        value=""
-        onChange={() => {}}
-        suggestions={['Electronic', 'asia records', 'eurobeat', 'happy music', 'italo dance']}
-      />,
-    )
+  it('con más ancho enseña más chips antes del +N', () => {
+    // contenedor 400: k=3 → 240+12+6+80 = 338 ≤ 400; k=4 → 424 > 400
+    mockChipWidths(400, 80)
+    render(<Field name="genre" label="Genre" value="" onChange={() => {}} suggestions={FIVE} />)
+    expect(screen.getByTestId('chip-eurobeat')).toBeInTheDocument()
+    expect(screen.queryByTestId('chip-happy music')).not.toBeInTheDocument()
+    expect(screen.getByTestId('chip-more')).toHaveTextContent('+2')
+  })
+
+  it('despliega el resto en varias líneas al pulsar +N', () => {
+    mockChipWidths(260, 80)
+    render(<Field name="genre" label="Genre" value="" onChange={() => {}} suggestions={FIVE} />)
     fireEvent.click(screen.getByTestId('chip-more'))
     expect(screen.getByTestId('chip-happy music')).toBeInTheDocument()
     expect(screen.getByTestId('chip-italo dance')).toBeInTheDocument()
-    // Expanded, the "+N" chip is gone (or flips to a collapse control).
+    expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
+    expect(screen.getByTestId('field-suggestions').className).toContain('flex-wrap')
+  })
+
+  it('no muestra +N cuando todos caben', () => {
+    mockChipWidths(1000, 80)
+    render(<Field name="genre" label="Genre" value="" onChange={() => {}} suggestions={FIVE} />)
+    expect(screen.getByTestId('chip-italo dance')).toBeInTheDocument()
     expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
   })
 
-  it('no muestra +N cuando hay dos o menos sugerencias', () => {
-    render(
-      <Field
-        name="genre"
-        label="Genre"
-        value=""
-        onChange={() => {}}
-        suggestions={['Electronic', 'asia records']}
-      />,
-    )
+  it('sin medida fiable (jsdom sin mock) muestra todos y ningún +N', () => {
+    render(<Field name="genre" label="Genre" value="" onChange={() => {}} suggestions={FIVE} />)
+    expect(screen.getByTestId('chip-italo dance')).toBeInTheDocument()
     expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
-    expect(screen.getByTestId('chip-asia records')).toBeInTheDocument()
   })
 })
