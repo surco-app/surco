@@ -223,6 +223,34 @@ describe('Waveform', () => {
     expect(playedCall[2]).toEqual(dimCall[2])
   })
 
+  it('previews the seek target under the cursor before the click commits', async () => {
+    // Scrubbing is a precision gesture: the ghost line and its time bubble tell the
+    // DJ which second a click will land on, instead of seek-and-listen roulette.
+    setWaveform(wave)
+    renderWithQuery(
+      <Waveform
+        inputPath="/m/a.wav"
+        audioRef={{ current: null }}
+        active={false}
+        onScrub={vi.fn()}
+      />,
+    )
+    const strip = await screen.findByTestId('waveform')
+    await waitFor(() => expect(screen.queryByTestId('waveform-loading')).not.toBeInTheDocument())
+    strip.getBoundingClientRect = () =>
+      ({ left: 0, width: 1000, top: 0, height: 96, right: 1000, bottom: 96, x: 0, y: 0 }) as DOMRect
+    // A quarter of the way across a 60 s track → the bubble promises 0:15 and the
+    // ghost line rides the same transform carrier the playhead uses.
+    fireEvent.pointerMove(strip, { clientX: 250, pointerId: 1 })
+    expect(screen.getByTestId('waveform-hover-time')).toHaveTextContent('0:15')
+    expect(screen.getByTestId('waveform-hover').parentElement).toHaveStyle({
+      transform: 'translateX(25%)',
+    })
+    // Off the strip, the preview goes with it — the resting card shows no ghost.
+    fireEvent.pointerLeave(strip)
+    expect(screen.queryByTestId('waveform-hover')).not.toBeInTheDocument()
+  })
+
   it('renders nothing when the file has no decodable audio', async () => {
     // A null envelope means ffmpeg decoded nothing; drawing an empty strip would
     // imply a zero-length track instead of "no waveform".

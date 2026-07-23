@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useWaveform } from '../hooks/useWaveform'
+import { formatTime } from '../lib/duration'
 import { parseColor } from '../lib/spectrumColors'
 import { drawWaveform } from '../lib/waveform'
 import { WaveformSkeleton } from './WaveformSkeleton'
@@ -31,6 +32,7 @@ export function Waveform({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const playedCanvasRef = useRef<HTMLCanvasElement>(null)
   const [playheadSec, setPlayheadSec] = useState<number | null>(null)
+  const [hoverRatio, setHoverRatio] = useState<number | null>(null)
 
   const { data: wave, isFetching } = useWaveform(inputPath, true)
   // The strip's geometry follows the playback clock so a DJ can scrub the instant
@@ -91,11 +93,14 @@ export function Waveform({
 
   const pct = (sec: number): number => (durationSec === 0 ? 0 : (sec / durationSec) * 100)
 
+  function ratioFrom(clientX: number, el: HTMLElement): number {
+    const rect = el.getBoundingClientRect()
+    return Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+  }
+
   function scrubFrom(clientX: number, el: HTMLElement): void {
     if (durationSec === 0) return
-    const rect = el.getBoundingClientRect()
-    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
-    onScrub(ratio * durationSec)
+    onScrub(ratioFrom(clientX, el) * durationSec)
   }
 
   return (
@@ -107,8 +112,10 @@ export function Waveform({
         scrubFrom(e.clientX, e.currentTarget)
       }}
       onPointerMove={(e) => {
+        setHoverRatio(ratioFrom(e.clientX, e.currentTarget))
         if (e.currentTarget.hasPointerCapture(e.pointerId)) scrubFrom(e.clientX, e.currentTarget)
       }}
+      onPointerLeave={() => setHoverRatio(null)}
     >
       {/* The wave is two stacked copies of the same raster, each drawn once: the dimmed
           base is the pending remainder (the ground colour rides the wrapper so the fade
@@ -147,6 +154,33 @@ export function Waveform({
             // audition playhead the wave sections use.
             className="absolute top-0 left-0 h-full w-0.5 -translate-x-1/2 bg-fg shadow-[0_0_3px_rgba(0,0,0,0.6)]"
           />
+        </div>
+      )}
+      {hoverRatio !== null && durationSec > 0 && (
+        // The seek preview: a ghost line under the cursor plus the second a click
+        // would land on, so scrubbing is aimed rather than seek-and-listen. Same
+        // transform-carrier trick as the playhead — pointermove ticks stay on the
+        // compositor. The ghost is dimmer and thinner than the playhead so the
+        // committed position always outranks the tentative one.
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ transform: `translateX(${hoverRatio * 100}%)` }}
+        >
+          <div
+            data-testid="waveform-hover"
+            className="absolute top-0 left-0 h-full w-px bg-fg/50"
+          />
+          <span
+            data-testid="waveform-hover-time"
+            // Dressed like the clock pill so the two speak the same language. Near
+            // either edge it hangs inward from the ghost line instead of centring,
+            // so the card's clipped corners never cut the number.
+            className={`absolute top-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm ${
+              hoverRatio < 0.08 ? '' : hoverRatio > 0.92 ? '-translate-x-full' : '-translate-x-1/2'
+            }`}
+          >
+            {formatTime(hoverRatio * durationSec)}
+          </span>
         </div>
       )}
     </div>
