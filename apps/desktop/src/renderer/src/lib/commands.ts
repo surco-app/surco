@@ -214,6 +214,7 @@ export interface CommandDeps {
   openRename: () => void
   openActivity: () => void
   openHelp: () => void
+  openOnboarding: () => void
   toggleLanguage: () => void
   // Rotates the UI theme through system → light → dark; global chrome, so it's always live.
   toggleTheme: () => void
@@ -297,6 +298,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     openRename,
     openActivity,
     openHelp,
+    openOnboarding,
     toggleLanguage,
     toggleTheme,
     clearMeta,
@@ -757,6 +759,13 @@ export function buildCommands(deps: CommandDeps): Command[] {
       title: tr('commands.help'),
       enabled: true,
       run: openHelp,
+    },
+    {
+      id: 'onboarding',
+      group: 'app',
+      title: tr('commands.onboarding'),
+      enabled: true,
+      run: openOnboarding,
     },
     {
       id: 'feedback',

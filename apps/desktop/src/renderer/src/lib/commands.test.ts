@@ -85,6 +85,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     openRename: () => {},
     openActivity: () => {},
     openHelp: () => {},
+    openOnboarding: () => {},
     toggleLanguage: () => {},
     toggleTheme: () => {},
     clearMeta: () => {},
@@ -254,6 +255,14 @@ describe('runCommand', () => {
     const run = vi.fn()
     runCommand([{ id: 'add', title: '', enabled: true, group: 'library', run }], 'missing')
     expect(run).not.toHaveBeenCalled()
+  })
+
+  // The menu's Help → Setup assistant re-opens the wizard through the same registry
+  // the palette uses, so both entry points can never drift.
+  it('opens the onboarding wizard from the onboarding command', () => {
+    const openOnboarding = vi.fn()
+    runCommand(buildCommands(makeDeps({ openOnboarding })), 'onboarding')
+    expect(openOnboarding).toHaveBeenCalledOnce()
   })
 })
 
