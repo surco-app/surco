@@ -10,7 +10,7 @@ vi.mock('electron', () => {
   return { app: { getPath: () => dir } }
 })
 
-import { mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -149,7 +149,6 @@ describe('cachedAnalysis', () => {
     expect(await cachedAnalysis('redo-ns', src, compute)).toEqual({ v: 2 })
     expect(compute).toHaveBeenCalledTimes(2)
   })
-
 })
 
 describe('clearAnalysisCache', () => {
@@ -214,5 +213,24 @@ describe('pruneAnalysisCache', () => {
     const recompute = vi.fn().mockResolvedValue({ v: 2 })
     for (const f of files) await cachedAnalysis('demo', f, recompute)
     expect(recompute).toHaveBeenCalledTimes(2)
+  })
+
+  // A 0.70.0 spectrogram entry could persist a decode error carrying the child's
+  // whole stdout — a 237 MB JSON that froze the main process on every re-parse.
+  // Legit entries top out around 0.5 MB, so anything enormous is poison, not data,
+  // and the startup prune must repair caches those builds left behind.
+  it('deletes oversized entries even when under the count cap', async () => {
+    rmSync(join(app.getPath('userData'), 'analysis-cache'), { recursive: true, force: true })
+    const file = await makeFile()
+    await cachedAnalysis('demo', file, vi.fn().mockResolvedValue({ v: 1 }))
+    const dir = join(app.getPath('userData'), 'analysis-cache')
+    await writeFile(join(dir, 'poisoned.json'), `"${'x'.repeat(2048)}"`)
+
+    await pruneAnalysisCache(1000, 1024)
+
+    expect(existsSync(join(dir, 'poisoned.json'))).toBe(false)
+    const recompute = vi.fn().mockResolvedValue({ v: 2 })
+    expect(await cachedAnalysis('demo', file, recompute)).toEqual({ v: 1 })
+    expect(recompute).not.toHaveBeenCalled()
   })
 })

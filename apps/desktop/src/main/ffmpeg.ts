@@ -1794,6 +1794,19 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
   }
 }
 
+// The persisted form of a spectrum build. The error fields are live-compute
+// diagnostics for the caller to log once — never part of the cached result: 0.70.0
+// cached a shelfError whose payload was the decode child's entire stdout (a 237 MB
+// JSON entry), and every later open re-parsed and re-logged it, freezing the main
+// process for seconds. The cutoff failure survives only as a flag, so the caller's
+// shouldCache can still refuse to pin the partial verdict for the file's life.
+export function cacheableSpectrum(
+  built: SpectrumBuild,
+): Omit<SpectrumBuild, 'cutoffError' | 'shelfError'> & { cutoffFailed: boolean } {
+  const { cutoffError: _cutoff, shelfError: _shelf, ...rest } = built
+  return { ...rest, cutoffFailed: built.cutoffError !== undefined }
+}
+
 // low-rate mono PCM for the editor waveform — the strip spans the full length (no
 // `seconds` window), so a truncated envelope would draw a track that ends early. The
 // 4 kHz rate keeps even a 2-hour mix around 115 MB, inside the 128 MB ceiling.

@@ -16,6 +16,7 @@ vi.mock('electron', () => ({ app: { isPackaged: false } }))
 import type { TrackMetadata } from '../shared/types'
 import {
   buildSpectrum,
+  cacheableSpectrum,
   convertArgs,
   convertTmpPath,
   coverArgs,
@@ -114,7 +115,9 @@ describe('convertArgs', () => {
   })
 
   it('maps the cover as attached art only when a cover is provided', () => {
-    expect(convertArgs('/in.wav', '/o.aiff', { codec: 'pcm_s16be' }, meta)).not.toContain('attached_pic')
+    expect(convertArgs('/in.wav', '/o.aiff', { codec: 'pcm_s16be' }, meta)).not.toContain(
+      'attached_pic',
+    )
     const withCover = convertArgs('/in.wav', '/o.aiff', { codec: 'pcm_s16be' }, meta, '/cover.jpg')
     expect(withCover).toContain('/cover.jpg')
     expect(withCover).toContain('attached_pic')
@@ -130,19 +133,24 @@ describe('convertArgs', () => {
   it('writes the advanced tags to the ID3 frames the DJ tools and Music read', () => {
     // verified against ffmpeg: these keys land in real TBPM/TKEY/TPUB/TPOS/TPE4
     // frames and the de-facto TXXX:CATALOGNUMBER, all re-readable by ffprobe
-    const args = convertArgs('/in.wav', '/o.mp3', { codec: 'pcm_s16be' }, {
-      ...meta,
-      bpm: '128',
-      key: '8A',
-      publisher: 'Kontor',
-      catalogNumber: 'KON123',
-      discNumber: '2',
-      remixArtist: 'Airscape',
-      composer: 'André Tanneberger',
-      isrc: 'DEA449900124',
-      mixName: 'Club Mix',
-      originalYear: '1998',
-    })
+    const args = convertArgs(
+      '/in.wav',
+      '/o.mp3',
+      { codec: 'pcm_s16be' },
+      {
+        ...meta,
+        bpm: '128',
+        key: '8A',
+        publisher: 'Kontor',
+        catalogNumber: 'KON123',
+        discNumber: '2',
+        remixArtist: 'Airscape',
+        composer: 'André Tanneberger',
+        isrc: 'DEA449900124',
+        mixName: 'Club Mix',
+        originalYear: '1998',
+      },
+    )
     expect(args).toContain('TBPM=128')
     expect(args).toContain('TKEY=8A')
     expect(args).toContain('publisher=Kontor')
@@ -157,7 +165,12 @@ describe('convertArgs', () => {
   })
 
   it('writes the compilation flag ffmpeg maps to the TCMP frame iTunes reads', () => {
-    const id3 = convertArgs('/in.wav', '/o.mp3', { codec: 'pcm_s16be' }, { ...meta, compilation: '1' })
+    const id3 = convertArgs(
+      '/in.wav',
+      '/o.mp3',
+      { codec: 'pcm_s16be' },
+      { ...meta, compilation: '1' },
+    )
     expect(id3).toContain('compilation=1')
     const flac = convertArgs('/in.wav', '/o.flac', { codec: 'flac' }, { ...meta, compilation: '1' })
     expect(flac).toContain('COMPILATION=1')
@@ -167,15 +180,20 @@ describe('convertArgs', () => {
     // verified against ffmpeg: the FLAC muxer has no ID3 mapping and writes the
     // keys verbatim, so TKEY/TBPM/TPE4 would land as comments Traktor and Mixed
     // In Key never look for — they read INITIALKEY/BPM/REMIXER in FLAC
-    const args = convertArgs('/in.wav', '/o.flac', { codec: 'flac' }, {
-      ...meta,
-      bpm: '128',
-      key: '8A',
-      remixArtist: 'Airscape',
-      isrc: 'DEA449900124',
-      mixName: 'Club Mix',
-      originalYear: '1998',
-    })
+    const args = convertArgs(
+      '/in.wav',
+      '/o.flac',
+      { codec: 'flac' },
+      {
+        ...meta,
+        bpm: '128',
+        key: '8A',
+        remixArtist: 'Airscape',
+        isrc: 'DEA449900124',
+        mixName: 'Club Mix',
+        originalYear: '1998',
+      },
+    )
     expect(args).toContain('INITIALKEY=8A')
     expect(args).toContain('BPM=128')
     expect(args).toContain('REMIXER=Airscape')
@@ -201,7 +219,12 @@ describe('convertArgs', () => {
     // editor must be overridden with an empty tag — otherwise the original
     // comment/BPM/etc. resurfaces. Covers both a generic key (comment) and a
     // raw frame name (TBPM), which clear the carried-over value alike.
-    const args = convertArgs('/in.wav', '/o.mp3', { codec: 'pcm_s16be' }, { ...meta, comment: '', bpm: '' })
+    const args = convertArgs(
+      '/in.wav',
+      '/o.mp3',
+      { codec: 'pcm_s16be' },
+      { ...meta, comment: '', bpm: '' },
+    )
     expect(args).toContain('comment=')
     expect(args).toContain('TBPM=')
   })
@@ -211,7 +234,15 @@ describe('convertArgs', () => {
     // NOTES the source carried would otherwise ride ffmpeg's default -map_metadata 0
     // into the re-encode untouched (only managed fields get an overriding empty tag).
     // -map_metadata -1 copies nothing, leaving only the explicit -metadata flags.
-    const cleared = convertArgs('/in.mp3', '/o.flac', { codec: 'flac' }, meta, undefined, undefined, true)
+    const cleared = convertArgs(
+      '/in.mp3',
+      '/o.flac',
+      { codec: 'flac' },
+      meta,
+      undefined,
+      undefined,
+      true,
+    )
     expect(cleared).toContain('-map_metadata')
     expect(cleared[cleared.indexOf('-map_metadata') + 1]).toBe('-1')
     // A normal convert still relies on the default carry-over — no -map_metadata flag.
@@ -250,7 +281,12 @@ describe('convertArgs', () => {
     // The reader falls back to these aliases, so a leftover LABEL from a previous
     // tagger resurfaced in the editor even after the user emptied the field — and
     // other apps showed the field twice (their PUBLISHER next to ours).
-    const args = convertArgs('/in.flac', '/o.flac', { codec: 'copy' }, { ...meta, publisher: 'Kontor' })
+    const args = convertArgs(
+      '/in.flac',
+      '/o.flac',
+      { codec: 'copy' },
+      { ...meta, publisher: 'Kontor' },
+    )
     expect(args).toContain('publisher=Kontor')
     expect(args).toContain('label=')
     expect(args).toContain('organization=')
@@ -263,12 +299,22 @@ describe('convertArgs', () => {
   it('never emits a clearing entry for the key it just wrote', () => {
     // The alias list contains the written name's own spelling (it is also a read
     // alias); clearing it would wipe the value in the same command.
-    const flac = convertArgs('/in.wav', '/o.flac', { codec: 'flac' }, { ...meta, bpm: '128', compilation: '1' })
+    const flac = convertArgs(
+      '/in.wav',
+      '/o.flac',
+      { codec: 'flac' },
+      { ...meta, bpm: '128', compilation: '1' },
+    )
     expect(flac).toContain('BPM=128')
     expect(flac).not.toContain('bpm=')
     expect(flac).toContain('COMPILATION=1')
     expect(flac).not.toContain('compilation=')
-    const mp3 = convertArgs('/in.wav', '/o.mp3', { codec: 'libmp3lame', bitrate: '320k' }, { ...meta, bpm: '128' })
+    const mp3 = convertArgs(
+      '/in.wav',
+      '/o.mp3',
+      { codec: 'libmp3lame', bitrate: '320k' },
+      { ...meta, bpm: '128' },
+    )
     expect(mp3).toContain('TBPM=128')
     expect(mp3).not.toContain('tbpm=')
   })
@@ -607,21 +653,25 @@ describe('planConversion', () => {
       ext: '.wav',
     })
     // MP3 needs the probe only to compare rates; the encoder itself never cares about depth.
-    expect(await planConversion('/in.wav', 'mp3', probe48, false, { sampleRate: '44100' })).toEqual({
-      codec: 'libmp3lame',
-      bitrate: '320k',
-      sampleRateHz: 44100,
-      ext: '.mp3',
-    })
+    expect(await planConversion('/in.wav', 'mp3', probe48, false, { sampleRate: '44100' })).toEqual(
+      {
+        codec: 'libmp3lame',
+        bitrate: '320k',
+        sampleRateHz: 44100,
+        ext: '.mp3',
+      },
+    )
   })
 
   it('passes the chosen FLAC compression level through — a size/speed trade-off, never a quality one', async () => {
-    expect(await planConversion('/in.wav', 'flac', probe, false, { flacCompression: '8' })).toEqual({
-      codec: 'flac',
-      sampleFmt: 's32',
-      compressionLevel: '8',
-      ext: '.flac',
-    })
+    expect(await planConversion('/in.wav', 'flac', probe, false, { flacCompression: '8' })).toEqual(
+      {
+        codec: 'flac',
+        sampleFmt: 's32',
+        compressionLevel: '8',
+        ext: '.flac',
+      },
+    )
   })
 
   it('transcodes an AAC/M4A source to every target instead of stream-copying', async () => {
@@ -1493,6 +1543,41 @@ describe('buildSpectrum', () => {
   })
 })
 
+describe('cacheableSpectrum', () => {
+  const built = (over: Record<string, unknown> = {}) => ({
+    image: 'data:image/png;base64,AAAA',
+    cutoffHz: 18000,
+    sampleRateHz: 44100,
+    processed: false,
+    hasKnee: false,
+    upsampled: false,
+    ...over,
+  })
+
+  // The build's error fields are live-compute diagnostics, never part of the result:
+  // 0.70.0 persisted a shelfError whose payload was the decode child's entire stdout
+  // (a 237 MB cache entry), and every later open re-parsed and re-logged it, freezing
+  // the main process — the same beachball the slim-error fix was meant to end.
+  it('drops the error fields so a failed pass can never be persisted into the cache', () => {
+    const slim = cacheableSpectrum(
+      built({ cutoffError: new Error('boom'), shelfError: new Error('overrun') }),
+    )
+    expect('cutoffError' in slim).toBe(false)
+    expect('shelfError' in slim).toBe(false)
+    expect(slim.image).toBe('data:image/png;base64,AAAA')
+    expect(slim.cutoffHz).toBe(18000)
+  })
+
+  // The caller's shouldCache still needs to know the cutoff failed (a transient
+  // failure must retry next open, not pin a null verdict for the file's life), so
+  // the error collapses to a flag the predicate can read.
+  it('flags a cutoff failure so the caller can refuse to pin the partial result', () => {
+    expect(cacheableSpectrum(built()).cutoffFailed).toBe(false)
+    expect(cacheableSpectrum(built({ cutoffError: new Error('boom') })).cutoffFailed).toBe(true)
+    expect(cacheableSpectrum(built({ shelfError: new Error('overrun') })).cutoffFailed).toBe(false)
+  })
+})
+
 describe('readMeta', () => {
   const FF = ffmpegStatic as unknown as string
   const testDir = mkdtempSync(join(tmpdir(), 'surco-readmeta-'))
@@ -1556,7 +1641,7 @@ describe('readMeta', () => {
   // ffprobe (4.4.1) does not surface those frames, so a WAV's foreign tags were
   // invisible to the inspector even though the file carried them — readMeta must
   // read them through ffmpeg's -f ffmetadata, which does expose them.
-  it('reads a WAV file\'s foreign TXXX tags (invisible to the bundled ffprobe)', async () => {
+  it("reads a WAV file's foreign TXXX tags (invisible to the bundled ffprobe)", async () => {
     const wav = join(testDir, 'foreign.wav')
     execFileSync(FF, [
       '-y',
