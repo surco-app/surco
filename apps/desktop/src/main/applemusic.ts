@@ -94,6 +94,35 @@ export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?
     )
   }
 
+  // macOS 26 (Tahoe) broke Music's `add`: it can execute without raising, import
+  // nothing and return nothing. AppleScript then leaves theTrack UNDEFINED (a `set`
+  // from a result-less command wipes the variable, even one pre-initialized to
+  // missing value), so the first later reference aborted the whole script with the
+  // cryptic "-2753 theTrack is not defined". The guard below detects both reported
+  // variants — undefined and an explicit missing value — and, before giving up,
+  // polls for the copy an async import may still have created (failing there would
+  // push the user into a retry that imports a duplicate). The recovery matches by
+  // the tags the converted file itself carries, bounded to entries added after this
+  // run started so an older same-titled library copy is never adopted; without a
+  // title and artist there is nothing safe to match, so the lookup is skipped and
+  // the add fails straight to the clear error.
+  const canRecover = !!meta.title.trim() && !!meta.artist.trim()
+  const recovery = canRecover
+    ? [
+        '    if not gotTrack then',
+        '      repeat 20 times',
+        `        set theMatches to (every track of library playlist 1 whose name is ${JSON.stringify(meta.title)} and artist is ${JSON.stringify(meta.artist)} and date added is greater than or equal to importStarted)`,
+        '        if (count of theMatches) > 0 then',
+        '          set theTrack to item 1 of theMatches',
+        '          set gotTrack to true',
+        '          exit repeat',
+        '        end if',
+        '        delay 0.5',
+        '      end repeat',
+        '    end if',
+      ]
+    : []
+
   return [
     'tell application "Music"',
     // Importing a long extended-mix AIFF into the library, plus writing its artwork, can
@@ -101,7 +130,18 @@ export function buildAddScript(filePath: string, meta: TrackMetadata, coverPath?
     // is still working. Widen it so a slow import settles instead of the add failing on a
     // track that would have imported fine.
     '  with timeout of 300 seconds',
+    // Two seconds of slack: date added has second resolution, and an import that
+    // races the clock edge must still fall inside the recovery window.
+    ...(canRecover ? ['    set importStarted to (current date) - 2'] : []),
     `    set theTrack to add POSIX file ${JSON.stringify(filePath)}`,
+    '    set gotTrack to true',
+    '    try',
+    '      if theTrack is missing value then set gotTrack to false',
+    '    on error',
+    '      set gotTrack to false',
+    '    end try',
+    ...recovery,
+    '    if not gotTrack then error "Música no importó el archivo y no dio ningún error: es un fallo conocido de macOS 26 (Tahoe). Reinicia la app Música (o el Mac) y vuelve a intentarlo."',
     '    set metaSet to false',
     '    repeat 600 times',
     '      try',

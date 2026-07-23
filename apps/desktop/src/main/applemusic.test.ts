@@ -100,7 +100,9 @@ describe('buildAddScript', () => {
     const script = buildAddScript('/x.wav', base, '/tmp/cover.jpg')
     const repeatStart = script.indexOf('repeat 600 times')
     const artwork = script.indexOf('set data of artwork 1')
-    const exitRepeat = script.indexOf('exit repeat')
+    // The recovery block above the loop has its own `exit repeat`, so look for the
+    // one belonging to the 600-times property loop.
+    const exitRepeat = script.indexOf('exit repeat', repeatStart)
     expect(repeatStart).toBeLessThan(artwork)
     expect(artwork).toBeLessThan(exitRepeat)
   })
@@ -123,6 +125,54 @@ describe('buildAddScript', () => {
     const script = buildAddScript('/x.aiff', { ...base, key: '8A', comment: 'clean intro' })
     expect(script).toContain('set comment of theTrack to "clean intro"')
     expect(script).not.toContain('8A')
+  })
+
+  // macOS 26 (Tahoe) broke Music's `add`: it can execute without error, import
+  // nothing and return nothing — which leaves theTrack UNDEFINED (AppleScript wipes
+  // the variable when a command returns no result, even if pre-initialized) and the
+  // first later reference aborts with the cryptic "-2753 theTrack is not defined"
+  // users saw in the footer. The script must detect that state itself.
+  it('guards the add result so a Tahoe no-op add cannot abort with -2753', () => {
+    const script = buildAddScript('/x.aiff', base)
+    expect(script).toContain('set gotTrack to true')
+    expect(script).toContain('if theTrack is missing value then set gotTrack to false')
+    expect(script).toContain('on error')
+    expect(script).toContain('set gotTrack to false')
+    const addAt = script.indexOf('add POSIX file')
+    const guardAt = script.indexOf('set gotTrack to true')
+    const repeatAt = script.indexOf('repeat 600 times')
+    expect(addAt).toBeLessThan(guardAt)
+    expect(guardAt).toBeLessThan(repeatAt)
+  })
+
+  // The other documented Tahoe variant: the import lands (sometimes late) but the
+  // reference never comes back. Failing there would make the user retry and import a
+  // duplicate, so the script first polls for the copy the import just created —
+  // matched by the tags the converted file carries and bounded to entries added
+  // after this run started, so an older same-titled library copy is never grabbed.
+  it('recovers the imported track by title, artist and date added when the add returns nothing', () => {
+    const script = buildAddScript('/x.aiff', base)
+    expect(script).toContain('set importStarted to (current date) - 2')
+    expect(script).toContain(
+      'whose name is "ATB (Till I Come)" and artist is "Tom Hafman" and date added is greater than or equal to importStarted',
+    )
+    expect(script).toContain('set theTrack to item 1 of theMatches')
+    const importStartedAt = script.indexOf('set importStarted')
+    const addAt = script.indexOf('add POSIX file')
+    expect(importStartedAt).toBeLessThan(addAt)
+  })
+
+  // Without a title or artist there is nothing safe to match a recovery against —
+  // a bare `whose date added` sweep could adopt any track another app imported.
+  it('skips the recovery lookup when the metadata carries no title or artist', () => {
+    const script = buildAddScript('/x.aiff', { ...base, artist: '' })
+    expect(script).not.toContain('importStarted')
+    expect(script).toContain('if not gotTrack then error')
+  })
+
+  it('fails with a clear macOS 26 message instead of -2753 when the import never lands', () => {
+    const script = buildAddScript('/x.aiff', base)
+    expect(script).toContain('if not gotTrack then error "Música no importó el archivo')
   })
 })
 
