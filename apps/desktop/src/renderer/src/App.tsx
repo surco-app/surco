@@ -1,7 +1,16 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { AudioLines } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import { autoMatchAvailable } from '../../shared/autoMatch'
 import { emptyMetadata } from '../../shared/metadata'
@@ -17,7 +26,6 @@ import type {
 } from '../../shared/types'
 import { ActivityPanel } from './components/ActivityPanel'
 import { Confetti } from './components/Confetti'
-import { Editor } from './components/Editor'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Overlays } from './components/Overlays'
 import { LivePlayer } from './components/Player'
@@ -106,6 +114,12 @@ import type { CopiedTags, TrackItem } from './types'
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
 // pointer across the list while scrolling doesn't fire a prefetch for every row.
 const PREFETCH_HOVER_MS = 150
+
+// The editor (DiscogsPanel, metadata form, every section) is dead weight on first
+// paint, which shows the empty pane — split it into its own chunk, loaded the first
+// time a track is selected. The .then unwraps the named export React.lazy needs as a
+// default, same convention as the on-demand overlays in Overlays.tsx.
+const Editor = lazy(() => import('./components/Editor').then((m) => ({ default: m.Editor })))
 
 // Stable fallback while settings load, so the memoized Editor doesn't see a new array
 // each render. Mirrors the persisted default (Discogs only).
@@ -319,6 +333,12 @@ export default function App(): React.JSX.Element {
     onDeclickChange,
     reset: resetEditorPicks,
   } = useEditorPicks(settings, saveSettings)
+
+  // Prewarms the editor chunk right after first paint, so the first real selection
+  // doesn't pay its network/parse cost — most sessions select a track within seconds.
+  useEffect(() => {
+    void import('./components/Editor')
+  }, [])
 
   // IPC promises rejected outside any catch (shell calls, fire-and-forget writes)
   // would otherwise vanish into the devtools console — a failure indistinguishable
@@ -1633,41 +1653,46 @@ export default function App(): React.JSX.Element {
                     key={selected.id}
                     className="flex h-full flex-col gap-4 overflow-auto p-8 text-sm"
                   >
-                    <Editor
-                      item={selected}
-                      libraryIndex={libraryIndex}
-                      searchInputRef={searchInputRef}
-                      selectedTracks={selectedTracks}
-                      onApplyMatches={onApplyMatches}
-                      onProcessAll={onProcessAllSelected}
-                      onAddAllToAppleMusic={onAddAllSelectedToAppleMusic}
-                      onChangeAllMeta={onChangeAllMeta}
-                      onApplyCoverAll={onApplyCoverAll}
-                      onDeriveTags={deriveTracksUndoable}
-                      onApplyTitleFormat={applyTitleFormat}
-                      onRecordUndo={recordMetaUndo}
-                      onClearExtras={onClearExtras}
-                      onFieldFocusChange={onFieldFocusChange}
-                      onChange={onEditorChange}
-                      onProcess={onProcessSelected}
-                      onCancel={onCancelSelected}
-                      onReencode={onReencodeSelected}
-                      onFormatChange={onFormatChange}
-                      onDestinationChange={onDestinationChange}
-                      onNormalizeChange={onNormalizeChange}
-                      onDeclickChange={onDeclickChange}
-                      onAddToAppleMusic={onAddSelectedToAppleMusic}
-                      onTrashOriginal={onTrashOriginal}
-                      onRemoveOldMusicCopy={onRemoveOldMusicCopy}
-                      onResultsWidthChange={onResultsWidthChange}
-                      onShowLoudnessHelp={onShowLoudnessHelp}
-                      onOpenRename={onOpenRename}
-                      onRegenerateName={onRegenerateName}
-                      onTrimDetectedAll={onTrimDetectedAll}
-                      onCopyFilename={onCopyFilename}
-                      onSearchWeb={onSearchWeb}
-                      onExportCollection={onOpenExport}
-                    />
+                    {/* fallback={null}: the empty-state pane lives in the sibling branch below,
+                    not here, so there's no "today's visual" to hold onto while the chunk loads
+                    the first time — a blank beat, not a spinner flash, and only once. */}
+                    <Suspense fallback={null}>
+                      <Editor
+                        item={selected}
+                        libraryIndex={libraryIndex}
+                        searchInputRef={searchInputRef}
+                        selectedTracks={selectedTracks}
+                        onApplyMatches={onApplyMatches}
+                        onProcessAll={onProcessAllSelected}
+                        onAddAllToAppleMusic={onAddAllSelectedToAppleMusic}
+                        onChangeAllMeta={onChangeAllMeta}
+                        onApplyCoverAll={onApplyCoverAll}
+                        onDeriveTags={deriveTracksUndoable}
+                        onApplyTitleFormat={applyTitleFormat}
+                        onRecordUndo={recordMetaUndo}
+                        onClearExtras={onClearExtras}
+                        onFieldFocusChange={onFieldFocusChange}
+                        onChange={onEditorChange}
+                        onProcess={onProcessSelected}
+                        onCancel={onCancelSelected}
+                        onReencode={onReencodeSelected}
+                        onFormatChange={onFormatChange}
+                        onDestinationChange={onDestinationChange}
+                        onNormalizeChange={onNormalizeChange}
+                        onDeclickChange={onDeclickChange}
+                        onAddToAppleMusic={onAddSelectedToAppleMusic}
+                        onTrashOriginal={onTrashOriginal}
+                        onRemoveOldMusicCopy={onRemoveOldMusicCopy}
+                        onResultsWidthChange={onResultsWidthChange}
+                        onShowLoudnessHelp={onShowLoudnessHelp}
+                        onOpenRename={onOpenRename}
+                        onRegenerateName={onRegenerateName}
+                        onTrimDetectedAll={onTrimDetectedAll}
+                        onCopyFilename={onCopyFilename}
+                        onSearchWeb={onSearchWeb}
+                        onExportCollection={onOpenExport}
+                      />
+                    </Suspense>
                   </ErrorBoundary>
                 ) : (
                   <div className="flex h-full items-center justify-center p-10 text-center">
