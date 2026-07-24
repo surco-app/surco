@@ -108,14 +108,17 @@ async function trackByIsrc(
   priority?: SearchPriority,
 ): Promise<SearchResult | undefined> {
   const key = `isrc:${isrc.toLowerCase()}`
+  // The identity mark is stamped on the way OUT, not into the cache: entries persisted
+  // by builds before `exact` existed live on disk without it, and re-marking here keeps
+  // them correct instead of leaving the ranking fix dead for already-searched tracks.
+  const exact = (r: SearchResult | undefined): SearchResult | undefined =>
+    r && { ...r, exact: true }
   const cached = cacheStore.getSearch(key)
-  if (cached) return cached[0]
+  if (cached) return exact(cached[0])
   const data = await api<DeezerTrackHit>(`${BASE}/track/isrc:${encodeURIComponent(isrc)}`, priority)
-  // Flagged before caching so a cached hit keeps its identity mark: the renderer's
-  // cross-provider re-rank keys on `exact` to lead with this row.
-  const results = groupByAlbum(data.album ? [data] : []).map((r) => ({ ...r, exact: true }))
+  const results = groupByAlbum(data.album ? [data] : [])
   cacheStore.setSearch(key, results)
-  return results[0]
+  return exact(results[0])
 }
 
 // Deezer's search is as brittle with download-filename noise as Bandcamp's, so it rides

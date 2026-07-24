@@ -221,6 +221,42 @@ describe('search with an ISRC hint', () => {
     expect(results.map((r) => r.id)).toEqual([60])
   })
 
+  // Builds before the `exact` flag existed persisted ISRC cache entries without it, and
+  // the lookup cache survives updates on disk. Stamping the flag only at write time
+  // would leave those legacy entries serving unmarked results forever — the ranking fix
+  // silently dead for exactly the tracks the user already searched once.
+  it('stamps exact onto a legacy cached ISRC entry that predates the flag', async () => {
+    const { writeFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const legacy = {
+      search: [
+        [
+          'isrc:qq7777777777',
+          [
+            {
+              provider: 'deezer',
+              id: 700,
+              title: 'Legacy - Cached Album',
+              thumb: 'm',
+              cover_image: 'xl',
+            },
+          ],
+        ],
+      ],
+      release: [],
+    }
+    writeFileSync(join(deezerCacheDir, 'deezer-lookup-cache.json'), JSON.stringify(legacy))
+    vi.resetModules()
+    const restarted = await import('./deezer')
+    const freshFetch = mockFetch([{ data: [] }])
+    const results = await restarted.search('legacy cached album', 'high', {
+      isrc: 'QQ7777777777',
+    })
+    expect(results[0]).toMatchObject({ id: 700, exact: true })
+    // The ISRC came from the legacy cache, never the network (the one call is the text ladder).
+    expect(freshFetch.mock.calls.length).toBeGreaterThanOrEqual(1)
+  })
+
   // A text search for the literal string "isrc:XX9999999999" used to cache under the
   // exact same key trackByIsrc uses for that ISRC. The empty text result then shadowed
   // the ISRC lookup: getSearch read back the cached `[]` as truthy and trackByIsrc
