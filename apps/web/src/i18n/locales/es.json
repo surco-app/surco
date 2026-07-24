@@ -205,7 +205,6 @@
   "showcase": {
     "alt": "Surco en macOS: lista de pistas, match de Discogs, editor de metadatos y análisis de calidad",
     "zoom": "Ampliar la captura",
-    "tourHint": "Pasa el cursor o toca para explorar",
     "tour": {
       "tracks": {
         "title": "Lista de pistas",
