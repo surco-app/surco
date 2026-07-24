@@ -32,7 +32,7 @@ export default function HeroShowcase() {
   const { scale, x, y } = cameraTransform(frame)
 
   return (
-    <figure className="relative mx-auto max-w-6xl">
+    <figure className="relative mx-auto max-w-6xl" onMouseLeave={() => setActive(null)}>
       <div
         className="pointer-events-none absolute -inset-x-6 -top-10 bottom-10 -z-10"
         style={{
