@@ -121,6 +121,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     shortcutOverrides: {},
     commandUsage: {},
     hasSeenOnboarding: true,
+    deezerProviderMigrated: true,
     conversionCount: 0,
     stats: {
       imported: 0,

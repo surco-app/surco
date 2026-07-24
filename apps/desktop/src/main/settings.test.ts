@@ -1,4 +1,4 @@
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // settings.ts persists to app.getPath('userData')/settings.json, so point Electron
 // at a throwaway temp dir and exercise the real read/merge/write round-trip.
@@ -30,6 +30,7 @@ import {
   defaults,
   getConfigDir,
   getSettings,
+  migrateProviderDefaults,
   recordConversion,
   recordStat,
   replaceSettings,
@@ -404,5 +405,49 @@ describe('token sync', () => {
 
     setConfigDir(null)
     rmSync(dir, { recursive: true, force: true })
+  })
+})
+
+describe('migrateProviderDefaults', () => {
+  // Earlier describes persist settings (and setConfigDir tests may leave a pointer
+  // file); each case here must start from a genuinely clean profile or the
+  // fresh-install assertions read another test's leftovers.
+  const wipe = (): void => {
+    rmSync(join(app.getPath('userData'), 'settings.json'), { force: true })
+    rmSync(join(app.getPath('userData'), 'config-dir.json'), { force: true })
+  }
+  beforeEach(wipe)
+  afterEach(wipe)
+
+  // An existing install persisted its searchProviders before Deezer existed; without
+  // this one-shot addition the new source would stay invisible exactly for the users
+  // the feature was built for.
+  it('adds deezer once to a pre-deezer providers array and sets the marker', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ searchProviders: ['discogs', 'bandcamp'] }),
+    )
+    migrateProviderDefaults()
+    const s = getSettings()
+    expect(s.searchProviders).toEqual(['discogs', 'bandcamp', 'deezer'])
+    expect(s.deezerProviderMigrated).toBe(true)
+  })
+
+  // The marker is what keeps the migration from resurrecting the source on every
+  // launch for a user who deliberately unticked it.
+  it('does not re-add deezer after the user unticked it post-migration', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ searchProviders: ['discogs'], deezerProviderMigrated: true }),
+    )
+    migrateProviderDefaults()
+    expect(getSettings().searchProviders).toEqual(['discogs'])
+  })
+
+  it('never duplicates deezer on a fresh install whose defaults already carry it', () => {
+    migrateProviderDefaults()
+    const s = getSettings()
+    expect(s.searchProviders.filter((p) => p === 'deezer')).toHaveLength(1)
+    expect(s.deezerProviderMigrated).toBe(true)
   })
 })

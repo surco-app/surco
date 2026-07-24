@@ -64,6 +64,7 @@ import {
   defaultConfigDir,
   getConfigDir,
   getSettings,
+  migrateProviderDefaults,
   recordConversion,
   recordStat,
   sanitizeSettingsPatch,
@@ -1133,6 +1134,7 @@ app.whenReady().then(() => {
       headers: { 'Content-Type': type, 'Content-Length': String(size), 'Accept-Ranges': 'bytes' },
     })
   })
+  migrateProviderDefaults()
   createWindow()
 
   // Downloads a newer version in the background, then tells the renderer so it can

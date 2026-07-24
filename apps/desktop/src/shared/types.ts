@@ -241,6 +241,10 @@ export interface Settings {
   // default from SHORTCUT_DEFAULTS; an empty-array value unbinds the command.
   shortcutOverrides: Record<string, Chord>
   hasSeenOnboarding: boolean
+  // One-shot marker for the additive searchProviders migration that introduced Deezer.
+  // Without it, "add if missing" would resurrect the source on every launch for a user
+  // who deliberately unticked it. Synced, so a second Mac doesn't redo the migration.
+  deezerProviderMigrated: boolean
   conversionCount: number
   // Lifetime activity tally behind the Stats tab, next to conversionCount. Bumped
   // only in the main process (stats:record fire-and-forget), so near-simultaneous

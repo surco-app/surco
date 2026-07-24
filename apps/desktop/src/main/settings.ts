@@ -83,6 +83,7 @@ export const defaults: Settings = {
   editorSections: DEFAULT_EDITOR_SECTIONS,
   shortcutOverrides: {},
   hasSeenOnboarding: false,
+  deezerProviderMigrated: false,
   conversionCount: 0,
   stats: {
     imported: 0,
@@ -311,4 +312,17 @@ export function recordStat(key: keyof Settings['stats'], by = 1): void {
   if (!Number.isFinite(n) || n <= 0) return
   const cur = getSettings()
   saveSettings({ stats: { ...cur.stats, [key]: cur.stats[key] + n } })
+}
+
+// Deezer shipped after existing installs persisted their searchProviders array, so
+// they would never see the new source without this one-shot addition at startup. The
+// marker (synced) keeps a later launch — or the user's other Mac — from re-adding the
+// source once it has run.
+export function migrateProviderDefaults(): void {
+  const cur = getSettings()
+  if (cur.deezerProviderMigrated) return
+  const searchProviders = cur.searchProviders.includes('deezer')
+    ? cur.searchProviders
+    : [...cur.searchProviders, 'deezer' as const]
+  saveSettings({ searchProviders, deezerProviderMigrated: true })
 }

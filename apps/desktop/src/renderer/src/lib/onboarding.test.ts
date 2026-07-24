@@ -68,6 +68,7 @@ const settings: Settings = {
   editorSections: DEFAULT_EDITOR_SECTIONS,
   commandUsage: {},
   hasSeenOnboarding: false,
+  deezerProviderMigrated: true,
   conversionCount: 0,
   stats: {
     imported: 0,
