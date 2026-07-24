@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.72",
+    "date": "24 de julio de 2026",
+    "title": "Una onda que se lee de un vistazo y un arranque al instante",
+    "items": [
+      {
+        "text": "La onda del reproductor es más grande y nítida, y la parte que queda por sonar se ve atenuada para leer el progreso de un vistazo. Al pasar el cursor por encima se previsualiza el punto exacto al que saltará el clic, el reloj se muestra siempre y los botones activos del reproductor se distinguen mejor.",
+        "in": "0.72.0"
+      },
+      {
+        "text": "Surco ahora recuerda entre sesiones lo que ya sabe de tu música — la biblioteca de Apple Music, los metadatos y el análisis de cada pista, las búsquedas de Discogs y Bandcamp y la base de datos de Engine DJ —, así que la aplicación abre y muestra tu biblioteca al instante en vez de recalcularlo todo desde cero.",
+        "in": "0.72.0"
+      }
+    ]
+  },
+  {
     "version": "0.71",
     "date": "23 de julio de 2026",
     "title": "Un vinilo que gira, el asistente siempre a mano y a prueba de archivos dañados",

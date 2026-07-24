@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.72",
+    "date": "July 24, 2026",
+    "title": "A waveform you can read at a glance, and instant startup",
+    "items": [
+      {
+        "text": "The player waveform is bigger and sharper, and the part still to play is dimmed so progress reads at a glance. Hovering over it previews the exact spot a click will jump to, the clock is now always visible, and the player's active buttons are easier to tell apart.",
+        "in": "0.72.0"
+      },
+      {
+        "text": "Surco now remembers what it already knows about your music between sessions — your Apple Music library, each track's metadata and analysis, Discogs and Bandcamp lookups, and your Engine DJ database — so the app opens and shows your library instantly instead of recomputing everything from scratch.",
+        "in": "0.72.0"
+      }
+    ]
+  },
+  {
     "version": "0.71",
     "date": "July 23, 2026",
     "title": "A spinning vinyl, the assistant always at hand, and no freezes on damaged files",
