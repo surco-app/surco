@@ -373,7 +373,7 @@ export function boostForCatalogMatch(base: number): number {
 // DJ Mofly" listed Zappa and Champs Elysées first and the right release dead last). The sort
 // is stable, so Discogs' order stands as the final tie-break and equally-relevant rows keep
 // their place.
-const PROVIDER_RANK: Record<SearchProviderId, number> = { discogs: 0, bandcamp: 1 }
+const PROVIDER_RANK: Record<SearchProviderId, number> = { discogs: 0, bandcamp: 1, deezer: 2 }
 
 const COMPILATION_PENALTY = 1
 

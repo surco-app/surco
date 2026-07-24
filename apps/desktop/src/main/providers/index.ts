@@ -7,6 +7,7 @@ import type {
   SearchResult,
 } from '../../shared/types'
 import * as bandcamp from '../bandcamp'
+import * as deezer from '../deezer'
 import * as discogs from '../discogs'
 import { getSettings } from '../settings'
 
@@ -66,6 +67,15 @@ const providers: Record<SearchProviderId, SearchProvider> = {
       return bandcamp.search(stripIgnoredWords(query, words), priority, cleanHints(hints, words))
     },
     getRelease: (ref, priority) => bandcamp.getRelease(ref as string, priority),
+  },
+  deezer: {
+    // Deezer takes no token and no format filter — like Bandcamp, only the ignore
+    // words are threaded here.
+    search: (query, priority, hints) => {
+      const words = ignoreWordsOf(getSettings().searchIgnoreWords)
+      return deezer.search(stripIgnoredWords(query, words), priority, cleanHints(hints, words))
+    },
+    getRelease: (ref, priority) => deezer.getRelease(ref as number, priority),
   },
 }
 

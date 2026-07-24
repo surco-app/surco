@@ -49,11 +49,11 @@ describe('defaults for a fresh install', () => {
     expect(defaults.autoAnalyze).toBe(true)
   })
 
-  // A fresh install searches both sources so a DJ reaches pressings (Discogs) and
-  // self-released / Bandcamp-exclusive material in one query, without first knowing
-  // Bandcamp exists as an opt-in under Settings.
-  it('searches both Discogs and Bandcamp by default', () => {
-    expect(defaults.searchProviders).toEqual(['discogs', 'bandcamp'])
+  // A fresh install searches every source so a DJ reaches pressings (Discogs),
+  // self-released / Bandcamp-exclusive material, and Deezer's commercial catalog in one
+  // query, without first knowing any of them is an opt-in under Settings.
+  it('searches Discogs, Bandcamp and Deezer by default', () => {
+    expect(defaults.searchProviders).toEqual(['discogs', 'bandcamp', 'deezer'])
   })
 })
 

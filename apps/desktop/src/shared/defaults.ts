@@ -25,7 +25,7 @@ export const DEFAULT_REQUIRED_FIELDS: string[] = ['title', 'artist']
 // The catalog sources offered as search-provider checkboxes, and all searched by default
 // on a new install. Lives in shared so the wizard, Settings and the persisted defaults
 // draw from one list and a new source can't reach one surface without the others.
-export const SEARCH_PROVIDERS: readonly SearchProviderId[] = ['discogs', 'bandcamp']
+export const SEARCH_PROVIDERS: readonly SearchProviderId[] = ['discogs', 'bandcamp', 'deezer']
 
 // The Discogs release-format buckets the search filter can restrict to. These are the
 // exact tokens Discogs returns in a result's `format` array — and accepts as the

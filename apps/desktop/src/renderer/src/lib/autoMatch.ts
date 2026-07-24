@@ -359,6 +359,7 @@ export async function autoMatchRelease(
 const PROVIDER_NAME: Record<SearchProviderId, string> = {
   discogs: 'Discogs',
   bandcamp: 'Bandcamp',
+  deezer: 'Deezer',
 }
 
 function pct(confidence: number): number {

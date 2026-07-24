@@ -663,7 +663,8 @@
     "searchProvidersHint": "Catálogos onde o editor busca. O Discogs é curado; o Bandcamp adiciona material independente.",
     "provider": {
       "discogs": "Discogs",
-      "bandcamp": "Bandcamp"
+      "bandcamp": "Bandcamp",
+      "deezer": "Deezer"
     },
     "format": {
       "Vinyl": "Vinyl",
@@ -952,6 +953,8 @@
     "loadDiscogsRelease": "Carregando release do Discogs #{{id}}",
     "searchBandcamp": "Buscando no Bandcamp: {{query}}",
     "loadBandcampRelease": "Carregando release do Bandcamp",
+    "searchDeezer": "Buscando no Deezer: {{query}}",
+    "loadDeezerRelease": "Carregando release do Deezer",
     "downloadCover": "Baixando capa",
     "convert": "Convertendo {{track}}",
     "probeSpectrogram": "Espectrograma",

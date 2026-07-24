@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SearchProviderId } from '../../shared/types'
 
-const { search, getRelease, getSettings, bcSearch } = vi.hoisted(() => ({
+const { search, getRelease, getSettings, bcSearch, dzSearch } = vi.hoisted(() => ({
   search: vi.fn(),
   getRelease: vi.fn(),
   getSettings: vi.fn(() => ({
@@ -10,10 +10,12 @@ const { search, getRelease, getSettings, bcSearch } = vi.hoisted(() => ({
     searchIgnoreWords: [] as string[],
   })),
   bcSearch: vi.fn(),
+  dzSearch: vi.fn(),
 }))
 
 vi.mock('../discogs', () => ({ search, getRelease }))
 vi.mock('../bandcamp', () => ({ search: bcSearch, getRelease: vi.fn() }))
+vi.mock('../deezer', () => ({ search: dzSearch, getRelease: vi.fn() }))
 vi.mock('../settings', () => ({ getSettings }))
 
 import { DEFAULT_PROVIDER, getProvider } from './index'
@@ -85,6 +87,19 @@ describe('getProvider', () => {
       title: 'Song rip djotas good',
     })
     expect(bcSearch).toHaveBeenCalledWith('Song', 'low', { title: 'Song' })
+  })
+
+  it('strips the saved ignore words for Deezer too', async () => {
+    getSettings.mockReturnValueOnce({
+      discogsToken: 'tok',
+      discogsFormats: [] as string[],
+      searchIgnoreWords: ['rip djotas good'],
+    })
+    dzSearch.mockResolvedValue([])
+    await getProvider('deezer').search('Song rip djotas good', 'low', {
+      title: 'Song rip djotas good',
+    })
+    expect(dzSearch).toHaveBeenCalledWith('Song', 'low', { title: 'Song' })
   })
 
   it('forwards getRelease to the Discogs client with the saved token and priority', async () => {

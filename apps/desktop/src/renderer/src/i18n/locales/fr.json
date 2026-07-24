@@ -663,7 +663,8 @@
     "searchProvidersHint": "Les catalogues où l'éditeur cherche. Discogs est un catalogue soigné ; Bandcamp ajoute les sorties autoproduites.",
     "provider": {
       "discogs": "Discogs",
-      "bandcamp": "Bandcamp"
+      "bandcamp": "Bandcamp",
+      "deezer": "Deezer"
     },
     "format": {
       "Vinyl": "Vinyle",
@@ -952,6 +953,8 @@
     "loadDiscogsRelease": "Chargement de la release Discogs #{{id}}",
     "searchBandcamp": "Recherche Bandcamp : {{query}}",
     "loadBandcampRelease": "Chargement de la release Bandcamp",
+    "searchDeezer": "Recherche Deezer : {{query}}",
+    "loadDeezerRelease": "Chargement de la release Deezer",
     "downloadCover": "Téléchargement de la pochette",
     "convert": "Conversion de {{track}}",
     "probeSpectrogram": "Spectrogramme",
