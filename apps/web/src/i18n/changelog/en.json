@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.73",
+    "date": "July 24, 2026",
+    "title": "Deezer joins the search",
+    "items": [
+      {
+        "text": "Deezer is now a metadata source alongside Discogs and Bandcamp: it searches its catalog for your tracks, brings in cover art, and when a file carries its ISRC code, it lands on the exact match right away. It turns itself on — nothing to set up.",
+        "in": "0.73.0"
+      }
+    ]
+  },
+  {
     "version": "0.72",
     "date": "July 24, 2026",
     "title": "A waveform you can read at a glance, and instant startup",

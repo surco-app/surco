@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.73",
+    "date": "24 de julio de 2026",
+    "title": "Deezer se une a las búsquedas",
+    "items": [
+      {
+        "text": "Deezer es ahora una fuente de metadatos más, junto a Discogs y Bandcamp: busca tus pistas en su catálogo, trae las carátulas y, si el archivo lleva grabado su código ISRC, da con la coincidencia exacta a la primera. Se activa solo, sin configurar nada.",
+        "in": "0.73.0"
+      }
+    ]
+  },
+  {
     "version": "0.72",
     "date": "24 de julio de 2026",
     "title": "Una onda que se lee de un vistazo y un arranque al instante",
