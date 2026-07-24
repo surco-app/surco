@@ -1078,7 +1078,7 @@ app.whenReady().then(() => {
       "default-src 'self'",
       "script-src 'self'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://i.discogs.com https://img.discogs.com https://*.bcbits.com",
+      "img-src 'self' data: blob: https://i.discogs.com https://img.discogs.com https://*.bcbits.com https://*.dzcdn.net",
       "media-src 'self' blob: surco:",
       "connect-src 'self'",
     ].join('; ')
