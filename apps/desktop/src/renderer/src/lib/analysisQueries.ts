@@ -79,15 +79,27 @@ export function removeAnalysisQueries(client: QueryClient, inputPath: string): v
 // for it exactly like before this hydration existed. setQueryData is skipped whenever the
 // key already holds data — an instant re-drop or a hover prefetch that beat this call must
 // keep its fresher in-session result, never get clobbered by a same-or-older disk entry.
+// Chunked into slices of SEED_CHUNK_SIZE: a many-hundred-track reopen would otherwise
+// structured-clone one tens-of-MB IPC message in a single shot. Hydration is opportunistic
+// — a failure just leaves the lazy probes to fill the verdicts in, so this never rejects.
+const SEED_CHUNK_SIZE = 200
+
 export async function seedCachedAnalyses(client: QueryClient, paths: string[]): Promise<void> {
   if (paths.length === 0) return
-  const batch = await window.api.loadCachedAnalyses(paths)
-  for (const [path, hit] of Object.entries(batch)) {
-    if (hit.spectrogram && client.getQueryData(['spectrogram', path]) === undefined) {
-      client.setQueryData(['spectrogram', path], hit.spectrogram)
+  try {
+    for (let i = 0; i < paths.length; i += SEED_CHUNK_SIZE) {
+      const chunk = paths.slice(i, i + SEED_CHUNK_SIZE)
+      const batch = await window.api.loadCachedAnalyses(chunk)
+      for (const [path, hit] of Object.entries(batch)) {
+        if (hit.spectrogram && client.getQueryData(['spectrogram', path]) === undefined) {
+          client.setQueryData(['spectrogram', path], hit.spectrogram)
+        }
+        if (hit.waveformScan && client.getQueryData(['waveformScan', path]) === undefined) {
+          client.setQueryData(['waveformScan', path], hit.waveformScan)
+        }
+      }
     }
-    if (hit.waveformScan && client.getQueryData(['waveformScan', path]) === undefined) {
-      client.setQueryData(['waveformScan', path], hit.waveformScan)
-    }
+  } catch {
+    // best-effort: same contract as a cache miss — the normal lazy probes fill in
   }
 }

@@ -34,6 +34,9 @@ interface Persisted<S, R> {
   release: [string, R][]
 }
 
+// A future shape change to the persisted SearchResult/Release entries is handled by
+// bumping the store's file name (e.g. `-v2`), the same convention analysisCache.ts's
+// namespaces use — old files are simply orphaned, never migrated in place.
 function cachePath(name: string): string {
   return join(app.getPath('userData'), `${name}.json`)
 }

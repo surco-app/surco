@@ -70,6 +70,12 @@ dropped), loaded on startup, saved debounced and on quit. Corrupt/missing file
   result for identical (cover source, cover settings) so a batch add encodes
   each distinct cover once. If the cleanup lifecycle makes safe reuse
   impractical, stop and report rather than force it.
+  Verified scope: the manual Apple Music add path is strictly per-track — the
+  palette/menu command operates on the single selected track, and no bulk-add
+  gesture exists — so the batch memo is wired only into the conversion
+  pipeline (`process:track`), the only path where N same-cover adds actually
+  occur. `appleMusicIpc.ts`'s per-track handlers intentionally keep calling
+  `prepareProcessedCover` directly.
 
 ## Non-goals
 

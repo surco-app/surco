@@ -336,8 +336,10 @@ export default function App(): React.JSX.Element {
 
   // Prewarms the editor chunk right after first paint, so the first real selection
   // doesn't pay its network/parse cost — most sessions select a track within seconds.
+  // Best-effort: a chunk-load failure here must not surface the global error toast —
+  // the real selection's own lazy load will retry and surface any genuine problem.
   useEffect(() => {
-    void import('./components/Editor')
+    void import('./components/Editor').catch(() => {})
   }, [])
 
   // IPC promises rejected outside any catch (shell calls, fire-and-forget writes)

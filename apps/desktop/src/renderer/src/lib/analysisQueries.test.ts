@@ -118,6 +118,31 @@ describe('seedCachedAnalyses', () => {
 
     expect(loadCachedAnalyses).not.toHaveBeenCalled()
   })
+
+  // A many-hundred-track reopen must not structured-clone one giant IPC message: paths
+  // are sliced into chunks of 200, one invoke per chunk, sequentially.
+  it('chunks a large batch into slices of 200 paths per IPC call', async () => {
+    const client = new QueryClient()
+    const loadCachedAnalyses = vi.fn().mockResolvedValue({})
+    setApi({ loadCachedAnalyses })
+    const paths = Array.from({ length: 250 }, (_, i) => `/m/${i}.wav`)
+
+    await seedCachedAnalyses(client, paths)
+
+    expect(loadCachedAnalyses).toHaveBeenCalledTimes(2)
+    expect(loadCachedAnalyses).toHaveBeenNthCalledWith(1, paths.slice(0, 200))
+    expect(loadCachedAnalyses).toHaveBeenNthCalledWith(2, paths.slice(200))
+  })
+
+  // Hydration is opportunistic: a rejected IPC call (main process error, dropped
+  // channel) must not reject the returned promise — the caller fires this without a
+  // catch, so a rejection here would surface as an unhandled rejection toast.
+  it('does not propagate a rejected IPC call', async () => {
+    const client = new QueryClient()
+    setApi({ loadCachedAnalyses: vi.fn().mockRejectedValue(new Error('ipc down')) })
+
+    await expect(seedCachedAnalyses(client, ['/m/a.wav'])).resolves.toBeUndefined()
+  })
 })
 
 describe('removeAnalysisQueries', () => {
