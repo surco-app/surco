@@ -47,9 +47,9 @@ vi.mock('../lib/changelog', () => ({
         ],
 }))
 
-beforeEach(() => {
+beforeEach(async () => {
   Object.assign(window, { api: { version: '0.33.1' } })
-  void i18n.changeLanguage('es')
+  await i18n.changeLanguage('es')
 })
 afterEach(cleanup)
 
