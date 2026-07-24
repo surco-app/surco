@@ -2,7 +2,7 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Settings } from '../../../shared/types'
-import { useSettings } from './useSettings'
+import { SETTINGS_SNAPSHOT_KEY, useSettings } from './useSettings'
 
 afterEach(cleanup)
 
@@ -11,6 +11,7 @@ function settings(over: Partial<Settings> = {}): Settings {
 }
 
 beforeEach(() => {
+  window.localStorage.clear()
   window.matchMedia = vi.fn().mockReturnValue({
     matches: false,
     addEventListener: vi.fn(),
@@ -214,5 +215,129 @@ describe('useSettings optimistic layout width', () => {
       await save
     })
     expect(result.current.settings?.resultsWidth).toBe(480)
+  })
+})
+
+describe('useSettings first-paint snapshot', () => {
+  const noop = (): void => {}
+
+  // The whole point of the snapshot: theme/width must be right in the very first
+  // render, before the async IPC round-trip resolves — otherwise every launch flashes
+  // fallback defaults for a frame.
+  it('seeds the first render from a stored snapshot instead of starting null', () => {
+    const snapshot = settings({ conversionCount: 3, theme: 'dark', resultsWidth: 512 })
+    window.localStorage.setItem(SETTINGS_SNAPSHOT_KEY, JSON.stringify(snapshot))
+
+    const { result } = renderHook(() =>
+      useSettings({ settingsOpen: false, onFirstLoad: noop, onLoadError: noop, onSaveError: noop }),
+    )
+
+    expect(result.current.settings).toEqual(snapshot)
+  })
+
+  // Main is still the source of truth: the seed is only a placeholder until the real
+  // read lands, and the real read must win even when it disagrees with the snapshot.
+  it('lets the resolved IPC settings overwrite the seeded snapshot', async () => {
+    const stale = settings({ conversionCount: 3, theme: 'dark' })
+    const fresh = settings({ conversionCount: 3, theme: 'light' })
+    window.localStorage.setItem(SETTINGS_SNAPSHOT_KEY, JSON.stringify(stale))
+    // biome-ignore lint/suspicious/noExplicitAny: minimal bridge stub for the hook under test
+    ;(window as any).api = { getSettings: vi.fn().mockResolvedValue(fresh) }
+
+    const { result } = renderHook(() =>
+      useSettings({ settingsOpen: false, onFirstLoad: noop, onLoadError: noop, onSaveError: noop }),
+    )
+
+    expect(result.current.settings?.theme).toBe('dark')
+    await waitFor(() => expect(result.current.settings?.theme).toBe('light'))
+  })
+
+  // A corrupt or missing snapshot (a hand-edited localStorage, an older schema that no
+  // longer parses as expected) must fall back to exactly today's behavior: null until
+  // the IPC resolves, never a thrown error during render.
+  it('starts null when the stored snapshot is corrupt JSON', () => {
+    window.localStorage.setItem(SETTINGS_SNAPSHOT_KEY, '{not json')
+
+    const { result } = renderHook(() =>
+      useSettings({ settingsOpen: false, onFirstLoad: noop, onLoadError: noop, onSaveError: noop }),
+    )
+
+    expect(result.current.settings).toBeNull()
+  })
+
+  it('starts null when no snapshot is stored', () => {
+    const { result } = renderHook(() =>
+      useSettings({ settingsOpen: false, onFirstLoad: noop, onLoadError: noop, onSaveError: noop }),
+    )
+
+    expect(result.current.settings).toBeNull()
+  })
+
+  // Mirrored on the initial load, so the very next launch has something to seed from.
+  it('writes the loaded settings into the snapshot key', async () => {
+    const loaded = settings({ conversionCount: 7, theme: 'dark' })
+    // biome-ignore lint/suspicious/noExplicitAny: minimal bridge stub for the hook under test
+    ;(window as any).api = { getSettings: vi.fn().mockResolvedValue(loaded) }
+
+    renderHook(() =>
+      useSettings({ settingsOpen: false, onFirstLoad: noop, onLoadError: noop, onSaveError: noop }),
+    )
+
+    await waitFor(() =>
+      expect(JSON.parse(window.localStorage.getItem(SETTINGS_SNAPSHOT_KEY) ?? 'null')).toEqual(
+        loaded,
+      ),
+    )
+  })
+
+  // And mirrored again on every update (the optimistic save's resolved value), so the
+  // snapshot never drifts behind what the user actually has.
+  it('writes the resolved save into the snapshot key', async () => {
+    const initial = settings({ conversionCount: 1, continuousPlayback: false })
+    const resolved = settings({ conversionCount: 1, continuousPlayback: true })
+    const getSettings = vi.fn().mockResolvedValue(initial)
+    const saveSettings = vi.fn().mockResolvedValue(resolved)
+    // biome-ignore lint/suspicious/noExplicitAny: minimal bridge stub for the hook under test
+    ;(window as any).api = { getSettings, saveSettings }
+
+    const { result } = renderHook(() =>
+      useSettings({ settingsOpen: false, onFirstLoad: noop, onLoadError: noop, onSaveError: noop }),
+    )
+    await waitFor(() => expect(result.current.settings).toEqual(initial))
+
+    await act(async () => {
+      result.current.saveSettings({ continuousPlayback: true })
+      await Promise.resolve()
+    })
+
+    await waitFor(() =>
+      expect(JSON.parse(window.localStorage.getItem(SETTINGS_SNAPSHOT_KEY) ?? 'null')).toEqual(
+        resolved,
+      ),
+    )
+  })
+
+  // A full or blocked localStorage (private browsing, disk quota) must not turn the
+  // paint-only mirror into a crash: the write is best-effort, so settings keep flowing
+  // to the hook's consumers exactly as if the mirror succeeded. setItem lives on
+  // Storage.prototype in jsdom, not the instance, so the spy targets the prototype —
+  // spying on the instance is a silent no-op there.
+  it('keeps applying settings updates when localStorage.setItem throws', async () => {
+    const loaded = settings({ conversionCount: 1, theme: 'dark' })
+    // biome-ignore lint/suspicious/noExplicitAny: minimal bridge stub for the hook under test
+    ;(window as any).api = { getSettings: vi.fn().mockResolvedValue(loaded) }
+    const setItemSpy = vi
+      .spyOn(Object.getPrototypeOf(window.localStorage), 'setItem')
+      .mockImplementation(() => {
+        throw new Error('QuotaExceededError')
+      })
+
+    const { result } = renderHook(() =>
+      useSettings({ settingsOpen: false, onFirstLoad: noop, onLoadError: noop, onSaveError: noop }),
+    )
+
+    await waitFor(() => expect(result.current.settings).toEqual(loaded))
+
+    setItemSpy.mockRestore()
   })
 })

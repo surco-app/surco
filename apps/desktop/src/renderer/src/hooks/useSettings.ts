@@ -26,6 +26,41 @@ interface SettingsState {
   setThemePreview: (pref: ThemePref | null) => void
 }
 
+// Mirrors the last-known merged settings so the very first render of the next launch
+// can paint with real values instead of fallback defaults, while main stays the
+// source of truth (the async getSettings() below still runs and overwrites it).
+export const SETTINGS_SNAPSHOT_KEY = 'settings-snapshot'
+
+// Guarded parse: a missing key, a hand-edited value or a schema from an older Surco
+// version must degrade to today's null start, never throw during the first render.
+// No field-by-field default-fill here — every consumer of `settings` already reads it
+// through `?? default` (App.tsx) or through settingsContext's resolveSettings, which
+// treats every field as possibly absent, so a partial object is already handled the
+// same way a partial IPC result would be.
+function readSnapshot(): Settings | null {
+  try {
+    const raw = window.localStorage.getItem(SETTINGS_SNAPSHOT_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    return parsed as Settings
+  } catch {
+    return null
+  }
+}
+
+// Same fail-open posture as readSnapshot: the mirror is a paint-only optimization, so
+// a full or blocked localStorage (private browsing, disk quota) must not crash the
+// settings-change effect that calls this — it just means the next launch starts null,
+// same as today.
+function writeSnapshot(s: Settings): void {
+  try {
+    window.localStorage.setItem(SETTINGS_SNAPSHOT_KEY, JSON.stringify(s))
+  } catch {
+    // best-effort mirror; nothing to recover
+  }
+}
+
 // Owns the persisted settings: the initial load, the modal-open refresh, applying the
 // theme to the document, and the optimistic save.
 export function useSettings({
@@ -34,11 +69,20 @@ export function useSettings({
   onLoadError,
   onSaveError,
 }: Params): SettingsState {
-  const [settings, setSettings] = useState<Settings | null>(null)
+  // Lazy initializer runs once, synchronously, before the first paint — seeding from
+  // the snapshot (if any) so first paint already has real values instead of null.
+  const [settings, setSettings] = useState<Settings | null>(readSnapshot)
   const [themePreview, setThemePreview] = useState<ThemePref | null>(null)
   // The load effect runs once; reading the callbacks through a ref keeps it that way
   // without freezing App's closures from the first render.
   const latest = useLatest({ onFirstLoad, onLoadError, onSaveError })
+
+  // Mirrors every settings value this hook exposes into the snapshot, seed included:
+  // the seed's own effect run just re-stores what was already there, and every real
+  // load/save/refresh below (they all funnel through setSettings) refreshes it.
+  useEffect(() => {
+    if (settings) writeSnapshot(settings)
+  }, [settings])
 
   useEffect(() => {
     window.api
