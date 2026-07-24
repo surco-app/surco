@@ -4,6 +4,20 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 // don't wait on real timers between requests.
 vi.mock('./bandcampLimiter', () => ({ bandcampLimiter: { acquire: vi.fn() } }))
 
+// The search/release caches now persist through lookupCacheStore, which reads
+// app.getPath('userData'); point it at a throwaway temp dir so these unit tests
+// never touch a real user profile. The dir is computed once via vi.hoisted so a
+// vi.resetModules() (simulating an app restart) reuses the same dir instead of
+// minting a fresh one, letting the persistence test read back what a "previous
+// session" wrote.
+const { bandcampCacheDir } = vi.hoisted(() => {
+  const { mkdtempSync } = require('node:fs')
+  const { tmpdir } = require('node:os')
+  const { join } = require('node:path')
+  return { bandcampCacheDir: mkdtempSync(join(tmpdir(), 'surco-bandcamp-cache-')) }
+})
+vi.mock('electron', () => ({ app: { getPath: () => bandcampCacheDir, on: () => {} } }))
+
 import { extractTralbum, getRelease, parseRelease, search } from './bandcamp'
 
 // The autocomplete endpoint answers POSTs with results under auto.results.
@@ -287,5 +301,37 @@ describe('extractTralbum / parseRelease', () => {
     const rel = parseRelease(html, 'https://x.bc')
     expect(rel.title).toBe('Closer - Precursor Mix')
     expect(rel.tracklist[0].title).toBe('Closer - Precursor Mix')
+  })
+})
+
+describe('lookup cache persistence across sessions', () => {
+  // The whole point of backing the caches with lookupCacheStore: a search/release
+  // already fetched in a previous session must come back on the next launch without
+  // hitting Bandcamp again — vi.resetModules() plus a fresh import simulates that
+  // restart against the same on-disk cache file.
+  it('serves a search and a release from a previous session without refetching', async () => {
+    vi.useFakeTimers()
+    const searchFetch = mockSearch([
+      { type: 'a', id: 41, band_name: 'B', album_name: 'A', item_url_path: 'https://b.bc/a' },
+    ])
+    await search('persisted bandcamp search')
+    const releaseFetch = mockPage(pageWith({ id: 9001, artist: 'A', current: { title: 'T' } }))
+    await getRelease('https://x.bandcamp.com/album/persisted')
+    // Flush the debounced disk write before "restarting".
+    await vi.runAllTimersAsync()
+    vi.useRealTimers()
+
+    vi.resetModules()
+    const restarted = await import('./bandcamp')
+    const freshFetch = vi.fn()
+    vi.stubGlobal('fetch', freshFetch)
+
+    const searchResult = await restarted.search('persisted bandcamp search')
+    const release = await restarted.getRelease('https://x.bandcamp.com/album/persisted')
+    expect(searchResult.map((r) => r.id)).toEqual([41])
+    expect(release.id).toBe(9001)
+    expect(freshFetch).not.toHaveBeenCalled()
+    expect(searchFetch).toHaveBeenCalledTimes(1)
+    expect(releaseFetch).toHaveBeenCalledTimes(1)
   })
 })

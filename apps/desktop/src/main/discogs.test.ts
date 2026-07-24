@@ -7,6 +7,20 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 const { acquire } = vi.hoisted(() => ({ acquire: vi.fn() }))
 vi.mock('./discogsLimiter', () => ({ discogsLimiterFor: () => ({ acquire }) }))
 
+// The search/release caches now persist through lookupCacheStore, which reads
+// app.getPath('userData'); point it at a throwaway temp dir so these unit tests
+// never touch a real user profile.
+// The dir is computed once via vi.hoisted so a vi.resetModules() (simulating an app
+// restart) reuses the same dir instead of minting a fresh one, letting the
+// persistence test read back what a "previous session" wrote.
+const { discogsCacheDir } = vi.hoisted(() => {
+  const { mkdtempSync } = require('node:fs')
+  const { tmpdir } = require('node:os')
+  const { join } = require('node:path')
+  return { discogsCacheDir: mkdtempSync(join(tmpdir(), 'surco-discogs-cache-')) }
+})
+vi.mock('electron', () => ({ app: { getPath: () => discogsCacheDir, on: () => {} } }))
+
 import type { SearchResult } from '../shared/types'
 import {
   dedupeResults,
@@ -456,5 +470,48 @@ describe('dedupeResults', () => {
     ])
     const out = await search('dedupe search query', 'tok')
     expect(out.map((r) => r.id)).toEqual([1])
+  })
+})
+
+describe('lookup cache persistence across sessions', () => {
+  // The whole point of backing the caches with lookupCacheStore: a search/release
+  // already fetched in a previous session must come back on the next launch without
+  // hitting Discogs again or spending a limiter token — vi.resetModules() plus a
+  // fresh import simulates that restart against the same on-disk cache file.
+  it('serves a search and a release from a previous session without refetching', async () => {
+    vi.useFakeTimers()
+    const searchFetch = mockFetch([{ id: 501 }])
+    await search('persisted across sessions', 'tok')
+    const releaseFetch = mockRelease({
+      id: 8001,
+      title: 'Persisted Release',
+      artists: [],
+      tracklist: [],
+    })
+    await getRelease(8001, 'tok')
+    // Flush the debounced disk write before "restarting".
+    await vi.runAllTimersAsync()
+    vi.useRealTimers()
+
+    vi.resetModules()
+    const restarted = await import('./discogs')
+    const freshFetch = vi.fn()
+    vi.stubGlobal('fetch', freshFetch)
+
+    expect(restarted.hasCachedSearch('persisted across sessions')).toBe(true)
+    expect(restarted.hasCachedRelease(8001)).toBe(true)
+    const searchResult = await restarted.search('persisted across sessions', 'tok')
+    const release = await restarted.getRelease(8001, 'tok')
+    expect(searchResult).toEqual([{ id: 501, provider: 'discogs' }])
+    expect(release).toEqual({
+      id: 8001,
+      title: 'Persisted Release',
+      artists: [],
+      tracklist: [],
+      provider: 'discogs',
+    })
+    expect(freshFetch).not.toHaveBeenCalled()
+    expect(searchFetch).toHaveBeenCalledTimes(1)
+    expect(releaseFetch).toHaveBeenCalledTimes(1)
   })
 })

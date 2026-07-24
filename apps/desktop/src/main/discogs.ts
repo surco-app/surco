@@ -3,6 +3,7 @@ import type { Release, SearchHints, SearchPriority, SearchResult } from '../shar
 import { activity } from './activity'
 import { discogsLimiterFor } from './discogsLimiter'
 import { REQUEST_TIMEOUT_MS, USER_AGENT } from './http'
+import { createLookupCacheStore } from './lookupCacheStore'
 import { buildSearchCandidates } from './searchQuery'
 
 const BASE = 'https://api.discogs.com'
@@ -59,7 +60,10 @@ async function api<T>(path: string, token: string, priority?: SearchPriority): P
   }
 }
 
-const searchCache = new Map<string, SearchResult[]>()
+// Backed by userData/discogs-lookup-cache.json so a search or release already
+// fetched in a previous session skips both the network call and the rate-limiter
+// token on the next launch, not just within one running session.
+const cacheStore = createLookupCacheStore<SearchResult[], Release>('discogs-lookup-cache')
 
 // Whether a release matches the user's format filter: empty filter accepts everything,
 // otherwise the result's `format` array (e.g. ["Vinyl","LP","Album"]) must carry one of
@@ -87,7 +91,7 @@ interface SearchOpts {
 // spending a token — a cache hit makes no network call. Keyed like the cache itself, so the
 // format/page of the request must match for it to count as cached.
 export function hasCachedSearch(query: string, opts: SearchOpts = {}): boolean {
-  return searchCache.has(searchKey(query, opts.format, opts.perPage ?? 20))
+  return cacheStore.hasSearch(searchKey(query, opts.format, opts.perPage ?? 20))
 }
 
 // Runs one /database/search request and normalizes it, sharing the cache and provider
@@ -103,7 +107,7 @@ async function runSearch(
 ): Promise<SearchResult[]> {
   const perPage = opts.perPage ?? 20
   const key = searchKey(cacheId, opts.format, perPage)
-  const cached = searchCache.get(key)
+  const cached = cacheStore.getSearch(key)
   if (cached) return cached
   // Pacing lives with the request itself: the token is taken here, after the cache
   // miss, so a repeat of any already-fetched shape (free-text, structured, tracklist)
@@ -120,7 +124,7 @@ async function runSearch(
   // Discogs' JSON carries no provider tag; stamp it here so the normalized result
   // identifies its source for the pill and release routing downstream.
   const results: SearchResult[] = (data.results ?? []).map((r) => ({ ...r, provider: 'discogs' }))
-  searchCache.set(key, results)
+  cacheStore.setSearch(key, results)
   return results
 }
 
@@ -271,10 +275,8 @@ export async function search(
   )
 }
 
-const releaseCache = new Map<number, Release>()
-
 export function hasCachedRelease(id: number): boolean {
-  return releaseCache.has(id)
+  return cacheStore.hasRelease(id)
 }
 
 export async function getRelease(
@@ -282,7 +284,7 @@ export async function getRelease(
   token: string,
   priority?: SearchPriority,
 ): Promise<Release> {
-  const cached = releaseCache.get(id)
+  const cached = cacheStore.getRelease(id)
   if (cached) return cached
   return activity.track(
     'discogs',
@@ -291,7 +293,7 @@ export async function getRelease(
       await discogsLimiterFor(token).acquire(priority)
       const raw = await api<Omit<Release, 'provider'>>(`/releases/${id}`, token, priority)
       const release: Release = { ...raw, provider: 'discogs' }
-      releaseCache.set(id, release)
+      cacheStore.setRelease(id, release)
       return release
     },
     {

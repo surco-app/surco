@@ -1,6 +1,7 @@
 import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
 import { activity } from './activity'
 import { bandcampLimiter } from './bandcampLimiter'
+import { createLookupCacheStore } from './lookupCacheStore'
 import { isBlockedFetchUrl } from './navigation'
 import { buildSearchCandidates } from './searchQuery'
 
@@ -51,11 +52,14 @@ function mapResult(r: AutoResult): SearchResult | undefined {
   }
 }
 
-const searchCache = new Map<string, SearchResult[]>()
+// Backed by userData/bandcamp-lookup-cache.json so a search or release already
+// fetched in a previous session skips the network call on the next launch, not
+// just within one running session.
+const cacheStore = createLookupCacheStore<SearchResult[], Release>('bandcamp-lookup-cache')
 
 async function searchOnce(text: string, priority?: SearchPriority): Promise<SearchResult[]> {
   const key = text.trim().toLowerCase()
-  const cached = searchCache.get(key)
+  const cached = cacheStore.getSearch(key)
   if (cached) return cached
   await bandcampLimiter.acquire(priority)
   const res = await fetch(SEARCH_URL, {
@@ -69,7 +73,7 @@ async function searchOnce(text: string, priority?: SearchPriority): Promise<Sear
   const results = (data.auto?.results ?? [])
     .map(mapResult)
     .filter((r): r is SearchResult => r !== undefined)
-  searchCache.set(key, results)
+  cacheStore.setSearch(key, results)
   return results
 }
 
@@ -204,8 +208,6 @@ export function parseRelease(html: string, url: string): Release {
   }
 }
 
-const releaseCache = new Map<string, Release>()
-
 // A Bandcamp release is addressed by its page URL (not a numeric id): the URL is the one
 // thing the autocomplete hands back that resolves to the full album/track data.
 export async function getRelease(url: string, priority?: SearchPriority): Promise<Release> {
@@ -213,7 +215,7 @@ export async function getRelease(url: string, priority?: SearchPriority): Promis
   // forging one) and it reaches fetch from the trusted main process — the same
   // SSRF primitive coverDownload.ts already guards against for cover art.
   if (isBlockedFetchUrl(url)) throw new Error('URL de Bandcamp no permitida')
-  const cached = releaseCache.get(url)
+  const cached = cacheStore.getRelease(url)
   if (cached) return cached
   return activity.track(
     'bandcamp',
@@ -226,7 +228,7 @@ export async function getRelease(url: string, priority?: SearchPriority): Promis
       })
       if (!res.ok) throw new Error(`Bandcamp devolvió ${res.status}`)
       const release = parseRelease(await res.text(), url)
-      releaseCache.set(url, release)
+      cacheStore.setRelease(url, release)
       return release
     },
     { detail: url, summary: (r) => ({ detail: r.title }), url },
