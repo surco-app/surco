@@ -141,6 +141,29 @@ describe('getRelease', () => {
     await getRelease(12)
     expect(fn.mock.calls.length).toBe(calls)
   })
+
+  // A `next` pointer names whatever URL the response body says; a hostile or
+  // compromised response must not redirect our fetches to a third-party host.
+  it('stops paging when `next` does not point back at the Deezer API', async () => {
+    const firstPage = {
+      data: [
+        {
+          id: 2,
+          title: 'pa ti toa <3',
+          duration: 213,
+          track_position: 1,
+          artist: { name: 'Ana Mena' },
+        },
+      ],
+      next: 'https://evil.example/x',
+    }
+    const fn = mockFetch([{ ...album, id: 13 }, firstPage])
+    const rel = await getRelease(13)
+    expect(rel.tracklist).toHaveLength(1)
+    expect(fn.mock.calls.every(([url]) => !String(url).startsWith('https://evil.example'))).toBe(
+      true,
+    )
+  })
 })
 
 describe('search', () => {
@@ -191,5 +214,25 @@ describe('search with an ISRC hint', () => {
     mockFetch([{ error: { code: 800 } }, { data: [remixHit] }])
     const results = await search('cancion desconocida xyz', 'high', { isrc: 'XX0000000000' })
     expect(results.map((r) => r.id)).toEqual([60])
+  })
+
+  // A text search for the literal string "isrc:XX9999999999" used to cache under the
+  // exact same key trackByIsrc uses for that ISRC. The empty text result then shadowed
+  // the ISRC lookup: getSearch read back the cached `[]` as truthy and trackByIsrc
+  // returned undefined without ever hitting the network again.
+  it('does not let a literal "isrc:" text search shadow a later trackByIsrc lookup', async () => {
+    const isrcQuery = 'isrc:XX9999999999'
+    mockFetch([{ data: [] }])
+    await search(isrcQuery, 'high', {})
+
+    const track = {
+      id: 123,
+      title: 'una cancion',
+      artist: { name: 'Alguien' },
+      album: { id: 900, title: 'un album', cover_medium: 'm900', cover_xl: 'xl900' },
+    }
+    mockFetch([track])
+    const results = await search('una cancion alguien', 'high', { isrc: 'XX9999999999' })
+    expect(results.map((r) => r.id)).toEqual([900])
   })
 })

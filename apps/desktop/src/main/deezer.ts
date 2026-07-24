@@ -87,7 +87,7 @@ export function groupByAlbum(hits: DeezerTrackHit[]): SearchResult[] {
 const cacheStore = createLookupCacheStore<SearchResult[], Release>('deezer-lookup-cache')
 
 async function searchOnce(text: string, priority?: SearchPriority): Promise<SearchResult[]> {
-  const key = text.trim().toLowerCase()
+  const key = `q:${text.trim().toLowerCase()}`
   const cached = cacheStore.getSearch(key)
   if (cached) return cached
   const data = await api<{ data?: DeezerTrackHit[] }>(
@@ -100,8 +100,9 @@ async function searchOnce(text: string, priority?: SearchPriority): Promise<Sear
 }
 
 // Resolves the exact recording an ISRC names, to its album's search row. Cached under
-// its own namespaced key so a text search for the literal string can never collide. A
-// miss (Deezer's code-800 body has no album) caches as empty and reads back as such.
+// its own `isrc:` prefix while text searches use `q:` — the two families are namespaced
+// so an ISRC key and a literal text query can never collide. A miss (Deezer's code-800
+// body has no album) caches as empty and reads back as such.
 async function trackByIsrc(
   isrc: string,
   priority?: SearchPriority,
@@ -236,7 +237,9 @@ export async function getRelease(id: number, priority?: SearchPriority): Promise
       for (let page = 0; url && page < MAX_TRACK_PAGES; page++) {
         const chunk: { data?: DeezerAlbumTrack[]; next?: string } = await api(url, priority)
         tracks.push(...(chunk.data ?? []))
-        url = chunk.next
+        // `next` is a URL the response body names, not one we construct — a hostile or
+        // compromised response must not redirect our fetches to a third-party host.
+        url = chunk.next?.startsWith(BASE) ? chunk.next : undefined
       }
       const release = mapRelease(album, tracks)
       cacheStore.setRelease(cacheKey, release)
