@@ -41,7 +41,7 @@ import {
 } from './applemusic'
 import { registerAudioIpc } from './audioIpc'
 import type { CoverSource } from './cover'
-import { hasCoverSource, prepareProcessedCover } from './cover'
+import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
 import { installCrashGuards, wireRendererRecovery } from './crashGuards'
 import { parseDockFrames } from './dockFrames'
@@ -115,6 +115,12 @@ const activeConversions = createActiveConversions()
 // across the separate process:track IPC calls a batch fans out into, and cleared at the top
 // of each run (process:batch-begin) so it never leaks a stale choice into the next batch.
 const stickyConflict = createStickyConflict()
+// A batch adding N tracks that share one album cover used to re-run the ffmpeg encode N
+// times. Shares one prepareProcessedCover per distinct (source, opts) across the
+// concurrent process:track calls a batch fans out into — same module-scoped-per-run
+// shape as stickyConflict above, replaced (not reset) at process:batch-begin so a
+// finished batch's entries are never reused across an unrelated later run.
+let coverMemo = createCoverMemo(prepareProcessedCover)
 // The trail a crash or force-quit mid-encode leaves for the NEXT launch to sweep.
 // Always userData (never a user music folder), so a corrupt or stale manifest
 // only ever risks deleting paths this app itself wrote.
@@ -716,6 +722,7 @@ function registerIpc(): void {
   // run left, so this batch begins asking again rather than silently reusing a stale one.
   ipcMain.on('process:batch-begin', () => {
     stickyConflict.reset()
+    coverMemo = createCoverMemo(prepareProcessedCover)
   })
 
   ipcMain.handle('process:track', (e, job: ProcessJob) =>
@@ -724,7 +731,7 @@ function registerIpc(): void {
       platform: process.platform,
       sendProgress: (stage) => e.sender.send('process:progress', { id: job.id, stage }),
       hasCoverSource,
-      prepareProcessedCover,
+      prepareProcessedCover: coverMemo.prepare,
       isPathReserved: outputReservations.isReserved,
       reservePath: outputReservations.reserve,
       releasePath: outputReservations.release,

@@ -19,7 +19,7 @@ vi.mock('node:fs/promises', () => ({
 }))
 vi.mock('./tmp', () => ({ tmpName: (prefix: string, ext: string) => `${prefix}.${ext}` }))
 
-import { hasCoverSource, prepareProcessedCover } from './cover'
+import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
 
 const opts = { maxSize: 1000, square: true, upscale: false }
 
@@ -117,5 +117,87 @@ describe('prepareProcessedCover', () => {
     expect(processCover).toHaveBeenCalledWith(embedPath, opts)
     await prepared?.cleanup()
     expect(unlink).toHaveBeenCalledWith(embedPath)
+  })
+})
+
+// A batch of Apple Music adds sharing one identical cover source + settings used to run
+// processCover once per track; createCoverMemo shares the one in-flight/finished prepare
+// across every caller keyed by the same (source, opts), refcounting cleanup so the file
+// is only unlinked once every caller that received it has called its own cleanup().
+describe('createCoverMemo', () => {
+  const src = { coverPath: '/cover.png' }
+
+  it('runs prepareProcessedCover once for two callers sharing the same source and opts', async () => {
+    const memo = createCoverMemo(prepareProcessedCover)
+    const [a, b] = await Promise.all([memo.prepare(src, opts), memo.prepare(src, opts)])
+    expect(processCover).toHaveBeenCalledTimes(1)
+    expect(a?.path).toBe('/tmp/processed.jpg')
+    expect(b?.path).toBe('/tmp/processed.jpg')
+  })
+
+  it('unlinks the shared processed file only after every caller has cleaned up', async () => {
+    const memo = createCoverMemo(prepareProcessedCover)
+    const [a, b] = await Promise.all([memo.prepare(src, opts), memo.prepare(src, opts)])
+    await a?.cleanup()
+    expect(unlink).not.toHaveBeenCalled()
+    await b?.cleanup()
+    expect(unlink).toHaveBeenCalledWith('/tmp/processed.jpg')
+  })
+
+  it('runs a fresh prepare for a different cover source', async () => {
+    processCover
+      .mockResolvedValueOnce('/tmp/processed-a.jpg')
+      .mockResolvedValueOnce('/tmp/processed-b.jpg')
+    const memo = createCoverMemo(prepareProcessedCover)
+    const [a, b] = await Promise.all([
+      memo.prepare({ coverPath: '/cover-a.png' }, opts),
+      memo.prepare({ coverPath: '/cover-b.png' }, opts),
+    ])
+    expect(processCover).toHaveBeenCalledTimes(2)
+    expect(a?.path).toBe('/tmp/processed-a.jpg')
+    expect(b?.path).toBe('/tmp/processed-b.jpg')
+  })
+
+  it('runs a fresh prepare for the same source with different cover settings', async () => {
+    processCover
+      .mockResolvedValueOnce('/tmp/processed-a.jpg')
+      .mockResolvedValueOnce('/tmp/processed-b.jpg')
+    const memo = createCoverMemo(prepareProcessedCover)
+    const [a, b] = await Promise.all([
+      memo.prepare(src, opts),
+      memo.prepare(src, { ...opts, square: false }),
+    ])
+    expect(processCover).toHaveBeenCalledTimes(2)
+    expect(a?.path).toBe('/tmp/processed-a.jpg')
+    expect(b?.path).toBe('/tmp/processed-b.jpg')
+  })
+
+  it('starts a new prepare once every earlier caller for the same key has cleaned up', async () => {
+    const memo = createCoverMemo(prepareProcessedCover)
+    const first = await memo.prepare(src, opts)
+    await first?.cleanup()
+    processCover.mockResolvedValueOnce('/tmp/processed-2.jpg')
+    const second = await memo.prepare(src, opts)
+    expect(processCover).toHaveBeenCalledTimes(2)
+    expect(second?.path).toBe('/tmp/processed-2.jpg')
+  })
+
+  it('propagates a prepare failure to every caller and does not pin it for later callers', async () => {
+    processCover.mockRejectedValueOnce(new Error('ffmpeg blew up'))
+    const memo = createCoverMemo(prepareProcessedCover)
+    await expect(Promise.all([memo.prepare(src, opts), memo.prepare(src, opts)])).rejects.toThrow(
+      'ffmpeg blew up',
+    )
+    processCover.mockResolvedValueOnce('/tmp/processed-retry.jpg')
+    const retried = await memo.prepare(src, opts)
+    expect(retried?.path).toBe('/tmp/processed-retry.jpg')
+  })
+
+  it('returns undefined for every caller when the job names no cover source', async () => {
+    const memo = createCoverMemo(prepareProcessedCover)
+    const [a, b] = await Promise.all([memo.prepare({}, opts), memo.prepare({}, opts)])
+    expect(a).toBeUndefined()
+    expect(b).toBeUndefined()
+    expect(processCover).not.toHaveBeenCalled()
   })
 })

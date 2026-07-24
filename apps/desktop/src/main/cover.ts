@@ -73,3 +73,82 @@ export async function prepareProcessedCover(
     },
   }
 }
+
+// A stable key for "would prepareProcessedCover produce the same file": the three
+// mutually-exclusive source fields plus every knob coverFilter reads. Two jobs with
+// equal keys are guaranteed byte-identical output, so they can safely share one prepare.
+function memoKey(src: CoverSource, opts: CoverProcessOpts): string {
+  return JSON.stringify([
+    src.coverPath,
+    src.coverUrl,
+    src.coverFromFile,
+    opts.maxSize,
+    opts.square,
+    opts.upscale,
+  ])
+}
+
+// Shares one prepareProcessedCover per distinct (source, opts) across concurrent callers
+// — a batch adding N tracks that all carry the same album art used to run the ffmpeg
+// encode N times. Refcounted rather than copy-per-caller: every consumer only reads the
+// processed file (ffmpeg -i, AppleScript "read POSIX file"), never writes it, so handing
+// out the same path is safe, and refcounting lets every caller's own `finally { cleanup() }`
+// stay untouched — the underlying file is only unlinked once the last caller that
+// received it has cleaned up. A failed prepare is never memoized (mirrors cachedAnalysis's
+// shouldCache): the entry is dropped immediately so the next caller retries instead of
+// replaying the same rejection.
+export interface CoverMemo {
+  prepare: (src: CoverSource, opts: CoverProcessOpts) => Promise<PreparedCover | undefined>
+}
+
+export function createCoverMemo(
+  prepare: (
+    src: CoverSource,
+    opts: CoverProcessOpts,
+  ) => Promise<PreparedCover | undefined> = prepareProcessedCover,
+): CoverMemo {
+  const inFlight = new Map<string, { promise: Promise<PreparedCover | undefined>; refs: number }>()
+
+  return {
+    prepare: async (src, opts) => {
+      const key = memoKey(src, opts)
+      const existing = inFlight.get(key)
+      if (existing) {
+        existing.refs++
+      } else {
+        const promise = prepare(src, opts)
+        inFlight.set(key, { promise, refs: 1 })
+        // A rejection must not pin itself for callers that haven't awaited yet, nor
+        // strand the entry for the next job with the same key — drop it immediately.
+        promise.catch(() => inFlight.delete(key))
+      }
+      // Set unconditionally just above (either branch), so this read always hits.
+      const entry = inFlight.get(key) as {
+        promise: Promise<PreparedCover | undefined>
+        refs: number
+      }
+      const result = await entry.promise
+      // No art to prepare: nothing was ever cached, so free the slot for the next
+      // (source, opts) — an undefined result carries no cleanup to share.
+      if (!result) {
+        inFlight.delete(key)
+        return undefined
+      }
+      let cleaned = false
+      return {
+        path: result.path,
+        cleanup: async () => {
+          // Each caller's own finally calls this once; a defensive guard keeps a
+          // caller that somehow cleans up twice from double-decrementing the refcount.
+          if (cleaned) return
+          cleaned = true
+          entry.refs--
+          if (entry.refs <= 0) {
+            inFlight.delete(key)
+            await result.cleanup()
+          }
+        },
+      }
+    },
+  }
+}
