@@ -31,6 +31,10 @@ export function nextMilestone(count: number): number | null {
 }
 
 // Which lifetime tally a match apply bumps, keyed by the release's provider.
-export function matchStatKey(provider: string): 'discogsMatches' | 'bandcampMatches' {
-  return provider === 'bandcamp' ? 'bandcampMatches' : 'discogsMatches'
+export function matchStatKey(
+  provider: string,
+): 'discogsMatches' | 'bandcampMatches' | 'deezerMatches' {
+  if (provider === 'bandcamp') return 'bandcampMatches'
+  if (provider === 'deezer') return 'deezerMatches'
+  return 'discogsMatches'
 }

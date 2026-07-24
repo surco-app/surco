@@ -8,7 +8,14 @@ import { StatsTab } from './StatsTab'
 
 afterEach(cleanup)
 
-const zeroStats = { imported: 0, listened: 0, analyzed: 0, discogsMatches: 0, bandcampMatches: 0 }
+const zeroStats = {
+  imported: 0,
+  listened: 0,
+  analyzed: 0,
+  discogsMatches: 0,
+  bandcampMatches: 0,
+  deezerMatches: 0,
+}
 
 function withStats(over: Partial<Settings> = {}): Settings {
   return { conversionCount: 0, stats: zeroStats, ...over } as Settings
@@ -37,6 +44,7 @@ describe('StatsTab', () => {
             analyzed: 512,
             discogsMatches: 301,
             bandcampMatches: 17,
+            deezerMatches: 44,
           },
         })}
       />,
@@ -46,24 +54,27 @@ describe('StatsTab', () => {
     expect(screen.getByTestId('stats-analyzed')).toHaveTextContent('512')
     expect(screen.getByTestId('stats-discogsMatches')).toHaveTextContent('301')
     expect(screen.getByTestId('stats-bandcampMatches')).toHaveTextContent('17')
+    expect(screen.getByTestId('stats-deezerMatches')).toHaveTextContent('44')
   })
 
-  // The two match tallies aren't independent trivia — together they answer "where did
-  // my metadata come from", so they read as one proportion. The split bar sizes each
+  // The match tallies aren't independent trivia — together they answer "where did my
+  // metadata come from", so they read as one proportion. The split bar sizes each
   // source to its share of the matches found, with the raw counts still legible.
   it('splits the match sources by their share of the matches found', () => {
     render(
       <StatsTab
         settings={withStats({
-          conversionCount: 40,
-          stats: { ...zeroStats, discogsMatches: 30, bandcampMatches: 10 },
+          conversionCount: 50,
+          stats: { ...zeroStats, discogsMatches: 30, bandcampMatches: 10, deezerMatches: 10 },
         })}
       />,
     )
     const split = screen.getByTestId('stats-match-split')
-    // Discogs is 30 of 40 matches → its segment fills three-quarters of the bar.
+    // Discogs is 30 of 50 matches → its segment fills three-fifths of the bar.
     const discogs = screen.getByTestId('stats-match-discogs')
-    expect(discogs).toHaveStyle({ width: '75%' })
+    expect(discogs).toHaveStyle({ width: '60%' })
+    const deezer = screen.getByTestId('stats-match-deezer')
+    expect(deezer).toHaveStyle({ width: '20%' })
     expect(split).toHaveTextContent('30')
     expect(split).toHaveTextContent('10')
   })

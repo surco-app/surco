@@ -11,11 +11,13 @@ describe('statsImageCells', () => {
       analyzed: 512,
       discogsMatches: 301,
       bandcampMatches: 0,
+      deezerMatches: 44,
     })
     expect(cells).toEqual([
       { key: 'imported', value: 812 },
       { key: 'analyzed', value: 512 },
       { key: 'discogsMatches', value: 301 },
+      { key: 'deezerMatches', value: 44 },
     ])
   })
 
@@ -27,6 +29,7 @@ describe('statsImageCells', () => {
         analyzed: 0,
         discogsMatches: 0,
         bandcampMatches: 0,
+        deezerMatches: 0,
       }),
     ).toEqual([])
   })

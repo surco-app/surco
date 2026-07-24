@@ -602,6 +602,7 @@
       "analyzed": "Pistas analizadas",
       "discogsMatches": "Encontradas en Discogs",
       "bandcampMatches": "Encontradas en Bandcamp",
+      "deezerMatches": "Encontradas en Deezer",
       "matchSources": "De dónde vienen las coincidencias",
       "timeSaved": "Has ahorrado unos {{time}}",
       "perTrack": "≈ {{minutes}} min de trabajo manual por pista",

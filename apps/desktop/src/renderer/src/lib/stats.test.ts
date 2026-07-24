@@ -59,4 +59,8 @@ describe('matchStatKey', () => {
     expect(matchStatKey('discogs')).toBe('discogsMatches')
     expect(matchStatKey('bandcamp')).toBe('bandcampMatches')
   })
+
+  it('routes a Deezer match to its own tally', () => {
+    expect(matchStatKey('deezer')).toBe('deezerMatches')
+  })
 })

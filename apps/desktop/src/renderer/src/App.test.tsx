@@ -122,7 +122,14 @@ function settings(over: Partial<Settings> = {}): Settings {
     commandUsage: {},
     hasSeenOnboarding: true,
     conversionCount: 0,
-    stats: { imported: 0, listened: 0, analyzed: 0, discogsMatches: 0, bandcampMatches: 0 },
+    stats: {
+      imported: 0,
+      listened: 0,
+      analyzed: 0,
+      discogsMatches: 0,
+      bandcampMatches: 0,
+      deezerMatches: 0,
+    },
     donateNudgeDismissed: false,
     donateNudgeLastShown: '',
     // Matches setApi's version so unrelated tests never trigger the launch stamp.

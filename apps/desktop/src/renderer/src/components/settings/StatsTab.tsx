@@ -1,4 +1,4 @@
-import { AudioLines, Disc3, FolderDown, Headphones, Heart, Share, Store } from 'lucide-react'
+import { AudioLines, Disc3, FolderDown, Headphones, Heart, Radio, Share, Store } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -33,26 +33,20 @@ const CELLS: { key: keyof LifetimeStats; icon: typeof FolderDown }[] = [
   ...ACTIVITY_CELLS,
   { key: 'discogsMatches', icon: Disc3 },
   { key: 'bandcampMatches', icon: Store },
+  { key: 'deezerMatches', icon: Radio },
 ]
 
-// Discogs vs Bandcamp as a share of all matches found — one bar, sized to each source's
-// slice, with the raw counts beside their swatches. When no match has landed yet the bar
-// stays flat and empty rather than dividing by zero.
+// Matches by source as one proportional bar, a segment per source with the raw counts
+// beside their swatches. When no match has landed yet the bar stays flat and empty
+// rather than dividing by zero.
 function MatchSplit({
-  discogs,
-  bandcamp,
   heading,
-  discogsLabel,
-  bandcampLabel,
+  sources,
 }: {
-  discogs: number
-  bandcamp: number
   heading: string
-  discogsLabel: string
-  bandcampLabel: string
+  sources: { key: string; label: string; count: number; swatch: string }[]
 }): React.JSX.Element {
-  const total = discogs + bandcamp
-  const discogsPct = total > 0 ? (discogs / total) * 100 : 0
+  const total = sources.reduce((sum, s) => sum + s.count, 0)
   return (
     <div
       data-testid="stats-match-split"
@@ -60,31 +54,28 @@ function MatchSplit({
     >
       <p className="text-xs font-medium text-fg-muted">{heading}</p>
       <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-[var(--color-field)]">
-        <div
-          data-testid="stats-match-discogs"
-          className="h-full bg-[var(--color-accent)]"
-          style={{ width: `${discogsPct}%` }}
-        />
-        <div className="h-full flex-1 bg-[var(--color-fg-dim)]/70" />
+        {sources.map((s) => (
+          <div
+            key={s.key}
+            data-testid={`stats-match-${s.key}`}
+            className={`h-full ${s.swatch}`}
+            style={{ width: total > 0 ? `${(s.count / total) * 100}%` : '0%' }}
+          />
+        ))}
       </div>
       <div className="mt-2 flex justify-between text-xs">
-        <span className="inline-flex items-center gap-1.5 text-fg-muted">
-          <span className="h-2 w-2 rounded-full bg-[var(--color-accent)]" aria-hidden="true" />
-          {discogsLabel}
-          <span data-testid="stats-discogsMatches" className="font-semibold tabular-nums text-fg">
-            {discogs}
+        {sources.map((s) => (
+          <span key={s.key} className="inline-flex items-center gap-1.5 text-fg-muted">
+            <span className={`h-2 w-2 rounded-full ${s.swatch}`} aria-hidden="true" />
+            {s.label}
+            <span
+              data-testid={`stats-${s.key}Matches`}
+              className="font-semibold tabular-nums text-fg"
+            >
+              {s.count}
+            </span>
           </span>
-        </span>
-        <span className="inline-flex items-center gap-1.5 text-fg-muted">
-          <span
-            className="h-2 w-2 rounded-full bg-[var(--color-fg-dim)]/70"
-            aria-hidden="true"
-          />
-          {bandcampLabel}
-          <span data-testid="stats-bandcampMatches" className="font-semibold tabular-nums text-fg">
-            {bandcamp}
-          </span>
-        </span>
+        ))}
       </div>
     </div>
   )
@@ -185,11 +176,27 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
             ))}
           </div>
           <MatchSplit
-            discogs={stats.discogsMatches}
-            bandcamp={stats.bandcampMatches}
             heading={tr('settings.stats.matchSources')}
-            discogsLabel={tr('settings.stats.discogsMatches')}
-            bandcampLabel={tr('settings.stats.bandcampMatches')}
+            sources={[
+              {
+                key: 'discogs',
+                label: tr('settings.stats.discogsMatches'),
+                count: stats.discogsMatches,
+                swatch: 'bg-[var(--color-accent)]',
+              },
+              {
+                key: 'bandcamp',
+                label: tr('settings.stats.bandcampMatches'),
+                count: stats.bandcampMatches,
+                swatch: 'bg-[var(--color-fg-dim)]/70',
+              },
+              {
+                key: 'deezer',
+                label: tr('settings.stats.deezerMatches'),
+                count: stats.deezerMatches,
+                swatch: 'bg-[var(--color-good)]',
+              },
+            ]}
           />
         </div>
       ) : (

@@ -602,6 +602,7 @@
       "analyzed": "Tracks analyzed",
       "discogsMatches": "Found on Discogs",
       "bandcampMatches": "Found on Bandcamp",
+      "deezerMatches": "Found on Deezer",
       "matchSources": "Where matches came from",
       "timeSaved": "You've saved around {{time}}",
       "perTrack": "≈ {{minutes}} min of manual work per track",

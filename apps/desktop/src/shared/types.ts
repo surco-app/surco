@@ -260,6 +260,7 @@ export interface LifetimeStats {
   analyzed: number
   discogsMatches: number
   bandcampMatches: number
+  deezerMatches: number
 }
 
 export interface TrackMetadata {

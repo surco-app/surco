@@ -104,6 +104,7 @@ describe('sanitizeSettingsPatch', () => {
       analyzed: 999,
       discogsMatches: 999,
       bandcampMatches: 999,
+      deezerMatches: 999,
     }
     expect(
       sanitizeSettingsPatch({ theme: 'dark', stats: forgedStats, conversionCount: 999 }),
@@ -141,6 +142,16 @@ describe('nested settings from an older install', () => {
     expect(getSettings().stats.discogsMatches).toBe(0)
     expect(getSettings().stats.bandcampMatches).toBe(0)
     expect(getSettings().stats.imported).toBe(5)
+  })
+
+  it('fills deezerMatches for a stats object written before the Deezer source existed', () => {
+    writeFileSync(
+      localFile(),
+      JSON.stringify({
+        stats: { imported: 3, listened: 1, analyzed: 2, discogsMatches: 4, bandcampMatches: 1 },
+      }),
+    )
+    expect(getSettings().stats.deezerMatches).toBe(0)
   })
 
   it('recordStat never produces NaN for a key a stale settings.json omitted', () => {
