@@ -7,10 +7,10 @@
     "ogLocale": "es_ES",
     "inLanguage": "es",
     "title": "Surco — Prepara tus pistas de DJ en segundos",
-    "description": "Surco automatiza la preparación de pistas para DJ: convierte a AIFF, WAV, FLAC o ALAC lossless (o a un MP3 más ligero), edita etiquetas y metadatos desde Discogs y manda a Apple Music o a tu biblioteca de Engine DJ (Denon) en segundos — y detecta MP3 recomprimidos disfrazados de lossless.",
+    "description": "Surco automatiza la preparación de pistas para DJ: convierte a AIFF, WAV, FLAC o ALAC lossless (o a un MP3 más ligero), edita etiquetas y metadatos desde Discogs, Bandcamp y Deezer, y manda a Apple Music o a tu biblioteca de Engine DJ (Denon) en segundos — y detecta MP3 recomprimidos disfrazados de lossless.",
     "ogTitle": "Surco — Prepara tus pistas de DJ en segundos",
-    "ogDescription": "Menos preparar, más pinchar: convierte a AIFF, WAV, FLAC o ALAC lossless (o a un MP3 más ligero), etiqueta desde Discogs y organiza en segundos. Y detecta MP3 disfrazados de lossless.",
-    "jsonLdDescription": "Organizador de pistas de audio para DJ: convierte a AIFF, WAV, FLAC o ALAC lossless, etiqueta desde Discogs, manda a Apple Music o Engine DJ (Denon) y analiza el espectro para detectar MP3 recomprimidos."
+    "ogDescription": "Menos preparar, más pinchar: convierte a AIFF, WAV, FLAC o ALAC lossless (o a un MP3 más ligero), etiqueta desde Discogs, Bandcamp y Deezer, y organiza en segundos. Y detecta MP3 disfrazados de lossless.",
+    "jsonLdDescription": "Organizador de pistas de audio para DJ: convierte a AIFF, WAV, FLAC o ALAC lossless, etiqueta desde Discogs, Bandcamp y Deezer, manda a Apple Music o Engine DJ (Denon) y analiza el espectro para detectar MP3 recomprimidos."
   },
   "nav": {
     "velocidad": "Velocidad",
@@ -74,9 +74,9 @@
       {
         "kick": "etiquetar",
         "title": "Etiquetar",
-        "replaces": "en vez de Discogs y Bandcamp en el navegador y un editor de tags",
+        "replaces": "en vez de Discogs, Bandcamp y Deezer en el navegador y un editor de tags",
         "items": [
-          "Rellena artista, álbum, sello, BPM y tono desde Discogs y Bandcamp",
+          "Rellena artista, álbum, sello, BPM y tono desde Discogs, Bandcamp y Deezer",
           "Empareja el disco entero por duración de pista",
           "Edita en bloque y busca y reemplaza con regex",
           "Trae la carátula de Discogs o suelta la tuya",
@@ -131,6 +131,7 @@
     "ID3v2.3",
     "Discogs",
     "Bandcamp",
+    "Deezer",
     "Engine DJ",
     "Apple Silicon"
   ],
@@ -211,8 +212,8 @@
         "desc": "Tus pistas y el filtro de lo que ya está en tu biblioteca de Apple Music o Engine DJ."
       },
       "discogs": {
-        "title": "Match de Discogs y Bandcamp",
-        "desc": "Busca el lanzamiento exacto en Discogs o Bandcamp y elige la versión correcta."
+        "title": "Match de Discogs, Bandcamp y Deezer",
+        "desc": "Busca el lanzamiento exacto en Discogs, Bandcamp o Deezer — de la edición de club al single comercial — y elige la versión correcta."
       },
       "metadata": {
         "title": "Editor de metadatos",
@@ -269,7 +270,7 @@
       },
       {
         "q": "¿Es un editor de etiquetas y metadatos?",
-        "a": "Sí, y más. Surco edita las etiquetas y los metadatos de tu música (artista, título, álbum, año, carátula…) y los completa desde Discogs. Pero además convierte entre formatos lossless, comprueba la calidad del audio y ordena tu biblioteca: lo que harías con un editor de etiquetas y tres apps más, en una."
+        "a": "Sí, y más. Surco edita las etiquetas y los metadatos de tu música (artista, título, álbum, año, carátula…) y los completa desde Discogs, Bandcamp o Deezer. Pero además convierte entre formatos lossless, comprueba la calidad del audio y ordena tu biblioteca: lo que harías con un editor de etiquetas y tres apps más, en una."
       },
       {
         "q": "¿Toca mis archivos originales?",
@@ -326,7 +327,7 @@
   },
   "guide": {
     "metaTitle": "Cómo usar Surco — Guía paso a paso",
-    "metaDescription": "Guía completa de Surco: importar pistas, etiquetar desde Discogs, emparejar un disco entero, analizar el espectro, convertir y exportar a Apple Music, Engine DJ, rekordbox o Traktor.",
+    "metaDescription": "Guía completa de Surco: importar pistas, etiquetar desde Discogs, Bandcamp y Deezer, emparejar un disco entero, analizar el espectro, convertir y exportar a Apple Music, Engine DJ, rekordbox o Traktor.",
     "kicker": "Guía",
     "title": "Cómo usar Surco",
     "lede": "De soltar tus pistas a tenerlas listas para pinchar. Esta guía recorre todo el flujo, paso a paso — sin prisa y sin saltarte nada.",
@@ -458,18 +459,18 @@
       },
       {
         "id": "discogs",
-        "title": "Etiqueta desde Discogs y Bandcamp",
+        "title": "Etiqueta desde Discogs, Bandcamp y Deezer",
         "body": [
           "En el editor, busca el disco por nombre o pega directamente un release id de Discogs y pulsa «Buscar» (o la tecla /). Surco lista los resultados con carátula, año y sello; despliega uno para ver su tracklist.",
           "Haz clic en la pista que corresponda y Surco aplica artista, álbum, año, género, sello, catálogo y carátula de un golpe — la más parecida aparece marcada como «Sugerida». La búsqueda funciona sin configurar nada; si añades tu propio token de Discogs en Ajustes, tendrás un límite mayor y privado.",
-          "¿Buscas autoeditados o exclusivos? Activa también Bandcamp en Ajustes → Búsqueda: sus resultados aparecen junto a los de Discogs en la misma lista, cada uno con una etiqueta de su origen, y lo eliges igual. Bandcamp no necesita cuenta ni token."
+          "¿Buscas autoeditados o exclusivos? Activa también Bandcamp en Ajustes → Búsqueda: sus resultados aparecen junto a los de Discogs en la misma lista, cada uno con una etiqueta de su origen, y lo eliges igual. Bandcamp no necesita cuenta ni token. ¿Y la música comercial — pop, urbano, éxitos de radio — que no está en ninguno de los dos? Para eso viene Deezer activado de serie: tampoco pide cuenta ni token, y cubre justo el catálogo que a Discogs y Bandcamp se les escapa."
         ],
         "points": [
           "Busca por texto o pega un release id si ya sabes cuál es.",
           "Con un token y la opción activada, Surco auto-empareja las pistas nada más importarlas.",
           "Tu carátula se conserva si ya tienes una; la de Discogs queda como alternativa.",
           "¿Firmas de rip o marcas de agua ensuciando tus títulos? Lístalas en Ajustes → Búsqueda y se ignoran al buscar y emparejar — tus tags no se tocan.",
-          "Con las dos fuentes activas, un filtro reduce la lista de resultados a solo Discogs o solo Bandcamp."
+          "Con varias fuentes activas, un filtro reduce la lista de resultados a una sola."
         ],
         "shot": "discogs-es.png",
         "shotCaption": "Buscar un disco y elegir la pista en Discogs."
@@ -478,7 +479,7 @@
         "id": "automatch",
         "title": "Auto-match: etiquetado sin tocar nada",
         "body": [
-          "Con «Auto-emparejar al importar» activado en Ajustes, cada archivo que sueltes se busca solo en segundo plano en las fuentes que tengas encendidas: Discogs primero y Bandcamp de respaldo. Surco compara título, duración, número de pista y artista con cada candidato, y solo si la coincidencia es fiable aplica los metadatos por ti — artista, álbum, año, género, sello y carátula, igual que si la hubieras elegido a mano.",
+          "Con «Auto-emparejar al importar» activado en Ajustes, cada archivo que sueltes se busca solo en segundo plano en las fuentes que tengas encendidas: Discogs primero, y Bandcamp y Deezer de respaldo. Surco compara título, duración, número de pista y artista con cada candidato, y solo si la coincidencia es fiable aplica los metadatos por ti — artista, álbum, año, género, sello y carátula, igual que si la hubieras elegido a mano. Si el archivo trae ISRC en sus tags (habitual en descargas de streaming), Surco lo usa para localizar la grabación exacta en Deezer, así el single original no se confunde con remixes de nombre parecido.",
           "Si ningún candidato llega a ese listón, no toca nada: la pista queda para ti, y al abrir su búsqueda de Discogs el mejor aparece marcado como «Sugerida», a un clic de confirmarse. Con el interruptor apagado (así viene de serie) pasa lo mismo: Surco sugiere, pero nunca actualiza por su cuenta."
         ],
         "points": [
