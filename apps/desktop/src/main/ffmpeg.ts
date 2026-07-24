@@ -401,8 +401,19 @@ export async function extractCover(
 // Reads tags, duration and the cover thumbnail in one go for the import path. A single
 // ffprobe pulls tags + duration + the art's pixel size, then one ffmpeg extracts the
 // thumbnail — two processes instead of the four the separate readTags/probeDuration/
-// extractCover calls spawned (each re-probing the same file).
+// extractCover calls spawned (each re-probing the same file). Cached on disk keyed by
+// path+mtime (see cachedAnalysis): every session reopen re-read this same file uncached,
+// so a big library paid 2-4 subprocess spawns per track on every launch. The cover
+// thumbnail is a ~384px JPEG data URL (tens of KB), well under the cache's per-entry cap.
 export async function readMeta(input: string): Promise<MetaRead> {
+  const result = await cachedAnalysis('readmeta-v1', input, () => readMetaUncached(input))
+  return result ?? { tags: {} as TrackMetadata, duration: null, cover: null, foreignTags: [] }
+}
+
+// The actual probe/decode work behind readMeta, split out so cachedAnalysis can tell a
+// successful read (an object, cached) from a failed one (null, never pinned — retried on
+// the next call rather than serving the degraded result forever).
+async function readMetaUncached(input: string): Promise<MetaRead | null> {
   try {
     const { stdout } = await run(
       ffprobePath,
@@ -448,7 +459,7 @@ export async function readMeta(input: string): Promise<MetaRead> {
   } catch {
     // A probe failure leaves an editable row with no tags/duration/cover — the same
     // degraded state the three granular reads reached when each failed on its own.
-    return { tags: {} as TrackMetadata, duration: null, cover: null, foreignTags: [] }
+    return null
   }
 }
 
