@@ -40,22 +40,19 @@ se conservan.
   recortan por arriba/abajo en vez de aplanar el zoom; centrado en el rectángulo y con
   el translate acotado a los bordes de la imagen.
 
-## Autoplay
+## Interacción
 
-- Arranca cuando la sección entra en viewport (IntersectionObserver); avanza cada ~6s
-  en orden 1→5 y vuelve a la 1.
-- Hover sobre el componente lo pausa; clic del visitante en una feature la selecciona y
-  **detiene el autoplay definitivamente** (el visitante toma el control).
-- `prefers-reduced-motion`: sin autoplay y sin transición — cambios instantáneos al
-  hacer clic.
+- Sin autoplay (decisión 2026-07-24: el primer prototipo con autoplay quedaba pausado
+  por hover y confundía). En reposo se ve la captura completa.
+- Clic en una feature encuadra su zona; clic en la activa vuelve a la vista completa.
+- `prefers-reduced-motion`: sin transición — cambios instantáneos al hacer clic.
 
 ## Tests (Vitest, TDD)
 
-- Renderiza los 5 títulos desde i18n con roles de tablist.
-- Clic en una feature la activa (aria-selected) y detiene el autoplay (con fake timers:
-  tras el clic ya no avanza).
-- El autoplay avanza de la 1 a la 2 pasado el intervalo (fake timers).
-- Con `prefers-reduced-motion` (matchMedia mockeado) no hay autoplay.
+La web no tiene infraestructura de tests de DOM (vitest en env `node`, solo lógica en
+`src/lib`), así que se testea la matemática de cámara (`src/lib/heroCamera.test.ts`):
+vista de reposo, escala por anchura, cap de zoom, centrado y clamp del pan. El
+componente se verifica visualmente (build + captura headless).
 
 ## Criterios de cierre
 

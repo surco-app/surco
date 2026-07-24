@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cameraTransform, type Frame } from '../lib/heroCamera'
 import Lightbox from './Lightbox'
 
 // Feature showcase over the hero screenshot: a side list of the app's features
-// and a "camera" that pans/zooms the screenshot to the active one. Autoplay
-// cycles through them once the section is visible, pauses on hover, and stops
-// for good as soon as the visitor picks a feature themselves.
+// and a "camera" that pans/zooms the screenshot to the one the visitor clicks.
+// At rest the full screenshot shows; clicking the active feature again returns
+// to the full view.
 type Feature = { id: string; frame: Frame }
 
 const FEATURES: Feature[] = [
@@ -17,8 +17,6 @@ const FEATURES: Feature[] = [
   { id: 'convert', frame: { top: 78, left: 47.5, width: 51, height: 21 } },
 ]
 
-const INTERVAL_MS = 6000
-
 export default function HeroShowcase() {
   const { t, i18n } = useTranslation()
   const lang = i18n.language === 'en' ? 'en' : 'es'
@@ -26,56 +24,15 @@ export default function HeroShowcase() {
   const srcSet = `/app-${lang}-1024.webp 1024w, /app-${lang}.webp 2000w`
 
   const [active, setActive] = useState<string | null>(null)
-  const [playing, setPlaying] = useState(false)
-  const [paused, setPaused] = useState(false)
   const [zoomed, setZoomed] = useState(false)
-  const rootRef = useRef<HTMLElement>(null)
-  const stopped = useRef(false)
 
-  const select = (id: string) => {
-    stopped.current = true
-    setPlaying(false)
-    setActive(id)
-  }
-
-  useEffect(() => {
-    const root = rootRef.current
-    if (!root) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry?.isIntersecting || stopped.current) return
-        observer.disconnect()
-        setActive((current) => current ?? FEATURES[0].id)
-        setPlaying(true)
-      },
-      { threshold: 0.4 },
-    )
-    observer.observe(root)
-    return () => observer.disconnect()
-  }, [])
-
-  useEffect(() => {
-    if (!playing || paused) return
-    const timer = window.setInterval(() => {
-      setActive((current) => {
-        const i = FEATURES.findIndex((f) => f.id === current)
-        return FEATURES[(i + 1) % FEATURES.length].id
-      })
-    }, INTERVAL_MS)
-    return () => window.clearInterval(timer)
-  }, [playing, paused])
+  const select = (id: string) => setActive((current) => (current === id ? null : id))
 
   const frame = FEATURES.find((f) => f.id === active)?.frame ?? null
   const { scale, x, y } = cameraTransform(frame)
 
   return (
-    <figure
-      ref={rootRef}
-      className="relative mx-auto max-w-6xl"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
+    <figure className="relative mx-auto max-w-6xl">
       <div
         className="pointer-events-none absolute -inset-x-6 -top-10 bottom-10 -z-10"
         style={{
@@ -123,18 +80,6 @@ export default function HeroShowcase() {
                 {isActive && (
                   <span className="mt-2 block text-sm leading-relaxed text-muted">
                     {t(`showcase.tour.${f.id}.desc`)}
-                  </span>
-                )}
-                {isActive && playing && (
-                  <span className="mt-3 block h-0.5 overflow-hidden rounded-full bg-line">
-                    <span
-                      key={`${f.id}:${paused}`}
-                      className="block h-full bg-blue"
-                      style={{
-                        animation: `showcaseProgress ${INTERVAL_MS}ms linear`,
-                        animationPlayState: paused ? 'paused' : 'running',
-                      }}
-                    />
                   </span>
                 )}
               </button>
