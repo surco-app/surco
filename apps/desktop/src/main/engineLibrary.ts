@@ -23,22 +23,42 @@ import { isEngineDjRunning } from './engineProcess'
 // accepts our rows, and an existing row for the same path is updated — never duplicated,
 // and never stripped of the analysis Engine already stored on it.
 
+// Memoizes the last successful dump in process memory (one entry, not disk): the
+// 5-minute refocus refresh calls dumpEngineLibrary on an m.db that is almost always
+// unchanged, and readFile + sql.js parsing it every time is pure waste. Keyed by
+// library dir + mtimeMs so a changed file (a re-convert, an Engine analysis) or a
+// different configured library both miss and re-read. Surco's own writeBatch always
+// bumps the file's mtime before this memo could see it (write-then-rename, see
+// engineLibrary.ts writeBatch), so no manual invalidation is needed there.
+let lastDump: { libraryDir: string; mtimeMs: number; result: AppleMusicLookupCandidate[] } | null =
+  null
+
 // Reads the library's title/artist/duration triples for the "already owned" membership
 // check — the Engine counterpart of the Apple Music library dump, sharing its candidate
 // shape so the renderer matches both with the same index. Read-only (plain readFile, no
 // locks), so it is safe while Engine DJ itself is open; a missing or unreadable database
 // simply reports an empty library, leaving every row's verdict undefined.
 export async function dumpEngineLibrary(libraryDir: string): Promise<AppleMusicLookupCandidate[]> {
+  const dbPath = join(libraryDir, 'Database2', 'm.db')
+  let mtimeMs: number
+  try {
+    mtimeMs = (await stat(dbPath)).mtimeMs
+  } catch {
+    return []
+  }
+  if (lastDump && lastDump.libraryDir === libraryDir && lastDump.mtimeMs === mtimeMs) {
+    return lastDump.result
+  }
   const SQL = await loadSqlJs()
   let db: Database
   try {
-    db = new SQL.Database(await readFile(join(libraryDir, 'Database2', 'm.db')))
+    db = new SQL.Database(await readFile(dbPath))
   } catch {
     return []
   }
   try {
     const result = db.exec('SELECT title, artist, length FROM Track')
-    return (result[0]?.values ?? []).flatMap(([title, artist, length]) => {
+    const candidates = (result[0]?.values ?? []).flatMap(([title, artist, length]) => {
       if (!title || !artist) return []
       return [
         {
@@ -48,6 +68,8 @@ export async function dumpEngineLibrary(libraryDir: string): Promise<AppleMusicL
         },
       ]
     })
+    lastDump = { libraryDir, mtimeMs, result: candidates }
+    return candidates
   } catch {
     // A schema this query doesn't fit (some future Engine) degrades to "no verdicts",
     // never to a failed conversion pipeline.

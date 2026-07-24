@@ -1,12 +1,25 @@
-import { mkdtemp, readFile, stat, writeFile } from 'node:fs/promises'
+// Counts real readFile calls so the memoization tests can assert the m.db bytes were
+// (or weren't) actually re-read, without replacing the real read/parse behaviour the
+// rest of this suite depends on.
+const { readFileCalls } = vi.hoisted(() => ({ readFileCalls: { count: 0 } }))
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const real = await importOriginal<typeof import('node:fs/promises')>()
+  const readFile: typeof real.readFile = ((...args: Parameters<typeof real.readFile>) => {
+    readFileCalls.count += 1
+    return real.readFile(...args)
+  }) as typeof real.readFile
+  return { ...real, readFile }
+})
+
+import { mkdtemp, readFile, stat, utimes, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import initSqlJs, { type Database } from 'sql.js'
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
 import { buildEngineDatabase } from './engine'
-import { addToEngineLibrary } from './engineLibrary'
+import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
 import { isEngineDjRunning } from './engineProcess'
 
 // The real probe shells out to pgrep/tasklist; tests pin it so they never depend on
@@ -472,5 +485,91 @@ describe('dumpEngineLibrary', () => {
   it('reports an empty library when the database is missing', async () => {
     const { dumpEngineLibrary } = await import('./engineLibrary')
     expect(await dumpEngineLibrary(join(root, 'nowhere', 'Engine Library'))).toEqual([])
+  })
+})
+
+describe('dumpEngineLibrary — memoized by mtime', () => {
+  let root: string
+  beforeAll(async () => {
+    root = await mkdtemp(join(tmpdir(), 'surco-engine-memo-'))
+  })
+  beforeEach(() => {
+    readFileCalls.count = 0
+  })
+
+  // The 5-minute refocus refresh calls this on an m.db that has not changed since the
+  // last successful dump; re-reading and re-parsing it every time is pure waste.
+  it('does not re-read the database on a second call with an unchanged mtime', async () => {
+    const lib = join(root, 'memo', 'Engine Library')
+    await addToEngineLibrary(
+      lib,
+      await makeFile(root, 'm1.aiff'),
+      meta({ title: 'Memo One' }),
+      'Surco',
+    )
+    readFileCalls.count = 0
+    const first = await dumpEngineLibrary(lib)
+    const callsAfterFirst = readFileCalls.count
+    expect(callsAfterFirst).toBeGreaterThan(0)
+
+    const second = await dumpEngineLibrary(lib)
+
+    expect(second).toEqual(first)
+    expect(readFileCalls.count).toBe(callsAfterFirst)
+  })
+
+  // Any change to the file (a re-convert, an Engine analysis) must invalidate the memo:
+  // a stale in-memory result must never outlive the file it was read from.
+  it('re-reads the database when its mtime changes', async () => {
+    const lib = join(root, 'bump', 'Engine Library')
+    const file = await makeFile(root, 'm2.aiff')
+    await addToEngineLibrary(lib, file, meta({ title: 'Before' }), 'Surco')
+    const dbPath = join(lib, 'Database2', 'm.db')
+    const first = await dumpEngineLibrary(lib)
+    expect(first).toEqual([{ title: 'Before', artist: 'A' }])
+
+    const later = new Date(Date.now() + 60_000)
+    await utimes(dbPath, later, later)
+    await addToEngineLibrary(lib, file, meta({ title: 'After' }), 'Surco')
+
+    expect(await dumpEngineLibrary(lib)).toEqual([{ title: 'After', artist: 'A' }])
+  })
+
+  // A memo keyed only by mtime (no path) would serve one library's rows for another —
+  // the library folder is a user setting and can point anywhere.
+  it('re-reads when a different library directory is requested', async () => {
+    const libA = join(root, 'dir-a', 'Engine Library')
+    const libB = join(root, 'dir-b', 'Engine Library')
+    await addToEngineLibrary(
+      libA,
+      await makeFile(root, 'm3.aiff'),
+      meta({ title: 'Dir A' }),
+      'Surco',
+    )
+    await addToEngineLibrary(
+      libB,
+      await makeFile(root, 'm4.aiff'),
+      meta({ title: 'Dir B' }),
+      'Surco',
+    )
+
+    expect(await dumpEngineLibrary(libA)).toEqual([{ title: 'Dir A', artist: 'A' }])
+    expect(await dumpEngineLibrary(libB)).toEqual([{ title: 'Dir B', artist: 'A' }])
+  })
+
+  // A failed read (missing/unreadable m.db) must not pin an empty result: once the
+  // library becomes readable, the next call must actually read it.
+  it('does not memoize a failed read', async () => {
+    const lib = join(root, 'missing-then-present', 'Engine Library')
+    expect(await dumpEngineLibrary(lib)).toEqual([])
+
+    await addToEngineLibrary(
+      lib,
+      await makeFile(root, 'm5.aiff'),
+      meta({ title: 'Appeared' }),
+      'Surco',
+    )
+
+    expect(await dumpEngineLibrary(lib)).toEqual([{ title: 'Appeared', artist: 'A' }])
   })
 })
