@@ -56,6 +56,10 @@ export interface SearchHints {
   artist?: string
   title?: string
   catalogNumber?: string
+  // The recording's ISRC from the file's own tags (streaming rips carry it). Only the
+  // Deezer provider consumes it: an exact-identity lookup that puts the original
+  // release in the pool ahead of any fuzzy text match.
+  isrc?: string
 }
 
 // Optional loudness normalization applied during conversion. 'none' is the default

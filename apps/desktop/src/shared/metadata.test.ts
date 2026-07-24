@@ -56,6 +56,14 @@ describe('searchHintsOf', () => {
       artist: 'Artist',
       title: 'Track',
       catalogNumber: 'CAT001',
+      isrc: 'USRC17607839',
     })
+  })
+
+  // Deezer's ISRC lookup is exact-identity, so it needs the file's own tag verbatim,
+  // unlike the fuzzy text hints above.
+  it('carries the tag ISRC so the Deezer provider can resolve the exact recording', () => {
+    const hints = searchHintsOf({ ...FULLY_TAGGED, isrc: 'ES5022600597' })
+    expect(hints.isrc).toBe('ES5022600597')
   })
 })

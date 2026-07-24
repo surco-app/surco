@@ -49,5 +49,10 @@ export function emptyMetadata(): TrackMetadata {
 // the ranking, the catalog number pins a specific pressing. Both the editor browser and
 // the background sweep derive hints from the same fields, so they read them from here.
 export function searchHintsOf(meta: TrackMetadata): SearchHints {
-  return { artist: meta.artist, title: meta.title, catalogNumber: meta.catalogNumber }
+  return {
+    artist: meta.artist,
+    title: meta.title,
+    catalogNumber: meta.catalogNumber,
+    isrc: meta.isrc,
+  }
 }

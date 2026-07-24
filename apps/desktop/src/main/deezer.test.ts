@@ -162,3 +162,34 @@ describe('search', () => {
     expect(results[0].id).toBe(10)
   })
 })
+
+describe('search with an ISRC hint', () => {
+  const isrcTrack = {
+    id: 99,
+    title: 'pa ti toa <3',
+    artist: { name: 'Ana Mena' },
+    album: { id: 50, title: 'pa ti toa <3', cover_medium: 'm50', cover_xl: 'xl50' },
+  }
+  const remixHit = {
+    id: 7,
+    title: 'pa ti toa (X Remix)',
+    artist: { name: 'X' },
+    album: { id: 60, title: 'Remixes', cover_medium: 'm60', cover_xl: 'xl60' },
+  }
+
+  // The whole point of the ISRC: the exact recording's album must lead the pool so the
+  // probe scores the original before any lookalike, without deduping it twice.
+  it('puts the ISRC album first and appends text results minus the duplicate', async () => {
+    mockFetch([isrcTrack, { data: [remixHit, isrcTrack] }])
+    const results = await search('ana mena pa ti toa', 'high', { isrc: 'ES5022600597' })
+    expect(results.map((r) => r.id)).toEqual([50, 60])
+  })
+
+  // Deezer answers an unknown ISRC with a 200 "no data" body (code 800) — a miss, not
+  // an error: the text ladder must still run.
+  it('falls back to the text search when the ISRC is unknown to Deezer', async () => {
+    mockFetch([{ error: { code: 800 } }, { data: [remixHit] }])
+    const results = await search('cancion desconocida xyz', 'high', { isrc: 'XX0000000000' })
+    expect(results.map((r) => r.id)).toEqual([60])
+  })
+})

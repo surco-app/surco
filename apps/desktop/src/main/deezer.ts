@@ -99,6 +99,22 @@ async function searchOnce(text: string, priority?: SearchPriority): Promise<Sear
   return results
 }
 
+// Resolves the exact recording an ISRC names, to its album's search row. Cached under
+// its own namespaced key so a text search for the literal string can never collide. A
+// miss (Deezer's code-800 body has no album) caches as empty and reads back as such.
+async function trackByIsrc(
+  isrc: string,
+  priority?: SearchPriority,
+): Promise<SearchResult | undefined> {
+  const key = `isrc:${isrc.toLowerCase()}`
+  const cached = cacheStore.getSearch(key)
+  if (cached) return cached[0]
+  const data = await api<DeezerTrackHit>(`${BASE}/track/isrc:${encodeURIComponent(isrc)}`, priority)
+  const results = groupByAlbum(data.album ? [data] : [])
+  cacheStore.setSearch(key, results)
+  return results[0]
+}
+
 // Deezer's search is as brittle with download-filename noise as Bandcamp's, so it rides
 // the same cleaned-then-relaxed candidate ladder, keeping the first candidate that
 // returns anything. No catalog-number candidate: like Bandcamp, Deezer has no catalog
@@ -112,12 +128,17 @@ export async function search(
     'deezer',
     'activity.searchDeezer',
     async () => {
+      // An ISRC from the file's tags names the exact recording — resolve it first so
+      // the original release leads the pool, with the text results as alternatives.
+      const isrc = hints.isrc?.trim()
+      const exact = isrc ? await trackByIsrc(isrc, priority) : undefined
       let results: SearchResult[] = []
       for (const candidate of buildSearchCandidates(query, hints, { includeCatalog: false })) {
         results = await searchOnce(candidate, priority)
         if (results.length) break
       }
-      return results
+      if (!exact) return results
+      return [exact, ...results.filter((r) => r.id !== exact.id)]
     },
     {
       labelParams: { query },
