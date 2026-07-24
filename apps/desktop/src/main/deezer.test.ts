@@ -201,11 +201,16 @@ describe('search with an ISRC hint', () => {
   }
 
   // The whole point of the ISRC: the exact recording's album must lead the pool so the
-  // probe scores the original before any lookalike, without deduping it twice.
-  it('puts the ISRC album first and appends text results minus the duplicate', async () => {
+  // probe scores the original before any lookalike, without deduping it twice. The hit
+  // is flagged `exact` — the renderer's cross-provider re-rank keys on it, since the
+  // album-titled row loses any text-overlap contest against bootlegs that echo the
+  // track's own name.
+  it('puts the ISRC album first, flagged exact, and appends text results minus the duplicate', async () => {
     mockFetch([isrcTrack, { data: [remixHit, isrcTrack] }])
     const results = await search('ana mena pa ti toa', 'high', { isrc: 'ES5022600597' })
     expect(results.map((r) => r.id)).toEqual([50, 60])
+    expect(results[0].exact).toBe(true)
+    expect(results[1].exact).toBeUndefined()
   })
 
   // Deezer answers an unknown ISRC with a 200 "no data" body (code 800) — a miss, not

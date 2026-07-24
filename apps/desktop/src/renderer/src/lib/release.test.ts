@@ -530,6 +530,31 @@ describe('preRankResults', () => {
     )
     expect(ranked[0].id).toBe(2)
   })
+
+  // An ISRC lookup names the file's exact recording by identity, not text similarity —
+  // but its row is titled by ALBUM, so on text overlap alone a wall of DJ bootlegs that
+  // echo "artist + track title" outranks it and pushes it past the probe cap (real case:
+  // ten "djcesar90 - Jay Wheeler X Omar Courtz - De Lejitos" mashups buried "Jay Wheeler
+  // - La Voz Favorita", the album the file actually came from). Identity must survive
+  // the merge: an exact row leads regardless of its text score.
+  it('ranks an exact-identity row above textually better-matching noise', () => {
+    const bootleg = (id: number): SearchResult => ({
+      provider: 'bandcamp',
+      id,
+      title: 'djcesar90 - Jay Wheeler X Omar Courtz - De Lejitos (Remix)',
+    })
+    const exactRow: SearchResult = {
+      provider: 'deezer',
+      id: 50,
+      title: 'Jay Wheeler - La Voz Favorita',
+      exact: true,
+    }
+    const ranked = preRankResults([bootleg(1), bootleg(2), exactRow], {
+      title: 'De Lejitos (Remix)',
+      artist: 'Jay Wheeler',
+    })
+    expect(ranked[0].id).toBe(50)
+  })
 })
 
 describe('providerCountsOf', () => {

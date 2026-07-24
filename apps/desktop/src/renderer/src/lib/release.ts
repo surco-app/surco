@@ -413,10 +413,16 @@ export function preRankResults(results: SearchResult[], target: TrackMatchTarget
   // canonical pressing — the one most people own — floats above the obscure repress. Only a
   // tie-break: it never overrides relevance, and Bandcamp/sparse rows (no stats) just score 0.
   const have = (result: SearchResult): number => result.community?.have ?? 0
+  // An exact row was resolved by identity (an ISRC lookup), not text search, and its
+  // album-formed title loses any text-overlap contest against bootlegs echoing the
+  // track's own name — so it leads before any score. Never a risk: if the ISRC was
+  // mis-tagged, the probe still scores the tracklist and rejects it like any other row.
+  const exactRank = (result: SearchResult): number => (result.exact ? 1 : 0)
   return results
     .map((result, index) => ({ result, index, score: relevance(result) }))
     .sort(
       (a, b) =>
+        exactRank(b.result) - exactRank(a.result) ||
         b.score - a.score ||
         PROVIDER_RANK[a.result.provider] - PROVIDER_RANK[b.result.provider] ||
         yearMatch(b.result) - yearMatch(a.result) ||

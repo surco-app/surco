@@ -111,7 +111,9 @@ async function trackByIsrc(
   const cached = cacheStore.getSearch(key)
   if (cached) return cached[0]
   const data = await api<DeezerTrackHit>(`${BASE}/track/isrc:${encodeURIComponent(isrc)}`, priority)
-  const results = groupByAlbum(data.album ? [data] : [])
+  // Flagged before caching so a cached hit keeps its identity mark: the renderer's
+  // cross-provider re-rank keys on `exact` to lead with this row.
+  const results = groupByAlbum(data.album ? [data] : []).map((r) => ({ ...r, exact: true }))
   cacheStore.setSearch(key, results)
   return results[0]
 }

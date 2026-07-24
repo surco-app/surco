@@ -372,6 +372,11 @@ export interface SearchResult {
   // search JSON, used only as a ranking tie-break so the canonical pressing floats up
   // among equally-relevant rows. Absent for Bandcamp and sparse releases.
   community?: { have?: number; want?: number }
+  // This row names the file's exact recording, resolved by identity (Deezer's ISRC
+  // lookup), not text search. The cross-provider re-rank keys on it: an album-titled
+  // row loses any text-overlap contest against bootlegs echoing the track's own name,
+  // and identity must survive that merge.
+  exact?: boolean
 }
 
 export interface ReleaseTrack {
