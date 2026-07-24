@@ -10,7 +10,7 @@ import Reveal from './components/Reveal'
 import Icon, { type GlyphName } from './components/Icon'
 import ScrollProgress from './components/ScrollProgress'
 import DownloadButton from './components/DownloadButton'
-import HeroTour from './components/HeroTour'
+import HeroShowcase from './components/HeroShowcase'
 import InstallSection from './components/InstallSection'
 import Faq from './components/Faq'
 import Band from './components/Band'
@@ -154,7 +154,7 @@ export default function App() {
 
           <Reveal eager delay={200}>
             <div className="relative mt-16 ml-[calc(50%-50vw)] w-screen px-6 sm:mt-20">
-              <HeroTour />
+              <HeroShowcase />
             </div>
           </Reveal>
         </section>

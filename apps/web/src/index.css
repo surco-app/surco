@@ -77,6 +77,10 @@ button:not(:disabled) {
   60% { width: 72%; }
   100% { width: 72%; }
 }
+@keyframes showcaseProgress {
+  0% { width: 0; }
+  100% { width: 100%; }
+}
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }

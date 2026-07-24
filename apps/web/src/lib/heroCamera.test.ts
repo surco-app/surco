@@ -14,13 +14,13 @@ describe('cameraTransform', () => {
     })
   })
 
-  it('scales so the frame fills the viewport along its tightest axis', () => {
-    const { scale } = cameraTransform({ top: 5, left: 0.5, width: 22, height: 92 })
-    expect(scale).toBeCloseTo(100 / 92, 5)
+  it('scales so the frame fills the viewport width, cropping tall frames', () => {
+    const { scale } = cameraTransform({ top: 60, left: 47.5, width: 51, height: 32 })
+    expect(scale).toBeCloseTo(100 / 51, 5)
   })
 
-  it('caps the zoom so small frames never pixelate', () => {
-    const { scale } = cameraTransform({ top: 40, left: 40, width: 10, height: 10 })
+  it('caps the zoom so narrow frames never pixelate', () => {
+    const { scale } = cameraTransform({ top: 5, left: 0.5, width: 22, height: 92 })
     expect(scale).toBe(2.2)
   })
 

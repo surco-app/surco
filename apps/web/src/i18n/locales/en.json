@@ -205,7 +205,6 @@
   "showcase": {
     "alt": "Surco on macOS: track list, Discogs match, metadata editor and quality analysis",
     "zoom": "Enlarge the screenshot",
-    "tourHint": "Hover or tap to explore",
     "tour": {
       "tracks": {
         "title": "Track list",

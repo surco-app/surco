@@ -33,10 +33,12 @@ se conservan.
 - Al activar una feature la imagen se mueve con `transform: scale(...) translate(...)`
   hacia ese encuadre; ~900ms con el ease de la página
   `cubic-bezier(0.22,1,0.36,1)` y `will-change: transform`.
-- Zoom capado a ~2.2× para no pixelar (el asset de 2000px da margen de sobra).
-- El encuadre se ajusta a la relación de aspecto del viewport: escala
-  `min(cap, 100/width%, 100/height%)`, centrado en el rectángulo y con el translate
-  acotado a los bordes de la imagen.
+- Zoom capado a ~2.2× para no pixelar (el asset de 2000px da margen de sobra; el
+  atributo `sizes` declara el ancho efectivo con zoom para que el navegador sirva el
+  webp grande).
+- La escala ajusta el ancho del encuadre — `min(cap, 100/width%)` — y las zonas altas
+  recortan por arriba/abajo en vez de aplanar el zoom; centrado en el rectángulo y con
+  el translate acotado a los bordes de la imagen.
 
 ## Autoplay
 
