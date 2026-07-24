@@ -12,6 +12,7 @@ import type {
   SearchProviderId,
   SessionData,
   SessionEdit,
+  SpectrumResult,
   TrackProperties,
   WaveformResult,
   WaveformScan,
@@ -105,6 +106,10 @@ const api: Api = {
   revealLog: (): Promise<void> => ipcRenderer.invoke('log:reveal'),
   spectrogram: (path: string, priority: 'high' | 'low' = 'low') =>
     ipcRenderer.invoke('audio:spectrogram', path, priority),
+  loadCachedAnalyses: (
+    paths: string[],
+  ): Promise<Record<string, { spectrogram?: SpectrumResult; waveformScan?: WaveformScan }>> =>
+    ipcRenderer.invoke('audio:cached-batch', paths),
   loudness: (path: string, priority: 'high' | 'low' = 'low'): Promise<LoudnessResult | null> =>
     ipcRenderer.invoke('audio:loudness', path, priority),
   properties: (path: string): Promise<TrackProperties | null> =>

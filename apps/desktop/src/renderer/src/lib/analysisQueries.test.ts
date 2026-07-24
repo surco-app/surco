@@ -1,6 +1,20 @@
+// @vitest-environment jsdom
 import { QueryClient } from '@tanstack/react-query'
-import { describe, expect, it, vi } from 'vitest'
-import { analysisOptions, HEAVY_PROBE_GC_MS, removeAnalysisQueries } from './analysisQueries'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import {
+  analysisOptions,
+  HEAVY_PROBE_GC_MS,
+  removeAnalysisQueries,
+  seedCachedAnalyses,
+} from './analysisQueries'
+
+function setApi(over: Record<string, unknown>): void {
+  ;(window as unknown as { api: unknown }).api = over
+}
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 describe('analysisOptions', () => {
   // The probe and its eviction must agree on the exact key tuple. Pinning the shape to
@@ -31,6 +45,78 @@ describe('analysisOptions', () => {
     for (const name of ['properties', 'loudness', 'bpm', 'key', 'clicks']) {
       expect(analysisOptions(name, '/m/a.wav', vi.fn()).gcTime).toBeUndefined()
     }
+  })
+})
+
+describe('seedCachedAnalyses', () => {
+  // The whole point: a fresh import's rows show their quality dot and clipping flag the
+  // instant the batch IPC resolves, with no per-track probe IPC ever firing for a warm hit.
+  it('seeds the spectrogram and waveformScan query data for a cache hit', async () => {
+    const client = new QueryClient()
+    setApi({
+      loadCachedAnalyses: vi.fn().mockResolvedValue({
+        '/m/a.wav': { spectrogram: { image: 'x', cutoffHz: 20000, sampleRateHz: 44100 } },
+        '/m/b.wav': { waveformScan: { clipped: [true] } },
+      }),
+    })
+
+    await seedCachedAnalyses(client, ['/m/a.wav', '/m/b.wav'])
+
+    expect(client.getQueryData(['spectrogram', '/m/a.wav'])).toEqual({
+      image: 'x',
+      cutoffHz: 20000,
+      sampleRateHz: 44100,
+    })
+    expect(client.getQueryData(['waveformScan', '/m/b.wav'])).toEqual({ clipped: [true] })
+  })
+
+  // A path with no cached entry either family must be left untouched — no placeholder,
+  // no empty object — so the normal lazy probe still runs for it exactly like today.
+  it('leaves a cache miss unset so the normal lazy probe still runs', async () => {
+    const client = new QueryClient()
+    setApi({ loadCachedAnalyses: vi.fn().mockResolvedValue({}) })
+
+    await seedCachedAnalyses(client, ['/m/a.wav'])
+
+    expect(client.getQueryData(['spectrogram', '/m/a.wav'])).toBeUndefined()
+    expect(client.getQueryData(['waveformScan', '/m/a.wav'])).toBeUndefined()
+  })
+
+  // A track already probed this session (e.g. an instant re-drop, or a hover prefetch
+  // that beat the batch) must keep its fresher in-session result — the disk cache can be
+  // older than what just landed, and clobbering it would flash a stale verdict back in.
+  it('does not overwrite a query key that already has data', async () => {
+    const client = new QueryClient()
+    client.setQueryData(['spectrogram', '/m/a.wav'], {
+      image: 'fresh',
+      cutoffHz: 1,
+      sampleRateHz: 1,
+    })
+    setApi({
+      loadCachedAnalyses: vi.fn().mockResolvedValue({
+        '/m/a.wav': { spectrogram: { image: 'stale', cutoffHz: 2, sampleRateHz: 2 } },
+      }),
+    })
+
+    await seedCachedAnalyses(client, ['/m/a.wav'])
+
+    expect(client.getQueryData(['spectrogram', '/m/a.wav'])).toEqual({
+      image: 'fresh',
+      cutoffHz: 1,
+      sampleRateHz: 1,
+    })
+  })
+
+  // An empty batch (nothing new to hydrate) must not call the IPC at all — the whole
+  // point is one round trip per load, not one for a no-op.
+  it('skips the IPC call for an empty path list', async () => {
+    const client = new QueryClient()
+    const loadCachedAnalyses = vi.fn()
+    setApi({ loadCachedAnalyses })
+
+    await seedCachedAnalyses(client, [])
+
+    expect(loadCachedAnalyses).not.toHaveBeenCalled()
   })
 })
 

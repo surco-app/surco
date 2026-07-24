@@ -1,9 +1,9 @@
 import { basename } from 'node:path'
 import { ipcMain } from 'electron'
 import log from 'electron-log/main'
-import type { DeclickMode } from '../shared/types'
+import type { DeclickMode, SpectrumResult, WaveformScan } from '../shared/types'
 import { activity } from './activity'
-import { cachedAnalysis } from './analysisCache'
+import { cachedAnalysis, peekAnalysis } from './analysisCache'
 import { analysisCancels, isAbortError } from './analysisCancel'
 import { analysisLimiter } from './analysisLimiter'
 import {
@@ -58,6 +58,19 @@ function cancellable<T>(
     ? analysisCancels.run(inputPath, job)
     : job(new AbortController().signal)
 }
+
+// The cachedAnalysis namespaces of every probe family, shared by the live handlers below
+// and the audio:cached-batch handler so the two can never drift onto different keys for
+// the same family — a batch peek under a stale namespace would silently show as a
+// permanent miss instead of the warm hit the live handler already wrote.
+const SPECTROGRAM_NAMESPACE = 'spectrogram-mono-v13'
+const LOUDNESS_NAMESPACE = 'loudness'
+const CLICKS_NAMESPACE = 'clickcount-v2'
+const PROPERTIES_NAMESPACE = 'properties'
+const BPM_NAMESPACE = 'bpm'
+const KEY_NAMESPACE = 'key'
+const WAVEFORM_NAMESPACE = 'waveform-v5'
+const CHANNELSCAN_NAMESPACE = 'channelscan-v1'
 
 // The read-only audio analysis IPC: tags, duration, cover and the cached quality probes
 // (spectrogram, loudness, properties, bpm, key, waveform). Self-contained — these handlers
@@ -118,7 +131,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
             // changed (Good→Bad), so old entries must regenerate to pick it up. v13 reports
             // full-band high-rate audio (96 kHz) at the ~22 kHz probed ceiling instead of the
             // 48 kHz Nyquist, so cutoffHz changed for those files and old entries must regenerate.
-            'spectrogram-mono-v13',
+            SPECTROGRAM_NAMESPACE,
             inputPath,
             () =>
               probe('activity.probeSpectrogram', inputPath, () =>
@@ -171,7 +184,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     'audio:loudness',
     async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
       try {
-        return await cachedAnalysis('loudness', inputPath, () =>
+        return await cachedAnalysis(LOUDNESS_NAMESPACE, inputPath, () =>
           probe('activity.probeLoudness', inputPath, () =>
             cancellable(inputPath, priority, (signal) =>
               analysisLimiter.run(() => measureLoudness(inputPath, signal), priority, signal),
@@ -193,7 +206,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     'audio:clicks',
     async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
       try {
-        return await cachedAnalysis('clickcount-v2', inputPath, () =>
+        return await cachedAnalysis(CLICKS_NAMESPACE, inputPath, () =>
           probe('activity.probeClicks', inputPath, () =>
             analysisLimiter.run(() => detectTrackClicks(inputPath), priority),
           ),
@@ -207,7 +220,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
 
   ipcMain.handle('audio:properties', async (_e, inputPath: string) => {
     try {
-      return await cachedAnalysis('properties', inputPath, () =>
+      return await cachedAnalysis(PROPERTIES_NAMESPACE, inputPath, () =>
         probe('activity.probeProperties', inputPath, () => probeProperties(inputPath)),
       )
     } catch (err) {
@@ -224,7 +237,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       // so it is cached too; only a transient decode error (which throws) is
       // left uncached for a later retry.
       return await cachedAnalysis(
-        'bpm',
+        BPM_NAMESPACE,
         inputPath,
         () =>
           probe('activity.probeBpm', inputPath, () =>
@@ -244,7 +257,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       // corrupt-file overrun) is a real measurement and is cached; only a
       // transient decode error retries.
       return await cachedAnalysis(
-        'key',
+        KEY_NAMESPACE,
         inputPath,
         () =>
           probe('activity.probeKey', inputPath, () =>
@@ -276,7 +289,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
         // v3 entries carry the now-removed clipped/channels, so a rename drops them.
         // v5: results grew per-bucket rms for the two-layer draw; v4 entries have
         // no rms, so a rename re-decodes them rather than draw a body-less wave.
-        return await cachedAnalysis('waveform-v5', inputPath, () =>
+        return await cachedAnalysis(WAVEFORM_NAMESPACE, inputPath, () =>
           probe('activity.probeWaveform', inputPath, () =>
             cancellable(inputPath, priority, (signal) =>
               analysisLimiter.run(() => measureWaveform(inputPath, signal), priority, signal),
@@ -296,7 +309,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   // and this is never served a wave with no scan.
   ipcMain.handle('audio:waveform-scan', async (_e, inputPath: string) => {
     try {
-      return await cachedAnalysis('channelscan-v1', inputPath, () =>
+      return await cachedAnalysis(CHANNELSCAN_NAMESPACE, inputPath, () =>
         probe('activity.probeWaveform', inputPath, () =>
           analysisLimiter.run(() => measureChannelScan(inputPath), 'high'),
         ),
@@ -305,6 +318,38 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       log.error('audio:waveform-scan failed', err)
       return null
     }
+  })
+
+  // Batch hydration for the track list on load: one round trip that peeks the disk
+  // cache for every dropped path and returns whatever is already warm, computing
+  // nothing on a miss (see peekAnalysis) — a cold library must not spawn ffmpeg for
+  // every row just because the list asked. Hydrates exactly the two families the list's
+  // verdict dots and filter counts read (see tracksSnapshot.ts SNAPSHOT_FAMILIES /
+  // useTracksView.ts on the renderer side): spectrogram (the quality verdict) and the
+  // channel scan (the clipping attention flag). Deliberately EXCLUDES waveform-v5: its
+  // peaks/rms payload is ~0.5 MB per track, feeds only the silence attention flag, and
+  // that lazy probe already runs cheaply off the player/analyze-sweep paths — hydrating
+  // it here would turn a big library's opening batch into a multi-MB read for a filter
+  // bucket few tracks even hit. loudness/properties/bpm/key/clicks are editor-only detail
+  // panels; tracksSnapshot never reads them, so they stay lazy too.
+  ipcMain.handle('audio:cached-batch', async (_e, paths: string[]) => {
+    const entries = await Promise.all(
+      paths.map(async (path) => {
+        const [spectrogram, waveformScan] = await Promise.all([
+          peekAnalysis<SpectrumResult>(SPECTROGRAM_NAMESPACE, path),
+          peekAnalysis<WaveformScan>(CHANNELSCAN_NAMESPACE, path),
+        ])
+        const hit: { spectrogram?: SpectrumResult; waveformScan?: WaveformScan } = {}
+        if (spectrogram) hit.spectrogram = spectrogram
+        if (waveformScan) hit.waveformScan = waveformScan
+        return [path, hit] as const
+      }),
+    )
+    const result: Record<string, { spectrogram?: SpectrumResult; waveformScan?: WaveformScan }> = {}
+    for (const [path, hit] of entries) {
+      if (hit.spectrogram || hit.waveformScan) result[path] = hit
+    }
+    return result
   })
 
   // The deep zoom's on-demand slice, disk-cached per quantized window: the renderer

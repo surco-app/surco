@@ -144,6 +144,12 @@ export interface Api {
   // Shows the log file in the OS file manager so a user can attach it to a report.
   revealLog: () => Promise<void>
   spectrogram: (path: string, priority?: 'high' | 'low') => Promise<SpectrumResult>
+  // The list's one-shot warm-up on load: for each path, whatever spectrogram/channel-scan
+  // entries are already on disk, computing nothing on a miss — see audioIpc.ts's
+  // audio:cached-batch for exactly which families and why only those two.
+  loadCachedAnalyses: (
+    paths: string[],
+  ) => Promise<Record<string, { spectrogram?: SpectrumResult; waveformScan?: WaveformScan }>>
   loudness: (path: string, priority?: 'high' | 'low') => Promise<LoudnessResult | null>
   properties: (path: string) => Promise<TrackProperties | null>
   bpm: (path: string, priority?: 'high' | 'low') => Promise<BpmResult | null>

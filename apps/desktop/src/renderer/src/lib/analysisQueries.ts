@@ -68,3 +68,26 @@ export function removeAnalysisQueries(client: QueryClient, inputPath: string): v
     client.removeQueries({ queryKey: [key, inputPath] })
   }
 }
+
+// The list's one-shot warm-up on import: one IPC round trip for the whole new batch,
+// seeding React Query straight from whatever the main process already had on disk so the
+// quality dot and clipping flag can render before any probe runs. Only the two families
+// tracksSnapshot.ts's SNAPSHOT_FAMILIES actually reads for verdicts/filters — spectrogram
+// and waveformScan — round-trip here; loadCachedAnalyses (audio:cached-batch) never
+// returns the others. A path missing from the response, or missing one of the two keys,
+// is left alone: no placeholder is written, so the family's normal lazy probe still runs
+// for it exactly like before this hydration existed. setQueryData is skipped whenever the
+// key already holds data — an instant re-drop or a hover prefetch that beat this call must
+// keep its fresher in-session result, never get clobbered by a same-or-older disk entry.
+export async function seedCachedAnalyses(client: QueryClient, paths: string[]): Promise<void> {
+  if (paths.length === 0) return
+  const batch = await window.api.loadCachedAnalyses(paths)
+  for (const [path, hit] of Object.entries(batch)) {
+    if (hit.spectrogram && client.getQueryData(['spectrogram', path]) === undefined) {
+      client.setQueryData(['spectrogram', path], hit.spectrogram)
+    }
+    if (hit.waveformScan && client.getQueryData(['waveformScan', path]) === undefined) {
+      client.setQueryData(['waveformScan', path], hit.waveformScan)
+    }
+  }
+}

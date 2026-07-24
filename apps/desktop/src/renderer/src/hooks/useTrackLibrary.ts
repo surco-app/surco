@@ -75,6 +75,11 @@ interface Params {
   // say so — those rows silently showing only file-name data used to read as "this
   // file has no tags" when the real tags were just unreadable.
   onMetaReadFailed: (count: number) => void
+  // Fired once per addPaths call with the deduped batch of genuinely new paths, right
+  // after they're known and before their metadata reads resolve — App's hook for seeding
+  // the disk-cached quality/clipping verdicts (seedCachedAnalyses) in one round trip so
+  // the list shows them immediately instead of waiting on each track's own lazy probe.
+  onPathsAdded?: (paths: string[]) => void
 }
 
 // Tracks that appeared in a watched folder after it was loaded, waiting on the user to
@@ -121,6 +126,7 @@ export function useTrackLibrary({
   onMetaLoaded,
   onDuplicatesSkipped,
   onMetaReadFailed,
+  onPathsAdded,
 }: Params): TrackLibrary {
   const [tracks, setTracks] = useState<TrackItem[]>([])
   const tracksRef = useRef<TrackItem[]>([])
@@ -203,6 +209,7 @@ export function useTrackLibrary({
     const skipped = audio.length - fresh.length
     if (skipped > 0) onDuplicatesSkipped(skipped)
     if (fresh.length === 0) return
+    onPathsAdded?.(fresh)
     // Importing a new crate is a context change, not a track step: if a section was blown
     // up to the whole window, leave that view now so the freshly selected track's spectrum
     // doesn't render full-screen behind the editor while it analyzes.

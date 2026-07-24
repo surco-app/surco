@@ -52,7 +52,7 @@ import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { useTracksView, type ViewCacheEntry } from './hooks/useTracksView'
 import { waveformOptions } from './hooks/useWaveform'
 import { nextLocale } from './i18n/locale'
-import { removeAnalysisQueries } from './lib/analysisQueries'
+import { removeAnalysisQueries, seedCachedAnalyses } from './lib/analysisQueries'
 import type { AppleMusicIndex, StaleLibraryCopy } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
 import { acceptReviewPatch, type MatchCleanup, tracksToAutoMatch } from './lib/autoMatch'
@@ -428,6 +428,11 @@ export default function App(): React.JSX.Element {
     },
     onDuplicatesSkipped: (count) => setNotice(tr('notices.duplicatesSkipped', { count })),
     onMetaReadFailed: (count) => setNotice(tr('notices.metaReadFailed', { count })),
+    // One disk-cache round trip for the whole freshly-dropped batch, so the list's quality
+    // dot and clipping flag can appear before any per-track probe runs. Fire-and-forget:
+    // a hydration failure just leaves the normal lazy probes to fill the verdicts in, same
+    // as a cold cache.
+    onPathsAdded: (paths) => void seedCachedAnalyses(queryClient, paths),
   })
 
   useEffect(

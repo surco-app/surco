@@ -284,6 +284,39 @@ describe('useTrackLibrary import batching', () => {
   })
 })
 
+describe('useTrackLibrary cache hydration', () => {
+  // The batch hydration's whole point: addPaths must hand the freshly added paths to
+  // onPathsAdded once the drop is deduped, so the caller can seed the disk-cached
+  // verdicts in one round trip instead of waiting for each track's own lazy probe.
+  it('reports the freshly added paths once, excluding duplicates already in the crate', async () => {
+    const onPathsAdded = vi.fn()
+    setApi({
+      readMeta: vi
+        .fn()
+        .mockResolvedValue({ tags: { title: '', artist: '' }, duration: 180, cover: null }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+        onPathsAdded,
+      }),
+    )
+
+    await act(() => result.current.addPaths(['/m/a.wav', '/m/b.wav']))
+    expect(onPathsAdded).toHaveBeenCalledExactlyOnceWith(['/m/a.wav', '/m/b.wav'])
+
+    onPathsAdded.mockClear()
+    await act(() => result.current.addPaths(['/m/a.wav', '/m/c.wav']))
+    expect(onPathsAdded).toHaveBeenCalledExactlyOnceWith(['/m/c.wav'])
+  })
+})
+
 describe('useTrackLibrary foreign tags', () => {
   // The inspector shows the third-party tags a file carries (SERATO_MARKERS_V2,
   // MUSICBRAINZ_*…) so the user can review and delete them. The read already returns

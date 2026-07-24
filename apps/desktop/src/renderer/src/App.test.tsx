@@ -223,6 +223,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     search: vi.fn().mockResolvedValue([]),
     getRelease: vi.fn().mockResolvedValue(null),
     spectrogram: vi.fn().mockResolvedValue(spectrum),
+    loadCachedAnalyses: vi.fn().mockResolvedValue({}),
     waveform: vi.fn().mockResolvedValue(wave),
     cancelAnalysis: vi.fn().mockResolvedValue(undefined),
     clicks: vi.fn().mockResolvedValue(null),

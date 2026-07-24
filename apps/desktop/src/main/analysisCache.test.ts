@@ -20,6 +20,7 @@ import {
   cachedAnalysis,
   clearAnalysisCache,
   dropAnalysis,
+  peekAnalysis,
   pruneAnalysisCache,
 } from './analysisCache'
 
@@ -148,6 +149,46 @@ describe('cachedAnalysis', () => {
     await dropAnalysis('redo-ns', src)
     expect(await cachedAnalysis('redo-ns', src, compute)).toEqual({ v: 2 })
     expect(compute).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('peekAnalysis', () => {
+  beforeEach(() => {
+    rmSync(join(app.getPath('userData'), 'analysis-cache'), { recursive: true, force: true })
+  })
+
+  // The batch hydration's whole point: read a cached entry without ever running the
+  // (expensive) compute the normal cachedAnalysis path falls back to on a miss.
+  it('returns the cached payload for a warm entry without computing', async () => {
+    const file = await makeFile()
+    await cachedAnalysis('demo', file, vi.fn().mockResolvedValue({ value: 42 }))
+
+    expect(await peekAnalysis('demo', file)).toEqual({ value: 42 })
+  })
+
+  // No entry yet for this namespace/path/mtime — the batch response must simply omit
+  // the track rather than trigger a live compute (peek never computes).
+  it('returns null for a cold entry', async () => {
+    const file = await makeFile()
+    expect(await peekAnalysis('demo', file)).toBeNull()
+  })
+
+  // A missing source file can't be stat-ed for its mtime, so there is no key to look
+  // up — degrades to null like every other cache miss, never throws.
+  it('returns null when the source file cannot be stat-ed', async () => {
+    const gone = join(work, 'does-not-exist.aiff')
+    expect(await peekAnalysis('demo', gone)).toBeNull()
+  })
+
+  // An edited file's old entry lives under a stale mtime key; the peek must follow the
+  // live file, not serve the superseded analysis.
+  it('returns null after the file mtime changes', async () => {
+    const file = await makeFile()
+    await cachedAnalysis('demo', file, vi.fn().mockResolvedValue({ value: 1 }))
+    const later = new Date(Date.now() + 60_000)
+    await utimes(file, later, later)
+
+    expect(await peekAnalysis('demo', file)).toBeNull()
   })
 })
 
