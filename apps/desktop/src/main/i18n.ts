@@ -36,7 +36,6 @@ interface MenuStrings {
   aboutCredits: string
   checkUpdates: string
   upToDate: string
-  updateError: string
   updatesDevOnly: string
   conflictExists: string
   conflictOverwrite: string
@@ -81,7 +80,6 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Hecha con cariño por Vicent Gozalbes\nvigosan@gmail.com\n\nGracias a @djotas y a quienes\naportan ideas y feedback.\n\ngetsurco.app',
     checkUpdates: 'Buscar actualizaciones…',
     upToDate: 'Ya tienes la última versión de Surco.',
-    updateError: 'No se pudo comprobar si hay actualizaciones.',
     updatesDevOnly: 'Las actualizaciones solo están disponibles en la app instalada.',
     conflictExists: 'Ya existe un archivo con ese nombre en la carpeta de destino.',
     conflictOverwrite: 'Sobrescribir',
@@ -125,7 +123,6 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Made with care by Vicent Gozalbes\nvigosan@gmail.com\n\nThanks to @djotas and everyone\nwho shares ideas and feedback.\n\ngetsurco.app',
     checkUpdates: 'Check for Updates…',
     upToDate: "You're on the latest version of Surco.",
-    updateError: 'Could not check for updates.',
     updatesDevOnly: 'Updates are only available in the installed app.',
     conflictExists: 'A file with this name already exists in the destination folder.',
     conflictOverwrite: 'Overwrite',
@@ -169,7 +166,6 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Mit Sorgfalt gemacht von Vicent Gozalbes\nvigosan@gmail.com\n\nDanke an @djotas und alle, die Ideen\nund Feedback beisteuern.\n\ngetsurco.app',
     checkUpdates: 'Nach Updates suchen…',
     upToDate: 'Du hast bereits die neueste Version von Surco.',
-    updateError: 'Nach Updates konnte nicht gesucht werden.',
     updatesDevOnly: 'Updates sind nur in der installierten App verfügbar.',
     conflictExists: 'Im Zielordner existiert bereits eine Datei mit diesem Namen.',
     conflictOverwrite: 'Überschreiben',
@@ -213,7 +209,6 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Fait avec soin par Vicent Gozalbes\nvigosan@gmail.com\n\nMerci à @djotas et à toutes les personnes\nqui partagent idées et retours.\n\ngetsurco.app',
     checkUpdates: 'Rechercher les mises à jour…',
     upToDate: 'Tu as déjà la dernière version de Surco.',
-    updateError: 'Impossible de vérifier les mises à jour.',
     updatesDevOnly: "Les mises à jour ne sont disponibles que dans l'app installée.",
     conflictExists: 'Un fichier du même nom existe déjà dans le dossier de destination.',
     conflictOverwrite: 'Écraser',
@@ -257,7 +252,6 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Feito com carinho por Vicent Gozalbes\nvigosan@gmail.com\n\nObrigado a @djotas e a todos que\ncompartilham ideias e feedback.\n\ngetsurco.app',
     checkUpdates: 'Buscar atualizações…',
     upToDate: 'Você já tem a versão mais recente do Surco.',
-    updateError: 'Não foi possível verificar se há atualizações.',
     updatesDevOnly: 'As atualizações só estão disponíveis no app instalado.',
     conflictExists: 'Já existe um arquivo com esse nome na pasta de destino.',
     conflictOverwrite: 'Sobrescrever',
