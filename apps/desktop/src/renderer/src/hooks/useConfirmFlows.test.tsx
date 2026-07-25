@@ -333,6 +333,40 @@ describe('useConfirmFlows lossy in-place re-encode', () => {
     flows.askConvertAll([mp3], 'source', undefined, undefined, undefined)
     expect(opened).toHaveLength(0)
   })
+
+  // With keep on and a filter running, the UI's "convert to AIFF" is actually an
+  // mp3-to-mp3 re-encode over the original: the generational-loss dialog must fire
+  // even though the batch format says aiff.
+  it('confirms a keep-mp3 batch whose filter forces a lossy re-encode', () => {
+    const mp3 = track('a', { inputPath: '/a.mp3', fileName: 'a.mp3' })
+    const { flows, opened } = setup([mp3], {
+      settings: {
+        outputFormat: 'aiff',
+        keepMp3Sources: true,
+        overwriteOriginal: false,
+        normalize: { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+      } as Settings,
+    })
+    flows.askConvertAll([mp3])
+    expect(opened).toHaveLength(1)
+    expect(opened[0].destructive).toBe(true)
+  })
+
+  // Without the setting, the same batch writes a fresh AIFF and never touches the
+  // original: nothing to confirm. The contrast pins the warning to the rule, not the filter.
+  it('does not confirm the same batch with keep mp3 off', () => {
+    const mp3 = track('a', { inputPath: '/a.mp3', fileName: 'a.mp3' })
+    const { flows, opened } = setup([mp3], {
+      settings: {
+        outputFormat: 'aiff',
+        keepMp3Sources: false,
+        overwriteOriginal: false,
+        normalize: { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+      } as Settings,
+    })
+    flows.askConvertAll([mp3])
+    expect(opened).toHaveLength(0)
+  })
 })
 
 describe('useConfirmFlows fill-all selection scope', () => {
