@@ -2093,8 +2093,9 @@ describe('App update check failure', () => {
     expect(toast.textContent).toContain('Could not check for updates')
     expect(toast.textContent).toContain('504')
     expect(toast.textContent).not.toContain('<html>')
-    fireEvent.click(screen.getByText('Retry'))
+    fireEvent.click(screen.getByTestId('update-check-failed-action'))
     expect(checkForUpdates).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(screen.queryByTestId('update-check-failed')).not.toBeInTheDocument())
   })
 })
 

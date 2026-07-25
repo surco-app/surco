@@ -518,15 +518,21 @@ export default function App(): React.JSX.Element {
   )
   useEffect(
     () =>
-      window.api.onUpdateCheckFailed((status) =>
-        pushToast(store, {
+      window.api.onUpdateCheckFailed((status) => {
+        const id = pushToast(store, {
           key: 'update',
           tone: 'danger',
           testid: 'update-check-failed',
           message: status ? tr('update.checkFailedStatus', { status }) : tr('update.checkFailed'),
-          action: { label: tr('update.retry'), onAction: () => window.api.checkForUpdates() },
-        }),
-      ),
+          action: {
+            label: tr('update.retry'),
+            onAction: () => {
+              dismissToast(store, id)
+              window.api.checkForUpdates()
+            },
+          },
+        })
+      }),
     [store, tr],
   )
 

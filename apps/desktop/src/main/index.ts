@@ -1176,6 +1176,11 @@ app.whenReady().then(() => {
       if (target) dialog.showMessageBox(target, opts)
       else dialog.showMessageBox(opts)
     })
+    // A manual check that finds an update never clears the flag on its own path; without
+    // this it stays armed and misroutes the next background failure as manual.
+    updater.on('update-available', () => {
+      manualUpdateCheck = false
+    })
     // One failure path for every source (check rejection, download/install 'error'
     // event): manual checks toast immediately with Retry, background transient
     // failures feed the silent backoff, and only fatal errors toast on their own.
