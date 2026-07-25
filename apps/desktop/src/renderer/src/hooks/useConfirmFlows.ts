@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { reencodesLossyInPlace } from '../../../shared/format'
+import { batchKeepMp3, reencodesLossyInPlace } from '../../../shared/format'
 import type {
   DeclickMode,
   FormatSetting,
@@ -48,6 +48,7 @@ function risksLossyReencode(
   normalize: NormalizeConfig | undefined,
   declick: DeclickMode | undefined,
   settings: Settings | null,
+  keepMp3: boolean,
 ): boolean {
   if (!format) return false
   return reencodesLossyInPlace(
@@ -56,6 +57,7 @@ function risksLossyReencode(
     overwriteOriginal ?? false,
     hasActiveFilters(track, normalize, declick, settings),
     'aiff',
+    keepMp3,
   )
 }
 
@@ -323,11 +325,25 @@ export function useConfirmFlows({
     // overwrite needs no confirmation (the run only writes new files), and one
     // back onto it must still ask.
     const overwriting = destination ? destination === 'overwrite' : settings?.overwriteOriginal
+    const keep = batchKeepMp3(
+      format,
+      settings?.outputFormat ?? 'aiff',
+      settings?.keepMp3Sources ?? false,
+    )
     // 'source' resolving to a track's own mp3 is in-place regardless of overwrite, so
     // the lossy re-encode risk is checked even when overwriting is off — it is the
-    // one case where a non-overwrite run still rewrites the original.
+    // one case where a non-overwrite run still rewrites the original. No explicit pick
+    // falls back to the live setting, same as processAll resolves its pinned format.
     const lossyReencode = targets.some((t) =>
-      risksLossyReencode(t, format, overwriting, normalize, declick, settings),
+      risksLossyReencode(
+        t,
+        format ?? settings?.outputFormat,
+        overwriting,
+        normalize,
+        declick,
+        settings,
+        keep,
+      ),
     )
     if (!overwriting && !lossyReencode) {
       void processAll(targets, format, normalize, destination, declick)
@@ -387,6 +403,7 @@ export function useConfirmFlows({
           opts.normalize,
           opts.declick,
           settings,
+          false,
         )
       : false
     if (!overwriting && !lossyReencode) {
