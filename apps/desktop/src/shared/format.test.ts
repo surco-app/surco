@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  batchKeepMp3,
   editsInPlace,
   formatExtension,
   formatMatchesInput,
@@ -90,6 +91,31 @@ describe('resolveJobFormat', () => {
     expect(resolveJobFormat('mp3', '/music/song.flac', 'aiff')).toBe('mp3')
     expect(resolveJobFormat('alac', '/music/song.m4a', 'aiff')).toBe('alac')
   })
+
+  // Transcodificar un mp3 a lossless no recupera nada de lo que el encoder descartó:
+  // con keepMp3 el fichero conserva su formato y el motor entra en el stream copy.
+  it('keeps an mp3 source as mp3 under any lossless setting when keepMp3 is on', () => {
+    expect(resolveJobFormat('aiff', '/music/song.mp3', 'aiff', true)).toBe('mp3')
+    expect(resolveJobFormat('wav', '/music/song.mp3', 'aiff', true)).toBe('mp3')
+    expect(resolveJobFormat('flac', '/music/song.mp3', 'aiff', true)).toBe('mp3')
+    expect(resolveJobFormat('alac', '/music/song.mp3', 'aiff', true)).toBe('mp3')
+    expect(resolveJobFormat('source', '/music/song.mp3', 'aiff', true)).toBe('mp3')
+  })
+
+  // Sin el flag, el comportamiento de siempre: el setting manda.
+  it('converts an mp3 normally when keepMp3 is off', () => {
+    expect(resolveJobFormat('aiff', '/music/song.mp3', 'aiff')).toBe('aiff')
+    expect(resolveJobFormat('aiff', '/music/song.mp3', 'aiff', false)).toBe('aiff')
+  })
+
+  // La regla es solo para mp3: el resto de fuentes (incluido el .m4a ambiguo) no
+  // cambia — un AAC dentro de .m4a seguiría sin poder "conservarse" con seguridad.
+  it('leaves non-mp3 sources untouched when keepMp3 is on', () => {
+    expect(resolveJobFormat('aiff', '/music/song.flac', 'aiff', true)).toBe('aiff')
+    expect(resolveJobFormat('aiff', '/music/song.wav', 'aiff', true)).toBe('aiff')
+    expect(resolveJobFormat('aiff', '/music/song.m4a', 'aiff', true)).toBe('aiff')
+    expect(resolveJobFormat('aiff', '/music/song.ogg', 'aiff', true)).toBe('aiff')
+  })
 })
 
 describe('reencodesLossyInPlace', () => {
@@ -124,5 +150,35 @@ describe('reencodesLossyInPlace', () => {
     expect(reencodesLossyInPlace('wav', '/music/song.wav', false, true, 'aiff')).toBe(false)
     expect(reencodesLossyInPlace('flac', '/music/song.flac', true, true, 'aiff')).toBe(false)
     expect(reencodesLossyInPlace('aiff', '/music/song.aiff', false, true, 'aiff')).toBe(false)
+  })
+
+  // keepMp3 convierte un export "a AIFF" en un mp3→mp3 in-place; con un filtro activo
+  // eso es el mismo re-encode generacional que ya cubren 'source' y overwrite, y el
+  // aviso tiene que verlo con el mismo formato que verá el job.
+  it('flags a keepMp3 rewrite of an mp3 with an active filter', () => {
+    expect(reencodesLossyInPlace('aiff', '/music/song.mp3', false, true, 'aiff', true)).toBe(true)
+    expect(reencodesLossyInPlace('aiff', '/music/song.mp3', false, false, 'aiff', true)).toBe(false)
+    expect(reencodesLossyInPlace('aiff', '/music/song.mp3', false, true, 'aiff', false)).toBe(false)
+  })
+})
+
+describe('batchKeepMp3', () => {
+  // En un lote la procedencia del formato se pierde al fijarlo, así que se decide por
+  // valor: sin formato, o con el mismo valor que el setting, el formato es
+  // settings-derived y la regla aplica.
+  it('applies to a settings-derived batch format', () => {
+    expect(batchKeepMp3(undefined, 'aiff', true)).toBe(true)
+    expect(batchKeepMp3('aiff', 'aiff', true)).toBe(true)
+  })
+
+  // Un pick distinto del setting solo puede venir del menú: elección explícita, la
+  // regla se aparta y el lote entero sale en el formato pedido.
+  it('steps aside for an explicit batch pick', () => {
+    expect(batchKeepMp3('wav', 'aiff', true)).toBe(false)
+  })
+
+  it('never applies with the setting off', () => {
+    expect(batchKeepMp3(undefined, 'aiff', false)).toBe(false)
+    expect(batchKeepMp3('aiff', 'aiff', false)).toBe(false)
   })
 })
