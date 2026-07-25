@@ -127,7 +127,9 @@ export async function runProcessTrack(
     // job.format is always set by the renderer's job builder; this fallback only
     // guards the type, since settings.outputFormat may be 'source' and 'source' must
     // never reach the conversion pipeline.
-    const format = job.format ?? resolveJobFormat(settings.outputFormat, job.inputPath, 'aiff')
+    const format =
+      job.format ??
+      resolveJobFormat(settings.outputFormat, job.inputPath, 'aiff', settings.keepMp3Sources)
     // Every destination facet prefers the job's pin over the live setting (see the
     // ProcessJob comments): the editor's one-shot destination pick and the batch pin
     // both ride the job, so a Settings change can't redirect a conversion in flight.
