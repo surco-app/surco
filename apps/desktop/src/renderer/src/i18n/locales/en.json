@@ -157,7 +157,10 @@
   "update": {
     "ready": "Version {{version}} is ready",
     "restart": "Restart to update",
-    "failed": "Update failed: {{error}}"
+    "failed": "Update failed: {{error}}",
+    "checkFailed": "Could not check for updates",
+    "checkFailedStatus": "Could not check for updates (GitHub responded {{status}})",
+    "retry": "Retry"
   },
   "player": {
     "play": "Play",
