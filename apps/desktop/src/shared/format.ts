@@ -57,11 +57,16 @@ export function hasFormatEquivalent(inputPath: string): boolean {
 // .ogg, .aac and .mp4, which no OutputFormat represents) fall back and transcode, the
 // same as they do today. ALAC is never resolved from an .m4a source: INPUT_EXT.alac
 // deliberately matches nothing, since the container may hold lossy AAC.
+// Upconverting an mp3 to lossless can't restore what the lossy encoder discarded —
+// the file only grows. With the Keep MP3 setting the source keeps its format, which
+// routes the job into the same stream-copy path a same-format export already takes.
 export function resolveJobFormat(
   setting: FormatSetting,
   inputPath: string,
   fallback: OutputFormat,
+  keepMp3 = false,
 ): OutputFormat {
+  if (keepMp3 && formatMatchesInput('mp3', inputPath)) return 'mp3'
   if (setting !== 'source') return setting
   const match = (Object.keys(INPUT_EXT) as OutputFormat[]).find((f) =>
     formatMatchesInput(f, inputPath),
@@ -80,8 +85,21 @@ export function reencodesLossyInPlace(
   overwriteOriginal: boolean,
   filtersActive: boolean,
   fallback: OutputFormat,
+  keepMp3 = false,
 ): boolean {
   if (!filtersActive) return false
-  const resolved = resolveJobFormat(setting, inputPath, fallback)
+  const resolved = resolveJobFormat(setting, inputPath, fallback, keepMp3)
   return resolved === 'mp3' && editsInPlace(resolved, inputPath, overwriteOriginal)
+}
+
+// Whether the Keep MP3 rule applies to a whole batch. A batch pins one format for the
+// run, losing where it came from, so provenance is judged by value: no format, or the
+// same value the setting holds, is settings-derived; a different value can only be an
+// explicit menu pick, which wins over the rule.
+export function batchKeepMp3(
+  format: FormatSetting | undefined,
+  outputFormat: FormatSetting,
+  keepMp3Sources: boolean,
+): boolean {
+  return keepMp3Sources && (format === undefined || format === outputFormat)
 }
