@@ -75,7 +75,9 @@ import { registerShellIpc } from './shellIpc'
 import { createStickyConflict } from './stickyConflict'
 import { createTmpManifest } from './tmpManifest'
 import { wireUpdateDelivery } from './updateDelivery'
+import { classifyUpdateError, summarizeUpdateError } from './updateErrors'
 import { armUpdateRecheck } from './updateRecheck'
+import { createUpdateRetry } from './updateRetry'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
 
@@ -190,20 +192,22 @@ async function ensureEngineDjClosed(win: BrowserWindow | null): Promise<boolean>
 }
 
 // Set while a user-triggered update check is in flight so the updater's result
-// events surface a dialog; the silent startup check leaves it false and stays quiet.
+// events surface a dialog or toast; the silent startup check leaves it false and
+// stays quiet.
 let manualUpdateCheck = false
 
+// Assigned inside the packaged-only updater block; the menu item and the toast's
+// Retry button both funnel through it so every check shares the same failure path.
+let requestUpdateCheck: (() => void) | null = null
+
 function checkForUpdates(win: BrowserWindow): void {
-  const t = createMenuT(menuLocale())
   if (!app.isPackaged) {
+    const t = createMenuT(menuLocale())
     dialog.showMessageBox(win, { type: 'info', message: t('updatesDevOnly') })
     return
   }
   manualUpdateCheck = true
-  // checkForUpdates emits 'error' AND rejects with the same failure; the 'error'
-  // handler already surfaces it, so the rejection is swallowed instead of tripping
-  // the unhandledRejection guard on every offline check.
-  void electronUpdater.autoUpdater.checkForUpdates().catch(() => {})
+  requestUpdateCheck?.()
 }
 
 function buildAppMenu(win: BrowserWindow): void {
@@ -1038,8 +1042,15 @@ function registerIpc(): void {
       electronUpdater.autoUpdater.quitAndInstall()
     } catch (err) {
       log.error('update:install failed', err)
-      e.sender.send('update:error', err instanceof Error ? err.message : String(err))
+      e.sender.send('update:error', summarizeUpdateError(err))
     }
+  })
+
+  // The Retry button on the failed-check toast re-runs the exact manual-check path
+  // the menu item uses, dev dialog included.
+  ipcMain.handle('update:check', (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (win) checkForUpdates(win)
   })
 
   registerAudioIpc((path) => mediaAccess.allow(path))
@@ -1165,29 +1176,56 @@ app.whenReady().then(() => {
       if (target) dialog.showMessageBox(target, opts)
       else dialog.showMessageBox(opts)
     })
+    // One failure path for every source (check rejection, download/install 'error'
+    // event): manual checks toast immediately with Retry, background transient
+    // failures feed the silent backoff, and only fatal errors toast on their own.
+    // The raw dump (HTML body, headers) never leaves main.log.
+    const reportFailure = (err: unknown): void => {
+      const { kind, status } = classifyUpdateError(err)
+      if (manualUpdateCheck) {
+        manualUpdateCheck = false
+        liveWindow()?.webContents.send('update:check-failed', status)
+      } else if (kind === 'fatal') {
+        liveWindow()?.webContents.send('update:error', summarizeUpdateError(err))
+      } else {
+        updateRetry.onFailure(kind, status)
+      }
+    }
+    const updateRetry = createUpdateRetry(
+      () => runUpdateCheck(),
+      (status) => liveWindow()?.webContents.send('update:check-failed', status),
+    )
+    // The check owns its failures through the promise; the guard keeps the global
+    // 'error' listener (which fires for the same rejection) from reporting twice.
+    let checkInFlight = false
+    const runUpdateCheck = (): void => {
+      if (checkInFlight) return
+      checkInFlight = true
+      updater
+        .checkForUpdates()
+        .then(() => updateRetry.onSuccess())
+        .catch((err) => {
+          log.error('update check failed', err)
+          reportFailure(err)
+        })
+        .finally(() => {
+          checkInFlight = false
+        })
+    }
+    requestUpdateCheck = runUpdateCheck
+    // Errors outside a check (Squirrel install failures, background download drops)
+    // still land here; without this the restart-to-update button would fail with no
+    // sign it did anything.
     updater.on('error', (err) => {
-      // Always log and tell the renderer: when the restart-to-update install fails
-      // (manualUpdateCheck is false) this is the only sign the user gets that the
-      // button did anything. The manual-check dialog stays as before.
       log.error('autoUpdater error', err)
-      liveWindow()?.webContents.send(
-        'update:error',
-        err instanceof Error ? err.message : String(err),
-      )
-      if (!manualUpdateCheck) return
-      manualUpdateCheck = false
-      const target = liveWindow()
-      const opts = { type: 'error' as const, message: createMenuT(menuLocale())('updateError') }
-      if (target) dialog.showMessageBox(target, opts)
-      else dialog.showMessageBox(opts)
+      if (checkInFlight) return
+      reportFailure(err)
     })
-    // Rejections swallowed for the same reason as the manual check: the 'error'
-    // handler above already logs and surfaces every failure.
-    void updater.checkForUpdates().catch(() => {})
+    runUpdateCheck()
     // The launch probe alone missed every patch: they ship within the hour of their
     // minor, after users have already relaunched, and a running instance never asked
     // again. Re-checking on an interval keeps a long-lived session in the loop.
-    armUpdateRecheck(() => void updater.checkForUpdates().catch(() => {}))
+    armUpdateRecheck(runUpdateCheck)
   }
 
   app.on('activate', () => {
