@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.74",
+    "date": "25 de julio de 2026",
+    "title": "Los MP3 se quedan como están y actualizaciones que se reintentan solas",
+    "items": [
+      {
+        "text": "Nueva opción «Mantener los MP3 como MP3» en Ajustes → Conversión: al exportar a un formato sin pérdida, los MP3 se saltan la conversión — que solo los haría más grandes sin recuperar calidad — y sus etiquetas se actualizan sobre el archivo original, mientras el resto del lote se convierte como siempre.",
+        "in": "0.74.0"
+      },
+      {
+        "text": "Si la comprobación de actualizaciones falla, Surco ahora reintenta solo en segundo plano y, cuando el fallo persiste, muestra un aviso corto con un botón de reintentar en lugar del error técnico ilegible de antes.",
+        "in": "0.74.0"
+      }
+    ]
+  },
+  {
     "version": "0.73",
     "date": "24 de julio de 2026",
     "title": "Deezer se une a las búsquedas",

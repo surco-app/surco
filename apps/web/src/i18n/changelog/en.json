@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.74",
+    "date": "July 25, 2026",
+    "title": "MP3s stay as they are, and update checks that retry themselves",
+    "items": [
+      {
+        "text": "New “Keep MP3 files as MP3” option in Settings → Conversion: when exporting to a lossless format, MP3s skip the conversion — which would only make them bigger without restoring quality — and their tags are updated on the original file, while the rest of the batch converts as usual.",
+        "in": "0.74.0"
+      },
+      {
+        "text": "If the update check fails, Surco now quietly retries in the background and, when the failure persists, shows a short message with a retry button instead of the unreadable technical error it used to dump.",
+        "in": "0.74.0"
+      }
+    ]
+  },
+  {
     "version": "0.73",
     "date": "July 24, 2026",
     "title": "Deezer joins the search",
