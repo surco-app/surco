@@ -22,6 +22,13 @@ Con él activo, cuando el formato de export efectivo es lossless (`aiff`, `wav`,
 stream-copy que ya existe (mp3→mp3: clon byte a byte + tags frescos), y el resto del
 pipeline — rename, retag, Apple Music, Engine DJ — funciona sin cambios.
 
+Como todo export cuyo formato coincide con el del fichero, esto es una **edición
+in-place** (`resolveOutputTarget`): Surco reescribe los tags sobre el original, allí
+donde vive, y no deja copia en la carpeta de salida — la misma semántica que hoy tiene
+exportar MP3→MP3 o "Same as source" sobre un mp3. La UI existente ya lo comunica: el
+botón muestra las etiquetas in-place ("Update" / "Update + Apple Music") y el editor su
+aviso de edición in-place. No se añaden claves i18n de botón.
+
 El checkbox solo es visible cuando el formato elegido es lossless: con `mp3` o `source`
 la regla no aplica y mostrarlo sería ruido. Mismo patrón de visibilidad condicional que
 ya usan los bloques de calidad MP3 / compresión FLAC en `ConversionTab`.
@@ -54,7 +61,7 @@ nunca ve reglas, solo `OutputFormat` resueltos. Esta feature la hereda.
 ```
 Settings                       outputFormat: FormatSetting, keepMp3Sources: boolean
         ↓
-Renderer, al crear cada job    resolveJobFormat(...) → aplicar keep-mp3 → 'mp3' | picked
+Renderer, al crear cada job    resolveJobFormat(setting, path, fallback, keep) → 'mp3' | picked
         ↓
 IPC / ProcessJob               job.format: OutputFormat   ← siempre concreto
         ↓
@@ -65,42 +72,63 @@ Main (processTrack, ffmpeg)    sin cambios de comportamiento
 
 ### Función de resolución
 
-Función pura en `shared/format.ts`, junto a `resolveJobFormat`:
+La regla vive dentro de `resolveJobFormat`, que gana un cuarto parámetro opcional:
 
 ```ts
-applyKeepMp3(format: OutputFormat, inputPath: string, keep: boolean): OutputFormat
+resolveJobFormat(setting, inputPath, fallback, keepMp3 = false): OutputFormat
 ```
 
-Devuelve `'mp3'` si `keep` y `format` es lossless (`format !== 'mp3'`) y `inputPath`
-es `.mp3` (via `formatMatchesInput('mp3', inputPath)`); si no, devuelve `format` intacto.
+Con `keepMp3` y `formatMatchesInput('mp3', inputPath)`, devuelve `'mp3'`; si no, resuelve
+como hoy. `reencodesLossyInPlace` gana el mismo parámetro y lo reenvía, de modo que el
+aviso de re-encode lossy ve el mismo formato que el job. Cada call site decide el flag
+según si su formato viene del setting o de una elección explícita.
+
+Para los lotes, donde la procedencia se pierde al fijar el formato, un segundo helper
+puro concentra la decisión:
+
+```ts
+batchKeepMp3(format: FormatSetting | undefined, outputFormat: FormatSetting,
+             keepMp3Sources: boolean): boolean
+```
+
+`true` cuando el setting está activo y el formato del lote es settings-derived:
+`undefined` o igual al `outputFormat` del setting.
 
 ### Puntos de aplicación
 
-- **Renderer** — `useTrackProcessing`, inmediatamente después de `resolveJobFormat`, en
-  el único sitio donde se calcula el formato del job. Con `pickedFormat === 'source'` la
-  regla es inocua: un `.mp3` ya resuelve a `'mp3'`.
-- **Main** — la guardia de `processTrack` (`job.format ?? resolveJobFormat(...)`) aplica
-  el mismo helper en su rama de fallback, para que main y renderer decidan igual si un
-  job llegara sin formato.
+Los cinco call sites de `resolveJobFormat`, con el flag según su procedencia:
+
+- **`Editor.tsx` (seeds de `format`)** — settings-derived: pasa `keepMp3Sources` (nuevo
+  campo del settings context). Con la regla activa un mp3 siembra `format: 'mp3'`, y de
+  ahí cuelgan la etiqueta del botón, el aviso in-place y lo que envía `onProcess`.
+- **`useTrackProcessing.processOne`** — `keepMp3 ?? (formatOverride === undefined &&
+  keepMp3Sources)`: un formato recibido por parámetro es explícito (el Editor ya sembró
+  la regla); solo la rama que lee el setting la aplica. `processAll` fija
+  `batchKeepMp3(...)` junto al `pinnedFormat` y lo pasa a cada `processOne`.
+- **`useConfirmFlows.askConvertAll`** — mismo `batchKeepMp3(...)` hacia
+  `risksLossyReencode`/`reencodesLossyInPlace`.
+- **`commands.ts` (add-apple-music)** — settings-derived: pasa `keepMp3Sources`.
+- **`main/processTrack`** (guardia `job.format ?? …`) — settings-derived: pasa
+  `settings.keepMp3Sources`.
 
 ### Override explícito gana
 
-La regla solo actúa cuando el formato viene del setting global. Si el usuario eligió un
-formato en el menú del split-button (`formatOverride`), ese formato se respeta tal cual:
-un MP3 con override AIFF se convierte a AIFF aunque el setting esté activo. En el call
-site (`formatOverride ?? settings.outputFormat`) el helper se aplica únicamente a la rama
-del setting. Elección explícita > regla global, igual que con "Same as source".
+En single-select la mecánica del seed lo resuelve sola: la regla siembra `format: 'mp3'`,
+y un pick del menú lo sustituye por un formato concreto que viaja tal cual — un MP3 con
+pick AIFF se convierte a AIFF aunque el setting esté activo. En multi-selección la
+procedencia es por valor (`batchKeepMp3`): un pick distinto del setting es explícito y
+desactiva la regla para el lote; un pick igual al setting es indistinguible del seed y la
+mantiene — corner inocuo, porque ese pick tampoco cambia nada hoy. Elección explícita >
+regla global, igual que con "Same as source".
 
 ### Botón
 
-`exportButtonLabel` gana una variante "keep": cuando el formato efectivo del track
-seleccionado sale de la regla (fuente `.mp3` + setting activo + export lossless), el
-split-button muestra **"Keep MP3 + Apple Music"** / **"Keep MP3 + Engine DJ"** /
-**"Keep MP3"** en vez de "Convert to AIFF…". El botón es el contrato visible: la regla
-nunca cambia nada en secreto.
+Sin cambios en `exportButtonLabel` ni claves i18n nuevas: al sembrar `format: 'mp3'`, la
+precedencia existente de la etiqueta (in-place gana a convert) muestra **"Update"** /
+**"Update + Apple Music"**, que es exactamente lo que va a pasar — tags reescritos sobre
+el original. El botón sigue siendo el contrato visible; la regla nunca cambia nada en
+secreto.
 
-- Claves i18n nuevas `editor.keep`, `editor.keepEngine`, `editor.keepNoMusic`, espejo de
-  las `editor.convert*`, en los 5 locales.
 - En multi-selección la etiqueta genérica ("Convert All…") no cambia; la regla se aplica
   por track al procesar.
 - El check verde del menú de formatos marca el formato realmente exportado, que con la
@@ -108,22 +136,25 @@ nunca cambia nada en secreto.
 
 ### Settings UI
 
-- `Settings.keepMp3Sources: boolean` en `shared/types.ts`, default en
-  `main/settings.ts`, saneado implícito de `mergeSettings` (un valor corrupto no rompe:
-  se normaliza a booleano o cae al default, mismo tratamiento que otros booleanos).
+- `Settings.keepMp3Sources: boolean` en `shared/types.ts`, default `false` en
+  `main/settings.ts`. Sin normalizador en `mergeSettings`: los booleanos se fusionan por
+  spread, mismo tratamiento que el resto.
+- `ResolvedSettings` + `DEFAULTS` en `renderer/src/lib/settingsContext.tsx` (el Editor
+  lee Settings del context, no de props).
 - `SyncedDraft` + `pickSynced` en `renderer/src/lib/settingsDraft.ts`.
 - `SettingsCheckboxField` en `ConversionTab`, visible solo con formato lossless.
 - i18n: `settings.keepMp3Sources` ("Keep MP3 files as MP3") y
-  `settings.keepMp3SourcesHint` (convertir MP3 a lossless no mejora la calidad y ocupa
-  más; con esto activo los MP3 se copian tal cual) en los 5 locales.
+  `settings.keepMp3SourcesHint` (convertir MP3 a lossless no recupera calidad y solo
+  ocupa más; con esto activo los tags se actualizan sobre el original, sin conversión)
+  en los 5 locales.
 
 ## Interacciones con lo existente
 
 - **Filtros de audio (normalize / trim / declick)** — fuerzan re-encode, así que con la
   regla activa un MP3 se recodifica MP3→MP3, que sí pierde calidad. Es el mismo caso que
-  ya cubre el aviso `risksLossyReencode` de `useConfirmFlows`; al llegarle
-  `format: 'mp3'` con fuente `.mp3`, el aviso existente debe dispararse por esta vía sin
-  cambios. Verificarlo con test.
+  ya cubre el aviso `risksLossyReencode` de `useConfirmFlows`. En single-select se
+  dispara sin cambios (le llega el `'mp3'` sembrado); en lote se dispara vía el
+  parámetro `keepMp3` de `reencodesLossyInPlace`. Verificado con test en ambas capas.
 - **Destinos** — sin interacción. `format: 'mp3'` pasa todos los gates (Apple Music
   acepta MP3). `editsInPlace` y la confirmación de overwrite funcionan igual que cuando
   el usuario exporta MP3→MP3 hoy.
@@ -133,25 +164,31 @@ nunca cambia nada en secreto.
 
 ## Tests
 
-Sobre `applyKeepMp3` (`shared/format.test.ts`):
+Sobre `resolveJobFormat` y compañía (`shared/format.test.ts`):
 
-- `.mp3` + formato lossless + keep → `'mp3'`, para cada lossless (`aiff`, `wav`,
-  `flac`, `alac`)
+- `.mp3` + keep → `'mp3'` para cada setting lossless (`aiff`, `wav`, `flac`, `alac`) y
+  para `'source'`
 - `.mp3` + keep apagado → formato intacto
 - fuente no-mp3 (`.flac`, `.wav`, `.m4a`, `.ogg`) + keep → formato intacto
-- formato `'mp3'` + keep → `'mp3'` (no-op)
+- `reencodesLossyInPlace` con setting lossless + `.mp3` + filtro activo + keep → `true`
+- `batchKeepMp3`: `undefined` y valor igual al setting → `true`; valor distinto →
+  `false`; setting apagado → siempre `false`
 
 Integración (`useTrackProcessing.test.tsx`) — encierran el porqué:
 
 - lote mixto MP3 + FLAC con export AIFF y keep activo → job del MP3 sale `'mp3'`, job
   del FLAC sale `'aiff'`: conversión selectiva, que es lo que "Same as source" no puede
   expresar
-- `formatOverride: 'aiff'` sobre un MP3 con keep activo → job `'aiff'`: el override gana
+- lote con pick explícito distinto del setting (`'wav'`) y keep activo → el MP3 también
+  sale `'wav'`: el override del lote gana
+- `processOne` con formato explícito `'aiff'` sobre un MP3 y keep activo → job `'aiff'`
 
-Etiqueta (`exportLabel.test.ts` / `ExportButton.test.tsx`): fuente mp3 + keep + export
-lossless → "Keep MP3 …"; fuente flac → "Convert to AIFF …".
+Aviso lossy en lote (`useConfirmFlows.test.tsx`): setting `aiff` + keep + mp3 + filtro
+activo → `askConvertAll` abre el diálogo de re-encode lossy.
 
-Settings (`settings.test.ts`): default `false`; valor corrupto cae al default.
+Etiqueta (`Editor.test.tsx`): fuente mp3 + keep + setting `aiff` → el botón dice
+"Update" (mismo modelo que el test existente de formato coincidente).
+
 UI (`ConversionTab.test.tsx`): checkbox visible con `aiff`, oculto con `mp3` y `source`.
 
 ## Alternativas descartadas
