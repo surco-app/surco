@@ -203,6 +203,8 @@ export interface Api {
   installUpdate: () => Promise<void>
   onUpdateDownloaded: (cb: (version: string) => void) => () => void
   onUpdateError: (cb: (message: string) => void) => () => void
+  checkForUpdates: () => Promise<void>
+  onUpdateCheckFailed: (cb: (status: number | null) => void) => () => void
   onWindowFocus: (cb: (focused: boolean) => void) => () => void
   // The Dock playing animation (macOS only): the renderer rasterizes the icon
   // frames — main has no DOM to render the SVG — and reports play/pause.

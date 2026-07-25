@@ -175,6 +175,12 @@ const api: Api = {
     ipcRenderer.on('update:error', listener)
     return () => ipcRenderer.removeListener('update:error', listener)
   },
+  checkForUpdates: () => ipcRenderer.invoke('update:check'),
+  onUpdateCheckFailed: (cb: (status: number | null) => void) => {
+    const listener = (_e: unknown, status: number | null): void => cb(status)
+    ipcRenderer.on('update:check-failed', listener)
+    return () => ipcRenderer.removeListener('update:check-failed', listener)
+  },
   onWindowFocus: (cb: (focused: boolean) => void) => {
     const listener = (_e: unknown, focused: boolean): void => cb(focused)
     ipcRenderer.on('window:focus', listener)

@@ -157,7 +157,10 @@
   "update": {
     "ready": "A versão {{version}} está pronta",
     "restart": "Reiniciar para atualizar",
-    "failed": "Falha ao atualizar: {{error}}"
+    "failed": "Falha ao atualizar: {{error}}",
+    "checkFailed": "Não foi possível verificar se há atualizações",
+    "checkFailedStatus": "Não foi possível verificar se há atualizações (GitHub respondeu {{status}})",
+    "retry": "Tentar novamente"
   },
   "player": {
     "play": "Reproduzir",

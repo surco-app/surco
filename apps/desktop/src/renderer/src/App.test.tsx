@@ -198,6 +198,8 @@ function setApi(over: Record<string, unknown> = {}): void {
     onActivity: () => () => {},
     onUpdateDownloaded: () => () => {},
     onUpdateError: () => () => {},
+    onUpdateCheckFailed: () => () => {},
+    checkForUpdates: vi.fn().mockResolvedValue(undefined),
     onOpenFiles: () => () => {},
     onFoldersChanged: () => () => {},
     unwatchFolders: vi.fn().mockResolvedValue(undefined),
@@ -2068,6 +2070,31 @@ describe('App donate nudge', () => {
     await screen.findByTestId('batch-summary')
     expect(screen.queryByTestId('donate-nudge-count')).toBeNull()
     await flush()
+  })
+})
+
+describe('App update check failure', () => {
+  // The 504 screenshot that motivated this: a failed check used to dump the raw
+  // HTTP error (HTML body, headers) into a toast. The user must instead get a short
+  // localized line and a Retry button that actually re-runs the check.
+  it('shows a clean retry toast when the update check fails', async () => {
+    let fail: ((status: number | null) => void) | undefined
+    const checkForUpdates = vi.fn().mockResolvedValue(undefined)
+    setApi({
+      onUpdateCheckFailed: (cb: (status: number | null) => void) => {
+        fail = cb
+        return () => {}
+      },
+      checkForUpdates,
+    })
+    await renderApp()
+    act(() => fail?.(504))
+    const toast = await screen.findByTestId('update-check-failed')
+    expect(toast.textContent).toContain('Could not check for updates')
+    expect(toast.textContent).toContain('504')
+    expect(toast.textContent).not.toContain('<html>')
+    fireEvent.click(screen.getByText('Retry'))
+    expect(checkForUpdates).toHaveBeenCalledTimes(1)
   })
 })
 
