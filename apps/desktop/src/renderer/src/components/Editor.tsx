@@ -213,6 +213,7 @@ export const Editor = memo(function Editor({
     outputFormat,
     addToAppleMusic,
     addToEngineDj,
+    keepMp3Sources,
     overwriteOriginal,
     convertBesideOriginal,
     replaceLowResCover,
@@ -287,7 +288,9 @@ export const Editor = memo(function Editor({
   // default rather than inheriting the last track's pick. 'source' is resolved
   // against this track right away — everything downstream (onProcess, in-place
   // checks) works with a real OutputFormat, never the setting itself.
-  const [format, setFormat] = useState(resolveJobFormat(outputFormat, item.inputPath, 'aiff'))
+  const [format, setFormat] = useState(
+    resolveJobFormat(outputFormat, item.inputPath, 'aiff', keepMp3Sources),
+  )
   // The menu's raw pick, offered unresolved only in multi-select: 'source' means
   // nothing against the anchor track alone, so it must reach processAll as the
   // setting it is and get resolved per track there (useTrackProcessing.processOne).
@@ -336,11 +339,13 @@ export const Editor = memo(function Editor({
     overwriteOriginal,
     addToEngineDj,
     convertBesideOriginal,
+    keepMp3Sources,
   })
   // biome-ignore lint/correctness/useExhaustiveDependencies: reacts only to the Settings values changing — item/isMulti/format are read at that moment, not tracked continuously.
   useEffect(() => {
     const prev = lastSettings.current
-    const formatSettingChanged = outputFormat !== prev.outputFormat
+    const formatSettingChanged =
+      outputFormat !== prev.outputFormat || keepMp3Sources !== prev.keepMp3Sources
     const destinationSettingsChanged =
       addToAppleMusic !== prev.addToAppleMusic ||
       overwriteOriginal !== prev.overwriteOriginal ||
@@ -353,9 +358,10 @@ export const Editor = memo(function Editor({
       overwriteOriginal,
       addToEngineDj,
       convertBesideOriginal,
+      keepMp3Sources,
     }
     const seededFormat = formatSettingChanged
-      ? resolveJobFormat(outputFormat, item.inputPath, 'aiff')
+      ? resolveJobFormat(outputFormat, item.inputPath, 'aiff', keepMp3Sources)
       : format
     if (formatSettingChanged) {
       setFormat(seededFormat)
@@ -372,7 +378,14 @@ export const Editor = memo(function Editor({
     )
     setDestination(seededDestination)
     onDestinationChange?.(seededDestination)
-  }, [outputFormat, addToAppleMusic, overwriteOriginal, addToEngineDj, convertBesideOriginal])
+  }, [
+    outputFormat,
+    addToAppleMusic,
+    overwriteOriginal,
+    addToEngineDj,
+    convertBesideOriginal,
+    keepMp3Sources,
+  ])
   // The facets the picked destination means, replacing the raw Settings reads below
   // so the in-place warnings, the button label and the membership badge all describe
   // the conversion the button will actually run.

@@ -681,7 +681,12 @@ export function buildCommands(deps: CommandDeps): Command[] {
         canAddToAppleMusic(
           selected,
           platform,
-          resolveJobFormat(settings?.outputFormat ?? 'aiff', selected.inputPath, 'aiff'),
+          resolveJobFormat(
+            settings?.outputFormat ?? 'aiff',
+            selected.inputPath,
+            'aiff',
+            settings?.keepMp3Sources ?? false,
+          ),
         ),
       run: () => selected && addTrackToAppleMusic(selected.id),
     },

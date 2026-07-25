@@ -53,6 +53,7 @@ const synced: SyncedDraft = {
   discogsMaxResults: 10,
   searchProviders: ['discogs'],
   searchIgnoreWords: '',
+  keepMp3Sources: false,
 }
 
 function renderTab(over: Partial<SyncedDraft> = {}) {
@@ -118,6 +119,29 @@ describe('ConversionTab MP3 quality', () => {
   it('lists ALAC among the output formats', () => {
     renderTab({ outputFormat: 'alac' })
     expect(screen.getByTestId('settings-format-alac')).toBeInTheDocument()
+  })
+
+  describe('keep mp3 checkbox', () => {
+    // The checkbox only makes sense while the export would transcode an mp3: with MP3
+    // or "Same as source" as the format the rule never fires, so showing it would be noise.
+    it('shows the checkbox only for lossless formats', () => {
+      renderTab({ outputFormat: 'aiff' })
+      expect(screen.getByTestId('settings-keep-mp3')).toBeInTheDocument()
+    })
+
+    it('hides the checkbox under mp3 and source', () => {
+      renderTab({ outputFormat: 'mp3' })
+      expect(screen.queryByTestId('settings-keep-mp3')).not.toBeInTheDocument()
+      cleanup()
+      renderTab({ outputFormat: 'source' })
+      expect(screen.queryByTestId('settings-keep-mp3')).not.toBeInTheDocument()
+    })
+
+    it('patches keepMp3Sources on toggle', () => {
+      const patch = renderTab({ outputFormat: 'aiff' })
+      fireEvent.click(screen.getByTestId('settings-keep-mp3'))
+      expect(patch).toHaveBeenCalledWith('keepMp3Sources', true)
+    })
   })
 
   // The format list is FORMAT_SETTINGS now (source + every OutputFormat); with a plain

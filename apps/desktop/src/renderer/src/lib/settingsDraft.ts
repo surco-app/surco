@@ -9,6 +9,7 @@ export interface SyncedDraft {
   theme: Settings['theme']
   language: Settings['language']
   outputFormat: Settings['outputFormat']
+  keepMp3Sources: boolean
   addToAppleMusic: boolean
   keepOutputCopy: boolean
   overwriteOriginal: boolean
@@ -73,6 +74,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     theme: s.theme,
     language: s.language,
     outputFormat: s.outputFormat,
+    keepMp3Sources: s.keepMp3Sources,
     discogsFormats: s.discogsFormats,
     discogsMaxResults: s.discogsMaxResults,
     searchProviders: s.searchProviders,

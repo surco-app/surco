@@ -1128,4 +1128,73 @@ describe('useTrackProcessing', () => {
       },
     )
   })
+
+  describe('Keep MP3', () => {
+    // The selective conversion 'source' cannot express: lossless tracks go to the
+    // chosen format while mp3s stay as they are, without bloating the library.
+    it('keeps mp3 tracks while converting the rest of the batch', async () => {
+      const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x' })
+      setApi({ processTrack })
+      const settings = {
+        outputFormat: 'aiff',
+        keepMp3Sources: true,
+        overwriteOriginal: false,
+      } as Settings
+      const tracks = [
+        track({ id: 'a', inputPath: '/music/a.flac' }),
+        track({ id: 'b', inputPath: '/music/b.mp3' }),
+      ]
+      const { result } = renderHook(
+        () => useTrackProcessing({ tracks, settings, updateTrack: vi.fn() }),
+        { wrapper: withClient() },
+      )
+      await act(async () => {
+        await result.current.processAll(tracks)
+      })
+      const formats = processTrack.mock.calls.map(([job]) => job.format)
+      expect(formats).toEqual(['aiff', 'mp3'])
+    })
+
+    // A menu pick different from the setting is an explicit order for the whole
+    // batch: the rule steps aside and the mp3 converts too.
+    it('converts mp3 tracks when the batch pins an explicit different format', async () => {
+      const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x' })
+      setApi({ processTrack })
+      const settings = {
+        outputFormat: 'aiff',
+        keepMp3Sources: true,
+        overwriteOriginal: false,
+      } as Settings
+      const tracks = [track({ id: 'b', inputPath: '/music/b.mp3' })]
+      const { result } = renderHook(
+        () => useTrackProcessing({ tracks, settings, updateTrack: vi.fn() }),
+        { wrapper: withClient() },
+      )
+      await act(async () => {
+        await result.current.processAll(tracks, 'wav')
+      })
+      expect(processTrack.mock.calls[0][0].format).toBe('wav')
+    })
+
+    // The single-select already seeded the rule into the format it sends; an explicit
+    // format in processOne must travel untouched or the editor's pick would lie.
+    it('honors an explicit processOne format over the rule', async () => {
+      const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x' })
+      setApi({ processTrack })
+      const settings = {
+        outputFormat: 'aiff',
+        keepMp3Sources: true,
+        overwriteOriginal: false,
+      } as Settings
+      const tracks = [track({ id: 'b', inputPath: '/music/b.mp3' })]
+      const { result } = renderHook(
+        () => useTrackProcessing({ tracks, settings, updateTrack: vi.fn() }),
+        { wrapper: withClient() },
+      )
+      await act(async () => {
+        await result.current.processOne('b', 'aiff')
+      })
+      expect(processTrack.mock.calls[0][0].format).toBe('aiff')
+    })
+  })
 })

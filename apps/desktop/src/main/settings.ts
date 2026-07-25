@@ -29,6 +29,8 @@ export const defaults: Settings = {
   searchIgnoreWords: ['vinyl', 'rip'],
   outputDir: join(app.getPath('music'), 'Surco'),
   outputFormat: 'aiff',
+  // Off by default: exports honor the chosen format unless the user opts in.
+  keepMp3Sources: false,
   addToAppleMusic: process.platform === 'darwin',
   // Keep a copy in the output folder by default; "Apple Music only" is opt-in.
   keepOutputCopy: true,
