@@ -131,6 +131,11 @@ export interface Settings {
   searchIgnoreWords: string[]
   outputDir: string
   outputFormat: FormatSetting
+  // When the export format is lossless, keep .mp3 sources as MP3 instead of
+  // transcoding them: upconverting lossy audio can't restore quality and only grows
+  // the file. Like any same-format export this edits the original in place (tags
+  // rewritten where the file lives, no output-folder copy). Off by default.
+  keepMp3Sources: boolean
   addToAppleMusic: boolean
   // Whether a converted file is kept in the output folder. Default true. When false
   // and the track is added to Apple Music, Surco drops the output-folder copy after a

@@ -30,6 +30,7 @@ interface ResolvedSettings {
   // no metadata is written without a deliberate click.
   autoMatch: boolean
   outputFormat: FormatSetting
+  keepMp3Sources: boolean
   // The quality pins, read by the editor's "re-encode this one" offer: a same-format
   // source that doesn't meet them gets the explicit action instead of a silent re-encode.
   outputBitDepth: OutputBitDepth
@@ -67,6 +68,7 @@ const DEFAULTS: ResolvedSettings = {
   discogsToken: '',
   autoMatch: false,
   outputFormat: 'aiff',
+  keepMp3Sources: false,
   outputBitDepth: 'source',
   outputSampleRate: 'source',
   addToAppleMusic: false,
@@ -100,6 +102,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     discogsToken: settings.discogsToken ?? DEFAULTS.discogsToken,
     autoMatch: settings.autoMatch ?? DEFAULTS.autoMatch,
     outputFormat: settings.outputFormat ?? DEFAULTS.outputFormat,
+    keepMp3Sources: settings.keepMp3Sources ?? DEFAULTS.keepMp3Sources,
     outputBitDepth: settings.outputBitDepth ?? DEFAULTS.outputBitDepth,
     outputSampleRate: settings.outputSampleRate ?? DEFAULTS.outputSampleRate,
     addToAppleMusic: settings.addToAppleMusic ?? DEFAULTS.addToAppleMusic,
