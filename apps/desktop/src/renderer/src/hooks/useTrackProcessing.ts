@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
+import { batchKeepMp3, hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
 import type { DeclickMode, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
 import { removeAnalysisQueries } from '../lib/analysisQueries'
 import {
@@ -68,6 +68,7 @@ interface TrackProcessing {
     forceReencode?: boolean,
     destinationOverride?: Destination,
     declickOverride?: DeclickMode,
+    keepMp3?: boolean,
   ) => Promise<BatchOutcome>
   processAll: (
     targets: TrackItem[],
@@ -136,6 +137,7 @@ export function useTrackProcessing({
       forceReencode?: boolean,
       destinationOverride?: Destination,
       declickOverride?: DeclickMode,
+      keepMp3?: boolean,
     ): Promise<BatchOutcome> => {
       const track = tracksRef.current.find((t) => t.id === id)
       // A track removed after being queued was a user decision, not a failure — count
@@ -175,7 +177,11 @@ export function useTrackProcessing({
       // The single point where the Default format setting becomes a real format. It has
       // to happen here, per track: 'source' is meaningless to the main process, and
       // sending `undefined` would make it read the setting itself and see 'source' too.
-      const jobFormat = resolveJobFormat(pickedFormat, track.inputPath, 'aiff')
+      // The Editor already seeds the rule into any format it sends, so a format
+      // received here is explicit and must travel untouched; only the branch that read
+      // the setting applies keep. processAll pins the batch decision via the parameter.
+      const keep = keepMp3 ?? (formatOverride === undefined && (settings?.keepMp3Sources ?? false))
+      const jobFormat = resolveJobFormat(pickedFormat, track.inputPath, 'aiff', keep)
       // Re-processing an edited (stale) track resets the Apple Music state too, since
       // the file it referred to is being rewritten — the user may want to add it again.
       // musicPersistentId deliberately survives the reset: it is what turns that next
@@ -379,6 +385,11 @@ export function useTrackProcessing({
       // change mid-batch can't fork the run into another format or into unconfirmed
       // in-place rewrites. The rest (covers, destinations) stays live-read.
       const pinnedFormat: FormatSetting | undefined = formatOverride ?? settings?.outputFormat
+      const pinnedKeep = batchKeepMp3(
+        formatOverride,
+        settings?.outputFormat ?? 'aiff',
+        settings?.keepMp3Sources ?? false,
+      )
       // A destination override IS the overwrite decision for the whole run (its facet
       // set includes overwriteOriginal), so the setting-derived pin only applies when
       // no destination was picked.
@@ -410,6 +421,7 @@ export function useTrackProcessing({
             undefined,
             destinationOverride,
             declickOverride,
+            pinnedKeep,
           )
           done += 1
           setBatchProgress({ done, total: ids.length })

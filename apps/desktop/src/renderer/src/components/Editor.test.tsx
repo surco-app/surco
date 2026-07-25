@@ -117,6 +117,7 @@ function renderEditor(
     overwriteOriginal?: boolean
     addToAppleMusic?: boolean
     addToEngineDj?: boolean
+    keepMp3Sources?: boolean
     keyNotation?: KeyNotation
     discogsFormats?: string[]
     libraryIndex?: AppleMusicIndex | null
@@ -197,6 +198,7 @@ function renderEditor(
       // test opts into another destination.
       addToAppleMusic: props.addToAppleMusic ?? true,
       addToEngineDj: props.addToEngineDj ?? false,
+      keepMp3Sources: props.keepMp3Sources ?? false,
       overwriteOriginal: props.overwriteOriginal ?? false,
       replaceLowResCover: props.replaceLowResCover ?? false,
       autoApplyFilename: props.autoApplyFilename ?? false,
@@ -1533,6 +1535,15 @@ describe('Editor export control', () => {
   // never happens — it offers to update the file instead.
   it('labels the button "Update" when the export format matches the source', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'wav')
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update')
+  })
+
+  // With Keep MP3 on, "converting to AIFF" an mp3 is actually an in-place tag
+  // edit: the button must say "Update", not promise an AIFF that never gets written.
+  it('labels the button "Update" for an mp3 source when keep mp3 is on', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.mp3', fileName: 'a.mp3' }, 'aiff', {
+      keepMp3Sources: true,
+    })
     expect(screen.getByTestId('process-btn')).toHaveTextContent('Update')
   })
 

@@ -33,6 +33,7 @@ const settings: Settings = {
   searchIgnoreWords: [],
   outputDir: '/out',
   outputFormat: 'aiff',
+  keepMp3Sources: false,
   addToAppleMusic: false,
   keepOutputCopy: true,
   overwriteOriginal: false,

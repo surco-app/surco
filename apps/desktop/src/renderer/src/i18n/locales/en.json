@@ -687,6 +687,8 @@
       "flac": "FLAC"
     },
     "outputFormatHint": "“Same as source” keeps each file in its own format, so a mixed batch is never re-encoded. AIFF/WAV/FLAC are lossless (FLAC compressed); MP3 is smaller. A file already in the format is copied without re-encoding.",
+    "keepMp3Sources": "Keep MP3 files as MP3",
+    "keepMp3SourcesHint": "Converting an MP3 to a lossless format can't restore quality — the file only gets bigger. With this on, MP3s skip the conversion: tags are updated on the original file, right where it lives.",
     "mp3Quality": "MP3 quality",
     "mp3Qualities": {
       "320": "320",

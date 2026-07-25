@@ -687,6 +687,8 @@
       "flac": "FLAC"
     },
     "outputFormatHint": "“Igual à origem” mantém cada arquivo em seu próprio formato, então um lote misto nunca é recodificado. AIFF/WAV/FLAC são sem perdas (FLAC comprimido); MP3 ocupa menos. Um arquivo que já está no formato é copiado sem recodificar.",
+    "keepMp3Sources": "Manter arquivos MP3 como MP3",
+    "keepMp3SourcesHint": "Converter um MP3 para um formato sem perdas não recupera qualidade — o arquivo só fica maior. Com isso ativo, os MP3 não são convertidos: as tags são atualizadas no arquivo original, onde ele está.",
     "mp3Quality": "Qualidade do MP3",
     "mp3Qualities": {
       "320": "320",
