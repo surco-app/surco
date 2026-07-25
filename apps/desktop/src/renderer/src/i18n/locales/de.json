@@ -684,6 +684,8 @@
       "flac": "FLAC"
     },
     "outputFormatHint": "„Wie die Quelle“ behält jede Datei in ihrem eigenen Format, sodass ein gemischter Stapel nie neu kodiert wird. AIFF/WAV/FLAC sind verlustfrei (FLAC komprimiert); MP3 ist kleiner. Eine Datei, die schon im Format vorliegt, wird ohne Neucodierung kopiert.",
+    "keepMp3Sources": "MP3-Dateien als MP3 behalten",
+    "keepMp3SourcesHint": "Die Umwandlung einer MP3 in ein verlustfreies Format bringt keine Qualität zurück – die Datei wird nur größer. Ist dies aktiv, werden MP3s nicht konvertiert: Die Tags werden direkt in der Originaldatei aktualisiert.",
     "mp3Quality": "MP3-Qualität",
     "mp3Qualities": {
       "320": "320",

@@ -4,7 +4,7 @@ import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { FormatSettingControl } from '../FormatSettingControl'
 import { SegmentedControl } from '../SegmentedControl'
-import { SettingsField, SettingsSection } from './SettingsPrimitives'
+import { SettingsCheckboxField, SettingsField, SettingsSection } from './SettingsPrimitives'
 
 interface Props {
   synced: SyncedDraft
@@ -27,6 +27,18 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
               testidPrefix="settings-format"
             />
           </SettingsField>
+
+          {/* Only offered while the export would transcode an mp3: under MP3 or "Same
+              as source" the rule never fires, so the checkbox would be noise. */}
+          {synced.outputFormat !== 'mp3' && synced.outputFormat !== 'source' && (
+            <SettingsCheckboxField
+              testid="settings-keep-mp3"
+              checked={synced.keepMp3Sources}
+              onChange={(v) => patch('keepMp3Sources', v)}
+              label={tr('settings.keepMp3Sources')}
+              hint={tr('settings.keepMp3SourcesHint')}
+            />
+          )}
 
           {/* Contextual like the FLAC note: the encoder choice only matters while MP3 is
               the pick, though it applies to every MP3 export (the editor's ad-hoc ones too). */}

@@ -83,6 +83,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     searchIgnoreWords: [],
     outputDir: '',
     outputFormat: 'aiff',
+    keepMp3Sources: false,
     addToAppleMusic: false,
     keepOutputCopy: true,
     overwriteOriginal: false,
