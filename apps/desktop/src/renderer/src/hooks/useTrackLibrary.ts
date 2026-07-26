@@ -369,6 +369,14 @@ export function useTrackLibrary({
     return window.api.onOpenFiles(open)
   }, [])
 
+  // The folder walk reports its audio files as it finds them, so rows appear during a slow
+  // (network) import instead of only when the whole tree has been walked — a 560-folder SMB
+  // crate takes ~20s to walk but yields its first files after ~1s. Subscribed here rather
+  // than at each call site so every import route (drop, picker, Open With) streams alike.
+  // The batches repeat paths the awaited expandPaths returns too; addPaths dedupes against
+  // the live crate, so the late full result adds only what streaming had not already shown.
+  useEffect(() => window.api.onExpandedBatch((paths) => void addPathsRef.current(paths)), [])
+
   // The main process watches the folders a crate was loaded from and reports each one's
   // current audio list when it changes. Diff against the live crate (tracksRef, not a render
   // snapshot, since a watch can fire long after mount) and park anything genuinely new for

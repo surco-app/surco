@@ -38,6 +38,11 @@ function isConversionTemp(name: string): boolean {
   return /\.tmp-[0-9a-f]{8}\.[^.]+$/i.test(name)
 }
 
+// Called with each group of audio files the walk uncovers, as it uncovers them, so a
+// long walk can fill the list instead of only paying out at the end. Every path handed
+// to it is also in the final result — it is an early view of the same set, never extra.
+export type OnBatch = (paths: string[]) => void
+
 // Drag-and-drop hands us whatever the user dropped — files *and* folders. A
 // dropped folder arrives as a single path that the renderer's extension filter
 // silently discards, so here we replace each directory with the audio files it
@@ -49,28 +54,44 @@ function isConversionTemp(name: string): boolean {
 // empty for seconds. Promise.all resolves in input order, so the result order is
 // identical to a serial walk — only the wall-clock collapses. Fan-out is bounded by the
 // tree's directory count, which is modest for a music library.
-export async function expandPaths(paths: string[]): Promise<string[]> {
+// Collapsing the wall-clock was not enough on a real network crate: 560 folders on an
+// SMB share cost ~20s of round trips even warm, while the first audio file is known
+// after ~1s. onBatch reports files the moment they are identified so the import can
+// start on them; the returned array is unchanged, so callers that ignore it (and the
+// awaited result everything still uses) behave exactly as before.
+export async function expandPaths(paths: string[], onBatch?: OnBatch): Promise<string[]> {
   const expanded = await Promise.all(
     paths.map(async (p) => {
       const info = await stat(p).catch(() => null)
       if (!info) return []
-      if (info.isDirectory()) return collectAudio(p)
+      if (info.isDirectory()) return collectAudio(p, onBatch)
       const name = basename(p)
-      return isHidden(name) || isConversionTemp(name) ? [] : [p]
+      if (isHidden(name) || isConversionTemp(name)) return []
+      // Announced like any walked file: a plain-file drop must reach the consumer
+      // through the same channel, or a streaming caller would never see it.
+      onBatch?.([p])
+      return [p]
     }),
   )
   return expanded.flat()
 }
 
-export async function collectAudio(dir: string): Promise<string[]> {
+export async function collectAudio(dir: string, onBatch?: OnBatch): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
-  const nested = await Promise.all(
-    entries.map(async (entry) => {
-      if (isHidden(entry.name) || isConversionTemp(entry.name)) return []
-      const full = join(dir, entry.name)
-      if (entry.isDirectory()) return collectAudio(full)
-      return AUDIO_EXTS.has(extname(entry.name).toLowerCase()) ? [full] : []
-    }),
-  )
-  return nested.flat()
+  // This directory's own audio files, announced before recursing into its subfolders:
+  // on a network volume each subfolder is another round trip, and holding these back
+  // until the whole subtree resolves is exactly the delay this streaming removes.
+  const here: string[] = []
+  const dirs: string[] = []
+  for (const entry of entries) {
+    if (isHidden(entry.name) || isConversionTemp(entry.name)) continue
+    const full = join(dir, entry.name)
+    if (entry.isDirectory()) dirs.push(full)
+    else if (AUDIO_EXTS.has(extname(entry.name).toLowerCase())) here.push(full)
+  }
+  if (here.length) onBatch?.(here)
+  const nested = await Promise.all(dirs.map((full) => collectAudio(full, onBatch)))
+  // Order matches the pre-streaming walk (a directory's files in readdir order, each
+  // subtree in place) so an import's row order does not depend on network timing.
+  return [...here, ...nested.flat()]
 }
