@@ -536,7 +536,7 @@
     "applyStart": "Cut {{seconds}} from the start",
     "applyEnd": "Cut {{seconds}} from the end",
     "applyAll_other": "Trim detected silence on {{count}} tracks",
-    "cueWarning": "Re-encodes the audio. Traktor cues and beatgrid stored in the file are re-anchored to the cut; WAV and FLAC lose them.",
+    "cueWarning": "Re-encodes the audio. Traktor cues and beatgrid stored in the file are re-anchored to the cut on MP3 and AIFF; on FLAC and WAV they are not, so re-analyze the track in Traktor after trimming.",
     "cueWarningShort": "Re-encodes the audio · cues re-anchored",
     "handleStart": "Trim start",
     "handleEnd": "Trim end",
