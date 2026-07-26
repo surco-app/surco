@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { existsSync, renameSync, writeFileSync } from 'node:fs'
+import { readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, nativeImage } from 'electron'
 import { normalizeTrim } from '../shared/trim'
@@ -61,16 +62,34 @@ function sanitizeEdit(raw: unknown, previews: Map<string, string | undefined>): 
   return edit
 }
 
-export function loadLastSession(): SessionData {
+// Async, and deliberately so: this answers session:get on the main process, which is also
+// the thread that paints the window. The existence check below used to be a synchronous
+// existsSync per path, so a crate loaded from a network (SMB) volume blocked the main
+// process for one stat round trip per track — ~4s measured for 622 paths — with the window
+// created but unable to paint, which is the black window at launch. Worse, it was spent
+// before the user had answered the reopen prompt at all: work for a decision not yet made.
+// The awaits let the event loop (and the paint) run; the concurrent stats collapse the
+// round trips into one wait instead of N.
+export async function loadLastSession(): Promise<SessionData> {
   try {
-    const raw = JSON.parse(readFileSync(sessionPath(), 'utf-8')) as {
+    const raw = JSON.parse(await readFile(sessionPath(), 'utf-8')) as {
       paths?: unknown
       edits?: unknown
     }
     if (!Array.isArray(raw.paths)) return { paths: [], edits: {} }
     // Files deleted or unmounted since last quit would come back as broken rows;
-    // dropping them here keeps the reopen offer's count honest.
-    const paths = raw.paths.filter((p): p is string => typeof p === 'string' && existsSync(p))
+    // dropping them here keeps the reopen offer's count honest. Checked concurrently so a
+    // slow volume costs one round trip, not one per track, and never blocks the paint.
+    const candidates = raw.paths.filter((p): p is string => typeof p === 'string')
+    const present = await Promise.all(
+      candidates.map((p) =>
+        stat(p).then(
+          () => true,
+          () => false,
+        ),
+      ),
+    )
+    const paths = candidates.filter((_, i) => present[i])
     const edits: Record<string, SessionEdit> = {}
     if (typeof raw.edits === 'object' && raw.edits !== null) {
       const previews = new Map<string, string | undefined>()
