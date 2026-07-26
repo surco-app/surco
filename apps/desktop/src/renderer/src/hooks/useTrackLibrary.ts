@@ -241,6 +241,15 @@ export function useTrackLibrary({
     // to block the whole drop behind the slowest file — on a cloud/network folder that's
     // seconds of an empty list that looks broken even though the import is running.
     const bases = fresh.map((path) => ({ ...newTrack(path), loadingMeta: true }))
+    // Publish the new rows to the live view immediately rather than waiting for the render
+    // that setTracks schedules. A folder walk pays out batches back-to-back, so two can land
+    // in the same tick: React has not repainted between them, tracksRef still holds the crate
+    // as it was before the first batch, and the second would re-add every path they share —
+    // the duplicated tracks a local (fast) import produced. Everything below counts on bases
+    // being exactly what was added, so the dedupe has to settle before it, not inside
+    // setTracks; the updater stays a plain append and the render overwrites this with the
+    // identical array.
+    tracksRef.current = [...tracksRef.current, ...bases]
     setTracks((prev) => [...prev, ...bases])
     // Every import route (drop, picker, Open With, watched folder) funnels through
     // here after dedup, so this is the one bump for the lifetime "loaded" tally.
