@@ -46,8 +46,10 @@ function setup(): {
   result: { current: ReturnType<typeof useTrackLibrary> }
   fire: FoldersChangedCb
   fireBatch: ExpandedBatchCb
+  onDuplicatesSkipped: ReturnType<typeof vi.fn>
 } {
   const { fire, fireBatch } = setApi()
+  const onDuplicatesSkipped = vi.fn()
   const { result } = renderHook(() =>
     useTrackLibrary({
       setSelection: vi.fn(),
@@ -55,11 +57,11 @@ function setup(): {
       onRemove: vi.fn(),
       onClear: vi.fn(),
       onMetaLoaded: vi.fn(),
-      onDuplicatesSkipped: vi.fn(),
+      onDuplicatesSkipped,
       onMetaReadFailed: vi.fn(),
     }),
   )
-  return { result, fire, fireBatch }
+  return { result, fire, fireBatch, onDuplicatesSkipped }
 }
 
 describe('useTrackLibrary watched folders', () => {
@@ -105,6 +107,7 @@ function setupWithTracks(): ReturnType<typeof setup> {
       .fn()
       .mockResolvedValue({ tags: { title: '', artist: '' }, duration: 180, cover: null }),
   })
+  const onDuplicatesSkipped = vi.fn()
   const { result } = renderHook(() =>
     useTrackLibrary({
       setSelection: vi.fn(),
@@ -112,11 +115,11 @@ function setupWithTracks(): ReturnType<typeof setup> {
       onRemove: vi.fn(),
       onClear: vi.fn(),
       onMetaLoaded: vi.fn(),
-      onDuplicatesSkipped: vi.fn(),
+      onDuplicatesSkipped,
       onMetaReadFailed: vi.fn(),
     }),
   )
-  return { result, fire, fireBatch }
+  return { result, fire, fireBatch, onDuplicatesSkipped }
 }
 
 describe('useTrackLibrary removed tracks vs watcher', () => {
@@ -531,5 +534,69 @@ describe('useTrackLibrary streamed import batches', () => {
     await act(() => result.current.addPaths(['/music/a.wav', '/music/b.flac']))
 
     expect(result.current.tracks.map((t) => t.inputPath)).toEqual(['/music/a.wav', '/music/b.flac'])
+  })
+
+  // "Already in the list, skipped" means the USER re-dropped something they already had.
+  // A path Surco itself streamed moments earlier is not that: the final result repeating
+  // the batches is our own plumbing, and warning about it accuses the user of a duplicate
+  // they never made. One dropped folder must produce no skip notice at all.
+  it('does not report the paths it streamed itself as skipped duplicates', async () => {
+    const { result, fireBatch, onDuplicatesSkipped } = setup()
+
+    await act(async () => {
+      fireBatch(['/music/a.wav'])
+    })
+    await act(() => result.current.addPaths(['/music/a.wav', '/music/b.flac']))
+
+    expect(onDuplicatesSkipped).not.toHaveBeenCalled()
+  })
+
+  // A real walk pays out many batches, and the reported bug was a *stack* of toasts — one
+  // per batch — burying the UI on a large crate. Every batch is self-inflicted, so no
+  // count of them may reach the user.
+  it('stays silent across many streamed batches from one walk', async () => {
+    const { result, fireBatch, onDuplicatesSkipped } = setup()
+
+    await act(async () => {
+      fireBatch(['/music/a.wav', '/music/b.flac'])
+      fireBatch(['/music/c.aiff'])
+      fireBatch(['/music/a.wav', '/music/d.mp3'])
+    })
+    await act(() =>
+      result.current.addPaths(['/music/a.wav', '/music/b.flac', '/music/c.aiff', '/music/d.mp3']),
+    )
+
+    expect(onDuplicatesSkipped).not.toHaveBeenCalled()
+  })
+
+  // The notice still has a job: dropping a folder the user already imported is a genuine
+  // no-op worth explaining. Killing the false positives must not kill the true one.
+  it('still reports duplicates when the user re-drops paths already in the crate', async () => {
+    const { result, onDuplicatesSkipped } = setup()
+
+    await act(() => result.current.addPaths(['/music/a.wav', '/music/b.flac']))
+    await act(() => result.current.addPaths(['/music/a.wav', '/music/b.flac']))
+
+    expect(onDuplicatesSkipped).toHaveBeenCalledWith(2)
+  })
+
+  // Re-dropping a folder replays the whole import, streamed batches included, so the
+  // second walk re-marks the very paths it is about to report. Unless each import's marks
+  // are consumed by its own final pass, that second drop goes silent — which is how the
+  // first cut of this fix broke the notice outright while the unit tests stayed green.
+  it('reports the re-drop of a folder that was originally streamed in', async () => {
+    const { result, fireBatch, onDuplicatesSkipped } = setup()
+
+    await act(async () => {
+      fireBatch(['/music/a.wav'])
+    })
+    await act(() => result.current.addPaths(['/music/a.wav', '/music/b.flac']))
+    await act(async () => {
+      fireBatch(['/music/a.wav'])
+    })
+    await act(() => result.current.addPaths(['/music/a.wav', '/music/b.flac']))
+
+    expect(onDuplicatesSkipped).toHaveBeenCalledTimes(1)
+    expect(onDuplicatesSkipped).toHaveBeenCalledWith(2)
   })
 })

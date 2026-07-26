@@ -142,6 +142,10 @@ export function useTrackLibrary({
   // on disk, so without this the watcher's next report — the safety poll fires every minute
   // whether or not anything changed — would flag each one as "new" again and again.
   const ignoredPaths = useRef(new Set<string>())
+  // Paths added by the in-flight walk's own streamed batches, awaiting the final expandPaths
+  // result that repeats them. They are Surco's plumbing, not a user duplicate, so the skip
+  // notice discounts them — and consumes the set, one import at a time. See addPaths.
+  const streamedPaths = useRef(new Set<string>())
   const importDone = useRef(0)
   const importTotal = useRef(0)
   // Failed metadata reads in the in-flight batch, reported once when it settles so a
@@ -190,7 +194,13 @@ export function useTrackLibrary({
     [flushMetaPatches],
   )
 
-  async function addPaths(paths: string[], restore?: Record<string, SessionEdit>): Promise<void> {
+  // `streamed` marks the call as one of the folder walk's own progress batches rather than a
+  // user-initiated import, which is what tells the skip notice apart from a real re-drop.
+  async function addPaths(
+    paths: string[],
+    restore?: Record<string, SessionEdit>,
+    streamed = false,
+  ): Promise<void> {
     // Read the live list, not the render snapshot: the native picker can sit open for
     // a long time, and a file that arrived through the OS meanwhile must still dedupe.
     const existing = new Set(tracksRef.current.map((t) => t.inputPath))
@@ -205,9 +215,21 @@ export function useTrackLibrary({
       }
     }
     // Already-in-the-list audio files are skipped (re-dragging a folder is common);
-    // report the count so App can surface it rather than the old silent no-op.
-    const skipped = audio.length - fresh.length
-    if (skipped > 0) onDuplicatesSkipped(skipped)
+    // report the count so App can surface it rather than the old silent no-op. A progress
+    // batch never reports: it is Surco's own plumbing, and its paths are also in the final
+    // result, so counting there would blame the user for a duplicate they never made — one
+    // toast per batch, stacked over the UI on a big crate. The batch instead records what it
+    // added, and the final call discounts exactly that before reporting the rest. Consuming
+    // the record there keeps each import self-contained, so re-dropping the same folder
+    // (which replays the batches too) still reports every path as the duplicate it is.
+    if (streamed) {
+      for (const path of fresh) streamedPaths.current.add(path)
+    } else {
+      const selfStreamed = audio.filter((p) => streamedPaths.current.has(p))
+      streamedPaths.current = new Set()
+      const skipped = audio.length - fresh.length - selfStreamed.length
+      if (skipped > 0) onDuplicatesSkipped(skipped)
+    }
     if (fresh.length === 0) return
     onPathsAdded?.(fresh)
     // Importing a new crate is a context change, not a track step: if a section was blown
@@ -375,7 +397,12 @@ export function useTrackLibrary({
   // than at each call site so every import route (drop, picker, Open With) streams alike.
   // The batches repeat paths the awaited expandPaths returns too; addPaths dedupes against
   // the live crate, so the late full result adds only what streaming had not already shown.
-  useEffect(() => window.api.onExpandedBatch((paths) => void addPathsRef.current(paths)), [])
+  // Flagged as streamed so that final pass recognises the repeats as self-inflicted instead
+  // of reporting them to the user as skipped duplicates.
+  useEffect(
+    () => window.api.onExpandedBatch((paths) => void addPathsRef.current(paths, undefined, true)),
+    [],
+  )
 
   // The main process watches the folders a crate was loaded from and reports each one's
   // current audio list when it changes. Diff against the live crate (tracksRef, not a render
