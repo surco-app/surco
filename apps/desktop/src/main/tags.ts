@@ -16,6 +16,7 @@ import {
   PictureType,
   File as TagFile,
   TagTypes,
+  type XiphComment,
 } from 'node-taglib-sharp'
 import {
   starsToRating,
@@ -39,6 +40,10 @@ const ID3_V23 = new Set(['.mp3', '.aiff', '.wav'])
 // re-muxing — but only for the ID3-based containers where this is proven safe.
 // WAV/FLAC do not round-trip GEOB cleanly through TagLib, so they stay on ffmpeg.
 const ID3_IN_PLACE = new Set(['.mp3', '.aiff'])
+
+// The Vorbis comment FLAC carries Traktor's cue/beatgrid blob in, the counterpart
+// of the ID3 PRIV frame owned "TRAKTOR4".
+const FLAC_CUE_FIELD = 'TRAKTOR4'
 
 // Picture.fromPath derives the APIC description from the temp basename
 // (surco-cover-proc-<uuid>.jpg), which mp3tag and DJ software display verbatim. Users
@@ -129,6 +134,31 @@ export function copyCueFrames(source: string, dest: string, shift?: CueShift): v
     }
   } catch {
     // Cue preservation is a bonus; never let it break a successful conversion.
+  }
+}
+
+// FLAC keeps the same Traktor blob in a Vorbis comment named TRAKTOR4 rather than
+// an ID3 frame, and ffmpeg copies that comment through a re-encode untouched — so
+// unlike the ID3 containers, nothing has to be carried over for cues to survive.
+// A trim is the case where surviving is exactly the problem: the positions inside
+// are absolute milliseconds from a start the trimmed file no longer has, leaving
+// every cue and the grid late by the whole cut. The payload is ASCII-armored by an
+// undocumented scheme, so it can't be re-anchored the way the ID3 blob is; drop it
+// and let Traktor re-analyze, the same call the parser makes for any blob it can't
+// re-anchor. Best-effort, like the ID3 side: never break a good conversion.
+export function dropFlacCueComment(file: string): void {
+  try {
+    const f = TagFile.createFromPath(file)
+    try {
+      const xiph = f.getTag(TagTypes.Xiph, false) as XiphComment | null
+      if (!xiph?.getField(FLAC_CUE_FIELD)?.length) return
+      xiph.removeField(FLAC_CUE_FIELD)
+      f.save()
+    } finally {
+      f.dispose()
+    }
+  } catch {
+    // Same bargain as copyCueFrames: cue handling never fails a conversion.
   }
 }
 
