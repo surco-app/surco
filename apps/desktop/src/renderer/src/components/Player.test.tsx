@@ -98,12 +98,6 @@ function props(over = {}) {
   }
 }
 
-// The slider lives in a popover that only mounts while the user is reaching for it, so
-// every volume assertion has to open it the way a pointer would.
-function openVolume(): void {
-  fireEvent.pointerEnter(screen.getByTestId('player-volume-control'))
-}
-
 describe('Player', () => {
   it('shows what is playing', () => {
     renderUI(<Player {...props()} />)
@@ -171,25 +165,12 @@ describe('Player', () => {
   // showing at every level, full volume included.
   it('shows the volume readout at full volume', () => {
     renderUI(<Player {...props({ volume: 1 })} />)
-    openVolume()
     expect(screen.getByTestId('player-volume')).toHaveTextContent('100%')
   })
 
   it('shows the volume readout once it is turned down', () => {
     renderUI(<Player {...props({ volume: 0.5 })} />)
-    openVolume()
     expect(screen.getByTestId('player-volume')).toHaveTextContent('50%')
-  })
-
-  // Closed, the popover is gone from the tree rather than sitting invisible over the card,
-  // where it would intercept clicks meant for the transport underneath.
-  it('keeps the volume popover unmounted until reached for', () => {
-    renderUI(<Player {...props()} />)
-    expect(screen.queryByTestId('player-volume-popover')).toBeNull()
-    openVolume()
-    expect(screen.getByTestId('player-volume-popover')).toBeInTheDocument()
-    fireEvent.pointerLeave(screen.getByTestId('player-volume-control'))
-    expect(screen.queryByTestId('player-volume-popover')).toBeNull()
   })
 
   it('toggles playback from the transport button', () => {
@@ -279,7 +260,6 @@ describe('Player', () => {
     expect(screen.getByTestId('player-time')).toHaveTextContent('1:05 / 12:34')
     // Volume is not duplicated on this row: the same speaker sits in the transport above in
     // both layouts, so the whole row width goes to the progress bar.
-    openVolume()
     expect(screen.getByTestId('player-volume-slider')).toHaveValue('0.5')
   })
 
@@ -316,7 +296,6 @@ describe('Player', () => {
   it('reports a new volume when the slider is dragged', () => {
     const onSetVolume = vi.fn()
     renderUI(<Player {...props({ volume: 1, onSetVolume })} />)
-    openVolume()
     fireEvent.change(screen.getByTestId('player-volume-slider'), { target: { value: '0.3' } })
     expect(onSetVolume).toHaveBeenCalledWith(0.3)
   })
@@ -324,7 +303,6 @@ describe('Player', () => {
   // The slider mirrors the live level so the control reflects the current volume.
   it('reflects the current volume on the slider', () => {
     renderUI(<Player {...props({ volume: 0.4 })} />)
-    openVolume()
     expect(screen.getByTestId('player-volume-slider')).toHaveValue('0.4')
   })
 
@@ -347,6 +325,23 @@ describe('Player', () => {
   it('lets clicks through the clock to the wave underneath', () => {
     renderUI(<Player {...props()} />)
     expect(screen.getByTestId('player-time')).toHaveClass('pointer-events-none')
+  })
+
+  // The whole point of moving volume down here: it is on screen at all times, with no
+  // hover and no popover, so the level is readable and adjustable in one gesture and can
+  // never appear on top of the title or the wave the way a pop-out did.
+  it('keeps the volume visible without any hover', () => {
+    renderUI(<Player {...props({ volume: 0.7 })} />)
+    expect(screen.getByTestId('player-volume-slider')).toHaveValue('0.7')
+    expect(screen.getByTestId('player-volume')).toHaveTextContent('70%')
+  })
+
+  // Volume sits on the transport row, not on the title's line — sharing that line is what
+  // squeezed a long title into an ellipsis.
+  it('keeps the volume out of the title block', () => {
+    renderUI(<Player {...props()} />)
+    const titleBlock = screen.getByTestId('player-title').parentElement
+    expect(titleBlock?.querySelector('[data-testid="player-volume-control"]')).toBeNull()
   })
 
   // Clicking the speaker mutes without hunting the slider to zero, and clicking again
@@ -418,7 +413,6 @@ describe('LivePlayer', () => {
         onClose={vi.fn()}
       />,
     )
-    openVolume()
     fireEvent.change(screen.getByTestId('player-volume-slider'), { target: { value: '0.45' } })
     expect(audio.volume).toBeCloseTo(0.45, 5)
   })

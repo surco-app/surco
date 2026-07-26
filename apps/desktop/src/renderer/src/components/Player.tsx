@@ -44,7 +44,7 @@ export function LivePlayer({
   const [duration, setDuration] = useState(0)
   const [paused, setPaused] = useState(false)
   const [loading, setLoading] = useState(false)
-  // Volume rides a slider on the volume pill (which fades in on hover); a slider rather
+  // Volume rides a slider that is always on screen in the transport row; a slider rather
   // than wheel-over-the-card so adjusting it never collides with scrolling the track list.
   const [volume, setVolume] = useState(1)
 
@@ -105,7 +105,7 @@ export function LivePlayer({
   }
 
   // The slider reports an absolute level; mirror it onto the element, which persists it
-  // across tracks, and reflect it live on the pill.
+  // across tracks, and reflect it live on the slider.
   const onSetVolume = useCallback(
     (value: number): void => {
       const audio = audioRef.current
@@ -212,12 +212,13 @@ export function Player({
       data-testid="player"
       className="group/player shrink-0 animate-player-in overflow-hidden border-t border-[var(--color-line-strong)] bg-[var(--color-panel-2)] shadow-[0_-1px_0_var(--color-line),0_-8px_20px_-12px_rgba(0,0,0,0.35)]"
     >
-      {/* Cover on the left; to its right a two-line stack: the title gets a whole line of its
-          own (so it rarely truncates, marquees on hover when it must), and below it the artist
-          shares a line with the small control cluster. The controls are compact ghost glyphs in
-          three zones — transport (play) · hairline · the two toggles · close held apart.
-          items-start aligns the cover's top with the title (the visual anchor): the bold title
-          carries the weight up top, so centring the square cover read as if it had sagged. */}
+      {/* The card reads as three stacked bands — identity, wave, transport — and nothing
+          shares a line with anything else. Cover plus title and artist here; the wave below;
+          the controls on their own row at the foot. Giving the title the full width is the
+          whole reason for the split: sharing its line with a control cluster is what clipped
+          long remix names into an ellipsis. items-start aligns the cover's top with the title
+          (the visual anchor): the bold title carries the weight up top, so centring the square
+          cover read as if it had sagged. */}
       <div className="flex items-start gap-2.5 px-3 pt-2.5">
         {/* The cover as a 40px vinyl: flat disc with thin groove rings, the art clipped
             into the center label (brand-accent label when the file has no art), a spindle
@@ -257,121 +258,10 @@ export function Player({
             </MarqueeText>
           </span>
 
-          {/* Artist and the controls share the second line: the name takes the slack, the
-              cluster sits flush right. The -mt pulls the artist up snug under the title, since
-              the h-7 control row is taller than the text and would otherwise float it down. */}
-          <div className="-mt-0.5 flex items-center gap-2">
-            <span className="min-w-0 flex-1 truncate text-fg-dim text-xs leading-tight">
-              {track.meta.artist}
-            </span>
-
-            <div className="-mr-1 flex shrink-0 items-center gap-0.5">
-              <button
-                type="button"
-                data-testid="player-toggle"
-                onClick={onToggle}
-                aria-label={paused ? t('player.play') : t('player.pause')}
-                aria-busy={!paused && loading}
-                className="press flex h-7 w-7 items-center justify-center rounded-md text-fg transition-colors hover:bg-[var(--color-line-strong)]"
-              >
-                {paused ? (
-                  // The play triangle is optically left-heavy, so nudge it right to sit centered.
-                  <Play
-                    className="h-3.5 w-3.5 translate-x-px"
-                    fill="currentColor"
-                    strokeWidth={0}
-                    aria-hidden="true"
-                  />
-                ) : loading ? (
-                  // Streaming from a network drive can take seconds to deliver the first
-                  // bytes; the spinner shows the click registered and the file is coming.
-                  <LoaderCircle
-                    data-testid="player-loading"
-                    className="h-3.5 w-3.5 animate-spin"
-                    aria-hidden="true"
-                  />
-                ) : (
-                  <Pause
-                    className="h-3.5 w-3.5"
-                    fill="currentColor"
-                    strokeWidth={0}
-                    aria-hidden="true"
-                  />
-                )}
-              </button>
-
-              <VolumeControl
-                volume={volume}
-                onSetVolume={onSetVolume}
-                label={t('player.volume')}
-                muteLabel={t('player.unmute')}
-              />
-
-              {/* Hairline marking off the transport from the two settings toggles. */}
-              <span aria-hidden="true" className="mx-0.5 h-3.5 w-px bg-[var(--color-line)]" />
-
-              {/* Active toggles wear a soft accent chip, not just an accent icon: with
-                  the wave and its played half already accent-blue, a lone blue glyph
-                  disappears among them — the fill is what says "on". The background is
-                  fully conditional so the two bg utilities never compete. */}
-              <button
-                type="button"
-                data-testid="player-continuous"
-                onClick={onToggleContinuous}
-                aria-label={t('player.continuous')}
-                aria-pressed={continuous}
-                className={`press relative flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
-                  continuous
-                    ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20'
-                    : 'text-fg-faint hover:bg-[var(--color-line-strong)] hover:text-fg'
-                }`}
-              >
-                <InfinityIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                <Tooltip label={t('player.continuousHelp')} />
-              </button>
-
-              <button
-                type="button"
-                data-testid="player-waveform"
-                onClick={onToggleWaveform}
-                aria-label={t('player.waveform')}
-                aria-pressed={showWaveform}
-                className={`press relative flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
-                  showWaveform
-                    ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20'
-                    : 'text-fg-faint hover:bg-[var(--color-line-strong)] hover:text-fg'
-                }`}
-              >
-                <AudioLines className="h-3.5 w-3.5" aria-hidden="true" />
-                <Tooltip label={t('player.waveformHelp')} />
-              </button>
-
-              {/* Jump the list to the track that's playing — after scrolling or selecting
-                  another row, the playing one may be off-screen with no other way back. */}
-              <button
-                type="button"
-                data-testid="player-reveal"
-                onClick={onReveal}
-                aria-label={t('player.reveal')}
-                className="press relative flex h-7 w-7 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
-              >
-                <Crosshair className="h-3.5 w-3.5" aria-hidden="true" />
-                <Tooltip label={t('player.reveal')} />
-              </button>
-
-              {/* Close held a touch apart — an exit, not a control, so a stray click doesn't
-                  kill the player in place of a toggle. */}
-              <button
-                type="button"
-                data-testid="player-close"
-                onClick={onClose}
-                aria-label={t('player.close')}
-                className="press ml-0.5 flex h-7 w-7 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
-              >
-                <X className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
-            </div>
-          </div>
+          {/* The artist now has the second line to itself, directly under the title. */}
+          <span className="min-w-0 truncate text-fg-dim text-xs leading-tight">
+            {track.meta.artist}
+          </span>
         </div>
       </div>
 
@@ -403,11 +293,10 @@ export function Player({
           </div>
         ) : (
           // No waveform: one compact line — the progress bar taking the whole width and the
-          // clock at the end. Volume is not repeated here; it sits in the transport row above
-          // in both layouts, so the same speaker is in the same place whether the wave is on
-          // or off. No second row and no empty space where the waveform used to be, so the
-          // player shrinks to a tidy transport bar instead of holding the wave's height.
-          <div className="flex items-center gap-2.5 px-3 pt-1.5 pb-2.5 text-[10px] text-fg-dim tabular-nums">
+          // clock at the end, standing in for the wave in the same band. The transport row
+          // below is unchanged, so volume and the buttons stay exactly where they were
+          // whether the wave is on or off, and the card just loses the wave's height.
+          <div className="flex items-center gap-2.5 px-3 pt-1.5 text-[10px] text-fg-dim tabular-nums">
             {/* The visible track is 4px, but the button is taller with a centered bar inside,
                 so the clickable target clears the 40px-ish comfort zone — a thin 6px bar was
                 fiddly to hit mid-set. */}
@@ -434,16 +323,130 @@ export function Player({
           </div>
         )}
       </div>
+
+      {/* The transport on its own row at the foot of the card: volume fixed at the left,
+          the buttons ranged right. Neither can cover the title or the wave from here, which
+          is the whole point of the split — every earlier attempt put volume on top of
+          something the DJ was trying to read or click. */}
+      <div className="flex items-center gap-2 px-3 pt-1.5 pb-2">
+        <VolumeControl
+          volume={volume}
+          onSetVolume={onSetVolume}
+          label={t('player.volume')}
+          muteLabel={t('player.unmute')}
+        />
+
+        <div className="ml-auto flex shrink-0 items-center gap-0.5">
+          <button
+            type="button"
+            data-testid="player-toggle"
+            onClick={onToggle}
+            aria-label={paused ? t('player.play') : t('player.pause')}
+            aria-busy={!paused && loading}
+            className="press flex h-7 w-7 items-center justify-center rounded-md text-fg transition-colors hover:bg-[var(--color-line-strong)]"
+          >
+            {paused ? (
+              // The play triangle is optically left-heavy, so nudge it right to sit centered.
+              <Play
+                className="h-3.5 w-3.5 translate-x-px"
+                fill="currentColor"
+                strokeWidth={0}
+                aria-hidden="true"
+              />
+            ) : loading ? (
+              // Streaming from a network drive can take seconds to deliver the first
+              // bytes; the spinner shows the click registered and the file is coming.
+              <LoaderCircle
+                data-testid="player-loading"
+                className="h-3.5 w-3.5 animate-spin"
+                aria-hidden="true"
+              />
+            ) : (
+              <Pause
+                className="h-3.5 w-3.5"
+                fill="currentColor"
+                strokeWidth={0}
+                aria-hidden="true"
+              />
+            )}
+          </button>
+
+          {/* Hairline marking off the transport from the two settings toggles. */}
+          <span aria-hidden="true" className="mx-0.5 h-3.5 w-px bg-[var(--color-line)]" />
+
+          {/* Active toggles wear a soft accent chip, not just an accent icon: with
+            the wave and its played half already accent-blue, a lone blue glyph
+            disappears among them — the fill is what says "on". The background is
+            fully conditional so the two bg utilities never compete. */}
+          <button
+            type="button"
+            data-testid="player-continuous"
+            onClick={onToggleContinuous}
+            aria-label={t('player.continuous')}
+            aria-pressed={continuous}
+            className={`press relative flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+              continuous
+                ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20'
+                : 'text-fg-faint hover:bg-[var(--color-line-strong)] hover:text-fg'
+            }`}
+          >
+            <InfinityIcon className="h-3.5 w-3.5" aria-hidden="true" />
+            <Tooltip label={t('player.continuousHelp')} />
+          </button>
+
+          <button
+            type="button"
+            data-testid="player-waveform"
+            onClick={onToggleWaveform}
+            aria-label={t('player.waveform')}
+            aria-pressed={showWaveform}
+            className={`press relative flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+              showWaveform
+                ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20'
+                : 'text-fg-faint hover:bg-[var(--color-line-strong)] hover:text-fg'
+            }`}
+          >
+            <AudioLines className="h-3.5 w-3.5" aria-hidden="true" />
+            <Tooltip label={t('player.waveformHelp')} />
+          </button>
+
+          {/* Jump the list to the track that's playing — after scrolling or selecting
+            another row, the playing one may be off-screen with no other way back. */}
+          <button
+            type="button"
+            data-testid="player-reveal"
+            onClick={onReveal}
+            aria-label={t('player.reveal')}
+            className="press relative flex h-7 w-7 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
+          >
+            <Crosshair className="h-3.5 w-3.5" aria-hidden="true" />
+            <Tooltip label={t('player.reveal')} />
+          </button>
+
+          {/* Close held a touch apart — an exit, not a control, so a stray click doesn't
+            kill the player in place of a toggle. */}
+          <button
+            type="button"
+            data-testid="player-close"
+            onClick={onClose}
+            aria-label={t('player.close')}
+            className="press ml-0.5 flex h-7 w-7 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
+          >
+            <X className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
 
-// Volume as a single speaker glyph in the transport row, its slider popping above on hover.
-// It reads as one more control among the toggles and, crucially, never covers the waveform:
-// a horizontal slider over a horizontal scrub surface always competes for the same pixels
-// and the same drag, so the slider stands upright in a popover instead. Clicking the speaker
-// mutes and clicking again restores the level, which is why the pre-mute value is remembered
-// here rather than being lost to a zeroed slider. A real slider (rather than wheel-over-the-
+// Volume as a permanent strip at the left of the transport row: speaker, slider, percentage,
+// all on screen at all times. Two earlier shapes failed the way the DJ actually works —
+// floating it over the waveform stole the clicks meant for scrubbing the opening seconds, and
+// popping it out on hover covered the title and the artwork. Fixed here it can cover nothing,
+// and it leaves the title line entirely to the title, which is what a long remix name needs.
+// Clicking the speaker mutes and clicking again restores the level, so the pre-mute value is
+// remembered rather than lost to a zeroed slider. A real slider (rather than wheel-over-the-
 // card) means adjusting volume never hijacks a scroll meant for the track list.
 function VolumeControl({
   volume,
@@ -461,33 +464,19 @@ function VolumeControl({
   // player still restores something audible rather than staying silent.
   const lastAudible = useRef(volume > 0 ? volume : 1)
   if (volume > 0) lastAudible.current = volume
-  // Open state is React's, not a CSS :hover group: the popover has to stay up while the
-  // pointer travels off the button and onto the slider above it, and it must also open on
-  // keyboard focus — one flag covers both without the two selectors fighting over opacity.
-  const [open, setOpen] = useState(false)
 
   return (
-    <fieldset
-      // A real group: the speaker and its slider are one control, which also gives the
-      // pointer/focus handlers an element that is allowed to carry them.
-      aria-label={label}
-      data-testid="player-volume-control"
-      className="relative flex items-center border-0 p-0"
-      onPointerEnter={() => setOpen(true)}
-      onPointerLeave={() => setOpen(false)}
-      onFocus={() => setOpen(true)}
-      onBlur={() => setOpen(false)}
-    >
+    <span data-testid="player-volume-control" className="flex shrink-0 items-center gap-1.5">
       <button
         type="button"
         data-testid="player-volume-button"
         onClick={() => onSetVolume(muted ? lastAudible.current : 0)}
         aria-label={muted ? muteLabel : label}
         aria-pressed={muted}
-        className={`press flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+        className={`press flex h-5 w-5 shrink-0 items-center justify-center rounded transition-colors ${
           muted
             ? 'text-[var(--color-accent)] hover:bg-[var(--color-line-strong)]'
-            : 'text-fg-faint hover:bg-[var(--color-line-strong)] hover:text-fg'
+            : 'text-fg-dim hover:bg-[var(--color-line-strong)] hover:text-fg'
         }`}
       >
         {muted ? (
@@ -497,35 +486,25 @@ function VolumeControl({
         )}
       </button>
 
-      {/* Unmounted while closed rather than merely transparent: an invisible panel over the
-          card would still swallow clicks aimed at the controls beneath it. It grows
-          leftwards along the transport row — the card clips its overflow, so a panel rising
-          above the speaker would be cut off by the card's own top edge, and the free space
-          the artist line leaves is right here on the row. */}
-      {open && (
-        <span
-          data-testid="player-volume-popover"
-          className="absolute top-1/2 right-full z-10 mr-0.5 flex -translate-y-1/2 items-center gap-1.5 rounded-full bg-[var(--color-panel)] px-2 py-1 shadow-md ring-1 ring-[var(--color-line)]"
-        >
-          <input
-            type="range"
-            data-testid="player-volume-slider"
-            aria-label={label}
-            min={0}
-            max={1}
-            step={0.01}
-            value={volume}
-            onChange={(e) => onSetVolume(Number(e.target.value))}
-            className="player-volume-range h-1 w-20 cursor-pointer"
-          />
-          <span
-            data-testid="player-volume"
-            className="w-7 shrink-0 text-right text-[10px] text-fg-dim leading-none tabular-nums"
-          >
-            {Math.round(volume * 100)}%
-          </span>
-        </span>
-      )}
-    </fieldset>
+      <input
+        type="range"
+        data-testid="player-volume-slider"
+        aria-label={label}
+        min={0}
+        max={1}
+        step={0.01}
+        value={volume}
+        onChange={(e) => onSetVolume(Number(e.target.value))}
+        className="player-volume-range h-1 w-16 cursor-pointer"
+      />
+
+      {/* Tabular so the strip doesn't twitch as the digits change under a drag. */}
+      <span
+        data-testid="player-volume"
+        className="w-8 shrink-0 text-[10px] text-fg-dim leading-none tabular-nums"
+      >
+        {Math.round(volume * 100)}%
+      </span>
+    </span>
   )
 }
