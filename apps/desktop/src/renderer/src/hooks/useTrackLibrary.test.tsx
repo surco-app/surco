@@ -9,29 +9,45 @@ afterEach(() => {
 })
 
 type FoldersChangedCb = (root: string, files: string[]) => void
+type ExpandedBatchCb = (paths: string[]) => void
 
-function setApi(over: Record<string, unknown> = {}): { fire: FoldersChangedCb } {
+function setApi(over: Record<string, unknown> = {}): {
+  fire: FoldersChangedCb
+  fireBatch: ExpandedBatchCb
+} {
   let cb: FoldersChangedCb = () => {}
+  let batchCb: ExpandedBatchCb = () => {}
   ;(window as unknown as { api: unknown }).api = {
     takePendingFiles: vi.fn().mockResolvedValue([]),
     onOpenFiles: vi.fn(() => () => {}),
+    onExpandedBatch: vi.fn((fn: ExpandedBatchCb) => {
+      batchCb = fn
+      return () => {}
+    }),
     onFoldersChanged: vi.fn((fn: FoldersChangedCb) => {
       cb = fn
       return () => {}
     }),
     unwatchFolders: vi.fn().mockResolvedValue(undefined),
     expandPaths: vi.fn().mockResolvedValue([]),
+    readMeta: vi.fn().mockResolvedValue({
+      tags: {},
+      duration: null,
+      cover: null,
+      foreignTags: [],
+    }),
     recordStat: vi.fn(),
     ...over,
   }
-  return { fire: (root, files) => cb(root, files) }
+  return { fire: (root, files) => cb(root, files), fireBatch: (paths) => batchCb(paths) }
 }
 
 function setup(): {
   result: { current: ReturnType<typeof useTrackLibrary> }
   fire: FoldersChangedCb
+  fireBatch: ExpandedBatchCb
 } {
-  const { fire } = setApi()
+  const { fire, fireBatch } = setApi()
   const { result } = renderHook(() =>
     useTrackLibrary({
       setSelection: vi.fn(),
@@ -43,7 +59,7 @@ function setup(): {
       onMetaReadFailed: vi.fn(),
     }),
   )
-  return { result, fire }
+  return { result, fire, fireBatch }
 }
 
 describe('useTrackLibrary watched folders', () => {
@@ -84,7 +100,7 @@ describe('useTrackLibrary watched folders', () => {
 })
 
 function setupWithTracks(): ReturnType<typeof setup> {
-  const { fire } = setApi({
+  const { fire, fireBatch } = setApi({
     readMeta: vi
       .fn()
       .mockResolvedValue({ tags: { title: '', artist: '' }, duration: 180, cover: null }),
@@ -100,7 +116,7 @@ function setupWithTracks(): ReturnType<typeof setup> {
       onMetaReadFailed: vi.fn(),
     }),
   )
-  return { result, fire }
+  return { result, fire, fireBatch }
 }
 
 describe('useTrackLibrary removed tracks vs watcher', () => {
@@ -486,5 +502,34 @@ describe('useTrackLibrary meta read failures', () => {
     fail = false
     await act(() => result.current.addPaths(['/music/two.wav']))
     expect(onMetaReadFailed).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('useTrackLibrary streamed import batches', () => {
+  // The whole point of streaming the walk: on an SMB crate (560 folders, ~20s to walk)
+  // the first files are known after ~1s, and the list must fill from them instead of
+  // staying empty — the "nothing happened" gap the user reported after dropping a folder.
+  it('adds rows from a batch that arrives while the walk is still running', async () => {
+    const { result, fireBatch } = setup()
+
+    await act(async () => {
+      fireBatch(['/music/a.wav', '/music/b.flac'])
+    })
+
+    expect(result.current.tracks.map((t) => t.inputPath)).toEqual(['/music/a.wav', '/music/b.flac'])
+  })
+
+  // Batches are an early view of what expandPaths finally resolves with, so the same
+  // paths arrive twice by design. Without dedupe every streamed track would double when
+  // the walk finished — the import must be idempotent, not merely fast.
+  it('does not duplicate rows when the final result repeats the streamed paths', async () => {
+    const { result, fireBatch } = setup()
+
+    await act(async () => {
+      fireBatch(['/music/a.wav'])
+    })
+    await act(() => result.current.addPaths(['/music/a.wav', '/music/b.flac']))
+
+    expect(result.current.tracks.map((t) => t.inputPath)).toEqual(['/music/a.wav', '/music/b.flac'])
   })
 })
