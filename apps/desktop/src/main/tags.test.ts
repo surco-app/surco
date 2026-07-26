@@ -734,11 +734,14 @@ describe('copyCueFrames', () => {
     writeFileSync(out, readFileSync(buildSeed(dir)))
     stripCues(out)
 
-    copyCueFrames(source, out, { shiftMs: 1300 })
+    copyCueFrames(source, out, { shiftMs: 1300, bpm: 143.78 })
 
     const carried = readPrivTree(out)
     expect(carried).not.toBeNull()
-    expect(readTraktorCueStart(carried as Uint8Array, 0)).toBeCloseTo(0)
+    // The hotcue moves by the raw cut; the grid marker keeps its phase instead
+    // (65.61 - 1300 folded back into the 417.30 ms beat), so Traktor's ruler
+    // still lands on the same beats it described before the trim.
+    expect(readTraktorCueStart(carried as Uint8Array, 0)).toBeCloseTo(17.52, 1)
     expect(readTraktorCueStart(carried as Uint8Array, 1)).toBeCloseTo(59934.5)
   })
 

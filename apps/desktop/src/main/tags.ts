@@ -93,10 +93,13 @@ export function readItunesGrouping(file: string): string {
 
 // A trim moved the audio under the stored cues: shift every position back by
 // shiftMs and clamp what remains to maxMs (the trimmed length) when the tail
-// was cut too. Millisecond units, like Traktor's own cue positions.
+// was cut too. Millisecond units, like Traktor's own cue positions. `bpm` is the
+// track's tempo, which the grid marker needs to keep its phase — without it a
+// blob carrying a grid is dropped rather than re-anchored blind.
 export interface CueShift {
   shiftMs: number
   maxMs?: number
+  bpm?: number
 }
 
 // Carries Traktor's cue/beatgrid frames from a source file into a freshly
@@ -172,7 +175,12 @@ function applyCueShift(frames: Id3v2Frame[], shift?: CueShift): Id3v2Frame[] {
   if (!shift) return frames
   return frames.flatMap((frame) => {
     if (!isTraktorPriv(frame)) return []
-    const patched = shiftTraktorCues(frame.privateData.toByteArray(), shift.shiftMs, shift.maxMs)
+    const patched = shiftTraktorCues(
+      frame.privateData.toByteArray(),
+      shift.shiftMs,
+      shift.maxMs,
+      shift.bpm,
+    )
     if (!patched) return []
     frame.privateData = ByteVector.fromByteArray(patched)
     return [frame]

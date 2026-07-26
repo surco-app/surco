@@ -11,6 +11,24 @@
 
 const CUE_HEADER_BYTES = 12
 
+// Cue type 4 is Traktor's grid marker (the "AutoGrid" cue a track analysis
+// writes). Every other type is a plain position — a hotcue, a load marker, a
+// loop — that means "this instant of audio".
+const GRID_CUE_TYPE = 4
+
+// The grid marker is the one cue that is not a position but a phase: Traktor
+// draws the whole beat ruler by extrapolating from it in both directions, so
+// what has to survive a trim is its offset within the beat, not its distance
+// from the old start. A silence trim cuts to the first transient, practically
+// never a whole number of beats, so subtracting the raw cut lands the ruler
+// between beats — the drift users fix by dragging the grid back by hand.
+// Folding the shifted position back into the first beat keeps the ruler on the
+// same beats it described before, and Traktor extrapolates the rest.
+function shiftGridAnchor(start: number, shiftMs: number, beatMs: number): number {
+  const moved = start - shiftMs
+  return ((moved % beatMs) + beatMs) % beatMs
+}
+
 function tagAt(tree: Uint8Array, off: number): string {
   // Tags are stored reversed ("TRMD" on disk means TRMD read back-to-front).
   return String.fromCharCode(tree[off + 3], tree[off + 2], tree[off + 1], tree[off])
@@ -40,12 +58,17 @@ export function shiftTraktorCues(
   source: Uint8Array,
   shiftMs: number,
   maxMs?: number,
+  bpm?: number,
 ): Uint8Array | null {
   try {
     const tree = new Uint8Array(source)
     const view = new DataView(tree.buffer, tree.byteOffset, tree.byteLength)
     if (tree.length < CUE_HEADER_BYTES || tagAt(tree, 0) !== 'TRMD') return null
     if (CUE_HEADER_BYTES + view.getUint32(4, true) !== tree.length) return null
+
+    // A usable tempo is what makes the grid anchor re-anchorable; without one we
+    // can still move plain cues, but a grid marker would have to be guessed at.
+    const beatMs = bpm !== undefined && Number.isFinite(bpm) && bpm > 0 ? 60000 / bpm : undefined
 
     let chksOff = -1
     const cueps: { off: number; len: number }[] = []
@@ -83,11 +106,21 @@ export function shiftTraktorCues(
         cursor += 4 // constant field (always 1)
         const nameLen = view.getUint32(cursor, true)
         cursor += 4 + nameLen * 2
-        cursor += 8 // display order + type
+        cursor += 4 // display order
+        const type = view.getInt32(cursor, true)
+        cursor += 4
         if (cursor + 16 + 8 > end) throw new Error('cue entry overruns CUEP')
         const start = view.getFloat64(cursor, true)
-        let next = Math.max(0, start - shiftMs)
-        if (maxMs !== undefined) next = Math.min(next, maxMs)
+        let next: number
+        if (type === GRID_CUE_TYPE) {
+          // No tempo, no phase we can compute: dropping the blob makes Traktor
+          // re-analyze, which beats handing back a ruler that is silently off.
+          if (beatMs === undefined) return null
+          next = shiftGridAnchor(start, shiftMs, beatMs)
+        } else {
+          next = Math.max(0, start - shiftMs)
+          if (maxMs !== undefined) next = Math.min(next, maxMs)
+        }
         view.setFloat64(cursor, next, true)
         cursor += 16 // start + length doubles
         cursor += 8 // repeats + hotcue
