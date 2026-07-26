@@ -1,6 +1,8 @@
+import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import ffmpegStatic from 'ffmpeg-static'
 import {
   Id3v2FrameClassType,
   Id3v2FrameIdentifiers,
@@ -11,11 +13,21 @@ import {
   PictureType,
   File as TagFile,
   TagTypes,
+  type XiphComment,
 } from 'node-taglib-sharp'
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
-import { copyCueFrames, preservesCuesInPlace, readItunesGrouping, writeTags } from './tags'
+import { decodeBase91, encodeBase91 } from './base91'
+import {
+  copyCueFrames,
+  preservesCuesInPlace,
+  readItunesGrouping,
+  shiftFlacCues,
+  writeTags,
+} from './tags'
 import { buildTraktorTree, readTraktorCueStart, traktorCue } from './traktor4Fixture'
+
+const FFMPEG = ffmpegStatic as unknown as string
 
 // Strips the GEOB cue frame from a file, to model the output of a normalizing
 // ffmpeg re-encode (which drops it) before copyCueFrames puts it back.
@@ -786,5 +798,98 @@ describe('copyCueFrames', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
     const file = buildSeed(dir)
     expect(readItunesGrouping(file)).toBe('')
+  })
+})
+
+describe('shiftFlacCues', () => {
+  // FLAC carries the same Traktor tree as MP3's PRIV frame, armored into a
+  // TRAKTOR4 Vorbis comment because comments are text. ffmpeg copies that comment
+  // through a re-encode untouched, so after a trim it holds positions measured
+  // from a start the file no longer has — the cues every FLAC user sees sitting
+  // late. Re-anchoring means decode, shift, re-encode, in place.
+  function flacWithCues(dir: string, tree: Uint8Array): string {
+    const file = join(dir, 'cued.flac')
+    execFileSync(FFMPEG, [
+      '-v',
+      'quiet',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=2',
+      '-metadata',
+      `TRAKTOR4=${encodeBase91(tree)}`,
+      '-y',
+      file,
+    ])
+    return file
+  }
+
+  function readFlacTree(file: string): Uint8Array | null {
+    const f = TagFile.createFromPath(file)
+    try {
+      const xiph = f.getTag(TagTypes.Xiph, false) as XiphComment | null
+      const armored = xiph?.getField('TRAKTOR4')?.[0]
+      return armored ? decodeBase91(armored) : null
+    } finally {
+      f.dispose()
+    }
+  }
+
+  it('re-anchors the cues stored in the FLAC comment', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-flac-'))
+    const file = flacWithCues(
+      dir,
+      buildTraktorTree([traktorCue('AutoGrid', 4, 143.38, 0), traktorCue('Drop', 0, 79672.64, 1)]),
+    )
+
+    shiftFlacCues(file, { shiftMs: 1300, bpm: 138.3 })
+
+    const tree = readFlacTree(file)
+    expect(tree).not.toBeNull()
+    expect(readTraktorCueStart(tree as Uint8Array, 1)).toBeCloseTo(78372.64)
+  })
+
+  // Without a trim nothing moved under the cues, so the comment must be left
+  // exactly as it was rather than rewritten for no reason.
+  it('leaves the comment untouched when there is no shift', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-flac-'))
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)])
+    const file = flacWithCues(dir, tree)
+
+    shiftFlacCues(file, undefined)
+
+    expect(readTraktorCueStart(readFlacTree(file) as Uint8Array, 0)).toBeCloseTo(79672.64)
+  })
+
+  // The parser's existing stance: a blob it can't re-anchor is dropped, never
+  // carried pointing at the wrong beats. On FLAC that means clearing the comment
+  // so Traktor re-analyzes instead of trusting stale positions.
+  it('drops a comment it cannot re-anchor', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-flac-'))
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)])
+    tree[tree.length - 6] ^= 0xff // break the checksum inside the summed span
+    const file = flacWithCues(dir, tree)
+
+    shiftFlacCues(file, { shiftMs: 1300, bpm: 138.3 })
+
+    expect(readFlacTree(file)).toBeNull()
+  })
+
+  it('does nothing to a FLAC that carries no cue comment', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-flac-'))
+    const file = join(dir, 'plain.flac')
+    execFileSync(FFMPEG, [
+      '-v',
+      'quiet',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=1',
+      '-y',
+      file,
+    ])
+
+    expect(() => shiftFlacCues(file, { shiftMs: 1300, bpm: 138.3 })).not.toThrow()
+    expect(readFlacTree(file)).toBeNull()
   })
 })

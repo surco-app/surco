@@ -536,7 +536,7 @@
     "applyStart": "Rogner {{seconds}} au début",
     "applyEnd": "Rogner {{seconds}} à la fin",
     "applyAll_other": "Rogner le silence détecté sur {{count}} morceaux",
-    "cueWarning": "Ré-encode l'audio. Les cues et le beatgrid Traktor enregistrés dans le fichier sont réalignés sur la coupe en MP3 et AIFF ; pas en FLAC ni en WAV — réanalysez le morceau dans Traktor après la coupe.",
+    "cueWarning": "Ré-encode l'audio. Les cues et le beatgrid Traktor enregistrés dans le fichier sont réalignés sur la coupe en MP3, AIFF et FLAC ; en WAV ils sont perdus.",
     "cueWarningShort": "Réencode l'audio · repères réancrés",
     "handleStart": "Début du rognage",
     "handleEnd": "Fin du rognage",
