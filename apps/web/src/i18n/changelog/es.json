@@ -15,6 +15,10 @@
       {
         "text": "Surco abre más rápido y ya no muestra una ventana en negro mientras arranca, tampoco cuando la última sesión apuntaba a una carpeta en red que tarda en responder.",
         "in": "0.75.0"
+      },
+      {
+        "text": "Al arrastrar una carpeta ya no se amontonan avisos de «ya está en la lista»: las pistas que Surco va encontrando mientras recorre la carpeta ya no se confunden con archivos repetidos.",
+        "in": "0.75.1"
       }
     ]
   },
