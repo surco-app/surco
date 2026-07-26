@@ -267,4 +267,25 @@ describe('Waveform', () => {
     expect(screen.queryByTestId('waveform')).not.toBeInTheDocument()
     expect(container).toBeEmptyDOMElement()
   })
+
+  // The raster is scaled by CSS to the strip's height, so it has to stay exactly twice
+  // that height to land 1:1 on device pixels of a @2x display. Change the strip without
+  // the raster and the wave is resampled at a fractional ratio — visibly soft, and the
+  // kind of regression nobody spots in a screenshot.
+  it('keeps the raster at exactly twice the strip height', async () => {
+    setWaveform(wave)
+    renderWithQuery(
+      <Waveform
+        inputPath="/m/a.wav"
+        audioRef={{ current: null }}
+        active={false}
+        onScrub={vi.fn()}
+      />,
+    )
+    const canvas = await screen.findByTestId('waveform')
+    const strip = canvas.querySelector('canvas')
+    expect(strip).not.toBeNull()
+    expect(strip).toHaveClass('h-12')
+    expect(strip).toHaveAttribute('height', '96')
+  })
 })

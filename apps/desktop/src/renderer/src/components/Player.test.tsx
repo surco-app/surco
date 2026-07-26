@@ -327,6 +327,22 @@ describe('Player', () => {
     expect(screen.getByTestId('player-time')).toHaveClass('pointer-events-none')
   })
 
+  // Close belongs to the card, not to the transport: dismissing the player is the standard
+  // top-right affordance of any closable panel, and keeping it among the playback buttons
+  // put an exit one stray click away from pause.
+  it('keeps close out of the transport cluster', () => {
+    renderUI(<Player {...props()} />)
+    const transport = screen.getByTestId('player-toggle').parentElement
+    expect(transport?.querySelector('[data-testid="player-close"]')).toBeNull()
+  })
+
+  it('still closes from the card corner', () => {
+    const onClose = vi.fn()
+    renderUI(<Player {...props({ onClose })} />)
+    fireEvent.click(screen.getByTestId('player-close'))
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
   // The whole point of moving volume down here: it is on screen at all times, with no
   // hover and no popover, so the level is readable and adjustable in one gesture and can
   // never appear on top of the title or the wave the way a pop-out did.
