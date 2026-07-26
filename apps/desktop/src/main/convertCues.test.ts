@@ -219,6 +219,29 @@ describe('convertAudio cue preservation', () => {
     expect(readTraktorCueStart(decodeBase91(armored as string), 1)).toBeCloseTo(78372.64)
   })
 
+  // The library move users actually make: an AIFF crate with cues converted to FLAC. The
+  // output extension picks the cue path, so .flac routes to shiftFlacCues — which only
+  // re-anchors a TRAKTOR4 comment that rode the encode by itself. Coming from AIFF the cues
+  // were in an ID3 GEOB that ffmpeg does not translate into a Vorbis comment, so there is
+  // nothing to shift and they are simply gone. Crossing tag families has to carry them over.
+  it('carries the cues over when converting a cued AIFF to FLAC', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'surco-aiff2flac-'))
+    const cued = join(own, 'in.aiff')
+    execFileSync(FF, ['-y', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=4', cued])
+    injectAiffCue(cued)
+    expect(hasCue(cued)).toBe(true)
+
+    const out = join(own, 'out.flac')
+    await convertAudio(cued, out, 'flac', meta)
+
+    const f = TagFile.createFromPath(out)
+    const armored = (f.getTag(TagTypes.Xiph, false) as XiphComment | null)?.getField(
+      'TRAKTOR4',
+    )?.[0]
+    f.dispose()
+    expect(armored).toBeDefined()
+  })
+
   // The re-encode path folds the cue carry-over into the same writeTags call as the
   // rating (cueSource: input, see ffmpeg.ts), so a clearExtras re-encode must not let
   // that carry-over reinject the very cues clearExtras just wiped — converting a cued

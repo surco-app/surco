@@ -9,7 +9,7 @@ import {
   unlink,
 } from 'node:fs/promises'
 import { constants as osConstants, setPriority, tmpdir } from 'node:os'
-import { basename, dirname, join } from 'node:path'
+import { basename, dirname, extname, join } from 'node:path'
 import { promisify } from 'node:util'
 import { declickFilter } from '../shared/declick'
 import { formatRatingTag } from '../shared/rating'
@@ -1155,12 +1155,24 @@ export async function convertAudio(
       // FLAC needs the mirror image: its armored TRAKTOR4 comment rides the
       // re-encode by itself, so nothing is carried over and only a trim matters
       // — the surviving comment is what ends up measuring from the wrong start.
+      // Unless the source was ID3 (an AIFF crate moving to FLAC is the common
+      // one): then no comment rode along, and the cues have to be re-armored out
+      // of the source's PRIV frame instead.
       else if (ext === '.flac')
-        await runInWorker({
-          type: 'shiftFlacCues',
-          file: tmp,
-          shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
-        })
+        await runInWorker(
+          preservesCuesInPlace(extname(input))
+            ? {
+                type: 'copyCuesToFlac',
+                source: input,
+                dest: tmp,
+                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
+              }
+            : {
+                type: 'shiftFlacCues',
+                file: tmp,
+                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
+              },
+        )
     }
     // Last touch before the rename so the header rides the same atomic landing.
     // Only when there's a cover to show — the header exists solely for Finder's
