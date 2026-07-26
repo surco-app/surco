@@ -70,7 +70,7 @@ import {
 } from './normalize'
 import { MANAGED_ALIASES, TAG_FIELDS } from './tagFields'
 import { readTagFormats } from './tagFormats'
-import { preservesCuesInPlace, readItunesGrouping } from './tags'
+import { type CueShift, preservesCuesInPlace, readItunesGrouping } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
 import { type ChannelWave, WAVEFORM_BUCKETS, WAVEFORM_SAMPLE_RATE } from './waveform'
@@ -939,16 +939,21 @@ export async function normalizeFilter(
 // The cue re-anchoring a trim demands, in Traktor's millisecond units: positions
 // move back by the head cut and clamp to the trimmed length when the tail was
 // cut too. Undefined while no trim filter ran — the carried frames then stay
-// byte-exact, as they always did for plain re-encodes and constant gains.
+// byte-exact, as they always did for plain re-encodes and constant gains. The
+// tempo rides along for the grid marker, whose phase can't be recomputed without
+// it; a non-numeric or absent bpm tag simply leaves it undefined.
 function cueShiftFor(
   trim: TrimRange | undefined,
   active: boolean,
-): { shiftMs: number; maxMs?: number } | undefined {
+  bpm: string,
+): CueShift | undefined {
   if (!active || !trim) return undefined
   const startSec = trim.startSec ?? 0
+  const tempo = Number(bpm)
   return {
     shiftMs: Math.round(startSec * 1000),
     maxMs: trim.endSec !== undefined ? Math.round((trim.endSec - startSec) * 1000) : undefined,
+    bpm: Number.isFinite(tempo) && tempo > 0 ? tempo : undefined,
   }
 }
 
@@ -1129,7 +1134,7 @@ export async function convertAudio(
           clearExtras,
           foreignRemoved,
           cueSource: input,
-          cueShift: cueShiftFor(trim, trimAf !== undefined),
+          cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
         })
       }
       // Any re-encode through ffmpeg drops Traktor's cue/beatgrid frames — a
@@ -1145,7 +1150,7 @@ export async function convertAudio(
           type: 'copyCueFrames',
           source: input,
           dest: tmp,
-          shift: cueShiftFor(trim, trimAf !== undefined),
+          shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
         })
     }
     // Last touch before the rename so the header rides the same atomic landing.
