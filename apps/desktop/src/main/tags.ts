@@ -167,6 +167,71 @@ export function shiftFlacCues(file: string, shift?: CueShift): void {
   }
 }
 
+// Cues crossing tag families: an ID3 source (MP3/AIFF) encoded to FLAC. Neither of the
+// other two paths covers it — copyCueFrames writes ID3 frames a FLAC has no place for, and
+// shiftFlacCues only re-anchors a TRAKTOR4 comment that rode the encode by itself, which is
+// exactly what an ID3 source never produces (ffmpeg does not translate a PRIV frame into a
+// Vorbis comment). So an AIFF crate converted to FLAC silently lost every cue. The PRIV
+// frame holds the same tree the FLAC comment armors, so carrying it over is a re-armoring:
+// read, re-anchor through the shared parser, write as base91.
+// Best-effort, like both siblings: cues never fail an otherwise good conversion.
+export function copyCuesToFlac(source: string, dest: string, shift?: CueShift): void {
+  try {
+    const tree = readTraktorTree(source)
+    if (!tree) return
+    // A trim has to move every stored position, and only the parsed tree can be re-anchored.
+    // Traktor also writes the same payload inside an opaque GEOB blob, which no path here
+    // parses; without a trim it needs no re-anchoring, so it still crosses over verbatim,
+    // but a trim has to drop it rather than ship cues pointing at the wrong beats — the
+    // same bargain the ID3 path already strikes in applyCueShift.
+    const anchored = shift ? shiftTraktorCues(tree, shift.shiftMs, shift.maxMs, shift.bpm) : tree
+    if (!anchored) return
+
+    const out = TagFile.createFromPath(dest)
+    try {
+      const xiph = out.getTag(TagTypes.Xiph, true) as XiphComment
+      xiph.setFieldAsStrings(FLAC_CUE_FIELD, encodeBase91(anchored))
+      out.save()
+    } finally {
+      out.dispose()
+    }
+  } catch {
+    // Same bargain as copyCueFrames and shiftFlacCues.
+  }
+}
+
+// The Traktor cue payload out of an ID3 source, or null when there is none to carry.
+// Prefers the PRIV frame (raw tree, the shape shiftTraktorCues parses) and falls back to
+// the GEOB blob, whose payload sits behind the frame's own header: an encoding byte, then
+// NUL-terminated MIME type, filename and description strings.
+function readTraktorTree(source: string): Uint8Array | null {
+  try {
+    const src = TagFile.createFromPath(source)
+    try {
+      const tag = src.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+      const priv = tag?.frames.find(isTraktorPriv)
+      if (priv) return priv.privateData.toByteArray()
+      const geob = tag?.frames.find((fr) => fr.frameId.toString() === 'GEOB')
+      return geob ? geobPayload(geob.render(4).toByteArray()) : null
+    } finally {
+      src.dispose()
+    }
+  } catch {
+    return null
+  }
+}
+
+// Strips a rendered GEOB frame down to its stored object: past the 10-byte frame header,
+// the encoding byte, then the three NUL-terminated strings that precede the payload.
+function geobPayload(rendered: Uint8Array): Uint8Array | null {
+  let at = 11
+  for (let field = 0; field < 3; field++) {
+    while (at < rendered.length && rendered[at] !== 0) at++
+    at++
+  }
+  return at < rendered.length ? rendered.subarray(at) : null
+}
+
 function isTraktorPriv(frame: Id3v2Frame): frame is Id3v2PrivateFrame {
   return frame instanceof Id3v2PrivateFrame && frame.owner === 'TRAKTOR4'
 }
