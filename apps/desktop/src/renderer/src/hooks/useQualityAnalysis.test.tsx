@@ -268,3 +268,43 @@ describe('useQualityAnalysis', () => {
     expect(measured).toEqual(['/music/a.wav', '/music/b.wav'])
   })
 })
+
+describe('useQualityAnalysis removed tracks', () => {
+  // Reported as "13 tracks loaded but the sweep says 87/621": pendingRef holds every track an
+  // import enqueued, and until now nothing ever took a removed one back out — only measuring it
+  // did. So emptying a 621-track crate down to 13 left 608 ghosts in the queue, and the sweep
+  // kept spawning ffmpeg over files (on a network share) the user had already taken out of the
+  // list. The count the user sees must reflect the crate, and the ffmpeg work must stop.
+  it('drops removed tracks from the pending queue instead of sweeping them', async () => {
+    const spectrogram = vi.fn().mockResolvedValue(spectrum)
+    setApi({ spectrogram })
+    // The crate is empty by the time the sweep runs: every candidate below reaches it only
+    // through pendingRef, exactly like a track enqueued by an import that was then removed.
+    const targetsRef = { current: [] as TrackItem[] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), { wrapper: wrapper() })
+
+    const ghosts = [track('gone-1'), track('gone-2')]
+    act(() => result.current.forgetTracks(ghosts.map((t) => t.id)))
+    act(() => result.current.analyzeAllQuality(ghosts))
+
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+    expect(spectrogram).not.toHaveBeenCalled()
+  })
+
+  // The queue exists to cover the render lag between an import's onMetaLoaded and the row
+  // reaching targetsRef, so forgetting must be surgical: a track that was never removed has
+  // to stay queued and still get measured.
+  it('keeps queued tracks that were not removed', async () => {
+    const spectrogram = vi.fn().mockResolvedValue(spectrum)
+    setApi({ spectrogram })
+    const targetsRef = { current: [] as TrackItem[] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), { wrapper: wrapper() })
+
+    const keep = track('keep')
+    act(() => result.current.forgetTracks(['unrelated']))
+    act(() => result.current.analyzeAllQuality([keep]))
+
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+    expect(spectrogram).toHaveBeenCalledWith('/music/keep.wav', expect.anything())
+  })
+})
