@@ -6,6 +6,7 @@ import {
   Pause,
   Play,
   Volume2,
+  VolumeX,
   X,
 } from 'lucide-react'
 import type React from 'react'
@@ -180,9 +181,6 @@ export function Player({
   const { t } = useTranslation()
   const sectionRef = useRef<HTMLDivElement>(null)
   const sectionHeightRef = useRef<number | undefined>(undefined)
-  // The volume pill only surfaces while the pointer is over the card, then fades back
-  // out; the clock stays put — where the track stands is primary playback information.
-  const [hovered, setHovered] = useState(false)
 
   // The tall waveform strip and the slim transport row are different heights, so flipping
   // the preference would jump the card. Tween the section's height from its last measured
@@ -212,8 +210,6 @@ export function Player({
   return (
     <div
       data-testid="player"
-      onPointerEnter={() => setHovered(true)}
-      onPointerLeave={() => setHovered(false)}
       className="group/player shrink-0 animate-player-in overflow-hidden border-t border-[var(--color-line-strong)] bg-[var(--color-panel-2)] shadow-[0_-1px_0_var(--color-line),0_-8px_20px_-12px_rgba(0,0,0,0.35)]"
     >
       {/* Cover on the left; to its right a two-line stack: the title gets a whole line of its
@@ -304,6 +300,13 @@ export function Player({
                 )}
               </button>
 
+              <VolumeControl
+                volume={volume}
+                onSetVolume={onSetVolume}
+                label={t('player.volume')}
+                muteLabel={t('player.unmute')}
+              />
+
               {/* Hairline marking off the transport from the two settings toggles. */}
               <span aria-hidden="true" className="mx-0.5 h-3.5 w-px bg-[var(--color-line)]" />
 
@@ -373,13 +376,13 @@ export function Player({
       </div>
 
       {/* The waveform runs full-bleed to the card edges (the rounded card clips its
-          corners) so the whole width is scrubbable. The clock and the volume slider float
-          over its corners as pills — the volume fades in on hover, the clock is always
-          there; the clock is pointer-events-none so a click underneath still reaches the
-          wave, while the volume pill takes pointer events for its slider. Hidden by the
-          toggle, the whole strip is unmounted so its full-file decode never runs — the
-          point of the preference. The wrapper clips and animates the height as the two
-          layouts swap (see useLayoutEffect). */}
+          corners) so the whole width is scrubbable. Auditioning means clicking along the
+          wave to jump around the track, so nothing that takes pointer events may sit on
+          it: the clock is the only overlay, and it is pointer-events-none so a click
+          still reaches the wave underneath. Volume lives on the transport row instead.
+          Hidden by the toggle, the whole strip is unmounted so its full-file decode never
+          runs — the point of the preference. The wrapper clips and animates the height as
+          the two layouts swap (see useLayoutEffect). */}
       <div ref={sectionRef} className="player-section overflow-hidden">
         {showWaveform ? (
           <div className="relative mt-2">
@@ -391,14 +394,6 @@ export function Player({
               audioDurationSec={duration}
               onScrub={onScrub}
             />
-            <VolumePill
-              volume={volume}
-              onSetVolume={onSetVolume}
-              label={t('player.volume')}
-              className={`absolute top-1 left-1 bg-[var(--color-panel-2)]/85 px-1.5 py-px shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm transition-opacity duration-200 ${
-                hovered ? 'opacity-100' : 'opacity-0'
-              }`}
-            />
             <span
               data-testid="player-time"
               className="pointer-events-none absolute top-1 right-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm"
@@ -407,27 +402,12 @@ export function Player({
             </span>
           </div>
         ) : (
-          // No waveform: one compact line — a small always-visible volume slider on the left,
-          // the progress bar taking the whole middle, and the clock at the end. No second row
-          // and no empty space where the waveform used to be, so the player shrinks to a tidy
-          // transport bar instead of holding the wave's height with thin controls.
+          // No waveform: one compact line — the progress bar taking the whole width and the
+          // clock at the end. Volume is not repeated here; it sits in the transport row above
+          // in both layouts, so the same speaker is in the same place whether the wave is on
+          // or off. No second row and no empty space where the waveform used to be, so the
+          // player shrinks to a tidy transport bar instead of holding the wave's height.
           <div className="flex items-center gap-2.5 px-3 pt-1.5 pb-2.5 text-[10px] text-fg-dim tabular-nums">
-            {/* Volume: a fixed-width slider that's always there — no pop-out — so the row reads
-                as one calm transport bar and the bar to its right never shifts. */}
-            <span className="flex shrink-0 items-center gap-1.5">
-              <Volume2 className="h-3.5 w-3.5 shrink-0 text-fg-dim" aria-hidden="true" />
-              <input
-                type="range"
-                data-testid="player-volume-slider"
-                aria-label={t('player.volume')}
-                min={0}
-                max={1}
-                step={0.01}
-                value={volume}
-                onChange={(e) => onSetVolume(Number(e.target.value))}
-                className="player-volume-range h-1 w-14 cursor-pointer"
-              />
-            </span>
             {/* The visible track is 4px, but the button is taller with a centered bar inside,
                 so the clickable target clears the 40px-ish comfort zone — a thin 6px bar was
                 fiddly to hit mid-set. */}
@@ -458,45 +438,94 @@ export function Player({
   )
 }
 
-// The volume pill: a speaker icon, a draggable range and the live percentage. Shared by the
-// waveform overlay and the slim transport row so both drive the volume the same way. A real
-// slider (rather than wheel-over-the-card) means adjusting volume never hijacks a scroll meant
-// for the track list. The number stays tabular so the pill width doesn't twitch as digits change.
-function VolumePill({
+// Volume as a single speaker glyph in the transport row, its slider popping above on hover.
+// It reads as one more control among the toggles and, crucially, never covers the waveform:
+// a horizontal slider over a horizontal scrub surface always competes for the same pixels
+// and the same drag, so the slider stands upright in a popover instead. Clicking the speaker
+// mutes and clicking again restores the level, which is why the pre-mute value is remembered
+// here rather than being lost to a zeroed slider. A real slider (rather than wheel-over-the-
+// card) means adjusting volume never hijacks a scroll meant for the track list.
+function VolumeControl({
   volume,
   onSetVolume,
   label,
-  className,
+  muteLabel,
 }: {
   volume: number
   onSetVolume: (value: number) => void
   label: string
-  className: string
+  muteLabel: string
 }): React.JSX.Element {
+  const muted = volume === 0
+  // Survives the trip to zero and back; seeded so the very first click on an already-muted
+  // player still restores something audible rather than staying silent.
+  const lastAudible = useRef(volume > 0 ? volume : 1)
+  if (volume > 0) lastAudible.current = volume
+  // Open state is React's, not a CSS :hover group: the popover has to stay up while the
+  // pointer travels off the button and onto the slider above it, and it must also open on
+  // keyboard focus — one flag covers both without the two selectors fighting over opacity.
+  const [open, setOpen] = useState(false)
+
   return (
-    <span
-      data-testid="player-volume-pill"
-      className={`flex items-center gap-1 rounded-full text-[10px] text-fg-dim leading-none tabular-nums ${className}`}
+    <fieldset
+      // A real group: the speaker and its slider are one control, which also gives the
+      // pointer/focus handlers an element that is allowed to carry them.
+      aria-label={label}
+      data-testid="player-volume-control"
+      className="relative flex items-center border-0 p-0"
+      onPointerEnter={() => setOpen(true)}
+      onPointerLeave={() => setOpen(false)}
+      onFocus={() => setOpen(true)}
+      onBlur={() => setOpen(false)}
     >
-      <Volume2 className="h-3 w-3 shrink-0" aria-hidden="true" />
-      <input
-        type="range"
-        data-testid="player-volume-slider"
-        aria-label={label}
-        min={0}
-        max={1}
-        step={0.01}
-        value={volume}
-        onChange={(e) => onSetVolume(Number(e.target.value))}
-        className="player-volume-range h-1 w-16 cursor-pointer"
-      />
-      {/* Full volume is the silent default, so the readout only appears once the user has
-          turned it down — where the exact figure is worth its space. */}
-      {volume < 1 && (
-        <span data-testid="player-volume" className="w-7 shrink-0 text-right">
-          {Math.round(volume * 100)}%
+      <button
+        type="button"
+        data-testid="player-volume-button"
+        onClick={() => onSetVolume(muted ? lastAudible.current : 0)}
+        aria-label={muted ? muteLabel : label}
+        aria-pressed={muted}
+        className={`press flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+          muted
+            ? 'text-[var(--color-accent)] hover:bg-[var(--color-line-strong)]'
+            : 'text-fg-faint hover:bg-[var(--color-line-strong)] hover:text-fg'
+        }`}
+      >
+        {muted ? (
+          <VolumeX className="h-3.5 w-3.5" aria-hidden="true" />
+        ) : (
+          <Volume2 className="h-3.5 w-3.5" aria-hidden="true" />
+        )}
+      </button>
+
+      {/* Unmounted while closed rather than merely transparent: an invisible panel over the
+          card would still swallow clicks aimed at the controls beneath it. It grows
+          leftwards along the transport row — the card clips its overflow, so a panel rising
+          above the speaker would be cut off by the card's own top edge, and the free space
+          the artist line leaves is right here on the row. */}
+      {open && (
+        <span
+          data-testid="player-volume-popover"
+          className="absolute top-1/2 right-full z-10 mr-0.5 flex -translate-y-1/2 items-center gap-1.5 rounded-full bg-[var(--color-panel)] px-2 py-1 shadow-md ring-1 ring-[var(--color-line)]"
+        >
+          <input
+            type="range"
+            data-testid="player-volume-slider"
+            aria-label={label}
+            min={0}
+            max={1}
+            step={0.01}
+            value={volume}
+            onChange={(e) => onSetVolume(Number(e.target.value))}
+            className="player-volume-range h-1 w-20 cursor-pointer"
+          />
+          <span
+            data-testid="player-volume"
+            className="w-7 shrink-0 text-right text-[10px] text-fg-dim leading-none tabular-nums"
+          >
+            {Math.round(volume * 100)}%
+          </span>
         </span>
       )}
-    </span>
+    </fieldset>
   )
 }

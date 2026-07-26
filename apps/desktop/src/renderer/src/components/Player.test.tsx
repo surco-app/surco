@@ -98,6 +98,12 @@ function props(over = {}) {
   }
 }
 
+// The slider lives in a popover that only mounts while the user is reaching for it, so
+// every volume assertion has to open it the way a pointer would.
+function openVolume(): void {
+  fireEvent.pointerEnter(screen.getByTestId('player-volume-control'))
+}
+
 describe('Player', () => {
   it('shows what is playing', () => {
     renderUI(<Player {...props()} />)
@@ -160,16 +166,30 @@ describe('Player', () => {
     expect(screen.getByTestId('player-cover-placeholder')).toBeInTheDocument()
   })
 
-  // The default full volume is the silent norm, so the slider stands alone; the readout
-  // only earns its space once the user has turned it down, where the exact figure helps.
-  it('hides the volume readout at full volume', () => {
+  // The readout lives inside the popover, which only mounts while the user is actually
+  // reaching for the volume — so it costs no permanent space and the exact figure is worth
+  // showing at every level, full volume included.
+  it('shows the volume readout at full volume', () => {
     renderUI(<Player {...props({ volume: 1 })} />)
-    expect(screen.queryByTestId('player-volume')).toBeNull()
+    openVolume()
+    expect(screen.getByTestId('player-volume')).toHaveTextContent('100%')
   })
 
   it('shows the volume readout once it is turned down', () => {
     renderUI(<Player {...props({ volume: 0.5 })} />)
+    openVolume()
     expect(screen.getByTestId('player-volume')).toHaveTextContent('50%')
+  })
+
+  // Closed, the popover is gone from the tree rather than sitting invisible over the card,
+  // where it would intercept clicks meant for the transport underneath.
+  it('keeps the volume popover unmounted until reached for', () => {
+    renderUI(<Player {...props()} />)
+    expect(screen.queryByTestId('player-volume-popover')).toBeNull()
+    openVolume()
+    expect(screen.getByTestId('player-volume-popover')).toBeInTheDocument()
+    fireEvent.pointerLeave(screen.getByTestId('player-volume-control'))
+    expect(screen.queryByTestId('player-volume-popover')).toBeNull()
   })
 
   it('toggles playback from the transport button', () => {
@@ -257,8 +277,9 @@ describe('Player', () => {
     )
     expect(screen.queryByTestId('waveform')).toBeNull()
     expect(screen.getByTestId('player-time')).toHaveTextContent('1:05 / 12:34')
-    // The volume collapses to a button whose slider pops on hover, so the whole row width
-    // goes to the progress bar — the slider is still present and reflects the level.
+    // Volume is not duplicated on this row: the same speaker sits in the transport above in
+    // both layouts, so the whole row width goes to the progress bar.
+    openVolume()
     expect(screen.getByTestId('player-volume-slider')).toHaveValue('0.5')
   })
 
@@ -295,6 +316,7 @@ describe('Player', () => {
   it('reports a new volume when the slider is dragged', () => {
     const onSetVolume = vi.fn()
     renderUI(<Player {...props({ volume: 1, onSetVolume })} />)
+    openVolume()
     fireEvent.change(screen.getByTestId('player-volume-slider'), { target: { value: '0.3' } })
     expect(onSetVolume).toHaveBeenCalledWith(0.3)
   })
@@ -302,28 +324,47 @@ describe('Player', () => {
   // The slider mirrors the live level so the control reflects the current volume.
   it('reflects the current volume on the slider', () => {
     renderUI(<Player {...props({ volume: 0.4 })} />)
+    openVolume()
     expect(screen.getByTestId('player-volume-slider')).toHaveValue('0.4')
   })
 
-  // Volume rides its own pill (left of the clock), so the level is visible without any
-  // permanent control taking up space.
-  it('shows the volume level on the volume pill', () => {
-    renderUI(<Player {...props({ volume: 0.8 })} />)
-    expect(screen.getByTestId('player-volume')).toHaveTextContent('80%')
-  })
-
-  // The volume pill stays hidden until the pointer is over the card; the clock does
-  // not — where the track stands is primary playback information, not a hover detail.
-  it('keeps the clock visible without hover while only the volume pill fades in', () => {
+  // Volume lives on the transport row, never over the wave. Auditioning a track means
+  // clicking along the waveform to jump around it, and a control floating on the wave
+  // both hides the opening seconds and swallows the clicks meant for them — the one
+  // gesture the player exists for. Nothing overlays the wave but the click-through clock.
+  it('keeps the volume off the waveform so the whole wave stays scrubbable', () => {
     renderUI(<Player {...props()} />)
     const card = screen.getByTestId('player')
-    expect(screen.getByTestId('player-volume-pill')).toHaveClass('opacity-0')
-    expect(screen.getByTestId('player-time')).not.toHaveClass('opacity-0')
     fireEvent.pointerEnter(card)
-    expect(screen.getByTestId('player-volume-pill')).toHaveClass('opacity-100')
-    fireEvent.pointerLeave(card)
-    expect(screen.getByTestId('player-volume-pill')).toHaveClass('opacity-0')
-    expect(screen.getByTestId('player-time')).not.toHaveClass('opacity-0')
+    const wave = screen.getByTestId('waveform').parentElement
+    expect(wave).not.toBeNull()
+    expect(wave?.querySelector('[data-testid="player-volume-button"]')).toBeNull()
+    expect(wave?.querySelector('[data-testid="player-volume-slider"]')).toBeNull()
+  })
+
+  // The clock may sit on the wave because it lets clicks through to the wave beneath;
+  // that is the standard any wave overlay has to meet.
+  it('lets clicks through the clock to the wave underneath', () => {
+    renderUI(<Player {...props()} />)
+    expect(screen.getByTestId('player-time')).toHaveClass('pointer-events-none')
+  })
+
+  // Clicking the speaker mutes without hunting the slider to zero, and clicking again
+  // restores the level it had — muting is a toggle, not a destroyed setting.
+  it('mutes to silence and restores the previous level', () => {
+    const onSetVolume = vi.fn()
+    const { rerender } = renderUI(<Player {...props({ volume: 0.8, onSetVolume })} />)
+    fireEvent.click(screen.getByTestId('player-volume-button'))
+    expect(onSetVolume).toHaveBeenCalledWith(0)
+    rerender(<Player {...props({ volume: 0, onSetVolume })} />)
+    fireEvent.click(screen.getByTestId('player-volume-button'))
+    expect(onSetVolume).toHaveBeenLastCalledWith(0.8)
+  })
+
+  // The speaker reports mute to assistive tech as state, not just as a changed glyph.
+  it('marks the speaker as pressed while muted', () => {
+    renderUI(<Player {...props({ volume: 0 })} />)
+    expect(screen.getByTestId('player-volume-button')).toHaveAttribute('aria-pressed', 'true')
   })
 })
 
@@ -377,6 +418,7 @@ describe('LivePlayer', () => {
         onClose={vi.fn()}
       />,
     )
+    openVolume()
     fireEvent.change(screen.getByTestId('player-volume-slider'), { target: { value: '0.45' } })
     expect(audio.volume).toBeCloseTo(0.45, 5)
   })

@@ -171,6 +171,7 @@
     "waveformHelp": "Mostrar a forma de onda. Ocultá-la pula a análise da forma de onda — útil para arquivos grandes ou discos de rede.",
     "seek": "Ir para posição",
     "volume": "Volume",
+    "unmute": "Ativar som",
     "reveal": "Mostrar na lista a faixa em reprodução",
     "close": "Fechar reprodutor"
   },
