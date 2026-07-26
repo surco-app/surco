@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.75",
+    "date": "26 de julio de 2026",
+    "title": "Los cues de Traktor sobreviven al recorte también en FLAC",
+    "items": [
+      {
+        "text": "Al recortar una pista, los cues y el beatgrid de Traktor guardados en el archivo se recolocan según el corte también en FLAC, que antes había que reanalizar. Se suma a MP3 y AIFF, donde además el inicio de la rejilla mantiene ahora la fase del compás cuando el recorte parte un tiempo por la mitad, así que la rejilla ya no queda descuadrada. En WAV siguen perdiéndose.",
+        "in": "0.75.0"
+      },
+      {
+        "text": "Al importar una carpeta grande o en red, las pistas van apareciendo en la lista según se encuentran, en vez de dejarte esperando delante de una pantalla vacía hasta que termina el recorrido entero.",
+        "in": "0.75.0"
+      },
+      {
+        "text": "Surco abre más rápido y ya no muestra una ventana en negro mientras arranca, tampoco cuando la última sesión apuntaba a una carpeta en red que tarda en responder.",
+        "in": "0.75.0"
+      }
+    ]
+  },
+  {
     "version": "0.74",
     "date": "25 de julio de 2026",
     "title": "Los MP3 se quedan como están y actualizaciones que se reintentan solas",

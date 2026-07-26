@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.75",
+    "date": "July 26, 2026",
+    "title": "Traktor cues now survive trimming on FLAC too",
+    "items": [
+      {
+        "text": "When you trim a track, the Traktor cues and beatgrid stored in the file are re-anchored to the cut on FLAC as well, which used to need a re-analysis. That joins MP3 and AIFF, where the grid's start now also keeps the beat's phase when a trim cuts a beat in half, so the grid no longer ends up off. WAV still loses them.",
+        "in": "0.75.0"
+      },
+      {
+        "text": "Importing a large or networked folder now fills the list with tracks as they are found, instead of leaving you in front of an empty screen until the whole walk finishes.",
+        "in": "0.75.0"
+      },
+      {
+        "text": "Surco opens faster and no longer flashes a black window while starting up, not even when the last session pointed at a slow network folder.",
+        "in": "0.75.0"
+      }
+    ]
+  },
+  {
     "version": "0.74",
     "date": "July 25, 2026",
     "title": "MP3s stay as they are, and update checks that retry themselves",
