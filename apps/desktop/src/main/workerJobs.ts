@@ -4,7 +4,7 @@ import { detectClicks } from './clickDetect'
 import { prependFlacId3 } from './flacFinderCover'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
-import { type CueShift, copyCueFrames, writeTags } from './tags'
+import { type CueShift, copyCueFrames, shiftFlacCues, writeTags } from './tags'
 import { detectBpm } from './tempo'
 import { computePeaks } from './waveform'
 
@@ -42,6 +42,9 @@ export type WorkerJob =
       foreignRemoved?: string[]
     }
   | { type: 'copyCueFrames'; source: string; dest: string; shift?: CueShift }
+  // FLAC's armored cue comment survives the re-encode on its own; only a trim
+  // needs it re-anchored, and the decode/shift/encode is another TagLib rewrite.
+  | { type: 'shiftFlacCues'; file: string; shift?: CueShift }
   // The Finder-covers ID3 prepend rewrites the whole FLAC synchronously, so it runs
   // off the main process's event loop like the other TagLib passes.
   | { type: 'prependFlacId3'; file: string; meta: TrackMetadata; coverPath: string }
@@ -87,6 +90,9 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return null
     case 'copyCueFrames':
       copyCueFrames(job.source, job.dest, job.shift)
+      return null
+    case 'shiftFlacCues':
+      shiftFlacCues(job.file, job.shift)
       return null
     case 'prependFlacId3':
       prependFlacId3(job.file, job.meta, job.coverPath)

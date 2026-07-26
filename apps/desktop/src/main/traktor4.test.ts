@@ -83,6 +83,31 @@ describe('shiftTraktorCues', () => {
     expect(shiftTraktorCues(tree, 500)).toBeNull()
   })
 
+  // Real Traktor FLAC blobs decode to the tree plus a run of zero padding: the
+  // armoring works in fixed blocks, so what comes back is a whole number of
+  // blocks, not the exact tree length. Refusing that tail would mean refusing
+  // every FLAC in a library — the header's own length says where the tree ends,
+  // so trailing zeros past it are not our data and must not disqualify it.
+  it('accepts a tree followed by the armoring zero padding', () => {
+    const tree = buildTree([cue('AutoGrid', 4, 143.38, 0), cue('Drop', 0, 79672.64, 1)])
+    const padded = new Uint8Array(tree.length + 512)
+    padded.set(tree)
+    const shifted = shiftTraktorCues(padded, 1300, undefined, 138.3)
+    expect(shifted).not.toBeNull()
+    expect(readStart(shifted as Uint8Array, 1)).toBeCloseTo(78372.64)
+  })
+
+  // Padding is zeros and nothing else: a non-zero tail past the declared length
+  // means the length is lying or the blob is a variant we don't know, and the
+  // parser's existing "don't guess" stance applies.
+  it('still refuses a tree with non-zero trailing bytes', () => {
+    const tree = buildTree([cue('Drop', 0, 1000, 1)])
+    const dirty = new Uint8Array(tree.length + 8)
+    dirty.set(tree)
+    dirty[tree.length + 3] = 0x42
+    expect(shiftTraktorCues(dirty, 500)).toBeNull()
+  })
+
   it('refuses malformed trees instead of guessing', () => {
     expect(shiftTraktorCues(new Uint8Array([1, 2, 3]), 500)).toBeNull()
     const tree = buildTree([cue('Drop', 0, 1000, 1)])

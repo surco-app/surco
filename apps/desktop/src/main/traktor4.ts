@@ -1,5 +1,6 @@
 // Traktor stores cue points and the beatgrid inside the audio file as a binary
-// tree (ID3 PRIV frame, owner "TRAKTOR4"): little-endian frames of
+// tree — an ID3 PRIV frame owned "TRAKTOR4" on MP3/AIFF, the same tree armored
+// into a TRAKTOR4 Vorbis comment on FLAC (see base91.ts): little-endian frames of
 // [reversed 4-char tag][uint32 length][uint32 child count], cues in a CUEP leaf
 // under DATA, each with its position as a millisecond double. The HDR carries a
 // CHKS checksum; reverse-engineered against real Traktor-written files here:
@@ -61,10 +62,19 @@ export function shiftTraktorCues(
   bpm?: number,
 ): Uint8Array | null {
   try {
-    const tree = new Uint8Array(source)
+    if (source.length < CUE_HEADER_BYTES || tagAt(source, 0) !== 'TRMD') return null
+    // The header's length is authoritative about where the tree ends. An ID3 PRIV
+    // frame holds exactly that many bytes, but a FLAC blob comes back from its
+    // basE91 armoring padded out to a whole block, so trim a zero tail rather
+    // than reject the file. Anything non-zero past the end is not padding.
+    const declared =
+      CUE_HEADER_BYTES +
+      new DataView(source.buffer, source.byteOffset, source.byteLength).getUint32(4, true)
+    if (declared > source.length) return null
+    for (let i = declared; i < source.length; i++) if (source[i] !== 0) return null
+
+    const tree = new Uint8Array(source.subarray(0, declared))
     const view = new DataView(tree.buffer, tree.byteOffset, tree.byteLength)
-    if (tree.length < CUE_HEADER_BYTES || tagAt(tree, 0) !== 'TRMD') return null
-    if (CUE_HEADER_BYTES + view.getUint32(4, true) !== tree.length) return null
 
     // A usable tempo is what makes the grid anchor re-anchorable; without one we
     // can still move plain cues, but a grid marker would have to be guessed at.
