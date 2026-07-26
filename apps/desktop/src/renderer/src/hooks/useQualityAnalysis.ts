@@ -27,6 +27,10 @@ interface QualityAnalysis {
   // import's onMetaLoaded) that fires before targetsRef's render has caught up with the
   // track it just added — mirroring enqueueAutoMatch's explicit candidates argument.
   analyzeAllQuality: (tracks?: TrackItem[]) => void
+  // Takes rows that left the list back out of the sweep's queue. Removal is the one way a
+  // queued track can stop being worth measuring without ever being measured, and nothing
+  // else retires it — see the pendingRef note below.
+  forgetTracks: (ids: string[]) => void
   cancelAnalysis: () => void
 }
 
@@ -61,7 +65,29 @@ export function useQualityAnalysis({ targetsRef, onErrors }: Params): QualityAna
   // relaunch check too. Kept here (mirroring enqueueAutoMatch's own queue) and drained on every
   // call, not just the first, so a track stays queued until targetsRef genuinely has it and
   // tracksToAnalyze can retire it on its own.
+  //
+  // Retired on exactly two events: the track gets measured (the per-track finally below), or
+  // it leaves the list (forgetTracks). Missing that second case is what made a crate emptied
+  // from 621 rows down to 13 keep reporting "87/621" and keep spawning ffmpeg over files no
+  // longer in the list — targetsRef had dropped them, but sweepCandidates read them straight
+  // back out of here.
   const pendingRef = useRef<Map<string, TrackItem>>(new Map())
+
+  // Ids removed from the list. Remembered rather than just deleted from pendingRef, because
+  // the enqueue that strands a ghost can arrive AFTER the removal: an import's onMetaLoaded
+  // fires off an async metadata read, so a track the user removes while that read is in
+  // flight would be queued by a call that had no way of knowing it is gone. An id here is
+  // refused re-entry until it is genuinely imported again (which clears it, below).
+  const forgottenRef = useRef<Set<string>>(new Set())
+
+  // App calls this from its track-removal callbacks, alongside the other per-track caches it
+  // evicts there (view cache, auto-match, the analysis queries).
+  const forgetTracks = useCallback((ids: string[]): void => {
+    for (const id of ids) {
+      pendingRef.current.delete(id)
+      forgottenRef.current.add(id)
+    }
+  }, [])
 
   useWindowFocus((focused) => focusGate.current.set(focused))
 
@@ -92,7 +118,16 @@ export function useQualityAnalysis({ targetsRef, onErrors }: Params): QualityAna
   // would otherwise be dropped by the runningRef guard below with no later call to pick it up.
   const analyzeAllQuality = useCallback(
     (tracks?: TrackItem[]): void => {
-      for (const t of tracks ?? []) pendingRef.current.set(t.id, t)
+      for (const t of tracks ?? []) {
+        // A re-import genuinely brings the row back (it is in the list again), so the
+        // forgotten mark is lifted and the track queues normally; anything still absent
+        // from the list is the stale enqueue of a removed row and is dropped.
+        if (forgottenRef.current.has(t.id)) {
+          if (!targetsRef.current.some((existing) => existing.id === t.id)) continue
+          forgottenRef.current.delete(t.id)
+        }
+        pendingRef.current.set(t.id, t)
+      }
       const targets = tracksToAnalyze(sweepCandidates(), measuredRef.current)
       if (runningRef.current || targets.length === 0) return
       runningRef.current = true
@@ -181,7 +216,7 @@ export function useQualityAnalysis({ targetsRef, onErrors }: Params): QualityAna
         setAnalysis(null)
       })
     },
-    [queryClient, sweepCandidates],
+    [queryClient, sweepCandidates, targetsRef],
   )
 
   const cancelAnalysis = useCallback((): void => {
@@ -193,5 +228,5 @@ export function useQualityAnalysis({ targetsRef, onErrors }: Params): QualityAna
     measuredRef.current = new Set()
   }, [])
 
-  return { analysis, analyzeAllQuality, cancelAnalysis }
+  return { analysis, analyzeAllQuality, cancelAnalysis, forgetTracks }
 }
