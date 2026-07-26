@@ -580,6 +580,42 @@ describe('useTrackLibrary streamed import batches', () => {
     expect(onDuplicatesSkipped).toHaveBeenCalledWith(2)
   })
 
+  // A local folder pays out its batches back-to-back, so two land in the same tick with no
+  // render in between. tracksRef only catches up when React repaints, so both batches read
+  // the same stale crate, neither sees the other's rows, and a path in both is added twice —
+  // the duplicated tracks users hit on 0.75.0/0.75.1. Dedupe must therefore happen against
+  // the queued state inside setTracks, not against a render-time snapshot.
+  it('does not duplicate a path shared by two batches in the same tick', async () => {
+    const { result, fireBatch } = setup()
+
+    await act(async () => {
+      fireBatch(['/music/a.wav'])
+      fireBatch(['/music/a.wav', '/music/b.flac'])
+    })
+
+    expect(result.current.tracks.map((t) => t.inputPath)).toEqual(['/music/a.wav', '/music/b.flac'])
+  })
+
+  // Only the paths two same-tick batches shared ever doubled, which is why the crate came
+  // back with some tracks twice and most exactly once — the "hay algunas q solo mete una"
+  // the user reported. Each path must land once regardless of how many batches carried it.
+  it('adds each path once when overlapping batches carry different subsets', async () => {
+    const { result, fireBatch } = setup()
+
+    await act(async () => {
+      fireBatch(['/music/a.wav', '/music/b.flac'])
+      fireBatch(['/music/b.flac', '/music/c.aiff'])
+      fireBatch(['/music/d.mp3'])
+    })
+
+    expect(result.current.tracks.map((t) => t.inputPath)).toEqual([
+      '/music/a.wav',
+      '/music/b.flac',
+      '/music/c.aiff',
+      '/music/d.mp3',
+    ])
+  })
+
   // Re-dropping a folder replays the whole import, streamed batches included, so the
   // second walk re-marks the very paths it is about to report. Unless each import's marks
   // are consumed by its own final pass, that second drop goes silent — which is how the
