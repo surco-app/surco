@@ -380,6 +380,18 @@ function createWindow(): BrowserWindow {
     minWidth: 1080,
     minHeight: 620,
     show: false,
+    // Without this the window is SHOWN before it can paint, so it sits black for ~4s.
+    // ready-to-show fires off the load, not off a rendered frame: measured at 232ms while
+    // the renderer's first frame only arrived at ~4000ms — that gap is the black rectangle.
+    // The flag lets the still-hidden window compose, so ready-to-show waits for real
+    // content and the window appears (measured ~4160ms) just after the first frame
+    // (~4021ms) instead of nearly four seconds before it. It trades "empty window sooner"
+    // for "no black window at all", which is the point of the show-when-ready pattern.
+    // The ~4s to that first frame is NOT app work — the main process finishes under 152ms,
+    // imports evaluate in 77ms, an IPC round trip answers in 1ms, and a bare rAF before
+    // React fires at 73ms; it reproduces with the CSS import removed, with hardware
+    // acceleration off, and running electron directly instead of through preview.
+    paintWhenInitiallyHidden: true,
     titleBarStyle: 'hiddenInset',
     // Centre the macOS traffic lights in the 48px (h-12) toolbar: the default inset sits them
     // near the top of a standard-height title bar, so on the taller toolbar they float high.
