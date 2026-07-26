@@ -1152,6 +1152,15 @@ export async function convertAudio(
           dest: tmp,
           shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
         })
+      // FLAC needs the mirror image: its armored TRAKTOR4 comment rides the
+      // re-encode by itself, so nothing is carried over and only a trim matters
+      // — the surviving comment is what ends up measuring from the wrong start.
+      else if (ext === '.flac')
+        await runInWorker({
+          type: 'shiftFlacCues',
+          file: tmp,
+          shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
+        })
     }
     // Last touch before the rename so the header rides the same atomic landing.
     // Only when there's a cover to show — the header exists solely for Finder's

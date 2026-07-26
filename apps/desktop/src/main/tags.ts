@@ -16,6 +16,7 @@ import {
   PictureType,
   File as TagFile,
   TagTypes,
+  type XiphComment,
 } from 'node-taglib-sharp'
 import {
   starsToRating,
@@ -24,6 +25,7 @@ import {
   WMP_RATING_USER,
 } from '../shared/rating'
 import type { TrackMetadata } from '../shared/types'
+import { decodeBase91, encodeBase91 } from './base91'
 import { shiftTraktorCues } from './traktor4'
 
 // Every ID3 container we write gets v2.3, pinned per tag rather than through the
@@ -39,6 +41,10 @@ const ID3_V23 = new Set(['.mp3', '.aiff', '.wav'])
 // re-muxing — but only for the ID3-based containers where this is proven safe.
 // WAV/FLAC do not round-trip GEOB cleanly through TagLib, so they stay on ffmpeg.
 const ID3_IN_PLACE = new Set(['.mp3', '.aiff'])
+
+// The Vorbis comment FLAC carries Traktor's cue/beatgrid tree in, the counterpart
+// of the ID3 PRIV frame owned "TRAKTOR4" — same tree, armored as text.
+const FLAC_CUE_FIELD = 'TRAKTOR4'
 
 // Picture.fromPath derives the APIC description from the temp basename
 // (surco-cover-proc-<uuid>.jpg), which mp3tag and DJ software display verbatim. Users
@@ -129,6 +135,35 @@ export function copyCueFrames(source: string, dest: string, shift?: CueShift): v
     }
   } catch {
     // Cue preservation is a bonus; never let it break a successful conversion.
+  }
+}
+
+// The FLAC counterpart of copyCueFrames. Traktor stores the same cue/beatgrid
+// tree there, armored into a TRAKTOR4 Vorbis comment because comments are UTF-8
+// text — and unlike ID3, ffmpeg copies that comment through a re-encode
+// untouched. So nothing needs carrying over; the only case that needs work is a
+// trim, where the surviving comment now measures from a start the file no longer
+// has. Decode, re-anchor through the same parser MP3 uses, re-encode in place. A
+// tree that can't be re-anchored is cleared rather than left pointing at the
+// wrong beats, matching what the ID3 path does with a frame it must drop.
+// Best-effort: cue handling never fails an otherwise good conversion.
+export function shiftFlacCues(file: string, shift?: CueShift): void {
+  if (!shift) return
+  try {
+    const f = TagFile.createFromPath(file)
+    try {
+      const xiph = f.getTag(TagTypes.Xiph, false) as XiphComment | null
+      const armored = xiph?.getField(FLAC_CUE_FIELD)?.[0]
+      if (!xiph || !armored) return
+      const patched = shiftTraktorCues(decodeBase91(armored), shift.shiftMs, shift.maxMs, shift.bpm)
+      if (patched) xiph.setFieldAsStrings(FLAC_CUE_FIELD, encodeBase91(patched))
+      else xiph.removeField(FLAC_CUE_FIELD)
+      f.save()
+    } finally {
+      f.dispose()
+    }
+  } catch {
+    // Same bargain as the ID3 side: never break a successful conversion.
   }
 }
 
