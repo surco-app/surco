@@ -1152,11 +1152,6 @@ export async function convertAudio(
           dest: tmp,
           shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
         })
-      // FLAC needs the opposite treatment: its TRAKTOR4 Vorbis comment rides the
-      // re-encode by itself, so only a trim needs handling — and the armored blob
-      // can't be re-anchored, so it goes (see tags.ts).
-      else if (ext === '.flac' && trimAf !== undefined)
-        await runInWorker({ type: 'dropFlacCueComment', file: tmp })
     }
     // Last touch before the rename so the header rides the same atomic landing.
     // Only when there's a cover to show — the header exists solely for Finder's
