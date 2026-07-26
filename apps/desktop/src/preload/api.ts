@@ -39,6 +39,10 @@ export interface Api {
   version: string
   getPathForFile: (file: File) => string
   expandPaths: (paths: string[]) => Promise<string[]>
+  // Fires with each batch of audio files an in-flight expandPaths uncovers, so the list
+  // fills during a slow (network) folder walk instead of only when it finishes. The
+  // batches add up to the same set expandPaths resolves with — an early view, not extra.
+  onExpandedBatch: (cb: (paths: string[]) => void) => () => void
   takePendingFiles: () => Promise<string[]>
   onOpenFiles: (cb: (paths: string[]) => void) => () => void
   onFoldersChanged: (cb: (root: string, files: string[]) => void) => () => void
