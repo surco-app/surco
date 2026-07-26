@@ -753,7 +753,11 @@ describe('runProcessTrack — Engine DJ', () => {
     const deps = makeDeps({ settings: settings({ addToEngineDj: true }) })
     await runProcessTrack(job({ coverPath: '/art/cover.jpg' }), deps)
 
-    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, '/tmp/cover.jpg')
+    expect(deps.addToEngineDj).toHaveBeenCalledWith(
+      '/out/Artist - Title.aiff',
+      {},
+      '/tmp/cover.jpg',
+    )
     // The job's own cover preparation is the only one — no second extraction pass.
     expect(deps.prepareProcessedCover).toHaveBeenCalledTimes(1)
   })

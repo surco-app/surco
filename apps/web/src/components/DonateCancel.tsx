@@ -13,7 +13,7 @@ const COPY = {
   },
   en: {
     title: 'Your donation was cancelled',
-    body: "No worries — thanks for even considering it. Surco is free and will stay free; donations are what keep its development going. If it ever saves you a few hours, the button will still be here.",
+    body: 'No worries — thanks for even considering it. Surco is free and will stay free; donations are what keep its development going. If it ever saves you a few hours, the button will still be here.',
     retry: 'Donate with PayPal',
     home: 'Back to home',
   },

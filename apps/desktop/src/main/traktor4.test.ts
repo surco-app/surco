@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { shiftTraktorCues } from './traktor4'
 import {
   buildTraktorTree as buildTree,
-  readTraktorCueStart as readStart,
   traktorCue as cue,
+  readTraktorCueStart as readStart,
 } from './traktor4Fixture'
 
 describe('shiftTraktorCues', () => {

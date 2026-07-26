@@ -1,6 +1,6 @@
 import type React from 'react'
-import { CheckboxRow } from './CheckboxRow'
 import { SECTION_SUBHEAD } from '../SectionSubhead'
+import { CheckboxRow } from './CheckboxRow'
 
 // The shared building blocks every settings tab draws from, so the panels read as one
 // system instead of each tab hand-rolling its own label/hint/eyebrow and its own margins.
@@ -76,9 +76,7 @@ export function SettingsSection({
   children: React.ReactNode
 }): React.JSX.Element {
   return (
-    <section
-      className={first ? '' : 'mt-6 border-t border-[var(--color-line)] pt-5'}
-    >
+    <section className={first ? '' : 'mt-6 border-t border-[var(--color-line)] pt-5'}>
       {eyebrow && <SettingsEyebrow className="mb-3">{eyebrow}</SettingsEyebrow>}
       {children}
     </section>
@@ -101,9 +99,7 @@ export function SettingsField({
 }): React.JSX.Element {
   return (
     <div className="flex flex-col gap-2">
-      {label && (
-        <SettingsLabel htmlFor={htmlFor}>{label}</SettingsLabel>
-      )}
+      {label && <SettingsLabel htmlFor={htmlFor}>{label}</SettingsLabel>}
       {children}
       {hint && <SettingsHint>{hint}</SettingsHint>}
     </div>
@@ -151,7 +147,9 @@ export function SettingsCheckboxField({
       {/* The hint follows the row's dimmed/enabled state so a disabled option greys out as
           one unit; CheckboxRow already dims its own row, so only the hint needs it here. */}
       {hint && (
-        <SettingsHint className={`mt-1.5 pl-7 ${disabled ? 'opacity-50' : ''}`}>{hint}</SettingsHint>
+        <SettingsHint className={`mt-1.5 pl-7 ${disabled ? 'opacity-50' : ''}`}>
+          {hint}
+        </SettingsHint>
       )}
     </div>
   )

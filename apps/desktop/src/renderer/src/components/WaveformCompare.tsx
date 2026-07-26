@@ -11,12 +11,12 @@ import type {
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useWaveform, useWaveformScan } from '../hooks/useWaveform'
 import { useWaveformWindow, windowFor } from '../hooks/useWaveformWindow'
-import { formatDb } from '../lib/quality'
 import { formatTime, timeTicks } from '../lib/duration'
+import { formatDb } from '../lib/quality'
 import { clippedCount, drawWaveform, previewPeaks } from '../lib/waveform'
 import { Tooltip } from './Tooltip'
-import { ZoomStepper } from './ZoomStepper'
 import { WaveformSkeleton } from './WaveformSkeleton'
+import { ZoomStepper } from './ZoomStepper'
 
 // Half the player strip's raster per side-by-side column (each sits in half the
 // panel width); the overlaid canvas spans the panel, so it gets the full raster.
@@ -78,9 +78,7 @@ function useStripData(path: string, enabled: boolean): StripData {
   const { data: peaks } = useWaveform(path, enabled)
   const { data: scan } = useWaveformScan(path, enabled)
   const { data: loudness } = useTrackLoudness(path, enabled)
-  const wave = peaks
-    ? { ...peaks, clipped: scan?.clipped, channels: scan?.channels }
-    : peaks
+  const wave = peaks ? { ...peaks, clipped: scan?.clipped, channels: scan?.channels } : peaks
   // Skeleton from the moment the strip is enabled until the wave lands — not `isFetching`,
   // which is briefly false after enable but before the query starts, leaving an empty
   // canvas. Same rule Trim/Grid use (`open && !wave`) so no blank strip shows on open.
@@ -205,7 +203,8 @@ export function Strip({
       canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
       return
     }
-    if (background) drawWaveform(canvas, background.peaks, { color: BEFORE_COLOR, rms: background.rms })
+    if (background)
+      drawWaveform(canvas, background.peaks, { color: BEFORE_COLOR, rms: background.rms })
     // With no dB line dialed in, the red marks come from the decoder's true-clipping
     // flags — drawWaveform only consults them when clipDb/limitDb are absent.
     const lanes = split && wave.channels?.length === 2 ? wave.channels : null
@@ -419,7 +418,8 @@ export function Strip({
     return {
       time: formatTime(hover.ratio * wave.durationSec),
       db: formatDb(shown > 0 ? 20 * Math.log10(shown) : Number.NEGATIVE_INFINITY),
-      over: markDb !== undefined ? amp > 10 ** (markDb / 20) : marks && wave.clipped?.[idx] === true,
+      over:
+        markDb !== undefined ? amp > 10 ** (markDb / 20) : marks && wave.clipped?.[idx] === true,
     }
   })()
   return (
@@ -611,7 +611,13 @@ function ClippedFlag({
 // and the converted file over it in blue. On barely-changed audio the two cover
 // each other, so an onion-skin fade slider crossfades the blue layer — scrubbing it
 // makes the difference move, which the eye catches where a static blend can't.
-function OverlayStrip({ before, after }: { before: StripData; after: StripData }): React.JSX.Element {
+function OverlayStrip({
+  before,
+  after,
+}: {
+  before: StripData
+  after: StripData
+}): React.JSX.Element {
   const { t: tr } = useTranslation()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [fade, setFade] = useState(0.5)
@@ -634,7 +640,9 @@ function OverlayStrip({ before, after }: { before: StripData; after: StripData }
           height={CANVAS_H}
           className="block h-24 w-full rounded-lg bg-[var(--color-field)]"
         />
-        {(before.loading || after.loading) && <WaveformSkeleton testid="waveform-compare-loading" />}
+        {(before.loading || after.loading) && (
+          <WaveformSkeleton testid="waveform-compare-loading" />
+        )}
       </div>
       <div className="mt-1.5 flex items-center justify-center gap-2">
         <span
@@ -730,7 +738,10 @@ export function WaveformSolo({
               label={tr('editor.waveformSource')}
               loudness={source.loudness}
             />
-            <span data-testid="waveform-preview" className="flex min-w-0 items-center gap-1.5 text-[10px]">
+            <span
+              data-testid="waveform-preview"
+              className="flex min-w-0 items-center gap-1.5 text-[10px]"
+            >
               <span
                 aria-hidden="true"
                 className="h-1.5 w-1.5 shrink-0 rounded-full"

@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackItem } from '../types'
-import {
-  clickSelect,
-  deselect,
-  editScope,
-  reanchorToVisible,
-  type Selection,
-} from './selection'
+import { clickSelect, deselect, editScope, reanchorToVisible, type Selection } from './selection'
 
 const ORDER = ['a', 'b', 'c', 'd']
 const empty: Selection = { ids: [], anchor: null }

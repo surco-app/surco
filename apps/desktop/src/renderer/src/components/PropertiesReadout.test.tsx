@@ -77,12 +77,7 @@ describe('PropertiesReadout two-column grid', () => {
   it('leaves every short row single-cell when the shorts come out even', () => {
     // Full props → AUDIO shorts = 8 (even), so none of them is stretched.
     render(
-      <PropertiesReadout
-        properties={props}
-        fileName="x"
-        inputPath="/x/x.flac"
-        duration={404}
-      />,
+      <PropertiesReadout properties={props} fileName="x" inputPath="/x/x.flac" duration={404} />,
     )
     expect(screen.getByTestId('property-duration').className).not.toContain('col-span-2')
   })

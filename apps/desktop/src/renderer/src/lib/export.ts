@@ -29,7 +29,7 @@ export function exportedPatch(
       stage: undefined,
       processedSignature: trackSignature(track),
       processedNormalize: normalize,
-    processedDeclick: declick,
+      processedDeclick: declick,
       // The staged state was just written out (here, into the Apple Music copy), so
       // nothing is at risk anymore: the session store stops persisting this track
       // and the reopen offer may expire freely again.

@@ -1,9 +1,15 @@
 import { useEffect, useRef } from 'react'
 
 const stops: [number, [number, number, number]][] = [
-  [0.0, [21, 22, 30]], [0.16, [31, 35, 53]], [0.32, [36, 54, 110]],
-  [0.48, [52, 84, 138]], [0.62, [90, 127, 214]], [0.74, [122, 162, 247]],
-  [0.86, [125, 207, 255]], [0.94, [187, 154, 247]], [1.0, [214, 240, 255]]
+  [0.0, [21, 22, 30]],
+  [0.16, [31, 35, 53]],
+  [0.32, [36, 54, 110]],
+  [0.48, [52, 84, 138]],
+  [0.62, [90, 127, 214]],
+  [0.74, [122, 162, 247]],
+  [0.86, [125, 207, 255]],
+  [0.94, [187, 154, 247]],
+  [1.0, [214, 240, 255]],
 ]
 
 function colormap(t: number): [number, number, number] {
@@ -16,7 +22,7 @@ function colormap(t: number): [number, number, number] {
       return [
         Math.round(ca[0] + (cb[0] - ca[0]) * u),
         Math.round(ca[1] + (cb[1] - ca[1]) * u),
-        Math.round(ca[2] + (cb[2] - ca[2]) * u)
+        Math.round(ca[2] + (cb[2] - ca[2]) * u),
       ]
     }
   }
@@ -69,7 +75,7 @@ const ticks = [20, 15, 10, 5]
 export default function Spectrogram({
   suspect = false,
   axis = false,
-  label
+  label,
 }: {
   suspect?: boolean
   axis?: boolean
@@ -114,7 +120,7 @@ export default function Spectrogram({
         style={{
           animation: 'scan 4.5s linear infinite',
           background: '#7dcfff',
-          boxShadow: '0 0 14px 2px rgba(125,207,255,0.6)'
+          boxShadow: '0 0 14px 2px rgba(125,207,255,0.6)',
         }}
       />
       {axis && (

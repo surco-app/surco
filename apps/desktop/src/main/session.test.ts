@@ -1,5 +1,4 @@
-import { afterAll, describe, expect, it } from 'vitest'
-import { vi } from 'vitest'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 
 // session.ts persists to app.getPath('userData')/session.json; point Electron at a
 // throwaway temp dir and exercise the real save/load round-trip. nativeImage backs

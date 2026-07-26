@@ -291,11 +291,7 @@ describe('CoverPicker drag and counter', () => {
     const dupRelease = {
       id: 2,
       title: 'Album',
-      images: [
-        { uri: 'http://a/1.jpg' },
-        { uri: 'http://a/1.jpg' },
-        { uri: 'http://a/2.jpg' },
-      ],
+      images: [{ uri: 'http://a/1.jpg' }, { uri: 'http://a/1.jpg' }, { uri: 'http://a/2.jpg' }],
     } as unknown as React.ComponentProps<typeof CoverPicker>['release']
     render(
       <CoverPicker

@@ -125,7 +125,10 @@ describe('ExportModal', () => {
   // export still works, but the user must be warned they're exporting originals, not copies.
   it('warns when some tracks have not been converted', () => {
     render(
-      <ExportModal tracks={[track(), { ...track(), outputPath: '/out/b.aiff' }]} onClose={vi.fn()} />,
+      <ExportModal
+        tracks={[track(), { ...track(), outputPath: '/out/b.aiff' }]}
+        onClose={vi.fn()}
+      />,
     )
     expect(screen.getByTestId('export-unconverted')).toHaveTextContent('1')
   })

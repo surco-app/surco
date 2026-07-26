@@ -337,7 +337,11 @@ describe('QualityFilterBar', () => {
   // so acting on the fakes doesn't mean opening ⌘K or the row menu one file at a time.
   it('offers a trash-suspects button only while the suspect filter is active and holds fakes', () => {
     const onTrashSuspects = vi.fn()
-    renderBar({ value: sel({ quality: 'suspect' }), tally: tally({ suspect: 13 }), onTrashSuspects })
+    renderBar({
+      value: sel({ quality: 'suspect' }),
+      tally: tally({ suspect: 13 }),
+      onTrashSuspects,
+    })
     fireEvent.click(screen.getByTestId('trash-suspects'))
     expect(onTrashSuspects).toHaveBeenCalledOnce()
   })

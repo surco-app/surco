@@ -3,11 +3,11 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../../shared/editorSections'
-import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import i18n from '../../i18n'
 
 // DestinationTab reads window.api.platform at module scope (isMacOS), so the bridge
 // must exist before the module loads — hence the dynamic import below.
+import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 ;(window as unknown as { api: unknown }).api = { platform: 'darwin' }
 const { DestinationTab } = await import('./DestinationTab')
 

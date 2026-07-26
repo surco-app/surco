@@ -45,7 +45,6 @@ describe('sanitizeOutputName', () => {
 })
 
 describe('resolveOutputTarget', () => {
-
   // The editor's explicit "Re-encode" action: same format, but the user asked for a
   // real conversion — it must land in the output folder, leaving the original alone.
   // Overwrite mode is the exception: rewriting the source is its whole contract.

@@ -140,7 +140,11 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
           label={tr('settings.titleFormat')}
           value={synced.titleFormat}
           placeholder="({trackNumber}) {title} ({year})"
-          hint={<p className="mt-2 text-xs leading-relaxed text-fg-dim">{tr('settings.titleFormatHint')}</p>}
+          hint={
+            <p className="mt-2 text-xs leading-relaxed text-fg-dim">
+              {tr('settings.titleFormatHint')}
+            </p>
+          }
           preview={
             synced.titleFormat.trim() !== ''
               ? renderTitle(synced.titleFormat, SAMPLE_META) || '—'

@@ -151,12 +151,12 @@ describe('QualitySection verdict caption', () => {
   // must describe the observation, never name a bitrate — a guess an expert spots instantly.
   // The bad/transcode captions are exempt: a detected knee IS a lossy signature, so naming
   // it is a measurement, not a guess.
-  it.each([
-    'editor.qualityCaptionGood',
-    'editor.qualityCaptionWarn',
-  ])('does not pin a specific source bitrate in %s', (key) => {
-    expect(i18n.t(key, { cutoff: '19.0 kHz' })).not.toMatch(/kbps/)
-  })
+  it.each(['editor.qualityCaptionGood', 'editor.qualityCaptionWarn'])(
+    'does not pin a specific source bitrate in %s',
+    (key) => {
+      expect(i18n.t(key, { cutoff: '19.0 kHz' })).not.toMatch(/kbps/)
+    },
+  )
 
   // For sound engineers the caption is a data readout, not coaching: it states what was
   // measured and stops. The spectrogram above it already invites a listen, so an advice

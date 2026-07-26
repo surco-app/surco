@@ -2,8 +2,8 @@ import { Check, ChevronDown, ChevronUp, GripVertical, Wand2 } from 'lucide-react
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Tooltip } from './Tooltip'
 import { FIELD_DEFS, moveItem, sortFieldsByGroup } from '../lib/fields'
+import { Tooltip } from './Tooltip'
 
 // How long the auto-organize button holds its "done" confirmation before reverting.
 const ORGANIZED_FEEDBACK_MS = 1500
@@ -103,7 +103,8 @@ export function FieldsEditor({
               onDragLeave={() => setDropKey((k) => (k === key ? null : k))}
               onDrop={(e) => {
                 e.preventDefault()
-                if (dragKey && dragKey !== key) onChangeVisible(reorder(visibleFields, dragKey, key))
+                if (dragKey && dragKey !== key)
+                  onChangeVisible(reorder(visibleFields, dragKey, key))
                 setDragKey(null)
                 setDropKey(null)
               }}

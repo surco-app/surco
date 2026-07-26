@@ -60,9 +60,7 @@ describe('CommandPalette', () => {
         onClose={() => {}}
       />,
     )
-    const headers = screen
-      .getAllByTestId('palette-group-header')
-      .map((el) => el.textContent)
+    const headers = screen.getAllByTestId('palette-group-header').map((el) => el.textContent)
     expect(headers).toEqual(['Metadata', 'Convert & export', 'Application'])
     const items = screen.getAllByTestId('palette-item').map((el) => el.textContent)
     expect(items).toEqual(['fill-all', 'export', 'help'])

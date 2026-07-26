@@ -8,16 +8,14 @@ import type { ReactNode } from 'react'
 export default function Band({
   children,
   tone = 'raised',
-  className = ''
+  className = '',
 }: {
   children: ReactNode
   tone?: 'deep' | 'raised'
   className?: string
 }) {
   const bg =
-    tone === 'deep'
-      ? 'border-y border-line/50 bg-bg2'
-      : 'border-y border-line/40 bg-surface2/30'
+    tone === 'deep' ? 'border-y border-line/50 bg-bg2' : 'border-y border-line/40 bg-surface2/30'
   return (
     <div className={`relative ml-[calc(50%-50vw)] w-screen ${bg} ${className}`}>
       <div className="mx-auto max-w-5xl px-6">{children}</div>

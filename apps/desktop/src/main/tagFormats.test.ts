@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type Reader, detectTagFormats } from './tagFormats'
+import { detectTagFormats, type Reader } from './tagFormats'
 
 const readerOf =
   (buf: Buffer): Reader =>

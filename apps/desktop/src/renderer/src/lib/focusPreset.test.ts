@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { activeFocusPreset, DEFAULT_RESULTS_WIDTH, FOCUS_PRESETS, focusPresetWidth } from './focusPreset'
+import {
+  activeFocusPreset,
+  DEFAULT_RESULTS_WIDTH,
+  FOCUS_PRESETS,
+  focusPresetWidth,
+} from './focusPreset'
 
 describe('FOCUS_PRESETS', () => {
   it('lists match, balanced and edit in that left-to-right order', () => {

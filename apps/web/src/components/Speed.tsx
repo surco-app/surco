@@ -6,7 +6,10 @@ const TIMES = ['~45 s', '~45 s', '~60 s', '~90 s', '~30 s']
 
 export default function Speed() {
   const { t } = useTranslation()
-  const manualSteps = t('speed.manualSteps', { returnObjects: true }) as { app: string; label: string }[]
+  const manualSteps = t('speed.manualSteps', { returnObjects: true }) as {
+    app: string
+    label: string
+  }[]
   const bullets = t('speed.bullets', { returnObjects: true }) as string[]
 
   return (

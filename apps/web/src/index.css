@@ -63,46 +63,105 @@ button:not(:disabled) {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 @keyframes scan {
-  0% { left: 0; opacity: 0; }
-  8% { opacity: 1; }
-  92% { opacity: 1; }
-  100% { left: 100%; opacity: 0; }
+  0% {
+    left: 0;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
 }
 @keyframes fill {
-  0% { width: 0; }
-  60% { width: 72%; }
-  100% { width: 72%; }
+  0% {
+    width: 0;
+  }
+  60% {
+    width: 72%;
+  }
+  100% {
+    width: 72%;
+  }
 }
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 @keyframes eq {
-  0%, 100% { transform: scaleY(0.35); }
-  50% { transform: scaleY(1); }
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
 }
 @keyframes glow {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.9; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.9;
+  }
 }
 @keyframes fillSlow {
-  0% { width: 0; }
-  88% { width: 100%; }
-  100% { width: 100%; }
+  0% {
+    width: 0;
+  }
+  88% {
+    width: 100%;
+  }
+  100% {
+    width: 100%;
+  }
 }
 @keyframes fillSnap {
-  0% { width: 0; }
-  16% { width: 100%; }
-  100% { width: 100%; }
+  0% {
+    width: 0;
+  }
+  16% {
+    width: 100%;
+  }
+  100% {
+    width: 100%;
+  }
 }
 @keyframes popcheck {
-  0%, 14% { opacity: 0; transform: scale(0.6); }
-  22% { opacity: 1; transform: scale(1.15); }
-  30%, 100% { opacity: 1; transform: scale(1); }
+  0%,
+  14% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  22% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  30%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* scroll-triggered reveal. Directional variants are declared before .reveal-in

@@ -2,13 +2,13 @@ import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'nod
 import { join } from 'node:path'
 import { app } from 'electron'
 import { autoMatchAvailable } from '../shared/autoMatch'
+import { DEFAULT_DECLICK, normalizeDeclick } from '../shared/declick'
 import {
   DEFAULT_DISCOGS_MAX_RESULTS,
   DEFAULT_FIELDS,
   DEFAULT_REQUIRED_FIELDS,
   SEARCH_PROVIDERS,
 } from '../shared/defaults'
-import { DEFAULT_DECLICK, normalizeDeclick } from '../shared/declick'
 import { DEFAULT_EDITOR_SECTIONS } from '../shared/editorSections'
 import { FORMAT_SETTINGS } from '../shared/outputFormats'
 import type { FormatSetting, Settings } from '../shared/types'
@@ -239,7 +239,10 @@ function writeAtomic(path: string, value: unknown): void {
 // key). A raw patch would bypass both — a compromised renderer, or a bug, could
 // zero out or inflate a user's lifetime stats in one call. commandUsage is exempt:
 // the command palette patches it directly and legitimately on every run.
-const INTERNAL_ONLY_KEYS = ['stats', 'conversionCount'] as const satisfies readonly (keyof Settings)[]
+const INTERNAL_ONLY_KEYS = [
+  'stats',
+  'conversionCount',
+] as const satisfies readonly (keyof Settings)[]
 
 export function sanitizeSettingsPatch(patch: Partial<Settings>): Partial<Settings> {
   const clean = { ...patch }
