@@ -210,8 +210,22 @@ export function Player({
   return (
     <div
       data-testid="player"
-      className="group/player shrink-0 animate-player-in overflow-hidden border-t border-[var(--color-line-strong)] bg-[var(--color-panel-2)] shadow-[0_-1px_0_var(--color-line),0_-8px_20px_-12px_rgba(0,0,0,0.35)]"
+      className="group/player relative shrink-0 animate-player-in overflow-hidden border-t border-[var(--color-line-strong)] bg-[var(--color-panel-2)] shadow-[0_-1px_0_var(--color-line),0_-8px_20px_-12px_rgba(0,0,0,0.35)]"
     >
+      {/* Dismissal belongs to the card, so it sits in the card's own top-right corner the
+          way any closable panel does — not in the transport, where an exit sat one stray
+          click from pause. The title row reserves room for it with padding, so a long name
+          runs into the ellipsis rather than under the glyph. */}
+      <button
+        type="button"
+        data-testid="player-close"
+        onClick={onClose}
+        aria-label={t('player.close')}
+        className="press absolute top-1.5 right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
+      >
+        <X className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+
       {/* The card reads as three stacked bands — identity, wave, transport — and nothing
           shares a line with anything else. Cover plus title and artist here; the wave below;
           the controls on their own row at the foot. Giving the title the full width is the
@@ -219,7 +233,7 @@ export function Player({
           long remix names into an ellipsis. items-start aligns the cover's top with the title
           (the visual anchor): the bold title carries the weight up top, so centring the square
           cover read as if it had sagged. */}
-      <div className="flex items-start gap-2.5 px-3 pt-2.5">
+      <div className="flex items-start gap-2.5 py-2.5 pr-9 pl-3">
         {/* The cover as a 40px vinyl: flat disc with thin groove rings, the art clipped
             into the center label (brand-accent label when the file has no art), a spindle
             dot on top. It spins only while sound is actually playing — paused or buffering
@@ -275,7 +289,7 @@ export function Player({
           the two layouts swap (see useLayoutEffect). */}
       <div ref={sectionRef} className="player-section overflow-hidden">
         {showWaveform ? (
-          <div className="relative mt-2">
+          <div className="relative">
             <Waveform
               key={track.inputPath}
               inputPath={track.inputPath}
@@ -421,18 +435,6 @@ export function Player({
           >
             <Crosshair className="h-3.5 w-3.5" aria-hidden="true" />
             <Tooltip label={t('player.reveal')} />
-          </button>
-
-          {/* Close held a touch apart — an exit, not a control, so a stray click doesn't
-            kill the player in place of a toggle. */}
-          <button
-            type="button"
-            data-testid="player-close"
-            onClick={onClose}
-            aria-label={t('player.close')}
-            className="press ml-0.5 flex h-7 w-7 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
-          >
-            <X className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         </div>
       </div>

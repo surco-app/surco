@@ -10,9 +10,9 @@ import { WaveformSkeleton } from './WaveformSkeleton'
 // buckets, so ~half a bucket per device pixel at typical panel widths —
 // resolution-independent enough without a resize observer.
 const CANVAS_W = 1200
-// 128 keeps the raster 1:1 with device pixels at the strip's 64px CSS height on @2x
-// displays — the height the raster is scaled to, so it must track the h-16 below.
-const CANVAS_H = 128
+// 96 keeps the raster 1:1 with device pixels at the strip's 48px CSS height on @2x
+// displays — the height the raster is scaled to, so it must track the h-12 below.
+const CANVAS_H = 96
 
 // The player's scrubbable waveform. Clicking or dragging seeks (onScrub gets the
 // position in seconds); the playhead follows playback while `active`.
@@ -126,7 +126,7 @@ export function Waveform({
         ref={canvasRef}
         width={CANVAS_W}
         height={CANVAS_H}
-        className="block h-16 w-full opacity-35"
+        className="block h-12 w-full opacity-35"
       />
       <canvas
         ref={playedCanvasRef}
