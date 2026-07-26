@@ -19,6 +19,10 @@
       {
         "text": "Al arrastrar una carpeta ya no se amontonan avisos de «ya está en la lista»: las pistas que Surco va encontrando mientras recorre la carpeta ya no se confunden con archivos repetidos.",
         "in": "0.75.1"
+      },
+      {
+        "text": "Al importar una carpeta ya no aparecen pistas repetidas en la lista: algunas se colaban dos veces cuando Surco encontraba varias subcarpetas a la vez, sobre todo en discos locales rápidos.",
+        "in": "0.75.2"
       }
     ]
   },

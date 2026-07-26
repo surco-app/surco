@@ -19,6 +19,10 @@
       {
         "text": "Dropping a folder no longer piles up “already in the list” notices: the tracks Surco turns up while walking the folder are no longer mistaken for duplicate files.",
         "in": "0.75.1"
+      },
+      {
+        "text": "Importing a folder no longer leaves repeated tracks in the list: some slipped in twice when Surco turned up several subfolders at once, most often on fast local drives.",
+        "in": "0.75.2"
       }
     ]
   },
