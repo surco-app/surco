@@ -171,6 +171,7 @@
     "waveformHelp": "Afficher la forme d'onde. La masquer évite son analyse — utile pour les gros fichiers ou les disques réseau.",
     "seek": "Se déplacer",
     "volume": "Volume",
+    "unmute": "Réactiver le son",
     "reveal": "Afficher le morceau en cours dans la liste",
     "close": "Fermer le lecteur"
   },

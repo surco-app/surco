@@ -171,6 +171,7 @@
     "waveformHelp": "Die Wellenform anzeigen. Ausblenden überspringt die Wellenform-Analyse — nützlich bei großen Dateien oder Netzlaufwerken.",
     "seek": "Spulen",
     "volume": "Lautstärke",
+    "unmute": "Ton einschalten",
     "reveal": "Den laufenden Track in der Liste zeigen",
     "close": "Player schließen"
   },
