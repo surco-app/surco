@@ -71,13 +71,7 @@ const GLYPHS = {
 
 export type GlyphName = keyof typeof GLYPHS
 
-export default function Icon({
-  name,
-  className = '',
-}: {
-  name: GlyphName
-  className?: string
-}) {
+export default function Icon({ name, className = '' }: { name: GlyphName; className?: string }) {
   return (
     <svg
       className={className}

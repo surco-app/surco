@@ -96,7 +96,13 @@ describe('fromDestination', () => {
       const { addToAppleMusic, overwriteOriginal, addToEngineDj, convertBesideOriginal } =
         fromDestination(d)
       expect(
-        toDestination(addToAppleMusic, false, overwriteOriginal, addToEngineDj, convertBesideOriginal),
+        toDestination(
+          addToAppleMusic,
+          false,
+          overwriteOriginal,
+          addToEngineDj,
+          convertBesideOriginal,
+        ),
       ).toBe(d)
     }
   })

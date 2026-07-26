@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type KeyLike, chordEquals, chordToAccelerator, eventToChord } from './shortcuts'
+import { chordEquals, chordToAccelerator, eventToChord, type KeyLike } from './shortcuts'
 
 function key(k: string, mods: Partial<Omit<KeyLike, 'key'>> = {}): KeyLike {
   return { key: k, metaKey: false, ctrlKey: false, shiftKey: false, ...mods }

@@ -369,7 +369,12 @@ describe('staleLibraryCopy', () => {
   // must never be offered for deletion.
   it('returns null when no library entry matches the candidate', () => {
     const idx = buildLibraryIndex([
-      { title: 'Ghosts n Stuff', artist: 'deadmau5', durationSec: 200, persistentId: 'AAAABBBBCCCCDDDD' },
+      {
+        title: 'Ghosts n Stuff',
+        artist: 'deadmau5',
+        durationSec: 200,
+        persistentId: 'AAAABBBBCCCCDDDD',
+      },
     ])
     const candidate = { title: 'Strobe', artist: 'deadmau5', durationSec: 634 }
     expect(staleLibraryCopy(idx, candidate, 'NEWCOPY123456789')).toBe(null)

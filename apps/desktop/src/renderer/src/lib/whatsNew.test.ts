@@ -39,7 +39,11 @@ describe('selectWhatsNew', () => {
   // updates to 0.33.1 must see only what the patch shipped, not the whole minor
   // they already read about.
   it('shows only the items shipped after the last seen version', () => {
-    const result = selectWhatsNew(releases, settings({ lastSeenChangelogVersion: '0.33.0' }), '0.33.1')
+    const result = selectWhatsNew(
+      releases,
+      settings({ lastSeenChangelogVersion: '0.33.0' }),
+      '0.33.1',
+    )
     expect(result).toEqual([
       { version: '0.33', title: 'Novedades y avisos', items: ['Arreglo del análisis a 48 kHz.'] },
     ])
@@ -48,14 +52,22 @@ describe('selectWhatsNew', () => {
   // Skipping releases must not lose news: 0.32.2 → 0.33.1 covers both 0.33 patches,
   // grouped under their minor so the titles give each batch its context.
   it('accumulates items across skipped versions, grouped by minor', () => {
-    const result = selectWhatsNew(releases, settings({ lastSeenChangelogVersion: '0.32.0' }), '0.33.1')
+    const result = selectWhatsNew(
+      releases,
+      settings({ lastSeenChangelogVersion: '0.32.0' }),
+      '0.33.1',
+    )
     expect(result).toEqual([
       {
         version: '0.33',
         title: 'Novedades y avisos',
         items: ['Popup de novedades tras actualizar.', 'Arreglo del análisis a 48 kHz.'],
       },
-      { version: '0.32', title: 'Deshacer, sesiones que vuelven y ALAC', items: ['Exportación M3U8 corregida.'] },
+      {
+        version: '0.32',
+        title: 'Deshacer, sesiones que vuelven y ALAC',
+        items: ['Exportación M3U8 corregida.'],
+      },
     ])
   })
 
@@ -63,7 +75,11 @@ describe('selectWhatsNew', () => {
   // "what's new" would be noise on top of the onboarding wizard.
   it('returns null on a fresh install', () => {
     expect(
-      selectWhatsNew(releases, settings({ hasSeenOnboarding: false, lastSeenChangelogVersion: '' }), '0.33.1'),
+      selectWhatsNew(
+        releases,
+        settings({ hasSeenOnboarding: false, lastSeenChangelogVersion: '' }),
+        '0.33.1',
+      ),
     ).toBeNull()
   })
 
@@ -83,26 +99,38 @@ describe('selectWhatsNew', () => {
 
   // Once seen, seen: the popup fires once per update, never on every launch.
   it('returns null when the current version was already seen', () => {
-    expect(selectWhatsNew(releases, settings({ lastSeenChangelogVersion: '0.33.1' }), '0.33.1')).toBeNull()
+    expect(
+      selectWhatsNew(releases, settings({ lastSeenChangelogVersion: '0.33.1' }), '0.33.1'),
+    ).toBeNull()
   })
 
   // A pure-fix patch adds no stamped items; an empty popup would train the user to
   // dismiss it without reading.
   it('returns null when nothing user-facing shipped in between', () => {
-    expect(selectWhatsNew(releases, settings({ lastSeenChangelogVersion: '0.32.2' }), '0.32.3')).toBeNull()
+    expect(
+      selectWhatsNew(releases, settings({ lastSeenChangelogVersion: '0.32.2' }), '0.32.3'),
+    ).toBeNull()
   })
 
   // Unstamped (pre-feature) items have no version to filter by, so they never
   // qualify — even on the no-stamp fallback path.
   it('never surfaces unstamped items', () => {
-    const result = selectWhatsNew(releases, settings({ lastSeenChangelogVersion: '0.30.0' }), '0.33.1')
+    const result = selectWhatsNew(
+      releases,
+      settings({ lastSeenChangelogVersion: '0.30.0' }),
+      '0.33.1',
+    )
     expect(result?.some((r) => r.version === '0.31')).toBe(false)
   })
 
   // Downgrades and corrupt stamps fail closed: showing the popup on every launch is
   // exactly what the stored stamp exists to prevent.
   it('returns null on a downgrade or an unparseable stamp', () => {
-    expect(selectWhatsNew(releases, settings({ lastSeenChangelogVersion: '0.34.0' }), '0.33.1')).toBeNull()
-    expect(selectWhatsNew(releases, settings({ lastSeenChangelogVersion: 'garbage' }), '0.33.1')).toBeNull()
+    expect(
+      selectWhatsNew(releases, settings({ lastSeenChangelogVersion: '0.34.0' }), '0.33.1'),
+    ).toBeNull()
+    expect(
+      selectWhatsNew(releases, settings({ lastSeenChangelogVersion: 'garbage' }), '0.33.1'),
+    ).toBeNull()
   })
 })

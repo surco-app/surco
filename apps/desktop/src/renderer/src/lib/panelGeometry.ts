@@ -28,10 +28,7 @@ export function clampPanelGeometry(
   saved: SavedPanelGeometry | undefined,
   viewport: { width: number; height: number },
 ): PanelGeometry {
-  if (
-    !saved ||
-    ![saved.x, saved.y, saved.width, saved.height].every((n) => Number.isFinite(n))
-  )
+  if (!saved || ![saved.x, saved.y, saved.width, saved.height].every((n) => Number.isFinite(n)))
     return DEFAULT_GEOMETRY
   return {
     // The same reachability clamp the drag applies: part of the header must stay on screen.

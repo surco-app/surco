@@ -11,8 +11,7 @@ const MODES = ['off', 'soft', 'standard', 'strong'] as const
 // original strings, and a short-lived dev shape stored {mode, sensitivity} — its
 // mode survives, anything else falls back to off.
 export function normalizeDeclick(value: unknown): DeclickMode {
-  if (typeof value === 'string' && MODES.includes(value as DeclickMode))
-    return value as DeclickMode
+  if (typeof value === 'string' && MODES.includes(value as DeclickMode)) return value as DeclickMode
   if (typeof value === 'object' && value !== null) {
     const mode = (value as { mode?: unknown }).mode
     if (typeof mode === 'string' && MODES.includes(mode as DeclickMode)) return mode as DeclickMode

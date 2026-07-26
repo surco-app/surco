@@ -214,9 +214,13 @@ describe('attention filter (silence to trim, clipping)', () => {
   })
 
   it('stacks with the other axes like any dimension', () => {
-    const done = [{ ...t('trimmed-already', { silence: true, clipping: false }), status: 'done' }] as TrackItem[]
+    const done = [
+      { ...t('trimmed-already', { silence: true, clipping: false }), status: 'done' },
+    ] as TrackItem[]
     expect(
-      by([...tracks, ...done], { attention: 'silence', conversion: 'unconverted' }).map((x) => x.id),
+      by([...tracks, ...done], { attention: 'silence', conversion: 'unconverted' }).map(
+        (x) => x.id,
+      ),
     ).toEqual(['quiet-tail', 'both'])
   })
 })

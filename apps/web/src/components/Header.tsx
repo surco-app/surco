@@ -57,7 +57,9 @@ export default function Header({ page }: { page?: Page }) {
   return (
     <header
       className={`sticky top-0 z-40 transition-colors duration-300 ${
-        scrolled ? 'border-b border-line/70 bg-bg/80 backdrop-blur-md' : 'border-b border-transparent'
+        scrolled
+          ? 'border-b border-line/70 bg-bg/80 backdrop-blur-md'
+          : 'border-b border-transparent'
       }`}
     >
       <a
@@ -68,7 +70,10 @@ export default function Header({ page }: { page?: Page }) {
       </a>
       <div
         className="mx-auto flex max-w-5xl items-center justify-between px-6 transition-all duration-300"
-        style={{ paddingTop: scrolled ? '0.7rem' : '1.25rem', paddingBottom: scrolled ? '0.7rem' : '1.25rem' }}
+        style={{
+          paddingTop: scrolled ? '0.7rem' : '1.25rem',
+          paddingBottom: scrolled ? '0.7rem' : '1.25rem',
+        }}
       >
         <a href={page ? home : '#top'} className="flex items-center gap-3">
           <img
@@ -127,11 +132,29 @@ export default function Header({ page }: { page?: Page }) {
             className="flex h-11 w-11 items-center justify-center rounded-full border border-line text-muted transition-colors hover:border-blue/50 hover:text-fg lg:hidden"
           >
             {open ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
                 <path d="M6 6l12 12M18 6L6 18" />
               </svg>
             ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
                 <path d="M4 7h16M4 12h16M4 17h16" />
               </svg>
             )}
@@ -147,7 +170,9 @@ export default function Header({ page }: { page?: Page }) {
         id="mobile-nav"
         aria-hidden={!open}
         className={`absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-t bg-bg/95 backdrop-blur-md transition-[opacity,translate,visibility] duration-200 ease-out lg:hidden ${
-          open ? 'border-line/70 opacity-100' : 'invisible -translate-y-2 border-transparent opacity-0'
+          open
+            ? 'border-line/70 opacity-100'
+            : 'invisible -translate-y-2 border-transparent opacity-0'
         }`}
       >
         <div className="mx-auto max-w-5xl px-6 py-2">

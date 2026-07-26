@@ -6,8 +6,8 @@ import { type AppleMusicIndex, isInLibrary } from '../lib/appleMusicLibrary'
 import {
   autoMatchRelease,
   MAX_AUTO_PROBE,
-  matchActivityReport,
   type MatchCleanup,
+  matchActivityReport,
   matchTargetOf,
   type ProbedCandidate,
   type SearchApi,

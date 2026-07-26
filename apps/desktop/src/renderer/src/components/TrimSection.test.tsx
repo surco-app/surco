@@ -356,7 +356,7 @@ describe('TrimSection', () => {
   // Placing a cut is one gesture: pressing anywhere in a lane drops THAT lane's
   // handle under the pointer, and releasing commits — no drag needed. Each lane
   // owns one bound, so a press can never move the wrong one.
-  it('places a lane\'s cut where the wave is pressed', async () => {
+  it("places a lane's cut where the wave is pressed", async () => {
     const onChange = vi.fn()
     render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
     const overlay = await screen.findByTestId('trim-overlay-start', undefined, { timeout: 3000 })

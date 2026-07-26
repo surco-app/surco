@@ -36,9 +36,14 @@ export function registerExportIpc(): void {
     })
     if (canceled || !filePath) return null
     // Wrap only the write, not the dialog: the user's think-time is not work.
-    await activity.track('export', 'activity.exportRekordbox', () => writeFile(filePath, xml, 'utf8'), {
-      detail: filePath,
-    })
+    await activity.track(
+      'export',
+      'activity.exportRekordbox',
+      () => writeFile(filePath, xml, 'utf8'),
+      {
+        detail: filePath,
+      },
+    )
     return filePath
   })
 
@@ -51,9 +56,14 @@ export function registerExportIpc(): void {
       filters: [{ name: 'Traktor NML', extensions: ['nml'] }],
     })
     if (canceled || !filePath) return null
-    await activity.track('export', 'activity.exportTraktor', () => writeFile(filePath, nml, 'utf8'), {
-      detail: filePath,
-    })
+    await activity.track(
+      'export',
+      'activity.exportTraktor',
+      () => writeFile(filePath, nml, 'utf8'),
+      {
+        detail: filePath,
+      },
+    )
     return filePath
   })
 
@@ -85,7 +95,11 @@ export function registerExportIpc(): void {
   ipcMain.handle('dialog:exportQualityReport', async (_e, dataUrl: string, baseName: string) => {
     const base64 = dataUrl.replace(/^data:image\/png;base64,/, '')
     // The base name comes from track metadata, which can carry path separators.
-    const safe = baseName.replace(/[/\\:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim() || 'Surco'
+    const safe =
+      baseName
+        .replace(/[/\\:*?"<>|]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim() || 'Surco'
     const { canceled, filePath } = await dialog.showSaveDialog({
       title: 'Guarda el informe de calidad',
       defaultPath: `${safe}.png`,

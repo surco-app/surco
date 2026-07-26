@@ -106,8 +106,9 @@ describe('SettingsModal settings export', () => {
   // A failed export used to reject into the void: the click did nothing visible and no
   // file was written. It reports through the same alert path a failed import already uses.
   it('reports an export failure instead of failing silently', async () => {
-    ;(window.api as unknown as { exportSettings: () => Promise<string | null> }).exportSettings =
-      vi.fn().mockRejectedValue(new Error('disk full'))
+    ;(window.api as unknown as { exportSettings: () => Promise<string | null> }).exportSettings = vi
+      .fn()
+      .mockRejectedValue(new Error('disk full'))
     const alert = vi.spyOn(window, 'alert').mockImplementation(() => {})
     render(
       <SettingsModal
@@ -375,7 +376,6 @@ describe('SettingsModal destination', () => {
 })
 
 describe('SettingsModal filename tokens', () => {
-
   // Rating is the one field outside FIELD_DEFS (the editor draws it as stars), but
   // every metadata field must be usable in the file name — e.g. {rating}/{artist}
   // sorts exports into per-rating folders.
@@ -438,7 +438,9 @@ describe('SettingsModal filename tokens', () => {
     openNaming()
     fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
     const labels = Array.from(
-      screen.getByTestId('field-insert-menu').querySelectorAll('[role="menuitem"] span:first-child'),
+      screen
+        .getByTestId('field-insert-menu')
+        .querySelectorAll('[role="menuitem"] span:first-child'),
     ).map((el) => el.textContent ?? '')
     expect(labels.length).toBeGreaterThan(20)
     expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b, 'en')))

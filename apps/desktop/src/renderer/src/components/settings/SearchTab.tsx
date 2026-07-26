@@ -7,12 +7,7 @@ import { AutoMatchControl } from '../AutoMatchControl'
 import { DiscogsTokenField } from '../DiscogsTokenField'
 import { SearchProvidersControl } from '../SearchProvidersControl'
 import { Select } from '../Select'
-import {
-  SettingsEyebrow,
-  SettingsHint,
-  SettingsLabel,
-  SettingsSection,
-} from './SettingsPrimitives'
+import { SettingsEyebrow, SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
 
 interface Props {
   synced: SyncedDraft
@@ -29,52 +24,52 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
   return (
     <>
       <SettingsSection first>
-      <SettingsEyebrow className="mb-1.5">{tr('settings.searchProviders')}</SettingsEyebrow>
-      <SettingsHint className="mb-3">{tr('settings.searchProvidersHint')}</SettingsHint>
-      <SearchProvidersControl
-        value={synced.searchProviders}
-        onChange={(value) => patch('searchProviders', value)}
-        testid="settings-search-providers"
-        testidPrefix="settings-provider"
-      />
+        <SettingsEyebrow className="mb-1.5">{tr('settings.searchProviders')}</SettingsEyebrow>
+        <SettingsHint className="mb-3">{tr('settings.searchProvidersHint')}</SettingsHint>
+        <SearchProvidersControl
+          value={synced.searchProviders}
+          onChange={(value) => patch('searchProviders', value)}
+          testid="settings-search-providers"
+          testidPrefix="settings-provider"
+        />
       </SettingsSection>
 
       {/* Auto-match is a behaviour (when matches get applied), not a source, so it sits in
           its own section apart from the Discogs/Bandcamp source checkboxes. */}
       <SettingsSection>
-      <AutoMatchControl
-        checked={local.autoMatch}
-        onChange={(checked) => patchLocal('autoMatch', checked)}
-        searchProviders={synced.searchProviders}
-        discogsToken={local.token}
-        testid="settings-auto-match"
-      />
+        <AutoMatchControl
+          checked={local.autoMatch}
+          onChange={(checked) => patchLocal('autoMatch', checked)}
+          searchProviders={synced.searchProviders}
+          discogsToken={local.token}
+          testid="settings-auto-match"
+        />
       </SettingsSection>
 
       {/* A one-value select doesn't need a full-width stacked block: the label and hint
           take the left, the control sits on the right, one row instead of three. */}
       <SettingsSection>
-      <div className="flex items-center justify-between gap-6">
-        {/* The text side wraps (min-w-0) and the control side never shrinks: squeezed by
+        <div className="flex items-center justify-between gap-6">
+          {/* The text side wraps (min-w-0) and the control side never shrinks: squeezed by
             justify-between, the select used to give up 2px and poke past the panel,
             summoning a horizontal scrollbar over the whole tab. */}
-        <div className="min-w-0 flex flex-col gap-2">
-          <SettingsLabel>{tr('settings.maxResults')}</SettingsLabel>
-          <SettingsHint>{tr('settings.maxResultsHint')}</SettingsHint>
+          <div className="min-w-0 flex flex-col gap-2">
+            <SettingsLabel>{tr('settings.maxResults')}</SettingsLabel>
+            <SettingsHint>{tr('settings.maxResultsHint')}</SettingsHint>
+          </div>
+          <div className="shrink-0">
+            <Select
+              testid="settings-max-results"
+              label={tr('settings.maxResults')}
+              value={String(synced.discogsMaxResults)}
+              onChange={(v) => patch('discogsMaxResults', Number(v))}
+              options={DISCOGS_MAX_RESULTS_OPTIONS.map((n) => ({
+                value: String(n),
+                label: String(n),
+              }))}
+            />
+          </div>
         </div>
-        <div className="shrink-0">
-          <Select
-            testid="settings-max-results"
-            label={tr('settings.maxResults')}
-            value={String(synced.discogsMaxResults)}
-            onChange={(v) => patch('discogsMaxResults', Number(v))}
-            options={DISCOGS_MAX_RESULTS_OPTIONS.map((n) => ({
-              value: String(n),
-              label: String(n),
-            }))}
-          />
-        </div>
-      </div>
       </SettingsSection>
 
       <SettingsSection>

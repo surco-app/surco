@@ -2,7 +2,6 @@ import { AudioLines, Disc3, FolderDown, Headphones, Heart, Radio, Share, Store }
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useToast } from '../../lib/toastContext'
 import type { LifetimeStats, Settings } from '../../../../shared/types'
 import { DONATE_URL } from '../../lib/donate'
 import {
@@ -12,6 +11,7 @@ import {
   timeSavedSeconds,
 } from '../../lib/stats'
 import { renderStatsImage, statsImageCells } from '../../lib/statsImage'
+import { useToast } from '../../lib/toastContext'
 
 interface Props {
   settings: Settings

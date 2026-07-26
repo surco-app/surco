@@ -1,4 +1,3 @@
-
 // Builds a Serato DJ ".crate" file from the loaded tracks. Unlike rekordbox/Traktor (plain
 // text), a crate is a binary tree of frames: a 4-byte ASCII tag, a 4-byte big-endian length,
 // then the payload. Text payloads are UTF-16 big-endian; container frames ('o…') hold child

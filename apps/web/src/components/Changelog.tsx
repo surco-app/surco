@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
-import Reveal from './Reveal'
-import DownloadButton from './DownloadButton'
-import Header from './Header'
-import Footer from './Footer'
 import { useAutoLanguage } from '../lib/useAutoLanguage'
+import DownloadButton from './DownloadButton'
+import Footer from './Footer'
+import Header from './Header'
+import Reveal from './Reveal'
 
 // Items are plain strings historically; newer ones carry the exact patch they
 // shipped in ({text, in}) so the desktop "what's new" popup can filter by version.
@@ -69,12 +69,17 @@ export default function Changelog() {
             <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
               {t('changelog.title')}
             </h1>
-            <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">{t('changelog.lede')}</p>
+            <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
+              {t('changelog.lede')}
+            </p>
           </Reveal>
         </section>
 
         {recent.map((r) => (
-          <section key={r.version} className="border-t border-line/60 py-12 first-of-type:border-t-0">
+          <section
+            key={r.version}
+            className="border-t border-line/60 py-12 first-of-type:border-t-0"
+          >
             <Reveal>
               <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
                 <span className="rounded-full border border-line bg-surface2/40 px-3 py-1 font-mono text-sm text-blue tabular-nums">

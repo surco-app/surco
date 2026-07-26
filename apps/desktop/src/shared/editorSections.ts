@@ -79,10 +79,11 @@ export const DEFAULT_EDITOR_SECTIONS: EditorSectionPref[] = [
 // new section below File Name (Beatgrid landed after the output name on upgraded
 // installs), breaking the workflow order the defaults encode while still
 // respecting any custom order the user arranged.
-export function normalizeEditorSections(value: EditorSectionPref[] | undefined): EditorSectionPref[] {
+export function normalizeEditorSections(
+  value: EditorSectionPref[] | undefined,
+): EditorSectionPref[] {
   const stored = (value ?? []).filter(
-    (s, i, all) =>
-      EDITOR_SECTION_IDS.includes(s.id) && all.findIndex((o) => o.id === s.id) === i,
+    (s, i, all) => EDITOR_SECTION_IDS.includes(s.id) && all.findIndex((o) => o.id === s.id) === i,
   )
   const merged = [...stored]
   for (const [index, def] of DEFAULT_EDITOR_SECTIONS.entries()) {
@@ -96,14 +97,13 @@ export function normalizeEditorSections(value: EditorSectionPref[] | undefined):
     }, -1)
     merged.splice(at + 1, 0, def)
   }
-  return [
-    ...merged.filter((s) => s.id === 'form'),
-    ...merged.filter((s) => s.id !== 'form'),
-  ].map((s) => ({
-    id: s.id,
-    open: s.open,
-    // hidden survives the repair, except on the form — hiding it would blank the
-    // whole editor, so a hand-edited flag there is dropped rather than honored.
-    ...(s.hidden === true && s.id !== 'form' ? { hidden: true } : {}),
-  }))
+  return [...merged.filter((s) => s.id === 'form'), ...merged.filter((s) => s.id !== 'form')].map(
+    (s) => ({
+      id: s.id,
+      open: s.open,
+      // hidden survives the repair, except on the form — hiding it would blank the
+      // whole editor, so a hand-edited flag there is dropped rather than honored.
+      ...(s.hidden === true && s.id !== 'form' ? { hidden: true } : {}),
+    }),
+  )
 }

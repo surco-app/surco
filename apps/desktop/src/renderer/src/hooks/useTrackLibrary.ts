@@ -8,9 +8,9 @@ import { newTrackPaths } from '../lib/newTracks'
 import { mergeReadMeta } from '../lib/readMerge'
 import { searchFromTags } from '../lib/search'
 import { deselect, type Selection } from '../lib/selection'
+import type { TrackItem } from '../types'
 import { clearMaximizedSection } from './useEditorSections'
 import { useStableCallback } from './useStableCallback'
-import type { TrackItem } from '../types'
 
 const AUDIO_EXT = /\.(wav|flac|aif|aiff|mp3|m4a|mp4|aac|ogg|oga|opus)$/i
 
@@ -395,14 +395,15 @@ export function useTrackLibrary({
       // must not offer Surco's own conversions back as "new tracks".
       const fresh = newTrackPaths(
         files,
-        tracksRef.current.flatMap((t) => (t.outputPath ? [t.inputPath, t.outputPath] : [t.inputPath])),
+        tracksRef.current.flatMap((t) =>
+          t.outputPath ? [t.inputPath, t.outputPath] : [t.inputPath],
+        ),
       ).filter((p) => !ignoredPaths.current.has(p))
       setPendingNew((prev) => {
         if (fresh.length === 0) return prev?.root === root ? null : prev
         // Union with an outstanding prompt for the same folder so a second copy-in adds to
         // the count instead of replacing it; a different folder takes over the prompt.
-        const merged =
-          prev?.root === root ? Array.from(new Set([...prev.paths, ...fresh])) : fresh
+        const merged = prev?.root === root ? Array.from(new Set([...prev.paths, ...fresh])) : fresh
         // A poll that reports the same still-unloaded files must keep the object identity:
         // the prompt's auto-dismiss timer restarts when pendingNew changes, and a rebuilt
         // twin every minute would keep the toast alive forever.

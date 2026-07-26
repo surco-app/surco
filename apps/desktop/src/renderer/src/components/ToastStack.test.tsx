@@ -16,9 +16,7 @@ describe('ToastStack', () => {
   // The empty container still mounts: a live region must exist before content arrives
   // or screen readers miss the first toast. No cards means nothing visible or clickable.
   it('keeps an empty, announced live region mounted when the queue is empty', () => {
-    const { container } = render(
-      <ToastStack toasts={[]} onExpire={vi.fn()} onClose={vi.fn()} />,
-    )
+    const { container } = render(<ToastStack toasts={[]} onExpire={vi.fn()} onClose={vi.fn()} />)
     const region = container.firstElementChild as HTMLElement
     expect(region).toHaveAttribute('aria-live', 'polite')
     expect(region).toBeEmptyDOMElement()
@@ -40,7 +38,10 @@ describe('ToastStack', () => {
     // corner overwriting another.
     render(
       <ToastStack
-        toasts={[toast({ id: 'a', message: 'skipped 3' }), toast({ id: 'b', message: 'update ready' })]}
+        toasts={[
+          toast({ id: 'a', message: 'skipped 3' }),
+          toast({ id: 'b', message: 'update ready' }),
+        ]}
         onExpire={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -109,7 +110,9 @@ describe('ToastStack', () => {
 
     const { rerender } = render(
       <ToastStack
-        toasts={[toast({ testid: 'process-error', tone: 'danger', message: 'osascript failed (-1712)' })]}
+        toasts={[
+          toast({ testid: 'process-error', tone: 'danger', message: 'osascript failed (-1712)' }),
+        ]}
         onExpire={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -149,9 +152,7 @@ describe('ToastStack', () => {
 
     it('leaves a toast without a duration on screen indefinitely', () => {
       const onExpire = vi.fn()
-      render(
-        <ToastStack toasts={[toast({ id: 'p' })]} onExpire={onExpire} onClose={vi.fn()} />,
-      )
+      render(<ToastStack toasts={[toast({ id: 'p' })]} onExpire={onExpire} onClose={vi.fn()} />)
       act(() => vi.advanceTimersByTime(60_000))
       expect(onExpire).not.toHaveBeenCalled()
     })

@@ -44,7 +44,9 @@ export function MarqueeText({
           overflowPx > 0 ? 'player-marquee' : ''
         }`}
         style={
-          overflowPx > 0 ? ({ '--marquee-px': `${overflowPx}px` } as React.CSSProperties) : undefined
+          overflowPx > 0
+            ? ({ '--marquee-px': `${overflowPx}px` } as React.CSSProperties)
+            : undefined
         }
       >
         {children}

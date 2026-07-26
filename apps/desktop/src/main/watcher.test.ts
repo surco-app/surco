@@ -57,9 +57,9 @@ describe('FolderWatcher', () => {
     // rescan that actually includes the newly written track, not merely the first fire.
     await vi.waitFor(
       () =>
-        expect(
-          onChange.mock.calls.some(([, files]) => files.includes(join(dir, 'new.flac'))),
-        ).toBe(true),
+        expect(onChange.mock.calls.some(([, files]) => files.includes(join(dir, 'new.flac')))).toBe(
+          true,
+        ),
       { timeout: 4000 },
     )
 

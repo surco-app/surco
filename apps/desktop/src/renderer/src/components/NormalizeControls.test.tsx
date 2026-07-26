@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import type React from 'react'
 import { useState } from 'react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { NormalizeConfig } from '../../../shared/types'
 import '../i18n'
 import { NormalizeControls } from './NormalizeControls'
@@ -90,9 +90,7 @@ describe('NormalizeControls peak options', () => {
   })
 
   it('shows the saved options as checked', () => {
-    render(
-      <NormalizeControls value={{ ...peak, peakRemoveDc: true }} onChange={vi.fn()} />,
-    )
+    render(<NormalizeControls value={{ ...peak, peakRemoveDc: true }} onChange={vi.fn()} />)
     expect(screen.getByTestId('normalize-peak-remove-dc')).toBeChecked()
     expect(screen.getByTestId('normalize-peak-per-channel')).not.toBeChecked()
   })

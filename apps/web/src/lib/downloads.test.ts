@@ -51,8 +51,14 @@ describe('pickInstallerRelease', () => {
 
   it('uses the newest release once its installer is there', () => {
     const releases = [
-      { tag_name: 'v0.18.0', assets: [{ name: 'Surco-0.18.0-arm64.dmg', browser_download_url: 'd' }] },
-      { tag_name: 'v0.17.1', assets: [{ name: 'Surco-0.17.1-arm64.dmg', browser_download_url: 'p' }] },
+      {
+        tag_name: 'v0.18.0',
+        assets: [{ name: 'Surco-0.18.0-arm64.dmg', browser_download_url: 'd' }],
+      },
+      {
+        tag_name: 'v0.17.1',
+        assets: [{ name: 'Surco-0.17.1-arm64.dmg', browser_download_url: 'p' }],
+      },
     ]
     expect(pickInstallerRelease(releases, 'arm64.dmg')?.tag_name).toBe('v0.18.0')
   })
@@ -70,7 +76,10 @@ describe('pickInstallerRelease', () => {
         tag_name: 'v0.58.0',
         assets: [{ name: 'Surco-0.58.0-x86_64.AppImage', browser_download_url: 'img' }],
       },
-      { tag_name: 'v0.57.0', assets: [{ name: 'Surco-0.57.0-arm64.dmg', browser_download_url: 'd' }] },
+      {
+        tag_name: 'v0.57.0',
+        assets: [{ name: 'Surco-0.57.0-arm64.dmg', browser_download_url: 'd' }],
+      },
     ]
     expect(pickInstallerRelease(releases, '.AppImage')?.tag_name).toBe('v0.58.0')
   })
@@ -91,10 +100,7 @@ describe('fetchAllReleases', () => {
   it('follows pagination past the 100-release page size', async () => {
     const first = Array.from({ length: 100 }, (_, i) => release(`v${i}`))
     const second = [release('v100'), release('v101')]
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(page(first))
-      .mockResolvedValueOnce(page(second))
+    const fetchMock = vi.fn().mockResolvedValueOnce(page(first)).mockResolvedValueOnce(page(second))
     vi.stubGlobal('fetch', fetchMock)
 
     const releases = await fetchAllReleases('surco-app/surco-releases')

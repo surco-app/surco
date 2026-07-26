@@ -57,7 +57,9 @@ describe('registerShellIpc — path allowlist', () => {
 
   it('refuses to trash a path the app never handed to the renderer', async () => {
     registerShellIpc(fakeMediaAccess(['/music/allowed.wav']))
-    await expect(handlerFor('shell:trash')({}, '/Users/me/Desktop/important.docx')).rejects.toThrow()
+    await expect(
+      handlerFor('shell:trash')({}, '/Users/me/Desktop/important.docx'),
+    ).rejects.toThrow()
     expect(trashItem).not.toHaveBeenCalled()
   })
 

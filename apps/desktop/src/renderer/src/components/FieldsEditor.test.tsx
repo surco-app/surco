@@ -40,7 +40,9 @@ describe('FieldsEditor', () => {
   it('reorders by dragging a row onto another', () => {
     const { onChangeVisible } = setup()
     const dt = { setData: vi.fn(), effectAllowed: '' }
-    fireEvent.mouseDown(within(screen.getByTestId('field-row-title')).getByTestId('field-grip-title'))
+    fireEvent.mouseDown(
+      within(screen.getByTestId('field-row-title')).getByTestId('field-grip-title'),
+    )
     fireEvent.dragStart(screen.getByTestId('field-row-title'), { dataTransfer: dt })
     fireEvent.dragOver(screen.getByTestId('field-row-album'), { dataTransfer: dt })
     fireEvent.drop(screen.getByTestId('field-row-album'), { dataTransfer: dt })

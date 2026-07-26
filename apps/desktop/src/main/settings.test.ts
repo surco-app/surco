@@ -26,6 +26,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app } from 'electron'
+import type { Settings } from '../shared/types'
 import {
   defaults,
   getConfigDir,
@@ -38,7 +39,6 @@ import {
   saveSettings,
   setConfigDir,
 } from './settings'
-import type { Settings } from '../shared/types'
 
 afterAll(() => rmSync(app.getPath('userData'), { recursive: true, force: true }))
 
@@ -136,10 +136,7 @@ describe('nested settings from an older install', () => {
   // `cur.stats[key] + n` corrupts it to NaN — which JSON.stringifies to null,
   // permanently bricking that counter for the user on the very next read.
   it('fills a stats key an older settings.json never wrote, instead of leaving it undefined', () => {
-    writeFileSync(
-      localFile(),
-      JSON.stringify({ stats: { imported: 5, listened: 2, analyzed: 1 } }),
-    )
+    writeFileSync(localFile(), JSON.stringify({ stats: { imported: 5, listened: 2, analyzed: 1 } }))
     expect(getSettings().stats.discogsMatches).toBe(0)
     expect(getSettings().stats.bandcampMatches).toBe(0)
     expect(getSettings().stats.imported).toBe(5)
@@ -197,13 +194,10 @@ describe('outputFormat from a synced settings.json', () => {
     expect(getSettings().outputFormat).toBe('source')
   })
 
-  it.each(['aiff', 'alac', 'mp3', 'wav', 'flac'])(
-    'keeps a valid %s value intact',
-    (format) => {
-      writeFileSync(localFile(), JSON.stringify({ outputFormat: format }))
-      expect(getSettings().outputFormat).toBe(format)
-    },
-  )
+  it.each(['aiff', 'alac', 'mp3', 'wav', 'flac'])('keeps a valid %s value intact', (format) => {
+    writeFileSync(localFile(), JSON.stringify({ outputFormat: format }))
+    expect(getSettings().outputFormat).toBe(format)
+  })
 })
 
 describe('saveSettings atomicity', () => {
@@ -248,12 +242,7 @@ describe('configurable settings folder', () => {
     setConfigDir(dir)
     saveSettings({ discogsToken: 'secret', autoMatch: true, outputDir: '/Volumes/USB' })
     const synced = read(syncedFile(dir))
-    for (const key of [
-      'outputDir',
-      'hasSeenOnboarding',
-      'conversionCount',
-      'stats',
-    ]) {
+    for (const key of ['outputDir', 'hasSeenOnboarding', 'conversionCount', 'stats']) {
       expect(synced).not.toHaveProperty(key)
     }
     expect(synced.discogsToken).toBe('secret')

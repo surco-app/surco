@@ -86,7 +86,9 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
               className={`flex items-center justify-between rounded-lg border bg-[var(--color-field)] py-1.5 pr-2 ${
                 movable ? 'pl-2' : 'pl-3'
               } ${
-                dropId === section.id ? 'border-[var(--color-accent)]' : 'border-[var(--color-line)]'
+                dropId === section.id
+                  ? 'border-[var(--color-accent)]'
+                  : 'border-[var(--color-line)]'
               } ${dragId === section.id ? 'opacity-40' : ''}`}
             >
               <span className="flex min-w-0 items-center gap-1.5 text-sm">

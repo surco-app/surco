@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { buildSeratoCrate } from './serato'
 
-const track = (over: { inputPath?: string; outputPath?: string } = {}): {
+const track = (
+  over: { inputPath?: string; outputPath?: string } = {},
+): {
   inputPath: string
   outputPath?: string
 } => ({ inputPath: over.inputPath ?? '/music/x.wav', outputPath: over.outputPath })
