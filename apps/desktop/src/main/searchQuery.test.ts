@@ -125,9 +125,9 @@ describe('buildSearchCandidates', () => {
   // The reported case end-to-end: a file whose name leads with its catalog code must search
   // the clean "Artist Title" first, not the code-poisoned candidate that returns nothing.
   it('leads with the catalog-free query for a code-prefixed file name', () => {
-    expect(
-      buildSearchCandidates('BL2-045 Tito Dj & Solá Brothers Love Again (Extended)')[0],
-    ).toBe('Tito Dj & Solá Brothers Love Again (Extended)')
+    expect(buildSearchCandidates('BL2-045 Tito Dj & Solá Brothers Love Again (Extended)')[0]).toBe(
+      'Tito Dj & Solá Brothers Love Again (Extended)',
+    )
   })
 
   it('ignores absent hints and de-dupes ones that repeat the cleaned query', () => {
@@ -280,9 +280,11 @@ describe('buildSearchCandidates', () => {
   // An act genuinely named "DJ" gets no variant: dropping the word would search a
   // different artist. A trailing "Dj" is part of the name ("Chumi Dj"), never stripped.
   it('adds no DJ-free variant when there is nothing after the prefix or no prefix at all', () => {
-    expect(
-      buildSearchCandidates('DJ Track', { artist: 'DJ', title: 'Track' }),
-    ).toEqual(['DJ Track', 'Track', 'Track DJ'])
+    expect(buildSearchCandidates('DJ Track', { artist: 'DJ', title: 'Track' })).toEqual([
+      'DJ Track',
+      'Track',
+      'Track DJ',
+    ])
     expect(
       buildSearchCandidates('Chumi Dj Dancing Hearts', {
         artist: 'Chumi Dj',

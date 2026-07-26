@@ -49,7 +49,10 @@ export function NormalizeSection({
     item.trim && item.duration
       ? {
           startFrac: Math.max(0, (item.trim.startSec ?? 0) / item.duration),
-          endFrac: Math.max(0, (item.duration - (item.trim.endSec ?? item.duration)) / item.duration),
+          endFrac: Math.max(
+            0,
+            (item.duration - (item.trim.endSec ?? item.duration)) / item.duration,
+          ),
         }
       : undefined
   // The dB line the strips mark in red: the active mode's own ceiling, so the marks

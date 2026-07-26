@@ -25,9 +25,7 @@ function poolSize(): number {
 // which is exactly the pre-worker behavior the integration tests exercise.
 function getClient(): Promise<WorkerClient | null> {
   clientPromise ??= import('./analysisWorker?nodeWorker').then((mod) =>
-    typeof mod.default === 'function'
-      ? createWorkerPool(() => mod.default({}), poolSize())
-      : null,
+    typeof mod.default === 'function' ? createWorkerPool(() => mod.default({}), poolSize()) : null,
   )
   return clientPromise
 }

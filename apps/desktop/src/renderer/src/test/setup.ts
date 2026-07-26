@@ -5,7 +5,9 @@ import { vi } from 'vitest'
 // canvas consumer in the renderer already guards on a null context, so returning
 // null is a faithful stub that keeps the tests exercising real code paths.
 if (typeof HTMLCanvasElement !== 'undefined') {
-  HTMLCanvasElement.prototype.getContext = vi.fn(() => null) as typeof HTMLCanvasElement.prototype.getContext
+  HTMLCanvasElement.prototype.getContext = vi.fn(
+    () => null,
+  ) as typeof HTMLCanvasElement.prototype.getContext
 }
 
 // Vitest's jsdom environment only copies window properties it already knows the

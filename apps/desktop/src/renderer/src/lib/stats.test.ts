@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  MANUAL_SECONDS_PER_CONVERSION,
   formatTimeSaved,
+  MANUAL_SECONDS_PER_CONVERSION,
   matchStatKey,
   nextMilestone,
   timeSavedSeconds,

@@ -11,14 +11,7 @@ import { suspectTracks } from './triage'
 // The palette's section for a command, Raycast-style: a fixed set of buckets so 47
 // commands read as six short lists instead of one wall. 'tracks' is reserved for the
 // go-to-track jumps filterTrackCommands builds.
-type CommandGroup =
-  | 'tags'
-  | 'convert'
-  | 'library'
-  | 'playback'
-  | 'navigate'
-  | 'app'
-  | 'tracks'
+type CommandGroup = 'tags' | 'convert' | 'library' | 'playback' | 'navigate' | 'app' | 'tracks'
 
 // The order the palette shows the sections in: everyday tag work first, app chrome last.
 export const COMMAND_GROUP_ORDER: CommandGroup[] = [

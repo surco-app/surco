@@ -70,9 +70,7 @@ describe('buildEngineDatabase', () => {
   // Guards that the whole DDL ran (a truncated schema string would silently drop tables and
   // still "work" for the rows we happen to query). These are the objects Engine reads.
   it('creates every table the Engine Library schema defines', () => {
-    const names = rows(db, "SELECT name FROM sqlite_master WHERE type = 'table'").map(
-      (r) => r.name,
-    )
+    const names = rows(db, "SELECT name FROM sqlite_master WHERE type = 'table'").map((r) => r.name)
     for (const t of ['Information', 'Track', 'Playlist', 'PlaylistEntity', 'AlbumArt']) {
       expect(names).toContain(t)
     }

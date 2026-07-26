@@ -41,11 +41,7 @@ export type QualityFilter = 'suspect' | 'good' | 'unanalyzed'
 // quality verdict, so its own axis. The per-provider buckets let a mixed-crate sweep
 // be reviewed source by source: a Bandcamp match carries no Discogs id or catalog
 // number, so those rows are the ones worth a separate eyeball.
-export type ConversionFilter =
-  | 'unconverted'
-  | 'automatched'
-  | 'matchedDiscogs'
-  | 'matchedBandcamp'
+export type ConversionFilter = 'unconverted' | 'automatched' | 'matchedDiscogs' | 'matchedBandcamp'
 // The Apple Music library buckets, gated on a known verdict (see matchesLibrary).
 export type LibraryFilter = 'inLibrary' | 'notInLibrary'
 // The same song loaded as two files (see lib/duplicates); a single-value axis so it

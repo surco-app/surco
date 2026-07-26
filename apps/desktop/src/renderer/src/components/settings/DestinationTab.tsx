@@ -55,7 +55,11 @@ export function DestinationTab({
   // unrelated global path — under Apple Music or overwrite there is no folder copy for
   // it to describe.
   const folderDetail = (
-    <OutputFolderField value={local.outputDir} onChange={onOutputDirChange} testid="settings-output" />
+    <OutputFolderField
+      value={local.outputDir}
+      onChange={onOutputDirChange}
+      testid="settings-output"
+    />
   )
   // Engine DJ's fields nest under its radio exactly like the output folder does — the
   // two destination details read as one pattern instead of one inline and one trailing

@@ -1,12 +1,11 @@
 import type React from 'react'
 import { lazy, Suspense } from 'react'
-import type { FormatSetting, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
-import { ConfirmDialog } from './ConfirmDialog'
-import type { Command } from '../lib/commands'
 import { formatExtension } from '../../../shared/format'
+import type { FormatSetting, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
 import type { ActiveModal } from '../hooks/useOverlays'
+import type { Command } from '../lib/commands'
 import type { TrackItem } from '../types'
-
+import { ConfirmDialog } from './ConfirmDialog'
 
 // On-demand overlays: none is part of the first paint (each renders only behind its
 // activeModal branch), so each is split into its own chunk and kept out of the startup
@@ -24,9 +23,7 @@ const DonateNudgeModal = lazy(() =>
 const WhatsNewModal = lazy(() =>
   import('./WhatsNewModal').then((m) => ({ default: m.WhatsNewModal })),
 )
-const HelpModal = lazy(() =>
-  import('./HelpModal').then((m) => ({ default: m.HelpModal })),
-)
+const HelpModal = lazy(() => import('./HelpModal').then((m) => ({ default: m.HelpModal })))
 const LoudnessHelpModal = lazy(() =>
   import('./LoudnessHelpModal').then((m) => ({ default: m.LoudnessHelpModal })),
 )
@@ -36,12 +33,8 @@ const FindReplaceModal = lazy(() =>
 const StripNumberingModal = lazy(() =>
   import('./StripNumberingModal').then((m) => ({ default: m.StripNumberingModal })),
 )
-const RenameModal = lazy(() =>
-  import('./RenameModal').then((m) => ({ default: m.RenameModal })),
-)
-const ExportModal = lazy(() =>
-  import('./ExportModal').then((m) => ({ default: m.ExportModal })),
-)
+const RenameModal = lazy(() => import('./RenameModal').then((m) => ({ default: m.RenameModal })))
+const ExportModal = lazy(() => import('./ExportModal').then((m) => ({ default: m.ExportModal })))
 const CommandPalette = lazy(() =>
   import('./CommandPalette').then((m) => ({ default: m.CommandPalette })),
 )
@@ -141,18 +134,10 @@ export function Overlays({
       {activeModal?.type === 'help' && <HelpModal onClose={close} />}
       {activeModal?.type === 'loudnessHelp' && <LoudnessHelpModal onClose={close} />}
       {activeModal?.type === 'findReplace' && (
-        <FindReplaceModal
-          tracks={bulkTracks}
-          onApply={deriveTracksUndoable}
-          onClose={close}
-        />
+        <FindReplaceModal tracks={bulkTracks} onApply={deriveTracksUndoable} onClose={close} />
       )}
       {activeModal?.type === 'stripNumbering' && (
-        <StripNumberingModal
-          tracks={bulkTracks}
-          onApply={deriveTracksUndoable}
-          onClose={close}
-        />
+        <StripNumberingModal tracks={bulkTracks} onApply={deriveTracksUndoable} onClose={close} />
       )}
       {activeModal?.type === 'rename' && selected && (
         <RenameModal
@@ -167,9 +152,7 @@ export function Overlays({
           onClose={close}
         />
       )}
-      {activeModal?.type === 'export' && (
-        <ExportModal tracks={bulkTracks} onClose={close} />
-      )}
+      {activeModal?.type === 'export' && <ExportModal tracks={bulkTracks} onClose={close} />}
       {activeModal?.type === 'confirm' && (
         <ConfirmDialog
           title={activeModal.confirm.title}

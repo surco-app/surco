@@ -83,8 +83,12 @@ describe('buildFieldSpecs onChange identity', () => {
   // back the same function reference for a field whose key didn't move.
   it('returns the same onChange reference across two calls given the same map', () => {
     const shared = singleOnChangeFrom(vi.fn())
-    const first = buildFieldSpecs(params({ visibleFields: ['title', 'artist'], singleOnChange: shared }))
-    const second = buildFieldSpecs(params({ visibleFields: ['title', 'artist'], singleOnChange: shared }))
+    const first = buildFieldSpecs(
+      params({ visibleFields: ['title', 'artist'], singleOnChange: shared }),
+    )
+    const second = buildFieldSpecs(
+      params({ visibleFields: ['title', 'artist'], singleOnChange: shared }),
+    )
     expect(first.find((s) => s.key === 'title')?.onChange).toBe(
       second.find((s) => s.key === 'title')?.onChange,
     )
@@ -97,10 +101,20 @@ describe('buildFieldSpecs onChange identity', () => {
     const shared = bulkOnChangeFrom(vi.fn())
     const tracks = [track('a', { genre: 'Techno' }), track('b', { genre: 'Techno' })]
     const first = buildFieldSpecs(
-      params({ isMulti: true, selectedTracks: tracks, visibleFields: ['genre'], bulkOnChange: shared }),
+      params({
+        isMulti: true,
+        selectedTracks: tracks,
+        visibleFields: ['genre'],
+        bulkOnChange: shared,
+      }),
     )
     const second = buildFieldSpecs(
-      params({ isMulti: true, selectedTracks: tracks, visibleFields: ['genre'], bulkOnChange: shared }),
+      params({
+        isMulti: true,
+        selectedTracks: tracks,
+        visibleFields: ['genre'],
+        bulkOnChange: shared,
+      }),
     )
     expect(first.find((s) => s.key === 'genre')?.onChange).toBe(
       second.find((s) => s.key === 'genre')?.onChange,

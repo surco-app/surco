@@ -108,7 +108,13 @@ describe('loudnorm target clamping', () => {
     truePeakDb: 2.6,
     peakDb: -1,
   }
-  const m = { inputI: -14.58, inputTp: -0.16, inputLra: 6.6, inputThresh: -24.79, targetOffset: -0.07 }
+  const m = {
+    inputI: -14.58,
+    inputTp: -0.16,
+    inputLra: 6.6,
+    inputThresh: -24.79,
+    targetOffset: -0.07,
+  }
 
   it('clamps a positive true-peak ceiling to 0 in the measurement pass', () => {
     const filter = loudnormArgs('in.wav', outOfRange)[5]

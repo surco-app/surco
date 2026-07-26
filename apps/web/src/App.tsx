@@ -1,22 +1,22 @@
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import Header from './components/Header'
-import Footer from './components/Footer'
-import Speed from './components/Speed'
-import HowItWorks from './components/HowItWorks'
-import Pricing from './components/Pricing'
-import Spectrogram from './components/Spectrogram'
-import Reveal from './components/Reveal'
-import Icon, { type GlyphName } from './components/Icon'
-import ScrollProgress from './components/ScrollProgress'
-import DownloadButton from './components/DownloadButton'
-import HeroShowcase from './components/HeroShowcase'
-import InstallSection from './components/InstallSection'
-import Faq from './components/Faq'
 import Band from './components/Band'
-import Kicker from './components/Kicker'
-import WaveBackdrop from './components/WaveBackdrop'
+import DownloadButton from './components/DownloadButton'
+import Faq from './components/Faq'
+import Footer from './components/Footer'
 import GrooveArcs from './components/GrooveArcs'
+import Header from './components/Header'
+import HeroShowcase from './components/HeroShowcase'
+import HowItWorks from './components/HowItWorks'
+import Icon, { type GlyphName } from './components/Icon'
+import InstallSection from './components/InstallSection'
+import Kicker from './components/Kicker'
+import Pricing from './components/Pricing'
+import Reveal from './components/Reveal'
+import ScrollProgress from './components/ScrollProgress'
+import Spectrogram from './components/Spectrogram'
+import Speed from './components/Speed'
+import WaveBackdrop from './components/WaveBackdrop'
 import { useAutoLanguage } from './lib/useAutoLanguage'
 
 const cardHover =
@@ -55,7 +55,7 @@ function HeroGlow() {
       className="pointer-events-none absolute inset-x-0 top-0 h-[760px]"
       style={{
         background:
-          'radial-gradient(55% 50% at 72% 4%, rgba(122,162,247,0.20) 0%, rgba(26,27,38,0) 70%)'
+          'radial-gradient(55% 50% at 72% 4%, rgba(122,162,247,0.20) 0%, rgba(26,27,38,0) 70%)',
       }}
     />
   )
@@ -85,7 +85,7 @@ export default function App() {
     ['⌘', '⇧', '↵'],
     [t('keys.space')],
     ['J', 'K'],
-    ['/']
+    ['/'],
   ]
   const stack = t('stack', { returnObjects: true }) as string[]
 
@@ -103,14 +103,14 @@ export default function App() {
           className="pointer-events-none absolute inset-x-0 top-[32%] h-[700px]"
           style={{
             background:
-              'radial-gradient(50% 50% at 10% 50%, rgba(187,154,247,0.07) 0%, rgba(26,27,38,0) 70%)'
+              'radial-gradient(50% 50% at 10% 50%, rgba(187,154,247,0.07) 0%, rgba(26,27,38,0) 70%)',
           }}
         />
         <div
           className="pointer-events-none absolute inset-x-0 top-[72%] h-[700px]"
           style={{
             background:
-              'radial-gradient(50% 50% at 90% 50%, rgba(125,207,255,0.06) 0%, rgba(26,27,38,0) 70%)'
+              'radial-gradient(50% 50% at 90% 50%, rgba(125,207,255,0.06) 0%, rgba(26,27,38,0) 70%)',
           }}
         />
         <WaveBackdrop className="top-[10%]" side="left" delay="-18s" />
@@ -160,66 +160,72 @@ export default function App() {
         </section>
 
         <Band tone="deep">
-        <section id="analisis" className="scroll-mt-24 py-24">
-          <Reveal>
-            <Kicker>{t('analysis.kicker')}</Kicker>
-            <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
-              {t('analysis.title')}
-            </h2>
-            <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">{t('analysis.lede')}</p>
-          </Reveal>
-
-          <div className="mt-10 grid gap-5 md:grid-cols-2">
-            <Reveal from="left">
-              <div className={`inset-shadow-edge rounded-2xl border border-line bg-surface2/50 p-4 ${cardHover}`}>
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="font-mono text-xs text-muted">original.flac</span>
-                  <span className="rounded-full bg-green/15 px-2.5 py-0.5 font-mono text-[11px] text-green">
-                    {t('analysis.good')}
-                  </span>
-                </div>
-                <Spectrogram
-                  axis
-                  label={`${t('analysis.goodCaptionPre')}${t('analysis.goodCaptionHz')}${t('analysis.goodCaptionPost')}`}
-                />
-                <p className="mt-3 font-mono text-xs text-muted">
-                  {t('analysis.goodCaptionPre')}
-                  <span className="text-fg">{t('analysis.goodCaptionHz')}</span>
-                  {t('analysis.goodCaptionPost')}
-                </p>
-              </div>
+          <section id="analisis" className="scroll-mt-24 py-24">
+            <Reveal>
+              <Kicker>{t('analysis.kicker')}</Kicker>
+              <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+                {t('analysis.title')}
+              </h2>
+              <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">
+                {t('analysis.lede')}
+              </p>
             </Reveal>
 
-            <Reveal from="right" delay={120}>
-              <div className={`inset-shadow-edge rounded-2xl border border-line bg-surface2/50 p-4 ${cardHover}`}>
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="font-mono text-xs text-muted">descarga_320.aiff</span>
-                  <span className="rounded-full bg-red/15 px-2.5 py-0.5 font-mono text-[11px] text-red">
-                    {t('analysis.suspect')}
-                  </span>
-                </div>
-                <div className="relative">
-                  <Spectrogram
-                    suspect
-                    axis
-                    label={`${t('analysis.suspectCaptionPre')}${t('analysis.suspectCaptionHz')}${t('analysis.suspectCaptionPost')}`}
-                  />
-                  <div className="pointer-events-none absolute inset-x-0" style={{ top: '27%' }}>
-                    <div className="border-t border-dashed border-red/80" />
-                    <span className="absolute right-1 -top-5 rounded bg-red/20 px-1.5 py-0.5 font-mono text-[10px] text-red">
-                      {t('analysis.wall')}
+            <div className="mt-10 grid gap-5 md:grid-cols-2">
+              <Reveal from="left">
+                <div
+                  className={`inset-shadow-edge rounded-2xl border border-line bg-surface2/50 p-4 ${cardHover}`}
+                >
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="font-mono text-xs text-muted">original.flac</span>
+                    <span className="rounded-full bg-green/15 px-2.5 py-0.5 font-mono text-[11px] text-green">
+                      {t('analysis.good')}
                     </span>
                   </div>
+                  <Spectrogram
+                    axis
+                    label={`${t('analysis.goodCaptionPre')}${t('analysis.goodCaptionHz')}${t('analysis.goodCaptionPost')}`}
+                  />
+                  <p className="mt-3 font-mono text-xs text-muted">
+                    {t('analysis.goodCaptionPre')}
+                    <span className="text-fg">{t('analysis.goodCaptionHz')}</span>
+                    {t('analysis.goodCaptionPost')}
+                  </p>
                 </div>
-                <p className="mt-3 font-mono text-xs text-muted">
-                  {t('analysis.suspectCaptionPre')}
-                  <span className="text-red">{t('analysis.suspectCaptionHz')}</span>
-                  {t('analysis.suspectCaptionPost')}
-                </p>
-              </div>
-            </Reveal>
-          </div>
-        </section>
+              </Reveal>
+
+              <Reveal from="right" delay={120}>
+                <div
+                  className={`inset-shadow-edge rounded-2xl border border-line bg-surface2/50 p-4 ${cardHover}`}
+                >
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="font-mono text-xs text-muted">descarga_320.aiff</span>
+                    <span className="rounded-full bg-red/15 px-2.5 py-0.5 font-mono text-[11px] text-red">
+                      {t('analysis.suspect')}
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <Spectrogram
+                      suspect
+                      axis
+                      label={`${t('analysis.suspectCaptionPre')}${t('analysis.suspectCaptionHz')}${t('analysis.suspectCaptionPost')}`}
+                    />
+                    <div className="pointer-events-none absolute inset-x-0" style={{ top: '27%' }}>
+                      <div className="border-t border-dashed border-red/80" />
+                      <span className="absolute right-1 -top-5 rounded bg-red/20 px-1.5 py-0.5 font-mono text-[10px] text-red">
+                        {t('analysis.wall')}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="mt-3 font-mono text-xs text-muted">
+                    {t('analysis.suspectCaptionPre')}
+                    <span className="text-red">{t('analysis.suspectCaptionHz')}</span>
+                    {t('analysis.suspectCaptionPost')}
+                  </p>
+                </div>
+              </Reveal>
+            </div>
+          </section>
         </Band>
 
         <Speed />
@@ -227,36 +233,36 @@ export default function App() {
         <HowItWorks />
 
         <Band tone="raised">
-        <section id="funciones" className="scroll-mt-24 py-24">
-          <Reveal>
-            <Kicker>{t('features.kicker')}</Kicker>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
-              {t('features.title')}
-            </h2>
-          </Reveal>
-          <div className="mt-10 grid gap-5 sm:grid-cols-2">
-            {featureGroups.map((g, i) => (
-              <Reveal key={g.title} delay={(i % 2) * 100}>
-                <div className="group h-full">
-                  <div className="mb-4 flex size-9 items-center justify-center rounded-lg border border-blue/30 bg-blue/10 text-blue transition duration-200 group-hover:-translate-y-0.5 group-hover:border-blue/60 group-hover:bg-blue/20 group-hover:shadow-lg group-hover:shadow-blue/15">
-                    <Icon name={FEATURE_ICONS[i]} className="size-4.5" />
+          <section id="funciones" className="scroll-mt-24 py-24">
+            <Reveal>
+              <Kicker>{t('features.kicker')}</Kicker>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+                {t('features.title')}
+              </h2>
+            </Reveal>
+            <div className="mt-10 grid gap-5 sm:grid-cols-2">
+              {featureGroups.map((g, i) => (
+                <Reveal key={g.title} delay={(i % 2) * 100}>
+                  <div className="group h-full">
+                    <div className="mb-4 flex size-9 items-center justify-center rounded-lg border border-blue/30 bg-blue/10 text-blue transition duration-200 group-hover:-translate-y-0.5 group-hover:border-blue/60 group-hover:bg-blue/20 group-hover:shadow-lg group-hover:shadow-blue/15">
+                      <Icon name={FEATURE_ICONS[i]} className="size-4.5" />
+                    </div>
+                    <div className="font-mono text-xs text-blue">{g.kick}</div>
+                    <h3 className="mt-2 text-lg font-semibold text-fg">{g.title}</h3>
+                    <p className="mt-1 font-mono text-xs text-faint">{g.replaces}</p>
+                    <ul className="mt-4 space-y-2">
+                      {g.items.map((it) => (
+                        <li key={it} className="flex gap-2 text-sm leading-relaxed text-muted">
+                          <span className="text-cyan">·</span>
+                          <span>{it}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <div className="font-mono text-xs text-blue">{g.kick}</div>
-                  <h3 className="mt-2 text-lg font-semibold text-fg">{g.title}</h3>
-                  <p className="mt-1 font-mono text-xs text-faint">{g.replaces}</p>
-                  <ul className="mt-4 space-y-2">
-                    {g.items.map((it) => (
-                      <li key={it} className="flex gap-2 text-sm leading-relaxed text-muted">
-                        <span className="text-cyan">·</span>
-                        <span>{it}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </section>
+                </Reveal>
+              ))}
+            </div>
+          </section>
         </Band>
 
         <section id="atajos" className="scroll-mt-24 pt-24 pb-12">
@@ -271,7 +277,10 @@ export default function App() {
               </div>
               <div className="space-y-2.5">
                 {shortcutLabels.map((label, i) => (
-                  <div key={label} className="flex items-center justify-between rounded-xl bg-bg/50 px-4 py-2.5">
+                  <div
+                    key={label}
+                    className="flex items-center justify-between rounded-xl bg-bg/50 px-4 py-2.5"
+                  >
                     <span className="text-sm text-fg">{label}</span>
                     <span className="flex items-center gap-1">
                       {shortcutKeys[i].map((k) => (

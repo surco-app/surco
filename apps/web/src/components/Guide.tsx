@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import Reveal from './Reveal'
-import DownloadButton from './DownloadButton'
-import Header from './Header'
-import Footer from './Footer'
-import Lightbox from './Lightbox'
 import { useAutoLanguage } from '../lib/useAutoLanguage'
+import DownloadButton from './DownloadButton'
+import Footer from './Footer'
+import Header from './Header'
+import Lightbox from './Lightbox'
+import Reveal from './Reveal'
 
 type Section = {
   id: string
@@ -88,14 +88,20 @@ export default function Guide() {
       <main id="main" className="relative mx-auto max-w-3xl px-6">
         <section className="pt-12 pb-12 sm:pt-16">
           <Reveal>
-            <p className="font-mono text-xs tracking-wider text-blue uppercase">{t('guide.kicker')}</p>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">{t('guide.title')}</h1>
+            <p className="font-mono text-xs tracking-wider text-blue uppercase">
+              {t('guide.kicker')}
+            </p>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
+              {t('guide.title')}
+            </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">{t('guide.lede')}</p>
           </Reveal>
 
           <Reveal delay={120}>
             <nav className="mt-10 rounded-2xl border border-line bg-surface2/40 p-6">
-              <p className="font-mono text-xs tracking-wider text-faint uppercase">{t('guide.tocLabel')}</p>
+              <p className="font-mono text-xs tracking-wider text-faint uppercase">
+                {t('guide.tocLabel')}
+              </p>
               <ol className="mt-4 grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
                 {sections.map((s, i) => (
                   <li key={s.id}>
@@ -152,8 +158,12 @@ export default function Guide() {
 
         <section className="border-t border-line/60 py-16 text-center">
           <Reveal>
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t('guide.outroTitle')}</h2>
-            <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">{t('guide.outroLede')}</p>
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {t('guide.outroTitle')}
+            </h2>
+            <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">
+              {t('guide.outroLede')}
+            </p>
             <div className="mt-2 flex flex-col items-center text-center">
               <DownloadButton />
             </div>

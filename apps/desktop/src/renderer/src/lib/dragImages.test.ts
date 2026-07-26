@@ -56,9 +56,7 @@ describe('imageUrlsFromDrag', () => {
   // each candidate in turn, so duplicates would just be wasted fetches — dedupe them.
   it('dedupes a URL that arrives on several types', () => {
     const url = 'https://img.example/cover.jpg'
-    expect(
-      imageUrlsFromDrag(dt({ 'text/uri-list': url, 'text/plain': url })),
-    ).toEqual([url])
+    expect(imageUrlsFromDrag(dt({ 'text/uri-list': url, 'text/plain': url }))).toEqual([url])
   })
 
   it('returns an empty list when the drag carried no image', () => {

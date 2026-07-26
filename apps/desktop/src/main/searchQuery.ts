@@ -1,4 +1,3 @@
-import type { SearchHints } from '../shared/types'
 import {
   cleanQuery,
   dropDjPrefix,
@@ -8,6 +7,7 @@ import {
   dropTrackNumberTail,
   stripParentheticals,
 } from '../shared/searchClean'
+import type { SearchHints } from '../shared/types'
 
 // Re-exported so existing callers/tests keep importing it from here; the implementation
 // (and the rest of the cleaners) now lives in shared so the renderer's matcher reuses it.

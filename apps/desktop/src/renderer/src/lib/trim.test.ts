@@ -76,7 +76,14 @@ describe('refineOnset', () => {
   })
 
   it('returns undefined when the window is silent, keeping the coarse estimate', () => {
-    expect(refineOnset(Array.from({ length: 100 }, () => NOISE), 9.5, 1, 'start')).toBeUndefined()
+    expect(
+      refineOnset(
+        Array.from({ length: 100 }, () => NOISE),
+        9.5,
+        1,
+        'start',
+      ),
+    ).toBeUndefined()
     expect(refineOnset([], 9.5, 1, 'start')).toBeUndefined()
   })
 })

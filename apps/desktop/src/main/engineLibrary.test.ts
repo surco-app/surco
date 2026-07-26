@@ -200,7 +200,12 @@ describe('addToEngineLibrary', () => {
     const file = await makeFile(root, 'cancio\u0301n.aiff')
     await addToEngineLibrary(lib, file, meta({ title: 'First' }), 'Surco')
 
-    await addToEngineLibrary(lib, join(root, 'canci\u00f3n.aiff'), meta({ title: 'Second' }), 'Surco')
+    await addToEngineLibrary(
+      lib,
+      join(root, 'canci\u00f3n.aiff'),
+      meta({ title: 'Second' }),
+      'Surco',
+    )
 
     const db = await open(join(lib, 'Database2', 'm.db'))
     const tracks = rows(db, 'SELECT * FROM Track')
@@ -219,7 +224,9 @@ describe('addToEngineLibrary', () => {
     await addToEngineLibrary(lib, file, meta({ title: 'Seed' }), 'Surco')
     vi.mocked(isEngineDjRunning).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
 
-    await expect(addToEngineLibrary(lib, file, meta({ title: 'Changed' }), 'Surco')).rejects.toThrow()
+    await expect(
+      addToEngineLibrary(lib, file, meta({ title: 'Changed' }), 'Surco'),
+    ).rejects.toThrow()
 
     const db = await open(join(lib, 'Database2', 'm.db'))
     expect(rows(db, 'SELECT title FROM Track')[0].title).toBe('Seed')
@@ -276,9 +283,7 @@ describe('addToEngineLibrary', () => {
   // because the writer serializes whole-file rewrites of the same database.
   it('lands every track from overlapping adds', async () => {
     const lib = join(root, 'parallel', 'Engine Library')
-    const files = await Promise.all(
-      ['p1.aiff', 'p2.aiff', 'p3.aiff'].map((n) => makeFile(root, n)),
-    )
+    const files = await Promise.all(['p1.aiff', 'p2.aiff', 'p3.aiff'].map((n) => makeFile(root, n)))
     await Promise.all(
       files.map((f, i) => addToEngineLibrary(lib, f, meta({ title: `P${i + 1}` }), 'Surco')),
     )
@@ -431,8 +436,20 @@ describe('addToEngineLibrary — album art', () => {
   it('reuses the stored blob for a second track with the same cover', async () => {
     const lib = join(root, 'dedup-art', 'Engine Library')
     const cover = await makeCover('shared.jpg', 'jpeg-shared')
-    await addToEngineLibrary(lib, await makeFile(root, 'a2.aiff'), meta({ title: 'A2' }), 'Surco', cover)
-    await addToEngineLibrary(lib, await makeFile(root, 'a3.aiff'), meta({ title: 'A3' }), 'Surco', cover)
+    await addToEngineLibrary(
+      lib,
+      await makeFile(root, 'a2.aiff'),
+      meta({ title: 'A2' }),
+      'Surco',
+      cover,
+    )
+    await addToEngineLibrary(
+      lib,
+      await makeFile(root, 'a3.aiff'),
+      meta({ title: 'A3' }),
+      'Surco',
+      cover,
+    )
     const db = await open(join(lib, 'Database2', 'm.db'))
     expect(rows(db, 'SELECT id FROM AlbumArt WHERE id > 1')).toHaveLength(1)
     const ids = rows(db, 'SELECT DISTINCT albumArtId FROM Track')
@@ -475,7 +492,12 @@ describe('dumpEngineLibrary', () => {
   // Music dump feeds the renderer's index with.
   it('reads the library rows as membership candidates', async () => {
     const lib = join(root, 'lib', 'Engine Library')
-    await addToEngineLibrary(lib, await makeFile(root, 'd1.aiff'), meta({ title: 'Dump One' }), 'Surco')
+    await addToEngineLibrary(
+      lib,
+      await makeFile(root, 'd1.aiff'),
+      meta({ title: 'Dump One' }),
+      'Surco',
+    )
     const { dumpEngineLibrary } = await import('./engineLibrary')
     expect(await dumpEngineLibrary(lib)).toEqual([{ title: 'Dump One', artist: 'A' }])
   })

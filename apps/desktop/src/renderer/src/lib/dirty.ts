@@ -52,8 +52,7 @@ function normalizeEffect(cfg: NormalizeConfig): string {
   if (cfg.mode === 'loudness') return `loudness ${cfg.targetLufs} ${cfg.truePeakDb}`
   // The booleans coerced so a config saved before the options existed (undefined)
   // reads identically to one with them off.
-  if (cfg.mode === 'peak')
-    return `peak ${cfg.peakDb} ${!!cfg.peakRemoveDc} ${!!cfg.peakPerChannel}`
+  if (cfg.mode === 'peak') return `peak ${cfg.peakDb} ${!!cfg.peakRemoveDc} ${!!cfg.peakPerChannel}`
   return 'none'
 }
 

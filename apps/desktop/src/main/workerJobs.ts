@@ -1,15 +1,10 @@
-import type {
-  BpmResult,
-  KeyResult,
-  TrackMetadata,
-  WaveformScan,
-} from '../shared/types'
+import type { BpmResult, KeyResult, TrackMetadata, WaveformScan } from '../shared/types'
 import { runChannelScan } from './channelScan'
 import { detectClicks } from './clickDetect'
 import { prependFlacId3 } from './flacFinderCover'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
-import { copyCueFrames, type CueShift, writeTags } from './tags'
+import { type CueShift, copyCueFrames, writeTags } from './tags'
 import { detectBpm } from './tempo'
 import { computePeaks } from './waveform'
 

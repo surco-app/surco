@@ -7,7 +7,11 @@ import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { MAX_META_UNDO, useMetaUndo } from './useMetaUndo'
 
-function track(id: string, meta: Partial<TrackMetadata> = {}, extra: Partial<TrackItem> = {}): TrackItem {
+function track(
+  id: string,
+  meta: Partial<TrackMetadata> = {},
+  extra: Partial<TrackItem> = {},
+): TrackItem {
   return {
     id,
     inputPath: `/${id}.wav`,
@@ -57,7 +61,11 @@ describe('useMetaUndo', () => {
   // get silently re-matched and overwritten by the next sweep.
   it('restores the match flags a clear dropped', () => {
     const cleared = setup([
-      track('a', { title: 'Matched' }, { matched: true, matchConfidence: 0.93, inLibraryResolved: true }),
+      track(
+        'a',
+        { title: 'Matched' },
+        { matched: true, matchConfidence: 0.93, inLibraryResolved: true },
+      ),
     ])
     act(() => {
       cleared.result.current.record(cleared.result.current.tracks)
@@ -117,11 +125,15 @@ describe('useMetaUndo', () => {
     const { result } = setup([track('a', { title: 'v1' })])
     act(() => {
       result.current.record(result.current.tracks)
-      result.current.setTracks((prev) => prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'v2' } })))
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'v2' } })),
+      )
     })
     act(() => {
       result.current.record(result.current.tracks)
-      result.current.setTracks((prev) => prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'v3' } })))
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'v3' } })),
+      )
     })
     act(() => {
       result.current.undo()
@@ -209,7 +221,9 @@ describe('useMetaUndo', () => {
     for (let i = 1; i <= MAX_META_UNDO + 1; i++) {
       act(() => {
         result.current.record(result.current.tracks)
-        result.current.setTracks((prev) => prev.map((t) => ({ ...t, meta: { ...t.meta, title: `v${i}` } })))
+        result.current.setTracks((prev) =>
+          prev.map((t) => ({ ...t, meta: { ...t.meta, title: `v${i}` } })),
+        )
       })
     }
     for (let i = 0; i < MAX_META_UNDO; i++) {

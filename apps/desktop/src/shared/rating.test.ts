@@ -3,9 +3,9 @@ import {
   formatRatingTag,
   ratingTagToStars,
   ratingToStars,
+  starsTagToEngineRating,
   starsToRating,
   starsToWmpRating,
-  starsTagToEngineRating,
 } from './rating'
 
 describe('formatRatingTag', () => {

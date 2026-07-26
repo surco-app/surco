@@ -47,6 +47,7 @@ export function trimFilter(trim: TrimRange | undefined): string | null {
     .join(':')
   const stages = [`atrim=${bounds}`, 'asetpts=PTS-STARTPTS']
   if (start !== undefined) stages.push(`afade=t=in:d=${FADE_SEC}`)
-  if (end !== undefined) stages.push(`afade=t=out:st=${secs(end - (start ?? 0) - FADE_SEC)}:d=${FADE_SEC}`)
+  if (end !== undefined)
+    stages.push(`afade=t=out:st=${secs(end - (start ?? 0) - FADE_SEC)}:d=${FADE_SEC}`)
   return stages.join(',')
 }
