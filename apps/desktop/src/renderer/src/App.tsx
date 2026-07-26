@@ -400,6 +400,8 @@ export default function App(): React.JSX.Element {
       discogsPrefetched.current.delete(id)
       viewCache.current.delete(id)
       forgetAutoMatch(id)
+      // Deliberately NOT forgetAnalysisTracks here: forget means the row is being rebuilt
+      // in place (start over), so the track is still in the list and must stay analyzable.
       // Free the rebuilt row's old blob only if no other track still shows it.
       revokeCoverUrlIfUnused(
         tracksRef.current.find((t) => t.id === id)?.coverUrl,
@@ -416,6 +418,10 @@ export default function App(): React.JSX.Element {
         forgetAutoMatch(track.id)
         removeAnalysisQueries(queryClient, track.inputPath)
       }
+      // Also take them out of the quality sweep's queue: nothing else retires a queued
+      // track short of measuring it, so without this the sweep keeps counting (and
+      // decoding) rows that are no longer in the list.
+      forgetAnalysisTracks(removed.map((t) => t.id))
       // A picked cover's blob URL would otherwise pin the image file until quit — but a
       // cover applied across a selection is shared, so keep it while another row uses it.
       // Weighed against the survivors of the whole batch: judging each row against a list
@@ -430,6 +436,7 @@ export default function App(): React.JSX.Element {
       discogsPrefetched.current.clear()
       viewCache.current.clear()
       resetAutoMatch()
+      forgetAnalysisTracks(cleared.map((t) => t.id))
       for (const t of cleared) {
         removeAnalysisQueries(queryClient, t.inputPath)
         revokeCoverUrl(t.coverUrl)
@@ -584,7 +591,12 @@ export default function App(): React.JSX.Element {
 
   // Batch quality triage (progress, cancel, focus gating) lives in the hook; App only
   // wires the start/cancel actions into the toolbar and commands.
-  const { analysis, analyzeAllQuality, cancelAnalysis } = useQualityAnalysis({
+  const {
+    analysis,
+    analyzeAllQuality,
+    cancelAnalysis,
+    forgetTracks: forgetAnalysisTracks,
+  } = useQualityAnalysis({
     // The bulk scope: a deliberate multi-selection when there is one, else the visible
     // (filtered) rows. Already-measured tracks are skipped, so widening the scope never
     // re-analyses what a narrower one already did.
