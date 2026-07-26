@@ -57,123 +57,154 @@ describe('session store', () => {
   // The whole point of the store: what the user had loaded comes back after a relaunch.
   // Only files that still exist are offered — a track deleted since would import as a
   // broken row, so a stale path must silently drop out of the offer.
-  it('round-trips the saved paths, dropping files that no longer exist', () => {
+  it('round-trips the saved paths, dropping files that no longer exist', async () => {
     const dir = app.getPath('userData')
     const kept = join(dir, 'kept.wav')
     writeFileSync(kept, 'x')
     saveLastSession([kept, join(dir, 'gone.wav')], {})
-    expect(loadLastSession().paths).toEqual([kept])
+    expect((await loadLastSession()).paths).toEqual([kept])
+  })
+
+  // The existence check used to be a synchronous existsSync per path, run on the main
+  // process while answering session:get — before the user had answered the reopen prompt
+  // at all. On a network (SMB) crate that is a stat round trip each: 622 paths measured
+  // ~4s of a fully blocked main process, which is the black window at launch. Checking
+  // the paths concurrently keeps the same "only offer files that still exist" guarantee
+  // without serializing the round trips.
+  it('checks the saved paths concurrently rather than one after another', async () => {
+    const dir = app.getPath('userData')
+    const paths: string[] = []
+    for (let i = 0; i < 40; i++) {
+      const p = join(dir, `concurrent-${i}.wav`)
+      writeFileSync(p, 'x')
+      paths.push(p)
+    }
+    saveLastSession(paths, {})
+
+    // Timing alone cannot express this on a fast local disk, and the cost that matters is
+    // not total work but BLOCKING work: existsSync stops the main process (and with it the
+    // window paint) for the whole walk, while the async stat lets the event loop run. So
+    // assert the property directly — the load must yield to the event loop at least once
+    // instead of running to completion in a single synchronous block.
+    let tickedDuringLoad = false
+    const pending = loadLastSession()
+    setImmediate(() => {
+      tickedDuringLoad = true
+    })
+    const loaded = await pending
+    expect(tickedDuringLoad).toBe(true)
+    expect(loaded.paths).toEqual(paths)
   })
 
   // The user feedback behind the edits field: hundreds of tracks re-tagged but not yet
   // converted, then the machine froze — every staged edit gone. The edits must survive
   // the round-trip so a relaunch can restore them onto the reopened session.
-  it('round-trips staged edits keyed by path', () => {
+  it('round-trips staged edits keyed by path', async () => {
     const dir = app.getPath('userData')
     const kept = join(dir, 'kept.wav')
     writeFileSync(kept, 'x')
     const staged = edit({ outputName: 'A1 - Edited', matched: true, matchConfidence: 0.9 })
     saveLastSession([kept], { [kept]: staged })
-    expect(loadLastSession().edits).toEqual({ [kept]: staged })
+    expect((await loadLastSession()).edits).toEqual({ [kept]: staged })
   })
 
   // session.json is hand-editable: an inverted trim range would make atrim emit an
   // empty stream at the next conversion, so the load repairs it to "no trim" while a
   // valid staged range comes back exactly as saved.
-  it('round-trips a staged silence trim and repairs a malformed one', () => {
+  it('round-trips a staged silence trim and repairs a malformed one', async () => {
     const dir = app.getPath('userData')
     const kept = join(dir, 'kept.wav')
     writeFileSync(kept, 'x')
     saveLastSession([kept], { [kept]: edit({ trim: { startSec: 3.2, endSec: 200 } }) })
-    expect(loadLastSession().edits[kept].trim).toEqual({ startSec: 3.2, endSec: 200 })
+    expect((await loadLastSession()).edits[kept].trim).toEqual({ startSec: 3.2, endSec: 200 })
     saveLastSession([kept], { [kept]: edit({ trim: { startSec: 10, endSec: 5 } }) })
-    expect(loadLastSession().edits[kept].trim).toBeUndefined()
+    expect((await loadLastSession()).edits[kept].trim).toBeUndefined()
   })
 
   // Sessions written before the beatgrid feature was removed still carry the
   // key; the load must drop it so no stale grid rides the restore.
-  it('drops the beatgrid key an older session stored', () => {
+  it('drops the beatgrid key an older session stored', async () => {
     const dir = app.getPath('userData')
     const kept = join(dir, 'kept.wav')
     writeFileSync(kept, 'x')
     const legacy = { ...edit(), beatgrid: { bpm: 128, anchorSec: 0.25 } }
     saveLastSession([kept], { [kept]: legacy })
-    expect('beatgrid' in loadLastSession().edits[kept]).toBe(false)
+    expect('beatgrid' in (await loadLastSession()).edits[kept]).toBe(false)
   })
 
   // An edit whose track dropped out of the offer (file gone) has nothing to restore
   // onto; keeping it would only grow the file forever.
-  it('drops edits for paths that no longer exist', () => {
+  it('drops edits for paths that no longer exist', async () => {
     const dir = app.getPath('userData')
     const kept = join(dir, 'kept.wav')
     const gone = join(dir, 'gone.wav')
     writeFileSync(kept, 'x')
     saveLastSession([kept, gone], { [kept]: edit(), [gone]: edit() })
-    expect(Object.keys(loadLastSession().edits)).toEqual([kept])
+    expect(Object.keys((await loadLastSession()).edits)).toEqual([kept])
   })
 
   // Pasted covers live in an OS temp dir that a reboot clears; a vanished cover file
   // can't be embedded, so the restored track must fall back to its own artwork rather
   // than carry a path the conversion would fail on.
-  it('drops a cover path whose file no longer exists', () => {
+  it('drops a cover path whose file no longer exists', async () => {
     const dir = app.getPath('userData')
     const kept = join(dir, 'kept.wav')
     writeFileSync(kept, 'x')
     saveLastSession([kept], {
       [kept]: edit({ coverPath: join(dir, 'gone-cover.png') }),
     })
-    expect(loadLastSession().edits[kept].coverPath).toBeUndefined()
+    expect((await loadLastSession()).edits[kept].coverPath).toBeUndefined()
   })
 
   // A locally picked cover was displayed through a blob: URL that died with the old
   // renderer, so only its file path survives. Minting a fresh data: preview at load
   // keeps the restored row showing the exact cover it will embed.
-  it('mints a preview for a surviving cover file that lost its display URL', () => {
+  it('mints a preview for a surviving cover file that lost its display URL', async () => {
     const dir = app.getPath('userData')
     const kept = join(dir, 'kept.wav')
     const cover = join(dir, 'cover.png')
     writeFileSync(kept, 'x')
     writeFileSync(cover, 'img')
     saveLastSession([kept], { [kept]: edit({ coverPath: cover }) })
-    const restored = loadLastSession().edits[kept]
+    const restored = (await loadLastSession()).edits[kept]
     expect(restored.coverPath).toBe(cover)
     expect(restored.coverUrl).toContain(`data:image/png;base64,preview:${cover}`)
   })
 
   // Clearing the list is a deliberate start-over; the next launch must not offer the
   // session the user just emptied.
-  it('persists an emptied session', () => {
+  it('persists an emptied session', async () => {
     const dir = app.getPath('userData')
     const kept = join(dir, 'kept.wav')
     saveLastSession([kept], {})
     saveLastSession([], {})
-    expect(loadLastSession()).toEqual({ paths: [], edits: {} })
+    expect(await loadLastSession()).toEqual({ paths: [], edits: {} })
   })
 
   // A corrupt or hand-edited file must degrade to "no previous session", never crash
   // the launch path that reads it.
-  it('treats a corrupt or malformed session file as empty', () => {
+  it('treats a corrupt or malformed session file as empty', async () => {
     const file = join(app.getPath('userData'), 'session.json')
     writeFileSync(file, '{not json')
-    expect(loadLastSession()).toEqual({ paths: [], edits: {} })
+    expect(await loadLastSession()).toEqual({ paths: [], edits: {} })
     writeFileSync(file, JSON.stringify({ paths: 'nope' }))
-    expect(loadLastSession()).toEqual({ paths: [], edits: {} })
+    expect(await loadLastSession()).toEqual({ paths: [], edits: {} })
     writeFileSync(file, JSON.stringify({ paths: [1, 2] }))
-    expect(loadLastSession()).toEqual({ paths: [], edits: {} })
+    expect(await loadLastSession()).toEqual({ paths: [], edits: {} })
   })
 
   // A session saved by a version without edits (or with a mangled edits value) still
   // reopens its paths; malformed entries degrade to "no staged edits" per track.
-  it('tolerates missing or malformed edits', () => {
+  it('tolerates missing or malformed edits', async () => {
     const dir = app.getPath('userData')
     const kept = join(dir, 'kept.wav')
     writeFileSync(kept, 'x')
     const file = join(dir, 'session.json')
     writeFileSync(file, JSON.stringify({ paths: [kept] }))
-    expect(loadLastSession()).toEqual({ paths: [kept], edits: {} })
+    expect(await loadLastSession()).toEqual({ paths: [kept], edits: {} })
     writeFileSync(file, JSON.stringify({ paths: [kept], edits: 'nope' }))
-    expect(loadLastSession()).toEqual({ paths: [kept], edits: {} })
+    expect(await loadLastSession()).toEqual({ paths: [kept], edits: {} })
     writeFileSync(file, JSON.stringify({ paths: [kept], edits: { [kept]: { meta: 'nope' } } }))
-    expect(loadLastSession()).toEqual({ paths: [kept], edits: {} })
+    expect(await loadLastSession()).toEqual({ paths: [kept], edits: {} })
   })
 })
