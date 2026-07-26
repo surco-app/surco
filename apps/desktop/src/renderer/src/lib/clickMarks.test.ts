@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_MARKS, clickMarks, nextClick } from './clickMarks'
+import { clickMarks, MAX_MARKS, nextClick } from './clickMarks'
 
 const FULL = { from: 0, to: 1 }
 

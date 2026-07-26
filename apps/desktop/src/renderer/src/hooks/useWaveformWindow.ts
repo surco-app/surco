@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query'
+import { keepPreviousData, type UseQueryResult, useQuery } from '@tanstack/react-query'
 
 // Roughly 1 bucket per viewport pixel across the 3-viewport window below —
 // enough that the deep zoom draws real detail, small enough to stay a
@@ -45,7 +45,12 @@ export function useWaveformWindow(
   return useQuery({
     queryKey: ['waveform-window', inputPath, startSec, durSec],
     queryFn: async () => {
-      const r = await window.api.waveformWindow(inputPath as string, startSec, durSec, WINDOW_BUCKETS)
+      const r = await window.api.waveformWindow(
+        inputPath as string,
+        startSec,
+        durSec,
+        WINDOW_BUCKETS,
+      )
       return r ? { peaks: r.peaks, rms: r.rms, startSec, durSec } : null
     },
     enabled: enabled && !!inputPath && durSec > 0,

@@ -18,18 +18,21 @@ export default function Footer({ page }: { page?: Page }) {
             <img src="/icon.png" alt="Surco" className="h-9 w-9" />
             <span className="text-lg font-semibold tracking-tight">Surco</span>
           </div>
-          <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
-            {t('footer.tagline')}
-          </p>
+          <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">{t('footer.tagline')}</p>
           <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-line bg-surface/40 px-3 py-1 font-mono text-xs text-muted">
-            <span className="h-1.5 w-1.5 rounded-full bg-blue" style={{ animation: 'glow 2s ease-in-out infinite' }} />
+            <span
+              className="h-1.5 w-1.5 rounded-full bg-blue"
+              style={{ animation: 'glow 2s ease-in-out infinite' }}
+            />
             {t('available')}
           </p>
           <p className="mt-4 max-w-xs text-xs leading-relaxed text-faint">{t('betaNote')}</p>
         </div>
 
         <div>
-          <h3 className="font-mono text-xs tracking-wider text-faint uppercase">{t('footer.product')}</h3>
+          <h3 className="font-mono text-xs tracking-wider text-faint uppercase">
+            {t('footer.product')}
+          </h3>
           <ul className="mt-4 space-y-2.5 text-sm text-muted">
             {FOOTER_SECTIONS.map((id) => (
               <li key={id}>
@@ -52,7 +55,9 @@ export default function Footer({ page }: { page?: Page }) {
         </div>
 
         <div>
-          <h3 className="font-mono text-xs tracking-wider text-faint uppercase">{t('footer.formatsHeading')}</h3>
+          <h3 className="font-mono text-xs tracking-wider text-faint uppercase">
+            {t('footer.formatsHeading')}
+          </h3>
           <ul className="mt-4 space-y-2.5 font-mono text-sm text-muted">
             {formats.map((f) => (
               <li key={f}>{f}</li>
@@ -61,7 +66,9 @@ export default function Footer({ page }: { page?: Page }) {
         </div>
 
         <div>
-          <h3 className="font-mono text-xs tracking-wider text-faint uppercase">{t('footer.contactHeading')}</h3>
+          <h3 className="font-mono text-xs tracking-wider text-faint uppercase">
+            {t('footer.contactHeading')}
+          </h3>
           <ul className="mt-4 space-y-2.5 text-sm text-muted">
             <li>
               <a href="mailto:hello@vicent.io" className="transition-colors hover:text-fg">

@@ -1,5 +1,5 @@
-import { type Chord, type KeyLike, eventToChord } from '../../../shared/shortcuts'
 import { matchChord } from '../../../shared/shortcutDefaults'
+import { type Chord, eventToChord, type KeyLike } from '../../../shared/shortcuts'
 
 export function moveIndex(length: number, current: number, delta: number): number {
   if (length === 0) return -1

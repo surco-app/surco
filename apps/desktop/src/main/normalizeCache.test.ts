@@ -41,11 +41,10 @@ vi.mock('node:child_process', () => ({
   },
 }))
 
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app } from 'electron'
-import { rmSync } from 'node:fs'
 import type { NormalizeConfig } from '../shared/types'
 import { clearAnalysisCache } from './analysisCache'
 import { normalizeFilter } from './ffmpeg'

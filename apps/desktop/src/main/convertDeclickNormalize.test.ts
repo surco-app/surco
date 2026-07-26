@@ -103,7 +103,17 @@ function channelStats(file: string): { dc: number; max: number }[] {
 // Integrated loudness via ffmpeg's own EBU R128 meter (it reports on stderr, which
 // execFileSync doesn't return — spawnSync does).
 function loudnessOf(file: string): number {
-  const run = spawnSync(FF, ['-hide_banner', '-nostats', '-i', file, '-af', 'ebur128', '-f', 'null', '-'])
+  const run = spawnSync(FF, [
+    '-hide_banner',
+    '-nostats',
+    '-i',
+    file,
+    '-af',
+    'ebur128',
+    '-f',
+    'null',
+    '-',
+  ])
   // The meter logs a progressive I: per frame before the summary — the last one is
   // the integrated figure.
   const all = [...run.stderr.toString().matchAll(/I:\s*(-?[\d.]+)\s*LUFS/g)]
@@ -200,10 +210,7 @@ describe('convertAudio declick × normalize', () => {
     // Channel 0: DC-biased quiet sine carrying the clicks; channel 1: louder clean
     // sine. Per-channel gains must come from astats of the REPAIRED audio — the
     // click would otherwise anchor channel 0's extent and leave it several dB short.
-    const src = makeSource(
-      'channels.wav',
-      `0.1+0.3*sin(2*PI*440*t)+${CLICKS}|0.6*sin(2*PI*554*t)`,
-    )
+    const src = makeSource('channels.wav', `0.1+0.3*sin(2*PI*440*t)+${CLICKS}|0.6*sin(2*PI*554*t)`)
     const out = join(dir, 'channels-out.wav')
     await convertAudio(
       src,

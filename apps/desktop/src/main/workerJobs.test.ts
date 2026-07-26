@@ -69,7 +69,13 @@ describe('runWorkerJob', () => {
 
   it('routes the clearExtras flag through so a cleared record wipes its rating', () => {
     const meta = { title: '' } as TrackMetadata
-    runWorkerJob({ type: 'writeTags', file: '/out/a.mp3', meta, removeCover: true, clearExtras: true })
+    runWorkerJob({
+      type: 'writeTags',
+      file: '/out/a.mp3',
+      meta,
+      removeCover: true,
+      clearExtras: true,
+    })
     expect(writeTags).toHaveBeenCalledWith(
       '/out/a.mp3',
       meta,

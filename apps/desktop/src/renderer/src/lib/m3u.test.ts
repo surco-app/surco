@@ -4,7 +4,11 @@ import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { buildM3u } from './m3u'
 
-function track(id: string, meta: Partial<TrackMetadata> = {}, extra: Partial<TrackItem> = {}): TrackItem {
+function track(
+  id: string,
+  meta: Partial<TrackMetadata> = {},
+  extra: Partial<TrackItem> = {},
+): TrackItem {
   return {
     id,
     inputPath: `/music/${id}.wav`,

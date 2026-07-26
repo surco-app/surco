@@ -6,14 +6,14 @@ const RINGS = [
   { r: 120, dash: '140 80', stroke: 'var(--color-cyan)', opacity: 0.07 },
   { r: 165, dash: '220 120', stroke: 'var(--color-blue)', opacity: 0.06 },
   { r: 210, dash: '180 150', stroke: 'var(--color-cyan)', opacity: 0.05 },
-  { r: 255, dash: '300 110', stroke: 'var(--color-blue)', opacity: 0.04 }
+  { r: 255, dash: '300 110', stroke: 'var(--color-blue)', opacity: 0.04 },
 ]
 
 const FADE = 'linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)'
 
 export default function GrooveArcs({
   className = '',
-  side = 'right'
+  side = 'right',
 }: {
   className?: string
   side?: 'left' | 'right'

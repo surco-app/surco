@@ -74,9 +74,7 @@ describe('buildRekordboxXml', () => {
     const withPunct = buildRekordboxXml([
       track({ id: 'q', inputPath: '/music/What Is Love? #1.wav' }),
     ])
-    expect(withPunct).toContain(
-      'Location="file://localhost/music/What%20Is%20Love%3F%20%231.wav"',
-    )
+    expect(withPunct).toContain('Location="file://localhost/music/What%20Is%20Love%3F%20%231.wav"')
   })
 
   it('labels the kind from the file extension', () => {

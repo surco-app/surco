@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 
 const FROM_CLASS = {
   up: '',
   left: 'reveal-from-left',
-  right: 'reveal-from-right'
+  right: 'reveal-from-right',
 } as const
 
 export default function Reveal({
@@ -11,7 +11,7 @@ export default function Reveal({
   delay = 0,
   from = 'up',
   eager = false,
-  className = ''
+  className = '',
 }: {
   children: ReactNode
   delay?: number
@@ -38,7 +38,7 @@ export default function Reveal({
           io.disconnect()
         }
       },
-      { threshold: 0.15, rootMargin: '0px 0px -8% 0px' }
+      { threshold: 0.15, rootMargin: '0px 0px -8% 0px' },
     )
     io.observe(el)
     return () => io.disconnect()

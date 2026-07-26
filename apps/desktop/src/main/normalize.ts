@@ -229,13 +229,12 @@ export function parseAstatsChannels(stderr: string): ChannelStats[] | null {
 // otherwise one shared gain (from the loudest channel) preserves the stereo image.
 // A silent channel has no extent to scale, so the whole filter bails (null) and the
 // caller skips normalization — the same contract as a failed measurement.
-export function peakChannelFilter(
-  cfg: NormalizeConfig,
-  channels: ChannelStats[],
-): string | null {
+export function peakChannelFilter(cfg: NormalizeConfig, channels: ChannelStats[]): string | null {
   const removeDc = cfg.peakRemoveDc === true
   const extents = channels.map((c) =>
-    removeDc ? Math.max(Math.abs(c.max - c.dc), Math.abs(c.min - c.dc)) : Math.max(Math.abs(c.max), Math.abs(c.min)),
+    removeDc
+      ? Math.max(Math.abs(c.max - c.dc), Math.abs(c.min - c.dc))
+      : Math.max(Math.abs(c.max), Math.abs(c.min)),
   )
   if (extents.some((e) => e <= 0)) return null
   const target = 10 ** (cfg.peakDb / 20)

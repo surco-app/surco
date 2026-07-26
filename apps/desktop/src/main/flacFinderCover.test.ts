@@ -84,7 +84,18 @@ describe('prependFlacId3', () => {
   it('stays readable to ffmpeg, so import/analysis/playback still see the tags through the header', async () => {
     const p = join(dir, 'readable.flac')
     copyFileSync(flac, p)
-    execFileSync(FF, ['-y', '-loglevel', 'error', '-i', flac, '-metadata', 'title=Elastic Pump', '-metadata', 'artist=Javi Soria', p])
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-i',
+      flac,
+      '-metadata',
+      'title=Elastic Pump',
+      '-metadata',
+      'artist=Javi Soria',
+      p,
+    ])
     prependFlacId3(p, meta, cover)
     const tags = await readTags(p)
     expect(tags.title).toBe('Elastic Pump')

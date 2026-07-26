@@ -47,7 +47,6 @@ export function useLibraryVerdict({
   discogsResolving,
   onChange,
 }: Params): LibraryVerdict {
-
   // Whether the confident Discogs suggestion is what proves this track is owned — the raw
   // tags didn't key-match the library but the release's canonical title/artist does. This is
   // the one verdict the list can't recompute on its own (it has no open release), so it gets

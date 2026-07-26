@@ -278,7 +278,12 @@ describe('extractTralbum / parseRelease', () => {
       current: { title: 'Various Artists Compilation' },
       trackinfo: [
         { track_num: 1, artist: 'Annwn', title: 'Annwn - First Contact', duration: 200 },
-        { track_num: 2, artist: 'Racheil Hearbsc', title: 'Racheil Hearbsc - Hard Hop', duration: 210 },
+        {
+          track_num: 2,
+          artist: 'Racheil Hearbsc',
+          title: 'Racheil Hearbsc - Hard Hop',
+          duration: 210,
+        },
       ],
     })
     const rel = parseRelease(html, 'https://x.bc')

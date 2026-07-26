@@ -389,7 +389,9 @@ export function preRankResults(results: SearchResult[], target: TrackMatchTarget
     // Whole words, never substrings: "Art" hiding inside "Artificial" must not count as
     // naming the act, or the noise row ties the real one and gets probed first.
     const hay = new Set(
-      normalize(`${result.title} ${(result.label ?? []).join(' ')}`).split(' ').filter(Boolean),
+      normalize(`${result.title} ${(result.label ?? []).join(' ')}`)
+        .split(' ')
+        .filter(Boolean),
     )
     const fraction = (field: string | undefined): number => {
       const words = field ? normalize(field).split(' ').filter(Boolean) : []

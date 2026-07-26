@@ -194,7 +194,8 @@ describe('preservesCuesInPlace', () => {
 // A minimal real ALAC .m4a (0.01s of silence, encoded once with ffmpeg and embedded
 // as base64 like the hand-built MP3 seed above): TagLib needs a genuine MPEG-4
 // container to open, and hand-assembling one is not worth the bytes.
-const TINY_M4A = 'AAAAHGZ0eXBNNEEgAAACAE00QSBpc29taXNvMgAAAAhmcmVlAAAAHW1kYXQAABAAAACgAAAPCAEAAAAAAAAA+XgAAAKrbW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAAAoAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAdV0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAAAoAAAAAAAAAAAAAAAEBAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAAKAAAAAAABAAAAAAFNbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAAAfQAAAAFBVxAAAAAAALWhkbHIAAAAAAAAAAHNvdW4AAAAAAAAAAAAAAABTb3VuZEhhbmRsZXIAAAAA+G1pbmYAAAAQc21oZAAAAAAAAAAAAAAAJGRpbmYAAAAcZHJlZgAAAAAAAAABAAAADHVybCAAAAABAAAAvHN0YmwAAABYc3RzZAAAAAAAAAABAAAASGFsYWMAAAAAAAAAAQAAAAAAAAAAAAEAEAAAAAAfQAAAAAAAJGFsYWMAAAAAAAAQAAAQKAoOAQAAAAAgBAAB9AAAAB9AAAAAGHN0dHMAAAAAAAAAAQAAAAEAAABQAAAAHHN0c2MAAAAAAAAAAQAAAAEAAAABAAAAAQAAABRzdHN6AAAAAAAAABUAAAABAAAAFHN0Y28AAAAAAAAAAQAAACwAAABidWR0YQAAAFptZXRhAAAAAAAAACFoZGxyAAAAAAAAAABtZGlyYXBwbAAAAAAAAAAAAAAAAC1pbHN0AAAAJal0b28AAAAdZGF0YQAAAAEAAAAATGF2ZjYyLjEyLjEwMg=='
+const TINY_M4A =
+  'AAAAHGZ0eXBNNEEgAAACAE00QSBpc29taXNvMgAAAAhmcmVlAAAAHW1kYXQAABAAAACgAAAPCAEAAAAAAAAA+XgAAAKrbW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAAAoAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAdV0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAAAoAAAAAAAAAAAAAAAEBAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAAKAAAAAAABAAAAAAFNbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAAAfQAAAAFBVxAAAAAAALWhkbHIAAAAAAAAAAHNvdW4AAAAAAAAAAAAAAABTb3VuZEhhbmRsZXIAAAAA+G1pbmYAAAAQc21oZAAAAAAAAAAAAAAAJGRpbmYAAAAcZHJlZgAAAAAAAAABAAAADHVybCAAAAABAAAAvHN0YmwAAABYc3RzZAAAAAAAAAABAAAASGFsYWMAAAAAAAAAAQAAAAAAAAAAAAEAEAAAAAAfQAAAAAAAJGFsYWMAAAAAAAAQAAAQKAoOAQAAAAAgBAAB9AAAAB9AAAAAGHN0dHMAAAAAAAAAAQAAAAEAAABQAAAAHHN0c2MAAAAAAAAAAQAAAAEAAAABAAAAAQAAABRzdHN6AAAAAAAAABUAAAABAAAAFHN0Y28AAAAAAAAAAQAAACwAAABidWR0YQAAAFptZXRhAAAAAAAAACFoZGxyAAAAAAAAAABtZGlyYXBwbAAAAAAAAAAAAAAAAC1pbHN0AAAAJal0b28AAAAdZGF0YQAAAAEAAAAATGF2ZjYyLjEyLjEwMg=='
 
 function buildM4aSeed(dir: string): string {
   const file = join(dir, 'seed.m4a')
@@ -238,7 +239,9 @@ describe('writeTags', () => {
     writeTags(file, meta, undefined, false, undefined, undefined, true)
 
     const f = TagFile.createFromPath(file)
-    expect((f.tag as Mpeg4AppleTag).getFirstItunesString('com.apple.iTunes', 'FOREIGN_TAG')).toBeFalsy()
+    expect(
+      (f.tag as Mpeg4AppleTag).getFirstItunesString('com.apple.iTunes', 'FOREIGN_TAG'),
+    ).toBeFalsy()
     expect(f.tag.title).toBe('Till I Come')
     f.dispose()
   })
@@ -254,7 +257,9 @@ describe('writeTags', () => {
     writeTags(file, meta, undefined, false, undefined, undefined, false, ['FOREIGN_TAG'])
 
     const f = TagFile.createFromPath(file)
-    expect((f.tag as Mpeg4AppleTag).getFirstItunesString('com.apple.iTunes', 'FOREIGN_TAG')).toBeFalsy()
+    expect(
+      (f.tag as Mpeg4AppleTag).getFirstItunesString('com.apple.iTunes', 'FOREIGN_TAG'),
+    ).toBeFalsy()
     expect(f.tag.title).toBe('Till I Come')
     f.dispose()
   })
@@ -409,9 +414,9 @@ describe('writeTags', () => {
     writeTags(file, meta)
 
     const f = TagFile.createFromPath(file)
-    expect(
-      userText(f.getTag(TagTypes.Id3v2, false) as Id3v2Tag, 'NOTES')?.text.join(''),
-    ).toBe('Medieval CUE Splitter (www.medieval.it)')
+    expect(userText(f.getTag(TagTypes.Id3v2, false) as Id3v2Tag, 'NOTES')?.text.join('')).toBe(
+      'Medieval CUE Splitter (www.medieval.it)',
+    )
     f.dispose()
   })
 
@@ -423,9 +428,7 @@ describe('writeTags', () => {
     const file = buildSeed(dir)
     addForeignFrame(file, 'REPLAYGAIN_TRACK_GAIN', '-6.6 dB')
 
-    writeTags(file, meta, undefined, false, undefined, undefined, false, [
-      'REPLAYGAIN_TRACK_GAIN',
-    ])
+    writeTags(file, meta, undefined, false, undefined, undefined, false, ['REPLAYGAIN_TRACK_GAIN'])
 
     const f = TagFile.createFromPath(file)
     const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
@@ -679,7 +682,11 @@ describe('copyCueFrames', () => {
       Buffer.concat([Buffer.from('TRAKTOR4', 'latin1'), Buffer.from([0]), Buffer.from(tree)]),
     )
     const body = priv
-    const header = Buffer.concat([Buffer.from('ID3'), Buffer.from([3, 0, 0]), syncsafe(body.length)])
+    const header = Buffer.concat([
+      Buffer.from('ID3'),
+      Buffer.from([3, 0, 0]),
+      syncsafe(body.length),
+    ])
     const mpegFrame = Buffer.concat([Buffer.from([0xff, 0xfb, 0x90, 0x00]), Buffer.alloc(413)])
     const audio = Buffer.concat(Array(20).fill(mpegFrame))
     const path = join(dir, 'priv-seed.mp3')
@@ -718,7 +725,10 @@ describe('copyCueFrames', () => {
   // must re-anchor every position (and the checksum, or Traktor ignores the frame).
   it('re-anchors the Traktor cues by the trim and clamps into-the-cut positions', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
-    const tree = buildTraktorTree([traktorCue('AutoGrid', 4, 65.61, 0), traktorCue('Drop', 0, 61234.5, 1)])
+    const tree = buildTraktorTree([
+      traktorCue('AutoGrid', 4, 65.61, 0),
+      traktorCue('Drop', 0, 61234.5, 1),
+    ])
     const source = buildPrivSeed(dir, tree)
     const out = join(dir, 'trimmed.mp3')
     writeFileSync(out, readFileSync(buildSeed(dir)))

@@ -90,89 +90,99 @@ export function useQualityAnalysis({ targetsRef, onErrors }: Params): QualityAna
   // argument rather than trusting a ref to be current. Kept in pendingRef (not just merged for
   // this one call) because a second track landing while the first's sweep is still running
   // would otherwise be dropped by the runningRef guard below with no later call to pick it up.
-  const analyzeAllQuality = useCallback((tracks?: TrackItem[]): void => {
-    for (const t of tracks ?? []) pendingRef.current.set(t.id, t)
-    const targets = tracksToAnalyze(sweepCandidates(), measuredRef.current)
-    if (runningRef.current || targets.length === 0) return
-    runningRef.current = true
-    analyzeCancel.current = false
-    let done = 0
-    let failed = 0
-    setAnalysis({ done: 0, total: targets.length })
-    void mapWithConcurrency(targets, 3, async (t) => {
-      if (analyzeCancel.current) return
-      // Hold here while the window is in the background so the sweep doesn't spawn
-      // ffmpeg off-screen; it resumes the moment the app is focused again.
-      await focusGate.current.wait()
-      if (analyzeCancel.current) return
-      try {
-        await queryClient.fetchQuery(spectrogramOptions(t.inputPath))
-        // The wave feeds the silence attention filter (silence left to trim); the
-        // clip/channel scan — a separate probe since the split — feeds the clipping
-        // one. Both decoded here so a single "analyze all" fills those buckets
-        // collection-wide instead of only for tracks the user opened or played.
-        await queryClient.fetchQuery(waveformOptions(t.inputPath))
-        await queryClient.fetchQuery(waveformScanOptions(t.inputPath))
-        // Each probe returns a different result type, so the fetchQuery calls are wrapped
-        // as thunks: kept in one array they'd unify to a union of option shapes fetchQuery
-        // can't accept, whereas each thunk keeps its own probe type monomorphic at its call.
-        const rest = [
-          () =>
-            queryClient.fetchQuery(
-              analysisOptions('loudness', t.inputPath, () => window.api.loudness(t.inputPath, 'low')),
-            ),
-          () =>
-            queryClient.fetchQuery(
-              analysisOptions('clicks', t.inputPath, () => window.api.clicks(t.inputPath, 'low')),
-            ),
-          () =>
-            queryClient.fetchQuery(
-              analysisOptions('bpm', t.inputPath, () => window.api.bpm(t.inputPath, 'low')),
-            ),
-          () =>
-            queryClient.fetchQuery(
-              analysisOptions('key', t.inputPath, () => window.api.key(t.inputPath, 'low')),
-            ),
-          () =>
-            queryClient.fetchQuery(
-              analysisOptions('properties', t.inputPath, () => window.api.properties(t.inputPath)),
-            ),
-        ]
-        for (const run of rest) {
-          try {
-            await run()
-          } catch {
-            // One analysis failing (e.g. bpm on a beatless rip) must not skip the others
-            // of the same track — each fills its own cache entry independently.
+  const analyzeAllQuality = useCallback(
+    (tracks?: TrackItem[]): void => {
+      for (const t of tracks ?? []) pendingRef.current.set(t.id, t)
+      const targets = tracksToAnalyze(sweepCandidates(), measuredRef.current)
+      if (runningRef.current || targets.length === 0) return
+      runningRef.current = true
+      analyzeCancel.current = false
+      let done = 0
+      let failed = 0
+      setAnalysis({ done: 0, total: targets.length })
+      void mapWithConcurrency(targets, 3, async (t) => {
+        if (analyzeCancel.current) return
+        // Hold here while the window is in the background so the sweep doesn't spawn
+        // ffmpeg off-screen; it resumes the moment the app is focused again.
+        await focusGate.current.wait()
+        if (analyzeCancel.current) return
+        try {
+          await queryClient.fetchQuery(spectrogramOptions(t.inputPath))
+          // The wave feeds the silence attention filter (silence left to trim); the
+          // clip/channel scan — a separate probe since the split — feeds the clipping
+          // one. Both decoded here so a single "analyze all" fills those buckets
+          // collection-wide instead of only for tracks the user opened or played.
+          await queryClient.fetchQuery(waveformOptions(t.inputPath))
+          await queryClient.fetchQuery(waveformScanOptions(t.inputPath))
+          // Each probe returns a different result type, so the fetchQuery calls are wrapped
+          // as thunks: kept in one array they'd unify to a union of option shapes fetchQuery
+          // can't accept, whereas each thunk keeps its own probe type monomorphic at its call.
+          const rest = [
+            () =>
+              queryClient.fetchQuery(
+                analysisOptions('loudness', t.inputPath, () =>
+                  window.api.loudness(t.inputPath, 'low'),
+                ),
+              ),
+            () =>
+              queryClient.fetchQuery(
+                analysisOptions('clicks', t.inputPath, () => window.api.clicks(t.inputPath, 'low')),
+              ),
+            () =>
+              queryClient.fetchQuery(
+                analysisOptions('bpm', t.inputPath, () => window.api.bpm(t.inputPath, 'low')),
+              ),
+            () =>
+              queryClient.fetchQuery(
+                analysisOptions('key', t.inputPath, () => window.api.key(t.inputPath, 'low')),
+              ),
+            () =>
+              queryClient.fetchQuery(
+                analysisOptions('properties', t.inputPath, () =>
+                  window.api.properties(t.inputPath),
+                ),
+              ),
+          ]
+          for (const run of rest) {
+            try {
+              await run()
+            } catch {
+              // One analysis failing (e.g. bpm on a beatless rip) must not skip the others
+              // of the same track — each fills its own cache entry independently.
+            }
           }
+        } catch {
+          // A single file ffmpeg can't read must not abort the whole sweep — count it so
+          // the run can report the total at the end instead of swallowing it.
+          failed += 1
+        } finally {
+          done += 1
+          measuredRef.current.add(t.id)
+          pendingRef.current.delete(t.id)
+          setAnalysis((a) => (a ? { ...a, done } : a))
         }
-      } catch {
-        // A single file ffmpeg can't read must not abort the whole sweep — count it so
-        // the run can report the total at the end instead of swallowing it.
-        failed += 1
-      } finally {
-        done += 1
-        measuredRef.current.add(t.id)
-        pendingRef.current.delete(t.id)
-        setAnalysis((a) => (a ? { ...a, done } : a))
-      }
-    }).finally(() => {
-      runningRef.current = false
-      if (failed > 0) onErrorsRef.current?.(failed)
-      // A drop that landed mid-sweep added rows to targetsRef the running pass never saw;
-      // re-evaluate (excluding what this run already measured, since targetsRef's own
-      // objects may not have caught up with the fetched spectrum yet) and drain before
-      // idling, so an import during analysis isn't stranded. pendingRef covers a track an
-      // onMetaLoaded enqueued while this pass was running and the runningRef guard dropped —
-      // it stays there (untouched by the guard above) until a relaunch actually measures it.
-      if (!analyzeCancel.current && tracksToAnalyze(sweepCandidates(), measuredRef.current).length > 0) {
-        analyzeAllQuality()
-        return
-      }
-      measuredRef.current = new Set()
-      setAnalysis(null)
-    })
-  }, [queryClient, sweepCandidates])
+      }).finally(() => {
+        runningRef.current = false
+        if (failed > 0) onErrorsRef.current?.(failed)
+        // A drop that landed mid-sweep added rows to targetsRef the running pass never saw;
+        // re-evaluate (excluding what this run already measured, since targetsRef's own
+        // objects may not have caught up with the fetched spectrum yet) and drain before
+        // idling, so an import during analysis isn't stranded. pendingRef covers a track an
+        // onMetaLoaded enqueued while this pass was running and the runningRef guard dropped —
+        // it stays there (untouched by the guard above) until a relaunch actually measures it.
+        if (
+          !analyzeCancel.current &&
+          tracksToAnalyze(sweepCandidates(), measuredRef.current).length > 0
+        ) {
+          analyzeAllQuality()
+          return
+        }
+        measuredRef.current = new Set()
+        setAnalysis(null)
+      })
+    },
+    [queryClient, sweepCandidates],
+  )
 
   const cancelAnalysis = useCallback((): void => {
     analyzeCancel.current = true
