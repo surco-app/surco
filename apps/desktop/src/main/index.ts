@@ -645,12 +645,25 @@ function registerIpc(): void {
   ipcMain.handle('files:expand', async (e, paths: string[]) => {
     // One feed row per drop/pick: the folder walk is the import's visible unit of work
     // (per-file tag reads flow through the analyze rows already).
-    const expanded = await activity.track('import', 'activity.import', () => expandPaths(paths), {
-      summary: (files) => ({
-        detailKey: 'activity.trackCount',
-        detailParams: { count: files.length },
-      }),
-    })
+    // Each batch the walk finds is granted access and pushed to the renderer right away,
+    // so rows appear while the rest of a slow (network) tree is still being walked. The
+    // grant must ride the batch, not the final result: a row the renderer shows before
+    // the walk ends still needs its file readable to load tags and play.
+    const streamBatch = (batch: string[]): void => {
+      mediaAccess.allowAll(batch)
+      if (!e.sender.isDestroyed()) e.sender.send('files:expanded', batch)
+    }
+    const expanded = await activity.track(
+      'import',
+      'activity.import',
+      () => expandPaths(paths, streamBatch),
+      {
+        summary: (files) => ({
+          detailKey: 'activity.trackCount',
+          detailParams: { count: files.length },
+        }),
+      },
+    )
     mediaAccess.allowAll(expanded)
     // Watch the folders the user dropped or picked so tracks copied in later surface as
     // "N new tracks"; a single dropped file has no folder to grow, so dirRoots drops it.

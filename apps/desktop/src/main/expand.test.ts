@@ -94,4 +94,51 @@ describe('expandPaths', () => {
   it('ignores paths that no longer exist instead of throwing', async () => {
     expect(await expandPaths([join(dir, 'gone.wav')])).toEqual([])
   })
+
+  // The reason this streams at all: on an SMB share a music tree costs one network
+  // round trip per directory, so a 560-folder crate takes ~20s to walk while the first
+  // audio file is known after ~1s. Reporting files as they are found is what lets the
+  // list fill from that first second instead of staying empty until the whole walk ends.
+  it('reports files as they are found, before the whole walk finishes', async () => {
+    await writeFile(join(dir, 'a.wav'), '')
+    await mkdir(join(dir, 'sub'))
+    await writeFile(join(dir, 'sub', 'b.flac'), '')
+
+    const seen: string[] = []
+    const all = await expandPaths([dir], (batch) => seen.push(...batch))
+
+    // Every path the walk returns must also have been announced — otherwise a consumer
+    // driven purely by the callback would silently miss tracks.
+    expect(seen.sort()).toEqual(all.sort())
+    expect(all.sort()).toEqual([join(dir, 'a.wav'), join(dir, 'sub', 'b.flac')].sort())
+  })
+
+  it('announces a shallow file without waiting for a slow sibling directory to finish', async () => {
+    // The guarantee that matters on a network volume: a file sitting at the root is
+    // usable immediately, even though a sibling subtree is still being walked. If the
+    // callback only fired at the end, this would arrive with everything else.
+    await writeFile(join(dir, 'quick.wav'), '')
+    await mkdir(join(dir, 'deep'))
+    await writeFile(join(dir, 'deep', 'slow.flac'), '')
+
+    const order: string[] = []
+    await expandPaths([dir], (batch) => order.push(...batch))
+
+    expect(order[0]).toBe(join(dir, 'quick.wav'))
+  })
+
+  it('never announces a path it filtered out of the result', async () => {
+    // The callback feeds the same import path as the return value, so anything the
+    // filters reject (hidden twins, conversion temps, non-audio) must not slip through
+    // it — a streamed ghost row is worse than a slow one.
+    await writeFile(join(dir, 'track.flac'), '')
+    await writeFile(join(dir, '._track.flac'), '')
+    await writeFile(join(dir, 'song.tmp-81f09e8f.wav'), '')
+    await writeFile(join(dir, 'cover.jpg'), '')
+
+    const seen: string[] = []
+    await expandPaths([dir], (batch) => seen.push(...batch))
+
+    expect(seen).toEqual([join(dir, 'track.flac')])
+  })
 })

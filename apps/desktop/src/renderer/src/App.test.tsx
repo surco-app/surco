@@ -202,6 +202,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     onUpdateCheckFailed: () => () => {},
     checkForUpdates: vi.fn().mockResolvedValue(undefined),
     onOpenFiles: () => () => {},
+    onExpandedBatch: () => () => {},
     onFoldersChanged: () => () => {},
     unwatchFolders: vi.fn().mockResolvedValue(undefined),
     takePendingFiles: vi.fn().mockResolvedValue([]),

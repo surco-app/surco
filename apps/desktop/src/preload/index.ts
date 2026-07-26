@@ -27,6 +27,11 @@ const api: Api = {
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
   expandPaths: (paths: string[]): Promise<string[]> => ipcRenderer.invoke('files:expand', paths),
   takePendingFiles: (): Promise<string[]> => ipcRenderer.invoke('files:pending'),
+  onExpandedBatch: (cb: (paths: string[]) => void) => {
+    const listener = (_e: unknown, paths: string[]): void => cb(paths)
+    ipcRenderer.on('files:expanded', listener)
+    return () => ipcRenderer.removeListener('files:expanded', listener)
+  },
   onOpenFiles: (cb: (paths: string[]) => void) => {
     const listener = (_e: unknown, paths: string[]): void => cb(paths)
     ipcRenderer.on('open-files', listener)
