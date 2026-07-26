@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
-import { type Id3v2Tag, File as TagFile, TagTypes } from 'node-taglib-sharp'
+import { type Id3v2Tag, File as TagFile, TagTypes, type XiphComment } from 'node-taglib-sharp'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
@@ -77,6 +77,18 @@ function hasCue(file: string): boolean {
   try {
     const tag = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
     return (tag?.frames ?? []).some((fr) => fr.frameId.toString() === 'GEOB')
+  } finally {
+    f.dispose()
+  }
+}
+
+// FLAC's side of the same blob: a Vorbis comment keyed TRAKTOR4, read back as the
+// single string it holds.
+function flacCueComment(file: string): string | undefined {
+  const f = TagFile.createFromPath(file)
+  try {
+    const xiph = f.getTag(TagTypes.Xiph, false) as XiphComment | null
+    return xiph?.getField('TRAKTOR4')?.[0]
   } finally {
     f.dispose()
   }
@@ -165,6 +177,72 @@ describe('convertAudio cue preservation', () => {
 
     expect(hasCue(out)).toBe(false)
     expect(hasPopm(out)).toBe(false)
+  })
+
+  // FLAC keeps Traktor's blob in a Vorbis comment named TRAKTOR4, not an ID3
+  // frame — and unlike ID3, ffmpeg carries that comment straight through a
+  // re-encode. So a trimmed FLAC comes out the far side holding cue positions
+  // measured from a start that no longer exists: every cue and the grid sit late
+  // by the whole cut, which is what users end up dragging back by hand. Until the
+  // ASCII-armored payload can be re-anchored the way the ID3 blob already is, the
+  // honest move is the one the parser already makes for a blob it can't re-anchor
+  // — drop it, and let Traktor re-analyze against the audio that's actually there.
+  it('drops the FLAC TRAKTOR4 comment when a trim moved the audio under it', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'surco-flaccue-'))
+    const cued = join(own, 'in.flac')
+    execFileSync(FF, [
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=4',
+      '-metadata',
+      'TRAKTOR4=ARMOREDCUEBLOB',
+      cued,
+    ])
+    expect(flacCueComment(cued)).toBe('ARMOREDCUEBLOB')
+
+    const out = join(own, 'out.flac')
+    await convertAudio(
+      cued,
+      out,
+      'flac',
+      meta,
+      undefined, // coverPath
+      undefined, // normalize
+      false, // removeCover
+      undefined, // quality
+      undefined, // forceReencode
+      undefined, // onChild
+      undefined, // onTmp
+      undefined, // finderCovers
+      undefined, // declick
+      { startSec: 1.3 }, // trim
+    )
+
+    expect(flacCueComment(out)).toBeUndefined()
+  })
+
+  // Without a trim nothing moved under the cues, so the comment must survive a
+  // plain format-preserving re-encode exactly as it does today.
+  it('keeps the FLAC TRAKTOR4 comment when no trim moved the audio', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'surco-flackeep-'))
+    const cued = join(own, 'in.flac')
+    execFileSync(FF, [
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=2',
+      '-metadata',
+      'TRAKTOR4=ARMOREDCUEBLOB',
+      cued,
+    ])
+
+    const out = join(own, 'out.flac')
+    await convertAudio(cued, out, 'flac', meta)
+
+    expect(flacCueComment(out)).toBe('ARMOREDCUEBLOB')
   })
 
   // The re-encode path folds the cue carry-over into the same writeTags call as the
