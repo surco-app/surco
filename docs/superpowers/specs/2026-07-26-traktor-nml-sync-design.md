@@ -56,6 +56,15 @@ lista de cambios, serializar. No sabe qué es Surco ni qué es una conversión: 
 documento y una lista de cambios, sale un documento. Es la pieza testeable sin tocar disco
 ni depender de un Traktor instalado.
 
+**Edición quirúrgica por texto, sin parser XML.** El proyecto no tiene librería XML
+(sólo taglib y sql.js) y no se añade ninguna. `traktorNml.ts` localiza cada bloque
+`<ENTRY>` por posición en el texto y sustituye únicamente los tramos que cambian; todo lo
+demás sale byte a byte idéntico. La razón es el fichero que estamos tocando: un round-trip
+por un parser genérico normaliza comillas, entidades y espaciado del documento **entero**,
+convirtiendo un cambio de tres atributos en un diff de toda la colección de un DJ. Aquí el
+diff mínimo no es elegancia, es la diferencia entre un cambio auditable y uno imposible de
+revisar. El coste es más código de índices y troceado, que se paga en tests.
+
 **`traktorNmlLibrary.ts`** — la política. Backup rotado, guarda de Traktor abierto,
 emparejado de pistas, agrupación del lote, escritura atómica. El equivalente de
 `engineLibrary.ts`.
