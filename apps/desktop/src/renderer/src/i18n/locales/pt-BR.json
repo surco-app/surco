@@ -536,7 +536,7 @@
     "applyStart": "Cortar {{seconds}} do início",
     "applyEnd": "Cortar {{seconds}} do final",
     "applyAll_other": "Cortar o silêncio detectado em {{count}} faixas",
-    "cueWarning": "Recodifica o áudio. Os cues e o beatgrid do Traktor salvos no arquivo são realinhados ao corte em MP3 e AIFF; em FLAC e WAV não — reanalise a faixa no Traktor depois de cortar.",
+    "cueWarning": "Recodifica o áudio. Os cues e o beatgrid do Traktor salvos no arquivo são realinhados ao corte em MP3, AIFF e FLAC; em WAV eles se perdem.",
     "cueWarningShort": "Recodifica o áudio · cues reancorados",
     "handleStart": "Início do corte",
     "handleEnd": "Final do corte",

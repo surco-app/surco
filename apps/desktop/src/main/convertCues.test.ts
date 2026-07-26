@@ -3,13 +3,15 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
-import { type Id3v2Tag, File as TagFile, TagTypes } from 'node-taglib-sharp'
+import { type Id3v2Tag, File as TagFile, TagTypes, type XiphComment } from 'node-taglib-sharp'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
 import type { TrackMetadata } from '../shared/types'
+import { decodeBase91, encodeBase91 } from './base91'
 import { convertAudio } from './ffmpeg'
+import { buildTraktorTree, readTraktorCueStart, traktorCue } from './traktor4Fixture'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-cues-'))
@@ -165,6 +167,56 @@ describe('convertAudio cue preservation', () => {
 
     expect(hasCue(out)).toBe(false)
     expect(hasPopm(out)).toBe(false)
+  })
+
+  // djotas's FLAC library, end to end: the TRAKTOR4 comment survives ffmpeg on its
+  // own, so before this the cues came out the far side still measured from the
+  // pre-trim start — every marker sitting late by the whole cut. Now the same
+  // parser MP3 uses re-anchors them through the armoring, hotcues by the cut and
+  // the grid marker by its phase.
+  it('re-anchors the FLAC cue comment through a trimming convert', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'surco-flacconv-'))
+    const cued = join(own, 'in.flac')
+    const tree = buildTraktorTree([
+      traktorCue('AutoGrid', 4, 143.38, 0),
+      traktorCue('Drop', 0, 79672.64, 1),
+    ])
+    execFileSync(FF, [
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=4',
+      '-metadata',
+      `TRAKTOR4=${encodeBase91(tree)}`,
+      cued,
+    ])
+
+    const out = join(own, 'out.flac')
+    await convertAudio(
+      cued,
+      out,
+      'flac',
+      { ...meta, bpm: '138.30' },
+      undefined, // coverPath
+      undefined, // normalize
+      false, // removeCover
+      undefined, // quality
+      undefined, // forceReencode
+      undefined, // onChild
+      undefined, // onTmp
+      undefined, // finderCovers
+      undefined, // declick
+      { startSec: 1.3 }, // trim
+    )
+
+    const f = TagFile.createFromPath(out)
+    const armored = (f.getTag(TagTypes.Xiph, false) as XiphComment | null)?.getField(
+      'TRAKTOR4',
+    )?.[0]
+    f.dispose()
+    expect(armored).toBeDefined()
+    expect(readTraktorCueStart(decodeBase91(armored as string), 1)).toBeCloseTo(78372.64)
   })
 
   // The re-encode path folds the cue carry-over into the same writeTags call as the
