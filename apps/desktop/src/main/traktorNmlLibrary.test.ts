@@ -14,16 +14,26 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('./traktorProcess', () => ({ isTraktorRunning: vi.fn().mockResolvedValue(false) }))
 
-// Only `rename` is faked, and only for the one test that needs it to fail: every other
-// test relies on the real read/copy/write/unlink behaviour on the temp dir it creates.
-const { renameShouldFail } = vi.hoisted(() => ({ renameShouldFail: { value: false } }))
+// Only `rename`/`copyFile` are faked, and only for the tests that need one of them to
+// fail in isolation: every other test relies on the real read/copy/write/unlink
+// behaviour on the temp dir it creates. A read-only directory would fail BOTH calls at
+// once, which can't tell "the backup guard stopped the write" apart from "the write
+// failed on its own too" — faking exactly one call is what isolates the guard.
+const { renameShouldFail, copyFileShouldFail } = vi.hoisted(() => ({
+  renameShouldFail: { value: false },
+  copyFileShouldFail: { value: false },
+}))
 vi.mock('node:fs/promises', async (importOriginal) => {
   const real = await importOriginal<typeof import('node:fs/promises')>()
   const rename: typeof real.rename = (async (...args: Parameters<typeof real.rename>) => {
     if (renameShouldFail.value) throw Object.assign(new Error('ENOSPC'), { code: 'ENOSPC' })
     return real.rename(...args)
   }) as typeof real.rename
-  return { ...real, rename }
+  const copyFile: typeof real.copyFile = (async (...args: Parameters<typeof real.copyFile>) => {
+    if (copyFileShouldFail.value) throw Object.assign(new Error('EACCES'), { code: 'EACCES' })
+    return real.copyFile(...args)
+  }) as typeof real.copyFile
+  return { ...real, rename, copyFile }
 })
 
 import { isTraktorRunning } from './traktorProcess'
@@ -40,8 +50,12 @@ beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'surco-nml-'))
   nmlPath = join(dir, 'collection.nml')
   writeFileSync(nmlPath, NML)
-  vi.mocked(isTraktorRunning).mockResolvedValue(false)
+  // mockReset (not just a fresh mockResolvedValue) clears any mockResolvedValueOnce
+  // left queued by the race test — without it, that queued value leaks into whichever
+  // test happens to run next and fails it with the wrong reason.
+  vi.mocked(isTraktorRunning).mockReset().mockResolvedValue(false)
   renameShouldFail.value = false
+  copyFileShouldFail.value = false
 })
 
 const patch = { volume: 'HD', dir: '/:M/:', file: 'uno.aiff', newFile: 'uno.flac' }
@@ -141,16 +155,16 @@ describe('syncCollection', () => {
   })
 
   // Si el backup falla, la regla es "nada de backup, nada de escritura": el original
-  // debe seguir intacto byte a byte, no sólo "no escrito" en el resultado.
+  // debe seguir intacto byte a byte, no sólo "no escrito" en el resultado. Sólo se hace
+  // fallar copyFile (el directorio sigue escribible) para que esto pruebe el guard en
+  // sí — con el directorio de sólo lectura, la escritura habría fallado igual y el
+  // test habría pasado aunque el guard no existiera.
   it('leaves the collection untouched when the backup cannot be written', async () => {
-    chmodSync(dir, 0o500)
-    try {
-      const result = await syncCollection(nmlPath, [patch])
+    copyFileShouldFail.value = true
 
-      expect(result).toMatchObject({ written: false, reason: 'backup-failed' })
-    } finally {
-      chmodSync(dir, 0o700)
-    }
+    const result = await syncCollection(nmlPath, [patch])
+
+    expect(result).toMatchObject({ written: false, reason: 'backup-failed' })
     expect(readFileSync(nmlPath, 'utf8')).toBe(NML)
     expect(readdirSync(dir).filter((f) => f.endsWith('.bak'))).toHaveLength(0)
   })
