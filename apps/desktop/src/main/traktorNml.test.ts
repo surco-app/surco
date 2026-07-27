@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { readTraktorMarkers } from './traktor4'
 import { buildTraktorTree, traktorCue } from './traktor4Fixture'
-import { cuesToXml, findEntries } from './traktorNml'
+import { applyPatches, cuesToXml, findEntries } from './traktorNml'
 
 const NML = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <NML VERSION="19">
@@ -82,5 +82,41 @@ describe('readTraktorMarkers', () => {
     expect(markers).toHaveLength(1)
     expect(markers[0]).toMatchObject({ name: 'Drop', type: 0, hotcue: 1 })
     expect(markers[0].startMs).toBeCloseTo(79672.64)
+  })
+})
+
+describe('applyPatches', () => {
+  // El caso AIFF→FLAC: la ENTRY existe pero apunta al fichero viejo. Se reapunta
+  // LOCATION para que la pista siga siendo UNA en Traktor, con sus playlists.
+  it('repoints LOCATION when the conversion changed the extension', () => {
+    const out = applyPatches(NML, [
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', newFile: 'uno.flac' },
+    ])
+
+    expect(out).toContain('FILE="uno.flac"')
+    expect(out).not.toContain('FILE="uno.aiff"')
+    expect(out).toContain('FILE="dos.flac"')
+  })
+
+  // COVERARTID es una referencia a la caché de carátulas de Traktor: mientras esté,
+  // Traktor sigue mostrando la vieja aunque el fichero lleve otra imagen.
+  it('drops COVERARTID so Traktor re-reads the artwork', () => {
+    const withCover = NML.replace(
+      '<ENTRY MODIFIED_DATE="2026/7/26" TITLE="Uno" ARTIST="A">',
+      '<ENTRY MODIFIED_DATE="2026/7/26" TITLE="Uno" ARTIST="A"><INFO COVERARTID="042/ABC" BITRATE="1411"></INFO>',
+    )
+
+    const out = applyPatches(withCover, [
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', clearCoverArt: true },
+    ])
+
+    expect(out).not.toContain('COVERARTID')
+    expect(out).toContain('BITRATE="1411"')
+  })
+
+  // Lo esencial del enfoque por texto: una pista que no está en la colección no
+  // produce ningún cambio. Ni una coma del documento del usuario se mueve.
+  it('leaves the document byte-for-byte identical when nothing matches', () => {
+    expect(applyPatches(NML, [{ volume: 'Otro', dir: '/:X/:', file: 'nope.mp3' }])).toBe(NML)
   })
 })
