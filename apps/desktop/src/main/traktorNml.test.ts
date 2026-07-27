@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { readTraktorMarkers } from './traktor4'
 import { buildTraktorTree, traktorCue } from './traktor4Fixture'
-import { applyPatches, cuesToXml, findEntries } from './traktorNml'
+import { applyPatches, cuesToXml, findEntries, matchedPatchCount } from './traktorNml'
 
 const NML = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <NML VERSION="19">
@@ -261,5 +261,59 @@ describe('applyPatches', () => {
     expect(out).toContain('FILE="uno-largo-convertido.flac"')
     expect(out).toContain('FILE="dos.flac"')
     expect(out).toContain('TITLE="Dos"')
+  })
+
+  // Caso minimizado del re-review: dos patches pueden casar la misma ENTRY, uno por
+  // nombre base y otro exacto. La regla siempre fue "gana el primero del array", no
+  // "gana el tipo de match más fuerte" — el índice por mapas tiene que preservar eso
+  // o el orden en que el caller construyó el batch deja de importar en silencio.
+  it('prefers the first patch in array order over a stronger match kind later in the array', () => {
+    const nml =
+      '<NML VERSION="19"><COLLECTION ENTRIES="1">' +
+      '<ENTRY TITLE="X"><LOCATION DIR="/:M/:" FILE="x&amp;y.mp3" VOLUME="HD"></LOCATION></ENTRY>' +
+      '</COLLECTION></NML>'
+
+    const out = applyPatches(nml, [
+      { volume: 'HD', dir: '/:M/:', file: 'x&y.aiff', newFile: 'FROM_A.flac' },
+      { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', clearCoverArt: true },
+    ])
+
+    expect(out).toContain('FILE="FROM_A.flac"')
+  })
+
+  // Mismo par de patches, orden invertido: ahora el match exacto va primero en el
+  // array y debe ganar — confirma que el resultado depende del orden del array, no
+  // de qué mapa (byFile vs byBaseName) resolvió el match.
+  it('prefers the exact match when it is first in array order', () => {
+    const nml =
+      '<NML VERSION="19"><COLLECTION ENTRIES="1">' +
+      '<ENTRY TITLE="X"><LOCATION DIR="/:M/:" FILE="x&amp;y.mp3" VOLUME="HD"></LOCATION></ENTRY>' +
+      '</COLLECTION></NML>'
+
+    const out = applyPatches(nml, [
+      { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', clearCoverArt: true },
+      { volume: 'HD', dir: '/:M/:', file: 'x&y.aiff', newFile: 'FROM_A.flac' },
+    ])
+
+    expect(out).not.toContain('FILE="FROM_A.flac"')
+    expect(out).toContain('FILE="x&amp;y.mp3"')
+  })
+})
+
+describe('matchedPatchCount', () => {
+  // Dos patches contendiendo por la misma ENTRY sólo aplican uno (el primero en el
+  // array): el conteo tiene que reflejar eso, no "cuántos patches podrían casar".
+  it('counts one match when two patches contend for the same entry', () => {
+    const nml =
+      '<NML VERSION="19"><COLLECTION ENTRIES="1">' +
+      '<ENTRY TITLE="X"><LOCATION DIR="/:M/:" FILE="x&amp;y.mp3" VOLUME="HD"></LOCATION></ENTRY>' +
+      '</COLLECTION></NML>'
+
+    const count = matchedPatchCount(nml, [
+      { volume: 'HD', dir: '/:M/:', file: 'x&y.aiff', newFile: 'FROM_A.flac' },
+      { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', clearCoverArt: true },
+    ])
+
+    expect(count).toBe(1)
   })
 })
