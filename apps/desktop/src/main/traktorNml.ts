@@ -62,6 +62,7 @@ export interface NmlPatch {
   dir: string
   file: string
   cueTree?: Uint8Array
+  bpm?: number
   newFile?: string
   clearCoverArt?: boolean
 }
@@ -97,9 +98,9 @@ function stripCoverArt(block: string): string {
 // every ENTRY that reaches here is guaranteed to have (matches() requires it).
 // This also covers the entry that had no CUE_V2 at all: nothing to remove, the
 // new cues still land at the same anchor instead of being silently discarded.
-function replaceCues(block: string, tree: Uint8Array): string {
+function replaceCues(block: string, tree: Uint8Array, bpm: number | undefined): string {
   const withoutCues = block.replace(/<CUE_V2\b[^>]*>[\s\S]*?<\/CUE_V2>/g, '')
-  return withoutCues.replace(/<\/LOCATION>/, `</LOCATION>${cuesToXml(tree)}`)
+  return withoutCues.replace(/<\/LOCATION>/, `</LOCATION>${cuesToXml(tree, bpm)}`)
 }
 
 function patchEntry(block: string, patch: NmlPatch): string {
@@ -111,7 +112,7 @@ function patchEntry(block: string, patch: NmlPatch): string {
     out = stripCoverArt(out)
   }
   if (patch.cueTree) {
-    out = replaceCues(out, patch.cueTree)
+    out = replaceCues(out, patch.cueTree, patch.bpm)
   }
   return out
 }
@@ -137,12 +138,25 @@ export function applyPatches(nml: string, patches: NmlPatch[]): string {
 // milliseconds with exactly six decimals. TYPE=4's startMs is a phase (see
 // traktor4.ts), copied through verbatim — clamping it here would desync the grid
 // from what readTraktorMarkers already carried through unchanged.
-export function cuesToXml(tree: Uint8Array): string {
+//
+// A TYPE=4 marker without a GRID child (or a GRID with BPM<=0) is not a real
+// anchor to Traktor's own tooling — it gets skipped when the grid is read back
+// (ground truth: traktor_nml_cleaner.py's _grid_anchors). The BPM isn't in the
+// binary cue tree; it has to come from the caller (track metadata), same as
+// shiftTraktorCues gets it from meta.bpm. When it isn't available, we drop the
+// TYPE=4 marker rather than write a dead anchor: a CUE_V2 that looks like a
+// saved beatgrid but that Traktor silently ignores is worse than no marker at
+// all, since it hides the fact that nothing usable was written.
+export function cuesToXml(tree: Uint8Array, bpm?: number): string {
+  const hasGrid = Number.isFinite(bpm) && (bpm as number) > 0
   return readTraktorMarkers(tree)
-    .map(
-      (m) =>
+    .filter((m) => m.type !== 4 || hasGrid)
+    .map((m) => {
+      const grid = m.type === 4 ? `<GRID BPM="${(bpm as number).toFixed(6)}"></GRID>` : ''
+      return (
         `<CUE_V2 NAME="${escapeAttr(m.name)}" DISPL_ORDER="0" TYPE="${m.type}" ` +
-        `START="${m.startMs.toFixed(6)}" LEN="0.000000" REPEATS="-1" HOTCUE="${m.hotcue}"></CUE_V2>`,
-    )
+        `START="${m.startMs.toFixed(6)}" LEN="0.000000" REPEATS="-1" HOTCUE="${m.hotcue}">${grid}</CUE_V2>`
+      )
+    })
     .join('')
 }
