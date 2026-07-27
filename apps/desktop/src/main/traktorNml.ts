@@ -71,16 +71,41 @@ const baseName = (file: string): string => file.replace(/\.[^.]*$/, '')
 
 // APFS treats NFC and NFD as the same file, so a raw byte comparison of the path
 // pieces can miss a real match when the two sides were normalized differently
-// (e.g. one written by Traktor, the other read back through Node's fs).
-function matches(entry: NmlEntry, patch: NmlPatch): boolean {
-  const volume = entry.volume.normalize('NFC') === patch.volume.normalize('NFC')
-  const dir = entry.dir.normalize('NFC') === patch.dir.normalize('NFC')
-  if (!volume || !dir) return false
-  if (entry.file.normalize('NFC') === patch.file.normalize('NFC')) return true
-  // Fallback: the AIFF→FLAC conversion case. The entry still points at the old
-  // file, matched by base name so the track stays ONE entry in Traktor instead of
-  // a second one appearing, which would drop its playlists and play history.
-  return baseName(entry.file).normalize('NFC') === baseName(patch.file).normalize('NFC')
+// (e.g. one written by Traktor, the other read back through Node's fs). The
+// delimiter between the three parts has to be a byte no volume/dir/file value can
+// ever contain — a space or "/" would let a value straddling the boundary collide
+// with a different split of the same three strings. NUL can't appear in any real
+// filesystem path, so it can't collide.
+const key = (volume: string, dir: string, file: string): string =>
+  `${volume.normalize('NFC')}\0${dir.normalize('NFC')}\0${file.normalize('NFC')}`
+
+// A real collection can be tens of thousands of ENTRY blocks; scanning every patch
+// for every entry is O(entries × patches) with an expensive normalize() on each side
+// of each comparison. Two lookup tables — exact file, and base name for the
+// AIFF→FLAC fallback — turn that into one O(1) lookup per entry instead. A batch
+// never sends two patches for the same track, so the map overwriting on a key
+// collision (last one wins, unlike the old first-match scan) has no caller to matter to.
+function indexPatches(patches: NmlPatch[]): {
+  byFile: Map<string, NmlPatch>
+  byBaseName: Map<string, NmlPatch>
+} {
+  const byFile = new Map<string, NmlPatch>()
+  const byBaseName = new Map<string, NmlPatch>()
+  for (const patch of patches) {
+    byFile.set(key(patch.volume, patch.dir, patch.file), patch)
+    byBaseName.set(key(patch.volume, patch.dir, baseName(patch.file)), patch)
+  }
+  return { byFile, byBaseName }
+}
+
+function matchPatch(
+  entry: NmlEntry,
+  index: { byFile: Map<string, NmlPatch>; byBaseName: Map<string, NmlPatch> },
+): NmlPatch | undefined {
+  return (
+    index.byFile.get(key(entry.volume, entry.dir, entry.file)) ??
+    index.byBaseName.get(key(entry.volume, entry.dir, baseName(entry.file)))
+  )
 }
 
 // Traktor writes COVERARTID only on <INFO>, so the removal is anchored there
@@ -123,15 +148,34 @@ function patchEntry(block: string, patch: NmlPatch): string {
 // an earlier one still waiting to be patched.
 export function applyPatches(nml: string, patches: NmlPatch[]): string {
   const entries = findEntries(nml)
+  const index = indexPatches(patches)
   let out = nml
   for (let i = entries.length - 1; i >= 0; i--) {
     const entry = entries[i]
-    const patch = patches.find((p) => matches(entry, p))
+    const patch = matchPatch(entry, index)
     if (!patch) continue
     const patched = patchEntry(out.slice(entry.start, entry.end), patch)
     out = out.slice(0, entry.start) + patched + out.slice(entry.end)
   }
   return out
+}
+
+// Same matching rules as applyPatches, in one pass over the entries instead of
+// one applyPatches (itself a full sweep) per patch — a caller that ran the
+// per-patch version against a real collection (tens of thousands of entries,
+// hundreds of patches) paid for a second full rewrite of the document per
+// patch just to count. This never rewrites anything, only counts how many
+// distinct patches matched some entry, which is what a caller reporting
+// "N tracks actually updated" needs.
+export function matchedPatchCount(nml: string, patches: NmlPatch[]): number {
+  const entries = findEntries(nml)
+  const index = indexPatches(patches)
+  const matched = new Set<NmlPatch>()
+  for (const entry of entries) {
+    const patch = matchPatch(entry, index)
+    if (patch) matched.add(patch)
+  }
+  return matched.size
 }
 
 // Traktor writes CUE_V2 as a self-closing-style pair with no children, START in

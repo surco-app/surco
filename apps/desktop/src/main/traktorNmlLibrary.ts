@@ -1,6 +1,6 @@
 import { copyFile, readdir, readFile, rename, unlink, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { applyPatches, type NmlPatch } from './traktorNml'
+import { applyPatches, matchedPatchCount, type NmlPatch } from './traktorNml'
 import { isTraktorRunning } from './traktorProcess'
 
 // Writes converted tracks back into the user's real collection.nml — the whole Traktor
@@ -14,7 +14,7 @@ const MAX_BACKUPS = 10
 export interface SyncResult {
   written: boolean
   matched: number
-  reason?: 'traktor-running' | 'backup-failed' | 'no-matches' | 'unreadable'
+  reason?: 'traktor-running' | 'backup-failed' | 'no-matches' | 'unreadable' | 'write-failed'
 }
 
 export async function syncCollection(nmlPath: string, patches: NmlPatch[]): Promise<SyncResult> {
@@ -58,20 +58,24 @@ export async function syncCollection(nmlPath: string, patches: NmlPatch[]): Prom
   }
 
   // Write-then-rename so a crash mid-write can never leave a truncated collection.
+  // The conversion on disk already succeeded by the time we get here (see the module
+  // comment), so a write/rename failure — disk full, read-only volume — must return a
+  // reason like every other failure path here, not throw past a caller that already
+  // told the DJ their files were converted.
   const tmp = `${nmlPath}.surco-tmp`
-  await writeFile(tmp, patched)
-  await rename(tmp, nmlPath)
+  try {
+    await writeFile(tmp, patched)
+    await rename(tmp, nmlPath)
+  } catch {
+    // The backup taken above is what actually protects the collection; the leftover
+    // tmp file is not — left behind, it would keep shadowing every later sync at the
+    // same path, so clear it before reporting the failure. Best-effort: if even the
+    // unlink fails, the reason returned still stands.
+    await unlink(tmp).catch(() => {})
+    return { written: false, matched: 0, reason: 'write-failed' }
+  }
 
-  return { written: true, matched: countMatches(original, patches) }
-}
-
-// applyPatches doesn't report which patches matched, only the resulting text — and a
-// real batch mixes tracks Traktor has with tracks it doesn't. Applying each patch on
-// its own against the untouched original and checking for a diff reuses the same
-// matching rules (including the AIFF→FLAC base-name fallback) without duplicating
-// them, so "matched" never claims a track that was never in the collection.
-function countMatches(original: string, patches: NmlPatch[]): number {
-  return patches.filter((p) => applyPatches(original, [p]) !== original).length
+  return { written: true, matched: matchedPatchCount(original, patches) }
 }
 
 // Rotates only Surco's own backups (the BACKUP_MARKER suffix), never a Traktor backup
