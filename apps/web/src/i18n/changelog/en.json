@@ -23,6 +23,14 @@
       {
         "text": "Importing a folder no longer leaves repeated tracks in the list: some slipped in twice when Surco turned up several subfolders at once, most often on fast local drives.",
         "in": "0.75.2"
+      },
+      {
+        "text": "Converting an AIFF to FLAC now carries the Traktor cues and beatgrid across with the track: they used to be lost on the way, because each format stores them differently and nothing translated between the two.",
+        "in": "0.75.3"
+      },
+      {
+        "text": "The player's volume moves off the waveform, so you can click anywhere on the wave to jump there. The transport gets its own row with the volume always in view, and the close button moves to the corner of the card.",
+        "in": "0.75.3"
       }
     ]
   },
