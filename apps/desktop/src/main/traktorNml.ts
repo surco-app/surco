@@ -130,16 +130,46 @@ function stripCoverArt(block: string): string {
   return block.replace(/(<INFO\b[^>]*?)\s*COVERARTID="[^"]*"/, '$1')
 }
 
+// CUE_V2 has no children in the schema Traktor itself writes (see cuesToXml),
+// so a serializer that self-closes empty elements — confirmed against the
+// user's own traktor_nml_cleaner.py, which runs his collection through
+// Python's ElementTree — emits `<CUE_V2 ... />` instead of the paired
+// `<CUE_V2 ...></CUE_V2>` form. Same for LOCATION below. Both forms must be
+// recognized or the removal/anchor silently misses every entry the user's own
+// tool has touched.
+const CUE_V2_RE = /<CUE_V2\b[^>]*?(?:\/>|>[\s\S]*?<\/CUE_V2>)/g
+const LOCATION_END_RE = /<LOCATION\b[^>]*?(?:\/>|>(?:(?!<\/LOCATION>)[\s\S])*<\/LOCATION>)/
+
 // CUE_V2 elements are not always one contiguous run — another element can sit
 // between two of them — so a single non-global replace can leave a later run
 // behind, coexisting with the freshly written set. Global removal, then insert
-// the fresh XML at one fixed anchor: right after </LOCATION>, the one element
-// every ENTRY that reaches here is guaranteed to have (matches() requires it).
-// This also covers the entry that had no CUE_V2 at all: nothing to remove, the
-// new cues still land at the same anchor instead of being silently discarded.
+// the fresh XML at one fixed anchor: right after LOCATION's close, the one
+// element every ENTRY that reaches here is guaranteed to have (matches()
+// requires it). This also covers the entry that had no CUE_V2 at all: nothing
+// to remove, the new cues still land at the same anchor instead of being
+// silently discarded.
+//
+// cuesToXml drops TYPE=4 when no usable bpm was passed (see its own comment) —
+// but the removal above is unconditional, so without this guard a track that
+// already had a saved beatgrid would lose it the moment it's patched with any
+// cueTree and no bpm, which is the default today since no caller passes bpm
+// yet. shiftTraktorCues faces the identical question (re-anchor a grid without
+// a usable bpm) and refuses by returning null rather than writing a guess; the
+// same refusal here means keeping whatever GRID element was already on disk
+// instead of letting the unconditional removal above delete it for nothing.
 function replaceCues(block: string, tree: Uint8Array, bpm: number | undefined): string {
-  const withoutCues = block.replace(/<CUE_V2\b[^>]*>[\s\S]*?<\/CUE_V2>/g, '')
-  return withoutCues.replace(/<\/LOCATION>/, `</LOCATION>${cuesToXml(tree, bpm)}`)
+  const newCues = cuesToXml(tree, bpm)
+  const droppedGrid =
+    readTraktorMarkers(tree).some((m) => m.type === 4) && !newCues.includes('TYPE="4"')
+  const existingGrid = droppedGrid
+    ? block.match(new RegExp(CUE_V2_RE.source.replace('[^>]*?', '[^>]*?TYPE="4"[^>]*?')))?.[0]
+    : undefined
+
+  const withoutCues = block.replace(CUE_V2_RE, '')
+  const cuesXml = existingGrid ? existingGrid + newCues : newCues
+  const location = withoutCues.match(LOCATION_END_RE)?.[0]
+  if (!location) return withoutCues
+  return withoutCues.replace(location, `${location}${cuesXml}`)
 }
 
 function patchEntry(block: string, patch: NmlPatch): string {
@@ -178,16 +208,21 @@ export function applyPatches(nml: string, patches: NmlPatch[]): string {
 // one applyPatches (itself a full sweep) per patch — a caller that ran the
 // per-patch version against a real collection (tens of thousands of entries,
 // hundreds of patches) paid for a second full rewrite of the document per
-// patch just to count. This never rewrites anything, only counts how many
-// distinct patches matched some entry, which is what a caller reporting
-// "N tracks actually updated" needs.
+// patch just to count. This never rewrites the document it returns, only
+// counts how many distinct patches actually changed the bytes of some entry —
+// syncCollection reports this number as "N tracks updated", so a patch that
+// matched an entry but produced no real change (e.g. a cueTree whose only
+// marker was a grid dropped for lack of bpm, see replaceCues) must not count,
+// or the caller would claim a write that never happened.
 export function matchedPatchCount(nml: string, patches: NmlPatch[]): number {
   const entries = findEntries(nml)
   const index = indexPatches(patches)
   const matched = new Set<NmlPatch>()
   for (const entry of entries) {
     const patch = matchPatch(entry, index)
-    if (patch) matched.add(patch)
+    if (!patch) continue
+    const block = nml.slice(entry.start, entry.end)
+    if (patchEntry(block, patch) !== block) matched.add(patch)
   }
   return matched.size
 }

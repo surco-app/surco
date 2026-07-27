@@ -181,7 +181,9 @@ describe('applyPatches', () => {
   // comprobara uno de los dos (una regresión real) no lo dejara pasar sin más.
   it('leaves the document byte-for-byte identical when nothing matches', () => {
     expect(applyPatches(NML, [{ volume: 'Otro', dir: '/:Musica/:', file: 'uno.aiff' }])).toBe(NML)
-    expect(applyPatches(NML, [{ volume: 'Macintosh HD', dir: '/:X/:', file: 'uno.aiff' }])).toBe(NML)
+    expect(applyPatches(NML, [{ volume: 'Macintosh HD', dir: '/:X/:', file: 'uno.aiff' }])).toBe(
+      NML,
+    )
   })
 
   // El caso central de la feature: una pista que hasta ahora no tenía cues en
@@ -221,6 +223,54 @@ describe('applyPatches', () => {
     expect(out).toContain('NAME="Drop"')
   })
 
+  // Hallazgo crítico 2: traktor_nml_cleaner.py (herramienta propia del usuario)
+  // serializa con ElementTree, que auto-cierra los elementos vacíos —
+  // `<LOCATION ... />` en vez de `<LOCATION ...></LOCATION>`. El ancla de cues
+  // buscaba literalmente `</LOCATION>`, que no existe en ese caso: applyPatches
+  // devolvía el documento sin tocar y el caller reportaba "no-matches" (lee como
+  // "Traktor no tiene esta pista") en vez de escribir los cues.
+  it('inserts cues after a self-closing LOCATION element', () => {
+    const selfClosing = NML.replace(
+      '<LOCATION DIR="/:Musica/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>',
+      '<LOCATION DIR="/:Musica/:" FILE="uno.aiff" VOLUME="Macintosh HD" />',
+    )
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)])
+
+    const out = applyPatches(selfClosing, [
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', cueTree: tree },
+    ])
+
+    expect(out).toContain('<CUE_V2')
+    expect(out).toContain('NAME="Drop"')
+  })
+
+  // Mismo hallazgo, la otra mitad: un CUE_V2 viejo auto-cerrado (`<CUE_V2 ... />`)
+  // no lo alcanza la regex de borrado (que exige `</CUE_V2>`), así que sobrevive
+  // junto a los recién escritos — cues duplicados en Traktor.
+  it('removes an old self-closing CUE_V2 instead of leaving a duplicate', () => {
+    const selfClosingCue = NML.replace(
+      '<LOCATION DIR="/:Musica/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>',
+      '<LOCATION DIR="/:Musica/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>' +
+        '<CUE_V2 NAME="Old" DISPL_ORDER="0" TYPE="0" START="1000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="0" />',
+    )
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)])
+
+    const out = applyPatches(selfClosingCue, [
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', cueTree: tree },
+    ])
+
+    expect(out).not.toContain('Old')
+    expect(out.match(/<CUE_V2/g)).toHaveLength(1)
+    expect(out).toContain('NAME="Drop"')
+  })
+
+  // El caso ya cubierto arriba ('writes cues into an entry that had none before',
+  // etc.) usa siempre el par abierto/cerrado — se deja constancia aquí de que el
+  // fix de las dos pruebas anteriores no puede depender de asumir SIEMPRE
+  // auto-cierre: el documento con pares `></LOCATION>`/`></CUE_V2>` sigue
+  // funcionando igual (ver 'replaces every CUE_V2 even when they are not one
+  // contiguous run' y 'writes cues into an entry that had none before').
+
   // El fichero que Surco tiene en disco tras la conversión es el .flac; la ENTRY
   // de Traktor todavía apunta al .aiff viejo. El emparejado exacto (file === file)
   // no casa aquí — sólo lo hace el fallback por nombre base. Si alguien quitara
@@ -253,14 +303,77 @@ describe('applyPatches', () => {
   // FILE. Aquí "uno.aiff" (8) pasa a "uno-largo-convertido.flac" (25), y luego
   // "dos.flac" debe seguir intacto.
   it('patches multiple entries whose block lengths change without corrupting later spans', () => {
-    const out = applyPatches(NML, [
-      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', newFile: 'uno-largo-convertido.flac' },
-      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'dos.flac', clearCoverArt: true },
+    // Cada ENTRY lleva su propio INFO y crece al parchearse: si un patch posterior
+    // no cambiara bytes, escribir su bloque sobre un rango ya desplazado devolvería
+    // el mismo texto y el test no distinguiría un bucle correcto de uno roto.
+    const three = `<NML VERSION="19"><COLLECTION ENTRIES="3">
+<ENTRY TITLE="Uno"><LOCATION DIR="/:M/:" FILE="uno.aiff" VOLUME="HD"></LOCATION><INFO COVERARTID="1/A" BITRATE="1411"></INFO></ENTRY>
+<ENTRY TITLE="Dos"><LOCATION DIR="/:M/:" FILE="dos.aiff" VOLUME="HD"></LOCATION><INFO COVERARTID="2/B" BITRATE="1411"></INFO></ENTRY>
+<ENTRY TITLE="Tres"><LOCATION DIR="/:M/:" FILE="tres.aiff" VOLUME="HD"></LOCATION><INFO COVERARTID="3/C" BITRATE="1411"></INFO></ENTRY>
+</COLLECTION></NML>`
+    const grow = (file: string, newFile: string) => ({
+      volume: 'HD',
+      dir: '/:M/:',
+      file,
+      newFile,
+      clearCoverArt: true,
+    })
+
+    const out = applyPatches(three, [
+      grow('uno.aiff', 'uno-nombre-mucho-mas-largo-tras-convertir.flac'),
+      grow('dos.aiff', 'dos-nombre-mucho-mas-largo-tras-convertir.flac'),
+      grow('tres.aiff', 'tres-nombre-mucho-mas-largo-tras-convertir.flac'),
     ])
 
-    expect(out).toContain('FILE="uno-largo-convertido.flac"')
-    expect(out).toContain('FILE="dos.flac"')
-    expect(out).toContain('TITLE="Dos"')
+    expect(out).toContain('FILE="uno-nombre-mucho-mas-largo-tras-convertir.flac"')
+    expect(out).toContain('FILE="dos-nombre-mucho-mas-largo-tras-convertir.flac"')
+    expect(out).toContain('FILE="tres-nombre-mucho-mas-largo-tras-convertir.flac"')
+    expect(out).not.toContain('COVERARTID')
+    expect(out).toContain('TITLE="Tres"')
+    expect(out).toContain('BITRATE="1411"')
+  })
+
+  // Guardarraíl del hallazgo crítico 1: una ENTRY con una rejilla guardada
+  // (TYPE=4 con GRID real) no puede perderla sólo porque el patch que le toca
+  // llega sin bpm. cuesToXml omite el TYPE=4 sin bpm, y replaceCues borraba TODOS
+  // los CUE_V2 antes de insertar — la rejilla existente desaparecía sin que nada
+  // lo señalara. La rejilla vieja debe seguir presente después del patch.
+  it('does not delete an existing beatgrid when the patch cue tree has no usable bpm', () => {
+    const withGrid = NML.replace(
+      '<LOCATION DIR="/:Musica/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>',
+      '<LOCATION DIR="/:Musica/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>' +
+        '<CUE_V2 NAME="AutoGrid" DISPL_ORDER="0" TYPE="4" START="143.380000" LEN="0.000000" ' +
+        'REPEATS="-1" HOTCUE="0"><GRID BPM="128.000000"></GRID></CUE_V2>',
+    )
+    const tree = buildTraktorTree([
+      traktorCue('AutoGrid', 4, 143.38, 0),
+      traktorCue('Drop', 0, 79672.64, 1),
+    ])
+
+    const out = applyPatches(withGrid, [
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', cueTree: tree },
+    ])
+
+    expect(out).toContain('<GRID BPM="128.000000">')
+  })
+
+  // El mismo caso desde matchedPatchCount/syncCollection: si la rejilla se
+  // conserva no tocando el patch, éste no puede seguir contando como aplicado —
+  // el caller reportaría éxito sin haber escrito nada de lo que el patch pedía.
+  it('does not count a cue patch as matched when its grid could not be written safely', () => {
+    const withGrid = NML.replace(
+      '<LOCATION DIR="/:Musica/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>',
+      '<LOCATION DIR="/:Musica/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>' +
+        '<CUE_V2 NAME="AutoGrid" DISPL_ORDER="0" TYPE="4" START="143.380000" LEN="0.000000" ' +
+        'REPEATS="-1" HOTCUE="0"><GRID BPM="128.000000"></GRID></CUE_V2>',
+    )
+    const tree = buildTraktorTree([traktorCue('AutoGrid', 4, 143.38, 0)])
+
+    const count = matchedPatchCount(withGrid, [
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', cueTree: tree },
+    ])
+
+    expect(count).toBe(0)
   })
 
   // Caso minimizado del re-review: dos patches pueden casar la misma ENTRY, uno por
