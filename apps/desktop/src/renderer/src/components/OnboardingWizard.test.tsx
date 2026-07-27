@@ -34,6 +34,7 @@ const settings: Settings = {
   convertBesideOriginal: false,
   addToEngineDj: false,
   engineLibraryDir: '/music/Engine Library',
+  traktorNmlPath: '',
   engineDjPlaylist: 'Surco',
   filenameFormat: '',
   titleFormat: '',

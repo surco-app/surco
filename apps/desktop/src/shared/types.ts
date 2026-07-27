@@ -160,6 +160,9 @@ export interface Settings {
   // The Engine DJ library folder whose Database2/m.db conversions are registered in.
   // Machine-local like outputDir — a filesystem path means nothing on another machine.
   engineLibraryDir: string
+  // Traktor's collection.nml path. Machine-local — the folder doesn't exist on another Mac.
+  // Empty by default: the feature is off until the user points Surco at their collection.
+  traktorNmlPath: string
   // The root playlist Engine DJ conversions land in (the "what Surco just converted"
   // inbox), created on first use. 'Surco' by default; a blank save restores it.
   engineDjPlaylist: string
