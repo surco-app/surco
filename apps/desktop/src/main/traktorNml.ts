@@ -19,7 +19,18 @@ const ENTRY_RE = /<ENTRY\b[^>]*>[\s\S]*?<\/ENTRY>/g
 // makes that true by construction rather than by accident.
 function attr(fragment: string, name: string): string {
   const m = fragment.match(new RegExp(`${name}\\b="([^"]*)"`))
-  return m ? m[1] : ''
+  return m ? unescapeAttr(m[1]) : ''
+}
+
+// Traktor XML-escapes attribute values on write (escapeAttr below is the same
+// table in reverse), so a FILE/DIR/VOLUME read back raw would never match a
+// patch built from the real filesystem name once it contains &, <, > or ".
+function unescapeAttr(value: string): string {
+  return value
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
 }
 
 export function findEntries(nml: string): NmlEntry[] {
@@ -71,16 +82,36 @@ function matches(entry: NmlEntry, patch: NmlPatch): boolean {
   return baseName(entry.file).normalize('NFC') === baseName(patch.file).normalize('NFC')
 }
 
+// Traktor writes COVERARTID only on <INFO>, so the removal is anchored there
+// rather than to a bare `COVERARTID="..."` search — anchoring to the element it
+// actually lives on is what makes stripping the "first occurrence" correct
+// instead of coincidental. Non-global: the schema has exactly one INFO per ENTRY.
+function stripCoverArt(block: string): string {
+  return block.replace(/(<INFO\b[^>]*?)\s*COVERARTID="[^"]*"/, '$1')
+}
+
+// CUE_V2 elements are not always one contiguous run — another element can sit
+// between two of them — so a single non-global replace can leave a later run
+// behind, coexisting with the freshly written set. Global removal, then insert
+// the fresh XML at one fixed anchor: right after </LOCATION>, the one element
+// every ENTRY that reaches here is guaranteed to have (matches() requires it).
+// This also covers the entry that had no CUE_V2 at all: nothing to remove, the
+// new cues still land at the same anchor instead of being silently discarded.
+function replaceCues(block: string, tree: Uint8Array): string {
+  const withoutCues = block.replace(/<CUE_V2\b[^>]*>[\s\S]*?<\/CUE_V2>/g, '')
+  return withoutCues.replace(/<\/LOCATION>/, `</LOCATION>${cuesToXml(tree)}`)
+}
+
 function patchEntry(block: string, patch: NmlPatch): string {
   let out = block
   if (patch.newFile) {
     out = out.replace(/(<LOCATION\b[^>]*\bFILE)="[^"]*"/, `$1="${escapeAttr(patch.newFile)}"`)
   }
   if (patch.clearCoverArt) {
-    out = out.replace(/\s*COVERARTID="[^"]*"/, '')
+    out = stripCoverArt(out)
   }
   if (patch.cueTree) {
-    out = out.replace(/(<CUE_V2\b[^>]*>[\s\S]*?<\/CUE_V2>)+/, cuesToXml(patch.cueTree))
+    out = replaceCues(out, patch.cueTree)
   }
   return out
 }

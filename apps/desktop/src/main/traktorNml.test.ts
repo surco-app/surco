@@ -114,9 +114,111 @@ describe('applyPatches', () => {
     expect(out).toContain('BITRATE="1411"')
   })
 
+  // El borrado debe estar anclado a <INFO>, el único elemento en el que Traktor
+  // escribe COVERARTID. Un comentario ANTES de INFO que contenga literalmente
+  // `COVERARTID="..."` no es el atributo real y no debe tocarse: una sustitución
+  // sin anclar (primera ocurrencia en cualquier parte del bloque, en vez de
+  // "el COVERARTID que cuelga de INFO") se comería esto en vez del de INFO.
+  it('only strips COVERARTID from the INFO element, not an earlier lookalike string', () => {
+    const withDecoy = NML.replace(
+      '<ENTRY MODIFIED_DATE="2026/7/26" TITLE="Uno" ARTIST="A">',
+      '<ENTRY MODIFIED_DATE="2026/7/26" TITLE="Uno" ARTIST="A">' +
+        '<!-- decoy COVERARTID="999/ZZZ" --><INFO COVERARTID="042/ABC" BITRATE="1411"></INFO>',
+    )
+
+    const out = applyPatches(withDecoy, [
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', clearCoverArt: true },
+    ])
+
+    expect(out).toContain('COVERARTID="999/ZZZ"')
+    expect(out).not.toContain('COVERARTID="042/ABC"')
+  })
+
   // Lo esencial del enfoque por texto: una pista que no está en la colección no
-  // produce ningún cambio. Ni una coma del documento del usuario se mueve.
+  // produce ningún cambio. Ni una coma del documento del usuario se mueve. El
+  // volume y el dir difieren cada uno por separado para que un guard que sólo
+  // comprobara uno de los dos (una regresión real) no lo dejara pasar sin más.
   it('leaves the document byte-for-byte identical when nothing matches', () => {
-    expect(applyPatches(NML, [{ volume: 'Otro', dir: '/:X/:', file: 'nope.mp3' }])).toBe(NML)
+    expect(applyPatches(NML, [{ volume: 'Otro', dir: '/:Musica/:', file: 'uno.aiff' }])).toBe(NML)
+    expect(applyPatches(NML, [{ volume: 'Macintosh HD', dir: '/:X/:', file: 'uno.aiff' }])).toBe(NML)
+  })
+
+  // El caso central de la feature: una pista que hasta ahora no tenía cues en
+  // Traktor recibe las suyas. Si el reemplazo depende de que ya exista un
+  // CUE_V2 previo que sustituir, esta ENTRY se queda muda para siempre.
+  it('writes cues into an entry that had none before', () => {
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)])
+
+    const out = applyPatches(NML, [
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', cueTree: tree },
+    ])
+
+    expect(out).toContain('<CUE_V2')
+    expect(out).toContain('NAME="Drop"')
+  })
+
+  // Los CUE_V2 existentes pueden no ser un único tramo contiguo (otro elemento del
+  // esquema, aquí simulado con un comentario, se cuela entre dos de ellos). Una
+  // sustitución no-global sólo se lleva la primera tanda: la segunda sobrevive
+  // duplicada junto a las nuevas. Deben desaparecer todas.
+  it('replaces every CUE_V2 even when they are not one contiguous run', () => {
+    const withSplitCues = NML.replace(
+      '<LOCATION DIR="/:Musica/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>',
+      '<LOCATION DIR="/:Musica/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>' +
+        '<CUE_V2 NAME="Old1" DISPL_ORDER="0" TYPE="0" START="1000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="0"></CUE_V2>' +
+        '<!-- gap --><CUE_V2 NAME="Old2" DISPL_ORDER="0" TYPE="0" START="2000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="1"></CUE_V2>',
+    )
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)])
+
+    const out = applyPatches(withSplitCues, [
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', cueTree: tree },
+    ])
+
+    expect(out).not.toContain('Old1')
+    expect(out).not.toContain('Old2')
+    expect(out.match(/<CUE_V2/g)).toHaveLength(1)
+    expect(out).toContain('NAME="Drop"')
+  })
+
+  // El fichero que Surco tiene en disco tras la conversión es el .flac; la ENTRY
+  // de Traktor todavía apunta al .aiff viejo. El emparejado exacto (file === file)
+  // no casa aquí — sólo lo hace el fallback por nombre base. Si alguien quitara
+  // el fallback, este patch dejaría de encontrar la ENTRY y el test debe notarlo.
+  it('matches via the base-name fallback when the patch already holds the converted file', () => {
+    const out = applyPatches(NML, [
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.flac', newFile: 'uno.flac' },
+    ])
+
+    expect(out).toContain('FILE="uno.flac"')
+    expect(out).not.toContain('FILE="uno.aiff"')
+  })
+
+  // El nombre real en disco lleva un '&' literal, pero el XML lo guarda escapado
+  // como &amp;. La lectura debe decodificarlo para que el emparejado con la ruta
+  // del filesystem siga funcionando en vez de fallar en silencio.
+  it('matches a file name containing an ampersand written as an XML entity', () => {
+    const withAmpersand = NML.replace('FILE="uno.aiff"', 'FILE="uno&amp;dos.aiff"')
+
+    const out = applyPatches(withAmpersand, [
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno&dos.aiff', newFile: 'uno&dos.flac' },
+    ])
+
+    expect(out).toContain('FILE="uno&amp;dos.flac"')
+  })
+
+  // Sustitución de atrás hacia adelante: si dos ENTRY se parchean y la primera
+  // cambia de longitud (nombre de fichero más largo), un bucle de-adelante-hacia-
+  // atrás desplazaría los índices ya calculados para la segunda y corrompería su
+  // FILE. Aquí "uno.aiff" (8) pasa a "uno-largo-convertido.flac" (25), y luego
+  // "dos.flac" debe seguir intacto.
+  it('patches multiple entries whose block lengths change without corrupting later spans', () => {
+    const out = applyPatches(NML, [
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', newFile: 'uno-largo-convertido.flac' },
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'dos.flac', clearCoverArt: true },
+    ])
+
+    expect(out).toContain('FILE="uno-largo-convertido.flac"')
+    expect(out).toContain('FILE="dos.flac"')
+    expect(out).toContain('TITLE="Dos"')
   })
 })
