@@ -1,10 +1,30 @@
 // @vitest-environment node
-import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('./traktorProcess', () => ({ isTraktorRunning: vi.fn().mockResolvedValue(false) }))
+
+// Only `rename` is faked, and only for the one test that needs it to fail: every other
+// test relies on the real read/copy/write/unlink behaviour on the temp dir it creates.
+const { renameShouldFail } = vi.hoisted(() => ({ renameShouldFail: { value: false } }))
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const real = await importOriginal<typeof import('node:fs/promises')>()
+  const rename: typeof real.rename = (async (...args: Parameters<typeof real.rename>) => {
+    if (renameShouldFail.value) throw Object.assign(new Error('ENOSPC'), { code: 'ENOSPC' })
+    return real.rename(...args)
+  }) as typeof real.rename
+  return { ...real, rename }
+})
 
 import { isTraktorRunning } from './traktorProcess'
 import { syncCollection } from './traktorNmlLibrary'
@@ -21,6 +41,7 @@ beforeEach(() => {
   nmlPath = join(dir, 'collection.nml')
   writeFileSync(nmlPath, NML)
   vi.mocked(isTraktorRunning).mockResolvedValue(false)
+  renameShouldFail.value = false
 })
 
 const patch = { volume: 'HD', dir: '/:M/:', file: 'uno.aiff', newFile: 'uno.flac' }
@@ -104,5 +125,85 @@ describe('syncCollection', () => {
     ])
 
     expect(result).toMatchObject({ written: true, matched: 1 })
+  })
+
+  // El primer chequeo puede pasar y Traktor arrancar justo en la ventana de
+  // lectura/backup que sigue: si el segundo chequeo (justo antes del swap) no
+  // existiera, este escenario escribiría con Traktor abierto sin que ningún test
+  // lo notara.
+  it('refuses to write when Traktor starts in the window between the two checks', async () => {
+    vi.mocked(isTraktorRunning).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+
+    const result = await syncCollection(nmlPath, [patch])
+
+    expect(result).toMatchObject({ written: false, reason: 'traktor-running' })
+    expect(readFileSync(nmlPath, 'utf8')).toBe(NML)
+  })
+
+  // Si el backup falla, la regla es "nada de backup, nada de escritura": el original
+  // debe seguir intacto byte a byte, no sólo "no escrito" en el resultado.
+  it('leaves the collection untouched when the backup cannot be written', async () => {
+    chmodSync(dir, 0o500)
+    try {
+      const result = await syncCollection(nmlPath, [patch])
+
+      expect(result).toMatchObject({ written: false, reason: 'backup-failed' })
+    } finally {
+      chmodSync(dir, 0o700)
+    }
+    expect(readFileSync(nmlPath, 'utf8')).toBe(NML)
+    expect(readdirSync(dir).filter((f) => f.endsWith('.bak'))).toHaveLength(0)
+  })
+
+  // Un fichero que no se puede leer (permisos, disco desmontado) no es "no hay
+  // coincidencias": son motivos distintos y una llamada que dependa del texto exacto
+  // de reason no puede recibir el equivocado.
+  it('reports the specific reason when the collection cannot be read', async () => {
+    chmodSync(nmlPath, 0o000)
+    try {
+      const result = await syncCollection(nmlPath, [patch])
+
+      expect(result).toMatchObject({ written: false, matched: 0, reason: 'unreadable' })
+    } finally {
+      chmodSync(nmlPath, 0o600)
+    }
+  })
+
+  // Un fallo al escribir (disco lleno, volumen de sólo lectura) llega DESPUÉS de que
+  // el backup ya se hizo — el original sigue a salvo — pero no puede escapar como una
+  // excepción sin capturar hacia un caller que ya le dijo al usuario que la conversión
+  // fue bien. Y el .surco-tmp fallido no puede quedarse ahí bloqueando el próximo sync.
+  it('reports write-failed instead of throwing, and clears the leftover tmp file', async () => {
+    renameShouldFail.value = true
+
+    const result = await syncCollection(nmlPath, [patch])
+
+    expect(result).toMatchObject({ written: false, matched: 0, reason: 'write-failed' })
+    expect(existsSync(`${nmlPath}.surco-tmp`)).toBe(false)
+    expect(readFileSync(nmlPath, 'utf8')).toBe(NML)
+  })
+
+  // La rotación sólo puede tocar los backups que Surco mismo creó (BACKUP_MARKER).
+  // Un fichero con "collection" en el nombre pero sin ese marcador — como los que
+  // el propio usuario o Traktor dejan al lado — debe sobrevivir a un sync entero.
+  // Se siembran más de MAX_BACKUPS backups reales para que la rotación se dispare de
+  // verdad: con pocos ficheros, un matcher demasiado laxo pasaría este test igual
+  // porque no habría nada que borrar.
+  it('rotation only ever deletes backups Surco itself created', async () => {
+    mkdirSync(join(dir, 'Backup'))
+    writeFileSync(join(dir, 'Backup', 'collection.nml'), 'traktor backup')
+    writeFileSync(join(dir, 'collection ORI.nml'), 'user backup')
+    writeFileSync(join(dir, 'collection buena retocada.nml'), 'user backup')
+    writeFileSync(join(dir, 'collection1.nml'), 'unrelated file')
+    for (let i = 0; i < 12; i++) {
+      writeFileSync(join(dir, `collection.nml.surco-2026-07-0${i % 10}T0${i % 10}-00.bak`), 'old')
+    }
+
+    await syncCollection(nmlPath, [patch])
+
+    expect(readFileSync(join(dir, 'Backup', 'collection.nml'), 'utf8')).toBe('traktor backup')
+    expect(readFileSync(join(dir, 'collection ORI.nml'), 'utf8')).toBe('user backup')
+    expect(readFileSync(join(dir, 'collection buena retocada.nml'), 'utf8')).toBe('user backup')
+    expect(readFileSync(join(dir, 'collection1.nml'), 'utf8')).toBe('unrelated file')
   })
 })
