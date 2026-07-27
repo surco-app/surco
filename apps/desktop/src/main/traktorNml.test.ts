@@ -58,14 +58,55 @@ describe('cuesToXml', () => {
 
   // Varios marcadores, incluido el grid (TYPE=4): salen todos, en orden, y el grid
   // conserva su valor tal cual — es fase, no una posición que haya que corregir.
-  it('emits every marker including the grid anchor', () => {
+  it('emits every marker including the grid anchor, with its GRID child', () => {
     const xml = cuesToXml(
       buildTraktorTree([traktorCue('AutoGrid', 4, 143.38, 0), traktorCue('Drop', 0, 79672.64, 1)]),
+      134.87,
     )
 
     expect(xml.match(/<CUE_V2/g)).toHaveLength(2)
     expect(xml).toContain('TYPE="4"')
     expect(xml).toContain('START="143.380000"')
+    expect(xml).toContain('<GRID BPM="134.870000">')
+  })
+
+  // El BPM se formatea igual que START: 6 decimales, como escribe Traktor.
+  it('formats the GRID BPM with six decimals', () => {
+    const xml = cuesToXml(buildTraktorTree([traktorCue('AutoGrid', 4, 143.38, 0)]), 128)
+
+    expect(xml).toContain('<GRID BPM="128.000000">')
+  })
+
+  // Un marcador que no es grid nunca lleva hijo GRID, tenga o no bpm disponible.
+  it('does not add a GRID child to a non-grid marker', () => {
+    const xml = cuesToXml(buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)]), 128)
+
+    expect(xml).not.toContain('<GRID')
+  })
+
+  // Sin bpm utilizable, un TYPE=4 sin GRID es una ancla muerta que Traktor
+  // descarta en silencio (ground truth: _grid_anchors salta TYPE=4 sin GRID o
+  // con BPM<=0). Escribirlo igual daría la falsa impresión de que la rejilla
+  // quedó guardada. Mejor no emitir el marcador que emitir uno que parece
+  // válido y no lo es.
+  it('omits the grid marker entirely when no usable bpm is available', () => {
+    const xml = cuesToXml(
+      buildTraktorTree([traktorCue('AutoGrid', 4, 143.38, 0), traktorCue('Drop', 0, 79672.64, 1)]),
+    )
+
+    expect(xml.match(/<CUE_V2/g)).toHaveLength(1)
+    expect(xml).not.toContain('TYPE="4"')
+    expect(xml).toContain('NAME="Drop"')
+  })
+
+  // bpm no finito o <= 0 cuenta como "no utilizable", igual que ausente.
+  it('omits the grid marker when bpm is zero, negative, or non-finite', () => {
+    const tree = buildTraktorTree([traktorCue('AutoGrid', 4, 143.38, 0)])
+
+    expect(cuesToXml(tree, 0)).not.toContain('TYPE="4"')
+    expect(cuesToXml(tree, -5)).not.toContain('TYPE="4"')
+    expect(cuesToXml(tree, Number.NaN)).not.toContain('TYPE="4"')
+    expect(cuesToXml(tree, Number.POSITIVE_INFINITY)).not.toContain('TYPE="4"')
   })
 })
 
