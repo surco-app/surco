@@ -328,6 +328,12 @@ button:not(:disabled) {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+  /* Deliberately shows the section outright instead of fading it in. Elsewhere reduced
+     motion should keep the fade and drop only the travel, but a reveal is invisible until
+     JS adds .reveal-in — so if opacity stayed at 0 and the observer never fired (JS slow,
+     blocked, or errored), the content would be hidden for good. Starting opaque is the
+     safety net, and it costs the fade: you cannot fade in something that has to be visible
+     before the animation is allowed to run. Safety wins over the flourish. */
   .reveal-init {
     opacity: 1 !important;
     transform: none !important;
