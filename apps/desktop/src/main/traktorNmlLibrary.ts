@@ -48,7 +48,18 @@ export async function syncCollection(nmlPath: string, patches: NmlPatch[]): Prom
     // outcome this whole module exists to rule out.
     return { written: false, matched: 0, reason: 'backup-failed' }
   }
-  await rotateBackups(dir, nmlPath)
+  try {
+    await rotateBackups(dir, nmlPath)
+  } catch {
+    // The module's own contract (see the header comment): nothing escapes to the
+    // caller uncaught. A readdir failure here (EIO, an unmounted volume) would
+    // otherwise propagate out of syncCollection into the unguarded
+    // 'process:batch-end' handler and vanish as an unhandled rejection — the DJ
+    // sees no activity row at all, neither success nor failure. The backup taken
+    // above already protects the collection, so this is safe to treat like any
+    // other failure short of the write itself.
+    return { written: false, matched: 0, reason: 'write-failed' }
+  }
 
   // Traktor can have launched during the read/backup above; check again right before
   // the swap so the vulnerable window shrinks to the rename itself. Mirrors
