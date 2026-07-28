@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.76",
+    "date": "28 de julio de 2026",
+    "title": "Traktor ve por fin los cues que Surco escribe",
+    "items": [
+      {
+        "text": "Surco puede actualizar tu colección de Traktor al convertir. Hasta ahora escribía los cues dentro del archivo, pero Traktor lee su propia base de datos y seguía enseñando los de antes; ahora también le pone al día los cues, el beatgrid y la carátula de las pistas que ya tenía. Se activa en Ajustes eligiendo tu archivo collection.nml — Surco propone el que encuentra, y no toca nada hasta que tú lo confirmas. Antes de escribir siempre guarda una copia de seguridad, y si Traktor está abierto avisa y se ofrece a cerrarlo, porque si no tus cambios se perderían al salir.",
+        "in": "0.76.0"
+      },
+      {
+        "text": "Las animaciones de la aplicación se han repasado enteras: la selección se pinta al instante, los resultados de búsqueda entran de forma progresiva, las barras de carga barren en una dirección en vez de parpadear, y la estrella de la valoración responde al pulsarla. Con el movimiento reducido activado del sistema, las animaciones se simplifican en vez de desaparecer.",
+        "in": "0.76.0"
+      }
+    ]
+  },
+  {
     "version": "0.75",
     "date": "26 de julio de 2026",
     "title": "Los cues de Traktor sobreviven al recorte también en FLAC",
