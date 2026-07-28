@@ -11,6 +11,10 @@
       {
         "text": "The app's animations have had a full pass: selection paints instantly, search results ramp in instead of landing all at once, loading bars sweep in one direction rather than pulsing, and the rating star responds when you click it. With the system's reduced-motion setting on, animations simplify instead of disappearing.",
         "in": "0.76.0"
+      },
+      {
+        "text": "The Traktor collection backup is now a single file that gets overwritten, rather than a new one per write: converting several tracks no longer fills the folder holding your collection.nml with copies.",
+        "in": "0.76.1"
       }
     ]
   },
