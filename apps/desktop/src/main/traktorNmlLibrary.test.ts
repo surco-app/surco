@@ -14,14 +14,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('./traktorProcess', () => ({ isTraktorRunning: vi.fn().mockResolvedValue(false) }))
 
-// Only `rename`/`copyFile` are faked, and only for the tests that need one of them to
-// fail in isolation: every other test relies on the real read/copy/write/unlink
-// behaviour on the temp dir it creates. A read-only directory would fail BOTH calls at
-// once, which can't tell "the backup guard stopped the write" apart from "the write
-// failed on its own too" — faking exactly one call is what isolates the guard.
-const { renameShouldFail, copyFileShouldFail } = vi.hoisted(() => ({
+// Only `rename`/`copyFile`/`readdir` are faked, and only for the tests that need one
+// of them to fail in isolation: every other test relies on the real read/copy/write/
+// unlink behaviour on the temp dir it creates. A read-only directory would fail
+// multiple calls at once, which can't tell "the backup guard stopped the write" apart
+// from "the write failed on its own too" — faking exactly one call is what isolates
+// the guard.
+const { renameShouldFail, copyFileShouldFail, readdirShouldFail } = vi.hoisted(() => ({
   renameShouldFail: { value: false },
   copyFileShouldFail: { value: false },
+  readdirShouldFail: { value: false },
 }))
 vi.mock('node:fs/promises', async (importOriginal) => {
   const real = await importOriginal<typeof import('node:fs/promises')>()
@@ -33,7 +35,11 @@ vi.mock('node:fs/promises', async (importOriginal) => {
     if (copyFileShouldFail.value) throw Object.assign(new Error('EACCES'), { code: 'EACCES' })
     return real.copyFile(...args)
   }) as typeof real.copyFile
-  return { ...real, rename, copyFile }
+  const readdir: typeof real.readdir = (async (...args: Parameters<typeof real.readdir>) => {
+    if (readdirShouldFail.value) throw Object.assign(new Error('EIO'), { code: 'EIO' })
+    return real.readdir(...args)
+  }) as typeof real.readdir
+  return { ...real, rename, copyFile, readdir }
 })
 
 import { isTraktorRunning } from './traktorProcess'
@@ -56,6 +62,7 @@ beforeEach(() => {
   vi.mocked(isTraktorRunning).mockReset().mockResolvedValue(false)
   renameShouldFail.value = false
   copyFileShouldFail.value = false
+  readdirShouldFail.value = false
 })
 
 const patch = { volume: 'HD', dir: '/:M/:', file: 'uno.aiff', newFile: 'uno.flac' }
@@ -183,6 +190,21 @@ describe('syncCollection', () => {
     }
   })
 
+  // Hallazgo importante 4: el módulo promete en su comentario de cabecera que nada
+  // se le escapa al caller sin capturar — cada fallo vuelve como un `reason`. Pero
+  // `await rotateBackups(...)` no estaba dentro de ningún try, y readdir (dentro de
+  // rotateBackups) queda fuera del único try que sí existe ahí (el que sólo envuelve
+  // unlink). Un EIO de readdir se escapa entero de syncCollection hasta el handler
+  // 'process:batch-end' (sin try/catch propio) y se pierde como una unhandled
+  // rejection: el DJ no ve ni éxito ni fallo, ninguna fila de actividad. La colección
+  // sigue a salvo (esto corre después del backup, antes de la escritura), pero el
+  // contrato de "nunca lanza" se rompe igual.
+  it('reports write-failed instead of throwing when backup rotation cannot list the directory', async () => {
+    readdirShouldFail.value = true
+
+    await expect(syncCollection(nmlPath, [patch])).resolves.toMatchObject({ written: false })
+  })
+
   // Un fallo al escribir (disco lleno, volumen de sólo lectura) llega DESPUÉS de que
   // el backup ya se hizo — el original sigue a salvo — pero no puede escapar como una
   // excepción sin capturar hacia un caller que ya le dijo al usuario que la conversión
@@ -209,6 +231,12 @@ describe('syncCollection', () => {
     writeFileSync(join(dir, 'collection ORI.nml'), 'user backup')
     writeFileSync(join(dir, 'collection buena retocada.nml'), 'user backup')
     writeFileSync(join(dir, 'collection1.nml'), 'unrelated file')
+    // Hallazgo menor 5: los señuelos de arriba no llevan extensión .bak, así que ni
+    // siquiera detectan que se caiga la mitad `f.startsWith(prefix)` del filtro — con
+    // sólo el `f.endsWith('.bak')` puesto, la rotación se comería CUALQUIER .bak de la
+    // carpeta, incluida una copia que el propio DJ se guardó a mano al lado de su
+    // colección.
+    writeFileSync(join(dir, 'coleccion a mano.bak'), 'hand-made backup')
     for (let i = 0; i < 12; i++) {
       writeFileSync(join(dir, `collection.nml.surco-2026-07-0${i % 10}T0${i % 10}-00.bak`), 'old')
     }
@@ -219,5 +247,6 @@ describe('syncCollection', () => {
     expect(readFileSync(join(dir, 'collection ORI.nml'), 'utf8')).toBe('user backup')
     expect(readFileSync(join(dir, 'collection buena retocada.nml'), 'utf8')).toBe('user backup')
     expect(readFileSync(join(dir, 'collection1.nml'), 'utf8')).toBe('unrelated file')
+    expect(readFileSync(join(dir, 'coleccion a mano.bak'), 'utf8')).toBe('hand-made backup')
   })
 })
