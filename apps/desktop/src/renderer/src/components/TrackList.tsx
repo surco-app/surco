@@ -298,7 +298,7 @@ const TrackRow = memo(function TrackRow({
         }}
         onMouseEnter={() => onPrefetch(t.id)}
         onFocus={() => onPrefetch(t.id)}
-        className={`group/row relative flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] ${
+        className={`group/row relative flex w-full items-center gap-2 rounded-lg px-2.5 py-1 text-left shadow-[inset_0_0_0_1px_var(--color-line)] ${
           // A selected row paints its fill on the keystroke: ↑/↓ and j/k run through this
           // list constantly, and easing the fill in leaves the highlight a step behind the
           // cursor. Only the unselected rows animate, where the transition belongs to the
