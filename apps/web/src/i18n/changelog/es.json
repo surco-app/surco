@@ -11,6 +11,10 @@
       {
         "text": "Las animaciones de la aplicación se han repasado enteras: la selección se pinta al instante, los resultados de búsqueda entran de forma progresiva, las barras de carga barren en una dirección en vez de parpadear, y la estrella de la valoración responde al pulsarla. Con el movimiento reducido activado del sistema, las animaciones se simplifican en vez de desaparecer.",
         "in": "0.76.0"
+      },
+      {
+        "text": "La copia de seguridad de la colección de Traktor es ahora un único archivo que se va sobrescribiendo, en vez de uno nuevo por cada escritura: convertir varias pistas ya no llena de copias la carpeta donde tienes el collection.nml.",
+        "in": "0.76.1"
       }
     ]
   },
