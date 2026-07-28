@@ -994,6 +994,14 @@
     "autoMatchReviewUncorroboratedDetail": "{{release}} → {{track}}\nKonfidenz: {{confidence}} % · Dauer {{duration}} · Künstler {{artist}} · Katalognr. {{catno}}\nZur Prüfung markiert: nur der Titel stimmt überein; kein unabhängiges Signal (Dauer, Künstler, Katalognr.) bestätigt ihn.\nGeprüfte Kandidaten:\n{{candidates}}",
     "autoMatchNoneDetail": "Kein Kandidat erreichte die nötige Konfidenz.\nGeprüfte Kandidaten:\n{{candidates}}",
     "autoMatchNoCandidates": "Die Suche lieferte keine Kandidaten zum Prüfen.",
-    "probeClicks": "Klicks werden gezählt"
+    "probeClicks": "Klicks werden gezählt",
+    "traktorSync": "Traktor-Sammlung wird aktualisiert",
+    "traktorSyncWritten_one": "{{count}} Track in collection.nml aktualisiert",
+    "traktorSyncWritten_other": "{{count}} Tracks in collection.nml aktualisiert",
+    "traktorSyncTraktorRunning": "Übersprungen: Traktor war geöffnet",
+    "traktorSyncBackupFailed": "Übersprungen: Sicherung von collection.nml fehlgeschlagen",
+    "traktorSyncNoMatches": "Übersprungen: keiner dieser Tracks ist in der Sammlung",
+    "traktorSyncUnreadable": "Übersprungen: collection.nml konnte nicht gelesen werden",
+    "traktorSyncWriteFailed": "Übersprungen: collection.nml konnte nicht geschrieben werden"
   }
 }

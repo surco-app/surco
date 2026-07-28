@@ -434,6 +434,10 @@ export function useTrackProcessing({
         // top-bar fraction, or the bar sticks at 100% and skews every later sweep.
         setBatchProgress({ done: 0, total: 0 })
         setBatchSummary(summarizeBatch(results))
+        // In the finally, not after: a cancelled or failed run must still flush main's
+        // recorded Traktor patches, or they linger and get applied to the collection
+        // during the NEXT batch instead.
+        window.api.endConversionBatch()
       }
       // After the summary, never mid-run: a run that converted nothing (all skipped or
       // failed) is no moment of value, so asking for support then would read as nagware.

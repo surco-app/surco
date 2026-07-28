@@ -92,6 +92,7 @@ const api: Api = {
     ipcRenderer.invoke('applemusic:delete', persistentId, track),
   processTrack: (job) => ipcRenderer.invoke('process:track', job),
   beginConversionBatch: (): void => ipcRenderer.send('process:batch-begin'),
+  endConversionBatch: (): void => ipcRenderer.send('process:batch-end'),
   cancelJob: (jobId: string): void => ipcRenderer.send('process:cancel', jobId),
   exportCover: (job) => ipcRenderer.invoke('cover:export', job),
   prepareCoverDrag: (src) => ipcRenderer.invoke('cover:prepareDrag', src),

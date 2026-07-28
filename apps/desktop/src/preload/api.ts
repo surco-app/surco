@@ -106,6 +106,10 @@ export interface Api {
   // file-conflict choice the previous run left. Fire-and-forget; single converts skip it,
   // so their conflicts always prompt.
   beginConversionBatch: () => void
+  // Marks the end of a convert-all run so main flushes any Traktor collection.nml
+  // patches the batch recorded. Fire-and-forget; must fire even when the run was
+  // cancelled or failed, or its patches would leak into the next batch's flush.
+  endConversionBatch: () => void
   // Reaches an encode already in flight for this job id; a no-op if it already
   // finished or never started. Fire-and-forget, mirroring dock:frames/track:drag.
   cancelJob: (jobId: string) => void
