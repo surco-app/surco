@@ -14,7 +14,7 @@ vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath }) }))
 import type { TrackMetadata } from '../shared/types'
 import { decodeBase91, encodeBase91 } from './base91'
 import { convertAudio, toNmlLocation } from './ffmpeg'
-import { resetNmlPatches, takeNmlPatches } from './nmlBatch'
+import { beginNmlBatch, endNmlBatch } from './nmlBatch'
 import { buildTraktorTree, readTraktorCueStart, traktorCue } from './traktor4Fixture'
 
 const FF = ffmpegStatic as unknown as string
@@ -279,11 +279,11 @@ describe('convertAudio cue preservation', () => {
   // colección configurada no se registra nada: la feature está apagada.
   it('records a collection patch for a converted track when a collection is configured', async () => {
     traktorNmlPath = '/Users/dj/collection.nml'
-    resetNmlPatches()
+    beginNmlBatch()
     const out = join(dir, 'out-nml.flac')
     await convertAudio(src, out, 'flac', { ...meta, bpm: '138.30' })
 
-    const patches = takeNmlPatches()
+    const patches = endNmlBatch()
 
     expect(patches).toHaveLength(1)
     expect(patches[0].file).toBe('in.aiff')
@@ -298,20 +298,20 @@ describe('convertAudio cue preservation', () => {
   // existe para evitar.
   it('leaves the bpm undefined when the track has none', async () => {
     traktorNmlPath = '/Users/dj/collection.nml'
-    resetNmlPatches()
+    beginNmlBatch()
     await convertAudio(src, join(dir, 'out-nobpm.flac'), 'flac', { ...meta, bpm: '' })
 
-    expect(takeNmlPatches()[0].bpm).toBeUndefined()
+    expect(endNmlBatch()[0].bpm).toBeUndefined()
   })
 
   // Con la ruta vacía (por defecto) no se toca nada: ni lecturas de disco extra ni
   // patches acumulados que nadie va a volcar.
   it('records nothing when no collection path is configured', async () => {
     traktorNmlPath = ''
-    resetNmlPatches()
+    beginNmlBatch()
     await convertAudio(src, join(dir, 'out-off.flac'), 'flac', meta)
 
-    expect(takeNmlPatches()).toEqual([])
+    expect(endNmlBatch()).toEqual([])
   })
 })
 

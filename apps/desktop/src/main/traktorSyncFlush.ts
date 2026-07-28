@@ -12,7 +12,7 @@ import type { SyncResult } from './traktorNmlLibrary'
 // line. 'traktor-running' can't reach flushTraktorSync in practice (ensureTraktorClosed
 // already refused earlier), but syncCollection re-checks right before its own write for
 // a race, so the map still needs an entry for it.
-export const TRAKTOR_SYNC_SKIP_KEYS: Record<NonNullable<SyncResult['reason']>, string> = {
+const TRAKTOR_SYNC_SKIP_KEYS: Record<NonNullable<SyncResult['reason']>, string> = {
   'traktor-running': 'activity.traktorSyncTraktorRunning',
   'backup-failed': 'activity.traktorSyncBackupFailed',
   'no-matches': 'activity.traktorSyncNoMatches',
@@ -22,7 +22,10 @@ export const TRAKTOR_SYNC_SKIP_KEYS: Record<NonNullable<SyncResult['reason']>, s
 
 export interface FlushTraktorSyncDeps {
   traktorNmlPath: string
-  takeNmlPatches: () => NmlPatch[]
+  // Closes this call's begin/end pair and returns the accumulated patches — empty if
+  // this end was nested inside a still-open outer batch (see nmlBatch.ts), in which
+  // case there is nothing to sync yet and the outer batch's own end will flush later.
+  endNmlBatch: () => NmlPatch[]
   // Resolves true once Traktor is confirmed not running (possibly after the user
   // accepted quitting it); false if it's running and the user declined.
   ensureTraktorClosed: () => Promise<boolean>
@@ -33,8 +36,8 @@ export interface FlushTraktorSyncDeps {
 }
 
 export async function flushTraktorSync(deps: FlushTraktorSyncDeps): Promise<void> {
+  const patches = deps.endNmlBatch()
   if (!deps.traktorNmlPath) return
-  const patches = deps.takeNmlPatches()
   if (patches.length === 0) return
   if (!(await deps.ensureTraktorClosed())) {
     deps.showBlockedDialog()

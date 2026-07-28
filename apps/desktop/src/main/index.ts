@@ -55,7 +55,7 @@ import { isSameFile, removeRenamedOriginal } from './inplace'
 import { createMediaAccess } from './mediaAccess'
 import { keymapMenuClick } from './menuCommand'
 import { isInternalNavigation, isWebUrl } from './navigation'
-import { resetNmlPatches, takeNmlPatches } from './nmlBatch'
+import { beginNmlBatch, endNmlBatch } from './nmlBatch'
 import { createOutputReservations } from './outputReservations'
 import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
 import { runProcessTrack } from './processTrack'
@@ -785,12 +785,13 @@ function registerIpc(): void {
 
   // A convert-all run starts: forget any "apply to the rest" conflict choice the previous
   // run left, so this batch begins asking again rather than silently reusing a stale one.
-  // Also drop any Traktor patches a cancelled or failed previous run recorded but never
-  // flushed, so this batch's sync only ever carries its own tracks.
+  // beginNmlBatch (not a raw reset) also handles processOne firing its own begin/end
+  // while THIS batch is still open (⌘⏎ during a running convert-all, see nmlBatch.ts) —
+  // nesting is tracked there so a lone convert mid-batch can never wipe it.
   ipcMain.on('process:batch-begin', () => {
     stickyConflict.reset()
     coverMemo = createCoverMemo(prepareProcessedCover)
-    resetNmlPatches()
+    beginNmlBatch()
   })
 
   // A convert-all run ends (however it ended — finished, cancelled, or failed, the
@@ -802,7 +803,7 @@ function registerIpc(): void {
     const win = BrowserWindow.fromWebContents(e.sender)
     await flushTraktorSync({
       traktorNmlPath: getSettings().traktorNmlPath,
-      takeNmlPatches,
+      endNmlBatch,
       ensureTraktorClosed: () => ensureTraktorClosed(win),
       showBlockedDialog: () => {
         const t = createMenuT(menuLocale())
