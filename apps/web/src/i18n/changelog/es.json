@@ -23,6 +23,14 @@
       {
         "text": "Al importar una carpeta ya no aparecen pistas repetidas en la lista: algunas se colaban dos veces cuando Surco encontraba varias subcarpetas a la vez, sobre todo en discos locales rápidos.",
         "in": "0.75.2"
+      },
+      {
+        "text": "Al convertir un AIFF a FLAC los cues y el beatgrid de Traktor viajan con la pista: antes se quedaban por el camino porque cada formato los guarda de una manera distinta y no se traducían.",
+        "in": "0.75.3"
+      },
+      {
+        "text": "El volumen del reproductor sale de encima de la onda, así que se puede pinchar en cualquier punto para saltar ahí. El transporte tiene su propia fila con el volumen siempre visible, y el botón de cerrar se va a la esquina de la tarjeta.",
+        "in": "0.75.3"
       }
     ]
   },
