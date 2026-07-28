@@ -914,7 +914,11 @@ describe('readCueTree', () => {
       'PRIV',
       Buffer.concat([Buffer.from('TRAKTOR4', 'latin1'), Buffer.from([0]), Buffer.from(tree)]),
     )
-    const header = Buffer.concat([Buffer.from('ID3'), Buffer.from([3, 0, 0]), syncsafe(body.length)])
+    const header = Buffer.concat([
+      Buffer.from('ID3'),
+      Buffer.from([3, 0, 0]),
+      syncsafe(body.length),
+    ])
     const mpegFrame = Buffer.concat([Buffer.from([0xff, 0xfb, 0x90, 0x00]), Buffer.alloc(413)])
     const audio = Buffer.concat(Array(20).fill(mpegFrame))
     const path = join(dir, 'priv-seed.mp3')
@@ -954,11 +958,12 @@ describe('readCueTree', () => {
       head.writeUInt32BE(data.length, 4)
       return Buffer.concat([head, data])
     }
-    const body = frame(
-      'TIT2',
-      Buffer.concat([Buffer.from([0]), Buffer.from('No Cues', 'latin1')]),
-    )
-    const header = Buffer.concat([Buffer.from('ID3'), Buffer.from([3, 0, 0]), syncsafe(body.length)])
+    const body = frame('TIT2', Buffer.concat([Buffer.from([0]), Buffer.from('No Cues', 'latin1')]))
+    const header = Buffer.concat([
+      Buffer.from('ID3'),
+      Buffer.from([3, 0, 0]),
+      syncsafe(body.length),
+    ])
     const mpegFrame = Buffer.concat([Buffer.from([0xff, 0xfb, 0x90, 0x00]), Buffer.alloc(413)])
     const audio = Buffer.concat(Array(20).fill(mpegFrame))
     const path = join(dir, 'plain.mp3')

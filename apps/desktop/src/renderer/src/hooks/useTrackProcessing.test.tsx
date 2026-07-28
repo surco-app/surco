@@ -913,9 +913,11 @@ describe('useTrackProcessing', () => {
       () => useTrackProcessing({ tracks, settings: null, updateTrack, concurrency: 1 }),
       { wrapper: withClient() },
     )
-    await expect(act(async () => {
-      await result.current.processAll(tracks)
-    })).rejects.toThrow('boom')
+    await expect(
+      act(async () => {
+        await result.current.processAll(tracks)
+      }),
+    ).rejects.toThrow('boom')
     expect(endConversionBatch).toHaveBeenCalledTimes(1)
   })
 

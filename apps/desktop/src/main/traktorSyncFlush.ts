@@ -50,7 +50,10 @@ export async function flushTraktorSync(deps: FlushTraktorSyncDeps): Promise<void
     {
       summary: (result) => {
         if (result.written) {
-          return { detailKey: 'activity.traktorSyncWritten', detailParams: { count: result.matched } }
+          return {
+            detailKey: 'activity.traktorSyncWritten',
+            detailParams: { count: result.matched },
+          }
         }
         // A skip with no reason can't happen today (every written:false branch in
         // syncCollection sets one) but the type leaves it optional, and `?? 'unreadable'`
