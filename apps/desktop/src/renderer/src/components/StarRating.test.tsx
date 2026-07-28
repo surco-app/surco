@@ -24,4 +24,32 @@ describe('StarRating', () => {
     fireEvent.click(screen.getByTestId('star-3'))
     expect(onChange).toHaveBeenCalledWith('3')
   })
+
+  // Rating a track is a rare, deliberate act, so the star that receives the click gets a
+  // small punch to acknowledge it. Only that one: hover already fills the row as a preview,
+  // so punching every filled star would fire the flourish on a pointer merely crossing the
+  // control, and repeat it five times over for a five-star rating.
+  it('punches only the star that was clicked', () => {
+    render(<StarRating value="" onChange={() => {}} />)
+    fireEvent.click(screen.getByTestId('star-3'))
+    expect(screen.getByTestId('star-3').className).toContain('star-punch')
+    expect(screen.getByTestId('star-2').className).not.toContain('star-punch')
+    expect(screen.getByTestId('star-4').className).not.toContain('star-punch')
+  })
+
+  // Clicking the top filled star clears the rating. That is an undo, and celebrating an
+  // erasure reads as the app congratulating the user for removing their own data.
+  it('does not punch when the click clears the rating', () => {
+    render(<StarRating value="3" onChange={() => {}} />)
+    fireEvent.click(screen.getByTestId('star-3'))
+    expect(screen.getByTestId('star-3').className).not.toContain('star-punch')
+  })
+
+  // Hovering is not a commitment — it must leave the flourish alone, or the animation
+  // fires every time the pointer sweeps across the row on its way somewhere else.
+  it('does not punch on hover alone', () => {
+    render(<StarRating value="" onChange={() => {}} />)
+    fireEvent.mouseEnter(screen.getByTestId('star-4'))
+    expect(screen.getByTestId('star-4').className).not.toContain('star-punch')
+  })
 })
