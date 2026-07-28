@@ -51,6 +51,33 @@ function renderPanel(b: DiscogsBrowser) {
   )
 }
 
+describe('DiscogsPanel result entrance', () => {
+  function results(n: number) {
+    return Array.from({ length: n }, (_, i) => ({
+      provider: 'discogs' as const,
+      id: i + 1,
+      title: `Album ${i + 1}`,
+    }))
+  }
+
+  // A search lands ~50 rows in one frame, which reads as a slab appearing rather than
+  // results arriving. A short per-row delay turns that into an arrival — but the delay MUST
+  // stop after the first handful: it is decoration, and a row 30 places down that waits its
+  // turn would be invisible-but-pending when the user scrolls to it, which is decoration
+  // blocking the actual content. Past the cap every row is at zero, i.e. already there.
+  it('staggers only the first rows and leaves the rest with no delay', () => {
+    renderPanel(browser({ results: results(20) }))
+    const rows = screen.getAllByTestId('discogs-result')
+
+    expect(rows[0].style.animationDelay).toBe('0ms')
+    expect(rows[1].style.animationDelay).toBe('40ms')
+    expect(rows[5].style.animationDelay).toBe('200ms')
+    // Capped: the seventh row onwards carries no delay at all.
+    expect(rows[6].style.animationDelay).toBe('0ms')
+    expect(rows[19].style.animationDelay).toBe('0ms')
+  })
+})
+
 describe('DiscogsPanel empty states', () => {
   // Before this split, an empty result set always showed the "choose an album" hint, so a
   // search that genuinely matched nothing looked identical to never having searched — the

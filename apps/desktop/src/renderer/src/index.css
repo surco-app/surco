@@ -654,3 +654,32 @@ textarea {
     opacity: 0;
   }
 }
+
+/* A search result taking its place in the list. Fifty rows resolving in one frame land as a
+   slab — the column simply IS full, with no moment of arriving — so the first few come in on
+   a short ramp (the per-row delay is set inline, and capped there: see DiscogsPanel).
+   Deliberately small: 4px and a fade, no real travel. These rows are a dense list the user
+   is about to read, not a hero element, and anything longer turns a search into a wait. */
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.result-in {
+  animation: result-in 0.22s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+/* The stagger is pure decoration, so reduced motion drops it whole — including the delay,
+   which would otherwise leave rows invisible while they wait their turn. */
+@media (prefers-reduced-motion: reduce) {
+  .result-in {
+    animation: none;
+    animation-delay: 0ms !important;
+  }
+}

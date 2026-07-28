@@ -15,6 +15,13 @@ import { SearchInput } from './SearchInput'
 import { Select } from './Select'
 import { Tooltip } from './Tooltip'
 
+// How many result rows ramp in, and how far apart. Six covers roughly what the column shows
+// before the fold, which is the whole point: the stagger exists to make a resolved search
+// read as results arriving, and a row nobody can see yet has nothing to announce. 40ms is
+// brisk enough that six rows are all in within a quarter second.
+const STAGGERED_ROWS = 6
+const STAGGER_STEP_MS = 40
+
 interface Props {
   browser: DiscogsBrowser
   // The tracklist entry that best matches the shown track and its confidence tier,
@@ -292,7 +299,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
           ) : results.length === 0 ? (
             <p className="px-3 pt-3 text-xs text-fg-faint">{tr('editor.chooseAlbumHint')}</p>
           ) : (
-            results.map((r) => {
+            results.map((r, i) => {
               const rk = `${r.provider}:${r.id}`
               const expanded = openKey === rk
               const suggested = suggestedKey === rk
@@ -308,7 +315,14 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                     data-testid="discogs-result"
                     aria-expanded={expanded}
                     onClick={() => previewRelease(r)}
-                    className={`press group relative flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] transition-colors ${
+                    // Only the rows above the fold ramp in; past STAGGERED_ROWS the delay is
+                    // zero, so a result the user scrolls down to is already there instead of
+                    // waiting on a queue of animations it can't see. Decoration must never
+                    // make content arrive later than it could.
+                    style={{
+                      animationDelay: `${i < STAGGERED_ROWS ? i * STAGGER_STEP_MS : 0}ms`,
+                    }}
+                    className={`press result-in group relative flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] transition-colors ${
                       expanded
                         ? 'bg-[var(--color-accent-soft)]/85'
                         : 'bg-[var(--color-panel)]/50 hover:bg-[var(--color-panel-2)]/85'
