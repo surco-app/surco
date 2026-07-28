@@ -48,6 +48,11 @@ interface MenuStrings {
   engineQuitConfirm: string
   engineQuitCancel: string
   engineOpenError: string
+  traktorQuitMessage: string
+  traktorQuitDetail: string
+  traktorQuitConfirm: string
+  traktorQuitCancel: string
+  traktorSyncBlocked: string
 }
 
 const strings: Record<MenuLang, MenuStrings> = {
@@ -93,6 +98,12 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineQuitConfirm: 'Cerrar Engine DJ',
     engineQuitCancel: 'Cancelar',
     engineOpenError: 'Cierra Engine DJ antes de convertir: tiene la biblioteca abierta.',
+    traktorQuitMessage: 'Traktor está abierto',
+    traktorQuitDetail:
+      'Surco necesita cerrarlo para escribir en collection.nml. Traktor se cerrará de forma segura; puedes volver a abrirlo cuando termine la conversión.',
+    traktorQuitConfirm: 'Cerrar Traktor',
+    traktorQuitCancel: 'Cancelar',
+    traktorSyncBlocked: 'La colección de Traktor no se ha actualizado: Traktor sigue abierto.',
   },
   en: {
     settings: 'Settings…',
@@ -136,6 +147,12 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineQuitConfirm: 'Close Engine DJ',
     engineQuitCancel: 'Cancel',
     engineOpenError: 'Close Engine DJ before converting: it has the library open.',
+    traktorQuitMessage: 'Traktor is open',
+    traktorQuitDetail:
+      'Surco needs to close it to write into collection.nml. Traktor will quit safely; reopen it once the conversion finishes.',
+    traktorQuitConfirm: 'Close Traktor',
+    traktorQuitCancel: 'Cancel',
+    traktorSyncBlocked: "Traktor's collection was not updated: Traktor is still open.",
   },
   de: {
     settings: 'Einstellungen…',
@@ -179,6 +196,12 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineQuitConfirm: 'Engine DJ schließen',
     engineQuitCancel: 'Abbrechen',
     engineOpenError: 'Schließ Engine DJ vor dem Konvertieren: Es hat die Bibliothek geöffnet.',
+    traktorQuitMessage: 'Traktor ist geöffnet',
+    traktorQuitDetail:
+      'Surco muss es schließen, um in collection.nml zu schreiben. Traktor wird sicher beendet; du kannst es nach der Konvertierung wieder öffnen.',
+    traktorQuitConfirm: 'Traktor schließen',
+    traktorQuitCancel: 'Abbrechen',
+    traktorSyncBlocked: 'Die Traktor-Sammlung wurde nicht aktualisiert: Traktor ist noch geöffnet.',
   },
   fr: {
     settings: 'Réglages…',
@@ -222,6 +245,13 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineQuitConfirm: 'Fermer Engine DJ',
     engineQuitCancel: 'Annuler',
     engineOpenError: 'Ferme Engine DJ avant de convertir : sa bibliothèque est ouverte.',
+    traktorQuitMessage: 'Traktor est ouvert',
+    traktorQuitDetail:
+      'Surco doit le fermer pour écrire dans collection.nml. Traktor sera fermé proprement ; tu pourras le rouvrir à la fin de la conversion.',
+    traktorQuitConfirm: 'Fermer Traktor',
+    traktorQuitCancel: 'Annuler',
+    traktorSyncBlocked:
+      "La collection Traktor n'a pas été mise à jour : Traktor est encore ouvert.",
   },
   'pt-BR': {
     settings: 'Ajustes…',
@@ -265,6 +295,12 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineQuitConfirm: 'Fechar o Engine DJ',
     engineQuitCancel: 'Cancelar',
     engineOpenError: 'Feche o Engine DJ antes de converter: ele está com a biblioteca aberta.',
+    traktorQuitMessage: 'O Traktor está aberto',
+    traktorQuitDetail:
+      'O Surco precisa fechá-lo para escrever no collection.nml. O Traktor será fechado com segurança; você pode reabri-lo quando a conversão terminar.',
+    traktorQuitConfirm: 'Fechar o Traktor',
+    traktorQuitCancel: 'Cancelar',
+    traktorSyncBlocked: 'A coleção do Traktor não foi atualizada: o Traktor ainda está aberto.',
   },
 }
 

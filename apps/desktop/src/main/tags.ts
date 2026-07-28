@@ -221,6 +221,30 @@ function readTraktorTree(source: string): Uint8Array | null {
   }
 }
 
+// The NML sync needs the cue tree of the file that was just converted, not the source —
+// a trim already re-anchored it there. ID3 (MP3/AIFF) and FLAC armor the same tree two
+// different ways, so this decides by what the file actually carries rather than by
+// extension: try the ID3 families first, and only open the file again for its Xiph
+// comment if that came back empty (a FLAC has no ID3 tag to find in the first place, so
+// readTraktorTree is a cheap, correct no-op there). Best-effort like every other cue path
+// in this file — an unreadable file or a missing tree both come back as null.
+export function readCueTree(file: string): Uint8Array | null {
+  const id3Tree = readTraktorTree(file)
+  if (id3Tree) return id3Tree
+  try {
+    const f = TagFile.createFromPath(file)
+    try {
+      const xiph = f.getTag(TagTypes.Xiph, false) as XiphComment | null
+      const armored = xiph?.getField(FLAC_CUE_FIELD)?.[0]
+      return armored ? decodeBase91(armored) : null
+    } finally {
+      f.dispose()
+    }
+  } catch {
+    return null
+  }
+}
+
 // Strips a rendered GEOB frame down to its stored object: past the 10-byte frame header,
 // the encoding byte, then the three NUL-terminated strings that precede the payload.
 function geobPayload(rendered: Uint8Array): Uint8Array | null {

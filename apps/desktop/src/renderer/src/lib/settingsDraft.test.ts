@@ -20,6 +20,7 @@ const settings: Settings = {
   convertBesideOriginal: false,
   addToEngineDj: false,
   engineLibraryDir: '/music/Engine Library',
+  traktorNmlPath: '',
   engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
   titleFormat: '',
@@ -73,6 +74,7 @@ const local: LocalDraft = {
   token: 'tok',
   outputDir: '/out',
   engineLibraryDir: '/music/Engine Library',
+  traktorNmlPath: '',
   autoMatch: false,
 }
 

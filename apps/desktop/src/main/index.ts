@@ -1,4 +1,11 @@
-import { createReadStream, existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
+import {
+  createReadStream,
+  existsSync,
+  readdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -55,6 +62,7 @@ import { isSameFile, removeRenamedOriginal } from './inplace'
 import { createMediaAccess } from './mediaAccess'
 import { keymapMenuClick } from './menuCommand'
 import { isInternalNavigation, isWebUrl } from './navigation'
+import { abandonNmlBatch, beginNmlBatch, endNmlBatch } from './nmlBatch'
 import { createOutputReservations } from './outputReservations'
 import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
 import { runProcessTrack } from './processTrack'
@@ -74,6 +82,10 @@ import {
 import { registerShellIpc } from './shellIpc'
 import { createStickyConflict } from './stickyConflict'
 import { createTmpManifest } from './tmpManifest'
+import { syncCollection } from './traktorNmlLibrary'
+import { detectTraktorNmlPaths } from './traktorNmlPath'
+import { isTraktorRunning, quitTraktor } from './traktorProcess'
+import { flushTraktorSync } from './traktorSyncFlush'
 import { wireUpdateDelivery } from './updateDelivery'
 import { classifyUpdateError, summarizeUpdateError } from './updateErrors'
 import { armUpdateRecheck } from './updateRecheck'
@@ -189,6 +201,36 @@ async function ensureEngineDjClosed(win: BrowserWindow | null): Promise<boolean>
     engineQuitPrompt = null
   })
   return engineQuitPrompt
+}
+
+// Twin of engineQuitPrompt above: shared so the one process:batch-end flush raises
+// at most one dialog, never one per patch.
+let traktorQuitPrompt: Promise<boolean> | null = null
+
+// True when Traktor is not running (possibly because the user just accepted quitting
+// it here); false when it is running and the user declined — the caller then refuses
+// to write collection.nml, since Traktor would not see it and overwrites it on exit.
+async function ensureTraktorClosed(win: BrowserWindow | null): Promise<boolean> {
+  if (!(await isTraktorRunning())) return true
+  traktorQuitPrompt ??= (async () => {
+    const t = createMenuT(menuLocale())
+    const opts = {
+      type: 'warning' as const,
+      message: t('traktorQuitMessage'),
+      detail: t('traktorQuitDetail'),
+      buttons: [t('traktorQuitConfirm'), t('traktorQuitCancel')],
+      defaultId: 0,
+      cancelId: 1,
+    }
+    const { response } = win
+      ? await dialog.showMessageBox(win, opts)
+      : await dialog.showMessageBox(opts)
+    if (response !== 0) return false
+    return quitTraktor()
+  })().finally(() => {
+    traktorQuitPrompt = null
+  })
+  return traktorQuitPrompt
 }
 
 // Set while a user-triggered update check is in flight so the updater's result
@@ -444,6 +486,12 @@ function createWindow(): BrowserWindow {
     event.preventDefault()
     if (isWebUrl(url)) shell.openExternal(url)
   })
+
+  // A reload wipes the renderer mid-conversion, so the end that would have closed an
+  // open batch never arrives. Left alone the accumulator's depth stays above zero and
+  // no later batch ever flushes again — the collection would quietly stop updating
+  // until the app restarted. Abandon whatever was in flight instead.
+  win.webContents.on('did-start-loading', abandonNmlBatch)
 
   if (process.env.ELECTRON_RENDERER_URL) {
     win.loadURL(process.env.ELECTRON_RENDERER_URL)
@@ -714,6 +762,30 @@ function registerIpc(): void {
     return canceled ? null : filePaths[0]
   })
 
+  ipcMain.handle('dialog:pickTraktorNmlPath', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      title: 'Colección de Traktor',
+      properties: ['openFile'],
+      filters: [{ name: 'Traktor Collection', extensions: ['nml'] }],
+    })
+    return canceled ? null : filePaths[0]
+  })
+
+  // Proposes, never imposes (see traktorNmlPath.ts): only paths that actually exist
+  // are worth offering, since the version folder itself is what changes on every
+  // Traktor update — an ipcMain.handle can't take fs as a dependency, so existsSync
+  // is applied here rather than inside the pure detector.
+  ipcMain.handle('traktor:detectNmlPath', () => {
+    const candidates = detectTraktorNmlPaths(app.getPath('home'), (dir) => {
+      try {
+        return readdirSync(dir)
+      } catch {
+        return []
+      }
+    })
+    return candidates.find((path) => existsSync(path)) ?? null
+  })
+
   registerExportIpc()
 
   // The Engine-library counterpart of applemusic:library: the title/artist/duration
@@ -751,9 +823,35 @@ function registerIpc(): void {
 
   // A convert-all run starts: forget any "apply to the rest" conflict choice the previous
   // run left, so this batch begins asking again rather than silently reusing a stale one.
+  // beginNmlBatch (not a raw reset) also handles processOne firing its own begin/end
+  // while THIS batch is still open (⌘⏎ during a running convert-all, see nmlBatch.ts) —
+  // nesting is tracked there so a lone convert mid-batch can never wipe it.
   ipcMain.on('process:batch-begin', () => {
     stickyConflict.reset()
     coverMemo = createCoverMemo(prepareProcessedCover)
+    beginNmlBatch()
+  })
+
+  // A convert-all run ends (however it ended — finished, cancelled, or failed, the
+  // renderer calls this from its finally block): flush whatever Traktor cue patches the
+  // batch recorded into collection.nml in one write. A failure here must never surface as
+  // a conversion failure — the audio is already correct on disk by this point — so every
+  // branch below only logs and returns, never throws back at the renderer.
+  ipcMain.on('process:batch-end', async (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    await flushTraktorSync({
+      traktorNmlPath: getSettings().traktorNmlPath,
+      endNmlBatch,
+      ensureTraktorClosed: () => ensureTraktorClosed(win),
+      showBlockedDialog: () => {
+        const t = createMenuT(menuLocale())
+        const opts = { type: 'warning' as const, message: t('traktorSyncBlocked') }
+        if (win) dialog.showMessageBox(win, opts)
+        else dialog.showMessageBox(opts)
+      },
+      syncCollection,
+      track: activity.track.bind(activity),
+    })
   })
 
   ipcMain.handle('process:track', (e, job: ProcessJob) =>

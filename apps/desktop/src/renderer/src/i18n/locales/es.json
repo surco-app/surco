@@ -738,6 +738,11 @@
     "engineLibraryDirHint": "Surco escribe en la base de datos de esta biblioteca. Cierra Engine DJ mientras conviertes.",
     "engineDjPlaylist": "Playlist",
     "engineDjPlaylistHint": "Las pistas convertidas se añaden a esta playlist de tu biblioteca, además de a la colección.",
+    "traktorSync": "Colección de Traktor",
+    "traktorNmlPath": "collection.nml",
+    "traktorNmlPathHint": "Si lo indicas, los cue points y la rejilla de las pistas convertidas se escriben en esta colección de Traktor. Déjalo vacío para desactivarlo.",
+    "traktorNmlPathDetectedHint": "Encontrado automáticamente — no se aplica hasta que elijas usarlo.",
+    "traktorNmlPathUseDetected": "Usar este",
     "appleMusicFlacNote": "Apple Music no reproduce FLAC, así que las pistas convertidas se quedan en la carpeta de salida mientras tu formato sea FLAC.",
     "filenameFormat": "Formato del nombre",
     "titleFormatHint": "Reconstruye el título a partir de otros campos. Se aplica solo cuando tú lo pides — desde el menú ⋯ del campo título o la paleta de comandos — nunca automáticamente.",
@@ -994,6 +999,14 @@
     "autoMatchReviewUncorroboratedDetail": "{{release}} → {{track}}\nConfianza: {{confidence}} % · duración {{duration}} · artista {{artist}} · nº de catálogo {{catno}}\nPara revisar: solo coincide el título; ninguna señal independiente (duración, artista, nº de catálogo) lo corrobora.\nCandidatos sondeados:\n{{candidates}}",
     "autoMatchNoneDetail": "Ningún candidato alcanzó la confianza mínima.\nCandidatos sondeados:\n{{candidates}}",
     "autoMatchNoCandidates": "La búsqueda no devolvió candidatos que sondear.",
-    "probeClicks": "Contando clicks"
+    "probeClicks": "Contando clicks",
+    "traktorSync": "Actualizando la colección de Traktor",
+    "traktorSyncWritten_one": "{{count}} pista actualizada en collection.nml",
+    "traktorSyncWritten_other": "{{count}} pistas actualizadas en collection.nml",
+    "traktorSyncTraktorRunning": "Omitido: Traktor estaba abierto",
+    "traktorSyncBackupFailed": "Omitido: no se pudo hacer copia de seguridad de collection.nml",
+    "traktorSyncNoMatches": "Omitido: ninguna de estas pistas está en la colección",
+    "traktorSyncUnreadable": "Omitido: no se pudo leer collection.nml",
+    "traktorSyncWriteFailed": "Omitido: no se pudo escribir collection.nml"
   }
 }

@@ -54,6 +54,7 @@ export interface LocalDraft {
   token: string
   outputDir: string
   engineLibraryDir: string
+  traktorNmlPath: string
   autoMatch: boolean
 }
 
@@ -65,6 +66,7 @@ export function pickLocal(s: Settings): LocalDraft {
     token: s.discogsToken,
     outputDir: s.outputDir,
     engineLibraryDir: s.engineLibraryDir,
+    traktorNmlPath: s.traktorNmlPath,
     autoMatch: s.autoMatch,
   }
 }
@@ -147,6 +149,7 @@ export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Part
     discogsToken: token,
     outputDir: local.outputDir,
     engineLibraryDir: local.engineLibraryDir,
+    traktorNmlPath: local.traktorNmlPath,
     engineDjPlaylist: engineDjPlaylist.trim() || DEFAULT_ENGINE_DJ_PLAYLIST,
     filenameFormat: filenameFormat.trim() || DEFAULT_FILENAME_FORMAT,
     groupingPresets: splitPresets(grouping),

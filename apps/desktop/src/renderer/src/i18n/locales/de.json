@@ -738,6 +738,11 @@
     "engineLibraryDirHint": "Surco schreibt in die Datenbank dieser Bibliothek. Schließ Engine DJ während der Konvertierung.",
     "engineDjPlaylist": "Playlist",
     "engineDjPlaylistHint": "Konvertierte Tracks landen in dieser Playlist deiner Bibliothek, zusätzlich zur Sammlung.",
+    "traktorSync": "Traktor-Sammlung",
+    "traktorNmlPath": "collection.nml",
+    "traktorNmlPathHint": "Ist ein Pfad gesetzt, werden Cue-Punkte und Beatgrid konvertierter Tracks in diese Traktor-Sammlung geschrieben. Leer lassen, um das zu deaktivieren.",
+    "traktorNmlPathDetectedHint": "Automatisch gefunden — wird erst übernommen, wenn du es auswählst.",
+    "traktorNmlPathUseDetected": "Diesen verwenden",
     "appleMusicFlacNote": "Apple Music kann FLAC nicht abspielen, deshalb bleiben konvertierte Tracks im Ausgabeordner, solange FLAC dein Format ist.",
     "filenameFormat": "Dateinamen-Format",
     "titleFormatHint": "Baut den Titel aus anderen Feldern neu auf. Wird nur auf Wunsch angewendet — über das ⋯-Menü des Titelfelds oder die Befehlspalette — nie automatisch.",
@@ -994,6 +999,14 @@
     "autoMatchReviewUncorroboratedDetail": "{{release}} → {{track}}\nKonfidenz: {{confidence}} % · Dauer {{duration}} · Künstler {{artist}} · Katalognr. {{catno}}\nZur Prüfung markiert: nur der Titel stimmt überein; kein unabhängiges Signal (Dauer, Künstler, Katalognr.) bestätigt ihn.\nGeprüfte Kandidaten:\n{{candidates}}",
     "autoMatchNoneDetail": "Kein Kandidat erreichte die nötige Konfidenz.\nGeprüfte Kandidaten:\n{{candidates}}",
     "autoMatchNoCandidates": "Die Suche lieferte keine Kandidaten zum Prüfen.",
-    "probeClicks": "Klicks werden gezählt"
+    "probeClicks": "Klicks werden gezählt",
+    "traktorSync": "Traktor-Sammlung wird aktualisiert",
+    "traktorSyncWritten_one": "{{count}} Track in collection.nml aktualisiert",
+    "traktorSyncWritten_other": "{{count}} Tracks in collection.nml aktualisiert",
+    "traktorSyncTraktorRunning": "Übersprungen: Traktor war geöffnet",
+    "traktorSyncBackupFailed": "Übersprungen: Sicherung von collection.nml fehlgeschlagen",
+    "traktorSyncNoMatches": "Übersprungen: keiner dieser Tracks ist in der Sammlung",
+    "traktorSyncUnreadable": "Übersprungen: collection.nml konnte nicht gelesen werden",
+    "traktorSyncWriteFailed": "Übersprungen: collection.nml konnte nicht geschrieben werden"
   }
 }
