@@ -71,9 +71,15 @@ button:not(:disabled) {
     transform: translateY(-10px);
   }
 }
+/* The spectrogram's playhead sweep. Travels on translateX rather than `left`, which it used
+   to animate: `left` is a layout property, so every frame of an infinite 4.5s loop was
+   putting the page through Layout and Paint instead of handing a 1px line to the compositor.
+   The distance is in cqw (container query width) so 100cqw is the full width of the
+   spectrogram frame — the same place `left: 100%` landed — while the transform itself stays
+   off the main thread. */
 @keyframes scan {
   0% {
-    left: 0;
+    transform: translateX(0);
     opacity: 0;
   }
   8% {
@@ -83,7 +89,7 @@ button:not(:disabled) {
     opacity: 1;
   }
   100% {
-    left: 100%;
+    transform: translateX(100cqw);
     opacity: 0;
   }
 }

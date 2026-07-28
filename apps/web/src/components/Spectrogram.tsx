@@ -105,7 +105,9 @@ export default function Spectrogram({
   }, [suspect])
 
   return (
-    <div className="relative overflow-hidden rounded-xl ring-1 ring-line/70">
+    // container-type gives the scan line below a cqw to travel in, so its sweep is measured
+    // against this frame's width without animating a layout property.
+    <div className="relative overflow-hidden rounded-xl ring-1 ring-line/70 [container-type:inline-size]">
       <canvas
         ref={ref}
         width={C * 2}
@@ -116,7 +118,7 @@ export default function Spectrogram({
         aria-hidden={label ? undefined : true}
       />
       <div
-        className="pointer-events-none absolute top-0 bottom-0 w-px"
+        className="pointer-events-none absolute top-0 bottom-0 left-0 w-px"
         style={{
           animation: 'scan 4.5s linear infinite',
           background: '#7dcfff',
