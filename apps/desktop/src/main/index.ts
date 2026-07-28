@@ -1,4 +1,11 @@
-import { createReadStream, existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
+import {
+  createReadStream,
+  existsSync,
+  readdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -76,6 +83,7 @@ import { registerShellIpc } from './shellIpc'
 import { createStickyConflict } from './stickyConflict'
 import { createTmpManifest } from './tmpManifest'
 import { syncCollection } from './traktorNmlLibrary'
+import { detectTraktorNmlPaths } from './traktorNmlPath'
 import { isTraktorRunning, quitTraktor } from './traktorProcess'
 import { flushTraktorSync } from './traktorSyncFlush'
 import { wireUpdateDelivery } from './updateDelivery'
@@ -752,6 +760,30 @@ function registerIpc(): void {
       properties: ['openDirectory', 'createDirectory'],
     })
     return canceled ? null : filePaths[0]
+  })
+
+  ipcMain.handle('dialog:pickTraktorNmlPath', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      title: 'Colección de Traktor',
+      properties: ['openFile'],
+      filters: [{ name: 'Traktor Collection', extensions: ['nml'] }],
+    })
+    return canceled ? null : filePaths[0]
+  })
+
+  // Proposes, never imposes (see traktorNmlPath.ts): only paths that actually exist
+  // are worth offering, since the version folder itself is what changes on every
+  // Traktor update — an ipcMain.handle can't take fs as a dependency, so existsSync
+  // is applied here rather than inside the pure detector.
+  ipcMain.handle('traktor:detectNmlPath', () => {
+    const candidates = detectTraktorNmlPaths(app.getPath('home'), (dir) => {
+      try {
+        return readdirSync(dir)
+      } catch {
+        return []
+      }
+    })
+    return candidates.find((path) => existsSync(path)) ?? null
   })
 
   registerExportIpc()

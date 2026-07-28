@@ -12,6 +12,7 @@ vi.hoisted(() => {
     defaultConfigDir: async () => '/Users/test/Library/Application Support/Surco',
     cacheStats: async () => ({ files: 0, bytes: 0 }),
     clearCache: async () => {},
+    detectTraktorNmlPath: async () => null,
   }
 })
 

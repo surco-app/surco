@@ -66,6 +66,10 @@ export interface Api {
   pickFiles: () => Promise<string[]>
   pickOutputDir: () => Promise<string | null>
   pickEngineLibraryDir: () => Promise<string | null>
+  pickTraktorNmlPath: () => Promise<string | null>
+  // Proposes a collection.nml to offer in Settings; the caller must have the user
+  // confirm it before saving — see traktorNmlPath.ts.
+  detectTraktorNmlPath: () => Promise<string | null>
   search: (
     query: string,
     provider?: SearchProviderId,
