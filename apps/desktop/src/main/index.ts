@@ -75,8 +75,9 @@ import {
 import { registerShellIpc } from './shellIpc'
 import { createStickyConflict } from './stickyConflict'
 import { createTmpManifest } from './tmpManifest'
-import { type SyncResult, syncCollection } from './traktorNmlLibrary'
+import { syncCollection } from './traktorNmlLibrary'
 import { isTraktorRunning, quitTraktor } from './traktorProcess'
+import { flushTraktorSync } from './traktorSyncFlush'
 import { wireUpdateDelivery } from './updateDelivery'
 import { classifyUpdateError, summarizeUpdateError } from './updateErrors'
 import { armUpdateRecheck } from './updateRecheck'
@@ -493,18 +494,6 @@ function createWindow(): BrowserWindow {
 // window so a closed crate stops holding OS watches.
 const folderWatchers = new WeakMap<BrowserWindow, FolderWatcher>()
 
-// Every non-write reason syncCollection can return, mapped to the activity row's detail
-// line. 'traktor-running' can't reach process:batch-end's handler in practice
-// (ensureTraktorClosed there already refused earlier), but syncCollection re-checks right
-// before its own write for a race, so the map still needs an entry for it.
-const TRAKTOR_SYNC_SKIP_KEYS: Record<NonNullable<SyncResult['reason']>, string> = {
-  'traktor-running': 'activity.traktorSyncTraktorRunning',
-  'backup-failed': 'activity.traktorSyncBackupFailed',
-  'no-matches': 'activity.traktorSyncNoMatches',
-  unreadable: 'activity.traktorSyncUnreadable',
-  'write-failed': 'activity.traktorSyncWriteFailed',
-}
-
 function watcherFor(win: BrowserWindow): FolderWatcher {
   let watcher = folderWatchers.get(win)
   if (!watcher) {
@@ -810,29 +799,20 @@ function registerIpc(): void {
   // a conversion failure — the audio is already correct on disk by this point — so every
   // branch below only logs and returns, never throws back at the renderer.
   ipcMain.on('process:batch-end', async (e) => {
-    const nmlPath = getSettings().traktorNmlPath
-    if (!nmlPath) return
-    const patches = takeNmlPatches()
-    if (patches.length === 0) return
     const win = BrowserWindow.fromWebContents(e.sender)
-    if (!(await ensureTraktorClosed(win))) {
-      const t = createMenuT(menuLocale())
-      const opts = { type: 'warning' as const, message: t('traktorSyncBlocked') }
-      if (win) dialog.showMessageBox(win, opts)
-      else dialog.showMessageBox(opts)
-      return
-    }
-    await activity.track(
-      'export',
-      'activity.traktorSync',
-      () => syncCollection(nmlPath, patches),
-      {
-        summary: (result) =>
-          result.written
-            ? { detailKey: 'activity.traktorSyncWritten', detailParams: { count: result.matched } }
-            : { detailKey: TRAKTOR_SYNC_SKIP_KEYS[result.reason ?? 'unreadable'] },
+    await flushTraktorSync({
+      traktorNmlPath: getSettings().traktorNmlPath,
+      takeNmlPatches,
+      ensureTraktorClosed: () => ensureTraktorClosed(win),
+      showBlockedDialog: () => {
+        const t = createMenuT(menuLocale())
+        const opts = { type: 'warning' as const, message: t('traktorSyncBlocked') }
+        if (win) dialog.showMessageBox(win, opts)
+        else dialog.showMessageBox(opts)
       },
-    )
+      syncCollection,
+      track: activity.track.bind(activity),
+    })
   })
 
   ipcMain.handle('process:track', (e, job: ProcessJob) =>
