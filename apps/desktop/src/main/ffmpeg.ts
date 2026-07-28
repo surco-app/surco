@@ -1016,11 +1016,29 @@ export function toNmlLocation(path: string): { volume: string; dir: string; file
 // this ENTRY, and newFile carries the rename separately. A failure here (unreadable
 // tree, unparseable path) skips the record silently: the audio and its tags are
 // already correct on disk, and this only feeds a later, separate NML write.
-function recordConversionPatch(input: string, output: string, meta: TrackMetadata): void {
+//
+// newFile only gets set when the output stayed in the SAME directory as the
+// input (overwriteOriginal / in-place edits, including a same-format rename):
+// that's the one case where the ENTRY genuinely should follow the file, because
+// the file it names still exists right there. The default path — output goes to
+// the configured outputDir, a DIFFERENT directory (see inplace.ts) — builds
+// volume/dir from the input, so a newFile there would repoint LOCATION at a
+// FILE that shares the INPUT's folder but was actually written elsewhere: a
+// path nothing lives at. Traktor would mark the track missing and the DJ loses
+// its playlist membership and play count. Leaving newFile unset keeps the
+// ENTRY pointed at the file Traktor still knows, cues updated in place — worse
+// than a rename that actually lands, but strictly better than a dangling one.
+function recordConversionPatch(
+  input: string,
+  output: string,
+  meta: TrackMetadata,
+  wroteArtwork: boolean,
+): void {
   if (!getSettings().traktorNmlPath) return
   try {
     const { volume, dir, file } = toNmlLocation(input)
     const outputName = basename(output)
+    const sameDir = dirname(input) === dirname(output)
     // meta.bpm is user-editable free text; empty or non-numeric must come out as
     // undefined; a NaN would pass around looking like a value and only fail
     // silently at cuesToXml's `> 0` check, dropping the beatgrid without a trace.
@@ -1030,9 +1048,15 @@ function recordConversionPatch(input: string, output: string, meta: TrackMetadat
       volume,
       dir,
       file,
-      newFile: outputName !== file ? outputName : undefined,
+      newFile: sameDir && outputName !== file ? outputName : undefined,
       cueTree: readCueTree(output) ?? undefined,
       bpm,
+      // Traktor caches artwork by COVERARTID and keeps serving it even after the
+      // file on disk gets a new cover — the same stale-cache mechanism the cue
+      // handling above exists to fix. wroteArtwork mirrors embedCover/finderCovers'
+      // own signal (coverPath present, removeCover not set): only when a fresh
+      // cover actually landed in the output is there anything for Traktor to re-read.
+      clearCoverArt: wroteArtwork || undefined,
     })
   } catch {
     // Best-effort: see comment above.
@@ -1241,7 +1265,7 @@ export async function convertAudio(
     // Comes after the rename, not before: the patch has to describe the file as
     // it now exists at `output`, and the cue-writing branches above (copyCueFrames,
     // copyCuesToFlac, shiftFlacCues) only ever touched `tmp`.
-    recordConversionPatch(input, output, meta)
+    recordConversionPatch(input, output, meta, !!(coverPath && !removeCover))
   } catch (e) {
     await unlink(tmp).catch(() => {})
     throw e
