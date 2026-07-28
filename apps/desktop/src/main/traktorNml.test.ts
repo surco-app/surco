@@ -357,6 +357,40 @@ describe('applyPatches', () => {
     expect(out).toContain('<GRID BPM="128.000000">')
   })
 
+  // La rejilla rescatada se saca del propio documento y se reinserta. Pasarla como
+  // string de reemplazo hacía que String.replace expandiera $&, $` y $' dentro de
+  // ella, empalmando texto del documento en el elemento: un cue con un dólar en el
+  // nombre acababa escribiendo XML inválido en la colección. Ese nombre lo teclea el
+  // DJ, así que es dato del usuario, no un caso de laboratorio.
+  it('keeps a rescued grid intact when its cue name contains replacement patterns', () => {
+    const named = "$&amp; Beat $` $' $1"
+    // El fixture se construye por concatenación, nunca con NML.replace(): el
+    // reemplazo por string expandiría estos mismos $& y $` al montarlo, y el test
+    // acabaría midiendo la corrupción de su propio andamiaje en vez de la del
+    // código bajo prueba.
+    const withGrid =
+      '<NML><COLLECTION>' +
+      '<ENTRY TITLE="Uno"><LOCATION DIR="/:M/:" FILE="uno.aiff" VOLUME="HD"></LOCATION>' +
+      `<CUE_V2 NAME="${named}" DISPL_ORDER="0" TYPE="4" START="143.380000" LEN="0.000000" ` +
+      'REPEATS="-1" HOTCUE="0"><GRID BPM="128.000000"></GRID></CUE_V2>' +
+      '</ENTRY></COLLECTION></NML>'
+    // Con un cue normal además del grid, el bloque sí cambia y el rescate se
+    // reinserta de verdad; un árbol sólo-grid sin bpm no toca nada (ver el test
+    // anterior) y no ejercitaría la reinserción.
+    const tree = buildTraktorTree([
+      traktorCue('AutoGrid', 4, 143.38, 0),
+      traktorCue('Drop', 0, 79672.64, 1),
+    ])
+
+    const out = applyPatches(withGrid, [
+      { volume: 'HD', dir: '/:M/:', file: 'uno.aiff', cueTree: tree },
+    ])
+
+    expect(out).toContain(`NAME="${named}"`)
+    expect(out).not.toContain('NAME="$&amp; Beat <')
+    expect(out).toContain('<GRID BPM="128.000000">')
+  })
+
   // El mismo caso desde matchedPatchCount/syncCollection: si la rejilla se
   // conserva no tocando el patch, éste no puede seguir contando como aplicado —
   // el caller reportaría éxito sin haber escrito nada de lo que el patch pedía.

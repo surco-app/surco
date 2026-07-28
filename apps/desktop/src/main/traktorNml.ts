@@ -169,7 +169,11 @@ function replaceCues(block: string, tree: Uint8Array, bpm: number | undefined): 
   const cuesXml = existingGrid ? existingGrid + newCues : newCues
   const location = withoutCues.match(LOCATION_END_RE)?.[0]
   if (!location) return withoutCues
-  return withoutCues.replace(location, `${location}${cuesXml}`)
+  // Replacement as a function, not a string: cuesXml carries cue NAMEs the DJ typed,
+  // and a string replacement expands $&, $`, $' and $n inside it — a marker named
+  // with a dollar sign would splice surrounding document text into the element and
+  // write invalid XML into the collection. The callback form never interprets them.
+  return withoutCues.replace(location, () => `${location}${cuesXml}`)
 }
 
 function patchEntry(block: string, patch: NmlPatch): string {
