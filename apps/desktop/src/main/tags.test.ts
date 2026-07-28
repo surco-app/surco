@@ -21,10 +21,12 @@ import { decodeBase91, encodeBase91 } from './base91'
 import {
   copyCueFrames,
   preservesCuesInPlace,
+  readCueTree,
   readItunesGrouping,
   shiftFlacCues,
   writeTags,
 } from './tags'
+import { readTraktorMarkers } from './traktor4'
 import { buildTraktorTree, readTraktorCueStart, traktorCue } from './traktor4Fixture'
 
 const FFMPEG = ffmpegStatic as unknown as string
@@ -891,5 +893,102 @@ describe('shiftFlacCues', () => {
 
     expect(() => shiftFlacCues(file, { shiftMs: 1300, bpm: 138.3 })).not.toThrow()
     expect(readFlacTree(file)).toBeNull()
+  })
+})
+
+describe('readCueTree', () => {
+  // Mirrors buildPrivSeed in the copyCueFrames suite: an ID3v2.3 MP3 whose cues
+  // live in a PRIV frame owned "TRAKTOR4", exactly where real Traktor writes them.
+  function seedPrivMp3(): string {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-readcuetree-'))
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 61234.5, 1)])
+    const syncsafe = (n: number) =>
+      Buffer.from([(n >> 21) & 0x7f, (n >> 14) & 0x7f, (n >> 7) & 0x7f, n & 0x7f])
+    const frame = (id: string, data: Buffer) => {
+      const head = Buffer.alloc(10)
+      head.write(id, 0, 'latin1')
+      head.writeUInt32BE(data.length, 4)
+      return Buffer.concat([head, data])
+    }
+    const body = frame(
+      'PRIV',
+      Buffer.concat([Buffer.from('TRAKTOR4', 'latin1'), Buffer.from([0]), Buffer.from(tree)]),
+    )
+    const header = Buffer.concat([Buffer.from('ID3'), Buffer.from([3, 0, 0]), syncsafe(body.length)])
+    const mpegFrame = Buffer.concat([Buffer.from([0xff, 0xfb, 0x90, 0x00]), Buffer.alloc(413)])
+    const audio = Buffer.concat(Array(20).fill(mpegFrame))
+    const path = join(dir, 'priv-seed.mp3')
+    writeFileSync(path, Buffer.concat([header, body, audio]))
+    return path
+  }
+
+  // Mirrors flacWithCues in the shiftFlacCues suite: the cue tree armored into a
+  // TRAKTOR4 Vorbis comment, the FLAC counterpart of the PRIV frame above.
+  function seedFlacWithArmoredCues(): string {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-readcuetree-'))
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)])
+    const file = join(dir, 'cued.flac')
+    execFileSync(FFMPEG, [
+      '-v',
+      'quiet',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=2',
+      '-metadata',
+      `TRAKTOR4=${encodeBase91(tree)}`,
+      '-y',
+      file,
+    ])
+    return file
+  }
+
+  // An MP3 with an ID3 tag but no PRIV/GEOB "TRAKTOR4" frame at all.
+  function seedPlainMp3(): string {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-readcuetree-'))
+    const syncsafe = (n: number) =>
+      Buffer.from([(n >> 21) & 0x7f, (n >> 14) & 0x7f, (n >> 7) & 0x7f, n & 0x7f])
+    const frame = (id: string, data: Buffer) => {
+      const head = Buffer.alloc(10)
+      head.write(id, 0, 'latin1')
+      head.writeUInt32BE(data.length, 4)
+      return Buffer.concat([head, data])
+    }
+    const body = frame(
+      'TIT2',
+      Buffer.concat([Buffer.from([0]), Buffer.from('No Cues', 'latin1')]),
+    )
+    const header = Buffer.concat([Buffer.from('ID3'), Buffer.from([3, 0, 0]), syncsafe(body.length)])
+    const mpegFrame = Buffer.concat([Buffer.from([0xff, 0xfb, 0x90, 0x00]), Buffer.alloc(413)])
+    const audio = Buffer.concat(Array(20).fill(mpegFrame))
+    const path = join(dir, 'plain.mp3')
+    writeFileSync(path, Buffer.concat([header, body, audio]))
+    return path
+  }
+
+  // The NML needs the cues of the file YA convertido, not the source's: they are
+  // the ones the conversion re-anchored. One reader for both families, because the
+  // caller (the batch accumulator) shouldn't need to know how each format stores them.
+  it('reads the cue tree back out of an ID3 file', () => {
+    const file = seedPrivMp3()
+
+    const tree = readCueTree(file)
+
+    expect(tree).not.toBeNull()
+    expect(readTraktorMarkers(tree as Uint8Array)).toHaveLength(1)
+  })
+
+  it('reads the cue tree back out of a FLAC file', () => {
+    const file = seedFlacWithArmoredCues()
+
+    const tree = readCueTree(file)
+
+    expect(tree).not.toBeNull()
+    expect(readTraktorMarkers(tree as Uint8Array)).toHaveLength(1)
+  })
+
+  // No cues is not an error: the track simply has nothing to carry into the NML.
+  it('returns null for a file with no Traktor cues', () => {
+    expect(readCueTree(seedPlainMp3())).toBeNull()
   })
 })
