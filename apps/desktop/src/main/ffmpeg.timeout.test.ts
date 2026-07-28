@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
+vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 // Capture every spawn so we can assert the analysis reads carry a kill-timeout.
 const calls: Array<{ file: string; args: string[]; opts: { timeout?: number } | undefined }> = []
