@@ -383,7 +383,7 @@ const TrackRow = memo(function TrackRow({
               </span>
               <span className="mt-1 block h-1 overflow-hidden rounded-full bg-[var(--color-panel-2)]">
                 <span
-                  className="block h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-500 animate-pulse"
+                  className="progress-sweep block h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-500"
                   style={{ width: `${STAGE_PROGRESS[t.stage] * 100}%` }}
                 />
               </span>

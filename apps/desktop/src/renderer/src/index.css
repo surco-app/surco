@@ -205,6 +205,41 @@ textarea {
   }
 }
 
+/* The "still working" cue for a progress bar whose width only moves in stage-sized jumps
+   (see STAGE_PROGRESS): between two stages the bar is perfectly still, and on a long stage
+   a still bar reads as a hung one. The fill previously pulsed, which said "working" by
+   dimming the bar to half opacity — attenuating the very thing the bar is there to report.
+   A highlight travelling through the fill says the same thing while the width and colour
+   keep meaning exactly what they mean. Anchored to the bar (no background-attachment) so
+   the travel is proportional to real progress, and linear because it represents ongoing
+   work with no beginning or end to ease. */
+.progress-sweep {
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, #fff 35%, transparent),
+    transparent
+  );
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: progress-sweep 1.2s linear infinite;
+}
+
+@keyframes progress-sweep {
+  0% {
+    background-position: -40% 0;
+  }
+  100% {
+    background-position: 140% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-sweep {
+    animation: none;
+  }
+}
+
 /* The dead band above a fake lossless's codec cut: a dark veil, strongest at the top and
    fading toward the cutoff line, that reads as "switched off" — the synthetic silence
    dims out instead of getting painted an alarm color that fights the duotone. The red
