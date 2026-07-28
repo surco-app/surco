@@ -100,7 +100,7 @@ export function MetadataForm({
           onApplyCoverAll={onApplyCoverAll}
         />
 
-        <div className="grid min-w-0 flex-1 grid-cols-1 gap-x-4 gap-y-3 @[26rem]:grid-cols-2">
+        <div className="grid min-w-0 flex-1 grid-cols-1 gap-x-3 gap-y-2 @[26rem]:grid-cols-2">
           {fields.map((f) => (
             <div
               key={f.key}
