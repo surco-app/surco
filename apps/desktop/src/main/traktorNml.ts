@@ -158,9 +158,16 @@ const LOCATION_END_RE = /<LOCATION\b[^>]*?(?:\/>|>(?:(?!<\/LOCATION>)[\s\S])*<\/
 // same refusal here means keeping whatever GRID element was already on disk
 // instead of letting the unconditional removal above delete it for nothing.
 function replaceCues(block: string, tree: Uint8Array, bpm: number | undefined): string {
+  const markers = readTraktorMarkers(tree)
+  // readTraktorMarkers never throws: a bad checksum, an unknown Traktor variant or
+  // a truncated blob all come back as [] (see walkTraktorTree's `return null` paths
+  // and the catch here). Removal below is unconditional, so treating [] the same as
+  // "a tree with real cues to write" would wipe every hotcue the ENTRY already had
+  // and insert nothing — an unreadable tree carries no information worth writing,
+  // so leave the block exactly as it is instead of erasing what Traktor already has.
+  if (markers.length === 0) return block
   const newCues = cuesToXml(tree, bpm)
-  const droppedGrid =
-    readTraktorMarkers(tree).some((m) => m.type === 4) && !newCues.includes('TYPE="4"')
+  const droppedGrid = markers.some((m) => m.type === 4) && !newCues.includes('TYPE="4"')
   const existingGrid = droppedGrid
     ? block.match(new RegExp(CUE_V2_RE.source.replace('[^>]*?', '[^>]*?TYPE="4"[^>]*?')))?.[0]
     : undefined
