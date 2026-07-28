@@ -187,6 +187,37 @@ describe('SettingsModal tablist', () => {
   })
 })
 
+describe('SettingsModal Traktor collection', () => {
+  // La autodetección PROPONE, nunca impone. El collection.nml es la biblioteca entera
+  // de un DJ, y escribir en una colección que el usuario no ha confirmado no es
+  // aceptable: Traktor crea una carpeta por versión y la del usuario puede estar fuera
+  // del sitio estándar, así que detectar bien no es lo mismo que acertar. Guardar sin
+  // tocar nada tiene que dejar traktorNmlPath vacío aunque se haya detectado una ruta.
+  it('never saves a detected collection path the user did not accept', async () => {
+    const detected = '/Users/test/Documents/Native Instruments/Traktor 4.5.0/collection.nml'
+    const api = (globalThis.window as unknown as { api: Record<string, unknown> }).api
+    const previous = api.detectTraktorNmlPath
+    api.detectTraktorNmlPath = async () => detected
+    const onSave = vi.fn()
+
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={onSave}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    await waitFor(() => expect(screen.getByTestId('settings-save')).toBeInTheDocument())
+    fireEvent.submit(screen.getByTestId('settings-save').closest('form') as HTMLFormElement)
+
+    expect(onSave).toHaveBeenCalled()
+    expect(onSave.mock.calls[0][0]).not.toMatchObject({ traktorNmlPath: detected })
+    api.detectTraktorNmlPath = previous
+  })
+})
+
 describe('SettingsModal save', () => {
   // The dialog is a form with a default Save button, so Enter from any field commits
   // the settings instead of doing nothing.
