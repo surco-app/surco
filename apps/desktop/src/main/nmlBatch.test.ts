@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { beginNmlBatch, endNmlBatch, recordNmlPatch } from './nmlBatch'
+import { abandonNmlBatch, beginNmlBatch, endNmlBatch, recordNmlPatch } from './nmlBatch'
 
 const patch = (file: string) => ({ volume: 'HD', dir: '/:M:/', file })
 
@@ -77,5 +77,21 @@ describe('nmlBatch', () => {
 
     expect(flushed).toHaveLength(300)
     expect(flushed.map((p) => p.file)).toEqual(files)
+  })
+
+  // Un begin cuyo end no llega nunca — el renderer se recarga a media conversión, que
+  // en esta app ya ha pasado (render-process-gone) — dejaría la profundidad clavada por
+  // encima de cero: a partir de ahí ningún lote volvería a volcar y la colección se
+  // quedaría sin actualizar en silencio hasta reiniciar la app. Abandonar el lote en
+  // vuelo al recargar devuelve el acumulador a un estado limpio.
+  it('recovers after a batch whose end never arrives', () => {
+    beginNmlBatch()
+    recordNmlPatch(patch('lost.aiff'))
+
+    abandonNmlBatch()
+
+    beginNmlBatch()
+    recordNmlPatch(patch('after-reload.aiff'))
+    expect(endNmlBatch()).toEqual([patch('after-reload.aiff')])
   })
 })

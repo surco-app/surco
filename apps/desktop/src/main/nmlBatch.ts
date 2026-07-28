@@ -21,6 +21,17 @@ export function recordNmlPatch(patch: NmlPatch): void {
   patches.push(patch)
 }
 
+// The renderer can vanish between a begin and its end — a reload, or the crash-and-
+// reload this app has already seen in the wild. Without a way back, depth would stay
+// stuck above zero and no later batch would ever flush again: the collection would
+// silently stop being updated until the app restarted. Abandoning the in-flight batch
+// drops its patches (their conversions are done and the collection simply misses them,
+// which is recoverable) and returns the accumulator to a state that works.
+export function abandonNmlBatch(): void {
+  patches = []
+  depth = 0
+}
+
 export function beginNmlBatch(): void {
   if (depth === 0) patches = []
   depth += 1

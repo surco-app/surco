@@ -103,8 +103,7 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco necesita cerrarlo para escribir en collection.nml. Traktor se cerrará de forma segura; puedes volver a abrirlo cuando termine la conversión.',
     traktorQuitConfirm: 'Cerrar Traktor',
     traktorQuitCancel: 'Cancelar',
-    traktorSyncBlocked:
-      'La colección de Traktor no se ha actualizado: Traktor sigue abierto.',
+    traktorSyncBlocked: 'La colección de Traktor no se ha actualizado: Traktor sigue abierto.',
   },
   en: {
     settings: 'Settings…',
@@ -251,7 +250,8 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco doit le fermer pour écrire dans collection.nml. Traktor sera fermé proprement ; tu pourras le rouvrir à la fin de la conversion.',
     traktorQuitConfirm: 'Fermer Traktor',
     traktorQuitCancel: 'Annuler',
-    traktorSyncBlocked: "La collection Traktor n'a pas été mise à jour : Traktor est encore ouvert.",
+    traktorSyncBlocked:
+      "La collection Traktor n'a pas été mise à jour : Traktor est encore ouvert.",
   },
   'pt-BR': {
     settings: 'Ajustes…',
