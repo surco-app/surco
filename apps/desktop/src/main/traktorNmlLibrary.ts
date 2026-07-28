@@ -1,5 +1,4 @@
-import { copyFile, readdir, readFile, rename, unlink, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import { copyFile, readFile, rename, unlink, writeFile } from 'node:fs/promises'
 import { applyPatches, matchedPatchCount, type NmlPatch } from './traktorNml'
 import { isTraktorRunning } from './traktorProcess'
 
@@ -8,8 +7,13 @@ import { isTraktorRunning } from './traktorProcess'
 // cue handling: the audio conversion already succeeded on disk by the time this runs, so
 // nothing here throws to its caller. Every failure path returns a reason instead.
 
-const BACKUP_MARKER = '.surco-'
-const MAX_BACKUPS = 10
+// One backup, always the same name, overwritten on every write — the same bargain
+// engineLibrary.ts strikes with m.db.surco-backup. Dated copies were the first shape,
+// but every lone conversion writes the collection, so converting three tracks one by
+// one left three .bak files beside it: clutter in the user's own folder for something
+// he only wants as a safety net. What he can lose is the state before the previous
+// write, which the write he is undoing had already replaced anyway.
+const BACKUP_SUFFIX = '.surco-backup'
 
 export interface SyncResult {
   written: boolean
@@ -39,26 +43,12 @@ export async function syncCollection(nmlPath: string, patches: NmlPatch[]): Prom
     return { written: false, matched: 0, reason: 'no-matches' }
   }
 
-  const dir = dirname(nmlPath)
-  const backupPath = `${nmlPath}${BACKUP_MARKER}${new Date().toISOString().replace(/:/g, '-')}.bak`
   try {
-    await copyFile(nmlPath, backupPath)
+    await copyFile(nmlPath, `${nmlPath}${BACKUP_SUFFIX}`)
   } catch {
     // No backup, no write. A write without a recoverable copy next to it is the one
     // outcome this whole module exists to rule out.
     return { written: false, matched: 0, reason: 'backup-failed' }
-  }
-  try {
-    await rotateBackups(dir, nmlPath)
-  } catch {
-    // The module's own contract (see the header comment): nothing escapes to the
-    // caller uncaught. A readdir failure here (EIO, an unmounted volume) would
-    // otherwise propagate out of syncCollection into the unguarded
-    // 'process:batch-end' handler and vanish as an unhandled rejection — the DJ
-    // sees no activity row at all, neither success nor failure. The backup taken
-    // above already protects the collection, so this is safe to treat like any
-    // other failure short of the write itself.
-    return { written: false, matched: 0, reason: 'write-failed' }
   }
 
   // Traktor can have launched during the read/backup above; check again right before
@@ -87,23 +77,4 @@ export async function syncCollection(nmlPath: string, patches: NmlPatch[]): Prom
   }
 
   return { written: true, matched: matchedPatchCount(original, patches) }
-}
-
-// Rotates only Surco's own backups (the BACKUP_MARKER suffix), never a Traktor backup
-// or a file the user happens to have dropped next to the collection. Keeps the 10 most
-// recent by filename, which sorts chronologically because the timestamp is ISO-8601.
-async function rotateBackups(dir: string, nmlPath: string): Promise<void> {
-  const prefix = `${nmlPath.slice(dir.length + 1)}${BACKUP_MARKER}`
-  const files = (await readdir(dir))
-    .filter((f) => f.startsWith(prefix) && f.endsWith('.bak'))
-    .sort()
-  const stale = files.slice(0, Math.max(0, files.length - MAX_BACKUPS))
-  for (const f of stale) {
-    try {
-      await unlink(join(dir, f))
-    } catch {
-      // A backup that can't be deleted just means one extra file survives past the
-      // cap — not worth failing the sync over.
-    }
-  }
 }

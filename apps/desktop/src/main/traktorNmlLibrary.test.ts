@@ -14,16 +14,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('./traktorProcess', () => ({ isTraktorRunning: vi.fn().mockResolvedValue(false) }))
 
-// Only `rename`/`copyFile`/`readdir` are faked, and only for the tests that need one
+// Only `rename`/`copyFile` are faked, and only for the tests that need one
 // of them to fail in isolation: every other test relies on the real read/copy/write/
 // unlink behaviour on the temp dir it creates. A read-only directory would fail
 // multiple calls at once, which can't tell "the backup guard stopped the write" apart
 // from "the write failed on its own too" — faking exactly one call is what isolates
 // the guard.
-const { renameShouldFail, copyFileShouldFail, readdirShouldFail } = vi.hoisted(() => ({
+const { renameShouldFail, copyFileShouldFail } = vi.hoisted(() => ({
   renameShouldFail: { value: false },
   copyFileShouldFail: { value: false },
-  readdirShouldFail: { value: false },
 }))
 vi.mock('node:fs/promises', async (importOriginal) => {
   const real = await importOriginal<typeof import('node:fs/promises')>()
@@ -35,11 +34,7 @@ vi.mock('node:fs/promises', async (importOriginal) => {
     if (copyFileShouldFail.value) throw Object.assign(new Error('EACCES'), { code: 'EACCES' })
     return real.copyFile(...args)
   }) as typeof real.copyFile
-  const readdir: typeof real.readdir = (async (...args: Parameters<typeof real.readdir>) => {
-    if (readdirShouldFail.value) throw Object.assign(new Error('EIO'), { code: 'EIO' })
-    return real.readdir(...args)
-  }) as typeof real.readdir
-  return { ...real, rename, copyFile, readdir }
+  return { ...real, rename, copyFile }
 })
 
 import { isTraktorRunning } from './traktorProcess'
@@ -62,7 +57,6 @@ beforeEach(() => {
   vi.mocked(isTraktorRunning).mockReset().mockResolvedValue(false)
   renameShouldFail.value = false
   copyFileShouldFail.value = false
-  readdirShouldFail.value = false
 })
 
 const patch = { volume: 'HD', dir: '/:M/:', file: 'uno.aiff', newFile: 'uno.flac' }
@@ -70,13 +64,11 @@ const patch = { volume: 'HD', dir: '/:M/:', file: 'uno.aiff', newFile: 'uno.flac
 describe('syncCollection', () => {
   // La colección es la biblioteca entera de un DJ: nunca se escribe sin una copia
   // recuperable al lado, y el backup va ANTES de tocar el original.
-  it('writes a dated backup before touching the collection', async () => {
+  it('writes a backup before touching the collection', async () => {
     const result = await syncCollection(nmlPath, [patch])
 
     expect(result.written).toBe(true)
-    const backups = readdirSync(dir).filter((f) => f.includes('surco') && f.endsWith('.bak'))
-    expect(backups).toHaveLength(1)
-    expect(readFileSync(join(dir, backups[0]), 'utf8')).toBe(NML)
+    expect(readFileSync(`${nmlPath}.surco-backup`, 'utf8')).toBe(NML)
     expect(readFileSync(nmlPath, 'utf8')).toContain('uno.flac')
   })
 
@@ -91,16 +83,33 @@ describe('syncCollection', () => {
     expect(readFileSync(nmlPath, 'utf8')).toBe(NML)
   })
 
-  // El flujo real es iterativo (probar, comprobar en Traktor, volver a probar), así
-  // que una sola copia pisada en cada escritura deja al usuario sin red. Se rotan 10.
-  it('keeps only the ten most recent backups', async () => {
-    for (let i = 0; i < 12; i++) {
-      writeFileSync(join(dir, `collection.nml.surco-2026-07-0${i % 10}T0${i % 10}-00.bak`), 'old')
-    }
-
+  // Un fichero de respaldo, siempre el mismo, pisado en cada escritura. Antes se
+  // guardaba uno con fecha por escritura, y como cada conversión suelta escribe la
+  // colección, tres pistas convertidas de una en una dejaban tres .bak al lado —
+  // ruido en la carpeta del usuario por algo que él sólo quiere como red de
+  // seguridad. Mismo trato que la biblioteca de Engine DJ (m.db.surco-backup).
+  it('keeps exactly one backup however many times it writes', async () => {
+    await syncCollection(nmlPath, [patch])
+    writeFileSync(nmlPath, NML)
+    await syncCollection(nmlPath, [patch])
+    writeFileSync(nmlPath, NML)
     await syncCollection(nmlPath, [patch])
 
-    expect(readdirSync(dir).filter((f) => f.endsWith('.bak'))).toHaveLength(10)
+    const leftovers = readdirSync(dir).filter((f) => f.includes('surco'))
+    expect(leftovers).toEqual(['collection.nml.surco-backup'])
+  })
+
+  // La copia tiene que ser la de ESTA escritura, no la primera de la historia: si
+  // conservara la más vieja, el usuario recuperaría un estado anterior al que creía
+  // estar deshaciendo.
+  it('overwrites the backup with the state from just before this write', async () => {
+    await syncCollection(nmlPath, [patch])
+    const second = NML.replace('uno.aiff', 'dos.aiff')
+    writeFileSync(nmlPath, second)
+
+    await syncCollection(nmlPath, [{ ...patch, file: 'dos.aiff' }])
+
+    expect(readFileSync(`${nmlPath}.surco-backup`, 'utf8')).toBe(second)
   })
 
   // Una pista que no está en la colección no es un error: es el caso normal de
@@ -130,7 +139,9 @@ describe('syncCollection', () => {
     ])
 
     expect(result).toMatchObject({ written: true, matched: 2 })
-    expect(readdirSync(dir).filter((f) => f.endsWith('.bak'))).toHaveLength(1)
+    expect(readdirSync(dir).filter((f) => f.includes('surco'))).toEqual([
+      'collection.nml.surco-backup',
+    ])
     const out = readFileSync(nmlPath, 'utf8')
     expect(out).toContain('uno.flac')
     expect(out).toContain('dos.flac')
@@ -190,21 +201,6 @@ describe('syncCollection', () => {
     }
   })
 
-  // Hallazgo importante 4: el módulo promete en su comentario de cabecera que nada
-  // se le escapa al caller sin capturar — cada fallo vuelve como un `reason`. Pero
-  // `await rotateBackups(...)` no estaba dentro de ningún try, y readdir (dentro de
-  // rotateBackups) queda fuera del único try que sí existe ahí (el que sólo envuelve
-  // unlink). Un EIO de readdir se escapa entero de syncCollection hasta el handler
-  // 'process:batch-end' (sin try/catch propio) y se pierde como una unhandled
-  // rejection: el DJ no ve ni éxito ni fallo, ninguna fila de actividad. La colección
-  // sigue a salvo (esto corre después del backup, antes de la escritura), pero el
-  // contrato de "nunca lanza" se rompe igual.
-  it('reports write-failed instead of throwing when backup rotation cannot list the directory', async () => {
-    readdirShouldFail.value = true
-
-    await expect(syncCollection(nmlPath, [patch])).resolves.toMatchObject({ written: false })
-  })
-
   // Un fallo al escribir (disco lleno, volumen de sólo lectura) llega DESPUÉS de que
   // el backup ya se hizo — el original sigue a salvo — pero no puede escapar como una
   // excepción sin capturar hacia un caller que ya le dijo al usuario que la conversión
@@ -219,27 +215,20 @@ describe('syncCollection', () => {
     expect(readFileSync(nmlPath, 'utf8')).toBe(NML)
   })
 
-  // La rotación sólo puede tocar los backups que Surco mismo creó (BACKUP_MARKER).
-  // Un fichero con "collection" en el nombre pero sin ese marcador — como los que
-  // el propio usuario o Traktor dejan al lado — debe sobrevivir a un sync entero.
-  // Se siembran más de MAX_BACKUPS backups reales para que la rotación se dispare de
-  // verdad: con pocos ficheros, un matcher demasiado laxo pasaría este test igual
-  // porque no habría nada que borrar.
-  it('rotation only ever deletes backups Surco itself created', async () => {
+  // Surco no borra NADA en la carpeta de la colección. Antes rotaba sus propios
+  // backups y el filtro tenía que distinguirlos de los ficheros del usuario; ahora
+  // que sólo mantiene una copia de nombre fijo, no hay borrado que pueda equivocarse.
+  // El usuario guarda copias a mano al lado de su colección (collection ORI.nml,
+  // collection buena retocada.nml, y .bak propios), y un sync entero debe dejarlas
+  // exactamente donde estaban.
+  it('never deletes anything the user keeps beside the collection', async () => {
     mkdirSync(join(dir, 'Backup'))
     writeFileSync(join(dir, 'Backup', 'collection.nml'), 'traktor backup')
     writeFileSync(join(dir, 'collection ORI.nml'), 'user backup')
     writeFileSync(join(dir, 'collection buena retocada.nml'), 'user backup')
     writeFileSync(join(dir, 'collection1.nml'), 'unrelated file')
-    // Hallazgo menor 5: los señuelos de arriba no llevan extensión .bak, así que ni
-    // siquiera detectan que se caiga la mitad `f.startsWith(prefix)` del filtro — con
-    // sólo el `f.endsWith('.bak')` puesto, la rotación se comería CUALQUIER .bak de la
-    // carpeta, incluida una copia que el propio DJ se guardó a mano al lado de su
-    // colección.
     writeFileSync(join(dir, 'coleccion a mano.bak'), 'hand-made backup')
-    for (let i = 0; i < 12; i++) {
-      writeFileSync(join(dir, `collection.nml.surco-2026-07-0${i % 10}T0${i % 10}-00.bak`), 'old')
-    }
+    writeFileSync(join(dir, 'collection.nml.surco-2026-07-01T00-00.bak'), 'old dated backup')
 
     await syncCollection(nmlPath, [patch])
 
@@ -248,5 +237,8 @@ describe('syncCollection', () => {
     expect(readFileSync(join(dir, 'collection buena retocada.nml'), 'utf8')).toBe('user backup')
     expect(readFileSync(join(dir, 'collection1.nml'), 'utf8')).toBe('unrelated file')
     expect(readFileSync(join(dir, 'coleccion a mano.bak'), 'utf8')).toBe('hand-made backup')
+    expect(readFileSync(join(dir, 'collection.nml.surco-2026-07-01T00-00.bak'), 'utf8')).toBe(
+      'old dated backup',
+    )
   })
 })
