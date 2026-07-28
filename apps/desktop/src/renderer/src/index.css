@@ -627,10 +627,12 @@ textarea {
    they carry colour and opacity almost everywhere here, and the few that move (the seek
    bar's height, the player's) are small, deliberate and user-initiated. */
 @media (prefers-reduced-motion: reduce) {
+  /* .donate-pop is deliberately absent: it declares its own reduced-motion fallback further
+     up, and listing it here too would win on source order and silently override whatever
+     that rule says the day someone tunes it. */
   .animate-pop,
   .animate-pop-flat,
-  .animate-player-in,
-  .donate-pop {
+  .animate-player-in {
     animation: overlay-in 0.2s ease;
   }
 
@@ -675,12 +677,12 @@ textarea {
   animation: result-in 0.22s cubic-bezier(0.2, 0, 0, 1) both;
 }
 
-/* The stagger is pure decoration, so reduced motion drops it whole — including the delay,
-   which would otherwise leave rows invisible while they wait their turn. */
+/* The stagger is pure decoration, so reduced motion drops it whole. Killing the animation is
+   enough on its own: the inline animation-delay each row carries has nothing left to delay,
+   so no row is held invisible waiting for a turn that never comes. */
 @media (prefers-reduced-motion: reduce) {
   .result-in {
     animation: none;
-    animation-delay: 0ms !important;
   }
 }
 
