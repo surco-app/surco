@@ -60,18 +60,22 @@ const local: LocalDraft = {
   token: '',
   outputDir: '/out',
   engineLibraryDir: '/music/Engine Library',
+  traktorNmlPath: '',
   autoMatch: false,
 }
 
-function renderTab(over: Partial<SyncedDraft> = {}) {
+function renderTab(over: Partial<SyncedDraft> = {}, localOver: Partial<LocalDraft> = {}) {
   const patch = vi.fn()
   render(
     <DestinationTab
       synced={{ ...synced, ...over }}
-      local={local}
+      local={{ ...local, ...localOver }}
       patch={patch}
       onOutputDirChange={vi.fn()}
       onChangeEngineDir={vi.fn()}
+      onChangeTraktorNmlPath={vi.fn()}
+      detectedNmlPath={null}
+      onAcceptDetectedNmlPath={vi.fn()}
     />,
   )
   return patch
@@ -177,5 +181,86 @@ describe('DestinationTab Engine DJ destination', () => {
     expect(field).toHaveValue('Surco')
     fireEvent.change(field, { target: { value: 'Pool' } })
     expect(patch).toHaveBeenCalledWith('engineDjPlaylist', 'Pool')
+  })
+})
+
+describe('DestinationTab Traktor collection', () => {
+  // Traktor cue sync is a side effect of conversion, not a destination the file goes
+  // to — it must stay visible whatever radio is selected, unlike Engine DJ's fields.
+  it('always shows the collection.nml field regardless of the chosen destination', () => {
+    renderTab()
+    expect(screen.getByTestId('settings-traktor-nml').closest('[inert]')).toBeNull()
+    expect(screen.getByTestId('settings-traktor-nml')).toHaveValue('')
+  })
+
+  it('opens the file picker when Change is clicked', () => {
+    const onChangeTraktorNmlPath = vi.fn()
+    render(
+      <DestinationTab
+        synced={synced}
+        local={local}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={onChangeTraktorNmlPath}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-traktor-nml-change'))
+    expect(onChangeTraktorNmlPath).toHaveBeenCalled()
+  })
+
+  // Autodetection only proposes a candidate; it must never appear once a path is
+  // already set (staged or saved), so a returning user doesn't see it resurface.
+  it('offers a detected path to accept only while no path is set yet', () => {
+    renderTab({}, {})
+    render(
+      <DestinationTab
+        synced={synced}
+        local={local}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath="/Users/dj/Documents/Native Instruments/Traktor 4.5.0/collection.nml"
+        onAcceptDetectedNmlPath={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('settings-traktor-nml-detected')).toBeInTheDocument()
+    cleanup()
+    render(
+      <DestinationTab
+        synced={synced}
+        local={{ ...local, traktorNmlPath: '/already/set/collection.nml' }}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath="/Users/dj/Documents/Native Instruments/Traktor 4.5.0/collection.nml"
+        onAcceptDetectedNmlPath={vi.fn()}
+      />,
+    )
+    expect(screen.queryByTestId('settings-traktor-nml-detected')).not.toBeInTheDocument()
+  })
+
+  // Accepting the proposal is the only way it ever reaches the draft — clicking
+  // "Use this" must call back into the modal rather than writing the path itself.
+  it('stages the detected path only when the user accepts it', () => {
+    const onAcceptDetectedNmlPath = vi.fn()
+    render(
+      <DestinationTab
+        synced={synced}
+        local={local}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath="/Users/dj/Documents/Native Instruments/Traktor 4.5.0/collection.nml"
+        onAcceptDetectedNmlPath={onAcceptDetectedNmlPath}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-traktor-nml-use-detected'))
+    expect(onAcceptDetectedNmlPath).toHaveBeenCalled()
   })
 })

@@ -195,6 +195,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     defaultConfigDir: vi.fn().mockResolvedValue('/Users/test/Library/Application Support/Surco'),
     cacheStats: vi.fn().mockResolvedValue({ files: 0, bytes: 0 }),
     clearCache: vi.fn().mockResolvedValue(undefined),
+    detectTraktorNmlPath: vi.fn().mockResolvedValue(null),
     onMenuCommand: () => () => {},
     onProcessProgress: () => () => {},
     onActivity: () => () => {},

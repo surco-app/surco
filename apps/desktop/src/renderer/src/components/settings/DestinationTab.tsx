@@ -6,7 +6,7 @@ import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { DestinationPicker } from '../DestinationPicker'
 import { OutputFolderField } from '../OutputFolderField'
-import { SettingsField, SettingsHint, SettingsLabel } from './SettingsPrimitives'
+import { SettingsField, SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
 
 // Apple Music automation only exists on macOS, so the destination is meaningless on
 // other platforms where a track simply finishes in the output folder.
@@ -18,6 +18,12 @@ interface Props {
   patch: PatchSynced
   onOutputDirChange: (dir: string) => void
   onChangeEngineDir: () => void
+  onChangeTraktorNmlPath: () => void
+  // A candidate collection.nml autodetection found — null while unresolved or once
+  // traktorNmlPath is already set (see SettingsModal). Never applied on its own; the
+  // user accepts it explicitly via onAcceptDetectedNmlPath.
+  detectedNmlPath: string | null
+  onAcceptDetectedNmlPath: () => void
 }
 
 // Where a conversion ends up: the output folder, the destination radio (folder /
@@ -30,6 +36,9 @@ export function DestinationTab({
   patch,
   onOutputDirChange,
   onChangeEngineDir,
+  onChangeTraktorNmlPath,
+  detectedNmlPath,
+  onAcceptDetectedNmlPath,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // FLAC can't go to Apple Music, so the destination is pinned to the output folder
@@ -112,6 +121,54 @@ export function DestinationTab({
           details={{ folder: folderDetail, engineDj: engineDetail }}
         />
       </SettingsField>
+      {/* Independent of the destination radio above: Traktor sync patches cue points
+          into collection.nml as a side effect of conversion, wherever the file ends up —
+          it isn't itself a place the converted file goes. Empty path means the feature
+          is off (see settings.ts), so this is the only control that turns it on. */}
+      <SettingsSection eyebrow={tr('settings.traktorSync')}>
+        <SettingsLabel htmlFor="settings-traktor-nml">
+          {tr('settings.traktorNmlPath')}
+        </SettingsLabel>
+        <div className="mt-2 flex gap-2">
+          <input
+            id="settings-traktor-nml"
+            data-testid="settings-traktor-nml"
+            value={local.traktorNmlPath}
+            readOnly
+            className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
+          />
+          <button
+            type="button"
+            data-testid="settings-traktor-nml-change"
+            onClick={onChangeTraktorNmlPath}
+            className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+          >
+            {tr('common.change')}
+          </button>
+        </div>
+        <SettingsHint className="mt-2">{tr('settings.traktorNmlPathHint')}</SettingsHint>
+        {/* Never applied without this explicit click — autodetection only proposes,
+            it must never silently pick a version folder or write to it. */}
+        {!local.traktorNmlPath && detectedNmlPath && (
+          <div
+            data-testid="settings-traktor-nml-detected"
+            className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] px-3 py-2"
+          >
+            <div className="min-w-0">
+              <p className="truncate text-sm">{detectedNmlPath}</p>
+              <SettingsHint>{tr('settings.traktorNmlPathDetectedHint')}</SettingsHint>
+            </div>
+            <button
+              type="button"
+              data-testid="settings-traktor-nml-use-detected"
+              onClick={onAcceptDetectedNmlPath}
+              className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+            >
+              {tr('settings.traktorNmlPathUseDetected')}
+            </button>
+          </div>
+        )}
+      </SettingsSection>
     </>
   )
 }

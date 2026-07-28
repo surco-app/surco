@@ -95,6 +95,27 @@ export function SettingsModal({
     if (dir) patchLocal('engineLibraryDir', dir)
   }
 
+  async function changeTraktorNmlPath(): Promise<void> {
+    const path = await window.api.pickTraktorNmlPath()
+    if (path) patchLocal('traktorNmlPath', path)
+  }
+
+  // Autodetection only ever PROPOSES: the path varies by Traktor version and the
+  // target user's real collection isn't even in the standard folder (his Documents
+  // are in iCloud), so this never writes traktorNmlPath itself — only offers a
+  // value the Traktor tab can show next to an "use this" action. Skipped once a
+  // path is already set, staged or saved: a returning user who picked (or cleared)
+  // one deliberately must not see a stale proposal resurface.
+  const [detectedNmlPath, setDetectedNmlPath] = useState<string | null>(null)
+  useEffect(() => {
+    if (local.traktorNmlPath) return
+    window.api.detectTraktorNmlPath().then(setDetectedNmlPath)
+  }, [local.traktorNmlPath])
+
+  function acceptDetectedNmlPath(): void {
+    if (detectedNmlPath) patchLocal('traktorNmlPath', detectedNmlPath)
+  }
+
   // Where settings.json lives — null is the app default. Loaded on open because it
   // isn't part of Settings (it's the pointer that says where Settings are read from).
   const [configDir, setConfigDir] = useState<string | null>(null)
@@ -249,6 +270,9 @@ export function SettingsModal({
                 patch={patch}
                 onOutputDirChange={(dir) => patchLocal('outputDir', dir)}
                 onChangeEngineDir={changeEngineDir}
+                onChangeTraktorNmlPath={changeTraktorNmlPath}
+                detectedNmlPath={detectedNmlPath}
+                onAcceptDetectedNmlPath={acceptDetectedNmlPath}
               />
             )}
             {tab === 'naming' && <NamingTab synced={synced} patch={patch} />}
