@@ -410,6 +410,34 @@ describe('applyPatches', () => {
     expect(count).toBe(0)
   })
 
+  // Hallazgo crítico 2: readTraktorMarkers nunca lanza — devuelve [] ante CUALQUIER
+  // fallo de parseo (checksum malo, variante desconocida, árbol truncado). Antes,
+  // replaceCues borraba TODOS los CUE_V2 incondicionalmente y no insertaba nada en
+  // su lugar, así que un árbol que Surco no sabe leer BORRABA los hotcues que ya
+  // tenía la ENTRY — y syncCollection lo reportaba como written: true. Un árbol sin
+  // marcadores no aporta ninguna información que merezca la pena escribir; se deja
+  // el bloque tal cual, igual que ya hace el rescate de droppedGrid con el mismo
+  // árbol vacío.
+  it('leaves existing hotcues untouched when the cue tree cannot be parsed', () => {
+    const withHotcues = NML.replace(
+      '<LOCATION DIR="/:Musica/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>',
+      '<LOCATION DIR="/:Musica/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>' +
+        '<CUE_V2 NAME="Intro" DISPL_ORDER="0" TYPE="0" START="1000.000000" LEN="0.000000" ' +
+        'REPEATS="-1" HOTCUE="0"></CUE_V2>' +
+        '<CUE_V2 NAME="Drop" DISPL_ORDER="0" TYPE="0" START="79672.640000" LEN="0.000000" ' +
+        'REPEATS="-1" HOTCUE="1"></CUE_V2>',
+    )
+    const garbage = new Uint8Array(20).fill(0)
+    garbage.set([0x54, 0x52, 0x4d, 0x44], 0) // "TRMD" tag, garbage body
+
+    const out = applyPatches(withHotcues, [
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', cueTree: garbage },
+    ])
+
+    expect(out).toContain('NAME="Intro"')
+    expect(out).toContain('NAME="Drop"')
+  })
+
   // Caso minimizado del re-review: dos patches pueden casar la misma ENTRY, uno por
   // nombre base y otro exacto. La regla siempre fue "gana el primero del array", no
   // "gana el tipo de match más fuerte" — el índice por mapas tiene que preservar eso
