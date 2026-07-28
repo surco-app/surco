@@ -55,6 +55,7 @@ import { isSameFile, removeRenamedOriginal } from './inplace'
 import { createMediaAccess } from './mediaAccess'
 import { keymapMenuClick } from './menuCommand'
 import { isInternalNavigation, isWebUrl } from './navigation'
+import { resetNmlPatches, takeNmlPatches } from './nmlBatch'
 import { createOutputReservations } from './outputReservations'
 import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
 import { runProcessTrack } from './processTrack'
@@ -74,6 +75,8 @@ import {
 import { registerShellIpc } from './shellIpc'
 import { createStickyConflict } from './stickyConflict'
 import { createTmpManifest } from './tmpManifest'
+import { type SyncResult, syncCollection } from './traktorNmlLibrary'
+import { isTraktorRunning, quitTraktor } from './traktorProcess'
 import { wireUpdateDelivery } from './updateDelivery'
 import { classifyUpdateError, summarizeUpdateError } from './updateErrors'
 import { armUpdateRecheck } from './updateRecheck'
@@ -189,6 +192,36 @@ async function ensureEngineDjClosed(win: BrowserWindow | null): Promise<boolean>
     engineQuitPrompt = null
   })
   return engineQuitPrompt
+}
+
+// Twin of engineQuitPrompt above: shared so the one process:batch-end flush raises
+// at most one dialog, never one per patch.
+let traktorQuitPrompt: Promise<boolean> | null = null
+
+// True when Traktor is not running (possibly because the user just accepted quitting
+// it here); false when it is running and the user declined — the caller then refuses
+// to write collection.nml, since Traktor would not see it and overwrites it on exit.
+async function ensureTraktorClosed(win: BrowserWindow | null): Promise<boolean> {
+  if (!(await isTraktorRunning())) return true
+  traktorQuitPrompt ??= (async () => {
+    const t = createMenuT(menuLocale())
+    const opts = {
+      type: 'warning' as const,
+      message: t('traktorQuitMessage'),
+      detail: t('traktorQuitDetail'),
+      buttons: [t('traktorQuitConfirm'), t('traktorQuitCancel')],
+      defaultId: 0,
+      cancelId: 1,
+    }
+    const { response } = win
+      ? await dialog.showMessageBox(win, opts)
+      : await dialog.showMessageBox(opts)
+    if (response !== 0) return false
+    return quitTraktor()
+  })().finally(() => {
+    traktorQuitPrompt = null
+  })
+  return traktorQuitPrompt
 }
 
 // Set while a user-triggered update check is in flight so the updater's result
@@ -459,6 +492,18 @@ function createWindow(): BrowserWindow {
 // surface "N new tracks". Lazily created on the first folder load and torn down with the
 // window so a closed crate stops holding OS watches.
 const folderWatchers = new WeakMap<BrowserWindow, FolderWatcher>()
+
+// Every non-write reason syncCollection can return, mapped to the activity row's detail
+// line. 'traktor-running' can't reach process:batch-end's handler in practice
+// (ensureTraktorClosed there already refused earlier), but syncCollection re-checks right
+// before its own write for a race, so the map still needs an entry for it.
+const TRAKTOR_SYNC_SKIP_KEYS: Record<NonNullable<SyncResult['reason']>, string> = {
+  'traktor-running': 'activity.traktorSyncTraktorRunning',
+  'backup-failed': 'activity.traktorSyncBackupFailed',
+  'no-matches': 'activity.traktorSyncNoMatches',
+  unreadable: 'activity.traktorSyncUnreadable',
+  'write-failed': 'activity.traktorSyncWriteFailed',
+}
 
 function watcherFor(win: BrowserWindow): FolderWatcher {
   let watcher = folderWatchers.get(win)
@@ -751,9 +796,43 @@ function registerIpc(): void {
 
   // A convert-all run starts: forget any "apply to the rest" conflict choice the previous
   // run left, so this batch begins asking again rather than silently reusing a stale one.
+  // Also drop any Traktor patches a cancelled or failed previous run recorded but never
+  // flushed, so this batch's sync only ever carries its own tracks.
   ipcMain.on('process:batch-begin', () => {
     stickyConflict.reset()
     coverMemo = createCoverMemo(prepareProcessedCover)
+    resetNmlPatches()
+  })
+
+  // A convert-all run ends (however it ended — finished, cancelled, or failed, the
+  // renderer calls this from its finally block): flush whatever Traktor cue patches the
+  // batch recorded into collection.nml in one write. A failure here must never surface as
+  // a conversion failure — the audio is already correct on disk by this point — so every
+  // branch below only logs and returns, never throws back at the renderer.
+  ipcMain.on('process:batch-end', async (e) => {
+    const nmlPath = getSettings().traktorNmlPath
+    if (!nmlPath) return
+    const patches = takeNmlPatches()
+    if (patches.length === 0) return
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (!(await ensureTraktorClosed(win))) {
+      const t = createMenuT(menuLocale())
+      const opts = { type: 'warning' as const, message: t('traktorSyncBlocked') }
+      if (win) dialog.showMessageBox(win, opts)
+      else dialog.showMessageBox(opts)
+      return
+    }
+    await activity.track(
+      'export',
+      'activity.traktorSync',
+      () => syncCollection(nmlPath, patches),
+      {
+        summary: (result) =>
+          result.written
+            ? { detailKey: 'activity.traktorSyncWritten', detailParams: { count: result.matched } }
+            : { detailKey: TRAKTOR_SYNC_SKIP_KEYS[result.reason ?? 'unreadable'] },
+      },
+    )
   })
 
   ipcMain.handle('process:track', (e, job: ProcessJob) =>
