@@ -10,7 +10,7 @@ const CELL_COUNT = 6
 export function LoudnessSkeleton(): React.JSX.Element {
   return (
     <div data-testid="loudness-skeleton" className="mt-3">
-      <div className="mb-1.5 h-2.5 w-16 animate-pulse rounded bg-[var(--color-panel-2)]" />
+      <div className="mb-1.5 h-2.5 w-16 skeleton-sweep rounded bg-[var(--color-panel-2)]" />
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-[var(--color-line)]">
         {Array.from({ length: CELL_COUNT }, (_, i) => (
           <div
@@ -19,10 +19,10 @@ export function LoudnessSkeleton(): React.JSX.Element {
             className="flex items-center justify-between gap-3 bg-[var(--color-field)] px-3 py-2"
           >
             <span className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[var(--color-panel-2)]" />
-              <span className="h-2.5 w-14 animate-pulse rounded bg-[var(--color-panel-2)]" />
+              <span className="h-1.5 w-1.5 shrink-0 skeleton-sweep rounded-full bg-[var(--color-panel-2)]" />
+              <span className="h-2.5 w-14 skeleton-sweep rounded bg-[var(--color-panel-2)]" />
             </span>
-            <span className="h-3 w-12 animate-pulse rounded bg-[var(--color-panel-2)]" />
+            <span className="h-3 w-12 skeleton-sweep rounded bg-[var(--color-panel-2)]" />
           </div>
         ))}
       </div>
