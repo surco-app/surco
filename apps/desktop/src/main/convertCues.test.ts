@@ -292,6 +292,18 @@ describe('convertAudio cue preservation', () => {
     expect(patches[0].cueTree).toBeDefined()
   })
 
+  // meta.bpm es un string: una pista sin BPM tiene que llegar como undefined, nunca
+  // como NaN. Un NaN parece un valor y se cuela hasta el filtro de cuesToXml, donde
+  // descarta el ancla de rejilla sin decir nada — el fallo silencioso que esta guarda
+  // existe para evitar.
+  it('leaves the bpm undefined when the track has none', async () => {
+    traktorNmlPath = '/Users/dj/collection.nml'
+    resetNmlPatches()
+    await convertAudio(src, join(dir, 'out-nobpm.flac'), 'flac', { ...meta, bpm: '' })
+
+    expect(takeNmlPatches()[0].bpm).toBeUndefined()
+  })
+
   // Con la ruta vacía (por defecto) no se toca nada: ni lecturas de disco extra ni
   // patches acumulados que nadie va a volcar.
   it('records nothing when no collection path is configured', async () => {
