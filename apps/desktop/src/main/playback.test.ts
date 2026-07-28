@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
+vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
 

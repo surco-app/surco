@@ -738,6 +738,11 @@
     "engineLibraryDirHint": "Surco écrit dans la base de données de cette bibliothèque. Ferme Engine DJ pendant la conversion.",
     "engineDjPlaylist": "Playlist",
     "engineDjPlaylistHint": "Les morceaux convertis sont ajoutés à cette playlist de ta bibliothèque, en plus de la collection.",
+    "traktorSync": "Collection Traktor",
+    "traktorNmlPath": "collection.nml",
+    "traktorNmlPathHint": "Une fois défini, les cue points et la grille des morceaux convertis sont écrits dans cette collection Traktor. Laisse vide pour désactiver.",
+    "traktorNmlPathDetectedHint": "Trouvé automatiquement — non appliqué tant que tu ne choisis pas de l'utiliser.",
+    "traktorNmlPathUseDetected": "Utiliser celui-ci",
     "appleMusicFlacNote": "Apple Music ne lit pas le FLAC, donc les morceaux convertis restent dans le dossier de sortie tant que ton format est FLAC.",
     "filenameFormat": "Format du nom de fichier",
     "titleFormatHint": "Reconstruit le titre à partir des autres champs. Appliqué uniquement à la demande — via le menu ⋯ du champ titre ou la palette de commandes — jamais automatiquement.",
@@ -994,6 +999,14 @@
     "autoMatchReviewUncorroboratedDetail": "{{release}} → {{track}}\nConfiance : {{confidence}} % · durée {{duration}} · artiste {{artist}} · nº de catalogue {{catno}}\nÀ vérifier : seul le titre correspond ; aucun signal indépendant (durée, artiste, nº de catalogue) ne le corrobore.\nCandidats sondés :\n{{candidates}}",
     "autoMatchNoneDetail": "Aucun candidat n'a atteint la confiance minimale.\nCandidats sondés :\n{{candidates}}",
     "autoMatchNoCandidates": "La recherche n'a renvoyé aucun candidat à sonder.",
-    "probeClicks": "Comptage des clics"
+    "probeClicks": "Comptage des clics",
+    "traktorSync": "Mise à jour de la collection Traktor",
+    "traktorSyncWritten_one": "{{count}} morceau mis à jour dans collection.nml",
+    "traktorSyncWritten_other": "{{count}} morceaux mis à jour dans collection.nml",
+    "traktorSyncTraktorRunning": "Ignoré : Traktor était ouvert",
+    "traktorSyncBackupFailed": "Ignoré : impossible de sauvegarder collection.nml",
+    "traktorSyncNoMatches": "Ignoré : aucun de ces morceaux n'est dans la collection",
+    "traktorSyncUnreadable": "Ignoré : impossible de lire collection.nml",
+    "traktorSyncWriteFailed": "Ignoré : impossible d'écrire collection.nml"
   }
 }

@@ -128,7 +128,10 @@ export function useTrackProcessing({
     return () => clearTimeout(id)
   }, [batchSummary])
 
-  const processOne = useStableCallback(
+  // The conversion itself, with no batch bracketing — processAll's loop calls this
+  // directly (never the exported processOne below) so a run of any size still produces
+  // exactly one begin/end pair, not one per track.
+  const runOne = useStableCallback(
     async (
       id: string,
       formatOverride?: FormatSetting,
@@ -284,6 +287,43 @@ export function useTrackProcessing({
     },
   )
 
+  // The Editor's convert button and ⌘⏎ call this directly — the only entry point that
+  // reaches a conversion without going through processAll's loop. ffmpeg.ts records a
+  // Traktor patch for every conversion unconditionally, so a standalone call needs its
+  // own begin/end pair to flush exactly what it produced: without one, the patch either
+  // gets swept into whatever OTHER batch happens to flush next (misattributing this
+  // track to that run) or, if no batch follows, sits until resetNmlPatches silently
+  // drops it. The end goes in finally for the same reason processAll's does — a throw
+  // out of runOne must still close the batch, or the patch leaks into the next run.
+  const processOne = useStableCallback(
+    async (
+      id: string,
+      formatOverride?: FormatSetting,
+      normalizeOverride?: NormalizeConfig,
+      overwriteOverride?: boolean,
+      forceReencode?: boolean,
+      destinationOverride?: Destination,
+      declickOverride?: DeclickMode,
+      keepMp3?: boolean,
+    ): Promise<BatchOutcome> => {
+      window.api.beginConversionBatch()
+      try {
+        return await runOne(
+          id,
+          formatOverride,
+          normalizeOverride,
+          overwriteOverride,
+          forceReencode,
+          destinationOverride,
+          declickOverride,
+          keepMp3,
+        )
+      } finally {
+        window.api.endConversionBatch()
+      }
+    },
+  )
+
   // Pushes an already-converted track into Apple Music by hand, the escape hatch
   // for when the automatic add is off. A track whose previous add stored a
   // persistent ID is synced onto that library copy instead of imported again —
@@ -413,7 +453,11 @@ export function useTrackProcessing({
         // conversion can't be aborted, but every not-yet-started one bails as 'skipped'.
         results = await mapWithConcurrency(ids, concurrency, async (id) => {
           if (cancelBatchRef.current) return 'skipped'
-          const outcome = await processOne(
+          // runOne, not processOne: this loop is already inside processAll's own
+          // begin/end pair, and calling the bracketed processOne here would open and
+          // close a batch per track, flushing (and rewriting collection.nml) 300 times
+          // over a 300-track run instead of the one write batching exists to produce.
+          const outcome = await runOne(
             id,
             pinnedFormat,
             normalizeOverride,
@@ -434,6 +478,10 @@ export function useTrackProcessing({
         // top-bar fraction, or the bar sticks at 100% and skews every later sweep.
         setBatchProgress({ done: 0, total: 0 })
         setBatchSummary(summarizeBatch(results))
+        // In the finally, not after: a cancelled or failed run must still flush main's
+        // recorded Traktor patches, or they linger and get applied to the collection
+        // during the NEXT batch instead.
+        window.api.endConversionBatch()
       }
       // After the summary, never mid-run: a run that converted nothing (all skipped or
       // failed) is no moment of value, so asking for support then would read as nagware.

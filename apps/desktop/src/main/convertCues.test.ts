@@ -8,9 +8,13 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
+let traktorNmlPath = ''
+vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath }) }))
+
 import type { TrackMetadata } from '../shared/types'
 import { decodeBase91, encodeBase91 } from './base91'
-import { convertAudio } from './ffmpeg'
+import { convertAudio, toNmlLocation } from './ffmpeg'
+import { beginNmlBatch, endNmlBatch } from './nmlBatch'
 import { buildTraktorTree, readTraktorCueStart, traktorCue } from './traktor4Fixture'
 
 const FF = ffmpegStatic as unknown as string
@@ -94,11 +98,25 @@ function hasPopm(file: string): boolean {
   }
 }
 
+const cover = join(dir, 'cover.jpg')
+
 beforeAll(() => {
   // A real, decodable integer-PCM AIFF so convertAudio's probe/re-encode runs for
   // real, with a raw Traktor GEOB cue frame written into its ID3 chunk.
   execFileSync(FF, ['-y', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1', src])
   injectAiffCue(src)
+  execFileSync(FF, [
+    '-y',
+    '-loglevel',
+    'error',
+    '-f',
+    'lavfi',
+    '-i',
+    'color=c=red:s=16x16:d=1',
+    '-frames:v',
+    '1',
+    cover,
+  ])
 })
 
 describe('convertAudio cue preservation', () => {
@@ -268,5 +286,117 @@ describe('convertAudio cue preservation', () => {
       true, // clearExtras
     )
     expect(hasCue(out)).toBe(false)
+  })
+
+  // El NML se actualiza con lo que la conversión dejó en el fichero de salida, así
+  // que el patch se registra después de escribir los cues, no antes. Sin ruta de
+  // colección configurada no se registra nada: la feature está apagada.
+  it('records a collection patch for a converted track when a collection is configured', async () => {
+    traktorNmlPath = '/Users/dj/collection.nml'
+    beginNmlBatch()
+    const out = join(dir, 'out-nml.flac')
+    await convertAudio(src, out, 'flac', { ...meta, bpm: '138.30' })
+
+    const patches = endNmlBatch()
+
+    expect(patches).toHaveLength(1)
+    expect(patches[0].file).toBe('in.aiff')
+    expect(patches[0].newFile).toBe('out-nml.flac')
+    expect(patches[0].bpm).toBeCloseTo(138.3)
+    expect(patches[0].cueTree).toBeDefined()
+  })
+
+  // meta.bpm es un string: una pista sin BPM tiene que llegar como undefined, nunca
+  // como NaN. Un NaN parece un valor y se cuela hasta el filtro de cuesToXml, donde
+  // descarta el ancla de rejilla sin decir nada — el fallo silencioso que esta guarda
+  // existe para evitar.
+  it('leaves the bpm undefined when the track has none', async () => {
+    traktorNmlPath = '/Users/dj/collection.nml'
+    beginNmlBatch()
+    await convertAudio(src, join(dir, 'out-nobpm.flac'), 'flac', { ...meta, bpm: '' })
+
+    expect(endNmlBatch()[0].bpm).toBeUndefined()
+  })
+
+  // Con la ruta vacía (por defecto) no se toca nada: ni lecturas de disco extra ni
+  // patches acumulados que nadie va a volcar.
+  it('records nothing when no collection path is configured', async () => {
+    traktorNmlPath = ''
+    beginNmlBatch()
+    await convertAudio(src, join(dir, 'out-off.flac'), 'flac', meta)
+
+    expect(endNmlBatch()).toEqual([])
+  })
+
+  // Hallazgo crítico 1: el caso por defecto (overwriteOriginal: false) manda la
+  // salida a outputDir, una carpeta distinta de la del origen. volume/dir salen
+  // del INPUT; newFile, del basename del OUTPUT — si newFile se escribiera igual
+  // aquí, la ENTRY quedaría repuntada a un FICHERO QUE NO EXISTE en la carpeta del
+  // origen (mismo volume/dir, nombre del output) y Traktor la marcaría perdida,
+  // con su historial de playlists y reproducciones. Cuando el output cae en otra
+  // carpeta, newFile debe quedar undefined: sólo los cues se actualizan in place,
+  // sobre la ENTRY que sigue apuntando al fichero que de verdad está ahí.
+  it('does not repoint the entry when the output lands in a different directory than the input', async () => {
+    traktorNmlPath = '/Users/dj/collection.nml'
+    beginNmlBatch()
+    const otherDir = mkdtempSync(join(tmpdir(), 'surco-cues-outdir-'))
+    const out = join(otherDir, 'out-elsewhere.flac')
+    await convertAudio(src, out, 'flac', { ...meta, bpm: '138.30' })
+
+    const patches = endNmlBatch()
+
+    expect(patches).toHaveLength(1)
+    expect(patches[0].file).toBe('in.aiff')
+    expect(patches[0].newFile).toBeUndefined()
+    expect(patches[0].cueTree).toBeDefined()
+  })
+
+  // Hallazgo importante 3: clearCoverArt existe en NmlPatch y está probado a nivel
+  // de applyPatches, pero nada en producción lo fijaba nunca — la mitad del
+  // problema que motiva la feature (Traktor sigue mostrando la carátula vieja
+  // cacheada por COVERARTID) seguía sin arreglarse. Cuando la conversión escribió
+  // una carátula nueva en el fichero (coverPath presente y removeCover no activo,
+  // la misma señal que ya usa embedCover/finderCovers arriba), el patch debe pedir
+  // que Traktor la relea en vez de servir la que tiene en caché.
+  it('sets clearCoverArt on the patch when the conversion wrote artwork', async () => {
+    traktorNmlPath = '/Users/dj/collection.nml'
+    beginNmlBatch()
+    const out = join(dir, 'out-cover.flac')
+    await convertAudio(src, out, 'flac', meta, cover)
+
+    const patches = endNmlBatch()
+
+    expect(patches).toHaveLength(1)
+    expect(patches[0].clearCoverArt).toBe(true)
+  })
+
+  // La otra cara: sin carátula que escribir (coverPath ausente), el patch no debe
+  // pedir un borrado que no corresponde a nada que la conversión haya cambiado.
+  it('does not set clearCoverArt when the conversion wrote no artwork', async () => {
+    traktorNmlPath = '/Users/dj/collection.nml'
+    beginNmlBatch()
+    const out = join(dir, 'out-nocover.flac')
+    await convertAudio(src, out, 'flac', meta)
+
+    const patches = endNmlBatch()
+
+    expect(patches[0].clearCoverArt).toBeFalsy()
+  })
+})
+
+describe('toNmlLocation', () => {
+  // Traktor no guarda la ruta del sistema: parte el volumen, la carpeta en su
+  // sintaxis /: y el fichero. Una traducción mal hecha no falla — no casa ninguna
+  // ENTRY, que es el fallo silencioso que más cuesta diagnosticar.
+  it('splits a volume path into the collection s own shape', () => {
+    expect(toNmlLocation('/Volumes/Musica_Sono/MUSICA/track.aiff')).toEqual({
+      volume: 'Musica_Sono',
+      dir: '/:MUSICA/:',
+      file: 'track.aiff',
+    })
+  })
+
+  it('keeps nested folders in order', () => {
+    expect(toNmlLocation('/Volumes/X/A/B/t.mp3').dir).toBe('/:A/:B/:')
   })
 })

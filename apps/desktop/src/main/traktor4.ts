@@ -46,6 +46,97 @@ function checksum(tree: Uint8Array, chksOff: number): number {
   return sum >>> 0
 }
 
+// Walks a TRMD tree and hands back every CUEP frame's byte span, alongside the
+// CHKS offset both callers need to validate the blob. Shared by shiftTraktorCues
+// (which rewrites the spans in place) and readTraktorMarkers (which only reads
+// them) so the binary layout is parsed in exactly one place — a format change
+// only has to be fixed here. Returns null when the tree isn't a well-formed,
+// checksum-verified TRMD; both callers treat that as "nothing to do".
+function walkTraktorTree(
+  tree: Uint8Array,
+): { view: DataView; cueps: { off: number; len: number }[]; chksOff: number } | null {
+  if (tree.length < CUE_HEADER_BYTES || tagAt(tree, 0) !== 'TRMD') return null
+  const view = new DataView(tree.buffer, tree.byteOffset, tree.byteLength)
+
+  let chksOff = -1
+  const cueps: { off: number; len: number }[] = []
+  const walk = (off: number, end: number): number => {
+    if (off + CUE_HEADER_BYTES > end) throw new Error('truncated frame header')
+    const tag = tagAt(tree, off)
+    const length = view.getUint32(off + 4, true)
+    const children = view.getUint32(off + 8, true)
+    let cursor = off + CUE_HEADER_BYTES
+    if (children > 0) {
+      for (let i = 0; i < children; i++) cursor = walk(cursor, end)
+      return cursor
+    }
+    if (cursor + length > end) throw new Error('frame overruns tree')
+    if (tag === 'CHKS') {
+      if (length !== 4) throw new Error('unexpected CHKS length')
+      chksOff = cursor
+    }
+    if (tag === 'CUEP') cueps.push({ off: cursor, len: length })
+    return cursor + length
+  }
+  const consumed = walk(0, tree.length)
+  if (consumed !== tree.length || chksOff === -1) return null
+
+  // Only touch blobs whose checksum we can reproduce: a mismatch means a
+  // scheme (or a corruption) we don't understand.
+  if (checksum(tree, chksOff) !== view.getUint32(chksOff, true)) return null
+
+  return { view, cueps, chksOff }
+}
+
+export interface TraktorMarker {
+  name: string
+  type: number
+  startMs: number
+  hotcue: number
+}
+
+// Reads the cues and grid anchor back out of a TRMD tree, for copying them into
+// the NML as CUE_V2 elements. TYPE=4's startMs is a phase, not a position — see
+// shiftGridAnchor above; callers must carry it through unchanged, never clamp it.
+export function readTraktorMarkers(tree: Uint8Array): TraktorMarker[] {
+  try {
+    const walked = walkTraktorTree(tree)
+    if (walked === null) return []
+    const { view, cueps } = walked
+
+    const markers: TraktorMarker[] = []
+    for (const { off, len } of cueps) {
+      const end = off + len
+      let cursor = off
+      const count = view.getUint32(cursor, true)
+      cursor += 4
+      for (let i = 0; i < count; i++) {
+        cursor += 4 // constant field (always 1)
+        const nameLen = view.getUint32(cursor, true)
+        cursor += 4
+        let name = ''
+        for (let c = 0; c < nameLen; c++) {
+          name += String.fromCharCode(view.getUint16(cursor, true))
+          cursor += 2
+        }
+        cursor += 4 // display order
+        const type = view.getInt32(cursor, true)
+        cursor += 4
+        if (cursor + 16 + 8 > end) throw new Error('cue entry overruns CUEP')
+        const startMs = view.getFloat64(cursor, true)
+        cursor += 16 // start + length doubles
+        cursor += 4 // repeats
+        const hotcue = view.getInt32(cursor, true)
+        cursor += 4
+        markers.push({ name, type, startMs, hotcue })
+      }
+    }
+    return markers
+  } catch {
+    return []
+  }
+}
+
 // Re-anchors every cue position after a head trim: each start moves back by
 // shiftMs (clamped to 0 — a cue inside the removed lead-in lands on the new
 // track start) and, when the tail was cut too, forward positions clamp to the
@@ -74,38 +165,14 @@ export function shiftTraktorCues(
     for (let i = declared; i < source.length; i++) if (source[i] !== 0) return null
 
     const tree = new Uint8Array(source.subarray(0, declared))
-    const view = new DataView(tree.buffer, tree.byteOffset, tree.byteLength)
 
     // A usable tempo is what makes the grid anchor re-anchorable; without one we
     // can still move plain cues, but a grid marker would have to be guessed at.
     const beatMs = bpm !== undefined && Number.isFinite(bpm) && bpm > 0 ? 60000 / bpm : undefined
 
-    let chksOff = -1
-    const cueps: { off: number; len: number }[] = []
-    const walk = (off: number, end: number): number => {
-      if (off + CUE_HEADER_BYTES > end) throw new Error('truncated frame header')
-      const tag = tagAt(tree, off)
-      const length = view.getUint32(off + 4, true)
-      const children = view.getUint32(off + 8, true)
-      let cursor = off + CUE_HEADER_BYTES
-      if (children > 0) {
-        for (let i = 0; i < children; i++) cursor = walk(cursor, end)
-        return cursor
-      }
-      if (cursor + length > end) throw new Error('frame overruns tree')
-      if (tag === 'CHKS') {
-        if (length !== 4) throw new Error('unexpected CHKS length')
-        chksOff = cursor
-      }
-      if (tag === 'CUEP') cueps.push({ off: cursor, len: length })
-      return cursor + length
-    }
-    const consumed = walk(0, tree.length)
-    if (consumed !== tree.length || chksOff === -1) return null
-
-    // Only touch blobs whose checksum we can reproduce: a mismatch means a
-    // scheme (or a corruption) we don't understand.
-    if (checksum(tree, chksOff) !== view.getUint32(chksOff, true)) return null
+    const walked = walkTraktorTree(tree)
+    if (walked === null) return null
+    const { view, cueps, chksOff } = walked
 
     for (const { off, len } of cueps) {
       const end = off + len

@@ -45,8 +45,14 @@ function track(
 
 function setApi(over: Record<string, unknown>): void {
   // beginConversionBatch fires at the top of every processAll run (it resets main's
-  // conflict-decision memory), so stub it by default; a test that cares can still override.
-  ;(window as unknown as { api: unknown }).api = { beginConversionBatch: vi.fn(), ...over }
+  // conflict-decision memory) and endConversionBatch at the end of every run (it flushes
+  // main's recorded Traktor patches), so stub both by default; a test that cares can
+  // still override.
+  ;(window as unknown as { api: unknown }).api = {
+    beginConversionBatch: vi.fn(),
+    endConversionBatch: vi.fn(),
+    ...over,
+  }
 }
 
 // The hook evicts probe caches on in-place exports, so every render needs a
@@ -783,6 +789,136 @@ describe('useTrackProcessing', () => {
       await result.current.processAll(tracks)
     })
     expect(result.current.batchProgress).toEqual({ done: 0, total: 0 })
+  })
+
+  // The volume of the NML sync goes at the end of the batch, not per track: a
+  // collection.nml can weigh tens of megabytes, so one write per run, not one per track.
+  it('closes the conversion batch so the collection is written once', async () => {
+    const endConversionBatch = vi.fn()
+    setApi({
+      processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }),
+      endConversionBatch,
+    })
+    const tracks = [track({ id: 'a' }), track({ id: 'b' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    expect(endConversionBatch).toHaveBeenCalledTimes(1)
+  })
+
+  // A cancelled or failed batch must still close: skipping it here would leave the
+  // patches recorded so far in main's batch state, and the NEXT run's flush would
+  // apply them — the wrong tracks, at the wrong time.
+  it('closes the conversion batch even when it was cancelled mid-run', async () => {
+    let releaseFirst: (v: { outputPath: string }) => void = () => {}
+    const processTrack = vi.fn().mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          releaseFirst = resolve
+        }),
+    )
+    const endConversionBatch = vi.fn()
+    setApi({ processTrack, cancelJob: vi.fn(), endConversionBatch })
+    const tracks = [track({ id: 'a' }), track({ id: 'b' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn(), concurrency: 1 }),
+      { wrapper: withClient() },
+    )
+    let run: Promise<void> = Promise.resolve()
+    act(() => {
+      run = result.current.processAll(tracks)
+    })
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+
+    act(() => result.current.cancelBatch())
+    releaseFirst({ outputPath: '/out/a.aiff' })
+    await act(async () => {
+      await run
+    })
+
+    expect(endConversionBatch).toHaveBeenCalledTimes(1)
+  })
+
+  // A lone convert (the Editor's convert button, or ⌘⏎) never goes through processAll,
+  // so nothing else brackets it — without its own begin/end the patch ffmpeg.ts records
+  // for it sits in main's batch state until some later run's flush either swallows it
+  // (counted as if that batch produced it) or resetNmlPatches discards it outright.
+  it('closes its own batch for a lone processOne call outside processAll', async () => {
+    const beginConversionBatch = vi.fn()
+    const endConversionBatch = vi.fn()
+    setApi({
+      processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }),
+      beginConversionBatch,
+      endConversionBatch,
+    })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(() => result.current.processOne('a'))
+    expect(beginConversionBatch).toHaveBeenCalledTimes(1)
+    expect(endConversionBatch).toHaveBeenCalledTimes(1)
+  })
+
+  // The other half of the same guarantee: processAll's internal per-track calls must
+  // NOT each open and close their own batch, or a 300-track run would flush the
+  // collection 300 times instead of the one write batching exists to produce.
+  it('does not bracket processAll’s internal per-track conversions with their own batch', async () => {
+    const beginConversionBatch = vi.fn()
+    const endConversionBatch = vi.fn()
+    setApi({
+      processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }),
+      beginConversionBatch,
+      endConversionBatch,
+    })
+    const tracks = [track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    expect(beginConversionBatch).toHaveBeenCalledTimes(1)
+    expect(endConversionBatch).toHaveBeenCalledTimes(1)
+  })
+
+  // Pins the actual reason endConversionBatch must live in the finally, not just after
+  // it: a batch that CANCELS resolves normally (mapWithConcurrency returns 'skipped'),
+  // so code placed right after a try without a finally would still run. A batch that
+  // THROWS is the case that only a real finally catches — without it, a rejected
+  // processOne would skip the flush and leak this batch's patches into the next run.
+  it('closes the conversion batch even when a track conversion throws', async () => {
+    setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }) })
+    const endConversionBatch = vi.fn()
+    ;(window as unknown as { api: { endConversionBatch: () => void } }).api.endConversionBatch =
+      endConversionBatch
+    // updateTrack runs synchronously inside processOne, outside its own try/catch — an
+    // updateTrack that throws is what actually rejects processAll's try block, unlike a
+    // rejected processTrack (processOne catches that itself and returns 'failed').
+    const updateTrack = vi.fn(() => {
+      throw new Error('boom')
+    })
+    const tracks = [track({ id: 'a' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack, concurrency: 1 }),
+      { wrapper: withClient() },
+    )
+    await expect(
+      act(async () => {
+        await result.current.processAll(tracks)
+      }),
+    ).rejects.toThrow('boom')
+    expect(endConversionBatch).toHaveBeenCalledTimes(1)
   })
 
   // Same contract for the other sweep that rides the shared batch state.

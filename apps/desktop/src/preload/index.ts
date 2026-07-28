@@ -58,6 +58,8 @@ const api: Api = {
   pickFiles: () => ipcRenderer.invoke('dialog:pickFiles'),
   pickOutputDir: () => ipcRenderer.invoke('dialog:pickOutputDir'),
   pickEngineLibraryDir: () => ipcRenderer.invoke('dialog:pickEngineLibraryDir'),
+  pickTraktorNmlPath: () => ipcRenderer.invoke('dialog:pickTraktorNmlPath'),
+  detectTraktorNmlPath: () => ipcRenderer.invoke('traktor:detectNmlPath'),
   exportRekordbox: (xml: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:exportRekordbox', xml),
   exportTraktor: (nml: string): Promise<string | null> =>
@@ -92,6 +94,7 @@ const api: Api = {
     ipcRenderer.invoke('applemusic:delete', persistentId, track),
   processTrack: (job) => ipcRenderer.invoke('process:track', job),
   beginConversionBatch: (): void => ipcRenderer.send('process:batch-begin'),
+  endConversionBatch: (): void => ipcRenderer.send('process:batch-end'),
   cancelJob: (jobId: string): void => ipcRenderer.send('process:cancel', jobId),
   exportCover: (job) => ipcRenderer.invoke('cover:export', job),
   prepareCoverDrag: (src) => ipcRenderer.invoke('cover:prepareDrag', src),

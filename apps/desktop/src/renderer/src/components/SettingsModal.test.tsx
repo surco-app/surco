@@ -12,6 +12,7 @@ vi.hoisted(() => {
     defaultConfigDir: async () => '/Users/test/Library/Application Support/Surco',
     cacheStats: async () => ({ files: 0, bytes: 0 }),
     clearCache: async () => {},
+    detectTraktorNmlPath: async () => null,
   }
 })
 
@@ -40,6 +41,7 @@ const settings: Settings = {
   convertBesideOriginal: false,
   addToEngineDj: false,
   engineLibraryDir: '/music/Engine Library',
+  traktorNmlPath: '',
   engineDjPlaylist: 'Surco',
   filenameFormat: '',
   titleFormat: '',
@@ -182,6 +184,37 @@ describe('SettingsModal tablist', () => {
     search.focus()
     fireEvent.keyDown(search, { key: 'ArrowDown' })
     expect(screen.getByTestId('settings-tab-editor')).toHaveFocus()
+  })
+})
+
+describe('SettingsModal Traktor collection', () => {
+  // La autodetección PROPONE, nunca impone. El collection.nml es la biblioteca entera
+  // de un DJ, y escribir en una colección que el usuario no ha confirmado no es
+  // aceptable: Traktor crea una carpeta por versión y la del usuario puede estar fuera
+  // del sitio estándar, así que detectar bien no es lo mismo que acertar. Guardar sin
+  // tocar nada tiene que dejar traktorNmlPath vacío aunque se haya detectado una ruta.
+  it('never saves a detected collection path the user did not accept', async () => {
+    const detected = '/Users/test/Documents/Native Instruments/Traktor 4.5.0/collection.nml'
+    const api = (globalThis.window as unknown as { api: Record<string, unknown> }).api
+    const previous = api.detectTraktorNmlPath
+    api.detectTraktorNmlPath = async () => detected
+    const onSave = vi.fn()
+
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={onSave}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    await waitFor(() => expect(screen.getByTestId('settings-save')).toBeInTheDocument())
+    fireEvent.submit(screen.getByTestId('settings-save').closest('form') as HTMLFormElement)
+
+    expect(onSave).toHaveBeenCalled()
+    expect(onSave.mock.calls[0][0]).not.toMatchObject({ traktorNmlPath: detected })
+    api.detectTraktorNmlPath = previous
   })
 })
 

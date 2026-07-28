@@ -54,6 +54,7 @@ import {
   BAND_START_HZ as SHELF_BAND_START_HZ,
   BAND_WIDTH_HZ as SHELF_BAND_WIDTH_HZ,
 } from './hfShelf'
+import { recordNmlPatch } from './nmlBatch'
 import {
   astatsArgs,
   limitedLoudnormFilter,
@@ -68,9 +69,10 @@ import {
   volumedetectArgs,
   volumeFilter,
 } from './normalize'
+import { getSettings } from './settings'
 import { MANAGED_ALIASES, TAG_FIELDS } from './tagFields'
 import { readTagFormats } from './tagFormats'
-import { type CueShift, preservesCuesInPlace, readItunesGrouping } from './tags'
+import { type CueShift, preservesCuesInPlace, readCueTree, readItunesGrouping } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
 import { type ChannelWave, WAVEFORM_BUCKETS, WAVEFORM_SAMPLE_RATE } from './waveform'
@@ -981,6 +983,86 @@ export function convertTmpPath(output: string, ext: string): string {
 // dither energy up where it's least audible.
 const DITHER_FILTER = 'aresample=out_sample_fmt=s16:dither_method=triangular_hp'
 
+// Traktor never stores a filesystem path: an ENTRY's LOCATION splits it into a
+// VOLUME name, a DIR in Traktor's own "/:folder/:subfolder/:" syntax, and a bare
+// FILE. Ground truth for this shape, checked against real collections:
+// split_os_path() (macOS volume/Windows drive letter split) and friendly_to_dir()
+// (the "/A/B/" -> "/:A/:B/:" folder encoding) in traktor_nml_cleaner.py. A path
+// under neither /Volumes/ nor a Windows drive letter (e.g. the internal boot
+// volume) keeps VOLUME as Traktor itself does: empty, with the whole path folded
+// into DIR — split_os_path's fallback returns no volume for that case.
+export function toNmlLocation(path: string): { volume: string; dir: string; file: string } {
+  const normalized = path.replace(/\\/g, '/').replace(/\/+$/, '')
+  const file = basename(normalized)
+  const folderPath = dirname(normalized)
+  const windowsDrive = folderPath.match(/^([A-Za-z]):(\/.*)?$/)
+  const volumesMatch = folderPath.match(/^\/Volumes\/([^/]+)(\/.*)?$/)
+  const [volume, folder] = windowsDrive
+    ? [`${windowsDrive[1].toUpperCase()}:`, windowsDrive[2] || '/']
+    : volumesMatch
+      ? [volumesMatch[1], volumesMatch[2] || '/']
+      : ['', folderPath || '/']
+  // friendly_to_dir: force leading/trailing "/", then turn every "/" into "/:".
+  const withSlashes = `${folder.startsWith('/') ? '' : '/'}${folder}${folder.endsWith('/') ? '' : '/'}`
+  const dir = withSlashes.replace(/\//g, '/:')
+  return { volume, dir, file }
+}
+
+// Best-effort and gated on a configured collection path so the feature costs
+// nothing (no extra disk read, no accumulated patch) when it's off, which is the
+// default. Reads the cue tree from the OUTPUT — the file as it now exists on disk
+// — never the input, since a trim already re-anchored the cues there. VOLUME/DIR/
+// FILE come from the INPUT path instead: that's the path Traktor has on file for
+// this ENTRY, and newFile carries the rename separately. A failure here (unreadable
+// tree, unparseable path) skips the record silently: the audio and its tags are
+// already correct on disk, and this only feeds a later, separate NML write.
+//
+// newFile only gets set when the output stayed in the SAME directory as the
+// input (overwriteOriginal / in-place edits, including a same-format rename):
+// that's the one case where the ENTRY genuinely should follow the file, because
+// the file it names still exists right there. The default path — output goes to
+// the configured outputDir, a DIFFERENT directory (see inplace.ts) — builds
+// volume/dir from the input, so a newFile there would repoint LOCATION at a
+// FILE that shares the INPUT's folder but was actually written elsewhere: a
+// path nothing lives at. Traktor would mark the track missing and the DJ loses
+// its playlist membership and play count. Leaving newFile unset keeps the
+// ENTRY pointed at the file Traktor still knows, cues updated in place — worse
+// than a rename that actually lands, but strictly better than a dangling one.
+function recordConversionPatch(
+  input: string,
+  output: string,
+  meta: TrackMetadata,
+  wroteArtwork: boolean,
+): void {
+  if (!getSettings().traktorNmlPath) return
+  try {
+    const { volume, dir, file } = toNmlLocation(input)
+    const outputName = basename(output)
+    const sameDir = dirname(input) === dirname(output)
+    // meta.bpm is user-editable free text; empty or non-numeric must come out as
+    // undefined; a NaN would pass around looking like a value and only fail
+    // silently at cuesToXml's `> 0` check, dropping the beatgrid without a trace.
+    const parsedBpm = Number(meta.bpm)
+    const bpm = meta.bpm.trim() !== '' && Number.isFinite(parsedBpm) ? parsedBpm : undefined
+    recordNmlPatch({
+      volume,
+      dir,
+      file,
+      newFile: sameDir && outputName !== file ? outputName : undefined,
+      cueTree: readCueTree(output) ?? undefined,
+      bpm,
+      // Traktor caches artwork by COVERARTID and keeps serving it even after the
+      // file on disk gets a new cover — the same stale-cache mechanism the cue
+      // handling above exists to fix. wroteArtwork mirrors embedCover/finderCovers'
+      // own signal (coverPath present, removeCover not set): only when a fresh
+      // cover actually landed in the output is there anything for Traktor to re-read.
+      clearCoverArt: wroteArtwork || undefined,
+    })
+  } catch {
+    // Best-effort: see comment above.
+  }
+}
+
 export async function convertAudio(
   input: string,
   output: string,
@@ -1180,6 +1262,10 @@ export async function convertAudio(
     if (finderCovers && ext === '.flac' && coverPath && !removeCover)
       await runInWorker({ type: 'prependFlacId3', file: tmp, meta, coverPath })
     await rename(tmp, output)
+    // Comes after the rename, not before: the patch has to describe the file as
+    // it now exists at `output`, and the cue-writing branches above (copyCueFrames,
+    // copyCuesToFlac, shiftFlacCues) only ever touched `tmp`.
+    recordConversionPatch(input, output, meta, !!(coverPath && !removeCover))
   } catch (e) {
     await unlink(tmp).catch(() => {})
     throw e

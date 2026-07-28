@@ -8,6 +8,7 @@ import { File as TagFile } from 'node-taglib-sharp'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
+vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 import { resolveJobFormat } from '../shared/format'
 import type { TrackMetadata } from '../shared/types'

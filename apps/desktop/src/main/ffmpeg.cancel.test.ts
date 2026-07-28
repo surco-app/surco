@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
+vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 // Capture every spawn so we can assert the cancellable analysis reads hand their
 // AbortSignal to execFile — Node kills the child on abort, which is the only way a

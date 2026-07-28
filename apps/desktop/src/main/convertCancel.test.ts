@@ -6,6 +6,7 @@ import ffmpegStatic from 'ffmpeg-static'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
+vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 import type { TrackMetadata } from '../shared/types'
 import { convertAudio } from './ffmpeg'

@@ -41,6 +41,10 @@ export const defaults: Settings = {
   addToEngineDj: false,
   // Engine DJ's default library location on both macOS and Windows.
   engineLibraryDir: join(app.getPath('music'), 'Engine Library'),
+  // Traktor's collection folder varies by version and user preference (Traktor 4.4.1, 4.5.0, …
+  // often kept outside the standard location), so no reliable default — empty means the feature
+  // is off until the user points Surco at their collection.nml.
+  traktorNmlPath: '',
   engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
   titleFormat: '',
@@ -110,6 +114,8 @@ export const defaults: Settings = {
 const LOCAL_KEYS = [
   'outputDir',
   'engineLibraryDir',
+  // Traktor collection path is machine-specific: the folder doesn't exist on another Mac.
+  'traktorNmlPath',
   'hasSeenOnboarding',
   'conversionCount',
   'stats',

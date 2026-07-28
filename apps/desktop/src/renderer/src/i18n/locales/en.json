@@ -738,6 +738,11 @@
     "engineLibraryDirHint": "Surco writes into this library's database. Close Engine DJ while converting.",
     "engineDjPlaylist": "Playlist",
     "engineDjPlaylistHint": "Converted tracks are added to this playlist in your library, on top of the collection.",
+    "traktorSync": "Traktor collection",
+    "traktorNmlPath": "collection.nml",
+    "traktorNmlPathHint": "When set, converted tracks' cue points and beatgrid are written into this Traktor collection. Leave empty to turn this off.",
+    "traktorNmlPathDetectedHint": "Found automatically — not applied until you choose to use it.",
+    "traktorNmlPathUseDetected": "Use this",
     "appleMusicFlacNote": "Apple Music can't play FLAC, so converted tracks stay in the output folder while FLAC is your format.",
     "filenameFormat": "File name format",
     "titleFormatHint": "Rebuilds the title from other fields. Applied only when you ask — from the title field’s ⋯ menu or the command palette — never automatically.",
@@ -994,6 +999,14 @@
     "autoMatchReviewUncorroboratedDetail": "{{release}} → {{track}}\nConfidence: {{confidence}} % · duration {{duration}} · artist {{artist}} · catalog # {{catno}}\nFlagged for review: only the title matches; no independent signal (duration, artist, catalog #) corroborates it.\nCandidates probed:\n{{candidates}}",
     "autoMatchNoneDetail": "No candidate reached the minimum confidence.\nCandidates probed:\n{{candidates}}",
     "autoMatchNoCandidates": "The search returned no candidates to probe.",
-    "probeClicks": "Counting clicks"
+    "probeClicks": "Counting clicks",
+    "traktorSync": "Updating the Traktor collection",
+    "traktorSyncWritten_one": "{{count}} track updated in collection.nml",
+    "traktorSyncWritten_other": "{{count}} tracks updated in collection.nml",
+    "traktorSyncTraktorRunning": "Skipped: Traktor was open",
+    "traktorSyncBackupFailed": "Skipped: couldn't back up collection.nml first",
+    "traktorSyncNoMatches": "Skipped: none of these tracks are in the collection",
+    "traktorSyncUnreadable": "Skipped: couldn't read collection.nml",
+    "traktorSyncWriteFailed": "Skipped: couldn't write collection.nml"
   }
 }

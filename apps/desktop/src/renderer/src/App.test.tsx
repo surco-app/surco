@@ -90,6 +90,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     convertBesideOriginal: false,
     addToEngineDj: false,
     engineLibraryDir: '/music/Engine Library',
+    traktorNmlPath: '',
     engineDjPlaylist: 'Surco',
     filenameFormat: '{artist} - {title}',
     titleFormat: '',
@@ -194,6 +195,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     defaultConfigDir: vi.fn().mockResolvedValue('/Users/test/Library/Application Support/Surco'),
     cacheStats: vi.fn().mockResolvedValue({ files: 0, bytes: 0 }),
     clearCache: vi.fn().mockResolvedValue(undefined),
+    detectTraktorNmlPath: vi.fn().mockResolvedValue(null),
     onMenuCommand: () => () => {},
     onProcessProgress: () => () => {},
     onActivity: () => () => {},
@@ -244,8 +246,10 @@ function setApi(over: Record<string, unknown> = {}): void {
     onDeclickPreviewProgress: vi.fn().mockReturnValue(() => {}),
     cancelDeclickPreview: vi.fn().mockResolvedValue(undefined),
     // Fired at the top of every convert-all run (it resets main's conflict-decision
-    // memory) and to cancel a single convert; stub both so processAll doesn't throw.
+    // memory), at the end of every run (it flushes main's recorded Traktor patches), and
+    // to cancel a single convert; stub all so processAll doesn't throw.
     beginConversionBatch: vi.fn(),
+    endConversionBatch: vi.fn(),
     cancelJob: vi.fn(),
     ...over,
   }
