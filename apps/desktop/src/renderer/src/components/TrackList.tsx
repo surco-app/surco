@@ -298,7 +298,13 @@ const TrackRow = memo(function TrackRow({
         }}
         onMouseEnter={() => onPrefetch(t.id)}
         onFocus={() => onPrefetch(t.id)}
-        className={`group/row relative flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] transition-colors ${
+        className={`group/row relative flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] ${
+          // A selected row paints its fill on the keystroke: ↑/↓ and j/k run through this
+          // list constantly, and easing the fill in leaves the highlight a step behind the
+          // cursor. Only the unselected rows animate, where the transition belongs to the
+          // hover tint and its mouse pace suits it.
+          selected ? 'transition-none' : 'transition-colors'
+        } ${
           // One solid-fill focal for the primary row (the one open in the editor) — it reads
           // as "this is what you're editing" at a glance, the way Finder/Mail fill the active
           // row. It uses the dedicated selection blue (deeper than the light accent, so it
