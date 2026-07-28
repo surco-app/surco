@@ -272,45 +272,47 @@ export function Player({
             </MarqueeText>
           </span>
 
-          {/* The artist now has the second line to itself, directly under the title. */}
-          <span className="min-w-0 truncate text-fg-dim text-xs leading-tight">
-            {track.meta.artist}
-          </span>
+          {/* Artist and clock share the second line: artist names are short enough that the
+              line had space going spare, and the right end of it is a fixed home for the
+              elapsed time in both layouts. That frees the wave of its last overlay — every
+              pixel of it now takes the click that seeks there — and the artist truncates
+              rather than pushing the clock, which keeps its own width with tabular digits. */}
+          <div
+            data-testid="player-identity"
+            className="flex min-w-0 items-baseline gap-2 text-fg-dim text-xs leading-tight"
+          >
+            <span className="min-w-0 flex-1 truncate">{track.meta.artist}</span>
+            <span data-testid="player-time" className="shrink-0 text-[11px] tabular-nums">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </span>
+          </div>
         </div>
       </div>
 
       {/* The waveform runs full-bleed to the card edges (the rounded card clips its
           corners) so the whole width is scrubbable. Auditioning means clicking along the
-          wave to jump around the track, so nothing that takes pointer events may sit on
-          it: the clock is the only overlay, and it is pointer-events-none so a click
-          still reaches the wave underneath. Volume lives on the transport row instead.
+          wave to jump around the track, so nothing may sit on it at all: the clock was the
+          last overlay and now rides the artist line, and volume lives on the transport row.
           Hidden by the toggle, the whole strip is unmounted so its full-file decode never
           runs — the point of the preference. The wrapper clips and animates the height as
           the two layouts swap (see useLayoutEffect). */}
       <div ref={sectionRef} className="player-section overflow-hidden">
         {showWaveform ? (
-          <div className="relative">
-            <Waveform
-              key={track.inputPath}
-              inputPath={track.inputPath}
-              audioRef={audioRef}
-              active
-              audioDurationSec={duration}
-              onScrub={onScrub}
-            />
-            <span
-              data-testid="player-time"
-              className="pointer-events-none absolute top-1 right-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm"
-            >
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </span>
-          </div>
+          <Waveform
+            key={track.inputPath}
+            inputPath={track.inputPath}
+            audioRef={audioRef}
+            active
+            audioDurationSec={duration}
+            onScrub={onScrub}
+          />
         ) : (
-          // No waveform: one compact line — the progress bar taking the whole width and the
-          // clock at the end, standing in for the wave in the same band. The transport row
-          // below is unchanged, so volume and the buttons stay exactly where they were
-          // whether the wave is on or off, and the card just loses the wave's height.
-          <div className="flex items-center gap-2.5 px-3 pt-1.5 text-[10px] text-fg-dim tabular-nums">
+          // No waveform: one compact line — the progress bar standing in for the wave in the
+          // same band, taking the row's whole width now that the clock lives up on the artist
+          // line in both layouts. The transport row below is unchanged, so volume and the
+          // buttons stay exactly where they were whether the wave is on or off, and the card
+          // just loses the wave's height.
+          <div className="flex items-center px-3 pt-1.5">
             {/* The visible track is 4px, but the button is taller with a centered bar inside,
                 so the clickable target clears the 40px-ish comfort zone — a thin 6px bar was
                 fiddly to hit mid-set. */}
@@ -331,9 +333,6 @@ export function Player({
                 />
               </span>
             </button>
-            <span data-testid="player-time" className="shrink-0">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </span>
           </div>
         )}
       </div>

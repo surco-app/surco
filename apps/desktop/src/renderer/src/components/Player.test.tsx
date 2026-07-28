@@ -249,14 +249,15 @@ describe('Player', () => {
     expect(screen.queryByTestId('waveform')).toBeNull()
   })
 
-  // Hiding the waveform must not hide the transport facts: the volume and the elapsed/total
-  // time the overlay used to carry stay on a slim row, so the player still tells you where
-  // you are.
-  it('keeps the volume and time on a compact row when the waveform is hidden', () => {
+  // Hiding the waveform must not hide the transport facts: the progress bar stands in for
+  // the wave on a slim row, and the clock stays up on the artist line exactly where it sits
+  // with the wave on, so the player still tells you where you are.
+  it('keeps the volume and time when the waveform is hidden', () => {
     renderUI(
       <Player {...props({ showWaveform: false, volume: 0.5, currentTime: 65, duration: 754 })} />,
     )
     expect(screen.queryByTestId('waveform')).toBeNull()
+    expect(screen.getByTestId('player-seek')).toBeInTheDocument()
     expect(screen.getByTestId('player-time')).toHaveTextContent('1:05 / 12:34')
     // Volume is not duplicated on this row: the same speaker sits in the transport above in
     // both layouts, so the whole row width goes to the progress bar.
@@ -320,11 +321,29 @@ describe('Player', () => {
     expect(wave?.querySelector('[data-testid="player-volume-slider"]')).toBeNull()
   })
 
-  // The clock may sit on the wave because it lets clicks through to the wave beneath;
-  // that is the standard any wave overlay has to meet.
-  it('lets clicks through the clock to the wave underneath', () => {
+  // The clock rides the artist's line instead of floating on the wave, so the wave carries
+  // no overlay at all and every pixel of it takes the click that seeks there.
+  it('keeps the clock off the waveform so the whole wave stays scrubbable', () => {
     renderUI(<Player {...props()} />)
-    expect(screen.getByTestId('player-time')).toHaveClass('pointer-events-none')
+    const wave = screen.getByTestId('waveform').parentElement
+    expect(wave).not.toBeNull()
+    expect(wave?.querySelector('[data-testid="player-time"]')).toBeNull()
+  })
+
+  // Album and artist names are short, so the line under the title has room to spare; the
+  // clock takes the right end of it in both layouts, which buys the wave its full height
+  // back and keeps the elapsed time in one fixed place whether the wave is on or off.
+  it('shows the clock on the artist line while the waveform is shown', () => {
+    renderUI(<Player {...props({ showWaveform: true, currentTime: 65, duration: 754 })} />)
+    const identity = screen.getByTestId('player-identity')
+    expect(identity).toHaveTextContent('DJ Carlos')
+    expect(identity.querySelector('[data-testid="player-time"]')).toHaveTextContent('1:05 / 12:34')
+  })
+
+  it('shows the clock on the artist line while the waveform is hidden', () => {
+    renderUI(<Player {...props({ showWaveform: false, currentTime: 65, duration: 754 })} />)
+    const identity = screen.getByTestId('player-identity')
+    expect(identity.querySelector('[data-testid="player-time"]')).toHaveTextContent('1:05 / 12:34')
   })
 
   // Close belongs to the card, not to the transport: dismissing the player is the standard
