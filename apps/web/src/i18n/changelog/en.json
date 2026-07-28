@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.76",
+    "date": "July 28, 2026",
+    "title": "Traktor finally sees the cues Surco writes",
+    "items": [
+      {
+        "text": "Surco can now update your Traktor collection as it converts. Until now it wrote the cues inside the file, but Traktor reads its own database and kept showing the old ones; now it also brings the cues, beatgrid and cover art up to date for tracks Traktor already had. Turn it on in Settings by choosing your collection.nml — Surco suggests the one it finds and touches nothing until you confirm. It always writes a backup first, and if Traktor is open it says so and offers to close it, since otherwise your changes would be lost on exit.",
+        "in": "0.76.0"
+      },
+      {
+        "text": "The app's animations have had a full pass: selection paints instantly, search results ramp in instead of landing all at once, loading bars sweep in one direction rather than pulsing, and the rating star responds when you click it. With the system's reduced-motion setting on, animations simplify instead of disappearing.",
+        "in": "0.76.0"
+      }
+    ]
+  },
+  {
     "version": "0.75",
     "date": "July 26, 2026",
     "title": "Traktor cues now survive trimming on FLAC too",
