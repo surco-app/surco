@@ -32,7 +32,11 @@ export default function HeroShowcase() {
   const { scale, x, y } = cameraTransform(frame)
 
   return (
-    <figure className="relative mx-auto max-w-6xl" onMouseLeave={() => setActive(null)}>
+    // No pointer-leave reset: framing a feature is a click, so undoing it when the pointer
+    // happens to exit throws away a deliberate choice and spends a 900ms pan doing it —
+    // and it only ever fired for mouse users, leaving touch on a different behaviour.
+    // Clicking the active tab again already returns to the full view (see `select`).
+    <figure className="relative mx-auto max-w-6xl">
       <div
         className="pointer-events-none absolute -inset-x-6 -top-10 bottom-10 -z-10"
         style={{
