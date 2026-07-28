@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
+vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 import ffmpegStatic from 'ffmpeg-static'
 import type { TrackMetadata } from '../shared/types'

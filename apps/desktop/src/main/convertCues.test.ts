@@ -8,9 +8,13 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
+let traktorNmlPath = ''
+vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath }) }))
+
 import type { TrackMetadata } from '../shared/types'
 import { decodeBase91, encodeBase91 } from './base91'
-import { convertAudio } from './ffmpeg'
+import { convertAudio, toNmlLocation } from './ffmpeg'
+import { resetNmlPatches, takeNmlPatches } from './nmlBatch'
 import { buildTraktorTree, readTraktorCueStart, traktorCue } from './traktor4Fixture'
 
 const FF = ffmpegStatic as unknown as string
@@ -268,5 +272,50 @@ describe('convertAudio cue preservation', () => {
       true, // clearExtras
     )
     expect(hasCue(out)).toBe(false)
+  })
+
+  // El NML se actualiza con lo que la conversión dejó en el fichero de salida, así
+  // que el patch se registra después de escribir los cues, no antes. Sin ruta de
+  // colección configurada no se registra nada: la feature está apagada.
+  it('records a collection patch for a converted track when a collection is configured', async () => {
+    traktorNmlPath = '/Users/dj/collection.nml'
+    resetNmlPatches()
+    const out = join(dir, 'out-nml.flac')
+    await convertAudio(src, out, 'flac', { ...meta, bpm: '138.30' })
+
+    const patches = takeNmlPatches()
+
+    expect(patches).toHaveLength(1)
+    expect(patches[0].file).toBe('in.aiff')
+    expect(patches[0].newFile).toBe('out-nml.flac')
+    expect(patches[0].bpm).toBeCloseTo(138.3)
+    expect(patches[0].cueTree).toBeDefined()
+  })
+
+  // Con la ruta vacía (por defecto) no se toca nada: ni lecturas de disco extra ni
+  // patches acumulados que nadie va a volcar.
+  it('records nothing when no collection path is configured', async () => {
+    traktorNmlPath = ''
+    resetNmlPatches()
+    await convertAudio(src, join(dir, 'out-off.flac'), 'flac', meta)
+
+    expect(takeNmlPatches()).toEqual([])
+  })
+})
+
+describe('toNmlLocation', () => {
+  // Traktor no guarda la ruta del sistema: parte el volumen, la carpeta en su
+  // sintaxis /: y el fichero. Una traducción mal hecha no falla — no casa ninguna
+  // ENTRY, que es el fallo silencioso que más cuesta diagnosticar.
+  it('splits a volume path into the collection s own shape', () => {
+    expect(toNmlLocation('/Volumes/Musica_Sono/MUSICA/track.aiff')).toEqual({
+      volume: 'Musica_Sono',
+      dir: '/:MUSICA/:',
+      file: 'track.aiff',
+    })
+  })
+
+  it('keeps nested folders in order', () => {
+    expect(toNmlLocation('/Volumes/X/A/B/t.mp3').dir).toBe('/:A/:B/:')
   })
 })
