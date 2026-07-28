@@ -616,11 +616,41 @@ textarea {
   color: var(--color-on-row-selected);
 }
 
+/* Reduced motion means gentler, not nothing. The blanket rule this replaces collapsed every
+   duration to 0.01ms, which also killed the plain opacity fades — and those are what tell
+   someone a dialog arrived or a toast replaced the last one. Cutting them makes the UI snap
+   between states with no explanation, which is a comprehension loss, not an accessibility
+   win. What the setting is actually asking us to drop is MOVEMENT: the travel and the
+   scaling, which is what provokes vestibular symptoms.
+   So the entrances keep their fade and lose their journey — each one re-declared as its
+   opacity half, matching what .donate-pop already did by hand. Transitions are left alone:
+   they carry colour and opacity almost everywhere here, and the few that move (the seek
+   bar's height, the player's) are small, deliberate and user-initiated. */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  ::before,
-  ::after {
-    animation-duration: 0.01ms;
-    transition-duration: 0.01ms;
+  .animate-pop,
+  .animate-pop-flat,
+  .animate-player-in,
+  .donate-pop {
+    animation: overlay-in 0.2s ease;
+  }
+
+  /* The toast's exit still has to END invisible — it is the timer in ToastStack, not this
+     animation, that unmounts the card, so a card that merely stopped moving would sit there
+     fully opaque until its leave timer fired. Fade in place, same duration. */
+  .animate-toast-leave {
+    animation: toast-fade-out 0.2s ease forwards;
+  }
+
+  /* Continuous, non-essential motion stops outright: a spinning disc or a drifting scan band
+     has no state to communicate that its static form doesn't. */
+  .spectrum-scan,
+  .animate-top-progress {
+    animation: none;
+  }
+}
+
+@keyframes toast-fade-out {
+  to {
+    opacity: 0;
   }
 }
