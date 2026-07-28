@@ -10,7 +10,7 @@ function patch(overrides: Partial<NmlPatch> = {}): NmlPatch {
 function makeDeps(overrides: Partial<FlushTraktorSyncDeps> = {}): FlushTraktorSyncDeps {
   return {
     traktorNmlPath: '/Users/me/collection.nml',
-    takeNmlPatches: vi.fn(() => [patch()]),
+    endNmlBatch: vi.fn(() => [patch()]),
     ensureTraktorClosed: vi.fn(async () => true),
     showBlockedDialog: vi.fn(),
     syncCollection: vi.fn(async () => ({ written: true, matched: 1 }) as SyncResult),
@@ -28,13 +28,16 @@ describe('flushTraktorSync', () => {
     const deps = makeDeps({ traktorNmlPath: '' })
     await flushTraktorSync(deps)
 
-    expect(deps.takeNmlPatches).not.toHaveBeenCalled()
+    // endNmlBatch still has to run: it closes this call's begin/end pair regardless of
+    // whether there's anywhere to sync to, or depth would never return to zero and every
+    // later batch would stay "nested" and never flush (see nmlBatch.ts).
+    expect(deps.endNmlBatch).toHaveBeenCalledOnce()
     expect(deps.ensureTraktorClosed).not.toHaveBeenCalled()
     expect(deps.syncCollection).not.toHaveBeenCalled()
   })
 
   it('does nothing when no patches were recorded', async () => {
-    const deps = makeDeps({ takeNmlPatches: vi.fn(() => []) })
+    const deps = makeDeps({ endNmlBatch: vi.fn(() => []) })
     await flushTraktorSync(deps)
 
     expect(deps.ensureTraktorClosed).not.toHaveBeenCalled()
