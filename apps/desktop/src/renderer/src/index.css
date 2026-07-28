@@ -163,6 +163,48 @@ textarea {
   }
 }
 
+/* The loading placeholder's shimmer, sibling to the spectrum's scan above: one directional
+   sweep instead of a throb. A pulse dims the whole block on a slow symmetric curve, which
+   reads as "disabled" rather than "working" — and a panel like the loudness table stacks
+   sixteen of them, so sixteen boxes breathe at once and the section looks like it's
+   flashing.
+   The sweep travels through a background gradient rather than a translated pseudo-element
+   so the highlight is positioned against the VIEWPORT, not each box: every placeholder on
+   screen shares one wavefront and the panel reads as a single surface filling in, instead
+   of each block running its own little animation. That is also why this animates
+   background-position — the one place worth stepping outside transform/opacity, since the
+   painted area is a handful of small rectangles with no text or layout riding on them.
+   Placeholders keep their own bg-* colour; the gradient only carries the moving highlight. */
+.skeleton-sweep {
+  background-image: linear-gradient(
+    90deg,
+    transparent 20%,
+    color-mix(in srgb, var(--color-fg) 8%, transparent) 50%,
+    transparent 80%
+  );
+  background-size: 60vw 100%;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  animation: skeleton-sweep 1.8s linear infinite;
+}
+
+@keyframes skeleton-sweep {
+  0% {
+    background-position: -60vw 0;
+  }
+  100% {
+    background-position: 100vw 0;
+  }
+}
+
+/* Reduced motion keeps the placeholder legible but still: the sweep is pure decoration, and
+   a block that stays put still reads as "not content yet" thanks to its fill. */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-sweep {
+    animation: none;
+  }
+}
+
 /* The dead band above a fake lossless's codec cut: a dark veil, strongest at the top and
    fading toward the cutoff line, that reads as "switched off" — the synthetic silence
    dims out instead of getting painted an alarm color that fights the duotone. The red

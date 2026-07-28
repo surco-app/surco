@@ -185,7 +185,7 @@ export const Field = memo(function Field({
           <span
             data-testid={`suggestion-loading-${name}`}
             aria-hidden="true"
-            className="h-[18px] w-11 animate-pulse rounded-full border border-[var(--color-line-strong)] bg-[var(--color-panel-2)]"
+            className="skeleton-sweep h-[18px] w-11 rounded-full border border-[var(--color-line-strong)] bg-[var(--color-panel-2)]"
           />
         </span>
       )}
