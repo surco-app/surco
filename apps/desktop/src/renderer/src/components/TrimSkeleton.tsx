@@ -9,7 +9,9 @@ import { WaveformSkeleton } from './WaveformSkeleton'
 
 // A greyed stand-in for one of the lane's h-7 controls, sized to the real button widths.
 function CtrlPill({ w }: { w: string }): React.JSX.Element {
-  return <span className={`h-7 ${w} shrink-0 animate-pulse rounded-md bg-[var(--color-panel-2)]`} />
+  return (
+    <span className={`h-7 ${w} shrink-0 skeleton-sweep rounded-md bg-[var(--color-panel-2)]`} />
+  )
 }
 
 function LaneSkeleton({ side }: { side: 'start' | 'end' }): React.JSX.Element {
@@ -18,7 +20,7 @@ function LaneSkeleton({ side }: { side: 'start' | 'end' }): React.JSX.Element {
       {/* The control row: a label on the left, then the nudge/time/nudge cluster and the
           audition/clear/zoom controls — the same shapes the real lane toolbar carries. */}
       <div className="mb-1 flex flex-nowrap items-center gap-1.5">
-        <span className="h-2.5 w-10 animate-pulse rounded bg-[var(--color-panel-2)]" />
+        <span className="h-2.5 w-10 skeleton-sweep rounded bg-[var(--color-panel-2)]" />
         <span className="flex-1" />
         <CtrlPill w="w-5" />
         <CtrlPill w="w-16" />

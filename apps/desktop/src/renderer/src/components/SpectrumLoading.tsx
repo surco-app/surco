@@ -21,8 +21,10 @@ export function SpectrumLoading(): React.JSX.Element {
     >
       {/* The column field: vertical bars of varied height, brightest along the bottom,
           masked to fade out toward the top the way real spectral energy thins with pitch.
-          Pure CSS gradients so it costs nothing and pulses as one. */}
-      <div aria-hidden="true" className="spectrum-skeleton-field absolute inset-0 animate-pulse" />
+          Pure CSS gradients so it costs nothing. Static: the drifting .spectrum-scan band
+          below is this frame's wait cue, and dimming the whole field underneath it made the
+          box read as two animations fighting rather than one surface being scanned. */}
+      <div aria-hidden="true" className="spectrum-skeleton-field absolute inset-0" />
       {/* The frequency ticks, matching the real spectrogram's placement and style. */}
       {FREQ_MARKS.map((f) => (
         <span
@@ -35,7 +37,7 @@ export function SpectrumLoading(): React.JSX.Element {
       ))}
       <span className="spectrum-scan pointer-events-none absolute inset-y-0 left-0 w-1/3" />
       <span className="absolute inset-0 flex items-center justify-center">
-        <span className="animate-pulse rounded bg-[var(--color-panel)]/70 px-2 py-0.5 text-xs text-fg-faint">
+        <span className="rounded bg-[var(--color-panel)]/70 px-2 py-0.5 text-xs text-fg-faint">
           {t('editor.analyzing')}
         </span>
       </span>

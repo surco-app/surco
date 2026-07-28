@@ -170,7 +170,7 @@ export function ExportButton({
           <span
             data-testid="process-progress"
             aria-hidden="true"
-            className="absolute inset-y-0 left-0 bg-[var(--color-accent)] transition-[width] duration-500 animate-pulse"
+            className="progress-sweep absolute inset-y-0 left-0 bg-[var(--color-accent)] transition-[width] duration-500"
             style={{ width: `${STAGE_PROGRESS[liveStage] * 100}%` }}
           />
         )}

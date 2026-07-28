@@ -28,6 +28,10 @@ export function WaveformSkeleton({ testid }: { testid: string }): React.JSX.Elem
       data-testid={testid}
       width={RASTER_W}
       height={RASTER_H}
+      // The one placeholder that keeps the pulse rather than .skeleton-sweep: the bars are
+      // painted into a canvas, so a background gradient would sit behind an opaque raster and
+      // never show. Fading the whole canvas is the only cue CSS can give here, and it works
+      // because the shape underneath already reads as a wave-to-come.
       className="pointer-events-none absolute inset-0 h-full w-full animate-pulse"
     />
   )

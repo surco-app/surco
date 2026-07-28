@@ -145,9 +145,13 @@ export function CommandPalette({
               aria-disabled={!c.enabled}
               onClick={() => runAt(i)}
               onMouseMove={() => setActive(i)}
-              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+              // The row taking the highlight paints it immediately; the ones losing it keep
+              // the fade. Arrowing is a keyboard action repeated all day — a transition on
+              // the incoming row leaves the blue trailing a step behind the cursor — while
+              // hover is mouse-paced and reads better eased.
+              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm ${
                 c.enabled ? 'cursor-pointer' : 'opacity-30'
-              } ${i === active ? 'bg-[var(--color-accent-soft)]' : ''}`}
+              } ${i === active ? 'bg-[var(--color-accent-soft)] transition-none' : 'transition-colors'}`}
             >
               <span>{c.title}</span>
               {c.hint && <span className="ml-4 shrink-0 text-xs text-fg-dim">{c.hint}</span>}

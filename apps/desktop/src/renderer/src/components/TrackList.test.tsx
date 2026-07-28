@@ -361,6 +361,18 @@ describe('TrackList', () => {
     expect(rows[2]).toHaveAttribute('aria-selected', 'false')
   })
 
+  // ↑/↓ and j/k walk this list all day, so the row taking the selection fill has to paint
+  // it on the keystroke. Easing it in means the blue arrives a step after the cursor has
+  // already moved on — the highlight visibly chases the selection down the list. Rows that
+  // are NOT selected keep the transition: that one is the mouse-paced hover tint, which
+  // wants the fade.
+  it('fills the selected row with no colour transition', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' })], 'a', ['a'])
+    const rows = screen.getAllByTestId('track-row')
+    expect(rows[0].className).toContain('transition-none')
+    expect(rows[1].className).toContain('transition-colors')
+  })
+
   // The list is a multi-select listbox of options, so a screen reader announces it as one
   // and the rows as selectable — not a stack of unrelated buttons.
   it('exposes a multi-select listbox of option rows', () => {

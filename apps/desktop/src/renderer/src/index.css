@@ -163,6 +163,83 @@ textarea {
   }
 }
 
+/* The loading placeholder's shimmer, sibling to the spectrum's scan above: one directional
+   sweep instead of a throb. A pulse dims the whole block on a slow symmetric curve, which
+   reads as "disabled" rather than "working" — and a panel like the loudness table stacks
+   sixteen of them, so sixteen boxes breathe at once and the section looks like it's
+   flashing.
+   The sweep travels through a background gradient rather than a translated pseudo-element
+   so the highlight is positioned against the VIEWPORT, not each box: every placeholder on
+   screen shares one wavefront and the panel reads as a single surface filling in, instead
+   of each block running its own little animation. That is also why this animates
+   background-position — the one place worth stepping outside transform/opacity, since the
+   painted area is a handful of small rectangles with no text or layout riding on them.
+   Placeholders keep their own bg-* colour; the gradient only carries the moving highlight. */
+.skeleton-sweep {
+  background-image: linear-gradient(
+    90deg,
+    transparent 20%,
+    color-mix(in srgb, var(--color-fg) 8%, transparent) 50%,
+    transparent 80%
+  );
+  background-size: 60vw 100%;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  animation: skeleton-sweep 1.8s linear infinite;
+}
+
+@keyframes skeleton-sweep {
+  0% {
+    background-position: -60vw 0;
+  }
+  100% {
+    background-position: 100vw 0;
+  }
+}
+
+/* Reduced motion keeps the placeholder legible but still: the sweep is pure decoration, and
+   a block that stays put still reads as "not content yet" thanks to its fill. */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-sweep {
+    animation: none;
+  }
+}
+
+/* The "still working" cue for a progress bar whose width only moves in stage-sized jumps
+   (see STAGE_PROGRESS): between two stages the bar is perfectly still, and on a long stage
+   a still bar reads as a hung one. The fill previously pulsed, which said "working" by
+   dimming the bar to half opacity — attenuating the very thing the bar is there to report.
+   A highlight travelling through the fill says the same thing while the width and colour
+   keep meaning exactly what they mean. Anchored to the bar (no background-attachment) so
+   the travel is proportional to real progress, and linear because it represents ongoing
+   work with no beginning or end to ease. */
+.progress-sweep {
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, #fff 35%, transparent),
+    transparent
+  );
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: progress-sweep 1.2s linear infinite;
+}
+
+@keyframes progress-sweep {
+  0% {
+    background-position: -40% 0;
+  }
+  100% {
+    background-position: 140% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-sweep {
+    animation: none;
+  }
+}
+
 /* The dead band above a fake lossless's codec cut: a dark veil, strongest at the top and
    fading toward the cutoff line, that reads as "switched off" — the synthetic silence
    dims out instead of getting painted an alarm color that fights the duotone. The red
@@ -539,11 +616,105 @@ textarea {
   color: var(--color-on-row-selected);
 }
 
+/* Reduced motion means gentler, not nothing. The blanket rule this replaces collapsed every
+   duration to 0.01ms, which also killed the plain opacity fades — and those are what tell
+   someone a dialog arrived or a toast replaced the last one. Cutting them makes the UI snap
+   between states with no explanation, which is a comprehension loss, not an accessibility
+   win. What the setting is actually asking us to drop is MOVEMENT: the travel and the
+   scaling, which is what provokes vestibular symptoms.
+   So the entrances keep their fade and lose their journey — each one re-declared as its
+   opacity half, matching what .donate-pop already did by hand. Transitions are left alone:
+   they carry colour and opacity almost everywhere here, and the few that move (the seek
+   bar's height, the player's) are small, deliberate and user-initiated. */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  ::before,
-  ::after {
-    animation-duration: 0.01ms;
-    transition-duration: 0.01ms;
+  /* .donate-pop is deliberately absent: it declares its own reduced-motion fallback further
+     up, and listing it here too would win on source order and silently override whatever
+     that rule says the day someone tunes it. */
+  .animate-pop,
+  .animate-pop-flat,
+  .animate-player-in {
+    animation: overlay-in 0.2s ease;
+  }
+
+  /* The toast's exit still has to END invisible — it is the timer in ToastStack, not this
+     animation, that unmounts the card, so a card that merely stopped moving would sit there
+     fully opaque until its leave timer fired. Fade in place, same duration. */
+  .animate-toast-leave {
+    animation: toast-fade-out 0.2s ease forwards;
+  }
+
+  /* Continuous, non-essential motion stops outright: a spinning disc or a drifting scan band
+     has no state to communicate that its static form doesn't. */
+  .spectrum-scan,
+  .animate-top-progress {
+    animation: none;
+  }
+}
+
+@keyframes toast-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* A search result taking its place in the list. Fifty rows resolving in one frame land as a
+   slab — the column simply IS full, with no moment of arriving — so the first few come in on
+   a short ramp (the per-row delay is set inline, and capped there: see DiscogsPanel).
+   Deliberately small: 4px and a fade, no real travel. These rows are a dense list the user
+   is about to read, not a hero element, and anything longer turns a search into a wait. */
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.result-in {
+  animation: result-in 0.22s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+/* The stagger is pure decoration, so reduced motion drops it whole. Killing the animation is
+   enough on its own: the inline animation-delay each row carries has nothing left to delay,
+   so no row is held invisible waiting for a turn that never comes. */
+@media (prefers-reduced-motion: reduce) {
+  .result-in {
+    animation: none;
+  }
+}
+
+/* The star that just took a click. Rating a track is deliberate and rare — the one place in
+   the app that earns a flourish rather than a plain state change, since nothing here is
+   repeated hundreds of times a day.
+   It overshoots, which almost nothing else in this app does: at 16px a star needs the extra
+   travel to register at all (the smaller the element, the more bounce it takes to read the
+   same amount). The dip to 0.9 first is what makes it land like a press being answered
+   rather than the icon simply inflating.
+   Starts AFTER .press has let go — pressing scales the button to 0.96, and running both at
+   once just averages into a shrug. */
+@keyframes star-punch {
+  0% {
+    transform: scale(0.9);
+  }
+  45% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.star-punch {
+  animation: star-punch 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Pure delight, so reduced motion simply drops it: the star filling with colour is the
+   feedback that matters, and it is untouched. */
+@media (prefers-reduced-motion: reduce) {
+  .star-punch {
+    animation: none;
   }
 }
