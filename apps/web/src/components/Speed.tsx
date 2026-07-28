@@ -47,10 +47,11 @@ export default function Speed() {
 
         <Reveal delay={120}>
           <div className="inset-shadow-edge relative h-full overflow-hidden rounded-2xl border border-blue/40 bg-surface2/40 p-6 transition duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue/5">
-            <div
-              className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-blue/15 blur-2xl"
-              style={{ animation: 'glow 4s ease-in-out infinite' }}
-            />
+            {/* Static bloom. It used to pulse on a 4s loop, which put a 192px blur-2xl layer
+                on a permanent repaint for an effect nobody watches — the small blue dots
+                elsewhere pulse because they report live status, whereas this is scenery, and
+                the section's actual motion is the race bars below it. */}
+            <div className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-blue/15 blur-2xl" />
             <div className="relative flex items-baseline justify-between">
               <span className="text-sm font-semibold text-fg">{t('speed.withSurco')}</span>
               <span className="font-mono text-sm text-cyan">{t('speed.withSurcoTime')}</span>
