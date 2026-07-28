@@ -683,3 +683,36 @@ textarea {
     animation-delay: 0ms !important;
   }
 }
+
+/* The star that just took a click. Rating a track is deliberate and rare — the one place in
+   the app that earns a flourish rather than a plain state change, since nothing here is
+   repeated hundreds of times a day.
+   It overshoots, which almost nothing else in this app does: at 16px a star needs the extra
+   travel to register at all (the smaller the element, the more bounce it takes to read the
+   same amount). The dip to 0.9 first is what makes it land like a press being answered
+   rather than the icon simply inflating.
+   Starts AFTER .press has let go — pressing scales the button to 0.96, and running both at
+   once just averages into a shrug. */
+@keyframes star-punch {
+  0% {
+    transform: scale(0.9);
+  }
+  45% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.star-punch {
+  animation: star-punch 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Pure delight, so reduced motion simply drops it: the star filling with colour is the
+   feedback that matters, and it is untouched. */
+@media (prefers-reduced-motion: reduce) {
+  .star-punch {
+    animation: none;
+  }
+}

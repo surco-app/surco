@@ -20,6 +20,10 @@ export function StarRating({
   // real value, not the hover.
   const [hovered, setHovered] = useState(0)
   const shown = hovered || stars
+  // The star currently playing its click flourish. Cleared on animationend so a second
+  // click on the same star re-runs it — a CSS animation only restarts when the class is
+  // removed and re-added, so leaving it on would make the first rating the only animated one.
+  const [punched, setPunched] = useState(0)
   return (
     // The leave handler only clears the visual hover preview; the stars are the
     // controls. Resetting per-button would misfire as the pointer crosses between them.
@@ -38,9 +42,17 @@ export function StarRating({
             data-testid={`star-${n}`}
             aria-pressed={n <= stars}
             aria-label={tr('editor.ratingStars', { count: n })}
-            onClick={() => onChange(n === stars ? '' : String(n))}
+            onClick={() => {
+              const cleared = n === stars
+              onChange(cleared ? '' : String(n))
+              // Clearing a rating is an undo, not an achievement — it gets no flourish.
+              setPunched(cleared ? 0 : n)
+            }}
             onMouseEnter={() => setHovered(n)}
-            className={`press ${filled ? 'text-warn' : 'text-fg-faint'}`}
+            onAnimationEnd={() => setPunched(0)}
+            className={`press ${punched === n ? 'star-punch' : ''} ${
+              filled ? 'text-warn' : 'text-fg-faint'
+            }`}
           >
             <Star
               className="h-4 w-4"
