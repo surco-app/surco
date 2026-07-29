@@ -175,14 +175,16 @@ describe('TrimSection', () => {
     expect(screen.getByTestId('trim-lane-end')).toHaveAttribute('data-window', '85.30-95.30')
   })
 
-  // The tightest windows are where a cut is actually judged: at ±0.25 s the lane's
-  // 1200 px span half a second, so a pixel is under a millisecond.
-  it('narrows a lane down to a quarter-second of context', async () => {
+  // The tightest windows are where a cut is actually judged, and a DJ's trim is
+  // usually a hair either side of the first beat: at ±0.05 s the lane spans a tenth
+  // of a second, so its 1200 px put a pixel well under the millisecond the cut is
+  // stored in. The zoom bottoms out there — one more click must do nothing.
+  it('narrows a lane down to fifty milliseconds of context', async () => {
     render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
     await screen.findByTestId('trim-context-start', undefined, { timeout: 3000 })
-    for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('trim-zoom-in-start'))
-    expect(screen.getByTestId('trim-context-start')).toHaveTextContent('±0.25s')
-    expect(screen.getByTestId('trim-lane-start')).toHaveAttribute('data-window', '9.45-9.95')
+    for (let i = 0; i < 6; i++) fireEvent.click(screen.getByTestId('trim-zoom-in-start'))
+    expect(screen.getByTestId('trim-context-start')).toHaveTextContent('±0.05s')
+    expect(screen.getByTestId('trim-lane-start')).toHaveAttribute('data-window', '9.65-9.75')
     expect(screen.getByTestId('trim-zoom-in-start')).toBeDisabled()
   })
 
@@ -379,6 +381,27 @@ describe('TrimSection', () => {
 
   // Parking the start handle back on the left edge means "cut nothing here": the
   // bound drops rather than persisting a hair's-width trim.
+  // El recorte de un DJ suele ser un pelo antes del primer golpe, así que la escala
+  // baja hasta ±0,05 s. Ese nivel sólo sirve si un corte de esa magnitud se GUARDA:
+  // el umbral que descarta un bound ("lo he devuelto a su borde, aquí no corto")
+  // medía 0,05 s en tiempo absoluto, justo el carril entero del zoom más fino, así
+  // que cualquier corte colocado ahí se tiraba y la pista arrancaba desde cero.
+  it('keeps a cut of a few milliseconds at the head of the track', async () => {
+    const onChange = vi.fn()
+    render(section({ value: { startSec: 0.02 }, onChange }))
+    await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+    // Zoomed all the way in, which is where a cut this small is placed: the lane
+    // spans 0.1 s, so 20 ms is a fifth of the way across it — plainly a deliberate
+    // position, not a handle parked back on the track's edge.
+    for (let i = 0; i < 6; i++) fireEvent.click(screen.getByTestId('trim-zoom-in-start'))
+
+    fireEvent.click(screen.getByTestId('trim-nudge-forward-start'))
+
+    const last = onChange.mock.calls.at(-1)?.[0]
+    expect(last).toBeDefined()
+    expect(last?.startSec).toBeGreaterThan(0)
+  })
+
   it('drops a bound dragged back to its own edge', async () => {
     const onChange = vi.fn()
     render(section({ value: { startSec: 9.7 }, onChange }))
@@ -427,7 +450,7 @@ describe('TrimSection', () => {
     // A bare arrow is the fine step (10 ms) — a cut is judged in milliseconds, and
     // the old tenth was too blunt to place one. Shift takes the coarse tenth.
     fireEvent.keyDown(start, { key: 'ArrowRight' })
-    expect(onChange).toHaveBeenCalledWith({ startSec: 9.71, endSec: 90.3 })
+    expect(onChange).toHaveBeenCalledWith({ startSec: 9.701, endSec: 90.3 })
     fireEvent.keyDown(start, { key: 'ArrowLeft', shiftKey: true })
     expect(onChange).toHaveBeenCalledWith({ startSec: 9.6, endSec: 90.3 })
   })
@@ -458,12 +481,12 @@ describe('TrimSection', () => {
     render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
     const start = await screen.findByTestId('trim-cut-time-start', undefined, { timeout: 3000 })
     fireEvent.keyDown(start, { key: 'ArrowUp' })
-    expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.71, endSec: 90.3 })
+    expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.701, endSec: 90.3 })
     fireEvent.keyDown(start, { key: 'ArrowDown', shiftKey: true })
     expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.6, endSec: 90.3 })
     onChange.mockClear()
     fireEvent.keyDown(start, { key: 'ArrowRight' })
-    expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.71, endSec: 90.3 })
+    expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.701, endSec: 90.3 })
     fireEvent.keyDown(start, { key: 'ArrowLeft', shiftKey: true })
     expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.6, endSec: 90.3 })
   })
@@ -477,9 +500,9 @@ describe('TrimSection', () => {
     const back = await screen.findByTestId('trim-nudge-back-start', undefined, { timeout: 3000 })
     const forward = screen.getByTestId('trim-nudge-forward-start')
     fireEvent.click(forward)
-    expect(onChange).toHaveBeenCalledWith({ startSec: 9.71, endSec: 90.3 })
+    expect(onChange).toHaveBeenCalledWith({ startSec: 9.701, endSec: 90.3 })
     fireEvent.click(back)
-    expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.69, endSec: 90.3 })
+    expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.699, endSec: 90.3 })
   })
 
   // Folded with a staged trim, the header badges the total cut, like the
