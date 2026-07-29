@@ -23,6 +23,10 @@
       {
         "text": "El reloj del reproductor pasa a la línea del artista, y el panel de resultados y el editor se ajustan a la misma densidad que la lista de pistas.",
         "in": "0.76.2"
+      },
+      {
+        "text": "En el recorte de silencios, la onda se dibuja justo donde está: al ampliar podía aparecer desplazada hasta cuatro centésimas respecto a la línea del corte, así que ajustabas contra un dibujo que mentía y el corte acababa dentro del primer golpe. Además la onda queda centrada en el corte al ampliar, con silencio a un lado y música al otro, en vez de irse a un extremo.",
+        "in": "0.76.3"
       }
     ]
   },

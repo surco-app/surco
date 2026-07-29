@@ -23,6 +23,10 @@
       {
         "text": "The player's clock moves onto the artist line, and the results panel and editor now match the track list's density.",
         "in": "0.76.2"
+      },
+      {
+        "text": "In silence trimming, the waveform is now drawn exactly where it belongs: zooming in could shift it up to four hundredths of a second away from the cut line, so you were lining the cut up against a drawing that lied and ended up cutting into the first beat. The wave also stays centred on the cut as you zoom, with silence on one side and music on the other, instead of drifting to one edge.",
+        "in": "0.76.3"
       }
     ]
   },
