@@ -153,12 +153,19 @@ function Lane({
     onSetTime(sec)
   }
   // The lane re-decodes its own window at full fidelity — the same machinery the
-  // deep zoom uses. Quantized to the tenth so a context change is one decode, not
-  // one per render.
+  // deep zoom uses. Asked for to the millisecond, and for EXACTLY the stretch the
+  // canvas draws: this used to quantize the start to the tenth (0.14 → 0.1) to keep
+  // a context change from re-decoding on every render, but the returned samples were
+  // then painted as though they began at 0.14, so the wave sat up to 50 ms off from
+  // the ruler it was drawn against. At ±0.5 s the user could see the gap open between
+  // the cut line and the attack it was supposed to be touching, and trusting the
+  // drawing meant nudging the cut INTO the transient — the swallowed first beat.
+  // The lane already only re-frames on a zoom or a released drag (see startLane), so
+  // the exact figures do not thrash the query either.
   const { data: win } = useWaveformWindow(
     inputPath,
-    Number(fromSec.toFixed(1)),
-    Number(spanSec.toFixed(1)),
+    Number(fromSec.toFixed(3)),
+    Number(spanSec.toFixed(3)),
     enabled,
   )
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -567,6 +574,20 @@ export function TrimSection({
   // window: the wave slid and re-decoded each time the cut moved, which is the
   // "wave keeps changing" the user kept seeing. Recentring on the cut is the right
   // thing to do when it is genuinely off-screen, and nothing at all otherwise.
+  // The window centred on what it frames, then SLID (never shrunk) back inside the
+  // track. Clamping each edge on its own instead used to squash the near side against
+  // the track's start: a cut 0.4 s in showed 0.00–1.00 at ±0.5 s, so the whole visible
+  // context sat AFTER the cut and the silence you are cutting away was off screen —
+  // exactly the lane in the user's screenshot, where the cut hugged one edge and the
+  // attack was half out of frame. Keeping the span and moving the window keeps the cut
+  // in the middle with room either side, which is what makes the edge of the music
+  // judgeable.
+  function place(centreSec: number, contextSec: number): { from: number; to: number } {
+    const span = Math.min(contextSec * 2, durationSec)
+    const from = Math.min(Math.max(0, centreSec - span / 2), Math.max(0, durationSec - span))
+    return { from, to: from + span }
+  }
+
   function contain(
     lane: { from: number; to: number },
     cutSec: number,
@@ -594,14 +615,12 @@ export function TrimSection({
   const committedEnd = value?.endSec ?? durationSec
   // biome-ignore lint/correctness/useExhaustiveDependencies: `contain` is a pure local helper over the values already listed.
   const startLane = useMemo(() => {
-    const from = Math.max(0, startFocus - startContextSec)
-    const lane = { from, to: Math.min(durationSec, from + startContextSec * 2) }
+    const lane = place(startFocus, startContextSec)
     return contain(lane, committedStart)
   }, [startFocus, startContextSec, durationSec, committedStart])
   // biome-ignore lint/correctness/useExhaustiveDependencies: `contain` is a pure local helper over the values already listed.
   const endLane = useMemo(() => {
-    const to = Math.min(durationSec, endFocus + endContextSec)
-    const lane = { from: Math.max(0, to - endContextSec * 2), to }
+    const lane = place(endFocus, endContextSec)
     return contain(lane, committedEnd)
   }, [endFocus, endContextSec, durationSec, committedEnd])
 
