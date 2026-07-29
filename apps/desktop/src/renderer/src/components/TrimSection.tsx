@@ -29,8 +29,15 @@ import { ZoomStepper } from './ZoomStepper'
 // whole track is always a mistake, and the floor keeps the handles grabbable.
 const MIN_KEEP_SEC = 1
 // Dragging a handle back to within this of its own edge means "cut nothing here":
-// the bound drops instead of persisting a hair's-width trim.
-const EDGE_SNAP_SEC = 0.05
+// the bound drops instead of persisting a hair's-width trim. Read against the lane
+// on screen, never as an absolute time: at ±0.05 s the whole lane is 0.1 s wide, so
+// a fixed 50 ms would swallow every cut the tightest zoom exists to place — the
+// user would dial in a few milliseconds off the head and get a track that starts
+// from zero. A fraction of the visible span keeps the gesture meaning what it says
+// ("I put it back on the edge") at every zoom, and the floor keeps it reachable
+// when the lane is a full 45 s wide.
+const EDGE_SNAP_FRACTION = 0.02
+const EDGE_SNAP_FLOOR_SEC = 0.002
 // How much of the track each cut audition plays: enough to judge the boundary by
 // ear, short enough to stay a check instead of a listen.
 const AUDITION_SEC = 4
@@ -40,14 +47,20 @@ const AUDITION_SEC = 4
 // "zoom" is now how much of the track flanks the cut. A ten-minute track's silent
 // head is a sliver at ×1: this is what made every user zoom and scrub their way to
 // a spot the detector already knew.
-// Down to a quarter-second because the cut itself needs judging, not just finding:
-// at ±0.25 s the lane's 1200 px span half a second, so a pixel is under a
-// millisecond and the exact edge of the music is something you can SEE.
-const CONTEXT_SEC = [0.25, 0.5, 1, 2, 5, 15, 45] as const
-const DEFAULT_CONTEXT_INDEX = 4
+// Down to fifty milliseconds because the cut itself needs judging, not just finding,
+// and a DJ's trim is usually a hair either side of the first beat. The tight end of
+// this scale is where that judgement happens: at ±0.05 s the lane spans a tenth of a
+// second, so its 1200 px put a pixel well under the millisecond the cut is stored in
+// — the exact edge of the music stops being something you estimate and becomes
+// something you point at. The wide end is unchanged: that is for FINDING the cut.
+const CONTEXT_SEC = [0.05, 0.15, 0.25, 0.5, 1, 2, 5, 15, 45] as const
+const DEFAULT_CONTEXT_INDEX = 6
 // The fine steps, on buttons rather than buried in arrow keys: a frame-ish nudge
 // and a tenth. Same figures the arrows use (Shift takes the coarse one).
-const FINE_STEP_SEC = 0.01
+// A millisecond, which is the unit the cut is actually stored in (see commit's
+// toFixed(3)): a coarser step would leave positions the tight lanes can show and
+// the file can hold but the buttons cannot reach.
+const FINE_STEP_SEC = 0.001
 const COARSE_STEP_SEC = 0.1
 // The lane's own raster: one window's worth of pixels, no scrolling.
 const LANE_RASTER = 1200
@@ -687,9 +700,14 @@ export function TrimSection({
     const cleaned: TrimRange = {}
     // To the millisecond: the tight lanes let the eye place a cut far finer than the
     // centisecond this used to round to, and the conversion's atrim takes it verbatim.
-    if (next.startSec !== undefined && next.startSec > EDGE_SNAP_SEC)
+    const edgeFor = (which: Side): number =>
+      Math.max(
+        EDGE_SNAP_FLOOR_SEC,
+        (which === 'start' ? startContextSec : endContextSec) * 2 * EDGE_SNAP_FRACTION,
+      )
+    if (next.startSec !== undefined && next.startSec > edgeFor('start'))
       cleaned.startSec = Number(next.startSec.toFixed(3))
-    if (next.endSec !== undefined && next.endSec < durationSec - EDGE_SNAP_SEC)
+    if (next.endSec !== undefined && next.endSec < durationSec - edgeFor('end'))
       cleaned.endSec = Number(next.endSec.toFixed(3))
     onChange(cleaned.startSec === undefined && cleaned.endSec === undefined ? undefined : cleaned)
   }
