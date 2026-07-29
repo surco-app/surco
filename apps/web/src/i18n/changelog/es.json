@@ -27,6 +27,10 @@
       {
         "text": "En el recorte de silencios, la onda se dibuja justo donde está: al ampliar podía aparecer desplazada hasta cuatro centésimas respecto a la línea del corte, así que ajustabas contra un dibujo que mentía y el corte acababa dentro del primer golpe. Además la onda queda centrada en el corte al ampliar, con silencio a un lado y música al otro, en vez de irse a un extremo.",
         "in": "0.76.3"
+      },
+      {
+        "text": "En el recorte ya puedes moverte por la onda: desliza dos dedos en horizontal sobre ella para mirar antes o después del corte sin tocarlo. Al ampliar o reducir, la vista vuelve a centrarse en el corte.",
+        "in": "0.76.4"
       }
     ]
   },
