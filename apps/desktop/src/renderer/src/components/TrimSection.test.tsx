@@ -159,6 +159,50 @@ describe('TrimSection', () => {
     expect(screen.getByTestId('trim-lane-end')).toHaveAttribute('data-window', '90.00-100.00')
   })
 
+  // El caso que reportó el usuario con una captura: corte en 0,412 s y lupa a
+  // ±0,25 s. La ventana se colocaba desde el foco viejo y se topaba con el inicio
+  // de la pista (no puede empezar en negativo), así que salía 0,000–0,500 y el
+  // corte quedaba al 82% — casi todo el contexto era el silencio de la izquierda y
+  // el ataque del golpe quedaba pegado al borde derecho, medio fuera. Cortando así
+  // es facilísimo pasarse y comerse el primer bombo. El corte tiene que quedar
+  // centrado siempre que la pista dé margen para ello.
+  it('centres a tight lane on the cut instead of pinning it near the edge', async () => {
+    // Como lo hace el usuario: la sección se abre SIN corte (el foco queda en 0),
+    // él coloca el corte mirando la onda, y sólo entonces amplía para afinar.
+    const { rerender } = render(section({ value: undefined }))
+    await screen.findByTestId('trim-context-start', undefined, { timeout: 3000 })
+    rerender(section({ value: { startSec: 0.412 } }))
+    for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('trim-zoom-in-start'))
+
+    expect(screen.getByTestId('trim-context-start')).toHaveTextContent('±0.25s')
+    expect(screen.getByTestId('trim-lane-start')).toHaveAttribute('data-window', '0.16-0.66')
+  })
+
+  // El fallo que el usuario documentó con tres capturas: ajusta el corte pegado al
+  // ataque a ±0,5 s, amplía, y la onda aparece corrida — la línea queda ANTES del
+  // transitorio, con un hueco. Medido en la app: con la ventana 0,14–0,64 la onda se
+  // pintaba 41 ms tarde. La causa es que el decodificado se pedía cuantizado a la
+  // décima (0,14 → 0,1) pero se dibujaba como si empezara en 0,14, así que el desfase
+  // del redondeo se pintaba tal cual. Ajustando contra esa onda mentirosa se acaba
+  // cortando dentro del golpe: el bombo que se comía. Lo que se pide tiene que ser lo
+  // que se dibuja.
+  it('decodes exactly the window it draws, without rounding the start away', async () => {
+    const waveformWindow = vi.fn().mockResolvedValue(null)
+    ;(window as unknown as { api: { waveformWindow: unknown } }).api.waveformWindow = waveformWindow
+    render(section({ value: { startSec: 0.394 } }))
+    await screen.findByTestId('trim-context-start', undefined, { timeout: 3000 })
+    for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('trim-zoom-in-start'))
+
+    // data-window se publica con dos decimales para que el test sea legible, así que
+    // la comparación va contra la ventana real: corte 0,394 centrado en ±0,25 s.
+    const asked = waveformWindow.mock.calls.at(-1)
+    expect(asked).toBeDefined()
+    expect(screen.getByTestId('trim-context-start')).toHaveTextContent('±0.25s')
+    // Sin margen: el inicio pedido es el inicio dibujado, al milisegundo.
+    expect(asked?.[1]).toBeCloseTo(0.394 - 0.25, 3)
+    expect(asked?.[2]).toBeCloseTo(0.5, 3)
+  })
+
   // Each lane zooms on its own: a dense head and a silent tail want different
   // windows, and one shared control forced a compromise that fit neither.
   it('zooms each lane independently of the other', async () => {
