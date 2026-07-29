@@ -15,6 +15,14 @@
       {
         "text": "The Traktor collection backup is now a single file that gets overwritten, rather than a new one per write: converting several tracks no longer fills the folder holding your collection.nml with copies.",
         "in": "0.76.1"
+      },
+      {
+        "text": "Silence trimming now works down to the millisecond: the zoom reaches ±0.05 s, where a pixel of the waveform is under a millisecond, and the nudge buttons move the cut one millisecond at a time instead of in jumps of ten. A small cut placed right at the head of a track is also no longer discarded on save — it could previously be lost, leaving the track to start from zero and swallow its first beat.",
+        "in": "0.76.2"
+      },
+      {
+        "text": "The player's clock moves onto the artist line, and the results panel and editor now match the track list's density.",
+        "in": "0.76.2"
       }
     ]
   },

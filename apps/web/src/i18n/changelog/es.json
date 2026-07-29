@@ -15,6 +15,14 @@
       {
         "text": "La copia de seguridad de la colección de Traktor es ahora un único archivo que se va sobrescribiendo, en vez de uno nuevo por cada escritura: convertir varias pistas ya no llena de copias la carpeta donde tienes el collection.nml.",
         "in": "0.76.1"
+      },
+      {
+        "text": "El recorte de silencios afina hasta el milisegundo: la lupa llega ahora a ±0,05 s, donde un píxel de la onda es menos de un milisegundo, y los botones de ajuste mueven el corte de milisegundo en milisegundo en vez de a saltos de diez. Además, un corte pequeño colocado muy al principio de la pista ya no se descarta al guardar — antes podía perderse y la pista arrancaba desde cero, comiéndose el primer golpe.",
+        "in": "0.76.2"
+      },
+      {
+        "text": "El reloj del reproductor pasa a la línea del artista, y el panel de resultados y el editor se ajustan a la misma densidad que la lista de pistas.",
+        "in": "0.76.2"
       }
     ]
   },
