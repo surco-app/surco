@@ -126,6 +126,22 @@ async function repl() {
       else if (cmd === 'play') { await openPlayer(page); console.log('player open') }
       else if (cmd === 'ss') { console.log(await shot(page, arg || 'shot')) }
       else if (cmd === 'click') { await page.locator(arg).first().click(); console.log('clicked ' + arg) }
+      // clickat <selector> <fraction>: a real mouse press at a horizontal fraction of the
+      // element (0 = left edge, 1 = right). Plain `click` always lands dead centre, which
+      // cannot tell "the drag placed the cut" apart from "the cut was already centred".
+      else if (cmd === 'clickat') {
+        const sp = arg.lastIndexOf(' ')
+        const sel = arg.slice(0, sp)
+        const frac = Number(arg.slice(sp + 1))
+        // Scroll it into view first: page.mouse takes absolute viewport coordinates and,
+        // unlike locator.click(), does no auto-scrolling — a target below the fold gets
+        // clicked at coordinates that are off screen, and the press lands on nothing.
+        const loc = page.locator(sel).first()
+        await loc.scrollIntoViewIfNeeded()
+        const box = await loc.boundingBox()
+        await page.mouse.click(box.x + box.width * frac, box.y + box.height / 2)
+        console.log('clicked ' + sel + ' at ' + frac)
+      }
       else if (cmd === 'hover') { await page.locator(arg).first().hover(); console.log('hovered ' + arg) }
       else if (cmd === 'key') { await page.keyboard.press(arg); console.log('pressed ' + arg) }
       else if (cmd === 'eval') { console.log(JSON.stringify(await page.evaluate(arg))) }
