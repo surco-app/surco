@@ -166,6 +166,58 @@ describe('TrimSection', () => {
   // el ataque del golpe quedaba pegado al borde derecho, medio fuera. Cortando así
   // es facilísimo pasarse y comerse el primer bombo. El corte tiene que quedar
   // centrado siempre que la pista dé margen para ello.
+  // Mirar la onda alrededor del corte sin moverlo: dos dedos en horizontal (o la
+  // rueda lateral) desplazan la ventana. Se eligió este gesto justo porque el
+  // arrastre sobre el carril YA coloca el corte — cualquier cosa que compartiera el
+  // botón izquierdo se arriesgaba a mover el corte al intentar mirar.
+  it('pans the lane with a horizontal wheel without touching the cut', async () => {
+    const onChange = vi.fn()
+    render(section({ value: { startSec: 9.7 }, onChange }))
+    await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
+    const before = screen.getByTestId('trim-lane-start').getAttribute('data-window')
+
+    fireEvent.wheel(screen.getByTestId('trim-overlay-start'), { deltaX: 120, deltaY: 0 })
+
+    const after = screen.getByTestId('trim-lane-start').getAttribute('data-window')
+    expect(after).not.toBe(before)
+    // El corte no se ha tocado: panear es mirar, no editar.
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  // El paneo tiene que AGUANTAR. La ventana se recentra sola sobre el corte cuando
+  // éste se sale de plano (contain), así que un paneo que se alejara del corte se
+  // desharía solo en el siguiente render — un gesto que parece funcionar y no
+  // funciona, que es peor que no tenerlo.
+  it('keeps the panned window even when it leaves the cut behind', async () => {
+    render(section({ value: { startSec: 9.7 } }))
+    await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
+
+    // Varios golpes en la misma dirección: lo bastante para sacar el corte de plano.
+    for (let i = 0; i < 8; i++) {
+      fireEvent.wheel(screen.getByTestId('trim-overlay-start'), { deltaX: 240, deltaY: 0 })
+    }
+
+    const [from] = (screen.getByTestId('trim-lane-start').getAttribute('data-window') ?? '')
+      .split('-')
+      .map(Number)
+    expect(from).toBeGreaterThan(9.7)
+  })
+
+  // Un scroll vertical es la página desplazándose, no una intención de panear: el
+  // panel de recorte vive en un editor con scroll y robarle la rueda vertical haría
+  // que la onda se moviera sola mientras el usuario baja por la ficha.
+  it('ignores a vertical wheel so the editor can still scroll', async () => {
+    render(section({ value: { startSec: 9.7 } }))
+    await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
+    const before = screen.getByTestId('trim-lane-start').getAttribute('data-window')
+
+    // Con algo de deriva lateral, que es como sale un gesto vertical real en un
+    // trackpad: manda el eje dominante, no la presencia de deltaX.
+    fireEvent.wheel(screen.getByTestId('trim-overlay-start'), { deltaX: 18, deltaY: 200 })
+
+    expect(screen.getByTestId('trim-lane-start').getAttribute('data-window')).toBe(before)
+  })
+
   it('centres a tight lane on the cut instead of pinning it near the edge', async () => {
     // Como lo hace el usuario: la sección se abre SIN corte (el foco queda en 0),
     // él coloca el corte mirando la onda, y sólo entonces amplía para afinar.
