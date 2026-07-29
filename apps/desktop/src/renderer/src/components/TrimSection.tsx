@@ -98,6 +98,7 @@ function Lane({
   snapped,
   onPointerDown,
   onPointerMove,
+  onWheelPan,
   onRelease,
   onKeyStep,
   onSetTime,
@@ -125,6 +126,7 @@ function Lane({
   snapped: boolean
   onPointerDown: (e: React.PointerEvent) => void
   onPointerMove: (e: React.PointerEvent) => void
+  onWheelPan: (deltaX: number) => void
   onRelease: () => void
   onKeyStep: (deltaSec: number) => void
   onSetTime: (sec: number) => void
@@ -334,6 +336,10 @@ function Lane({
           className="absolute inset-0 touch-none"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
+          onWheel={(e) => {
+            if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
+            onWheelPan(e.deltaX)
+          }}
           onPointerUp={onRelease}
           onPointerCancel={onRelease}
         >
@@ -529,6 +535,14 @@ export function TrimSection({
   // stalled the moment you let go of the handle. The frame is re-taken only when the
   // user asks for a different view (the zoom) or moves to another track.
   const focus = useRef<{ start: number; end: number } | null>(null)
+  // A two-finger horizontal swipe (or a tilt wheel) slides the window so the wave
+  // around the cut can be inspected without moving it. Kept as state rather than
+  // folded into the focus ref because panning must repaint, and separate from focus
+  // so the rescue below can tell "the user is looking somewhere" from "the cut drifted
+  // out of frame": while panning, a window that no longer holds the cut is exactly
+  // what was asked for, and yanking it back would make the gesture feel broken.
+  // A zoom, a new cut or another track clears it — those all re-aim the view.
+  const [panSec, setPanSec] = useState<Record<Side, number>>({ start: 0, end: 0 })
   const suggestedStart = suggestion?.startSec
   const suggestedEnd = suggestion?.endSec
   if (focus.current === null && durationSec > 0) {
@@ -558,6 +572,15 @@ export function TrimSection({
       ...focus.current,
       [which]: which === 'start' ? startSec : endSec,
     }
+  }
+
+  // Horizontal only: the section sits in a scrolling editor, so claiming the vertical
+  // wheel would drag the wave sideways every time someone scrolled past. The step is a
+  // share of the visible span, so one swipe covers the same fraction of the lane at
+  // every zoom instead of flying across a tight window and crawling across a wide one.
+  function panBy(which: Side, deltaX: number): void {
+    const span = (which === 'start' ? startContextSec : endContextSec) * 2
+    setPanSec((p) => ({ ...p, [which]: p[which] + (deltaX / 400) * span }))
   }
   const startFocus = focus.current?.start ?? 0
   const endFocus = focus.current?.end ?? durationSec
@@ -615,14 +638,14 @@ export function TrimSection({
   const committedEnd = value?.endSec ?? durationSec
   // biome-ignore lint/correctness/useExhaustiveDependencies: `contain` is a pure local helper over the values already listed.
   const startLane = useMemo(() => {
-    const lane = place(startFocus, startContextSec)
-    return contain(lane, committedStart)
-  }, [startFocus, startContextSec, durationSec, committedStart])
+    const lane = place(startFocus + panSec.start, startContextSec)
+    return panSec.start === 0 ? contain(lane, committedStart) : lane
+  }, [startFocus, startContextSec, durationSec, committedStart, panSec.start])
   // biome-ignore lint/correctness/useExhaustiveDependencies: `contain` is a pure local helper over the values already listed.
   const endLane = useMemo(() => {
-    const lane = place(endFocus, endContextSec)
-    return contain(lane, committedEnd)
-  }, [endFocus, endContextSec, durationSec, committedEnd])
+    const lane = place(endFocus + panSec.end, endContextSec)
+    return panSec.end === 0 ? contain(lane, committedEnd) : lane
+  }, [endFocus, endContextSec, durationSec, committedEnd, panSec.end])
 
   // The by-ear check of a cut: a local element playing the source right at the
   // boundary — from the cut-in (what the converted track will open with), or the
@@ -826,7 +849,11 @@ export function TrimSection({
       onAudition: () => audition(which),
       onClear: () => clearSide(which),
       auditing: auditing === which,
+      onWheelPan: (deltaX: number) => panBy(which, deltaX),
       onContextChange: (index: number) => {
+        // A zoom re-aims the view on the cut, so whatever the user had panned to is
+        // no longer what they are asking for.
+        setPanSec((p) => ({ ...p, [which]: 0 }))
         reframe(which)
         setContext(which, index)
       },
