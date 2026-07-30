@@ -45,21 +45,20 @@ export default function Walkthrough() {
         title={t('home.drop.title')}
         app={
           <AppFrame pill={t('home.drop.pill')} busy progress={66}>
-            <div className="grid sm:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
-              <TrackRows
-                rows={[
-                  { name: 'Kaleidos - Take Me To The Limit', format: 'FLAC' },
-                  { name: 'Kalura - Pay For Love', state: 'loading', format: 'FLAC' },
-                  { name: 'Karen B - Natural Woman', state: 'loading', format: 'FLAC' },
-                  { name: 'Ken Laszlo - When I Fall In Love', state: 'loading', format: 'FLAC' },
-                  { name: 'Kim Sanders - Ride', state: 'loading', format: 'FLAC' },
-                  { name: 'Kriss - Tonight', state: 'loading', format: 'FLAC' },
-                ]}
-              />
-              <div className="hidden items-center justify-center border-l border-line p-4 text-center font-mono text-xs text-faint sm:flex">
-                {t('home.drop.caption')}
-              </div>
-            </div>
+            <TrackRows
+              rows={[
+                { name: 'Kaleidos - Take Me To The Limit', format: 'FLAC' },
+                { name: 'Kalura - Pay For Love', state: 'loading', format: 'FLAC' },
+                { name: 'Karen B - Natural Woman', state: 'loading', format: 'FLAC' },
+                { name: 'Ken Laszlo - When I Fall In Love', state: 'loading', format: 'FLAC' },
+                { name: 'Kim Sanders - Ride', state: 'loading', format: 'FLAC' },
+                { name: 'Kriss - Tonight', state: 'loading', format: 'FLAC' },
+                { name: 'Lia - Private Fantasy', state: 'loading', format: 'FLAC' },
+              ]}
+            />
+            <p className="border-t border-line px-4 py-2.5 font-mono text-[11px] text-faint">
+              {t('home.drop.caption')}
+            </p>
           </AppFrame>
         }
       >
@@ -67,7 +66,7 @@ export default function Walkthrough() {
       </SceneLayout>
 
       <SceneLayout
-        flip
+        wide
         step={t('home.quality.step')}
         title={t('home.quality.title')}
         app={
@@ -126,10 +125,10 @@ export default function Walkthrough() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    ['Sello', 'Factory Team'],
-                    ['BPM', '135'],
-                    ['Tono', 'Fm · 9A'],
-                    ['Año', '1995'],
+                    [t('home.tag.fields.label'), 'Factory Team'],
+                    [t('home.tag.fields.bpm'), '135'],
+                    [t('home.tag.fields.key'), 'Fm · 9A'],
+                    [t('home.tag.fields.year'), '1995'],
                   ].map(([k, v]) => (
                     <div key={k} className="rounded-lg border border-line bg-bg/60 p-2">
                       <span className="block text-[9px] tracking-wider text-faint uppercase">
@@ -149,7 +148,7 @@ export default function Walkthrough() {
       </SceneLayout>
 
       <SceneLayout
-        flip
+        wide
         step={t('home.declick.step')}
         title={t('home.declick.title')}
         app={
@@ -159,16 +158,17 @@ export default function Walkthrough() {
                 values={DECLICK_ENVELOPE}
                 marks={DECLICK_MARKS}
                 playhead={0.54}
-                height="h-32"
+                height="h-36 sm:h-44"
                 label={t('home.declick.title')}
               />
-              <div className="mt-4 flex items-center gap-3">
-                <span className="inline-flex overflow-hidden rounded-lg border border-line font-mono text-[11px]">
+              <div className="mt-5 flex items-center justify-between gap-3">
+                <span className="inline-flex overflow-hidden rounded-lg border border-line font-mono text-xs">
                   <span className="bg-blue/20 px-3 py-1.5 text-blue">
                     {t('home.declick.hearing')}
                   </span>
                   <span className="px-3 py-1.5 text-muted">{t('home.declick.original')}</span>
                 </span>
+                <span className="font-mono text-[11px] text-faint">{t('home.declick.pill')}</span>
               </div>
             </div>
           </AppFrame>
@@ -185,6 +185,7 @@ export default function Walkthrough() {
             <div className="p-5">
               <WaveStrip
                 values={TAIL_ENVELOPE}
+                gap={0.12}
                 cut={TAIL_CUT}
                 height="h-32"
                 label={t('home.trim.tailLabel')}
@@ -196,7 +197,8 @@ export default function Walkthrough() {
               <div className="mt-5 border-t border-line pt-4">
                 <WaveStrip
                   values={TRACK_ENVELOPE}
-                  height="h-12"
+                  gap={0.1}
+                  height="h-14"
                   label={t('home.trim.fullLabel')}
                 />
                 <p className="mt-2 font-mono text-[10px] text-faint">{t('home.trim.fullLabel')}</p>
@@ -242,11 +244,11 @@ export default function Walkthrough() {
                     <span className="text-faint">{t('home.batch.cancel')}</span>
                   </span>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-1.5">
+                <div className="mt-4 grid grid-cols-3 gap-2">
                   {DESTINATIONS.map((d, i) => (
                     <span
                       key={d}
-                      className={`rounded border px-2.5 py-1.5 font-mono text-[10px] ${
+                      className={`rounded border px-2 py-1.5 text-center font-mono text-[10px] ${
                         i === 0 ? 'border-blue/45 bg-blue/10 text-blue' : 'border-line text-muted'
                       }`}
                     >
@@ -254,10 +256,8 @@ export default function Walkthrough() {
                     </span>
                   ))}
                 </div>
-                <p className="mt-3 font-mono text-[10px] text-green">{t('home.batch.cues')}</p>
-                <p className="mt-1.5 font-mono text-[10px] text-faint">
-                  {t('home.batch.summary')}
-                </p>
+                <p className="mt-5 font-mono text-[11px] text-green">{t('home.batch.cues')}</p>
+                <p className="mt-2 font-mono text-[11px] text-faint">{t('home.batch.summary')}</p>
               </div>
             </div>
           </AppFrame>

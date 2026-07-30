@@ -8,7 +8,7 @@ const MID = 50
 //
 // Emitted as one <path> of rectangles rather than one node per bar, so a 150-column
 // waveform is still a single element to lay out.
-export function barsPath(values: number[], amp = 44, gap = 0.3) {
+export function barsPath(values: number[], amp = 44, gap = 0.22) {
   if (values.length === 0) return ''
   const slot = W / values.length
   const width = Math.max(0.5, slot * (1 - gap))
