@@ -639,11 +639,11 @@
     "batch": {
       "step": "06 · sale",
       "title": "Y acaba donde tú la escuchas.",
-      "lede": "Elige formato y destino, y Surco convierte la selección entera. No exporta un fichero para que tú lo importes: escribe en la biblioteca — con su carátula, su rating y su playlist.",
+      "lede": "Elige formato y destino, y Surco convierte la selección entera. No exporta un fichero para que tú lo importes: en Engine DJ escribe directamente en tu biblioteca, con carátula, rating y playlist.",
       "pill": "Convirtiendo 11/40",
       "stage": "Convirtiendo a AIFF…",
       "cancel": "cancelar",
-      "cues": "tus cue points de Traktor siguen donde estaban en MP3, AIFF y FLAC",
+      "cues": "tus cue points de Traktor siguen donde estaban al convertir entre MP3 y AIFF, o hacia FLAC",
       "summary": "38 convertidas · 1 omitida · 1 con error"
     },
     "heroLede": "Surco abre cada archivo y te dice qué tienes de verdad: si el lossless es auténtico, qué etiquetas faltan, dónde hay clics y silencio de sobra. Lo arregla y lo deja listo en tu reproductor o en tu equipo de DJ.",
