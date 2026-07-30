@@ -62,7 +62,7 @@ export default function SpectrumPair() {
         <Spectrum src="/spectrum/lossless-real.jpg" alt={t('home.quality.goodAlt')} />
         <p className="mt-2 font-mono text-xs text-muted">
           {t('home.quality.goodCaptionPre')}
-          <span className="text-green">20.6 kHz</span>
+          <span className="text-green">21.2 kHz</span>
           {t('home.quality.goodCaptionPost')}
         </p>
       </div>
