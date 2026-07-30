@@ -574,6 +574,9 @@ comparación»* (`useDeclickAb.ts:60-67`).
 - **Plataformas:** macOS (Apple Silicon e Intel, notarizado), Windows (NSIS) y
   Linux (AppImage — el único target que electron-updater puede actualizar en
   sitio).
+- **Firma:** macOS va notarizado por Apple (`electron-builder.yml`, `notarize:
+  true`). Windows no lleva firma de código, así que SmartScreen avisa la primera
+  vez por tratarse de una app nueva.
 - **Actualizaciones automáticas** con re-comprobación cada 2 horas y backoff de
   60 s → 5 min → 15 min. Nunca avisa por estar sin conexión: *«no tener wifi es
   vida normal, no una incidencia»*.
