@@ -138,7 +138,7 @@ export default function Changelog() {
         </section>
       </main>
 
-      <Footer page="changelog" />
+      <Footer />
     </div>
   )
 }

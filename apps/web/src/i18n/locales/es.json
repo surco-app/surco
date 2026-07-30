@@ -18,7 +18,6 @@
     "analisis": "Análisis",
     "funciones": "Funciones",
     "atajos": "Atajos",
-    "precio": "Precio",
     "instalar": "Instalar",
     "faq": "Preguntas",
     "guia": "Guía",
@@ -28,8 +27,7 @@
     "cambios": "Novedades",
     "donar": "Donar"
   },
-  "available": "Disponible · macOS · Windows · Linux",
-  "betaPill": "Gratis para siempre",
+  "available": "macOS · Windows · Linux",
   "betaNote": "Surco está en beta. Sin cuenta, sin suscripción.",
   "keys": {
     "space": "Espacio"
@@ -38,20 +36,6 @@
     "h1a": "Deja de preparar.",
     "h1b": "Ponte a pinchar.",
     "ledeShort": "Convertir, etiquetar, comprobar la calidad y ordenar en Apple Music o Engine DJ: lo que hacías saltando entre cuatro o cinco apps, Surco lo hace en una. De minutos por pista a un par de segundos."
-  },
-  "analysis": {
-    "kicker": "Análisis anti-fake",
-    "title": "El espectro no miente",
-    "lede": "Algunos archivos «lossless» son MP3 de baja calidad disfrazados de alta — y suenan peor en un buen equipo. Surco detecta los agudos que faltan y marca la pista antes de que llegue a cabina.",
-    "good": "● buena calidad",
-    "suspect": "● sospechoso",
-    "goodCaptionPre": "sonido completo hasta ",
-    "goodCaptionHz": "~22 kHz",
-    "goodCaptionPost": " — no falta nada. El de verdad.",
-    "wall": "corte ~16 kHz",
-    "suspectCaptionPre": "todo cortado en ",
-    "suspectCaptionHz": "~16 kHz",
-    "suspectCaptionPost": " — faltan los agudos. Es un fake."
   },
   "features": {
     "kicker": "Funciones",
@@ -107,7 +91,9 @@
           "Nombra archivos — y títulos — con plantillas {artist} - {title}"
         ]
       }
-    ]
+    ],
+    "metaTitle": "Todo lo que hace Surco · Funciones",
+    "metaDescription": "Convertir, etiquetar desde Discogs, analizar la calidad, reparar clics, recortar silencios y exportar a rekordbox, Engine DJ, Traktor o Serato. Gratis."
   },
   "shortcuts": {
     "kicker": "Teclado primero",
@@ -122,19 +108,6 @@
       "Buscar en Discogs"
     ]
   },
-  "stack": [
-    "AIFF lossless",
-    "FLAC lossless",
-    "ALAC lossless",
-    "MP3 alta calidad",
-    "ffmpeg incluido",
-    "ID3v2.3",
-    "Discogs",
-    "Bandcamp",
-    "Deezer",
-    "Engine DJ",
-    "Apple Silicon"
-  ],
   "speed": {
     "kicker": "Una app, no cinco",
     "title": "El trabajo de cinco apps, en un clic",
@@ -197,12 +170,6 @@
       }
     ]
   },
-  "mockup": {
-    "tracks": "Pistas",
-    "metadata": "Metadatos",
-    "good": "● buena calidad",
-    "spectrum": "espectro"
-  },
   "showcase": {
     "alt": "Surco en macOS: lista de pistas, match de Discogs, editor de metadatos y análisis de calidad",
     "zoom": "Ampliar la captura",
@@ -229,25 +196,10 @@
       }
     }
   },
-  "pricing": {
-    "kicker": "Precio",
-    "title": "Gratis, para siempre",
-    "lede": "Surco es gratis y completo: sin cuenta, sin suscripción y sin límites. Si te ahorra horas, puedes apoyar su desarrollo.",
-    "cta": "Descargar Surco",
-    "donate": "Donar con PayPal"
-  },
   "footer": {
     "tagline": "Convierte, etiqueta y organiza tus pistas de DJ — listas para pinchar en segundos.",
     "product": "Producto",
     "contactHeading": "Contacto",
-    "formatsHeading": "Formatos",
-    "formats": [
-      "AIFF lossless",
-      "WAV lossless",
-      "FLAC lossless",
-      "ALAC lossless",
-      "MP3 alta calidad"
-    ],
     "copyright": "© 2026 Surco · getsurco.app",
     "slogan": "tu música, en orden"
   },
@@ -620,5 +572,84 @@
     "olderTitle": "Versiones anteriores",
     "outroTitle": "Pruébalo todo en tu próxima sesión",
     "outroLede": "Descarga Surco y prepara tus primeras pistas en un par de minutos."
+  },
+  "home": {
+    "walkthrough": {
+      "kicker": "De la carpeta a la cabina",
+      "title": "Una pista, de principio a fin",
+      "lede": "Esto es todo lo que le pasa a un archivo desde que lo sueltas hasta que está en tu equipo."
+    },
+    "drop": {
+      "step": "01 · entra",
+      "title": "Suéltalas y ya están dentro.",
+      "lede": "Carpetas enteras. Surco lee etiquetas, duración y carátula al vuelo, y la misma pista nunca entra dos veces.",
+      "pill": "Leyendo 212/319",
+      "caption": "319 pistas leídas en 4 s"
+    },
+    "quality": {
+      "step": "02 · se comprueba",
+      "title": "El espectro no miente.",
+      "lede": "Un lossless de verdad llega hasta arriba. Un MP3 disfrazado se corta en seco y deja el hueco a la vista, antes de que la pista llegue a cabina.",
+      "pill": "calidad",
+      "goodBadge": "● Buena calidad",
+      "fakeBadge": "● Fake lossless",
+      "goodAlt": "Espectro de un FLAC auténtico: la energía llega hasta lo más alto sin corte",
+      "fakeAlt": "Espectro de un MP3 transcodificado a FLAC: banda vacía por encima de 16 kHz con el borde recto",
+      "goodCaptionPre": "llega hasta ",
+      "goodCaptionPost": " · sin muro",
+      "fakeCaptionPre": "se corta en ",
+      "fakeCaptionPost": " · muro de códec",
+      "note": "Dos pistas compradas de la misma carpeta. La segunda dice ser FLAC, pero su audio pasó por un MP3 antes."
+    },
+    "tag": {
+      "step": "03 · se etiqueta",
+      "title": "Cada pista, con su nombre puesto.",
+      "lede": "Discogs para sellos, Bandcamp para autoeditados y Deezer para lo comercial. Un clic y entra todo: artista, sello, año, BPM y carátula.",
+      "pill": "12/40",
+      "before": "Artista · antes",
+      "after": "Artista · después",
+      "note": "Tag real de un FLAC comprado. En la pantalla de cabina se lee la etiqueta, no el nombre del archivo.",
+      "fields": {
+        "label": "Sello",
+        "bpm": "BPM",
+        "key": "Tono",
+        "year": "Año"
+      }
+    },
+    "declick": {
+      "step": "04 · se limpia",
+      "title": "Los clics del vinilo, fuera.",
+      "lede": "Surco los marca uno a uno sobre la onda y te deja alternar entre la original y la reparada mientras suena, sin cortar el audio.",
+      "pill": "9 clics",
+      "hearing": "Oyendo la reparada",
+      "original": "↔ la original",
+      "next": "Siguiente clic →",
+      "note": "Si la reparación se come el ataque de una caja, la diferencia es sutil. Y las diferencias sutiles solo se aprecian cambiando en caliente."
+    },
+    "trim": {
+      "step": "05 · se ajusta",
+      "title": "Acaba donde acaba la música.",
+      "lede": "Detecta el silencio de entrada y de salida y el corte se engancha solo al último golpe. Al milisegundo, con escucha a cada lado.",
+      "pill": "−4.6 s al final",
+      "tailLabel": "Final · últimos 12 s",
+      "fullLabel": "La pista entera · 6:43",
+      "magnet": "imán · enganchado al último golpe",
+      "clipping": "14 picos en 0 dBFS · clipping del máster"
+    },
+    "batch": {
+      "step": "06 · sale",
+      "title": "Toda la carpeta, de una vez.",
+      "lede": "Y va a donde tú pinchas. Con tus cue points de Traktor intactos.",
+      "pill": "Convirtiendo 11/40",
+      "stage": "Convirtiendo a AIFF…",
+      "cancel": "cancelar",
+      "cues": "con tus cue points de Traktor intactos",
+      "summary": "38 convertidas · 1 omitida · 1 con error"
+    },
+    "heroLede": "Convertir, etiquetar, comprobar la calidad y dejar cada pista en rekordbox, Engine DJ o Apple Music. Todo lo que hoy haces en cinco programas.",
+    "heroFree": "Gratis · macOS, Windows y Linux",
+    "closeTitle": "De la carpeta a la cabina sin salir de una ventana.",
+    "closeNote": "Gratis, para siempre. Sin cuenta, sin nube, sin límites.",
+    "allFeatures": "Ver todo lo que hace →"
   }
 }
