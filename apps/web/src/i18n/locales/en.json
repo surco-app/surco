@@ -107,7 +107,9 @@
           "Name files — and titles — with {artist} - {title} templates"
         ]
       }
-    ]
+    ],
+    "metaTitle": "Everything Surco does · Features",
+    "metaDescription": "Convert, tag from Discogs, analyse quality, repair clicks, trim silence and export to rekordbox, Engine DJ, Traktor or Serato. Free."
   },
   "shortcuts": {
     "kicker": "Keyboard first",
@@ -687,6 +689,11 @@
       "cancel": "cancel",
       "cues": "with your Traktor cue points intact",
       "summary": "38 converted · 1 skipped · 1 failed"
-    }
+    },
+    "heroLede": "Convert, tag, check the quality and file every track into rekordbox, Engine DJ or Apple Music. Everything you do today across five programs.",
+    "heroFree": "Free · macOS, Windows and Linux",
+    "closeTitle": "From the folder to the booth without leaving one window.",
+    "closeNote": "Free, forever. No account, no cloud, no limits.",
+    "allFeatures": "See everything it does →"
   }
 }

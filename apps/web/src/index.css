@@ -65,6 +65,18 @@ button:not(:disabled) {
   outline-offset: 2px;
 }
 
+/* The hero wave uncovers left to right. clip-path animates on the compositor and,
+   unlike a JS-driven reveal, leaves the wave fully painted if the animation never
+   runs at all. */
+@keyframes wave-sweep {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
 @keyframes float {
   0%,
   100% {

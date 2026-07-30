@@ -107,7 +107,9 @@
           "Nombra archivos — y títulos — con plantillas {artist} - {title}"
         ]
       }
-    ]
+    ],
+    "metaTitle": "Todo lo que hace Surco · Funciones",
+    "metaDescription": "Convertir, etiquetar desde Discogs, analizar la calidad, reparar clics, recortar silencios y exportar a rekordbox, Engine DJ, Traktor o Serato. Gratis."
   },
   "shortcuts": {
     "kicker": "Teclado primero",
@@ -687,6 +689,11 @@
       "cancel": "cancelar",
       "cues": "con tus cue points de Traktor intactos",
       "summary": "38 convertidas · 1 omitida · 1 con error"
-    }
+    },
+    "heroLede": "Convertir, etiquetar, comprobar la calidad y dejar cada pista en rekordbox, Engine DJ o Apple Music. Todo lo que hoy haces en cinco programas.",
+    "heroFree": "Gratis · macOS, Windows y Linux",
+    "closeTitle": "De la carpeta a la cabina sin salir de una ventana.",
+    "closeNote": "Gratis, para siempre. Sin cuenta, sin nube, sin límites.",
+    "allFeatures": "Ver todo lo que hace →"
   }
 }

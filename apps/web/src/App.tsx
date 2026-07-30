@@ -1,244 +1,76 @@
-import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import Band from './components/Band'
 import DownloadButton from './components/DownloadButton'
-import Faq from './components/Faq'
 import Footer from './components/Footer'
-import GrooveArcs from './components/GrooveArcs'
 import Header from './components/Header'
-import HeroShowcase from './components/HeroShowcase'
-import Icon, { type GlyphName } from './components/Icon'
-import InstallSection from './components/InstallSection'
-import Kicker from './components/Kicker'
-import Pricing from './components/Pricing'
+import HeroApp from './components/HeroApp'
 import Reveal from './components/Reveal'
 import ScrollProgress from './components/ScrollProgress'
-import Speed from './components/Speed'
 import Walkthrough from './components/Walkthrough'
-import WaveBackdrop from './components/WaveBackdrop'
+import { PAGES } from './lib/nav'
 import { useAutoLanguage } from './lib/useAutoLanguage'
 
-// One glyph per feature card, in the order of the `features.groups` i18n list
-// (convert, tag, analyze quality, organize & export).
-const FEATURE_ICONS: GlyphName[] = ['convert', 'tag', 'spectrum', 'upload']
-
-// The hero glow drifts at a fraction of the scroll speed so the background
-// reads as a deeper layer than the content. Transform-only, rAF-throttled.
-function HeroGlow() {
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    let raf = 0
-    const onScroll = () => {
-      cancelAnimationFrame(raf)
-      raf = requestAnimationFrame(() => {
-        el.style.transform = `translate3d(0, ${window.scrollY * 0.12}px, 0)`
-      })
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      window.removeEventListener('scroll', onScroll)
-      cancelAnimationFrame(raf)
-    }
-  }, [])
-
-  return (
-    <div
-      ref={ref}
-      className="pointer-events-none absolute inset-x-0 top-0 h-[760px]"
-      style={{
-        background:
-          'radial-gradient(55% 50% at 72% 4%, rgba(122,162,247,0.20) 0%, rgba(26,27,38,0) 70%)',
-      }}
-    />
-  )
-}
-
-function Kbd({ k }: { k: string }) {
-  return (
-    <kbd className="rounded-md border border-line bg-surface px-2 py-1 font-mono text-xs text-fg shadow-sm">
-      {k}
-    </kbd>
-  )
-}
-
+// The home page is three things: what this is, what it does to a track, and how to
+// get it. Everything that used to sit below — the feature lists, the five-app
+// comparison, the shortcut table, the FAQ — moved to the features page, because
+// eight stacked sections can each be well designed and still never feel minimal.
 export default function App() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   useAutoLanguage()
-  const featureGroups = t('features.groups', { returnObjects: true }) as {
-    kick: string
-    title: string
-    replaces: string
-    items: string[]
-  }[]
-  const shortcutLabels = t('shortcuts.items', { returnObjects: true }) as string[]
-  const shortcutKeys: string[][] = [
-    ['⌘', 'O'],
-    ['⌘', '↵'],
-    ['⌘', '⇧', '↵'],
-    [t('keys.space')],
-    ['J', 'K'],
-    ['/'],
-  ]
-  const stack = t('stack', { returnObjects: true }) as string[]
+  const featuresHref = PAGES.features[i18n.language === 'en' ? 'en' : 'es']
 
   return (
     <div id="top" className="min-h-screen overflow-x-clip bg-bg text-fg antialiased">
       <ScrollProgress />
       <div className="grain pointer-events-none fixed inset-0 z-[1] opacity-[0.03] mix-blend-soft-light" />
 
-      <HeroGlow />
-
       <Header />
 
-      <main id="main" className="relative mx-auto max-w-5xl px-6">
-        <div
-          className="pointer-events-none absolute inset-x-0 top-[32%] h-[700px]"
-          style={{
-            background:
-              'radial-gradient(50% 50% at 10% 50%, rgba(187,154,247,0.07) 0%, rgba(26,27,38,0) 70%)',
-          }}
-        />
-        <div
-          className="pointer-events-none absolute inset-x-0 top-[72%] h-[700px]"
-          style={{
-            background:
-              'radial-gradient(50% 50% at 90% 50%, rgba(125,207,255,0.06) 0%, rgba(26,27,38,0) 70%)',
-          }}
-        />
-        <WaveBackdrop className="top-[10%]" side="left" delay="-18s" />
-        <GrooveArcs className="top-[40%]" side="right" />
-        <WaveBackdrop className="top-[66%]" flip side="left" delay="-29s" />
-        <section className="pt-12 pb-24 text-center sm:pt-20">
+      <main id="main" className="relative">
+        <section className="mx-auto max-w-6xl px-6 pt-16 pb-10 sm:pt-24">
           <Reveal eager>
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue/40 bg-blue/10 px-3 py-1 font-mono text-xs text-blue">
-              <span
-                className="h-1.5 w-1.5 rounded-full bg-blue"
-                style={{ animation: 'glow 2s ease-in-out infinite' }}
-              />
-              {t('betaPill')}
-            </div>
-          </Reveal>
-          <Reveal eager delay={80}>
-            <h1 className="mx-auto mt-7 max-w-4xl text-5xl font-bold tracking-tight text-balance sm:text-7xl">
+            <h1 className="max-w-3xl text-5xl font-bold tracking-tight text-balance sm:text-7xl">
               {t('hero.h1a')}
               <br />
               <span className="text-grad text-grad-glow">{t('hero.h1b')}</span>
             </h1>
           </Reveal>
-          <Reveal eager delay={160}>
-            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-pretty text-muted">
-              {t('hero.ledeShort')}
+          <Reveal eager delay={80}>
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-pretty text-muted">
+              {t('home.heroLede')}
             </p>
           </Reveal>
-          <Reveal eager delay={240}>
-            <div className="mt-6 font-mono text-sm text-muted">
-              <span className="text-fg">AIFF</span> <span className="text-cyan">⇄</span>{' '}
-              <span className="text-fg">WAV</span> <span className="text-cyan">⇄</span>{' '}
-              <span className="text-fg">FLAC</span> <span className="text-cyan">⇄</span>{' '}
-              <span className="text-fg">MP3</span>
-            </div>
-          </Reveal>
-          <Reveal eager delay={320}>
-            <div className="flex flex-col items-center">
+          <Reveal eager delay={150}>
+            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
               <DownloadButton />
+              <span className="font-mono text-xs text-faint">{t('home.heroFree')}</span>
             </div>
           </Reveal>
-
-          <Reveal eager delay={200}>
-            <div className="relative mt-16 ml-[calc(50%-50vw)] w-screen px-6 sm:mt-20">
-              <HeroShowcase />
-            </div>
-          </Reveal>
-        </section>
-
-        <Walkthrough />
-        <Speed />
-
-        <Band tone="raised">
-          <section id="funciones" className="scroll-mt-24 py-24">
-            <Reveal>
-              <Kicker>{t('features.kicker')}</Kicker>
-              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
-                {t('features.title')}
-              </h2>
-            </Reveal>
-            <div className="mt-10 grid gap-5 sm:grid-cols-2">
-              {featureGroups.map((g, i) => (
-                <Reveal key={g.title} delay={(i % 2) * 100}>
-                  <div className="group h-full">
-                    <div className="mb-4 flex size-9 items-center justify-center rounded-lg border border-blue/30 bg-blue/10 text-blue transition duration-200 group-hover:-translate-y-0.5 group-hover:border-blue/60 group-hover:bg-blue/20 group-hover:shadow-lg group-hover:shadow-blue/15">
-                      <Icon name={FEATURE_ICONS[i]} className="size-4.5" />
-                    </div>
-                    <div className="font-mono text-xs text-blue">{g.kick}</div>
-                    <h3 className="mt-2 text-lg font-semibold text-fg">{g.title}</h3>
-                    <p className="mt-1 font-mono text-xs text-faint">{g.replaces}</p>
-                    <ul className="mt-4 space-y-2">
-                      {g.items.map((it) => (
-                        <li key={it} className="flex gap-2 text-sm leading-relaxed text-muted">
-                          <span className="text-cyan">·</span>
-                          <span>{it}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </section>
-        </Band>
-
-        <section id="atajos" className="scroll-mt-24 pt-24 pb-12">
-          <Reveal>
-            <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr] lg:items-center">
-              <div>
-                <Kicker>{t('shortcuts.kicker')}</Kicker>
-                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
-                  {t('shortcuts.title')}
-                </h2>
-                <p className="mt-3 leading-relaxed text-pretty text-muted">{t('shortcuts.lede')}</p>
-              </div>
-              <div className="space-y-2.5">
-                {shortcutLabels.map((label, i) => (
-                  <div
-                    key={label}
-                    className="flex items-center justify-between rounded-xl bg-bg/50 px-4 py-2.5"
-                  >
-                    <span className="text-sm text-fg">{label}</span>
-                    <span className="flex items-center gap-1">
-                      {shortcutKeys[i].map((k) => (
-                        <Kbd key={k} k={k} />
-                      ))}
-                    </span>
-                  </div>
-                ))}
-              </div>
+          <Reveal eager delay={220}>
+            <div className="mt-12 sm:mt-16">
+              <HeroApp />
             </div>
           </Reveal>
         </section>
 
-        <Band tone="deep">
-          <Pricing />
-          <InstallSection />
-          <Faq />
-        </Band>
+        <div className="mx-auto max-w-5xl px-6">
+          <Walkthrough />
+        </div>
 
-        <section className="pt-20 pb-24">
+        <section className="mx-auto max-w-5xl px-6 py-28 text-center sm:py-36">
           <Reveal>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              {stack.map((s, i) => (
-                <span
-                  key={s}
-                  style={{ '--i': i } as React.CSSProperties}
-                  className="stack-pill rounded-full border border-line bg-surface/40 px-4 py-1.5 font-mono text-xs text-muted transition-colors hover:border-blue/40 hover:text-fg"
-                >
-                  {s}
-                </span>
-              ))}
+            <h2 className="mx-auto max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
+              {t('home.closeTitle')}
+            </h2>
+            <div className="mt-10 flex flex-col items-center gap-4">
+              <DownloadButton />
+              <p className="font-mono text-xs text-faint">{t('home.closeNote')}</p>
             </div>
+            <a
+              href={featuresHref}
+              className="mt-14 inline-flex items-center text-sm font-medium text-muted transition-colors hover:text-blue"
+            >
+              {t('home.allFeatures')}
+            </a>
           </Reveal>
         </section>
       </main>
