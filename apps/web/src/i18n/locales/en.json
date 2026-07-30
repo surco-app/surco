@@ -658,7 +658,13 @@
       "pill": "12/40",
       "before": "Artist · before",
       "after": "Artist · after",
-      "note": "A real tag from a purchased FLAC. The booth screen shows the tag, not the filename."
+      "note": "A real tag from a purchased FLAC. The booth screen shows the tag, not the filename.",
+      "fields": {
+        "label": "Label",
+        "bpm": "BPM",
+        "key": "Key",
+        "year": "Year"
+      }
     },
     "declick": {
       "step": "04 · cleaned",

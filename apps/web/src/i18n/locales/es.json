@@ -658,7 +658,13 @@
       "pill": "12/40",
       "before": "Artista · antes",
       "after": "Artista · después",
-      "note": "Tag real de un FLAC comprado. En la pantalla de cabina se lee la etiqueta, no el nombre del archivo."
+      "note": "Tag real de un FLAC comprado. En la pantalla de cabina se lee la etiqueta, no el nombre del archivo.",
+      "fields": {
+        "label": "Sello",
+        "bpm": "BPM",
+        "key": "Tono",
+        "year": "Año"
+      }
     },
     "declick": {
       "step": "04 · se limpia",

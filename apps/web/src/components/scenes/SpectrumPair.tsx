@@ -18,7 +18,7 @@ function Spectrum({ src, alt, cutoff }: { src: string; alt: string; cutoff?: num
         height={245}
         loading="lazy"
         decoding="async"
-        className="block h-32 w-full object-cover"
+        className="block h-36 w-full object-cover sm:h-44"
       />
       <div
         aria-hidden="true"

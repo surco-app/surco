@@ -8,6 +8,7 @@ export default function WaveStrip({
   cut,
   cutFrom = 'end',
   height = 'h-24',
+  gap,
   label,
   playhead,
   tone = 'blue',
@@ -17,6 +18,7 @@ export default function WaveStrip({
   cut?: number
   cutFrom?: 'start' | 'end'
   height?: string
+  gap?: number
   label: string
   playhead?: number
   tone?: 'blue' | 'cyan'
@@ -30,7 +32,7 @@ export default function WaveStrip({
         preserveAspectRatio="none"
         className="block size-full"
       >
-        <path d={barsPath(values, 42)} className={fill} />
+        <path d={barsPath(values, 42, gap)} className={fill} />
       </svg>
       {cut !== undefined && (
         <>
