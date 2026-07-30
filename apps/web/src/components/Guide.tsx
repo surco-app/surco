@@ -180,7 +180,7 @@ export default function Guide() {
         onClose={() => setLightboxOpen(false)}
       />
 
-      <Footer page="guide" />
+      <Footer />
     </div>
   )
 }

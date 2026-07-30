@@ -2,7 +2,6 @@
 // the full index: this is a single-page site, so re-listing every anchor (Speed,
 // Analysis, Shortcuts…) is noise. Each keeps only the links worth a deliberate jump.
 export const HEADER_SECTIONS = ['como'] as const
-export const FOOTER_SECTIONS = ['instalar', 'precio', 'faq'] as const
 
 export const PAGES = {
   features: { es: '/funciones', en: '/en/features' },
