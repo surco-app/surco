@@ -16,7 +16,7 @@ export default function Faq() {
           {t('faq.title')}
         </h2>
       </Reveal>
-      <div className="mt-10 max-w-2xl border-t border-line/60">
+      <div className="mt-10 grid gap-x-12 md:grid-cols-2">
         {items.map((item, i) => (
           <Reveal key={item.q} delay={(i % 2) * 80}>
             <details className="group border-b border-line/60 py-4">

@@ -17,11 +17,7 @@ export default function Footer() {
             <span className="text-lg font-semibold tracking-tight">Surco</span>
           </div>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">{t('footer.tagline')}</p>
-          <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-line bg-surface/40 px-3 py-1 font-mono text-xs text-muted">
-            <span
-              className="h-1.5 w-1.5 rounded-full bg-blue"
-              style={{ animation: 'glow 2s ease-in-out infinite' }}
-            />
+          <p className="mt-5 inline-flex rounded-full border border-line bg-surface/40 px-3 py-1 font-mono text-xs text-muted">
             {t('available')}
           </p>
           <p className="mt-4 max-w-xs text-xs leading-relaxed text-faint">{t('betaNote')}</p>
@@ -40,6 +36,11 @@ export default function Footer() {
             <li>
               <a href={`${featuresHref}#instalar`} className="transition-colors hover:text-fg">
                 {t('nav.instalar')}
+              </a>
+            </li>
+            <li>
+              <a href={`${featuresHref}#faq`} className="transition-colors hover:text-fg">
+                {t('nav.faq')}
               </a>
             </li>
             <li>
