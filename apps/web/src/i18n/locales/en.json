@@ -599,7 +599,7 @@
       "goodCaptionPost": " · no wall",
       "fakeCaptionPre": "cuts off at ",
       "fakeCaptionPost": " · codec wall",
-      "note": "The same track, twice: the original FLAC, and that same audio pushed through MP3 and back. Only the codec differs, so the wall has no other explanation."
+      "note": "Two tracks bought as FLAC. The second one says so on the tag, but its audio went through an MP3 first: above the wall there is nothing left."
     },
     "tag": {
       "step": "03 · tagged",
@@ -608,7 +608,7 @@
       "pill": "12/40",
       "before": "Artist · before",
       "after": "Artist · after",
-      "note": "A real tag from a purchased FLAC. The booth screen shows the tag, not the filename.",
+      "note": "A real tag from a purchased FLAC — that is how the artist came. What your player shows is the tag, not the filename.",
       "fields": {
         "label": "Label",
         "bpm": "BPM",
@@ -639,18 +639,20 @@
     "batch": {
       "step": "06 · out",
       "title": "And it ends up where you listen.",
-      "lede": "Pick a format and a destination, and Surco converts the whole selection. It doesn't export a file for you to import: with Engine DJ it writes straight into your library, artwork, rating and playlist included.",
+      "lede": "Pick a format and a destination and convert the whole folder. With Apple Music and Engine DJ you import nothing: the track shows up in your library with its artwork on — and on Engine DJ, with rating and playlist. Everything else gets the file it expects.",
       "pill": "Converting 11/40",
       "stage": "Converting to AIFF…",
       "cancel": "cancel",
-      "cues": "your Traktor cue points stay put when you convert between MP3 and AIFF, and when either of them — or a FLAC — goes to FLAC",
+      "toLibrary": "into the app",
+      "toFile": "or export the file",
+      "cues": "Traktor cue points intact between MP3 and AIFF, and from any of the three into FLAC",
       "summary": "38 converted · 1 skipped · 1 failed"
     },
     "heroLede": "Surco opens every file and tells you what you actually have: whether the lossless is genuine, which tags are missing, where the clicks and the dead air are. Then it fixes all of it and files it into your player or your DJ gear.",
     "heroFree": "Free · macOS, Windows and Linux",
     "closeTitle": "All of it, in one window.",
     "closeNote": "Free, forever. No account, no cloud, no limits.",
-    "closeSafety": "Converting to another format leaves the original untouched and writes to a separate folder. Re-exporting to the same format rewrites the file where it is. Notarized by Apple; on Windows, SmartScreen warns because the app is new.",
+    "closeSafety": "Changing format leaves your original untouched and writes elsewhere; re-exporting to the same format rewrites the file where it is. Notarized by Apple.",
     "allFeatures": "See everything it does →"
   }
 }
