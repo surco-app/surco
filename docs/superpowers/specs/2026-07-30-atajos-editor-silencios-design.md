@@ -1,7 +1,8 @@
-# Atajos de teclado en el editor de silencios
+# Atajos de teclado: editor de silencios y huecos de la auditoría
 
 Fecha: 2026-07-30
 Estado: aprobado, pendiente de plan de implementación
+Alcance: fase 1 (editor de silencios) + fase 2 (menú contextual y scrub de click-repair)
 
 ## Origen
 
@@ -52,7 +53,13 @@ En `components/TrimSection.tsx` concretamente:
    encoder, el handle tiene el foco y las teclas actúan sobre él, pero no se ve
    resaltado.
 4. **El botón de aplicar sugerencia baila.** Solo existe con el corte sin poner, así que
-   es un objetivo de Tab que aparece y desaparece.
+   es un objetivo de Tab que aparece y desaparece. *(Menor: la acción ya tiene camino de
+   teclado por el comando `trim-detected` de la paleta.)*
+
+El editor de silencios **no** es un agujero de accesibilidad: se puede trabajar con
+teclado hoy, tabulando a los botones o tecleando el segundo exacto en el `<input>` de
+tiempo (`TrimSection.tsx:257-281`). Lo que falta son *atajos* — una tecla por acción,
+que es lo que hace útil un macropad — y que sean configurables.
 
 ## Decisiones tomadas
 
@@ -143,11 +150,61 @@ TDD, red-green-refactor:
 - `TrimSection`: cada tecla actúa sobre el handle enfocado y **no** sobre el otro. Es la
   prueba que encierra el porqué de la feature.
 
+## Fase 2 — los huecos reales de la auditoría
+
+Auditoría completa del renderer hecha el 2026-07-30. Resultado de fondo: la app está
+**bien cubierta**. Las 11 pestañas de Settings, `NormalizeSection` y `NormalizeControls`
+tienen cobertura del 100%. La convención dominante es `<button>` nativo con `aria-label`,
+y las excepciones están documentadas con `biome-ignore` razonados. No hay deuda
+sistémica. Solo dos huecos merecen trabajo.
+
+### 2.1 Abrir el menú contextual de pista con el teclado
+
+`TrackList.tsx:292-298` — el menú solo se abre con `onContextMenu` (clic derecho).
+Detrás hay 10 acciones (`TrackContextMenu.tsx:157-207`) y **cuatro no tienen ningún otro
+camino**: *Copiar metadatos*, *Pegar metadatos*, *Empezar de cero*, *Copiar ruta*. Ni
+atajo, ni paleta, ni botón. Para quien trabaja con teclado, no existen.
+
+Es el único incumplimiento real del principio que enunció djotas. El menú por dentro ya
+navega bien (autofoco al primer `menuitem`, roving con flechas, Escape cierra), así que
+falta solo la puerta: un comando nuevo que abra el menú sobre la pista seleccionada. Un
+binding desbloquea diez acciones.
+
+Va en `SHORTCUT_DEFAULTS` como comando global normal (sin `scope`), porque actúa sobre la
+selección de la lista, que es estado global. Tecla por defecto a decidir en el plan
+(`Shift+F10` es el estándar de Windows/Linux; en macOS no hay convención fuerte).
+
+### 2.2 Scrub del playhead en click-repair
+
+`DeclickSection.tsx:263-271` — un `<div>` con `onPointerDown`/`onPointerMove`, sin
+`tabIndex`, sin rol y sin `onKeyDown`. El comentario del propio código admite que sin
+scrub "los únicos puntos alcanzables son las marcas de click": las marcas son `<button>`
+tabulables, pero **el terreno entre marcas es inalcanzable** por teclado.
+
+Se arregla copiando el patrón que `TrimSection.tsx:389-411` ya resuelve en este mismo
+repo: `role="slider"` + `tabIndex={0}` + `aria-valuemin/max/now` + `onKeyDown` con ←/→ y
+Shift para el paso grueso. No se inventa nada; se replica lo que ya funciona.
+
+### Descartado de la fase 2 (con motivo)
+
+- **Arrastres cosméticos**: mover y redimensionar el `ActivityPanel`
+  (`ActivityPanel.tsx:274-313`), redimensionar columnas (`ResizeHandle.tsx:110`). El
+  propio código lo marca deliberado: "the panels are fully usable at their default
+  width".
+- **Lecturas informativas**: el crosshair del espectrograma (`Spectrogram.tsx:46-50`) y
+  el chip de dB (`WaveformCompare.tsx:446-452`). No son acciones, son información para el
+  ojo. No es deuda.
+- **Drag-out al OS** (`TrackList.tsx:255-263`) y **drag-out de portada**
+  (`CoverPicker.tsx:379-393`). El primero no tiene equivalente limpio de teclado; el
+  segundo ya duplica el botón de exportar portada.
+- **Auto-fit de columna por doble clic** (`ResizeHandle.tsx:111`). Acción puntual y buena
+  candidata a tecla, pero es comodidad de layout, no funcionalidad bloqueada.
+- **Zoom continuo pinch/⌘+wheel** (`WaveformCompare.tsx:265-280`) y **pan de la lane de
+  trim** (`TrimSection.tsx:367-370`). Ambos tienen `ZoomStepper` como sustituto por
+  pasos.
+
 ## Fuera de alcance
 
-- **Auditoría del resto de la app** — fase 2, decidida pero separada. Responde al "todas
-  las funcionalidades de Surco deberían poder usarse con el teclado". Su tamaño se
-  dimensiona con los datos de la auditoría, no antes.
 - **Paso de nudge grande.** Fino son 1 ms y grueso 100 ms: ambos son de precisión.
   Ninguno sirve para recorrer la pista (del segundo 3 al 12). Puede ser una carencia real
   para djotas, pero no la ha planteado y no se inventa aquí. **Pendiente de preguntarle.**
