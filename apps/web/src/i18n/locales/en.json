@@ -638,12 +638,12 @@
     },
     "batch": {
       "step": "06 · out",
-      "title": "The whole folder, in one go.",
-      "lede": "Straight into wherever you play. With your Traktor cue points intact.",
+      "title": "And it ends up where you listen.",
+      "lede": "Pick a format and a destination, and Surco converts the whole selection. It doesn't export a file for you to import: it writes into the library — artwork, rating and playlist included.",
       "pill": "Converting 11/40",
       "stage": "Converting to AIFF…",
       "cancel": "cancel",
-      "cues": "with your Traktor cue points intact",
+      "cues": "your Traktor cue points stay put in MP3, AIFF and FLAC",
       "summary": "38 converted · 1 skipped · 1 failed"
     },
     "heroLede": "Surco opens every file and tells you what you actually have: whether the lossless is genuine, which tags are missing, where the clicks and the dead air are. Then it fixes all of it and files it into your player or your DJ gear.",
