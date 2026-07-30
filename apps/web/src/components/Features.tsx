@@ -86,9 +86,9 @@ export default function Features() {
 
         <Speed />
 
-        <section id="atajos" className="scroll-mt-24 py-20">
+        <section id="atajos" className="scroll-mt-24 py-16">
           <Reveal>
-            <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+            <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-start">
               <div>
                 <Kicker>{t('shortcuts.kicker')}</Kicker>
                 <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">

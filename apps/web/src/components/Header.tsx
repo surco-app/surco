@@ -18,6 +18,7 @@ export default function Header({ page }: { page?: Page }) {
   const home = lang === 'en' ? '/en' : '/'
   const otherHref = page ? PAGES[page][otherCode] : lang === 'en' ? '/' : '/en'
   const sectionHref = (id: string) => (page ? `${home}#${id}` : `#${id}`)
+  const featuresHref = PAGES.features[lang]
   const guideHref = PAGES.guide[lang]
   const changelogHref = PAGES.changelog[lang]
 
@@ -100,6 +101,9 @@ export default function Header({ page }: { page?: Page }) {
                 {t(`nav.${id}`)}
               </a>
             ))}
+            <a href={featuresHref} className="transition-colors hover:text-fg">
+              {t('nav.funciones')}
+            </a>
             <a href={guideHref} className="transition-colors hover:text-fg">
               {t('nav.guia')}
             </a>
@@ -188,6 +192,13 @@ export default function Header({ page }: { page?: Page }) {
               {t(`nav.${id}`)}
             </a>
           ))}
+          <a
+            href={featuresHref}
+            onClick={() => setOpen(false)}
+            className="block py-3 text-sm text-muted transition-colors hover:text-fg"
+          >
+            {t('nav.funciones')}
+          </a>
           <a
             href={guideHref}
             onClick={() => setOpen(false)}
