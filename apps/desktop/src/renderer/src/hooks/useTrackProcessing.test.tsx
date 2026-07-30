@@ -1333,4 +1333,110 @@ describe('useTrackProcessing', () => {
       expect(processTrack.mock.calls[0][0].format).toBe('aiff')
     })
   })
+
+  describe('row refresh', () => {
+    // An in-place export rewrote the original file, which is the one the row describes,
+    // so the row has to be re-read or it keeps the title and cover from before the
+    // conversion.
+    it('refreshes the row after an in-place export', async () => {
+      setApi({
+        processTrack: vi.fn().mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true }),
+      })
+      const refreshTrackFromDisk = vi.fn().mockResolvedValue(undefined)
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: [track({ id: 'a' })],
+            settings: null,
+            updateTrack: vi.fn(),
+            refreshTrackFromDisk,
+          }),
+        { wrapper: withClient() },
+      )
+
+      await act(async () => {
+        await result.current.processOne('a')
+      })
+
+      expect(refreshTrackFromDisk).toHaveBeenCalledWith('a', '/m/a.wav')
+    })
+
+    // Exporting elsewhere leaves the original untouched, so refreshing its row would make
+    // it show metadata that file does not carry. The row must keep describing the file it
+    // actually points at.
+    it('leaves the row alone when the export went somewhere else', async () => {
+      setApi({
+        processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
+      })
+      const refreshTrackFromDisk = vi.fn().mockResolvedValue(undefined)
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: [track({ id: 'a' })],
+            settings: null,
+            updateTrack: vi.fn(),
+            refreshTrackFromDisk,
+          }),
+        { wrapper: withClient() },
+      )
+
+      await act(async () => {
+        await result.current.processOne('a')
+      })
+
+      expect(refreshTrackFromDisk).not.toHaveBeenCalled()
+    })
+
+    // An in-place export also renames, so the input path can point at a file that no
+    // longer exists: reading it would fail or return the pre-conversion file.
+    it('reads the file at its post-rename path', async () => {
+      setApi({
+        processTrack: vi
+          .fn()
+          .mockResolvedValue({ outputPath: '/m/Mike Absolom - Heaven.wav', inPlace: true }),
+      })
+      const refreshTrackFromDisk = vi.fn().mockResolvedValue(undefined)
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: [track({ id: 'a', inputPath: '/m/old-name.wav' })],
+            settings: null,
+            updateTrack: vi.fn(),
+            refreshTrackFromDisk,
+          }),
+        { wrapper: withClient() },
+      )
+
+      await act(async () => {
+        await result.current.processOne('a')
+      })
+
+      expect(refreshTrackFromDisk).toHaveBeenCalledWith('a', '/m/Mike Absolom - Heaven.wav')
+    })
+
+    // The file was written: a repaint that fails afterwards must not turn a successful
+    // conversion into a failed one in the user's eyes.
+    it('still reports the track converted when the refresh throws', async () => {
+      setApi({
+        processTrack: vi.fn().mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true }),
+      })
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: [track({ id: 'a' })],
+            settings: null,
+            updateTrack: vi.fn(),
+            refreshTrackFromDisk: vi.fn().mockRejectedValue(new Error('EBUSY')),
+          }),
+        { wrapper: withClient() },
+      )
+
+      let outcome: string | undefined
+      await act(async () => {
+        outcome = await result.current.processOne('a')
+      })
+
+      expect(outcome).toBe('converted')
+    })
+  })
 })
