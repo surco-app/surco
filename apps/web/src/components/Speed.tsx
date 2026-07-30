@@ -61,9 +61,12 @@ export default function Speed() {
               <span className="text-sm font-medium text-fg">{t('speed.combo')}</span>
               <span className="race-check ml-auto text-green opacity-0">✓</span>
             </div>
-            <ul className="relative mt-4 grid grid-cols-2 gap-2 font-mono text-[11px] text-muted">
+            <ul className="relative mt-4 space-y-1.5 text-sm text-muted">
               {bullets.map((b) => (
-                <li key={b}>· {b}</li>
+                <li key={b} className="flex gap-2.5">
+                  <span className="text-cyan">·</span>
+                  <span>{b}</span>
+                </li>
               ))}
             </ul>
             <div className="relative mt-4 h-1.5 overflow-hidden rounded-full bg-bg">

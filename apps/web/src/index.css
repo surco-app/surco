@@ -11,6 +11,9 @@
   --color-purple: #bb9af7;
   --color-green: #9ece6a;
   --color-red: #f7768e;
+  /* Tokyo Night's warning hue. Marks the vinyl clicks on the declick waveform,
+     where red already means "clipping" and would read as the wrong problem. */
+  --color-amber: #e0af68;
   --color-fg: #c0caf5;
   --color-muted: #9aa6cf;
   /* Lightened from #6b7396 (3.7:1, fails WCAG AA) to clear 4.5:1 on --color-bg
@@ -62,37 +65,6 @@ button:not(:disabled) {
   outline-offset: 2px;
 }
 
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-/* The spectrogram's playhead sweep. Travels on translateX rather than `left`, which it used
-   to animate: `left` is a layout property, so every frame of an infinite 4.5s loop was
-   putting the page through Layout and Paint instead of handing a 1px line to the compositor.
-   The distance is in cqw (container query width) so 100cqw is the full width of the
-   spectrogram frame — the same place `left: 100%` landed — while the transform itself stays
-   off the main thread. */
-@keyframes scan {
-  0% {
-    transform: translateX(0);
-    opacity: 0;
-  }
-  8% {
-    opacity: 1;
-  }
-  92% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(100cqw);
-    opacity: 0;
-  }
-}
 @keyframes fill {
   0% {
     width: 0;
@@ -102,15 +74,6 @@ button:not(:disabled) {
   }
   100% {
     width: 72%;
-  }
-}
-@keyframes blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
   }
 }
 @keyframes eq {
@@ -203,51 +166,6 @@ button:not(:disabled) {
   transform: none;
 }
 
-/* "Replaces five apps" list: once the list scrolls into view each program crosses
-   itself off in sequence (staggered by its --i index) — the line draws across the
-   name and the row fades to a "done" state, so the section narrates 5 → 1 instead of
-   sitting static. The reduced-motion block below collapses these to their end state. */
-.replace-strike {
-  transform: scaleX(0);
-  transform-origin: left;
-}
-.reveal-in .replace-pill {
-  animation: replaceDim 0.4s ease forwards;
-  animation-delay: calc(var(--i) * 130ms + 220ms);
-}
-.reveal-in .replace-strike {
-  animation: replaceStrike 0.4s ease forwards;
-  animation-delay: calc(var(--i) * 130ms + 220ms);
-}
-@keyframes replaceStrike {
-  to {
-    transform: scaleX(1);
-  }
-}
-@keyframes replaceDim {
-  to {
-    opacity: 0.5;
-  }
-}
-
-/* Tech-stack pills cascade in left-to-right (40ms per pill, indexed by --i)
-   instead of landing as one block — the page's closing beat, same reveal
-   language as everything above it. */
-.stack-pill {
-  opacity: 0;
-  transform: translateY(10px);
-}
-.reveal-in .stack-pill {
-  animation: stackIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: calc(var(--i) * 40ms);
-}
-@keyframes stackIn {
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
 /* Copy-button label swap ("Copiar" → "Copiado"): the incoming word pops in from
    a slight shrink instead of hard-swapping. Keyed on the label so React remounts
    the span and replays the animation each way. */
@@ -273,34 +191,6 @@ button:not(:disabled) {
 }
 .reveal-in .race-check {
   animation: popcheck 6s ease-out 2 forwards;
-}
-
-/* horizontal drift for the decorative audio waves; the duplicated periodic
-   path makes the -50% translate wrap around invisibly */
-@keyframes waveDrift {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
-.wave-drift {
-  animation: waveDrift linear infinite;
-}
-
-/* near-static rotation for the groove arcs; animating the standalone rotate
-   property keeps it independent from the centering translate */
-@keyframes spinSlow {
-  from {
-    rotate: 0deg;
-  }
-  to {
-    rotate: 360deg;
-  }
-}
-.spin-slow {
-  animation: spinSlow 150s linear infinite;
 }
 
 /* blue→cyan gradient text accent */

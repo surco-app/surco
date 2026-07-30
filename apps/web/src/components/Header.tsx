@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DONATE_URL } from '../config'
+import { isCondensed } from '../lib/header'
 import { HEADER_SECTIONS, PAGES, type Page } from '../lib/nav'
 import { btnPrimary } from '../lib/ui'
 import { rememberLanguage } from '../lib/useAutoLanguage'
@@ -17,11 +18,12 @@ export default function Header({ page }: { page?: Page }) {
   const home = lang === 'en' ? '/en' : '/'
   const otherHref = page ? PAGES[page][otherCode] : lang === 'en' ? '/' : '/en'
   const sectionHref = (id: string) => (page ? `${home}#${id}` : `#${id}`)
+  const featuresHref = PAGES.features[lang]
   const guideHref = PAGES.guide[lang]
   const changelogHref = PAGES.changelog[lang]
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12)
+    const onScroll = () => setScrolled((current) => isCondensed(window.scrollY, current))
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
@@ -68,12 +70,13 @@ export default function Header({ page }: { page?: Page }) {
       >
         {t('nav.skipToContent')}
       </a>
+      {/* Fixed height, always. The header used to animate its own padding, which
+          shortened the document as it condensed — near the threshold that fed back
+          into the scroll position and flickered between both sizes. Only the inner
+          row scales now, so the space the header occupies never changes. */}
       <div
-        className="mx-auto flex max-w-5xl items-center justify-between px-6 transition-all duration-300"
-        style={{
-          paddingTop: scrolled ? '0.7rem' : '1.25rem',
-          paddingBottom: scrolled ? '0.7rem' : '1.25rem',
-        }}
+        className="mx-auto flex h-20 max-w-5xl items-center justify-between px-6 transition-transform duration-300"
+        style={{ transform: scrolled ? 'scale(0.92)' : 'scale(1)' }}
       >
         <a href={page ? home : '#top'} className="flex items-center gap-3">
           <img
@@ -98,6 +101,9 @@ export default function Header({ page }: { page?: Page }) {
                 {t(`nav.${id}`)}
               </a>
             ))}
+            <a href={featuresHref} className="transition-colors hover:text-fg">
+              {t('nav.funciones')}
+            </a>
             <a href={guideHref} className="transition-colors hover:text-fg">
               {t('nav.guia')}
             </a>
@@ -186,6 +192,13 @@ export default function Header({ page }: { page?: Page }) {
               {t(`nav.${id}`)}
             </a>
           ))}
+          <a
+            href={featuresHref}
+            onClick={() => setOpen(false)}
+            className="block py-3 text-sm text-muted transition-colors hover:text-fg"
+          >
+            {t('nav.funciones')}
+          </a>
           <a
             href={guideHref}
             onClick={() => setOpen(false)}

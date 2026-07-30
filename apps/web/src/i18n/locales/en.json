@@ -18,7 +18,6 @@
     "analisis": "Analysis",
     "funciones": "Features",
     "atajos": "Shortcuts",
-    "precio": "Pricing",
     "instalar": "Install",
     "faq": "FAQ",
     "guia": "Guide",
@@ -28,8 +27,7 @@
     "cambios": "What's new",
     "donar": "Donate"
   },
-  "available": "Available · macOS · Windows · Linux",
-  "betaPill": "Free forever",
+  "available": "macOS · Windows · Linux",
   "betaNote": "Surco is in beta. No account, no subscription.",
   "keys": {
     "space": "Space"
@@ -38,20 +36,6 @@
     "h1a": "Stop prepping.",
     "h1b": "Start playing.",
     "ledeShort": "Convert, tag, check the quality and file into Apple Music or Engine DJ: what used to take four or five apps, Surco does in one. From minutes per track to a couple of seconds."
-  },
-  "analysis": {
-    "kicker": "Anti-fake analysis",
-    "title": "The spectrum doesn't lie",
-    "lede": "Some \"lossless\" files are just low-quality MP3s dressed up to look hi-fi — and they sound worse on a big system. Surco spots the missing highs and flags the track before it reaches your set.",
-    "good": "● good quality",
-    "suspect": "● suspicious",
-    "goodCaptionPre": "full sound up to ",
-    "goodCaptionHz": "~22 kHz",
-    "goodCaptionPost": " — nothing missing. The real thing.",
-    "wall": "drop-off ~16 kHz",
-    "suspectCaptionPre": "everything cut off at ",
-    "suspectCaptionHz": "~16 kHz",
-    "suspectCaptionPost": " — the highs are gone. A fake."
   },
   "features": {
     "kicker": "Features",
@@ -107,7 +91,9 @@
           "Name files — and titles — with {artist} - {title} templates"
         ]
       }
-    ]
+    ],
+    "metaTitle": "Everything Surco does · Features",
+    "metaDescription": "Convert, tag from Discogs, analyse quality, repair clicks, trim silence and export to rekordbox, Engine DJ, Traktor or Serato. Free."
   },
   "shortcuts": {
     "kicker": "Keyboard first",
@@ -122,19 +108,6 @@
       "Search Discogs"
     ]
   },
-  "stack": [
-    "lossless AIFF",
-    "lossless FLAC",
-    "lossless ALAC",
-    "high-quality MP3",
-    "ffmpeg included",
-    "ID3v2.3",
-    "Discogs",
-    "Bandcamp",
-    "Deezer",
-    "Engine DJ",
-    "Apple Silicon"
-  ],
   "speed": {
     "kicker": "One app, not five",
     "title": "The work of five apps, in one click",
@@ -197,12 +170,6 @@
       }
     ]
   },
-  "mockup": {
-    "tracks": "Tracks",
-    "metadata": "Metadata",
-    "good": "● good quality",
-    "spectrum": "spectrum"
-  },
   "showcase": {
     "alt": "Surco on macOS: track list, Discogs match, metadata editor and quality analysis",
     "zoom": "Enlarge the screenshot",
@@ -229,25 +196,10 @@
       }
     }
   },
-  "pricing": {
-    "kicker": "Pricing",
-    "title": "Free, forever",
-    "lede": "Surco is free and complete — no account, no subscription, no limits. If it saves you hours, you can support its development.",
-    "cta": "Download Surco",
-    "donate": "Donate with PayPal"
-  },
   "footer": {
     "tagline": "Convert, tag and organize your DJ tracks — ready to play in seconds.",
     "product": "Product",
     "contactHeading": "Contact",
-    "formatsHeading": "Formats",
-    "formats": [
-      "lossless AIFF",
-      "lossless WAV",
-      "lossless FLAC",
-      "lossless ALAC",
-      "high-quality MP3"
-    ],
     "copyright": "© 2026 Surco · getsurco.app",
     "slogan": "your music, in order"
   },
@@ -620,5 +572,84 @@
     "olderTitle": "Earlier versions",
     "outroTitle": "Try it all in your next session",
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes."
+  },
+  "home": {
+    "walkthrough": {
+      "kicker": "From the folder to the booth",
+      "title": "One track, start to finish",
+      "lede": "Everything that happens to a file between dropping it in and playing it out."
+    },
+    "drop": {
+      "step": "01 · in",
+      "title": "Drop them and they're in.",
+      "lede": "Whole folders. Surco reads tags, length and artwork on the fly, and never adds the same track twice.",
+      "pill": "Reading 212/319",
+      "caption": "319 tracks read in 4s"
+    },
+    "quality": {
+      "step": "02 · checked",
+      "title": "The spectrum doesn't lie.",
+      "lede": "Real lossless reaches the top. A disguised MP3 stops dead and leaves the gap in plain sight — before the track reaches the booth.",
+      "pill": "quality",
+      "goodBadge": "● Good quality",
+      "fakeBadge": "● Fake lossless",
+      "goodAlt": "Spectrum of a genuine FLAC: energy reaches the top with no cutoff",
+      "fakeAlt": "Spectrum of an MP3 transcoded to FLAC: empty band above 16 kHz with a straight edge",
+      "goodCaptionPre": "reaches ",
+      "goodCaptionPost": " · no wall",
+      "fakeCaptionPre": "cuts off at ",
+      "fakeCaptionPost": " · codec wall",
+      "note": "Two purchased tracks from the same folder. The second claims to be FLAC, but its audio went through an MP3 first."
+    },
+    "tag": {
+      "step": "03 · tagged",
+      "title": "Every track, under its own name.",
+      "lede": "Discogs for labels, Bandcamp for self-released, Deezer for the charts. One click fills it all in: artist, label, year, BPM and artwork.",
+      "pill": "12/40",
+      "before": "Artist · before",
+      "after": "Artist · after",
+      "note": "A real tag from a purchased FLAC. The booth screen shows the tag, not the filename.",
+      "fields": {
+        "label": "Label",
+        "bpm": "BPM",
+        "key": "Key",
+        "year": "Year"
+      }
+    },
+    "declick": {
+      "step": "04 · cleaned",
+      "title": "Vinyl clicks, gone.",
+      "lede": "Surco marks every one on the waveform and lets you switch between the original and the repair while it plays, with no break in the audio.",
+      "pill": "9 clicks",
+      "hearing": "Hearing the repair",
+      "original": "↔ the original",
+      "next": "Next click →",
+      "note": "If the repair eats the attack of a snare, the difference is subtle. And subtle differences only show up when you switch on the fly."
+    },
+    "trim": {
+      "step": "05 · trimmed",
+      "title": "End where the music ends.",
+      "lede": "It finds the silence at both ends and the cut magnets onto the last hit. To the millisecond, with its own audition on each side.",
+      "pill": "−4.6s at the end",
+      "tailLabel": "End · last 12s",
+      "fullLabel": "The whole track · 6:43",
+      "magnet": "magnet · locked to the last hit",
+      "clipping": "14 peaks at 0 dBFS · master clipping"
+    },
+    "batch": {
+      "step": "06 · out",
+      "title": "The whole folder, in one go.",
+      "lede": "Straight into wherever you play. With your Traktor cue points intact.",
+      "pill": "Converting 11/40",
+      "stage": "Converting to AIFF…",
+      "cancel": "cancel",
+      "cues": "with your Traktor cue points intact",
+      "summary": "38 converted · 1 skipped · 1 failed"
+    },
+    "heroLede": "Convert, tag, check the quality and file every track into rekordbox, Engine DJ or Apple Music. Everything you do today across five programs.",
+    "heroFree": "Free · macOS, Windows and Linux",
+    "closeTitle": "From the folder to the booth without leaving one window.",
+    "closeNote": "Free, forever. No account, no cloud, no limits.",
+    "allFeatures": "See everything it does →"
   }
 }
