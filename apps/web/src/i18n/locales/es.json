@@ -588,8 +588,8 @@
     },
     "quality": {
       "step": "02 · se comprueba",
-      "title": "El espectro no miente.",
-      "lede": "Un lossless de verdad llega hasta arriba. Un MP3 disfrazado se corta en seco y deja el hueco a la vista, antes de que la pista llegue a cabina.",
+      "title": "Ese FLAC era un MP3.",
+      "lede": "Comprar lossless no garantiza que lo sea. Si alguien convirtió un MP3 a FLAC, el archivo pesa lo mismo que un lossless pero le falta la mitad de los agudos — y en el espectro se ve como un muro plano. Surco te lo marca antes de que la pista salga de casa.",
       "pill": "calidad",
       "goodBadge": "● Buena calidad",
       "fakeBadge": "● Fake lossless",
@@ -599,7 +599,7 @@
       "goodCaptionPost": " · sin muro",
       "fakeCaptionPre": "se corta en ",
       "fakeCaptionPost": " · muro de códec",
-      "note": "Dos pistas compradas de la misma carpeta. La segunda dice ser FLAC, pero su audio pasó por un MP3 antes."
+      "note": "La misma pista, dos veces: el FLAC original y ese mismo audio pasado por MP3 y devuelto a FLAC. Solo cambia el códec, así que el muro no tiene otra explicación."
     },
     "tag": {
       "step": "03 · se etiqueta",
