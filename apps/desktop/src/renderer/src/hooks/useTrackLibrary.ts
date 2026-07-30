@@ -111,6 +111,10 @@ interface TrackLibrary {
   clearExtrasTracks: (ids: string[]) => void
   deriveTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   startOverTrack: (track: TrackItem) => void
+  // Re-reads the file after an in-place export rewrote it, so the row stops describing
+  // bytes that no longer exist. Only the fields the row renders — everything the user
+  // staged in the editor is left alone.
+  refreshTrackFromDisk: (id: string, path: string) => Promise<void>
   removeTrack: (id: string) => void
   removeTracks: (ids: string[]) => void
   clearTracks: () => void
@@ -384,6 +388,30 @@ export function useTrackLibrary({
     void loadTrackMeta(base)
   })
 
+  // An in-place export rewrote the file this row describes (possibly under a new name),
+  // so the row's frozen label and the file's own artwork both went stale. Deliberately
+  // not loadTrackMeta: that one merges into meta, consumes the restored-edit overlay and
+  // restamps diskSignature — all editor state, none of it ours. A failed read is
+  // swallowed and, notably, does not set metaReadFailed: the export that triggered this
+  // succeeded, so the file is fine and the row is merely stale.
+  const refreshTrackFromDisk = useStableCallback(async (id: string, path: string) => {
+    try {
+      const { tags, duration, cover } = await window.api.readMeta(path)
+      const { fileName } = parseFileName(path)
+      const s = searchFromTags(parseFileName(path), tags)
+      enqueueMetaPatch(id, (t) => ({
+        ...t,
+        listLabel: s.title || fileName,
+        duration: duration ?? undefined,
+        embeddedCover: cover?.thumbUrl,
+        embeddedCoverDims:
+          cover && cover.width > 0 ? { w: cover.width, h: cover.height } : undefined,
+      }))
+    } catch {
+      // Cosmetic: the row keeps the values it already had.
+    }
+  })
+
   // Files opened from Finder ("Open With Surco"), dropped on the dock, or double-clicked
   // reach us through the OS, not the renderer: the main process buffers any handed over
   // before this window existed and pushes later ones live. Drain the buffer on mount and
@@ -596,6 +624,7 @@ export function useTrackLibrary({
     clearExtrasTracks,
     deriveTracks,
     startOverTrack,
+    refreshTrackFromDisk,
     removeTrack,
     removeTracks,
     clearTracks,
