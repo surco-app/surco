@@ -636,3 +636,99 @@ describe('useTrackLibrary streamed import batches', () => {
     expect(onDuplicatesSkipped).toHaveBeenCalledWith(2)
   })
 })
+
+function setupWith(readMeta: ReturnType<typeof vi.fn>): {
+  result: { current: ReturnType<typeof useTrackLibrary> }
+} {
+  setApi({ readMeta })
+  const { result } = renderHook(() =>
+    useTrackLibrary({
+      setSelection: vi.fn(),
+      onForget: vi.fn(),
+      onRemove: vi.fn(),
+      onClear: vi.fn(),
+      onMetaLoaded: vi.fn(),
+      onDuplicatesSkipped: vi.fn(),
+      onMetaReadFailed: vi.fn(),
+    }),
+  )
+  return { result }
+}
+
+describe('useTrackLibrary refresh after an in-place export', () => {
+  // An in-place export rewrote the very file the row describes, so the row must be
+  // re-read: otherwise it keeps the title and the artwork the file had before the
+  // conversion, describing bytes that no longer exist.
+  it('relabels the row and takes the new cover from the file', async () => {
+    const { result } = setupWith(
+      vi.fn().mockResolvedValue({
+        tags: { title: 'From Absolom To Heaven', artist: 'Mike Absolom' },
+        duration: 345,
+        cover: { thumbUrl: 'data:image/jpeg;base64,NEW', width: 600, height: 600 },
+        foreignTags: [],
+      }),
+    )
+    await act(() => result.current.addPaths(['/m/a.wav']))
+    const id = result.current.tracks[0].id
+
+    await act(() => result.current.refreshTrackFromDisk(id, '/m/a.wav'))
+
+    expect(result.current.tracks[0].listLabel).toBe('From Absolom To Heaven')
+    expect(result.current.tracks[0].embeddedCover).toBe('data:image/jpeg;base64,NEW')
+    expect(result.current.tracks[0].embeddedCoverDims).toEqual({ w: 600, h: 600 })
+    expect(result.current.tracks[0].duration).toBe(345)
+  })
+
+  // The conversion that triggers this already succeeded, so a failed re-read means the
+  // row is merely stale, not the file unreadable. Flagging it would tell the user their
+  // freshly written file is broken when it is fine.
+  it('leaves the row untouched and unflagged when the read fails', async () => {
+    const { result } = setupWith(
+      vi
+        .fn()
+        .mockResolvedValueOnce({
+          tags: { title: 'Old', artist: 'Old Artist' },
+          duration: 100,
+          cover: { thumbUrl: 'data:image/jpeg;base64,OLD', width: 300, height: 300 },
+          foreignTags: [],
+        })
+        .mockRejectedValueOnce(new Error('EBUSY')),
+    )
+    await act(() => result.current.addPaths(['/m/a.wav']))
+    const id = result.current.tracks[0].id
+
+    await act(() => result.current.refreshTrackFromDisk(id, '/m/a.wav'))
+
+    expect(result.current.tracks[0].listLabel).toBe('Old')
+    expect(result.current.tracks[0].embeddedCover).toBe('data:image/jpeg;base64,OLD')
+    expect(result.current.tracks[0].metaReadFailed).toBeUndefined()
+  })
+
+  // The refresh describes the file, nothing else: whatever the user has staged in the
+  // editor — typed metadata, an applied match — was not part of what changed on disk
+  // and must survive a conversion untouched.
+  it('keeps the editor state out of the refresh', async () => {
+    const { result } = setupWith(
+      vi.fn().mockResolvedValue({
+        tags: { title: 'On Disk', artist: 'On Disk Artist' },
+        duration: 200,
+        cover: null,
+        foreignTags: [],
+      }),
+    )
+    await act(() => result.current.addPaths(['/m/a.wav']))
+    const id = result.current.tracks[0].id
+    act(() => {
+      result.current.updateTrack(id, {
+        meta: { ...result.current.tracks[0].meta, title: 'Typed By User' },
+        matched: true,
+      })
+    })
+
+    await act(() => result.current.refreshTrackFromDisk(id, '/m/a.wav'))
+
+    expect(result.current.tracks[0].meta.title).toBe('Typed By User')
+    expect(result.current.tracks[0].matched).toBe(true)
+    expect(result.current.tracks[0].listLabel).toBe('On Disk')
+  })
+})
