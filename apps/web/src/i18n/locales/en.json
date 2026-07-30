@@ -643,14 +643,14 @@
       "pill": "Converting 11/40",
       "stage": "Converting to AIFF…",
       "cancel": "cancel",
-      "cues": "your Traktor cue points stay put when you convert between MP3 and AIFF, or into FLAC",
+      "cues": "your Traktor cue points stay put when you convert between MP3 and AIFF, and when either of them — or a FLAC — goes to FLAC",
       "summary": "38 converted · 1 skipped · 1 failed"
     },
     "heroLede": "Surco opens every file and tells you what you actually have: whether the lossless is genuine, which tags are missing, where the clicks and the dead air are. Then it fixes all of it and files it into your player or your DJ gear.",
     "heroFree": "Free · macOS, Windows and Linux",
     "closeTitle": "All of it, in one window.",
     "closeNote": "Free, forever. No account, no cloud, no limits.",
-    "closeSafety": "By default your original files are left alone — converted tracks go to a separate folder. Notarized by Apple; on Windows, SmartScreen warns because the app is new.",
+    "closeSafety": "Converting to another format leaves the original untouched and writes to a separate folder. Re-exporting to the same format rewrites the file where it is. Notarized by Apple; on Windows, SmartScreen warns because the app is new.",
     "allFeatures": "See everything it does →"
   }
 }
