@@ -29,7 +29,7 @@ export default function App() {
         <section className="mx-auto grid max-w-5xl items-center gap-10 px-6 pt-14 pb-14 sm:pt-20 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-12 lg:pt-24 lg:pb-20">
           <div>
             <Reveal eager>
-              <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-[2.6rem] lg:leading-[1.06] xl:text-[3rem]">
+              <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-[2.6rem] lg:leading-[1.06]">
                 {t('hero.h1a')}
                 <br />
                 <span className="text-grad text-grad-glow">{t('hero.h1b')}</span>
