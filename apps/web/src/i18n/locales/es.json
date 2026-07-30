@@ -33,8 +33,8 @@
     "space": "Espacio"
   },
   "hero": {
-    "h1a": "Deja de preparar.",
-    "h1b": "Ponte a pinchar.",
+    "h1a": "Tu música,",
+    "h1b": "como debería estar.",
     "ledeShort": "Convertir, etiquetar, comprobar la calidad y ordenar en Apple Music o Engine DJ: lo que hacías saltando entre cuatro o cinco apps, Surco lo hace en una. De minutos por pista a un par de segundos."
   },
   "features": {
@@ -575,9 +575,9 @@
   },
   "home": {
     "walkthrough": {
-      "kicker": "De la carpeta a la cabina",
+      "kicker": "Paso a paso",
       "title": "Una pista, de principio a fin",
-      "lede": "Esto es todo lo que le pasa a un archivo desde que lo sueltas hasta que está en tu equipo."
+      "lede": "Todo lo que Surco le hace a un archivo desde que lo sueltas hasta que está donde lo escuchas. Seis pasos, una sola ventana."
     },
     "drop": {
       "step": "01 · entra",
@@ -588,8 +588,8 @@
     },
     "quality": {
       "step": "02 · se comprueba",
-      "title": "El espectro no miente.",
-      "lede": "Un lossless de verdad llega hasta arriba. Un MP3 disfrazado se corta en seco y deja el hueco a la vista, antes de que la pista llegue a cabina.",
+      "title": "Ese FLAC era un MP3.",
+      "lede": "Comprar lossless no garantiza que lo sea. Si alguien convirtió un MP3 a FLAC, el archivo pesa lo mismo que un lossless pero le falta la mitad de los agudos — y en el espectro se ve como un muro plano. Surco te lo marca antes de que la pista salga de casa.",
       "pill": "calidad",
       "goodBadge": "● Buena calidad",
       "fakeBadge": "● Fake lossless",
@@ -599,7 +599,7 @@
       "goodCaptionPost": " · sin muro",
       "fakeCaptionPre": "se corta en ",
       "fakeCaptionPost": " · muro de códec",
-      "note": "Dos pistas compradas de la misma carpeta. La segunda dice ser FLAC, pero su audio pasó por un MP3 antes."
+      "note": "La misma pista, dos veces: el FLAC original y ese mismo audio pasado por MP3 y devuelto a FLAC. Solo cambia el códec, así que el muro no tiene otra explicación."
     },
     "tag": {
       "step": "03 · se etiqueta",
@@ -619,7 +619,7 @@
     "declick": {
       "step": "04 · se limpia",
       "title": "Los clics del vinilo, fuera.",
-      "lede": "Surco los marca uno a uno sobre la onda y te deja alternar entre la original y la reparada mientras suena, sin cortar el audio.",
+      "lede": "Si tus pistas vienen de un disco, traen chasquidos. Surco los encuentra, los marca sobre la onda y los quita — y puedes cambiar entre el audio original y el reparado mientras suena, sin cortes, para comprobar que no se ha llevado nada de la música por delante.",
       "pill": "9 clics",
       "hearing": "Oyendo la reparada",
       "original": "↔ la original",
@@ -638,18 +638,19 @@
     },
     "batch": {
       "step": "06 · sale",
-      "title": "Toda la carpeta, de una vez.",
-      "lede": "Y va a donde tú pinchas. Con tus cue points de Traktor intactos.",
+      "title": "Y acaba donde tú la escuchas.",
+      "lede": "Elige formato y destino, y Surco convierte la selección entera. No exporta un fichero para que tú lo importes: en Engine DJ escribe directamente en tu biblioteca, con carátula, rating y playlist.",
       "pill": "Convirtiendo 11/40",
       "stage": "Convirtiendo a AIFF…",
       "cancel": "cancelar",
-      "cues": "con tus cue points de Traktor intactos",
+      "cues": "tus cue points de Traktor siguen donde estaban al convertir entre MP3 y AIFF, y al pasar cualquiera de los dos —o un FLAC— a FLAC",
       "summary": "38 convertidas · 1 omitida · 1 con error"
     },
-    "heroLede": "Convertir, etiquetar, comprobar la calidad y dejar cada pista en rekordbox, Engine DJ o Apple Music. Todo lo que hoy haces en cinco programas.",
+    "heroLede": "Surco abre cada archivo y te dice qué tienes de verdad: si el lossless es auténtico, qué etiquetas faltan, dónde hay clics y silencio de sobra. Lo arregla y lo deja listo en tu reproductor o en tu equipo de DJ.",
     "heroFree": "Gratis · macOS, Windows y Linux",
-    "closeTitle": "De la carpeta a la cabina sin salir de una ventana.",
+    "closeTitle": "Todo esto, en una ventana.",
     "closeNote": "Gratis, para siempre. Sin cuenta, sin nube, sin límites.",
+    "closeSafety": "Convertir a otro formato deja el original intacto y escribe en una carpeta aparte. Reexportar al mismo formato reescribe el fichero donde está. Notarizado por Apple; en Windows, SmartScreen avisa por ser una app nueva.",
     "allFeatures": "Ver todo lo que hace →"
   }
 }

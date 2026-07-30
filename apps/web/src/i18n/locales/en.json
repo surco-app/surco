@@ -33,8 +33,8 @@
     "space": "Space"
   },
   "hero": {
-    "h1a": "Stop prepping.",
-    "h1b": "Start playing.",
+    "h1a": "Your music,",
+    "h1b": "the way it should be.",
     "ledeShort": "Convert, tag, check the quality and file into Apple Music or Engine DJ: what used to take four or five apps, Surco does in one. From minutes per track to a couple of seconds."
   },
   "features": {
@@ -575,9 +575,9 @@
   },
   "home": {
     "walkthrough": {
-      "kicker": "From the folder to the booth",
+      "kicker": "Step by step",
       "title": "One track, start to finish",
-      "lede": "Everything that happens to a file between dropping it in and playing it out."
+      "lede": "Everything Surco does to a file between dropping it in and having it where you listen. Six steps, one window."
     },
     "drop": {
       "step": "01 · in",
@@ -588,8 +588,8 @@
     },
     "quality": {
       "step": "02 · checked",
-      "title": "The spectrum doesn't lie.",
-      "lede": "Real lossless reaches the top. A disguised MP3 stops dead and leaves the gap in plain sight — before the track reaches the booth.",
+      "title": "That FLAC was an MP3.",
+      "lede": "Buying lossless is no guarantee it is. If someone converted an MP3 to FLAC, the file weighs what a lossless weighs but half the treble is gone — and on the spectrum it shows as a flat wall. Surco flags it before the track ever leaves the house.",
       "pill": "quality",
       "goodBadge": "● Good quality",
       "fakeBadge": "● Fake lossless",
@@ -599,7 +599,7 @@
       "goodCaptionPost": " · no wall",
       "fakeCaptionPre": "cuts off at ",
       "fakeCaptionPost": " · codec wall",
-      "note": "Two purchased tracks from the same folder. The second claims to be FLAC, but its audio went through an MP3 first."
+      "note": "The same track, twice: the original FLAC, and that same audio pushed through MP3 and back. Only the codec differs, so the wall has no other explanation."
     },
     "tag": {
       "step": "03 · tagged",
@@ -619,7 +619,7 @@
     "declick": {
       "step": "04 · cleaned",
       "title": "Vinyl clicks, gone.",
-      "lede": "Surco marks every one on the waveform and lets you switch between the original and the repair while it plays, with no break in the audio.",
+      "lede": "If your tracks came off a record, they carry clicks. Surco finds them, marks them on the wave and takes them out — and you can switch between the original and the repaired audio while it plays, with no gap, to check the repair didn't take any of the music with it.",
       "pill": "9 clicks",
       "hearing": "Hearing the repair",
       "original": "↔ the original",
@@ -638,18 +638,19 @@
     },
     "batch": {
       "step": "06 · out",
-      "title": "The whole folder, in one go.",
-      "lede": "Straight into wherever you play. With your Traktor cue points intact.",
+      "title": "And it ends up where you listen.",
+      "lede": "Pick a format and a destination, and Surco converts the whole selection. It doesn't export a file for you to import: with Engine DJ it writes straight into your library, artwork, rating and playlist included.",
       "pill": "Converting 11/40",
       "stage": "Converting to AIFF…",
       "cancel": "cancel",
-      "cues": "with your Traktor cue points intact",
+      "cues": "your Traktor cue points stay put when you convert between MP3 and AIFF, and when either of them — or a FLAC — goes to FLAC",
       "summary": "38 converted · 1 skipped · 1 failed"
     },
-    "heroLede": "Convert, tag, check the quality and file every track into rekordbox, Engine DJ or Apple Music. Everything you do today across five programs.",
+    "heroLede": "Surco opens every file and tells you what you actually have: whether the lossless is genuine, which tags are missing, where the clicks and the dead air are. Then it fixes all of it and files it into your player or your DJ gear.",
     "heroFree": "Free · macOS, Windows and Linux",
-    "closeTitle": "From the folder to the booth without leaving one window.",
+    "closeTitle": "All of it, in one window.",
     "closeNote": "Free, forever. No account, no cloud, no limits.",
+    "closeSafety": "Converting to another format leaves the original untouched and writes to a separate folder. Re-exporting to the same format rewrites the file where it is. Notarized by Apple; on Windows, SmartScreen warns because the app is new.",
     "allFeatures": "See everything it does →"
   }
 }

@@ -245,11 +245,13 @@ export default function Walkthrough() {
                   </span>
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-2">
-                  {DESTINATIONS.map((d, i) => (
+                  {DESTINATIONS.map((d) => (
                     <span
                       key={d}
                       className={`rounded border px-2 py-1.5 text-center font-mono text-[10px] ${
-                        i === 0 ? 'border-blue/45 bg-blue/10 text-blue' : 'border-line text-muted'
+                        d === 'Engine DJ'
+                          ? 'border-blue/45 bg-blue/10 text-blue'
+                          : 'border-line text-muted'
                       }`}
                     >
                       {d}
