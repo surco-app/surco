@@ -36,13 +36,13 @@ export default function HeroApp({ video }: { video?: string }) {
 
   return (
     <div className="relative">
-      <div className="inset-shadow-edge overflow-hidden rounded-2xl border border-line bg-surface2/60 shadow-2xl shadow-black/50">
+      <div className="overflow-hidden rounded-xl shadow-2xl shadow-black/60 ring-1 ring-line/60">
         <div className="relative">
           <img
             src={shot}
             alt={t('showcase.alt')}
             width={2000}
-            height={1240}
+            height={1239}
             fetchPriority="high"
             decoding="async"
             className="block h-auto w-full"
