@@ -19,11 +19,11 @@
     "check": "biome check --write src"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.4",
+    "@biomejs/biome": "2.5.6",
     "@tailwindcss/vite": "^4.3.3",
-    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.1.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.0.3",
     "@types/sql.js": "^1.4.11",
@@ -32,10 +32,10 @@
     "electron-builder": "26.15.3",
     "electron-vite": "^5.0.0",
     "i18next": "^26.3.6",
-    "jsdom": "^29.1.1",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-i18next": "^17.0.10",
+    "jsdom": "^30.0.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-i18next": "^17.0.11",
     "tailwindcss": "^4.1.13",
     "typescript": "^7.0.2",
     "vite": "^7.3.6",
@@ -43,11 +43,11 @@
   },
   "dependencies": {
     "@ffprobe-installer/ffprobe": "^2.1.2",
-    "@tanstack/react-query": "^5.101.2",
+    "@tanstack/react-query": "^5.101.4",
     "electron-log": "^5.4.4",
     "electron-updater": "^6.8.9",
     "ffmpeg-static": "^5.3.0",
-    "lucide-react": "^1.24.0",
+    "lucide-react": "^1.28.0",
     "node-taglib-sharp": "^6.0.3",
     "sql.js": "^1.14.1"
   }
