@@ -37,15 +37,15 @@ export default function HeroApp({ video }: { video?: string }) {
   return (
     <div className="relative">
       <div className="inset-shadow-edge overflow-hidden rounded-2xl border border-line bg-surface2/60 shadow-2xl shadow-black/50">
-        <div className="relative aspect-[16/11]">
+        <div className="relative">
           <img
             src={shot}
             alt={t('showcase.alt')}
             width={2000}
-            height={1241}
+            height={1240}
             fetchPriority="high"
             decoding="async"
-            className="absolute inset-0 size-full object-cover object-left-top"
+            className="block h-auto w-full"
           />
           {video && (
             <video
@@ -56,7 +56,7 @@ export default function HeroApp({ video }: { video?: string }) {
               loop
               playsInline
               preload="none"
-              className={`absolute inset-0 size-full object-cover object-top transition-opacity duration-700 ${
+              className={`absolute inset-0 size-full object-cover transition-opacity duration-700 ${
                 playing ? 'opacity-100' : 'opacity-0'
               }`}
             />
