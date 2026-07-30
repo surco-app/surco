@@ -35,7 +35,7 @@ export default function HeroApp({ video }: { video?: string }) {
   return (
     <div className="relative">
       <div className="inset-shadow-edge overflow-hidden rounded-2xl border border-line bg-surface2/60 shadow-2xl shadow-black/50">
-        <div className="relative aspect-[16/11] sm:aspect-[16/10]">
+        <div className="relative aspect-[16/11]">
           <img
             src={shot}
             alt={t('showcase.alt')}
@@ -43,7 +43,7 @@ export default function HeroApp({ video }: { video?: string }) {
             height={900}
             fetchPriority="high"
             decoding="async"
-            className="absolute inset-0 size-full object-cover object-top"
+            className="absolute inset-0 size-full object-cover object-left-top"
           />
           {video && (
             <video
