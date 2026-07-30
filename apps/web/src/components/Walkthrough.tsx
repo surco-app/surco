@@ -15,7 +15,8 @@ import SpectrumPair from './scenes/SpectrumPair'
 import TrackRows from './scenes/TrackRows'
 import WaveStrip from './scenes/WaveStrip'
 
-const DESTINATIONS = ['rekordbox', 'Engine DJ', 'Traktor', 'Serato', 'Apple Music', 'M3U8']
+const LIBRARY_DESTINATIONS = ['Apple Music', 'Engine DJ']
+const EXPORT_DESTINATIONS = ['rekordbox', 'Traktor', 'Serato', 'M3U8']
 
 // The six steps a file goes through, in order, each one showing the part of the app
 // that does it. The page sells the whole preparation flow, so it walks the flow
@@ -244,15 +245,27 @@ export default function Walkthrough() {
                     <span className="text-faint">{t('home.batch.cancel')}</span>
                   </span>
                 </div>
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  {DESTINATIONS.map((d) => (
+                <p className="mt-4 font-mono text-[9px] tracking-wider text-faint uppercase">
+                  {t('home.batch.toLibrary')}
+                </p>
+                <div className="mt-1.5 grid grid-cols-2 gap-2">
+                  {LIBRARY_DESTINATIONS.map((d) => (
                     <span
                       key={d}
-                      className={`rounded border px-2 py-1.5 text-center font-mono text-[10px] ${
-                        d === 'Engine DJ'
-                          ? 'border-blue/45 bg-blue/10 text-blue'
-                          : 'border-line text-muted'
-                      }`}
+                      className="rounded border border-blue/45 bg-blue/10 px-2 py-1.5 text-center font-mono text-[11px] text-blue"
+                    >
+                      {d}
+                    </span>
+                  ))}
+                </div>
+                <p className="mt-3 font-mono text-[9px] tracking-wider text-faint uppercase">
+                  {t('home.batch.toFile')}
+                </p>
+                <div className="mt-1.5 grid grid-cols-4 gap-1.5">
+                  {EXPORT_DESTINATIONS.map((d) => (
+                    <span
+                      key={d}
+                      className="rounded border border-line px-1.5 py-1 text-center font-mono text-[9px] text-muted"
                     >
                       {d}
                     </span>

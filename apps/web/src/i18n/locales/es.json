@@ -599,7 +599,7 @@
       "goodCaptionPost": " · sin muro",
       "fakeCaptionPre": "se corta en ",
       "fakeCaptionPost": " · muro de códec",
-      "note": "La misma pista, dos veces: el FLAC original y ese mismo audio pasado por MP3 y devuelto a FLAC. Solo cambia el códec, así que el muro no tiene otra explicación."
+      "note": "Dos pistas compradas como FLAC. La segunda lo dice en la etiqueta, pero su audio pasó por un MP3 antes: por encima del muro no queda nada."
     },
     "tag": {
       "step": "03 · se etiqueta",
@@ -608,7 +608,7 @@
       "pill": "12/40",
       "before": "Artista · antes",
       "after": "Artista · después",
-      "note": "Tag real de un FLAC comprado. En la pantalla de cabina se lee la etiqueta, no el nombre del archivo.",
+      "note": "Tag real de un FLAC comprado: el artista venía así. Lo que se lee en tu reproductor es la etiqueta, no el nombre del archivo.",
       "fields": {
         "label": "Sello",
         "bpm": "BPM",
@@ -639,18 +639,20 @@
     "batch": {
       "step": "06 · sale",
       "title": "Y acaba donde tú la escuchas.",
-      "lede": "Elige formato y destino, y Surco convierte la selección entera. No exporta un fichero para que tú lo importes: en Engine DJ escribe directamente en tu biblioteca, con carátula, rating y playlist.",
+      "lede": "Elige formato y destino y convierte la carpeta entera. En Apple Music y Engine DJ no importas nada: la pista aparece en tu biblioteca con la carátula puesta — y en Engine DJ, con rating y playlist. A los demás les deja el fichero que esperan.",
       "pill": "Convirtiendo 11/40",
       "stage": "Convirtiendo a AIFF…",
       "cancel": "cancelar",
-      "cues": "tus cue points de Traktor siguen donde estaban al convertir entre MP3 y AIFF, y al pasar cualquiera de los dos —o un FLAC— a FLAC",
+      "toLibrary": "entra en la app",
+      "toFile": "o exporta el fichero",
+      "cues": "cue points de Traktor intactos entre MP3 y AIFF, y de cualquiera de los tres a FLAC",
       "summary": "38 convertidas · 1 omitida · 1 con error"
     },
     "heroLede": "Surco abre cada archivo y te dice qué tienes de verdad: si el lossless es auténtico, qué etiquetas faltan, dónde hay clics y silencio de sobra. Lo arregla y lo deja listo en tu reproductor o en tu equipo de DJ.",
     "heroFree": "Gratis · macOS, Windows y Linux",
     "closeTitle": "Todo esto, en una ventana.",
     "closeNote": "Gratis, para siempre. Sin cuenta, sin nube, sin límites.",
-    "closeSafety": "Convertir a otro formato deja el original intacto y escribe en una carpeta aparte. Reexportar al mismo formato reescribe el fichero donde está. Notarizado por Apple; en Windows, SmartScreen avisa por ser una app nueva.",
+    "closeSafety": "Cambiar de formato deja tu original intacto y escribe aparte; reexportar al mismo formato reescribe el fichero donde está. Notarizado por Apple.",
     "allFeatures": "Ver todo lo que hace →"
   }
 }

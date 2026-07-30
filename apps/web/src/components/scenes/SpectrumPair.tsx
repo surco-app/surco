@@ -2,9 +2,10 @@ import { useTranslation } from 'react-i18next'
 
 const AXIS = ['20k', '15k', '10k', '5k', '0k']
 
-// Both images are ffmpeg renders of the same track: the genuine FLAC, and that same
-// audio pushed through MP3 128k and back. Only the codec differs, so the wall in the
-// second one has no other explanation — which is the whole argument of this scene.
+// Two different purchased tracks, both sold as FLAC: one genuine, one whose audio had
+// already been through an MP3. Keep the copy on "two tracks" — an earlier version of
+// this scene rendered one track twice, and copy written against that stale premise
+// claimed a provenance these images do not have.
 //
 // They're rendered on a linear frequency scale on purpose. On the log scale a codec
 // cutoff barely registers; linear is what makes it a straight edge you can point at.

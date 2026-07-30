@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import BrewCommand from './components/BrewCommand'
 import DownloadButton from './components/DownloadButton'
 import Footer from './components/Footer'
 import Header from './components/Header'
@@ -61,7 +62,10 @@ export default function App() {
             <div className="mt-10 flex flex-col items-center gap-4">
               <DownloadButton />
               <p className="font-mono text-xs text-faint">{t('home.closeNote')}</p>
-              <p className="max-w-md text-center font-mono text-xs leading-relaxed text-faint/80">
+            </div>
+            <div className="mx-auto mt-14 max-w-xl text-left">
+              <BrewCommand />
+              <p className="mt-3 font-mono text-xs leading-relaxed text-faint/80">
                 {t('home.closeSafety')}
               </p>
             </div>
