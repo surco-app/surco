@@ -391,6 +391,7 @@ export default function App(): React.JSX.Element {
     clearExtrasTracks,
     deriveTracks,
     startOverTrack,
+    refreshTrackFromDisk,
     removeTrack,
     removeTracks,
     clearTracks,
@@ -721,6 +722,7 @@ export default function App(): React.JSX.Element {
     tracks,
     settings,
     updateTrack,
+    refreshTrackFromDisk,
     onConversion: maybeShowDonateNudge,
     onNormalizeSkipped: (name) => setNotice(tr('notices.normalizeSkipped', { name })),
     // Only when the repair actually touched samples: a clean track reporting "0
