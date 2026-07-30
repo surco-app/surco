@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { PAGES } from '../lib/nav'
 import {
+  DECLICK_ENVELOPE,
   DECLICK_MARKS,
-  DECLICK_PEAKS,
   TAIL_CUT,
-  TAIL_PEAKS,
-  TRACK_PEAKS,
+  TAIL_ENVELOPE,
+  TRACK_ENVELOPE,
 } from '../lib/waveforms'
 import Kicker from './Kicker'
 import Reveal from './Reveal'
@@ -156,26 +156,25 @@ export default function Walkthrough() {
           <AppFrame pill={t('home.declick.pill')}>
             <div className="p-5">
               <WaveStrip
-                peaks={DECLICK_PEAKS}
+                values={DECLICK_ENVELOPE}
                 marks={DECLICK_MARKS}
-                height="h-28"
+                playhead={0.54}
+                height="h-32"
                 label={t('home.declick.title')}
               />
-              <div className="mt-3 flex flex-wrap items-center gap-3">
+              <div className="mt-4 flex items-center gap-3">
                 <span className="inline-flex overflow-hidden rounded-lg border border-line font-mono text-[11px]">
                   <span className="bg-blue/20 px-3 py-1.5 text-blue">
                     {t('home.declick.hearing')}
                   </span>
                   <span className="px-3 py-1.5 text-muted">{t('home.declick.original')}</span>
                 </span>
-                <span className="font-mono text-[11px] text-faint">{t('home.declick.next')}</span>
               </div>
             </div>
           </AppFrame>
         }
       >
-        <p>{t('home.declick.lede')}</p>
-        <p className="mt-3 font-mono text-xs text-faint">{t('home.declick.note')}</p>
+        {t('home.declick.lede')}
       </SceneLayout>
 
       <SceneLayout
@@ -184,21 +183,24 @@ export default function Walkthrough() {
         app={
           <AppFrame pill={t('home.trim.pill')}>
             <div className="p-5">
-              <p className="mb-1.5 font-mono text-[10px] tracking-wider text-faint uppercase">
-                {t('home.trim.tailLabel')}
-              </p>
               <WaveStrip
-                peaks={TAIL_PEAKS}
+                values={TAIL_ENVELOPE}
                 cut={TAIL_CUT}
+                height="h-32"
                 label={t('home.trim.tailLabel')}
-                height="h-28"
               />
-              <p className="mt-2 font-mono text-[10px] text-cyan">{t('home.trim.magnet')}</p>
-              <p className="mt-4 mb-1.5 font-mono text-[10px] tracking-wider text-faint uppercase">
-                {t('home.trim.fullLabel')}
-              </p>
-              <WaveStrip peaks={TRACK_PEAKS} label={t('home.trim.fullLabel')} height="h-16" />
-              <p className="mt-2 font-mono text-[10px] text-red">{t('home.trim.clipping')}</p>
+              <div className="mt-4 flex items-baseline justify-between font-mono text-[10px]">
+                <span className="text-cyan">{t('home.trim.magnet')}</span>
+                <span className="text-faint">{t('home.trim.tailLabel')}</span>
+              </div>
+              <div className="mt-5 border-t border-line pt-4">
+                <WaveStrip
+                  values={TRACK_ENVELOPE}
+                  height="h-12"
+                  label={t('home.trim.fullLabel')}
+                />
+                <p className="mt-2 font-mono text-[10px] text-faint">{t('home.trim.fullLabel')}</p>
+              </div>
             </div>
           </AppFrame>
         }

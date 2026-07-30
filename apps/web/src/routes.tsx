@@ -8,12 +8,14 @@ import App from './App'
 import Changelog from './components/Changelog'
 import DonateCancel from './components/DonateCancel'
 import DonateCompleted from './components/DonateCompleted'
+import Features from './components/Features'
 import GoogleAnalytics from './components/GoogleAnalytics'
 import Guide from './components/Guide'
 import { createI18n, type Language } from './i18n'
 
 const SITE = 'https://getsurco.app'
 const PATHS: Record<Language, string> = { es: '/', en: '/en' }
+const FEATURE_PATHS: Record<Language, string> = { es: '/funciones', en: '/en/features' }
 const GUIDE_PATHS: Record<Language, string> = { es: '/guia', en: '/en/guide' }
 const CHANGELOG_PATHS: Record<Language, string> = { es: '/cambios', en: '/en/changelog' }
 
@@ -60,6 +62,37 @@ function LocalizedApp({ lng }: { lng: Language }) {
     <I18nextProvider i18n={I18N[lng]}>
       <DocumentHead lng={lng} />
       <App />
+    </I18nextProvider>
+  )
+}
+
+function FeaturesHead({ lng }: { lng: Language }) {
+  const t = I18N[lng].getFixedT(lng)
+  const url = SITE + FEATURE_PATHS[lng]
+  return (
+    <Head>
+      <html lang={t('meta.htmlLang')} />
+      <title>{t('features.metaTitle')}</title>
+      <meta name="description" content={t('features.metaDescription')} />
+      <link rel="canonical" href={url} />
+      <link rel="alternate" hrefLang="es" href={`${SITE}${FEATURE_PATHS.es}`} />
+      <link rel="alternate" hrefLang="en" href={`${SITE}${FEATURE_PATHS.en}`} />
+      <link rel="alternate" hrefLang="x-default" href={`${SITE}${FEATURE_PATHS.es}`} />
+      <meta property="og:locale" content={t('meta.ogLocale')} />
+      <meta property="og:url" content={url} />
+      <meta property="og:title" content={t('features.metaTitle')} />
+      <meta property="og:description" content={t('features.metaDescription')} />
+      <meta name="twitter:title" content={t('features.metaTitle')} />
+      <meta name="twitter:description" content={t('features.metaDescription')} />
+    </Head>
+  )
+}
+
+function LocalizedFeatures({ lng }: { lng: Language }) {
+  return (
+    <I18nextProvider i18n={I18N[lng]}>
+      <FeaturesHead lng={lng} />
+      <Features />
     </I18nextProvider>
   )
 }
@@ -146,6 +179,8 @@ export const routes: RouteRecord[] = [
     children: [
       { index: true, element: <LocalizedApp lng="es" />, entry: 'src/routes.tsx' },
       { path: 'en', element: <LocalizedApp lng="en" />, entry: 'src/routes.tsx' },
+      { path: 'funciones', element: <LocalizedFeatures lng="es" />, entry: 'src/routes.tsx' },
+      { path: 'en/features', element: <LocalizedFeatures lng="en" />, entry: 'src/routes.tsx' },
       { path: 'guia', element: <LocalizedGuide lng="es" />, entry: 'src/routes.tsx' },
       { path: 'en/guide', element: <LocalizedGuide lng="en" />, entry: 'src/routes.tsx' },
       { path: 'cambios', element: <LocalizedChangelog lng="es" />, entry: 'src/routes.tsx' },
