@@ -226,11 +226,11 @@
       },
       {
         "q": "¿Toca mis archivos originales?",
-        "a": "Por defecto, no. Las pistas convertidas se guardan en una carpeta aparte (Música/Surco) y tus originales quedan intactos. Solo se reemplazan si activas «Sobrescribir original»."
+        "a": "Depende de si cambias de formato. Si conviertes a un formato distinto del que ya tiene, el original queda intacto y la copia va a una carpeta aparte (Música/Surco). Si reexportas al mismo formato, Surco reescribe ese fichero donde está — es lo que le permite actualizar las etiquetas sin recodificar el audio. Y con «Sobrescribir original» activado, reescribe siempre."
       },
       {
         "q": "¿Conserva los cue points?",
-        "a": "Al reexportar sin tocar el audio, sí: los cue points de Traktor pasan intactos. Si activas el recorte de silencio, la normalización o la reparación de clics, el audio se recodifica: con el recorte los cues se recolocan según lo que hayas cortado, y en WAV y FLAC se pierden. En MP3 y AIFF se conservan. Surco te lo avisa en la propia sección antes de que conviertas."
+        "a": "Depende del formato de destino. Se conservan al convertir entre MP3 y AIFF, y al pasar cualquiera de los tres —MP3, AIFF o FLAC— a FLAC: Surco lee el árbol que Traktor guarda dentro del fichero y lo vuelve a escribir en el formato que toca. Se pierden al convertir a WAV o a ALAC, que no tienen dónde guardarlo, y al pasar de FLAC a MP3 o AIFF. Si recortas silencio, los cues se recolocan solos según lo que hayas cortado —incluida la rejilla, que se reancla por fase para que no se descuadre—, y si algo no se puede recolocar con garantías se descarta en vez de quedar mal puesto. Surco te lo avisa antes de convertir."
       },
       {
         "q": "¿Puedo recortar el silencio de mis rips?",
@@ -404,7 +404,7 @@
           "Dos carriles: uno para el corte de entrada y otro para el de salida, cada uno con su zoom y su escucha.",
           "Ajuste al milisegundo con las asas o con los pasos.",
           "El filtro «Silencio por recortar» de la lista te reúne las pistas que lo necesitan.",
-          "Recortar recodifica el audio y recoloca los cues de Traktor según lo cortado; en WAV y FLAC se pierden. Surco te lo avisa en la sección."
+          "Recortar recodifica el audio y recoloca los cues de Traktor según lo cortado; en WAV y ALAC se pierden. Surco te lo avisa en la sección."
         ],
         "shot": "",
         "shotCaption": "Los carriles de recorte de entrada y salida sobre la onda."
@@ -485,7 +485,7 @@
         "points": [
           "Formatos: AIFF, WAV, FLAC y ALAC (lossless) y MP3 — de 320 a 128 kbps, o VBR V0/V2.",
           "Reexportar al mismo formato, sin tocar el audio, conserva los cue points de Traktor.",
-          "La normalización, el recorte y la reparación de clics recodifican el audio: en MP3 y AIFF los cues se conservan, en WAV y FLAC se pierden. Vienen desactivados y Surco te lo avisa antes de convertir.",
+          "La normalización, el recorte y la reparación de clics recodifican el audio: en MP3, AIFF y FLAC los cues se conservan, en WAV y ALAC se pierden. Vienen desactivados y Surco te lo avisa antes de convertir.",
           "Tras convertir, puedes mandar los originales a la papelera con una sola acción."
         ],
         "shot": "convertir-es.png",
