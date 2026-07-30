@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import HeroWave from './HeroWave'
 
 // The product, full width, immediately under the headline — a visitor should know
 // what Surco is before reading a word. The still ships in the static HTML so the
 // window is there at first paint; the loop, when present, fades over it once it can
 // actually play, and never on a connection or a preference that shouldn't carry it.
 export default function HeroApp({ video }: { video?: string }) {
-  const { t, i18n } = useTranslation()
-  const shot = `/app-${i18n.language === 'en' ? 'en' : 'es'}.webp`
+  const { t } = useTranslation()
+  // One screenshot for both languages for now: this is the current build's UI, and
+  // the older per-language shots are a version behind. Swap in a Spanish capture when
+  // there is one.
+  const shot = '/hero-app.webp'
   const ref = useRef<HTMLVideoElement>(null)
   const [playing, setPlaying] = useState(false)
 
@@ -39,8 +41,8 @@ export default function HeroApp({ video }: { video?: string }) {
           <img
             src={shot}
             alt={t('showcase.alt')}
-            width={1600}
-            height={900}
+            width={2000}
+            height={1241}
             fetchPriority="high"
             decoding="async"
             className="absolute inset-0 size-full object-cover object-left-top"
@@ -60,7 +62,6 @@ export default function HeroApp({ video }: { video?: string }) {
             />
           )}
         </div>
-        <HeroWave className="h-14 border-t border-line bg-bg/60 sm:h-16" />
       </div>
     </div>
   )

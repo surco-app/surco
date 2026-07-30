@@ -649,7 +649,7 @@
       "goodCaptionPost": " · no wall",
       "fakeCaptionPre": "cuts off at ",
       "fakeCaptionPost": " · codec wall",
-      "note": "Both spectra come from the same track: the original, and that same audio run through MP3 128k. The codec is the only difference."
+      "note": "Two purchased tracks from the same folder. The second claims to be FLAC, but its audio went through an MP3 first."
     },
     "tag": {
       "step": "03 · tagged",
