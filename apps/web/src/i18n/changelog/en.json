@@ -31,6 +31,10 @@
       {
         "text": "You can now move around the waveform while trimming: swipe two fingers horizontally across it to look before or after the cut without touching it. Zooming in or out re-centres the view on the cut.",
         "in": "0.76.4"
+      },
+      {
+        "text": "Panning the trim waveform is smooth now: the view tracks your fingers instead of jumping once the audio finishes loading, and the cut line disappears when you push it off the lane rather than sticking to the edge.",
+        "in": "0.76.5"
       }
     ]
   },
