@@ -96,6 +96,7 @@ function Lane({
   cutSec,
   suggestionSec,
   snapped,
+  grabbed,
   onPointerDown,
   onPointerMove,
   onWheelPan,
@@ -124,6 +125,7 @@ function Lane({
   cutSec: number | undefined
   suggestionSec: number | undefined
   snapped: boolean
+  grabbed: boolean
   onPointerDown: (e: React.PointerEvent) => void
   onPointerMove: (e: React.PointerEvent) => void
   onWheelPan: (deltaX: number) => void
@@ -205,6 +207,18 @@ function Lane({
   // Lane-relative: 0% is fromSec, 100% is toSec.
   const pct = (sec: number): number => ((sec - fromSec) / spanSec) * 100
   const cut = cutSec ?? (side === 'start' ? 0 : durationSec)
+  // Panning can carry the window past the cut. A handle clamped to the lane edge then
+  // reads as "the cut is here" when it is somewhere off screen — what the user saw as a
+  // line planted against the left border that only started moving again once the cut
+  // came back into frame. Absence tells the truth; a pinned edge does not. The half-
+  // strip of slack keeps it from blinking out the instant it touches the border, where
+  // it is still legitimately pointing at the visible edge. Computed here in Lane, which
+  // both the head and the tail lane are instances of, so start and end behave alike.
+  const cutPct = pct(cut)
+  // Never hidden while the handle is held: a drag can legitimately carry the cut past
+  // the lane edge (that is how a bound is dropped back onto the track's own start), and
+  // yanking the element out of the DOM mid-gesture kills the pointer capture with it.
+  const cutOnScreen = grabbed || cutSec === undefined || (cutPct >= -1 && cutPct <= 101)
   // The dropped audio, shaded: for the head lane everything BEFORE the cut, for the
   // tail lane everything after — the kept audio stays lit.
   const shadeWidth =
@@ -369,61 +383,63 @@ function Lane({
           )}
           {/* The cut itself: a handle to drag, arrow keys to refine. The magnet's
               glow stands in for the trackpad click an Electron app cannot fire. */}
-          <div
-            data-testid={`trim-handle-${side}`}
-            role="slider"
-            aria-label={tr(side === 'start' ? 'trim.handleStart' : 'trim.handleEnd')}
-            aria-valuemin={0}
-            aria-valuemax={Number(durationSec.toFixed(2))}
-            aria-valuenow={Number(cut.toFixed(2))}
-            tabIndex={0}
-            // Keyboard focus lights the handle's own line and dot instead of drawing
-            // a box around it: an outline on a strip this thin and tall read as a
-            // stray rectangle, and the arrows (which need the handle focused) made it
-            // a constant sight. The glow is the snap's, so focus and snap speak the
-            // same visual language. outline-none alone leaves the global focus-visible
-            // ring (a box-shadow, not an outline) boxing the 12px-wide strip, so the
-            // shadow-none kills that too.
-            className="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-ew-resize touch-none outline-none focus-visible:shadow-none"
-            style={{ left: `${Math.max(0, Math.min(100, pct(cut)))}%` }}
-            onKeyDown={(e) => {
-              if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
-              e.preventDefault()
-              // Shift is the coarse step; bare arrows do the fine one, matching the
-              // buttons either side of the readout.
-              const step = e.shiftKey ? COARSE_STEP_SEC : fineStepSec
-              onKeyStep(e.key === 'ArrowLeft' ? -step : step)
-            }}
-            onPointerDown={(e) => {
-              e.stopPropagation()
-              e.currentTarget.setPointerCapture?.(e.pointerId)
-              onPointerDown(e)
-            }}
-            onPointerMove={(e) => {
-              e.stopPropagation()
-              onPointerMove(e)
-            }}
-            onPointerUp={onRelease}
-            onPointerCancel={onRelease}
-          >
-            {/* Focus SHARPENS the line rather than haloing it: the snap's wide, spread
+          {cutOnScreen && (
+            <div
+              data-testid={`trim-handle-${side}`}
+              role="slider"
+              aria-label={tr(side === 'start' ? 'trim.handleStart' : 'trim.handleEnd')}
+              aria-valuemin={0}
+              aria-valuemax={Number(durationSec.toFixed(2))}
+              aria-valuenow={Number(cut.toFixed(2))}
+              tabIndex={0}
+              // Keyboard focus lights the handle's own line and dot instead of drawing
+              // a box around it: an outline on a strip this thin and tall read as a
+              // stray rectangle, and the arrows (which need the handle focused) made it
+              // a constant sight. The glow is the snap's, so focus and snap speak the
+              // same visual language. outline-none alone leaves the global focus-visible
+              // ring (a box-shadow, not an outline) boxing the 12px-wide strip, so the
+              // shadow-none kills that too.
+              className="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-ew-resize touch-none outline-none focus-visible:shadow-none"
+              style={{ left: `${Math.max(0, Math.min(100, pct(cut)))}%` }}
+              onKeyDown={(e) => {
+                if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+                e.preventDefault()
+                // Shift is the coarse step; bare arrows do the fine one, matching the
+                // buttons either side of the readout.
+                const step = e.shiftKey ? COARSE_STEP_SEC : fineStepSec
+                onKeyStep(e.key === 'ArrowLeft' ? -step : step)
+              }}
+              onPointerDown={(e) => {
+                e.stopPropagation()
+                e.currentTarget.setPointerCapture?.(e.pointerId)
+                onPointerDown(e)
+              }}
+              onPointerMove={(e) => {
+                e.stopPropagation()
+                onPointerMove(e)
+              }}
+              onPointerUp={onRelease}
+              onPointerCancel={onRelease}
+            >
+              {/* Focus SHARPENS the line rather than haloing it: the snap's wide, spread
                 glow, worn as a persistent state, smeared across the wave until the line
                 itself was lost in it. Focus instead widens the line a hair and gives it
                 a tight, spreadless glow — the line stays a crisp line, just brighter. */}
-            <span
-              aria-hidden="true"
-              data-testid={snapped ? `trim-snapped-${side}` : undefined}
-              className={`absolute inset-y-0 left-1/2 w-px bg-accent group-focus-visible:shadow-[0_0_4px_var(--color-accent)] ${
-                snapped ? 'shadow-[0_0_8px_2px_var(--color-accent)]' : ''
-              }`}
-            />
-            <span
-              aria-hidden="true"
-              className={`absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent group-focus-visible:scale-125 group-focus-visible:shadow-[0_0_4px_var(--color-accent)] ${
-                snapped ? 'scale-150 shadow-[0_0_8px_var(--color-accent)]' : ''
-              }`}
-            />
-          </div>
+              <span
+                aria-hidden="true"
+                data-testid={snapped ? `trim-snapped-${side}` : undefined}
+                className={`absolute inset-y-0 left-1/2 w-px bg-accent group-focus-visible:shadow-[0_0_4px_var(--color-accent)] ${
+                  snapped ? 'shadow-[0_0_8px_2px_var(--color-accent)]' : ''
+                }`}
+              />
+              <span
+                aria-hidden="true"
+                className={`absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent group-focus-visible:scale-125 group-focus-visible:shadow-[0_0_4px_var(--color-accent)] ${
+                  snapped ? 'scale-150 shadow-[0_0_8px_var(--color-accent)]' : ''
+                }`}
+              />
+            </div>
+          )}
           {/* The suggestion, where it would land: one click stages this side alone.
               The button is clamped inside the lane so a cut hugging the very edge
               never renders half-clipped. */}
@@ -846,6 +862,7 @@ export function TrimSection({
       cutSec: which === 'start' ? shown?.startSec : shown?.endSec,
       suggestionSec: which === 'start' ? suggestion?.startSec : suggestion?.endSec,
       snapped: snapped && dragging.current === which,
+      grabbed: draft !== null,
       onPointerDown: (e: React.PointerEvent) => {
         dragging.current = which
         ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
