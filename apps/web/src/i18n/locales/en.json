@@ -620,5 +620,73 @@
     "olderTitle": "Earlier versions",
     "outroTitle": "Try it all in your next session",
     "outroLede": "Download Surco and prep your first tracks in a couple of minutes."
+  },
+  "home": {
+    "walkthrough": {
+      "kicker": "From the folder to the booth",
+      "title": "One track, start to finish",
+      "lede": "Everything that happens to a file between dropping it in and playing it out."
+    },
+    "drop": {
+      "step": "01 · in",
+      "title": "Drop them and they're in.",
+      "lede": "Whole folders. Surco reads tags, length and artwork on the fly, and never adds the same track twice.",
+      "pill": "Reading 212/319",
+      "caption": "319 tracks read in 4s"
+    },
+    "quality": {
+      "step": "02 · checked",
+      "title": "The spectrum doesn't lie.",
+      "lede": "Real lossless reaches the top. A disguised MP3 stops dead and leaves the gap in plain sight — before the track reaches the booth.",
+      "pill": "quality",
+      "goodBadge": "● Good quality",
+      "fakeBadge": "● Fake lossless",
+      "goodAlt": "Spectrum of a genuine FLAC: energy reaches the top with no cutoff",
+      "fakeAlt": "Spectrum of an MP3 transcoded to FLAC: empty band above 16 kHz with a straight edge",
+      "goodCaptionPre": "reaches ",
+      "goodCaptionPost": " · no wall",
+      "fakeCaptionPre": "cuts off at ",
+      "fakeCaptionPost": " · codec wall",
+      "note": "Both spectra come from the same track: the original, and that same audio run through MP3 128k. The codec is the only difference."
+    },
+    "tag": {
+      "step": "03 · tagged",
+      "title": "Every track, under its own name.",
+      "lede": "Discogs for labels, Bandcamp for self-released, Deezer for the charts. One click fills it all in: artist, label, year, BPM and artwork.",
+      "pill": "12/40",
+      "before": "Artist · before",
+      "after": "Artist · after",
+      "note": "A real tag from a purchased FLAC. The booth screen shows the tag, not the filename."
+    },
+    "declick": {
+      "step": "04 · cleaned",
+      "title": "Vinyl clicks, gone.",
+      "lede": "Surco marks every one on the waveform and lets you switch between the original and the repair while it plays, with no break in the audio.",
+      "pill": "9 clicks",
+      "hearing": "Hearing the repair",
+      "original": "↔ the original",
+      "next": "Next click →",
+      "note": "If the repair eats the attack of a snare, the difference is subtle. And subtle differences only show up when you switch on the fly."
+    },
+    "trim": {
+      "step": "05 · trimmed",
+      "title": "End where the music ends.",
+      "lede": "It finds the silence at both ends and the cut magnets onto the last hit. To the millisecond, with its own audition on each side.",
+      "pill": "−4.6s at the end",
+      "tailLabel": "End · last 12s",
+      "fullLabel": "The whole track · 6:43",
+      "magnet": "magnet · locked to the last hit",
+      "clipping": "14 peaks at 0 dBFS · master clipping"
+    },
+    "batch": {
+      "step": "06 · out",
+      "title": "The whole folder, in one go.",
+      "lede": "Straight into wherever you play. With your Traktor cue points intact.",
+      "pill": "Converting 11/40",
+      "stage": "Converting to AIFF…",
+      "cancel": "cancel",
+      "cues": "with your Traktor cue points intact",
+      "summary": "38 converted · 1 skipped · 1 failed"
+    }
   }
 }

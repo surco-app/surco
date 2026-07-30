@@ -11,6 +11,9 @@
   --color-purple: #bb9af7;
   --color-green: #9ece6a;
   --color-red: #f7768e;
+  /* Tokyo Night's warning hue. Marks the vinyl clicks on the declick waveform,
+     where red already means "clipping" and would read as the wrong problem. */
+  --color-amber: #e0af68;
   --color-fg: #c0caf5;
   --color-muted: #9aa6cf;
   /* Lightened from #6b7396 (3.7:1, fails WCAG AA) to clear 4.5:1 on --color-bg

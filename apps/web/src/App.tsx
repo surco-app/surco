@@ -14,13 +14,10 @@ import Kicker from './components/Kicker'
 import Pricing from './components/Pricing'
 import Reveal from './components/Reveal'
 import ScrollProgress from './components/ScrollProgress'
-import Spectrogram from './components/Spectrogram'
 import Speed from './components/Speed'
+import Walkthrough from './components/Walkthrough'
 import WaveBackdrop from './components/WaveBackdrop'
 import { useAutoLanguage } from './lib/useAutoLanguage'
-
-const cardHover =
-  'transition duration-200 hover:-translate-y-1 hover:border-blue/50 hover:shadow-xl hover:shadow-blue/10'
 
 // One glyph per feature card, in the order of the `features.groups` i18n list
 // (convert, tag, analyze quality, organize & export).
@@ -159,75 +156,7 @@ export default function App() {
           </Reveal>
         </section>
 
-        <Band tone="deep">
-          <section id="analisis" className="scroll-mt-24 py-24">
-            <Reveal>
-              <Kicker>{t('analysis.kicker')}</Kicker>
-              <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
-                {t('analysis.title')}
-              </h2>
-              <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">
-                {t('analysis.lede')}
-              </p>
-            </Reveal>
-
-            <div className="mt-10 grid gap-5 md:grid-cols-2">
-              <Reveal from="left">
-                <div
-                  className={`inset-shadow-edge rounded-2xl border border-line bg-surface2/50 p-4 ${cardHover}`}
-                >
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="font-mono text-xs text-muted">original.flac</span>
-                    <span className="rounded-full bg-green/15 px-2.5 py-0.5 font-mono text-[11px] text-green">
-                      {t('analysis.good')}
-                    </span>
-                  </div>
-                  <Spectrogram
-                    axis
-                    label={`${t('analysis.goodCaptionPre')}${t('analysis.goodCaptionHz')}${t('analysis.goodCaptionPost')}`}
-                  />
-                  <p className="mt-3 font-mono text-xs text-muted">
-                    {t('analysis.goodCaptionPre')}
-                    <span className="text-fg">{t('analysis.goodCaptionHz')}</span>
-                    {t('analysis.goodCaptionPost')}
-                  </p>
-                </div>
-              </Reveal>
-
-              <Reveal from="right" delay={120}>
-                <div
-                  className={`inset-shadow-edge rounded-2xl border border-line bg-surface2/50 p-4 ${cardHover}`}
-                >
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="font-mono text-xs text-muted">descarga_320.aiff</span>
-                    <span className="rounded-full bg-red/15 px-2.5 py-0.5 font-mono text-[11px] text-red">
-                      {t('analysis.suspect')}
-                    </span>
-                  </div>
-                  <div className="relative">
-                    <Spectrogram
-                      suspect
-                      axis
-                      label={`${t('analysis.suspectCaptionPre')}${t('analysis.suspectCaptionHz')}${t('analysis.suspectCaptionPost')}`}
-                    />
-                    <div className="pointer-events-none absolute inset-x-0" style={{ top: '27%' }}>
-                      <div className="border-t border-dashed border-red/80" />
-                      <span className="absolute right-1 -top-5 rounded bg-red/20 px-1.5 py-0.5 font-mono text-[10px] text-red">
-                        {t('analysis.wall')}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="mt-3 font-mono text-xs text-muted">
-                    {t('analysis.suspectCaptionPre')}
-                    <span className="text-red">{t('analysis.suspectCaptionHz')}</span>
-                    {t('analysis.suspectCaptionPost')}
-                  </p>
-                </div>
-              </Reveal>
-            </div>
-          </section>
-        </Band>
-
+        <Walkthrough />
         <Speed />
 
         <HowItWorks />

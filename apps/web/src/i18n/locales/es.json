@@ -620,5 +620,73 @@
     "olderTitle": "Versiones anteriores",
     "outroTitle": "Pruébalo todo en tu próxima sesión",
     "outroLede": "Descarga Surco y prepara tus primeras pistas en un par de minutos."
+  },
+  "home": {
+    "walkthrough": {
+      "kicker": "De la carpeta a la cabina",
+      "title": "Una pista, de principio a fin",
+      "lede": "Esto es todo lo que le pasa a un archivo desde que lo sueltas hasta que está en tu equipo."
+    },
+    "drop": {
+      "step": "01 · entra",
+      "title": "Suéltalas y ya están dentro.",
+      "lede": "Carpetas enteras. Surco lee etiquetas, duración y carátula al vuelo, y la misma pista nunca entra dos veces.",
+      "pill": "Leyendo 212/319",
+      "caption": "319 pistas leídas en 4 s"
+    },
+    "quality": {
+      "step": "02 · se comprueba",
+      "title": "El espectro no miente.",
+      "lede": "Un lossless de verdad llega hasta arriba. Un MP3 disfrazado se corta en seco y deja el hueco a la vista, antes de que la pista llegue a cabina.",
+      "pill": "calidad",
+      "goodBadge": "● Buena calidad",
+      "fakeBadge": "● Fake lossless",
+      "goodAlt": "Espectro de un FLAC auténtico: la energía llega hasta lo más alto sin corte",
+      "fakeAlt": "Espectro de un MP3 transcodificado a FLAC: banda vacía por encima de 16 kHz con el borde recto",
+      "goodCaptionPre": "llega hasta ",
+      "goodCaptionPost": " · sin muro",
+      "fakeCaptionPre": "se corta en ",
+      "fakeCaptionPost": " · muro de códec",
+      "note": "Los dos espectros salen del mismo tema: el original y ese mismo audio pasado por MP3 128k. Lo único que cambia es el códec."
+    },
+    "tag": {
+      "step": "03 · se etiqueta",
+      "title": "Cada pista, con su nombre puesto.",
+      "lede": "Discogs para sellos, Bandcamp para autoeditados y Deezer para lo comercial. Un clic y entra todo: artista, sello, año, BPM y carátula.",
+      "pill": "12/40",
+      "before": "Artista · antes",
+      "after": "Artista · después",
+      "note": "Tag real de un FLAC comprado. En la pantalla de cabina se lee la etiqueta, no el nombre del archivo."
+    },
+    "declick": {
+      "step": "04 · se limpia",
+      "title": "Los clics del vinilo, fuera.",
+      "lede": "Surco los marca uno a uno sobre la onda y te deja alternar entre la original y la reparada mientras suena, sin cortar el audio.",
+      "pill": "9 clics",
+      "hearing": "Oyendo la reparada",
+      "original": "↔ la original",
+      "next": "Siguiente clic →",
+      "note": "Si la reparación se come el ataque de una caja, la diferencia es sutil. Y las diferencias sutiles solo se aprecian cambiando en caliente."
+    },
+    "trim": {
+      "step": "05 · se ajusta",
+      "title": "Acaba donde acaba la música.",
+      "lede": "Detecta el silencio de entrada y de salida y el corte se engancha solo al último golpe. Al milisegundo, con escucha a cada lado.",
+      "pill": "−4.6 s al final",
+      "tailLabel": "Final · últimos 12 s",
+      "fullLabel": "La pista entera · 6:43",
+      "magnet": "imán · enganchado al último golpe",
+      "clipping": "14 picos en 0 dBFS · clipping del máster"
+    },
+    "batch": {
+      "step": "06 · sale",
+      "title": "Toda la carpeta, de una vez.",
+      "lede": "Y va a donde tú pinchas. Con tus cue points de Traktor intactos.",
+      "pill": "Convirtiendo 11/40",
+      "stage": "Convirtiendo a AIFF…",
+      "cancel": "cancelar",
+      "cues": "con tus cue points de Traktor intactos",
+      "summary": "38 convertidas · 1 omitida · 1 con error"
+    }
   }
 }
