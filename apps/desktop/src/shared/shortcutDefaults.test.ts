@@ -126,6 +126,20 @@ describe('matchChord con ámbito', () => {
     const bindings = new Map([['settings', ['mod', ',']]])
     expect(matchChord(bindings, ['mod', ','], false, 'trim')).toBe('settings')
   })
+
+  // Con la tabla real: ← está ligada a seek-back (global) y a trim-nudge-back (scope
+  // 'trim'). Dentro del editor de silencios manda la del ámbito, o la flecha adelantaría
+  // la reproducción en vez de mover el corte.
+  it('prefiere el comando de ámbito al global que comparte chord', () => {
+    const bindings = resolveBindings()
+    expect(matchChord(bindings, ['left'], false, 'trim')).toBe('trim-nudge-back')
+    expect(matchChord(bindings, ['right'], false, 'trim')).toBe('trim-nudge-forward')
+  })
+
+  it('deja el chord compartido al comando global fuera del ámbito', () => {
+    const bindings = resolveBindings()
+    expect(matchChord(bindings, ['left'], false, null)).toBe('seek-back')
+  })
 })
 
 describe('findConflicts con ámbito', () => {
