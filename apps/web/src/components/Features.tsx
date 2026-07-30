@@ -7,7 +7,6 @@ import Header from './Header'
 import Icon, { type GlyphName } from './Icon'
 import InstallSection from './InstallSection'
 import Kicker from './Kicker'
-import Pricing from './Pricing'
 import Reveal from './Reveal'
 import Speed from './Speed'
 import { useAutoLanguage } from '../lib/useAutoLanguage'
@@ -116,7 +115,6 @@ export default function Features() {
         </section>
 
         <Band tone="deep">
-          <Pricing />
           <InstallSection />
           <Faq />
         </Band>

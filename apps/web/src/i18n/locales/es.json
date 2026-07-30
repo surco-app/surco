@@ -18,7 +18,6 @@
     "analisis": "Análisis",
     "funciones": "Funciones",
     "atajos": "Atajos",
-    "precio": "Precio",
     "instalar": "Instalar",
     "faq": "Preguntas",
     "guia": "Guía",
@@ -29,7 +28,6 @@
     "donar": "Donar"
   },
   "available": "macOS · Windows · Linux",
-  "betaPill": "Gratis para siempre",
   "betaNote": "Surco está en beta. Sin cuenta, sin suscripción.",
   "keys": {
     "space": "Espacio"
@@ -38,20 +36,6 @@
     "h1a": "Deja de preparar.",
     "h1b": "Ponte a pinchar.",
     "ledeShort": "Convertir, etiquetar, comprobar la calidad y ordenar en Apple Music o Engine DJ: lo que hacías saltando entre cuatro o cinco apps, Surco lo hace en una. De minutos por pista a un par de segundos."
-  },
-  "analysis": {
-    "kicker": "Análisis anti-fake",
-    "title": "El espectro no miente",
-    "lede": "Algunos archivos «lossless» son MP3 de baja calidad disfrazados de alta — y suenan peor en un buen equipo. Surco detecta los agudos que faltan y marca la pista antes de que llegue a cabina.",
-    "good": "● buena calidad",
-    "suspect": "● sospechoso",
-    "goodCaptionPre": "sonido completo hasta ",
-    "goodCaptionHz": "~22 kHz",
-    "goodCaptionPost": " — no falta nada. El de verdad.",
-    "wall": "corte ~16 kHz",
-    "suspectCaptionPre": "todo cortado en ",
-    "suspectCaptionHz": "~16 kHz",
-    "suspectCaptionPost": " — faltan los agudos. Es un fake."
   },
   "features": {
     "kicker": "Funciones",
@@ -124,19 +108,6 @@
       "Buscar en Discogs"
     ]
   },
-  "stack": [
-    "AIFF lossless",
-    "FLAC lossless",
-    "ALAC lossless",
-    "MP3 alta calidad",
-    "ffmpeg incluido",
-    "ID3v2.3",
-    "Discogs",
-    "Bandcamp",
-    "Deezer",
-    "Engine DJ",
-    "Apple Silicon"
-  ],
   "speed": {
     "kicker": "Una app, no cinco",
     "title": "El trabajo de cinco apps, en un clic",
@@ -199,12 +170,6 @@
       }
     ]
   },
-  "mockup": {
-    "tracks": "Pistas",
-    "metadata": "Metadatos",
-    "good": "● buena calidad",
-    "spectrum": "espectro"
-  },
   "showcase": {
     "alt": "Surco en macOS: lista de pistas, match de Discogs, editor de metadatos y análisis de calidad",
     "zoom": "Ampliar la captura",
@@ -230,13 +195,6 @@
         "desc": "A AIFF, WAV, FLAC, ALAC o MP3 y directo a tu biblioteca de Apple Music o Engine DJ, en un clic."
       }
     }
-  },
-  "pricing": {
-    "kicker": "Precio",
-    "title": "Gratis, para siempre",
-    "lede": "Surco es gratis y completo: sin cuenta, sin suscripción y sin límites. Si te ahorra horas, puedes apoyar su desarrollo.",
-    "cta": "Descargar Surco",
-    "donate": "Donar con PayPal"
   },
   "footer": {
     "tagline": "Convierte, etiqueta y organiza tus pistas de DJ — listas para pinchar en segundos.",
