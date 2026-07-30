@@ -18,7 +18,6 @@
     "analisis": "Analysis",
     "funciones": "Features",
     "atajos": "Shortcuts",
-    "precio": "Pricing",
     "instalar": "Install",
     "faq": "FAQ",
     "guia": "Guide",
@@ -29,7 +28,6 @@
     "donar": "Donate"
   },
   "available": "macOS · Windows · Linux",
-  "betaPill": "Free forever",
   "betaNote": "Surco is in beta. No account, no subscription.",
   "keys": {
     "space": "Space"
@@ -38,20 +36,6 @@
     "h1a": "Stop prepping.",
     "h1b": "Start playing.",
     "ledeShort": "Convert, tag, check the quality and file into Apple Music or Engine DJ: what used to take four or five apps, Surco does in one. From minutes per track to a couple of seconds."
-  },
-  "analysis": {
-    "kicker": "Anti-fake analysis",
-    "title": "The spectrum doesn't lie",
-    "lede": "Some \"lossless\" files are just low-quality MP3s dressed up to look hi-fi — and they sound worse on a big system. Surco spots the missing highs and flags the track before it reaches your set.",
-    "good": "● good quality",
-    "suspect": "● suspicious",
-    "goodCaptionPre": "full sound up to ",
-    "goodCaptionHz": "~22 kHz",
-    "goodCaptionPost": " — nothing missing. The real thing.",
-    "wall": "drop-off ~16 kHz",
-    "suspectCaptionPre": "everything cut off at ",
-    "suspectCaptionHz": "~16 kHz",
-    "suspectCaptionPost": " — the highs are gone. A fake."
   },
   "features": {
     "kicker": "Features",
@@ -124,19 +108,6 @@
       "Search Discogs"
     ]
   },
-  "stack": [
-    "lossless AIFF",
-    "lossless FLAC",
-    "lossless ALAC",
-    "high-quality MP3",
-    "ffmpeg included",
-    "ID3v2.3",
-    "Discogs",
-    "Bandcamp",
-    "Deezer",
-    "Engine DJ",
-    "Apple Silicon"
-  ],
   "speed": {
     "kicker": "One app, not five",
     "title": "The work of five apps, in one click",
@@ -199,12 +170,6 @@
       }
     ]
   },
-  "mockup": {
-    "tracks": "Tracks",
-    "metadata": "Metadata",
-    "good": "● good quality",
-    "spectrum": "spectrum"
-  },
   "showcase": {
     "alt": "Surco on macOS: track list, Discogs match, metadata editor and quality analysis",
     "zoom": "Enlarge the screenshot",
@@ -230,13 +195,6 @@
         "desc": "To AIFF, WAV, FLAC, ALAC or MP3 and straight into your Apple Music or Engine DJ library, in one click."
       }
     }
-  },
-  "pricing": {
-    "kicker": "Pricing",
-    "title": "Free, forever",
-    "lede": "Surco is free and complete — no account, no subscription, no limits. If it saves you hours, you can support its development.",
-    "cta": "Download Surco",
-    "donate": "Donate with PayPal"
   },
   "footer": {
     "tagline": "Convert, tag and organize your DJ tracks — ready to play in seconds.",
