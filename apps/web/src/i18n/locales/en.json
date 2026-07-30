@@ -588,8 +588,8 @@
     },
     "quality": {
       "step": "02 · checked",
-      "title": "The spectrum doesn't lie.",
-      "lede": "Real lossless reaches the top. A disguised MP3 stops dead and leaves the gap in plain sight — before the track reaches the booth.",
+      "title": "That FLAC was an MP3.",
+      "lede": "Buying lossless is no guarantee it is. If someone converted an MP3 to FLAC, the file weighs what a lossless weighs but half the treble is gone — and on the spectrum it shows as a flat wall. Surco flags it before the track ever leaves the house.",
       "pill": "quality",
       "goodBadge": "● Good quality",
       "fakeBadge": "● Fake lossless",
@@ -599,7 +599,7 @@
       "goodCaptionPost": " · no wall",
       "fakeCaptionPre": "cuts off at ",
       "fakeCaptionPost": " · codec wall",
-      "note": "Two purchased tracks from the same folder. The second claims to be FLAC, but its audio went through an MP3 first."
+      "note": "The same track, twice: the original FLAC, and that same audio pushed through MP3 and back. Only the codec differs, so the wall has no other explanation."
     },
     "tag": {
       "step": "03 · tagged",
