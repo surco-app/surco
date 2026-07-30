@@ -62,7 +62,7 @@ export default function SpectrumPair() {
         <Spectrum src="/spectrum/lossless-real.jpg" alt={t('home.quality.goodAlt')} />
         <p className="mt-2 font-mono text-xs text-muted">
           {t('home.quality.goodCaptionPre')}
-          <span className="text-green">21.4 kHz</span>
+          <span className="text-green">21.8 kHz</span>
           {t('home.quality.goodCaptionPost')}
         </p>
       </div>
@@ -70,7 +70,7 @@ export default function SpectrumPair() {
         <span className="mb-2.5 inline-flex rounded-full bg-red/15 px-2.5 py-0.5 font-mono text-[11px] text-red">
           {t('home.quality.fakeBadge')}
         </span>
-        <Spectrum src="/spectrum/lossless-fake.jpg" alt={t('home.quality.fakeAlt')} cutoff={27} />
+        <Spectrum src="/spectrum/lossless-fake.jpg" alt={t('home.quality.fakeAlt')} cutoff={27.3} />
         <p className="mt-2 font-mono text-xs text-muted">
           {t('home.quality.fakeCaptionPre')}
           <span className="text-red">16.0 kHz</span>
