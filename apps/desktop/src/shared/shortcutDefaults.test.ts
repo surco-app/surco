@@ -105,3 +105,43 @@ describe('findConflicts', () => {
     expect(conflicts).toEqual([['add', 'reveal']])
   })
 })
+
+describe('matchChord con ámbito', () => {
+  it('no dispara un comando de ámbito cuando no hay ámbito activo', () => {
+    const bindings = new Map([['trim-audition', ['a']]])
+    expect(matchChord(bindings, ['a'], false, null)).toBeNull()
+  })
+
+  it('dispara un comando de ámbito cuando su ámbito está activo', () => {
+    const bindings = new Map([['trim-audition', ['a']]])
+    expect(matchChord(bindings, ['a'], false, 'trim')).toBe('trim-audition')
+  })
+
+  it('no dispara un comando de ámbito bajo un ámbito distinto', () => {
+    const bindings = new Map([['trim-audition', ['a']]])
+    expect(matchChord(bindings, ['a'], false, 'otro')).toBeNull()
+  })
+
+  it('sigue disparando los comandos globales dentro de un ámbito', () => {
+    const bindings = new Map([['settings', ['mod', ',']]])
+    expect(matchChord(bindings, ['mod', ','], false, 'trim')).toBe('settings')
+  })
+})
+
+describe('findConflicts con ámbito', () => {
+  it('no marca conflicto entre un comando de ámbito y uno global', () => {
+    const bindings = new Map([
+      ['trim-audition', ['a']],
+      ['add', ['a']],
+    ])
+    expect(findConflicts(bindings)).toEqual([])
+  })
+
+  it('marca conflicto entre dos comandos del mismo ámbito', () => {
+    const bindings = new Map([
+      ['trim-audition', ['a']],
+      ['trim-clear', ['a']],
+    ])
+    expect(findConflicts(bindings)).toEqual([['trim-audition', 'trim-clear']])
+  })
+})

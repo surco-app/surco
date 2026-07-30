@@ -11,6 +11,9 @@ interface ShortcutDef {
   id: string
   chord: Chord
   suppressWhileTyping?: boolean
+  // Limita el comando al ámbito con ese nombre: solo dispara cuando el foco está dentro
+  // de un `[data-shortcut-scope]` que coincide. Sin scope el comando es global.
+  scope?: string
 }
 
 export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
@@ -57,6 +60,14 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   { id: 'focus-list', chord: ['mod', '1'] },
   { id: 'focus-matches', chord: ['mod', '2'] },
   { id: 'focus-editor', chord: ['mod', '3'] },
+  // Editor de silencios. Teclas sueltas sin modificador: solo viven con el foco en un
+  // handle de corte, así que no compiten con nada global — y un macropad manda teclas
+  // limpias, no combos.
+  { id: 'trim-nudge-back', chord: ['left'], scope: 'trim' },
+  { id: 'trim-nudge-forward', chord: ['right'], scope: 'trim' },
+  { id: 'trim-audition', chord: ['a'], scope: 'trim' },
+  { id: 'trim-clear', chord: ['c'], scope: 'trim' },
+  { id: 'trim-apply', chord: ['s'], scope: 'trim' },
 ]
 
 // The effective binding per command id: defaults with the user's overrides applied. An
@@ -80,11 +91,13 @@ export function matchChord(
   bindings: Map<string, Chord>,
   chord: Chord,
   typing: boolean,
+  scope: string | null = null,
 ): string | null {
   const hasMod = chord.includes('mod')
   for (const def of SHORTCUT_DEFAULTS) {
     const bound = bindings.get(def.id)
     if (!bound || bound.length === 0 || !chordEquals(bound, chord)) continue
+    if (def.scope && def.scope !== scope) continue
     if (typing && (!hasMod || def.suppressWhileTyping)) return null
     return def.id
   }
@@ -94,10 +107,11 @@ export function matchChord(
 // Groups of command ids that resolve to the same chord — used by the Shortcuts tab to
 // flag a clash before it's saved. Unbound (`[]`) commands are ignored.
 export function findConflicts(bindings: Map<string, Chord>): string[][] {
+  const scopeOf = new Map(SHORTCUT_DEFAULTS.map((d) => [d.id, d.scope ?? '']))
   const byChord = new Map<string, string[]>()
   for (const [id, chord] of bindings) {
     if (chord.length === 0) continue
-    const key = chord.join('+')
+    const key = `${scopeOf.get(id) ?? ''}:${chord.join('+')}`
     const ids = byChord.get(key) ?? []
     ids.push(id)
     byChord.set(key, ids)
