@@ -650,7 +650,7 @@
     "heroFree": "Free · macOS, Windows and Linux",
     "closeTitle": "All of it, in one window.",
     "closeNote": "Free, forever. No account, no cloud, no limits.",
-    "closeSafety": "Your original files are left alone — converted tracks go to a separate folder. Notarized by Apple; on Windows, SmartScreen warns because the app is new.",
+    "closeSafety": "By default your original files are left alone — converted tracks go to a separate folder. Notarized by Apple; on Windows, SmartScreen warns because the app is new.",
     "allFeatures": "See everything it does →"
   }
 }
