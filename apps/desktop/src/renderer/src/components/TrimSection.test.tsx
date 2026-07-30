@@ -213,6 +213,46 @@ describe('TrimSection', () => {
   // rueda lateral) desplazan la ventana. Se eligió este gesto justo porque el
   // arrastre sobre el carril YA coloca el corte — cualquier cosa que compartiera el
   // botón izquierdo se arriesgaba a mover el corte al intentar mirar.
+  // Paneando lejos del corte, el handle se quedaba clavado al borde del carril: una
+  // línea pegada al filo que parece decir "el corte está aquí" cuando el corte está
+  // fuera de plano. El usuario lo vio al panear a la izquierda — la línea se plantaba
+  // en el borde y sólo volvía a moverse cuando el corte reentraba en la ventana.
+  // Fuera de plano no se pinta: la ausencia dice la verdad, un borde no.
+  it('hides the cut line when the pan leaves the cut off screen', async () => {
+    render(section({ value: { startSec: 9.7 } }))
+    await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+
+    for (let i = 0; i < 10; i++) {
+      fireEvent.wheel(screen.getByTestId('trim-overlay-start'), { deltaX: 300, deltaY: 0 })
+    }
+
+    const [from] = (screen.getByTestId('trim-lane-start').getAttribute('data-window') ?? '')
+      .split('-')
+      .map(Number)
+    // Sanidad: el paneo llegó de verdad más allá del corte.
+    expect(from).toBeGreaterThan(9.7)
+    expect(screen.queryByTestId('trim-handle-start')).not.toBeInTheDocument()
+  })
+
+  // El mismo comportamiento en el carril de la cola: Lane se instancia dos veces
+  // (start y end), así que el arreglo es compartido por construcción — pero eso hay
+  // que comprobarlo, no deducirlo. Aquí se panea hacia la izquierda, alejándose del
+  // corte de fin, que es el sentido contrario al del carril de cabeza.
+  it('hides the end cut line too when the pan leaves it off screen', async () => {
+    render(section({ value: { endSec: 90.3 } }))
+    await screen.findByTestId('trim-handle-end', undefined, { timeout: 3000 })
+
+    for (let i = 0; i < 10; i++) {
+      fireEvent.wheel(screen.getByTestId('trim-overlay-end'), { deltaX: -300, deltaY: 0 })
+    }
+
+    const [, to] = (screen.getByTestId('trim-lane-end').getAttribute('data-window') ?? '')
+      .split('-')
+      .map(Number)
+    expect(to).toBeLessThan(90.3)
+    expect(screen.queryByTestId('trim-handle-end')).not.toBeInTheDocument()
+  })
+
   it('pans the lane with a horizontal wheel without touching the cut', async () => {
     const onChange = vi.fn()
     render(section({ value: { startSec: 9.7 }, onChange }))
