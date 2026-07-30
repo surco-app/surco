@@ -5,11 +5,12 @@ import { useTranslation } from 'react-i18next'
 // what Surco is before reading a word. The still ships in the static HTML so the
 // window is there at first paint; the loop, when present, fades over it once it can
 // actually play, and never on a connection or a preference that shouldn't carry it.
-export default function HeroApp({ video }: { video?: string }) {
+export default function HeroApp({ video }: { video?: boolean }) {
   const { t } = useTranslation()
-  // One screenshot for both languages for now: this is the current build's UI, and
-  // the older per-language shots are a version behind. Swap in a Spanish capture when
-  // there is one.
+  // The still is the video's own first frame, so the loop starts without the image
+  // jumping to a different state underneath it. One capture serves both languages:
+  // it shows the current build, and the older per-language shots were a version
+  // behind. Swap in a Spanish recording when there is one.
   const shot = '/hero-app.webp'
   const ref = useRef<HTMLVideoElement>(null)
   const [playing, setPlaying] = useState(false)
@@ -42,15 +43,17 @@ export default function HeroApp({ video }: { video?: string }) {
             src={shot}
             alt={t('showcase.alt')}
             width={2000}
-            height={1239}
+            height={1242}
             fetchPriority="high"
             decoding="async"
             className="block h-auto w-full"
           />
           {video && (
+            // VP9 first: on a screen recording it lands about the same size as H.264
+            // at a noticeably higher resolution. The MP4 covers the browsers that
+            // don't take WebM.
             <video
               ref={ref}
-              src={video}
               poster={shot}
               muted
               loop
@@ -59,7 +62,10 @@ export default function HeroApp({ video }: { video?: string }) {
               className={`absolute inset-0 size-full object-cover transition-opacity duration-700 ${
                 playing ? 'opacity-100' : 'opacity-0'
               }`}
-            />
+            >
+              <source src="/hero-app.webm" type="video/webm" />
+              <source src="/hero-app.mp4" type="video/mp4" />
+            </video>
           )}
         </div>
       </div>

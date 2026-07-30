@@ -12,3 +12,5 @@ dist
 # Media dropped in the repo root — source recordings, not source code.
 *.mkv
 *.mp4
+# …but the landing page's own clips ship with the site.
+!apps/web/public/*.mp4
