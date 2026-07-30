@@ -226,11 +226,11 @@
       },
       {
         "q": "Does it touch my original files?",
-        "a": "By default, no. Converted tracks are saved to a separate folder (Music/Surco) and your originals stay intact. They're only replaced if you turn on \"Overwrite original\"."
+        "a": "It depends on whether the format changes. Convert to a different format and the original is left alone, with the copy going to a separate folder (Music/Surco). Re-export to the same format and Surco rewrites that file where it is — which is what lets it update the tags without re-encoding the audio. With \"Overwrite original\" on, it always rewrites."
       },
       {
         "q": "Does it keep cue points?",
-        "a": "When it re-exports without touching the audio, yes: your Traktor cue points pass through intact. Turn on silence trim, normalization or click repair and the audio is re-encoded: with trim, the cues are re-anchored to whatever you cut off, and on WAV and FLAC they're lost. On MP3 and AIFF they survive. Surco warns you right in the section before you convert."
+        "a": "It depends on the target format. They survive when you convert between MP3 and AIFF, and when any of the three — MP3, AIFF or FLAC — goes into FLAC: Surco reads the tree Traktor stores inside the file and writes it back in whichever form that format needs. They're lost converting to WAV or ALAC, which have nowhere to keep it, and going from FLAC to MP3 or AIFF. If you trim silence the cues move with it, the beatgrid included — it's re-anchored by phase so the ruler doesn't drift — and anything that can't be re-anchored reliably is dropped rather than left pointing at the wrong beat. Surco warns you before you convert."
       },
       {
         "q": "Can I trim the silence off my rips?",
@@ -404,7 +404,7 @@
           "Two lanes: one for the head cut and one for the tail, each with its own zoom and audition.",
           "Millisecond precision, by handle or by nudge.",
           "The list's “Silence to trim” filter gathers the tracks that need it.",
-          "Trimming re-encodes the audio and re-anchors Traktor's cues to the cut; on WAV and FLAC they're lost. Surco warns you in the section."
+          "Trimming re-encodes the audio and re-anchors Traktor's cues to the cut; on WAV and ALAC they're lost. Surco warns you in the section."
         ],
         "shot": "",
         "shotCaption": "The head and tail trim lanes over the waveform."
@@ -485,7 +485,7 @@
         "points": [
           "Formats: AIFF, WAV, FLAC and ALAC (lossless) and MP3 — 320 down to 128 kbps, or VBR V0/V2.",
           "Re-exporting to the same format, without touching the audio, keeps Traktor cue points.",
-          "Normalization, trim and click repair re-encode the audio: on MP3 and AIFF the cues survive, on WAV and FLAC they're lost. They ship off and Surco warns you before you convert.",
+          "Normalization, trim and click repair re-encode the audio: on MP3, AIFF and FLAC the cues survive, on WAV and ALAC they're lost. They ship off and Surco warns you before you convert.",
           "After converting, send the originals to the trash in a single action."
         ],
         "shot": "convertir-en.png",
