@@ -45,7 +45,7 @@ export default function App() {
             </Reveal>
           </div>
           <Reveal eager delay={220}>
-            <HeroApp />
+            <HeroApp video />
           </Reveal>
         </section>
 
