@@ -26,29 +26,26 @@ export default function App() {
       <Header />
 
       <main id="main" className="relative">
-        <section className="mx-auto max-w-6xl px-6 pt-16 pb-10 sm:pt-24">
-          <Reveal eager>
-            <h1 className="max-w-3xl text-5xl font-bold tracking-tight text-balance sm:text-7xl">
-              {t('hero.h1a')}
-              <br />
-              <span className="text-grad text-grad-glow">{t('hero.h1b')}</span>
-            </h1>
-          </Reveal>
-          <Reveal eager delay={80}>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-pretty text-muted">
-              {t('home.heroLede')}
-            </p>
-          </Reveal>
-          <Reveal eager delay={150}>
-            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+        <section className="mx-auto grid max-w-6xl items-center gap-10 overflow-hidden px-6 pt-14 pb-14 sm:pt-20 lg:grid-cols-[minmax(0,25rem)_minmax(0,1fr)] lg:gap-12 lg:pt-24 lg:pb-20">
+          <div>
+            <Reveal eager>
+              <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-6xl">
+                {t('hero.h1a')}
+                <br />
+                <span className="text-grad text-grad-glow">{t('hero.h1b')}</span>
+              </h1>
+            </Reveal>
+            <Reveal eager delay={80}>
+              <p className="mt-6 max-w-md text-lg leading-relaxed text-pretty text-muted">
+                {t('home.heroLede')}
+              </p>
+            </Reveal>
+            <Reveal eager delay={150}>
               <DownloadButton />
-              <span className="font-mono text-xs text-faint">{t('home.heroFree')}</span>
-            </div>
-          </Reveal>
-          <Reveal eager delay={220}>
-            <div className="mt-12 sm:mt-16">
-              <HeroApp />
-            </div>
+            </Reveal>
+          </div>
+          <Reveal eager delay={220} className="lg:-mr-[9vw]">
+            <HeroApp />
           </Reveal>
         </section>
 
