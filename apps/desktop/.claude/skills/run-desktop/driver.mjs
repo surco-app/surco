@@ -129,6 +129,28 @@ async function repl() {
       // clickat <selector> <fraction>: a real mouse press at a horizontal fraction of the
       // element (0 = left edge, 1 = right). Plain `click` always lands dead centre, which
       // cannot tell "the drag placed the cut" apart from "the cut was already centred".
+      // dragat <selector> <fromFrac> <toFrac> [steps]: press at one horizontal fraction of
+      // the element and move to another in N steps, like a hand does. `clickat` only ever
+      // lands a single press, which cannot exercise the pointermove path a real drag walks.
+      else if (cmd === 'dragat') {
+        const parts = arg.split(' ')
+        const steps = parts.length > 3 ? Number(parts.pop()) : 20
+        const to = Number(parts.pop())
+        const from = Number(parts.pop())
+        const sel = parts.join(' ')
+        const loc = page.locator(sel).first()
+        await loc.scrollIntoViewIfNeeded()
+        const box = await loc.boundingBox()
+        const y = box.y + box.height / 2
+        await page.mouse.move(box.x + box.width * from, y)
+        await page.mouse.down()
+        for (let i = 1; i <= steps; i++) {
+          const f = from + ((to - from) * i) / steps
+          await page.mouse.move(box.x + box.width * f, y)
+        }
+        await page.mouse.up()
+        console.log(`dragged ${sel} ${from}->${to} in ${steps}`)
+      }
       else if (cmd === 'clickat') {
         const sp = arg.lastIndexOf(' ')
         const sel = arg.slice(0, sp)
