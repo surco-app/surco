@@ -648,8 +648,9 @@
     },
     "heroLede": "Surco opens every file and tells you what you actually have: whether the lossless is genuine, which tags are missing, where the clicks and the dead air are. Then it fixes all of it and files it into your player or your DJ gear.",
     "heroFree": "Free · macOS, Windows and Linux",
-    "closeTitle": "From the folder to the booth without leaving one window.",
+    "closeTitle": "All of it, in one window.",
     "closeNote": "Free, forever. No account, no cloud, no limits.",
+    "closeSafety": "Your original files are left alone — converted tracks go to a separate folder. Notarized by Apple; on Windows, SmartScreen warns because the app is new.",
     "allFeatures": "See everything it does →"
   }
 }
