@@ -33,8 +33,8 @@
     "space": "Space"
   },
   "hero": {
-    "h1a": "Stop prepping.",
-    "h1b": "Start playing.",
+    "h1a": "Your music,",
+    "h1b": "the way it should be.",
     "ledeShort": "Convert, tag, check the quality and file into Apple Music or Engine DJ: what used to take four or five apps, Surco does in one. From minutes per track to a couple of seconds."
   },
   "features": {
@@ -575,9 +575,9 @@
   },
   "home": {
     "walkthrough": {
-      "kicker": "From the folder to the booth",
+      "kicker": "Step by step",
       "title": "One track, start to finish",
-      "lede": "Everything that happens to a file between dropping it in and playing it out."
+      "lede": "Everything Surco does to a file between dropping it in and having it where you listen. Six steps, one window."
     },
     "drop": {
       "step": "01 · in",
@@ -646,7 +646,7 @@
       "cues": "with your Traktor cue points intact",
       "summary": "38 converted · 1 skipped · 1 failed"
     },
-    "heroLede": "Convert, tag, check the quality and file every track into rekordbox, Engine DJ or Apple Music. Everything you do today across five programs.",
+    "heroLede": "Surco opens every file and tells you what you actually have: whether the lossless is genuine, which tags are missing, where the clicks and the dead air are. Then it fixes all of it and files it into your player or your DJ gear.",
     "heroFree": "Free · macOS, Windows and Linux",
     "closeTitle": "From the folder to the booth without leaving one window.",
     "closeNote": "Free, forever. No account, no cloud, no limits.",
