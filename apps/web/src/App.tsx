@@ -26,7 +26,7 @@ export default function App() {
       <Header />
 
       <main id="main" className="relative">
-        <section className="mx-auto grid max-w-7xl items-center gap-10 px-6 pt-14 pb-14 sm:pt-20 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)] lg:gap-12 lg:pt-24 lg:pb-20">
+        <section className="mx-auto grid max-w-5xl items-center gap-10 px-6 pt-14 pb-14 sm:pt-20 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-12 lg:pt-24 lg:pb-20">
           <div>
             <Reveal eager>
               <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-[2.6rem] lg:leading-[1.06] xl:text-[3rem]">
