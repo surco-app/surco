@@ -7,7 +7,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WaveformResult } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
+import { drawWaveform } from '../lib/waveform'
 import { TrimSection } from './TrimSection'
+
+// jsdom has no canvas 2D context, so the real drawer bails early anyway; spying on it
+// is what lets a test assert WHICH slice of the decoded peaks the lane asked for.
+vi.mock('../lib/waveform', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../lib/waveform')>()),
+  drawWaveform: vi.fn(),
+}))
 
 afterEach(cleanup)
 
@@ -166,6 +174,41 @@ describe('TrimSection', () => {
   // el ataque del golpe quedaba pegado al borde derecho, medio fuera. Cortando así
   // es facilísimo pasarse y comerse el primer bombo. El corte tiene que quedar
   // centrado siempre que la pista dé margen para ello.
+  // El lag que el usuario notó paneando: keepPreviousData mantiene en pantalla la
+  // onda de la ventana ANTERIOR mientras se decodifica la nueva, y el carril la
+  // dibujaba a lo ancho como si fuera la nueva. La línea del corte se movía al
+  // instante y la onda se quedaba atrás hasta pegar un salto al llegar los datos.
+  // Los datos vienen sellados con el tramo que cubren de verdad (startSec/durSec),
+  // así que el dibujado tiene que mapearlos por ese sello — es justo lo que avisa el
+  // comentario de useWaveformWindow.
+  it('draws stale window data over the stretch it really covers', async () => {
+    // Datos de 0–1 s entregados cuando el carril ya mira 0.5–1.5 s: sólo la segunda
+    // mitad de esos picos cae en la ventana visible.
+    const stale = {
+      peaks: Array.from({ length: 100 }, () => 0.5),
+      rms: Array.from({ length: 100 }, () => 0.4),
+      startSec: 0,
+      durSec: 1,
+    }
+    ;(window as unknown as { api: { waveformWindow: unknown } }).api.waveformWindow = vi
+      .fn()
+      .mockResolvedValue(stale)
+    vi.mocked(drawWaveform).mockClear()
+    render(section({ value: { startSec: 1 } }))
+    await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
+
+    await vi.waitFor(() => {
+      const withStale = vi
+        .mocked(drawWaveform)
+        .mock.calls.filter((c) => (c[1] as number[])?.length === 100)
+      expect(withStale.length).toBeGreaterThan(0)
+      // Mapeado por el sello: no puede pintarse el array entero como si cubriera la
+      // ventana pedida, porque no la cubre.
+      const opts = withStale.at(-1)?.[2] as { window?: { from: number; to: number } }
+      expect(opts?.window).toBeDefined()
+    })
+  })
+
   // Mirar la onda alrededor del corte sin moverlo: dos dedos en horizontal (o la
   // rueda lateral) desplazan la ventana. Se eligió este gesto justo porque el
   // arrastre sobre el carril YA coloca el corte — cualquier cosa que compartiera el

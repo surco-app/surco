@@ -177,7 +177,21 @@ function Lane({
     // While the window decodes, the overview's peaks stand in for the same stretch
     // — coarse, but the lane is never blank and never lies about WHERE it is.
     if (win) {
-      drawWaveform(canvas, win.peaks, { color: AFTER_COLOR, rms: win.rms })
+      // Mapped by the slice the data is STAMPED with, never by the one just asked for.
+      // keepPreviousData hands back the previous window while the next decodes, so on a
+      // pan those peaks cover a stretch the lane has already moved off. Drawing them
+      // across the full width regardless is what made the wave sit still and then jump
+      // when the fetch landed, while the cut line had already moved — the pan's lag.
+      // Sliced this way the stale peaks are drawn under the coordinates they belong to,
+      // so the wave slides with the gesture and merely sharpens when the decode arrives.
+      drawWaveform(canvas, win.peaks, {
+        color: AFTER_COLOR,
+        rms: win.rms,
+        window: {
+          from: (fromSec - win.startSec) / win.durSec,
+          to: (toSec - win.startSec) / win.durSec,
+        },
+      })
       return
     }
     if (!wave || durationSec <= 0) return
