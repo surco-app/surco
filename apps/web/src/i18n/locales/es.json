@@ -46,13 +46,38 @@
         "title": "Convertir",
         "replaces": "en vez de un conversor",
         "items": [
-          "AIFF, WAV, FLAC, ALAC o MP3, de cualquiera a cualquiera",
-          "¿Ya en ese formato? Lo copia tal cual al instante",
-          "Calidad a tu gusto: bitrate del MP3, bits y frecuencia — o los del original",
-          "Iguala el volumen a un loudness o pico común",
-          "Recorta el silencio del principio y del final, con el corte a la vista sobre la onda",
-          "Tú eliges dónde cae cada una: una carpeta, junto al original, Apple Music o Engine DJ",
-          "Reexporta sin tocar los cue points de Traktor"
+          {
+            "t": "Cualquier formato a cualquiera",
+            "d": "AIFF, WAV, FLAC, ALAC o MP3. Lee además M4A, AAC, OGG y OPUS, que siempre se transcodifican."
+          },
+          {
+            "t": "Sin recodificar si ya está",
+            "d": "Copia los bytes tal cual; en MP3 y AIFF sobre APFS es un clon instantáneo a cualquier tamaño."
+          },
+          {
+            "t": "Calidad a tu gusto",
+            "d": "Bitrate del MP3, bits y frecuencia — o los del original, que es lo que viene por defecto."
+          },
+          {
+            "t": "Sin ensanchados por sorpresa",
+            "d": "Fija la profundidad para que un rip de 16 bits no acabe en 24 sin que nadie lo pida."
+          },
+          {
+            "t": "Volumen igualado",
+            "d": "Ganancia constante, y limitador solo cuando el objetivo no se alcanza de otro modo."
+          },
+          {
+            "t": "Recorte de silencios",
+            "d": "El corte a la vista sobre la onda, con ajuste al milisegundo."
+          },
+          {
+            "t": "Rescata WAV rotos",
+            "d": "La cabecera que atraganta a otras apps, reparada sobre una copia. Tu fichero no se toca."
+          },
+          {
+            "t": "Tú eliges dónde cae",
+            "d": "Una carpeta, junto al original, Apple Music o Engine DJ."
+          }
         ]
       },
       {
@@ -60,11 +85,42 @@
         "title": "Etiquetar",
         "replaces": "en vez de Discogs, Bandcamp y Deezer en el navegador y un editor de tags",
         "items": [
-          "Rellena artista, álbum, sello, BPM y tono desde Discogs, Bandcamp y Deezer",
-          "Empareja el disco entero por duración de pista",
-          "Edita en bloque y busca y reemplaza con regex",
-          "Trae la carátula de Discogs o suelta la tuya",
-          "Tus ediciones se guardan solas: recuperas la sesión aunque la app se cierre de golpe"
+          {
+            "t": "Discogs, Bandcamp y Deezer",
+            "d": "Artista, álbum, año, BPM y tono. El sello y el catálogo solo los trae Discogs."
+          },
+          {
+            "t": "Empareja el disco entero",
+            "d": "Por duración de pista, que es lo que distingue dos cortes cuando el título no ayuda."
+          },
+          {
+            "t": "Edición en bloque",
+            "d": "Los campos que comparte un disco, más buscar y reemplazar con regex."
+          },
+          {
+            "t": "Carátulas",
+            "d": "De Discogs o la tuya, con recorte cuadrado y tamaño máximo configurables."
+          },
+          {
+            "t": "ID3v2.3, no v2.4",
+            "d": "Para que los CDJ y rekordbox lo lean sin rarezas."
+          },
+          {
+            "t": "Rating que da la vuelta",
+            "d": "En los dos frames que leen Traktor y Windows Media Player."
+          },
+          {
+            "t": "Grouping de Apple Music",
+            "d": "Lo escribe en su propio frame, invisible para casi todas las herramientas."
+          },
+          {
+            "t": "Tags de otros programas",
+            "d": "Inspecciónalos y bórralos uno a uno, o vacía la ficha entera."
+          },
+          {
+            "t": "Nada se pierde",
+            "d": "Las ediciones se guardan solas: recuperas la sesión aunque la app se cierre de golpe."
+          }
         ]
       },
       {
@@ -72,12 +128,42 @@
         "title": "Analizar la calidad",
         "replaces": "en vez de un analizador de espectro",
         "items": [
-          "Dibuja el espectro y caza MP3 falsos antes de cabina",
-          "Lectura por colores: LUFS, pico, dinámica y ruido",
-          "Forma de onda con zoom, clipping real en rojo y vista previa del resultado normalizado",
-          "Repara los clics del vinilo: marca cada uno sobre la onda, salta de uno a otro y compara la pista reparada con la original sin cortar el audio",
-          "Detecta BPM y tonalidad del propio audio",
-          "Avisa si la pista ya está en tu Apple Music o Engine DJ y filtra las que te faltan"
+          {
+            "t": "Caza los MP3 disfrazados",
+            "d": "Dibuja el espectro con el corte del códec marcado sobre la imagen."
+          },
+          {
+            "t": "Tres cosas, no una",
+            "d": "Una transcodificación, unos agudos regenerados por un «enhancer» y un hi-res que era un 44,1 estirado."
+          },
+          {
+            "t": "Sin falsos positivos",
+            "d": "Comprueba que hay un corte de verdad: un máster apagado no es un fake."
+          },
+          {
+            "t": "Lectura por colores",
+            "d": "LUFS, pico real, dinámica, balance L/R y suelo de ruido."
+          },
+          {
+            "t": "Clipping como Audacity",
+            "d": "Mismo criterio muestra a muestra, para que las marcas rojas coincidan."
+          },
+          {
+            "t": "Onda con zoom ×256",
+            "d": "Re-decodifica el trozo visible en vez de estirar píxeles."
+          },
+          {
+            "t": "Clics del vinilo",
+            "d": "Alterna entre la original y la reparada mientras suena, sin cortes, para oír qué se llevó."
+          },
+          {
+            "t": "BPM y tonalidad",
+            "d": "Del propio audio, siempre como sugerencia que confirmas tú."
+          },
+          {
+            "t": "Lo que ya tienes",
+            "d": "Avisa si la pista está en tu Apple Music o Engine DJ y filtra las que te faltan."
+          }
         ]
       },
       {
@@ -85,10 +171,38 @@
         "title": "Organizar y exportar",
         "replaces": "en vez de tu gestor de biblioteca",
         "items": [
-          "Envía a Apple Music con tags y carátula, hasta en WAV",
-          "Directo a tu biblioteca de Engine DJ (Denon): carátula, rating y playlist",
-          "Exporta la cola a rekordbox, Traktor, Serato o M3U8",
-          "Nombra archivos — y títulos — con plantillas {artist} - {title}"
+          {
+            "t": "Apple Music",
+            "d": "Con etiquetas y carátula, hasta en WAV. Solo en macOS, y nunca FLAC: Music no lo admite."
+          },
+          {
+            "t": "Engine DJ (Denon)",
+            "d": "Carátula, rating y playlist en tu biblioteca. Copia de seguridad antes, y no la toca si Engine está abierto."
+          },
+          {
+            "t": "Carátula dentro de un WAV",
+            "d": "Que por sí solo no admite ni carátula ni metadatos."
+          },
+          {
+            "t": "Cue points de Traktor",
+            "d": "Intactos entre MP3 y AIFF, y hacia FLAC. Si recortas, la rejilla se reancla por fase."
+          },
+          {
+            "t": "Tu colección de Traktor",
+            "d": "Actualiza el .nml con copia de seguridad y una escritura por tanda. Necesita Traktor cerrado."
+          },
+          {
+            "t": "rekordbox, Serato y M3U8",
+            "d": "Ficheros puente: llevan rutas y metadatos — el crate de Serato, solo rutas. Ni cues ni rating."
+          },
+          {
+            "t": "Plantillas de nombre",
+            "d": "Archivos y títulos con {artist} - {title}. Una barra dentro de un campo no crea carpetas."
+          },
+          {
+            "t": "Papelera, nunca borrado",
+            "d": "Lo que quitas va a la papelera del sistema."
+          }
         ]
       }
     ],

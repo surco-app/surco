@@ -491,6 +491,12 @@ Se edita como texto y no con un parser XML, porque un round-trip genérico
 normalizaría comillas y espaciado de todo el documento y convertiría un cambio de
 tres atributos en un diff de la colección entera (`traktorNml.ts:1-4`).
 
+**Exige Traktor cerrado**, igual que Engine DJ: Traktor carga el `.nml` al
+arrancar y lo reescribe entero al salir, así que escribir con él abierto sería
+invisible en el mejor caso y revertido en el peor. Surco se ofrece a cerrarlo, y
+si el usuario declina no escribe y avisa (`traktorNmlLibrary.ts:28`, `:57`;
+`index.ts:213` `ensureTraktorClosed`).
+
 Salvaguardas notables: un árbol de cues ilegible **no borra** los hotcues
 existentes; una rejilla existente se rescata cuando no hay BPM; y un lote de 300
 pistas produce **una** escritura, no 300 (`nmlBatch.ts:3-6`). Un backup único,
