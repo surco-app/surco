@@ -648,8 +648,9 @@
     },
     "heroLede": "Surco abre cada archivo y te dice qué tienes de verdad: si el lossless es auténtico, qué etiquetas faltan, dónde hay clics y silencio de sobra. Lo arregla y lo deja listo en tu reproductor o en tu equipo de DJ.",
     "heroFree": "Gratis · macOS, Windows y Linux",
-    "closeTitle": "De la carpeta a la cabina sin salir de una ventana.",
+    "closeTitle": "Todo esto, en una ventana.",
     "closeNote": "Gratis, para siempre. Sin cuenta, sin nube, sin límites.",
+    "closeSafety": "Tus archivos originales no se tocan: lo convertido va a una carpeta aparte. Notarizado por Apple; en Windows, SmartScreen avisa por ser una app nueva.",
     "allFeatures": "Ver todo lo que hace →"
   }
 }

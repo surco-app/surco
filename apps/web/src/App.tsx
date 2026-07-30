@@ -61,6 +61,9 @@ export default function App() {
             <div className="mt-10 flex flex-col items-center gap-4">
               <DownloadButton />
               <p className="font-mono text-xs text-faint">{t('home.closeNote')}</p>
+              <p className="max-w-md text-center font-mono text-xs leading-relaxed text-faint/80">
+                {t('home.closeSafety')}
+              </p>
             </div>
             <a
               href={featuresHref}
