@@ -38,6 +38,13 @@ export function isTypingTarget(
   )
 }
 
+// El ámbito de atajos activo: el `data-shortcut-scope` del ancestro más cercano al
+// elemento enfocado. Se lee del DOM y no de estado en React a propósito — así no puede
+// desincronizarse de lo que el usuario ve enfocado.
+export function activeScope(el: Element | null): string | null {
+  return el?.closest?.('[data-shortcut-scope]')?.getAttribute('data-shortcut-scope') ?? null
+}
+
 // Resolves a key event to a command id using the configurable bindings, falling back
 // to the fixed vim aliases. `bindings` is the merged defaults+overrides map; `isMac`
 // picks ⌘ vs Ctrl as the `mod` key.
@@ -46,10 +53,11 @@ export function keyToCommandId(
   typing: boolean,
   bindings: Map<string, Chord>,
   isMac: boolean,
+  scope: string | null = null,
 ): string | null {
   const chord = eventToChord(e, isMac)
   if (!chord) return null
-  const id = matchChord(bindings, chord, typing)
+  const id = matchChord(bindings, chord, typing, scope)
   if (id) return id
   // j/k are fixed vim aliases for list navigation — deliberately not configurable and
   // not shown in the Shortcuts tab, so power-user muscle memory keeps working without a
