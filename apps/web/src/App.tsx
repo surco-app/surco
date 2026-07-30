@@ -7,7 +7,6 @@ import Footer from './components/Footer'
 import GrooveArcs from './components/GrooveArcs'
 import Header from './components/Header'
 import HeroShowcase from './components/HeroShowcase'
-import HowItWorks from './components/HowItWorks'
 import Icon, { type GlyphName } from './components/Icon'
 import InstallSection from './components/InstallSection'
 import Kicker from './components/Kicker'
@@ -158,8 +157,6 @@ export default function App() {
 
         <Walkthrough />
         <Speed />
-
-        <HowItWorks />
 
         <Band tone="raised">
           <section id="funciones" className="scroll-mt-24 py-24">

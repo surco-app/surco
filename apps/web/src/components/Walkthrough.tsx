@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { PAGES } from '../lib/nav'
 import {
   DECLICK_MARKS,
   DECLICK_PEAKS,
@@ -20,12 +21,13 @@ const DESTINATIONS = ['rekordbox', 'Engine DJ', 'Traktor', 'Serato', 'Apple Musi
 // that does it. The page sells the whole preparation flow, so it walks the flow
 // rather than listing features — and the app is on screen in every scene.
 export default function Walkthrough() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const guideHref = PAGES.guide[i18n.language === 'en' ? 'en' : 'es']
 
   return (
     <>
       <Reveal>
-        <div className="pt-24 text-center">
+        <div id="como" className="scroll-mt-24 pt-24 text-center">
           <div className="flex justify-center">
             <Kicker>{t('home.walkthrough.kicker')}</Kicker>
           </div>
@@ -261,6 +263,15 @@ export default function Walkthrough() {
       >
         {t('home.batch.lede')}
       </SceneLayout>
+
+      <Reveal>
+        <a
+          href={guideHref}
+          className="inline-flex items-center text-sm font-medium text-fg transition-colors hover:text-blue"
+        >
+          {t('how.guideCta')}
+        </a>
+      </Reveal>
     </>
   )
 }
