@@ -87,6 +87,11 @@ export function resolveBindings(overrides: Record<string, Chord> = {}): Map<stri
 // is deterministic (first match wins) even if two commands share a chord. Respects the
 // typing guard: while a field is focused, bare-key chords and `suppressWhileTyping`
 // commands don't fire, but other mod-combos do.
+//
+// The active scope's commands are matched BEFORE the global ones, so a scoped binding
+// beats a global that shares its chord: ← is seek-back everywhere, but inside the
+// silence editor it nudges the cut. Without that precedence the table's order would
+// decide, and seek-back is declared first.
 export function matchChord(
   bindings: Map<string, Chord>,
   chord: Chord,
@@ -94,14 +99,18 @@ export function matchChord(
   scope: string | null = null,
 ): string | null {
   const hasMod = chord.includes('mod')
-  for (const def of SHORTCUT_DEFAULTS) {
-    const bound = bindings.get(def.id)
-    if (!bound || bound.length === 0 || !chordEquals(bound, chord)) continue
-    if (def.scope && def.scope !== scope) continue
-    if (typing && (!hasMod || def.suppressWhileTyping)) return null
-    return def.id
+  const match = (wantScoped: boolean): string | null => {
+    for (const def of SHORTCUT_DEFAULTS) {
+      const bound = bindings.get(def.id)
+      if (!bound || bound.length === 0 || !chordEquals(bound, chord)) continue
+      if (def.scope && def.scope !== scope) continue
+      if (Boolean(def.scope) !== wantScoped) continue
+      if (typing && (!hasMod || def.suppressWhileTyping)) return null
+      return def.id
+    }
+    return null
   }
-  return null
+  return (scope !== null ? match(true) : null) ?? match(false)
 }
 
 // Groups of command ids that resolve to the same chord — used by the Shortcuts tab to
