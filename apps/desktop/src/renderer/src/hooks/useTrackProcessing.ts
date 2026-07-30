@@ -36,6 +36,9 @@ interface Params {
   tracks: TrackItem[]
   settings: Settings | null
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
+  // Called only after an in-place export, with the file's post-rename path: that is the
+  // one case where the bytes the row describes were actually rewritten.
+  refreshTrackFromDisk?: (id: string, path: string) => Promise<void>
   // Surfaced when a track converted without the requested loudness normalization (its
   // measurement failed), so the skip doesn't pass silently. Receives the track's label.
   onNormalizeSkipped?: (name: string) => void
@@ -94,6 +97,7 @@ export function useTrackProcessing({
   tracks,
   settings,
   updateTrack,
+  refreshTrackFromDisk,
   onNormalizeSkipped,
   onDeclicked,
   onFormatSkipped,
@@ -272,7 +276,14 @@ export function useTrackProcessing({
         // showing the old output as "after". An in-place export additionally rewrote
         // the source, so its (possibly different, when renamed) path is evicted too.
         removeAnalysisQueries(queryClient, result.outputPath)
-        if (result.inPlace) removeAnalysisQueries(queryClient, track.inputPath)
+        if (result.inPlace) {
+          removeAnalysisQueries(queryClient, track.inputPath)
+          // The row's frozen label and the file's own artwork describe the bytes this
+          // export just overwrote, so re-read them from the file at its final (possibly
+          // renamed) path. Awaited so a batch's rows settle in order, but never allowed
+          // to fail the conversion: the file is written either way and this only repaints.
+          await refreshTrackFromDisk?.(id, result.outputPath).catch(() => {})
+        }
         return 'converted'
       } catch (e) {
         const message = e instanceof Error ? cleanIpcError(e.message) : tr('editor.processError')
