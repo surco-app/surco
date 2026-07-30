@@ -5,6 +5,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import type React from 'react'
 import { createRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type {
   FormatSetting,
   KeyNotation,
@@ -21,9 +22,18 @@ import { OpenSettingsProvider } from '../lib/openSettingsContext'
 import { createQueryClient } from '../lib/queryClient'
 import { SettingsProvider } from '../lib/settingsContext'
 import type { TrackItem } from '../types'
+
+// TrimSection (rendered by Editor) reads window.api.platform at module load, so stub
+// it before the component is imported.
+vi.hoisted(() => {
+  ;(globalThis.window as unknown as { api: unknown }).api = { platform: 'win32' }
+})
+
 import { Editor } from './Editor'
 
 afterEach(cleanup)
+
+const bindings = resolveBindings()
 
 // The Editor's read-only data (currently Properties) is fetched through React Query,
 // so every mount needs a client in context. A fresh client per render keeps tests
@@ -189,6 +199,7 @@ function renderEditor(
         onCopyFilename={onCopyFilename}
         onSearchWeb={onSearchWeb}
         onExportCollection={onExportCollection}
+        bindings={bindings}
       />
     </OpenSettingsProvider>,
     {
@@ -684,6 +695,7 @@ function MultiHarness() {
         item={selected}
         libraryIndex={null}
         searchInputRef={createRef<HTMLInputElement>()}
+        bindings={bindings}
         onExportCollection={vi.fn()}
         onResultsWidthChange={vi.fn()}
         selectedTracks={selectedTracks}
@@ -1001,6 +1013,7 @@ describe('Editor multi-select', () => {
         item={a}
         libraryIndex={null}
         searchInputRef={createRef<HTMLInputElement>()}
+        bindings={bindings}
         onExportCollection={vi.fn()}
         onResultsWidthChange={vi.fn()}
         selectedTracks={[a, b]}

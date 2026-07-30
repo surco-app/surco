@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
+import type { Chord } from '../../../shared/shortcuts'
 import type {
   DeclickMode,
   FormatSetting,
@@ -163,6 +164,9 @@ interface Props {
   // Opens the DJ-app collection export (rekordbox/Traktor/Serato/M3U8/Engine USB) — the
   // post-conversion step that used to live on the toolbar. App owns the modal.
   onExportCollection: () => void
+  // The effective key bindings (defaults + the user's overrides). App owns the single
+  // source; the trim section's own onKeyDown reads it to resolve its five commands.
+  bindings: Map<string, Chord>
 }
 
 // Memoized: App keeps every prop identity-stable (useStableCallback handlers, kept
@@ -202,6 +206,7 @@ export const Editor = memo(function Editor({
   onCopyFilename,
   onSearchWeb,
   onExportCollection,
+  bindings,
 }: Props): React.JSX.Element {
   // Every Settings-derived value the editor reads comes from the shared context in one
   // pull — this used to be a 17-prop wall App re-plumbed for each field (see
@@ -1174,6 +1179,7 @@ export const Editor = memo(function Editor({
                           onToggle={() => setSectionOpen('trim', !trimOpen)}
                           onChange={(trim) => onChange({ trim })}
                           inputPath={item.inputPath}
+                          bindings={bindings}
                         />
                       )
                     case 'declick':

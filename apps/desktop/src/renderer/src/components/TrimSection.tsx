@@ -11,10 +11,13 @@ import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { mediaUrl } from '../../../shared/media'
+import { matchChord } from '../../../shared/shortcutDefaults'
+import { type Chord, eventToChord } from '../../../shared/shortcuts'
 import type { TrimRange, WaveformResult } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
 import { useWaveformWindow } from '../hooks/useWaveformWindow'
+import { isMacOS } from '../lib/platform'
 import { detectOnsets, detectTrim, refineOnset } from '../lib/trim'
 import { drawWaveform } from '../lib/waveform'
 import { SectionHeader } from './SectionHeader'
@@ -66,12 +69,15 @@ const COARSE_STEP_SEC = 0.1
 const LANE_RASTER = 1200
 const LANE_H = 96
 
+const isMac = isMacOS()
+
 interface Props {
   value: TrimRange | undefined
   open: boolean
   onToggle: () => void
   onChange: (trim: TrimRange | undefined) => void
   inputPath: string
+  bindings: Map<string, Chord>
 }
 
 function cutSeconds(seconds: number): string {
@@ -97,6 +103,7 @@ function Lane({
   suggestionSec,
   snapped,
   grabbed,
+  bindings,
   onPointerDown,
   onPointerMove,
   onWheelPan,
@@ -126,6 +133,7 @@ function Lane({
   suggestionSec: number | undefined
   snapped: boolean
   grabbed: boolean
+  bindings: Map<string, Chord>
   onPointerDown: (e: React.PointerEvent) => void
   onPointerMove: (e: React.PointerEvent) => void
   onWheelPan: (deltaX: number) => void
@@ -402,12 +410,28 @@ function Lane({
               className="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-ew-resize touch-none outline-none focus-visible:shadow-none"
               style={{ left: `${Math.max(0, Math.min(100, pct(cut)))}%` }}
               onKeyDown={(e) => {
-                if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+                const chord = eventToChord(e, isMac)
+                if (!chord) return
+                // Shift is the coarse step for the nudge keys, not a different chord: a
+                // held Shift still means trim-nudge-back/-forward, so it is matched
+                // stripped of its shift token — matching it as pressed would look for a
+                // ['shift','left'] binding that doesn't exist and silently do nothing.
+                const bare = chord[0] === 'shift' ? chord.slice(1) : chord
+                const id = matchChord(bindings, bare, false, 'trim')
+                if (!id) return
                 e.preventDefault()
-                // Shift is the coarse step; bare arrows do the fine one, matching the
-                // buttons either side of the readout.
                 const step = e.shiftKey ? COARSE_STEP_SEC : fineStepSec
-                onKeyStep(e.key === 'ArrowLeft' ? -step : step)
+                if (id === 'trim-nudge-back') onKeyStep(-step)
+                else if (id === 'trim-nudge-forward') onKeyStep(step)
+                else if (id === 'trim-audition' && cutSec !== undefined) onAudition()
+                else if (id === 'trim-clear' && cutSec !== undefined) onClear()
+                else if (
+                  id === 'trim-apply' &&
+                  cutSec === undefined &&
+                  suggestionSec !== undefined
+                ) {
+                  onApplySuggestion(suggestionSec)
+                }
               }}
               onPointerDown={(e) => {
                 e.stopPropagation()
@@ -486,6 +510,7 @@ export function TrimSection({
   onToggle,
   onChange,
   inputPath,
+  bindings,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // The waveform decodes the full file, so it waits for the selection to rest and
@@ -863,6 +888,7 @@ export function TrimSection({
       suggestionSec: which === 'start' ? suggestion?.startSec : suggestion?.endSec,
       snapped: snapped && dragging.current === which,
       grabbed: draft !== null,
+      bindings,
       onPointerDown: (e: React.PointerEvent) => {
         dragging.current = which
         ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
@@ -898,7 +924,11 @@ export function TrimSection({
   }
 
   return (
-    <div data-testid="editor-trim" className="mt-5 border-t border-[var(--color-line)] pt-5">
+    <div
+      data-testid="editor-trim"
+      data-shortcut-scope="trim"
+      className="mt-5 border-t border-[var(--color-line)] pt-5"
+    >
       <SectionHeader
         sectionId="trim"
         title={tr('trim.title')}
