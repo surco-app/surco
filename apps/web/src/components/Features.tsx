@@ -32,7 +32,7 @@ export default function Features() {
     kick: string
     title: string
     replaces: string
-    items: string[]
+    items: { t: string; d: string }[]
   }[]
   const shortcutLabels = t('shortcuts.items', { returnObjects: true }) as string[]
   const shortcutKeys: string[][] = [
@@ -69,11 +69,14 @@ export default function Features() {
                   </div>
                   <h2 className="text-lg font-semibold text-fg">{g.title}</h2>
                   <p className="mt-1 font-mono text-xs text-faint">{g.replaces}</p>
-                  <ul className="mt-4 space-y-2.5">
+                  <ul className="mt-4 space-y-3">
                     {g.items.map((it) => (
-                      <li key={it} className="flex gap-2.5 text-sm leading-relaxed text-muted">
+                      <li key={it.t} className="flex gap-2.5 text-sm leading-relaxed">
                         <span className="text-cyan">·</span>
-                        <span>{it}</span>
+                        <span>
+                          <span className="font-medium text-fg">{it.t}</span>{' '}
+                          <span className="text-muted">{it.d}</span>
+                        </span>
                       </li>
                     ))}
                   </ul>
