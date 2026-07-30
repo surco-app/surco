@@ -650,7 +650,7 @@
     "heroFree": "Gratis · macOS, Windows y Linux",
     "closeTitle": "Todo esto, en una ventana.",
     "closeNote": "Gratis, para siempre. Sin cuenta, sin nube, sin límites.",
-    "closeSafety": "Tus archivos originales no se tocan: lo convertido va a una carpeta aparte. Notarizado por Apple; en Windows, SmartScreen avisa por ser una app nueva.",
+    "closeSafety": "Por defecto tus archivos originales no se tocan: lo convertido va a una carpeta aparte. Notarizado por Apple; en Windows, SmartScreen avisa por ser una app nueva.",
     "allFeatures": "Ver todo lo que hace →"
   }
 }
