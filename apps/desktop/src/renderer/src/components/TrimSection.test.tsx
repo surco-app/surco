@@ -705,6 +705,21 @@ describe('TrimSection', () => {
     expect(screen.getByTestId('trim-summary')).toHaveTextContent('Off')
   })
 
+  it('marca el handle enfocado aunque el foco haya llegado con el ratón', async () => {
+    render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+    act(() => {
+      start.focus()
+    })
+    expect(start).toHaveAttribute('data-focused', 'true')
+  })
+
+  it('no marca el handle sin foco', async () => {
+    render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+    expect(start).not.toHaveAttribute('data-focused', 'true')
+  })
+
   // The five trim commands, bound to the FOCUSED handle: a macropad key must act on
   // whichever side the user is looking at, never both.
   describe('keyboard shortcuts on the focused handle', () => {

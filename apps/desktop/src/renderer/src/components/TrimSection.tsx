@@ -156,6 +156,7 @@ function Lane({
   // Edits as text and commits on blur/Enter, so a half-typed "40" never becomes a
   // 40-second cut mid-keystroke.
   const [timeText, setTimeText] = useState<string | null>(null)
+  const [focused, setFocused] = useState(false)
   function commitTime(): void {
     const text = timeText
     setTimeText(null)
@@ -394,12 +395,15 @@ function Lane({
           {cutOnScreen && (
             <div
               data-testid={`trim-handle-${side}`}
+              data-focused={focused || undefined}
               role="slider"
               aria-label={tr(side === 'start' ? 'trim.handleStart' : 'trim.handleEnd')}
               aria-valuemin={0}
               aria-valuemax={Number(durationSec.toFixed(2))}
               aria-valuenow={Number(cut.toFixed(2))}
               tabIndex={0}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
               // Keyboard focus lights the handle's own line and dot instead of drawing
               // a box around it: an outline on a strip this thin and tall read as a
               // stray rectangle, and the arrows (which need the handle focused) made it
@@ -455,13 +459,13 @@ function Lane({
               <span
                 aria-hidden="true"
                 data-testid={snapped ? `trim-snapped-${side}` : undefined}
-                className={`absolute inset-y-0 left-1/2 w-px bg-accent group-focus-visible:shadow-[0_0_4px_var(--color-accent)] ${
+                className={`absolute inset-y-0 left-1/2 w-px bg-accent group-data-[focused]:shadow-[0_0_4px_var(--color-accent)] ${
                   snapped ? 'shadow-[0_0_8px_2px_var(--color-accent)]' : ''
                 }`}
               />
               <span
                 aria-hidden="true"
-                className={`absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent group-focus-visible:scale-125 group-focus-visible:shadow-[0_0_4px_var(--color-accent)] ${
+                className={`absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent group-data-[focused]:scale-125 group-data-[focused]:shadow-[0_0_4px_var(--color-accent)] ${
                   snapped ? 'scale-150 shadow-[0_0_8px_var(--color-accent)]' : ''
                 }`}
               />
