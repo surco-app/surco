@@ -511,6 +511,7 @@
     "estimateNonePill": "No clicks",
     "waveTitle": "Clicks found",
     "markLabel": "Click at {{sec}} s — jump here",
+    "playheadLabel": "Playhead position",
     "unscanned": "Analysed the first {{minutes}} minutes; clicks after that are not marked.",
     "preview": "Hear the result",
     "previewHint": "Renders this track with the repair applied, so you can compare it against the original while it plays. The full track, so you can check the repair at every click.",

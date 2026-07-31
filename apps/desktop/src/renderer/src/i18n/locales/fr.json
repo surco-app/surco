@@ -511,6 +511,7 @@
     "estimateNonePill": "Aucun clic",
     "waveTitle": "Clics détectés",
     "markLabel": "Clic à {{sec}} s — aller ici",
+    "playheadLabel": "Position de lecture",
     "unscanned": "Les {{minutes}} premières minutes ont été analysées ; les clics suivants ne sont pas marqués.",
     "preview": "Écouter le résultat",
     "previewHint": "Rend ce morceau avec la réparation appliquée, pour le comparer à l’original pendant la lecture. Le morceau entier, afin de vérifier la réparation sur chaque clic.",

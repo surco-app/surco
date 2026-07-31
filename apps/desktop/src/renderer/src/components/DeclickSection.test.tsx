@@ -390,6 +390,25 @@ describe('DeclickSection', () => {
     expect(elements[1].currentTime).toBe(240)
   })
 
+  // The scrubbable strip was pointer-only: the marks are tabulable buttons, but the
+  // ground between them had no tabIndex, no role, and no onKeyDown, so a keyboard user
+  // could never place the cursor anywhere but on a click.
+  it('exposes the playhead as an accessible slider', async () => {
+    await withPreview()
+    const strip = screen.getByTestId('declick-marks')
+    expect(strip).toHaveAttribute('role', 'slider')
+    expect(strip).toHaveAttribute('tabindex', '0')
+  })
+
+  it('moves the playhead with the arrow keys', async () => {
+    await withPreview()
+    const strip = screen.getByTestId('declick-marks')
+    strip.focus()
+    const before = Number(strip.getAttribute('aria-valuenow'))
+    fireEvent.keyDown(strip, { key: 'ArrowRight' })
+    expect(Number(strip.getAttribute('aria-valuenow'))).toBeGreaterThan(before)
+  })
+
   // Caught in the real app, not here: the two elements buffer and schedule independently,
   // so play() on both does NOT start them together — measured ~450 ms apart. A drifted
   // A/B compares two different moments of the song while still *sounding* like a
