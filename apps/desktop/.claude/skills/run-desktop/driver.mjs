@@ -165,6 +165,12 @@ async function repl() {
         console.log('clicked ' + sel + ' at ' + frac)
       }
       else if (cmd === 'hover') { await page.locator(arg).first().hover(); console.log('hovered ' + arg) }
+      // clicktext <text>: click the first button whose label contains <text>. Some section
+      // headers carry no testid of their own, so the visible label is the only handle.
+      else if (cmd === 'clicktext') { await page.getByRole('button', { name: new RegExp(arg) }).first().click(); console.log('clicked text ' + arg) }
+      // waitfor <selector>: block until it appears, for panels that fill in after an async
+      // analysis. Screenshotting on a fixed sleep races the work and captures a blank panel.
+      else if (cmd === 'waitfor') { await page.locator(arg).first().waitFor({ timeout: 120000 }); console.log('appeared ' + arg) }
       else if (cmd === 'key') { await page.keyboard.press(arg); console.log('pressed ' + arg) }
       else if (cmd === 'eval') { console.log(JSON.stringify(await page.evaluate(arg))) }
       else if (cmd === 'sleep') { await page.waitForTimeout(Number(arg) || 500); console.log('slept ' + (Number(arg) || 500)) }
