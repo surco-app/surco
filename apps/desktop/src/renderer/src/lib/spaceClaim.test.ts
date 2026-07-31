@@ -81,4 +81,39 @@ describe('spaceClaim', () => {
     releaseTop()
     releaseBelow()
   })
+
+  // The silence editor claims its own keys the same way: while the section is open they
+  // act on the open track, with no focus anywhere. Claiming (not binding to the focused
+  // element) is what lets a macro pad drive the trim — the user presses a key and the
+  // cut moves, instead of first having to click the handle.
+  it('runs a trim action claimed by the open silence editor', () => {
+    const nudge = vi.fn()
+    const release = claimKeys({ 'trim-start-forward': nudge })
+    expect(runKeyClaim('trim-start-forward')).toBe(true)
+    expect(nudge).toHaveBeenCalled()
+    release()
+    expect(runKeyClaim('trim-start-forward')).toBe(false)
+  })
+
+  // Each side is its own key, so one press can never move the wrong cut: with no focus
+  // to disambiguate, the key IS the side.
+  it('keeps the two sides on separate handlers', () => {
+    const start = vi.fn()
+    const end = vi.fn()
+    const release = claimKeys({ 'trim-start-forward': start, 'trim-end-forward': end })
+    runKeyClaim('trim-end-forward')
+    expect(end).toHaveBeenCalled()
+    expect(start).not.toHaveBeenCalled()
+    release()
+  })
+
+  // Shift is the coarse step, so the claim has to carry whether it was held: without it
+  // the section could only ever nudge by the fine step from a claimed key.
+  it('passes the shift modifier through to the handler', () => {
+    const nudge = vi.fn()
+    const release = claimKeys({ 'trim-start-forward': nudge })
+    runKeyClaim('trim-start-forward', { shift: true })
+    expect(nudge).toHaveBeenCalledWith({ shift: true })
+    release()
+  })
 })

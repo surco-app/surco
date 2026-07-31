@@ -11,13 +11,11 @@ import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { mediaUrl } from '../../../shared/media'
-import { matchChord } from '../../../shared/shortcutDefaults'
-import { type Chord, eventToChord } from '../../../shared/shortcuts'
 import type { TrimRange, WaveformResult } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
 import { useWaveformWindow } from '../hooks/useWaveformWindow'
-import { isMacOS } from '../lib/platform'
+import { claimKeys } from '../lib/spaceClaim'
 import { detectOnsets, detectTrim, refineOnset } from '../lib/trim'
 import { drawWaveform } from '../lib/waveform'
 import { SectionHeader } from './SectionHeader'
@@ -69,15 +67,12 @@ const COARSE_STEP_SEC = 0.1
 const LANE_RASTER = 1200
 const LANE_H = 96
 
-const isMac = isMacOS()
-
 interface Props {
   value: TrimRange | undefined
   open: boolean
   onToggle: () => void
   onChange: (trim: TrimRange | undefined) => void
   inputPath: string
-  bindings: Map<string, Chord>
 }
 
 function cutSeconds(seconds: number): string {
@@ -103,7 +98,6 @@ function Lane({
   suggestionSec,
   snapped,
   grabbed,
-  bindings,
   onPointerDown,
   onPointerMove,
   onWheelPan,
@@ -133,7 +127,6 @@ function Lane({
   suggestionSec: number | undefined
   snapped: boolean
   grabbed: boolean
-  bindings: Map<string, Chord>
   onPointerDown: (e: React.PointerEvent) => void
   onPointerMove: (e: React.PointerEvent) => void
   onWheelPan: (deltaX: number) => void
@@ -417,32 +410,15 @@ function Lane({
               // shadow-none kills that too.
               className="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-ew-resize touch-none outline-none focus-visible:shadow-none"
               style={{ left: `${Math.max(0, Math.min(100, pct(cut)))}%` }}
+              // The arrows a focused slider owes anyone driving it by keyboard or with a
+              // screen reader. The section's own per-side keys (claimed, focus-free) are
+              // the way this is meant to be worked; these stay because a role="slider"
+              // that ignores its arrows when focused is simply broken.
               onKeyDown={(e) => {
-                const chord = eventToChord(e, isMac)
-                if (!chord) return
-                // Matched as pressed first, so a command deliberately rebound to a
-                // shift chord (⇧A for trim-audition on a macro keyboard) still fires.
-                // Only when that fails does Shift get treated as a modifier on the step
-                // size rather than part of the chord — ⇧← has no ['shift','left']
-                // binding, so it falls back to ['left'] and still nudges, just coarse.
-                const bare = chord[0] === 'shift' ? chord.slice(1) : chord
-                const id =
-                  matchChord(bindings, chord, false, 'trim') ??
-                  matchChord(bindings, bare, false, 'trim')
-                if (!id) return
+                if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
                 e.preventDefault()
                 const step = e.shiftKey ? COARSE_STEP_SEC : fineStepSec
-                if (id === 'trim-nudge-back') onKeyStep(-step)
-                else if (id === 'trim-nudge-forward') onKeyStep(step)
-                else if (id === 'trim-audition' && cutSec !== undefined) onAudition()
-                else if (id === 'trim-clear' && cutSec !== undefined) onClear()
-                else if (
-                  id === 'trim-apply' &&
-                  cutSec === undefined &&
-                  suggestionSec !== undefined
-                ) {
-                  onApplySuggestion(suggestionSec)
-                }
+                onKeyStep(e.key === 'ArrowLeft' ? -step : step)
               }}
               onPointerDown={(e) => {
                 e.stopPropagation()
@@ -521,7 +497,6 @@ export function TrimSection({
   onToggle,
   onChange,
   inputPath,
-  bindings,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // The waveform decodes the full file, so it waits for the selection to rest and
@@ -863,14 +838,49 @@ export function TrimSection({
 
   function nudge(which: Side, deltaSec: number): void {
     if (durationSec === 0) return
+    // Nudging starts from the line the user can SEE. With nothing trimmed yet that line
+    // sits on the detected silence (the lanes frame it), not on the track's own edge, so
+    // reading the raw 0 moved a millisecond off the head while the line stayed put nine
+    // seconds away — the key looked dead when it was simply working somewhere else.
     if (which === 'start') {
-      const sec = Math.min(Math.max(0, startSec + deltaSec), endSec - MIN_KEEP_SEC)
+      const from = shown?.startSec ?? suggestedStart ?? 0
+      const sec = Math.min(Math.max(0, from + deltaSec), endSec - MIN_KEEP_SEC)
       commit({ ...shown, startSec: sec }, true)
     } else {
-      const sec = Math.max(Math.min(durationSec, endSec + deltaSec), startSec + MIN_KEEP_SEC)
+      const from = shown?.endSec ?? suggestedEnd ?? durationSec
+      const sec = Math.max(Math.min(durationSec, from + deltaSec), startSec + MIN_KEEP_SEC)
       commit({ ...shown, endSec: sec }, true)
     }
   }
+
+  // The per-side keys act on the open track while the section is open, with no focus
+  // anywhere — the point of the feature. They are CLAIMED rather than bound to the
+  // handles: a macro pad presses a key and the cut moves, instead of the user having to
+  // click the handle first. The ref keeps each handler reading the current cut, so the
+  // claim registers once per open/close instead of on every nudge.
+  const actionsRef = useRef({ nudge, audition, clearSide, suggestion, onChange })
+  actionsRef.current = { nudge, audition, clearSide, suggestion, onChange }
+  useEffect(() => {
+    if (!open) return
+    const step = (which: Side, dir: 1 | -1, ctx: { shift?: boolean }): void =>
+      actionsRef.current.nudge(which, dir * (ctx.shift ? COARSE_STEP_SEC : FINE_STEP_SEC))
+    return claimKeys({
+      'trim-start-back': (ctx) => step('start', -1, ctx),
+      'trim-start-forward': (ctx) => step('start', 1, ctx),
+      'trim-start-audition': () => actionsRef.current.audition('start'),
+      'trim-start-clear': () => actionsRef.current.clearSide('start'),
+      'trim-end-back': (ctx) => step('end', -1, ctx),
+      'trim-end-forward': (ctx) => step('end', 1, ctx),
+      'trim-end-audition': () => actionsRef.current.audition('end'),
+      'trim-end-clear': () => actionsRef.current.clearSide('end'),
+      // The detection proposes both cuts at once, so applying it is one action for the
+      // whole track rather than one per side.
+      'trim-apply': () => {
+        const found = actionsRef.current.suggestion
+        if (found) actionsRef.current.onChange(found)
+      },
+    })
+  }, [open])
 
   // The folded header states the cuts (or that there are none) exactly once, like
   // the click-repair header: dim summary when off, accent badge when active.
@@ -908,7 +918,6 @@ export function TrimSection({
       suggestionSec: which === 'start' ? suggestion?.startSec : suggestion?.endSec,
       snapped: snapped && dragging.current === which,
       grabbed: draft !== null,
-      bindings,
       onPointerDown: (e: React.PointerEvent) => {
         dragging.current = which
         ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)

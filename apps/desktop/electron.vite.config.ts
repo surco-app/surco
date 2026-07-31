@@ -33,6 +33,15 @@ export default defineConfig({
     build: {
       rollupOptions: {
         input: { index: resolve(__dirname, 'src/renderer/index.html') },
+        output: {
+          // The key-claim registry holds module-level state: the open section registers
+          // its handlers there and the global keydown listener reads them back. The
+          // listener ships in the entry chunk and the sections in the lazy Editor one,
+          // so left to itself Rollup COPIED the module into both — two stacks, and every
+          // claim registered in one was invisible to the other. The section's keys did
+          // nothing while its tests (one module graph, no chunks) stayed green.
+          manualChunks: (id) => (id.includes('lib/spaceClaim') ? 'key-claims' : undefined),
+        },
       },
     },
   },

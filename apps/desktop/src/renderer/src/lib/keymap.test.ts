@@ -175,39 +175,40 @@ describe('activeScope', () => {
 
   it('devuelve el ámbito del ancestro más cercano', () => {
     const box = document.createElement('div')
-    box.setAttribute('data-shortcut-scope', 'trim')
+    box.setAttribute('data-shortcut-scope', 'track-list')
     const inner = document.createElement('button')
     box.appendChild(inner)
     document.body.appendChild(box)
-    expect(activeScope(inner)).toBe('trim')
+    expect(activeScope(inner)).toBe('track-list')
     box.remove()
   })
 })
 
 describe('keyToCommandId con ámbito', () => {
   const bindings = resolveBindings()
-  const press = (key: string): KeyLike => ({
+  const press = (key: string, shift = false): KeyLike => ({
     key,
     metaKey: false,
     ctrlKey: false,
-    shiftKey: false,
+    shiftKey: shift,
   })
 
-  it('no dispara el comando del trim fuera de su ámbito', () => {
-    expect(keyToCommandId(press('a'), false, bindings, true, null)).toBeNull()
+  it('no dispara un comando de ámbito fuera de él', () => {
+    expect(keyToCommandId(press('F10', true), false, bindings, true, null)).toBeNull()
   })
 
-  it('dispara el comando del trim dentro de su ámbito', () => {
-    expect(keyToCommandId(press('a'), false, bindings, true, 'trim')).toBe('trim-audition')
+  it('dispara el comando dentro de su ámbito', () => {
+    expect(keyToCommandId(press('F10', true), false, bindings, true, 'track-list')).toBe(
+      'track-menu',
+    )
   })
 
-  it('las flechas siguen siendo seek fuera del trim', () => {
+  // Las flechas son seek en toda la app: el editor de silencios ya no se las queda, sus
+  // teclas son propias por lado y actúan sin foco.
+  it('deja las flechas al seek en cualquier ámbito', () => {
     expect(keyToCommandId(press('ArrowLeft'), false, bindings, true, null)).toBe('seek-back')
-  })
-
-  it('las flechas son nudge dentro del trim', () => {
-    expect(keyToCommandId(press('ArrowLeft'), false, bindings, true, 'trim')).toBe(
-      'trim-nudge-back',
+    expect(keyToCommandId(press('ArrowLeft'), false, bindings, true, 'track-list')).toBe(
+      'seek-back',
     )
   })
 })

@@ -228,10 +228,14 @@
     "toggleLanguage": "Sprache wechseln (Englisch / Spanisch)",
     "toggleTheme": "Design wechseln (System / Hell / Dunkel)",
     "confetti": "Konfetti werfen 🎉",
-    "trimNudgeBack": "Schnitt nach hinten schieben",
-    "trimNudgeForward": "Schnitt nach vorne schieben",
-    "trimAudition": "Schnitt anhören",
-    "trimClear": "Schnitt entfernen",
+    "trimStartBack": "Anfangsschnitt zurück",
+    "trimStartForward": "Anfangsschnitt vor",
+    "trimStartAudition": "Anfangsschnitt anhören",
+    "trimStartClear": "Anfangsschnitt entfernen",
+    "trimEndBack": "Endschnitt zurück",
+    "trimEndForward": "Endschnitt vor",
+    "trimEndAudition": "Endschnitt anhören",
+    "trimEndClear": "Endschnitt entfernen",
     "trimApply": "Erkannte Stille anwenden"
   },
   "trackList": {

@@ -228,10 +228,14 @@
     "toggleLanguage": "Switch language (English / Spanish)",
     "toggleTheme": "Switch theme (system / light / dark)",
     "confetti": "Throw confetti 🎉",
-    "trimNudgeBack": "Nudge the cut back",
-    "trimNudgeForward": "Nudge the cut forward",
-    "trimAudition": "Hear the cut",
-    "trimClear": "Clear the cut",
+    "trimStartBack": "Nudge the head cut back",
+    "trimStartForward": "Nudge the head cut forward",
+    "trimStartAudition": "Hear the head cut",
+    "trimStartClear": "Clear the head cut",
+    "trimEndBack": "Nudge the tail cut back",
+    "trimEndForward": "Nudge the tail cut forward",
+    "trimEndAudition": "Hear the tail cut",
+    "trimEndClear": "Clear the tail cut",
     "trimApply": "Apply the detected silence"
   },
   "trackList": {

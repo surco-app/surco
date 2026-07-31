@@ -228,10 +228,14 @@
     "toggleLanguage": "Trocar idioma (inglês / espanhol)",
     "toggleTheme": "Trocar tema (sistema / claro / escuro)",
     "confetti": "Soltar confete 🎉",
-    "trimNudgeBack": "Mover o corte para trás",
-    "trimNudgeForward": "Mover o corte para frente",
-    "trimAudition": "Ouvir o corte",
-    "trimClear": "Remover o corte",
+    "trimStartBack": "Recuar o corte inicial",
+    "trimStartForward": "Avançar o corte inicial",
+    "trimStartAudition": "Ouvir o corte inicial",
+    "trimStartClear": "Remover o corte inicial",
+    "trimEndBack": "Recuar o corte final",
+    "trimEndForward": "Avançar o corte final",
+    "trimEndAudition": "Ouvir o corte final",
+    "trimEndClear": "Remover o corte final",
     "trimApply": "Aplicar o silêncio detectado"
   },
   "trackList": {

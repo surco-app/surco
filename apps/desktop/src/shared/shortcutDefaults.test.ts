@@ -108,36 +108,34 @@ describe('findConflicts', () => {
 
 describe('matchChord con ámbito', () => {
   it('no dispara un comando de ámbito cuando no hay ámbito activo', () => {
-    const bindings = new Map([['trim-audition', ['a']]])
-    expect(matchChord(bindings, ['a'], false, null)).toBeNull()
+    const bindings = new Map([['track-menu', ['shift', 'f10']]])
+    expect(matchChord(bindings, ['shift', 'f10'], false, null)).toBeNull()
   })
 
   it('dispara un comando de ámbito cuando su ámbito está activo', () => {
-    const bindings = new Map([['trim-audition', ['a']]])
-    expect(matchChord(bindings, ['a'], false, 'trim')).toBe('trim-audition')
+    const bindings = new Map([['track-menu', ['shift', 'f10']]])
+    expect(matchChord(bindings, ['shift', 'f10'], false, 'track-list')).toBe('track-menu')
   })
 
   it('no dispara un comando de ámbito bajo un ámbito distinto', () => {
-    const bindings = new Map([['trim-audition', ['a']]])
-    expect(matchChord(bindings, ['a'], false, 'otro')).toBeNull()
+    const bindings = new Map([['track-menu', ['shift', 'f10']]])
+    expect(matchChord(bindings, ['shift', 'f10'], false, 'otro')).toBeNull()
   })
 
   it('sigue disparando los comandos globales dentro de un ámbito', () => {
     const bindings = new Map([['settings', ['mod', ',']]])
-    expect(matchChord(bindings, ['mod', ','], false, 'trim')).toBe('settings')
+    expect(matchChord(bindings, ['mod', ','], false, 'track-list')).toBe('settings')
   })
 
-  // Con la tabla real: ← está ligada a seek-back (global) y a trim-nudge-back (scope
-  // 'trim'). Dentro del editor de silencios manda la del ámbito, o la flecha adelantaría
-  // la reproducción en vez de mover el corte.
+  // Un comando de ámbito gana al global que comparte su chord mientras ese ámbito está
+  // activo: si mandara el orden de la tabla, el global declarado antes se lo quedaría.
+  // Hoy ningún par de la tabla real colisiona, así que se prueba con un mapa propio.
   it('prefiere el comando de ámbito al global que comparte chord', () => {
-    const bindings = resolveBindings()
-    expect(matchChord(bindings, ['left'], false, 'trim')).toBe('trim-nudge-back')
-    expect(matchChord(bindings, ['right'], false, 'trim')).toBe('trim-nudge-forward')
-  })
-
-  it('deja el chord compartido al comando global fuera del ámbito', () => {
-    const bindings = resolveBindings()
+    const bindings = new Map([
+      ['seek-back', ['left']],
+      ['track-menu', ['left']],
+    ])
+    expect(matchChord(bindings, ['left'], false, 'track-list')).toBe('track-menu')
     expect(matchChord(bindings, ['left'], false, null)).toBe('seek-back')
   })
 })
@@ -145,17 +143,17 @@ describe('matchChord con ámbito', () => {
 describe('findConflicts con ámbito', () => {
   it('no marca conflicto entre un comando de ámbito y uno global', () => {
     const bindings = new Map([
-      ['trim-audition', ['a']],
+      ['track-menu', ['a']],
       ['add', ['a']],
     ])
     expect(findConflicts(bindings)).toEqual([])
   })
 
-  it('marca conflicto entre dos comandos del mismo ámbito', () => {
+  it('marca conflicto entre dos comandos globales con el mismo chord', () => {
     const bindings = new Map([
-      ['trim-audition', ['a']],
-      ['trim-clear', ['a']],
+      ['add', ['a']],
+      ['reveal', ['a']],
     ])
-    expect(findConflicts(bindings)).toEqual([['trim-audition', 'trim-clear']])
+    expect(findConflicts(bindings)).toEqual([['add', 'reveal']])
   })
 })
