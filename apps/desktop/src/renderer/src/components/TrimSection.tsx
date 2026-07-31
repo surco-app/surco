@@ -804,15 +804,24 @@ export function TrimSection({
 
   // A handle parked back on its own edge cuts nothing: that bound drops, and
   // with both gone the track carries no trim at all.
-  function commit(next: TrimRange): void {
+  //
+  // `deliberate` marks a placement the user aimed (a key press, a typed second) as
+  // opposed to a drag that merely ended up near the edge. Trimming the head of a track
+  // starts AT the edge and walks inward, so a nudge of a few milliseconds has to
+  // survive: with the drag threshold applied, the first presses computed a value that
+  // this function then threw away, and the key read as dead exactly where the work
+  // begins. An aimed cut only drops when it sits exactly on the edge.
+  function commit(next: TrimRange, deliberate = false): void {
     const cleaned: TrimRange = {}
     // To the millisecond: the tight lanes let the eye place a cut far finer than the
     // centisecond this used to round to, and the conversion's atrim takes it verbatim.
     const edgeFor = (which: Side): number =>
-      Math.max(
-        EDGE_SNAP_FLOOR_SEC,
-        (which === 'start' ? startContextSec : endContextSec) * 2 * EDGE_SNAP_FRACTION,
-      )
+      deliberate
+        ? 0
+        : Math.max(
+            EDGE_SNAP_FLOOR_SEC,
+            (which === 'start' ? startContextSec : endContextSec) * 2 * EDGE_SNAP_FRACTION,
+          )
     if (next.startSec !== undefined && next.startSec > edgeFor('start'))
       cleaned.startSec = Number(next.startSec.toFixed(3))
     if (next.endSec !== undefined && next.endSec < durationSec - edgeFor('end'))
@@ -846,9 +855,9 @@ export function TrimSection({
   function setCut(which: Side, sec: number): void {
     if (durationSec === 0) return
     if (which === 'start') {
-      commit({ ...shown, startSec: Math.min(Math.max(0, sec), endSec - MIN_KEEP_SEC) })
+      commit({ ...shown, startSec: Math.min(Math.max(0, sec), endSec - MIN_KEEP_SEC) }, true)
     } else {
-      commit({ ...shown, endSec: Math.max(Math.min(durationSec, sec), startSec + MIN_KEEP_SEC) })
+      commit({ ...shown, endSec: Math.max(Math.min(durationSec, sec), startSec + MIN_KEEP_SEC) }, true)
     }
   }
 
@@ -856,10 +865,10 @@ export function TrimSection({
     if (durationSec === 0) return
     if (which === 'start') {
       const sec = Math.min(Math.max(0, startSec + deltaSec), endSec - MIN_KEEP_SEC)
-      commit({ ...shown, startSec: sec })
+      commit({ ...shown, startSec: sec }, true)
     } else {
       const sec = Math.max(Math.min(durationSec, endSec + deltaSec), startSec + MIN_KEEP_SEC)
-      commit({ ...shown, endSec: sec })
+      commit({ ...shown, endSec: sec }, true)
     }
   }
 
