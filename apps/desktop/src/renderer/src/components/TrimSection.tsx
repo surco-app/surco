@@ -395,6 +395,10 @@ function Lane({
           {cutOnScreen && (
             <div
               data-testid={`trim-handle-${side}`}
+              // El ámbito vive en el handle y no en la sección porque solo aquí se
+              // manejan estas teclas: en el resto de la sección capturarlas las dejaría
+              // muertas en vez de caer a su comando global.
+              data-shortcut-scope="trim"
               data-focused={focused || undefined}
               role="slider"
               aria-label={tr(side === 'start' ? 'trim.handleStart' : 'trim.handleEnd')}
@@ -933,7 +937,6 @@ export function TrimSection({
   return (
     <div
       data-testid="editor-trim"
-      data-shortcut-scope="trim"
       className="mt-5 border-t border-[var(--color-line)] pt-5"
     >
       <SectionHeader

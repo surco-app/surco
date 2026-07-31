@@ -6,6 +6,7 @@ import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type { WaveformResult } from '../../../shared/types'
+import { activeScope } from '../lib/keymap'
 import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
 import { drawWaveform } from '../lib/waveform'
@@ -772,6 +773,16 @@ describe('TrimSection', () => {
       expect(onChange).not.toHaveBeenCalled()
       expect(audios).toHaveLength(0)
       outside.remove()
+    })
+
+    it('solo activa el ámbito trim con el foco en un handle', async () => {
+      render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+      const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+      expect(activeScope(start)).toBe('trim')
+      // El resto de la sección no maneja las teclas del trim, así que si quedara dentro
+      // del ámbito ←/→/a/c/s se resolverían a comandos que nadie ejecuta y no harían nada.
+      expect(activeScope(screen.getByTestId('trim-zoom-in-start'))).toBeNull()
+      expect(activeScope(screen.getByTestId('trim-audition-start'))).toBeNull()
     })
 
     // A macro keyboard can be rebound to send a shift chord. The direct match must
