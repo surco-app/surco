@@ -226,7 +226,12 @@
     "activity": "Afficher l'activité",
     "toggleLanguage": "Changer de langue (anglais / espagnol)",
     "toggleTheme": "Changer de thème (système / clair / sombre)",
-    "confetti": "Lancer des confettis 🎉"
+    "confetti": "Lancer des confettis 🎉",
+    "trimNudgeBack": "Déplacer la coupe vers l'arrière",
+    "trimNudgeForward": "Déplacer la coupe vers l'avant",
+    "trimAudition": "Écouter la coupe",
+    "trimClear": "Supprimer la coupe",
+    "trimApply": "Appliquer le silence détecté"
   },
   "trackList": {
     "label": "Morceaux",
@@ -596,7 +601,9 @@
       "reset": "Rétablir la valeur par défaut",
       "resetAll": "Tout rétablir",
       "conflict": "Deux commandes partagent un raccourci. Résous-le pour enregistrer.",
-      "fixedNav": "Toujours actives (non modifiables) : ↑↓ ou j / k parcourent la liste des morceaux et les résultats Discogs, Début / Fin vont aux extrémités, et Page haut / bas avancent d'une page."
+      "fixedNav": "Toujours actives (non modifiables) : ↑↓ ou j / k parcourent la liste des morceaux et les résultats Discogs, Début / Fin vont aux extrémités, et Page haut / bas avancent d'une page.",
+      "groupTrim": "Éditeur de silences",
+      "groupTrimHint": "Seulement quand une coupe a le focus"
     },
     "stats": {
       "count": "conversions",

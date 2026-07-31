@@ -226,7 +226,12 @@
     "activity": "Ver actividad",
     "toggleLanguage": "Cambiar idioma (español / inglés)",
     "toggleTheme": "Cambiar tema (sistema / claro / oscuro)",
-    "confetti": "Lanzar confeti 🎉"
+    "confetti": "Lanzar confeti 🎉",
+    "trimNudgeBack": "Mover el corte atrás",
+    "trimNudgeForward": "Mover el corte adelante",
+    "trimAudition": "Escuchar el corte",
+    "trimClear": "Quitar el corte",
+    "trimApply": "Aplicar el silencio detectado"
   },
   "trackList": {
     "label": "Pistas",
@@ -596,7 +601,9 @@
       "reset": "Restablecer al valor por defecto",
       "resetAll": "Restablecer todo",
       "conflict": "Dos comandos comparten un atajo. Resuélvelo para guardar.",
-      "fixedNav": "Siempre activas (no reasignables): ↑↓ o j / k recorren la lista de pistas y los resultados de Discogs, Inicio / Fin van a los extremos y Re Pág / Av Pág saltan de página."
+      "fixedNav": "Siempre activas (no reasignables): ↑↓ o j / k recorren la lista de pistas y los resultados de Discogs, Inicio / Fin van a los extremos y Re Pág / Av Pág saltan de página.",
+      "groupTrim": "Editor de silencios",
+      "groupTrimHint": "Solo con el foco en un corte"
     },
     "stats": {
       "count": "conversiones",
