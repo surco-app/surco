@@ -511,6 +511,7 @@
     "estimateNonePill": "Sin clicks",
     "waveTitle": "Clics encontrados",
     "markLabel": "Clic en el segundo {{sec}} — saltar aquí",
+    "playheadLabel": "Posición de reproducción",
     "unscanned": "Analizados los primeros {{minutes}} minutos; los clics posteriores no se marcan.",
     "preview": "Escuchar el resultado",
     "previewHint": "Renderiza esta pista con la reparación aplicada para que puedas compararla con el original mientras suena. La pista entera, así puedes revisar la reparación en cada clic.",

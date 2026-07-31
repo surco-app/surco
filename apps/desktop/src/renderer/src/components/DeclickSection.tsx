@@ -23,6 +23,9 @@ import { ZoomStepper } from './ZoomStepper'
 // cue warning would be pure noise there.
 const CUES_SURVIVE: OutputFormat[] = ['mp3', 'aiff']
 
+const PLAYHEAD_FINE_STEP_SEC = 0.01
+const PLAYHEAD_COARSE_STEP_SEC = 0.25
+
 interface Props {
   value: DeclickMode
   open: boolean
@@ -260,6 +263,12 @@ export function DeclickSection({
                 <div
                   data-testid="declick-marks"
                   className="absolute inset-0 cursor-pointer"
+                  role="slider"
+                  tabIndex={0}
+                  aria-label={tr('declick.playheadLabel')}
+                  aria-valuemin={0}
+                  aria-valuemax={Number(durationSec.toFixed(2))}
+                  aria-valuenow={Number(ab.at.toFixed(2))}
                   onPointerDown={(e) => {
                     e.currentTarget.setPointerCapture?.(e.pointerId)
                     scrubFrom(e.clientX, e.currentTarget)
@@ -267,6 +276,14 @@ export function DeclickSection({
                   onPointerMove={(e) => {
                     if (e.currentTarget.hasPointerCapture?.(e.pointerId))
                       scrubFrom(e.clientX, e.currentTarget)
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+                    if (durationSec <= 0) return
+                    e.preventDefault()
+                    const step = e.shiftKey ? PLAYHEAD_COARSE_STEP_SEC : PLAYHEAD_FINE_STEP_SEC
+                    const next = ab.at + (e.key === 'ArrowLeft' ? -step : step)
+                    ab.seek(Math.min(durationSec, Math.max(0, next)))
                   }}
                 >
                   {marks.map((m) => (
