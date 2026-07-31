@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import type { Chord } from '../../../shared/shortcuts'
 import { type Command, runCommand } from '../lib/commands'
 import { activeScope, isTypingTarget, keyToCommandId } from '../lib/keymap'
-import { runKeyClaim } from '../lib/spaceClaim'
+import { isClaimable, runKeyClaim } from '../lib/spaceClaim'
 import { useLatest } from './useLatest'
 
 interface Params {
@@ -58,10 +58,12 @@ export function useKeyboardShortcuts(params: Params): void {
       const typing = isTypingTarget(document.activeElement)
       const id = keyToCommandId(e, typing, p.bindings, p.isMac, activeScope(document.activeElement))
       if (!id) return
-      // A section with its own transport (click repair's audition) claims Space
-      // while it is open, so one press never starts BOTH its check and the
-      // mini-player. Nothing claimed → the global play command runs as always.
-      if (id === 'play' && !p.overlayOpen && runKeyClaim('play')) {
+      // A section that owns a key while it is open answers it here, before the global
+      // registry: click repair claims Space so one press never starts BOTH its check and
+      // the mini-player, and the silence editor claims its per-side trim actions so they
+      // act on the open track with no focus anywhere. Nothing claimed → the global
+      // command runs as always.
+      if (!p.overlayOpen && isClaimable(id) && runKeyClaim(id, { shift: e.shiftKey })) {
         e.preventDefault()
         return
       }

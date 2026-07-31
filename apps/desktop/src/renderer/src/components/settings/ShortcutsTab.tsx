@@ -14,7 +14,10 @@ const isMac = isMacOS()
 // Los ámbitos presentes en la tabla, en su orden de declaración. Derivados y no listados a
 // mano para que un comando con ámbito nuevo salga en el tab sin tocar esto: sin fila no se
 // puede reasignar, que es justo lo que necesita quien no tiene su tecla.
-const scopes = [...new Set(SHORTCUT_DEFAULTS.map((d) => d.scope).filter((s) => s !== undefined))]
+// Un comando se lista bajo su `group` si lo declara y, si no, bajo su `scope`: los dos
+// acotan la tecla, uno por sección abierta y otro por foco, y ninguno es global.
+const sectionOf = (d: ShortcutDef): string | undefined => d.group ?? d.scope
+const sections = [...new Set(SHORTCUT_DEFAULTS.map(sectionOf).filter((s) => s !== undefined))]
 
 // 'track-list' → settings.shortcuts.groupTrackList / groupTrackListHint. The hint's
 // qualifier goes at the END of the key: keying it as groupHintTrackList printed the raw
@@ -123,14 +126,14 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
           {tr('settings.shortcuts.resetAll')}
         </button>
       </div>
-      <div>{SHORTCUT_DEFAULTS.filter((d) => !d.scope).map(renderRow)}</div>
-      {scopes.map((scope) => (
+      <div>{SHORTCUT_DEFAULTS.filter((d) => !sectionOf(d)).map(renderRow)}</div>
+      {sections.map((scope) => (
         <div key={scope} data-testid={`shortcut-group-${scope}`} className="mt-4">
           <div className="mb-1 flex items-baseline gap-2">
             <h3 className="text-xs font-medium text-fg">{tr(scopeKey(scope))}</h3>
             <span className="text-xs text-fg-dim">{tr(scopeKey(scope, 'Hint'))}</span>
           </div>
-          {SHORTCUT_DEFAULTS.filter((d) => d.scope === scope).map(renderRow)}
+          {SHORTCUT_DEFAULTS.filter((d) => sectionOf(d) === scope).map(renderRow)}
         </div>
       ))}
       {/* The list/Discogs navigation keys are fixed (vim-style j/k, arrows, Home/End, Page
