@@ -307,6 +307,17 @@ async function addOneTrack(): Promise<HTMLElement[]> {
   return screen.getAllByTestId('track-row')
 }
 
+// The player slides in with translateY(100%), so for 0.26s it is drawn a card's height
+// BELOW the sidebar. With nothing clipping it that overhang counts as scrollable page,
+// and a vertical scrollbar flashes down the right edge of the window and vanishes. The
+// column has to clip its own children; the animation is fine as it is.
+describe('App sidebar clipping', () => {
+  it('clips the sidebar so the player cannot animate into page scroll', async () => {
+    await renderApp()
+    expect(screen.getByTestId('sidebar').className).toContain('overflow-hidden')
+  })
+})
+
 describe('App sidebar divider', () => {
   // Hover the divider and let the tooltip's delay elapse; the portal tooltip only mounts
   // once the delay fires, so the assertion reads it after advancing the timer.
