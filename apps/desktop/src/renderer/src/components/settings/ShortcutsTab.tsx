@@ -1,7 +1,7 @@
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { SHORTCUT_DEFAULTS } from '../../../../shared/shortcutDefaults'
+import { type ShortcutDef, SHORTCUT_DEFAULTS } from '../../../../shared/shortcutDefaults'
 import { type Chord, chordEquals, eventToChord } from '../../../../shared/shortcuts'
 import { isMacOS } from '../../lib/platform'
 import type { SyncedDraft } from '../../lib/settingsDraft'
@@ -10,6 +10,15 @@ import { formatShortcut } from '../../lib/shortcuts'
 import { Tooltip } from '../Tooltip'
 
 const isMac = isMacOS()
+
+// Los ámbitos presentes en la tabla, en su orden de declaración. Derivados y no listados a
+// mano para que un comando con ámbito nuevo salga en el tab sin tocar esto: sin fila no se
+// puede reasignar, que es justo lo que necesita quien no tiene su tecla.
+const scopes = [...new Set(SHORTCUT_DEFAULTS.map((d) => d.scope).filter((s) => s !== undefined))]
+
+// 'track-list' → settings.shortcuts.groupTrackList / groupTrackListHint
+const scopeKey = (scope: string, prefix: string): string =>
+  `settings.shortcuts.${prefix}${scope[0].toUpperCase()}${scope.slice(1).replace(/-([a-z])/g, (_m, c) => c.toUpperCase())}`
 
 interface Props {
   synced: SyncedDraft
@@ -50,6 +59,55 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
     patch('shortcutOverrides', rest)
   }
 
+  function renderRow(def: ShortcutDef): React.JSX.Element {
+    const chord = bindings.get(def.id) ?? []
+    const overridden = def.id in synced.shortcutOverrides
+    const isRecording = recording === def.id
+    return (
+      <div
+        key={def.id}
+        data-testid={`shortcut-row-${def.id}`}
+        className="flex items-center justify-between gap-3 border-b border-[var(--color-line)] py-2 last:border-b-0"
+      >
+        <span className="text-sm text-fg">{commandTitle(def.id)}</span>
+        <div className="flex items-center gap-2">
+          {overridden && (
+            <button
+              type="button"
+              data-testid={`shortcut-reset-${def.id}`}
+              onClick={() => resetRow(def.id)}
+              className="press text-sm text-fg-faint hover:text-fg"
+            >
+              ↺
+              <Tooltip label={tr('settings.shortcuts.reset')} />
+            </button>
+          )}
+          <button
+            type="button"
+            data-testid={`shortcut-record-${def.id}`}
+            onClick={() => setRecording(isRecording ? null : def.id)}
+            onKeyDown={isRecording ? (e) => captureChord(def.id, e) : undefined}
+            onBlur={() => isRecording && setRecording(null)}
+            aria-pressed={isRecording}
+            className={`press min-w-[6rem] rounded-md border px-2.5 py-1 text-center font-mono text-xs ${
+              isRecording
+                ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
+                : conflictIds.has(def.id)
+                  ? 'border-danger text-danger'
+                  : 'border-[var(--color-line-strong)] text-fg-muted hover:text-fg'
+            }`}
+          >
+            {isRecording
+              ? tr('settings.shortcuts.recording')
+              : chord.length
+                ? formatShortcut(chord, isMac)
+                : tr('settings.shortcuts.unbound')}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-[280px]">
       <div className="mb-2 flex items-center justify-between">
@@ -63,56 +121,16 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
           {tr('settings.shortcuts.resetAll')}
         </button>
       </div>
-      <div>
-        {SHORTCUT_DEFAULTS.map((def) => {
-          const chord = bindings.get(def.id) ?? []
-          const overridden = def.id in synced.shortcutOverrides
-          const isRecording = recording === def.id
-          return (
-            <div
-              key={def.id}
-              data-testid={`shortcut-row-${def.id}`}
-              className="flex items-center justify-between gap-3 border-b border-[var(--color-line)] py-2 last:border-b-0"
-            >
-              <span className="text-sm text-fg">{commandTitle(def.id)}</span>
-              <div className="flex items-center gap-2">
-                {overridden && (
-                  <button
-                    type="button"
-                    data-testid={`shortcut-reset-${def.id}`}
-                    onClick={() => resetRow(def.id)}
-                    className="press text-sm text-fg-faint hover:text-fg"
-                  >
-                    ↺
-                    <Tooltip label={tr('settings.shortcuts.reset')} />
-                  </button>
-                )}
-                <button
-                  type="button"
-                  data-testid={`shortcut-record-${def.id}`}
-                  onClick={() => setRecording(isRecording ? null : def.id)}
-                  onKeyDown={isRecording ? (e) => captureChord(def.id, e) : undefined}
-                  onBlur={() => isRecording && setRecording(null)}
-                  aria-pressed={isRecording}
-                  className={`press min-w-[6rem] rounded-md border px-2.5 py-1 text-center font-mono text-xs ${
-                    isRecording
-                      ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
-                      : conflictIds.has(def.id)
-                        ? 'border-danger text-danger'
-                        : 'border-[var(--color-line-strong)] text-fg-muted hover:text-fg'
-                  }`}
-                >
-                  {isRecording
-                    ? tr('settings.shortcuts.recording')
-                    : chord.length
-                      ? formatShortcut(chord, isMac)
-                      : tr('settings.shortcuts.unbound')}
-                </button>
-              </div>
-            </div>
-          )
-        })}
-      </div>
+      <div>{SHORTCUT_DEFAULTS.filter((d) => !d.scope).map(renderRow)}</div>
+      {scopes.map((scope) => (
+        <div key={scope} data-testid={`shortcut-group-${scope}`} className="mt-4">
+          <div className="mb-1 flex items-baseline gap-2">
+            <h3 className="text-xs font-medium text-fg">{tr(scopeKey(scope, 'group'))}</h3>
+            <span className="text-xs text-fg-dim">{tr(scopeKey(scope, 'groupHint'))}</span>
+          </div>
+          {SHORTCUT_DEFAULTS.filter((d) => d.scope === scope).map(renderRow)}
+        </div>
+      ))}
       {/* The list/Discogs navigation keys are fixed (vim-style j/k, arrows, Home/End, Page
           Up/Down), so they don't get an editable row above — name them here so they're still
           discoverable rather than hidden. */}

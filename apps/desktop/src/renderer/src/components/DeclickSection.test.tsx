@@ -12,6 +12,27 @@ import { AFTER_COLOR } from './WaveformCompare'
 
 afterEach(cleanup)
 
+// Spies on the real hook's seek without changing its behaviour — needed for the one
+// test where the playhead starts at 0 and a wrongly-fired seek(0) would render
+// identically to no call at all, so the DOM alone cannot tell the two apart.
+const seekSpy = vi.fn()
+vi.mock('../hooks/useDeclickAb', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../hooks/useDeclickAb')>()
+  return {
+    ...original,
+    useDeclickAb: (...args: Parameters<typeof original.useDeclickAb>) => {
+      const ab = original.useDeclickAb(...args)
+      return {
+        ...ab,
+        seek: (sec: number) => {
+          seekSpy(sec)
+          ab.seek(sec)
+        },
+      }
+    },
+  }
+})
+
 const play = vi.fn()
 const pause = vi.fn()
 // Every <audio> the A/B builds, so the tests can assert on the PAIR — the whole point
@@ -77,6 +98,7 @@ let client: QueryClient
 beforeEach(() => {
   play.mockReset().mockResolvedValue(undefined)
   pause.mockReset()
+  seekSpy.mockReset()
   elements = []
   client = createQueryClient()
   vi.stubGlobal('Audio', FakeAudio)
@@ -388,6 +410,69 @@ describe('DeclickSection', () => {
     expect(elements[1].currentTime).toBe(0)
     pointerAt(overlay, 'pointerDown', 1400)
     expect(elements[1].currentTime).toBe(240)
+  })
+
+  // The scrubbable strip was pointer-only: the marks are tabulable buttons, but the
+  // ground between them had no tabIndex, no role, and no onKeyDown, so a keyboard user
+  // could never place the cursor anywhere but on a click.
+  it('exposes the playhead as an accessible slider', async () => {
+    await withPreview()
+    const strip = screen.getByTestId('declick-marks')
+    expect(strip).toHaveAttribute('role', 'slider')
+    expect(strip).toHaveAttribute('tabindex', '0')
+  })
+
+  it('moves the playhead by the fine step in either direction', async () => {
+    await withPreview()
+    const strip = screen.getByTestId('declick-marks')
+    strip.focus()
+    fireEvent.keyDown(strip, { key: 'ArrowRight' })
+    expect(strip.getAttribute('aria-valuenow')).toBe('0.01')
+    fireEvent.keyDown(strip, { key: 'ArrowLeft' })
+    expect(strip.getAttribute('aria-valuenow')).toBe('0')
+  })
+
+  it('moves the playhead by the coarse step when Shift is held', async () => {
+    await withPreview()
+    const strip = screen.getByTestId('declick-marks')
+    strip.focus()
+    fireEvent.keyDown(strip, { key: 'ArrowRight', shiftKey: true })
+    expect(strip.getAttribute('aria-valuenow')).toBe('0.25')
+  })
+
+  it('clamps the keyboard scrub at the start of the track', async () => {
+    await withPreview()
+    const strip = screen.getByTestId('declick-marks')
+    strip.focus()
+    fireEvent.keyDown(strip, { key: 'ArrowLeft' })
+    expect(strip.getAttribute('aria-valuenow')).toBe('0')
+  })
+
+  it('clamps the keyboard scrub at the end of the track', async () => {
+    await withPreview()
+    const overlay = screen.getByTestId('declick-marks')
+    stubWidth(overlay)
+    // Pointer-scrubs to the far edge of a 240 s track, same as the pointer clamp test.
+    act(() => pointerAt(overlay, 'pointerDown', 1400))
+    overlay.focus()
+    fireEvent.keyDown(overlay, { key: 'ArrowRight' })
+    expect(overlay.getAttribute('aria-valuenow')).toBe('240')
+  })
+
+  // Nothing to move a cursor along before the wave has a duration — pressing an arrow
+  // key here must not call seek at all, not just clamp to zero. Checked against the
+  // spy rather than aria-valuenow: the playhead already starts at 0, so a seek(0) that
+  // should not have fired would render identically to no call ever happening.
+  it('ignores the arrow keys before a duration is known', async () => {
+    ;(window.api.waveform as ReturnType<typeof vi.fn>).mockResolvedValue({
+      peaks: [],
+      durationSec: 0,
+    })
+    render(section({ value: 'standard' }))
+    const strip = await screen.findByTestId('declick-marks')
+    strip.focus()
+    fireEvent.keyDown(strip, { key: 'ArrowRight' })
+    expect(seekSpy).not.toHaveBeenCalled()
   })
 
   // Caught in the real app, not here: the two elements buffer and schedule independently,

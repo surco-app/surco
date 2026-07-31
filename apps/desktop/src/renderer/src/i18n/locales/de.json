@@ -207,6 +207,7 @@
     "rename": "Dateinamen erstellen…",
     "shortcuts": "Tastaturkürzel…",
     "selectAll": "Alles auswählen",
+    "trackMenu": "Track-Menü öffnen",
     "fillAll": "Alle Tags aus dem Dateinamen füllen",
     "deriveTags": "Metadaten aus dem Dateinamen füllen",
     "numberTracks": "Tracks in Listenreihenfolge nummerieren",
@@ -226,7 +227,12 @@
     "activity": "Aktivität anzeigen",
     "toggleLanguage": "Sprache wechseln (Englisch / Spanisch)",
     "toggleTheme": "Design wechseln (System / Hell / Dunkel)",
-    "confetti": "Konfetti werfen 🎉"
+    "confetti": "Konfetti werfen 🎉",
+    "trimNudgeBack": "Schnitt nach hinten schieben",
+    "trimNudgeForward": "Schnitt nach vorne schieben",
+    "trimAudition": "Schnitt anhören",
+    "trimClear": "Schnitt entfernen",
+    "trimApply": "Erkannte Stille anwenden"
   },
   "trackList": {
     "label": "Tracks",
@@ -505,6 +511,7 @@
     "estimateNonePill": "Keine Klicks",
     "waveTitle": "Gefundene Klicks",
     "markLabel": "Klick bei {{sec}} s — hierher springen",
+    "playheadLabel": "Wiedergabeposition",
     "unscanned": "Die ersten {{minutes}} Minuten wurden analysiert; spätere Klicks werden nicht markiert.",
     "preview": "Ergebnis anhören",
     "previewHint": "Rendert diesen Titel mit angewandter Reparatur, damit du ihn beim Abspielen mit dem Original vergleichen kannst. Der ganze Titel, damit du die Reparatur an jedem Klick prüfen kannst.",
@@ -596,7 +603,11 @@
       "reset": "Auf Standard zurücksetzen",
       "resetAll": "Alle zurücksetzen",
       "conflict": "Zwei Befehle teilen sich ein Kürzel. Lös den Konflikt, um zu speichern.",
-      "fixedNav": "Immer aktiv (nicht änderbar): ↑↓ oder j / k bewegen sich durch die Trackliste und die Discogs-Ergebnisse, Pos1 / Ende springen an die Enden und Bild ↑ / Bild ↓ blättern seitenweise."
+      "fixedNav": "Immer aktiv (nicht änderbar): ↑↓ oder j / k bewegen sich durch die Trackliste und die Discogs-Ergebnisse, Pos1 / Ende springen an die Enden und Bild ↑ / Bild ↓ blättern seitenweise.",
+      "groupTrim": "Stille-Editor",
+      "groupTrimHint": "Nur solange ein Schnitt fokussiert ist",
+      "groupTrackList": "Trackliste",
+      "groupTrackListHint": "Nur solange eine Zeile fokussiert ist"
     },
     "stats": {
       "count": "Konvertierungen",

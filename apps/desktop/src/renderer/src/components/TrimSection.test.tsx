@@ -4,10 +4,19 @@ import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type { WaveformResult } from '../../../shared/types'
+import { activeScope } from '../lib/keymap'
 import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
 import { drawWaveform } from '../lib/waveform'
+
+// TrimSection reads window.api.platform (isMacOS) at module scope; install a stub
+// before importing it.
+vi.hoisted(() => {
+  ;(globalThis.window as unknown as { api: unknown }).api = { platform: 'darwin' }
+})
+
 import { TrimSection } from './TrimSection'
 
 // jsdom has no canvas 2D context, so the real drawer bails early anyway; spying on it
@@ -64,6 +73,8 @@ beforeEach(() => {
   }
 })
 
+const bindings = resolveBindings()
+
 function section(over: Partial<React.ComponentProps<typeof TrimSection>> = {}): React.JSX.Element {
   return (
     <QueryClientProvider client={client}>
@@ -73,6 +84,7 @@ function section(over: Partial<React.ComponentProps<typeof TrimSection>> = {}): 
         onToggle={() => {}}
         onChange={() => {}}
         inputPath="/in/track.wav"
+        bindings={bindings}
         {...over}
       />
     </QueryClientProvider>
@@ -692,5 +704,101 @@ describe('TrimSection', () => {
     rerender(section({ value: undefined, open: false }))
     expect(screen.queryByTestId('trim-active-badge')).not.toBeInTheDocument()
     expect(screen.getByTestId('trim-summary')).toHaveTextContent('Off')
+  })
+
+  it('marca el handle enfocado aunque el foco haya llegado con el ratón', async () => {
+    render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+    act(() => {
+      start.focus()
+    })
+    expect(start).toHaveAttribute('data-focused', 'true')
+  })
+
+  it('no marca el handle sin foco', async () => {
+    render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+    expect(start).not.toHaveAttribute('data-focused', 'true')
+  })
+
+  // The five trim commands, bound to the FOCUSED handle: a macropad key must act on
+  // whichever side the user is looking at, never both.
+  describe('keyboard shortcuts on the focused handle', () => {
+    it('nudges the focused handle, fine on a bare key and coarse with Shift', async () => {
+      const onChange = vi.fn()
+      render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+      const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+      fireEvent.keyDown(start, { key: 'ArrowRight' })
+      expect(onChange).toHaveBeenCalledWith({ startSec: 9.701, endSec: 90.3 })
+      fireEvent.keyDown(start, { key: 'ArrowLeft', shiftKey: true })
+      expect(onChange).toHaveBeenCalledWith({ startSec: 9.6, endSec: 90.3 })
+    })
+
+    it('audiciona el lado cuyo handle tiene el foco', async () => {
+      render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+      const end = await screen.findByTestId('trim-handle-end', undefined, { timeout: 3000 })
+      end.focus()
+      fireEvent.keyDown(end, { key: 'a' })
+      const audio = audios.at(-1)
+      expect(audio).toBeDefined()
+      act(() => audio?.onloadedmetadata?.())
+      expect(audio?.currentTime).toBe(Math.max(0, 90.3 - 4))
+    })
+
+    it('limpia el lado cuyo handle tiene el foco', async () => {
+      const onChange = vi.fn()
+      render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+      const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+      start.focus()
+      fireEvent.keyDown(start, { key: 'c' })
+      expect(onChange).toHaveBeenCalledWith({ endSec: 90.3 })
+    })
+
+    it('aplica la sugerencia del lado cuyo handle tiene el foco', async () => {
+      const onChange = vi.fn()
+      render(section({ onChange }))
+      const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+      start.focus()
+      fireEvent.keyDown(start, { key: 's' })
+      expect(onChange).toHaveBeenCalledWith({ startSec: 9.9 })
+    })
+
+    it('no dispara las teclas del trim con el foco fuera del editor', () => {
+      const onChange = vi.fn()
+      render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+      const outside = document.createElement('button')
+      document.body.appendChild(outside)
+      outside.focus()
+      fireEvent.keyDown(outside, { key: 'a' })
+      expect(onChange).not.toHaveBeenCalled()
+      expect(audios).toHaveLength(0)
+      outside.remove()
+    })
+
+    it('solo activa el ámbito trim con el foco en un handle', async () => {
+      render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+      const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+      expect(activeScope(start)).toBe('trim')
+      // El resto de la sección no maneja las teclas del trim, así que si quedara dentro
+      // del ámbito ←/→/a/c/s se resolverían a comandos que nadie ejecuta y no harían nada.
+      expect(activeScope(screen.getByTestId('trim-zoom-in-start'))).toBeNull()
+      expect(activeScope(screen.getByTestId('trim-audition-start'))).toBeNull()
+    })
+
+    // A macro keyboard can be rebound to send a shift chord. The direct match must
+    // win over the Shift-as-step-size fallback, or a saved rebind would silently do
+    // nothing — the worst failure mode for a feature that exists so this can be
+    // remapped to whatever the hardware sends.
+    it('dispara un comando del trim rebindeado a un chord con shift', async () => {
+      const rebound = resolveBindings({ 'trim-audition': ['shift', 'a'] })
+      render(section({ value: { startSec: 9.7, endSec: 90.3 }, bindings: rebound }))
+      const end = await screen.findByTestId('trim-handle-end', undefined, { timeout: 3000 })
+      end.focus()
+      fireEvent.keyDown(end, { key: 'a', shiftKey: true })
+      const audio = audios.at(-1)
+      expect(audio).toBeDefined()
+      act(() => audio?.onloadedmetadata?.())
+      expect(audio?.currentTime).toBe(Math.max(0, 90.3 - 4))
+    })
   })
 })

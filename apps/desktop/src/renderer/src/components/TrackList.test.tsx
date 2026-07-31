@@ -16,11 +16,15 @@ vi.hoisted(() => {
 })
 
 import '../i18n'
+import { resolveBindings } from '../../../shared/shortcutDefaults'
+import type { Chord } from '../../../shared/shortcuts'
 import type { TrackMetadata } from '../../../shared/types'
 import { trackSignature } from '../lib/dirty'
 import type { TrackItem } from '../types'
 import { TrackContextMenu } from './TrackContextMenu'
 import { TrackList } from './TrackList'
+
+const bindings = resolveBindings()
 
 beforeEach(() => {
   Object.assign(window, { api })
@@ -67,7 +71,10 @@ function renderList(
   tracks: TrackItem[],
   selectedId: string | null = null,
   selectedIds: string[] = selectedId ? [selectedId] : [],
-  { canPasteMeta = false }: { canPasteMeta?: boolean } = {},
+  {
+    canPasteMeta = false,
+    bindings: overrideBindings = bindings,
+  }: { canPasteMeta?: boolean; bindings?: Map<string, Chord> } = {},
 ) {
   const onSelect = vi.fn()
   const onActivate = vi.fn()
@@ -86,6 +93,7 @@ function renderList(
       selectedId={selectedId}
       selectedIds={new Set(selectedIds)}
       outputFormat="aiff"
+      bindings={overrideBindings}
       onSelect={onSelect}
       onActivate={onActivate}
       onRemove={onRemove}
@@ -441,6 +449,50 @@ describe('TrackList', () => {
     const { onRemove } = renderList([track({ id: 'a' }), track({ id: 'b' })], 'a')
     fireEvent.keyDown(screen.getAllByTestId('track-row')[0], { key: 'Backspace', metaKey: true })
     expect(onRemove).not.toHaveBeenCalled()
+  })
+
+  // The context menu otherwise only opens with a right click; Shift+F10 is its only
+  // other door, and four of its actions (copy/paste metadata, start over, copy path)
+  // have no other path at all.
+  it('opens the track menu with the keyboard', () => {
+    renderList([track({ id: 'a' })])
+    const row = screen.getAllByTestId('track-row')[0]
+    row.focus()
+    fireEvent.keyDown(row, { key: 'F10', shiftKey: true })
+    expect(screen.getByTestId('track-menu')).toBeInTheDocument()
+  })
+
+  // Opening the menu from an unselected row must select it first, exactly like a right
+  // click does, so the single-track actions in the menu are unambiguous.
+  it('selects an unselected row before opening the menu with the keyboard', () => {
+    const { onSelect } = renderList([track({ id: 'a' }), track({ id: 'b' })], 'a', ['a'])
+    const row = screen.getAllByTestId('track-row')[1]
+    row.focus()
+    fireEvent.keyDown(row, { key: 'F10', shiftKey: true })
+    expect(onSelect).toHaveBeenCalledWith('b', {})
+  })
+
+  // The row must read the chord from the bindings, never compare F10 literally: djotas's
+  // macro keyboard almost certainly doesn't emit F10, so a rebind is this feature's real
+  // safety net. Both halves matter — a hardcoded `e.key === 'F10'` would still pass the
+  // second assertion.
+  it('opens the track menu on its rebound chord instead of the default', () => {
+    const rebound = resolveBindings({ 'track-menu': ['shift', 'k'] })
+    renderList([track({ id: 'a' })], null, [], { bindings: rebound })
+    const row = screen.getAllByTestId('track-row')[0]
+    row.focus()
+    fireEvent.keyDown(row, { key: 'F10', shiftKey: true })
+    expect(screen.queryByTestId('track-menu')).toBeNull()
+    fireEvent.keyDown(row, { key: 'K', shiftKey: true })
+    expect(screen.getByTestId('track-menu')).toBeInTheDocument()
+  })
+
+  // El ámbito vive en la fila, que es quien maneja la tecla. Si estuviera en un contenedor
+  // de la lista entera, capturaría el chord sobre los controles que no lo manejan y lo
+  // dejaría muerto — el error que ya se corrigió en el editor de silencios.
+  it('declara el ámbito de atajos en la fila que maneja la tecla', () => {
+    renderList([track({ id: 'a' })])
+    expect(screen.getByTestId('track-row')).toHaveAttribute('data-shortcut-scope', 'track-list')
   })
 
   it('removes a track without selecting it when the remove control is clicked', () => {

@@ -1,6 +1,8 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
-import { isTypingTarget, jumpIndex, keyToCommandId, moveIndex, pageSize } from './keymap'
+import type { KeyLike } from '../../../shared/shortcuts'
+import { activeScope, isTypingTarget, jumpIndex, keyToCommandId, moveIndex, pageSize } from './keymap'
 
 function key(
   k: string,
@@ -156,5 +158,56 @@ describe('isTypingTarget', () => {
     expect(isTypingTarget({ tagName: 'BUTTON' })).toBe(false)
     expect(isTypingTarget({ tagName: 'DIV' })).toBe(false)
     expect(isTypingTarget(null)).toBe(false)
+  })
+})
+
+describe('activeScope', () => {
+  it('devuelve null sin elemento enfocado', () => {
+    expect(activeScope(null)).toBeNull()
+  })
+
+  it('devuelve null cuando el foco está fuera de cualquier ámbito', () => {
+    const el = document.createElement('div')
+    document.body.appendChild(el)
+    expect(activeScope(el)).toBeNull()
+    el.remove()
+  })
+
+  it('devuelve el ámbito del ancestro más cercano', () => {
+    const box = document.createElement('div')
+    box.setAttribute('data-shortcut-scope', 'trim')
+    const inner = document.createElement('button')
+    box.appendChild(inner)
+    document.body.appendChild(box)
+    expect(activeScope(inner)).toBe('trim')
+    box.remove()
+  })
+})
+
+describe('keyToCommandId con ámbito', () => {
+  const bindings = resolveBindings()
+  const press = (key: string): KeyLike => ({
+    key,
+    metaKey: false,
+    ctrlKey: false,
+    shiftKey: false,
+  })
+
+  it('no dispara el comando del trim fuera de su ámbito', () => {
+    expect(keyToCommandId(press('a'), false, bindings, true, null)).toBeNull()
+  })
+
+  it('dispara el comando del trim dentro de su ámbito', () => {
+    expect(keyToCommandId(press('a'), false, bindings, true, 'trim')).toBe('trim-audition')
+  })
+
+  it('las flechas siguen siendo seek fuera del trim', () => {
+    expect(keyToCommandId(press('ArrowLeft'), false, bindings, true, null)).toBe('seek-back')
+  })
+
+  it('las flechas son nudge dentro del trim', () => {
+    expect(keyToCommandId(press('ArrowLeft'), false, bindings, true, 'trim')).toBe(
+      'trim-nudge-back',
+    )
   })
 })
