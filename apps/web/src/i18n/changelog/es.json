@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.77",
+    "date": "31 de julio de 2026",
+    "title": "El recorte de silencios se maneja con el teclado",
+    "items": [
+      {
+        "text": "El editor de silencios ya no necesita el ratón. Con el foco en un corte, las flechas lo mueven al milisegundo (con Mayúsculas, de golpe), y una tecla lo escucha, otra lo quita y otra aplica el silencio que Surco ha detectado. El corte que tiene el foco se ve marcado en la onda, también cuando llegas a él arrastrando con el ratón, así que siempre sabes sobre cuál de los dos estás actuando.",
+        "in": "0.77.0"
+      },
+      {
+        "text": "Los atajos del recorte se cambian en Ajustes, en su propio apartado, y aceptan teclas sueltas sin combinaciones — pensado para quien trabaja con un teclado de macros o un controlador que manda teclas.",
+        "in": "0.77.0"
+      },
+      {
+        "text": "El menú de cada pista se abre ahora con el teclado (Mayúsculas+F10, reasignable). Detrás están copiar y pegar metadatos, copiar la ruta y volver a empezar con la pista: hasta ahora solo se llegaba a ellas con el botón derecho del ratón.",
+        "in": "0.77.0"
+      },
+      {
+        "text": "En la reparación de clics, el cabezal de reproducción se coloca con las flechas en cualquier punto de la pista, no solo saltando de un clic detectado al siguiente.",
+        "in": "0.77.0"
+      },
+      {
+        "text": "Al convertir sobre el archivo original, la fila se actualiza sola con lo que ha quedado en el disco, sin tener que recargar la lista para verlo.",
+        "in": "0.77.0"
+      }
+    ]
+  },
+  {
     "version": "0.76",
     "date": "28 de julio de 2026",
     "title": "Traktor ve por fin los cues que Surco escribe",
