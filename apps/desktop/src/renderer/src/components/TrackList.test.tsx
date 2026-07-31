@@ -17,6 +17,7 @@ vi.hoisted(() => {
 
 import '../i18n'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
+import type { Chord } from '../../../shared/shortcuts'
 import type { TrackMetadata } from '../../../shared/types'
 import { trackSignature } from '../lib/dirty'
 import type { TrackItem } from '../types'
@@ -70,7 +71,10 @@ function renderList(
   tracks: TrackItem[],
   selectedId: string | null = null,
   selectedIds: string[] = selectedId ? [selectedId] : [],
-  { canPasteMeta = false }: { canPasteMeta?: boolean } = {},
+  {
+    canPasteMeta = false,
+    bindings: overrideBindings = bindings,
+  }: { canPasteMeta?: boolean; bindings?: Map<string, Chord> } = {},
 ) {
   const onSelect = vi.fn()
   const onActivate = vi.fn()
@@ -89,7 +93,7 @@ function renderList(
       selectedId={selectedId}
       selectedIds={new Set(selectedIds)}
       outputFormat="aiff"
-      bindings={bindings}
+      bindings={overrideBindings}
       onSelect={onSelect}
       onActivate={onActivate}
       onRemove={onRemove}
@@ -466,6 +470,21 @@ describe('TrackList', () => {
     row.focus()
     fireEvent.keyDown(row, { key: 'F10', shiftKey: true })
     expect(onSelect).toHaveBeenCalledWith('b', {})
+  })
+
+  // The row must read the chord from the bindings, never compare F10 literally: djotas's
+  // macro keyboard almost certainly doesn't emit F10, so a rebind is this feature's real
+  // safety net. Both halves matter — a hardcoded `e.key === 'F10'` would still pass the
+  // second assertion.
+  it('opens the track menu on its rebound chord instead of the default', () => {
+    const rebound = resolveBindings({ 'track-menu': ['shift', 'k'] })
+    renderList([track({ id: 'a' })], null, [], { bindings: rebound })
+    const row = screen.getAllByTestId('track-row')[0]
+    row.focus()
+    fireEvent.keyDown(row, { key: 'F10', shiftKey: true })
+    expect(screen.queryByTestId('track-menu')).toBeNull()
+    fireEvent.keyDown(row, { key: 'K', shiftKey: true })
+    expect(screen.getByTestId('track-menu')).toBeInTheDocument()
   })
 
   it('removes a track without selecting it when the remove control is clicked', () => {
