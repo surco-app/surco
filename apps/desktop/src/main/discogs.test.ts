@@ -417,6 +417,32 @@ describe('search format filter', () => {
     expect(url).not.toContain('format=')
     expect(url).toContain('per_page=20')
   })
+
+  // The page has to cover what the panel will show: asking for 20 while Settings is set
+  // to 50 means the list can never fill, and the 50 option quietly lies. Discogs caps
+  // per_page at 100, so the request is clamped there.
+  it('fetches a page that covers the shown-results setting', async () => {
+    const fetchMock = mockFetch([{ id: 1 }])
+    await search('wants fifty', 'tok', undefined, undefined, [], 50)
+    expect(fetchMock.mock.calls[0][0] as string).toContain('per_page=50')
+  })
+
+  // Client-side format filtering thins the page, so several formats fetch double the
+  // shown count to leave enough survivors — still clamped to the API's own ceiling.
+  it('doubles the page for client-side format filtering and clamps at 100', async () => {
+    const fetchMock = mockFetch([{ id: 1, format: ['Vinyl'] }])
+    await search('many formats', 'tok', undefined, undefined, ['Vinyl', 'CD'], 50)
+    expect(fetchMock.mock.calls[0][0] as string).toContain('per_page=100')
+  })
+
+  // A small setting must not shrink the page below the old floor: the auto-match probe
+  // scans the full set independently of what the panel shows, so a user who displays 5
+  // results still gets the same suggestion quality as before.
+  it('keeps the floor when the shown-results setting is small', async () => {
+    const fetchMock = mockFetch([{ id: 1 }])
+    await search('wants five', 'tok', undefined, undefined, [], 5)
+    expect(fetchMock.mock.calls[0][0] as string).toContain('per_page=20')
+  })
 })
 
 describe('dedupeResults', () => {
