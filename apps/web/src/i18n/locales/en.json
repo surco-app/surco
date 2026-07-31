@@ -655,7 +655,7 @@
           "With the audio filters off, the audio isn't touched at all: the bytes are copied straight across and only the tags are rewritten. It's instant however large the file is, and there's no possible quality loss, because there's no re-encoding."
         ],
         "points": [
-          "Pick it in the format dropdown, in Settings → Conversion, or right from the welcome wizard.",
+          "Pick it in Settings → Format or from the welcome wizard, and also in the convert button's dropdown when you have several tracks selected.",
           "It works with every destination, including overwriting the original in place.",
           "A file whose format can't be preserved is skipped with a warning, instead of being quietly converted to something else.",
           "If you turn on a filter that would force an MP3 to be re-encoded onto itself, Surco asks you first."
