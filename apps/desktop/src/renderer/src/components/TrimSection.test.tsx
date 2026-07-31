@@ -646,6 +646,19 @@ describe('TrimSection', () => {
     expect(onChange).toHaveBeenCalledWith({ startSec: 9.6, endSec: 90.3 })
   })
 
+  // Trimming the silence at the head of a track STARTS at the edge and walks inward,
+  // so the edge-snap that drops a cut too close to zero must not swallow a keyboard
+  // nudge: the press is a deliberate placement, unlike a drag that lands on the edge.
+  // Without this the first presses compute a value, commit throws it away, and the
+  // key reads as dead exactly where the work begins.
+  it('keeps a keyboard nudge that starts from the very edge of the track', async () => {
+    const onChange = vi.fn()
+    render(section({ value: undefined, onChange }))
+    const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+    fireEvent.keyDown(start, { key: 'ArrowRight', shiftKey: true })
+    expect(onChange).toHaveBeenCalledWith({ startSec: 0.1 })
+  })
+
   // The cut's time is a FIELD: type the second you want. It replaced a ‹ time ›
   // stepper whose three controls duplicated the handle and the arrow keys, in a lane
   // that had no room for them — and typing is the only way to land an exact value in
