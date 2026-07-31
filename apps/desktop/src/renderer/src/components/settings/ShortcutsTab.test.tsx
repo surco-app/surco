@@ -46,6 +46,16 @@ describe('ShortcutsTab trim group', () => {
     const trimGroup = screen.getByTestId('shortcut-group-trim')
     expect(trimGroup.querySelector('[data-testid="shortcut-row-play"]')).toBeNull()
   })
+
+  // A missing translation renders the key itself, so the panel printed
+  // "settings.shortcuts.groupHintTrim" where the sentence belongs. Asserting no group
+  // header leaks a raw key catches the next scope added without its two strings.
+  it('translates every group heading and hint', () => {
+    renderTab()
+    for (const group of screen.getAllByTestId(/^shortcut-group-/)) {
+      expect(group.textContent).not.toContain('settings.shortcuts.')
+    }
+  })
 })
 
 // Un comando con ámbito propio no puede desaparecer del tab: si no tiene fila, el usuario
