@@ -25,6 +25,7 @@ const NAMED: Record<string, string> = {
   End: 'end',
   PageUp: 'pageup',
   PageDown: 'pagedown',
+  F10: 'f10',
 }
 
 // Canonical key token for an event.key, or null for keys we never bind (Tab, F-keys,

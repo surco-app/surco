@@ -37,6 +37,10 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   // text inside a field; the rest are mod-combos that stay live while editing, matching
   // rename (⌘⇧R) and the other toolbar shortcuts.
   { id: 'select-all', chord: ['mod', 'a'], suppressWhileTyping: true },
+  // Shift+F10 is the Windows/Linux convention for a context menu; macOS has no
+  // convention of its own, so we share it. Without it, four menu actions (copy/paste
+  // metadata, start over, copy path) have no keyboard path at all.
+  { id: 'track-menu', chord: ['shift', 'f10'] },
   { id: 'fill-all', chord: ['mod', 'shift', 'f'] },
   // The editor's own Tag (fill selection from file name) and Eraser (clear selection) buttons,
   // as chords so the keyboard flow reaches them without a ⌘K detour. Mod-combos with no typing

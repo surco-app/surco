@@ -1637,6 +1637,7 @@ export default function App(): React.JSX.Element {
                               ? 'aiff'
                               : (settings?.outputFormat ?? 'aiff')
                           }
+                          bindings={bindings}
                           onSelect={onSelectTrack}
                           onActivate={toggleTrack}
                           onRemove={removeFromList}

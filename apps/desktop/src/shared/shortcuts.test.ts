@@ -48,6 +48,12 @@ describe('eventToChord', () => {
     expect(eventToChord(key('Tab'), true)).toBeNull()
     expect(eventToChord(key('F1'), true)).toBeNull()
   })
+
+  // Shift+F10 is the track menu's chord (the Windows/Linux convention for a context
+  // menu), so F10 must resolve to a token or that chord could never be formed.
+  it('recognizes F10 as a bindable key', () => {
+    expect(eventToChord(key('F10', { shiftKey: true }), true)).toEqual(['shift', 'f10'])
+  })
 })
 
 describe('chordToAccelerator', () => {

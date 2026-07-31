@@ -12,21 +12,29 @@ import {
 import type React from 'react'
 import { memo, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { matchChord } from '../../../shared/shortcutDefaults'
+import { type Chord, eventToChord } from '../../../shared/shortcuts'
 import type { OutputFormat } from '../../../shared/types'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { isStale } from '../lib/dirty'
 import { formatTime } from '../lib/duration'
+import { isMacOS } from '../lib/platform'
 import { STAGE_PROGRESS } from '../lib/progress'
 import type { ClickMods } from '../lib/selection'
 import { sourceFormat, type TrackQuality, trackQuality } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { Tooltip } from './Tooltip'
 
+const isMac = isMacOS()
+
 interface Props {
   tracks: TrackItem[]
   selectedId: string | null
   selectedIds: ReadonlySet<string>
   outputFormat: OutputFormat
+  // The effective key bindings (defaults + the user's overrides), read by the row to
+  // resolve Shift+F10 (or whatever it's been rebound to) to the track-menu command.
+  bindings: Map<string, Chord>
   onSelect: (id: string, mods: ClickMods) => void
   // Double-clicking a row plays it: opens the floating player straight on that track.
   onActivate: (track: TrackItem) => void
@@ -158,6 +166,7 @@ function rowTooltip(t: TrackItem, tr: (key: string) => string): string {
 
 interface RowProps {
   track: TrackItem
+  bindings: Map<string, Chord>
   selected: boolean
   primary: boolean
   // Whether this row holds the listbox's single tab stop (roving tabindex): the primary
@@ -190,6 +199,7 @@ interface RowProps {
 // the whole list. Relies on App passing stable onSelect/onRemove.
 const TrackRow = memo(function TrackRow({
   track: t,
+  bindings,
   selected,
   primary,
   tabbable,
@@ -281,6 +291,17 @@ const TrackRow = memo(function TrackRow({
         tabIndex={tabbable ? 0 : -1}
         onClick={(e) => onSelect(t.id, { meta: e.metaKey || e.ctrlKey, shift: e.shiftKey })}
         onKeyDown={(e) => {
+          const chord = eventToChord(e, isMac)
+          if (chord && matchChord(bindings, chord, false, null) === 'track-menu') {
+            e.preventDefault()
+            // The menu is positioned in pixels because it's normally born from a right
+            // click; from the keyboard there are none, so anchor it to the row's own
+            // bottom-left corner.
+            const r = e.currentTarget.getBoundingClientRect()
+            if (!selected) onSelect(t.id, {})
+            onOpenMenu(t, r.left, r.bottom)
+            return
+          }
           // Bare key only: ⌘⌫ belongs to the global remove command, and the list is a
           // no-typing surface so plain ⌫/Supr is unambiguous here.
           if (e.key !== 'Backspace' && e.key !== 'Delete') return
@@ -524,6 +545,7 @@ export const TrackList = memo(function TrackList({
   selectedId,
   selectedIds,
   outputFormat,
+  bindings,
   onSelect,
   onActivate,
   onRemove,
@@ -616,6 +638,7 @@ export const TrackList = memo(function TrackList({
           <TrackRow
             key={t.id}
             track={t}
+            bindings={bindings}
             selected={selectedIds.has(t.id)}
             primary={t.id === selectedId}
             // The selection owns the single tab stop; with nothing selected the first row
