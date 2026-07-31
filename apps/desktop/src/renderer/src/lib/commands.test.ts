@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { SHORTCUT_DEFAULTS } from '../../../shared/shortcutDefaults'
 import type { Settings } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import {
@@ -634,4 +635,20 @@ describe('buildCommands bulk scope', () => {
     ).run()
     expect(enqueueAutoMatch).toHaveBeenCalledWith(bulk, false)
   })
+})
+
+// Las dos regresiones de la rama de atajos fueron el mismo defecto: una tecla que
+// matchChord resuelve pero que nadie ejecuta, así que el preventDefault del listener
+// global la mata sin hacer nada. Un comando sin scope lo ejecuta ese listener vía
+// runCommand, luego TIENE que estar en el registro; uno con scope lo ejecuta el
+// onKeyDown del componente que declara ese ámbito.
+describe('cada atajo global lo ejecuta alguien', () => {
+  const registeredIds = new Set(buildCommands(makeDeps()).map((c) => c.id))
+
+  for (const def of SHORTCUT_DEFAULTS) {
+    if (def.scope) continue
+    it(`registra el comando global '${def.id}' para que runCommand lo encuentre`, () => {
+      expect(registeredIds).toContain(def.id)
+    })
+  }
 })
