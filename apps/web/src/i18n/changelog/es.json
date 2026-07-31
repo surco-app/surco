@@ -31,6 +31,10 @@
       {
         "text": "Mostrar en el Finder funciona también con pistas que aún no has convertido: abre el archivo original en vez de no hacer nada.",
         "in": "0.77.1"
+      },
+      {
+        "text": "Al abrir el reproductor ya no asoma una barra de desplazamiento en el lateral derecho de la ventana mientras entra la tarjeta.",
+        "in": "0.77.2"
       }
     ]
   },
