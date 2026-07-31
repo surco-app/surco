@@ -401,21 +401,34 @@ describe('buildCommands platform-gated entries', () => {
     expect(commandById(deps, 'add-apple-music').enabled).toBe(false)
   })
 
-  // Reveal-in-finder is enabled only once a track has an output on disk, and running it
-  // hands that exact path to the injected reveal. Pinning both halves guards that the
-  // registry routes the reveal through its dependency rather than calling window.api.
-  it('reveals the selected track output path and is gated on it existing', () => {
+  // Reveal-in-finder prefers the converted file, and running it hands that exact path to
+  // the injected reveal. Pinning both halves guards that the registry routes the reveal
+  // through its dependency rather than calling window.api.
+  it('reveals the selected track output path', () => {
     const reveal = vi.fn()
     const withOutput = commandById(makeDeps({ reveal, selected: track() }), 'reveal')
     expect(withOutput.enabled).toBe(true)
     withOutput.run()
     expect(reveal).toHaveBeenCalledWith('/out/a.aiff')
+  })
 
+  // Before a track is converted there is no output, but the file the user imported is
+  // right there on disk — so ⌘R reveals that instead of doing nothing. A shortcut that
+  // silently no-ops reads as broken: the palette greys the row, the key press gives no
+  // clue at all.
+  it('falls back to the source file when the track has not been converted', () => {
+    const reveal = vi.fn()
     const noOutput = commandById(
       makeDeps({ reveal, selected: track({ outputPath: undefined }) }),
       'reveal',
     )
-    expect(noOutput.enabled).toBe(false)
+    expect(noOutput.enabled).toBe(true)
+    noOutput.run()
+    expect(reveal).toHaveBeenCalledWith('/in/a.wav')
+  })
+
+  it('disables reveal with no track selected', () => {
+    expect(commandById(makeDeps({ selected: null }), 'reveal').enabled).toBe(false)
   })
 
   // The ←/→ seek nudges the playhead by ±5s and is gated on the player being open, so the
