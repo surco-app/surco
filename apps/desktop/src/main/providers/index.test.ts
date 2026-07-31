@@ -4,11 +4,20 @@ import type { SearchProviderId } from '../../shared/types'
 const { search, getRelease, getSettings, bcSearch, dzSearch } = vi.hoisted(() => ({
   search: vi.fn(),
   getRelease: vi.fn(),
-  getSettings: vi.fn(() => ({
-    discogsToken: 'tok',
-    discogsFormats: [] as string[],
-    searchIgnoreWords: [] as string[],
-  })),
+  getSettings: vi.fn(
+    (): {
+      discogsToken: string
+      discogsFormats: string[]
+      searchIgnoreWords: string[]
+      // Optional on purpose: an older settings.json predates the setting, and the seam
+      // has to cope with it missing.
+      discogsMaxResults?: number
+    } => ({
+      discogsToken: 'tok',
+      discogsFormats: [],
+      searchIgnoreWords: [],
+    }),
+  ),
   bcSearch: vi.fn(),
   dzSearch: vi.fn(),
 }))
@@ -35,7 +44,7 @@ describe('getProvider', () => {
     search.mockResolvedValue([{ id: 1 }])
     const hints = { title: 'Airwave', catalogNumber: 'ANJ001' }
     const out = await getProvider('discogs').search('rank 1 airwave', 'high', hints)
-    expect(search).toHaveBeenCalledWith('rank 1 airwave', 'tok', 'high', hints, [])
+    expect(search).toHaveBeenCalledWith('rank 1 airwave', 'tok', 'high', hints, [], 0)
     expect(out).toEqual([{ id: 1 }])
   })
 
@@ -49,7 +58,7 @@ describe('getProvider', () => {
     })
     search.mockResolvedValue([])
     await getProvider('discogs').search('only vinyl', 'high')
-    expect(search).toHaveBeenCalledWith('only vinyl', 'tok', 'high', undefined, ['Vinyl'])
+    expect(search).toHaveBeenCalledWith('only vinyl', 'tok', 'high', undefined, ['Vinyl'], 0)
   })
 
   // A rip-crew stamp in the query/hints ("rip djotas good") sinks every search shape —
@@ -73,7 +82,22 @@ describe('getProvider', () => {
       'high',
       { title: 'Sueño Latino', artist: 'Latino Project' },
       [],
+      0,
     )
+  })
+
+  // The page the client fetches has to cover the list the panel will show, so the seam
+  // forwards how many results Settings displays alongside the token and formats.
+  it('forwards the shown-results setting to the Discogs client', async () => {
+    getSettings.mockReturnValueOnce({
+      discogsToken: 'tok',
+      discogsFormats: [] as string[],
+      searchIgnoreWords: [] as string[],
+      discogsMaxResults: 50,
+    })
+    search.mockResolvedValue([])
+    await getProvider('discogs').search('fifty please', 'high')
+    expect(search).toHaveBeenCalledWith('fifty please', 'tok', 'high', undefined, [], 50)
   })
 
   it('strips the saved ignore words for Bandcamp too', async () => {

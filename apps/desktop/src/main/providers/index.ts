@@ -54,6 +54,10 @@ const providers: Record<SearchProviderId, SearchProvider> = {
         priority,
         cleanHints(hints, words),
         formats,
+        // How many the panel will show, so the page is never smaller than the list it
+        // has to fill. Defensive like formats above: a hand-edited settings.json must
+        // not send NaN into the page size.
+        Number(s.discogsMaxResults) || 0,
       )
     },
     getRelease: (ref, priority) =>

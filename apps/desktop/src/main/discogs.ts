@@ -24,6 +24,8 @@ function authParams(token: string): string {
 // sends one, otherwise back off exponentially — both capped by the same ceiling so
 // neither a late attempt nor an oversized header ever waits absurdly long (the wait
 // holds the request's rate-limiter token, and the fetch timeout doesn't cover it).
+// The API refuses anything larger, so a big shown-results setting clamps here.
+const DISCOGS_MAX_PER_PAGE = 100
 const MAX_RETRIES = 3
 const BASE_DELAY_MS = 1000
 const MAX_DELAY_MS = 8000
@@ -219,13 +221,23 @@ export async function search(
   priority?: SearchPriority,
   hints?: SearchHints,
   formats: string[] = [],
+  shownResults = 0,
 ): Promise<SearchResult[]> {
   return activity.track(
     'discogs',
     'activity.searchDiscogs',
     async () => {
       const serverFormat = formats.length === 1 ? formats[0] : undefined
-      const perPage = formats.length > 1 ? 50 : 20
+      // The page has to cover what the panel will show, or the list can never fill and
+      // the larger Settings options quietly lie. Several formats are thinned client-side
+      // afterwards, so those fetch double to leave enough survivors. Never below the old
+      // floor — the auto-match probe scans the whole page regardless of what is shown —
+      // and never above the API's own per_page ceiling.
+      const wanted = formats.length > 1 ? shownResults * 2 : shownResults
+      const perPage = Math.min(
+        DISCOGS_MAX_PER_PAGE,
+        Math.max(formats.length > 1 ? 50 : 20, wanted),
+      )
       const opts: SearchOpts = { format: serverFormat, perPage }
       const keep = (raw: SearchResult[]): SearchResult[] =>
         dedupeResults(formats.length ? raw.filter((r) => matchesFormats(r, formats)) : raw)
