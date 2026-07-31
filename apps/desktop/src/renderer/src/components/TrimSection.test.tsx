@@ -758,5 +758,21 @@ describe('TrimSection', () => {
       expect(audios).toHaveLength(0)
       outside.remove()
     })
+
+    // A macro keyboard can be rebound to send a shift chord. The direct match must
+    // win over the Shift-as-step-size fallback, or a saved rebind would silently do
+    // nothing — the worst failure mode for a feature that exists so this can be
+    // remapped to whatever the hardware sends.
+    it('dispara un comando del trim rebindeado a un chord con shift', async () => {
+      const rebound = resolveBindings({ 'trim-audition': ['shift', 'a'] })
+      render(section({ value: { startSec: 9.7, endSec: 90.3 }, bindings: rebound }))
+      const end = await screen.findByTestId('trim-handle-end', undefined, { timeout: 3000 })
+      end.focus()
+      fireEvent.keyDown(end, { key: 'a', shiftKey: true })
+      const audio = audios.at(-1)
+      expect(audio).toBeDefined()
+      act(() => audio?.onloadedmetadata?.())
+      expect(audio?.currentTime).toBe(Math.max(0, 90.3 - 4))
+    })
   })
 })
