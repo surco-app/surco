@@ -400,13 +400,55 @@ describe('DeclickSection', () => {
     expect(strip).toHaveAttribute('tabindex', '0')
   })
 
-  it('moves the playhead with the arrow keys', async () => {
+  it('moves the playhead by the fine step in either direction', async () => {
     await withPreview()
     const strip = screen.getByTestId('declick-marks')
     strip.focus()
-    const before = Number(strip.getAttribute('aria-valuenow'))
     fireEvent.keyDown(strip, { key: 'ArrowRight' })
-    expect(Number(strip.getAttribute('aria-valuenow'))).toBeGreaterThan(before)
+    expect(strip.getAttribute('aria-valuenow')).toBe('0.01')
+    fireEvent.keyDown(strip, { key: 'ArrowLeft' })
+    expect(strip.getAttribute('aria-valuenow')).toBe('0')
+  })
+
+  it('moves the playhead by the coarse step when Shift is held', async () => {
+    await withPreview()
+    const strip = screen.getByTestId('declick-marks')
+    strip.focus()
+    fireEvent.keyDown(strip, { key: 'ArrowRight', shiftKey: true })
+    expect(strip.getAttribute('aria-valuenow')).toBe('0.25')
+  })
+
+  it('clamps the keyboard scrub at the start of the track', async () => {
+    await withPreview()
+    const strip = screen.getByTestId('declick-marks')
+    strip.focus()
+    fireEvent.keyDown(strip, { key: 'ArrowLeft' })
+    expect(strip.getAttribute('aria-valuenow')).toBe('0')
+  })
+
+  it('clamps the keyboard scrub at the end of the track', async () => {
+    await withPreview()
+    const overlay = screen.getByTestId('declick-marks')
+    stubWidth(overlay)
+    // Pointer-scrubs to the far edge of a 240 s track, same as the pointer clamp test.
+    act(() => pointerAt(overlay, 'pointerDown', 1400))
+    overlay.focus()
+    fireEvent.keyDown(overlay, { key: 'ArrowRight' })
+    expect(overlay.getAttribute('aria-valuenow')).toBe('240')
+  })
+
+  // Nothing to move a cursor along before the wave has a duration — pressing an arrow
+  // key here must not call seek at all, not just clamp to zero.
+  it('ignores the arrow keys before a duration is known', async () => {
+    ;(window.api.waveform as ReturnType<typeof vi.fn>).mockResolvedValue({
+      peaks: [],
+      durationSec: 0,
+    })
+    render(section({ value: 'standard' }))
+    const strip = await screen.findByTestId('declick-marks')
+    strip.focus()
+    fireEvent.keyDown(strip, { key: 'ArrowRight' })
+    expect(strip.getAttribute('aria-valuenow')).toBe('0')
   })
 
   // Caught in the real app, not here: the two elements buffer and schedule independently,
