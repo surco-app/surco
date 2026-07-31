@@ -226,7 +226,12 @@
     "activity": "Aktivität anzeigen",
     "toggleLanguage": "Sprache wechseln (Englisch / Spanisch)",
     "toggleTheme": "Design wechseln (System / Hell / Dunkel)",
-    "confetti": "Konfetti werfen 🎉"
+    "confetti": "Konfetti werfen 🎉",
+    "trimNudgeBack": "Schnitt nach hinten schieben",
+    "trimNudgeForward": "Schnitt nach vorne schieben",
+    "trimAudition": "Schnitt anhören",
+    "trimClear": "Schnitt entfernen",
+    "trimApply": "Erkannte Stille anwenden"
   },
   "trackList": {
     "label": "Tracks",
@@ -596,7 +601,9 @@
       "reset": "Auf Standard zurücksetzen",
       "resetAll": "Alle zurücksetzen",
       "conflict": "Zwei Befehle teilen sich ein Kürzel. Lös den Konflikt, um zu speichern.",
-      "fixedNav": "Immer aktiv (nicht änderbar): ↑↓ oder j / k bewegen sich durch die Trackliste und die Discogs-Ergebnisse, Pos1 / Ende springen an die Enden und Bild ↑ / Bild ↓ blättern seitenweise."
+      "fixedNav": "Immer aktiv (nicht änderbar): ↑↓ oder j / k bewegen sich durch die Trackliste und die Discogs-Ergebnisse, Pos1 / Ende springen an die Enden und Bild ↑ / Bild ↓ blättern seitenweise.",
+      "groupTrim": "Stille-Editor",
+      "groupTrimHint": "Nur solange ein Schnitt fokussiert ist"
     },
     "stats": {
       "count": "Konvertierungen",
