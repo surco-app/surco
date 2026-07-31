@@ -23,6 +23,14 @@
       {
         "text": "Al convertir sobre el archivo original, la fila se actualiza sola con lo que ha quedado en el disco, sin tener que recargar la lista para verlo.",
         "in": "0.77.0"
+      },
+      {
+        "text": "El corte de silencio ya se puede ajustar con el teclado desde el mismo principio de la pista. Antes, con el corte pegado al borde, las flechas calculaban el movimiento y se descartaba al guardar: la tecla parecía muerta justo donde se recorta el silencio inicial.",
+        "in": "0.77.1"
+      },
+      {
+        "text": "Mostrar en el Finder funciona también con pistas que aún no has convertido: abre el archivo original en vez de no hacer nada.",
+        "in": "0.77.1"
       }
     ]
   },

@@ -23,6 +23,14 @@
       {
         "text": "When converting over the original file, the row now refreshes itself from what ended up on disk, with no need to reload the list to see it.",
         "in": "0.77.0"
+      },
+      {
+        "text": "The silence cut can now be adjusted from the keyboard right at the head of the track. Until now, with the cut sitting on the edge, the arrow keys worked out the move and it was thrown away on save — the key felt dead exactly where you trim the opening silence.",
+        "in": "0.77.1"
+      },
+      {
+        "text": "Reveal in Finder now works on tracks you haven't converted yet: it opens the source file instead of doing nothing.",
+        "in": "0.77.1"
       }
     ]
   },
