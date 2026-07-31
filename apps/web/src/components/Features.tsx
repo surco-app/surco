@@ -47,7 +47,7 @@ export default function Features() {
   return (
     <div id="top" className="min-h-screen overflow-x-clip bg-bg text-fg antialiased">
       <div className="grain pointer-events-none fixed inset-0 z-[1] opacity-[0.03] mix-blend-soft-light" />
-      <Header />
+      <Header page="features" />
 
       <main id="main" className="relative mx-auto max-w-5xl px-6">
         <section className="pt-16 pb-8 sm:pt-24">
