@@ -12,6 +12,27 @@ import { AFTER_COLOR } from './WaveformCompare'
 
 afterEach(cleanup)
 
+// Spies on the real hook's seek without changing its behaviour — needed for the one
+// test where the playhead starts at 0 and a wrongly-fired seek(0) would render
+// identically to no call at all, so the DOM alone cannot tell the two apart.
+const seekSpy = vi.fn()
+vi.mock('../hooks/useDeclickAb', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../hooks/useDeclickAb')>()
+  return {
+    ...original,
+    useDeclickAb: (...args: Parameters<typeof original.useDeclickAb>) => {
+      const ab = original.useDeclickAb(...args)
+      return {
+        ...ab,
+        seek: (sec: number) => {
+          seekSpy(sec)
+          ab.seek(sec)
+        },
+      }
+    },
+  }
+})
+
 const play = vi.fn()
 const pause = vi.fn()
 // Every <audio> the A/B builds, so the tests can assert on the PAIR — the whole point
@@ -77,6 +98,7 @@ let client: QueryClient
 beforeEach(() => {
   play.mockReset().mockResolvedValue(undefined)
   pause.mockReset()
+  seekSpy.mockReset()
   elements = []
   client = createQueryClient()
   vi.stubGlobal('Audio', FakeAudio)
@@ -438,7 +460,9 @@ describe('DeclickSection', () => {
   })
 
   // Nothing to move a cursor along before the wave has a duration — pressing an arrow
-  // key here must not call seek at all, not just clamp to zero.
+  // key here must not call seek at all, not just clamp to zero. Checked against the
+  // spy rather than aria-valuenow: the playhead already starts at 0, so a seek(0) that
+  // should not have fired would render identically to no call ever happening.
   it('ignores the arrow keys before a duration is known', async () => {
     ;(window.api.waveform as ReturnType<typeof vi.fn>).mockResolvedValue({
       peaks: [],
@@ -448,7 +472,7 @@ describe('DeclickSection', () => {
     const strip = await screen.findByTestId('declick-marks')
     strip.focus()
     fireEvent.keyDown(strip, { key: 'ArrowRight' })
-    expect(strip.getAttribute('aria-valuenow')).toBe('0')
+    expect(seekSpy).not.toHaveBeenCalled()
   })
 
   // Caught in the real app, not here: the two elements buffer and schedule independently,
