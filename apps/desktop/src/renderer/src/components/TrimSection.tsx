@@ -412,12 +412,15 @@ function Lane({
               onKeyDown={(e) => {
                 const chord = eventToChord(e, isMac)
                 if (!chord) return
-                // Shift is the coarse step for the nudge keys, not a different chord: a
-                // held Shift still means trim-nudge-back/-forward, so it is matched
-                // stripped of its shift token — matching it as pressed would look for a
-                // ['shift','left'] binding that doesn't exist and silently do nothing.
+                // Matched as pressed first, so a command deliberately rebound to a
+                // shift chord (⇧A for trim-audition on a macro keyboard) still fires.
+                // Only when that fails does Shift get treated as a modifier on the step
+                // size rather than part of the chord — ⇧← has no ['shift','left']
+                // binding, so it falls back to ['left'] and still nudges, just coarse.
                 const bare = chord[0] === 'shift' ? chord.slice(1) : chord
-                const id = matchChord(bindings, bare, false, 'trim')
+                const id =
+                  matchChord(bindings, chord, false, 'trim') ??
+                  matchChord(bindings, bare, false, 'trim')
                 if (!id) return
                 e.preventDefault()
                 const step = e.shiftKey ? COARSE_STEP_SEC : fineStepSec
