@@ -195,6 +195,7 @@ export function DeclickSection({
         // A wave-work section, so it earns the maximize toggle like Trim: the
         // clicks-found strip reads far better with the whole window to mark them in.
         sectionId="declick"
+        maximizable
         summary={value === 'off' ? tr('declick.mode.off') : undefined}
         summaryTestId="declick-summary"
         summaryMuted

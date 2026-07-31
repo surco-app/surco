@@ -74,6 +74,13 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   { id: 'focus-list', chord: ['mod', '1'] },
   { id: 'focus-matches', chord: ['mod', '2'] },
   { id: 'focus-editor', chord: ['mod', '3'] },
+  // Saltar de sección a sección por sus cabeceras, sin cruzar los campos de dentro: con
+  // una sola sección abierta el editor tiene 133 paradas de tabulador. Llevan `mod` para
+  // seguir vivas con un campo enfocado — irse al recorte desde el título es el caso — y
+  // son corchetes porque ⌘↓/⌘⇧↓ son atajos de edición de texto en macOS y estas teclas
+  // conviven con el tecleo. `mod` es ⌘ en macOS y Ctrl en Windows y Linux.
+  { id: 'section-next', chord: ['mod', ']'], scope: 'editor' },
+  { id: 'section-prev', chord: ['mod', '['], scope: 'editor' },
   // Editor de silencios. Una tecla por lado y acción: con el editor desplegado actúan
   // sobre la pista abierta SIN foco en ninguna parte, que es como se maneja un teclado
   // de macros — se pulsa y el corte se mueve, en vez de tener que pinchar antes el

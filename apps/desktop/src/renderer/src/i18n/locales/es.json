@@ -236,7 +236,9 @@
     "trimEndForward": "Mover el corte de salida adelante",
     "trimEndAudition": "Escuchar el corte de salida",
     "trimEndClear": "Quitar el corte de salida",
-    "trimApply": "Aplicar el silencio detectado"
+    "trimApply": "Aplicar el silencio detectado",
+    "sectionNext": "Ir a la sección siguiente",
+    "sectionPrev": "Ir a la sección anterior"
   },
   "trackList": {
     "label": "Pistas",
@@ -611,7 +613,9 @@
       "groupTrim": "Editor de silencios",
       "groupTrimHint": "Solo con el foco en un corte",
       "groupTrackList": "Lista de pistas",
-      "groupTrackListHint": "Solo con el foco en una fila"
+      "groupTrackListHint": "Solo con el foco en una fila",
+      "groupEditor": "Editor",
+      "groupEditorHint": "Saltando entre secciones"
     },
     "stats": {
       "count": "conversiones",

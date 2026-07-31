@@ -166,6 +166,7 @@ export function QualitySection({
     <div className="mt-5 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
         sectionId="quality"
+        maximizable
         title={tr('editor.qualityTitle')}
         open={open}
         onToggle={onToggle}

@@ -236,7 +236,9 @@
     "trimEndForward": "Nudge the tail cut forward",
     "trimEndAudition": "Hear the tail cut",
     "trimEndClear": "Clear the tail cut",
-    "trimApply": "Apply the detected silence"
+    "trimApply": "Apply the detected silence",
+    "sectionNext": "Go to the next section",
+    "sectionPrev": "Go to the previous section"
   },
   "trackList": {
     "label": "Tracks",
@@ -611,7 +613,9 @@
       "groupTrim": "Silence editor",
       "groupTrimHint": "Only while a cut has focus",
       "groupTrackList": "Track list",
-      "groupTrackListHint": "Only while a row has focus"
+      "groupTrackListHint": "Only while a row has focus",
+      "groupEditor": "Editor",
+      "groupEditorHint": "Jumping between sections"
     },
     "stats": {
       "count": "conversions",
