@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.77",
+    "date": "July 31, 2026",
+    "title": "The silence trimmer works from the keyboard",
+    "items": [
+      {
+        "text": "The silence editor no longer needs the mouse. With a cut focused, the arrow keys move it by the millisecond (hold Shift for a coarser step), and one key auditions it, another clears it and another applies the silence Surco detected. The focused cut is marked on the waveform — including when you reach it by dragging with the mouse — so you always know which of the two you are acting on.",
+        "in": "0.77.0"
+      },
+      {
+        "text": "The trimmer's shortcuts can be changed in Settings, under their own heading, and they accept single keys with no modifiers — meant for anyone working with a macro pad or a controller that sends keystrokes.",
+        "in": "0.77.0"
+      },
+      {
+        "text": "A track's menu now opens from the keyboard (Shift+F10, rebindable). Behind it are copy and paste metadata, copy path and start over — until now they were only reachable with a right click.",
+        "in": "0.77.0"
+      },
+      {
+        "text": "In click repair, the playhead can be placed anywhere in the track with the arrow keys, instead of only jumping from one detected click to the next.",
+        "in": "0.77.0"
+      },
+      {
+        "text": "When converting over the original file, the row now refreshes itself from what ended up on disk, with no need to reload the list to see it.",
+        "in": "0.77.0"
+      }
+    ]
+  },
+  {
     "version": "0.76",
     "date": "July 28, 2026",
     "title": "Traktor finally sees the cues Surco writes",
