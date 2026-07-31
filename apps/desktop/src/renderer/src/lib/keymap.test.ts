@@ -203,6 +203,23 @@ describe('keyToCommandId con ámbito', () => {
     )
   })
 
+  // Shift es el paso grueso de las teclas del recorte, no parte del chord: ⇧W tiene que
+  // resolver al mismo comando que W. Sin esto el comando existe, la tecla llega al
+  // listener y muere ahí — el fallo silencioso más caro de diagnosticar.
+  it('resuelve una tecla suelta aunque se pulse con shift', () => {
+    expect(keyToCommandId(press('w', true), false, bindings, true, null)).toBe(
+      'trim-start-forward',
+    )
+    expect(keyToCommandId(press('w'), false, bindings, true, null)).toBe('trim-start-forward')
+  })
+
+  // Pero un comando rebindeado A un chord con shift gana al reintento: si el usuario
+  // guarda ⇧A, esa combinación tiene que disparar lo suyo y no el comando de la A pelada.
+  it('prefiere el comando ligado al chord con shift sobre el reintento', () => {
+    const rebound = resolveBindings({ 'trim-end-audition': ['shift', 'a'] })
+    expect(keyToCommandId(press('a', true), false, rebound, true, null)).toBe('trim-end-audition')
+  })
+
   // Las flechas son seek en toda la app: el editor de silencios ya no se las queda, sus
   // teclas son propias por lado y actúan sin foco.
   it('deja las flechas al seek en cualquier ámbito', () => {
