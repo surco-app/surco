@@ -31,6 +31,10 @@
       {
         "text": "Reveal in Finder now works on tracks you haven't converted yet: it opens the source file instead of doing nothing.",
         "in": "0.77.1"
+      },
+      {
+        "text": "Opening the player no longer flashes a scrollbar down the right edge of the window as the card slides in.",
+        "in": "0.77.2"
       }
     ]
   },
