@@ -22,6 +22,8 @@ type ClaimedKey =
   | 'trim-end-audition'
   | 'trim-end-clear'
   | 'trim-apply'
+  | 'section-next'
+  | 'section-prev'
 
 // Shift rides along because it is the coarse step for the trim nudges; `play` ignores it.
 export interface ClaimContext {
@@ -41,6 +43,8 @@ const CLAIMABLE: ClaimedKey[] = [
   'trim-end-audition',
   'trim-end-clear',
   'trim-apply',
+  'section-next',
+  'section-prev',
 ]
 
 // Whether a command id can be answered by an open section, so the global listener only
@@ -55,11 +59,17 @@ export function isClaimable(id: string): id is ClaimedKey {
 // through to the GLOBAL command: Space starting the mini-player underneath a section
 // that still had its own transport open, precisely what claiming exists to prevent.
 const claims: Handlers[] = []
+const claimed = new Set<string>()
 
 // Registers the section's handlers and returns the release. A release removes its
 // OWN entry wherever it sits, so it can neither resurrect a dead claim nor drop a
 // live one.
 export function claimKeys(handlers: Handlers): () => void {
+  // The tag rides on the live stack so minification keeps it (a dead constant is shaken
+  // out). It is what spaceClaim.bundle.test.ts counts: one chunk carrying it means one
+  // copy of this stack, and a second copy would make a section's claims invisible to the
+  // global listener.
+  claimed.add('surco/key-claims/single-instance')
   claims.push(handlers)
   return () => {
     const i = claims.indexOf(handlers)

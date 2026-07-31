@@ -23,10 +23,15 @@ interface SectionHeaderProps {
   // than a paragraph under it: the explanation is read once and the two lines it
   // cost were charged on every visit, pushing the actual work down the panel.
   help?: string
-  // Present on the sections that earn a maximize toggle (the wave-work ones):
-  // the header wires itself to the shared maximized-section store, so the
-  // Editor's overlay and every header stay one state.
+  // Which section this header belongs to. Always set: the ⌘[ / ⌘] jumps find headers by
+  // it. Whether the section earns a maximize toggle is a separate question — see
+  // `maximizable`, which used to be conflated with this and started offering the button
+  // on every section the moment the jumps needed the id everywhere.
   sectionId?: EditorSection
+  // Present on the sections that earn a maximize toggle (the wave-work ones): the header
+  // wires itself to the shared maximized-section store, so the Editor's overlay and every
+  // header stay one state.
+  maximizable?: boolean
 }
 
 export function SectionHeader({
@@ -39,6 +44,7 @@ export function SectionHeader({
   right,
   help,
   sectionId,
+  maximizable,
 }: SectionHeaderProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { maximized, setMaximized } = useMaximizedSection()
@@ -51,6 +57,9 @@ export function SectionHeader({
           name to the title alone — the summary is state, not name. */}
       <button
         type="button"
+        // The section jumps (⌘[ / ⌘]) move focus header to header, so each one has to be
+        // findable from outside React without a ref registry to keep in sync.
+        data-section-header={sectionId}
         onClick={onToggle}
         aria-label={title}
         aria-expanded={open}
@@ -86,7 +95,7 @@ export function SectionHeader({
         </span>
       )}
       {right}
-      {sectionId !== undefined && (
+      {maximizable === true && sectionId !== undefined && (
         <button
           type="button"
           data-testid="section-maximize"

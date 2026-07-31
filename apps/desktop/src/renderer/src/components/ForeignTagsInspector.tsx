@@ -35,6 +35,7 @@ export function ForeignTagsInspector({
       className="mt-5 border-t border-[var(--color-line)] pt-5"
     >
       <SectionHeader
+        sectionId="otherTags"
         title={tr('editor.otherTagsTitle')}
         open={open}
         onToggle={onToggle}

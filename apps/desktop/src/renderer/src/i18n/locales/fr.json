@@ -236,7 +236,9 @@
     "trimEndForward": "Avancer la coupe de fin",
     "trimEndAudition": "Écouter la coupe de fin",
     "trimEndClear": "Supprimer la coupe de fin",
-    "trimApply": "Appliquer le silence détecté"
+    "trimApply": "Appliquer le silence détecté",
+    "sectionNext": "Aller à la section suivante",
+    "sectionPrev": "Aller à la section précédente"
   },
   "trackList": {
     "label": "Morceaux",
@@ -611,7 +613,9 @@
       "groupTrim": "Éditeur de silences",
       "groupTrimHint": "Seulement quand une coupe a le focus",
       "groupTrackList": "Liste des morceaux",
-      "groupTrackListHint": "Seulement quand une ligne a le focus"
+      "groupTrackListHint": "Seulement quand une ligne a le focus",
+      "groupEditor": "Éditeur",
+      "groupEditorHint": "Naviguer entre les sections"
     },
     "stats": {
       "count": "conversions",

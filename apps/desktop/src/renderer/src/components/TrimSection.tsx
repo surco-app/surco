@@ -959,6 +959,7 @@ export function TrimSection({
     >
       <SectionHeader
         sectionId="trim"
+        maximizable
         title={tr('trim.title')}
         open={open}
         onToggle={onToggle}

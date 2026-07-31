@@ -236,7 +236,9 @@
     "trimEndForward": "Endschnitt vor",
     "trimEndAudition": "Endschnitt anhören",
     "trimEndClear": "Endschnitt entfernen",
-    "trimApply": "Erkannte Stille anwenden"
+    "trimApply": "Erkannte Stille anwenden",
+    "sectionNext": "Zum nächsten Abschnitt",
+    "sectionPrev": "Zum vorherigen Abschnitt"
   },
   "trackList": {
     "label": "Tracks",
@@ -611,7 +613,9 @@
       "groupTrim": "Stille-Editor",
       "groupTrimHint": "Nur solange ein Schnitt fokussiert ist",
       "groupTrackList": "Trackliste",
-      "groupTrackListHint": "Nur solange eine Zeile fokussiert ist"
+      "groupTrackListHint": "Nur solange eine Zeile fokussiert ist",
+      "groupEditor": "Editor",
+      "groupEditorHint": "Zwischen Abschnitten springen"
     },
     "stats": {
       "count": "Konvertierungen",
