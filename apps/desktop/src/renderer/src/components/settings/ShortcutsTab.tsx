@@ -16,9 +16,11 @@ const isMac = isMacOS()
 // puede reasignar, que es justo lo que necesita quien no tiene su tecla.
 const scopes = [...new Set(SHORTCUT_DEFAULTS.map((d) => d.scope).filter((s) => s !== undefined))]
 
-// 'track-list' → settings.shortcuts.groupTrackList / groupTrackListHint
-const scopeKey = (scope: string, prefix: string): string =>
-  `settings.shortcuts.${prefix}${scope[0].toUpperCase()}${scope.slice(1).replace(/-([a-z])/g, (_m, c) => c.toUpperCase())}`
+// 'track-list' → settings.shortcuts.groupTrackList / groupTrackListHint. The hint's
+// qualifier goes at the END of the key: keying it as groupHintTrackList printed the raw
+// key in the panel instead of the sentence.
+const scopeKey = (scope: string, suffix = ''): string =>
+  `settings.shortcuts.group${scope[0].toUpperCase()}${scope.slice(1).replace(/-([a-z])/g, (_m, c) => c.toUpperCase())}${suffix}`
 
 interface Props {
   synced: SyncedDraft
@@ -125,8 +127,8 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
       {scopes.map((scope) => (
         <div key={scope} data-testid={`shortcut-group-${scope}`} className="mt-4">
           <div className="mb-1 flex items-baseline gap-2">
-            <h3 className="text-xs font-medium text-fg">{tr(scopeKey(scope, 'group'))}</h3>
-            <span className="text-xs text-fg-dim">{tr(scopeKey(scope, 'groupHint'))}</span>
+            <h3 className="text-xs font-medium text-fg">{tr(scopeKey(scope))}</h3>
+            <span className="text-xs text-fg-dim">{tr(scopeKey(scope, 'Hint'))}</span>
           </div>
           {SHORTCUT_DEFAULTS.filter((d) => d.scope === scope).map(renderRow)}
         </div>
