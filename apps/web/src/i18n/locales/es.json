@@ -655,7 +655,7 @@
           "Con los filtros de audio apagados, el audio ni se toca: se copian los bytes tal cual y solo se reescriben las etiquetas. Es instantáneo por grande que sea el archivo, y no hay ninguna pérdida de calidad posible, porque no hay recodificación."
         ],
         "points": [
-          "Elígelo en el desplegable de formato, en Ajustes → Conversión o ya desde el asistente de bienvenida.",
+          "Elígelo en Ajustes → Formato o desde el asistente de bienvenida, y también en el desplegable del botón de convertir cuando tienes varias pistas seleccionadas.",
           "Funciona con cualquier destino, incluido sobrescribir el original en su sitio.",
           "Un archivo cuyo formato no se puede conservar se salta con un aviso, en vez de convertirse a otra cosa sin decírtelo.",
           "Si activas un filtro que obligue a recodificar un MP3 sobre sí mismo, Surco te lo pregunta antes."
