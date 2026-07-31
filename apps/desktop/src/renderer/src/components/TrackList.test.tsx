@@ -487,6 +487,14 @@ describe('TrackList', () => {
     expect(screen.getByTestId('track-menu')).toBeInTheDocument()
   })
 
+  // El ámbito vive en la fila, que es quien maneja la tecla. Si estuviera en un contenedor
+  // de la lista entera, capturaría el chord sobre los controles que no lo manejan y lo
+  // dejaría muerto — el error que ya se corrigió en el editor de silencios.
+  it('declara el ámbito de atajos en la fila que maneja la tecla', () => {
+    renderList([track({ id: 'a' })])
+    expect(screen.getByTestId('track-row')).toHaveAttribute('data-shortcut-scope', 'track-list')
+  })
+
   it('removes a track without selecting it when the remove control is clicked', () => {
     const { onSelect, onRemove } = renderList([track({ id: 'a' }), track({ id: 'b' })])
     fireEvent.click(screen.getAllByLabelText('Remove')[0])

@@ -11,6 +11,15 @@ import { Tooltip } from '../Tooltip'
 
 const isMac = isMacOS()
 
+// Los ámbitos presentes en la tabla, en su orden de declaración. Derivados y no listados a
+// mano para que un comando con ámbito nuevo salga en el tab sin tocar esto: sin fila no se
+// puede reasignar, que es justo lo que necesita quien no tiene su tecla.
+const scopes = [...new Set(SHORTCUT_DEFAULTS.map((d) => d.scope).filter((s) => s !== undefined))]
+
+// 'track-list' → settings.shortcuts.groupTrackList / groupTrackListHint
+const scopeKey = (scope: string, prefix: string): string =>
+  `settings.shortcuts.${prefix}${scope[0].toUpperCase()}${scope.slice(1).replace(/-([a-z])/g, (_m, c) => c.toUpperCase())}`
+
 interface Props {
   synced: SyncedDraft
   patch: PatchSynced
@@ -113,13 +122,15 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
         </button>
       </div>
       <div>{SHORTCUT_DEFAULTS.filter((d) => !d.scope).map(renderRow)}</div>
-      <div data-testid="shortcut-group-trim" className="mt-4">
-        <div className="mb-1 flex items-baseline gap-2">
-          <h3 className="text-xs font-medium text-fg">{tr('settings.shortcuts.groupTrim')}</h3>
-          <span className="text-xs text-fg-dim">{tr('settings.shortcuts.groupTrimHint')}</span>
+      {scopes.map((scope) => (
+        <div key={scope} data-testid={`shortcut-group-${scope}`} className="mt-4">
+          <div className="mb-1 flex items-baseline gap-2">
+            <h3 className="text-xs font-medium text-fg">{tr(scopeKey(scope, 'group'))}</h3>
+            <span className="text-xs text-fg-dim">{tr(scopeKey(scope, 'groupHint'))}</span>
+          </div>
+          {SHORTCUT_DEFAULTS.filter((d) => d.scope === scope).map(renderRow)}
         </div>
-        {SHORTCUT_DEFAULTS.filter((d) => d.scope === 'trim').map(renderRow)}
-      </div>
+      ))}
       {/* The list/Discogs navigation keys are fixed (vim-style j/k, arrows, Home/End, Page
           Up/Down), so they don't get an editable row above — name them here so they're still
           discoverable rather than hidden. */}
