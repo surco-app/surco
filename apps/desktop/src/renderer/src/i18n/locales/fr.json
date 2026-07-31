@@ -207,6 +207,7 @@
     "rename": "Composer le nom du fichier…",
     "shortcuts": "Raccourcis clavier…",
     "selectAll": "Tout sélectionner",
+    "trackMenu": "Ouvrir le menu du morceau",
     "fillAll": "Remplir tous les tags depuis le nom du fichier",
     "deriveTags": "Remplir les métadonnées depuis le nom",
     "numberTracks": "Numéroter les morceaux dans l'ordre de la liste",

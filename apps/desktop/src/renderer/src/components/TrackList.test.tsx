@@ -16,11 +16,14 @@ vi.hoisted(() => {
 })
 
 import '../i18n'
+import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type { TrackMetadata } from '../../../shared/types'
 import { trackSignature } from '../lib/dirty'
 import type { TrackItem } from '../types'
 import { TrackContextMenu } from './TrackContextMenu'
 import { TrackList } from './TrackList'
+
+const bindings = resolveBindings()
 
 beforeEach(() => {
   Object.assign(window, { api })
@@ -86,6 +89,7 @@ function renderList(
       selectedId={selectedId}
       selectedIds={new Set(selectedIds)}
       outputFormat="aiff"
+      bindings={bindings}
       onSelect={onSelect}
       onActivate={onActivate}
       onRemove={onRemove}
@@ -441,6 +445,27 @@ describe('TrackList', () => {
     const { onRemove } = renderList([track({ id: 'a' }), track({ id: 'b' })], 'a')
     fireEvent.keyDown(screen.getAllByTestId('track-row')[0], { key: 'Backspace', metaKey: true })
     expect(onRemove).not.toHaveBeenCalled()
+  })
+
+  // The context menu otherwise only opens with a right click; Shift+F10 is its only
+  // other door, and four of its actions (copy/paste metadata, start over, copy path)
+  // have no other path at all.
+  it('opens the track menu with the keyboard', () => {
+    renderList([track({ id: 'a' })])
+    const row = screen.getAllByTestId('track-row')[0]
+    row.focus()
+    fireEvent.keyDown(row, { key: 'F10', shiftKey: true })
+    expect(screen.getByTestId('track-menu')).toBeInTheDocument()
+  })
+
+  // Opening the menu from an unselected row must select it first, exactly like a right
+  // click does, so the single-track actions in the menu are unambiguous.
+  it('selects an unselected row before opening the menu with the keyboard', () => {
+    const { onSelect } = renderList([track({ id: 'a' }), track({ id: 'b' })], 'a', ['a'])
+    const row = screen.getAllByTestId('track-row')[1]
+    row.focus()
+    fireEvent.keyDown(row, { key: 'F10', shiftKey: true })
+    expect(onSelect).toHaveBeenCalledWith('b', {})
   })
 
   it('removes a track without selecting it when the remove control is clicked', () => {

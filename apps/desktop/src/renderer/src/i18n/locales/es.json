@@ -207,6 +207,7 @@
     "rename": "Generar nombre del archivo…",
     "shortcuts": "Atajos de teclado…",
     "selectAll": "Seleccionar todo",
+    "trackMenu": "Abrir el menú de la pista",
     "fillAll": "Rellenar todo desde el nombre",
     "deriveTags": "Rellenar metadatos del nombre",
     "numberTracks": "Numerar pistas en orden de lista",

@@ -207,6 +207,7 @@
     "rename": "Build file name…",
     "shortcuts": "Keyboard shortcuts…",
     "selectAll": "Select all",
+    "trackMenu": "Open the track menu",
     "fillAll": "Fill all tags from file name",
     "deriveTags": "Fill metadata from file name",
     "numberTracks": "Number tracks in list order",
