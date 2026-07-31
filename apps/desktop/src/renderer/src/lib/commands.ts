@@ -624,12 +624,18 @@ export function buildCommands(deps: CommandDeps): Command[] {
       run: openExport,
     },
     {
+      // The converted file when there is one, else the file the user imported: before a
+      // conversion there is still something on disk to show, and a ⌘R that silently does
+      // nothing reads as a broken key rather than as "convert it first".
       id: 'reveal',
       group: 'library',
       title: tr('commands.reveal'),
       hint: hintFor('reveal'),
-      enabled: !!selected?.outputPath,
-      run: () => selected?.outputPath && reveal(selected.outputPath),
+      enabled: !!(selected?.outputPath ?? selected?.inputPath),
+      run: () => {
+        const path = selected?.outputPath ?? selected?.inputPath
+        if (path) reveal(path)
+      },
     },
     {
       // Builds the output name from a pattern. Only one track has a File name section
