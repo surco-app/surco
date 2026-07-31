@@ -40,7 +40,11 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   // Shift+F10 is the Windows/Linux convention for a context menu; macOS has no
   // convention of its own, so we share it. Without it, four menu actions (copy/paste
   // metadata, start over, copy path) have no keyboard path at all.
-  { id: 'track-menu', chord: ['shift', 'f10'] },
+  //
+  // Con ámbito porque quien lo ejecuta es el onKeyDown de la fila (necesita sus
+  // coordenadas para colocar el menú), no el registro de comandos: como global, una
+  // reasignación a ⌘P mataría esa tecla en toda la app sin ejecutar nada.
+  { id: 'track-menu', chord: ['shift', 'f10'], scope: 'track-list' },
   { id: 'fill-all', chord: ['mod', 'shift', 'f'] },
   // The editor's own Tag (fill selection from file name) and Eraser (clear selection) buttons,
   // as chords so the keyboard flow reaches them without a ⌘K detour. Mod-combos with no typing

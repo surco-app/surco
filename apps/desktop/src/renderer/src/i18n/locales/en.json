@@ -605,7 +605,9 @@
       "conflict": "Two commands share a shortcut. Resolve it to save.",
       "fixedNav": "Always on (not rebindable): ↑↓ or j / k move through the track list and the Discogs results, Home / End jump to the ends, and Page Up / Down move a page at a time.",
       "groupTrim": "Silence editor",
-      "groupTrimHint": "Only while a cut has focus"
+      "groupTrimHint": "Only while a cut has focus",
+      "groupTrackList": "Track list",
+      "groupTrackListHint": "Only while a row has focus"
     },
     "stats": {
       "count": "conversions",

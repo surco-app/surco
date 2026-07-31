@@ -605,7 +605,9 @@
       "conflict": "Dos comandos comparten un atajo. Resuélvelo para guardar.",
       "fixedNav": "Siempre activas (no reasignables): ↑↓ o j / k recorren la lista de pistas y los resultados de Discogs, Inicio / Fin van a los extremos y Re Pág / Av Pág saltan de página.",
       "groupTrim": "Editor de silencios",
-      "groupTrimHint": "Solo con el foco en un corte"
+      "groupTrimHint": "Solo con el foco en un corte",
+      "groupTrackList": "Lista de pistas",
+      "groupTrackListHint": "Solo con el foco en una fila"
     },
     "stats": {
       "count": "conversiones",

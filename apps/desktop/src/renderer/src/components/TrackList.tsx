@@ -280,6 +280,10 @@ const TrackRow = memo(function TrackRow({
           else rowRegistry.current.delete(t.id)
         }}
         data-testid="track-row"
+        // El ámbito vive en la fila y no en un contenedor de la lista porque solo aquí se
+        // maneja esta tecla: capturarla sobre el resto de controles la dejaría muerta en
+        // vez de caer a su comando global.
+        data-shortcut-scope="track-list"
         role="option"
         aria-selected={selected}
         // The rows are real DOM (content-visibility, not windowing), but a screen reader
@@ -292,7 +296,7 @@ const TrackRow = memo(function TrackRow({
         onClick={(e) => onSelect(t.id, { meta: e.metaKey || e.ctrlKey, shift: e.shiftKey })}
         onKeyDown={(e) => {
           const chord = eventToChord(e, isMac)
-          if (chord && matchChord(bindings, chord, false, null) === 'track-menu') {
+          if (chord && matchChord(bindings, chord, false, 'track-list') === 'track-menu') {
             e.preventDefault()
             // The menu is positioned in pixels because it's normally born from a right
             // click; from the keyboard there are none, so anchor it to the row's own

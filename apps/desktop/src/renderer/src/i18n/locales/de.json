@@ -605,7 +605,9 @@
       "conflict": "Zwei Befehle teilen sich ein Kürzel. Lös den Konflikt, um zu speichern.",
       "fixedNav": "Immer aktiv (nicht änderbar): ↑↓ oder j / k bewegen sich durch die Trackliste und die Discogs-Ergebnisse, Pos1 / Ende springen an die Enden und Bild ↑ / Bild ↓ blättern seitenweise.",
       "groupTrim": "Stille-Editor",
-      "groupTrimHint": "Nur solange ein Schnitt fokussiert ist"
+      "groupTrimHint": "Nur solange ein Schnitt fokussiert ist",
+      "groupTrackList": "Trackliste",
+      "groupTrackListHint": "Nur solange eine Zeile fokussiert ist"
     },
     "stats": {
       "count": "Konvertierungen",

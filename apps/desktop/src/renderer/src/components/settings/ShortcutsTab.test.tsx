@@ -8,7 +8,11 @@ vi.hoisted(() => {
   ;(globalThis.window as unknown as { api: unknown }).api = { platform: 'darwin' }
 })
 
-import { findConflicts, resolveBindings } from '../../../../shared/shortcutDefaults'
+import {
+  findConflicts,
+  resolveBindings,
+  SHORTCUT_DEFAULTS,
+} from '../../../../shared/shortcutDefaults'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import '../../i18n'
 import { ShortcutsTab } from './ShortcutsTab'
@@ -41,5 +45,22 @@ describe('ShortcutsTab trim group', () => {
     renderTab()
     const trimGroup = screen.getByTestId('shortcut-group-trim')
     expect(trimGroup.querySelector('[data-testid="shortcut-row-play"]')).toBeNull()
+  })
+})
+
+// Un comando con ámbito propio no puede desaparecer del tab: si no tiene fila, el usuario
+// no puede reasignarlo, y reasignarlo es justo lo que necesita quien no tiene la tecla.
+describe('ShortcutsTab agrupa por ámbito', () => {
+  it('lista los comandos de la lista de pistas en su propio grupo', () => {
+    renderTab()
+    const group = screen.getByTestId('shortcut-group-track-list')
+    expect(group.querySelector('[data-testid="shortcut-row-track-menu"]')).not.toBeNull()
+  })
+
+  it('da una fila a cada comando de la tabla', () => {
+    renderTab()
+    for (const def of SHORTCUT_DEFAULTS) {
+      expect(screen.getByTestId(`shortcut-row-${def.id}`)).toBeInTheDocument()
+    }
   })
 })

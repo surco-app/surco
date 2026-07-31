@@ -605,7 +605,9 @@
       "conflict": "Dois comandos compartilham um atalho. Resolva para salvar.",
       "fixedNav": "Sempre ativos (não reatribuíveis): ↑↓ ou j / k percorrem a lista de faixas e os resultados do Discogs, Home / End vão para as extremidades e Page Up / Down pulam uma página.",
       "groupTrim": "Editor de silêncio",
-      "groupTrimHint": "Somente com o foco em um corte"
+      "groupTrimHint": "Somente com o foco em um corte",
+      "groupTrackList": "Lista de faixas",
+      "groupTrackListHint": "Somente com o foco em uma linha"
     },
     "stats": {
       "count": "conversões",
