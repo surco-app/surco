@@ -207,6 +207,7 @@
     "rename": "Gerar nome do arquivo…",
     "shortcuts": "Atalhos de teclado…",
     "selectAll": "Selecionar tudo",
+    "trackMenu": "Abrir o menu da faixa",
     "fillAll": "Preencher tudo a partir do nome",
     "deriveTags": "Preencher metadados do nome",
     "numberTracks": "Numerar faixas na ordem da lista",
@@ -226,7 +227,12 @@
     "activity": "Ver atividade",
     "toggleLanguage": "Trocar idioma (inglês / espanhol)",
     "toggleTheme": "Trocar tema (sistema / claro / escuro)",
-    "confetti": "Soltar confete 🎉"
+    "confetti": "Soltar confete 🎉",
+    "trimNudgeBack": "Mover o corte para trás",
+    "trimNudgeForward": "Mover o corte para frente",
+    "trimAudition": "Ouvir o corte",
+    "trimClear": "Remover o corte",
+    "trimApply": "Aplicar o silêncio detectado"
   },
   "trackList": {
     "label": "Faixas",
@@ -505,6 +511,7 @@
     "estimateNonePill": "Sem clicks",
     "waveTitle": "Cliques encontrados",
     "markLabel": "Clique em {{sec}} s — ir para cá",
+    "playheadLabel": "Posição de reprodução",
     "unscanned": "Analisados os primeiros {{minutes}} minutos; cliques posteriores não são marcados.",
     "preview": "Ouvir o resultado",
     "previewHint": "Renderiza esta faixa com o reparo aplicado, para você comparar com o original enquanto toca. A faixa inteira, para conferir o reparo em cada clique.",
@@ -596,7 +603,11 @@
       "reset": "Restaurar o padrão",
       "resetAll": "Restaurar tudo",
       "conflict": "Dois comandos compartilham um atalho. Resolva para salvar.",
-      "fixedNav": "Sempre ativos (não reatribuíveis): ↑↓ ou j / k percorrem a lista de faixas e os resultados do Discogs, Home / End vão para as extremidades e Page Up / Down pulam uma página."
+      "fixedNav": "Sempre ativos (não reatribuíveis): ↑↓ ou j / k percorrem a lista de faixas e os resultados do Discogs, Home / End vão para as extremidades e Page Up / Down pulam uma página.",
+      "groupTrim": "Editor de silêncio",
+      "groupTrimHint": "Somente com o foco em um corte",
+      "groupTrackList": "Lista de faixas",
+      "groupTrackListHint": "Somente com o foco em uma linha"
     },
     "stats": {
       "count": "conversões",

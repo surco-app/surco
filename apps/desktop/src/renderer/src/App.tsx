@@ -1639,6 +1639,7 @@ export default function App(): React.JSX.Element {
                               ? 'aiff'
                               : (settings?.outputFormat ?? 'aiff')
                           }
+                          bindings={bindings}
                           onSelect={onSelectTrack}
                           onActivate={toggleTrack}
                           onRemove={removeFromList}
@@ -1726,6 +1727,7 @@ export default function App(): React.JSX.Element {
                         onCopyFilename={onCopyFilename}
                         onSearchWeb={onSearchWeb}
                         onExportCollection={onOpenExport}
+                        bindings={bindings}
                       />
                     </Suspense>
                   </ErrorBoundary>

@@ -676,11 +676,16 @@ it('reconoce F10 como tecla ligable', () => {
 
 - [ ] **Step 4: Abrir el menú desde el `onKeyDown` de la fila**
 
+El chord se lee de las **bindings**, nunca con una comparación literal de `F10`: `track-menu` sale en el tab de Shortcuts y debe seguir funcionando cuando el usuario lo rebindea (el macropad de djotas probablemente no emite F10). Es el mismo mecanismo que la Task 3.
+
+`TrackList` no recibe hoy las bindings: se cablean por props desde `App.tsx:983` (el `Map` ya memoizado) igual que en la Task 3, atravesando `TrackList` hasta la fila. Prop nueva `bindings: Map<string, Chord>` en el componente de lista y en el de fila.
+
 En `TrackList.tsx`, ampliar el `onKeyDown` de la fila (líneas 283-290). El manejo actual de ⌫/Supr se conserva intacto; se añade antes:
 
 ```tsx
 onKeyDown={(e) => {
-  if (e.key === 'F10' && e.shiftKey) {
+  const chord = eventToChord(e, isMac)
+  if (chord && matchChord(bindings, chord, false, null) === 'track-menu') {
     e.preventDefault()
     // El menú se posiciona en píxeles porque nace de un clic derecho; desde el teclado
     // lo anclamos a la esquina inferior izquierda de la propia fila.
@@ -696,9 +701,11 @@ onKeyDown={(e) => {
 }}
 ```
 
+Importar `eventToChord` de `../../../shared/shortcuts`, `matchChord` de `../../../shared/shortcutDefaults` e `isMacOS` de `../lib/platform`.
+
 > El `preventDefault` hace que el listener global se aparte (`useKeyboardShortcuts.ts:38`), así que la fila gana. Se replica la regla del clic derecho (líneas 294-296): si la fila no está en la selección, se selecciona antes de abrir, para que las acciones de una sola pista no sean ambiguas.
 >
-> `track-menu` queda declarado en `SHORTCUT_DEFAULTS` para que salga en el tab de Shortcuts y sea rebindeable, pero quien lo ejecuta es la fila enfocada. Si se rebindea, esta comparación literal de `F10` deja de reflejarlo: leer el chord de las bindings con `matchChord(bindings, chord, false, null) === 'track-menu'` como en la Task 3, pasando las bindings a `TrackList` si no las recibe ya.
+> El ámbito es `null` (global) a propósito: `track-menu` no declara `scope`, y la fila solo lo ejecuta porque es quien conoce sus propias coordenadas.
 
 - [ ] **Step 5: Añadir el título a los locales**
 
@@ -856,6 +863,7 @@ Sin push: el push lo decide el usuario.
 
 **Riesgos anotados, no ocultos:**
 - Task 6 depende de que `keyToken` acepte F10; hoy devuelve `null` para las F-keys, así que el Step 3 añade `F10: 'f10'` a `NAMED` **antes** de declarar el comando. Sin eso el chord nunca casaría.
+- Tasks 3 y 6 cablean ambas `bindings` por props desde `App.tsx:983`, a ramas distintas del árbol (`Editor`→`TrimSection`→`Lane` y `TrackList`→fila). La 3 va primero; la 6 no puede dar por hecho que su rama ya esté hecha.
 - Task 3 requiere cablear `bindings` por props desde `App` hasta `Lane`: `TrimSection` no recibe hoy ni los ajustes ni las bindings. Verificado, y resuelto en el Step 4 reutilizando el `Map` memoizado de `App.tsx:983` en vez de reconstruirlo.
 - Los valores de paso de la Task 7 (10 ms / 250 ms) son un punto de partida a ajustar probando, no una medida verificada.
 

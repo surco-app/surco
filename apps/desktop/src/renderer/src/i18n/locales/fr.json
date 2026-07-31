@@ -207,6 +207,7 @@
     "rename": "Composer le nom du fichier…",
     "shortcuts": "Raccourcis clavier…",
     "selectAll": "Tout sélectionner",
+    "trackMenu": "Ouvrir le menu du morceau",
     "fillAll": "Remplir tous les tags depuis le nom du fichier",
     "deriveTags": "Remplir les métadonnées depuis le nom",
     "numberTracks": "Numéroter les morceaux dans l'ordre de la liste",
@@ -226,7 +227,12 @@
     "activity": "Afficher l'activité",
     "toggleLanguage": "Changer de langue (anglais / espagnol)",
     "toggleTheme": "Changer de thème (système / clair / sombre)",
-    "confetti": "Lancer des confettis 🎉"
+    "confetti": "Lancer des confettis 🎉",
+    "trimNudgeBack": "Déplacer la coupe vers l'arrière",
+    "trimNudgeForward": "Déplacer la coupe vers l'avant",
+    "trimAudition": "Écouter la coupe",
+    "trimClear": "Supprimer la coupe",
+    "trimApply": "Appliquer le silence détecté"
   },
   "trackList": {
     "label": "Morceaux",
@@ -505,6 +511,7 @@
     "estimateNonePill": "Aucun clic",
     "waveTitle": "Clics détectés",
     "markLabel": "Clic à {{sec}} s — aller ici",
+    "playheadLabel": "Position de lecture",
     "unscanned": "Les {{minutes}} premières minutes ont été analysées ; les clics suivants ne sont pas marqués.",
     "preview": "Écouter le résultat",
     "previewHint": "Rend ce morceau avec la réparation appliquée, pour le comparer à l’original pendant la lecture. Le morceau entier, afin de vérifier la réparation sur chaque clic.",
@@ -596,7 +603,11 @@
       "reset": "Rétablir la valeur par défaut",
       "resetAll": "Tout rétablir",
       "conflict": "Deux commandes partagent un raccourci. Résous-le pour enregistrer.",
-      "fixedNav": "Toujours actives (non modifiables) : ↑↓ ou j / k parcourent la liste des morceaux et les résultats Discogs, Début / Fin vont aux extrémités, et Page haut / bas avancent d'une page."
+      "fixedNav": "Toujours actives (non modifiables) : ↑↓ ou j / k parcourent la liste des morceaux et les résultats Discogs, Début / Fin vont aux extrémités, et Page haut / bas avancent d'une page.",
+      "groupTrim": "Éditeur de silences",
+      "groupTrimHint": "Seulement quand une coupe a le focus",
+      "groupTrackList": "Liste des morceaux",
+      "groupTrackListHint": "Seulement quand une ligne a le focus"
     },
     "stats": {
       "count": "conversions",

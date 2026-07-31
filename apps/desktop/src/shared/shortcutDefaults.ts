@@ -7,10 +7,13 @@ import { type Chord, chordEquals } from './shortcuts'
 // `suppressWhileTyping` keeps a mod-combo from firing while a text field is focused —
 // only ⌘⌫ (remove) needs it, so ⌫ stays a backspace mid-edit instead of deleting the
 // track. Bare-key chords are always suppressed while typing regardless of this flag.
-interface ShortcutDef {
+export interface ShortcutDef {
   id: string
   chord: Chord
   suppressWhileTyping?: boolean
+  // Limita el comando al ámbito con ese nombre: solo dispara cuando el foco está dentro
+  // de un `[data-shortcut-scope]` que coincide. Sin scope el comando es global.
+  scope?: string
 }
 
 export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
@@ -34,6 +37,14 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   // text inside a field; the rest are mod-combos that stay live while editing, matching
   // rename (⌘⇧R) and the other toolbar shortcuts.
   { id: 'select-all', chord: ['mod', 'a'], suppressWhileTyping: true },
+  // Shift+F10 is the Windows/Linux convention for a context menu; macOS has no
+  // convention of its own, so we share it. Without it, four menu actions (copy/paste
+  // metadata, start over, copy path) have no keyboard path at all.
+  //
+  // Con ámbito porque quien lo ejecuta es el onKeyDown de la fila (necesita sus
+  // coordenadas para colocar el menú), no el registro de comandos: como global, una
+  // reasignación a ⌘P mataría esa tecla en toda la app sin ejecutar nada.
+  { id: 'track-menu', chord: ['shift', 'f10'], scope: 'track-list' },
   { id: 'fill-all', chord: ['mod', 'shift', 'f'] },
   // The editor's own Tag (fill selection from file name) and Eraser (clear selection) buttons,
   // as chords so the keyboard flow reaches them without a ⌘K detour. Mod-combos with no typing
@@ -57,6 +68,14 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   { id: 'focus-list', chord: ['mod', '1'] },
   { id: 'focus-matches', chord: ['mod', '2'] },
   { id: 'focus-editor', chord: ['mod', '3'] },
+  // Editor de silencios. Teclas sueltas sin modificador: solo viven con el foco en un
+  // handle de corte, así que no compiten con nada global — y un macropad manda teclas
+  // limpias, no combos.
+  { id: 'trim-nudge-back', chord: ['left'], scope: 'trim' },
+  { id: 'trim-nudge-forward', chord: ['right'], scope: 'trim' },
+  { id: 'trim-audition', chord: ['a'], scope: 'trim' },
+  { id: 'trim-clear', chord: ['c'], scope: 'trim' },
+  { id: 'trim-apply', chord: ['s'], scope: 'trim' },
 ]
 
 // The effective binding per command id: defaults with the user's overrides applied. An
@@ -76,28 +95,40 @@ export function resolveBindings(overrides: Record<string, Chord> = {}): Map<stri
 // is deterministic (first match wins) even if two commands share a chord. Respects the
 // typing guard: while a field is focused, bare-key chords and `suppressWhileTyping`
 // commands don't fire, but other mod-combos do.
+//
+// The active scope's commands are matched BEFORE the global ones, so a scoped binding
+// beats a global that shares its chord: ← is seek-back everywhere, but inside the
+// silence editor it nudges the cut. Without that precedence the table's order would
+// decide, and seek-back is declared first.
 export function matchChord(
   bindings: Map<string, Chord>,
   chord: Chord,
   typing: boolean,
+  scope: string | null = null,
 ): string | null {
   const hasMod = chord.includes('mod')
-  for (const def of SHORTCUT_DEFAULTS) {
-    const bound = bindings.get(def.id)
-    if (!bound || bound.length === 0 || !chordEquals(bound, chord)) continue
-    if (typing && (!hasMod || def.suppressWhileTyping)) return null
-    return def.id
+  const match = (wantScoped: boolean): string | null => {
+    for (const def of SHORTCUT_DEFAULTS) {
+      const bound = bindings.get(def.id)
+      if (!bound || bound.length === 0 || !chordEquals(bound, chord)) continue
+      if (def.scope && def.scope !== scope) continue
+      if (Boolean(def.scope) !== wantScoped) continue
+      if (typing && (!hasMod || def.suppressWhileTyping)) return null
+      return def.id
+    }
+    return null
   }
-  return null
+  return (scope !== null ? match(true) : null) ?? match(false)
 }
 
 // Groups of command ids that resolve to the same chord — used by the Shortcuts tab to
 // flag a clash before it's saved. Unbound (`[]`) commands are ignored.
 export function findConflicts(bindings: Map<string, Chord>): string[][] {
+  const scopeOf = new Map(SHORTCUT_DEFAULTS.map((d) => [d.id, d.scope ?? '']))
   const byChord = new Map<string, string[]>()
   for (const [id, chord] of bindings) {
     if (chord.length === 0) continue
-    const key = chord.join('+')
+    const key = `${scopeOf.get(id) ?? ''}:${chord.join('+')}`
     const ids = byChord.get(key) ?? []
     ids.push(id)
     byChord.set(key, ids)

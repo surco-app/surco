@@ -11,10 +11,13 @@ import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { mediaUrl } from '../../../shared/media'
+import { matchChord } from '../../../shared/shortcutDefaults'
+import { type Chord, eventToChord } from '../../../shared/shortcuts'
 import type { TrimRange, WaveformResult } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
 import { useWaveformWindow } from '../hooks/useWaveformWindow'
+import { isMacOS } from '../lib/platform'
 import { detectOnsets, detectTrim, refineOnset } from '../lib/trim'
 import { drawWaveform } from '../lib/waveform'
 import { SectionHeader } from './SectionHeader'
@@ -66,12 +69,15 @@ const COARSE_STEP_SEC = 0.1
 const LANE_RASTER = 1200
 const LANE_H = 96
 
+const isMac = isMacOS()
+
 interface Props {
   value: TrimRange | undefined
   open: boolean
   onToggle: () => void
   onChange: (trim: TrimRange | undefined) => void
   inputPath: string
+  bindings: Map<string, Chord>
 }
 
 function cutSeconds(seconds: number): string {
@@ -97,6 +103,7 @@ function Lane({
   suggestionSec,
   snapped,
   grabbed,
+  bindings,
   onPointerDown,
   onPointerMove,
   onWheelPan,
@@ -126,6 +133,7 @@ function Lane({
   suggestionSec: number | undefined
   snapped: boolean
   grabbed: boolean
+  bindings: Map<string, Chord>
   onPointerDown: (e: React.PointerEvent) => void
   onPointerMove: (e: React.PointerEvent) => void
   onWheelPan: (deltaX: number) => void
@@ -148,6 +156,7 @@ function Lane({
   // Edits as text and commits on blur/Enter, so a half-typed "40" never becomes a
   // 40-second cut mid-keystroke.
   const [timeText, setTimeText] = useState<string | null>(null)
+  const [focused, setFocused] = useState(false)
   function commitTime(): void {
     const text = timeText
     setTimeText(null)
@@ -386,12 +395,19 @@ function Lane({
           {cutOnScreen && (
             <div
               data-testid={`trim-handle-${side}`}
+              // El ámbito vive en el handle y no en la sección porque solo aquí se
+              // manejan estas teclas: en el resto de la sección capturarlas las dejaría
+              // muertas en vez de caer a su comando global.
+              data-shortcut-scope="trim"
+              data-focused={focused || undefined}
               role="slider"
               aria-label={tr(side === 'start' ? 'trim.handleStart' : 'trim.handleEnd')}
               aria-valuemin={0}
               aria-valuemax={Number(durationSec.toFixed(2))}
               aria-valuenow={Number(cut.toFixed(2))}
               tabIndex={0}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
               // Keyboard focus lights the handle's own line and dot instead of drawing
               // a box around it: an outline on a strip this thin and tall read as a
               // stray rectangle, and the arrows (which need the handle focused) made it
@@ -402,12 +418,31 @@ function Lane({
               className="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-ew-resize touch-none outline-none focus-visible:shadow-none"
               style={{ left: `${Math.max(0, Math.min(100, pct(cut)))}%` }}
               onKeyDown={(e) => {
-                if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+                const chord = eventToChord(e, isMac)
+                if (!chord) return
+                // Matched as pressed first, so a command deliberately rebound to a
+                // shift chord (⇧A for trim-audition on a macro keyboard) still fires.
+                // Only when that fails does Shift get treated as a modifier on the step
+                // size rather than part of the chord — ⇧← has no ['shift','left']
+                // binding, so it falls back to ['left'] and still nudges, just coarse.
+                const bare = chord[0] === 'shift' ? chord.slice(1) : chord
+                const id =
+                  matchChord(bindings, chord, false, 'trim') ??
+                  matchChord(bindings, bare, false, 'trim')
+                if (!id) return
                 e.preventDefault()
-                // Shift is the coarse step; bare arrows do the fine one, matching the
-                // buttons either side of the readout.
                 const step = e.shiftKey ? COARSE_STEP_SEC : fineStepSec
-                onKeyStep(e.key === 'ArrowLeft' ? -step : step)
+                if (id === 'trim-nudge-back') onKeyStep(-step)
+                else if (id === 'trim-nudge-forward') onKeyStep(step)
+                else if (id === 'trim-audition' && cutSec !== undefined) onAudition()
+                else if (id === 'trim-clear' && cutSec !== undefined) onClear()
+                else if (
+                  id === 'trim-apply' &&
+                  cutSec === undefined &&
+                  suggestionSec !== undefined
+                ) {
+                  onApplySuggestion(suggestionSec)
+                }
               }}
               onPointerDown={(e) => {
                 e.stopPropagation()
@@ -428,13 +463,13 @@ function Lane({
               <span
                 aria-hidden="true"
                 data-testid={snapped ? `trim-snapped-${side}` : undefined}
-                className={`absolute inset-y-0 left-1/2 w-px bg-accent group-focus-visible:shadow-[0_0_4px_var(--color-accent)] ${
+                className={`absolute inset-y-0 left-1/2 w-px bg-accent group-data-[focused]:shadow-[0_0_4px_var(--color-accent)] ${
                   snapped ? 'shadow-[0_0_8px_2px_var(--color-accent)]' : ''
                 }`}
               />
               <span
                 aria-hidden="true"
-                className={`absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent group-focus-visible:scale-125 group-focus-visible:shadow-[0_0_4px_var(--color-accent)] ${
+                className={`absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent group-data-[focused]:scale-125 group-data-[focused]:shadow-[0_0_4px_var(--color-accent)] ${
                   snapped ? 'scale-150 shadow-[0_0_8px_var(--color-accent)]' : ''
                 }`}
               />
@@ -486,6 +521,7 @@ export function TrimSection({
   onToggle,
   onChange,
   inputPath,
+  bindings,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // The waveform decodes the full file, so it waits for the selection to rest and
@@ -863,6 +899,7 @@ export function TrimSection({
       suggestionSec: which === 'start' ? suggestion?.startSec : suggestion?.endSec,
       snapped: snapped && dragging.current === which,
       grabbed: draft !== null,
+      bindings,
       onPointerDown: (e: React.PointerEvent) => {
         dragging.current = which
         ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
@@ -898,7 +935,10 @@ export function TrimSection({
   }
 
   return (
-    <div data-testid="editor-trim" className="mt-5 border-t border-[var(--color-line)] pt-5">
+    <div
+      data-testid="editor-trim"
+      className="mt-5 border-t border-[var(--color-line)] pt-5"
+    >
       <SectionHeader
         sectionId="trim"
         title={tr('trim.title')}

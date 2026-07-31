@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import type { Chord } from '../../../shared/shortcuts'
 import { type Command, runCommand } from '../lib/commands'
-import { isTypingTarget, keyToCommandId } from '../lib/keymap'
+import { activeScope, isTypingTarget, keyToCommandId } from '../lib/keymap'
 import { runKeyClaim } from '../lib/spaceClaim'
 import { useLatest } from './useLatest'
 
@@ -56,7 +56,7 @@ export function useKeyboardShortcuts(params: Params): void {
         return
       }
       const typing = isTypingTarget(document.activeElement)
-      const id = keyToCommandId(e, typing, p.bindings, p.isMac)
+      const id = keyToCommandId(e, typing, p.bindings, p.isMac, activeScope(document.activeElement))
       if (!id) return
       // A section with its own transport (click repair's audition) claims Space
       // while it is open, so one press never starts BOTH its check and the
