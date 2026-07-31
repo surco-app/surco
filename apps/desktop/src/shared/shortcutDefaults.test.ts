@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { findConflicts, matchChord, resolveBindings } from './shortcutDefaults'
+import { buildCommands, type CommandDeps } from '../renderer/src/lib/commands'
+import { findConflicts, matchChord, resolveBindings, SHORTCUT_DEFAULTS } from './shortcutDefaults'
 
 describe('resolveBindings', () => {
   it('returns the defaults when there are no overrides', () => {
@@ -158,4 +159,38 @@ describe('findConflicts con ámbito', () => {
     ])
     expect(findConflicts(bindings)).toEqual([['trim-audition', 'trim-clear']])
   })
+})
+
+// Las dos regresiones de esta rama fueron el mismo defecto: una tecla que matchChord
+// resuelve pero que nadie ejecuta, así que preventDefault la mata sin hacer nada. Un
+// comando sin scope lo ejecuta el listener global vía runCommand, luego TIENE que estar
+// en el registro; uno con scope lo ejecuta el onKeyDown del componente de ese ámbito.
+describe('cada atajo lo ejecuta alguien', () => {
+  // buildCommands solo lee sus deps para decidir enabled/run, así que unas dependencias
+  // inertes bastan para extraer los ids que el registro declara.
+  const registeredIds = new Set(
+    buildCommands(
+      new Proxy({} as CommandDeps, {
+        get: (_t, key) => {
+          if (key === 'tr' || key === 'hintFor') return () => ''
+          if (key === 'platform') return 'darwin'
+          if (key === 'titleFormatSet' || key === 'playerVisible' || key === 'batching')
+            return false
+          if (key === 'selected' || key === 'settings' || key === 'analysis') return null
+          if (key === 'matching') return null
+          if (key === 'selectedTracksCount' || key === 'autoMatchable') return 0
+          if (key === 'tracks' || key === 'visibleTracks' || key === 'bulkTracks') return []
+          if (key.toString().endsWith('Ref')) return { current: null }
+          return () => undefined
+        },
+      }),
+    ).map((c) => c.id),
+  )
+
+  for (const def of SHORTCUT_DEFAULTS) {
+    if (def.scope) continue
+    it(`registra el comando global '${def.id}' para que runCommand lo encuentre`, () => {
+      expect(registeredIds).toContain(def.id)
+    })
+  }
 })
