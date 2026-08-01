@@ -135,6 +135,12 @@ describe('chordToAccelerator', () => {
     expect(chordToAccelerator(['space'])).toBe('Space')
     expect(chordToAccelerator(['down'])).toBe('Down')
   })
+
+  it('traduce alt y ctrl al acelerador de Electron', () => {
+    expect(chordToAccelerator(['alt', 'e'])).toBe('Alt+E')
+    expect(chordToAccelerator(['ctrl', 'e'])).toBe('Control+E')
+    expect(chordToAccelerator(['mod', 'alt', 'shift', 'e'])).toBe('CmdOrCtrl+Alt+Shift+E')
+  })
 })
 
 describe('chordEquals', () => {

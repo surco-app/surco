@@ -99,6 +99,8 @@ export function chordEquals(a: Chord, b: Chord): boolean {
 // label shown in the menu (built with registerAccelerator:false).
 const ACCEL: Record<string, string> = {
   mod: 'CmdOrCtrl',
+  alt: 'Alt',
+  ctrl: 'Control',
   shift: 'Shift',
   enter: 'Enter',
   backspace: 'Backspace',
