@@ -97,12 +97,7 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
       const png = renderStatsImage({
         title: tr('settings.stats.shareTitle'),
         conversionCount,
-        countLabel: tr('settings.stats.count'),
-        milestoneLabel:
-          milestone !== null
-            ? tr('settings.stats.milestone', { milestone, remaining: milestone - conversionCount })
-            : null,
-        milestoneFraction: milestone !== null ? conversionCount / milestone : null,
+        countLabel: tr('settings.stats.shareHeroLabel'),
         cells: statsImageCells(stats).map(({ key, value }) => ({
           value,
           label: tr(`settings.stats.${key}`),

@@ -644,9 +644,10 @@
       "empty": "Nothing converted yet. Once you start, you'll see how much time Surco saves you here.",
       "donateCta": "Donate with PayPal",
       "share": "Share image",
-      "shareTitle": "My music in numbers",
-      "shareFooter": "Made with Surco — getsurco.app",
-      "roiDonate": "If Surco saves you time, support it — it costs money to build and run"
+      "shareTitle": "My collection in numbers",
+      "shareFooter": "Get your music ready · getsurco.app",
+      "roiDonate": "If Surco saves you time, support it — it costs money to build and run",
+      "shareHeroLabel": "tracks converted and tagged"
     },
     "theme": "Appearance",
     "themes": {

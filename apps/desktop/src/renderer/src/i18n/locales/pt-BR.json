@@ -644,9 +644,10 @@
       "empty": "Nada convertido ainda. Quando você começar, verá aqui quanto tempo o Surco economiza.",
       "donateCta": "Doar com PayPal",
       "share": "Compartilhar imagem",
-      "shareTitle": "Minha música em números",
-      "shareFooter": "Feito com Surco — getsurco.app",
-      "roiDonate": "Se o Surco economiza seu tempo, apoie — desenvolvê-lo custa dinheiro"
+      "shareTitle": "Minha coleção em números",
+      "shareFooter": "Prepare sua música · getsurco.app",
+      "roiDonate": "Se o Surco economiza seu tempo, apoie — desenvolvê-lo custa dinheiro",
+      "shareHeroLabel": "faixas convertidas e etiquetadas"
     },
     "theme": "Aparência",
     "themes": {
