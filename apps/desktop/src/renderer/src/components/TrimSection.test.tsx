@@ -785,6 +785,38 @@ describe('TrimSection', () => {
   // mueve — y lo que el modelo anterior (actuar sobre el tirador enfocado) no daba: había
   // que pinchar antes el corte, un paso invisible que se leía como "las teclas no van".
   describe('claimed keys with no focus', () => {
+    // Ajustar la lupa es parte del recorte, no un paso aparte: se acerca para colocar el
+    // corte al milisegundo y se aleja para ver dónde cae dentro de la pista. Sin tecla
+    // había que ir al ratón en mitad de un flujo que ya era de teclado.
+    it('acerca y aleja la vista de cada lado con su propia tecla', async () => {
+      render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+      const lane = await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
+      const ventana = (): number => {
+        const [from, to] = (lane.getAttribute('data-window') ?? '0-0').split('-').map(Number)
+        return to - from
+      }
+      const inicial = ventana()
+      act(() => {
+        runKeyClaim('trim-start-zoom-in', {})
+      })
+      expect(ventana()).toBeLessThan(inicial)
+      act(() => {
+        runKeyClaim('trim-start-zoom-out', {})
+      })
+      expect(ventana()).toBe(inicial)
+    })
+
+    it('ajusta la lupa del lado de salida sin tocar la del de entrada', async () => {
+      render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+      const start = await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
+      const antes = start.getAttribute('data-window')
+      act(() => {
+        runKeyClaim('trim-end-zoom-in', {})
+      })
+      expect(start.getAttribute('data-window')).toBe(antes)
+      expect(screen.getByTestId('trim-lane-end').getAttribute('data-window')).not.toBe(antes)
+    })
+
     it('mueve el corte de entrada sin que nada tenga el foco', async () => {
       const onChange = vi.fn()
       render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findConflicts, matchChord, resolveBindings } from './shortcutDefaults'
+import { findConflicts, matchChord, resolveBindings, SHORTCUT_DEFAULTS } from './shortcutDefaults'
 
 describe('resolveBindings', () => {
   it('returns the defaults when there are no overrides', () => {
@@ -137,6 +137,21 @@ describe('matchChord con ámbito', () => {
     ])
     expect(matchChord(bindings, ['left'], false, 'track-list')).toBe('track-menu')
     expect(matchChord(bindings, ['left'], false, null)).toBe('seek-back')
+  })
+})
+
+// j/k (y Home/End/RePág/AvPág) son alias fijos de navegación por la lista: no se
+// configuran ni salen en Ajustes, así que un chord por defecto que los pise gana en la
+// tabla y deja al alias sin efecto, en silencio. Pasó con la lupa del recorte, que
+// arrancó en 'k' y se comía "pista anterior".
+describe('los alias fijos de lista', () => {
+  const FIJOS = ['j', 'k', 'home', 'end', 'pageup', 'pagedown']
+
+  it('no los pisa ningún atajo por defecto', () => {
+    const pisados = SHORTCUT_DEFAULTS.filter(
+      (d) => d.chord.length === 1 && FIJOS.includes(d.chord[0]),
+    ).map((d) => d.id)
+    expect(pisados).toEqual([])
   })
 })
 

@@ -238,7 +238,11 @@
     "trimEndClear": "Remover o corte final",
     "trimApply": "Aplicar o silêncio detectado",
     "sectionNext": "Ir para a próxima seção",
-    "sectionPrev": "Ir para a seção anterior"
+    "sectionPrev": "Ir para a seção anterior",
+    "trimStartZoomIn": "Aproximar o corte inicial",
+    "trimStartZoomOut": "Afastar o corte inicial",
+    "trimEndZoomIn": "Aproximar o corte final",
+    "trimEndZoomOut": "Afastar o corte final"
   },
   "trackList": {
     "label": "Faixas",

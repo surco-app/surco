@@ -94,6 +94,15 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   { group: 'trim', id: 'trim-end-forward', chord: ['p'] },
   { group: 'trim', id: 'trim-end-audition', chord: ['l'] },
   { group: 'trim', id: 'trim-end-clear', chord: ['.'] },
+  // La lupa de cada lado: acercar para colocar el corte al milisegundo, alejar para ver
+  // dónde cae dentro de la pista. Es parte del recorte, no un paso aparte, así que sin
+  // tecla obligaba a ir al ratón en mitad de un flujo que ya era de teclado.
+  { group: 'trim', id: 'trim-start-zoom-in', chord: ['e'] },
+  { group: 'trim', id: 'trim-start-zoom-out', chord: ['d'] },
+  { group: 'trim', id: 'trim-end-zoom-in', chord: ['i'] },
+  // ',' y no 'k': la k es alias fijo de "pista anterior" (vim), y queda junto al '.'
+  // que ya es del corte de salida.
+  { group: 'trim', id: 'trim-end-zoom-out', chord: [','] },
   // La detección propone los dos cortes a la vez, así que aplicarla es una sola acción.
   { group: 'trim', id: 'trim-apply', chord: ['s'] },
 ]
