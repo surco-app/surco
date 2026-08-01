@@ -158,6 +158,26 @@ describe('Tooltip', () => {
     }
   })
 
+  // A pointerenter can arrive with no coordinates on it (a synthesized event, a
+  // pointer type that reports none). Reading them blind put `undefined + OFFSET`
+  // into the style as NaN, which the browser drops — stranding the tooltip at the
+  // viewport origin instead of next to the control it belongs to.
+  it('places itself even when the entering pointer carries no coordinates', () => {
+    vi.useFakeTimers()
+    try {
+      renderTooltip()
+      const trigger = screen.getByTestId('trigger')
+      trigger.dispatchEvent(new Event('pointerenter', { bubbles: true }))
+      act(() => vi.advanceTimersByTime(400))
+      const style = screen.getByRole('tooltip').getAttribute('style') ?? ''
+      expect(style).not.toContain('NaN')
+      expect(style).toContain('left')
+      expect(style).toContain('top')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   // 1.4.13 requires the hint be dismissable without moving the pointer or focus.
   it('dismisses on Escape while the trigger keeps focus', () => {
     renderTooltip()

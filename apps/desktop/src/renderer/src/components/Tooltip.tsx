@@ -61,11 +61,23 @@ export function Tooltip({
         timer = null
       }
     }
+    // A pointer event can reach us with no coordinates (a synthesized enter, a pointer
+    // type that reports none). Reading them blind put NaN into the style, which the
+    // browser drops — stranding the tooltip at the viewport origin — so fall back to
+    // the trigger's own box, the same anchor the keyboard path uses.
+    const anchor = (): { x: number; y: number } => {
+      const r = trigger.getBoundingClientRect()
+      return { x: r.left + r.width / 2, y: r.bottom }
+    }
     const onMove = (e: PointerEvent): void => {
-      last.x = e.clientX
-      last.y = e.clientY
+      const point =
+        Number.isFinite(e.clientX) && Number.isFinite(e.clientY)
+          ? { x: e.clientX, y: e.clientY }
+          : anchor()
+      last.x = point.x
+      last.y = point.y
       if (shown) {
-        showAt(e.clientX, e.clientY)
+        showAt(point.x, point.y)
         return
       }
       if (timer === null) {
@@ -126,8 +138,8 @@ export function Tooltip({
       if (pointerFocus) return
       clearTimer()
       shown = true
-      const r = trigger.getBoundingClientRect()
-      showAt(r.left + r.width / 2, r.bottom)
+      const { x, y } = anchor()
+      showAt(x, y)
     }
     const onKeyDown = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onLeave()
