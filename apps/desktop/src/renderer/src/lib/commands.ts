@@ -238,6 +238,28 @@ export interface CommandDeps {
   fireConfetti: () => void
 }
 
+// The id → group map, for surfaces that need to classify commands without being able to
+// build the registry (Settings' Shortcuts tab has no access to the app's state). Derived
+// from the registry itself rather than copied, so a new command is filed correctly with
+// no second list to keep in step. The deps are inert: `group` is declared literally on
+// every entry, so nothing here reads state.
+export function commandGroups(): Map<string, string> {
+  const inert = new Proxy({} as CommandDeps, {
+    get: (_t, key) => {
+      if (key === 'tr' || key === 'hintFor') return () => ''
+      if (key === 'platform') return 'darwin'
+      if (key === 'selected' || key === 'settings' || key === 'analysis' || key === 'matching')
+        return null
+      if (key === 'tracks' || key === 'visibleTracks' || key === 'bulkTracks') return []
+      if (String(key).endsWith('Ref')) return { current: null }
+      if (key === 'titleFormatSet' || key === 'playerVisible' || key === 'batching') return false
+      if (key === 'selectedTracksCount' || key === 'autoMatchable') return 0
+      return () => undefined
+    },
+  })
+  return new Map(buildCommands(inert).map((c) => [c.id, c.group]))
+}
+
 export function buildCommands(deps: CommandDeps): Command[] {
   const {
     tr,

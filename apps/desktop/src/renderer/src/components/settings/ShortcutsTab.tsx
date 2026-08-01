@@ -6,6 +6,7 @@ import { type Chord, chordEquals, eventToChord } from '../../../../shared/shortc
 import { isMacOS } from '../../lib/platform'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
+import { COMMAND_GROUP_ORDER, commandGroups } from '../../lib/commands'
 import { formatShortcut } from '../../lib/shortcuts'
 import { Tooltip } from '../Tooltip'
 
@@ -14,10 +15,25 @@ const isMac = isMacOS()
 // Los ámbitos presentes en la tabla, en su orden de declaración. Derivados y no listados a
 // mano para que un comando con ámbito nuevo salga en el tab sin tocar esto: sin fila no se
 // puede reasignar, que es justo lo que necesita quien no tiene su tecla.
-// Un comando se lista bajo su `group` si lo declara y, si no, bajo su `scope`: los dos
-// acotan la tecla, uno por sección abierta y otro por foco, y ninguno es global.
-const sectionOf = (d: ShortcutDef): string | undefined => d.group ?? d.scope
-const sections = [...new Set(SHORTCUT_DEFAULTS.map(sectionOf).filter((s) => s !== undefined))]
+// Cada fila se lista bajo lo que HACE el comando, no en una lista plana: doce filas
+// seguidas obligan a leerlas todas para encontrar una tecla. La clasificación se toma de
+// la paleta (⌘K), que ya reparte estos mismos comandos por función, para que la app tenga
+// una taxonomía y no dos. Los comandos que ejecuta un componente en vez del registro no
+// tienen grupo del que heredar y lo declaran en la tabla.
+const GROUPS = commandGroups()
+const sectionOf = (d: ShortcutDef): string => d.group ?? GROUPS.get(d.id) ?? 'app'
+// En el orden en que la paleta muestra sus secciones, para que las dos superficies se
+// lean igual; 'tracks' no aparece porque son los saltos a pista, que no son atajos. Los
+// grupos que la tabla declara por su cuenta (el editor de silencios: teclas que solo
+// actúan con la sección desplegada) van detrás, porque no describen una función de la
+// app sino DÓNDE vive la tecla, y eso se lee mejor al final que intercalado.
+const inPalette = COMMAND_GROUP_ORDER.filter((g) =>
+  SHORTCUT_DEFAULTS.some((d) => sectionOf(d) === g),
+)
+const ownGroups = [
+  ...new Set(SHORTCUT_DEFAULTS.map((d) => d.group).filter((g) => g !== undefined)),
+].filter((g) => !(COMMAND_GROUP_ORDER as string[]).includes(g))
+const sections = [...inPalette, ...ownGroups]
 
 // 'track-list' → settings.shortcuts.groupTrackList / groupTrackListHint. The hint's
 // qualifier goes at the END of the key: keying it as groupHintTrackList printed the raw
@@ -126,7 +142,6 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
           {tr('settings.shortcuts.resetAll')}
         </button>
       </div>
-      <div>{SHORTCUT_DEFAULTS.filter((d) => !sectionOf(d)).map(renderRow)}</div>
       {sections.map((scope) => (
         <div key={scope} data-testid={`shortcut-group-${scope}`} className="mt-4">
           <div className="mb-1 flex items-baseline gap-2">

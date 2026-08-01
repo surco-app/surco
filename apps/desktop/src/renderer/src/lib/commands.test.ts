@@ -5,6 +5,7 @@ import type { Settings } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import {
   buildCommands,
+  commandGroups,
   type Command,
   type CommandDeps,
   filterCommands,
@@ -648,6 +649,24 @@ describe('buildCommands bulk scope', () => {
       'auto-match',
     ).run()
     expect(enqueueAutoMatch).toHaveBeenCalledWith(bulk, false)
+  })
+})
+
+// Ajustes agrupa sus filas por lo que hace cada comando, y la fuente de esa taxonomía es
+// la misma que usa la paleta: una sola clasificación en toda la app en vez de dos que
+// acaben divergiendo. Este mapa es lo que el tab consulta.
+describe('commandGroups', () => {
+  it('devuelve el grupo declarado por cada comando', () => {
+    const g = commandGroups()
+    expect(g.get('process-current')).toBe('convert')
+    expect(g.get('play')).toBe('playback')
+    expect(g.get('focus-editor')).toBe('navigate')
+  })
+
+  // Se deriva del registro real, así que un comando nuevo aparece sin tocar nada más: si
+  // esto se copiara a mano, la copia envejecería en silencio.
+  it('cubre todos los comandos del registro', () => {
+    expect(commandGroups().size).toBeGreaterThan(40)
   })
 })
 

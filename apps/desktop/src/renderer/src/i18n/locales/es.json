@@ -615,7 +615,19 @@
       "groupTrackList": "Lista de pistas",
       "groupTrackListHint": "Solo con el foco en una fila",
       "groupEditor": "Editor",
-      "groupEditorHint": "Saltando entre secciones"
+      "groupEditorHint": "Saltando entre secciones",
+      "groupTags": "Etiquetas",
+      "groupTagsHint": "Metadatos de la pista",
+      "groupConvert": "Convertir",
+      "groupConvertHint": "Procesar y exportar",
+      "groupLibrary": "Biblioteca",
+      "groupLibraryHint": "Archivos y organización",
+      "groupPlayback": "Reproducción",
+      "groupPlaybackHint": "Escuchar la pista",
+      "groupNavigate": "Navegar",
+      "groupNavigateHint": "Moverse por la app",
+      "groupApp": "Aplicación",
+      "groupAppHint": "Ajustes y ventanas"
     },
     "stats": {
       "count": "conversiones",

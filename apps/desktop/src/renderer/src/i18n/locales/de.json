@@ -615,7 +615,19 @@
       "groupTrackList": "Trackliste",
       "groupTrackListHint": "Nur solange eine Zeile fokussiert ist",
       "groupEditor": "Editor",
-      "groupEditorHint": "Zwischen Abschnitten springen"
+      "groupEditorHint": "Zwischen Abschnitten springen",
+      "groupTags": "Tags",
+      "groupTagsHint": "Track-Metadaten",
+      "groupConvert": "Konvertieren",
+      "groupConvertHint": "Verarbeiten und exportieren",
+      "groupLibrary": "Bibliothek",
+      "groupLibraryHint": "Dateien und Ordnung",
+      "groupPlayback": "Wiedergabe",
+      "groupPlaybackHint": "Den Track anhören",
+      "groupNavigate": "Navigieren",
+      "groupNavigateHint": "Durch die App bewegen",
+      "groupApp": "App",
+      "groupAppHint": "Einstellungen und Fenster"
     },
     "stats": {
       "count": "Konvertierungen",
