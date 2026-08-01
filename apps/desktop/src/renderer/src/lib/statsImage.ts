@@ -158,6 +158,7 @@ export function renderStatsImage(input: StatsImageInput): string {
       ctx.font = '26px system-ui, sans-serif'
       ctx.fillText(input.perTrack, centerX, y + 138, WIDTH - PAD * 2 - 60)
     }
+    y += panelHeight
   }
 
   // The footer is the only thing that can turn a viewer into a user, so it reads as a
@@ -166,7 +167,7 @@ export function renderStatsImage(input: StatsImageInput): string {
   ctx.font = ctaFont
   const ctaWidth = Math.min(WIDTH - PAD * 2, ctx.measureText(input.footer).width + 76)
   const ctaHeight = 76
-  const ctaY = HEIGHT - 196
+  const ctaY = Math.min(HEIGHT - 196, y + 150)
   ctx.fillStyle = 'rgba(122, 162, 247, 0.12)'
   ctx.strokeStyle = 'rgba(122, 162, 247, 0.45)'
   ctx.lineWidth = 2
