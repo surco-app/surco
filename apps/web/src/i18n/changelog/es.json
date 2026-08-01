@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.79",
+    "date": "1 de agosto de 2026",
+    "title": "La lupa del recorte también va con el teclado",
+    "items": [
+      {
+        "text": "Acercar y alejar la vista de cada corte tiene ahora sus propias teclas, una pareja por lado. Ajustar la lupa es parte de recortar — se acerca para colocar el corte al milisegundo y se aleja para ver dónde cae dentro de la pista — así que era lo único del recorte que seguía obligando a coger el ratón.",
+        "in": "0.79.0"
+      },
+      {
+        "text": "La tarjeta de estadísticas que se puede compartir se queda con las cuatro cifras más altas en vez de listarlo todo, y está escrita para que la entienda alguien que no conoce Surco.",
+        "in": "0.79.0"
+      }
+    ]
+  },
+  {
     "version": "0.78",
     "date": "1 de agosto de 2026",
     "title": "Toda la conversión, de principio a fin, sin soltar el teclado",

@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.79",
+    "date": "August 1, 2026",
+    "title": "The trimmer's zoom works from the keyboard too",
+    "items": [
+      {
+        "text": "Zooming in and out on each cut now has its own keys, one pair per side. Setting the zoom is part of trimming — you zoom in to place the cut to the millisecond and out to see where it lands in the track — so it was the last part of the trimmer still forcing you back to the mouse.",
+        "in": "0.79.0"
+      },
+      {
+        "text": "The shareable stats card keeps the four biggest tallies instead of listing everything, and it now reads for someone who has never used Surco.",
+        "in": "0.79.0"
+      }
+    ]
+  },
+  {
     "version": "0.78",
     "date": "August 1, 2026",
     "title": "The whole conversion, start to finish, without leaving the keyboard",
