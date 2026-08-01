@@ -1,7 +1,8 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { tagFrame } from '../../lib/scenes'
+import { tagFrame, TAG_TOTAL } from '../../lib/scenes'
 import { useSceneProgress } from '../../lib/useSceneProgress'
+import AppFrame from './AppFrame'
 
 const MATCHES = [
   { title: 'When I Fall In Love', meta: '1995 · Factory Team · FT-012', src: 'Discogs' },
@@ -15,7 +16,9 @@ const MATCHES = [
 export default function TagScene() {
   const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
-  const frame = tagFrame(useSceneProgress(ref, 5200))
+  const progress = useSceneProgress(ref, 5200)
+  const frame = tagFrame(progress)
+  const done = progress >= 1
 
   const fieldLabels = [
     t('home.tag.fields.label'),
@@ -24,7 +27,11 @@ export default function TagScene() {
     t('home.tag.fields.year'),
   ]
 
+  // The scene owns the counter, so it draws its own window chrome instead of having
+  // Walkthrough pass a frozen "12/40" in from outside — that frozen string was the
+  // very thing this animation exists to unfreeze.
   return (
+    <AppFrame pill={`${frame.done}/${TAG_TOTAL}`} busy={!done} progress={(frame.done / TAG_TOTAL) * 100}>
     <div ref={ref} className="grid gap-4 p-4 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)]">
       <div className="space-y-1.5">
         {MATCHES.map((r, i) => (
@@ -70,5 +77,6 @@ export default function TagScene() {
         </div>
       </div>
     </div>
+    </AppFrame>
   )
 }

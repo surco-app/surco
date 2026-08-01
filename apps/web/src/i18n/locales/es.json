@@ -850,7 +850,9 @@
       "toFile": "o exporta el fichero",
       "cues": "cue points de Traktor intactos entre MP3 y AIFF, y de cualquiera de los tres a FLAC",
       "summary": "38 convertidas · 1 omitida · 1 con error",
-      "ready": "Listo"
+      "ready": "Listo",
+      "pillRunning": "Convirtiendo {{done}}/{{total}}",
+      "pillDone": "{{total}}/{{total}} listas"
     },
     "heroLede": "Surco abre cada archivo y te dice qué tienes de verdad: si el lossless es auténtico, qué etiquetas faltan, dónde hay clics y silencio de sobra. Lo arregla y lo deja listo en tu reproductor o en tu equipo de DJ.",
     "heroFree": "Gratis · macOS, Windows y Linux",

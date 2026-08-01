@@ -850,7 +850,9 @@
       "toFile": "or export the file",
       "cues": "Traktor cue points intact between MP3 and AIFF, and from any of the three into FLAC",
       "summary": "38 converted · 1 skipped · 1 failed",
-      "ready": "Done"
+      "ready": "Done",
+      "pillRunning": "Converting {{done}}/{{total}}",
+      "pillDone": "{{total}}/{{total}} done"
     },
     "heroLede": "Surco opens every file and tells you what you actually have: whether the lossless is genuine, which tags are missing, where the clicks and the dead air are. Then it fixes all of it and files it into your player or your DJ gear.",
     "heroFree": "Free · macOS, Windows and Linux",
