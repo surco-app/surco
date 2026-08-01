@@ -5,6 +5,8 @@
 // canonical lower-case chord renders as the familiar ⌘R / Ctrl+R.
 const MAC: Record<string, string> = {
   mod: '⌘',
+  alt: '⌥',
+  ctrl: '⌃',
   shift: '⇧',
   enter: '↵',
   backspace: '⌫',
@@ -14,6 +16,8 @@ const MAC: Record<string, string> = {
 }
 const OTHER: Record<string, string> = {
   mod: 'Ctrl',
+  alt: 'Alt',
+  ctrl: 'Ctrl',
   shift: 'Shift',
   enter: 'Enter',
   backspace: 'Backspace',

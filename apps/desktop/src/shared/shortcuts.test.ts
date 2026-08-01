@@ -41,7 +41,7 @@ describe('eventToChord', () => {
   it('treats mod as ⌘ on mac and Ctrl elsewhere, not both', () => {
     expect(eventToChord(key('o', { ctrlKey: true }), false)).toEqual(['mod', 'o'])
     expect(eventToChord(key('o', { metaKey: true }), false)).toEqual(['o'])
-    expect(eventToChord(key('o', { ctrlKey: true }), true)).toEqual(['o'])
+    expect(eventToChord(key('o', { ctrlKey: true }), true)).toEqual(['ctrl', 'o'])
   })
 
   it('returns null for keys we never bind', () => {
@@ -56,6 +56,92 @@ describe('eventToChord', () => {
   })
 })
 
+describe('modificadores alt y ctrl', () => {
+  // ⌥E en un teclado español produce `´` (carácter muerto), no `e`. Guardar ese carácter
+  // ataría el atajo al idioma del sistema, y un teclado de macros manda posiciones, no
+  // letras: el mismo hardware se comportaría distinto en otra máquina.
+  it('guarda la posición física de la tecla cuando hay alt', () => {
+    const chord = eventToChord(
+      { key: '´', code: 'KeyE', metaKey: false, ctrlKey: false, altKey: true, shiftKey: false },
+      true,
+    )
+    expect(chord).toEqual(['alt', 'e'])
+  })
+
+  // En macOS Control es un modificador libre. Sin leerlo, ⌃E se guardaba como ['e'] y
+  // pisaba la tecla suelta de otro comando, en silencio.
+  it('reconoce Control en macOS como modificador propio', () => {
+    const chord = eventToChord(
+      { key: 'e', code: 'KeyE', metaKey: false, ctrlKey: true, altKey: false, shiftKey: false },
+      true,
+    )
+    expect(chord).toEqual(['ctrl', 'e'])
+  })
+
+  // Fuera de macOS Ctrl ES `mod`, así que no puede ser además un modificador aparte.
+  it('trata Control como mod fuera de macOS', () => {
+    const chord = eventToChord(
+      { key: 'e', code: 'KeyE', metaKey: false, ctrlKey: true, altKey: false, shiftKey: false },
+      false,
+    )
+    expect(chord).toEqual(['mod', 'e'])
+  })
+
+  // Orden canónico: sin él, ⌥⇧E y ⇧⌥E serían chords distintos para la misma pulsación y
+  // el guardado nunca casaría con lo pulsado.
+  it('ordena los modificadores igual sea cual sea el orden de pulsación', () => {
+    const chord = eventToChord(
+      { key: 'E', code: 'KeyE', metaKey: true, ctrlKey: true, altKey: true, shiftKey: true },
+      true,
+    )
+    expect(chord).toEqual(['mod', 'alt', 'ctrl', 'shift', 'e'])
+  })
+
+  // Sin alt ni ctrl nada cambia: los atajos ya guardados están en forma de carácter y
+  // tienen que seguir resolviendo igual.
+  it('mantiene la forma por carácter cuando no hay alt ni ctrl', () => {
+    expect(
+      eventToChord(
+        { key: 'r', code: 'KeyR', metaKey: true, ctrlKey: false, altKey: false, shiftKey: false },
+        true,
+      ),
+    ).toEqual(['mod', 'r'])
+  })
+
+  // En modo posición física el token ya no es el carácter (Slash → '/'), así que el
+  // carácter no codifica el shift por sí solo: sin contarlo aparte, ⌥⇧/ y ⌥/
+  // colapsarían al mismo chord y una de las dos combinaciones dejaría de ser alcanzable.
+  it('distingue ⌥⇧/ de ⌥/ aunque el token sea el mismo símbolo', () => {
+    const sinShift = eventToChord(
+      { key: '/', code: 'Slash', metaKey: false, ctrlKey: false, altKey: true, shiftKey: false },
+      true,
+    )
+    const conShift = eventToChord(
+      { key: '/', code: 'Slash', metaKey: false, ctrlKey: false, altKey: true, shiftKey: true },
+      true,
+    )
+    expect(sinShift).toEqual(['alt', '/'])
+    expect(conShift).toEqual(['alt', 'shift', '/'])
+  })
+
+  // Las teclas con nombre (flechas, Enter…) no dependen de la distribución, así que
+  // conservan su token aunque el chord lleve alt.
+  it('conserva el token con nombre de las teclas especiales', () => {
+    const chord = eventToChord(
+      {
+        key: 'ArrowLeft',
+        code: 'ArrowLeft',
+        metaKey: false,
+        ctrlKey: false,
+        altKey: true,
+        shiftKey: false,
+      },
+      true,
+    )
+    expect(chord).toEqual(['alt', 'left'])
+  })
+})
+
 describe('chordToAccelerator', () => {
   it('renders Electron accelerator strings from a chord', () => {
     expect(chordToAccelerator(['mod', 'shift', 'r'])).toBe('CmdOrCtrl+Shift+R')
@@ -64,6 +150,12 @@ describe('chordToAccelerator', () => {
     expect(chordToAccelerator(['mod', ','])).toBe('CmdOrCtrl+,')
     expect(chordToAccelerator(['space'])).toBe('Space')
     expect(chordToAccelerator(['down'])).toBe('Down')
+  })
+
+  it('traduce alt y ctrl al acelerador de Electron', () => {
+    expect(chordToAccelerator(['alt', 'e'])).toBe('Alt+E')
+    expect(chordToAccelerator(['ctrl', 'e'])).toBe('Control+E')
+    expect(chordToAccelerator(['mod', 'alt', 'shift', 'e'])).toBe('CmdOrCtrl+Alt+Shift+E')
   })
 })
 

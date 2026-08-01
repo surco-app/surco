@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // ShortcutsTab reads window.api.platform at module load, so stub it before import.
@@ -14,6 +14,7 @@ import {
   SHORTCUT_DEFAULTS,
 } from '../../../../shared/shortcutDefaults'
 import type { SyncedDraft } from '../../lib/settingsDraft'
+import type { PatchSynced } from '../../lib/settingsTabs'
 import '../../i18n'
 import { ShortcutsTab } from './ShortcutsTab'
 
@@ -23,11 +24,11 @@ const synced: SyncedDraft = {
   shortcutOverrides: {},
 } as SyncedDraft
 
-function renderTab(): void {
+function renderTab(patch: PatchSynced = vi.fn()): void {
   const bindings = resolveBindings(synced.shortcutOverrides)
   const conflictIds = new Set(findConflicts(bindings).flat())
   render(
-    <ShortcutsTab synced={synced} patch={vi.fn()} bindings={bindings} conflictIds={conflictIds} />,
+    <ShortcutsTab synced={synced} patch={patch} bindings={bindings} conflictIds={conflictIds} />,
   )
 }
 
@@ -103,4 +104,31 @@ describe('ShortcutsTab agrupa por función', () => {
       expect(screen.getByTestId(`shortcut-row-${def.id}`)).toBeInTheDocument()
     }
   })
+})
+
+// El reporte que originó esto: "option+E control+E o option+E no funciona, no hace
+// nada". El chord no se formaba, así que el grabador descartaba la pulsación en
+// silencio y el usuario no tenía forma de saber por qué.
+it('graba una combinación con option', () => {
+  const patch = vi.fn()
+  renderTab(patch)
+  const boton = screen.getByTestId('shortcut-record-play')
+  fireEvent.click(boton)
+  fireEvent.keyDown(boton, { key: '´', code: 'KeyE', altKey: true })
+  expect(patch).toHaveBeenCalledWith(
+    'shortcutOverrides',
+    expect.objectContaining({ play: ['alt', 'e'] }),
+  )
+})
+
+it('graba una combinación con control', () => {
+  const patch = vi.fn()
+  renderTab(patch)
+  const boton = screen.getByTestId('shortcut-record-play')
+  fireEvent.click(boton)
+  fireEvent.keyDown(boton, { key: 'e', code: 'KeyE', ctrlKey: true })
+  expect(patch).toHaveBeenCalledWith(
+    'shortcutOverrides',
+    expect.objectContaining({ play: ['ctrl', 'e'] }),
+  )
 })
