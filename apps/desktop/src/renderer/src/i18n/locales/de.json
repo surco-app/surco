@@ -228,11 +228,17 @@
     "toggleLanguage": "Sprache wechseln (Englisch / Spanisch)",
     "toggleTheme": "Design wechseln (System / Hell / Dunkel)",
     "confetti": "Konfetti werfen 🎉",
-    "trimNudgeBack": "Schnitt nach hinten schieben",
-    "trimNudgeForward": "Schnitt nach vorne schieben",
-    "trimAudition": "Schnitt anhören",
-    "trimClear": "Schnitt entfernen",
-    "trimApply": "Erkannte Stille anwenden"
+    "trimStartBack": "Anfangsschnitt zurück",
+    "trimStartForward": "Anfangsschnitt vor",
+    "trimStartAudition": "Anfangsschnitt anhören",
+    "trimStartClear": "Anfangsschnitt entfernen",
+    "trimEndBack": "Endschnitt zurück",
+    "trimEndForward": "Endschnitt vor",
+    "trimEndAudition": "Endschnitt anhören",
+    "trimEndClear": "Endschnitt entfernen",
+    "trimApply": "Erkannte Stille anwenden",
+    "sectionNext": "Zum nächsten Abschnitt",
+    "sectionPrev": "Zum vorherigen Abschnitt"
   },
   "trackList": {
     "label": "Tracks",
@@ -607,7 +613,9 @@
       "groupTrim": "Stille-Editor",
       "groupTrimHint": "Nur solange ein Schnitt fokussiert ist",
       "groupTrackList": "Trackliste",
-      "groupTrackListHint": "Nur solange eine Zeile fokussiert ist"
+      "groupTrackListHint": "Nur solange eine Zeile fokussiert ist",
+      "groupEditor": "Editor",
+      "groupEditorHint": "Zwischen Abschnitten springen"
     },
     "stats": {
       "count": "Konvertierungen",

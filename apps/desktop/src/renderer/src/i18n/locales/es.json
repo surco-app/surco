@@ -228,11 +228,17 @@
     "toggleLanguage": "Cambiar idioma (español / inglés)",
     "toggleTheme": "Cambiar tema (sistema / claro / oscuro)",
     "confetti": "Lanzar confeti 🎉",
-    "trimNudgeBack": "Mover el corte atrás",
-    "trimNudgeForward": "Mover el corte adelante",
-    "trimAudition": "Escuchar el corte",
-    "trimClear": "Quitar el corte",
-    "trimApply": "Aplicar el silencio detectado"
+    "trimStartBack": "Mover el corte de entrada atrás",
+    "trimStartForward": "Mover el corte de entrada adelante",
+    "trimStartAudition": "Escuchar el corte de entrada",
+    "trimStartClear": "Quitar el corte de entrada",
+    "trimEndBack": "Mover el corte de salida atrás",
+    "trimEndForward": "Mover el corte de salida adelante",
+    "trimEndAudition": "Escuchar el corte de salida",
+    "trimEndClear": "Quitar el corte de salida",
+    "trimApply": "Aplicar el silencio detectado",
+    "sectionNext": "Ir a la sección siguiente",
+    "sectionPrev": "Ir a la sección anterior"
   },
   "trackList": {
     "label": "Pistas",
@@ -607,7 +613,9 @@
       "groupTrim": "Editor de silencios",
       "groupTrimHint": "Solo con el foco en un corte",
       "groupTrackList": "Lista de pistas",
-      "groupTrackListHint": "Solo con el foco en una fila"
+      "groupTrackListHint": "Solo con el foco en una fila",
+      "groupEditor": "Editor",
+      "groupEditorHint": "Saltando entre secciones"
     },
     "stats": {
       "count": "conversiones",

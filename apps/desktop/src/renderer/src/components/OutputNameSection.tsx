@@ -45,6 +45,7 @@ export function OutputNameSection({
   return (
     <div className="mt-5 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
+        sectionId="output"
         title={tr('editor.outputName')}
         open={open}
         onToggle={onToggle}

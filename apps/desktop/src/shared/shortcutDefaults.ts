@@ -14,6 +14,12 @@ export interface ShortcutDef {
   // Limita el comando al ámbito con ese nombre: solo dispara cuando el foco está dentro
   // de un `[data-shortcut-scope]` que coincide. Sin scope el comando es global.
   scope?: string
+  // Bajo qué encabezado se lista en Ajustes. Separado de `scope` porque una tecla puede
+  // estar acotada sin depender del foco: las del editor de silencios actúan sobre la
+  // pista abierta mientras la sección está desplegada, así que no llevan scope pero
+  // tampoco son globales — listarlas entre "Convertir" y "Ajustes" haría creer que
+  // funcionan en toda la app.
+  group?: string
 }
 
 export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
@@ -68,14 +74,29 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   { id: 'focus-list', chord: ['mod', '1'] },
   { id: 'focus-matches', chord: ['mod', '2'] },
   { id: 'focus-editor', chord: ['mod', '3'] },
-  // Editor de silencios. Teclas sueltas sin modificador: solo viven con el foco en un
-  // handle de corte, así que no compiten con nada global — y un macropad manda teclas
-  // limpias, no combos.
-  { id: 'trim-nudge-back', chord: ['left'], scope: 'trim' },
-  { id: 'trim-nudge-forward', chord: ['right'], scope: 'trim' },
-  { id: 'trim-audition', chord: ['a'], scope: 'trim' },
-  { id: 'trim-clear', chord: ['c'], scope: 'trim' },
-  { id: 'trim-apply', chord: ['s'], scope: 'trim' },
+  // Saltar de sección a sección por sus cabeceras, sin cruzar los campos de dentro: con
+  // una sola sección abierta el editor tiene 133 paradas de tabulador. Llevan `mod` para
+  // seguir vivas con un campo enfocado — irse al recorte desde el título es el caso — y
+  // son corchetes porque ⌘↓/⌘⇧↓ son atajos de edición de texto en macOS y estas teclas
+  // conviven con el tecleo. `mod` es ⌘ en macOS y Ctrl en Windows y Linux.
+  { id: 'section-next', chord: ['mod', ']'], scope: 'editor' },
+  { id: 'section-prev', chord: ['mod', '['], scope: 'editor' },
+  // Editor de silencios. Una tecla por lado y acción: con el editor desplegado actúan
+  // sobre la pista abierta SIN foco en ninguna parte, que es como se maneja un teclado
+  // de macros — se pulsa y el corte se mueve, en vez de tener que pinchar antes el
+  // tirador. Sin foco que desambigüe, la tecla ES el lado. Teclas sueltas: la sección
+  // cerrada las deja libres, y el guardián de tecleo las calla con un campo enfocado.
+  // Mano izquierda para el corte de entrada, derecha para el de salida, como en la onda.
+  { group: 'trim', id: 'trim-start-back', chord: ['q'] },
+  { group: 'trim', id: 'trim-start-forward', chord: ['w'] },
+  { group: 'trim', id: 'trim-start-audition', chord: ['a'] },
+  { group: 'trim', id: 'trim-start-clear', chord: ['z'] },
+  { group: 'trim', id: 'trim-end-back', chord: ['o'] },
+  { group: 'trim', id: 'trim-end-forward', chord: ['p'] },
+  { group: 'trim', id: 'trim-end-audition', chord: ['l'] },
+  { group: 'trim', id: 'trim-end-clear', chord: ['.'] },
+  // La detección propone los dos cortes a la vez, así que aplicarla es una sola acción.
+  { group: 'trim', id: 'trim-apply', chord: ['s'] },
 ]
 
 // The effective binding per command id: defaults with the user's overrides applied. An

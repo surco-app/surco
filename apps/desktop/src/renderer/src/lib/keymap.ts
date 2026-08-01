@@ -59,6 +59,14 @@ export function keyToCommandId(
   if (!chord) return null
   const id = matchChord(bindings, chord, typing, scope)
   if (id) return id
+  // Shift is an intensity modifier for the bare-key commands (the trim nudges take their
+  // coarse step with it), not part of the chord, so ⇧W has to resolve to the same command
+  // as W. The direct match runs first so a command deliberately rebound TO a shift chord
+  // still wins; only when nothing owns the chord as pressed is the shift dropped.
+  if (chord[0] === 'shift' && chord.length > 1) {
+    const bare = matchChord(bindings, chord.slice(1), typing, scope)
+    if (bare) return bare
+  }
   // j/k are fixed vim aliases for list navigation — deliberately not configurable and
   // not shown in the Shortcuts tab, so power-user muscle memory keeps working without a
   // second editable row per command. Only when a field doesn't own the keystroke.
