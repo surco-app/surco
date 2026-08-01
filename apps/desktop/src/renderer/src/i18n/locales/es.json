@@ -644,9 +644,10 @@
       "empty": "Todavía no has convertido nada. Cuando empieces, verás aquí cuánto tiempo te ahorra Surco.",
       "donateCta": "Donar con PayPal",
       "share": "Compartir imagen",
-      "shareTitle": "Mi música en cifras",
-      "shareFooter": "Hecho con Surco — getsurco.app",
-      "roiDonate": "Si Surco te ahorra tiempo, apóyalo — construirlo y mantenerlo cuesta dinero"
+      "shareTitle": "Mi colección en cifras",
+      "shareFooter": "Prepara tu música · getsurco.app",
+      "roiDonate": "Si Surco te ahorra tiempo, apóyalo — construirlo y mantenerlo cuesta dinero",
+      "shareHeroLabel": "pistas convertidas y etiquetadas"
     },
     "theme": "Apariencia",
     "themes": {

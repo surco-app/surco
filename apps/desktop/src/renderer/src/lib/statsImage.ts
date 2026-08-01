@@ -31,10 +31,24 @@ interface StatsImageCell {
   value: number
 }
 
-// The share card is a brag sheet, not a report: a zero tally reads as an anti-achievement,
-// so only counters with activity make it onto the image.
+// Four fills two clean rows of the card's two-column grid; six leaves a lopsided third.
+const MAX_CELLS = 4
+
+// The share card is a brag sheet, not a report. Zero tallies are dropped — "0 found on
+// Bandcamp" reads as an anti-achievement — and then only the four biggest survive.
+//
+// Biggest rather than a relative floor: a percentage cut looked right until measured
+// against real numbers, where Bandcamp (1.8% of the top tally) belongs on the card and
+// tracks-played (1.6%) does not. Nothing separates those two by size, so ranking picks
+// the four that carry the most weight and leaves the tail off instead of inventing a
+// threshold the data does not support. CELL_ORDER still decides the reading order, so
+// the card and the Stats tab tell the story in the same sequence.
 export function statsImageCells(stats: LifetimeStats): StatsImageCell[] {
-  return CELL_ORDER.filter((key) => stats[key] > 0).map((key) => ({ key, value: stats[key] }))
+  const active = CELL_ORDER.filter((key) => stats[key] > 0)
+  const kept = new Set(
+    [...active].sort((a, b) => stats[b] - stats[a]).slice(0, MAX_CELLS),
+  )
+  return active.filter((key) => kept.has(key)).map((key) => ({ key, value: stats[key] }))
 }
 
 interface StatsImageInput {
@@ -42,9 +56,6 @@ interface StatsImageInput {
   // 0 hides the hero block (activity without conversions still deserves a card).
   conversionCount: number
   countLabel: string
-  // Both null when every milestone is already passed.
-  milestoneLabel: string | null
-  milestoneFraction: number | null
   // Already filtered (statsImageCells) and translated by the caller.
   cells: { value: number; label: string }[]
   timeSaved: string | null
@@ -65,8 +76,12 @@ function grooves(ctx: CanvasRenderingContext2D, cx: number, cy: number): void {
 }
 
 // Composes the shareable stats card as a story-sized PNG: wordmark and title up top, the
-// lifetime conversion hero with its milestone bar, the activity tallies in a grid, the
-// time-saved panel, and the site footer. Returns a data URL ready for the save dialog.
+// lifetime conversion hero, the activity tallies in a grid, the time-saved panel, and the
+// site call to action. Returns a data URL ready for the save dialog.
+//
+// The milestone bar the Stats tab shows is deliberately absent: "2583 to go until 25000"
+// motivates the person converting, but says nothing to whoever sees the card on Instagram,
+// which is half of what this image is for.
 export function renderStatsImage(input: StatsImageInput): string {
   const canvas = document.createElement('canvas')
   canvas.width = WIDTH
@@ -96,7 +111,7 @@ export function renderStatsImage(input: StatsImageInput): string {
   ctx.fillText(input.title, centerX, y, WIDTH - PAD * 2)
 
   if (input.conversionCount > 0) {
-    y += 296
+    y += 286
     ctx.font = '700 220px system-ui, sans-serif'
     ctx.fillText(String(input.conversionCount), centerX, y, WIDTH - PAD * 2)
     y += 78
@@ -104,25 +119,6 @@ export function renderStatsImage(input: StatsImageInput): string {
     ctx.font = '34px system-ui, sans-serif'
     ctx.fillText(input.countLabel, centerX, y)
 
-    if (input.milestoneLabel && input.milestoneFraction !== null) {
-      const barWidth = 560
-      const barLeft = centerX - barWidth / 2
-      y += 66
-      ctx.fillStyle = CARD.panel
-      ctx.strokeStyle = CARD.line
-      ctx.beginPath()
-      ctx.roundRect(barLeft, y, barWidth, 12, 6)
-      ctx.fill()
-      ctx.stroke()
-      ctx.fillStyle = CARD.accent
-      ctx.beginPath()
-      ctx.roundRect(barLeft, y, barWidth * Math.min(1, input.milestoneFraction), 12, 6)
-      ctx.fill()
-      y += 48
-      ctx.fillStyle = CARD.fgDim
-      ctx.font = '27px system-ui, sans-serif'
-      ctx.fillText(input.milestoneLabel, centerX, y, WIDTH - PAD * 2)
-    }
   }
 
   // Two-column tally grid; an odd last cell sits centered on its own row.
@@ -164,9 +160,25 @@ export function renderStatsImage(input: StatsImageInput): string {
     }
   }
 
-  ctx.fillStyle = CARD.fgDim
-  ctx.font = '28px system-ui, sans-serif'
-  ctx.fillText(input.footer, centerX, HEIGHT - 110)
+  // The footer is the only thing that can turn a viewer into a user, so it reads as a
+  // button rather than as the dimmest text on the card, which is what it used to be.
+  const ctaFont = '600 30px system-ui, sans-serif'
+  ctx.font = ctaFont
+  const ctaWidth = Math.min(WIDTH - PAD * 2, ctx.measureText(input.footer).width + 76)
+  const ctaHeight = 76
+  const ctaY = HEIGHT - 196
+  ctx.fillStyle = 'rgba(122, 162, 247, 0.12)'
+  ctx.strokeStyle = 'rgba(122, 162, 247, 0.45)'
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.roundRect(centerX - ctaWidth / 2, ctaY, ctaWidth, ctaHeight, ctaHeight / 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = CARD.accent
+  ctx.font = ctaFont
+  ctx.textBaseline = 'middle'
+  ctx.fillText(input.footer, centerX, ctaY + ctaHeight / 2 + 1)
+  ctx.textBaseline = 'alphabetic'
 
   return canvas.toDataURL('image/png')
 }

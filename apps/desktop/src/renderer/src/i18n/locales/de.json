@@ -644,9 +644,10 @@
       "empty": "Noch nichts konvertiert. Sobald du loslegst, siehst du hier, wie viel Zeit dir Surco spart.",
       "donateCta": "Mit PayPal spenden",
       "share": "Bild teilen",
-      "shareTitle": "Meine Musik in Zahlen",
-      "shareFooter": "Erstellt mit Surco — getsurco.app",
-      "roiDonate": "Wenn Surco dir Zeit spart, unterstütz es — die Entwicklung kostet Geld"
+      "shareTitle": "Meine Sammlung in Zahlen",
+      "shareFooter": "Mach deine Musik bereit · getsurco.app",
+      "roiDonate": "Wenn Surco dir Zeit spart, unterstütz es — die Entwicklung kostet Geld",
+      "shareHeroLabel": "Tracks konvertiert und getaggt"
     },
     "theme": "Erscheinungsbild",
     "themes": {
