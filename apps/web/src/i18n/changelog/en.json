@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.80",
+    "date": "August 1, 2026",
+    "title": "Any key combination works as a shortcut",
+    "items": [
+      {
+        "text": "Option and Control now work when recording a shortcut. Assigning ⌥E or ⌃E used to do nothing at all: Surco only understood ⌘ and Shift, and silently dropped whatever else you pressed. If you remap Surco to a macro keyboard, you can now use whichever combination your hardware sends instead of hunting for one that sticks.",
+        "in": "0.80.0"
+      },
+      {
+        "text": "The loudness normalization you dial on a track stays on that track. Switching to another track and coming back used to wipe it, leaving you to set it again before converting.",
+        "in": "0.80.0"
+      }
+    ]
+  },
+  {
     "version": "0.79",
     "date": "August 1, 2026",
     "title": "The trimmer's zoom works from the keyboard too",

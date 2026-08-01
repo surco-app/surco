@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.80",
+    "date": "1 de agosto de 2026",
+    "title": "Cualquier combinación de teclas vale como atajo",
+    "items": [
+      {
+        "text": "Option y Control ya sirven para grabar atajos. Antes, al intentar asignar ⌥E o ⌃E no pasaba nada: Surco solo entendía ⌘ y Mayúsculas, y descartaba en silencio lo que pulsabas. Si remapeas Surco a un teclado de macros, ahora puedes usar la combinación que emita tu hardware en vez de buscar cuál de ellas cuela.",
+        "in": "0.80.0"
+      },
+      {
+        "text": "La normalización de volumen que ajustas en una pista se queda en esa pista. Antes, al pasar a otra y volver, el ajuste había desaparecido y tenías que volver a ponerlo antes de convertir.",
+        "in": "0.80.0"
+      }
+    ]
+  },
+  {
     "version": "0.79",
     "date": "1 de agosto de 2026",
     "title": "La lupa del recorte también va con el teclado",
