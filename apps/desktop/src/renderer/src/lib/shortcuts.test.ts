@@ -25,4 +25,17 @@ describe('formatShortcut', () => {
     expect(formatShortcut(['up'], true)).toBe('↑')
     expect(formatShortcut(['down'], false)).toBe('↓')
   })
+
+  describe('modificadores alt y ctrl', () => {
+    it('usa los glifos de macOS', () => {
+      expect(formatShortcut(['alt', 'e'], true)).toBe('⌥E')
+      expect(formatShortcut(['ctrl', 'e'], true)).toBe('⌃E')
+      expect(formatShortcut(['mod', 'alt', 'shift', 'e'], true)).toBe('⌘⌥⇧E')
+    })
+
+    it('los deletrea fuera de macOS', () => {
+      expect(formatShortcut(['alt', 'e'], false)).toBe('Alt+E')
+      expect(formatShortcut(['mod', 'alt', 'e'], false)).toBe('Ctrl+Alt+E')
+    })
+  })
 })
