@@ -120,3 +120,15 @@ it('graba una combinación con option', () => {
     expect.objectContaining({ play: ['alt', 'e'] }),
   )
 })
+
+it('graba una combinación con control', () => {
+  const patch = vi.fn()
+  renderTab(patch)
+  const boton = screen.getByTestId('shortcut-record-play')
+  fireEvent.click(boton)
+  fireEvent.keyDown(boton, { key: 'e', code: 'KeyE', ctrlKey: true })
+  expect(patch).toHaveBeenCalledWith(
+    'shortcutOverrides',
+    expect.objectContaining({ play: ['ctrl', 'e'] }),
+  )
+})
