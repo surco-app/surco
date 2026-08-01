@@ -615,7 +615,19 @@
       "groupTrackList": "Track list",
       "groupTrackListHint": "Only while a row has focus",
       "groupEditor": "Editor",
-      "groupEditorHint": "Jumping between sections"
+      "groupEditorHint": "Jumping between sections",
+      "groupTags": "Tags",
+      "groupTagsHint": "Track metadata",
+      "groupConvert": "Convert",
+      "groupConvertHint": "Process and export",
+      "groupLibrary": "Library",
+      "groupLibraryHint": "Files and housekeeping",
+      "groupPlayback": "Playback",
+      "groupPlaybackHint": "Listening to the track",
+      "groupNavigate": "Navigate",
+      "groupNavigateHint": "Moving around the app",
+      "groupApp": "App",
+      "groupAppHint": "Settings and windows"
     },
     "stats": {
       "count": "conversions",

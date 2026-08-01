@@ -10,12 +10,18 @@ export const TRACKS = 40
 // what put an earlier version of this section at three hours — a figure any DJ who
 // has done the work would read as inflated, which costs the credibility Surco's own
 // measured number depends on.
+// Timings from the person who actually does this work, not a guess: about five
+// minutes per track. The step an outside estimate misses is the second pass of
+// tagging — Apple Music does not keep everything the file arrived with, so the
+// metadata gets written once in the tag editor and again inside Music, with the
+// cover art dragged in by hand on top. That alone is more than two minutes a track.
 export const MANUAL_STEPS = [
-  { key: 'spectrum', seconds: 10, per: 'track' },
-  { key: 'convert', seconds: 90, per: 'batch' },
+  { key: 'convert', seconds: 20, per: 'batch' },
   { key: 'discogs', seconds: 60, per: 'track' },
-  { key: 'metadata', seconds: 40, per: 'track' },
-  { key: 'import', seconds: 45, per: 'batch' },
+  { key: 'metadata', seconds: 50, per: 'track' },
+  { key: 'import', seconds: 15, per: 'batch' },
+  { key: 'retag', seconds: 90, per: 'track' },
+  { key: 'cover', seconds: 45, per: 'track' },
 ] as const satisfies readonly { key: string; seconds: number; per: 'track' | 'batch' }[]
 
 const PER_TRACK = MANUAL_STEPS.filter((s) => s.per === 'track')

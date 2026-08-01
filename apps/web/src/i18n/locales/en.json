@@ -225,17 +225,13 @@
   "speed": {
     "kicker": "One app, not five",
     "title": "The work of five apps, in one click",
-    "lede": "Converter, Discogs, tag editor, spectrum analyzer and Apple Music: five programs, four or five minutes per track. Surco folds that whole flow into one button.",
+    "lede": "Converter, Discogs, tag editor and Apple Music: five programs, about five minutes per track — and the tags have to be redone inside Music, cover art included. Surco folds that whole flow into one button.",
     "manual": "By hand",
-    "manualTime": "~1 h 15 min",
+    "manualTime": "~2 h 45 min",
     "manualSteps": [
       {
-        "app": "Spek",
-        "label": "Check the spectrum"
-      },
-      {
         "app": "converter",
-        "label": "Convert to AIFF"
+        "label": "Convert FLAC to WAV"
       },
       {
         "app": "browser",
@@ -247,7 +243,15 @@
       },
       {
         "app": "Music",
-        "label": "Import to Apple Music"
+        "label": "Copy to Apple Music"
+      },
+      {
+        "app": "Music",
+        "label": "Redo the tags inside Music"
+      },
+      {
+        "app": "Music",
+        "label": "Drag in the cover art"
       }
     ],
     "manualCaption": "converting and importing run in batches · the rest repeats per track",
@@ -263,7 +267,7 @@
       "to Apple Music or Engine DJ"
     ],
     "oneClick": "one click · 7 s for all 40 · up to 13 conversions at once",
-    "footnote": "* The manual flow is an example; steps and tools vary from person to person — times are estimates. Surco: converting and tagging 40 tracks of 7:08 (WAV 16/44.1 → AIFF) measured on a 14-core Mac; varies with machine, format and length.",
+    "footnote": "* The manual flow follows the one the author actually uses: convert, look up on Discogs, tag, copy to Music, then redo the tags and cover art there; steps and tools vary from person to person. Surco: converting and tagging 40 tracks of 7:08 (WAV 16/44.1 → AIFF) measured on a 14-core Mac; varies with machine, format and length.",
     "replay": "↻ replay",
     "tracksReady": "ready",
     "trackCount": "{{count}} tracks"

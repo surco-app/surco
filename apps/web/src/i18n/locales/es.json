@@ -225,17 +225,13 @@
   "speed": {
     "kicker": "Una app, no cinco",
     "title": "El trabajo de cinco apps, en un clic",
-    "lede": "Conversor, Discogs, editor de tags, analizador de espectro y Apple Music: cinco programas, cuatro o cinco minutos por pista. Surco reúne todo ese flujo en un botón.",
+    "lede": "Conversor, Discogs, editor de tags y Apple Music: cinco programas, unos cinco minutos por pista — y los tags hay que rehacerlos dentro de Music, carátula incluida. Surco reúne todo ese flujo en un botón.",
     "manual": "A mano",
-    "manualTime": "~1 h 15 min",
+    "manualTime": "~2 h 45 min",
     "manualSteps": [
       {
-        "app": "Spek",
-        "label": "Comprobar el espectro"
-      },
-      {
         "app": "conversor",
-        "label": "Convertir a AIFF"
+        "label": "Convertir FLAC a WAV"
       },
       {
         "app": "navegador",
@@ -247,7 +243,15 @@
       },
       {
         "app": "Música",
-        "label": "Importar a Apple Music"
+        "label": "Copiar a Apple Music"
+      },
+      {
+        "app": "Música",
+        "label": "Rehacer los tags dentro de Music"
+      },
+      {
+        "app": "Música",
+        "label": "Arrastrar la carátula"
       }
     ],
     "manualCaption": "convertir e importar van por lotes · lo demás se repite en cada pista",
@@ -263,7 +267,7 @@
       "a Apple Music o Engine DJ"
     ],
     "oneClick": "un clic · 7 s las 40 · hasta 13 conversiones a la vez",
-    "footnote": "* Flujo a mano a modo de ejemplo; los pasos y herramientas varían según cada quien — tiempos estimados. Surco: convertir y etiquetar 40 pistas de 7:08 (WAV 16/44.1 → AIFF) medido en un Mac de 14 núcleos; varía con la máquina, el formato y la duración.",
+    "footnote": "* Flujo a mano medido sobre el que sigue el autor: convertir, buscar en Discogs, taggear, copiar a Music y rehacer allí los tags y la carátula; los pasos y herramientas varían según cada quien. Surco: convertir y etiquetar 40 pistas de 7:08 (WAV 16/44.1 → AIFF) medido en un Mac de 14 núcleos; varía con la máquina, el formato y la duración.",
     "replay": "↻ repetir",
     "tracksReady": "listas",
     "trackCount": "{{count}} pistas"

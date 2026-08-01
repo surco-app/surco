@@ -14,11 +14,10 @@ export interface ShortcutDef {
   // Limita el comando al ámbito con ese nombre: solo dispara cuando el foco está dentro
   // de un `[data-shortcut-scope]` que coincide. Sin scope el comando es global.
   scope?: string
-  // Bajo qué encabezado se lista en Ajustes. Separado de `scope` porque una tecla puede
-  // estar acotada sin depender del foco: las del editor de silencios actúan sobre la
-  // pista abierta mientras la sección está desplegada, así que no llevan scope pero
-  // tampoco son globales — listarlas entre "Convertir" y "Ajustes" haría creer que
-  // funcionan en toda la app.
+  // Bajo qué encabezado se lista en Ajustes. Por defecto se hereda del grupo que el
+  // comando ya declara en la paleta (⌘K), para que la app tenga UNA taxonomía y no dos
+  // que acaben divergiendo; este campo solo hace falta cuando el comando no vive en el
+  // registro —lo ejecuta un componente— y por tanto no tiene grupo del que heredar.
   group?: string
 }
 
@@ -50,7 +49,7 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   // Con ámbito porque quien lo ejecuta es el onKeyDown de la fila (necesita sus
   // coordenadas para colocar el menú), no el registro de comandos: como global, una
   // reasignación a ⌘P mataría esa tecla en toda la app sin ejecutar nada.
-  { id: 'track-menu', chord: ['shift', 'f10'], scope: 'track-list' },
+  { group: 'navigate', id: 'track-menu', chord: ['shift', 'f10'], scope: 'track-list' },
   { id: 'fill-all', chord: ['mod', 'shift', 'f'] },
   // The editor's own Tag (fill selection from file name) and Eraser (clear selection) buttons,
   // as chords so the keyboard flow reaches them without a ⌘K detour. Mod-combos with no typing
@@ -79,8 +78,8 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   // seguir vivas con un campo enfocado — irse al recorte desde el título es el caso — y
   // son corchetes porque ⌘↓/⌘⇧↓ son atajos de edición de texto en macOS y estas teclas
   // conviven con el tecleo. `mod` es ⌘ en macOS y Ctrl en Windows y Linux.
-  { id: 'section-next', chord: ['mod', ']'], scope: 'editor' },
-  { id: 'section-prev', chord: ['mod', '['], scope: 'editor' },
+  { group: 'navigate', id: 'section-next', chord: ['mod', ']'], scope: 'editor' },
+  { group: 'navigate', id: 'section-prev', chord: ['mod', '['], scope: 'editor' },
   // Editor de silencios. Una tecla por lado y acción: con el editor desplegado actúan
   // sobre la pista abierta SIN foco en ninguna parte, que es como se maneja un teclado
   // de macros — se pulsa y el corte se mueve, en vez de tener que pinchar antes el

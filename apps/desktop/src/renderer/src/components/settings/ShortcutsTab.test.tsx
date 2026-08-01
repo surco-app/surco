@@ -58,13 +58,43 @@ describe('ShortcutsTab trim group', () => {
   })
 })
 
-// Un comando con ámbito propio no puede desaparecer del tab: si no tiene fila, el usuario
-// no puede reasignarlo, y reasignarlo es justo lo que necesita quien no tiene la tecla.
-describe('ShortcutsTab agrupa por ámbito', () => {
-  it('lista los comandos de la lista de pistas en su propio grupo', () => {
+// Doce filas seguidas sin ningún corte — convertir, añadir ficheros, buscar y reemplazar,
+// revelar, ajustes, reproducir, pista siguiente — obligan a leer la lista entera para dar
+// con una tecla. La paleta ya reparte estos mismos comandos por lo que hacen, así que el
+// tab toma prestada esa clasificación en vez de inventar una segunda que acabaría
+// divergiendo de ella.
+describe('ShortcutsTab agrupa por función', () => {
+  it('agrupa las filas por lo que hace el comando', () => {
     renderTab()
-    const group = screen.getByTestId('shortcut-group-track-list')
-    expect(group.querySelector('[data-testid="shortcut-row-track-menu"]')).not.toBeNull()
+    expect(screen.getByTestId('shortcut-group-convert')).toBeInTheDocument()
+    expect(screen.getByTestId('shortcut-group-playback')).toBeInTheDocument()
+    expect(screen.getByTestId('shortcut-group-navigate')).toBeInTheDocument()
+  })
+
+  it('archiva cada comando en su grupo y en ningún otro', () => {
+    renderTab()
+    const convert = screen.getByTestId('shortcut-group-convert')
+    expect(convert.querySelector('[data-testid="shortcut-row-process-current"]')).not.toBeNull()
+    expect(convert.querySelector('[data-testid="shortcut-row-play"]')).toBeNull()
+  })
+
+  // Los saltos de sección y el menú de pista los ejecuta un componente, no el registro, así
+  // que declaran su grupo en la tabla. Son navegación igualmente y van con el resto, no en
+  // un cajón aparte.
+  it('archiva con la navegación los comandos que ejecuta un componente', () => {
+    renderTab()
+    const navigate = screen.getByTestId('shortcut-group-navigate')
+    expect(navigate.querySelector('[data-testid="shortcut-row-section-next"]')).not.toBeNull()
+    expect(navigate.querySelector('[data-testid="shortcut-row-track-menu"]')).not.toBeNull()
+  })
+
+  // Nada puede escaparse de la agrupación: un comando sin sitio desaparecería del tab, y un
+  // atajo que no se ve es uno que no se puede reasignar.
+  it('no deja ningún comando sin grupo', () => {
+    renderTab()
+    for (const row of screen.getAllByTestId(/^shortcut-row-/)) {
+      expect(row.closest('[data-testid^="shortcut-group-"]')).not.toBeNull()
+    }
   })
 
   it('da una fila a cada comando de la tabla', () => {

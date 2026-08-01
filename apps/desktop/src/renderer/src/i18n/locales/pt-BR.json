@@ -615,7 +615,19 @@
       "groupTrackList": "Lista de faixas",
       "groupTrackListHint": "Somente com o foco em uma linha",
       "groupEditor": "Editor",
-      "groupEditorHint": "Navegando entre seções"
+      "groupEditorHint": "Navegando entre seções",
+      "groupTags": "Tags",
+      "groupTagsHint": "Metadados da faixa",
+      "groupConvert": "Converter",
+      "groupConvertHint": "Processar e exportar",
+      "groupLibrary": "Biblioteca",
+      "groupLibraryHint": "Arquivos e organização",
+      "groupPlayback": "Reprodução",
+      "groupPlaybackHint": "Ouvir a faixa",
+      "groupNavigate": "Navegar",
+      "groupNavigateHint": "Mover-se pelo app",
+      "groupApp": "App",
+      "groupAppHint": "Ajustes e janelas"
     },
     "stats": {
       "count": "conversões",

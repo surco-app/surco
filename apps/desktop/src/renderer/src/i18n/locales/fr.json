@@ -615,7 +615,19 @@
       "groupTrackList": "Liste des morceaux",
       "groupTrackListHint": "Seulement quand une ligne a le focus",
       "groupEditor": "Éditeur",
-      "groupEditorHint": "Naviguer entre les sections"
+      "groupEditorHint": "Naviguer entre les sections",
+      "groupTags": "Tags",
+      "groupTagsHint": "Métadonnées du morceau",
+      "groupConvert": "Convertir",
+      "groupConvertHint": "Traiter et exporter",
+      "groupLibrary": "Bibliothèque",
+      "groupLibraryHint": "Fichiers et rangement",
+      "groupPlayback": "Lecture",
+      "groupPlaybackHint": "Écouter le morceau",
+      "groupNavigate": "Naviguer",
+      "groupNavigateHint": "Se déplacer dans l’app",
+      "groupApp": "Application",
+      "groupAppHint": "Réglages et fenêtres"
     },
     "stats": {
       "count": "conversions",
