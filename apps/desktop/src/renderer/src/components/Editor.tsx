@@ -1256,7 +1256,11 @@ export const Editor = memo(function Editor({
                 // div) — otherwise two hairlines stack a few pixels apart.
                 return [
                   <SectionGroupHeading
-                    key={`group-${group}`}
+                    // Keyed by the section that OPENS this run, not by the group: a
+                    // reordered list can re-enter the same phase further down (an audio
+                    // section moved above the metadata ones leaves the rest below them),
+                    // and a per-group key would collide between the two headings.
+                    key={`group-${id}`}
                     label={label}
                     testid={`editor-group-${group}`}
                   />,

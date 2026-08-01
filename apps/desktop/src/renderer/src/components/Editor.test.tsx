@@ -2922,6 +2922,38 @@ describe('Editor section groups', () => {
     expect(screen.getByTestId('editor-group-output')).toBeInTheDocument()
   })
 
+  // A reordered list can split one phase into several runs (an audio section moved up
+  // above the metadata ones leaves the rest of the audio group below them). Each run
+  // opens its own heading, so the headings must not collide on a per-group key — React
+  // drops or duplicates same-key siblings, and the second run's heading is the one at risk.
+  it('labels every run of a phase when the order splits that phase in two', () => {
+    const errors: unknown[][] = []
+    const spy = vi.spyOn(console, 'error').mockImplementation((...args) => {
+      errors.push(args)
+    })
+    renderEditor({ id: 'a' }, 'wav', {
+      editorSections: [
+        { id: 'form', open: true },
+        { id: 'normalize', open: false },
+        { id: 'quality', open: false },
+        { id: 'properties', open: false },
+        { id: 'trim', open: false },
+        { id: 'declick', open: false },
+        { id: 'output', open: false },
+      ],
+    })
+    const audio = screen.getAllByTestId('editor-group-audio')
+    expect(audio).toHaveLength(2)
+    const normalize = screen.getByTestId('editor-normalize')
+    const trim = screen.getByTestId('editor-trim')
+    expect(
+      audio[0].compareDocumentPosition(normalize) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(audio[1].compareDocumentPosition(trim) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    spy.mockRestore()
+    expect(errors.flat().join(' ')).not.toContain('same key')
+  })
+
   it('opens the audio phase right before the first audio section', () => {
     renderEditor({ id: 'a' })
     // The heading sits immediately above Silence trim (the first audio section in
