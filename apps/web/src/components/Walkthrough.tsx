@@ -78,9 +78,7 @@ export default function Walkthrough() {
         step={t('home.tag.step')}
         title={t('home.tag.title')}
         app={
-          <AppFrame pill={t('home.tag.pill')} busy progress={30}>
-            <TagScene />
-          </AppFrame>
+          <TagScene />
         }
       >
         <p>{t('home.tag.lede')}</p>
@@ -117,9 +115,7 @@ export default function Walkthrough() {
         step={t('home.batch.step')}
         title={t('home.batch.title')}
         app={
-          <AppFrame pill={t('home.batch.pill')} busy progress={28}>
-            <BatchScene />
-          </AppFrame>
+          <BatchScene />
         }
       >
         {t('home.batch.lede')}

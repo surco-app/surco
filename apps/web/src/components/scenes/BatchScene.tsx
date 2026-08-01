@@ -1,7 +1,8 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { batchFrame, BATCH_QUEUE } from '../../lib/scenes'
+import { batchFrame, BATCH_QUEUE, BATCH_TOTAL } from '../../lib/scenes'
 import { useSceneProgress } from '../../lib/useSceneProgress'
+import AppFrame from './AppFrame'
 import TrackRows, { type Row } from './TrackRows'
 
 const LIBRARY_DESTINATIONS = ['Apple Music', 'Engine DJ']
@@ -38,7 +39,18 @@ export default function BatchScene() {
     return { name: track.name, state, format: track.format }
   })
 
+  // Owns its window chrome so the toolbar counter tracks the queue instead of
+  // sitting frozen at "Converting 11/40".
   return (
+    <AppFrame
+      pill={
+        frame.finished
+          ? t('home.batch.pillDone', { total: BATCH_TOTAL })
+          : t('home.batch.pillRunning', { done: frame.done, total: BATCH_TOTAL })
+      }
+      busy={!frame.finished}
+      progress={(frame.done / BATCH_TOTAL) * 100}
+    >
     <div ref={ref} className="grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
       <TrackRows rows={rows} />
       <div className="border-t border-line p-5 lg:border-t-0 lg:border-l">
@@ -91,5 +103,6 @@ export default function BatchScene() {
         </p>
       </div>
     </div>
+    </AppFrame>
   )
 }
