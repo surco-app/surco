@@ -32,6 +32,26 @@ import { Editor } from './Editor'
 
 afterEach(cleanup)
 
+// Raise a hover tooltip and wait out its deliberate pause in fake time, so the assertion
+// that follows can be synchronous. Waiting in REAL time made these tests flaky on CI: the
+// tooltip sits behind a 400ms delay, which left only ~600ms of findBy* budget, and a loaded
+// runner ate it (the sparkle test burned 1612ms before failing). jsdom's synthetic
+// PointerEvent drops clientX/clientY, so drive the listener with MouseEvents, entering
+// before moving — the cursor-tracking listeners are bound lazily on pointerenter.
+// Timers are faked only here, AFTER the caller's async setup has settled, since installing
+// them earlier would strand the pending API promises these tests await.
+function hoverForTooltip(trigger: HTMLElement): void {
+  vi.useFakeTimers()
+  try {
+    for (const type of ['pointerenter', 'pointermove']) {
+      trigger.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
+    }
+    act(() => vi.advanceTimersByTime(400))
+  } finally {
+    vi.useRealTimers()
+  }
+}
+
 
 // The Editor's read-only data (currently Properties) is fetched through React Query,
 // so every mount needs a client in context. A fresh client per render keeps tests
@@ -841,10 +861,8 @@ describe('Editor Discogs loading skeleton', () => {
     renderEditor({ id: 'a', query: 'artist song', meta: { title: 'My Song' } })
     const badge = await screen.findByTestId('result-suggested')
     expect(badge).toHaveTextContent('')
-    for (const type of ['pointerenter', 'pointermove']) {
-      badge.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
-    }
-    expect(await screen.findByRole('tooltip')).toHaveTextContent(i18n.t('editor.matchSuggested'))
+    hoverForTooltip(badge)
+    expect(screen.getByRole('tooltip')).toHaveTextContent(i18n.t('editor.matchSuggested'))
   })
 
   // The provider is an origin label, not a match signal — so it wears the same
@@ -2282,10 +2300,8 @@ describe('Editor track preselection', () => {
     await loadTracklist()
     const badge = await screen.findByTestId('track-confidence')
     expect(badge).toHaveTextContent('')
-    for (const type of ['pointerenter', 'pointermove']) {
-      badge.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
-    }
-    expect(await screen.findByRole('tooltip')).toHaveTextContent(i18n.t('editor.matchSuggested'))
+    hoverForTooltip(badge)
+    expect(screen.getByRole('tooltip')).toHaveTextContent(i18n.t('editor.matchSuggested'))
   })
 
   it('flags a partial-title preselection for review', async () => {
@@ -2843,15 +2859,13 @@ describe('Editor Discogs format filter hint', () => {
   // When a format filter is active (Settings → Search), the Discogs column flags it with a
   // discreet funnel icon, so a thinned or empty result list reads as the filter at work
   // rather than a broken search — without a line of text repeating a setting the user chose.
-  it('flags an active format filter with the funnel control, naming the formats on hover', async () => {
+  it('flags an active format filter with the funnel control, naming the formats on hover', () => {
     renderEditor({ id: 'a' }, 'wav', { discogsFormats: ['Vinyl', 'CD'] })
     const filter = screen.getByTestId('discogs-format-filter')
     expect(filter).toBeInTheDocument()
     // The formats live in the themed tooltip, surfaced on hover, not as always-on text.
-    for (const type of ['pointerenter', 'pointermove']) {
-      filter.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
-    }
-    const tip = await screen.findByRole('tooltip')
+    hoverForTooltip(filter)
+    const tip = screen.getByRole('tooltip')
     expect(tip).toHaveTextContent('Vinyl')
     expect(tip).toHaveTextContent('CD')
   })
