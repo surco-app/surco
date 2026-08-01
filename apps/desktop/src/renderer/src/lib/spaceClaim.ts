@@ -22,6 +22,10 @@ type ClaimedKey =
   | 'trim-end-audition'
   | 'trim-end-clear'
   | 'trim-apply'
+  | 'trim-start-zoom-in'
+  | 'trim-start-zoom-out'
+  | 'trim-end-zoom-in'
+  | 'trim-end-zoom-out'
   | 'section-next'
   | 'section-prev'
 
@@ -43,6 +47,10 @@ const CLAIMABLE: ClaimedKey[] = [
   'trim-end-audition',
   'trim-end-clear',
   'trim-apply',
+  'trim-start-zoom-in',
+  'trim-start-zoom-out',
+  'trim-end-zoom-in',
+  'trim-end-zoom-out',
   'section-next',
   'section-prev',
 ]

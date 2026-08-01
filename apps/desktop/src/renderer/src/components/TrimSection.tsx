@@ -859,8 +859,8 @@ export function TrimSection({
   // handles: a macro pad presses a key and the cut moves, instead of the user having to
   // click the handle first. The ref keeps each handler reading the current cut, so the
   // claim registers once per open/close instead of on every nudge.
-  const actionsRef = useRef({ nudge, audition, clearSide, suggestion, onChange })
-  actionsRef.current = { nudge, audition, clearSide, suggestion, onChange }
+  const actionsRef = useRef({ nudge, audition, clearSide, suggestion, onChange, setContext, contextIndex })
+  actionsRef.current = { nudge, audition, clearSide, suggestion, onChange, setContext, contextIndex }
   useEffect(() => {
     if (!open) return
     const step = (which: Side, dir: 1 | -1, ctx: { shift?: boolean }): void =>
@@ -874,6 +874,15 @@ export function TrimSection({
       'trim-end-forward': (ctx) => step('end', 1, ctx),
       'trim-end-audition': () => actionsRef.current.audition('end'),
       'trim-end-clear': () => actionsRef.current.clearSide('end'),
+      // Un índice MENOR es una ventana más estrecha, o sea más zoom.
+      'trim-start-zoom-in': () =>
+        actionsRef.current.setContext('start', actionsRef.current.contextIndex.start - 1),
+      'trim-start-zoom-out': () =>
+        actionsRef.current.setContext('start', actionsRef.current.contextIndex.start + 1),
+      'trim-end-zoom-in': () =>
+        actionsRef.current.setContext('end', actionsRef.current.contextIndex.end - 1),
+      'trim-end-zoom-out': () =>
+        actionsRef.current.setContext('end', actionsRef.current.contextIndex.end + 1),
       // The detection proposes both cuts at once, so applying it is one action for the
       // whole track rather than one per side.
       'trim-apply': () => {
