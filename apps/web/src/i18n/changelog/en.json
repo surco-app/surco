@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.78",
+    "date": "August 1, 2026",
+    "title": "The whole conversion, start to finish, without leaving the keyboard",
+    "items": [
+      {
+        "text": "The silence trimmer's keys no longer depend on where the focus is: with the section open they act on the track you are editing, full stop. Each cut has its own keys — one set for the head, another for the tail — so a press can never move the wrong one. Built for anyone working from a macro pad: press a key and the cut moves.",
+        "in": "0.78.0"
+      },
+      {
+        "text": "You can jump from one editor section to the next with ⌘] and ⌘[, skipping every field in between. They keep working while you type in a field, so you can go from the title to the trimmer without touching the mouse: ⌘3 for the editor, a couple of jumps, Enter to unfold the section, and its keys are live.",
+        "in": "0.78.0"
+      },
+      {
+        "text": "The shortcuts in Settings are now sorted by what each one does — tags, convert, library, playback, navigate — instead of one long list you had to read end to end to find a key.",
+        "in": "0.78.0"
+      },
+      {
+        "text": "The silence trimmer folds and unfolds with the same animation as every other section, instead of snapping open.",
+        "in": "0.78.0"
+      },
+      {
+        "text": "Discogs searches now fetch as many results as you have set the list to show: it used to ask for fewer than it promised to display, leaving the larger options short.",
+        "in": "0.78.0"
+      }
+    ]
+  },
+  {
     "version": "0.77",
     "date": "July 31, 2026",
     "title": "The silence trimmer works from the keyboard",

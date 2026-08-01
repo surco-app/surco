@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.78",
+    "date": "1 de agosto de 2026",
+    "title": "Toda la conversión, de principio a fin, sin soltar el teclado",
+    "items": [
+      {
+        "text": "Las teclas del recorte de silencios ya no dependen de dónde tengas el foco: con la sección abierta actúan sobre la pista que estás editando, sin más. Cada corte tiene sus propias teclas — unas para el de entrada y otras para el de salida — así que una pulsación nunca mueve el que no era. Pensado para quien trabaja con un teclado de macros: se pulsa y el corte se mueve.",
+        "in": "0.78.0"
+      },
+      {
+        "text": "Puedes saltar de una sección del editor a la siguiente con ⌘] y ⌘[, sin pasar por todos los campos que hay en medio. Funcionan incluso mientras escribes en un campo, así que se puede ir del título al recorte sin tocar el ratón: ⌘3 para entrar al editor, un par de saltos, Enter para desplegar la sección y ya responden sus teclas.",
+        "in": "0.78.0"
+      },
+      {
+        "text": "Los atajos de Ajustes están ordenados por lo que hace cada uno — etiquetas, convertir, biblioteca, reproducción, navegar — en vez de una lista larga donde había que leerlo todo para encontrar una tecla.",
+        "in": "0.78.0"
+      },
+      {
+        "text": "El recorte de silencios se despliega y se pliega con la misma animación que el resto de secciones, en lugar de aparecer de golpe.",
+        "in": "0.78.0"
+      },
+      {
+        "text": "La búsqueda en Discogs trae tantos resultados como los que hayas configurado que se muestren: antes pedía menos de los que la lista prometía enseñar y las opciones altas se quedaban cortas.",
+        "in": "0.78.0"
+      }
+    ]
+  },
+  {
     "version": "0.77",
     "date": "31 de julio de 2026",
     "title": "El recorte de silencios se maneja con el teclado",
