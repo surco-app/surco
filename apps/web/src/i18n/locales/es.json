@@ -824,7 +824,8 @@
       "hearing": "Oyendo la reparada",
       "original": "↔ la original",
       "next": "Siguiente clic →",
-      "note": "Si la reparación se come el ataque de una caja, la diferencia es sutil. Y las diferencias sutiles solo se aprecian cambiando en caliente."
+      "note": "Si la reparación se come el ataque de una caja, la diferencia es sutil. Y las diferencias sutiles solo se aprecian cambiando en caliente.",
+      "clickCount": "{{count}} clics"
     },
     "trim": {
       "step": "05 · se ajusta",
@@ -834,7 +835,9 @@
       "tailLabel": "Final · últimos 12 s",
       "fullLabel": "La pista entera · 6:43",
       "magnet": "imán · enganchado al último golpe",
-      "clipping": "14 picos en 0 dBFS · clipping del máster"
+      "clipping": "14 picos en 0 dBFS · clipping del máster",
+      "seeking": "buscando el último golpe…",
+      "trimmed": "−{{seconds}} s al final"
     },
     "batch": {
       "step": "06 · sale",
@@ -846,7 +849,8 @@
       "toLibrary": "entra en la app",
       "toFile": "o exporta el fichero",
       "cues": "cue points de Traktor intactos entre MP3 y AIFF, y de cualquiera de los tres a FLAC",
-      "summary": "38 convertidas · 1 omitida · 1 con error"
+      "summary": "38 convertidas · 1 omitida · 1 con error",
+      "ready": "Listo"
     },
     "heroLede": "Surco abre cada archivo y te dice qué tienes de verdad: si el lossless es auténtico, qué etiquetas faltan, dónde hay clics y silencio de sobra. Lo arregla y lo deja listo en tu reproductor o en tu equipo de DJ.",
     "heroFree": "Gratis · macOS, Windows y Linux",

@@ -5,6 +5,8 @@ import { barsPath } from '../../lib/envelope'
 export default function WaveStrip({
   values,
   marks,
+  hitMark,
+  foundMarks,
   cut,
   cutFrom = 'end',
   height = 'h-24',
@@ -15,6 +17,11 @@ export default function WaveStrip({
 }: {
   values: number[]
   marks?: number[]
+  // Index of the mark the playhead is on right now, and how many it has passed.
+  // Marks behind the playhead stay bright: the scene claims these were found, so
+  // they have to accumulate rather than blink out once the head moves on.
+  hitMark?: number | null
+  foundMarks?: number
   cut?: number
   cutFrom?: 'start' | 'end'
   height?: string
@@ -52,14 +59,23 @@ export default function WaveStrip({
           />
         </>
       )}
-      {marks?.map((m) => (
-        <span
-          key={m}
-          aria-hidden="true"
-          className="absolute inset-y-2 w-px bg-amber/90"
-          style={{ left: `${m * 100}%` }}
-        />
-      ))}
+      {marks?.map((m, i) => {
+        const found = foundMarks === undefined || i < foundMarks
+        return (
+          <span
+            key={m}
+            aria-hidden="true"
+            className={`absolute inset-y-2 w-px transition-[background-color,box-shadow] duration-200 ${
+              hitMark === i
+                ? 'bg-amber shadow-[0_0_10px_var(--color-amber)]'
+                : found
+                  ? 'bg-amber/90'
+                  : 'bg-amber/25'
+            }`}
+            style={{ left: `${m * 100}%` }}
+          />
+        )
+      })}
       {playhead !== undefined && (
         <span
           aria-hidden="true"
