@@ -238,7 +238,11 @@
     "trimEndClear": "Supprimer la coupe de fin",
     "trimApply": "Appliquer le silence détecté",
     "sectionNext": "Aller à la section suivante",
-    "sectionPrev": "Aller à la section précédente"
+    "sectionPrev": "Aller à la section précédente",
+    "trimStartZoomIn": "Zoomer sur la coupe de début",
+    "trimStartZoomOut": "Dézoomer de la coupe de début",
+    "trimEndZoomIn": "Zoomer sur la coupe de fin",
+    "trimEndZoomOut": "Dézoomer de la coupe de fin"
   },
   "trackList": {
     "label": "Morceaux",

@@ -238,7 +238,11 @@
     "trimEndClear": "Quitar el corte de salida",
     "trimApply": "Aplicar el silencio detectado",
     "sectionNext": "Ir a la sección siguiente",
-    "sectionPrev": "Ir a la sección anterior"
+    "sectionPrev": "Ir a la sección anterior",
+    "trimStartZoomIn": "Acercar la vista del corte de entrada",
+    "trimStartZoomOut": "Alejar la vista del corte de entrada",
+    "trimEndZoomIn": "Acercar la vista del corte de salida",
+    "trimEndZoomOut": "Alejar la vista del corte de salida"
   },
   "trackList": {
     "label": "Pistas",

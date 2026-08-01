@@ -238,7 +238,11 @@
     "trimEndClear": "Clear the tail cut",
     "trimApply": "Apply the detected silence",
     "sectionNext": "Go to the next section",
-    "sectionPrev": "Go to the previous section"
+    "sectionPrev": "Go to the previous section",
+    "trimStartZoomIn": "Zoom in on the head cut",
+    "trimStartZoomOut": "Zoom out from the head cut",
+    "trimEndZoomIn": "Zoom in on the tail cut",
+    "trimEndZoomOut": "Zoom out from the tail cut"
   },
   "trackList": {
     "label": "Tracks",

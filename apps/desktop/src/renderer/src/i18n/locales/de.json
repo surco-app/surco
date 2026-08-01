@@ -238,7 +238,11 @@
     "trimEndClear": "Endschnitt entfernen",
     "trimApply": "Erkannte Stille anwenden",
     "sectionNext": "Zum nächsten Abschnitt",
-    "sectionPrev": "Zum vorherigen Abschnitt"
+    "sectionPrev": "Zum vorherigen Abschnitt",
+    "trimStartZoomIn": "Anfangsschnitt heranzoomen",
+    "trimStartZoomOut": "Anfangsschnitt herauszoomen",
+    "trimEndZoomIn": "Endschnitt heranzoomen",
+    "trimEndZoomOut": "Endschnitt herauszoomen"
   },
   "trackList": {
     "label": "Tracks",
