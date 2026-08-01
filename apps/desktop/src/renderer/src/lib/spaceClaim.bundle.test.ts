@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -19,9 +19,16 @@ import { describe, expect, it } from 'vitest'
 // Skipped when there is no build to inspect; CI builds before testing.
 describe('key-claim registry bundling', () => {
   const assets = join(__dirname, '../../../../out/renderer/assets')
+  // Only meaningful against a build of the CURRENT source: a stale out/ describes code
+  // that no longer exists, and failing on that would break the suite for a reason that
+  // has nothing to do with the change under test. `npm test` does not build, so skip
+  // unless the bundle is newer than the module it is supposed to mirror.
   let files: string[] = []
   try {
-    files = readdirSync(assets).filter((f) => f.endsWith('.js'))
+    const built = Math.min(...readdirSync(assets).map((f) => statSync(join(assets, f)).mtimeMs))
+    if (built > statSync(join(__dirname, 'spaceClaim.ts')).mtimeMs) {
+      files = readdirSync(assets).filter((f) => f.endsWith('.js'))
+    }
   } catch {
     files = []
   }
