@@ -47,6 +47,7 @@ export function PropertiesSection({ item, open, onToggle }: Props): React.JSX.El
   return (
     <div className="mt-5 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
+        sectionId="properties"
         title={tr('editor.propertiesTitle')}
         open={open}
         onToggle={onToggle}

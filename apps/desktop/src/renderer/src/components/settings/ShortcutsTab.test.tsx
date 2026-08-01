@@ -38,7 +38,7 @@ describe('ShortcutsTab trim group', () => {
   it('lists the silence editor commands under their own group', () => {
     renderTab()
     expect(screen.getByTestId('shortcut-group-trim')).toBeInTheDocument()
-    expect(screen.getByTestId('shortcut-row-trim-audition')).toBeInTheDocument()
+    expect(screen.getByTestId('shortcut-row-trim-start-audition')).toBeInTheDocument()
   })
 
   it('keeps the global commands out of the trim group', () => {

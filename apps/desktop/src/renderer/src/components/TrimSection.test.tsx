@@ -4,9 +4,8 @@ import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type { WaveformResult } from '../../../shared/types'
-import { activeScope } from '../lib/keymap'
+import { runKeyClaim } from '../lib/spaceClaim'
 import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
 import { drawWaveform } from '../lib/waveform'
@@ -73,7 +72,6 @@ beforeEach(() => {
   }
 })
 
-const bindings = resolveBindings()
 
 function section(over: Partial<React.ComponentProps<typeof TrimSection>> = {}): React.JSX.Element {
   return (
@@ -84,7 +82,6 @@ function section(over: Partial<React.ComponentProps<typeof TrimSection>> = {}): 
         onToggle={() => {}}
         onChange={() => {}}
         inputPath="/in/track.wav"
-        bindings={bindings}
         {...over}
       />
     </QueryClientProvider>
@@ -646,17 +643,16 @@ describe('TrimSection', () => {
     expect(onChange).toHaveBeenCalledWith({ startSec: 9.6, endSec: 90.3 })
   })
 
-  // Trimming the silence at the head of a track STARTS at the edge and walks inward,
-  // so the edge-snap that drops a cut too close to zero must not swallow a keyboard
-  // nudge: the press is a deliberate placement, unlike a drag that lands on the edge.
-  // Without this the first presses compute a value, commit throws it away, and the
-  // key reads as dead exactly where the work begins.
-  it('keeps a keyboard nudge that starts from the very edge of the track', async () => {
+  // The edge-snap drops a cut that sits too close to the track's own edge, which is right
+  // for a drag that lands there but not for a key: trimming the head walks inward from the
+  // edge, so a deliberate press must survive. Without this the first presses compute a
+  // value, commit throws it away, and the key reads as dead where the work begins.
+  it('keeps a keyboard nudge that lands next to the very edge of the track', async () => {
     const onChange = vi.fn()
-    render(section({ value: undefined, onChange }))
+    render(section({ value: { startSec: 0.05 }, onChange }))
     const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
-    fireEvent.keyDown(start, { key: 'ArrowRight', shiftKey: true })
-    expect(onChange).toHaveBeenCalledWith({ startSec: 0.1 })
+    fireEvent.keyDown(start, { key: 'ArrowRight' })
+    expect(onChange).toHaveBeenCalledWith({ startSec: 0.051 })
   })
 
   // The cut's time is a FIELD: type the second you want. It replaced a ‹ time ›
@@ -747,71 +743,96 @@ describe('TrimSection', () => {
       expect(onChange).toHaveBeenCalledWith({ startSec: 9.6, endSec: 90.3 })
     })
 
-    it('audiciona el lado cuyo handle tiene el foco', async () => {
-      render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    // Each handle answers only for itself, so a focused slider can never move the other
+    // cut — the same guarantee the claimed keys give by having one key per side.
+    it('nudges only the handle that holds the focus', async () => {
+      const onChange = vi.fn()
+      render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
       const end = await screen.findByTestId('trim-handle-end', undefined, { timeout: 3000 })
-      end.focus()
-      fireEvent.keyDown(end, { key: 'a' })
-      const audio = audios.at(-1)
-      expect(audio).toBeDefined()
-      act(() => audio?.onloadedmetadata?.())
-      expect(audio?.currentTime).toBe(Math.max(0, 90.3 - 4))
+      fireEvent.keyDown(end, { key: 'ArrowLeft' })
+      expect(onChange).toHaveBeenCalledWith({ startSec: 9.7, endSec: 90.299 })
     })
 
-    it('limpia el lado cuyo handle tiene el foco', async () => {
+    // Letters belong to the claimed keys now, which act with no focus at all. A focused
+    // handle must not answer them a second time, or one press would fire twice.
+    it('leaves the letter keys to the claimed handlers', async () => {
       const onChange = vi.fn()
       render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
       const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
       start.focus()
+      fireEvent.keyDown(start, { key: 'a' })
       fireEvent.keyDown(start, { key: 'c' })
-      expect(onChange).toHaveBeenCalledWith({ endSec: 90.3 })
-    })
-
-    it('aplica la sugerencia del lado cuyo handle tiene el foco', async () => {
-      const onChange = vi.fn()
-      render(section({ onChange }))
-      const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
-      start.focus()
-      fireEvent.keyDown(start, { key: 's' })
-      expect(onChange).toHaveBeenCalledWith({ startSec: 9.9 })
-    })
-
-    it('no dispara las teclas del trim con el foco fuera del editor', () => {
-      const onChange = vi.fn()
-      render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
-      const outside = document.createElement('button')
-      document.body.appendChild(outside)
-      outside.focus()
-      fireEvent.keyDown(outside, { key: 'a' })
       expect(onChange).not.toHaveBeenCalled()
       expect(audios).toHaveLength(0)
-      outside.remove()
+    })
+  })
+
+  // El modelo nuevo: con la sección abierta las teclas actúan sobre la pista abierta SIN
+  // foco en ninguna parte. Es lo que pide un teclado de macros — se pulsa y el corte se
+  // mueve — y lo que el modelo anterior (actuar sobre el tirador enfocado) no daba: había
+  // que pinchar antes el corte, un paso invisible que se leía como "las teclas no van".
+  describe('claimed keys with no focus', () => {
+    it('mueve el corte de entrada sin que nada tenga el foco', async () => {
+      const onChange = vi.fn()
+      render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+      await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+      expect(document.activeElement).toBe(document.body)
+      expect(runKeyClaim('trim-start-forward', {})).toBe(true)
+      expect(onChange).toHaveBeenCalledWith({ startSec: 9.701, endSec: 90.3 })
     })
 
-    it('solo activa el ámbito trim con el foco en un handle', async () => {
+    // Con la pista todavía sin recortar, la línea del corte se dibuja sobre el silencio
+    // que Surco ha detectado, no sobre el segundo cero. La tecla tiene que partir de ahí:
+    // arrancando desde cero movía un milisegundo al principio de la pista mientras la
+    // línea seguía quieta a nueve segundos, y se leía como que la tecla no hacía nada.
+    it('parte de la línea dibujada cuando aún no hay corte puesto', async () => {
+      const onChange = vi.fn()
+      render(section({ value: undefined, onChange }))
+      await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+      runKeyClaim('trim-start-forward', { shift: true })
+      expect(onChange).toHaveBeenCalledWith({ startSec: 10 })
+    })
+
+    it('parte de la línea dibujada también en el corte de salida', async () => {
+      const onChange = vi.fn()
+      render(section({ value: undefined, onChange }))
+      await screen.findByTestId('trim-handle-end', undefined, { timeout: 3000 })
+      runKeyClaim('trim-end-back', { shift: true })
+      expect(onChange).toHaveBeenCalledWith({ endSec: 90 })
+    })
+
+    it('mueve el corte de salida con su propia tecla, nunca el de entrada', async () => {
+      const onChange = vi.fn()
+      render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+      await screen.findByTestId('trim-handle-end', undefined, { timeout: 3000 })
+      runKeyClaim('trim-end-back', {})
+      expect(onChange).toHaveBeenCalledWith({ startSec: 9.7, endSec: 90.299 })
+    })
+
+    it('aplica el paso grueso cuando la pulsación lleva shift', async () => {
+      const onChange = vi.fn()
+      render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+      await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+      runKeyClaim('trim-start-forward', { shift: true })
+      expect(onChange).toHaveBeenCalledWith({ startSec: 9.8, endSec: 90.3 })
+    })
+
+    it('audiciona cada lado con su tecla, sin foco', async () => {
       render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
-      const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
-      expect(activeScope(start)).toBe('trim')
-      // El resto de la sección no maneja las teclas del trim, así que si quedara dentro
-      // del ámbito ←/→/a/c/s se resolverían a comandos que nadie ejecuta y no harían nada.
-      expect(activeScope(screen.getByTestId('trim-zoom-in-start'))).toBeNull()
-      expect(activeScope(screen.getByTestId('trim-audition-start'))).toBeNull()
-    })
-
-    // A macro keyboard can be rebound to send a shift chord. The direct match must
-    // win over the Shift-as-step-size fallback, or a saved rebind would silently do
-    // nothing — the worst failure mode for a feature that exists so this can be
-    // remapped to whatever the hardware sends.
-    it('dispara un comando del trim rebindeado a un chord con shift', async () => {
-      const rebound = resolveBindings({ 'trim-audition': ['shift', 'a'] })
-      render(section({ value: { startSec: 9.7, endSec: 90.3 }, bindings: rebound }))
-      const end = await screen.findByTestId('trim-handle-end', undefined, { timeout: 3000 })
-      end.focus()
-      fireEvent.keyDown(end, { key: 'a', shiftKey: true })
+      await screen.findByTestId('trim-handle-end', undefined, { timeout: 3000 })
+      runKeyClaim('trim-end-audition', {})
       const audio = audios.at(-1)
       expect(audio).toBeDefined()
       act(() => audio?.onloadedmetadata?.())
       expect(audio?.currentTime).toBe(Math.max(0, 90.3 - 4))
+    })
+
+    it('limpia cada lado con su tecla, sin foco', async () => {
+      const onChange = vi.fn()
+      render(section({ value: { startSec: 9.7, endSec: 90.3 }, onChange }))
+      await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+      runKeyClaim('trim-start-clear', {})
+      expect(onChange).toHaveBeenCalledWith({ endSec: 90.3 })
     })
   })
 })

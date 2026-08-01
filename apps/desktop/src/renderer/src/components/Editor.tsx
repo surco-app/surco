@@ -4,9 +4,9 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
+import { useSectionNavigation } from '../hooks/useSectionNavigation'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
-import type { Chord } from '../../../shared/shortcuts'
 import type {
   DeclickMode,
   FormatSetting,
@@ -164,9 +164,7 @@ interface Props {
   // Opens the DJ-app collection export (rekordbox/Traktor/Serato/M3U8/Engine USB) — the
   // post-conversion step that used to live on the toolbar. App owns the modal.
   onExportCollection: () => void
-  // The effective key bindings (defaults + the user's overrides). App owns the single
   // source; the trim section's own onKeyDown reads it to resolve its five commands.
-  bindings: Map<string, Chord>
 }
 
 // Memoized: App keeps every prop identity-stable (useStableCallback handlers, kept
@@ -206,10 +204,11 @@ export const Editor = memo(function Editor({
   onCopyFilename,
   onSearchWeb,
   onExportCollection,
-  bindings,
 }: Props): React.JSX.Element {
   // Every Settings-derived value the editor reads comes from the shared context in one
   // pull — this used to be a 17-prop wall App re-plumbed for each field (see
+  // ⌘] / ⌘[ jump header to header over the fields in between.
+  useSectionNavigation()
   // settingsContext.tsx). Memoized upstream on the settings identity, so the memo()
   // above keeps the same "only re-render when settings actually change" contract.
   const {
@@ -920,7 +919,7 @@ export const Editor = memo(function Editor({
         onResultsWidthChange={onResultsWidthChange}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div data-shortcut-scope="editor" className="flex min-w-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
           {/* The pinned metadata form opens the "File" phase; the mapped sections
               below label "Audio" and "Output" as the group changes down the list. */}
@@ -1179,7 +1178,6 @@ export const Editor = memo(function Editor({
                           onToggle={() => setSectionOpen('trim', !trimOpen)}
                           onChange={(trim) => onChange({ trim })}
                           inputPath={item.inputPath}
-                          bindings={bindings}
                         />
                       )
                     case 'declick':

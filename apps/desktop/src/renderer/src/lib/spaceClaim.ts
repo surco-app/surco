@@ -7,9 +7,51 @@
 // here, and the keyboard-shortcut hook consults this before running the global
 // command. Module-level (not context) because the claim must survive the
 // editor's per-track remount, like the fold/maximize stores next door.
-type ClaimedKey = 'play'
+// The silence editor claims its own actions the same way, and for the same reason:
+// while the section is open they act on the open track with no focus anywhere, so a
+// macro pad drives the trim by pressing a key instead of first clicking a handle.
+// One key per side — with no focus to disambiguate, the key IS the side.
+type ClaimedKey =
+  | 'play'
+  | 'trim-start-back'
+  | 'trim-start-forward'
+  | 'trim-start-audition'
+  | 'trim-start-clear'
+  | 'trim-end-back'
+  | 'trim-end-forward'
+  | 'trim-end-audition'
+  | 'trim-end-clear'
+  | 'trim-apply'
+  | 'section-next'
+  | 'section-prev'
 
-type Handlers = Partial<Record<ClaimedKey, () => void>>
+// Shift rides along because it is the coarse step for the trim nudges; `play` ignores it.
+export interface ClaimContext {
+  shift?: boolean
+}
+
+type Handlers = Partial<Record<ClaimedKey, (ctx: ClaimContext) => void>>
+
+const CLAIMABLE: ClaimedKey[] = [
+  'play',
+  'trim-start-back',
+  'trim-start-forward',
+  'trim-start-audition',
+  'trim-start-clear',
+  'trim-end-back',
+  'trim-end-forward',
+  'trim-end-audition',
+  'trim-end-clear',
+  'trim-apply',
+  'section-next',
+  'section-prev',
+]
+
+// Whether a command id can be answered by an open section, so the global listener only
+// consults the claims for the keys a section could own.
+export function isClaimable(id: string): id is ClaimedKey {
+  return (CLAIMABLE as string[]).includes(id)
+}
 
 // A STACK, not a single claim. Releases can arrive in any order — React unmounts
 // children before parents, and the editor's sections are reorderable — so with one
@@ -17,11 +59,17 @@ type Handlers = Partial<Record<ClaimedKey, () => void>>
 // through to the GLOBAL command: Space starting the mini-player underneath a section
 // that still had its own transport open, precisely what claiming exists to prevent.
 const claims: Handlers[] = []
+const claimed = new Set<string>()
 
 // Registers the section's handlers and returns the release. A release removes its
 // OWN entry wherever it sits, so it can neither resurrect a dead claim nor drop a
 // live one.
 export function claimKeys(handlers: Handlers): () => void {
+  // The tag rides on the live stack so minification keeps it (a dead constant is shaken
+  // out). It is what spaceClaim.bundle.test.ts counts: one chunk carrying it means one
+  // copy of this stack, and a second copy would make a section's claims invisible to the
+  // global listener.
+  claimed.add('surco/key-claims/single-instance')
   claims.push(handlers)
   return () => {
     const i = claims.indexOf(handlers)
@@ -36,14 +84,14 @@ export function claimKeys(handlers: Handlers): () => void {
 // the top one has nothing to play right now (repair set to Off) the key must not fall
 // through to the mini-player while one below is still auditioning — that is the whole
 // track blaring under a live transport, the exact thing the claim exists to stop.
-export function runKeyClaim(key: ClaimedKey): boolean {
+export function runKeyClaim(key: ClaimedKey, ctx: ClaimContext = {}): boolean {
   const handler = nearest(key)
   if (!handler) return false
-  handler()
+  handler(ctx)
   return true
 }
 
-function nearest(key: ClaimedKey): (() => void) | undefined {
+function nearest(key: ClaimedKey): ((ctx: ClaimContext) => void) | undefined {
   for (let i = claims.length - 1; i >= 0; i--) {
     const handler = claims[i][key]
     if (handler) return handler
