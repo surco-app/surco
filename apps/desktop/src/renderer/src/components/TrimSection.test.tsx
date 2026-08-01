@@ -89,6 +89,19 @@ function section(over: Partial<React.ComponentProps<typeof TrimSection>> = {}): 
 }
 
 describe('TrimSection', () => {
+  // Every other editor section folds through SectionBody, which tweens the height over
+  // 240 ms and keeps the children mounted through the collapse. This one used to render
+  // its body inline, so it was the one section that snapped open and shut — jarring
+  // precisely where the user opens and closes most while trimming.
+  it('folds through the shared animated body, like every other section', async () => {
+    const { rerender } = render(section({ open: true }))
+    await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
+    rerender(section({ open: false }))
+    // Mid-collapse the lanes are still in the tree: that is what makes the shrink visible
+    // instead of the panel vanishing on the first frame.
+    expect(screen.queryByTestId('trim-lane-start')).not.toBeNull()
+  })
+
   // The decode is gated behind a ~400ms settle, so the query isn't fetching yet for that
   // window. The section must still show its loading skeleton the instant it opens — before
   // this it rendered an empty body during the settle and looked like it hadn't opened.

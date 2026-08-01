@@ -18,6 +18,7 @@ import { useWaveformWindow } from '../hooks/useWaveformWindow'
 import { claimKeys } from '../lib/spaceClaim'
 import { detectOnsets, detectTrim, refineOnset } from '../lib/trim'
 import { drawWaveform } from '../lib/waveform'
+import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
 import { SectionSubhead } from './SectionSubhead'
@@ -981,7 +982,7 @@ export function TrimSection({
           ) : undefined
         }
       />
-      {open && (
+      <SectionBody open={open}>
         <div className="mt-4">
           {(loading || wave) && (
             <>
@@ -1043,7 +1044,7 @@ export function TrimSection({
             </>
           )}
         </div>
-      )}
+      </SectionBody>
     </div>
   )
 }
