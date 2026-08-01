@@ -227,7 +227,7 @@
     "title": "The work of five apps, in one click",
     "lede": "Converter, Discogs, tag editor, spectrum analyzer and Apple Music: five programs, four or five minutes per track. Surco folds that whole flow into one button.",
     "manual": "By hand",
-    "manualTime": "~4–5 min",
+    "manualTime": "~1 h 15 min",
     "manualSteps": [
       {
         "app": "Spek",
@@ -250,9 +250,9 @@
         "label": "Import to Apple Music"
       }
     ],
-    "manualCaption": "jumping between tools · repeating on every track",
+    "manualCaption": "converting and importing run in batches · the rest repeats per track",
     "withSurco": "With Surco",
-    "withSurcoTime": "~1–2 s",
+    "withSurcoTime": "7 s",
     "combo": "Convert + tag + Apple Music or Engine DJ",
     "bullets": [
       "lossless AIFF, WAV, FLAC or ALAC, or MP3",
@@ -262,8 +262,11 @@
       "spectrum analysis",
       "to Apple Music or Engine DJ"
     ],
-    "oneClick": "one click · one track ready",
-    "footnote": "* Manual flow shown as an example; steps and tools vary from person to person. Estimated times."
+    "oneClick": "one click · 7 s for all 40 · up to 13 conversions at once",
+    "footnote": "* The manual flow is an example; steps and tools vary from person to person — times are estimates. Surco: converting and tagging 40 tracks of 7:08 (WAV 16/44.1 → AIFF) measured on a 14-core Mac; varies with machine, format and length.",
+    "replay": "↻ replay",
+    "tracksReady": "ready",
+    "trackCount": "{{count}} tracks"
   },
   "how": {
     "kicker": "How it works",
