@@ -403,9 +403,10 @@ export const Editor = memo(function Editor({
   // Which library the membership badge reads — the conversion destination's. Null
   // (folder/beside/overwrite, or Apple Music off macOS) hides the badge entirely.
   const librarySource = librarySourceOf({ ...picked, outputFormat: format }, isMacOS())
-  // Per-track normalization, seeded from the Settings default. Editing it both
-  // updates the control and reports the override up so convert uses it.
-  const [normalizeCfg, setNormalizeCfg] = useState(normalize)
+  // Per-track normalization, seeded from the track's own setting and falling back to
+  // the Settings default for a track never touched. Editing it both updates the control
+  // and reports the override up so convert uses it.
+  const [normalizeCfg, setNormalizeCfg] = useState(item.normalize ?? normalize)
   // Per-track click repair, same contract as normalizeCfg.
   const [declickCfg, setDeclickCfg] = useState(declick)
   // Report the seeded picks up once on mount: App mirrors them in refs for the
@@ -1207,6 +1208,9 @@ export const Editor = memo(function Editor({
                           onChange={(n) => {
                             setNormalizeCfg(n)
                             onNormalizeChange?.(n)
+                            // Stage it on the track so coming back to it finds the dial
+                            // as it was left, the way the silence trim already does.
+                            onChange({ normalize: n })
                           }}
                           item={item}
                           isMulti={isMulti}
