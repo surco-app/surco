@@ -104,6 +104,16 @@ describe('findConflicts', () => {
     const conflicts = findConflicts(resolveBindings({ reveal: ['mod', 'o'] }))
     expect(conflicts).toEqual([['add', 'reveal']])
   })
+
+  // La clave del conflicto es el chord completo, así que ⌥E y E no chocan. Es lo que
+  // permite que un teclado de macros use combinaciones sin desplazar los atajos de siempre.
+  it('no marca conflicto entre una tecla y la misma con un modificador', () => {
+    const bindings = new Map([
+      ['add', ['alt', 'e']],
+      ['reveal', ['e']],
+    ])
+    expect(findConflicts(bindings)).toEqual([])
+  })
 })
 
 describe('matchChord con ámbito', () => {
