@@ -128,6 +128,10 @@ export interface TrackItem {
   // waveform). On the track — not an editor dial — so it rides trackSignature:
   // editing it flips a done track stale and gets it saved into session.json.
   trim?: TrimRange
+  // The normalization dialled for THIS track. Absent means the track has never been
+  // touched and the editor seeds it from the Settings default, so configuring loudness
+  // globally still governs freshly imported tracks.
+  normalize?: NormalizeConfig
   status: TrackStatus
   stage?: ProcessStage
   // The format this track is being / was last converted to, captured when the

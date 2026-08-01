@@ -1364,6 +1364,31 @@ describe('Editor export control', () => {
     expect(screen.getByTestId('process-btn')).toBeInTheDocument()
   })
 
+  // Djotas's report: the editor remounts per track, so a normalization dialled on one
+  // track was re-seeded from the global default on the way back and the choice was gone.
+  // A track that carries its own setting must open showing it.
+  it('seeds the normalization from the track when it has its own', () => {
+    renderEditor(
+      {
+        id: 'a',
+        normalize: { mode: 'loudness', targetLufs: -9, truePeakDb: -1, peakDb: -1 },
+      },
+      'wav',
+      { editorSections: [{ id: 'normalize' as const, open: true }] },
+    )
+    expect(screen.getByTestId('normalize-mode-loudness')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  // The other half: a track the user never touched still opens on the Settings default,
+  // so configuring loudness globally keeps working for freshly imported tracks.
+  it('seeds the normalization from Settings when the track has none', () => {
+    renderEditor({ id: 'a' }, 'wav', {
+      normalize: { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+      editorSections: [{ id: 'normalize' as const, open: true }],
+    })
+    expect(screen.getByTestId('normalize-mode-loudness')).toHaveAttribute('aria-pressed', 'true')
+  })
+
   // The section order below the metadata form is the user's (Settings → Editor): a DJ
   // who tunes loudness before naming the file puts Normalization above File name, and
   // the editor must honor that instead of hardcoding one editorial order.
