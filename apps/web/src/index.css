@@ -94,44 +94,6 @@ button:not(:disabled) {
     opacity: 0.9;
   }
 }
-@keyframes fillSlow {
-  0% {
-    width: 0;
-  }
-  88% {
-    width: 100%;
-  }
-  100% {
-    width: 100%;
-  }
-}
-@keyframes fillSnap {
-  0% {
-    width: 0;
-  }
-  16% {
-    width: 100%;
-  }
-  100% {
-    width: 100%;
-  }
-}
-@keyframes popcheck {
-  0%,
-  14% {
-    opacity: 0;
-    transform: scale(0.6);
-  }
-  22% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
-  30%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
 
 /* scroll-triggered reveal. Directional variants are declared before .reveal-in
    so the shown state wins the transform at equal specificity. */
@@ -177,20 +139,6 @@ button:not(:disabled) {
 }
 .label-pop {
   animation: labelPop 0.15s ease-out;
-}
-
-/* Speed section race: the manual-vs-Surco bars (and the ✓ pop) only start once
-   the section scrolls into view — riding the same .reveal-in gate as everything
-   else — so the visitor always catches the race from the start. Two laps, then
-   both bars rest full instead of looping forever off-screen. */
-.reveal-in .race-slow {
-  animation: fillSlow 6s linear 2 forwards;
-}
-.reveal-in .race-snap {
-  animation: fillSnap 6s ease-out 2 forwards;
-}
-.reveal-in .race-check {
-  animation: popcheck 6s ease-out 2 forwards;
 }
 
 /* blue→cyan gradient text accent */
