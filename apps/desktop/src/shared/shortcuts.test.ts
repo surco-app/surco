@@ -108,6 +108,22 @@ describe('modificadores alt y ctrl', () => {
     ).toEqual(['mod', 'r'])
   })
 
+  // En modo posición física el token ya no es el carácter (Slash → '/'), así que el
+  // carácter no codifica el shift por sí solo: sin contarlo aparte, ⌥⇧/ y ⌥/
+  // colapsarían al mismo chord y una de las dos combinaciones dejaría de ser alcanzable.
+  it('distingue ⌥⇧/ de ⌥/ aunque el token sea el mismo símbolo', () => {
+    const sinShift = eventToChord(
+      { key: '/', code: 'Slash', metaKey: false, ctrlKey: false, altKey: true, shiftKey: false },
+      true,
+    )
+    const conShift = eventToChord(
+      { key: '/', code: 'Slash', metaKey: false, ctrlKey: false, altKey: true, shiftKey: true },
+      true,
+    )
+    expect(sinShift).toEqual(['alt', '/'])
+    expect(conShift).toEqual(['alt', 'shift', '/'])
+  })
+
   // Las teclas con nombre (flechas, Enter…) no dependen de la distribución, así que
   // conservan su token aunque el chord lleve alt.
   it('conserva el token con nombre de las teclas especiales', () => {
