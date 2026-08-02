@@ -67,6 +67,7 @@ import { createOutputReservations } from './outputReservations'
 import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
 import { runProcessTrack } from './processTrack'
 import { getProvider } from './providers'
+import { createQuitGuard } from './quitGuard'
 import { loadLastSession, saveLastSession } from './session'
 import {
   defaultConfigDir,
@@ -464,27 +465,31 @@ function createWindow(): BrowserWindow {
   // still close on the first click. The flag makes the confirmed close fall straight
   // through instead of re-prompting, and covers ⌘Q too, since app.quit() closes the
   // window and lands right back here.
-  let quitConfirmed = false
-  win.on('close', (event) => {
-    if (quitConfirmed) return
-    const running = activeConversions.count()
-    if (running === 0) return
-    event.preventDefault()
-    const t = createMenuT(menuLocale())
-    dialog
-      .showMessageBox(win, {
+  const quitGuard = createQuitGuard({
+    count: activeConversions.count,
+    confirm: async (running) => {
+      const t = createMenuT(menuLocale())
+      const { response } = await dialog.showMessageBox(win, {
         type: 'warning',
         message: t('quitBusyMessage'),
         detail: t('quitBusyDetail').replace('{n}', String(running)),
         buttons: [t('quitBusyConfirm'), t('quitBusyCancel')],
+        // Keep converting is the default: an absent-minded Return on this dialog must
+        // not be what throws away a batch that has been running for minutes.
         defaultId: 1,
         cancelId: 1,
       })
-      .then(({ response }) => {
-        if (response !== 0) return
-        quitConfirmed = true
-        win.close()
-      })
+      return response === 0
+    },
+  })
+  win.on('close', (event) => {
+    // The decision is async and 'close' is not, so the event is always prevented first
+    // and the window closed again once the user has answered.
+    if (!quitGuard.mustAsk()) return
+    event.preventDefault()
+    quitGuard.ask().then((quit) => {
+      if (quit) win.close()
+    })
   })
   // Let the renderer pause its background analyze sweep while the window is hidden,
   // so it stops spawning ffmpeg in the background, and resume it on focus.
