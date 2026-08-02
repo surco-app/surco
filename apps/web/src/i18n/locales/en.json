@@ -423,7 +423,7 @@
           "It ships with the useful things already on: quality analysis on import, and Discogs, Bandcamp and Deezer all searched without configuring anything.",
           "You can change any setting later in Settings (⌘ ,)."
         ],
-        "shot": "instalar-en.png",
+        "shot": "instalar-en.webp",
         "shotCaption": "The welcome wizard on first launch."
       },
       {
@@ -441,7 +441,7 @@
           "A damaged file neither freezes the app nor stops the import: it's flagged and skipped, and a WAV with a broken header is repaired on the fly so you can still play it.",
           "Closed the app? On launch it offers to reopen your last session — with your unapplied edits intact, even after an unexpected quit."
         ],
-        "shot": "importar-en.png",
+        "shot": "importar-en.webp",
         "shotCaption": "Dragging and dropping tracks into the list."
       },
       {
@@ -461,7 +461,7 @@
           "Drag tracks out of Surco —one or several— into any other app without exporting them first.",
           "Lost track of what's playing? A button takes you to it, and the command palette (⌘K) jumps to any track as you type its title or artist."
         ],
-        "shot": "lista-en.png",
+        "shot": "lista-en.webp",
         "shotCaption": "The track list with filters and statuses."
       },
       {
@@ -484,7 +484,7 @@
           "The Properties section shows the file's technical details —codec, sample rate, bits, channels, bitrate, path and size— and warns you when the file doesn't match the quality you asked for in Settings, in case you want to reconvert it.",
           "Editor sections collapse, reorder and hide to taste in Settings → Editor; collapsed they summarize their state, and any one expands to full screen (Esc to come back)."
         ],
-        "shot": "editor-en.png",
+        "shot": "editor-en.webp",
         "shotCaption": "The metadata editor with Discogs suggestions."
       },
       {
@@ -500,7 +500,7 @@
           "On conversion Surco unifies the variants of the same field and doesn't stamp its own encoder signature, so it adds no new clutter.",
           "Mood and energy tags written by other DJ tools are preserved on conversion."
         ],
-        "shot": "otros-tags-en.png",
+        "shot": "otros-tags-en.webp",
         "shotCaption": "The “Other metadata” section with third-party tags."
       },
       {
@@ -521,7 +521,7 @@
           "With “Analyze quality on import” on, every file you drop is analyzed in full in the background and everything is ready by the time you open the track.",
           "Analysis is cached so it isn't repeated; you can clear the cache in Settings to recompute everything from scratch."
         ],
-        "shot": "calidad-en.png",
+        "shot": "calidad-en.webp",
         "shotCaption": "A track's spectrum with its quality verdict."
       },
       {
@@ -540,7 +540,7 @@
           "If you're also trimming silence, the part being cut is dimmed on the waveform so you don't tune against audio that won't make it out.",
           "It repairs the audio on conversion, so it re-encodes: check the cue point note before applying it to a WAV or an ALAC with cues."
         ],
-        "shot": "declick-en.png",
+        "shot": "declick-en.webp",
         "shotCaption": "Detected clicks marked on the waveform."
       },
       {
@@ -557,7 +557,7 @@
           "The “Silence to trim” filter in the list gathers the tracks that need it.",
           "Trimming re-encodes the audio and moves Traktor's cues to match the cut, keeping the grid's phase; on WAV and ALAC they're lost. Surco warns you in the section."
         ],
-        "shot": "recorte-en.png",
+        "shot": "recorte-en.webp",
         "shotCaption": "The leading and trailing cuts on the waveform."
       },
       {
@@ -578,7 +578,7 @@
           "Pick the release with the arrow keys; a band tells you how many tracks it has before you expand it.",
           "If you already renamed with your own title format, Surco undoes it before searching so your template doesn't leak into the query."
         ],
-        "shot": "discogs-en.png",
+        "shot": "discogs-en.webp",
         "shotCaption": "Searching a release and picking the track on Discogs."
       },
       {
@@ -595,7 +595,7 @@
           "Filter the list by “Auto-matched” to review what it did, or run it on demand with “Auto-match all tracks”.",
           "The Activity panel shows the background work and explains each verdict: which signals matched and which candidates were discarded. A button copies the whole log in case you need to report something."
         ],
-        "shot": "automatch-en.png",
+        "shot": "automatch-en.webp",
         "shotCaption": "The best match, flagged “Suggested” in the Discogs search."
       },
       {
@@ -613,7 +613,7 @@
           "In multi-track mode the spectrum and the filename are hidden, because they belong to individual tracks.",
           "Release not on Discogs? Number the selection in list order with a single command."
         ],
-        "shot": "album-en.png",
+        "shot": "album-en.webp",
         "shotCaption": "Assigning each file to its song and applying to all."
       },
       {
@@ -631,7 +631,7 @@
           "Titles have their own format too, collector style: define a pattern like ({trackNumber}) {title} ({year}) and apply it when you want — to one track or the whole selection —, never automatically. Applying it twice doesn't duplicate the prefix, and Surco tells you how many titles changed and which it skipped.",
           "You can regenerate the filenames of a whole selection from their metadata in one go."
         ],
-        "shot": "nombres-en.png",
+        "shot": "nombres-en.webp",
         "shotCaption": "The filename template builder in Settings."
       },
       {
@@ -651,7 +651,7 @@
           "You can cancel a conversion midway, and apply the same decision to the rest of the batch at once when a file already exists.",
           "Once converted, you can send the originals to the trash in a single action — to the trash, never a hard delete."
         ],
-        "shot": "convertir-en.png",
+        "shot": "convertir-en.webp",
         "shotCaption": "The convert button with its format picker."
       },
       {
@@ -667,7 +667,7 @@
           "A file whose format can't be preserved is skipped with a warning, instead of being quietly converted to something else.",
           "If you turn on a filter that would force an MP3 to be re-encoded onto itself, Surco asks you first."
         ],
-        "shot": "igual-origen-en.png",
+        "shot": "igual-origen-en.webp",
         "shotCaption": "“Same as source” in the format picker."
       },
       {
@@ -684,7 +684,7 @@
           "It only uses the current metadata: nothing is downloaded from Discogs during the batch.",
           "The arrow next to the convert button changes the format and destination for that run only — your defaults stay as they were."
         ],
-        "shot": "lote-en.png",
+        "shot": "lote-en.webp",
         "shotCaption": "A batch conversion in progress."
       },
       {
@@ -702,7 +702,7 @@
           "Edit a track later and Surco updates its Apple Music copy instead of duplicating it, and if an older copy was already there it offers to remove it.",
           "Key, label, catalog number and remixer don't reach Apple Music —they only live in the file's tags— and FLAC is never sent, because Music can't handle it."
         ],
-        "shot": "exportar-en.png",
+        "shot": "exportar-en.webp",
         "shotCaption": "Sending the track to Apple Music or exporting the collection."
       },
       {
@@ -719,7 +719,7 @@
           "A batch of three hundred tracks produces one single write, not three hundred.",
           "If a track's cue tree can't be read, Surco doesn't wipe the ones you already had."
         ],
-        "shot": "traktor-en.png",
+        "shot": "traktor-en.webp",
         "shotCaption": "Traktor collection sync in Settings."
       },
       {
@@ -738,7 +738,7 @@
           "From the palette you can jump to any track by title or artist, switch the theme, accept a flagged match or reopen the wizard.",
           "Every shortcut is rebindable in Settings, and Surco won't let you save two that clash."
         ],
-        "shot": "atajos-en.png",
+        "shot": "atajos-en.webp",
         "shotCaption": "The command palette with search open."
       },
       {
@@ -758,7 +758,7 @@
           "Export your configuration as a backup, or point the config folder at iCloud Drive or Dropbox to share your preferences across Macs — your Discogs token travels with it, so you don't have to set it up again on each machine. None of this goes through any Surco server: no account, no cloud, no telemetry.",
           "Turn on your system's reduced motion setting and the animations simplify rather than disappear."
         ],
-        "shot": "ajustes-en.png",
+        "shot": "ajustes-en.webp",
         "shotCaption": "The Settings window with its sections."
       }
     ]
