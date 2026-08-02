@@ -60,6 +60,15 @@ export function createWorkerClient(spawn: () => Worker): WorkerClient {
       pump()
     })
     spawned.on('error', failEverything)
+    // A thread can die without ever emitting 'error' — a native crash in the tagging
+    // library, a process.exit, an external terminate all emit only 'exit'. Without this
+    // the jobs it was carrying stay pending forever and inFlightId stays set, so pump()
+    // never dispatches again and the slot is dead for the rest of the session.
+    // failEverything is a no-op once the maps are empty, so a clean exit costs nothing.
+    spawned.on('exit', (code: number) => {
+      if (worker !== spawned) return
+      failEverything(new Error(`worker exited (${code})`))
+    })
     worker = spawned
     return spawned
   }
