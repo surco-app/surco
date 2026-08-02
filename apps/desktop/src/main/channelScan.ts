@@ -1,6 +1,29 @@
+import type { ChildProcess } from 'node:child_process'
 import { spawn } from 'node:child_process'
 import { constants as osConstants, setPriority } from 'node:os'
 import { type ChannelWave, createChannelScan } from './waveform'
+
+// The scans decoding right now. This spawn happens inside the DSP worker thread, so the
+// main process's activeConversions registry never sees it and app.on('will-quit') has
+// nothing to kill: quitting mid-scan left the most expensive probe in the app — a native
+// stereo decode of a long mix — running on with only its two-minute timeout as a backstop.
+// Entries are removed as each child settles so a quit can never signal a pid the OS has
+// already handed to someone else.
+const active = new Set<ChildProcess>()
+
+// Stop every scan still decoding. Called when the worker is shutting down; safe to call
+// when nothing is running.
+export function killActiveScans(): void {
+  for (const child of active) child.kill('SIGTERM')
+  active.clear()
+}
+
+// How many scans are registered. A sweep runs this probe over every track in a crate, so
+// the registry emptying itself as children settle is what keeps it from growing all
+// session — exposed so a test can hold that line.
+export function activeScanCount(): number {
+  return active.size
+}
 
 // The spawn+stream half of the native channel scan, extracted worker-safe: it takes
 // ffmpegPath and the channel count as data (the worker thread has no `app`/binaries to
@@ -40,8 +63,13 @@ export function runChannelScan(
       aligned.set(data.subarray(0, usable))
       scan.push(new Float32Array(aligned.buffer))
     })
-    child.on('error', reject)
+    active.add(child)
+    child.on('error', (err) => {
+      active.delete(child)
+      reject(err)
+    })
     child.on('close', (code) => {
+      active.delete(child)
       if (code === 0) resolve(scan.finish())
       else reject(new Error(`channel scan exited with code ${code}`))
     })

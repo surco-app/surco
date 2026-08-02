@@ -1,5 +1,12 @@
 import { parentPort } from 'node:worker_threads'
+import { killActiveScans } from './channelScan'
 import { runWorkerJob, type WorkerJob } from './workerJobs'
+
+// The channel scan spawns ffmpeg from in here, so a child outlives this thread unless it
+// is killed on the way out: quitting Surco mid-scan otherwise leaves a native decode of a
+// long mix burning a core with nothing left that can stop it. 'exit' covers both routes
+// the thread ends by — the pool terminating it, and the process going away underneath.
+process.on('exit', killActiveScans)
 
 // Worker-thread entry: a plain request/response loop over parentPort. All routing
 // logic lives in runWorkerJob so it stays testable outside a thread. The await handles
