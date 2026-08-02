@@ -63,3 +63,32 @@ describe('filled-surface label contrast (WCAG 1.4.3 AA)', () => {
     }
   }
 })
+
+// Conversion progress on the selected row. The stage label and its sweep bar paint in
+// --color-accent, which in the light palette is the SAME hex as --color-row-selected
+// (#2959aa): the one row the DJ is watching — the track open in the editor — loses its
+// progress entirely, reading as a stall while every other row animates. The .is-primary
+// block already flips the right-hand glyphs for exactly this reason; the stage was missed.
+// Guarding the token distance keeps a future palette edit from collapsing them again.
+describe('selected-row progress affordances', () => {
+  for (const [theme, t] of [
+    ['dark', dark],
+    ['light', light],
+  ] as const) {
+    // Why the accent can't stay: light collapses to 1.00 (identical hex) and dark reaches
+    // only 2.12. The on-selection colour clears AA on both fills, which is why the fix is
+    // to flip the affordance rather than to retune the accent.
+    it(`${theme} on-selection colour reaches 4.5:1 on the selected row fill`, () => {
+      expect(contrast(t['color-on-row-selected'], t['color-row-selected'])).toBeGreaterThanOrEqual(
+        4.5,
+      )
+    })
+  }
+
+  for (const testid of ['track-stage', 'track-quality-loading']) {
+    it(`flips ${testid} to the on-selection colour`, () => {
+      const block = css.slice(css.indexOf('.is-primary'))
+      expect(block).toContain(`.is-primary [data-testid="${testid}"]`)
+    })
+  }
+})
