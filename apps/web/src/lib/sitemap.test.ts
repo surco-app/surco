@@ -3,7 +3,10 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { INDEXABLE_PATHS, SITE } from './sitemap'
 
-const sitemap = readFileSync(fileURLToPath(new URL('../../public/sitemap.xml', import.meta.url)), 'utf8')
+const sitemap = readFileSync(
+  fileURLToPath(new URL('../../public/sitemap.xml', import.meta.url)),
+  'utf8',
+)
 const routesSrc = readFileSync(fileURLToPath(new URL('../routes.tsx', import.meta.url)), 'utf8')
 
 function locs(xml: string): string[] {

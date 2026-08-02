@@ -30,7 +30,13 @@ function contrast(a: string, b: string): number {
 function fade(fg: string, bg: string, alpha: number): string {
   const parse = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
   const [f, b] = [parse(fg), parse(bg)]
-  return `#${f.map((v, i) => Math.round(v * alpha + b[i] * (1 - alpha)).toString(16).padStart(2, '0')).join('')}`
+  return `#${f
+    .map((v, i) =>
+      Math.round(v * alpha + b[i] * (1 - alpha))
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`
 }
 
 describe('body text contrast (WCAG 1.4.3 AA)', () => {
@@ -50,7 +56,10 @@ describe('body text contrast (WCAG 1.4.3 AA)', () => {
     expect(safety, 'closeSafety paragraph not found').not.toBeNull()
     const faded = safety?.[1].match(/text-(faint|muted)\/(\d+)/)
     if (faded) {
-      const ratio = contrast(fade(token(faded[1]), token('bg'), Number(faded[2]) / 100), token('bg'))
+      const ratio = contrast(
+        fade(token(faded[1]), token('bg'), Number(faded[2]) / 100),
+        token('bg'),
+      )
       expect(ratio).toBeGreaterThanOrEqual(4.5)
     }
   })
