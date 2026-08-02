@@ -57,4 +57,27 @@ describe('createActiveConversions', () => {
     const conversions = createActiveConversions()
     expect(() => conversions.killAll()).not.toThrow()
   })
+
+  // Closing the window mid-batch used to kill the running conversions and drop the
+  // queued ones without a word, so the DJ came back to a half-converted crate with no
+  // sign of where it stopped. The close handler asks before quitting, and to ask it
+  // first has to know whether anything is actually running.
+  it('reports how many conversions are still running', () => {
+    const conversions = createActiveConversions()
+    expect(conversions.count()).toBe(0)
+    conversions.register('a', vi.fn())
+    conversions.register('b', vi.fn())
+    expect(conversions.count()).toBe(2)
+    conversions.unregister('a')
+    expect(conversions.count()).toBe(1)
+    conversions.killAll()
+    expect(conversions.count()).toBe(0)
+  })
+
+  it('stops counting a conversion once it is cancelled', () => {
+    const conversions = createActiveConversions()
+    conversions.register('a', vi.fn())
+    conversions.cancel('a')
+    expect(conversions.count()).toBe(0)
+  })
 })

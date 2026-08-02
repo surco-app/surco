@@ -458,6 +458,34 @@ function createWindow(): BrowserWindow {
     if (!win.isDestroyed()) win.webContents.send('activity:event', event)
   })
   win.on('closed', offActivity)
+  // Closing mid-batch used to kill the running conversions and silently drop everything
+  // still queued, so the DJ came back to a half-converted crate with no sign of where it
+  // stopped. Ask first, and only while ffmpeg is actually running — a quiet app must
+  // still close on the first click. The flag makes the confirmed close fall straight
+  // through instead of re-prompting, and covers ⌘Q too, since app.quit() closes the
+  // window and lands right back here.
+  let quitConfirmed = false
+  win.on('close', (event) => {
+    if (quitConfirmed) return
+    const running = activeConversions.count()
+    if (running === 0) return
+    event.preventDefault()
+    const t = createMenuT(menuLocale())
+    dialog
+      .showMessageBox(win, {
+        type: 'warning',
+        message: t('quitBusyMessage'),
+        detail: t('quitBusyDetail').replace('{n}', String(running)),
+        buttons: [t('quitBusyConfirm'), t('quitBusyCancel')],
+        defaultId: 1,
+        cancelId: 1,
+      })
+      .then(({ response }) => {
+        if (response !== 0) return
+        quitConfirmed = true
+        win.close()
+      })
+  })
   // Let the renderer pause its background analyze sweep while the window is hidden,
   // so it stops spawning ffmpeg in the background, and resume it on focus.
   win.on('blur', () => win.webContents.send('window:focus', false))

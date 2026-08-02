@@ -53,6 +53,10 @@ interface MenuStrings {
   traktorQuitConfirm: string
   traktorQuitCancel: string
   traktorSyncBlocked: string
+  quitBusyMessage: string
+  quitBusyDetail: string
+  quitBusyConfirm: string
+  quitBusyCancel: string
 }
 
 const strings: Record<MenuLang, MenuStrings> = {
@@ -104,6 +108,11 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitConfirm: 'Cerrar Traktor',
     traktorQuitCancel: 'Cancelar',
     traktorSyncBlocked: 'La colección de Traktor no se ha actualizado: Traktor sigue abierto.',
+    quitBusyMessage: 'Hay conversiones en curso',
+    quitBusyDetail:
+      'Si sales ahora se detendrán {n} conversiones y las pistas que faltan se quedarán sin convertir.',
+    quitBusyConfirm: 'Salir igualmente',
+    quitBusyCancel: 'Seguir convirtiendo',
   },
   en: {
     settings: 'Settings…',
@@ -153,6 +162,11 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitConfirm: 'Close Traktor',
     traktorQuitCancel: 'Cancel',
     traktorSyncBlocked: "Traktor's collection was not updated: Traktor is still open.",
+    quitBusyMessage: 'Conversions are still running',
+    quitBusyDetail:
+      'Quitting now stops {n} conversions, and the tracks still queued will be left unconverted.',
+    quitBusyConfirm: 'Quit anyway',
+    quitBusyCancel: 'Keep converting',
   },
   de: {
     settings: 'Einstellungen…',
@@ -202,6 +216,11 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitConfirm: 'Traktor schließen',
     traktorQuitCancel: 'Abbrechen',
     traktorSyncBlocked: 'Die Traktor-Sammlung wurde nicht aktualisiert: Traktor ist noch geöffnet.',
+    quitBusyMessage: 'Es laufen noch Konvertierungen',
+    quitBusyDetail:
+      'Beim Beenden werden {n} Konvertierungen gestoppt, und die noch wartenden Titel bleiben unkonvertiert.',
+    quitBusyConfirm: 'Trotzdem beenden',
+    quitBusyCancel: 'Weiter konvertieren',
   },
   fr: {
     settings: 'Réglages…',
@@ -252,6 +271,11 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitCancel: 'Annuler',
     traktorSyncBlocked:
       "La collection Traktor n'a pas été mise à jour : Traktor est encore ouvert.",
+    quitBusyMessage: 'Des conversions sont en cours',
+    quitBusyDetail:
+      'Quitter maintenant arrête {n} conversions, et les morceaux en attente resteront non convertis.',
+    quitBusyConfirm: 'Quitter quand même',
+    quitBusyCancel: 'Continuer la conversion',
   },
   'pt-BR': {
     settings: 'Ajustes…',
@@ -301,6 +325,11 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitConfirm: 'Fechar o Traktor',
     traktorQuitCancel: 'Cancelar',
     traktorSyncBlocked: 'A coleção do Traktor não foi atualizada: o Traktor ainda está aberto.',
+    quitBusyMessage: 'Ainda há conversões em andamento',
+    quitBusyDetail:
+      'Sair agora interrompe {n} conversões, e as faixas na fila ficarão sem converter.',
+    quitBusyConfirm: 'Sair mesmo assim',
+    quitBusyCancel: 'Continuar convertendo',
   },
 }
 

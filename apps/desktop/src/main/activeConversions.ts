@@ -14,6 +14,9 @@ export interface ActiveConversions {
   // writing after the process that owns them is gone — will-quit calls this for
   // every conversion still in flight.
   killAll: () => void
+  // How many conversions are running right now, so closing the window can ask
+  // before throwing away work instead of killing the batch silently.
+  count: () => number
 }
 
 export function createActiveConversions(): ActiveConversions {
@@ -32,5 +35,6 @@ export function createActiveConversions(): ActiveConversions {
       for (const kill of kills.values()) kill('SIGTERM')
       kills.clear()
     },
+    count: () => kills.size,
   }
 }
