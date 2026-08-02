@@ -13,7 +13,7 @@ export default function Footer() {
       <div className="mx-auto grid max-w-5xl gap-8 px-6 py-14 sm:grid-cols-2 lg:grid-cols-[1.8fr_1fr_1fr]">
         <div>
           <div className="flex items-center gap-2.5">
-            <img src="/icon.png" alt="Surco" className="h-9 w-9" />
+            <img src="/icon-128.webp" alt="Surco" width={128} height={128} className="h-9 w-9" />
             <span className="text-lg font-semibold tracking-tight">Surco</span>
           </div>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">{t('footer.tagline')}</p>

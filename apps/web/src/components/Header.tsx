@@ -79,9 +79,13 @@ export default function Header({ page }: { page?: Page }) {
         style={{ transform: scrolled ? 'scale(0.92)' : 'scale(1)' }}
       >
         <a href={page ? home : '#top'} className="flex items-center gap-3">
+          {/* 128px source for a mark that never paints above 56: the 1024px PNG it replaced
+              was 313 KB on the critical path of every route, for ~80x the pixels drawn. */}
           <img
-            src="/icon.png"
+            src="/icon-128.webp"
             alt="Surco"
+            width={128}
+            height={128}
             className={`transition-all duration-300 ${
               scrolled ? 'h-10 w-10' : 'h-11 w-11 sm:h-14 sm:w-14'
             }`}
