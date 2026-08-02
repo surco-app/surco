@@ -39,7 +39,8 @@ describe('guide screenshots', () => {
   ] as const) {
     it(`${name} references only files that exist in public/guide`, () => {
       const missing = shots(locale).filter(
-        (shot) => !existsSync(fileURLToPath(new URL(`../../public/guide/${shot}`, import.meta.url))),
+        (shot) =>
+          !existsSync(fileURLToPath(new URL(`../../public/guide/${shot}`, import.meta.url))),
       )
       expect(missing).toEqual([])
     })
