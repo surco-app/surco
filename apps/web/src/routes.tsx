@@ -12,8 +12,8 @@ import Features from './components/Features'
 import GoogleAnalytics from './components/GoogleAnalytics'
 import Guide from './components/Guide'
 import { createI18n, type Language } from './i18n'
+import { SITE } from './lib/sitemap'
 
-const SITE = 'https://getsurco.app'
 const PATHS: Record<Language, string> = { es: '/', en: '/en' }
 const FEATURE_PATHS: Record<Language, string> = { es: '/funciones', en: '/en/features' }
 const GUIDE_PATHS: Record<Language, string> = { es: '/guia', en: '/en/guide' }
