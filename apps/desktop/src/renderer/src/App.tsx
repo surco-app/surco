@@ -76,6 +76,7 @@ import {
   type FocusPresetId,
   focusPresetWidth,
 } from './lib/focusPreset'
+import { pushImportNotice } from './lib/importNotices'
 import { isTypingTarget } from './lib/keymap'
 import { librarySourceOf } from './lib/librarySource'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
@@ -456,8 +457,12 @@ export default function App(): React.JSX.Element {
       // an explicit "always analyze my imports" setting.
       if (settings?.autoAnalyze) analyzeAllQuality([t])
     },
-    onDuplicatesSkipped: (count) => setNotice(tr('notices.duplicatesSkipped', { count })),
-    onMetaReadFailed: (count) => setNotice(tr('notices.metaReadFailed', { count })),
+    // Keyed, unlike the plain notices above: a folder walk settles one batch per directory,
+    // so an unkeyed card here stacks one per folder rather than one per import.
+    onDuplicatesSkipped: (count) =>
+      pushImportNotice(store, 'duplicates-skipped', tr('notices.duplicatesSkipped', { count })),
+    onMetaReadFailed: (count) =>
+      pushImportNotice(store, 'meta-read-failed', tr('notices.metaReadFailed', { count })),
     // One disk-cache round trip for the whole freshly-dropped batch, so the list's quality
     // dot and clipping flag can appear before any per-track probe runs. Fire-and-forget:
     // a hydration failure just leaves the normal lazy probes to fill the verdicts in, same
