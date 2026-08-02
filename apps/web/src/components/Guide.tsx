@@ -16,6 +16,11 @@ type Section = {
   shotCaption: string
 }
 
+// The export size every walkthrough shot shares: 2x the ~718px the figure is ever painted
+// at, which is what a retina screen actually draws and no more.
+const SHOT_WIDTH = 1440
+const SHOT_HEIGHT = 895
+
 // Renders a screenshot/GIF for a step. The images live in /public/guide and are
 // dropped in after the fact, so a missing file falls back to a labelled
 // placeholder instead of a broken image — the page reads fine before the media
@@ -47,12 +52,18 @@ function GuideShot({
           onClick={() => onZoom({ src, caption })}
           className="block w-full cursor-zoom-in"
         >
+          {/* Every walkthrough shot is exported at this size, so declaring it lets the
+              browser reserve the figure's height from the aspect ratio before the file
+              arrives. Without it each lazy image resolved from zero-height and shoved the
+              text the reader was following down the page — nineteen times per visit. */}
           <img
             src={src}
             alt={caption}
+            width={SHOT_WIDTH}
+            height={SHOT_HEIGHT}
             loading="lazy"
             onError={() => setFailed(true)}
-            className="block w-full"
+            className="block h-auto w-full"
           />
         </button>
       )}

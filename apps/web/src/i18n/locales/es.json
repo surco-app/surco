@@ -423,7 +423,7 @@
           "De serie ya viene con lo importante encendido: analiza la calidad al importar y busca en Discogs, Bandcamp y Deezer sin que configures nada.",
           "Puedes cambiar cualquier ajuste después en Ajustes (⌘ ,)."
         ],
-        "shot": "instalar-es.png",
+        "shot": "instalar-es.webp",
         "shotCaption": "El asistente de bienvenida en el primer arranque."
       },
       {
@@ -441,7 +441,7 @@
           "Un archivo dañado ni cuelga la app ni corta la importación: se marca y se salta, y un WAV con la cabecera rota se repara al vuelo para que puedas oírlo.",
           "¿Cerraste la app? Al abrirla te ofrece reabrir la última sesión — con tus ediciones sin aplicar intactas, incluso tras un cierre inesperado."
         ],
-        "shot": "importar-es.png",
+        "shot": "importar-es.webp",
         "shotCaption": "Arrastrar y soltar pistas en la lista."
       },
       {
@@ -461,7 +461,7 @@
           "Arrastra pistas fuera de Surco —una o varias— a cualquier otra app sin exportarlas antes.",
           "¿Se te pierde la que suena? Un botón te lleva a ella, y la paleta de comandos (⌘K) salta a cualquier pista escribiendo su título o su artista."
         ],
-        "shot": "lista-es.png",
+        "shot": "lista-es.webp",
         "shotCaption": "La lista de pistas con filtros y estados."
       },
       {
@@ -484,7 +484,7 @@
           "La sección Propiedades te enseña la ficha técnica del archivo —códec, frecuencia, bits, canales, bitrate, ruta y tamaño— y te avisa si el archivo no coincide con la calidad que pides en Ajustes, por si quieres reconvertirlo.",
           "Las secciones del editor se pliegan, se reordenan y se ocultan a tu gusto en Ajustes → Editor; plegadas resumen su estado, y cualquiera se agranda a pantalla completa (Esc para volver)."
         ],
-        "shot": "editor-es.png",
+        "shot": "editor-es.webp",
         "shotCaption": "El editor de metadatos con las sugerencias de Discogs."
       },
       {
@@ -500,7 +500,7 @@
           "Al convertir, Surco unifica las variantes de un mismo campo y no estampa su propia firma de programa, así que no añade basura nueva.",
           "Las etiquetas de ánimo y energía que escriben otras herramientas de DJ sí se respetan al convertir."
         ],
-        "shot": "otros-tags-es.png",
+        "shot": "otros-tags-es.webp",
         "shotCaption": "La sección «Otros metadatos» con las etiquetas de terceros."
       },
       {
@@ -521,7 +521,7 @@
           "Con «Analizar la calidad al importar» activado, cada archivo que sueltes se analiza entero en segundo plano y todo está listo cuando abres la pista.",
           "El análisis se guarda en caché para no repetirlo; puedes vaciarla en Ajustes para recalcularlo todo desde cero."
         ],
-        "shot": "calidad-es.png",
+        "shot": "calidad-es.webp",
         "shotCaption": "El espectro de una pista con su veredicto de calidad."
       },
       {
@@ -540,7 +540,7 @@
           "Si además recortas el silencio, la parte que se va queda atenuada en la onda para que no ajustes sobre audio que no saldrá.",
           "Repara el audio al convertir, así que recodifica: revisa la nota sobre cue points antes de aplicarlo a un WAV o un ALAC con cues."
         ],
-        "shot": "declick-es.png",
+        "shot": "declick-es.webp",
         "shotCaption": "Los clics detectados, marcados sobre la forma de onda."
       },
       {
@@ -557,7 +557,7 @@
           "El filtro «Silencio por recortar» de la lista te reúne las pistas que lo necesitan.",
           "Recortar recodifica el audio y recoloca los cues de Traktor según lo cortado, conservando la fase de la rejilla; en WAV y ALAC se pierden. Surco te lo avisa en la sección."
         ],
-        "shot": "recorte-es.png",
+        "shot": "recorte-es.webp",
         "shotCaption": "Los cortes de entrada y salida sobre la onda."
       },
       {
@@ -578,7 +578,7 @@
           "Elige el disco con las flechas del teclado; una banda te dice cuántas pistas tiene antes de desplegarlo.",
           "Si ya renombraste con tu propio formato de título, Surco lo deshace antes de buscar para no arrastrar tu plantilla a la consulta."
         ],
-        "shot": "discogs-es.png",
+        "shot": "discogs-es.webp",
         "shotCaption": "Buscar un disco y elegir la pista en Discogs."
       },
       {
@@ -595,7 +595,7 @@
           "Filtra la lista por «Auto-emparejadas» para revisar lo que ha hecho, o lánzalo a demanda con «Auto-emparejar todas las pistas».",
           "El panel de Actividad enseña el trabajo en segundo plano y explica cada veredicto: qué señales coincidieron y qué candidatos se descartaron. Un botón copia el registro entero por si tienes que reportar algo."
         ],
-        "shot": "automatch-es.png",
+        "shot": "automatch-es.webp",
         "shotCaption": "La mejor coincidencia, marcada como «Sugerida» en la búsqueda de Discogs."
       },
       {
@@ -613,7 +613,7 @@
           "En modo varias pistas se ocultan el espectro y el nombre de archivo, porque son cosa de cada pista.",
           "¿El disco no está en Discogs? Numera la selección en orden de lista con un solo comando."
         ],
-        "shot": "album-es.png",
+        "shot": "album-es.webp",
         "shotCaption": "Asignar cada archivo a su canción del disco y aplicar a todas."
       },
       {
@@ -631,7 +631,7 @@
           "El título también tiene su formato, al estilo coleccionista: define un patrón como ({trackNumber}) {title} ({year}) y aplícalo cuando tú quieras — a una pista o a toda la selección —, nunca automáticamente. Aplicarlo dos veces no duplica el prefijo, y Surco te dice cuántos títulos cambió y cuáles se saltó.",
           "Puedes regenerar de golpe los nombres de toda una selección a partir de sus metadatos."
         ],
-        "shot": "nombres-es.png",
+        "shot": "nombres-es.webp",
         "shotCaption": "El constructor de plantillas de nombre en Ajustes."
       },
       {
@@ -651,7 +651,7 @@
           "Puedes cancelar una conversión a medias, y aplicar de una vez la misma decisión al resto cuando un archivo ya existe.",
           "Tras convertir, puedes mandar los originales a la papelera con una sola acción — a la papelera, nunca borrado directo."
         ],
-        "shot": "convertir-es.png",
+        "shot": "convertir-es.webp",
         "shotCaption": "El botón de convertir con su selector de formato."
       },
       {
@@ -667,7 +667,7 @@
           "Un archivo cuyo formato no se puede conservar se salta con un aviso, en vez de convertirse a otra cosa sin decírtelo.",
           "Si activas un filtro que obligue a recodificar un MP3 sobre sí mismo, Surco te lo pregunta antes."
         ],
-        "shot": "igual-origen-es.png",
+        "shot": "igual-origen-es.webp",
         "shotCaption": "«Igual que el origen» en el selector de formato."
       },
       {
@@ -684,7 +684,7 @@
           "Solo usa los metadatos actuales: no descarga nada de Discogs en el lote.",
           "La flecha junto al botón de convertir cambia el formato y el destino solo para esa tanda — tus ajustes por defecto se quedan como estaban."
         ],
-        "shot": "lote-es.png",
+        "shot": "lote-es.webp",
         "shotCaption": "El progreso de una conversión por lotes."
       },
       {
@@ -702,7 +702,7 @@
           "Si editas una pista después, Surco actualiza su copia de Apple Music en vez de duplicarla, y si ya había una copia antigua te ofrece eliminarla.",
           "A Apple Music no llegan la tonalidad, el sello, el catálogo ni el remixer —solo viven en el tag del archivo— y los FLAC no se envían nunca, porque Music no puede con ellos."
         ],
-        "shot": "exportar-es.png",
+        "shot": "exportar-es.webp",
         "shotCaption": "Enviar la pista a Apple Music o exportar la colección."
       },
       {
@@ -719,7 +719,7 @@
           "Una tanda de trescientas pistas produce una sola escritura, no trescientas.",
           "Si el árbol de cues de una pista no se puede leer, Surco no borra los que ya tenías."
         ],
-        "shot": "traktor-es.png",
+        "shot": "traktor-es.webp",
         "shotCaption": "La sincronización con la colección de Traktor en Ajustes."
       },
       {
@@ -738,7 +738,7 @@
           "Desde la paleta saltas a cualquier pista por título o artista, cambias el tema, aceptas una coincidencia marcada o vuelves a abrir el asistente.",
           "Todos los atajos son reasignables en Ajustes, y Surco no te deja guardar dos iguales."
         ],
-        "shot": "atajos-es.png",
+        "shot": "atajos-es.webp",
         "shotCaption": "La paleta de comandos con la búsqueda abierta."
       },
       {
@@ -758,7 +758,7 @@
           "Exporta tu configuración como copia de seguridad, o apunta la carpeta de configuración a iCloud Drive o Dropbox para compartir tus preferencias entre Macs — el token de Discogs viaja con ella, así que no tienes que reconfigurarlo en cada equipo. Nada de esto pasa por ningún servidor de Surco: no hay cuenta, ni nube, ni telemetría.",
           "Si activas el movimiento reducido del sistema, las animaciones se simplifican en vez de desaparecer."
         ],
-        "shot": "ajustes-es.png",
+        "shot": "ajustes-es.webp",
         "shotCaption": "La ventana de Ajustes con sus secciones."
       }
     ]
