@@ -76,6 +76,7 @@ import {
   type FocusPresetId,
   focusPresetWidth,
 } from './lib/focusPreset'
+import { pushImportNotice } from './lib/importNotices'
 import { isTypingTarget } from './lib/keymap'
 import { librarySourceOf } from './lib/librarySource'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
@@ -86,6 +87,7 @@ import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
 import type { ReleaseMetaPatch } from './lib/release'
 import { contentDeficit } from './lib/resize'
+import { sameTracks } from './lib/sameTracks'
 import {
   type ClickMods,
   clickSelect,
@@ -456,8 +458,12 @@ export default function App(): React.JSX.Element {
       // an explicit "always analyze my imports" setting.
       if (settings?.autoAnalyze) analyzeAllQuality([t])
     },
-    onDuplicatesSkipped: (count) => setNotice(tr('notices.duplicatesSkipped', { count })),
-    onMetaReadFailed: (count) => setNotice(tr('notices.metaReadFailed', { count })),
+    // Keyed, unlike the plain notices above: a folder walk settles one batch per directory,
+    // so an unkeyed card here stacks one per folder rather than one per import.
+    onDuplicatesSkipped: (count) =>
+      pushImportNotice(store, 'duplicates-skipped', tr('notices.duplicatesSkipped', { count })),
+    onMetaReadFailed: (count) =>
+      pushImportNotice(store, 'meta-read-failed', tr('notices.metaReadFailed', { count })),
     // One disk-cache round trip for the whole freshly-dropped batch, so the list's quality
     // dot and clipping flag can appear before any per-track probe runs. Fire-and-forget:
     // a hydration failure just leaves the normal lazy probes to fill the verdicts in, same
@@ -849,9 +855,7 @@ export default function App(): React.JSX.Element {
   const prevSelectedTracks = useRef<TrackItem[]>([])
   const selectedTracks = useMemo(() => {
     const next = tracks.filter((t) => selectedIds.includes(t.id))
-    const prev = prevSelectedTracks.current
-    const unchanged = prev.length === next.length && next.every((t, i) => t === prev[i])
-    if (!unchanged) prevSelectedTracks.current = next
+    if (!sameTracks(prevSelectedTracks.current, next)) prevSelectedTracks.current = next
     return prevSelectedTracks.current
   }, [tracks, selectedIds])
   // The floating player (audio element, visibility, follow-selection playback)
@@ -894,6 +898,12 @@ export default function App(): React.JSX.Element {
       setFormatFilter(null)
     }
   }, [formatTally, formatFilter, setFormatFilter])
+  // Same identity guard as selectedTracks above, for the same reason: filtering and
+  // sorting mint a new array on every tracks change, so an edit to one row handed the
+  // list a fresh reference even when the visible rows were untouched — breaking the memo
+  // on TrackList (whose comment claims to survive exactly that) for a render with nothing
+  // to show. The rows themselves stay memoized either way; this drops the reconciliation.
+  const prevVisibleTracks = useRef<TrackItem[]>([])
   const visibleTracks = useMemo(() => {
     // Reset the pinned set the moment any filter axis changes, so each filter session
     // starts from the live verdicts; within a session filterWithSticky keeps already-shown
@@ -904,13 +914,15 @@ export default function App(): React.JSX.Element {
       stickyFilter.current = key
       stickyIds.current = new Set()
     }
-    return sortTracks(
+    const next = sortTracks(
       filterWithSticky(tracksView, filterSelection, stickyIds.current).filter((t) =>
         matchesSearch(t, deferredSearch),
       ),
       sortBy,
       sortDir,
     )
+    if (!sameTracks(prevVisibleTracks.current, next)) prevVisibleTracks.current = next
+    return prevVisibleTracks.current
   }, [tracksView, filterSelection, deferredSearch, sortBy, sortDir])
   // The display order a Shift-click ranges over, read by the (ref-stable) select callback
   // so a range spans the rows the user actually sees — not the import order, which would

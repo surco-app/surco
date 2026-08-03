@@ -67,6 +67,7 @@ import { createOutputReservations } from './outputReservations'
 import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
 import { runProcessTrack } from './processTrack'
 import { getProvider } from './providers'
+import { createQuitGuard } from './quitGuard'
 import { loadLastSession, saveLastSession } from './session'
 import {
   defaultConfigDir,
@@ -458,6 +459,38 @@ function createWindow(): BrowserWindow {
     if (!win.isDestroyed()) win.webContents.send('activity:event', event)
   })
   win.on('closed', offActivity)
+  // Closing mid-batch used to kill the running conversions and silently drop everything
+  // still queued, so the DJ came back to a half-converted crate with no sign of where it
+  // stopped. Ask first, and only while ffmpeg is actually running — a quiet app must
+  // still close on the first click. The flag makes the confirmed close fall straight
+  // through instead of re-prompting, and covers ⌘Q too, since app.quit() closes the
+  // window and lands right back here.
+  const quitGuard = createQuitGuard({
+    count: activeConversions.count,
+    confirm: async (running) => {
+      const t = createMenuT(menuLocale())
+      const { response } = await dialog.showMessageBox(win, {
+        type: 'warning',
+        message: t('quitBusyMessage'),
+        detail: t('quitBusyDetail').replace('{n}', String(running)),
+        buttons: [t('quitBusyConfirm'), t('quitBusyCancel')],
+        // Keep converting is the default: an absent-minded Return on this dialog must
+        // not be what throws away a batch that has been running for minutes.
+        defaultId: 1,
+        cancelId: 1,
+      })
+      return response === 0
+    },
+  })
+  win.on('close', (event) => {
+    // The decision is async and 'close' is not, so the event is always prevented first
+    // and the window closed again once the user has answered.
+    if (!quitGuard.mustAsk()) return
+    event.preventDefault()
+    quitGuard.ask().then((quit) => {
+      if (quit) win.close()
+    })
+  })
   // Let the renderer pause its background analyze sweep while the window is hidden,
   // so it stops spawning ffmpeg in the background, and resume it on focus.
   win.on('blur', () => win.webContents.send('window:focus', false))
