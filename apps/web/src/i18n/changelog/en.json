@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.81",
+    "date": "August 3, 2026",
+    "title": "Quitting mid-conversion no longer takes your work with it",
+    "items": [
+      {
+        "text": "Closing Surco while conversions are running now asks first. A ⌘Q or a click on the X used to cut off whatever was converting and drop the rest of the queue without a word: you reopened to a half-converted folder with no sign of where it stopped.",
+        "in": "0.81.0"
+      },
+      {
+        "text": "The track you have open in the editor shows its progress again while it converts. In the light theme the stage and its bar were painted the same colour as the selected row's background, so the one track you were watching looked stalled while every other row moved along.",
+        "in": "0.81.0"
+      },
+      {
+        "text": "Importing a large folder now collapses the unreadable-file and duplicate notices into a single card that keeps its count up to date. They used to appear once per subfolder, so a collection on a network drive could bury the window under stacked notices for the whole import.",
+        "in": "0.81.0"
+      }
+    ]
+  },
+  {
     "version": "0.80",
     "date": "August 1, 2026",
     "title": "Any key combination works as a shortcut",

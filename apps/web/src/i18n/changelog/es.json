@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.81",
+    "date": "3 de agosto de 2026",
+    "title": "Salir a mitad de una conversión ya no se lleva el trabajo por delante",
+    "items": [
+      {
+        "text": "Cerrar Surco con conversiones en marcha ahora pregunta antes. Hasta ahora un ⌘Q o un clic en la X cortaba en seco lo que se estaba convirtiendo y descartaba lo que quedaba en cola sin decir nada: volvías a abrir y te encontrabas la carpeta a medias, sin saber por dónde se había quedado.",
+        "in": "0.81.0"
+      },
+      {
+        "text": "La pista que tienes abierta en el editor vuelve a enseñar su progreso mientras se convierte. Con el tema claro, la etapa y la barra se pintaban del mismo color que el fondo de la fila seleccionada, así que justo la pista que estabas mirando parecía atascada mientras las demás avanzaban.",
+        "in": "0.81.0"
+      },
+      {
+        "text": "Al importar una carpeta grande, los avisos de archivos ilegibles o repetidos se agrupan en una sola tarjeta que va actualizando la cuenta. Antes salía uno por cada subcarpeta, y una colección en red podía tapar la ventana con avisos apilados durante toda la importación.",
+        "in": "0.81.0"
+      }
+    ]
+  },
+  {
     "version": "0.80",
     "date": "1 de agosto de 2026",
     "title": "Cualquier combinación de teclas vale como atajo",
