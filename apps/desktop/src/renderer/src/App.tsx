@@ -87,6 +87,7 @@ import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
 import type { ReleaseMetaPatch } from './lib/release'
 import { contentDeficit } from './lib/resize'
+import { sameTracks } from './lib/sameTracks'
 import {
   type ClickMods,
   clickSelect,
@@ -854,9 +855,7 @@ export default function App(): React.JSX.Element {
   const prevSelectedTracks = useRef<TrackItem[]>([])
   const selectedTracks = useMemo(() => {
     const next = tracks.filter((t) => selectedIds.includes(t.id))
-    const prev = prevSelectedTracks.current
-    const unchanged = prev.length === next.length && next.every((t, i) => t === prev[i])
-    if (!unchanged) prevSelectedTracks.current = next
+    if (!sameTracks(prevSelectedTracks.current, next)) prevSelectedTracks.current = next
     return prevSelectedTracks.current
   }, [tracks, selectedIds])
   // The floating player (audio element, visibility, follow-selection playback)
@@ -899,6 +898,12 @@ export default function App(): React.JSX.Element {
       setFormatFilter(null)
     }
   }, [formatTally, formatFilter, setFormatFilter])
+  // Same identity guard as selectedTracks above, for the same reason: filtering and
+  // sorting mint a new array on every tracks change, so an edit to one row handed the
+  // list a fresh reference even when the visible rows were untouched — breaking the memo
+  // on TrackList (whose comment claims to survive exactly that) for a render with nothing
+  // to show. The rows themselves stay memoized either way; this drops the reconciliation.
+  const prevVisibleTracks = useRef<TrackItem[]>([])
   const visibleTracks = useMemo(() => {
     // Reset the pinned set the moment any filter axis changes, so each filter session
     // starts from the live verdicts; within a session filterWithSticky keeps already-shown
@@ -909,13 +914,15 @@ export default function App(): React.JSX.Element {
       stickyFilter.current = key
       stickyIds.current = new Set()
     }
-    return sortTracks(
+    const next = sortTracks(
       filterWithSticky(tracksView, filterSelection, stickyIds.current).filter((t) =>
         matchesSearch(t, deferredSearch),
       ),
       sortBy,
       sortDir,
     )
+    if (!sameTracks(prevVisibleTracks.current, next)) prevVisibleTracks.current = next
+    return prevVisibleTracks.current
   }, [tracksView, filterSelection, deferredSearch, sortBy, sortDir])
   // The display order a Shift-click ranges over, read by the (ref-stable) select callback
   // so a range spans the rows the user actually sees — not the import order, which would
