@@ -598,9 +598,25 @@ textarea {
    On the selected row they flip to the on-selection colour so the shape still reads; the
    colour cue they'd normally give is redundant here — the row is already the one in focus. */
 .is-primary [data-testid="track-quality"],
+.is-primary [data-testid="track-quality-loading"],
 .is-primary [data-testid="track-automatched"],
 .is-primary [data-testid="track-match-review"] {
   color: var(--color-on-row-selected);
+}
+/* Conversion progress is the same story and the one that costs most: the stage label and its
+   sweep bar are accent-coloured, and accent on the selection fill measures 1.00 in light (the
+   two tokens are the same hex) and 2.12 in dark. The row the DJ is watching — the track open
+   in the editor — was the only one showing no progress at all, reading as a stall. Both the
+   label and the bar flip to the on-selection colour; the track it sweeps over keeps its own
+   translucent white so the bar still reads as a track rather than a solid block. */
+.is-primary [data-testid="track-stage"] .text-\[var\(--color-accent\)\] {
+  color: var(--color-on-row-selected);
+}
+.is-primary [data-testid="track-stage"] .progress-sweep {
+  background: var(--color-on-row-selected);
+}
+.is-primary [data-testid="track-stage"] .bg-\[var\(--color-panel-2\)\] {
+  background: color-mix(in srgb, var(--color-on-row-selected) 28%, transparent);
 }
 
 /* The applied tracklist row (Discogs column) shares the same solid selection-blue fill, so its

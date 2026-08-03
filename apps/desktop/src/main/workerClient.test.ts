@@ -103,6 +103,52 @@ describe('createWorkerClient', () => {
     expect(first.terminate).toHaveBeenCalledTimes(1)
   })
 
+  // A thread can die WITHOUT ever emitting 'error': a native crash inside the tagging
+  // library, a process.exit, an external terminate — all of those emit only 'exit'.
+  // Listening for 'error' alone left those jobs pending forever, which surfaced as a
+  // waveform stuck loading or, worse, a conversion frozen mid-write on 'converting'
+  // that neither resolved nor failed, with Cancel having nothing left to kill.
+  it('fails in-flight jobs when the worker exits without emitting an error', async () => {
+    const w = fakeWorker()
+    const client = createWorkerClient(() => w as unknown as Worker)
+    const inFlight = client.run(job)
+    const queued = client.run(job)
+    w.emit('exit', 1)
+    await expect(inFlight).rejects.toThrow(/exited/)
+    await expect(queued).rejects.toThrow(/exited/)
+  })
+
+  // A silent exit must free the slot the same way an 'error' does, or the client keeps
+  // an in-flight id set and pump() never dispatches again: that worker is dead for the
+  // rest of the session even though the thread is gone.
+  it('respawns after a silent exit so later jobs still run', async () => {
+    const first = fakeWorker()
+    const second = fakeWorker()
+    const spawn = vi
+      .fn()
+      .mockReturnValueOnce(first as unknown as Worker)
+      .mockReturnValueOnce(second as unknown as Worker)
+    const client = createWorkerClient(spawn)
+    const doomed = client.run(job)
+    first.emit('exit', 0)
+    await expect(doomed).rejects.toThrow(/exited/)
+    const revived = client.run(job)
+    second.emit('message', { id: second.postMessage.mock.calls[0][0].id, ok: true, result: 'ok' })
+    await expect(revived).resolves.toBe('ok')
+    expect(spawn).toHaveBeenCalledTimes(2)
+  })
+
+  // The normal path: a worker that exits after its jobs settled has nothing to fail,
+  // and the exit must not manufacture a rejection for a caller that already resolved.
+  it('ignores an exit once every job has settled', async () => {
+    const w = fakeWorker()
+    const client = createWorkerClient(() => w as unknown as Worker)
+    const done = client.run(job)
+    w.emit('message', { id: w.postMessage.mock.calls[0][0].id, ok: true, result: 7 })
+    await expect(done).resolves.toBe(7)
+    expect(() => w.emit('exit', 0)).not.toThrow()
+  })
+
   // Jobs still waiting in the client when the thread dies must reject like the
   // in-flight one — a queued promise that never settles would hang its caller.
   it('rejects queued jobs too when the worker dies', async () => {

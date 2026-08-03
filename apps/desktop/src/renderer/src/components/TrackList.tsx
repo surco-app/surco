@@ -477,7 +477,7 @@ const TrackRow = memo(function TrackRow({
                   t.analyzing && (
                     <span
                       data-testid="track-quality-loading"
-                      className="group/dot relative h-2 w-2 animate-pulse rounded-full bg-fg-faint ring-2 ring-fg-faint/20"
+                      className="group/dot relative h-2 w-2 animate-pulse rounded-full bg-current text-fg-faint ring-2 ring-current/20"
                     >
                       <Tooltip label={tr('editor.analyzing')} align="end" scope="dot" />
                     </span>
