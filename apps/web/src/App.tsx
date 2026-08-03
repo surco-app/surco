@@ -65,7 +65,11 @@ export default function App() {
             </div>
             <div className="mx-auto mt-14 max-w-xl text-left">
               <BrewCommand />
-              <p className="mt-3 font-mono text-xs leading-relaxed text-faint/80">
+              {/* Full-strength faint, not /80: this is the line warning that re-exporting to
+                  the same format rewrites the original in place, and fading it put small mono
+                  text at 3.8:1 — back on the colour index.css already records as failing AA.
+                  The margin above separates it from the command; the contrast stays. */}
+              <p className="mt-3 font-mono text-xs leading-relaxed text-faint">
                 {t('home.closeSafety')}
               </p>
             </div>
