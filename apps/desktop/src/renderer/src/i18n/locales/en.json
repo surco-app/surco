@@ -192,6 +192,8 @@
     "focusList": "Focus the track list",
     "focusMatches": "Focus the Discogs matches",
     "focusEditor": "Focus the editor",
+    "focusColumnPrev": "Focus the previous column",
+    "focusColumnNext": "Focus the next column",
     "search": "Search Discogs",
     "settings": "Settings",
     "clearAll": "Clear the list",

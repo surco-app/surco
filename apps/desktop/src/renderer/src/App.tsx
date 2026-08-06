@@ -77,7 +77,7 @@ import {
   focusPresetWidth,
 } from './lib/focusPreset'
 import { pushImportNotice } from './lib/importNotices'
-import { isTypingTarget } from './lib/keymap'
+import { columnOf, isTypingTarget, nextColumn } from './lib/keymap'
 import { librarySourceOf } from './lib/librarySource'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
@@ -1392,6 +1392,14 @@ export default function App(): React.JSX.Element {
     )?.focus()
   const focusEditor = (): void =>
     document.querySelector<HTMLElement>('[data-testid="field-title"]')?.focus()
+  // El salto relativo se apoya en los tres saltos absolutos de arriba: resuelve a qué
+  // columna toca ir mirando dónde está el foco ahora, y llama al que corresponda.
+  const focusColumn = (delta: 1 | -1): void => {
+    const to = nextColumn(columnOf(document.activeElement), delta)
+    if (to === 'list') focusList()
+    else if (to === 'matches') focusMatches()
+    else focusEditor()
+  }
 
   // The command registry is data, rebuilt from the current state each time it's read.
   // Built lazily through a stable getter (rather than every render) because its only
@@ -1430,6 +1438,7 @@ export default function App(): React.JSX.Element {
       focusList,
       focusMatches,
       focusEditor,
+      focusColumn,
       togglePlay,
       playerVisible,
       seek,

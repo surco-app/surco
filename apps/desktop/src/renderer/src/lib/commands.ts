@@ -157,6 +157,7 @@ export interface CommandDeps {
   focusList: () => void
   focusMatches: () => void
   focusEditor: () => void
+  focusColumn: (delta: 1 | -1) => void
   togglePlay: () => void
   // Whether the player card is open — gates the ←/→ seek so the arrows only act on a
   // running player, never while it's closed.
@@ -291,6 +292,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     focusList,
     focusMatches,
     focusEditor,
+    focusColumn,
     togglePlay,
     playerVisible,
     seek,
@@ -530,6 +532,23 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('focus-editor'),
       enabled: !!selected,
       run: focusEditor,
+    },
+    {
+      // Jump focus one column to the left / right of wherever it is now.
+      id: 'focus-column-prev',
+      group: 'navigate',
+      title: tr('commands.focusColumnPrev'),
+      hint: hintFor('focus-column-prev'),
+      enabled: !!selected,
+      run: () => focusColumn(-1),
+    },
+    {
+      id: 'focus-column-next',
+      group: 'navigate',
+      title: tr('commands.focusColumnNext'),
+      hint: hintFor('focus-column-next'),
+      enabled: !!selected,
+      run: () => focusColumn(1),
     },
     {
       id: 'process-current',

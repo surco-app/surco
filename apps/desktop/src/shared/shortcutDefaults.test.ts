@@ -182,3 +182,25 @@ describe('findConflicts con ámbito', () => {
     expect(findConflicts(bindings)).toEqual([['add', 'reveal']])
   })
 })
+
+describe('saltos relativos de columna', () => {
+  it('liga ⌘← y ⌘→ a los comandos de columna', () => {
+    const b = resolveBindings()
+    expect(b.get('focus-column-prev')).toEqual(['mod', 'left'])
+    expect(b.get('focus-column-next')).toEqual(['mod', 'right'])
+  })
+
+  // Quedan mudos con un campo enfocado para no pisar inicio/fin de línea de macOS, que es
+  // un reflejo muy arraigado y los campos del editor son de texto largo. La vía para salir
+  // del editor escribiendo sigue siendo ⌘1/2/3, que sí siguen vivos a propósito.
+  it('no dispara mientras se escribe', () => {
+    const b = resolveBindings()
+    expect(matchChord(b, ['mod', 'left'], false, null)).toBe('focus-column-prev')
+    expect(matchChord(b, ['mod', 'left'], true, null)).toBeNull()
+    expect(matchChord(b, ['mod', 'right'], true, null)).toBeNull()
+  })
+
+  it('no entra en conflicto con ningún otro atajo por defecto', () => {
+    expect(findConflicts(resolveBindings())).toEqual([])
+  })
+})
