@@ -173,6 +173,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   return (
     <>
       <div
+        data-testid="matches-column"
         style={{ width: discogs.width }}
         className="flex shrink-0 flex-col border-r border-[var(--color-line)]"
       >
@@ -327,7 +328,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                     style={{
                       animationDelay: `${i < STAGGERED_ROWS ? i * STAGGER_STEP_MS : 0}ms`,
                     }}
-                    className={`press result-in group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] transition-colors ${
+                    className={`press result-in group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] transition-colors focus:bg-[var(--color-accent-soft)] focus:shadow-[inset_0_0_0_1px_var(--color-accent)] focus:outline-none ${
                       expanded
                         ? 'bg-[var(--color-accent-soft)]/85'
                         : 'bg-[var(--color-panel)]/50 hover:bg-[var(--color-panel-2)]/85'
@@ -430,7 +431,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                                 t === appliedTrack || t === matchedTrack ? 'true' : undefined
                               }
                               onClick={() => selectTrack(t)}
-                              className={`flex w-full items-center gap-3 py-1.5 pr-3 pl-4 text-left ${
+                              className={`flex w-full items-center gap-3 py-1.5 pr-3 pl-4 text-left focus:bg-[var(--color-accent-soft)] focus:shadow-[inset_0_0_0_1px_var(--color-accent)] focus:outline-none ${
                                 // Same solid selection-blue as the library row, so the applied
                                 // track reads with equal weight in both columns (was a faint
                                 // tint that looked second-class next to the filled library row).
