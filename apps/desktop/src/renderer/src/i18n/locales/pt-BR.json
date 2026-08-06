@@ -192,6 +192,8 @@
     "focusList": "Focar a lista de faixas",
     "focusMatches": "Focar os resultados do Discogs",
     "focusEditor": "Focar o editor",
+    "focusColumnPrev": "Focar a coluna anterior",
+    "focusColumnNext": "Focar a próxima coluna",
     "search": "Buscar no Discogs",
     "settings": "Ajustes",
     "clearAll": "Limpar a lista",

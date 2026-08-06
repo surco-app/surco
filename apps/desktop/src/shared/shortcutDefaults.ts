@@ -73,6 +73,11 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   { id: 'focus-list', chord: ['mod', '1'] },
   { id: 'focus-matches', chord: ['mod', '2'] },
   { id: 'focus-editor', chord: ['mod', '3'] },
+  // Salto relativo a la columna de al lado, como alternativa a los saltos absolutos ⌘1/2/3.
+  // A diferencia de ellos SÍ llevan guardián de tecleo: ⌘← y ⌘→ son inicio y fin de línea en
+  // macOS, y los campos del editor son de texto largo. Escribiendo, la salida sigue siendo ⌘1/2/3.
+  { id: 'focus-column-prev', chord: ['mod', 'left'], suppressWhileTyping: true },
+  { id: 'focus-column-next', chord: ['mod', 'right'], suppressWhileTyping: true },
   // Saltar de sección a sección por sus cabeceras, sin cruzar los campos de dentro: con
   // una sola sección abierta el editor tiene 133 paradas de tabulador. Llevan `mod` para
   // seguir vivas con un campo enfocado — irse al recorte desde el título es el caso — y
