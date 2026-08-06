@@ -45,6 +45,31 @@ export function activeScope(el: Element | null): string | null {
   return el?.closest?.('[data-shortcut-scope]')?.getAttribute('data-shortcut-scope') ?? null
 }
 
+export type Column = 'list' | 'matches' | 'editor'
+
+// El orden visual de las columnas en la ventana, que es el que recorren ⌘← y ⌘→.
+const COLUMNS: Column[] = ['list', 'matches', 'editor']
+
+// La columna que contiene un elemento, leída del DOM por la misma razón que `activeScope`:
+// así no puede desincronizarse de lo que el usuario ve enfocado. Cada columna se reconoce
+// por el contenedor que ya la delimita.
+export function columnOf(el: Element | null): Column | null {
+  if (!el?.closest) return null
+  if (el.closest('[data-testid="sidebar"]')) return 'list'
+  if (el.closest('[data-testid="matches-column"]')) return 'matches'
+  if (el.closest('[data-shortcut-scope="editor"]')) return 'editor'
+  return null
+}
+
+// Hace tope en los extremos en vez de dar la vuelta: saltar del editor a la lista de un
+// golpe deja al usuario sin saber de qué lado de la ventana está. Sin columna de partida
+// se entra por la lista, que es el principio del recorrido.
+export function nextColumn(current: Column | null, delta: 1 | -1): Column {
+  if (!current) return 'list'
+  const i = COLUMNS.indexOf(current)
+  return COLUMNS[Math.min(COLUMNS.length - 1, Math.max(0, i + delta))]
+}
+
 // Resolves a key event to a command id using the configurable bindings, falling back
 // to the fixed vim aliases. `bindings` is the merged defaults+overrides map; `isMac`
 // picks ⌘ vs Ctrl as the `mod` key.

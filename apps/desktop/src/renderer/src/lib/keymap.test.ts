@@ -2,7 +2,16 @@
 import { describe, expect, it } from 'vitest'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type { KeyLike } from '../../../shared/shortcuts'
-import { activeScope, isTypingTarget, jumpIndex, keyToCommandId, moveIndex, pageSize } from './keymap'
+import {
+  activeScope,
+  columnOf,
+  isTypingTarget,
+  jumpIndex,
+  keyToCommandId,
+  moveIndex,
+  nextColumn,
+  pageSize,
+} from './keymap'
 
 function key(
   k: string,
@@ -227,5 +236,48 @@ describe('keyToCommandId con ámbito', () => {
     expect(keyToCommandId(press('ArrowLeft'), false, bindings, true, 'track-list')).toBe(
       'seek-back',
     )
+  })
+})
+
+describe('nextColumn', () => {
+  it('avanza y retrocede por el orden visual de las tres columnas', () => {
+    expect(nextColumn('list', 1)).toBe('matches')
+    expect(nextColumn('matches', 1)).toBe('editor')
+    expect(nextColumn('editor', -1)).toBe('matches')
+    expect(nextColumn('matches', -1)).toBe('list')
+  })
+
+  // Tope y no ciclo: dar la vuelta desde un extremo desorienta, porque el usuario
+  // pierde la referencia de en qué lado de la ventana está.
+  it('hace tope en los extremos en vez de dar la vuelta', () => {
+    expect(nextColumn('list', -1)).toBe('list')
+    expect(nextColumn('editor', 1)).toBe('editor')
+  })
+
+  it('entra por la lista cuando el foco no está en ninguna columna', () => {
+    expect(nextColumn(null, 1)).toBe('list')
+    expect(nextColumn(null, -1)).toBe('list')
+  })
+})
+
+describe('columnOf', () => {
+  function mount(html: string): HTMLElement {
+    document.body.innerHTML = html
+    return document.querySelector('[data-probe]') as HTMLElement
+  }
+
+  it('reconoce cada columna por su contenedor', () => {
+    expect(columnOf(mount('<aside data-testid="sidebar"><b data-probe></b></aside>'))).toBe('list')
+    expect(
+      columnOf(mount('<div data-testid="matches-column"><b data-probe></b></div>')),
+    ).toBe('matches')
+    expect(
+      columnOf(mount('<div data-shortcut-scope="editor"><b data-probe></b></div>')),
+    ).toBe('editor')
+  })
+
+  it('devuelve null fuera de las tres columnas y sin elemento', () => {
+    expect(columnOf(mount('<div><b data-probe></b></div>'))).toBeNull()
+    expect(columnOf(null)).toBeNull()
   })
 })
