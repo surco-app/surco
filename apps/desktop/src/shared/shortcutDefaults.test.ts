@@ -182,3 +182,25 @@ describe('findConflicts con ámbito', () => {
     expect(findConflicts(bindings)).toEqual([['add', 'reveal']])
   })
 })
+
+describe('saltos relativos de columna', () => {
+  it('liga ⌘← y ⌘→ a los comandos de columna', () => {
+    const b = resolveBindings()
+    expect(b.get('focus-column-prev')).toEqual(['mod', 'left'])
+    expect(b.get('focus-column-next')).toEqual(['mod', 'right'])
+  })
+
+  // Sin esto el salto no tiene vuelta desde un campo: sus destinos son la caja de búsqueda
+  // de Discogs y los campos del editor, así que un guardián de tecleo dejaría atrapado
+  // dentro sin forma de volver con el mismo atajo.
+  it('dispara aunque haya un campo enfocado', () => {
+    const b = resolveBindings()
+    expect(matchChord(b, ['mod', 'left'], false, null)).toBe('focus-column-prev')
+    expect(matchChord(b, ['mod', 'left'], true, null)).toBe('focus-column-prev')
+    expect(matchChord(b, ['mod', 'right'], true, null)).toBe('focus-column-next')
+  })
+
+  it('no entra en conflicto con ningún otro atajo por defecto', () => {
+    expect(findConflicts(resolveBindings())).toEqual([])
+  })
+})

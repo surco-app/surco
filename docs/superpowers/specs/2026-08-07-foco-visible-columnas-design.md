@@ -70,13 +70,15 @@ El relleno azul que el usuario esperaba ver es el estado **desplegado**
   quirúrgico.
 - **`⌘←`/`⌘→` relativos, con tope en los extremos.** En la lista, `⌘←` no hace nada. Se
   descartó dar la vuelta: desorienta.
-- **`⌘←`/`⌘→` quedan inertes mientras se escribe**, para conservar inicio/fin de línea de
-  macOS dentro de los campos. Esto crea una **asimetría deliberada** con `⌘1/2/3`, que sí
-  siguen vivos escribiendo justo para poder salir del editor
-  (`shortcutDefaults.ts:71-72`: *"the same key jumps you out of the editor"*). Se valoró
-  hacerlos vivos también (coherencia, al precio de perder inicio/fin de línea) y se
-  descartó: el reflejo de `⌘←` en macOS está muy arraigado y los campos del editor son de
-  texto largo. En el editor la vía de salida sigue siendo `⌘1/2/3`.
+- **`⌘←`/`⌘→` disparan siempre, también mientras se escribe** — igual que `⌘1/2/3`.
+
+  *Esta decisión se revirtió durante la implementación.* El diseño original los dejaba
+  inertes al escribir, para conservar inicio/fin de línea de macOS. Al verificar en la app
+  compilada resultó que eso los rompía: casi todos los destinos del salto **son campos de
+  texto** (la caja de búsqueda de Discogs y los campos del editor), así que el salto era de
+  ida sin vuelta — medido: `track-row → discogs-query`, y allí se quedaba. El usuario
+  decidió quitar el guardián. Precio aceptado: dentro de un campo se pierde inicio/fin de
+  línea. Implementado en `31975103`.
 - **`→`/`←` no despliegan ni cierran la tarjeta.** Colisionan con `seek-back`/
   `seek-forward` del reproductor (`shortcutDefaults.ts:38-39`). `Enter` ya cubre el
   despliegue.
@@ -148,5 +150,5 @@ En `DiscogsPanel.tsx`, sobre los botones ya existentes. Sin estado nuevo en Reac
 - El usuario aprobó "tope en los extremos" y "el cursor también se marca al clicar" de
   forma implícita (dijo "ok" a la propuesta que las recomendaba). Ambas son de una línea
   si al probarlas prefiere lo contrario.
-- La asimetría `⌘←/⌘→` inertes vs `⌘1/2/3` vivos al escribir es una decisión consciente;
-  conviene comprobar en uso real si molesta.
+- Perder inicio/fin de línea dentro de un campo es el precio del cambio de decisión de
+  arriba. Conviene comprobar en uso real si molesta; `⌥←/⌥→` y `Home/End` siguen ahí.

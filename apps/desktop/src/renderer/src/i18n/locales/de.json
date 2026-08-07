@@ -192,6 +192,8 @@
     "focusList": "Trackliste fokussieren",
     "focusMatches": "Discogs-Treffer fokussieren",
     "focusEditor": "Editor fokussieren",
+    "focusColumnPrev": "Vorherige Spalte fokussieren",
+    "focusColumnNext": "Nächste Spalte fokussieren",
     "search": "Auf Discogs suchen",
     "settings": "Einstellungen",
     "clearAll": "Liste leeren",
