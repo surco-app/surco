@@ -512,6 +512,22 @@ function CollapsibleTracks({
 }): React.JSX.Element {
   const lastContent = useRef<React.ReactNode>(null)
   if (open && children) lastContent.current = children
+  const inner = useRef<HTMLDivElement>(null)
+
+  // Al plegar, el contenido sigue montado para que la animación de cierre no parpadee, y
+  // `inert` lo saca del tabulador: si no, el Tab entra en pistas invisibles. `inert` no
+  // mueve el foco que ya estuviera dentro — lo deja huérfano en el body — así que lo
+  // devolvemos al botón de la tarjeta, que comparte contenedor con este colapsable y es
+  // donde el usuario acaba de pulsar para cerrar.
+  useEffect(() => {
+    if (open) return
+    if (!inner.current?.contains(document.activeElement)) return
+    const card = inner.current.parentElement?.parentElement?.querySelector(
+      '[data-testid="discogs-result"]',
+    )
+    if (card instanceof HTMLElement) card.focus()
+  }, [open])
+
   return (
     <div
       className={`grid transition-[grid-template-rows] duration-200 ease-out ${
@@ -519,6 +535,8 @@ function CollapsibleTracks({
       }`}
     >
       <div
+        ref={inner}
+        inert={!open}
         className={`overflow-hidden transition-opacity duration-200 ${
           open ? 'opacity-100' : 'opacity-0'
         }`}

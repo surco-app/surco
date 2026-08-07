@@ -31,8 +31,8 @@ function browser(overrides: Partial<DiscogsBrowser>): DiscogsBrowser {
   }
 }
 
-function renderPanel(b: DiscogsBrowser) {
-  return render(
+function panel(b: DiscogsBrowser) {
+  return (
     <DiscogsPanel
       browser={b}
       matchedTrack={undefined}
@@ -47,8 +47,12 @@ function renderPanel(b: DiscogsBrowser) {
       formatFilter={[]}
       resultsWidth={315}
       onResultsWidthChange={vi.fn()}
-    />,
+    />
   )
+}
+
+function renderPanel(b: DiscogsBrowser) {
+  return render(panel(b))
 }
 
 describe('DiscogsPanel result entrance', () => {
@@ -153,5 +157,55 @@ describe('cursor de teclado', () => {
     expect(track.className).toContain('focus:bg-[var(--color-accent-soft)]')
     expect(track.className).toContain('focus:shadow-[inset_0_0_0_1px_var(--color-accent)]')
     expect(track.className).toContain('focus:outline-none')
+  })
+})
+
+describe('pistas de una tarjeta plegada', () => {
+  const results = [
+    { provider: 'discogs', id: 1, title: 'Uno', thumb: '' },
+    { provider: 'discogs', id: 2, title: 'Dos', thumb: '' },
+  ] as unknown as DiscogsBrowser['results']
+
+  const release = {
+    provider: 'discogs' as const,
+    id: 1,
+    title: 'Uno',
+    artists: [],
+    tracklist: [
+      { position: '1', title: 'Cara A' },
+      { position: '2', title: 'Cara B' },
+    ],
+  }
+
+  // El colapso es puramente visual (grid-rows-[0fr] + overflow-hidden), y al plegar se
+  // sigue renderizando la última tracklist para que la animación de cierre no parpadee.
+  // Sin `inert`, esas pistas invisibles siguen siendo paradas de tabulador: el Tab se mete
+  // en pistas que el usuario no ve y no puede saber dónde está.
+  it('siguen siendo tabulables mientras la tarjeta está desplegada', () => {
+    renderPanel(browser({ results, openKey: 'discogs:1', release, loading: false }))
+    expect(screen.getAllByTestId('discogs-track')[0].closest('[inert]')).toBeNull()
+  })
+
+  it('quedan fuera del tabulador al plegar la tarjeta', () => {
+    const { rerender } = renderPanel(
+      browser({ results, openKey: 'discogs:1', release, loading: false }),
+    )
+    rerender(panel(browser({ results, openKey: null, release, loading: false })))
+
+    expect(screen.getAllByTestId('discogs-track')[0].closest('[inert]')).not.toBeNull()
+  })
+
+  // jsdom no implementa `inert` (deja enfocar dentro igualmente), así que el tabulador en sí
+  // se verifica en Chromium; aquí se cubre lo que sí es lógica nuestra: no dejar el foco
+  // huérfano en el body al plegar con el cursor dentro de una pista.
+  it('sube el foco a la tarjeta al plegarla con una pista enfocada', () => {
+    const { rerender } = renderPanel(
+      browser({ results, openKey: 'discogs:1', release, loading: false }),
+    )
+    screen.getAllByTestId('discogs-track')[0].focus()
+
+    rerender(panel(browser({ results, openKey: null, release, loading: false })))
+
+    expect(screen.getAllByTestId('discogs-result')[0]).toHaveFocus()
   })
 })
