@@ -208,4 +208,38 @@ describe('pistas de una tarjeta plegada', () => {
 
     expect(screen.getAllByTestId('discogs-result')[0]).toHaveFocus()
   })
+
+  // El rescate del foco debe mirar SOLO su propia tarjeta. Buscando el botón en toda la
+  // lista devolvía siempre el primer resultado, así que cada ↓ por los resultados rebotaba
+  // al primer álbum y la columna parecía congelada.
+  it('devuelve el foco a su propia tarjeta, no a la primera de la lista', () => {
+    const dos = { ...release, id: 2, title: 'Dos' }
+    const { rerender } = renderPanel(
+      browser({ results, openKey: 'discogs:2', release: dos, loading: false }),
+    )
+    screen.getAllByTestId('discogs-track')[0].focus()
+
+    rerender(panel(browser({ results, openKey: null, release: dos, loading: false })))
+
+    expect(screen.getAllByTestId('discogs-result')[1]).toHaveFocus()
+  })
+
+  // El roving de ↑/↓ no puede parar en las pistas de una tarjeta plegada: siguen montadas
+  // por la animación, así que ↓ se detenía en una pista invisible y la columna parecía
+  // congelada en el primer álbum. Sólo cuentan los elementos fuera de un contenedor `inert`.
+  it('no cuenta las pistas plegadas al recorrer los resultados', () => {
+    const { rerender } = renderPanel(
+      browser({ results, openKey: 'discogs:1', release, loading: false }),
+    )
+    rerender(panel(browser({ results, openKey: null, release, loading: false })))
+
+    const navegables = [
+      ...screen.getByTestId('matches-column').querySelectorAll('[data-testid]'),
+    ].filter(
+      (el) =>
+        ['discogs-result', 'discogs-track'].includes(el.getAttribute('data-testid') ?? '') &&
+        !el.closest('[inert]'),
+    )
+    expect(navegables).toHaveLength(results.length)
+  })
 })

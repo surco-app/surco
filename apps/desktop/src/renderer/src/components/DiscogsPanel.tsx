@@ -139,11 +139,14 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   const resultsRef = useRef<HTMLDivElement>(null)
   const moveResultFocus = useCallback(
     (to: -1 | 1 | 'first' | 'last'): void => {
+      // Las pistas de una tarjeta plegada siguen montadas (para que la animación de cierre
+      // no parpadee) pero están `inert`: si se contaran aquí, ↓ pararía en pistas invisibles
+      // y la columna parecería congelada en el primer álbum.
       const items = Array.from(
         resultsRef.current?.querySelectorAll<HTMLElement>(
           '[data-testid="discogs-result"], [data-testid="discogs-track"]',
         ) ?? [],
-      )
+      ).filter((el) => !el.closest('[inert]'))
       if (items.length === 0) return
       if (to === 'first') {
         items[0].focus()
@@ -311,7 +314,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                 .filter(Boolean)
                 .join(' · ')
               return (
-                <div key={rk} className="px-1.5 pt-1.5">
+                <div key={rk} data-testid="result-card" className="px-1.5 pt-1.5">
                   {/* Result as a card, matching the track list's rows so both columns read as the
                       same component. The wide column earns the title a full two lines instead of a
                       hard cut, and the release line shows year · label · catalogue no · format in
@@ -522,9 +525,12 @@ function CollapsibleTracks({
   useEffect(() => {
     if (open) return
     if (!inner.current?.contains(document.activeElement)) return
-    const card = inner.current.parentElement?.parentElement?.querySelector(
-      '[data-testid="discogs-result"]',
-    )
+    // El botón de ESTA tarjeta, acotando la búsqueda a su contenedor: buscarlo desde un
+    // ancestro más alto devolvía el primer resultado de toda la lista, y entonces cada ↓
+    // por los resultados rebotaba al primer álbum.
+    const card = inner.current
+      .closest('[data-testid="result-card"]')
+      ?.querySelector('[data-testid="discogs-result"]')
     if (card instanceof HTMLElement) card.focus()
   }, [open])
 
