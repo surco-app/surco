@@ -535,11 +535,14 @@ export function buildCommands(deps: CommandDeps): Command[] {
     },
     {
       // Jump focus one column to the left / right of wherever it is now.
+      // Always enabled: the global handler calls preventDefault before checking `enabled`,
+      // so a disabled command here would just eat the keypress — and these two no longer
+      // have macOS's native start/end-of-line binding to fall back on.
       id: 'focus-column-prev',
       group: 'navigate',
       title: tr('commands.focusColumnPrev'),
       hint: hintFor('focus-column-prev'),
-      enabled: !!selected,
+      enabled: true,
       run: () => focusColumn(-1),
     },
     {
@@ -547,7 +550,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       group: 'navigate',
       title: tr('commands.focusColumnNext'),
       hint: hintFor('focus-column-next'),
-      enabled: !!selected,
+      enabled: true,
       run: () => focusColumn(1),
     },
     {
