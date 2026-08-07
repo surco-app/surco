@@ -469,5 +469,5 @@ Con resultados reales de Discogs en pantalla (el tono sintético no los trae):
 1. `⌘→` desde la lista → la **primera tarjeta** queda marcada, no la caja de búsqueda.
 2. `↓`/`↑` mueven la marca **sin desplegar** ninguna tarjeta.
 3. `Enter` despliega la tarjeta marcada.
-4. Con el cursor dentro del campo *Title*, `⌘←` mueve el cursor de texto al inicio de la línea (comportamiento nativo de macOS conservado) y **no** cambia de columna.
+4. Con el cursor dentro del campo *Title*, `⌘←` **cambia de columna** (va a los resultados). El plan original decía lo contrario: los atajos iban a quedar inertes al escribir. Se revirtió durante la ejecución porque dejaba el salto sin vuelta — ver el spec.
 5. Settings → Atajos lista las dos entradas nuevas bajo *Navegación*, y son reasignables.
