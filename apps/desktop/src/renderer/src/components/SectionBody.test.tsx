@@ -57,6 +57,29 @@ describe('SectionBody', () => {
     expect(screen.queryByTestId('body')).toBeNull()
   })
 
+  // Those ~240ms of deferred unmount are a live section: without `inert` the Tab key walks
+  // into a body that is shrinking away and about to vanish, and the focus lands nowhere.
+  it('takes the closing body out of the tab order while it collapses', () => {
+    const { rerender } = render(
+      <SectionBody open>
+        <button type="button" data-testid="body">
+          heavy
+        </button>
+      </SectionBody>,
+    )
+    expect(screen.getByTestId('section-body')).not.toHaveAttribute('inert')
+
+    rerender(
+      <SectionBody open={false}>
+        <button type="button" data-testid="body">
+          heavy
+        </button>
+      </SectionBody>,
+    )
+    expect(screen.getByTestId('body')).toBeInTheDocument()
+    expect(screen.getByTestId('section-body')).toHaveAttribute('inert')
+  })
+
   // Under reduced-motion there is no transition, so transitionend never fires — the body
   // must still unmount on close instead of lingering forever. matchMedia is stubbed to
   // report the preference.

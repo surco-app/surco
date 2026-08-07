@@ -130,6 +130,9 @@ export function SectionBody({ open, children }: Props): React.JSX.Element | null
     <div
       data-testid="section-body"
       data-open={open}
+      // Closing, the children outlive the fold by the length of the tween. `inert` keeps
+      // the Tab key out of a body that is on its way to unmounting.
+      inert={!open || undefined}
       onTransitionEnd={onTransitionEnd}
       style={{
         maxHeight: maxHeight === undefined ? undefined : `${maxHeight}px`,
