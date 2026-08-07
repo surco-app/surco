@@ -190,14 +190,14 @@ describe('saltos relativos de columna', () => {
     expect(b.get('focus-column-next')).toEqual(['mod', 'right'])
   })
 
-  // Quedan mudos con un campo enfocado para no pisar inicio/fin de línea de macOS, que es
-  // un reflejo muy arraigado y los campos del editor son de texto largo. La vía para salir
-  // del editor escribiendo sigue siendo ⌘1/2/3, que sí siguen vivos a propósito.
-  it('no dispara mientras se escribe', () => {
+  // Sin esto el salto no tiene vuelta desde un campo: sus destinos son la caja de búsqueda
+  // de Discogs y los campos del editor, así que un guardián de tecleo dejaría atrapado
+  // dentro sin forma de volver con el mismo atajo.
+  it('dispara aunque haya un campo enfocado', () => {
     const b = resolveBindings()
     expect(matchChord(b, ['mod', 'left'], false, null)).toBe('focus-column-prev')
-    expect(matchChord(b, ['mod', 'left'], true, null)).toBeNull()
-    expect(matchChord(b, ['mod', 'right'], true, null)).toBeNull()
+    expect(matchChord(b, ['mod', 'left'], true, null)).toBe('focus-column-prev')
+    expect(matchChord(b, ['mod', 'right'], true, null)).toBe('focus-column-next')
   })
 
   it('no entra en conflicto con ningún otro atajo por defecto', () => {
