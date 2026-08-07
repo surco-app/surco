@@ -118,6 +118,8 @@ describe('cursor de teclado', () => {
     first.focus()
     expect(first).toHaveFocus()
     expect(first.className).toContain('focus:bg-[var(--color-accent-soft)]')
+    expect(first.className).toContain('focus:shadow-[inset_0_0_0_1px_var(--color-accent)]')
+    expect(first.className).toContain('focus:outline-none')
   })
 
   // La garantía de la decisión "foco ≠ despliegue": moverse por los resultados no puede
@@ -131,5 +133,25 @@ describe('cursor de teclado', () => {
     fireEvent.keyDown(cards[0], { key: 'ArrowDown' })
     expect(previewRelease).not.toHaveBeenCalled()
     for (const c of cards) expect(c).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('marca visiblemente la pista enfocada dentro de un release desplegado', () => {
+    const release = {
+      provider: 'discogs' as const,
+      id: 1,
+      title: 'Uno',
+      artists: [],
+      tracklist: [
+        { position: '1', title: 'Cara A' },
+        { position: '2', title: 'Cara B' },
+      ],
+    }
+    renderPanel(browser({ results, openKey: 'discogs:1', release, loading: false }))
+    const track = screen.getAllByTestId('discogs-track')[0]
+    track.focus()
+    expect(track).toHaveFocus()
+    expect(track.className).toContain('focus:bg-[var(--color-accent-soft)]')
+    expect(track.className).toContain('focus:shadow-[inset_0_0_0_1px_var(--color-accent)]')
+    expect(track.className).toContain('focus:outline-none')
   })
 })
