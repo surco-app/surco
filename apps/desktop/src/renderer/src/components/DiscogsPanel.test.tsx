@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { createRef } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
@@ -98,5 +98,60 @@ describe('DiscogsPanel empty states', () => {
 
     expect(screen.getByText(/choose an album/i)).toBeInTheDocument()
     expect(screen.queryByTestId('discogs-no-results')).not.toBeInTheDocument()
+  })
+})
+
+describe('cursor de teclado', () => {
+  const results = [
+    { provider: 'discogs', id: 1, title: 'Uno', thumb: '' },
+    { provider: 'discogs', id: 2, title: 'Dos', thumb: '' },
+  ] as unknown as DiscogsBrowser['results']
+
+  it('marca la columna para que los saltos ⌘←/⌘→ la reconozcan', () => {
+    renderPanel(browser({ results }))
+    expect(screen.getByTestId('matches-column')).toBeInTheDocument()
+  })
+
+  it('marca visiblemente la tarjeta enfocada', () => {
+    renderPanel(browser({ results }))
+    const first = screen.getAllByTestId('discogs-result')[0]
+    first.focus()
+    expect(first).toHaveFocus()
+    expect(first.className).toContain('focus:bg-[var(--color-accent-soft)]')
+    expect(first.className).toContain('focus:shadow-[inset_0_0_0_1px_var(--color-accent)]')
+    expect(first.className).toContain('focus:outline-none')
+  })
+
+  // La garantía de la decisión "foco ≠ despliegue": moverse por los resultados no puede
+  // abrir ninguno, porque cada despliegue dispara una query de release a Discogs y el
+  // contenido saltaría bajo el cursor mientras navegas. Solo Enter despliega.
+  it('mover el foco no despliega ninguna tarjeta', () => {
+    const previewRelease = vi.fn()
+    renderPanel(browser({ results, previewRelease }))
+    const cards = screen.getAllByTestId('discogs-result')
+    cards[0].focus()
+    fireEvent.keyDown(cards[0], { key: 'ArrowDown' })
+    expect(previewRelease).not.toHaveBeenCalled()
+    for (const c of cards) expect(c).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('marca visiblemente la pista enfocada dentro de un release desplegado', () => {
+    const release = {
+      provider: 'discogs' as const,
+      id: 1,
+      title: 'Uno',
+      artists: [],
+      tracklist: [
+        { position: '1', title: 'Cara A' },
+        { position: '2', title: 'Cara B' },
+      ],
+    }
+    renderPanel(browser({ results, openKey: 'discogs:1', release, loading: false }))
+    const track = screen.getAllByTestId('discogs-track')[0]
+    track.focus()
+    expect(track).toHaveFocus()
+    expect(track.className).toContain('focus:bg-[var(--color-accent-soft)]')
+    expect(track.className).toContain('focus:shadow-[inset_0_0_0_1px_var(--color-accent)]')
+    expect(track.className).toContain('focus:outline-none')
   })
 })

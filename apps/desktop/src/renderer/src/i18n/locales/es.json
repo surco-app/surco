@@ -192,6 +192,8 @@
     "focusList": "Ir a la lista de pistas",
     "focusMatches": "Ir a los resultados de Discogs",
     "focusEditor": "Ir al editor",
+    "focusColumnPrev": "Ir a la columna anterior",
+    "focusColumnNext": "Ir a la columna siguiente",
     "search": "Buscar en Discogs",
     "settings": "Ajustes",
     "clearAll": "Vaciar la lista",

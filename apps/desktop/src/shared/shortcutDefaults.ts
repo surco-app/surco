@@ -73,6 +73,12 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   { id: 'focus-list', chord: ['mod', '1'] },
   { id: 'focus-matches', chord: ['mod', '2'] },
   { id: 'focus-editor', chord: ['mod', '3'] },
+  // Salto relativo a la columna de al lado, como alternativa a los saltos absolutos ⌘1/2/3.
+  // Sin guardián de tecleo, como ellos: sus destinos son la caja de búsqueda de Discogs y
+  // los campos del editor, así que con guardián el salto no tendría vuelta desde un campo.
+  // El precio es perder inicio/fin de línea de macOS mientras se escribe dentro de un campo.
+  { id: 'focus-column-prev', chord: ['mod', 'left'] },
+  { id: 'focus-column-next', chord: ['mod', 'right'] },
   // Saltar de sección a sección por sus cabeceras, sin cruzar los campos de dentro: con
   // una sola sección abierta el editor tiene 133 paradas de tabulador. Llevan `mod` para
   // seguir vivas con un campo enfocado — irse al recorte desde el título es el caso — y
