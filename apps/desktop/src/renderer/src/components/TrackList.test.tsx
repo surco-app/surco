@@ -706,4 +706,15 @@ describe('TrackList quality badge', () => {
     renderList([track({ id: 'a', spectrum: spectrum(21000) })])
     expect(screen.queryByTestId('track-quality-loading')).not.toBeInTheDocument()
   })
+
+  // El relleno azul dice qué track se está editando; no dice dónde está el teclado. Al
+  // recorrer la lista con ↑/↓ hace falta un contorno propio, el mismo que marca la tarjeta
+  // enfocada en la columna de resultados. Va con `focus-visible:` y no con `focus:` porque
+  // aquí sí distingue el clic de ratón (que no debe pintarlo) del recorrido con flechas.
+  it('marca con contorno la fila que tiene el foco de teclado', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' })])
+    const row = screen.getAllByTestId('track-row')[0]
+    expect(row.className).toContain('focus-visible:shadow-[inset_0_0_0_2px_var(--color-fg)]')
+    expect(row.className).toContain('focus-visible:outline-none')
+  })
 })
