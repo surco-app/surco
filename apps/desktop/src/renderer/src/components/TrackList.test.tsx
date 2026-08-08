@@ -714,7 +714,7 @@ describe('TrackList quality badge', () => {
   it('marca con contorno la fila que tiene el foco de teclado', () => {
     renderList([track({ id: 'a' }), track({ id: 'b' })])
     const row = screen.getAllByTestId('track-row')[0]
-    expect(row.className).toContain('focus-visible:shadow-[inset_0_0_0_2px_var(--color-fg)]')
-    expect(row.className).toContain('focus-visible:outline-none')
+    expect(row.className).toContain('focus-visible:outline-[var(--color-accent)]')
+    expect(row.className).toContain('focus-visible:outline-2')
   })
 })
