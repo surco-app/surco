@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { countDownloads, fetchAllReleases, pickInstallerRelease } from './downloads'
+import {
+  countDownloads,
+  fetchAllReleases,
+  fetchReleasesCached,
+  pickInstallerRelease,
+} from './downloads'
 
 describe('countDownloads', () => {
   // Only installers count. The release also carries .zip/.blockmap/.yml assets
@@ -140,8 +145,8 @@ describe('fetchAllReleases', () => {
     const fetchMock = vi.fn().mockResolvedValue(page([release('v1.0.0')]))
     vi.stubGlobal('fetch', fetchMock)
 
-    const first = await fetchAllReleases('surco-app/surco-releases')
-    const second = await fetchAllReleases('surco-app/surco-releases')
+    const first = await fetchReleasesCached('surco-app/surco-releases')
+    const second = await fetchReleasesCached('surco-app/surco-releases')
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(second).toEqual(first)
