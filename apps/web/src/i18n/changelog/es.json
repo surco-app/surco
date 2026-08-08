@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.82",
+    "date": "8 de agosto de 2026",
+    "title": "Moverte por Surco sin soltar el teclado",
+    "items": [
+      {
+        "text": "⌘← y ⌘→ saltan a la columna de al lado, como alternativa a los saltos directos ⌘1, ⌘2 y ⌘3. Hacen tope en los extremos en vez de dar la vuelta, así que no pierdes la referencia de en qué lado de la ventana estás. Ojo: dentro de un campo de texto también cambian de columna, así que ahí dejan de llevar el cursor al principio o al final de la línea.",
+        "in": "0.82.0"
+      },
+      {
+        "text": "Ahora se ve dónde está el teclado. La pista de la lista y el resultado de búsqueda que tienen el foco se marcan con un contorno, así que al recorrerlos con las flechas sabes en todo momento sobre cuál vas a actuar. Antes el foco era invisible fuera de la lista y navegar a ciegas por los resultados no era práctico.",
+        "in": "0.82.0"
+      },
+      {
+        "text": "Recorrer los resultados de búsqueda con las flechas ya no se queda encallado. Al plegar un álbum, sus pistas seguían contando para el recorrido y el foco paraba en ellas aunque no se vieran: parecía que la columna se hubiera congelado en el primer resultado.",
+        "in": "0.82.0"
+      }
+    ]
+  },
+  {
     "version": "0.81",
     "date": "3 de agosto de 2026",
     "title": "Salir a mitad de una conversión ya no se lleva el trabajo por delante",
