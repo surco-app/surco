@@ -340,7 +340,7 @@ const TrackRow = memo(function TrackRow({
             : selected
               ? 'bg-[var(--color-accent-soft)]/85'
               : 'bg-[var(--color-panel)]/50 hover:bg-[var(--color-panel-2)]/85'
-        } focus-visible:shadow-[inset_0_0_0_2px_var(--color-fg)] focus-visible:outline-none`}
+        } focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]`}
       >
         {/* Severity stripe at the left edge: ambient, scannable — a page of rows shows which
             ones want attention before you read a single glyph. Hidden on the primary row,
