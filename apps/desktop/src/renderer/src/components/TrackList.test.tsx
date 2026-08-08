@@ -715,6 +715,7 @@ describe('TrackList quality badge', () => {
     renderList([track({ id: 'a' }), track({ id: 'b' })])
     const row = screen.getAllByTestId('track-row')[0]
     expect(row.className).toContain('focus-visible:outline-[var(--color-accent)]')
-    expect(row.className).toContain('focus-visible:outline-2')
+    expect(row.className).toContain('focus-visible:outline-1')
+    expect(row.className).toContain('focus-visible:-outline-offset-1')
   })
 })
