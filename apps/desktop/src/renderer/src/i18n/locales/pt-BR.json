@@ -139,6 +139,7 @@
     "trimApplied_zero": "Nenhum silêncio para cortar encontrado",
     "trimApplied_one": "Corte aplicado em {{count}} faixa",
     "trimApplied_other": "Corte aplicado em {{count}} faixas",
+    "trimUndo": "Desfazer",
     "undoneMeta_one": "Metadados restaurados em {{count}} faixa",
     "undoneMeta_other": "Metadados restaurados em {{count}} faixas",
     "metaReadFailed_one": "Não foi possível ler as tags de {{count}} arquivo — mostrando só o nome dele.",
@@ -398,9 +399,9 @@
     "outputName": "Nome do arquivo",
     "outputNameHintInPlace": "Mesmo formato do original: atualiza o arquivo original no lugar e o renomeia — nenhuma cópia é criada na pasta de saída.",
     "overwriteTitle": "Sobrescreve o original",
-    "overwriteHint": "Reescreve o arquivo de origem no lugar, mantendo o nome. Nenhuma cópia vai para a pasta de saída. Desative em Ajustes → Conversão.",
+    "overwriteHint": "Reescreve o arquivo de origem no lugar, mantendo o nome. Nenhuma cópia vai para a pasta de saída. Desative em Ajustes → Saída.",
     "overwriteAlacHint": "ALAC nunca substitui o original: o arquivo de origem pode conter áudio com perdas, então um arquivo novo é criado na pasta de saída e o original é mantido.",
-    "overwriteLossyHint": "Substitui o original sem perdas por um MP3 de 320 kbps no lugar — o master se perde e não pode ser recuperado. Desative em Ajustes → Conversão.",
+    "overwriteLossyHint": "Substitui o original sem perdas por um MP3 de 320 kbps no lugar — o master se perde e não pode ser recuperado. Desative em Ajustes → Saída.",
     "regenerate": "Regenerar nome do arquivo com os metadados",
     "regenerateAll_other": "Regenerar {{count}} nomes de arquivo com os metadados",
     "regenerateHint": "Reconstruir o nome do arquivo com os metadados acima usando seu padrão de Ajustes → Nomes",
@@ -893,7 +894,7 @@
     "items": {
       "token": {
         "q": "Preciso de um token do Discogs?",
-        "a": "Não. O Surco busca no Discogs sem configurar nada, usando as próprias credenciais do app, então você pode começar a etiquetar na hora.\n\nEssas credenciais compartilhadas têm um limite comum (60 requisições por minuto entre todos os usuários do Surco), então em momentos de pico uma busca pode falhar de vez em quando com um aviso de “limite atingido”: espere alguns segundos e tente de novo.\n\nSe você etiqueta muito, gere de graça seu próprio token pessoal em discogs.com/settings/developers e cole em Ajustes → Geral. Seu token tem um limite privado próprio, então as buscas continuam rápidas não importa quanta gente esteja usando o Surco."
+        "a": "Não. O Surco busca no Discogs sem configurar nada, usando as próprias credenciais do app, então você pode começar a etiquetar na hora.\n\nEssas credenciais compartilhadas têm um limite comum (60 requisições por minuto entre todos os usuários do Surco), então em momentos de pico uma busca pode falhar de vez em quando com um aviso de “limite atingido”: espere alguns segundos e tente de novo.\n\nSe você etiqueta muito, gere de graça seu próprio token pessoal em discogs.com/settings/developers e cole em Ajustes → Busca. Seu token tem um limite privado próprio, então as buscas continuam rápidas não importa quanta gente esteja usando o Surco."
       },
       "quality": {
         "q": "Por que uma faixa aparece marcada como “Revisar”?",
@@ -905,7 +906,7 @@
       },
       "appleMusic": {
         "q": "O que faz “Adicionar ao Apple Music”?",
-        "a": "Quando ativado (somente no macOS), o Surco importa automaticamente cada faixa convertida para a sua biblioteca do Apple Music logo após o processamento, então seus arquivos recém-etiquetados chegam lá sem arrastar nada à mão.\n\nEnquanto você edita, o Surco também verifica se uma faixa já está na sua biblioteca e mostra um pequeno selo, para você não criar duplicatas. Dá para desativar a adição automática quando quiser em Ajustes → Geral."
+        "a": "Quando ativado (somente no macOS), o Surco importa automaticamente cada faixa convertida para a sua biblioteca do Apple Music logo após o processamento, então seus arquivos recém-etiquetados chegam lá sem arrastar nada à mão.\n\nEnquanto você edita, o Surco também verifica se uma faixa já está na sua biblioteca e mostra um pequeno selo, para você não criar duplicatas. Dá para desativar a adição automática quando quiser em Ajustes → Saída."
       },
       "windows": {
         "q": "Tem algo diferente no Windows?",

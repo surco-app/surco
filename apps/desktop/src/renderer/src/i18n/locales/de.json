@@ -139,6 +139,7 @@
     "trimApplied_zero": "Keine Stille am Anfang oder Ende gefunden",
     "trimApplied_one": "Kürzung auf {{count}} Track angewendet",
     "trimApplied_other": "Kürzung auf {{count}} Tracks angewendet",
+    "trimUndo": "Rückgängig",
     "undoneMeta_one": "Metadaten in {{count}} Track wiederhergestellt",
     "undoneMeta_other": "Metadaten in {{count}} Tracks wiederhergestellt",
     "metaReadFailed_one": "Die Tags von {{count}} Datei konnten nicht gelesen werden — es wird nur ihr Dateiname angezeigt.",
@@ -398,9 +399,9 @@
     "outputName": "Dateiname",
     "outputNameHintInPlace": "Gleiches Format wie die Quelle: Die Originaldatei wird direkt aktualisiert und umbenannt — es landet keine Kopie im Ausgabeordner.",
     "overwriteTitle": "Überschreibt das Original",
-    "overwriteHint": "Die Quelldatei wird direkt überschrieben und behält ihren Namen. Keine Kopie im Ausgabeordner. Abschaltbar unter Einstellungen → Konvertierung.",
+    "overwriteHint": "Die Quelldatei wird direkt überschrieben und behält ihren Namen. Keine Kopie im Ausgabeordner. Abschaltbar unter Einstellungen → Ausgabe.",
     "overwriteAlacHint": "ALAC ersetzt nie das Original: Die Quelle kann verlustbehaftetes Audio enthalten, deshalb wird eine neue Datei in den Ausgabeordner geschrieben und das Original bleibt erhalten.",
-    "overwriteLossyHint": "Das verlustfreie Original wird direkt durch eine 320-kbps-MP3 ersetzt — das Master ist verloren und nicht wiederherstellbar. Abschaltbar unter Einstellungen → Konvertierung.",
+    "overwriteLossyHint": "Das verlustfreie Original wird direkt durch eine 320-kbps-MP3 ersetzt — das Master ist verloren und nicht wiederherstellbar. Abschaltbar unter Einstellungen → Ausgabe.",
     "regenerate": "Dateinamen aus den Metadaten neu erzeugen",
     "regenerateAll_other": "{{count}} Dateinamen aus den Metadaten neu erzeugen",
     "regenerateHint": "Baut den Dateinamen aus den Metadaten oben neu, mit deinem Muster aus Einstellungen → Benennung",
@@ -893,7 +894,7 @@
     "items": {
       "token": {
         "q": "Brauche ich einen Discogs-Token?",
-        "a": "Nein. Surco durchsucht Discogs ohne Einrichtung mit eigenen App-Zugangsdaten, du kannst also sofort mit dem Taggen loslegen.\n\nDiese geteilten Zugangsdaten haben ein gemeinsames Limit (60 Anfragen pro Minute über alle Surco-Nutzer), deshalb kann eine Suche in Stoßzeiten gelegentlich mit der Meldung „Limit erreicht“ fehlschlagen — warte ein paar Sekunden und versuch es erneut.\n\nWenn du viel taggst, erstell dir kostenlos einen persönlichen Token auf discogs.com/settings/developers und füg ihn unter Einstellungen → Allgemein ein. Dein Token bekommt ein eigenes privates Limit, die Suchen bleiben also schnell, egal wie viel bei Surco los ist."
+        "a": "Nein. Surco durchsucht Discogs ohne Einrichtung mit eigenen App-Zugangsdaten, du kannst also sofort mit dem Taggen loslegen.\n\nDiese geteilten Zugangsdaten haben ein gemeinsames Limit (60 Anfragen pro Minute über alle Surco-Nutzer), deshalb kann eine Suche in Stoßzeiten gelegentlich mit der Meldung „Limit erreicht“ fehlschlagen — warte ein paar Sekunden und versuch es erneut.\n\nWenn du viel taggst, erstell dir kostenlos einen persönlichen Token auf discogs.com/settings/developers und füg ihn unter Einstellungen → Suche ein. Dein Token bekommt ein eigenes privates Limit, die Suchen bleiben also schnell, egal wie viel bei Surco los ist."
       },
       "quality": {
         "q": "Warum ist ein Track mit „Prüfen“ markiert?",
@@ -905,7 +906,7 @@
       },
       "appleMusic": {
         "q": "Was macht „Zu Apple Music hinzufügen“?",
-        "a": "Wenn aktiviert (nur macOS), importiert Surco jeden konvertierten Track direkt nach der Verarbeitung automatisch in deine Apple Music-Bibliothek — deine frisch getaggten Dateien landen dort ohne manuelles Hineinziehen.\n\nBeim Bearbeiten prüft Surco außerdem, ob ein Track schon in deiner Bibliothek ist, und zeigt ein kleines Abzeichen, damit keine Duplikate entstehen. Das automatische Hinzufügen lässt sich jederzeit unter Einstellungen → Allgemein abschalten."
+        "a": "Wenn aktiviert (nur macOS), importiert Surco jeden konvertierten Track direkt nach der Verarbeitung automatisch in deine Apple Music-Bibliothek — deine frisch getaggten Dateien landen dort ohne manuelles Hineinziehen.\n\nBeim Bearbeiten prüft Surco außerdem, ob ein Track schon in deiner Bibliothek ist, und zeigt ein kleines Abzeichen, damit keine Duplikate entstehen. Das automatische Hinzufügen lässt sich jederzeit unter Einstellungen → Ausgabe abschalten."
       },
       "windows": {
         "q": "Gibt es Unterschiede unter Windows?",

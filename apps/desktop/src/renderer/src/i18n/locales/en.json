@@ -139,6 +139,7 @@
     "trimApplied_zero": "No leading or trailing silence found",
     "trimApplied_one": "Trim applied to {{count}} track",
     "trimApplied_other": "Trim applied to {{count}} tracks",
+    "trimUndo": "Undo",
     "undoneMeta_one": "Metadata restored on {{count}} track",
     "undoneMeta_other": "Metadata restored on {{count}} tracks",
     "metaReadFailed_one": "Couldn't read the tags of {{count}} file — showing its file name only.",

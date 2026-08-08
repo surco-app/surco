@@ -139,6 +139,7 @@
     "trimApplied_zero": "Sin silencio que recortar en la selección",
     "trimApplied_one": "Recorte aplicado en {{count}} pista",
     "trimApplied_other": "Recorte aplicado en {{count}} pistas",
+    "trimUndo": "Deshacer",
     "undoneMeta_one": "Metadatos restaurados en {{count}} pista",
     "undoneMeta_other": "Metadatos restaurados en {{count}} pistas",
     "metaReadFailed_one": "No se pudieron leer los metadatos de {{count}} archivo — se muestra solo su nombre.",
