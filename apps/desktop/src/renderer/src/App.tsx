@@ -1041,8 +1041,13 @@ export default function App(): React.JSX.Element {
   // an inline arrow here would give onActivity a fresh identity every render and
   // defeat that memo just like the other Toolbar handlers above.
   const onToggleActivity = useStableCallback(() => setActivityOpen((v) => !v))
+  // Applying a release rewrites title/artist/track number across every matched row at
+  // once — the widest tag overwrite in the app — so it snapshots first, like the other
+  // batch overwrites do. A wrong release (a reissue with a different tracklist, a
+  // same-named LP) is otherwise unrecoverable: the file's own tags are already gone.
   const onApplyMatches = useStableCallback(
     (patches: { id: string; patch: ReleaseMetaPatch }[], provider: SearchProviderId) => {
+      recordMetaUndo(patches.map((p) => p.id))
       for (const p of patches)
         updateTrack(p.id, { ...p.patch, matched: true, matchProvider: provider })
     },
