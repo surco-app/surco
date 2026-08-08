@@ -71,6 +71,12 @@ interface Params {
   // How many dropped/picked audio files were already in the list and skipped, so App
   // can tell the user instead of the silent no-op a re-dragged folder used to be.
   onDuplicatesSkipped: (count: number) => void
+  // Fired when a user-initiated drop/pick carried no audio at all, so App can say so
+  // instead of the drop being a total no-op. The same silence also covered a failed
+  // stat() — a denied permission, a dropped network mount, a broken alias all collapse
+  // to zero paths in expand.ts — leaving "there is nothing here" indistinguishable from
+  // "I could not read it".
+  onNoAudioFound: () => void
   // How many files in a finished import batch failed their metadata read, so App can
   // say so — those rows silently showing only file-name data used to read as "this
   // file has no tags" when the real tags were just unreadable.
@@ -129,6 +135,7 @@ export function useTrackLibrary({
   onClear,
   onMetaLoaded,
   onDuplicatesSkipped,
+  onNoAudioFound,
   onMetaReadFailed,
   onPathsAdded,
 }: Params): TrackLibrary {
@@ -210,6 +217,12 @@ export function useTrackLibrary({
     const existing = new Set(tracksRef.current.map((t) => t.inputPath))
     const audio = paths.filter((p) => AUDIO_EXT.test(p))
     const fresh = audio.filter((p) => !existing.has(p))
+    // A user-initiated drop that yielded no audio at all: say so rather than doing nothing
+    // visible. Only for real imports — the walk's own progress batches land one per
+    // directory, and an artwork-only subfolder inside a crate is normal. The all-duplicates
+    // case is excluded on purpose: those paths ARE audio, and the skip notice below covers
+    // them; firing both would report one drop twice.
+    if (!streamed && paths.length > 0 && audio.length === 0) onNoAudioFound()
     // Only genuinely new rows restore: a path already in the list is a live track
     // whose current state must not be clobbered by a stale saved edit.
     if (restore) {

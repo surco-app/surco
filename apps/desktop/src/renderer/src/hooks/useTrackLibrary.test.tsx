@@ -47,9 +47,11 @@ function setup(): {
   fire: FoldersChangedCb
   fireBatch: ExpandedBatchCb
   onDuplicatesSkipped: ReturnType<typeof vi.fn>
+  onNoAudioFound: ReturnType<typeof vi.fn>
 } {
   const { fire, fireBatch } = setApi()
   const onDuplicatesSkipped = vi.fn()
+  const onNoAudioFound = vi.fn()
   const { result } = renderHook(() =>
     useTrackLibrary({
       setSelection: vi.fn(),
@@ -58,11 +60,46 @@ function setup(): {
       onClear: vi.fn(),
       onMetaLoaded: vi.fn(),
       onDuplicatesSkipped,
+      onNoAudioFound,
       onMetaReadFailed: vi.fn(),
     }),
   )
-  return { result, fire, fireBatch, onDuplicatesSkipped }
+  return { result, fire, fireBatch, onDuplicatesSkipped, onNoAudioFound }
 }
+
+describe('useTrackLibrary drops with nothing to add', () => {
+  // Dropping a folder with no audio did nothing at all: no row, no toast, no change. The
+  // same silence covered a failed stat() - a denied permission, a dropped SMB mount, a
+  // broken alias all collapse to "zero paths" in expand.ts - so the user cannot tell
+  // "there is nothing here" from "I could not read it". Duplicates already report; this
+  // was the remaining silent no-op, and the more confusing of the two (with duplicates
+  // there are at least rows on screen).
+  it('reports a drop that carried no audio at all', async () => {
+    const { result, onNoAudioFound } = setup()
+
+    await act(async () => {
+      await result.current.addPaths(['/music/artwork.jpg', '/music/notes.txt'])
+    })
+
+    expect(onNoAudioFound).toHaveBeenCalledTimes(1)
+  })
+
+  // A drop whose files are all already loaded is NOT this case: those paths ARE audio, the
+  // duplicate notice already explains them, and firing both would double-report one drop.
+  it('stays quiet when the audio was there but already loaded', async () => {
+    const { result, onNoAudioFound, onDuplicatesSkipped } = setup()
+
+    await act(async () => {
+      await result.current.addPaths(['/music/a.wav'])
+    })
+    await act(async () => {
+      await result.current.addPaths(['/music/a.wav'])
+    })
+
+    expect(onDuplicatesSkipped).toHaveBeenCalledWith(1)
+    expect(onNoAudioFound).not.toHaveBeenCalled()
+  })
+})
 
 describe('useTrackLibrary watched folders', () => {
   // The watcher exists to detect tracks copied into a folder the crate was loaded FROM.
@@ -91,6 +128,7 @@ describe('useTrackLibrary watched folders', () => {
         onClear: vi.fn(),
         onMetaLoaded: vi.fn(),
         onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
         onMetaReadFailed: vi.fn(),
       }),
     )
@@ -108,6 +146,7 @@ function setupWithTracks(): ReturnType<typeof setup> {
       .mockResolvedValue({ tags: { title: '', artist: '' }, duration: 180, cover: null }),
   })
   const onDuplicatesSkipped = vi.fn()
+  const onNoAudioFound = vi.fn()
   const { result } = renderHook(() =>
     useTrackLibrary({
       setSelection: vi.fn(),
@@ -116,10 +155,11 @@ function setupWithTracks(): ReturnType<typeof setup> {
       onClear: vi.fn(),
       onMetaLoaded: vi.fn(),
       onDuplicatesSkipped,
+      onNoAudioFound: vi.fn(),
       onMetaReadFailed: vi.fn(),
     }),
   )
-  return { result, fire, fireBatch, onDuplicatesSkipped }
+  return { result, fire, fireBatch, onDuplicatesSkipped, onNoAudioFound }
 }
 
 describe('useTrackLibrary removed tracks vs watcher', () => {
@@ -254,6 +294,7 @@ describe('useTrackLibrary import batching', () => {
         onClear: vi.fn(),
         onMetaLoaded: vi.fn(),
         onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
         onMetaReadFailed: vi.fn(),
       }),
     )
@@ -322,6 +363,7 @@ describe('useTrackLibrary cache hydration', () => {
         onClear: vi.fn(),
         onMetaLoaded: vi.fn(),
         onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
         onMetaReadFailed: vi.fn(),
         onPathsAdded,
       }),
@@ -358,6 +400,7 @@ describe('useTrackLibrary foreign tags', () => {
         onClear: vi.fn(),
         onMetaLoaded: vi.fn(),
         onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
         onMetaReadFailed: vi.fn(),
       }),
     )
@@ -394,6 +437,7 @@ describe('useTrackLibrary foreign tags', () => {
         onClear: vi.fn(),
         onMetaLoaded: vi.fn(),
         onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
         onMetaReadFailed: vi.fn(),
       }),
     )
@@ -428,6 +472,7 @@ describe('useTrackLibrary foreign tags', () => {
         onClear: vi.fn(),
         onMetaLoaded: vi.fn(),
         onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
         onMetaReadFailed: vi.fn(),
       }),
     )
@@ -463,6 +508,7 @@ describe('useTrackLibrary meta read failures', () => {
         onClear: vi.fn(),
         onMetaLoaded: vi.fn(),
         onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
         onMetaReadFailed,
       }),
     )
@@ -496,6 +542,7 @@ describe('useTrackLibrary meta read failures', () => {
         onClear: vi.fn(),
         onMetaLoaded: vi.fn(),
         onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
         onMetaReadFailed,
       }),
     )
@@ -649,6 +696,7 @@ function setupWith(readMeta: ReturnType<typeof vi.fn>): {
       onClear: vi.fn(),
       onMetaLoaded: vi.fn(),
       onDuplicatesSkipped: vi.fn(),
+      onNoAudioFound: vi.fn(),
       onMetaReadFailed: vi.fn(),
     }),
   )
