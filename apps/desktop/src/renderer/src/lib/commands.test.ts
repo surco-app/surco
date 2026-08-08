@@ -65,6 +65,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     focusList: () => {},
     focusMatches: () => {},
     focusEditor: () => {},
+    focusColumn: () => {},
     togglePlay: () => {},
     playerVisible: false,
     seek: () => {},
