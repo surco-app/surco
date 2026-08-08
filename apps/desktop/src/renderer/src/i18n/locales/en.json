@@ -398,9 +398,9 @@
     "outputName": "File name",
     "outputNameHintInPlace": "Same format as the source: this updates the original file in place and renames it — no copy is written to the output folder.",
     "overwriteTitle": "Overwrites the original",
-    "overwriteHint": "This rewrites the source file in place, keeping its name. No copy goes to the output folder. Turn this off in Settings → Conversion.",
+    "overwriteHint": "This rewrites the source file in place, keeping its name. No copy goes to the output folder. Turn this off in Settings → Output.",
     "overwriteAlacHint": "ALAC never replaces the original: the source may hold lossy audio, so a new file is written to the output folder and the original is kept.",
-    "overwriteLossyHint": "This replaces the lossless original with a 320 kbps MP3 in place — the master is lost and can't be recovered. Turn this off in Settings → Conversion.",
+    "overwriteLossyHint": "This replaces the lossless original with a 320 kbps MP3 in place — the master is lost and can't be recovered. Turn this off in Settings → Output.",
     "regenerate": "Regenerate filename from metadata",
     "regenerateAll_other": "Regenerate {{count}} file names from metadata",
     "regenerateHint": "Rebuild the file name from the metadata above using your Settings → Naming pattern",
@@ -893,7 +893,7 @@
     "items": {
       "token": {
         "q": "Do I need a Discogs token?",
-        "a": "No. Surco searches Discogs out of the box using its own app credentials, so you can start tagging right away.\n\nThose shared credentials have a combined rate limit (60 requests/minute across all Surco users), so during busy moments a search may occasionally fail with a “rate limit reached” message — just wait a few seconds and try again.\n\nIf you tag a lot, generate your own free personal token at discogs.com/settings/developers and paste it in Settings → General. Your token gets its own private rate limit, so searches stay fast no matter how busy Surco is."
+        "a": "No. Surco searches Discogs out of the box using its own app credentials, so you can start tagging right away.\n\nThose shared credentials have a combined rate limit (60 requests/minute across all Surco users), so during busy moments a search may occasionally fail with a “rate limit reached” message — just wait a few seconds and try again.\n\nIf you tag a lot, generate your own free personal token at discogs.com/settings/developers and paste it in Settings → Search. Your token gets its own private rate limit, so searches stay fast no matter how busy Surco is."
       },
       "quality": {
         "q": "Why is a track flagged for “Review”?",
@@ -905,7 +905,7 @@
       },
       "appleMusic": {
         "q": "What does “Add to Apple Music” do?",
-        "a": "When enabled (macOS only), Surco automatically imports each converted track into your Apple Music library right after processing, so your freshly tagged files land there without a manual drag-and-drop.\n\nWhile editing, Surco also checks whether a track is already in your library and shows a small badge, so you don't create duplicates. You can turn auto-add off anytime in Settings → General."
+        "a": "When enabled (macOS only), Surco automatically imports each converted track into your Apple Music library right after processing, so your freshly tagged files land there without a manual drag-and-drop.\n\nWhile editing, Surco also checks whether a track is already in your library and shows a small badge, so you don't create duplicates. You can turn auto-add off anytime in Settings → Output."
       },
       "windows": {
         "q": "Is anything different on Windows?",
