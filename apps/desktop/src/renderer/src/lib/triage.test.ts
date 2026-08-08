@@ -180,7 +180,9 @@ describe('matchesFilter / qualityCounts', () => {
       good: 1,
       unanalyzed: 2,
       unconverted: 4,
+      failed: 0,
       automatched: 0,
+      matchReview: 0,
       matchedDiscogs: 0,
       matchedBandcamp: 0,
       inLibrary: 0,
@@ -508,6 +510,52 @@ describe('automatched filter', () => {
 
   it('tallies the auto-matched tracks for its filter badge', () => {
     expect(qualityCounts(tracks).automatched).toBe(2)
+  })
+})
+
+describe('match-review filter', () => {
+  const t = (id: string, matchReview?: boolean): TrackItem =>
+    ({ id, status: 'idle', matchReview }) as TrackItem
+  // The auto-match sweep marks the matches it would not apply unsupervised, and those
+  // rows are the ONLY ones the user still has to act on. Without a bucket, finding the
+  // 40 amber sparks scattered through a 300-track crate meant scrolling and eyeballing
+  // colour — the axis already splits by provider for exactly this kind of review pass.
+  const tracks = [t('needs-eyes', true), t('clean'), t('also-needs-eyes', true)]
+
+  it('keeps only the matches the sweep left for review', () => {
+    expect(by(tracks, { conversion: 'matchReview' }).map((x) => x.id)).toEqual([
+      'needs-eyes',
+      'also-needs-eyes',
+    ])
+  })
+
+  it('tallies the tracks awaiting review for its filter badge', () => {
+    expect(qualityCounts(tracks).matchReview).toBe(2)
+  })
+})
+
+describe('failed filter', () => {
+  const t = (id: string, status: TrackItem['status']): TrackItem => ({ id, status }) as TrackItem
+  // After a 200-track batch the toolbar says "180 converted · 20 failed", and the only
+  // per-row sign of a failure is a small red ring on the artwork. 'unconverted' can't
+  // stand in: it means status !== 'done', which lumps the failures together with every
+  // track that was never attempted.
+  const tracks = [t('ok', 'done'), t('broke', 'error'), t('pending', 'idle'), t('broke2', 'error')]
+
+  it('keeps only the tracks whose conversion failed', () => {
+    expect(by(tracks, { conversion: 'failed' }).map((x) => x.id)).toEqual(['broke', 'broke2'])
+  })
+
+  it('does not confuse a failure with a track that was never converted', () => {
+    expect(by(tracks, { conversion: 'unconverted' }).map((x) => x.id)).toEqual([
+      'broke',
+      'pending',
+      'broke2',
+    ])
+  })
+
+  it('tallies the failed tracks for its filter badge', () => {
+    expect(qualityCounts(tracks).failed).toBe(2)
   })
 })
 
