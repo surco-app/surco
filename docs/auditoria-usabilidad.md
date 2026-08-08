@@ -7,6 +7,55 @@ Alcance: **usabilidad de lo que ya existe**. Ninguna propuesta añade funcionali
 
 ---
 
+## Estado de los arreglos
+
+Nueve commits en `worktree-auditoria-usabilidad`, sin mergear. Suites tras los cambios:
+**escritorio 3547 ✓** (partía de 3493) · **web 80 ✓** (partía de 78). Typecheck limpio en
+ambos; el `dist` de la web reconstruye sin errores.
+
+| # | Hallazgo | Estado |
+|---|---|---|
+| 1 | El wizard ofrece «sobrescribir el original» | ✅ arreglado + test + **verificado en la app** |
+| 2 | 25 punteros «Ajustes → X» rotos en 5 idiomas | ✅ arreglado y verificado uno a uno |
+| 3 | El declick no persiste por pista | ✅ arreglado + 3 tests (ver matiz abajo) |
+| 4 | El emparejado de álbum fuera de ⌘Z | ✅ arreglado |
+| 5 | El trim en lote no es deshacible | ✅ acción «Deshacer» en su toast, 5 idiomas |
+| 10 | El HTML prerenderizado dice «Ver descargas» | ✅ arreglado + **medido en el `dist`** |
+| 11 | 3 peticiones a GitHub por visita | ✅ caché de sesión + test |
+| 12 | Copy huérfana (`heroFree`, `ledeShort`) | ✅ `heroFree` enchufada; `ledeShort` borrada (tu decisión) |
+| 13 | Aviso de SmartScreen solo en `/funciones` | ✅ bajo el botón, solo en Windows |
+| 14 | No se dice cuánto pesa la descarga | ✅ leído del `size` que ya venía en la respuesta |
+| 15 | Enlace Intel en el estilo más tenue | ✅ subido a `text-muted`, sin tocar el CLS reservado |
+
+**Del 6 al 9 y del 16 al 25 quedan sin tocar** — son los que describo abajo y no entraban
+en el bloque de mayor riesgo.
+
+### Matiz importante sobre el #3 (declick por pista)
+
+Al arreglarlo descubrí que **el lote aplana el filtro a todas las pistas**: `processAll`
+pasa un único `declickOverride`/`normalizeOverride` a cada trabajo
+(`useTrackProcessing.ts:470-478`), y el main resuelve `job.declick ?? settings.declick`.
+
+Es decir, **`normalize` tiene exactamente la misma limitación** — no es algo que
+introdujera el declick. Lo que el arreglo consigue es lo que su comentario prometía: que
+el nivel dialado sobreviva al cambio de pista en el editor y no se re-siembre del global.
+Que un lote respete el valor por pista sería un cambio de contrato aparte, no una
+corrección de usabilidad, y no lo he hecho.
+
+### Correcciones a este informe, descubiertas al arreglar
+
+- **`heroFree` no estaba en los dos idiomas**, solo en español (`hero.heroFree`). El
+  informe decía que sí. Al enchufarla hubo que añadir la inglesa.
+- **Ambas claves viven bajo `hero.`, no bajo `home.`** como citaba el informe.
+- El guard `usedKeys.test.ts` —el mismo que detectó estas huérfanas— exige que toda clave
+  se use, así que dejar `ledeShort` sin enchufar no era una opción neutral: había que
+  usarla o borrarla.
+- **Node 26 define `sessionStorage` de forma nativa**, así que el caché del #11 tuvo que
+  extraerse a `fetchReleasesCached` para que `fetchAllReleases` siguiera siendo pura y
+  los tests no se contaminaran entre sí.
+
+---
+
 ## Resumen
 
 34 hallazgos brutos, 21 retenidos tras verificación. Ninguno es un bug de corrección: la app hace lo que dice el código. Lo que fallan son **contratos entre el código y lo que el usuario lee o encuentra**.
