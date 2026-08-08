@@ -27,7 +27,24 @@ ambos; el `dist` de la web reconstruye sin errores.
 | 14 | No se dice cuánto pesa la descarga | ✅ leído del `size` que ya venía en la respuesta |
 | 15 | Enlace Intel en el estilo más tenue | ✅ subido a `text-muted`, sin tocar el CLS reservado |
 
-**Del 6 al 9 y del 16 al 25 quedan sin tocar** — son los que describo abajo y no entraban
+Segunda tanda (mismo worktree):
+
+| # | Hallazgo | Estado |
+|---|---|---|
+| 7 | Sin filtro para «a revisar» ni para «con error» | ✅ dos buckets nuevos + 5 tests, en los 5 idiomas |
+| 8 | Soltar una carpeta sin audio no da señal | ✅ aviso keyed + 2 tests, en los 5 idiomas |
+| 6 | Aceptar una sugerencia no tiene camino de ratón | ⬜ pendiente |
+| 9 | Cancelar un lote no deja rastro | ⬜ pendiente (ver nota) |
+
+**Nota sobre el #9:** el arreglo está identificado y es pequeño — el `finally` de
+`useTrackProcessing.ts:488` ya captura `const cancelled = cancelBatchRef.current` y no lo
+usa; basta añadir `cancelled` a `BatchSummary` (`lib/batch.ts:34`), propagarlo, y tratarlo
+como el caso persistente en `clearSummaryLater`. Lo dejo sin implementar porque
+`useTrackProcessing.test.tsx` devolvía lecturas inconsistentes entre herramientas en esta
+sesión (grep y awk mostraban contenidos distintos para la misma línea), y editar a ciegas
+un fichero de 3556 tests en verde no compensa.
+
+**Del 6 y el 9, y del 16 al 25, quedan sin tocar** — son los que describo abajo y no entraban
 en el bloque de mayor riesgo.
 
 ### Matiz importante sobre el #3 (declick por pista)
