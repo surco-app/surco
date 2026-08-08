@@ -462,6 +462,9 @@ export default function App(): React.JSX.Element {
     // so an unkeyed card here stacks one per folder rather than one per import.
     onDuplicatesSkipped: (count) =>
       pushImportNotice(store, 'duplicates-skipped', tr('notices.duplicatesSkipped', { count })),
+    // Same keying: a drop of several folders resolves one call per folder, and the user
+    // needs one card saying "nothing came in", not one per directory.
+    onNoAudioFound: () => pushImportNotice(store, 'no-audio-found', tr('notices.noAudioFound')),
     onMetaReadFailed: (count) =>
       pushImportNotice(store, 'meta-read-failed', tr('notices.metaReadFailed', { count })),
     // One disk-cache round trip for the whole freshly-dropped batch, so the list's quality

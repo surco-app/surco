@@ -114,6 +114,7 @@
   },
   "notices": {
     "duplicatesSkipped": "Ya en la lista, omitidas: {{count}}",
+    "noAudioFound": "No se encontró audio en lo que soltaste: comprueba que la carpeta se puede leer y tiene formatos compatibles.",
     "normalizeSkipped": "No se pudo medir el loudness de «{{name}}» — convertida sin normalizar.",
     "formatSkipped": "«{{name}}» no tiene formato de salida equivalente para Igual que el origen — saltada.",
     "declicked": "Reparados clicks en {{count}} muestras de «{{name}}».",

@@ -114,6 +114,7 @@
   },
   "notices": {
     "duplicatesSkipped": "Already in the list, skipped: {{count}}",
+    "noAudioFound": "No audio found in what you dropped — check the folder is readable and holds supported formats.",
     "normalizeSkipped": "Couldn't measure the loudness of “{{name}}” — converted without normalization.",
     "formatSkipped": "“{{name}}” has no equivalent output format for Same as source — skipped.",
     "declicked": "Repaired clicks in {{count}} samples of “{{name}}”.",
