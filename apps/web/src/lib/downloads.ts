@@ -31,7 +31,27 @@ export function countDownloads(releases: Release[]): number {
 // releases (and their download counts) once the repo passes 100 of them. Walks
 // the pages until one comes back short. Throws on any failed page: a partial
 // list would silently undercount, which is the very bug this exists to avoid.
+// The walk costs one request per 100 releases, and GitHub's unauthenticated limit is 60
+// per hour PER IP — shared by everyone behind an office, campus or CGNAT address. Every
+// page that mounts the download button used to repeat the whole walk, so a single visit
+// through home → features → guide → changelog spent it four times over. The result is
+// cached for the session because it is a vanity count, not live data: a number minutes
+// out of date is invisible, while a 403 sends the visitor to a raw asset list.
+function cached(key: string): Release[] | null {
+  try {
+    const raw = sessionStorage.getItem(key)
+    return raw ? (JSON.parse(raw) as Release[]) : null
+  } catch {
+    // Private-mode Safari throws on sessionStorage access, and a corrupt entry throws
+    // on parse. Either way the fetch below is the answer, not a broken page.
+    return null
+  }
+}
+
 export async function fetchAllReleases(repo: string): Promise<Release[]> {
+  const key = `surco:releases:${repo}`
+  const hit = cached(key)
+  if (hit) return hit
   const releases: Release[] = []
   for (let pageNum = 1; ; pageNum++) {
     const res = await fetch(
@@ -40,8 +60,15 @@ export async function fetchAllReleases(repo: string): Promise<Release[]> {
     if (!res.ok) throw new Error(`GitHub returned ${res.status}`)
     const pageReleases = (await res.json()) as Release[]
     releases.push(...pageReleases)
-    if (pageReleases.length < 100) return releases
+    if (pageReleases.length < 100) break
   }
+  try {
+    sessionStorage.setItem(key, JSON.stringify(releases))
+  } catch {
+    // Storage full or blocked: the count still renders, it just costs the walk again
+    // on the next page. Never let caching break the thing it exists to speed up.
+  }
+  return releases
 }
 
 interface InstallerRelease {
