@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.82",
+    "date": "August 8, 2026",
+    "title": "Getting around Surco without leaving the keyboard",
+    "items": [
+      {
+        "text": "⌘← and ⌘→ jump to the column next door, as an alternative to the direct ⌘1, ⌘2 and ⌘3 jumps. They stop at the ends rather than wrapping around, so you never lose track of which side of the window you're on. Note: inside a text field they still change column, so there they no longer move the cursor to the start or end of the line.",
+        "in": "0.82.0"
+      },
+      {
+        "text": "You can now see where the keyboard is. The focused track in the list and the focused search result are marked with an outline, so as you move through them with the arrow keys you always know which one you're about to act on. Until now the focus was invisible outside the list, which made arrowing through results impractical.",
+        "in": "0.82.0"
+      },
+      {
+        "text": "Arrowing through search results no longer gets stuck. Collapsing an album left its tracks in the rundown and the focus stopped on them even though they weren't visible, which made the column look frozen on the first result.",
+        "in": "0.82.0"
+      }
+    ]
+  },
+  {
     "version": "0.81",
     "date": "August 3, 2026",
     "title": "Quitting mid-conversion no longer takes your work with it",
