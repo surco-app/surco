@@ -40,8 +40,17 @@ export type QualityFilter = 'suspect' | 'good' | 'unanalyzed'
 // auto-match, or matched from a specific catalog — a different dimension from the
 // quality verdict, so its own axis. The per-provider buckets let a mixed-crate sweep
 // be reviewed source by source: a Bandcamp match carries no Discogs id or catalog
-// number, so those rows are the ones worth a separate eyeball.
-export type ConversionFilter = 'unconverted' | 'automatched' | 'matchedDiscogs' | 'matchedBandcamp'
+// number, so those rows are the ones worth a separate eyeball. By the same argument
+// 'matchReview' and 'failed' get their own buckets: they are the rows the user still has
+// to ACT on — the sweep's unapplied suggestions and the conversions that errored — and
+// the toolbar already counts both, a count that until now pointed nowhere.
+export type ConversionFilter =
+  | 'unconverted'
+  | 'failed'
+  | 'automatched'
+  | 'matchReview'
+  | 'matchedDiscogs'
+  | 'matchedBandcamp'
 // The Apple Music library buckets, gated on a known verdict (see matchesLibrary).
 export type LibraryFilter = 'inLibrary' | 'notInLibrary'
 // The same song loaded as two files (see lib/duplicates); a single-value axis so it
@@ -99,6 +108,10 @@ export function suspectTracks(tracks: TrackItem[]): TrackItem[] {
 
 function matchesConversion(track: TrackItem, filter: ConversionFilter): boolean {
   if (filter === 'unconverted') return track.status !== 'done'
+  // Narrower than 'unconverted' on purpose: that one means "not done", which covers
+  // every track never attempted. This one is only the ones that were tried and broke.
+  if (filter === 'failed') return track.status === 'error'
+  if (filter === 'matchReview') return Boolean(track.matchReview)
   if (filter === 'matchedDiscogs') return track.matchProvider === 'discogs'
   if (filter === 'matchedBandcamp') return track.matchProvider === 'bandcamp'
   return Boolean(track.autoMatched)
@@ -215,7 +228,9 @@ export function qualityCounts(tracks: TrackItem[]): {
   good: number
   unanalyzed: number
   unconverted: number
+  failed: number
   automatched: number
+  matchReview: number
   matchedDiscogs: number
   matchedBandcamp: number
   inLibrary: number
@@ -228,7 +243,9 @@ export function qualityCounts(tracks: TrackItem[]): {
   let good = 0
   let unanalyzed = 0
   let unconverted = 0
+  let failed = 0
   let automatched = 0
+  let matchReview = 0
   let matchedDiscogs = 0
   let matchedBandcamp = 0
   let inLibrary = 0
@@ -242,7 +259,9 @@ export function qualityCounts(tracks: TrackItem[]): {
     else if (q === 'good') good += 1
     else unanalyzed += 1
     if (t.status !== 'done') unconverted += 1
+    if (t.status === 'error') failed += 1
     if (t.autoMatched) automatched += 1
+    if (t.matchReview) matchReview += 1
     if (t.matchProvider === 'discogs') matchedDiscogs += 1
     else if (t.matchProvider === 'bandcamp') matchedBandcamp += 1
     if (t.inLibrary === true) inLibrary += 1
@@ -256,7 +275,9 @@ export function qualityCounts(tracks: TrackItem[]): {
     good,
     unanalyzed,
     unconverted,
+    failed,
     automatched,
+    matchReview,
     matchedDiscogs,
     matchedBandcamp,
     inLibrary,

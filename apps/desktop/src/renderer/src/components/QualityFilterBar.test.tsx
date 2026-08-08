@@ -15,7 +15,9 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   good: 0,
   unanalyzed: 0,
   unconverted: 0,
+  failed: 0,
   automatched: 0,
+  matchReview: 0,
   matchedDiscogs: 0,
   matchedBandcamp: 0,
   silence: 0,
@@ -60,6 +62,25 @@ describe('QualityFilterBar', () => {
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     expect(screen.getByTestId('quality-filter-matchedDiscogs')).toBeInTheDocument()
     expect(screen.getByTestId('quality-filter-matchedBandcamp')).toBeInTheDocument()
+  })
+
+  // The two buckets that hold rows the user still has to act on. Before these, a batch
+  // ending "180 converted · 20 failed" gave a count with no way to reach those 20, and the
+  // sweep's amber "review" sparks could only be found by scrolling and eyeballing colour.
+  it('lists the failed and review buckets once something lands in them', () => {
+    renderBar({ tally: tally({ failed: 20, matchReview: 4 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByTestId('quality-filter-failed')).toBeInTheDocument()
+    expect(screen.getByTestId('quality-filter-matchReview')).toBeInTheDocument()
+  })
+
+  // Same restraint as the per-provider buckets: a crate that converted cleanly and had
+  // nothing left to review must not carry two permanently-empty rows.
+  it('hides the failed and review buckets while nothing is in them', () => {
+    renderBar({ tally: tally({ unconverted: 2 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.queryByTestId('quality-filter-failed')).toBeNull()
+    expect(screen.queryByTestId('quality-filter-matchReview')).toBeNull()
   })
 
   it('hides the per-provider buckets while nothing has matched from them', () => {
