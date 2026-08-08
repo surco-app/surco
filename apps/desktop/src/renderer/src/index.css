@@ -62,7 +62,10 @@
   --color-warn: #8f5e15;
   --color-danger: #8c4351;
   --color-on-accent: #ffffff;
-  --color-row-selected: #2959aa;
+  /* Más oscuro que --color-accent a propósito: el contorno de foco de una fila se pinta en
+     accent, así que un relleno del mismo tono lo haría invisible (como en oscuro, donde el
+     relleno ya es el más oscuro de los dos). */
+  --color-row-selected: #1e4480;
   --color-on-row-selected: #ffffff;
   --color-scrollbar: rgba(20, 22, 38, 0.18);
   --color-scrollbar-hover: rgba(20, 22, 38, 0.3);
