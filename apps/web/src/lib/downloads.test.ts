@@ -129,4 +129,25 @@ describe('fetchAllReleases', () => {
 
     await expect(fetchAllReleases('surco-app/surco-releases')).rejects.toThrow()
   })
+  // The unauthenticated limit is 60 requests/hour PER IP, and every page mounting the
+  // download button spends a whole pagination walk. Four pages in one visit (home →
+  // features → guide → changelog) burn eight of them, so an office, a campus or a
+  // CGNAT mobile network can reach the 403 — which drops the visitor onto the generic
+  // releases link instead of an installer. One walk per session is enough: this is a
+  // vanity count, not live data.
+  it('reuses the session cache instead of re-walking the pages', async () => {
+    const store = new Map<string, string>()
+    vi.stubGlobal('sessionStorage', {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => void store.set(k, v),
+    })
+    const fetchMock = vi.fn().mockResolvedValue(page([release('v1.0.0')]))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const first = await fetchAllReleases('surco-app/surco-releases')
+    const second = await fetchAllReleases('surco-app/surco-releases')
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(second).toEqual(first)
+  })
 })
