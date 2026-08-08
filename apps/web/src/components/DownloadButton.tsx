@@ -9,7 +9,13 @@ import DownloadCount from './DownloadCount'
 const REPO = 'surco-app/surco-releases'
 const RELEASES = `https://github.com/${REPO}/releases/latest`
 
-const LABEL: Record<OS, string> = { mac: 'macOS', windows: 'Windows', linux: 'Linux', other: '' }
+const LABEL: Record<OS, string> = {
+  mac: 'macOS',
+  windows: 'Windows',
+  linux: 'Linux',
+  other: '',
+  unknown: '',
+}
 
 const primary = `inline-flex ${btnPrimary} px-7 py-3 text-sm`
 
@@ -23,14 +29,19 @@ const primary = `inline-flex ${btnPrimary} px-7 py-3 text-sm`
 // majority of Macs — and a discreet link below covers Intel.
 export default function DownloadButton({ showMeta = true }: { showMeta?: boolean }) {
   const { t } = useTranslation()
-  const [os] = useState(detectOS)
+  // Starts 'unknown' in the prerender (no navigator) and resolves on mount, so the
+  // static HTML carries a pending CTA rather than the generic fallback link.
+  const [os, setOs] = useState(detectOS)
+  useEffect(() => {
+    setOs(detectOS())
+  }, [])
   const [href, setHref] = useState<string | null>(null)
   const [intelHref, setIntelHref] = useState<string | null>(null)
   const [version, setVersion] = useState<string | null>(null)
   const [settled, setSettled] = useState(false)
 
   useEffect(() => {
-    if (os === 'other') return
+    if (os === 'other' || os === 'unknown') return
     let cancelled = false
     fetch(`https://api.github.com/repos/${REPO}/releases?per_page=20`)
       .then((r) => (r.ok ? r.json() : null))
@@ -55,11 +66,41 @@ export default function DownloadButton({ showMeta = true }: { showMeta?: boolean
   }, [os])
 
   const ready = href !== null || os === 'other'
+  // Before detection runs (the prerender) the CTA can't name a platform, so it shows the
+  // same pending spinner as an in-flight fetch rather than the 'other' fallback link.
+  const pending = os === 'unknown'
 
   return (
     <>
       <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-        {os === 'other' ? (
+        {pending ? (
+          <button
+            type="button"
+            disabled
+            aria-disabled="true"
+            aria-busy="true"
+            data-testid="download-cta-pending"
+            className="inline-flex cursor-wait items-center gap-2 rounded-full bg-surface px-7 py-3 text-sm font-semibold text-muted ring-1 ring-line"
+          >
+            <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="9"
+                stroke="currentColor"
+                strokeWidth="3"
+              />
+              <path
+                d="M21 12a9 9 0 0 0-9-9"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
+            </svg>
+            {t('download.cta', { os: 'macOS' })}
+          </button>
+        ) : os === 'other' ? (
           <a href={RELEASES} className={primary}>
             {t('download.viewDownloads')}
           </a>
