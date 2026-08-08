@@ -31,27 +31,7 @@ export function countDownloads(releases: Release[]): number {
 // releases (and their download counts) once the repo passes 100 of them. Walks
 // the pages until one comes back short. Throws on any failed page: a partial
 // list would silently undercount, which is the very bug this exists to avoid.
-// The walk costs one request per 100 releases, and GitHub's unauthenticated limit is 60
-// per hour PER IP — shared by everyone behind an office, campus or CGNAT address. Every
-// page that mounts the download button used to repeat the whole walk, so a single visit
-// through home → features → guide → changelog spent it four times over. The result is
-// cached for the session because it is a vanity count, not live data: a number minutes
-// out of date is invisible, while a 403 sends the visitor to a raw asset list.
-function cached(key: string): Release[] | null {
-  try {
-    const raw = sessionStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as Release[]) : null
-  } catch {
-    // Private-mode Safari throws on sessionStorage access, and a corrupt entry throws
-    // on parse. Either way the fetch below is the answer, not a broken page.
-    return null
-  }
-}
-
 export async function fetchAllReleases(repo: string): Promise<Release[]> {
-  const key = `surco:releases:${repo}`
-  const hit = cached(key)
-  if (hit) return hit
   const releases: Release[] = []
   for (let pageNum = 1; ; pageNum++) {
     const res = await fetch(
@@ -60,13 +40,32 @@ export async function fetchAllReleases(repo: string): Promise<Release[]> {
     if (!res.ok) throw new Error(`GitHub returned ${res.status}`)
     const pageReleases = (await res.json()) as Release[]
     releases.push(...pageReleases)
-    if (pageReleases.length < 100) break
+    if (pageReleases.length < 100) return releases
   }
+}
+
+// The walk above costs one request per 100 releases, and GitHub's unauthenticated limit
+// is 60 per hour PER IP — shared by everyone behind an office, campus or CGNAT address.
+// Every page mounting the download button repeated the whole walk, so one visit through
+// home → features → guide → changelog spent it four times over; exhausting the limit
+// answers 403, which drops the visitor onto a raw asset list instead of an installer.
+// Caching is safe here because this is a vanity count, not live data: minutes out of
+// date is invisible. sessionStorage is read through globalThis because it is absent in
+// the SSG prerender and throws in private-mode Safari.
+export async function fetchReleasesCached(repo: string): Promise<Release[]> {
+  const key = `surco:releases:${repo}`
   try {
-    sessionStorage.setItem(key, JSON.stringify(releases))
+    const raw = globalThis.sessionStorage?.getItem(key)
+    if (raw) return JSON.parse(raw) as Release[]
   } catch {
-    // Storage full or blocked: the count still renders, it just costs the walk again
-    // on the next page. Never let caching break the thing it exists to speed up.
+    // A corrupt entry throws on parse; falling through to the walk is the answer.
+  }
+  const releases = await fetchAllReleases(repo)
+  try {
+    globalThis.sessionStorage?.setItem(key, JSON.stringify(releases))
+  } catch {
+    // Storage blocked or full: the count still renders, it just costs the walk again
+    // on the next page. Caching must never break the thing it exists to speed up.
   }
   return releases
 }
@@ -74,7 +73,9 @@ export async function fetchAllReleases(repo: string): Promise<Release[]> {
 interface InstallerRelease {
   tag_name: string
   draft?: boolean
-  assets?: { name: string; browser_download_url: string }[]
+  // size rides in the same payload the download URL comes from, so showing the
+  // installer weight costs no extra request against the 60/hour rate limit.
+  assets?: { name: string; browser_download_url: string; size?: number }[]
 }
 
 // The newest release whose installer for `suffix` (e.g. "arm64.dmg", ".exe") is actually
