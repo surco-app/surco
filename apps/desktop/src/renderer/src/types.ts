@@ -132,6 +132,10 @@ export interface TrackItem {
   // touched and the editor seeds it from the Settings default, so configuring loudness
   // globally still governs freshly imported tracks.
   normalize?: NormalizeConfig
+  // The click repair dialled for THIS track, same contract as normalize above: a dusty
+  // rip keeps the level it was given instead of being re-seeded from the global default
+  // every time the editor remounts on the way back to it.
+  declick?: DeclickMode
   status: TrackStatus
   stage?: ProcessStage
   // The format this track is being / was last converted to, captured when the
