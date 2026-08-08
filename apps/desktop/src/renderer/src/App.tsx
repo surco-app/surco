@@ -1223,21 +1223,39 @@ export default function App(): React.JSX.Element {
     const targets = scope.filter((t) => !t.trim)
     if (targets.length === 0) return
     if (targets.length > 1) setNotice(tr('notices.trimDetecting', { count: targets.length }))
-    let applied = 0
+    // The ids this sweep actually cut, so its summary can offer one way back: detection
+    // only suggests, and on a crate of vinyl rips (long surface-noise intros are exactly
+    // what the -60 dB threshold exists for) a wrong batch would otherwise mean opening
+    // every bad row to reset it by hand. Targets all started with no trim, so undoing is
+    // clearing it — no snapshot needed.
+    const cut: string[] = []
     for (const t of targets) {
       try {
         const wave = await queryClient.fetchQuery(waveformOptions(t.inputPath))
         const suggestion = wave ? detectTrim(wave) : undefined
         if (suggestion) {
           updateTrack(t.id, { trim: suggestion })
-          applied++
+          cut.push(t.id)
         }
       } catch {
         // A failed decode counts as "nothing to trim" for this track; the summary
         // notice below still reports honestly how many were actually cut.
       }
     }
-    setNotice(tr('notices.trimApplied', { count: applied }))
+    if (cut.length === 0) {
+      setNotice(tr('notices.trimApplied', { count: 0 }))
+      return
+    }
+    pushToast(store, {
+      tone: 'neutral',
+      message: tr('notices.trimApplied', { count: cut.length }),
+      duration: 4000,
+      testid: 'app-notice',
+      action: {
+        label: tr('notices.trimUndo'),
+        onAction: () => patchTracks(cut, { trim: undefined }),
+      },
+    })
   })
   // The fire-and-forget face of the sweep above, identity-stable like every other
   // Editor/command prop so the memoized editor never re-renders for it.
