@@ -136,11 +136,7 @@ describe('fetchAllReleases', () => {
   // releases link instead of an installer. One walk per session is enough: this is a
   // vanity count, not live data.
   it('reuses the session cache instead of re-walking the pages', async () => {
-    const store = new Map<string, string>()
-    vi.stubGlobal('sessionStorage', {
-      getItem: (k: string) => store.get(k) ?? null,
-      setItem: (k: string, v: string) => void store.set(k, v),
-    })
+    globalThis.sessionStorage?.clear()
     const fetchMock = vi.fn().mockResolvedValue(page([release('v1.0.0')]))
     vi.stubGlobal('fetch', fetchMock)
 
