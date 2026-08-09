@@ -607,10 +607,15 @@
     "peakPerChannel": "Normalize stereo channels independently",
     "cueWarning": "Re-encodes the audio. Traktor cues and beatgrid are kept for MP3 and AIFF, but dropped for WAV and FLAC.",
     "cueWarningShort": "Re-encodes the audio · cues kept for MP3/AIFF",
-    "predictionNow": "Now {{lufs}} LUFS · {{peak}} dBTP",
-    "predictionAfter": "{{lufs}} LUFS · {{peak}} dBTP",
     "predictionEstimate": "(estimated)",
-    "predictionLimited": "(estimated — peaks limited to the ceiling)"
+    "targetHint": "The overall loudness the conversion aims the whole track at. Streaming services level around −14 LUFS.",
+    "truePeakHint": "The loudest instant of the signal, measured between samples. The conversion keeps peaks at or under this ceiling; −1 dBTP is the safe default.",
+    "presetHint": {
+      "streaming": "How Spotify and Apple Music level tracks — the safe default for a listening library.",
+      "club": "Hot, for the booth: most tracks need peak limiting to get there, trading a little punch.",
+      "broadcast": "The TV and radio level. Quieter than streaming, with plenty of headroom.",
+      "custom": "Your own target. The preview under the wave shows where the track will land."
+    }
   },
   "settings": {
     "tabs": {

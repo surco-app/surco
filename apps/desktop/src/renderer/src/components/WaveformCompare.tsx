@@ -12,7 +12,7 @@ import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useWaveform, useWaveformScan } from '../hooks/useWaveform'
 import { useWaveformWindow, windowFor } from '../hooks/useWaveformWindow'
 import { formatTime, timeTicks } from '../lib/duration'
-import { formatDb } from '../lib/quality'
+import { formatDb, predictNormalized } from '../lib/quality'
 import { clippedCount, drawWaveform, previewPeaks } from '../lib/waveform'
 import { Tooltip } from './Tooltip'
 import { WaveformSkeleton } from './WaveformSkeleton'
@@ -695,6 +695,13 @@ export function WaveformSolo({
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const source = useStripData(inputPath, enabled)
+  // Where the conversion will actually land, from the measurement already fetched
+  // for the ORIGINAL row. The PREVIEW legend used to print the DIALS (target and
+  // ceiling) as if they were the outcome — wrong whenever the target is reachable
+  // linearly, where the peak lands well below the ceiling (Broadcast −23 on a hot
+  // master predicts −12.4 dBTP while the row claimed −1.0). One prediction source
+  // also retires the separate estimate line the section carried above the wave.
+  const predicted = source.loudness ? predictNormalized(normalize, source.loudness) : null
   // The clip marks' switch (the ClippedFlag legend). Per-mount state: a track flip
   // remounts the editor, and marks defaulting back on is the safe reading.
   const [marks, setMarks] = useState(true)
@@ -754,10 +761,17 @@ export function WaveformSolo({
                 {tr('editor.waveformPreview')}
               </span>
               <span className="truncate tabular-nums text-fg-dim">
-                {normalize.mode === 'loudness'
-                  ? `${formatDb(normalize.targetLufs)} LUFS · ${formatDb(normalize.truePeakDb)} dBTP`
-                  : `${formatDb(normalize.peakDb)} dBFS`}
+                {predicted
+                  ? `${formatDb(predicted.lufs)} LUFS · ${formatDb(predicted.truePeakDb)} dBTP`
+                  : normalize.mode === 'loudness'
+                    ? `${formatDb(normalize.targetLufs)} LUFS · ${formatDb(normalize.truePeakDb)} dBTP`
+                    : `${formatDb(normalize.peakDb)} dBFS`}
               </span>
+              {predicted && (
+                <span className="shrink-0 text-fg-faint">
+                  {tr('normalize.predictionEstimate')}
+                </span>
+              )}
               {/* The felt number, on its own chip: how hard the conversion pushes,
                   the single figure worth reading at a glance. Signed and toned so a
                   boost (up, accent) and a cut (down, muted) read apart without the

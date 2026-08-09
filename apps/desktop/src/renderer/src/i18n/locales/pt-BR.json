@@ -607,10 +607,15 @@
     "peakPerChannel": "Normalizar canais estéreo independentemente",
     "cueWarning": "Recodifica o áudio. Os cues e o beatgrid do Traktor são mantidos em MP3 e AIFF, mas se perdem em WAV e FLAC.",
     "cueWarningShort": "Recodifica o áudio · cues mantidos em MP3/AIFF",
-    "predictionNow": "Agora {{lufs}} LUFS · {{peak}} dBTP",
-    "predictionAfter": "{{lufs}} LUFS · {{peak}} dBTP",
     "predictionEstimate": "(estimado)",
-    "predictionLimited": "(estimado — os picos são limitados ao teto)"
+    "targetHint": "O volume global para o qual a conversão leva a faixa inteira. O streaming nivela em torno de −14 LUFS.",
+    "truePeakHint": "O instante mais alto do sinal, medido entre amostras. A conversão mantém os picos neste teto ou abaixo; −1 dBTP é o valor seguro.",
+    "presetHint": {
+      "streaming": "Como Spotify e Apple Music nivelam — o valor seguro para uma biblioteca de escuta.",
+      "club": "Quente, para a cabine: a maioria das faixas precisa limitar picos para chegar lá, perdendo um pouco de pegada.",
+      "broadcast": "O nível de TV e rádio. Mais baixo que streaming, com bastante margem.",
+      "custom": "Seu próprio alvo. A prévia sob a onda mostra onde a faixa vai ficar."
+    }
   },
   "settings": {
     "tabs": {

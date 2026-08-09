@@ -566,8 +566,12 @@ describe('WaveformSolo', () => {
       />,
     )
     const legend = await screen.findByTestId('waveform-preview')
+    // The legend states the predicted OUTCOME, not the dials: -20 LUFS gaining +6 dB
+    // lands the -8 dBTP peak at -2.0, well under the -1 ceiling — printing the ceiling
+    // here (as it used to) claimed a peak the conversion never produces.
     expect(legend).toHaveTextContent('-14.0 LUFS')
-    expect(legend).toHaveTextContent('-1.0 dBTP')
+    expect(legend).toHaveTextContent('-2.0 dBTP')
+    expect(legend).toHaveTextContent('(estimated)')
     // The felt number — how hard the normalization pushes (-20 measured to -14) —
     // lives in its own chip now, signed so a boost and a cut read apart at a glance,
     // instead of trailing the target figures as one more dot-separated number.

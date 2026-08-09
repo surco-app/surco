@@ -1217,6 +1217,7 @@ export const Editor = memo(function Editor({
                           }}
                           item={item}
                           isMulti={isMulti}
+                          onShowHelp={onShowLoudnessHelp}
                         />
                       )
                     default:
