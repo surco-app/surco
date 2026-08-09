@@ -35,6 +35,18 @@
       {
         "text": "On the website, the download button now names your platform right away. If your browser was slow to run JavaScript, or GitHub didn't answer, you ended up on a list of loose GitHub files instead of the installer. It also tells you how big the download is, warns Windows users about the SmartScreen prompt, and the Intel Mac link is legible without hunting for it.",
         "in": "0.83.0"
+      },
+      {
+        "text": "“Remove DC offset” now works together with loudness normalization. A reader wrote in with the exact case: a vinyl captured with the signal off-centre needs both at once, and the option lived only in the peak tab, so picking loudness silently dropped it. It is now a correction of its own, available in both modes, and anyone who had it on keeps it.",
+        "in": "0.83.0"
+      },
+      {
+        "text": "The audio-quality help (“What do these mean?”) now states, for every metric, what range counts as good and whether Surco can fix it — and with which setting. For the ones baked into the master (range, dynamics, noise floor) it says so plainly, so you stop hunting for a setting that doesn't exist. The ranges are the same thresholds the indicators are coloured with.",
+        "in": "0.83.0"
+      },
+      {
+        "text": "The normalization section estimates where the track will land before you convert: “Now −21.8 LUFS · −18.1 dBTP → −14.0 LUFS · −10.3 dBTP”. Another point from the same reader: he was re-converting the same FLAC over and over just to read the result. It is arithmetic over the measurement already on screen, so it updates as you move the target — and when the target forces peak limiting, it says so.",
+        "in": "0.83.0"
       }
     ]
   },
