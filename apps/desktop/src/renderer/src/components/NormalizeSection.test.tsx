@@ -32,7 +32,7 @@ function renderSection(
   value: NormalizeConfig = cfg,
 ): void {
   ;(window as unknown as { api: unknown }).api = {
-    waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], durationSec: 10 }),
+    waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], rms: [0.2, 0.4], durationSec: 10 }),
     loudness: vi.fn().mockResolvedValue(loudness),
   }
   const client = createQueryClient()
@@ -45,6 +45,7 @@ function renderSection(
         onChange={vi.fn()}
         item={item}
         isMulti={isMulti}
+        onShowHelp={vi.fn()}
       />
     </QueryClientProvider>,
   )
@@ -127,6 +128,7 @@ describe('NormalizeSection before/after waveforms', () => {
           onChange={vi.fn()}
           item={item}
           isMulti={false}
+          onShowHelp={vi.fn()}
         />
       </QueryClientProvider>
     )
@@ -153,7 +155,7 @@ describe('NormalizeSection layout', () => {
     over: { open?: boolean; value?: NormalizeConfig } = {},
   ): ReturnType<typeof render> {
     ;(window as unknown as { api: unknown }).api = {
-      waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], durationSec: 10 }),
+      waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], rms: [0.2, 0.4], durationSec: 10 }),
       loudness: vi.fn().mockResolvedValue(null),
     }
     const client = createQueryClient()
@@ -166,6 +168,7 @@ describe('NormalizeSection layout', () => {
           onChange={vi.fn()}
           item={track()}
           isMulti={false}
+          onShowHelp={vi.fn()}
         />
       </QueryClientProvider>,
     )
@@ -244,12 +247,18 @@ describe('NormalizeSection measured figures', () => {
       // The estimate only renders with a mode active — mode 'none' has nothing to predict.
       { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
     )
-    const prediction = await screen.findByTestId('normalize-prediction', undefined, {
+    // The estimate lives in the wave's PREVIEW legend now — ORIGINAL/PREVIEW were
+    // already the section's before/after vocabulary, and a separate line above the
+    // wave was a second narrator that could even disagree with it (the legend used
+    // to print the dials, not the outcome). Target -14 from -8.6 is -5.4 dB of gain,
+    // landing the 0.2 dBTP peak at -5.2.
+    const preview = await screen.findByTestId('waveform-preview', undefined, {
       timeout: 3000,
     })
-    expect(prediction).toHaveTextContent('-8.6 LUFS')
-    expect(prediction).toHaveTextContent('dBTP')
+    expect(preview).toHaveTextContent('-14.0 LUFS')
+    expect(preview).toHaveTextContent('-5.2 dBTP')
     expect(screen.queryByTestId('normalize-measured-pill')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('normalize-prediction')).not.toBeInTheDocument()
   })
 
   it('shows no pill before the measurement exists', async () => {

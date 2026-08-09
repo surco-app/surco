@@ -23,6 +23,8 @@ interface SectionHeaderProps {
   // than a paragraph under it: the explanation is read once and the two lines it
   // cost were charged on every visit, pushing the actual work down the panel.
   help?: string
+  // When given, the ⓘ opens this instead of being a hover-only note.
+  onHelp?: () => void
   // Which section this header belongs to. Always set: the ⌘[ / ⌘] jumps find headers by
   // it. Whether the section earns a maximize toggle is a separate question — see
   // `maximizable`, which used to be conflated with this and started offering the button
@@ -43,6 +45,7 @@ export function SectionHeader({
   summaryMuted,
   right,
   help,
+  onHelp,
   sectionId,
   maximizable,
 }: SectionHeaderProps): React.JSX.Element {
@@ -81,7 +84,23 @@ export function SectionHeader({
           </span>
         )}
       </button>
-      {help && (
+      {help && onHelp && (
+        // With a handler, the ⓘ is a real control: it opens the metric help the hover
+        // sentence can only gesture at. Normalization asked for this first — its
+        // ranges/fixable help lived in Quality's readout, unreachable from the very
+        // section whose dials those metrics govern.
+        <button
+          type="button"
+          data-testid="section-help"
+          aria-label={help}
+          onClick={onHelp}
+          className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded text-fg-dim hover:text-fg-muted"
+        >
+          <Info className="h-3 w-3" aria-hidden="true" />
+          <Tooltip label={help} />
+        </button>
+      )}
+      {help && !onHelp && (
         <span
           data-testid="section-help"
           role="note"
