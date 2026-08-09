@@ -478,7 +478,21 @@
     "otherTagsTitle": "Other metadata",
     "otherTagsSummary": "{{count}} tags",
     "otherTagsRemove": "Remove {{name}}",
-    "otherTagsRestore": "Restore {{name}}"
+    "otherTagsRestore": "Restore {{name}}",
+    "loudnessRangeLufs": "Good: -16 to -8 LUFS.",
+    "loudnessFixLufs": "Fixable here: Loudness normalization sets this to your target.",
+    "loudnessRangePeak": "Good: -1 dBTP or below.",
+    "loudnessFixPeak": "Fixable here: the true-peak ceiling in Loudness normalization caps it.",
+    "loudnessRangeRange": "Good: 6 LU or more.",
+    "loudnessFixRange": "Not fixable here: it is baked into the master. Normalizing changes the level, not the spread.",
+    "loudnessRangeCrest": "Good: 12 dB or more.",
+    "loudnessFixCrest": "Not fixable here: the punch was lost when the track was mastered.",
+    "loudnessRangeBalance": "Good: under 1 dB.",
+    "loudnessFixBalance": "Fixable here: Peak normalization with per-channel gain evens the two sides out.",
+    "loudnessRangeDc": "Good: under 0.2%.",
+    "loudnessFixDc": "Fixable here: tick “Remove DC offset” under Normalization.",
+    "loudnessRangeNoise": "Good: -45 dB or lower.",
+    "loudnessFixNoise": "Not fixable here: Surco does not denoise. It comes from the source or the capture."
   },
   "fields": {
     "groupFilled_one": "{{count}} filled",

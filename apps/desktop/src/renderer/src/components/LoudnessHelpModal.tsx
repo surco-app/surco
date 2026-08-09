@@ -39,10 +39,23 @@ export function LoudnessHelpModal({ onClose }: Props): React.JSX.Element {
       </div>
 
       <div className="-mx-2 space-y-3 overflow-y-auto px-2 text-sm leading-relaxed text-fg-dim">
+        {/* Each metric now carries the band the app itself grades as good, and whether
+            Surco can do anything about it. A user wrote asking for exactly this: the
+            figures meant nothing without a target to compare them to, and there was no
+            way to tell which ones a setting could still fix (loudness, true peak, DC,
+            balance) from the ones baked into the master (range, dynamics, noise floor).
+            The ranges are the same thresholds lib/quality.ts colours the pills with, so
+            the copy and the dots cannot drift apart. */}
         {METRICS.map((m) => (
           <p key={m}>
             <span className="font-medium text-fg">{tr(`editor.loudness${m}Label`)}</span>{' '}
-            {tr(`editor.loudness${m}Help`)}
+            {tr(`editor.loudness${m}Help`)}{' '}
+            <span className="text-fg" data-testid={`loudness-help-range-${m.toLowerCase()}`}>
+              {tr(`editor.loudnessRange${m}`)}
+            </span>{' '}
+            <span data-testid={`loudness-help-fix-${m.toLowerCase()}`}>
+              {tr(`editor.loudnessFix${m}`)}
+            </span>
           </p>
         ))}
         <p className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-[var(--color-line)] pt-3">

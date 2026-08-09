@@ -198,7 +198,14 @@ function split(settings: Settings): { synced: Partial<Settings>; local: Partial<
 // carries only the old field, so read it forward — without this, everyone who had
 // centring on would silently stop getting it. The old field is left in place: peak mode's
 // per-channel filter still needs it to centre and scale in one expression.
+// Tolerates an absent config: mergeSettings runs over partial objects (a settings.json
+// that predates the whole normalize block, the renderer's first-paint snapshot), and a
+// migration must never be the thing that throws on a file it was written to repair.
 function migrateDcOffset(cfg: NormalizeConfig): NormalizeConfig {
+  // Defensive: mergeSettings always hands over a spread object, but a hand-edited or
+  // partially-written settings.json can leave the fields inside it missing, and a
+  // migration must never be the thing that throws on a file it exists to repair.
+  if (!cfg) return cfg
   if (cfg.removeDcOffset !== undefined || cfg.peakRemoveDc !== true) return cfg
   return { ...cfg, removeDcOffset: true }
 }
