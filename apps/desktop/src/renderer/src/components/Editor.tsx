@@ -408,7 +408,7 @@ export const Editor = memo(function Editor({
   // and reports the override up so convert uses it.
   const [normalizeCfg, setNormalizeCfg] = useState(item.normalize ?? normalize)
   // Per-track click repair, same contract as normalizeCfg.
-  const [declickCfg, setDeclickCfg] = useState(declick)
+  const [declickCfg, setDeclickCfg] = useState(item.declick ?? declick)
   // Report the seeded picks up once on mount: App mirrors them in refs for the
   // keyboard convert shortcuts, and since this editor remounts per track, the mount
   // report IS the per-track reseed — one mechanism (the editor reporting) keeps the
@@ -1191,6 +1191,9 @@ export const Editor = memo(function Editor({
                           onChange={(d) => {
                             setDeclickCfg(d)
                             onDeclickChange?.(d)
+                            // Stage it on the track so coming back to it finds the level
+                            // as it was left, the way normalize and the trim already do.
+                            onChange({ declick: d })
                           }}
                           inputPath={item.inputPath}
                           isMulti={isMulti}

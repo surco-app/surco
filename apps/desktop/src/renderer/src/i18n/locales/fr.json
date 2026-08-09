@@ -31,6 +31,7 @@
     "batchConverted": "{{count}} convertis",
     "batchSkipped": "{{count}} ignorés",
     "batchFailed": "{{count}} en échec",
+    "batchCancelled": "Annulé",
     "palette": "Palette de commandes",
     "settings": "Réglages",
     "stats": "Statistiques",
@@ -60,7 +61,9 @@
       "good": "Bons",
       "unanalyzed": "Non analysés",
       "unconverted": "Non convertis",
+      "failed": "En échec",
       "automatched": "Auto-associés",
+      "matchReview": "À vérifier",
       "matchedDiscogs": "Discogs",
       "matchedBandcamp": "Bandcamp",
       "notInLibrary": "Pas dans Apple Music",
@@ -112,6 +115,7 @@
   },
   "notices": {
     "duplicatesSkipped": "Déjà dans la liste, ignorés : {{count}}",
+    "noAudioFound": "Aucun audio trouvé dans ce que tu as déposé — vérifie que le dossier est lisible et contient des formats pris en charge.",
     "normalizeSkipped": "Impossible de mesurer le loudness de « {{name}} » — converti sans normalisation.",
     "formatSkipped": "« {{name}} » n'a pas de format de sortie équivalent pour Comme la source — ignoré.",
     "declicked": "Clics réparés dans {{count}} échantillons de « {{name}} ».",
@@ -139,6 +143,7 @@
     "trimApplied_zero": "Aucun silence à rogner trouvé",
     "trimApplied_one": "Rognage appliqué à {{count}} morceau",
     "trimApplied_other": "Rognage appliqué à {{count}} morceaux",
+    "trimUndo": "Annuler",
     "undoneMeta_one": "Métadonnées restaurées sur {{count}} morceau",
     "undoneMeta_other": "Métadonnées restaurées sur {{count}} morceaux",
     "metaReadFailed_one": "Impossible de lire les tags de {{count}} fichier — seul son nom est affiché.",
@@ -227,7 +232,7 @@
     "export": "Exporter vers un logiciel DJ",
     "stats": "Statistiques",
     "activity": "Afficher l'activité",
-    "toggleLanguage": "Changer de langue (anglais / espagnol)",
+    "toggleLanguage": "Changer de langue",
     "toggleTheme": "Changer de thème (système / clair / sombre)",
     "confetti": "Lancer des confettis 🎉",
     "trimStartBack": "Reculer la coupe de début",
@@ -398,9 +403,9 @@
     "outputName": "Nom du fichier",
     "outputNameHintInPlace": "Même format que la source : le fichier original est mis à jour sur place et renommé — aucune copie n'est écrite dans le dossier de sortie.",
     "overwriteTitle": "Écrase l'original",
-    "overwriteHint": "Réécrit le fichier source sur place, en gardant son nom. Aucune copie dans le dossier de sortie. Désactive-le dans Réglages → Conversion.",
+    "overwriteHint": "Réécrit le fichier source sur place, en gardant son nom. Aucune copie dans le dossier de sortie. Désactive-le dans Réglages → Sortie.",
     "overwriteAlacHint": "ALAC ne remplace jamais l'original : la source peut contenir de l'audio avec perte, donc un nouveau fichier est écrit dans le dossier de sortie et l'original est conservé.",
-    "overwriteLossyHint": "Remplace l'original sans perte par un MP3 320 kbps sur place — le master est perdu et irrécupérable. Désactive-le dans Réglages → Conversion.",
+    "overwriteLossyHint": "Remplace l'original sans perte par un MP3 320 kbps sur place — le master est perdu et irrécupérable. Désactive-le dans Réglages → Sortie.",
     "regenerate": "Régénérer le nom du fichier depuis les métadonnées",
     "regenerateAll_other": "Régénérer {{count}} noms de fichiers depuis les métadonnées",
     "regenerateHint": "Reconstruit le nom du fichier à partir des métadonnées ci-dessus selon ton modèle de Réglages → Noms",
@@ -474,7 +479,21 @@
     "otherTagsTitle": "Autres métadonnées",
     "otherTagsSummary": "{{count}} tags",
     "otherTagsRemove": "Supprimer {{name}}",
-    "otherTagsRestore": "Restaurer {{name}}"
+    "otherTagsRestore": "Restaurer {{name}}",
+    "loudnessRangeLufs": "Bon : entre -16 et -8 LUFS.",
+    "loudnessFixLufs": "Corrigible : la normalisation loudness l'amène à ta cible.",
+    "loudnessRangePeak": "Bon : -1 dBTP ou moins.",
+    "loudnessFixPeak": "Corrigible : le plafond true-peak de la normalisation le limite.",
+    "loudnessRangeRange": "Bon : 6 LU ou plus.",
+    "loudnessFixRange": "Non corrigible ici : c'est dans le master. Normaliser change le niveau, pas l'écart.",
+    "loudnessRangeCrest": "Bon : 12 dB ou plus.",
+    "loudnessFixCrest": "Non corrigible ici : le punch a été perdu au mastering.",
+    "loudnessRangeBalance": "Bon : moins de 1 dB.",
+    "loudnessFixBalance": "Corrigible : la normalisation crête avec gain par canal égalise les deux côtés.",
+    "loudnessRangeDc": "Bon : moins de 0,2 %.",
+    "loudnessFixDc": "Corrigible : coche « Supprimer le décalage DC » sous Normalisation.",
+    "loudnessRangeNoise": "Bon : -45 dB ou moins.",
+    "loudnessFixNoise": "Non corrigible ici : Surco ne débruite pas. Cela vient de la source ou de la captation."
   },
   "fields": {
     "groupFilled_one": "{{count}} rempli",
@@ -583,10 +602,15 @@
     "targetLufs": "Cible (LUFS)",
     "truePeak": "Pic réel (dBTP)",
     "peakDb": "Pic (dBFS)",
+    "removeDcOffset": "Supprimer le décalage DC (centrer sur 0.0)",
     "peakRemoveDc": "Supprimer le décalage DC (centrer sur 0.0)",
     "peakPerChannel": "Normaliser les canaux stéréo indépendamment",
     "cueWarning": "Ré-encode l'audio. Les points cue et le beatgrid de Traktor sont conservés en MP3 et AIFF, mais perdus en WAV et FLAC.",
-    "cueWarningShort": "Réencode l'audio · repères conservés en MP3/AIFF"
+    "cueWarningShort": "Réencode l'audio · repères conservés en MP3/AIFF",
+    "predictionNow": "Actuel {{lufs}} LUFS · {{peak}} dBTP",
+    "predictionAfter": "{{lufs}} LUFS · {{peak}} dBTP",
+    "predictionEstimate": "(estimation)",
+    "predictionLimited": "(estimation — les crêtes sont limitées au plafond)"
   },
   "settings": {
     "tabs": {
@@ -613,11 +637,11 @@
       "recording": "Appuie sur les touches…",
       "unbound": "Non assigné",
       "reset": "Rétablir la valeur par défaut",
-      "resetAll": "Tout rétablir",
+      "resetAll": "Tout réinitialiser ({{count}})",
       "conflict": "Deux commandes partagent un raccourci. Résous-le pour enregistrer.",
       "fixedNav": "Toujours actives (non modifiables) : ↑↓ ou j / k parcourent la liste des morceaux et les résultats Discogs, Début / Fin vont aux extrémités, et Page haut / bas avancent d'une page.",
       "groupTrim": "Éditeur de silences",
-      "groupTrimHint": "Seulement quand une coupe a le focus",
+      "groupTrimHint": "Quand la section de rognage est ouverte",
       "groupTrackList": "Liste des morceaux",
       "groupTrackListHint": "Seulement quand une ligne a le focus",
       "groupEditor": "Éditeur",
@@ -807,7 +831,7 @@
     "replaceLowResHint": "Si désactivé, la pochette du fichier est toujours conservée — une basse résolution est seulement signalée, jamais remplacée par l'image de la release.",
     "flacFinderCovers": "Afficher les pochettes FLAC dans le Finder",
     "flacFinderCoversHint": "Le Finder ne sait pas lire la pochette des fichiers FLAC et affiche une icône générique. Cette option le contourne pour les fichiers convertis ; la lecture n'est pas affectée.",
-    "showSpectrum": "Afficher le spectre audio",
+    "showSpectrum": "Analyse de la qualité audio",
     "showSpectrumHint": "Affiche le spectre et le contrôle de qualité à l'édition d'un morceau. Si désactivé, l'analyse est entièrement sautée.",
     "autoAnalyze": "Tout analyser à l'import",
     "autoAnalyzeHint": "Précalcule en arrière-plan toutes les analyses de chaque morceau dès l'import, pour que rouvrir votre bibliothèque soit instantané ; et les rips suspects sont signalés sans appuyer sur Analyser.",
@@ -893,7 +917,7 @@
     "items": {
       "token": {
         "q": "Ai-je besoin d'un token Discogs ?",
-        "a": "Non. Surco cherche sur Discogs sans rien configurer, avec ses propres identifiants d'app, donc tu peux commencer à taguer tout de suite.\n\nCes identifiants partagés ont une limite commune (60 requêtes par minute pour tous les utilisateurs de Surco), donc aux moments de forte affluence une recherche peut parfois échouer avec un message « limite atteinte » — attends quelques secondes et réessaie.\n\nSi tu tagues beaucoup, génère gratuitement ton propre token personnel sur discogs.com/settings/developers et colle-le dans Réglages → Général. Ton token a sa propre limite privée, donc les recherches restent rapides quelle que soit l'affluence sur Surco."
+        "a": "Non. Surco cherche sur Discogs sans rien configurer, avec ses propres identifiants d'app, donc tu peux commencer à taguer tout de suite.\n\nCes identifiants partagés ont une limite commune (60 requêtes par minute pour tous les utilisateurs de Surco), donc aux moments de forte affluence une recherche peut parfois échouer avec un message « limite atteinte » — attends quelques secondes et réessaie.\n\nSi tu tagues beaucoup, génère gratuitement ton propre token personnel sur discogs.com/settings/developers et colle-le dans Réglages → Recherche. Ton token a sa propre limite privée, donc les recherches restent rapides quelle que soit l'affluence sur Surco."
       },
       "quality": {
         "q": "Pourquoi un morceau est-il marqué « À vérifier » ?",
@@ -905,7 +929,7 @@
       },
       "appleMusic": {
         "q": "Que fait « Ajouter à Apple Music » ?",
-        "a": "Quand c'est activé (macOS uniquement), Surco importe automatiquement chaque morceau converti dans ta bibliothèque Apple Music juste après le traitement, pour que tes fichiers fraîchement tagués y arrivent sans glisser-déposer manuel.\n\nPendant l'édition, Surco vérifie aussi si un morceau est déjà dans ta bibliothèque et affiche un petit badge, pour éviter les doublons. Tu peux désactiver l'ajout automatique quand tu veux dans Réglages → Général."
+        "a": "Quand c'est activé (macOS uniquement), Surco importe automatiquement chaque morceau converti dans ta bibliothèque Apple Music juste après le traitement, pour que tes fichiers fraîchement tagués y arrivent sans glisser-déposer manuel.\n\nPendant l'édition, Surco vérifie aussi si un morceau est déjà dans ta bibliothèque et affiche un petit badge, pour éviter les doublons. Tu peux désactiver l'ajout automatique quand tu veux dans Réglages → Sortie."
       },
       "windows": {
         "q": "Quelque chose change-t-il sous Windows ?",

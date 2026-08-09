@@ -169,7 +169,9 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                     {tr('settings.destination')}
                   </span>
                   <DestinationPicker
-                    destinations={DESTINATIONS.filter((d) => isMac || d !== 'appleMusic')}
+                    destinations={DESTINATIONS.filter(
+                      (d) => d !== 'overwrite' && (isMac || d !== 'appleMusic'),
+                    )}
                     value={destination}
                     onChange={chooseDestination}
                     flacOnly={synced.outputFormat === 'flac'}

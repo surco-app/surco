@@ -133,14 +133,18 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
     <div className="min-h-[280px]">
       <div className="mb-2 flex items-center justify-between">
         <p className="text-xs text-fg-dim">{tr('settings.shortcuts.intro')}</p>
-        <button
-          type="button"
-          data-testid="shortcuts-reset-all"
-          onClick={() => patch('shortcutOverrides', {})}
-          className="press shrink-0 text-xs text-fg-muted hover:text-fg"
-        >
-          {tr('settings.shortcuts.resetAll')}
-        </button>
+        {Object.keys(synced.shortcutOverrides).length > 0 && (
+          <button
+            type="button"
+            data-testid="shortcuts-reset-all"
+            onClick={() => patch('shortcutOverrides', {})}
+            className="press shrink-0 text-xs text-fg-muted hover:text-fg"
+          >
+            {tr('settings.shortcuts.resetAll', {
+              count: Object.keys(synced.shortcutOverrides).length,
+            })}
+          </button>
+        )}
       </div>
       {sections.map((scope) => (
         <div key={scope} data-testid={`shortcut-group-${scope}`} className="mt-4">

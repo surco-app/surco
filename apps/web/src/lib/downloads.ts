@@ -44,10 +44,38 @@ export async function fetchAllReleases(repo: string): Promise<Release[]> {
   }
 }
 
+// The walk above costs one request per 100 releases, and GitHub's unauthenticated limit
+// is 60 per hour PER IP — shared by everyone behind an office, campus or CGNAT address.
+// Every page mounting the download button repeated the whole walk, so one visit through
+// home → features → guide → changelog spent it four times over; exhausting the limit
+// answers 403, which drops the visitor onto a raw asset list instead of an installer.
+// Caching is safe here because this is a vanity count, not live data: minutes out of
+// date is invisible. sessionStorage is read through globalThis because it is absent in
+// the SSG prerender and throws in private-mode Safari.
+export async function fetchReleasesCached(repo: string): Promise<Release[]> {
+  const key = `surco:releases:${repo}`
+  try {
+    const raw = globalThis.sessionStorage?.getItem(key)
+    if (raw) return JSON.parse(raw) as Release[]
+  } catch {
+    // A corrupt entry throws on parse; falling through to the walk is the answer.
+  }
+  const releases = await fetchAllReleases(repo)
+  try {
+    globalThis.sessionStorage?.setItem(key, JSON.stringify(releases))
+  } catch {
+    // Storage blocked or full: the count still renders, it just costs the walk again
+    // on the next page. Caching must never break the thing it exists to speed up.
+  }
+  return releases
+}
+
 interface InstallerRelease {
   tag_name: string
   draft?: boolean
-  assets?: { name: string; browser_download_url: string }[]
+  // size rides in the same payload the download URL comes from, so showing the
+  // installer weight costs no extra request against the 60/hour rate limit.
+  assets?: { name: string; browser_download_url: string; size?: number }[]
 }
 
 // The newest release whose installer for `suffix` (e.g. "arm64.dmg", ".exe") is actually

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { NormalizeConfig } from '../../../shared/types'
 import {
   formatDb,
   formatKHz,
@@ -10,6 +11,7 @@ import {
   gradeLufs,
   gradeNoiseFloor,
   gradeTruePeak,
+  predictNormalized,
   isLosslessContainer,
   isLowResCover,
   isTranscode,
@@ -279,5 +281,73 @@ describe('gradeLra', () => {
   it('flags a flat, brick-walled range as bad (the loudness-war signature)', () => {
     expect(gradeLra(0)).toBe('bad')
     expect(gradeLra(2)).toBe('bad')
+  })
+})
+
+describe('predictNormalized', () => {
+  const cfg = (over: Partial<NormalizeConfig> = {}): NormalizeConfig => ({
+    mode: 'loudness',
+    targetLufs: -14,
+    truePeakDb: -1,
+    peakDb: -1,
+    ...over,
+  })
+
+  // A user asked to see where a track would land BEFORE converting: he was re-converting
+  // the same FLAC over and over just to read the resulting numbers. Loudness normalization
+  // is a constant gain, so the outcome is arithmetic on figures already measured.
+  it('shifts loudness to the target and moves the peak by the same gain', () => {
+    const out = predictNormalized(cfg(), { integratedLufs: -9.2, truePeakDb: -0.3 })
+    expect(out?.lufs).toBeCloseTo(-14, 5)
+    // -14 - (-9.2) = -4.8 dB of gain, applied to the peak as well.
+    expect(out?.truePeakDb).toBeCloseTo(-5.1, 5)
+  })
+
+  it('raises a quiet track and its peak together', () => {
+    const out = predictNormalized(cfg(), { integratedLufs: -20, truePeakDb: -12 })
+    expect(out?.lufs).toBeCloseTo(-14, 5)
+    expect(out?.truePeakDb).toBeCloseTo(-6, 5)
+  })
+
+  // When the full gain would push the peak past the ceiling, the conversion applies the
+  // gain anyway and limits the overs (limitedLoudnormFilter). The estimate must say the
+  // peak lands ON the ceiling, not above it, or it would promise a clip that never happens.
+  it('holds the peak at the ceiling when the target is not reachable linearly', () => {
+    const out = predictNormalized(cfg({ targetLufs: -9 }), { integratedLufs: -20, truePeakDb: -2 })
+    expect(out?.lufs).toBeCloseTo(-9, 5)
+    expect(out?.truePeakDb).toBeCloseTo(-1, 5)
+    expect(out?.limited).toBe(true)
+  })
+
+  it('reports the linear case as unlimited', () => {
+    expect(predictNormalized(cfg(), { integratedLufs: -9.2, truePeakDb: -0.3 })?.limited).toBe(false)
+  })
+
+  // Peak mode sizes its gain from the peak, not the loudness: the peak lands exactly on
+  // the target and the loudness follows by the same amount.
+  it('predicts peak mode from the peak instead of the loudness', () => {
+    const out = predictNormalized(cfg({ mode: 'peak', peakDb: -1 }), {
+      integratedLufs: -18,
+      truePeakDb: -6,
+    })
+    expect(out?.truePeakDb).toBeCloseTo(-1, 5)
+    expect(out?.lufs).toBeCloseTo(-13, 5)
+  })
+
+  // Nothing to predict when normalization is off, or when a figure never landed — an
+  // estimate built on a missing measurement would be a fabricated number.
+  it('returns null with no normalization or no measurement', () => {
+    expect(
+      predictNormalized(cfg({ mode: 'none' }), { integratedLufs: -9, truePeakDb: -1 }),
+    ).toBeNull()
+    expect(predictNormalized(cfg(), { integratedLufs: null, truePeakDb: -1 })).toBeNull()
+    expect(predictNormalized(cfg(), { integratedLufs: -9, truePeakDb: null })).toBeNull()
+  })
+
+  // -Infinity is what a silent decode reads as; it must not reach the screen as NaN.
+  it('returns null for a non-finite measurement', () => {
+    expect(
+      predictNormalized(cfg(), { integratedLufs: Number.NEGATIVE_INFINITY, truePeakDb: -1 }),
+    ).toBeNull()
   })
 })

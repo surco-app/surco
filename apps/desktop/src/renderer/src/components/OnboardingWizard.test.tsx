@@ -136,6 +136,15 @@ describe('OnboardingWizard destination', () => {
     expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ outputDir: '/dj/converted' }))
   })
 
+  // Overwrite rewrites every source file in place, and the wizard runs before the user
+  // has loaded a single track — so the one destructive choice is the one they have no
+  // way to judge yet. Settings still offers it, with the editor's overwrite warnings
+  // behind it; the first-run wizard must not.
+  it('does not offer the destructive overwrite destination', () => {
+    openFormatStep()
+    expect(screen.queryByTestId('onboarding-destination-overwrite')).toBeNull()
+  })
+
   it('hides the folder detail under destinations that keep no folder copy', () => {
     openFormatStep()
     fireEvent.click(screen.getByTestId('onboarding-destination-beside'))

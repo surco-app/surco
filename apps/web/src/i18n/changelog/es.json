@@ -1,5 +1,56 @@
 [
   {
+    "version": "0.83",
+    "date": "8 de agosto de 2026",
+    "title": "Encontrar lo que queda por hacer, y poder deshacerlo",
+    "items": [
+      {
+        "text": "El asistente de la primera vez ya no ofrece «Sobrescribir el original». Era la única opción destructiva del asistente y estaba a un clic antes de que hubieras visto un solo archivo, con un aviso de una línea por toda advertencia. Sigue disponible en Ajustes → Destino, donde el editor sí te avisa de lo que implica antes de convertir.",
+        "in": "0.83.0"
+      },
+      {
+        "text": "Los avisos que te dicen cómo desactivar algo ahora llevan a la pestaña correcta. El más importante —el que avisa de que sustituir un original sin pérdida por un MP3 pierde el máster para siempre— te mandaba a «Ajustes → Conversión», una pestaña que no existe: se llama Formato, y la opción vive en Destino.",
+        "in": "0.83.0"
+      },
+      {
+        "text": "El nivel de reparación de clics se queda en la pista. Si le ponías «Fuerte» a un vinilo con ruido y pasabas a la siguiente, al volver estaba otra vez en el valor global, sin avisar. Ahora se comporta como el recorte de silencios y la normalización, que ya se guardaban por pista.",
+        "in": "0.83.0"
+      },
+      {
+        "text": "⌘Z deshace el emparejado de un álbum entero. Aplicar un lanzamiento equivocado —una reedición con otro tracklist, un disco con el mismo nombre— reescribía título, artista y número de pista de todas las pistas seleccionadas sin vuelta atrás, y los tags originales del archivo ya no estaban.",
+        "in": "0.83.0"
+      },
+      {
+        "text": "Detectar el recorte de silencios en varias pistas ahora se puede deshacer desde el propio aviso. Si la detección se equivocaba en unas cuantas —los vinilos con entrada larga de ruido de superficie son justo el caso difícil— la única salida era abrirlas una a una y quitarles el corte a mano.",
+        "in": "0.83.0"
+      },
+      {
+        "text": "Dos filtros nuevos para lo que queda pendiente: «Con error» y «A revisar». Después de convertir un lote, la barra decía «180 convertidas · 20 con error» y no había forma de llegar a esas 20 más que buscando un aro rojo diminuto por toda la lista; lo mismo con las coincidencias que el emparejado automático deja marcadas para que las mires tú. Aparecen solo cuando hay algo dentro.",
+        "in": "0.83.0"
+      },
+      {
+        "text": "Soltar una carpeta sin audio ya no se queda en nada. No pasaba absolutamente nada: ni fila, ni aviso, ni cambio, y era imposible distinguir «aquí no hay música» de «no he podido leer la carpeta» — que es lo que ocurre con un disco de red caído o una carpeta sin permisos.",
+        "in": "0.83.0"
+      },
+      {
+        "text": "En la web, el botón de descarga ya dice para qué sistema es desde el primer momento. Si tu navegador tardaba en arrancar el JavaScript, o GitHub no respondía, acababas en una lista de archivos sueltos de GitHub en vez de en el instalador. Ahora además indica cuánto pesa la descarga, avisa a quien usa Windows del aviso de SmartScreen, y el enlace para los Mac con Intel se lee sin buscarlo.",
+        "in": "0.83.0"
+      },
+      {
+        "text": "«Quitar el offset de DC» ya funciona junto con la normalización por loudness. Un lector nos escribió con el caso exacto: un vinilo capturado con la señal descentrada necesita las dos cosas a la vez, y la opción vivía solo en la pestaña de pico, así que elegir loudness la descartaba sin avisar. Ahora es una corrección propia, disponible en los dos modos, y quien la tenía activada la conserva.",
+        "in": "0.83.0"
+      },
+      {
+        "text": "La ayuda de calidad de audio («¿Qué significan?») ahora dice, para cada métrica, qué rango se considera bueno y si Surco puede corregirla — y con qué ajuste. Para las que vienen del máster (rango, dinámica, suelo de ruido) lo dice claro: no hay ajuste que las cambie, para que no busques uno que no existe. Los rangos son los mismos umbrales con los que se colorean los indicadores.",
+        "in": "0.83.0"
+      },
+      {
+        "text": "La sección de normalización estima dónde quedará la pista antes de convertir: «Ahora −21.8 LUFS · −18.1 dBTP → −14.0 LUFS · −10.3 dBTP». Otro punto del mismo lector: tenía que convertir el FLAC una y otra vez solo para leer el resultado. Es aritmética sobre la medición que ya está en pantalla, así que se actualiza al mover el objetivo; y cuando el objetivo obliga a limitar picos, lo dice.",
+        "in": "0.83.0"
+      }
+    ]
+  },
+  {
     "version": "0.82",
     "date": "8 de agosto de 2026",
     "title": "Moverte por Surco sin soltar el teclado",

@@ -6,6 +6,7 @@ import type React from 'react'
 import { createRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
+  DeclickMode,
   FormatSetting,
   KeyNotation,
   LoudnessResult,
@@ -142,6 +143,7 @@ function renderEditor(
     genrePresets?: string[]
     showLoudness?: boolean
     normalize?: NormalizeConfig
+    declick?: DeclickMode
     overwriteOriginal?: boolean
     addToAppleMusic?: boolean
     addToEngineDj?: boolean
@@ -241,6 +243,7 @@ function renderEditor(
       showLoudness: props.showLoudness ?? false,
       keyNotation: props.keyNotation ?? 'camelot',
       normalize: props.normalize ?? { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+      ...(props.declick ? { declick: props.declick } : {}),
       outputBitDepth: props.outputBitDepth ?? 'source',
       outputSampleRate: props.outputSampleRate ?? 'source',
       ...(props.editorSections ? { editorSections: props.editorSections } : {}),
@@ -1377,6 +1380,37 @@ describe('Editor export control', () => {
       { editorSections: [{ id: 'normalize' as const, open: true }] },
     )
     expect(screen.getByTestId('normalize-mode-loudness')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  // Same remount story as the normalization above: a click-repair level dialled for a
+  // dusty rip was re-seeded from the global default on the way back, so the choice was
+  // silently gone. Click repair is per track exactly like trim and normalize.
+  it('seeds the click repair from the track when it has its own', () => {
+    renderEditor({ id: 'a', declick: 'strong' }, 'wav', {
+      declick: 'off',
+      editorSections: [{ id: 'declick' as const, open: true }],
+    })
+    expect(screen.getByTestId('declick-mode-strong')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  // The other half of the same contract: an untouched track still opens on the Settings
+  // default, so configuring click repair globally governs freshly imported tracks.
+  it('seeds the click repair from Settings when the track has none', () => {
+    renderEditor({ id: 'a' }, 'wav', {
+      declick: 'soft',
+      editorSections: [{ id: 'declick' as const, open: true }],
+    })
+    expect(screen.getByTestId('declick-mode-soft')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  // Dialling a level must stage it ON the track, or coming back finds the global value.
+  it('stages the click repair on the track when it changes', () => {
+    const { onChange } = renderEditor({ id: 'a' }, 'wav', {
+      declick: 'off',
+      editorSections: [{ id: 'declick' as const, open: true }],
+    })
+    fireEvent.click(screen.getByTestId('declick-mode-standard'))
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ declick: 'standard' }))
   })
 
   // The other half: a track the user never touched still opens on the Settings default,

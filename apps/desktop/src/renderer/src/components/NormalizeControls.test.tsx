@@ -75,28 +75,62 @@ describe('NormalizeControls number input', () => {
 })
 
 // Djotas's Audacity habit, verbatim: peak to a target plus per-channel DC removal
-// and independent channel gains. They only make sense in peak mode — loudness
-// (loudnorm) has its own gating math — so the boxes live in the peak block alone.
+// and independent channel gains. Per-channel gain belongs to peak mode (it trades the
+// stereo image for both channels hitting the target), but centring does not: a user
+// reported wanting to fix a biased vinyl capture AND normalize to a loudness target, and
+// had to choose. Subtracting the mean is a correction of the signal; the mode only
+// decides how the gain is sized afterwards.
 describe('NormalizeControls peak options', () => {
   const peak: NormalizeConfig = { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
 
-  it('offers DC removal and independent channels in peak mode', () => {
+  it('offers independent channel gains in peak mode', () => {
     const onChange = vi.fn()
     render(<NormalizeControls value={peak} onChange={onChange} />)
-    fireEvent.click(screen.getByTestId('normalize-peak-remove-dc'))
-    expect(onChange).toHaveBeenCalledWith({ ...peak, peakRemoveDc: true })
     fireEvent.click(screen.getByTestId('normalize-peak-per-channel'))
     expect(onChange).toHaveBeenCalledWith({ ...peak, peakPerChannel: true })
   })
 
-  it('shows the saved options as checked', () => {
-    render(<NormalizeControls value={{ ...peak, peakRemoveDc: true }} onChange={vi.fn()} />)
-    expect(screen.getByTestId('normalize-peak-remove-dc')).toBeChecked()
-    expect(screen.getByTestId('normalize-peak-per-channel')).not.toBeChecked()
+  it('shows a saved per-channel choice as checked', () => {
+    render(<NormalizeControls value={{ ...peak, peakPerChannel: true }} onChange={vi.fn()} />)
+    expect(screen.getByTestId('normalize-peak-per-channel')).toBeChecked()
   })
 
-  it('keeps the options out of loudness mode', () => {
+  it('keeps the per-channel option out of loudness mode', () => {
     render(<NormalizeControls value={loudness} onChange={vi.fn()} />)
-    expect(screen.queryByTestId('normalize-peak-remove-dc')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('normalize-peak-per-channel')).not.toBeInTheDocument()
+  })
+})
+
+describe('NormalizeControls DC offset', () => {
+  const peak: NormalizeConfig = { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
+
+  // The reported bug: picking loudness silently dropped the centring, because the box
+  // lived inside the peak block. Both modes have to offer it.
+  it('offers DC removal in loudness mode', () => {
+    const onChange = vi.fn()
+    render(<NormalizeControls value={loudness} onChange={onChange} />)
+    fireEvent.click(screen.getByTestId('normalize-remove-dc'))
+    expect(onChange).toHaveBeenCalledWith({ ...loudness, removeDcOffset: true })
+  })
+
+  it('offers DC removal in peak mode too', () => {
+    const onChange = vi.fn()
+    render(<NormalizeControls value={peak} onChange={onChange} />)
+    fireEvent.click(screen.getByTestId('normalize-remove-dc'))
+    expect(onChange).toHaveBeenCalledWith({ ...peak, removeDcOffset: true })
+  })
+
+  it('shows a saved choice as checked in either mode', () => {
+    render(<NormalizeControls value={{ ...loudness, removeDcOffset: true }} onChange={vi.fn()} />)
+    expect(screen.getByTestId('normalize-remove-dc')).toBeChecked()
+  })
+
+  // Ungated on the mode, unlike the per-channel box. The editor writes the MODE per track
+  // but this choice back to Settings, so gating it would make a lasting preference blink
+  // in and out as the user steps through a crate.
+  it('stays available whatever the mode is', () => {
+    const none: NormalizeConfig = { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
+    render(<NormalizeControls value={none} onChange={vi.fn()} />)
+    expect(screen.getByTestId('normalize-remove-dc')).toBeInTheDocument()
   })
 })

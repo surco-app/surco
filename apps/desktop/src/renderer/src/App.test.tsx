@@ -1489,7 +1489,7 @@ describe('App normalize peak preferences', () => {
     const rows = await addTwoTracks()
     fireEvent.click(rows[0])
     fireEvent.click(await screen.findByTestId('normalize-mode-peak'))
-    fireEvent.click(screen.getByTestId('normalize-peak-remove-dc'))
+    fireEvent.click(screen.getByTestId('normalize-remove-dc'))
     await waitFor(() =>
       expect(saveSettings).toHaveBeenCalledWith({
         normalize: {
@@ -1497,7 +1497,8 @@ describe('App normalize peak preferences', () => {
           targetLufs: -14,
           truePeakDb: -1,
           peakDb: -1,
-          peakRemoveDc: true,
+          removeDcOffset: true,
+          peakRemoveDc: false,
           peakPerChannel: false,
         },
       }),
@@ -1533,7 +1534,7 @@ describe('App normalize peak preferences', () => {
     const rows = await addTwoTracks()
     fireEvent.click(rows[0])
     fireEvent.click(await screen.findByTestId('normalize-mode-peak'))
-    await screen.findByTestId('normalize-peak-remove-dc')
+    await screen.findByTestId('normalize-remove-dc')
     expect(saveSettings).not.toHaveBeenCalledWith(
       expect.objectContaining({ normalize: expect.anything() }),
     )

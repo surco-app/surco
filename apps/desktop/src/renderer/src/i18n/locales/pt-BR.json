@@ -31,6 +31,7 @@
     "batchConverted": "{{count}} convertidas",
     "batchSkipped": "{{count}} puladas",
     "batchFailed": "{{count}} com erro",
+    "batchCancelled": "Cancelado",
     "palette": "Paleta de comandos",
     "settings": "Ajustes",
     "stats": "Estatísticas",
@@ -60,7 +61,9 @@
       "good": "Boas",
       "unanalyzed": "Sem análise",
       "unconverted": "Sem converter",
+      "failed": "Com erro",
       "automatched": "Auto-associadas",
+      "matchReview": "A revisar",
       "matchedDiscogs": "Discogs",
       "matchedBandcamp": "Bandcamp",
       "notInLibrary": "Fora do Apple Music",
@@ -112,6 +115,7 @@
   },
   "notices": {
     "duplicatesSkipped": "Já estavam na lista, ignoradas: {{count}}",
+    "noAudioFound": "Nenhum áudio encontrado no que você soltou — verifique se a pasta pode ser lida e tem formatos compatíveis.",
     "normalizeSkipped": "Não foi possível medir o loudness de “{{name}}” — convertida sem normalização.",
     "formatSkipped": "“{{name}}” não tem formato de saída equivalente para Igual à origem — pulada.",
     "declicked": "Clicks reparados em {{count}} amostras de “{{name}}”.",
@@ -139,6 +143,7 @@
     "trimApplied_zero": "Nenhum silêncio para cortar encontrado",
     "trimApplied_one": "Corte aplicado em {{count}} faixa",
     "trimApplied_other": "Corte aplicado em {{count}} faixas",
+    "trimUndo": "Desfazer",
     "undoneMeta_one": "Metadados restaurados em {{count}} faixa",
     "undoneMeta_other": "Metadados restaurados em {{count}} faixas",
     "metaReadFailed_one": "Não foi possível ler as tags de {{count}} arquivo — mostrando só o nome dele.",
@@ -227,7 +232,7 @@
     "export": "Exportar para software de DJ",
     "stats": "Estatísticas",
     "activity": "Ver atividade",
-    "toggleLanguage": "Trocar idioma (inglês / espanhol)",
+    "toggleLanguage": "Trocar idioma",
     "toggleTheme": "Trocar tema (sistema / claro / escuro)",
     "confetti": "Soltar confete 🎉",
     "trimStartBack": "Recuar o corte inicial",
@@ -398,9 +403,9 @@
     "outputName": "Nome do arquivo",
     "outputNameHintInPlace": "Mesmo formato do original: atualiza o arquivo original no lugar e o renomeia — nenhuma cópia é criada na pasta de saída.",
     "overwriteTitle": "Sobrescreve o original",
-    "overwriteHint": "Reescreve o arquivo de origem no lugar, mantendo o nome. Nenhuma cópia vai para a pasta de saída. Desative em Ajustes → Conversão.",
+    "overwriteHint": "Reescreve o arquivo de origem no lugar, mantendo o nome. Nenhuma cópia vai para a pasta de saída. Desative em Ajustes → Saída.",
     "overwriteAlacHint": "ALAC nunca substitui o original: o arquivo de origem pode conter áudio com perdas, então um arquivo novo é criado na pasta de saída e o original é mantido.",
-    "overwriteLossyHint": "Substitui o original sem perdas por um MP3 de 320 kbps no lugar — o master se perde e não pode ser recuperado. Desative em Ajustes → Conversão.",
+    "overwriteLossyHint": "Substitui o original sem perdas por um MP3 de 320 kbps no lugar — o master se perde e não pode ser recuperado. Desative em Ajustes → Saída.",
     "regenerate": "Regenerar nome do arquivo com os metadados",
     "regenerateAll_other": "Regenerar {{count}} nomes de arquivo com os metadados",
     "regenerateHint": "Reconstruir o nome do arquivo com os metadados acima usando seu padrão de Ajustes → Nomes",
@@ -474,7 +479,21 @@
     "otherTagsTitle": "Outros metadados",
     "otherTagsSummary": "{{count}} tags",
     "otherTagsRemove": "Remover {{name}}",
-    "otherTagsRestore": "Restaurar {{name}}"
+    "otherTagsRestore": "Restaurar {{name}}",
+    "loudnessRangeLufs": "Bom: entre -16 e -8 LUFS.",
+    "loudnessFixLufs": "Dá para corrigir: a normalização por loudness leva ao seu alvo.",
+    "loudnessRangePeak": "Bom: -1 dBTP ou menos.",
+    "loudnessFixPeak": "Dá para corrigir: o teto de true peak da normalização limita isso.",
+    "loudnessRangeRange": "Bom: 6 LU ou mais.",
+    "loudnessFixRange": "Não dá para corrigir aqui: vem do master. Normalizar muda o nível, não a variação.",
+    "loudnessRangeCrest": "Bom: 12 dB ou mais.",
+    "loudnessFixCrest": "Não dá para corrigir aqui: a pegada se perdeu na masterização.",
+    "loudnessRangeBalance": "Bom: menos de 1 dB.",
+    "loudnessFixBalance": "Dá para corrigir: normalização por pico com ganho por canal iguala os dois lados.",
+    "loudnessRangeDc": "Bom: menos de 0,2%.",
+    "loudnessFixDc": "Dá para corrigir: marque “Remover offset de DC” em Normalização.",
+    "loudnessRangeNoise": "Bom: -45 dB ou menos.",
+    "loudnessFixNoise": "Não dá para corrigir aqui: o Surco não remove ruído. Vem da fonte ou da captura."
   },
   "fields": {
     "groupFilled_one": "{{count}} preenchido",
@@ -583,10 +602,15 @@
     "targetLufs": "Alvo (LUFS)",
     "truePeak": "Pico real (dBTP)",
     "peakDb": "Pico (dBFS)",
+    "removeDcOffset": "Remover deslocamento DC (centralizar em 0.0)",
     "peakRemoveDc": "Remover deslocamento DC (centralizar em 0.0)",
     "peakPerChannel": "Normalizar canais estéreo independentemente",
     "cueWarning": "Recodifica o áudio. Os cues e o beatgrid do Traktor são mantidos em MP3 e AIFF, mas se perdem em WAV e FLAC.",
-    "cueWarningShort": "Recodifica o áudio · cues mantidos em MP3/AIFF"
+    "cueWarningShort": "Recodifica o áudio · cues mantidos em MP3/AIFF",
+    "predictionNow": "Agora {{lufs}} LUFS · {{peak}} dBTP",
+    "predictionAfter": "{{lufs}} LUFS · {{peak}} dBTP",
+    "predictionEstimate": "(estimado)",
+    "predictionLimited": "(estimado — os picos são limitados ao teto)"
   },
   "settings": {
     "tabs": {
@@ -613,11 +637,11 @@
       "recording": "Pressione as teclas…",
       "unbound": "Sem atribuição",
       "reset": "Restaurar o padrão",
-      "resetAll": "Restaurar tudo",
+      "resetAll": "Redefinir tudo ({{count}})",
       "conflict": "Dois comandos compartilham um atalho. Resolva para salvar.",
       "fixedNav": "Sempre ativos (não reatribuíveis): ↑↓ ou j / k percorrem a lista de faixas e os resultados do Discogs, Home / End vão para as extremidades e Page Up / Down pulam uma página.",
       "groupTrim": "Editor de silêncio",
-      "groupTrimHint": "Somente com o foco em um corte",
+      "groupTrimHint": "Com a seção de corte aberta",
       "groupTrackList": "Lista de faixas",
       "groupTrackListHint": "Somente com o foco em uma linha",
       "groupEditor": "Editor",
@@ -807,7 +831,7 @@
     "replaceLowResHint": "Quando desativado, a capa do próprio arquivo é sempre mantida — uma de baixa resolução só é sinalizada, nunca trocada pela imagem do release.",
     "flacFinderCovers": "Mostrar capas de FLAC no Finder",
     "flacFinderCoversHint": "O Finder não consegue ler a capa dos arquivos FLAC e mostra um ícone genérico. Esta opção contorna isso nos arquivos convertidos; a reprodução não é afetada.",
-    "showSpectrum": "Mostrar o espectro de áudio",
+    "showSpectrum": "Análise de qualidade de áudio",
     "showSpectrumHint": "Mostra o espectro e a verificação de qualidade ao editar uma faixa. Se desativar, a análise é pulada por completo.",
     "autoAnalyze": "Analisar tudo ao importar",
     "autoAnalyzeHint": "Pré-calcula em segundo plano todas as análises de cada faixa ao importá-la, para que reabrir a sua biblioteca seja instantâneo; e os rips suspeitos são marcados sozinhos, sem apertar Analisar.",
@@ -893,7 +917,7 @@
     "items": {
       "token": {
         "q": "Preciso de um token do Discogs?",
-        "a": "Não. O Surco busca no Discogs sem configurar nada, usando as próprias credenciais do app, então você pode começar a etiquetar na hora.\n\nEssas credenciais compartilhadas têm um limite comum (60 requisições por minuto entre todos os usuários do Surco), então em momentos de pico uma busca pode falhar de vez em quando com um aviso de “limite atingido”: espere alguns segundos e tente de novo.\n\nSe você etiqueta muito, gere de graça seu próprio token pessoal em discogs.com/settings/developers e cole em Ajustes → Geral. Seu token tem um limite privado próprio, então as buscas continuam rápidas não importa quanta gente esteja usando o Surco."
+        "a": "Não. O Surco busca no Discogs sem configurar nada, usando as próprias credenciais do app, então você pode começar a etiquetar na hora.\n\nEssas credenciais compartilhadas têm um limite comum (60 requisições por minuto entre todos os usuários do Surco), então em momentos de pico uma busca pode falhar de vez em quando com um aviso de “limite atingido”: espere alguns segundos e tente de novo.\n\nSe você etiqueta muito, gere de graça seu próprio token pessoal em discogs.com/settings/developers e cole em Ajustes → Busca. Seu token tem um limite privado próprio, então as buscas continuam rápidas não importa quanta gente esteja usando o Surco."
       },
       "quality": {
         "q": "Por que uma faixa aparece marcada como “Revisar”?",
@@ -905,7 +929,7 @@
       },
       "appleMusic": {
         "q": "O que faz “Adicionar ao Apple Music”?",
-        "a": "Quando ativado (somente no macOS), o Surco importa automaticamente cada faixa convertida para a sua biblioteca do Apple Music logo após o processamento, então seus arquivos recém-etiquetados chegam lá sem arrastar nada à mão.\n\nEnquanto você edita, o Surco também verifica se uma faixa já está na sua biblioteca e mostra um pequeno selo, para você não criar duplicatas. Dá para desativar a adição automática quando quiser em Ajustes → Geral."
+        "a": "Quando ativado (somente no macOS), o Surco importa automaticamente cada faixa convertida para a sua biblioteca do Apple Music logo após o processamento, então seus arquivos recém-etiquetados chegam lá sem arrastar nada à mão.\n\nEnquanto você edita, o Surco também verifica se uma faixa já está na sua biblioteca e mostra um pequeno selo, para você não criar duplicatas. Dá para desativar a adição automática quando quiser em Ajustes → Saída."
       },
       "windows": {
         "q": "Tem algo diferente no Windows?",

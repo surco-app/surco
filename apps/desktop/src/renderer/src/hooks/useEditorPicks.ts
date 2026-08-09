@@ -60,6 +60,8 @@ export function useEditorPicks(
       targetLufs: n.targetLufs,
       truePeakDb: n.truePeakDb,
       peakDb: n.peakDb,
+      // Centring applies to both modes now, so it persists like the rest of the dials.
+      removeDcOffset: n.removeDcOffset === true,
       peakRemoveDc: n.peakRemoveDc === true,
       peakPerChannel: n.peakPerChannel === true,
     }
@@ -67,6 +69,7 @@ export function useEditorPicks(
       cur.targetLufs !== next.targetLufs ||
       cur.truePeakDb !== next.truePeakDb ||
       cur.peakDb !== next.peakDb ||
+      (cur.removeDcOffset === true) !== next.removeDcOffset ||
       (cur.peakRemoveDc === true) !== next.peakRemoveDc ||
       (cur.peakPerChannel === true) !== next.peakPerChannel
     )
