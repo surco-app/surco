@@ -6,6 +6,7 @@ import Footer from './Footer'
 import Header from './Header'
 import Lightbox from './Lightbox'
 import Reveal from './Reveal'
+import ScrollProgress from './ScrollProgress'
 
 type Section = {
   id: string
@@ -85,6 +86,7 @@ export default function Guide() {
 
   return (
     <div id="top" className="min-h-screen bg-bg text-fg antialiased">
+      <ScrollProgress />
       <div className="grain pointer-events-none fixed inset-0 z-[1] opacity-[0.03] mix-blend-soft-light" />
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-[520px]"
