@@ -3,6 +3,7 @@ import {
   ChartColumn,
   Columns3,
   Disc3,
+  FilePlus,
   Loader2,
   Radio,
   Settings as SettingsIcon,
@@ -211,8 +212,12 @@ export const Toolbar = memo(function Toolbar({
             })}
             className="group relative flex h-8 items-center gap-1.5 rounded-lg border border-[var(--color-accent)] px-2.5 text-xs font-medium tabular-nums text-[var(--color-accent)]"
           >
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            {/* The spinner alone doesn't say which sweep this is (the sparkles/activity
+            {/* FilePlus, not the shared Loader2: mid-conversion, a dropped folder painted
+                two identical spinning capsules — one cancels the batch when pressed, the
+                other is inert. The other sweeps identify themselves by glyph already;
+                this is the import's, echoing the Add files button it follows from. */}
+            <FilePlus className="h-4 w-4" aria-hidden="true" />
+            {/* The glyph alone doesn't say which sweep this is (the sparkles/activity
                 buttons identify themselves by icon, but a generic loader can't), so the import
                 pill names its phase inline rather than hiding it in a hover tooltip. */}
             {tr('header.importingCount', { done: importing.done, total: importing.total })}
