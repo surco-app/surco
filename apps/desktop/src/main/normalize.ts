@@ -221,6 +221,26 @@ export function parseAstatsChannels(stderr: string): ChannelStats[] | null {
   return channels.length > 0 && complete ? channels : null
 }
 
+// The bias below which a correction is not worth a re-encode: the same 0.2% of full
+// scale the quality readout grades as "worth fixing" (lib/quality's gradeDcOffset), so
+// the pill and the filter agree on what counts as an offset.
+const DC_FIX_THRESHOLD = 0.002
+
+// Centring on its own, independent of how the gain is sized afterwards. DC removal used
+// to exist only inside peakChannelFilter, so a user who picked loudness normalization
+// silently lost it — yet the two are orthogonal: subtracting each channel's mean is a
+// correction of the signal, sizing a gain is a decision about level. Returning a filter
+// the caller can prepend lets loudness mode measure ALREADY-CENTRED audio, which is what
+// makes the resulting target accurate rather than skewed by the bias.
+// Null when there is nothing to correct, so a centred file keeps its stream-copy path.
+export function dcRemovalFilter(channels: ChannelStats[]): string | null {
+  if (!channels.some((c) => Math.abs(c.dc) >= DC_FIX_THRESHOLD)) return null
+  // Every channel has to be listed even when its own bias is nil: aeval emits only the
+  // expressions it is given, so naming a subset would drop the rest of the audio.
+  const exprs = channels.map((c, i) => `val(${i})-(${c.dc.toFixed(6)})`)
+  return `aeval=exprs=${exprs.join('|')}:c=same`
+}
+
 // Audacity's Normalize, as one -af-compatible filter: aeval rewrites every channel
 // as (sample − mean) × gain, which a linear chain like channelsplit+amerge can't
 // express per channel. With peakRemoveDc the mean is subtracted BEFORE the gain is
