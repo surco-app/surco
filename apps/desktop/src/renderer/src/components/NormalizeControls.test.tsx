@@ -101,40 +101,28 @@ describe('NormalizeControls peak options', () => {
   })
 })
 
-describe('NormalizeControls term hints', () => {
-  // LUFS and dBTP are the first jargon a non-expert meets. The definition rides the
-  // dotted term as a deliberate, opt-in hover: the small target IS the intent filter.
-  // An earlier pass widened the trigger to the whole field plus focus, and every visit
-  // to the input summoned a definition the expert never asked for — the split that
-  // serves both audiences is a visible term for the curious, a silent field for the
-  // fluent, the ever-present preset line as passive teaching, and the header ⓘ for
-  // the full story.
-  it('reveals the definition on a deliberate hover over the dotted term', () => {
+describe('NormalizeControls field help', () => {
+  // The per-term hover tooltips are gone on purpose: their dotted affordance was
+  // invisible at this size on the dark ground, and making it visible read as noise to
+  // the fluent user. Help lives in the two layers that work for both audiences — the
+  // ever-visible preset line for context, and the header ⓘ modal for definitions —
+  // so the fields themselves must stay completely quiet.
+  it('keeps the fields silent — no tooltip on focus or hover', () => {
     vi.useFakeTimers()
     render(<NormalizeControls value={loudness} onChange={vi.fn()} />)
-    const term = screen.getByText('Target (LUFS)')
-    fireEvent.pointerEnter(term, { clientX: 10, clientY: 10 })
-    act(() => vi.advanceTimersByTime(400))
-    expect(screen.getByRole('tooltip')).toHaveTextContent(/LUFS/)
-    vi.useRealTimers()
-  })
-
-  it('keeps the field itself silent for the fluent user', () => {
-    vi.useFakeTimers()
-    render(<NormalizeControls value={loudness} onChange={vi.fn()} />)
-    // Neither focusing nor hovering the input may summon the definition: typing a
-    // target is the expert's whole visit, and a tooltip there is a nag.
     fireEvent.focusIn(screen.getByTestId('normalize-target-lufs'))
     fireEvent.pointerEnter(screen.getByTestId('normalize-target-lufs'), {
       clientX: 10,
       clientY: 40,
     })
+    fireEvent.pointerEnter(screen.getByText('Target (LUFS)'), { clientX: 10, clientY: 10 })
     act(() => vi.advanceTimersByTime(600))
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
     vi.useRealTimers()
   })
 
-  // The chosen preset explains itself in one line, keyed to the selection.
+  // The chosen preset explains itself in one line, keyed to the selection — the
+  // passive layer of teaching that interrupts nobody.
   it('describes the active preset under the chips', () => {
     render(
       <NormalizeControls
