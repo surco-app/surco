@@ -2,7 +2,6 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig, NormalizeMode } from '../../../shared/types'
-import { Tooltip } from './Tooltip'
 
 interface Props {
   value: NormalizeConfig
@@ -30,16 +29,12 @@ const PEAK_PRESETS = [
 function NumberField({
   testid,
   label,
-  hint,
   value,
   onChange,
   inputRef,
 }: {
   testid: string
   label: string
-  // Hover definition for the label's term (what LUFS/dBTP mean and the good range),
-  // shown as a dotted underline so the affordance is visible without a visit.
-  hint?: string
   value: number
   onChange: (n: number) => void
   inputRef?: React.RefObject<HTMLInputElement | null>
@@ -57,14 +52,7 @@ function NumberField({
   }, [value])
   return (
     <label className="flex flex-col gap-1 text-xs text-fg-muted">
-      {hint ? (
-        <span className="relative w-fit cursor-help border-b border-dotted border-[var(--color-line-strong)]">
-          {label}
-          <Tooltip label={hint} hoverOnly />
-        </span>
-      ) : (
-        label
-      )}
+      {label}
       <input
         ref={inputRef}
         type="number"
@@ -192,7 +180,6 @@ export function NormalizeControls({
             <NumberField
               testid="normalize-target-lufs"
               label={tr('normalize.targetLufs')}
-              hint={tr('normalize.targetHint')}
               value={value.targetLufs}
               onChange={(n) => onChange({ ...value, targetLufs: n })}
               inputRef={lufsRef}
@@ -200,7 +187,6 @@ export function NormalizeControls({
             <NumberField
               testid="normalize-true-peak"
               label={tr('normalize.truePeak')}
-              hint={tr('normalize.truePeakHint')}
               value={value.truePeakDb}
               onChange={(n) => onChange({ ...value, truePeakDb: n })}
             />

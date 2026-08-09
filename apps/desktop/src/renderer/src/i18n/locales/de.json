@@ -608,8 +608,6 @@
     "cueWarning": "Codiert das Audio neu. Traktor-Cues und -Beatgrid bleiben bei MP3 und AIFF erhalten, gehen bei WAV und FLAC aber verloren.",
     "cueWarningShort": "Kodiert das Audio neu · Cues bleiben bei MP3/AIFF",
     "predictionEstimate": "(geschätzt)",
-    "targetHint": "Die Gesamtlautheit, auf die die Konvertierung den ganzen Track bringt. Streamingdienste pegeln um −14 LUFS.",
-    "truePeakHint": "Der lauteste Moment des Signals, zwischen den Samples gemessen. Die Konvertierung hält die Spitzen auf oder unter dieser Grenze; −1 dBTP ist der sichere Standard.",
     "presetHint": {
       "streaming": "So pegeln Spotify und Apple Music — der sichere Standard für eine Hörbibliothek.",
       "club": "Heiß, für die Kanzel: die meisten Tracks brauchen dafür ein Peak-Limiting und verlieren etwas Punch.",

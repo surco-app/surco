@@ -608,8 +608,6 @@
     "cueWarning": "Ré-encode l'audio. Les points cue et le beatgrid de Traktor sont conservés en MP3 et AIFF, mais perdus en WAV et FLAC.",
     "cueWarningShort": "Réencode l'audio · repères conservés en MP3/AIFF",
     "predictionEstimate": "(estimation)",
-    "targetHint": "Le volume global vers lequel la conversion amène tout le morceau. Le streaming nivelle autour de −14 LUFS.",
-    "truePeakHint": "L'instant le plus fort du signal, mesuré entre les échantillons. La conversion garde les crêtes à ce plafond ou en dessous ; −1 dBTP est la valeur sûre.",
     "presetHint": {
       "streaming": "Comme nivellent Spotify et Apple Music — la valeur sûre pour une bibliothèque d'écoute.",
       "club": "Chaud, pour la cabine : la plupart des morceaux exigent un limiteur pour y arriver, au prix d'un peu de punch.",
