@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -102,22 +102,36 @@ describe('NormalizeControls peak options', () => {
 })
 
 describe('NormalizeControls term hints', () => {
-  // LUFS and dBTP are the first jargon a non-expert meets, and the only explanation
-  // used to live behind another section's help modal. The definition now rides the
-  // field itself — and reveals on FOCUS, not hover alone: the hover target sits right
-  // above an async-loading wave whose relayout slides the row out from under a resting
-  // pointer, cancelling the armed tooltip. Clicking into the field is the natural
-  // moment to wonder what the unit means, and focus is immune to relayout.
-  it('reveals the target definition when the field takes focus', () => {
+  // LUFS and dBTP are the first jargon a non-expert meets. The definition rides the
+  // dotted term as a deliberate, opt-in hover: the small target IS the intent filter.
+  // An earlier pass widened the trigger to the whole field plus focus, and every visit
+  // to the input summoned a definition the expert never asked for — the split that
+  // serves both audiences is a visible term for the curious, a silent field for the
+  // fluent, the ever-present preset line as passive teaching, and the header ⓘ for
+  // the full story.
+  it('reveals the definition on a deliberate hover over the dotted term', () => {
+    vi.useFakeTimers()
     render(<NormalizeControls value={loudness} onChange={vi.fn()} />)
-    fireEvent.focusIn(screen.getByTestId('normalize-target-lufs'))
+    const term = screen.getByText('Target (LUFS)')
+    fireEvent.pointerEnter(term, { clientX: 10, clientY: 10 })
+    act(() => vi.advanceTimersByTime(400))
     expect(screen.getByRole('tooltip')).toHaveTextContent(/LUFS/)
+    vi.useRealTimers()
   })
 
-  it('reveals the true-peak definition on its own field', () => {
+  it('keeps the field itself silent for the fluent user', () => {
+    vi.useFakeTimers()
     render(<NormalizeControls value={loudness} onChange={vi.fn()} />)
-    fireEvent.focusIn(screen.getByTestId('normalize-true-peak'))
-    expect(screen.getByRole('tooltip')).toHaveTextContent(/dBTP/)
+    // Neither focusing nor hovering the input may summon the definition: typing a
+    // target is the expert's whole visit, and a tooltip there is a nag.
+    fireEvent.focusIn(screen.getByTestId('normalize-target-lufs'))
+    fireEvent.pointerEnter(screen.getByTestId('normalize-target-lufs'), {
+      clientX: 10,
+      clientY: 40,
+    })
+    act(() => vi.advanceTimersByTime(600))
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+    vi.useRealTimers()
   })
 
   // The chosen preset explains itself in one line, keyed to the selection.
