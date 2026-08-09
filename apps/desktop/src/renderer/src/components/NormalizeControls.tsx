@@ -56,15 +56,15 @@ function NumberField({
     setDraft((d) => (Number.parseFloat(d) === value ? d : String(value)))
   }, [value])
   return (
-    <label className="flex flex-col gap-1 text-xs text-fg-muted">
+    <label className="relative flex flex-col gap-1 text-xs text-fg-muted">
       {hint ? (
-        <span className="relative w-fit cursor-help border-b border-dotted border-[var(--color-line-strong)]">
+        <span className="w-fit cursor-help border-b border-dotted border-[var(--color-line-strong)]">
           {label}
-          <Tooltip label={hint} hoverOnly />
         </span>
       ) : (
         label
       )}
+      {hint && <Tooltip label={hint} />}
       <input
         ref={inputRef}
         type="number"
