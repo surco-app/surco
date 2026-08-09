@@ -45,7 +45,7 @@
         "in": "0.83.0"
       },
       {
-        "text": "The normalization section estimates where the track will land before you convert: “Now −21.8 LUFS · −18.1 dBTP → −14.0 LUFS · −10.3 dBTP”. Another point from the same reader: he was re-converting the same FLAC over and over just to read the result. It is arithmetic over the measurement already on screen, so it updates as you move the target — and when the target forces peak limiting, it says so.",
+        "text": "The normalization preview now tells you where the track will land before you convert: the “Preview” row over the wave shows the actual LUFS and peak the conversion will produce, marked as an estimate, updating as you move the target. It came from a reader who kept re-converting the same FLAC just to read the result. The section's ⓘ now opens the metric help too, and each preset explains itself in one line.",
         "in": "0.83.0"
       }
     ]
