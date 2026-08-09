@@ -101,6 +101,37 @@ describe('NormalizeControls peak options', () => {
   })
 })
 
+describe('NormalizeControls term hints', () => {
+  // LUFS and dBTP are the first jargon a non-expert meets, and the only explanation
+  // used to live behind another section's help modal. The definition now rides the
+  // field itself — and reveals on FOCUS, not hover alone: the hover target sits right
+  // above an async-loading wave whose relayout slides the row out from under a resting
+  // pointer, cancelling the armed tooltip. Clicking into the field is the natural
+  // moment to wonder what the unit means, and focus is immune to relayout.
+  it('reveals the target definition when the field takes focus', () => {
+    render(<NormalizeControls value={loudness} onChange={vi.fn()} />)
+    fireEvent.focusIn(screen.getByTestId('normalize-target-lufs'))
+    expect(screen.getByRole('tooltip')).toHaveTextContent(/LUFS/)
+  })
+
+  it('reveals the true-peak definition on its own field', () => {
+    render(<NormalizeControls value={loudness} onChange={vi.fn()} />)
+    fireEvent.focusIn(screen.getByTestId('normalize-true-peak'))
+    expect(screen.getByRole('tooltip')).toHaveTextContent(/dBTP/)
+  })
+
+  // The chosen preset explains itself in one line, keyed to the selection.
+  it('describes the active preset under the chips', () => {
+    render(
+      <NormalizeControls
+        value={{ mode: 'loudness', targetLufs: -23, truePeakDb: -1, peakDb: -1 }}
+        onChange={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('normalize-preset-hint')).toHaveTextContent(/TV and radio/)
+  })
+})
+
 describe('NormalizeControls DC offset', () => {
   const peak: NormalizeConfig = { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
 
