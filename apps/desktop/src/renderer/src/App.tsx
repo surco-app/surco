@@ -1387,6 +1387,18 @@ export default function App(): React.JSX.Element {
       window.api.recordStat(matchStatKey(selected.reviewMatch.release.provider))
     }
   })
+  // The row spark's click: same acceptance as the command above, but for the row that
+  // was clicked rather than the selection — reviewing 40 amber sparks must not require
+  // selecting each one first.
+  const acceptReviewRow = useStableCallback((id: string) => {
+    const t = tracksRef.current.find((x) => x.id === id)
+    if (!t) return
+    const patch = acceptReviewPatch(t)
+    if (patch && t.reviewMatch) {
+      updateTrack(t.id, patch)
+      window.api.recordStat(matchStatKey(t.reviewMatch.release.provider))
+    }
+  })
   // Rotates system → light → dark and persists it, the palette twin of the Settings control.
   const toggleTheme = useStableCallback(() => {
     const order: ThemePref[] = ['system', 'light', 'dark']
@@ -1694,6 +1706,7 @@ export default function App(): React.JSX.Element {
                           onSelect={onSelectTrack}
                           onActivate={toggleTrack}
                           onRemove={removeFromList}
+                          onAcceptReview={acceptReviewRow}
                           onPrefetch={handlePrefetch}
                           renderMenu={renderTrackMenu}
                           scrollRootRef={listScrollRef}
