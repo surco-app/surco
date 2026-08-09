@@ -11,7 +11,7 @@ import {
 } from '../shared/defaults'
 import { DEFAULT_EDITOR_SECTIONS } from '../shared/editorSections'
 import { FORMAT_SETTINGS } from '../shared/outputFormats'
-import type { FormatSetting, Settings } from '../shared/types'
+import type { FormatSetting, NormalizeConfig, Settings } from '../shared/types'
 
 export const defaults: Settings = {
   theme: 'system',
@@ -193,12 +193,22 @@ function split(settings: Settings): { synced: Partial<Settings>; local: Partial<
 // the whole (incomplete) local object instead of filling the gap from defaults.
 // recordStat's `cur.stats[key] + n` then corrupts that field to NaN — which
 // JSON.stringifies to null, permanently bricking the counter on the next read.
+// DC removal moved out of peak mode: it used to be peakRemoveDc, a 'peak' extra, and is
+// now removeDcOffset, which both modes honour. A settings.json written before the move
+// carries only the old field, so read it forward — without this, everyone who had
+// centring on would silently stop getting it. The old field is left in place: peak mode's
+// per-channel filter still needs it to centre and scale in one expression.
+function migrateDcOffset(cfg: NormalizeConfig): NormalizeConfig {
+  if (cfg.removeDcOffset !== undefined || cfg.peakRemoveDc !== true) return cfg
+  return { ...cfg, removeDcOffset: true }
+}
+
 function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
   return {
     ...base,
     ...patch,
     stats: { ...base.stats, ...patch.stats },
-    normalize: { ...base.normalize, ...patch.normalize },
+    normalize: migrateDcOffset({ ...base.normalize, ...patch.normalize }),
     // Not a spread-merge like the two above: a 0.49-0.50 file stores declick as a
     // bare mode string, which normalizeDeclick upgrades (and repairs) instead.
     declick: normalizeDeclick(patch.declick ?? base.declick),

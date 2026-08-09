@@ -161,6 +161,25 @@ describe('nested settings from an older install', () => {
 
   // normalize is the other fixed-shape nested object (targetLufs/truePeakDb/peakDb);
   // same shallow-merge exposure if a future field is added to it.
+  // DC removal used to be a peak-mode-only option (peakRemoveDc). It now applies to both
+  // modes as removeDcOffset, so a settings.json written before the move must carry the
+  // user's choice forward — dropping it would silently stop centring the captures of
+  // everyone who had it on.
+  it('carries a peak-only DC removal choice forward to the shared setting', () => {
+    writeFileSync(localFile(), JSON.stringify({ normalize: { mode: 'peak', peakRemoveDc: true } }))
+    const normalize = getSettings().normalize
+    expect(normalize.removeDcOffset).toBe(true)
+    // The old field stays readable: peakChannelFilter still uses it for the combined
+    // centre-and-scale expression that per-channel gains need.
+    expect(normalize.peakRemoveDc).toBe(true)
+  })
+
+  // The migration must not invent a choice: a file that never had the option keeps it off.
+  it('leaves DC removal off when the older file never set it', () => {
+    writeFileSync(localFile(), JSON.stringify({ normalize: { mode: 'peak' } }))
+    expect(getSettings().normalize.removeDcOffset).toBeUndefined()
+  })
+
   it('fills a normalize field an older settings.json never wrote', () => {
     writeFileSync(localFile(), JSON.stringify({ normalize: { mode: 'peak' } }))
     const normalize = getSettings().normalize

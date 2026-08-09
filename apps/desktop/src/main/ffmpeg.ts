@@ -63,6 +63,7 @@ import {
   parseAstatsChannels,
   parseLoudnorm,
   parseMaxVolume,
+  dcRemovalFilter,
   peakChannelFilter,
   peakGainDb,
   reachesTargetLinearly,
@@ -892,6 +893,37 @@ export async function normalizeFilter(
     const declicked = declickAf ? `-declick-${declick}` : ''
     return `${base}${trimmed}${declicked}`
   }
+  // Centring the signal is a correction, not a property of how the gain is sized, so it
+  // applies to whichever mode asked for it — a user fixing a biased vinyl capture and
+  // normalizing to a loudness target wants both, and DC removal used to live only inside
+  // peak mode, where picking loudness silently dropped it.
+  //
+  // It has to run BEFORE the level measurement: an offset capture reads a peak (and a
+  // loudness) skewed by the bias, so centring afterwards would leave the track off its
+  // target. Prepending it to `prefilter` puts it ahead of every measurement below, and
+  // returning it as part of this function's filter puts it in the encode chain too.
+  //
+  // Peak mode's own combined filter already subtracts the mean while sizing each channel,
+  // so it opts out here rather than centring twice.
+  const peakOwnsDc = cfg.mode === 'peak' && (cfg.peakRemoveDc === true || cfg.peakPerChannel === true)
+  let dcAf: string | undefined
+  if (cfg.removeDcOffset === true && !peakOwnsDc) {
+    const channels = await cachedAnalysis(ns('astats-channels-v1'), input, async () => {
+      const { stderr } = await run(ffmpegPath, astatsArgs(input, prefilter), {
+        maxBuffer: 1024 * 1024 * 16,
+      })
+      return parseAstatsChannels(stderr)
+    })
+    dcAf = channels ? (dcRemovalFilter(channels) ?? undefined) : undefined
+  }
+  // Every measurement below reads through this, so the gains are sized on centred audio.
+  const measurePrefilter = [prefilter, dcAf].filter(Boolean).join(',') || undefined
+  // Puts the centring at the head of whatever this function returns, so the encode chain
+  // carries it as well — null means "no filter", and DC alone is a valid filter.
+  const withDc = (filter: string | null): string | null => {
+    if (!dcAf) return filter
+    return filter ? `${dcAf},${filter}` : dcAf
+  }
   if (cfg.mode === 'peak') {
     // The Audacity-style options (per-channel DC removal, independent channel
     // gains) need per-channel figures volumedetect can't give, so they measure
@@ -909,21 +941,21 @@ export async function normalizeFilter(
     // needs no rate restoration. The measured peak is a fact about the file alone,
     // so one namespace serves every target.
     const max = await cachedAnalysis(ns('volumedetect-v1'), input, async () => {
-      const { stderr } = await run(ffmpegPath, volumedetectArgs(input, prefilter), {
+      const { stderr } = await run(ffmpegPath, volumedetectArgs(input, measurePrefilter), {
         maxBuffer: 1024 * 1024 * 16,
       })
       return parseMaxVolume(stderr)
     })
-    return max === null ? null : volumeFilter(peakGainDb(cfg.peakDb, max))
+    return max === null ? null : withDc(volumeFilter(peakGainDb(cfg.peakDb, max)))
   }
   // The requested I/TP ride in the measurement filter and target_offset depends on
   // them, so the key carries both — same file, different target re-measures. The
   // fixed LRA is baked into the version suffix: bump it if LOUDNORM_LRA changes.
   const measured = await cachedAnalysis(
-    ns(`loudnorm-measure-v1-I${cfg.targetLufs}-TP${cfg.truePeakDb}`),
+    ns(`loudnorm-measure-v1-I${cfg.targetLufs}-TP${cfg.truePeakDb}${dcAf ? '-dc' : ''}`),
     input,
     async () => {
-      const { stderr } = await run(ffmpegPath, loudnormArgs(input, cfg, prefilter), {
+      const { stderr } = await run(ffmpegPath, loudnormArgs(input, cfg, measurePrefilter), {
         maxBuffer: 1024 * 1024 * 16,
       })
       return parseLoudnorm(stderr)
@@ -933,9 +965,11 @@ export async function normalizeFilter(
   // A reachable target normalizes linearly (dynamics intact); a target too loud for a
   // constant gain (the club preset on most material) would otherwise land short, so
   // push the gain to target and limit the overs to the ceiling instead.
-  return reachesTargetLinearly(cfg, measured)
-    ? loudnormFilter(cfg, measured, sampleRate)
-    : limitedLoudnormFilter(cfg, measured, sampleRate)
+  return withDc(
+    reachesTargetLinearly(cfg, measured)
+      ? loudnormFilter(cfg, measured, sampleRate)
+      : limitedLoudnormFilter(cfg, measured, sampleRate),
+  )
 }
 
 // The cue re-anchoring a trim demands, in Traktor's millisecond units: positions
