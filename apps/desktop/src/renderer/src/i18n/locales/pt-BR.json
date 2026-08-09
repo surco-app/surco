@@ -31,6 +31,7 @@
     "batchConverted": "{{count}} convertidas",
     "batchSkipped": "{{count}} puladas",
     "batchFailed": "{{count}} com erro",
+    "batchCancelled": "Cancelado",
     "palette": "Paleta de comandos",
     "settings": "Ajustes",
     "stats": "Estatísticas",

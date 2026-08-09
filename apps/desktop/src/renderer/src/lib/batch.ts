@@ -35,6 +35,11 @@ export interface BatchSummary {
   converted: number
   skipped: number
   failed: number
+  // True when the user cancelled the run. 'skipped' alone cannot say so: it also covers
+  // a track removed mid-run, one already converting, a format with no equivalent output,
+  // and a declined file conflict — five causes collapsed into one number, which made a
+  // cancelled batch read exactly like a run that finished normally.
+  cancelled?: boolean
 }
 
 // Reduces a batch run (one outcome per track) to per-bucket counts, so the UI can

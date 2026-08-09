@@ -157,6 +157,9 @@ export const Toolbar = memo(function Toolbar({
         {batchSummary && !batching && (
           <span data-testid="batch-summary" role="status" className="text-sm text-fg-muted">
             {[
+              // Leads the row so a cancelled run cannot be mistaken for one that finished
+              // on its own and skipped tracks for some other reason.
+              batchSummary.cancelled === true && tr('header.batchCancelled'),
               tr('header.batchConverted', { count: batchSummary.converted }),
               batchSummary.skipped > 0 &&
                 tr('header.batchSkipped', { count: batchSummary.skipped }),
