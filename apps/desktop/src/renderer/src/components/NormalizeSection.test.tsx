@@ -24,7 +24,13 @@ function track(over: Partial<TrackItem> = {}): TrackItem {
   }
 }
 
-function renderSection(item: TrackItem, isMulti = false, loudness: unknown = null): void {
+function renderSection(
+  item: TrackItem,
+  isMulti = false,
+  loudness: unknown = null,
+  // The estimate only exists with a mode active, so a test that reads it passes one in.
+  value: NormalizeConfig = cfg,
+): void {
   ;(window as unknown as { api: unknown }).api = {
     waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], durationSec: 10 }),
     loudness: vi.fn().mockResolvedValue(loudness),
@@ -33,7 +39,7 @@ function renderSection(item: TrackItem, isMulti = false, loudness: unknown = nul
   render(
     <QueryClientProvider client={client}>
       <NormalizeSection
-        value={cfg}
+        value={value}
         open
         onToggle={vi.fn()}
         onChange={vi.fn()}
@@ -224,19 +230,26 @@ describe('NormalizeSection layout', () => {
   })
 })
 
-// The measured loudness rides the header as a pill — the one convention for
-// analysis results — so the figures read without hunting through the body.
-describe('NormalizeSection measured pill', () => {
-  it('pills the source measurement once the loudness pass lands', async () => {
-    renderSection(track(), false, {
-      integratedLufs: -8.6,
-      truePeakDb: 0.2,
-      loudnessRange: 5,
-      samplePeakDb: 0.1,
+// The measurement used to ride the header as its own pill. It doesn't any more: it was
+// typographically identical to the target summary beside it (same template, same units,
+// same tabular-nums), so the header printed one figure twice with nothing saying which was
+// which — and it took 164px of a 241px header, truncating the target to "No…". The figure
+// is not lost: the estimate below opens with it, and Quality grades it by colour.
+describe('NormalizeSection measured figures', () => {
+  it('opens the estimate with the source measurement instead of a header pill', async () => {
+    renderSection(
+      track(),
+      false,
+      { integratedLufs: -8.6, truePeakDb: 0.2, loudnessRange: 5, samplePeakDb: 0.1 },
+      // The estimate only renders with a mode active — mode 'none' has nothing to predict.
+      { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+    )
+    const prediction = await screen.findByTestId('normalize-prediction', undefined, {
+      timeout: 3000,
     })
-    const pill = await screen.findByTestId('normalize-measured-pill', undefined, { timeout: 3000 })
-    expect(pill).toHaveTextContent('-8.6 LUFS')
-    expect(pill).toHaveTextContent('dBTP')
+    expect(prediction).toHaveTextContent('-8.6 LUFS')
+    expect(prediction).toHaveTextContent('dBTP')
+    expect(screen.queryByTestId('normalize-measured-pill')).not.toBeInTheDocument()
   })
 
   it('shows no pill before the measurement exists', async () => {

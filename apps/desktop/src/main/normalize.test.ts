@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { NormalizeConfig } from '../shared/types'
+import type { ChannelStats } from './normalize'
 import {
   astatsArgs,
   limitedLoudnormFilter,
@@ -8,6 +9,7 @@ import {
   parseAstatsChannels,
   parseLoudnorm,
   parseMaxVolume,
+  dcRemovalFilter,
   peakChannelFilter,
   peakGainDb,
   reachesTargetLinearly,
@@ -307,6 +309,41 @@ const peak = (over: Partial<NormalizeConfig> = {}): NormalizeConfig => ({
   truePeakDb: -1,
   peakDb: -1,
   ...over,
+})
+
+describe('dcRemovalFilter', () => {
+  const ch = (dc: number): ChannelStats => ({ dc, min: -0.5, max: 0.5 })
+
+  // A user asked to fix a biased capture AND normalize to a loudness target: both are
+  // reasonable on the same vinyl rip (a misaligned phono stage offsets the signal), but
+  // DC removal only ever ran inside peak mode, so picking loudness silently dropped it.
+  // Subtracting the mean is independent of how the gain is then sized, so it builds a
+  // filter of its own that either mode can prepend.
+  it('subtracts each channel own mean', () => {
+    expect(dcRemovalFilter([ch(0.02), ch(-0.01)])).toBe(
+      'aeval=exprs=val(0)-(0.020000)|val(1)-(-0.010000):c=same',
+    )
+  })
+
+  // Nothing to correct is not an error: a centred file must convert as a plain copy
+  // rather than paying for a no-op filter (which would also force a re-encode).
+  it('returns null when every channel is already centred', () => {
+    expect(dcRemovalFilter([ch(0), ch(0)])).toBeNull()
+  })
+
+  // The threshold matches the quality grade's "worth fixing" line (0.2% of full scale),
+  // so the app never spends a re-encode on a bias too small to hear or to matter.
+  it('ignores a bias below the audible threshold', () => {
+    expect(dcRemovalFilter([ch(0.0001), ch(0.0001)])).toBeNull()
+  })
+
+  // One offset channel is enough: the filter must still name every channel, or aeval
+  // would drop the ones it does not list.
+  it('keeps the untouched channels in the expression list', () => {
+    expect(dcRemovalFilter([ch(0.03), ch(0)])).toBe(
+      'aeval=exprs=val(0)-(0.030000)|val(1)-(0.000000):c=same',
+    )
+  })
 })
 
 describe('peakChannelFilter', () => {

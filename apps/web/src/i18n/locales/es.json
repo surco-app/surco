@@ -395,6 +395,7 @@
     "viewDownloads": "Ver descargas",
     "cta": "Descargar para {{os}}",
     "intel": "¿Mac con Intel (2020 o anterior)? Descárgalo aquí",
+    "smartscreen": "Al abrir el instalador, Windows mostrará «Windows protegió tu PC»: pulsa «Más información» y luego «Ejecutar de todas formas». Es SmartScreen avisando de que no reconoce al editor, no de que el archivo tenga nada malo.",
     "unavailable": "La descarga aún no está disponible — estamos puliendo la primera versión.",
     "countSuffix": "descargas y subiendo"
   },

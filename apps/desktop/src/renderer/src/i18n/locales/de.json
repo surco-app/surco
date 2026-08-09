@@ -31,6 +31,7 @@
     "batchConverted": "{{count}} konvertiert",
     "batchSkipped": "{{count}} übersprungen",
     "batchFailed": "{{count}} fehlgeschlagen",
+    "batchCancelled": "Abgebrochen",
     "palette": "Befehlspalette",
     "settings": "Einstellungen",
     "stats": "Statistiken",
@@ -60,7 +61,9 @@
       "good": "Gut",
       "unanalyzed": "Nicht analysiert",
       "unconverted": "Nicht konvertiert",
+      "failed": "Fehlgeschlagen",
       "automatched": "Auto-abgeglichen",
+      "matchReview": "Zu prüfen",
       "matchedDiscogs": "Discogs",
       "matchedBandcamp": "Bandcamp",
       "notInLibrary": "Nicht in Apple Music",
@@ -112,6 +115,7 @@
   },
   "notices": {
     "duplicatesSkipped": "Schon in der Liste, übersprungen: {{count}}",
+    "noAudioFound": "Kein Audio im abgelegten Inhalt gefunden — prüfe, ob der Ordner lesbar ist und unterstützte Formate enthält.",
     "normalizeSkipped": "Die Loudness von „{{name}}“ konnte nicht gemessen werden — ohne Normalisierung konvertiert.",
     "formatSkipped": "„{{name}}“ hat kein passendes Ausgabeformat für Wie die Quelle — übersprungen.",
     "declicked": "Klicks in {{count}} Samples von „{{name}}“ repariert.",
@@ -139,6 +143,7 @@
     "trimApplied_zero": "Keine Stille am Anfang oder Ende gefunden",
     "trimApplied_one": "Kürzung auf {{count}} Track angewendet",
     "trimApplied_other": "Kürzung auf {{count}} Tracks angewendet",
+    "trimUndo": "Rückgängig",
     "undoneMeta_one": "Metadaten in {{count}} Track wiederhergestellt",
     "undoneMeta_other": "Metadaten in {{count}} Tracks wiederhergestellt",
     "metaReadFailed_one": "Die Tags von {{count}} Datei konnten nicht gelesen werden — es wird nur ihr Dateiname angezeigt.",
@@ -227,7 +232,7 @@
     "export": "An DJ-Software exportieren",
     "stats": "Statistiken",
     "activity": "Aktivität anzeigen",
-    "toggleLanguage": "Sprache wechseln (Englisch / Spanisch)",
+    "toggleLanguage": "Sprache wechseln",
     "toggleTheme": "Design wechseln (System / Hell / Dunkel)",
     "confetti": "Konfetti werfen 🎉",
     "trimStartBack": "Anfangsschnitt zurück",
@@ -398,9 +403,9 @@
     "outputName": "Dateiname",
     "outputNameHintInPlace": "Gleiches Format wie die Quelle: Die Originaldatei wird direkt aktualisiert und umbenannt — es landet keine Kopie im Ausgabeordner.",
     "overwriteTitle": "Überschreibt das Original",
-    "overwriteHint": "Die Quelldatei wird direkt überschrieben und behält ihren Namen. Keine Kopie im Ausgabeordner. Abschaltbar unter Einstellungen → Konvertierung.",
+    "overwriteHint": "Die Quelldatei wird direkt überschrieben und behält ihren Namen. Keine Kopie im Ausgabeordner. Abschaltbar unter Einstellungen → Ausgabe.",
     "overwriteAlacHint": "ALAC ersetzt nie das Original: Die Quelle kann verlustbehaftetes Audio enthalten, deshalb wird eine neue Datei in den Ausgabeordner geschrieben und das Original bleibt erhalten.",
-    "overwriteLossyHint": "Das verlustfreie Original wird direkt durch eine 320-kbps-MP3 ersetzt — das Master ist verloren und nicht wiederherstellbar. Abschaltbar unter Einstellungen → Konvertierung.",
+    "overwriteLossyHint": "Das verlustfreie Original wird direkt durch eine 320-kbps-MP3 ersetzt — das Master ist verloren und nicht wiederherstellbar. Abschaltbar unter Einstellungen → Ausgabe.",
     "regenerate": "Dateinamen aus den Metadaten neu erzeugen",
     "regenerateAll_other": "{{count}} Dateinamen aus den Metadaten neu erzeugen",
     "regenerateHint": "Baut den Dateinamen aus den Metadaten oben neu, mit deinem Muster aus Einstellungen → Benennung",
@@ -474,7 +479,21 @@
     "otherTagsTitle": "Weitere Metadaten",
     "otherTagsSummary": "{{count}} Tags",
     "otherTagsRemove": "{{name}} entfernen",
-    "otherTagsRestore": "{{name}} wiederherstellen"
+    "otherTagsRestore": "{{name}} wiederherstellen",
+    "loudnessRangeLufs": "Gut: -16 bis -8 LUFS.",
+    "loudnessFixLufs": "Korrigierbar: Die Loudness-Normalisierung setzt den Zielwert.",
+    "loudnessRangePeak": "Gut: -1 dBTP oder darunter.",
+    "loudnessFixPeak": "Korrigierbar: Die True-Peak-Grenze der Normalisierung begrenzt ihn.",
+    "loudnessRangeRange": "Gut: 6 LU oder mehr.",
+    "loudnessFixRange": "Hier nicht korrigierbar: steckt im Master. Normalisieren ändert den Pegel, nicht die Spanne.",
+    "loudnessRangeCrest": "Gut: 12 dB oder mehr.",
+    "loudnessFixCrest": "Hier nicht korrigierbar: Der Punch ging beim Mastern verloren.",
+    "loudnessRangeBalance": "Gut: unter 1 dB.",
+    "loudnessFixBalance": "Korrigierbar: Peak-Normalisierung mit Gain pro Kanal gleicht beide Seiten an.",
+    "loudnessRangeDc": "Gut: unter 0,2 %.",
+    "loudnessFixDc": "Korrigierbar: „DC-Offset entfernen“ unter Normalisierung aktivieren.",
+    "loudnessRangeNoise": "Gut: -45 dB oder niedriger.",
+    "loudnessFixNoise": "Hier nicht korrigierbar: Surco entrauscht nicht. Es stammt aus Quelle oder Aufnahme."
   },
   "fields": {
     "groupFilled_one": "{{count}} ausgefüllt",
@@ -583,10 +602,15 @@
     "targetLufs": "Ziel (LUFS)",
     "truePeak": "True Peak (dBTP)",
     "peakDb": "Peak (dBFS)",
+    "removeDcOffset": "DC-Versatz entfernen (auf 0.0 zentrieren)",
     "peakRemoveDc": "DC-Versatz entfernen (auf 0.0 zentrieren)",
     "peakPerChannel": "Stereokanäle unabhängig normalisieren",
     "cueWarning": "Codiert das Audio neu. Traktor-Cues und -Beatgrid bleiben bei MP3 und AIFF erhalten, gehen bei WAV und FLAC aber verloren.",
-    "cueWarningShort": "Kodiert das Audio neu · Cues bleiben bei MP3/AIFF"
+    "cueWarningShort": "Kodiert das Audio neu · Cues bleiben bei MP3/AIFF",
+    "predictionNow": "Jetzt {{lufs}} LUFS · {{peak}} dBTP",
+    "predictionAfter": "{{lufs}} LUFS · {{peak}} dBTP",
+    "predictionEstimate": "(geschätzt)",
+    "predictionLimited": "(geschätzt — Spitzen werden auf die Grenze begrenzt)"
   },
   "settings": {
     "tabs": {
@@ -613,11 +637,11 @@
       "recording": "Tasten drücken…",
       "unbound": "Nicht belegt",
       "reset": "Auf Standard zurücksetzen",
-      "resetAll": "Alle zurücksetzen",
+      "resetAll": "Alle zurücksetzen ({{count}})",
       "conflict": "Zwei Befehle teilen sich ein Kürzel. Lös den Konflikt, um zu speichern.",
       "fixedNav": "Immer aktiv (nicht änderbar): ↑↓ oder j / k bewegen sich durch die Trackliste und die Discogs-Ergebnisse, Pos1 / Ende springen an die Enden und Bild ↑ / Bild ↓ blättern seitenweise.",
       "groupTrim": "Stille-Editor",
-      "groupTrimHint": "Nur solange ein Schnitt fokussiert ist",
+      "groupTrimHint": "Solange der Schnittbereich geöffnet ist",
       "groupTrackList": "Trackliste",
       "groupTrackListHint": "Nur solange eine Zeile fokussiert ist",
       "groupEditor": "Editor",
@@ -807,7 +831,7 @@
     "replaceLowResHint": "Wenn aus, bleibt immer das Cover deiner Datei erhalten — ein niedrig aufgelöstes wird nur markiert, nie gegen das Release-Bild getauscht.",
     "flacFinderCovers": "FLAC-Cover im Finder anzeigen",
     "flacFinderCoversHint": "Der Finder kann das Cover in FLAC-Dateien nicht lesen und zeigt ein generisches Symbol. Diese Option umgeht das bei konvertierten Dateien; die Wiedergabe ist nicht betroffen.",
-    "showSpectrum": "Audiospektrum anzeigen",
+    "showSpectrum": "Audioqualitätsanalyse",
     "showSpectrumHint": "Zeigt Spektrum und Qualitätsprüfung beim Bearbeiten eines Tracks. Wenn aus, entfällt die Analyse komplett.",
     "autoAnalyze": "Beim Import alles analysieren",
     "autoAnalyzeHint": "Berechnet beim Import alle Analysen jedes Tracks im Hintergrund vor, sodass das erneute Öffnen deiner Bibliothek sofort geht; verdächtige Rips werden markiert, ohne Analysieren zu drücken.",
@@ -893,7 +917,7 @@
     "items": {
       "token": {
         "q": "Brauche ich einen Discogs-Token?",
-        "a": "Nein. Surco durchsucht Discogs ohne Einrichtung mit eigenen App-Zugangsdaten, du kannst also sofort mit dem Taggen loslegen.\n\nDiese geteilten Zugangsdaten haben ein gemeinsames Limit (60 Anfragen pro Minute über alle Surco-Nutzer), deshalb kann eine Suche in Stoßzeiten gelegentlich mit der Meldung „Limit erreicht“ fehlschlagen — warte ein paar Sekunden und versuch es erneut.\n\nWenn du viel taggst, erstell dir kostenlos einen persönlichen Token auf discogs.com/settings/developers und füg ihn unter Einstellungen → Allgemein ein. Dein Token bekommt ein eigenes privates Limit, die Suchen bleiben also schnell, egal wie viel bei Surco los ist."
+        "a": "Nein. Surco durchsucht Discogs ohne Einrichtung mit eigenen App-Zugangsdaten, du kannst also sofort mit dem Taggen loslegen.\n\nDiese geteilten Zugangsdaten haben ein gemeinsames Limit (60 Anfragen pro Minute über alle Surco-Nutzer), deshalb kann eine Suche in Stoßzeiten gelegentlich mit der Meldung „Limit erreicht“ fehlschlagen — warte ein paar Sekunden und versuch es erneut.\n\nWenn du viel taggst, erstell dir kostenlos einen persönlichen Token auf discogs.com/settings/developers und füg ihn unter Einstellungen → Suche ein. Dein Token bekommt ein eigenes privates Limit, die Suchen bleiben also schnell, egal wie viel bei Surco los ist."
       },
       "quality": {
         "q": "Warum ist ein Track mit „Prüfen“ markiert?",
@@ -905,7 +929,7 @@
       },
       "appleMusic": {
         "q": "Was macht „Zu Apple Music hinzufügen“?",
-        "a": "Wenn aktiviert (nur macOS), importiert Surco jeden konvertierten Track direkt nach der Verarbeitung automatisch in deine Apple Music-Bibliothek — deine frisch getaggten Dateien landen dort ohne manuelles Hineinziehen.\n\nBeim Bearbeiten prüft Surco außerdem, ob ein Track schon in deiner Bibliothek ist, und zeigt ein kleines Abzeichen, damit keine Duplikate entstehen. Das automatische Hinzufügen lässt sich jederzeit unter Einstellungen → Allgemein abschalten."
+        "a": "Wenn aktiviert (nur macOS), importiert Surco jeden konvertierten Track direkt nach der Verarbeitung automatisch in deine Apple Music-Bibliothek — deine frisch getaggten Dateien landen dort ohne manuelles Hineinziehen.\n\nBeim Bearbeiten prüft Surco außerdem, ob ein Track schon in deiner Bibliothek ist, und zeigt ein kleines Abzeichen, damit keine Duplikate entstehen. Das automatische Hinzufügen lässt sich jederzeit unter Einstellungen → Ausgabe abschalten."
       },
       "windows": {
         "q": "Gibt es Unterschiede unter Windows?",

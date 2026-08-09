@@ -76,10 +76,17 @@ export interface NormalizeConfig {
   truePeakDb: number
   // 'peak' mode: the dBFS the loudest sample is scaled to.
   peakDb: number
+  // Subtract each channel's mean so a biased capture (a misaligned phono stage) is
+  // centred. Applies to BOTH modes: centring is a correction of the signal, while the
+  // mode only decides how the gain is then sized — a user fixing a vinyl rip and
+  // normalizing to a loudness target needs the two together, which the peak-only
+  // version below could not express.
+  removeDcOffset?: boolean
   // 'peak' mode extras, matching Audacity's Normalize dialog. Optional so configs
   // saved before they existed stay valid; absent reads as off.
-  // Subtract each channel's mean before sizing the gain, reclaiming the headroom
-  // a biased capture (a misaligned phono stage) wastes.
+  // The peak-mode-only predecessor of removeDcOffset, kept so settings written by
+  // earlier versions keep working: it still drives peakChannelFilter's combined
+  // centre-and-scale expression, and getSettings migrates it forward.
   peakRemoveDc?: boolean
   // Give each channel its own gain to the target instead of one shared gain —
   // trades the stereo image for both channels peaking at the same level.

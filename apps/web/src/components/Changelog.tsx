@@ -4,6 +4,7 @@ import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
 import Reveal from './Reveal'
+import ScrollProgress from './ScrollProgress'
 
 // Items are plain strings historically; newer ones carry the exact patch they
 // shipped in ({text, in}) so the desktop "what's new" popup can filter by version.
@@ -49,6 +50,7 @@ export default function Changelog() {
 
   return (
     <div className="min-h-screen bg-bg text-fg antialiased">
+      <ScrollProgress />
       <div className="grain pointer-events-none fixed inset-0 z-[1] opacity-[0.03] mix-blend-soft-light" />
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-[520px]"

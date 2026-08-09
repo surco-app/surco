@@ -38,11 +38,14 @@ describe('detectOS', () => {
     expect(detectOS()).toBe('other')
   })
 
-  // The site is statically prerendered in Node, where there is no navigator. The
-  // prerendered HTML must be the OS-agnostic variant, not a guess.
-  it('falls back to other when there is no navigator', () => {
+  // The site is statically prerendered in Node, where there is no navigator — but that
+  // is "not known yet", not "no build for this platform". Collapsing the two made the
+  // prerendered HTML ship the generic "view downloads" link as the primary CTA, so a
+  // visitor whose JS was slow, blocked, or whose GitHub fetch 403'd was sent to a raw
+  // asset list (.blockmap, latest.yml) instead of an installer.
+  it('reports unknown when there is no navigator', () => {
     vi.stubGlobal('navigator', undefined)
-    expect(detectOS()).toBe('other')
+    expect(detectOS()).toBe('unknown')
   })
 })
 

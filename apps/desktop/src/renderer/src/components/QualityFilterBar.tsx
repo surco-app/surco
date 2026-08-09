@@ -2,9 +2,11 @@ import {
   AudioLines,
   Check,
   ChevronDown,
+  CircleAlert,
   CircleCheckBig,
   Copy as CopyIcon,
   Disc3,
+  Eye,
   FileAudio,
   List,
   type LucideIcon,
@@ -27,7 +29,13 @@ import { Tooltip } from './Tooltip'
 
 // The selectable bucket modes, one row each, grouped by the dimension they belong to.
 type QualityMode = 'unanalyzed' | 'suspect' | 'good'
-type ConversionMode = 'unconverted' | 'automatched' | 'matchedDiscogs' | 'matchedBandcamp'
+type ConversionMode =
+  | 'unconverted'
+  | 'failed'
+  | 'automatched'
+  | 'matchReview'
+  | 'matchedDiscogs'
+  | 'matchedBandcamp'
 type LibraryMode = 'inLibrary' | 'notInLibrary'
 type DuplicatesMode = 'duplicates'
 type AttentionMode = 'silence' | 'clipping'
@@ -36,7 +44,9 @@ type Mode = QualityMode | ConversionMode | LibraryMode | DuplicatesMode | Attent
 const QUALITY_MODES: QualityMode[] = ['unanalyzed', 'suspect', 'good']
 const CONVERSION_MODES: ConversionMode[] = [
   'unconverted',
+  'failed',
   'automatched',
+  'matchReview',
   'matchedDiscogs',
   'matchedBandcamp',
 ]
@@ -52,7 +62,9 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   good: CircleCheckBig,
   unanalyzed: AudioLines,
   unconverted: RefreshCw,
+  failed: CircleAlert,
   automatched: Sparkles,
+  matchReview: Eye,
   matchedDiscogs: Disc3,
   matchedBandcamp: Store,
   inLibrary: Check,

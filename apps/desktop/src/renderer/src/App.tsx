@@ -462,6 +462,9 @@ export default function App(): React.JSX.Element {
     // so an unkeyed card here stacks one per folder rather than one per import.
     onDuplicatesSkipped: (count) =>
       pushImportNotice(store, 'duplicates-skipped', tr('notices.duplicatesSkipped', { count })),
+    // Same keying: a drop of several folders resolves one call per folder, and the user
+    // needs one card saying "nothing came in", not one per directory.
+    onNoAudioFound: () => pushImportNotice(store, 'no-audio-found', tr('notices.noAudioFound')),
     onMetaReadFailed: (count) =>
       pushImportNotice(store, 'meta-read-failed', tr('notices.metaReadFailed', { count })),
     // One disk-cache round trip for the whole freshly-dropped batch, so the list's quality
@@ -1041,8 +1044,13 @@ export default function App(): React.JSX.Element {
   // an inline arrow here would give onActivity a fresh identity every render and
   // defeat that memo just like the other Toolbar handlers above.
   const onToggleActivity = useStableCallback(() => setActivityOpen((v) => !v))
+  // Applying a release rewrites title/artist/track number across every matched row at
+  // once — the widest tag overwrite in the app — so it snapshots first, like the other
+  // batch overwrites do. A wrong release (a reissue with a different tracklist, a
+  // same-named LP) is otherwise unrecoverable: the file's own tags are already gone.
   const onApplyMatches = useStableCallback(
     (patches: { id: string; patch: ReleaseMetaPatch }[], provider: SearchProviderId) => {
+      recordMetaUndo(patches.map((p) => p.id))
       for (const p of patches)
         updateTrack(p.id, { ...p.patch, matched: true, matchProvider: provider })
     },
@@ -1218,21 +1226,39 @@ export default function App(): React.JSX.Element {
     const targets = scope.filter((t) => !t.trim)
     if (targets.length === 0) return
     if (targets.length > 1) setNotice(tr('notices.trimDetecting', { count: targets.length }))
-    let applied = 0
+    // The ids this sweep actually cut, so its summary can offer one way back: detection
+    // only suggests, and on a crate of vinyl rips (long surface-noise intros are exactly
+    // what the -60 dB threshold exists for) a wrong batch would otherwise mean opening
+    // every bad row to reset it by hand. Targets all started with no trim, so undoing is
+    // clearing it — no snapshot needed.
+    const cut: string[] = []
     for (const t of targets) {
       try {
         const wave = await queryClient.fetchQuery(waveformOptions(t.inputPath))
         const suggestion = wave ? detectTrim(wave) : undefined
         if (suggestion) {
           updateTrack(t.id, { trim: suggestion })
-          applied++
+          cut.push(t.id)
         }
       } catch {
         // A failed decode counts as "nothing to trim" for this track; the summary
         // notice below still reports honestly how many were actually cut.
       }
     }
-    setNotice(tr('notices.trimApplied', { count: applied }))
+    if (cut.length === 0) {
+      setNotice(tr('notices.trimApplied', { count: 0 }))
+      return
+    }
+    pushToast(store, {
+      tone: 'neutral',
+      message: tr('notices.trimApplied', { count: cut.length }),
+      duration: 4000,
+      testid: 'app-notice',
+      action: {
+        label: tr('notices.trimUndo'),
+        onAction: () => patchTracks(cut, { trim: undefined }),
+      },
+    })
   })
   // The fire-and-forget face of the sweep above, identity-stable like every other
   // Editor/command prop so the memoized editor never re-renders for it.
@@ -1359,6 +1385,18 @@ export default function App(): React.JSX.Element {
     if (patch && selected.reviewMatch) {
       updateTrack(selected.id, patch)
       window.api.recordStat(matchStatKey(selected.reviewMatch.release.provider))
+    }
+  })
+  // The row spark's click: same acceptance as the command above, but for the row that
+  // was clicked rather than the selection — reviewing 40 amber sparks must not require
+  // selecting each one first.
+  const acceptReviewRow = useStableCallback((id: string) => {
+    const t = tracksRef.current.find((x) => x.id === id)
+    if (!t) return
+    const patch = acceptReviewPatch(t)
+    if (patch && t.reviewMatch) {
+      updateTrack(t.id, patch)
+      window.api.recordStat(matchStatKey(t.reviewMatch.release.provider))
     }
   })
   // Rotates system → light → dark and persists it, the palette twin of the Settings control.
@@ -1668,6 +1706,7 @@ export default function App(): React.JSX.Element {
                           onSelect={onSelectTrack}
                           onActivate={toggleTrack}
                           onRemove={removeFromList}
+                          onAcceptReview={acceptReviewRow}
                           onPrefetch={handlePrefetch}
                           renderMenu={renderTrackMenu}
                           scrollRootRef={listScrollRef}

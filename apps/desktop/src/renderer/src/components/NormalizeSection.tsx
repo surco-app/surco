@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
-import { formatDb } from '../lib/quality'
+import { formatDb, predictNormalized } from '../lib/quality'
 import type { TrackItem } from '../types'
 import { NormalizeControls } from './NormalizeControls'
 import { SectionBody } from './SectionBody'
@@ -73,6 +73,9 @@ export function NormalizeSection({
   // cache the strips' legends read, and the same open-gating as the wave decode,
   // so a folded section stays unanalysed but keeps the pill once known.
   const { data: measured } = useTrackLoudness(item.inputPath, !isMulti && open && settled)
+  // Pure arithmetic over the figures above — no extra pass, so it re-computes as the
+  // user drags a target and answers "what will this do?" before the convert.
+  const prediction = measured ? predictNormalized(value, measured) : null
   useEffect(() => {
     if (!mounted.current) {
       mounted.current = true
@@ -106,14 +109,16 @@ export function NormalizeSection({
         summaryMuted={value.mode === 'none'}
         right={
           <span className="flex shrink-0 items-center gap-1.5">
-            {/* The measurement pill stays up open or folded — it is a fact about
-                the file, not a control state, and the body never repeats it as
-                figures this compact. */}
-            {measured && (
-              <SectionPill tone="neutral" testid="normalize-measured-pill" numeric>
-                {`${formatDb(measured.integratedLufs)} LUFS · ${formatDb(measured.truePeakDb)} dBTP`}
-              </SectionPill>
-            )}
+            {/* No measurement pill here. It used to ride alongside, justified as "the body
+                never repeats it as figures this compact" — no longer true: the estimate
+                below opens with the same "Now -21.8 LUFS · -18.1 dBTP", and the Quality
+                section states the same two figures graded by colour. Worse, it was
+                typographically identical to the summary beside it (same template, same
+                units, same tabular-nums), so the header read as one figure printed twice
+                with nothing saying which was the target and which the measurement — while
+                eating 164px of a 241px header and truncating the target to "No…".
+                Trim hit the same collision and made the two mutually exclusive
+                (TrimSection.tsx); this is that same fix. */}
             {/* The mode badge only while folded: open, the segmented control right
                 below says the same thing. */}
             {value.mode !== 'none' && !open && (
@@ -129,6 +134,34 @@ export function NormalizeSection({
           {/* The cue warning renders once, below the wave: inline it sat between the
               dials and the preview, right where the eye travels while tuning. */}
           <NormalizeControls value={value} onChange={onChange} showCueWarning={false} />
+          {/* Where the track will land, computed from the measurement already on screen.
+              A user was re-converting the same FLAC over and over just to read these two
+              numbers; both modes apply a constant gain, so the answer is arithmetic, not
+              something an encode has to reveal. Labelled an estimate because loudnorm
+              re-measures during the real pass and can land a few tenths off. */}
+          {prediction && measured && (
+            <p
+              data-testid="normalize-prediction"
+              className="mt-3 font-mono text-xs text-fg-dim tabular-nums"
+            >
+              {tr('normalize.predictionNow', {
+                lufs: formatDb(measured.integratedLufs),
+                peak: formatDb(measured.truePeakDb),
+              })}
+              {' → '}
+              <span className="text-fg">
+                {tr('normalize.predictionAfter', {
+                  lufs: formatDb(prediction.lufs),
+                  peak: formatDb(prediction.truePeakDb),
+                })}
+              </span>{' '}
+              <span className="text-fg-faint">
+                {prediction.limited
+                  ? tr('normalize.predictionLimited')
+                  : tr('normalize.predictionEstimate')}
+              </span>
+            </p>
+          )}
           {!isMulti && !compare && (
             <WaveformSolo
               inputPath={item.inputPath}

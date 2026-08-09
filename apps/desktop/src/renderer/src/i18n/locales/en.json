@@ -31,6 +31,7 @@
     "batchConverted": "{{count}} converted",
     "batchSkipped": "{{count}} skipped",
     "batchFailed": "{{count}} failed",
+    "batchCancelled": "Cancelled",
     "palette": "Command palette",
     "settings": "Settings",
     "stats": "Stats",
@@ -60,7 +61,9 @@
       "good": "Good",
       "unanalyzed": "Unanalyzed",
       "unconverted": "Unconverted",
+      "failed": "Failed",
       "automatched": "Auto-matched",
+      "matchReview": "To review",
       "matchedDiscogs": "Discogs",
       "matchedBandcamp": "Bandcamp",
       "notInLibrary": "Not in Apple Music",
@@ -112,6 +115,7 @@
   },
   "notices": {
     "duplicatesSkipped": "Already in the list, skipped: {{count}}",
+    "noAudioFound": "No audio found in what you dropped — check the folder is readable and holds supported formats.",
     "normalizeSkipped": "Couldn't measure the loudness of “{{name}}” — converted without normalization.",
     "formatSkipped": "“{{name}}” has no equivalent output format for Same as source — skipped.",
     "declicked": "Repaired clicks in {{count}} samples of “{{name}}”.",
@@ -139,6 +143,7 @@
     "trimApplied_zero": "No leading or trailing silence found",
     "trimApplied_one": "Trim applied to {{count}} track",
     "trimApplied_other": "Trim applied to {{count}} tracks",
+    "trimUndo": "Undo",
     "undoneMeta_one": "Metadata restored on {{count}} track",
     "undoneMeta_other": "Metadata restored on {{count}} tracks",
     "metaReadFailed_one": "Couldn't read the tags of {{count}} file — showing its file name only.",
@@ -227,7 +232,7 @@
     "export": "Export to DJ software",
     "stats": "Stats",
     "activity": "Show activity",
-    "toggleLanguage": "Switch language (English / Spanish)",
+    "toggleLanguage": "Switch language",
     "toggleTheme": "Switch theme (system / light / dark)",
     "confetti": "Throw confetti 🎉",
     "trimStartBack": "Nudge the head cut back",
@@ -398,9 +403,9 @@
     "outputName": "File name",
     "outputNameHintInPlace": "Same format as the source: this updates the original file in place and renames it — no copy is written to the output folder.",
     "overwriteTitle": "Overwrites the original",
-    "overwriteHint": "This rewrites the source file in place, keeping its name. No copy goes to the output folder. Turn this off in Settings → Conversion.",
+    "overwriteHint": "This rewrites the source file in place, keeping its name. No copy goes to the output folder. Turn this off in Settings → Output.",
     "overwriteAlacHint": "ALAC never replaces the original: the source may hold lossy audio, so a new file is written to the output folder and the original is kept.",
-    "overwriteLossyHint": "This replaces the lossless original with a 320 kbps MP3 in place — the master is lost and can't be recovered. Turn this off in Settings → Conversion.",
+    "overwriteLossyHint": "This replaces the lossless original with a 320 kbps MP3 in place — the master is lost and can't be recovered. Turn this off in Settings → Output.",
     "regenerate": "Regenerate filename from metadata",
     "regenerateAll_other": "Regenerate {{count}} file names from metadata",
     "regenerateHint": "Rebuild the file name from the metadata above using your Settings → Naming pattern",
@@ -474,7 +479,21 @@
     "otherTagsTitle": "Other metadata",
     "otherTagsSummary": "{{count}} tags",
     "otherTagsRemove": "Remove {{name}}",
-    "otherTagsRestore": "Restore {{name}}"
+    "otherTagsRestore": "Restore {{name}}",
+    "loudnessRangeLufs": "Good: -16 to -8 LUFS.",
+    "loudnessFixLufs": "Fixable here: Loudness normalization sets this to your target.",
+    "loudnessRangePeak": "Good: -1 dBTP or below.",
+    "loudnessFixPeak": "Fixable here: the true-peak ceiling in Loudness normalization caps it.",
+    "loudnessRangeRange": "Good: 6 LU or more.",
+    "loudnessFixRange": "Not fixable here: it is baked into the master. Normalizing changes the level, not the spread.",
+    "loudnessRangeCrest": "Good: 12 dB or more.",
+    "loudnessFixCrest": "Not fixable here: the punch was lost when the track was mastered.",
+    "loudnessRangeBalance": "Good: under 1 dB.",
+    "loudnessFixBalance": "Fixable here: Peak normalization with per-channel gain evens the two sides out.",
+    "loudnessRangeDc": "Good: under 0.2%.",
+    "loudnessFixDc": "Fixable here: tick “Remove DC offset” under Normalization.",
+    "loudnessRangeNoise": "Good: -45 dB or lower.",
+    "loudnessFixNoise": "Not fixable here: Surco does not denoise. It comes from the source or the capture."
   },
   "fields": {
     "groupFilled_one": "{{count}} filled",
@@ -583,10 +602,15 @@
     "targetLufs": "Target (LUFS)",
     "truePeak": "True peak (dBTP)",
     "peakDb": "Peak (dBFS)",
+    "removeDcOffset": "Remove DC offset (center on 0.0)",
     "peakRemoveDc": "Remove DC offset (center on 0.0)",
     "peakPerChannel": "Normalize stereo channels independently",
     "cueWarning": "Re-encodes the audio. Traktor cues and beatgrid are kept for MP3 and AIFF, but dropped for WAV and FLAC.",
-    "cueWarningShort": "Re-encodes the audio · cues kept for MP3/AIFF"
+    "cueWarningShort": "Re-encodes the audio · cues kept for MP3/AIFF",
+    "predictionNow": "Now {{lufs}} LUFS · {{peak}} dBTP",
+    "predictionAfter": "{{lufs}} LUFS · {{peak}} dBTP",
+    "predictionEstimate": "(estimated)",
+    "predictionLimited": "(estimated — peaks limited to the ceiling)"
   },
   "settings": {
     "tabs": {
@@ -613,11 +637,11 @@
       "recording": "Press keys…",
       "unbound": "Unassigned",
       "reset": "Reset to default",
-      "resetAll": "Reset all",
+      "resetAll": "Reset all ({{count}})",
       "conflict": "Two commands share a shortcut. Resolve it to save.",
       "fixedNav": "Always on (not rebindable): ↑↓ or j / k move through the track list and the Discogs results, Home / End jump to the ends, and Page Up / Down move a page at a time.",
       "groupTrim": "Silence editor",
-      "groupTrimHint": "Only while a cut has focus",
+      "groupTrimHint": "While the trim section is open",
       "groupTrackList": "Track list",
       "groupTrackListHint": "Only while a row has focus",
       "groupEditor": "Editor",
@@ -807,7 +831,7 @@
     "replaceLowResHint": "When off, your file's own cover is always kept — a low-res one is only flagged, never swapped for the release image.",
     "flacFinderCovers": "Show FLAC covers in Finder",
     "flacFinderCoversHint": "Finder can't read the artwork inside FLAC files, so they get a generic icon. This works around it on converted files; playback isn't affected.",
-    "showSpectrum": "Show audio spectrum",
+    "showSpectrum": "Audio quality analysis",
     "showSpectrumHint": "Shows the spectrum and quality check while editing a track. When off, the analysis is skipped entirely.",
     "autoAnalyze": "Analyze everything on import",
     "autoAnalyzeHint": "Precomputes every track's analysis in the background as you import, so reopening your library is instant — and suspect rips get flagged without pressing Analyze.",
@@ -893,7 +917,7 @@
     "items": {
       "token": {
         "q": "Do I need a Discogs token?",
-        "a": "No. Surco searches Discogs out of the box using its own app credentials, so you can start tagging right away.\n\nThose shared credentials have a combined rate limit (60 requests/minute across all Surco users), so during busy moments a search may occasionally fail with a “rate limit reached” message — just wait a few seconds and try again.\n\nIf you tag a lot, generate your own free personal token at discogs.com/settings/developers and paste it in Settings → General. Your token gets its own private rate limit, so searches stay fast no matter how busy Surco is."
+        "a": "No. Surco searches Discogs out of the box using its own app credentials, so you can start tagging right away.\n\nThose shared credentials have a combined rate limit (60 requests/minute across all Surco users), so during busy moments a search may occasionally fail with a “rate limit reached” message — just wait a few seconds and try again.\n\nIf you tag a lot, generate your own free personal token at discogs.com/settings/developers and paste it in Settings → Search. Your token gets its own private rate limit, so searches stay fast no matter how busy Surco is."
       },
       "quality": {
         "q": "Why is a track flagged for “Review”?",
@@ -905,7 +929,7 @@
       },
       "appleMusic": {
         "q": "What does “Add to Apple Music” do?",
-        "a": "When enabled (macOS only), Surco automatically imports each converted track into your Apple Music library right after processing, so your freshly tagged files land there without a manual drag-and-drop.\n\nWhile editing, Surco also checks whether a track is already in your library and shows a small badge, so you don't create duplicates. You can turn auto-add off anytime in Settings → General."
+        "a": "When enabled (macOS only), Surco automatically imports each converted track into your Apple Music library right after processing, so your freshly tagged files land there without a manual drag-and-drop.\n\nWhile editing, Surco also checks whether a track is already in your library and shows a small badge, so you don't create duplicates. You can turn auto-add off anytime in Settings → Output."
       },
       "windows": {
         "q": "Is anything different on Windows?",

@@ -79,6 +79,7 @@ function renderList(
   const onSelect = vi.fn()
   const onActivate = vi.fn()
   const onRemove = vi.fn()
+  const onAcceptReview = vi.fn()
   const onPrefetch = vi.fn()
   const onSearch = vi.fn()
   const onSearchWeb = vi.fn()
@@ -97,6 +98,7 @@ function renderList(
       onSelect={onSelect}
       onActivate={onActivate}
       onRemove={onRemove}
+      onAcceptReview={onAcceptReview}
       onPrefetch={onPrefetch}
       // Composed here exactly as App composes it: the list owns when/where the menu
       // opens, the caller owns what it offers.
@@ -123,6 +125,7 @@ function renderList(
     onSelect,
     onActivate,
     onRemove,
+    onAcceptReview,
     onPrefetch,
     onSearch,
     onSearchWeb,
@@ -152,6 +155,21 @@ describe('TrackList', () => {
     renderList([track({ id: 'a', matchReview: true, matchConfidence: 0.7 })])
     expect(screen.getByTestId('track-match-review')).toBeInTheDocument()
     expect(screen.queryByTestId('track-automatched')).not.toBeInTheDocument()
+  })
+
+  // The spark is the click the sweep promised: useAutoMatch stores the release so the
+  // suggestion can be accepted "in one action (shortcut or click)", but the click never
+  // existed — the spark was inert, accept-review ships with no default chord, and the
+  // only path was hunting the command palette while the release sat loaded and unused.
+  it('accepts the review suggestion when its spark is clicked', () => {
+    const { onAcceptReview, onSelect } = renderList([
+      track({ id: 'a', matchReview: true, matchConfidence: 0.7 }),
+    ])
+    fireEvent.click(screen.getByTestId('track-match-review'))
+    expect(onAcceptReview).toHaveBeenCalledWith('a')
+    // The click must not double as a row select: accepting 40 sparks in a sweep should
+    // not drag the editor through 40 remounts.
+    expect(onSelect).not.toHaveBeenCalled()
   })
 
   // Once the user (or a later high match) actually tags the track, the pending-review flag
