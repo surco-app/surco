@@ -33,18 +33,19 @@ Segunda tanda (mismo worktree):
 |---|---|---|
 | 7 | Sin filtro para «a revisar» ni para «con error» | ✅ dos buckets nuevos + 5 tests, en los 5 idiomas |
 | 8 | Soltar una carpeta sin audio no da señal | ✅ aviso keyed + 2 tests, en los 5 idiomas |
-| 6 | Aceptar una sugerencia no tiene camino de ratón | ⬜ pendiente |
-| 9 | Cancelar un lote no deja rastro | ⬜ pendiente (ver nota) |
+| 6 | Aceptar una sugerencia no tiene camino de ratón | ✅ la chispa ámbar es ahora un botón que acepta |
+| 9 | Cancelar un lote no deja rastro | ✅ `cancelled` en el resumen: «Cancelado · N convertidas», persistente |
+| 16 | Atajos de recorte anunciados al revés | ✅ «Con la sección de recorte abierta», 5 idiomas |
+| 17 | «Cambiar idioma (español / inglés)» | ✅ paréntesis fuera, 5 idiomas |
+| 18 | «Mostrar el espectro» apaga todo el análisis | ✅ renombrado «Análisis de calidad de audio», 5 idiomas |
+| 22 | Sin recuento de atajos modificados | ✅ «Restablecer todo (N)», y el botón se retira sin overrides |
+| 23 | Dos píldoras de progreso idénticas | ✅ la de importación lleva su propio glifo (FilePlus) |
+| 24 | La guía sin barra de progreso | ✅ `ScrollProgress` montado en guía y changelog |
+| 25 | El lightbox intercepta Shift+Tab | ❌ descartado al releer: con un solo control enfocable, fijar ambas direcciones ES el focus trap correcto; soltar Shift+Tab dejaría escapar el foco tras el overlay |
 
-**Nota sobre el #9:** el arreglo está identificado y es pequeño — el `finally` de
-`useTrackProcessing.ts:488` ya captura `const cancelled = cancelBatchRef.current` y no lo
-usa; basta añadir `cancelled` a `BatchSummary` (`lib/batch.ts:34`), propagarlo, y tratarlo
-como el caso persistente en `clearSummaryLater`. Lo dejo sin implementar porque
-`useTrackProcessing.test.tsx` devolvía lecturas inconsistentes entre herramientas en esta
-sesión (grep y awk mostraban contenidos distintos para la misma línea), y editar a ciegas
-un fichero de 3556 tests en verde no compensa.
-
-**Del 6 y el 9, y del 16 al 25, quedan sin tocar** — son los que describo abajo y no entraban
+**Quedan sin tocar el 19, el 20 y el 21** (aviso al invalidar el A/B, reseed del destino,
+cabecera de la sección maximizada) — los tres exigen algo más que un parche puntual y
+están descritos abajo con su arreglo propuesto. El resto
 en el bloque de mayor riesgo.
 
 ### Matiz importante sobre el #3 (declick por pista)
