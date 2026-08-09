@@ -605,7 +605,11 @@
     "peakRemoveDc": "Remover deslocamento DC (centralizar em 0.0)",
     "peakPerChannel": "Normalizar canais estéreo independentemente",
     "cueWarning": "Recodifica o áudio. Os cues e o beatgrid do Traktor são mantidos em MP3 e AIFF, mas se perdem em WAV e FLAC.",
-    "cueWarningShort": "Recodifica o áudio · cues mantidos em MP3/AIFF"
+    "cueWarningShort": "Recodifica o áudio · cues mantidos em MP3/AIFF",
+    "predictionNow": "Agora {{lufs}} LUFS · {{peak}} dBTP",
+    "predictionAfter": "{{lufs}} LUFS · {{peak}} dBTP",
+    "predictionEstimate": "(estimado)",
+    "predictionLimited": "(estimado — os picos são limitados ao teto)"
   },
   "settings": {
     "tabs": {

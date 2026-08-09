@@ -605,7 +605,11 @@
     "peakRemoveDc": "Remove DC offset (center on 0.0)",
     "peakPerChannel": "Normalize stereo channels independently",
     "cueWarning": "Re-encodes the audio. Traktor cues and beatgrid are kept for MP3 and AIFF, but dropped for WAV and FLAC.",
-    "cueWarningShort": "Re-encodes the audio · cues kept for MP3/AIFF"
+    "cueWarningShort": "Re-encodes the audio · cues kept for MP3/AIFF",
+    "predictionNow": "Now {{lufs}} LUFS · {{peak}} dBTP",
+    "predictionAfter": "{{lufs}} LUFS · {{peak}} dBTP",
+    "predictionEstimate": "(estimated)",
+    "predictionLimited": "(estimated — peaks limited to the ceiling)"
   },
   "settings": {
     "tabs": {
