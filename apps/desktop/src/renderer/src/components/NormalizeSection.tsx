@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
-import { formatDb } from '../lib/quality'
+import { formatDb, predictNormalized } from '../lib/quality'
 import type { TrackItem } from '../types'
 import { NormalizeControls } from './NormalizeControls'
 import { SectionBody } from './SectionBody'
@@ -73,6 +73,9 @@ export function NormalizeSection({
   // cache the strips' legends read, and the same open-gating as the wave decode,
   // so a folded section stays unanalysed but keeps the pill once known.
   const { data: measured } = useTrackLoudness(item.inputPath, !isMulti && open && settled)
+  // Pure arithmetic over the figures above — no extra pass, so it re-computes as the
+  // user drags a target and answers "what will this do?" before the convert.
+  const prediction = measured ? predictNormalized(value, measured) : null
   useEffect(() => {
     if (!mounted.current) {
       mounted.current = true
@@ -129,6 +132,34 @@ export function NormalizeSection({
           {/* The cue warning renders once, below the wave: inline it sat between the
               dials and the preview, right where the eye travels while tuning. */}
           <NormalizeControls value={value} onChange={onChange} showCueWarning={false} />
+          {/* Where the track will land, computed from the measurement already on screen.
+              A user was re-converting the same FLAC over and over just to read these two
+              numbers; both modes apply a constant gain, so the answer is arithmetic, not
+              something an encode has to reveal. Labelled an estimate because loudnorm
+              re-measures during the real pass and can land a few tenths off. */}
+          {prediction && measured && (
+            <p
+              data-testid="normalize-prediction"
+              className="mt-3 font-mono text-xs text-fg-dim tabular-nums"
+            >
+              {tr('normalize.predictionNow', {
+                lufs: formatDb(measured.integratedLufs),
+                peak: formatDb(measured.truePeakDb),
+              })}
+              {' → '}
+              <span className="text-fg">
+                {tr('normalize.predictionAfter', {
+                  lufs: formatDb(prediction.lufs),
+                  peak: formatDb(prediction.truePeakDb),
+                })}
+              </span>{' '}
+              <span className="text-fg-faint">
+                {prediction.limited
+                  ? tr('normalize.predictionLimited')
+                  : tr('normalize.predictionEstimate')}
+              </span>
+            </p>
+          )}
           {!isMulti && !compare && (
             <WaveformSolo
               inputPath={item.inputPath}

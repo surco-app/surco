@@ -147,3 +147,50 @@ export function gradeNoiseFloor(floorDb: number): Grade {
 export function formatPercent(fraction: number): string {
   return `${(fraction * 100).toFixed(1)}%`
 }
+
+// Where the track lands after normalization, without converting it. A user was
+// re-converting the same FLAC over and over just to read the resulting numbers: both
+// modes apply a CONSTANT gain, so the outcome is arithmetic on figures the analysis
+// already measured, not something an encode has to reveal.
+//
+// It mirrors main/normalize.ts on purpose — same clamps, same reachability test — so the
+// estimate and the conversion can't disagree. It stays an estimate: loudnorm re-measures
+// during the real pass and can land a few tenths off, which is why the UI labels it as one.
+export interface NormalizePrediction {
+  lufs: number
+  truePeakDb: number
+  // True when the target needs more gain than the ceiling allows, so the conversion
+  // applies the full gain and limits the overs instead of falling short. The peak then
+  // sits ON the ceiling rather than above it.
+  limited: boolean
+}
+
+export function predictNormalized(
+  cfg: NormalizeConfig,
+  measured: { integratedLufs: number | null; truePeakDb: number | null },
+): NormalizePrediction | null {
+  if (cfg.mode === 'none') return null
+  const { integratedLufs: lufs, truePeakDb: peak } = measured
+  // A missing or infinite reading (a silent decode reads -Infinity) would turn every
+  // figure below into NaN on screen — no estimate is better than a fabricated one.
+  if (lufs === null || peak === null || !Number.isFinite(lufs) || !Number.isFinite(peak))
+    return null
+
+  if (cfg.mode === 'peak') {
+    // Peak mode sizes its gain from the peak, so the peak lands exactly on the target
+    // and the loudness follows by the same amount.
+    const gain = cfg.peakDb - peak
+    return { lufs: lufs + gain, truePeakDb: cfg.peakDb, limited: false }
+  }
+
+  // Same clamps ffmpeg enforces (loudnorm rejects I outside [-70,-5], TP outside [-9,0]),
+  // so a target typed out of range predicts what the conversion will actually do.
+  const target = Math.min(-5, Math.max(-70, cfg.targetLufs))
+  const ceiling = Math.min(0, Math.max(-9, cfg.truePeakDb))
+  const gain = target - lufs
+  const linearPeak = peak + gain
+  // reachesTargetLinearly, restated: when the gained peak would clear the ceiling, the
+  // conversion still applies the full gain and holds the overs at the ceiling.
+  const limited = linearPeak > ceiling
+  return { lufs: target, truePeakDb: limited ? ceiling : linearPeak, limited }
+}
