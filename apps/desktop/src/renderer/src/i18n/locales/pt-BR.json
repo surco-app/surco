@@ -637,7 +637,7 @@
       "recording": "Pressione as teclas…",
       "unbound": "Sem atribuição",
       "reset": "Restaurar o padrão",
-      "resetAll": "Restaurar tudo",
+      "resetAll": "Redefinir tudo ({{count}})",
       "conflict": "Dois comandos compartilham um atalho. Resolva para salvar.",
       "fixedNav": "Sempre ativos (não reatribuíveis): ↑↓ ou j / k percorrem a lista de faixas e os resultados do Discogs, Home / End vão para as extremidades e Page Up / Down pulam uma página.",
       "groupTrim": "Editor de silêncio",

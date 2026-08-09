@@ -637,7 +637,7 @@
       "recording": "Appuie sur les touches…",
       "unbound": "Non assigné",
       "reset": "Rétablir la valeur par défaut",
-      "resetAll": "Tout rétablir",
+      "resetAll": "Tout réinitialiser ({{count}})",
       "conflict": "Deux commandes partagent un raccourci. Résous-le pour enregistrer.",
       "fixedNav": "Toujours actives (non modifiables) : ↑↓ ou j / k parcourent la liste des morceaux et les résultats Discogs, Début / Fin vont aux extrémités, et Page haut / bas avancent d'une page.",
       "groupTrim": "Éditeur de silences",
