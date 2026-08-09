@@ -478,7 +478,21 @@
     "otherTagsTitle": "Otros metadatos",
     "otherTagsSummary": "{{count}} etiquetas",
     "otherTagsRemove": "Borrar {{name}}",
-    "otherTagsRestore": "Restaurar {{name}}"
+    "otherTagsRestore": "Restaurar {{name}}",
+    "loudnessRangeLufs": "Bueno: entre -16 y -8 LUFS.",
+    "loudnessFixLufs": "Se puede corregir: la normalización por loudness lo lleva a tu objetivo.",
+    "loudnessRangePeak": "Bueno: -1 dBTP o menos.",
+    "loudnessFixPeak": "Se puede corregir: el techo de true peak de la normalización lo limita.",
+    "loudnessRangeRange": "Bueno: 6 LU o más.",
+    "loudnessFixRange": "No se puede corregir aquí: viene del máster. Normalizar cambia el nivel, no el margen.",
+    "loudnessRangeCrest": "Bueno: 12 dB o más.",
+    "loudnessFixCrest": "No se puede corregir aquí: la pegada se perdió al masterizar la pista.",
+    "loudnessRangeBalance": "Bueno: menos de 1 dB.",
+    "loudnessFixBalance": "Se puede corregir: la normalización por pico con ganancia por canal iguala los dos lados.",
+    "loudnessRangeDc": "Bueno: menos del 0,2%.",
+    "loudnessFixDc": "Se puede corregir: marca «Quitar el offset de DC» en Normalización.",
+    "loudnessRangeNoise": "Bueno: -45 dB o menos.",
+    "loudnessFixNoise": "No se puede corregir aquí: Surco no elimina ruido. Viene del origen o de la captura."
   },
   "fields": {
     "groupFilled_one": "{{count}} con datos",

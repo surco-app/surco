@@ -478,7 +478,21 @@
     "otherTagsTitle": "Weitere Metadaten",
     "otherTagsSummary": "{{count}} Tags",
     "otherTagsRemove": "{{name}} entfernen",
-    "otherTagsRestore": "{{name}} wiederherstellen"
+    "otherTagsRestore": "{{name}} wiederherstellen",
+    "loudnessRangeLufs": "Gut: -16 bis -8 LUFS.",
+    "loudnessFixLufs": "Korrigierbar: Die Loudness-Normalisierung setzt den Zielwert.",
+    "loudnessRangePeak": "Gut: -1 dBTP oder darunter.",
+    "loudnessFixPeak": "Korrigierbar: Die True-Peak-Grenze der Normalisierung begrenzt ihn.",
+    "loudnessRangeRange": "Gut: 6 LU oder mehr.",
+    "loudnessFixRange": "Hier nicht korrigierbar: steckt im Master. Normalisieren ändert den Pegel, nicht die Spanne.",
+    "loudnessRangeCrest": "Gut: 12 dB oder mehr.",
+    "loudnessFixCrest": "Hier nicht korrigierbar: Der Punch ging beim Mastern verloren.",
+    "loudnessRangeBalance": "Gut: unter 1 dB.",
+    "loudnessFixBalance": "Korrigierbar: Peak-Normalisierung mit Gain pro Kanal gleicht beide Seiten an.",
+    "loudnessRangeDc": "Gut: unter 0,2 %.",
+    "loudnessFixDc": "Korrigierbar: „DC-Offset entfernen“ unter Normalisierung aktivieren.",
+    "loudnessRangeNoise": "Gut: -45 dB oder niedriger.",
+    "loudnessFixNoise": "Hier nicht korrigierbar: Surco entrauscht nicht. Es stammt aus Quelle oder Aufnahme."
   },
   "fields": {
     "groupFilled_one": "{{count}} ausgefüllt",

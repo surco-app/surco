@@ -478,7 +478,21 @@
     "otherTagsTitle": "Autres métadonnées",
     "otherTagsSummary": "{{count}} tags",
     "otherTagsRemove": "Supprimer {{name}}",
-    "otherTagsRestore": "Restaurer {{name}}"
+    "otherTagsRestore": "Restaurer {{name}}",
+    "loudnessRangeLufs": "Bon : entre -16 et -8 LUFS.",
+    "loudnessFixLufs": "Corrigible : la normalisation loudness l'amène à ta cible.",
+    "loudnessRangePeak": "Bon : -1 dBTP ou moins.",
+    "loudnessFixPeak": "Corrigible : le plafond true-peak de la normalisation le limite.",
+    "loudnessRangeRange": "Bon : 6 LU ou plus.",
+    "loudnessFixRange": "Non corrigible ici : c'est dans le master. Normaliser change le niveau, pas l'écart.",
+    "loudnessRangeCrest": "Bon : 12 dB ou plus.",
+    "loudnessFixCrest": "Non corrigible ici : le punch a été perdu au mastering.",
+    "loudnessRangeBalance": "Bon : moins de 1 dB.",
+    "loudnessFixBalance": "Corrigible : la normalisation crête avec gain par canal égalise les deux côtés.",
+    "loudnessRangeDc": "Bon : moins de 0,2 %.",
+    "loudnessFixDc": "Corrigible : coche « Supprimer le décalage DC » sous Normalisation.",
+    "loudnessRangeNoise": "Bon : -45 dB ou moins.",
+    "loudnessFixNoise": "Non corrigible ici : Surco ne débruite pas. Cela vient de la source ou de la captation."
   },
   "fields": {
     "groupFilled_one": "{{count}} rempli",
