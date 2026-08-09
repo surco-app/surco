@@ -141,7 +141,14 @@ describe('fetchAllReleases', () => {
   // releases link instead of an installer. One walk per session is enough: this is a
   // vanity count, not live data.
   it('reuses the session cache instead of re-walking the pages', async () => {
-    globalThis.sessionStorage?.clear()
+    // Stubbed, not the runtime's own storage: sessionStorage is native from Node ~25
+    // but absent on the CI runner's Node, where the cache correctly no-ops and this
+    // test read "called twice" — the assertion must not depend on which Node runs it.
+    const store = new Map<string, string>()
+    vi.stubGlobal('sessionStorage', {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => void store.set(k, v),
+    })
     const fetchMock = vi.fn().mockResolvedValue(page([release('v1.0.0')]))
     vi.stubGlobal('fetch', fetchMock)
 
