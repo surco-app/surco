@@ -39,6 +39,12 @@ interface Props {
   // Double-clicking a row plays it: opens the floating player straight on that track.
   onActivate: (track: TrackItem) => void
   onRemove: (id: string) => void
+  // Applies the row's pending review-tier suggestion — the mouse half of the
+  // accept-review command. The sweep stored the release for one-action acceptance
+  // (useAutoMatch: "shortcut or click"), but the click never existed: the amber
+  // spark was inert, and accept-review ships with no default chord, so the only
+  // path was hunting the command palette. The spark is now that click.
+  onAcceptReview: (id: string) => void
   onPrefetch: (id: string) => void
   // The right-click menu for a row. The list owns when and where it opens; the caller
   // owns what it offers, so its handlers reach the menu without passing through here.
@@ -179,6 +185,12 @@ interface RowProps {
   onSelect: (id: string, mods: ClickMods) => void
   onActivate: (track: TrackItem) => void
   onRemove: (id: string) => void
+  // Applies the row's pending review-tier suggestion — the mouse half of the
+  // accept-review command. The sweep stored the release for one-action acceptance
+  // (useAutoMatch: "shortcut or click"), but the click never existed: the amber
+  // spark was inert, and accept-review ships with no default chord, so the only
+  // path was hunting the command palette. The spark is now that click.
+  onAcceptReview: (id: string) => void
   // Plain ⌫/Supr on the focused row — the keyboard ✕. Separate from onRemove because
   // the list must also hop selection/focus to a surviving neighbour (see TrackList).
   onRemoveKey: (id: string) => void
@@ -209,6 +221,7 @@ const TrackRow = memo(function TrackRow({
   onSelect,
   onActivate,
   onRemove,
+  onAcceptReview,
   onRemoveKey,
   onPrefetch,
   onOpenMenu,
@@ -455,18 +468,24 @@ const TrackRow = memo(function TrackRow({
                   // the applied accent sparkle, and gone the moment the track is actually matched.
                   t.matchReview &&
                   !t.matched && (
-                    <span
+                    <button
+                      type="button"
                       data-testid="track-match-review"
                       data-confidence="review"
-                      className="group/dot relative flex items-center text-warn"
+                      aria-label={tr('commands.acceptReview')}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onAcceptReview(t.id)
+                      }}
+                      className="group/dot press relative flex items-center text-warn"
                     >
                       <Sparkles className="h-3 w-3" aria-hidden="true" />
                       <Tooltip
-                        label={matchTooltip(tr('trackList.matchReview'), t.matchConfidence)}
+                        label={matchTooltip(tr('commands.acceptReview'), t.matchConfidence)}
                         align="end"
                         scope="dot"
                       />
-                    </span>
+                    </button>
                   )
                 )}
               </span>
@@ -553,6 +572,7 @@ export const TrackList = memo(function TrackList({
   onSelect,
   onActivate,
   onRemove,
+  onAcceptReview,
   onPrefetch,
   renderMenu,
   scrollRootRef,
@@ -654,6 +674,7 @@ export const TrackList = memo(function TrackList({
             onSelect={onSelect}
             onActivate={onActivate}
             onRemove={onRemove}
+            onAcceptReview={onAcceptReview}
             onRemoveKey={removeViaKeyboard}
             onPrefetch={onPrefetch}
             onOpenMenu={openMenu}
