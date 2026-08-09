@@ -127,7 +127,7 @@ export function useTrackProcessing({
   // failures is the exception: its "N failed" count is worth reading after the fact, so it
   // stays until the next run replaces it rather than vanishing on the timer.
   useEffect(() => {
-    if (!batchSummary || batchSummary.failed > 0) return
+    if (!batchSummary || batchSummary.failed > 0 || batchSummary.cancelled === true) return
     const id = setTimeout(() => setBatchSummary(null), 6000)
     return () => clearTimeout(id)
   }, [batchSummary])
@@ -488,7 +488,9 @@ export function useTrackProcessing({
         // Same zeroing as addAllToAppleMusic: a finished batch must leave the pooled
         // top-bar fraction, or the bar sticks at 100% and skews every later sweep.
         setBatchProgress({ done: 0, total: 0 })
-        setBatchSummary(summarizeBatch(results))
+        // cancelBatchRef is still true here when the user stopped the run — the next
+        // batch resets it — so the summary can say which kind of end this was.
+        setBatchSummary({ ...summarizeBatch(results), cancelled: cancelBatchRef.current })
         // In the finally, not after: a cancelled or failed run must still flush main's
         // recorded Traktor patches, or they linger and get applied to the collection
         // during the NEXT batch instead.
