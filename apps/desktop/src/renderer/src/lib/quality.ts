@@ -1,3 +1,5 @@
+import type { NormalizeConfig } from '../../../shared/types'
+
 // Three-step lossless verdict (green/amber/red), banded on the absolute cutoff
 // because codec lowpasses are absolute: ~20.5 kHz is a full 320 kbps / lossless,
 // ~18.5–19 kHz is the ~192 kbps class, and ~16 kHz is the classic 128 kbps
