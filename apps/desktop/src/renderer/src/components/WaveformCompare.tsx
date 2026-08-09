@@ -714,8 +714,11 @@ export function WaveformSolo({
   // The preview scales the source envelope by the mode's linear gain; scale its RMS body
   // by the same factor so the two-layer draw keeps its core (rms ≤ peaks holds, both
   // scaled alike). Without it the preview would fall back to a peaks-only outline.
+  // Guarded on rms too, not just the wave: a decode cached by a version that predates
+  // the RMS layer carries peaks alone, and mapping over the missing array threw before
+  // the section could render at all.
   const previewWave =
-    preview && source.wave
+    preview && source.wave?.rms
       ? {
           peaks: preview.peaks,
           rms: source.wave.rms.map((r) => r * 10 ** (preview.gainDb / 20)),

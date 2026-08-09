@@ -109,14 +109,16 @@ export function NormalizeSection({
         summaryMuted={value.mode === 'none'}
         right={
           <span className="flex shrink-0 items-center gap-1.5">
-            {/* The measurement pill stays up open or folded — it is a fact about
-                the file, not a control state, and the body never repeats it as
-                figures this compact. */}
-            {measured && (
-              <SectionPill tone="neutral" testid="normalize-measured-pill" numeric>
-                {`${formatDb(measured.integratedLufs)} LUFS · ${formatDb(measured.truePeakDb)} dBTP`}
-              </SectionPill>
-            )}
+            {/* No measurement pill here. It used to ride alongside, justified as "the body
+                never repeats it as figures this compact" — no longer true: the estimate
+                below opens with the same "Now -21.8 LUFS · -18.1 dBTP", and the Quality
+                section states the same two figures graded by colour. Worse, it was
+                typographically identical to the summary beside it (same template, same
+                units, same tabular-nums), so the header read as one figure printed twice
+                with nothing saying which was the target and which the measurement — while
+                eating 164px of a 241px header and truncating the target to "No…".
+                Trim hit the same collision and made the two mutually exclusive
+                (TrimSection.tsx); this is that same fix. */}
             {/* The mode badge only while folded: open, the segmented control right
                 below says the same thing. */}
             {value.mode !== 'none' && !open && (
