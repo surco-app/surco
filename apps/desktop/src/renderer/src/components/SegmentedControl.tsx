@@ -1,4 +1,5 @@
 import type React from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 
 interface Props<T extends string> {
   options: readonly T[]
@@ -19,6 +20,12 @@ interface Props<T extends string> {
 // presets stay trackless on purpose, since none of them may be active and a track
 // with no raised segment looks broken. One definition so the instances can't drift
 // in styling or in the aria-pressed wiring.
+//
+// The raised segment is not painted on the buttons: it is an aria-hidden copy of the
+// whole row, clipped to the active option, so switching SLIDES the relief along the
+// track instead of teleporting it — the visual claim that this is one value moving
+// between positions. Clipping (not a measured thumb) keeps the active label's color
+// inside the moving highlight, so text and background can never fall out of sync.
 export function SegmentedControl<T extends string>({
   options,
   value,
@@ -27,11 +34,35 @@ export function SegmentedControl<T extends string>({
   labelFor,
   className,
 }: Props<T>): React.JSX.Element {
+  const overlayRef = useRef<HTMLDivElement>(null)
+  const [clip, setClip] = useState({ left: 0, right: 0 })
+  // Measured before paint, so the highlight lands on the mounted value without a
+  // slide from the far left. The ResizeObserver re-measures when the labels change
+  // width under it (language switch, late font) — the value itself is a dep, so a
+  // pick re-measures directly and the clip transition does the travelling.
+  useLayoutEffect(() => {
+    const overlay = overlayRef.current
+    const track = overlay?.parentElement
+    const measure = (): void => {
+      const active = track?.querySelector<HTMLButtonElement>(
+        `[data-testid="${testidPrefix}-${value}"]`,
+      )
+      if (!overlay || !active) return
+      const o = overlay.getBoundingClientRect()
+      const b = active.getBoundingClientRect()
+      setClip({ left: b.left - o.left, right: o.right - b.right })
+    }
+    measure()
+    if (!track || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    ro.observe(track)
+    return () => ro.disconnect()
+  }, [value, testidPrefix])
   return (
     <div
       // self-start: several callers stack settings in a flex column, whose default
       // stretch would pull the track to the panel's full width now that it paints a box.
-      className={`inline-flex gap-0.5 self-start rounded-[9px] border border-[var(--color-line)] bg-[var(--color-field)] p-[3px] ${className ?? ''}`}
+      className={`relative inline-flex gap-0.5 self-start rounded-[9px] border border-[var(--color-line)] bg-[var(--color-field)] p-[3px] ${className ?? ''}`}
     >
       {options.map((id) => (
         <button
@@ -40,17 +71,37 @@ export function SegmentedControl<T extends string>({
           data-testid={`${testidPrefix}-${id}`}
           aria-pressed={value === id}
           onClick={() => onChange(id)}
-          // The active segment sits raised on the track (fill, hairline ring, soft
-          // shadow); hovering the rest previews the fill without the relief.
-          className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
-            value === id
-              ? 'bg-[var(--color-panel-2)] text-fg shadow-[0_1px_2px_rgba(0,0,0,0.3),inset_0_0_0_1px_var(--color-line-strong)]'
-              : 'text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg'
-          }`}
+          // The buttons themselves all stay quiet — the overlay below paints the
+          // raised state — so a segment the highlight is leaving fades back to muted
+          // exactly as the clip uncovers it. Hover previews the fill without relief.
+          className="rounded-md px-4 py-1.5 text-sm text-fg-muted transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
         >
           {labelFor(id)}
         </button>
       ))}
+      <div
+        ref={overlayRef}
+        data-testid={`${testidPrefix}-highlight`}
+        aria-hidden="true"
+        // Mirrors the row's exact layout (same padding, gap and type), every copy
+        // painted raised, then clips down to the active option's box. clip-path is
+        // composited and a transition retargets from the current clip, so rapid
+        // clicks redirect the slide mid-flight instead of restarting it.
+        className="absolute inset-0 flex gap-0.5 p-[3px] transition-[clip-path] duration-200 ease-[cubic-bezier(0.645,0.045,0.355,1)] motion-reduce:transition-none"
+        style={{
+          pointerEvents: 'none',
+          clipPath: `inset(0 ${clip.right}px 0 ${clip.left}px round 6px)`,
+        }}
+      >
+        {options.map((id) => (
+          <span
+            key={id}
+            className="rounded-md bg-[var(--color-panel-2)] px-4 py-1.5 text-sm text-fg shadow-[0_1px_2px_rgba(0,0,0,0.3),inset_0_0_0_1px_var(--color-line-strong)]"
+          >
+            {labelFor(id)}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }
