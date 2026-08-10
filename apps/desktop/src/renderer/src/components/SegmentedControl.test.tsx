@@ -51,36 +51,63 @@ describe('SegmentedControl sliding highlight', () => {
     expect(overlay.className).not.toContain('transition-[clip-path]')
   })
 
-  // Regression: measuring with getBoundingClientRect skewed the clip by ~2% whenever
-  // the control mounted inside the settings modal's pop-in — viewport rects shrink
-  // with the scale(0.98) entrance while clip-path applies in unscaled local space —
-  // and the skew stuck for good, since ResizeObserver never fires for transforms. A
-  // sliver of the neighbouring copy stayed visible. offsetLeft/offsetWidth are layout
-  // values, immune to any ancestor transform.
-  it('clips the highlight from layout geometry, immune to entrance transforms', () => {
-    const define = (el: Element, left: number, width: number): void => {
-      Object.defineProperty(el, 'offsetLeft', { value: left, configurable: true })
-      Object.defineProperty(el, 'offsetWidth', { value: width, configurable: true })
+  // Two regressions in one measurement. Rects alone: the settings modal pops in at
+  // scale(0.98), viewport rects shrink with it while clip-path applies in unscaled
+  // local space, and the ~2% skew stuck for good (ResizeObserver ignores transforms)
+  // — a sliver of the neighbouring copy stayed visible. Integer offsetLeft/offsetWidth
+  // alone: real layout is fractional, and the rounding cut the raised segment's right
+  // ring flat. So: fractional rect deltas, rescaled into local space by the layout
+  // width — exact under any uniform ancestor scale.
+  it('rescales fractional rect measurements into unscaled local space', () => {
+    const original = Element.prototype.getBoundingClientRect
+    // The overlay laid out 300px wide but currently painted at scale 0.98 from x=1000;
+    // button "c" spans [201, 297] in local space.
+    const scaled = (localLeft: number, localRight: number): DOMRect =>
+      ({
+        left: 1000 + localLeft * 0.98,
+        right: 1000 + localRight * 0.98,
+        width: (localRight - localLeft) * 0.98,
+        top: 0,
+        bottom: 31.36,
+        height: 31.36,
+        x: 1000 + localLeft * 0.98,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect
+    Element.prototype.getBoundingClientRect = function () {
+      const id = (this as Element).getAttribute?.('data-testid') ?? ''
+      if (id === 'seg-highlight') return scaled(0, 300)
+      if (id === 'seg-a') return scaled(3, 99)
+      if (id === 'seg-b') return scaled(101, 199)
+      if (id === 'seg-c') return scaled(201, 297)
+      return scaled(0, 0)
     }
-    const onChange = vi.fn()
-    const control = (value: string): React.JSX.Element => (
-      <SegmentedControl
-        options={['a', 'b', 'c'] as const}
-        value={value}
-        onChange={onChange}
-        testidPrefix="seg"
-        labelFor={(id) => id.toUpperCase()}
-      />
-    )
-    const { rerender } = render(control('b'))
-    define(screen.getByTestId('seg-highlight'), 0, 300)
-    define(screen.getByTestId('seg-a'), 3, 96)
-    define(screen.getByTestId('seg-b'), 101, 98)
-    define(screen.getByTestId('seg-c'), 201, 96)
-    rerender(control('c'))
-    const overlay = screen.getByTestId('seg-highlight')
-    expect(overlay.style.clipPath).toBe('inset(0 3px 0 201px round 6px)')
-    expect(overlay.style.visibility).not.toBe('hidden')
+    try {
+      const onChange = vi.fn()
+      const control = (value: string): React.JSX.Element => (
+        <SegmentedControl
+          options={['a', 'b', 'c'] as const}
+          value={value}
+          onChange={onChange}
+          testidPrefix="seg"
+          labelFor={(id) => id.toUpperCase()}
+        />
+      )
+      const { rerender } = render(control('b'))
+      Object.defineProperty(screen.getByTestId('seg-highlight'), 'offsetWidth', {
+        value: 300,
+        configurable: true,
+      })
+      rerender(control('c'))
+      const overlay = screen.getByTestId('seg-highlight')
+      const m = overlay.style.clipPath.match(/inset\(0 ([\d.]+)px 0 ([\d.]+)px round/)
+      expect(m).not.toBeNull()
+      expect(Number(m?.[1])).toBeCloseTo(3, 1)
+      expect(Number(m?.[2])).toBeCloseTo(201, 1)
+      expect(overlay.style.visibility).not.toBe('hidden')
+    } finally {
+      Element.prototype.getBoundingClientRect = original
+    }
   })
 
   // aria-pressed stays on the real buttons — the overlay never becomes the source of

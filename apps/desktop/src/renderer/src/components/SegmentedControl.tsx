@@ -56,19 +56,23 @@ export function SegmentedControl<T extends string>({
         `[data-testid="${testidPrefix}-${value}"]`,
       )
       if (!overlay || !active) return
-      // Layout metrics, not getBoundingClientRect: viewport rects shrink with an
-      // ancestor transform (the settings modal pops in at scale 0.98) while the clip
-      // applies in unscaled local space, so a rect-based clip landed ~2% off and
-      // showed a sliver of the neighbouring copy — for good, because ResizeObserver
-      // ignores transforms and never re-measured. offsetLeft shares the overlay's
-      // origin: both are laid out against the track's padding box.
+      // Fractional rect deltas rescaled into local space by the layout width. Rects
+      // alone skewed the clip whenever an ancestor was mid-transform (the settings
+      // modal pops in at scale 0.98; clip-path applies unscaled — a sliver of the
+      // neighbouring copy stayed visible, since ResizeObserver ignores transforms and
+      // never corrected it). Integer offsetLeft/offsetWidth alone rounded away the
+      // real layout's fractions and cut the raised segment's right ring flat. The
+      // ratio undoes any uniform ancestor scale while keeping subpixel precision.
       const width = overlay.offsetWidth
-      if (width === 0) {
+      const o = overlay.getBoundingClientRect()
+      if (width === 0 || o.width === 0) {
         setClip(null)
         setSettled(false)
         return
       }
-      setClip({ left: active.offsetLeft, right: width - active.offsetLeft - active.offsetWidth })
+      const factor = width / o.width
+      const b = active.getBoundingClientRect()
+      setClip({ left: (b.left - o.left) * factor, right: (o.right - b.right) * factor })
     }
     measure()
     if (!track || typeof ResizeObserver === 'undefined') return
