@@ -51,36 +51,36 @@ describe('SegmentedControl sliding highlight', () => {
     expect(overlay.className).not.toContain('transition-[clip-path]')
   })
 
-  it('clips the highlight to the active option once real geometry lands', () => {
-    const original = Element.prototype.getBoundingClientRect
-    const rect = (left: number, width: number): DOMRect =>
-      ({
-        left,
-        right: left + width,
-        width,
-        top: 0,
-        bottom: 32,
-        height: 32,
-        x: left,
-        y: 0,
-        toJSON: () => ({}),
-      }) as DOMRect
-    Element.prototype.getBoundingClientRect = function () {
-      const id = (this as Element).getAttribute?.('data-testid') ?? ''
-      if (id === 'seg-highlight') return rect(0, 300)
-      if (id === 'seg-a') return rect(0, 100)
-      if (id === 'seg-b') return rect(100, 100)
-      if (id === 'seg-c') return rect(200, 100)
-      return rect(0, 0)
+  // Regression: measuring with getBoundingClientRect skewed the clip by ~2% whenever
+  // the control mounted inside the settings modal's pop-in — viewport rects shrink
+  // with the scale(0.98) entrance while clip-path applies in unscaled local space —
+  // and the skew stuck for good, since ResizeObserver never fires for transforms. A
+  // sliver of the neighbouring copy stayed visible. offsetLeft/offsetWidth are layout
+  // values, immune to any ancestor transform.
+  it('clips the highlight from layout geometry, immune to entrance transforms', () => {
+    const define = (el: Element, left: number, width: number): void => {
+      Object.defineProperty(el, 'offsetLeft', { value: left, configurable: true })
+      Object.defineProperty(el, 'offsetWidth', { value: width, configurable: true })
     }
-    try {
-      renderControl()
-      const overlay = screen.getByTestId('seg-highlight')
-      expect(overlay.style.clipPath).toContain('inset(0 100px 0 100px')
-      expect(overlay.style.visibility).not.toBe('hidden')
-    } finally {
-      Element.prototype.getBoundingClientRect = original
-    }
+    const onChange = vi.fn()
+    const control = (value: string): React.JSX.Element => (
+      <SegmentedControl
+        options={['a', 'b', 'c'] as const}
+        value={value}
+        onChange={onChange}
+        testidPrefix="seg"
+        labelFor={(id) => id.toUpperCase()}
+      />
+    )
+    const { rerender } = render(control('b'))
+    define(screen.getByTestId('seg-highlight'), 0, 300)
+    define(screen.getByTestId('seg-a'), 3, 96)
+    define(screen.getByTestId('seg-b'), 101, 98)
+    define(screen.getByTestId('seg-c'), 201, 96)
+    rerender(control('c'))
+    const overlay = screen.getByTestId('seg-highlight')
+    expect(overlay.style.clipPath).toBe('inset(0 3px 0 201px round 6px)')
+    expect(overlay.style.visibility).not.toBe('hidden')
   })
 
   // aria-pressed stays on the real buttons — the overlay never becomes the source of
