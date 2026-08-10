@@ -47,6 +47,10 @@
       {
         "text": "The normalization preview now tells you where the track will land before you convert: the “Preview” row over the wave shows the actual LUFS and peak the conversion will produce, marked as an estimate, updating as you move the target. It came from a reader who kept re-converting the same FLAC just to read the result. The section's ⓘ now opens the metric help too, and each preset explains itself in one line.",
         "in": "0.83.0"
+      },
+      {
+        "text": "The None / Loudness / Peak selector — and every switch of that kind across the editor and Settings — now sits on a recessed track, and the active value slides over instead of jumping. It used to read as a row of tabs, with whatever sat below looking like the tab's content: that's why “Remove DC offset” seemed to belong to None, a mode where it does nothing. That checkbox now only shows in Loudness and Peak, where it actually applies.",
+        "in": "0.83.1"
       }
     ]
   },
