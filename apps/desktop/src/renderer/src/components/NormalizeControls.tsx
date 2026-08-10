@@ -242,23 +242,25 @@ export function NormalizeControls({
           </label>
         </div>
       )}
-      {/* Outside both mode blocks on purpose, and deliberately NOT gated on the mode.
-          Centring a biased capture is a correction of the signal; the mode only decides
-          how the gain is sized afterwards, so the two are independent — this used to live
-          inside the peak block, which meant a user fixing a misaligned phono stage had to
-          give up loudness normalization to get it. Ungated also keeps it a stable
-          preference: the editor writes the mode per track but this box back to Settings,
-          so hiding it on the per-track mode would make it flicker as tracks change. */}
-      <label className="mt-3 flex cursor-pointer items-center gap-3">
-        <input
-          data-testid="normalize-remove-dc"
-          type="checkbox"
-          checked={value.removeDcOffset === true}
-          onChange={(e) => onChange({ ...value, removeDcOffset: e.target.checked })}
-          className="h-4 w-4 accent-[var(--color-accent)]"
-        />
-        <span className="text-sm">{tr('normalize.removeDcOffset')}</span>
-      </label>
+      {/* Outside both mode blocks: centring a biased capture is a correction of the
+          signal, not part of how the gain is sized, so loudness and peak share the one
+          box (it used to live inside peak only, which silently dropped it for loudness
+          users). The hairline above draws that boundary. Hidden in none, though — with
+          no normalization the pipeline never applies any filter (normalizeFilter bails
+          before reading removeDcOffset), and a visible checkbox under the None tab
+          promised a correction that never happened. */}
+      {value.mode !== 'none' && (
+        <label className="mt-3 flex cursor-pointer items-center gap-3 border-t border-[var(--color-line)] pt-3">
+          <input
+            data-testid="normalize-remove-dc"
+            type="checkbox"
+            checked={value.removeDcOffset === true}
+            onChange={(e) => onChange({ ...value, removeDcOffset: e.target.checked })}
+            className="h-4 w-4 accent-[var(--color-accent)]"
+          />
+          <span className="text-sm">{tr('normalize.removeDcOffset')}</span>
+        </label>
+      )}
 
       {showCueWarning && value.mode !== 'none' && (
         <p className="mt-3 text-xs text-warn">{tr('normalize.cueWarning')}</p>
