@@ -17,12 +17,10 @@ beforeEach(() => {
 function status(showDone: boolean): SelectionStatus {
   return {
     showDone,
-    revealPath: null,
     inMusicLibraryOnly: false,
     canDeleteOriginal: false,
     musicAdding: false,
     musicAdded: false,
-    musicError: null,
   } as SelectionStatus
 }
 
