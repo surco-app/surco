@@ -158,12 +158,12 @@ describe('NormalizeControls DC offset', () => {
     expect(screen.getByTestId('normalize-remove-dc')).toBeChecked()
   })
 
-  // Ungated on the mode, unlike the per-channel box. The editor writes the MODE per track
-  // but this choice back to Settings, so gating it would make a lasting preference blink
-  // in and out as the user steps through a crate.
-  it('stays available whatever the mode is', () => {
+  // With mode none the pipeline applies no filter at all (normalizeFilter bails before
+  // reading removeDcOffset), so a visible box there promises a correction that never
+  // happens — the reported confusion: "why is it on the None tab?".
+  it('hides DC removal in none mode, where it would do nothing', () => {
     const none: NormalizeConfig = { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
     render(<NormalizeControls value={none} onChange={vi.fn()} />)
-    expect(screen.getByTestId('normalize-remove-dc')).toBeInTheDocument()
+    expect(screen.queryByTestId('normalize-remove-dc')).not.toBeInTheDocument()
   })
 })
