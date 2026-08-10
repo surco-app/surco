@@ -104,6 +104,31 @@ function openNaming() {
   fireEvent.click(screen.getByTestId('settings-tab-naming'))
 }
 
+describe('SettingsModal sidebar indicator', () => {
+  // The active tab's highlight is one pill that TRAVELS between rows (same pattern as
+  // the segmented control's sliding relief) — so the buttons themselves must not paint
+  // their own background, or two highlights would show while the pill is mid-slide.
+  // Presentational only: hidden from assistive tech and transparent to the pointer,
+  // aria-selected on the real buttons stays the source of truth.
+  it('backs the active tab with one presentational sliding pill', () => {
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    const pill = screen.getByTestId('settings-tab-indicator')
+    expect(pill).toHaveAttribute('aria-hidden', 'true')
+    expect(pill.className).toContain('pointer-events-none')
+    expect(screen.getByTestId('settings-tab-general').className).not.toContain('accent-soft')
+    fireEvent.click(screen.getByTestId('settings-tab-naming'))
+    expect(screen.getByTestId('settings-tab-indicator')).toBeInTheDocument()
+  })
+})
+
 describe('SettingsModal settings export', () => {
   // A failed export used to reject into the void: the click did nothing visible and no
   // file was written. It reports through the same alert path a failed import already uses.
