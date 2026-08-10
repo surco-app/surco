@@ -1,5 +1,6 @@
 import { SlidersVertical } from 'lucide-react'
 import type React from 'react'
+import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { FormatSetting, NormalizeConfig, OutputFormat } from '../../../shared/types'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
@@ -114,6 +115,17 @@ export function ConvertFooter({
   // keeps the plain add semantics: the sweep resolves add-vs-update per track.
   const hasMusicCopy = !isMulti && !!item.musicPersistentId
   const showInMusic = hasMusicCopy && musicAdded
+  // The footer swaps wholesale between the convert button and the done line — the
+  // one state change every conversion ends on, and it used to snap. The keyed block
+  // below rises in on a real swap only: the editor remounts this footer per track,
+  // and stepping through a crate must not replay an entrance on every switch. Refs
+  // survive re-renders but not that remount, which is exactly the boundary wanted.
+  const prevShowDone = useRef(showDone)
+  const swapped = useRef(false)
+  if (prevShowDone.current !== showDone) {
+    swapped.current = true
+    prevShowDone.current = showDone
+  }
   return (
     <div className="border-t border-[var(--color-line)] bg-[var(--color-ink)] px-6 py-3.5">
       {item.status === 'error' && (
@@ -129,7 +141,11 @@ export function ConvertFooter({
           </button>
         </div>
       )}
-      <div className="space-y-2">
+      <div
+        key={String(showDone)}
+        data-testid="footer-state"
+        className={`space-y-2${swapped.current ? ' animate-footer-swap' : ''}`}
+      >
         {normalizeCfg.mode !== 'none' && (
           <button
             type="button"
