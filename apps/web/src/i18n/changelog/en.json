@@ -51,6 +51,18 @@
       {
         "text": "The None / Loudness / Peak selector — and every switch of that kind across the editor and Settings — now sits on a recessed track, and the active value slides over instead of jumping. It used to read as a row of tabs, with whatever sat below looking like the tab's content: that's why “Remove DC offset” seemed to belong to None, a mode where it does nothing. That checkbox now only shows in Loudness and Peak, where it actually applies.",
         "in": "0.83.1"
+      },
+      {
+        "text": "That sliding highlight shipped with three defects, and all three die here: it made a trip from the edges to the active value the moment a panel opened (now it only moves when you change the value), it could leave a sliver of the neighbouring segment showing, and it shaved a hair off the active segment's right edge. All one root cause underneath: measuring geometry while the settings dialog was still animating in.",
+        "in": "0.83.2"
+      },
+      {
+        "text": "The command palette (⌘K) opens instantly, with no entrance animation. It's a surface you open dozens of times a day, almost always from the keyboard, and paying a quarter-second entrance every time made the whole app feel slower than it is. Real dialogs keep theirs.",
+        "in": "0.83.2"
+      },
+      {
+        "text": "Three missing movements: the editor's bottom bar no longer snaps between “Convert” and the result but transitions briefly; when a notification closes, the rest settle smoothly instead of jumping; and in Settings the active tab's highlight travels along the sidebar just like the selectors' does.",
+        "in": "0.83.2"
       }
     ]
   },

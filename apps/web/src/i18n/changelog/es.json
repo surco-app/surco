@@ -51,6 +51,18 @@
       {
         "text": "El selector Ninguna / Loudness / Pico —y todos los interruptores de ese tipo en el editor y en Ajustes— va ahora sobre un carril hundido, y el valor activo se desliza al cambiar en vez de saltar. Antes parecía una fila de pestañas, y lo que había debajo parecía contenido de la pestaña: por eso «Eliminar desplazamiento DC» daba la impresión de pertenecer a Ninguna, un modo donde no hace nada. Esa casilla ahora solo aparece en Loudness y Pico, que es donde se aplica.",
         "in": "0.83.1"
+      },
+      {
+        "text": "El resaltado deslizante de esos selectores estrenó tres defectos y aquí mueren los tres: hacía un viaje desde los bordes hasta el valor activo nada más abrir (ahora solo se mueve cuando cambias tú de valor), podía dejar asomando un trocito del vecino, y recortaba una pizca el borde derecho del segmento activo. Debajo había lo mismo: medir la geometría con el modal aún entrando en escena.",
+        "in": "0.83.2"
+      },
+      {
+        "text": "La paleta de comandos (⌘K) abre al instante, sin animación de entrada. Es una superficie que se abre decenas de veces al día, casi siempre desde el teclado, y pagar una entrada de un cuarto de segundo cada vez hacía sentir lenta a toda la app. Los diálogos de verdad conservan la suya.",
+        "in": "0.83.2"
+      },
+      {
+        "text": "Tres movimientos que faltaban: la barra inferior del editor ya no cambia de golpe entre «Convertir» y el resultado, sino con una transición breve; al cerrarse una notificación las demás se asientan suavemente en vez de saltar; y en Ajustes el resaltado de la pestaña activa viaja por la barra lateral igual que el de los selectores.",
+        "in": "0.83.2"
       }
     ]
   },
