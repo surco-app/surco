@@ -17,6 +17,10 @@ interface Props {
   align?: 'center' | 'top'
   // When set, the body is wrapped in a form so Enter submits via the primary button.
   onSubmit?: () => void
+  // Skips the entrance animation (dialog pop and backdrop fade). For surfaces opened
+  // many times a day — the command palette — where paying an entrance on every open
+  // makes the app feel slower than it is. Card dialogs keep the default.
+  instant?: boolean
   children: React.ReactNode
 }
 
@@ -34,6 +38,7 @@ export function ModalShell({
   label,
   align = 'center',
   onSubmit,
+  instant = false,
   children,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -63,7 +68,7 @@ export function ModalShell({
         data-testid={backdropTestId}
         aria-label={tr('common.close')}
         onClick={onClose}
-        className="animate-overlay absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className={`${instant ? '' : 'animate-overlay '}absolute inset-0 bg-black/60 backdrop-blur-sm`}
       />
       <div
         ref={dialogRef}
@@ -72,7 +77,7 @@ export function ModalShell({
         data-testid={dialogTestId}
         aria-labelledby={labelledBy}
         aria-label={label}
-        className={`animate-pop relative z-10 ${className}`}
+        className={`${instant ? '' : 'animate-pop '}relative z-10 ${className}`}
       >
         {body}
       </div>

@@ -94,6 +94,9 @@ export function CommandPalette({
       backdropTestId="palette-backdrop"
       label={t('header.palette')}
       align="top"
+      // Opened dozens of times a day, usually from the keyboard: it must appear
+      // instantly (the Raycast rule) — an entrance here reads as input latency.
+      instant
       className="w-[560px] overflow-hidden rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)]"
     >
       <input
