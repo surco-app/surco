@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 interface Props<T extends string> {
   options: readonly T[]
@@ -35,7 +35,15 @@ export function SegmentedControl<T extends string>({
   className,
 }: Props<T>): React.JSX.Element {
   const overlayRef = useRef<HTMLDivElement>(null)
-  const [clip, setClip] = useState({ left: 0, right: 0 })
+  // null = no real measurement yet. A control can mount before it has geometry (a
+  // hidden wizard step, a modal mid-entrance): zeros read as clip inset(0 0 0 0) —
+  // the WHOLE track raised — and the first real measurement then slid the highlight
+  // from both edges onto the active segment. Until geometry lands, no highlight.
+  const [clip, setClip] = useState<{ left: number; right: number } | null>(null)
+  // The slide is for changing VALUE, never for arriving on screen: the transition
+  // class is withheld until one real clip has painted, so the first measurement
+  // (and the first after being re-hidden) lands instantly.
+  const [settled, setSettled] = useState(false)
   // Measured before paint, so the highlight lands on the mounted value without a
   // slide from the far left. The ResizeObserver re-measures when the labels change
   // width under it (language switch, late font) — the value itself is a dep, so a
@@ -49,6 +57,11 @@ export function SegmentedControl<T extends string>({
       )
       if (!overlay || !active) return
       const o = overlay.getBoundingClientRect()
+      if (o.width === 0) {
+        setClip(null)
+        setSettled(false)
+        return
+      }
       const b = active.getBoundingClientRect()
       setClip({ left: b.left - o.left, right: o.right - b.right })
     }
@@ -58,6 +71,9 @@ export function SegmentedControl<T extends string>({
     ro.observe(track)
     return () => ro.disconnect()
   }, [value, testidPrefix])
+  useEffect(() => {
+    if (clip) setSettled(true)
+  }, [clip])
   return (
     <div
       // self-start: several callers stack settings in a flex column, whose default
@@ -87,11 +103,17 @@ export function SegmentedControl<T extends string>({
         // painted raised, then clips down to the active option's box. clip-path is
         // composited and a transition retargets from the current clip, so rapid
         // clicks redirect the slide mid-flight instead of restarting it.
-        className="absolute inset-0 flex gap-0.5 p-[3px] transition-[clip-path] duration-200 ease-[cubic-bezier(0.645,0.045,0.355,1)] motion-reduce:transition-none"
-        style={{
-          pointerEvents: 'none',
-          clipPath: `inset(0 ${clip.right}px 0 ${clip.left}px round 6px)`,
-        }}
+        className={`absolute inset-0 flex gap-0.5 p-[3px] motion-reduce:transition-none ${
+          settled ? 'transition-[clip-path] duration-200 ease-[cubic-bezier(0.645,0.045,0.355,1)]' : ''
+        }`}
+        style={
+          clip
+            ? {
+                pointerEvents: 'none',
+                clipPath: `inset(0 ${clip.right}px 0 ${clip.left}px round 6px)`,
+              }
+            : { pointerEvents: 'none', visibility: 'hidden' }
+        }
       >
         {options.map((id) => (
           <span
