@@ -2,6 +2,7 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig, NormalizeMode } from '../../../shared/types'
+import { SegmentedControl } from './SegmentedControl'
 
 interface Props {
   value: NormalizeConfig
@@ -111,27 +112,13 @@ export function NormalizeControls({
     }`
   return (
     <div>
-      <div className="inline-flex gap-1">
-        {MODES.map((mode) => (
-          <button
-            key={mode}
-            type="button"
-            data-testid={`normalize-mode-${mode}`}
-            aria-pressed={value.mode === mode}
-            onClick={() => onChange({ ...value, mode })}
-            // Same active state as the shared SegmentedControl — this mode switch predates it
-            // and maps a config object, so it stays hand-rolled but must not drift from the
-            // control it looks identical to (no background track, active segment filled).
-            className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
-              value.mode === mode
-                ? 'bg-[var(--color-panel-2)] text-fg'
-                : 'text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg'
-            }`}
-          >
-            {tr(`normalize.mode.${mode}`)}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        options={MODES}
+        value={value.mode}
+        onChange={(mode) => onChange({ ...value, mode })}
+        testidPrefix="normalize-mode"
+        labelFor={(mode) => tr(`normalize.mode.${mode}`)}
+      />
 
       {value.mode === 'loudness' && (
         <div ref={detailRef} className="mt-3 space-y-3">
