@@ -60,12 +60,15 @@ export function SegmentedControl<T extends string>({
       // alone skewed the clip whenever an ancestor was mid-transform (the settings
       // modal pops in at scale 0.98; clip-path applies unscaled — a sliver of the
       // neighbouring copy stayed visible, since ResizeObserver ignores transforms and
-      // never corrected it). Integer offsetLeft/offsetWidth alone rounded away the
-      // real layout's fractions and cut the raised segment's right ring flat. The
-      // ratio undoes any uniform ancestor scale while keeping subpixel precision.
-      const width = overlay.offsetWidth
+      // never corrected it). Integer offset metrics alone rounded away the layout's
+      // fractions and cut the raised segment's ring flat. And the layout width must
+      // come from computed style, not offsetWidth: offsetWidth rounds (527.65 → 528),
+      // which biased the factor by 0.07% and shaved ~0.2px off the ring even with no
+      // transform anywhere. Computed width is fractional and transform-free, so the
+      // factor is exactly 1 at rest and exactly the inverse scale mid-entrance.
+      const width = Number.parseFloat(getComputedStyle(overlay).width)
       const o = overlay.getBoundingClientRect()
-      if (width === 0 || o.width === 0) {
+      if (!width || o.width === 0) {
         setClip(null)
         setSettled(false)
         return

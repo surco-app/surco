@@ -94,18 +94,82 @@ describe('SegmentedControl sliding highlight', () => {
         />
       )
       const { rerender } = render(control('b'))
-      Object.defineProperty(screen.getByTestId('seg-highlight'), 'offsetWidth', {
-        value: 300,
-        configurable: true,
-      })
-      rerender(control('c'))
-      const overlay = screen.getByTestId('seg-highlight')
-      const m = overlay.style.clipPath.match(/inset\(0 ([\d.]+)px 0 ([\d.]+)px round/)
-      expect(m).not.toBeNull()
-      expect(Number(m?.[1])).toBeCloseTo(3, 1)
-      expect(Number(m?.[2])).toBeCloseTo(201, 1)
-      expect(overlay.style.visibility).not.toBe('hidden')
+      const overlayEl = screen.getByTestId('seg-highlight')
+      // The true layout width comes from computed style: fractional, unaffected by
+      // transforms. offsetWidth would round 300 → fine here, but 527.65 → 528 in the
+      // real app, and that lie skewed the factor and shaved the ring (see below).
+      const realGCS = window.getComputedStyle.bind(window)
+      const spy = vi
+        .spyOn(window, 'getComputedStyle')
+        .mockImplementation((el, pseudo) =>
+          el === overlayEl ? ({ width: '300px' } as CSSStyleDeclaration) : realGCS(el, pseudo),
+        )
+      try {
+        rerender(control('c'))
+        const m = overlayEl.style.clipPath.match(/inset\(0 ([\d.]+)px 0 ([\d.]+)px round/)
+        expect(m).not.toBeNull()
+        expect(Number(m?.[1])).toBeCloseTo(3, 1)
+        expect(Number(m?.[2])).toBeCloseTo(201, 1)
+        expect(overlayEl.style.visibility).not.toBe('hidden')
+      } finally {
+        spy.mockRestore()
+      }
     } finally {
+      Element.prototype.getBoundingClientRect = original
+    }
+  })
+
+  // Reported as "still minimally cut": with NO transform in play, the factor must be
+  // exactly 1 or the boundary creeps into the raised segment and shaves its ring's
+  // antialiasing. offsetWidth rounds the true layout width (527.65 → 528) and that
+  // 0.07% lie moved the right edge ~0.2px inward. The fractional computed-style width
+  // keeps the clip byte-identical to the rect deltas.
+  it('clips exactly on the button bounds when nothing is transformed', () => {
+    const original = Element.prototype.getBoundingClientRect
+    const rect = (left: number, right: number): DOMRect =>
+      ({
+        left,
+        right,
+        width: right - left,
+        top: 0,
+        bottom: 32,
+        height: 32,
+        x: left,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect
+    Element.prototype.getBoundingClientRect = function () {
+      const id = (this as Element).getAttribute?.('data-testid') ?? ''
+      if (id === 'seg-highlight') return rect(484, 1011.6484375)
+      if (id === 'seg-b') return rect(649.3984375, 732.265625)
+      return rect(0, 0.0001)
+    }
+    const onChange = vi.fn()
+    const control = (value: string): React.JSX.Element => (
+      <SegmentedControl
+        options={['a', 'b', 'c'] as const}
+        value={value}
+        onChange={onChange}
+        testidPrefix="seg"
+        labelFor={(id) => id.toUpperCase()}
+      />
+    )
+    const { rerender } = render(control('a'))
+    const overlayEl = screen.getByTestId('seg-highlight')
+    const realGCS = window.getComputedStyle.bind(window)
+    const spy = vi
+      .spyOn(window, 'getComputedStyle')
+      .mockImplementation((el, pseudo) =>
+        el === overlayEl ? ({ width: '527.6484375px' } as CSSStyleDeclaration) : realGCS(el, pseudo),
+      )
+    try {
+      rerender(control('b'))
+      const m = overlayEl.style.clipPath.match(/inset\(0 ([\d.]+)px 0 ([\d.]+)px round/)
+      expect(m).not.toBeNull()
+      expect(Number(m?.[1])).toBeCloseTo(1011.6484375 - 732.265625, 6)
+      expect(Number(m?.[2])).toBeCloseTo(649.3984375 - 484, 6)
+    } finally {
+      spy.mockRestore()
       Element.prototype.getBoundingClientRect = original
     }
   })
