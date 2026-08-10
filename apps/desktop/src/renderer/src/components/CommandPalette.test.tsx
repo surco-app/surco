@@ -24,6 +24,15 @@ describe('CommandPalette', () => {
     expect(screen.getByTestId('palette-input')).toHaveAccessibleName()
   })
 
+  // The palette is opened dozens of times a day, often from the keyboard — paying a
+  // 220ms pop on every open makes the whole app feel slower than it is. It must
+  // appear instantly, unlike the card dialogs that keep their entrance.
+  it('opens without an entrance animation', () => {
+    render(<CommandPalette commands={[cmd({ id: 'a', title: 'Add' })]} onClose={vi.fn()} />)
+    expect(screen.getByRole('dialog').className).not.toContain('animate-pop')
+    expect(screen.getByTestId('palette-backdrop').className).not.toContain('animate-overlay')
+  })
+
   // Virtual focus (aria-activedescendant) never scrolls on its own: with ~25
   // commands the list overflows, and arrowing below the fold would move the
   // highlight off-screen — Enter would then run an invisible command.
