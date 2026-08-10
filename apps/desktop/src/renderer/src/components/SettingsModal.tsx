@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { findConflicts, resolveBindings } from '../../../shared/shortcutDefaults'
 import type { Settings, ThemePref } from '../../../shared/types'
@@ -63,6 +63,25 @@ export function SettingsModal({
   // selection and focus together, wrapping around, per the ARIA tabs pattern. Left/Right
   // stay wired as aliases so muscle memory from the old horizontal row still works.
   const tabRefs = useRef<Partial<Record<SettingsTab, HTMLButtonElement | null>>>({})
+  // The active tab's pill is one element that TRAVELS between rows — the vertical
+  // sibling of the segmented control's sliding relief, so the two switch patterns in
+  // the app tell the same story. Measured before paint so opening the modal shows the
+  // pill already in place; the ResizeObserver re-measures when the sidebar's labels
+  // change width under it (language switch, late font).
+  const tablistRef = useRef<HTMLDivElement>(null)
+  const [pill, setPill] = useState<{ top: number; height: number } | null>(null)
+  useLayoutEffect(() => {
+    const list = tablistRef.current
+    const measure = (): void => {
+      const btn = tabRefs.current[tab]
+      if (btn) setPill({ top: btn.offsetTop, height: btn.offsetHeight })
+    }
+    measure()
+    if (!list || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    ro.observe(list)
+    return () => ro.disconnect()
+  }, [tab])
   function onTabKeyDown(e: React.KeyboardEvent, idx: number): void {
     const last = SETTINGS_TABS.length - 1
     let next = -1
@@ -187,11 +206,22 @@ export function SettingsModal({
           point a single centred row of ten tabs starts to crowd — every label gets its
           full width, and adding a tab costs a row, not horizontal space it doesn't have. */}
       <div
+        ref={tablistRef}
         role="tablist"
         aria-orientation="vertical"
         aria-label={tr('header.settings')}
-        className="flex w-[188px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-panel-2)] p-3"
+        // relative z-0 fences a stacking context so the pill's -z-10 stays above this
+        // column's own background instead of escaping behind it.
+        className="relative z-0 flex w-[188px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-panel-2)] p-3"
       >
+        {pill && (
+          <div
+            data-testid="settings-tab-indicator"
+            aria-hidden="true"
+            className="pointer-events-none absolute top-0 right-3 left-3 -z-10 rounded-lg bg-[var(--color-accent-soft)] transition-[transform,height] duration-200 ease-[cubic-bezier(0.645,0.045,0.355,1)] motion-reduce:transition-none"
+            style={{ transform: `translateY(${pill.top}px)`, height: pill.height }}
+          />
+        )}
         {SETTINGS_TAB_GROUPS.map((group) => (
           <div key={group.heading ?? 'main'} className="flex flex-col gap-0.5">
             {group.heading && (
@@ -219,11 +249,13 @@ export function SettingsModal({
                   tabIndex={tab === id ? 0 : -1}
                   onClick={() => setTab(id)}
                   onKeyDown={(e) => onTabKeyDown(e, idx)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                  // The button paints no background of its own — the sliding pill behind
+                  // it does (accent-soft, not field, so it reads against the panel-2
+                  // sidebar in light too). Text color shares the pill's 200ms so the two
+                  // arrive together.
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors duration-200 ${
                     tab === id
-                      ? // accent-soft (not field) so the selected tab reads against the panel-2
-                        // sidebar in light too, where field and panel-2 are nearly the same grey.
-                        'bg-[var(--color-accent-soft)] font-medium text-[var(--color-accent)]'
+                      ? 'font-medium text-[var(--color-accent)]'
                       : 'text-fg-muted hover:bg-[var(--color-panel)] hover:text-fg'
                   }`}
                 >
