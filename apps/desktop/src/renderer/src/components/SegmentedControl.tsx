@@ -56,14 +56,19 @@ export function SegmentedControl<T extends string>({
         `[data-testid="${testidPrefix}-${value}"]`,
       )
       if (!overlay || !active) return
-      const o = overlay.getBoundingClientRect()
-      if (o.width === 0) {
+      // Layout metrics, not getBoundingClientRect: viewport rects shrink with an
+      // ancestor transform (the settings modal pops in at scale 0.98) while the clip
+      // applies in unscaled local space, so a rect-based clip landed ~2% off and
+      // showed a sliver of the neighbouring copy — for good, because ResizeObserver
+      // ignores transforms and never re-measured. offsetLeft shares the overlay's
+      // origin: both are laid out against the track's padding box.
+      const width = overlay.offsetWidth
+      if (width === 0) {
         setClip(null)
         setSettled(false)
         return
       }
-      const b = active.getBoundingClientRect()
-      setClip({ left: b.left - o.left, right: o.right - b.right })
+      setClip({ left: active.offsetLeft, right: width - active.offsetLeft - active.offsetWidth })
     }
     measure()
     if (!track || typeof ResizeObserver === 'undefined') return
