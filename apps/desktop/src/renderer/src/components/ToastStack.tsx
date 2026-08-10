@@ -76,15 +76,28 @@ export function ToastStack({
   // arrives or screen readers miss the first toast. Empty it has zero size, so the
   // fixed corner div never intercepts a click.
   return (
-    <div aria-live="polite" className="fixed bottom-5 right-5 z-50 flex flex-col gap-2">
+    // Spacing lives INSIDE each collapsing wrapper (pt-2 on the inner div), not as a
+    // container gap: a gap would survive the row collapse and leave an 8px jump the
+    // moment the card unmounts. Padding above the topmost card falls outside anything
+    // visible, so the stack sits exactly where it always has.
+    <div aria-live="polite" className="fixed bottom-5 right-5 z-50 flex flex-col">
       {cards.map(({ toast, leaving }) => (
-        <ToastCard
+        // The card's exit only fades it — the SPACE it held used to vanish at unmount,
+        // jumping every surviving toast a full card height in one frame. The grid row
+        // tweens 1fr→0fr alongside the fade (same 200ms as TOAST_LEAVE_MS), so the
+        // stack settles smoothly; a transition, so a mid-collapse re-push retargets.
+        <div
           key={toast.id}
-          toast={toast}
-          leaving={leaving}
-          onExpire={onExpire}
-          onClose={onClose}
-        />
+          className={`grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none ${
+            leaving ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'
+          }`}
+        >
+          {/* overflow-hidden only while collapsing — kept on, it would clip the
+              card's shadow for its whole life. min-h-0 lets the row actually shrink. */}
+          <div className={`min-h-0 pt-2 ${leaving ? 'overflow-hidden' : ''}`}>
+            <ToastCard toast={toast} leaving={leaving} onExpire={onExpire} onClose={onClose} />
+          </div>
+        </div>
       ))}
     </div>
   )

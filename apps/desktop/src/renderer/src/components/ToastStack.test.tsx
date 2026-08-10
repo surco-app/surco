@@ -157,6 +157,21 @@ describe('ToastStack', () => {
       expect(onExpire).not.toHaveBeenCalled()
     })
 
+    // The exit fades the card, but the SPACE it held used to vanish only at unmount —
+    // every surviving toast jumped a full card height in one frame. The wrapper row
+    // collapses in step with the fade, so neighbours settle instead of jumping.
+    it('collapses the leaving card’s row so surviving toasts settle, not jump', () => {
+      const two = [toast({ id: 'a', testid: 'app-notice' }), toast({ id: 'b', testid: 'b-toast' })]
+      const { rerender } = render(<ToastStack toasts={two} onExpire={vi.fn()} onClose={vi.fn()} />)
+      const wrapper = screen.getByTestId('app-notice').parentElement?.parentElement
+      expect(wrapper?.className).toContain('grid-rows-[1fr]')
+      rerender(<ToastStack toasts={[two[1]]} onExpire={vi.fn()} onClose={vi.fn()} />)
+      expect(wrapper?.className).toContain('grid-rows-[0fr]')
+      expect(screen.getByTestId('b-toast').parentElement?.parentElement?.className).toContain(
+        'grid-rows-[1fr]',
+      )
+    })
+
     // A dismissed card must not blink out of existence — it lingers just long enough
     // for its leave animation, then unmounts. Now that several toasts expire on their
     // own, an instant unmount reads as a rendering glitch, not a dismissal.
