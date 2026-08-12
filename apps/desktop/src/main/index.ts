@@ -56,6 +56,7 @@ import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
 import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import { expandPaths } from './expand'
 import { registerExportIpc } from './exportIpc'
+import { registerFeedbackIpc } from './feedback'
 import { convertAudio } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { isSameFile, removeRenamedOriginal } from './inplace'
@@ -1187,6 +1188,7 @@ function registerIpc(): void {
   ipcMain.handle('clipboard:hasImage', () => !clipboard.readImage().isEmpty())
 
   registerShellIpc(mediaAccess)
+  registerFeedbackIpc()
 
   // Restarts into the already-downloaded update. Paired with the update:downloaded
   // push below — without this handler the toast's "Restart" button rejects.
