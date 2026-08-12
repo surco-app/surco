@@ -1,4 +1,5 @@
-import { copyFile, readFile, rename, unlink, writeFile } from 'node:fs/promises'
+import { copyFile, readFile, unlink, writeFile } from 'node:fs/promises'
+import { renameWithRetry } from './renameRetry'
 import { applyPatches, matchedPatchCount, type NmlPatch } from './traktorNml'
 import { isTraktorRunning } from './traktorProcess'
 
@@ -66,7 +67,7 @@ export async function syncCollection(nmlPath: string, patches: NmlPatch[]): Prom
   const tmp = `${nmlPath}.surco-tmp`
   try {
     await writeFile(tmp, patched)
-    await rename(tmp, nmlPath)
+    await renameWithRetry(tmp, nmlPath)
   } catch {
     // The backup taken above is what actually protects the collection; the leftover
     // tmp file is not — left behind, it would keep shadowing every later sync at the

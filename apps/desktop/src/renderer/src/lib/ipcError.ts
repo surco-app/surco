@@ -5,3 +5,12 @@
 export function cleanIpcError(message: string): string {
   return message.replace(/^Error invoking remote method '[^']*': (?:Error: )?/, '')
 }
+
+// Whether a failure is Windows refusing to replace a file another program holds open
+// (see main/renameRetry.ts, which stamps the marker after its retries run out). The
+// IPC hop drops the error's `code` and every custom property, so this marker in the
+// message text is all that reaches the renderer — matched here so the row can name
+// the real cause instead of showing "EPERM: operation not permitted" to a DJ.
+export function isFileInUseMessage(message: string): boolean {
+  return message.includes('SURCO_FILE_IN_USE')
+}
