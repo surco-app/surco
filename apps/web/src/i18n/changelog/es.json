@@ -63,6 +63,14 @@
       {
         "text": "Tres movimientos que faltaban: la barra inferior del editor ya no cambia de golpe entre «Convertir» y el resultado, sino con una transición breve; al cerrarse una notificación las demás se asientan suavemente en vez de saltar; y en Ajustes el resaltado de la pestaña activa viaja por la barra lateral igual que el de los selectores.",
         "in": "0.83.2"
+      },
+      {
+        "text": "El botón de reportar un error ahora reporta de verdad. No abría absolutamente nada —en ningún sistema, sin aviso ni error—, así que todos los reportes que alguien intentó enviar se perdieron por el camino. Ahora abre en el navegador un informe ya rellenado con la versión, tu sistema y lo que ha fallado, incluidas las últimas líneas de error del registro; los nombres de tus carpetas no viajan, solo el del archivo implicado.",
+        "in": "0.83.3"
+      },
+      {
+        "text": "En Windows, guardar los cambios de una pista que tienes abierta en otro programa ya no falla. Si Traktor, el reproductor o el explorador tenían el archivo cogido en ese instante, Windows se negaba a reemplazarlo y el guardado se caía; ahora Surco espera un momento y lo reintenta, que es justo lo que suele bastar.",
+        "in": "0.83.3"
       }
     ]
   },

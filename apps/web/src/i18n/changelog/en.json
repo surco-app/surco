@@ -63,6 +63,14 @@
       {
         "text": "Three missing movements: the editor's bottom bar no longer snaps between “Convert” and the result but transitions briefly; when a notification closes, the rest settle smoothly instead of jumping; and in Settings the active tab's highlight travels along the sidebar just like the selectors' does.",
         "in": "0.83.2"
+      },
+      {
+        "text": "The report-an-error button now actually reports. It opened nothing at all — on any system, with no notice and no error — so every report anyone tried to send was lost on the way. It now opens a prefilled report in your browser with the version, your system and what failed, including the last error lines from the log; your folder names never travel, only the name of the file involved.",
+        "in": "0.83.3"
+      },
+      {
+        "text": "On Windows, saving changes to a track you have open in another program no longer fails. If Traktor, your player or Explorer happened to be holding the file, Windows refused to replace it and the save fell over; Surco now waits a moment and tries again, which is usually all it takes.",
+        "in": "0.83.3"
       }
     ]
   },
