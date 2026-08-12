@@ -16,7 +16,7 @@ import { type Destination, fromDestination } from '../lib/destination'
 import { exportedPatch } from '../lib/export'
 import { DEFAULT_REQUIRED_FIELDS, missingRequired } from '../lib/fields'
 import { sanitizeMeta } from '../lib/hygiene'
-import { cleanIpcError } from '../lib/ipcError'
+import { cleanIpcError, isFileInUseMessage } from '../lib/ipcError'
 import { renderOutputName } from '../lib/outputName'
 import { declickForJob, normalizeForJob } from '../lib/reapply'
 import type { TrackItem } from '../types'
@@ -286,7 +286,12 @@ export function useTrackProcessing({
         }
         return 'converted'
       } catch (e) {
-        const message = e instanceof Error ? cleanIpcError(e.message) : tr('editor.processError')
+        const raw = e instanceof Error ? cleanIpcError(e.message) : ''
+        const message = !raw
+          ? tr('editor.processError')
+          : isFileInUseMessage(raw)
+            ? tr('editor.fileInUseError')
+            : raw
         updateTrack(id, {
           status: 'error',
           error: message,

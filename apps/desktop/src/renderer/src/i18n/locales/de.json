@@ -446,6 +446,7 @@
     "releaseError": "Das Release konnte nicht geladen werden",
     "analyzeError": "Das Audio konnte nicht analysiert werden",
     "processError": "Verarbeitung fehlgeschlagen",
+    "fileInUseError": "Ein anderes Programm verwendet diese Datei (Antivirus, Player…). Schließe es und versuche es erneut.",
     "missingRequired": "Pflichtfelder fehlen: {{fields}}",
     "reportError": "Melden",
     "inLibrary": "In Mediathek",

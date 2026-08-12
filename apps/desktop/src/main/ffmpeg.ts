@@ -1,13 +1,6 @@
 import { execFile, spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import {
-  copyFile,
-  constants as fsConstants,
-  readFile,
-  rename,
-  stat,
-  unlink,
-} from 'node:fs/promises'
+import { copyFile, constants as fsConstants, readFile, stat, unlink } from 'node:fs/promises'
 import { constants as osConstants, setPriority, tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import { promisify } from 'node:util'
@@ -57,19 +50,20 @@ import {
 import { recordNmlPatch } from './nmlBatch'
 import {
   astatsArgs,
+  dcRemovalFilter,
   limitedLoudnormFilter,
   loudnormArgs,
   loudnormFilter,
   parseAstatsChannels,
   parseLoudnorm,
   parseMaxVolume,
-  dcRemovalFilter,
   peakChannelFilter,
   peakGainDb,
   reachesTargetLinearly,
   volumedetectArgs,
   volumeFilter,
 } from './normalize'
+import { renameWithRetry } from './renameRetry'
 import { getSettings } from './settings'
 import { MANAGED_ALIASES, TAG_FIELDS } from './tagFields'
 import { readTagFormats } from './tagFormats'
@@ -905,7 +899,8 @@ export async function normalizeFilter(
   //
   // Peak mode's own combined filter already subtracts the mean while sizing each channel,
   // so it opts out here rather than centring twice.
-  const peakOwnsDc = cfg.mode === 'peak' && (cfg.peakRemoveDc === true || cfg.peakPerChannel === true)
+  const peakOwnsDc =
+    cfg.mode === 'peak' && (cfg.peakRemoveDc === true || cfg.peakPerChannel === true)
   let dcAf: string | undefined
   if (cfg.removeDcOffset === true && !peakOwnsDc) {
     const channels = await cachedAnalysis(ns('astats-channels-v1'), input, async () => {
@@ -1295,7 +1290,7 @@ export async function convertAudio(
     // thumbnail, so a coverless (or cover-removed) FLAC stays fully standard.
     if (finderCovers && ext === '.flac' && coverPath && !removeCover)
       await runInWorker({ type: 'prependFlacId3', file: tmp, meta, coverPath })
-    await rename(tmp, output)
+    await renameWithRetry(tmp, output)
     // Comes after the rename, not before: the patch has to describe the file as
     // it now exists at `output`, and the cue-writing branches above (copyCueFrames,
     // copyCuesToFlac, shiftFlacCues) only ever touched `tmp`.

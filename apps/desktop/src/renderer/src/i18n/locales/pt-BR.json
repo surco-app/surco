@@ -446,6 +446,7 @@
     "releaseError": "Não foi possível carregar o release",
     "analyzeError": "Não foi possível analisar o áudio",
     "processError": "Falha ao processar",
+    "fileInUseError": "Outro programa está usando este arquivo (antivírus, player…). Feche-o e tente novamente.",
     "missingRequired": "Faltam campos obrigatórios: {{fields}}",
     "reportError": "Reportar",
     "inLibrary": "Na biblioteca",

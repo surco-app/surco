@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { copyFile, mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, extname, join, relative } from 'node:path'
 import type { Database } from 'sql.js'
 import { starsTagToEngineRating } from '../shared/rating'
@@ -13,6 +13,7 @@ import {
   trackRow,
 } from './engine'
 import { isEngineDjRunning } from './engineProcess'
+import { renameWithRetry } from './renameRetry'
 
 // Registers converted files in the user's own Engine DJ library (the "Engine DJ"
 // conversion destination), unlike engine.ts's export which always builds a fresh
@@ -232,7 +233,7 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
     // Write-then-rename so a crash mid-write can never leave a truncated m.db behind.
     const tmp = `${dbPath}.surco-tmp`
     await writeFile(tmp, db.export())
-    await rename(tmp, dbPath)
+    await renameWithRetry(tmp, dbPath)
   } finally {
     db.close()
   }

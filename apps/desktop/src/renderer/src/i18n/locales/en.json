@@ -446,6 +446,7 @@
     "releaseError": "Could not load the release",
     "analyzeError": "Could not analyze the audio",
     "processError": "Processing failed",
+    "fileInUseError": "Another program is using this file (antivirus, player…). Close it and try again.",
     "missingRequired": "Missing required fields: {{fields}}",
     "reportError": "Report",
     "inLibrary": "In library",
