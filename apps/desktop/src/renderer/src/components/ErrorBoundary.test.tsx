@@ -9,7 +9,11 @@ import { ErrorBoundary } from './ErrorBoundary'
 afterEach(cleanup)
 
 beforeEach(() => {
-  ;(window as unknown as { api: unknown }).api = { logError: vi.fn(), revealLog: vi.fn() }
+  ;(window as unknown as { api: unknown }).api = {
+    logError: vi.fn(),
+    revealLog: vi.fn(),
+    openFeedback: vi.fn(async () => {}),
+  }
 })
 
 function Bomb({ defused }: { defused?: boolean }): React.JSX.Element {
@@ -52,6 +56,24 @@ describe('ErrorBoundary', () => {
     )
     const { logError } = (window as unknown as { api: { logError: ReturnType<typeof vi.fn> } }).api
     expect(logError).toHaveBeenCalledWith('boom', expect.stringContaining('Bomb'))
+    silenced.mockRestore()
+  })
+
+  // A "the app went blank" report with only the message says nothing: the stack is
+  // what points at a line. It is on screen and in the log already, so leaving it out
+  // of the report was pure loss.
+  it('reports the crash with its stack', () => {
+    const silenced = vi.spyOn(console, 'error').mockImplementation(() => {})
+    render(
+      <ErrorBoundary>
+        <Bomb />
+      </ErrorBoundary>,
+    )
+    fireEvent.click(screen.getByTestId('report-crash'))
+    const { openFeedback } = (
+      window as unknown as { api: { openFeedback: ReturnType<typeof vi.fn> } }
+    ).api
+    expect(openFeedback).toHaveBeenCalledWith('boom', expect.stringContaining('Bomb'))
     silenced.mockRestore()
   })
 
