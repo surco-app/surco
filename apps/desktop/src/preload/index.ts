@@ -112,7 +112,8 @@ const api: Api = {
   logError: (message: string, stack?: string): void =>
     ipcRenderer.send('log:renderer', message, stack),
   revealLog: (): Promise<void> => ipcRenderer.invoke('log:reveal'),
-  openFeedback: (error?: string): Promise<void> => ipcRenderer.invoke('feedback:open', error),
+  openFeedback: (error?: string, stack?: string): Promise<void> =>
+    ipcRenderer.invoke('feedback:open', error, stack),
   spectrogram: (path: string, priority: 'high' | 'low' = 'low') =>
     ipcRenderer.invoke('audio:spectrogram', path, priority),
   loadCachedAnalyses: (

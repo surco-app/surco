@@ -157,7 +157,7 @@ export interface Api {
   revealLog: () => Promise<void>
   // Opens a prefilled report in the OS mail client. Only the error text crosses the
   // bridge; main stamps version and OS and builds the address itself.
-  openFeedback: (error?: string) => Promise<void>
+  openFeedback: (error?: string, stack?: string) => Promise<void>
   spectrogram: (path: string, priority?: 'high' | 'low') => Promise<SpectrumResult>
   // The list's one-shot warm-up on load: for each path, whatever spectrogram/channel-scan
   // entries are already on disk, computing nothing on a miss — see audioIpc.ts's
