@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { isRecoveryUrl, mediaPathFromUrl, mediaUrl } from '../../../shared/media'
@@ -11,7 +11,11 @@ import { usePlayer } from './usePlayer'
 afterEach(cleanup)
 
 beforeEach(() => {
-  ;(window as unknown as { api: unknown }).api = { recordStat: vi.fn(), logError: vi.fn() }
+  ;(window as unknown as { api: unknown }).api = {
+    recordStat: vi.fn(),
+    logError: vi.fn(),
+    releasePlayingFile: vi.fn().mockResolvedValue(undefined),
+  }
 })
 
 function track(id: string, inputPath: string): TrackItem {
@@ -143,6 +147,28 @@ describe('usePlayer releaseFile', () => {
 
     expect(audio.pause).not.toHaveBeenCalled()
     expect(audio.src).toContain('a.mp3')
+  })
+
+  // The element teardown alone is what v0.83.4 shipped, and the bug survived it: the
+  // OS handle lives in main, held by the surco:// handler's read stream, and dropping
+  // the src only asks Chromium to cancel. Main must be told, and the caller must be
+  // able to wait for it — otherwise the rename races the descriptor.
+  it('asks main to close the descriptor and reports when it is gone', async () => {
+    playing('/m/a.mp3', '/m/a.mp3')
+
+    fireEvent.click(screen.getByTestId('release'))
+
+    await waitFor(() => expect(window.api.releasePlayingFile).toHaveBeenCalledWith('/m/a.mp3'))
+  })
+
+  // Releasing an unrelated file must not reach main either: destroying another track's
+  // stream would stop the audition the DJ is listening to.
+  it('does not ask main to close a file the player is not holding', () => {
+    playing('/m/a.mp3', '/m/other.mp3')
+
+    fireEvent.click(screen.getByTestId('release'))
+
+    expect(window.api.releasePlayingFile).not.toHaveBeenCalled()
   })
 })
 

@@ -93,6 +93,7 @@ const api: Api = {
   deleteAppleMusic: (persistentId: string, track: string) =>
     ipcRenderer.invoke('applemusic:delete', persistentId, track),
   processTrack: (job) => ipcRenderer.invoke('process:track', job),
+  releasePlayingFile: (path) => ipcRenderer.invoke('player:release', path),
   beginConversionBatch: (): void => ipcRenderer.send('process:batch-begin'),
   endConversionBatch: (): void => ipcRenderer.send('process:batch-end'),
   cancelJob: (jobId: string): void => ipcRenderer.send('process:cancel', jobId),

@@ -60,10 +60,11 @@ interface Params {
   // How many conversions overlap in a bulk run. Defaults to CONVERT_CONCURRENCY (all cores
   // but one); only overridden in tests, which pin it to make the concurrency deterministic.
   concurrency?: number
-  // Drops the player's stream when it holds the given path. An in-place export renames
-  // over the source file, and on Windows an open handle — the player's own surco://
-  // stream — makes that rename fail, so the file is released before the job starts.
-  releaseFile?: (path: string) => void
+  // Drops the player's stream when it holds the given path, resolving only once the OS
+  // descriptor is closed. An in-place export renames over the source file, and on
+  // Windows an open handle — the player's own surco:// stream — makes that rename fail,
+  // so the file is released, and the release confirmed, before the job starts.
+  releaseFile?: (path: string) => Promise<void>
 }
 
 interface TrackProcessing {
@@ -237,7 +238,11 @@ export function useTrackProcessing({
       // result comes back — by which point the rename has already had to succeed.
       // Releasing a file no export rewrites costs only a paused stream the player's
       // own watcher restarts, so the safe default is to release whenever it matches.
-      releaseFile?.(track.inputPath)
+      // Awaited, not fired and forgotten: tearing down the <audio> element merely asks
+      // Chromium to cancel, and the descriptor dies in main some time later. v0.83.4
+      // called this without waiting and users still hit the error — just intermittently,
+      // "it works on the third or fourth try", which is what a lost race looks like.
+      await releaseFile?.(track.inputPath)
       try {
         const result = await window.api.processTrack({
           id: track.id,

@@ -61,6 +61,7 @@ import { convertAudio } from './ffmpeg'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { isSameFile, removeRenamedOriginal } from './inplace'
 import { createMediaAccess } from './mediaAccess'
+import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { keymapMenuClick } from './menuCommand'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { abandonNmlBatch, beginNmlBatch, endNmlBatch } from './nmlBatch'
@@ -888,6 +889,13 @@ function registerIpc(): void {
     })
   })
 
+  // Awaited by the renderer before it starts an in-place export: the surco:// stream
+  // holds an OS handle on the very file the export renames over, and only main can
+  // confirm the descriptor is closed. Tearing down the <audio> element alone just
+  // asks Chromium to cancel, which reaches main asynchronously — the race the user
+  // reported as "it updates on the third or fourth try".
+  ipcMain.handle('player:release', (_e, path: string) => releaseMediaFile(path))
+
   ipcMain.handle('process:track', (e, job: ProcessJob) =>
     runProcessTrack(job, {
       settings: getSettings(),
@@ -1286,7 +1294,9 @@ app.whenReady().then(() => {
     const range = parseRange(req.headers.get('range'), size)
     if (range) {
       const { start, end } = range
-      const body = Readable.toWeb(createReadStream(filePath, { start, end })) as ReadableStream
+      const stream = createReadStream(filePath, { start, end })
+      trackMediaStream(requested, stream)
+      const body = Readable.toWeb(stream) as ReadableStream
       return new Response(body, {
         status: 206,
         headers: {
@@ -1297,7 +1307,9 @@ app.whenReady().then(() => {
         },
       })
     }
-    const body = Readable.toWeb(createReadStream(filePath)) as ReadableStream
+    const stream = createReadStream(filePath)
+    trackMediaStream(requested, stream)
+    const body = Readable.toWeb(stream) as ReadableStream
     return new Response(body, {
       status: 200,
       headers: { 'Content-Type': type, 'Content-Length': String(size), 'Accept-Ranges': 'bytes' },

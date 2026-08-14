@@ -308,7 +308,7 @@ export default function App(): React.JSX.Element {
   // The player's file release, reached through a ref because usePlayer is declared
   // below the conversion hook that has to call it — a conversion rewriting the file
   // the player streams must drop that handle first (see usePlayer's releaseFile).
-  const releaseFileRef = useRef<(path: string) => void>(() => {})
+  const releaseFileRef = useRef<(path: string) => Promise<void>>(async () => {})
   // The rows pinned into the current library-filter view, so a background auto-match that
   // flips a row's "already owned" verdict can't drop it out from under the user mid-work
   // (see filterWithSticky). Tied to the filter it was built for: switching filter (or

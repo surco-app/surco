@@ -119,6 +119,53 @@ describe('useTrackProcessing', () => {
     expect(calls).toEqual(['releaseFile', 'processTrack'])
   })
 
+  // v0.83.4 shipped the ordering above and the bug survived it: users saw the file
+  // update "on the third or fourth try". Calling the release first is not enough when
+  // the release is fire-and-forget — tearing down the <audio> element only asks
+  // Chromium to cancel, and the descriptor dies in main some time later. The
+  // conversion has to WAIT for that confirmation, so a release that resolves late
+  // must still hold processTrack back.
+  it('waits for the file to be released before the conversion starts', async () => {
+    const calls: string[] = []
+    const processTrack = vi.fn().mockImplementation(async () => {
+      calls.push('processTrack')
+      return { outputPath: '/m/a.wav', inPlace: true }
+    })
+    setApi({ processTrack })
+    let confirmRelease = (): void => {}
+    const releaseFile = vi.fn().mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          confirmRelease = () => {
+            calls.push('released')
+            resolve()
+          }
+        }),
+    )
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack: vi.fn(),
+          releaseFile,
+        }),
+      { wrapper: withClient() },
+    )
+    let done: Promise<unknown> | undefined
+    await act(async () => {
+      done = result.current.processOne('a')
+      await Promise.resolve()
+    })
+    // The descriptor has not closed yet, so the rename must not have been attempted.
+    expect(calls).toEqual([])
+    await act(async () => {
+      confirmRelease()
+      await done
+    })
+    expect(calls).toEqual(['released', 'processTrack'])
+  })
+
   // The hook is wired through App, where the player may not exist yet on the first
   // render — an optional dep must not turn a conversion into a crash.
   it('converts normally when no player is wired up', async () => {
