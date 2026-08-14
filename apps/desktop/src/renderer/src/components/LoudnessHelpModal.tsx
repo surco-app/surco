@@ -52,8 +52,14 @@ export function LoudnessHelpModal({ onClose }: Props): React.JSX.Element {
             {tr(`editor.loudness${m}Help`)}{' '}
             <span className="text-fg" data-testid={`loudness-help-range-${m.toLowerCase()}`}>
               {tr(`editor.loudnessRange${m}`)}
-            </span>{' '}
-            <span data-testid={`loudness-help-fix-${m.toLowerCase()}`}>
+            </span>
+            {/* On its own line, not trailing the description: a reader scanning for
+                whether Surco can fix a figure was losing that answer in the prose. Its
+                own copy already, so splitting it costs no translation churn. */}
+            <span
+              data-testid={`loudness-help-fix-${m.toLowerCase()}`}
+              className="mt-1 block border-l-2 border-[var(--color-line-strong)] pl-2.5"
+            >
               {tr(`editor.loudnessFix${m}`)}
             </span>
           </p>
