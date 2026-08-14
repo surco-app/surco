@@ -165,6 +165,11 @@ export interface NormalizePrediction {
   // applies the full gain and limits the overs instead of falling short. The peak then
   // sits ON the ceiling rather than above it.
   limited: boolean
+  // The constant gain the conversion applies, for the figures that simply ride along
+  // with it (the noise floor). Null once the limiter engages: it holds the loud passages
+  // back while the quiet ones still take the full gain, so no single figure describes
+  // the shift and an estimate built on the nominal gain would overstate it.
+  gainDb: number | null
 }
 
 export function predictNormalized(
@@ -182,7 +187,7 @@ export function predictNormalized(
     // Peak mode sizes its gain from the peak, so the peak lands exactly on the target
     // and the loudness follows by the same amount.
     const gain = cfg.peakDb - peak
-    return { lufs: lufs + gain, truePeakDb: cfg.peakDb, limited: false }
+    return { lufs: lufs + gain, truePeakDb: cfg.peakDb, limited: false, gainDb: gain }
   }
 
   // Same clamps ffmpeg enforces (loudnorm rejects I outside [-70,-5], TP outside [-9,0]),
@@ -194,5 +199,10 @@ export function predictNormalized(
   // reachesTargetLinearly, restated: when the gained peak would clear the ceiling, the
   // conversion still applies the full gain and holds the overs at the ceiling.
   const limited = linearPeak > ceiling
-  return { lufs: target, truePeakDb: limited ? ceiling : linearPeak, limited }
+  return {
+    lufs: target,
+    truePeakDb: limited ? ceiling : linearPeak,
+    limited,
+    gainDb: limited ? null : gain,
+  }
 }

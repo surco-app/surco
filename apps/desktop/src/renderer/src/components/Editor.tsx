@@ -4,7 +4,6 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
-import { useSectionNavigation } from '../hooks/useSectionNavigation'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
 import type {
@@ -21,6 +20,7 @@ import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
 import { useKey } from '../hooks/useKey'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
+import { useSectionNavigation } from '../hooks/useSectionNavigation'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { useTrackProperties } from '../hooks/useTrackProperties'
@@ -1095,6 +1095,7 @@ export const Editor = memo(function Editor({
                             item={item}
                             showSpectrum={showSpectrum}
                             showLoudness={showLoudness}
+                            normalize={normalizeCfg}
                             open={spectrumOpen}
                             onToggle={() => setSectionOpen('quality', !spectrumOpen)}
                             onShowLoudnessHelp={onShowLoudnessHelp}

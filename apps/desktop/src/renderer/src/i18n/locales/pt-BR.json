@@ -397,6 +397,8 @@
     "loudnessGradeGood": "Bom",
     "loudnessGradeWarn": "Regular",
     "loudnessGradeBad": "Verificar",
+    "loudnessEstimateSame": "sem mudança",
+    "loudnessEstimateLegend": "Em itálico: estimativa após converter com seus ajustes de normalização.",
     "spectrumAlt": "Espectrograma de frequências da faixa",
     "spectrumCutoff": "corte ~{{cutoff}}",
     "spectrumHighs": "agudos até ~{{cutoff}}",

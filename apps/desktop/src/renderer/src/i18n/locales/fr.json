@@ -397,6 +397,8 @@
     "loudnessGradeGood": "Bien",
     "loudnessGradeWarn": "Moyen",
     "loudnessGradeBad": "À vérifier",
+    "loudnessEstimateSame": "inchangé",
+    "loudnessEstimateLegend": "En italique : estimation après conversion avec tes réglages de normalisation.",
     "spectrumAlt": "Spectrogramme de fréquences du morceau",
     "spectrumCutoff": "coupure ~{{cutoff}}",
     "spectrumHighs": "aigus jusqu'à ~{{cutoff}}",

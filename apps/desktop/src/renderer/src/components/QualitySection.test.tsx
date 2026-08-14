@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { SpectrumResult } from '../../../shared/types'
+import type { NormalizeConfig, SpectrumResult } from '../../../shared/types'
 import i18n from '../i18n'
 import { createQueryClient } from '../lib/queryClient'
 import { ToastProvider } from '../lib/toastContext'
@@ -19,6 +19,10 @@ vi.mock('../lib/qualityReport', async (importOriginal) => ({
 }))
 
 afterEach(cleanup)
+
+// These cases are about the spectrogram, and mount with the loudness table off; with
+// normalization off too, nothing here draws a post-conversion estimate.
+const OFF: NormalizeConfig = { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
 
 function track(inputPath = '/music/a.flac'): TrackItem {
   const fileName = inputPath.split('/').pop() ?? inputPath
@@ -60,6 +64,7 @@ function renderSection(spectrum: SpectrumResult, inputPath?: string): void {
         item={track(inputPath)}
         showSpectrum
         showLoudness={false}
+        normalize={OFF}
         open
         onToggle={vi.fn()}
         onShowLoudnessHelp={vi.fn()}
@@ -87,6 +92,7 @@ describe('QualitySection analysis gating', () => {
           item={track()}
           showSpectrum
           showLoudness={false}
+          normalize={OFF}
           open={false}
           onToggle={vi.fn()}
           onShowLoudnessHelp={vi.fn()}
@@ -113,6 +119,7 @@ describe('QualitySection analysis gating', () => {
           item={track()}
           showSpectrum
           showLoudness={false}
+          normalize={OFF}
           open
           onToggle={vi.fn()}
           onShowLoudnessHelp={vi.fn()}
@@ -222,6 +229,7 @@ describe('QualitySection verdict caption', () => {
             item={track('/m/a.flac')}
             showSpectrum
             showLoudness={false}
+            normalize={OFF}
             open
             onToggle={vi.fn()}
             onShowLoudnessHelp={vi.fn()}
@@ -340,6 +348,7 @@ describe('QualitySection analysis failure', () => {
           item={track()}
           showSpectrum
           showLoudness={false}
+          normalize={OFF}
           open
           onToggle={vi.fn()}
           onShowLoudnessHelp={vi.fn()}

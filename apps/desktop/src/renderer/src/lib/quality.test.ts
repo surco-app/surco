@@ -11,11 +11,11 @@ import {
   gradeLufs,
   gradeNoiseFloor,
   gradeTruePeak,
-  predictNormalized,
   isLosslessContainer,
   isLowResCover,
   isTranscode,
   MIN_COVER_PX,
+  predictNormalized,
   qualityVerdict,
 } from './quality'
 
@@ -320,7 +320,9 @@ describe('predictNormalized', () => {
   })
 
   it('reports the linear case as unlimited', () => {
-    expect(predictNormalized(cfg(), { integratedLufs: -9.2, truePeakDb: -0.3 })?.limited).toBe(false)
+    expect(predictNormalized(cfg(), { integratedLufs: -9.2, truePeakDb: -0.3 })?.limited).toBe(
+      false,
+    )
   })
 
   // Peak mode sizes its gain from the peak, not the loudness: the peak lands exactly on
@@ -332,6 +334,34 @@ describe('predictNormalized', () => {
     })
     expect(out?.truePeakDb).toBeCloseTo(-1, 5)
     expect(out?.lufs).toBeCloseTo(-13, 5)
+  })
+
+  // The gain the conversion applies, which the noise floor rides along with. Exposed
+  // because the quality table estimates the floor from it, and it is NOT the nominal
+  // target - source difference once the limiter is in play.
+  it('reports the applied gain for the linear case', () => {
+    expect(predictNormalized(cfg(), { integratedLufs: -20, truePeakDb: -12 })?.gainDb).toBeCloseTo(
+      6,
+      5,
+    )
+  })
+
+  // Peak mode sizes its gain from the peak, so the gain is the peak's own shift.
+  it('reports the applied gain in peak mode', () => {
+    const out = predictNormalized(cfg({ mode: 'peak', peakDb: -1 }), {
+      integratedLufs: -18,
+      truePeakDb: -6,
+    })
+    expect(out?.gainDb).toBeCloseTo(5, 5)
+  })
+
+  // Once the limiter engages, the loudest passages are held back while quiet ones still
+  // take the full gain, so no single figure describes what happened to the signal. The
+  // floor estimate has to drop out rather than claim a shift the conversion never made.
+  it('reports no usable gain when the limiter engages', () => {
+    const out = predictNormalized(cfg({ targetLufs: -9 }), { integratedLufs: -20, truePeakDb: -2 })
+    expect(out?.limited).toBe(true)
+    expect(out?.gainDb).toBeNull()
   })
 
   // Nothing to predict when normalization is off, or when a figure never landed — an

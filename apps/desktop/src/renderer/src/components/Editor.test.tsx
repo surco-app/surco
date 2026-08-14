@@ -53,7 +53,6 @@ function hoverForTooltip(trigger: HTMLElement): void {
   }
 }
 
-
 // The Editor's read-only data (currently Properties) is fetched through React Query,
 // so every mount needs a client in context. A fresh client per render keeps tests
 // isolated; retry:false lets a rejected probe settle into isError within waitFor.
@@ -690,6 +689,124 @@ describe('Editor loudness pills', () => {
     seedLoudness(healthy)
     renderEditor({ id: 'a' }, 'wav', { showLoudness: true })
     expect(await screen.findByTestId('loudness-help-toggle')).toHaveAccessibleName()
+  })
+})
+
+// A second user asked to read the post-conversion figures next to the measured ones,
+// instead of switching to the Normalize section to see where the track lands. The
+// estimate is the same prediction that section draws, so the two cannot disagree.
+describe('Editor loudness estimates', () => {
+  const measured: LoudnessResult = {
+    integratedLufs: -11.1,
+    truePeakDb: -0.4,
+    lra: 3.8,
+    channelBalanceDb: 0.1,
+    dcOffset: 0.004,
+    crestDb: 10.2,
+    noiseFloorDb: -58.3,
+  }
+
+  function seedLoudness(value: LoudnessResult): void {
+    ;(window as unknown as { api: { loudness: unknown } }).api.loudness = vi
+      .fn()
+      .mockResolvedValue(value)
+  }
+
+  const club: NormalizeConfig = {
+    mode: 'loudness',
+    targetLufs: -9,
+    truePeakDb: -1,
+    peakDb: -1,
+  }
+
+  // Normalization off means nothing is going to change, so an "estimated" column would
+  // just repeat the measurement in every row.
+  it('shows no estimate while normalization is off', async () => {
+    seedLoudness(measured)
+    renderEditor({ id: 'a' }, 'wav', {
+      showLoudness: true,
+      normalize: { ...club, mode: 'none' },
+    })
+    await screen.findByTestId('loudness-pill-lufs')
+    expect(screen.queryByTestId('loudness-estimate-lufs')).toBeNull()
+    expect(screen.queryByTestId('loudness-estimate-range')).toBeNull()
+  })
+
+  // The loudness lands on the target and the peak is pulled to the ceiling: this track
+  // needs +2.1 dB, which would push its -0.4 dBTP peak over the -1 ceiling.
+  it('estimates the loudness and peak the conversion will land on', async () => {
+    seedLoudness(measured)
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true, normalize: club })
+    expect(await screen.findByTestId('loudness-estimate-lufs')).toHaveTextContent('-9.0')
+    expect(screen.getByTestId('loudness-estimate-peak')).toHaveTextContent('-1.0')
+  })
+
+  // The heart of the request, and where it was wrong: the reporter expected dynamics to
+  // move when the peak does. Both modes apply a CONSTANT gain and Surco has no
+  // compressor, so peak and RMS shift together and their difference cannot change.
+  // Printing a shifted figure there would be a number the converted file contradicts.
+  it('marks the gain-invariant figures as unchanged instead of inventing a shift', async () => {
+    seedLoudness(measured)
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true, normalize: club })
+    await screen.findByTestId('loudness-estimate-lufs')
+    for (const id of ['range', 'crest', 'balance']) {
+      expect(screen.getByTestId(`loudness-estimate-${id}`)).toHaveTextContent(
+        i18n.t('editor.loudnessEstimateSame'),
+      )
+    }
+  })
+
+  // Removing the DC offset centres the signal, so the estimate is zero — but only when
+  // the box is actually ticked, since the mode alone doesn't touch it.
+  it('estimates a centred signal only when DC removal is on', async () => {
+    seedLoudness(measured)
+    renderEditor({ id: 'a' }, 'wav', {
+      showLoudness: true,
+      normalize: { ...club, removeDcOffset: true },
+    })
+    expect(await screen.findByTestId('loudness-estimate-dc')).toHaveTextContent('0.0%')
+  })
+
+  it('leaves the DC offset unchanged when removal is off', async () => {
+    seedLoudness(measured)
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true, normalize: club })
+    await screen.findByTestId('loudness-estimate-lufs')
+    expect(screen.getByTestId('loudness-estimate-dc')).toHaveTextContent(
+      i18n.t('editor.loudnessEstimateSame'),
+    )
+  })
+
+  // The floor rides the gain, but only while the gain is a single constant. This track
+  // limits (+2.1 dB over a -0.4 peak), so the loud passages are held back while quiet
+  // ones take the full gain and no single figure describes the floor's shift.
+  it('drops the noise floor estimate when the limiter engages', async () => {
+    seedLoudness(measured)
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true, normalize: club })
+    await screen.findByTestId('loudness-estimate-lufs')
+    expect(screen.queryByTestId('loudness-estimate-noise')).toBeNull()
+  })
+
+  // The estimate shares a cell with the measured figure and the label. Repeating the unit
+  // on both ("-11.1 LUFS  -9.0 LUFS") overflowed the widest label and the app rendered
+  // "Loudn…" — the same truncation a user had already reported in the Normalize header.
+  // The measured figure beside it carries the unit, so the estimate goes without.
+  it('leaves the unit to the measured figure so the widest label still fits', async () => {
+    seedLoudness(measured)
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true, normalize: club })
+    const estimate = await screen.findByTestId('loudness-estimate-lufs')
+    expect(estimate.textContent).toBe('-9.0')
+    expect(estimate.textContent).not.toMatch(/LUFS/)
+  })
+
+  // With headroom to spare the gain is constant all the way down, so the floor rises
+  // with it: -58.3 dB + 6 dB of gain (-20 LUFS up to the -14 target).
+  it('raises the noise floor by the gain when nothing is limited', async () => {
+    seedLoudness({ ...measured, integratedLufs: -20, truePeakDb: -12 })
+    renderEditor({ id: 'a' }, 'wav', {
+      showLoudness: true,
+      normalize: { ...club, targetLufs: -14 },
+    })
+    expect(await screen.findByTestId('loudness-estimate-noise')).toHaveTextContent('-52.3')
   })
 })
 
