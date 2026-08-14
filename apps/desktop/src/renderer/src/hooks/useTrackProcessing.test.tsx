@@ -88,6 +88,57 @@ describe('useTrackProcessing', () => {
     expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ status: 'processing' }))
   })
 
+  // Windows refuses to rename over a file another handle holds open, and the player's
+  // surco:// stream is such a handle on the file an in-place export rewrites — Surco
+  // blocking its own conversion, then reporting "another program is using this file".
+  // The release has to happen BEFORE the job starts: releasing after the write is what
+  // the rewrite watcher already did, and it is exactly what left the rename to fail. So
+  // the ordering, not merely the call, is the contract under test.
+  it('releases the played file before the conversion writes it', async () => {
+    const calls: string[] = []
+    const processTrack = vi.fn().mockImplementation(async () => {
+      calls.push('processTrack')
+      return { outputPath: '/m/a.wav', inPlace: true }
+    })
+    setApi({ processTrack })
+    const releaseFile = vi.fn().mockImplementation(() => calls.push('releaseFile'))
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack: vi.fn(),
+          releaseFile,
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(releaseFile).toHaveBeenCalledWith('/m/a.wav')
+    expect(calls).toEqual(['releaseFile', 'processTrack'])
+  })
+
+  // The hook is wired through App, where the player may not exist yet on the first
+  // render — an optional dep must not turn a conversion into a crash.
+  it('converts normally when no player is wired up', async () => {
+    setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }) })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.processOne('a')
+    })
+    expect(outcome).toBe('converted')
+  })
+
   // The trim rides the track (persisted, per-track), not a convert-time override:
   // every entry point — single convert, ⌘⏎, convert all — must send the staged
   // range without knowing it exists.

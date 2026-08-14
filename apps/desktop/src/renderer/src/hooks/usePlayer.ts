@@ -29,6 +29,9 @@ export interface Player {
   // when it's already the one playing — a play/stop toggle on the row itself.
   toggleTrack: (track: TrackItem) => void
   closePlayer: () => void
+  // Drops the stream when it is holding `path`, so a conversion about to rewrite that
+  // file can rename over it. No-op for any other path — see the implementation.
+  releaseFile: (path: string) => void
 }
 
 // The floating player follows the selection: while it's open, picking another
@@ -84,6 +87,23 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
     playerVisibleRef.current = false
     setPlayerVisible(false)
     setPlayingId(null)
+  }, [])
+
+  // Windows refuses to rename over a file another handle holds open, and the surco://
+  // stream is exactly such a handle on the file an in-place export is about to rewrite:
+  // Surco blocked its own conversion, then blamed "another program" in the error. So the
+  // element is torn down before the write, releasing the OS handle. Same teardown as
+  // closePlayer (pause + drop src + load, since removing src alone keeps the resource
+  // attached) but the card stays open: the rewrite watcher above restarts playback from
+  // the file's new path the moment the export lands, so the DJ hears it resume rather
+  // than losing the player mid-audition. Only the held path releases — silencing an
+  // unrelated track the DJ is auditioning would be pure interruption.
+  const releaseFile = useCallback((path: string): void => {
+    if (playingPathRef.current !== path) return
+    const audio = audioRef.current
+    audio?.pause()
+    audio?.removeAttribute('src')
+    audio?.load()
   }, [])
 
   // Removing (or clearing) the track that is playing must stop the audio: the
@@ -206,5 +226,14 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
   // between opening and the first track loading.
   const playerTrack = tracks.find((t) => t.id === playingId) ?? selected
 
-  return { audioRef, playerVisible, playerTrack, togglePlay, seek, toggleTrack, closePlayer }
+  return {
+    audioRef,
+    playerVisible,
+    playerTrack,
+    togglePlay,
+    seek,
+    toggleTrack,
+    closePlayer,
+    releaseFile,
+  }
 }
