@@ -71,6 +71,10 @@
       {
         "text": "En Windows, guardar los cambios de una pista que tienes abierta en otro programa ya no falla. Si Traktor, el reproductor o el explorador tenían el archivo cogido en ese instante, Windows se negaba a reemplazarlo y el guardado se caía; ahora Surco espera un momento y lo reintenta, que es justo lo que suele bastar.",
         "in": "0.83.3"
+      },
+      {
+        "text": "En Windows, actualizar una pista mientras la estás escuchando ya no falla. El aviso decía que otro programa tenía cogido el archivo, pero era el propio reproductor de Surco: al guardar sobre la pista que sonaba, Windows se negaba a reemplazarla y perdías los cambios. Ahora Surco suelta el archivo antes de escribirlo y sigue sonando donde lo dejaste.",
+        "in": "0.83.4"
       }
     ]
   },

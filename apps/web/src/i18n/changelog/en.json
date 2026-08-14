@@ -71,6 +71,10 @@
       {
         "text": "On Windows, saving changes to a track you have open in another program no longer fails. If Traktor, your player or Explorer happened to be holding the file, Windows refused to replace it and the save fell over; Surco now waits a moment and tries again, which is usually all it takes.",
         "in": "0.83.3"
+      },
+      {
+        "text": "On Windows, updating a track while you are listening to it no longer fails. The message blamed another program for holding the file, but it was Surco's own player: saving over the track that was playing made Windows refuse to replace it, and your changes were lost. Surco now releases the file before writing it, and playback picks up where you left off.",
+        "in": "0.83.4"
       }
     ]
   },
