@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.84",
+    "date": "14 de agosto de 2026",
+    "title": "Ver cómo va a quedar antes de convertir",
+    "items": [
+      {
+        "text": "La tabla de calidad de audio ahora enseña, junto a cada medición, cómo va a quedar tras convertir con tu normalización. Antes había que convertir el archivo para saberlo, o cambiar a la sección de Normalización para ver solo dos de las cifras. El volumen y el pico llevan su valor estimado; el rango, la dinámica y el balance dicen «sin cambio», porque normalizar sube o baja el nivel entero y no toca la distancia entre lo flojo y lo fuerte.",
+        "in": "0.84.0"
+      }
+    ]
+  },
+  {
     "version": "0.83",
     "date": "8 de agosto de 2026",
     "title": "Encontrar lo que queda por hacer, y poder deshacerlo",
