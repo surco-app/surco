@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.84",
+    "date": "August 14, 2026",
+    "title": "Seeing where a track lands before you convert it",
+    "items": [
+      {
+        "text": "The audio quality table now shows, next to each measurement, where the figure will land once you convert with your normalization settings. Until now you had to convert the file to find out, or switch to the Normalization section to see just two of the numbers. Loudness and peak get their estimate; range, dynamics and balance read “no change”, because normalizing moves the whole level up or down and leaves the distance between the quiet and loud parts alone.",
+        "in": "0.84.0"
+      }
+    ]
+  },
+  {
     "version": "0.83",
     "date": "August 8, 2026",
     "title": "Finding what's left to do, and being able to undo it",
