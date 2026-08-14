@@ -78,4 +78,51 @@ describe('renameWithRetry', () => {
     expect(rename).toHaveBeenCalledTimes(1)
     expect(sleep).not.toHaveBeenCalled()
   })
+
+  // Field diagnosis, not decoration: this bug only reproduces on Windows machines we
+  // cannot attach a debugger to, so the log has to answer "was the file still held,
+  // and for how long" on its own. A report that says "it failed" without these numbers
+  // is what sent the previous fix out unverified.
+  it('reports each blocked attempt so the log can prove the file was held', async () => {
+    const rename = vi
+      .fn()
+      .mockRejectedValueOnce(inUse('EPERM'))
+      .mockRejectedValueOnce(inUse('EBUSY'))
+      .mockResolvedValueOnce(undefined)
+    const onRetry = vi.fn()
+    await renameWithRetry('/tmp/a.tmp', '/out/a.flac', { rename, sleep: async () => {}, onRetry })
+    expect(onRetry.mock.calls.map(([info]) => info)).toEqual([
+      { attempt: 1, code: 'EPERM', waitMs: 100, path: '/out/a.flac' },
+      { attempt: 2, code: 'EBUSY', waitMs: 200, path: '/out/a.flac' },
+    ])
+  })
+
+  // The give-up path is the one a user actually reports, so it must be the loudest:
+  // without a final record the log would show four retries and then silence, leaving
+  // "did it eventually land?" unanswerable.
+  it('reports the give-up separately from the retries', async () => {
+    const rename = vi.fn().mockRejectedValue(inUse('EPERM'))
+    const onRetry = vi.fn()
+    await expect(
+      renameWithRetry('/tmp/a.tmp', '/out/a.flac', { rename, sleep: async () => {}, onRetry }),
+    ).rejects.toThrow(FILE_IN_USE_MARKER)
+    expect(onRetry.mock.calls.map(([info]) => info).at(-1)).toEqual({
+      attempt: 5,
+      code: 'EPERM',
+      waitMs: null,
+      path: '/out/a.flac',
+    })
+  })
+
+  // A rename that lands first try is the common case; logging it would bury the
+  // interesting events under one line per converted track in a bulk run.
+  it('stays silent when nothing blocked the rename', async () => {
+    const onRetry = vi.fn()
+    await renameWithRetry('/tmp/a.tmp', '/out/a.flac', {
+      rename: vi.fn().mockResolvedValue(undefined),
+      sleep: async () => {},
+      onRetry,
+    })
+    expect(onRetry).not.toHaveBeenCalled()
+  })
 })

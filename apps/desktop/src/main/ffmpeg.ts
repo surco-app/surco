@@ -4,6 +4,7 @@ import { copyFile, constants as fsConstants, readFile, stat, unlink } from 'node
 import { constants as osConstants, setPriority, tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import { promisify } from 'node:util'
+import log from 'electron-log/main'
 import { declickFilter } from '../shared/declick'
 import { formatRatingTag } from '../shared/rating'
 import { trimFilter } from '../shared/trim'
@@ -1290,7 +1291,16 @@ export async function convertAudio(
     // thumbnail, so a coverless (or cover-removed) FLAC stays fully standard.
     if (finderCovers && ext === '.flac' && coverPath && !removeCover)
       await runInWorker({ type: 'prependFlacId3', file: tmp, meta, coverPath })
-    await renameWithRetry(tmp, output)
+    // Logged because this failure only reproduces on Windows machines we cannot
+    // attach a debugger to: when a user reports "another program is using the file",
+    // these lines are the whole evidence — whether the destination was still held,
+    // by how many attempts, and whether it ever freed.
+    await renameWithRetry(tmp, output, {
+      onRetry: ({ attempt, code, waitMs, path }) =>
+        log.warn(
+          `rename blocked: ${code} on ${path} (attempt ${attempt}${waitMs === null ? ', giving up' : `, retrying in ${waitMs}ms`})`,
+        ),
+    })
     // Comes after the rename, not before: the patch has to describe the file as
     // it now exists at `output`, and the cue-writing branches above (copyCueFrames,
     // copyCuesToFlac, shiftFlacCues) only ever touched `tmp`.
