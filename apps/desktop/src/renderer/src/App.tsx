@@ -305,6 +305,10 @@ export default function App(): React.JSX.Element {
   // Ref twin of the bulk-action scope (declared early: the analysis sweep reads it
   // before the memo below exists); assigned right after bulkTracks is computed.
   const bulkTracksRef = useRef<TrackItem[]>([])
+  // The player's file release, reached through a ref because usePlayer is declared
+  // below the conversion hook that has to call it — a conversion rewriting the file
+  // the player streams must drop that handle first (see usePlayer's releaseFile).
+  const releaseFileRef = useRef<(path: string) => void>(() => {})
   // The rows pinned into the current library-filter view, so a background auto-match that
   // flips a row's "already owned" verdict can't drop it out from under the user mid-work
   // (see filterWithSticky). Tied to the filter it was built for: switching filter (or
@@ -732,6 +736,7 @@ export default function App(): React.JSX.Element {
     settings,
     updateTrack,
     refreshTrackFromDisk,
+    releaseFile: (path) => releaseFileRef.current(path),
     onConversion: maybeShowDonateNudge,
     onNormalizeSkipped: (name) => setNotice(tr('notices.normalizeSkipped', { name })),
     // Only when the repair actually touched samples: a clean track reporting "0
@@ -863,12 +868,21 @@ export default function App(): React.JSX.Element {
   }, [tracks, selectedIds])
   // The floating player (audio element, visibility, follow-selection playback)
   // lives in the hook; App renders the <audio> element and the card.
-  const { audioRef, playerVisible, playerTrack, togglePlay, seek, toggleTrack, closePlayer } =
-    usePlayer({
-      tracks,
-      selected,
-      selectedId,
-    })
+  const {
+    audioRef,
+    playerVisible,
+    playerTrack,
+    togglePlay,
+    seek,
+    toggleTrack,
+    closePlayer,
+    releaseFile,
+  } = usePlayer({
+    tracks,
+    selected,
+    selectedId,
+  })
+  releaseFileRef.current = releaseFile
   // While audio plays, the Dock icon's engraved wave animates (macOS only).
   useDockPlayingIndicator(audioRef)
 

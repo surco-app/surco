@@ -82,6 +82,70 @@ describe('usePlayer', () => {
   })
 })
 
+// Windows refuses to rename over a file another handle holds open, and the surco://
+// stream IS such a handle on the very file an in-place export rewrites. Surco was
+// blocking itself: the export's rename hit EPERM and told the DJ to close "another
+// program" that was Surco's own player. Releasing the element before the write is
+// what unblocks it, so these cover the release contract the conversion depends on.
+describe('usePlayer releaseFile', () => {
+  function ReleaseHarness({
+    tracks,
+    releasePath,
+  }: {
+    tracks: TrackItem[]
+    releasePath: string
+  }): React.JSX.Element {
+    const { audioRef, togglePlay, releaseFile } = usePlayer({
+      tracks,
+      selected: tracks[0] ?? null,
+      selectedId: tracks[0]?.id ?? null,
+    })
+    return (
+      <>
+        {/* biome-ignore lint/a11y/useMediaCaption: silent test fixture */}
+        <audio ref={audioRef} data-testid="audio" />
+        <button type="button" data-testid="toggle" onClick={togglePlay} />
+        <button type="button" data-testid="release" onClick={() => releaseFile(releasePath)} />
+      </>
+    )
+  }
+
+  function playing(inputPath: string, releasePath: string): HTMLAudioElement {
+    render(<ReleaseHarness tracks={[track('a', inputPath)]} releasePath={releasePath} />)
+    const audio = screen.getByTestId('audio') as HTMLAudioElement
+    audio.play = vi.fn().mockResolvedValue(undefined)
+    audio.pause = vi.fn()
+    audio.load = vi.fn()
+    fireEvent.click(screen.getByTestId('toggle'))
+    return audio
+  }
+
+  // Removing src alone doesn't release the media resource — the spec'd teardown needs
+  // load(). Without it the OS handle survives and the rename fails exactly as before,
+  // so asserting on load() is what proves the file is actually free, not just detached.
+  it('tears the element down so the export can rename over the streamed file', () => {
+    const audio = playing('/m/a.mp3', '/m/a.mp3')
+    expect(audio.src).toContain('a.mp3')
+
+    fireEvent.click(screen.getByTestId('release'))
+
+    expect(audio.pause).toHaveBeenCalled()
+    expect(audio.getAttribute('src')).toBeNull()
+    expect(audio.load).toHaveBeenCalled()
+  })
+
+  // Converting track B must not silence track A the DJ is auditioning: only the file
+  // actually being written is held, so releasing anything else is pure interruption.
+  it('leaves the stream alone when another track is the one being written', () => {
+    const audio = playing('/m/a.mp3', '/m/other.mp3')
+
+    fireEvent.click(screen.getByTestId('release'))
+
+    expect(audio.pause).not.toHaveBeenCalled()
+    expect(audio.src).toContain('a.mp3')
+  })
+})
+
 // A damaged file (mid-stream corruption is common in shared rips) kills the whole
 // element with a MediaError while every other player sails past the bad frames. The
 // element's error event is the only signal there is; without a retry through the
