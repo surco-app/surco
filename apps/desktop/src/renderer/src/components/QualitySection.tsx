@@ -2,6 +2,7 @@ import { ImageDown, TriangleAlert } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { NormalizeConfig } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useSpectrogram } from '../hooks/useSpectrogram'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
@@ -50,6 +51,10 @@ interface Props {
   item: TrackItem
   showSpectrum: boolean
   showLoudness: boolean
+  // The pending conversion's settings, so the loudness table can show where each figure
+  // will land. Owned by the Normalize section; read here because the figures it predicts
+  // are the ones this table measures.
+  normalize: NormalizeConfig
   open: boolean
   onToggle: () => void
   onShowLoudnessHelp: () => void
@@ -63,6 +68,7 @@ export function QualitySection({
   item,
   showSpectrum,
   showLoudness,
+  normalize,
   open,
   onToggle,
   onShowLoudnessHelp,
@@ -237,7 +243,11 @@ export function QualitySection({
             ) : null)}
           {showLoudness &&
             (loudness ? (
-              <LoudnessReadout loudness={loudness} onShowHelp={onShowLoudnessHelp} />
+              <LoudnessReadout
+                loudness={loudness}
+                normalize={normalize}
+                onShowHelp={onShowLoudnessHelp}
+              />
             ) : (
               // Measuring (undefined): show the pill placeholders so the figures don't pop
               // into empty space. A failed measure resolves null, and the skeleton hides —

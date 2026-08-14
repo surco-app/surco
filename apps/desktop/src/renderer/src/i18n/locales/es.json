@@ -397,6 +397,8 @@
     "loudnessGradeGood": "Bien",
     "loudnessGradeWarn": "Regular",
     "loudnessGradeBad": "Revisar",
+    "loudnessEstimateSame": "sin cambio",
+    "loudnessEstimateLegend": "En cursiva: estimación tras convertir con tus ajustes de normalización.",
     "spectrumAlt": "Espectrograma de frecuencias de la pista",
     "spectrumCutoff": "corte ~{{cutoff}}",
     "spectrumHighs": "agudos hasta ~{{cutoff}}",

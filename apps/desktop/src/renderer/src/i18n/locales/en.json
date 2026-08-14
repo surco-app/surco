@@ -397,6 +397,8 @@
     "loudnessGradeGood": "Good",
     "loudnessGradeWarn": "So-so",
     "loudnessGradeBad": "Check it",
+    "loudnessEstimateSame": "no change",
+    "loudnessEstimateLegend": "In italics: estimated after converting with your normalization settings.",
     "spectrumAlt": "Frequency spectrogram of the track",
     "spectrumCutoff": "cutoff ~{{cutoff}}",
     "spectrumHighs": "highs to ~{{cutoff}}",

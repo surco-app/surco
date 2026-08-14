@@ -397,6 +397,8 @@
     "loudnessGradeGood": "Gut",
     "loudnessGradeWarn": "Mittel",
     "loudnessGradeBad": "Prüfen",
+    "loudnessEstimateSame": "unverändert",
+    "loudnessEstimateLegend": "Kursiv: Schätzung nach der Konvertierung mit deinen Normalisierungseinstellungen.",
     "spectrumAlt": "Frequenz-Spektrogramm des Tracks",
     "spectrumCutoff": "Cutoff ~{{cutoff}}",
     "spectrumHighs": "Höhen bis ~{{cutoff}}",
