@@ -31,7 +31,7 @@ export interface Player {
   closePlayer: () => void
   // Drops the stream when it is holding `path`, so a conversion about to rewrite that
   // file can rename over it. No-op for any other path — see the implementation.
-  releaseFile: (path: string) => void
+  releaseFile: (path: string) => Promise<void>
 }
 
 // The floating player follows the selection: while it's open, picking another
@@ -98,12 +98,18 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
   // the file's new path the moment the export lands, so the DJ hears it resume rather
   // than losing the player mid-audition. Only the held path releases — silencing an
   // unrelated track the DJ is auditioning would be pure interruption.
-  const releaseFile = useCallback((path: string): void => {
+  // Both halves are needed and neither is enough alone: the element has to let go so
+  // Chromium stops re-requesting ranges, and main has to close the descriptor the
+  // surco:// handler opened — the element's teardown only *asks*, asynchronously, and
+  // v0.83.4 shipped that ask alone, leaving a race users hit as "it updates on the
+  // third or fourth try". The awaited IPC is what turns it into a sequence.
+  const releaseFile = useCallback(async (path: string): Promise<void> => {
     if (playingPathRef.current !== path) return
     const audio = audioRef.current
     audio?.pause()
     audio?.removeAttribute('src')
     audio?.load()
+    await window.api.releasePlayingFile(path)
   }, [])
 
   // Removing (or clearing) the track that is playing must stop the audio: the
