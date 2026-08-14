@@ -18,9 +18,19 @@ export function isFileInUseError(err: unknown): boolean {
 // bulk conversion visibly stuck on one track.
 const BACKOFF_MS = [100, 200, 400, 800, 1600]
 
+// What one blocked rename looked like. `waitMs` is null on the attempt that gave up,
+// since there is no further wait after it.
+export interface RenameBlocked {
+  attempt: number
+  code: string
+  waitMs: number | null
+  path: string
+}
+
 interface RenameDeps {
   rename?: (from: string, to: string) => Promise<void>
   sleep?: (ms: number) => Promise<void>
+  onRetry?: (info: RenameBlocked) => void
 }
 
 // Electron's IPC serializes a rejection down to its message alone — `code` and any
@@ -38,14 +48,22 @@ export const FILE_IN_USE_MARKER = 'SURCO_FILE_IN_USE'
 export async function renameWithRetry(
   from: string,
   to: string,
-  { rename = fsRename, sleep = defaultSleep }: RenameDeps = {},
+  { rename = fsRename, sleep = defaultSleep, onRetry }: RenameDeps = {},
 ): Promise<void> {
   for (let attempt = 0; ; attempt++) {
     try {
       return await rename(from, to)
     } catch (err) {
       if (!isFileInUseError(err)) throw err
-      if (attempt >= BACKOFF_MS.length - 1) {
+      const code = (err as NodeJS.ErrnoException).code as string
+      const lastAttempt = attempt >= BACKOFF_MS.length - 1
+      onRetry?.({
+        attempt: attempt + 1,
+        code,
+        waitMs: lastAttempt ? null : BACKOFF_MS[attempt],
+        path: to,
+      })
+      if (lastAttempt) {
         const held = err as NodeJS.ErrnoException
         held.message = `${FILE_IN_USE_MARKER}: ${held.message}`
         throw held
