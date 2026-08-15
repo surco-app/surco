@@ -448,7 +448,7 @@
     "releaseError": "Impossible de charger la release",
     "analyzeError": "Impossible d'analyser l'audio",
     "processError": "Échec du traitement",
-    "fileInUseError": "Un autre programme utilise ce fichier (antivirus, lecteur…). Fermez-le et réessayez.",
+    "fileInUseError": "Un autre programme utilise ce fichier (antivirus, lecteur…). Votre conversion n'est pas perdue : elle est enregistrée à côté, avec ~ à la fin du nom.",
     "missingRequired": "Champs obligatoires manquants : {{fields}}",
     "reportError": "Signaler",
     "inLibrary": "Dans la bibliothèque",
