@@ -115,13 +115,38 @@ describe('convertArgs', () => {
     expect(convertArgs('/in.wav', '/o.aiff', { codec: 'pcm_s16be' }, meta)).not.toContain('-af')
   })
 
-  it('maps the cover as attached art only when a cover is provided', () => {
-    expect(convertArgs('/in.wav', '/o.aiff', { codec: 'pcm_s16be' }, meta)).not.toContain(
-      'attached_pic',
-    )
+  it('maps a provided cover as attached art, from its own input', () => {
     const withCover = convertArgs('/in.wav', '/o.aiff', { codec: 'pcm_s16be' }, meta, '/cover.jpg')
     expect(withCover).toContain('/cover.jpg')
     expect(withCover).toContain('attached_pic')
+    expect(withCover).toContain('1:v')
+  })
+
+  // With no cover to apply, the source's own picture is carried across instead of
+  // dropped: a conversion whose only job was fixing a title used to strip the artwork
+  // the file already had. `?` keeps it optional so a picture-less source still converts.
+  it('carries the source picture across when no cover is applied', () => {
+    const args = convertArgs('/in.flac', '/o.aiff', { codec: 'pcm_s16be' }, meta)
+    expect(args).toContain('0:v?')
+    expect(args).toContain('attached_pic')
+  })
+
+  // Removal has to beat the carry-over, or the "remove artwork" button would do nothing
+  // on any re-encode.
+  it('drops the source picture when removal is requested', () => {
+    const args = convertArgs(
+      '/in.flac',
+      '/o.aiff',
+      { codec: 'pcm_s16be' },
+      meta,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true,
+    )
+    expect(args).not.toContain('0:v?')
+    expect(args).not.toContain('attached_pic')
   })
 
   it('never embeds the cover into a WAV target, whose single-stream RIFF container makes ffmpeg abort with "WAVE files have exactly one stream" — the art reaches Apple Music via AppleScript instead', () => {

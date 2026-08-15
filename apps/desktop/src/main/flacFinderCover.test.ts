@@ -150,4 +150,51 @@ describe('convertAudio with Finder covers enabled', () => {
     )
     expect(readFileSync(out).toString('latin1', 0, 4)).toBe('fLaC')
   })
+
+  // The gap this closes: the header was written only when a NEW cover was being applied,
+  // so a FLAC that already carried perfectly good art — the usual case when you are only
+  // fixing tags — came out with no header and stayed a blank icon in Finder. Users were
+  // running their own tools afterwards to bolt the header on by hand, which is precisely
+  // what this option exists to spare them.
+  it('writes the header for art the file already carries, with no new cover applied', async () => {
+    const withArt = join(dir, 'has-art.flac')
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-i',
+      flac,
+      '-i',
+      cover,
+      '-map',
+      '0:a',
+      '-map',
+      '1:v',
+      '-c:a',
+      'flac',
+      '-c:v',
+      'copy',
+      '-disposition:v',
+      'attached_pic',
+      withArt,
+    ])
+    const out = join(dir, 'out-existing-art.flac')
+    await convertAudio(
+      withArt,
+      out,
+      'flac',
+      meta,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true,
+    )
+    const buf = readFileSync(out)
+    expect(buf.toString('latin1', 0, 3)).toBe('ID3')
+    expect(buf.toString('latin1', leadingId3v2Size(buf), leadingId3v2Size(buf) + 4)).toBe('fLaC')
+  })
 })
