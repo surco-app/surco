@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MANUAL_STEPS, raceFrame, RACE_END, SURCO_TOTAL, TRACKS } from './race'
+import { MANUAL_STEPS, RACE_END, raceFrame, SURCO_TOTAL, TRACKS } from './race'
 
 describe('raceFrame', () => {
   // The whole claim of the section: the same 40 tracks, one job finishing while the

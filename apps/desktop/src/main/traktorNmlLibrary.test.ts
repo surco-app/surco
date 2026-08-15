@@ -37,8 +37,8 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   return { ...real, rename, copyFile }
 })
 
-import { isTraktorRunning } from './traktorProcess'
 import { syncCollection } from './traktorNmlLibrary'
+import { isTraktorRunning } from './traktorProcess'
 
 const NML = `<NML VERSION="19"><COLLECTION ENTRIES="1">
 <ENTRY TITLE="Uno"><LOCATION DIR="/:M/:" FILE="uno.aiff" VOLUME="HD"></LOCATION></ENTRY>

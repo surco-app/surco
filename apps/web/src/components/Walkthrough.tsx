@@ -8,9 +8,8 @@ import DeclickScene from './scenes/DeclickScene'
 import SceneLayout from './scenes/SceneLayout'
 import SpectrumPair from './scenes/SpectrumPair'
 import TagScene from './scenes/TagScene'
-import TrimScene from './scenes/TrimScene'
 import TrackRows from './scenes/TrackRows'
-
+import TrimScene from './scenes/TrimScene'
 
 // The six steps a file goes through, in order, each one showing the part of the app
 // that does it. The page sells the whole preparation flow, so it walks the flow
@@ -74,13 +73,7 @@ export default function Walkthrough() {
         <p className="mt-3 font-mono text-xs text-faint">{t('home.quality.note')}</p>
       </SceneLayout>
 
-      <SceneLayout
-        step={t('home.tag.step')}
-        title={t('home.tag.title')}
-        app={
-          <TagScene />
-        }
-      >
+      <SceneLayout step={t('home.tag.step')} title={t('home.tag.title')} app={<TagScene />}>
         <p>{t('home.tag.lede')}</p>
         <p className="mt-3 font-mono text-xs text-faint">{t('home.tag.note')}</p>
       </SceneLayout>
@@ -114,9 +107,7 @@ export default function Walkthrough() {
         wide
         step={t('home.batch.step')}
         title={t('home.batch.title')}
-        app={
-          <BatchScene />
-        }
+        app={<BatchScene />}
       >
         {t('home.batch.lede')}
       </SceneLayout>

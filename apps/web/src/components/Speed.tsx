@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { MANUAL_STEPS, raceFrame, RACE_END, TRACKS, type RaceFrame } from '../lib/race'
+import { MANUAL_STEPS, RACE_END, type RaceFrame, raceFrame, TRACKS } from '../lib/race'
 import Kicker from './Kicker'
 import Reveal from './Reveal'
 

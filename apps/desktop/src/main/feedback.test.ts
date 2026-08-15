@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { MAX_URL_LENGTH, buildIssueUrl, openFeedbackReport } from './feedback'
+import { buildIssueUrl, MAX_URL_LENGTH, openFeedbackReport } from './feedback'
 
 const ctx = { version: '0.1.2', platform: 'win32', error: 'ffmpeg exited 1' }
 
@@ -30,7 +30,8 @@ describe('buildIssueUrl', () => {
 
   it('omits the error section for plain feedback', () => {
     const body =
-      new URL(buildIssueUrl({ version: '0.1.2', platform: 'darwin' })).searchParams.get('body') ?? ''
+      new URL(buildIssueUrl({ version: '0.1.2', platform: 'darwin' })).searchParams.get('body') ??
+      ''
     expect(body).not.toContain('### Error')
     expect(body).toContain('macOS')
   })

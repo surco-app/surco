@@ -116,7 +116,9 @@ export function SegmentedControl<T extends string>({
         // composited and a transition retargets from the current clip, so rapid
         // clicks redirect the slide mid-flight instead of restarting it.
         className={`absolute inset-0 flex gap-0.5 p-[3px] motion-reduce:transition-none ${
-          settled ? 'transition-[clip-path] duration-200 ease-[cubic-bezier(0.645,0.045,0.355,1)]' : ''
+          settled
+            ? 'transition-[clip-path] duration-200 ease-[cubic-bezier(0.645,0.045,0.355,1)]'
+            : ''
         }`}
         style={
           clip

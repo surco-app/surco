@@ -1,13 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { SHORTCUT_DEFAULTS } from '../../../shared/shortcutDefaults'
-import { isClaimable } from './spaceClaim'
 import type { Settings } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import {
   buildCommands,
-  commandGroups,
   type Command,
   type CommandDeps,
+  commandGroups,
   filterCommands,
   filterTrackCommands,
   guideUrl,
@@ -15,6 +14,7 @@ import {
   trackLabel,
 } from './commands'
 import { DONATE_URL } from './donate'
+import { isClaimable } from './spaceClaim'
 
 function cmd(id: string, title: string): Command {
   return { id, title, enabled: true, group: 'app', run: () => {} }

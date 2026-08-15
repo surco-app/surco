@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
-  batchFrame,
   BATCH_QUEUE,
+  batchFrame,
   declickFrame,
-  tagFrame,
   TAG_FIELDS,
-  trimFrame,
   TRIM_CUT,
+  tagFrame,
+  trimFrame,
 } from './scenes'
 import { DECLICK_MARKS } from './waveforms'
 

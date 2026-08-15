@@ -234,10 +234,7 @@ export async function search(
       // floor — the auto-match probe scans the whole page regardless of what is shown —
       // and never above the API's own per_page ceiling.
       const wanted = formats.length > 1 ? shownResults * 2 : shownResults
-      const perPage = Math.min(
-        DISCOGS_MAX_PER_PAGE,
-        Math.max(formats.length > 1 ? 50 : 20, wanted),
-      )
+      const perPage = Math.min(DISCOGS_MAX_PER_PAGE, Math.max(formats.length > 1 ? 50 : 20, wanted))
       const opts: SearchOpts = { format: serverFormat, perPage }
       const keep = (raw: SearchResult[]): SearchResult[] =>
         dedupeResults(formats.length ? raw.filter((r) => matchesFormats(r, formats)) : raw)

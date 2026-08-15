@@ -3,13 +3,13 @@ import type { NormalizeConfig } from '../shared/types'
 import type { ChannelStats } from './normalize'
 import {
   astatsArgs,
+  dcRemovalFilter,
   limitedLoudnormFilter,
   loudnormArgs,
   loudnormFilter,
   parseAstatsChannels,
   parseLoudnorm,
   parseMaxVolume,
-  dcRemovalFilter,
   peakChannelFilter,
   peakGainDb,
   reachesTargetLinearly,

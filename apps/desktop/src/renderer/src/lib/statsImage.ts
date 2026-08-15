@@ -45,9 +45,7 @@ const MAX_CELLS = 4
 // the card and the Stats tab tell the story in the same sequence.
 export function statsImageCells(stats: LifetimeStats): StatsImageCell[] {
   const active = CELL_ORDER.filter((key) => stats[key] > 0)
-  const kept = new Set(
-    [...active].sort((a, b) => stats[b] - stats[a]).slice(0, MAX_CELLS),
-  )
+  const kept = new Set([...active].sort((a, b) => stats[b] - stats[a]).slice(0, MAX_CELLS))
   return active.filter((key) => kept.has(key)).map((key) => ({ key, value: stats[key] }))
 }
 
@@ -118,7 +116,6 @@ export function renderStatsImage(input: StatsImageInput): string {
     ctx.fillStyle = CARD.fgDim
     ctx.font = '34px system-ui, sans-serif'
     ctx.fillText(input.countLabel, centerX, y)
-
   }
 
   // Two-column tally grid; an odd last cell sits centered on its own row.

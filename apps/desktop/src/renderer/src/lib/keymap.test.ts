@@ -216,9 +216,7 @@ describe('keyToCommandId con ámbito', () => {
   // resolver al mismo comando que W. Sin esto el comando existe, la tecla llega al
   // listener y muere ahí — el fallo silencioso más caro de diagnosticar.
   it('resuelve una tecla suelta aunque se pulse con shift', () => {
-    expect(keyToCommandId(press('w', true), false, bindings, true, null)).toBe(
-      'trim-start-forward',
-    )
+    expect(keyToCommandId(press('w', true), false, bindings, true, null)).toBe('trim-start-forward')
     expect(keyToCommandId(press('w'), false, bindings, true, null)).toBe('trim-start-forward')
   })
 
@@ -268,12 +266,12 @@ describe('columnOf', () => {
 
   it('reconoce cada columna por su contenedor', () => {
     expect(columnOf(mount('<aside data-testid="sidebar"><b data-probe></b></aside>'))).toBe('list')
-    expect(
-      columnOf(mount('<div data-testid="matches-column"><b data-probe></b></div>')),
-    ).toBe('matches')
-    expect(
-      columnOf(mount('<div data-shortcut-scope="editor"><b data-probe></b></div>')),
-    ).toBe('editor')
+    expect(columnOf(mount('<div data-testid="matches-column"><b data-probe></b></div>'))).toBe(
+      'matches',
+    )
+    expect(columnOf(mount('<div data-shortcut-scope="editor"><b data-probe></b></div>'))).toBe(
+      'editor',
+    )
   })
 
   it('devuelve null fuera de las tres columnas y sin elemento', () => {

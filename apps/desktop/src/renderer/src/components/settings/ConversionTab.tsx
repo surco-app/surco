@@ -17,83 +17,81 @@ interface Props {
 export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   return (
-    <>
-      <SettingsSection first>
-        <div className="flex flex-col gap-5">
-          <SettingsField label={tr('settings.outputFormat')} hint={tr('settings.outputFormatHint')}>
-            <FormatSettingControl
-              value={synced.outputFormat}
-              onChange={(id) => patch('outputFormat', id)}
-              testidPrefix="settings-format"
-            />
-          </SettingsField>
+    <SettingsSection first>
+      <div className="flex flex-col gap-5">
+        <SettingsField label={tr('settings.outputFormat')} hint={tr('settings.outputFormatHint')}>
+          <FormatSettingControl
+            value={synced.outputFormat}
+            onChange={(id) => patch('outputFormat', id)}
+            testidPrefix="settings-format"
+          />
+        </SettingsField>
 
-          {/* Only offered while the export would transcode an mp3: under MP3 or "Same
+        {/* Only offered while the export would transcode an mp3: under MP3 or "Same
               as source" the rule never fires, so the checkbox would be noise. */}
-          {synced.outputFormat !== 'mp3' && synced.outputFormat !== 'source' && (
-            <SettingsCheckboxField
-              testid="settings-keep-mp3"
-              checked={synced.keepMp3Sources}
-              onChange={(v) => patch('keepMp3Sources', v)}
-              label={tr('settings.keepMp3Sources')}
-              hint={tr('settings.keepMp3SourcesHint')}
-            />
-          )}
+        {synced.outputFormat !== 'mp3' && synced.outputFormat !== 'source' && (
+          <SettingsCheckboxField
+            testid="settings-keep-mp3"
+            checked={synced.keepMp3Sources}
+            onChange={(v) => patch('keepMp3Sources', v)}
+            label={tr('settings.keepMp3Sources')}
+            hint={tr('settings.keepMp3SourcesHint')}
+          />
+        )}
 
-          {/* Contextual like the FLAC note: the encoder choice only matters while MP3 is
+        {/* Contextual like the FLAC note: the encoder choice only matters while MP3 is
               the pick, though it applies to every MP3 export (the editor's ad-hoc ones too). */}
-          {(synced.outputFormat === 'mp3' || synced.outputFormat === 'source') && (
-            <SettingsField label={tr('settings.mp3Quality')} hint={tr('settings.mp3QualityHint')}>
-              <SegmentedControl
-                options={['320', '256', '192', '160', '128', 'v0', 'v2'] as const}
-                value={synced.mp3Quality}
-                onChange={(id) => patch('mp3Quality', id)}
-                testidPrefix="settings-mp3-quality"
-                labelFor={(id) => tr(`settings.mp3Qualities.${id}`)}
-              />
-            </SettingsField>
-          )}
-
-          {/* Bit depth shapes the PCM/FLAC/ALAC encoders; LAME has no bit depth, so under
-              MP3 the control would read as a knob that does nothing. */}
-          {synced.outputFormat !== 'mp3' && (
-            <SettingsField label={tr('settings.bitDepth')} hint={tr('settings.bitDepthHint')}>
-              <SegmentedControl
-                options={['source', '16', '24'] as const}
-                value={synced.outputBitDepth}
-                onChange={(id) => patch('outputBitDepth', id)}
-                testidPrefix="settings-bit-depth"
-                labelFor={(id) => tr(`settings.bitDepths.${id}`)}
-              />
-            </SettingsField>
-          )}
-
-          <SettingsField label={tr('settings.sampleRate')} hint={tr('settings.sampleRateHint')}>
+        {(synced.outputFormat === 'mp3' || synced.outputFormat === 'source') && (
+          <SettingsField label={tr('settings.mp3Quality')} hint={tr('settings.mp3QualityHint')}>
             <SegmentedControl
-              options={['source', '44100', '48000'] as const}
-              value={synced.outputSampleRate}
-              onChange={(id) => patch('outputSampleRate', id)}
-              testidPrefix="settings-sample-rate"
-              labelFor={(id) => tr(`settings.sampleRates.${id}`)}
+              options={['320', '256', '192', '160', '128', 'v0', 'v2'] as const}
+              value={synced.mp3Quality}
+              onChange={(id) => patch('mp3Quality', id)}
+              testidPrefix="settings-mp3-quality"
+              labelFor={(id) => tr(`settings.mp3Qualities.${id}`)}
             />
           </SettingsField>
+        )}
 
-          {(synced.outputFormat === 'flac' || synced.outputFormat === 'source') && (
-            <SettingsField
-              label={tr('settings.flacCompression')}
-              hint={tr('settings.flacCompressionHint')}
-            >
-              <SegmentedControl
-                options={['0', '5', '8'] as const}
-                value={synced.flacCompression}
-                onChange={(id) => patch('flacCompression', id)}
-                testidPrefix="settings-flac-compression"
-                labelFor={(id) => tr(`settings.flacCompressions.${id}`)}
-              />
-            </SettingsField>
-          )}
-        </div>
-      </SettingsSection>
-    </>
+        {/* Bit depth shapes the PCM/FLAC/ALAC encoders; LAME has no bit depth, so under
+              MP3 the control would read as a knob that does nothing. */}
+        {synced.outputFormat !== 'mp3' && (
+          <SettingsField label={tr('settings.bitDepth')} hint={tr('settings.bitDepthHint')}>
+            <SegmentedControl
+              options={['source', '16', '24'] as const}
+              value={synced.outputBitDepth}
+              onChange={(id) => patch('outputBitDepth', id)}
+              testidPrefix="settings-bit-depth"
+              labelFor={(id) => tr(`settings.bitDepths.${id}`)}
+            />
+          </SettingsField>
+        )}
+
+        <SettingsField label={tr('settings.sampleRate')} hint={tr('settings.sampleRateHint')}>
+          <SegmentedControl
+            options={['source', '44100', '48000'] as const}
+            value={synced.outputSampleRate}
+            onChange={(id) => patch('outputSampleRate', id)}
+            testidPrefix="settings-sample-rate"
+            labelFor={(id) => tr(`settings.sampleRates.${id}`)}
+          />
+        </SettingsField>
+
+        {(synced.outputFormat === 'flac' || synced.outputFormat === 'source') && (
+          <SettingsField
+            label={tr('settings.flacCompression')}
+            hint={tr('settings.flacCompressionHint')}
+          >
+            <SegmentedControl
+              options={['0', '5', '8'] as const}
+              value={synced.flacCompression}
+              onChange={(id) => patch('flacCompression', id)}
+              testidPrefix="settings-flac-compression"
+              labelFor={(id) => tr(`settings.flacCompressions.${id}`)}
+            />
+          </SettingsField>
+        )}
+      </div>
+    </SettingsSection>
   )
 }

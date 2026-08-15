@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
-import { MANUAL_STEPS, raceFrame, RACE_END, TRACKS } from './race'
+import { MANUAL_STEPS, RACE_END, raceFrame, TRACKS } from './race'
 
 // Speed.tsx pairs MANUAL_STEPS with the translated manualSteps by index, and prints
 // each step's duration straight off MANUAL_STEPS. Nothing in the type system ties the
@@ -34,8 +34,10 @@ describe('the manual flow copy and its timings', () => {
 
     for (const locale of Object.values(LOCALES)) {
       const claimed = locale.speed.manualTime.match(/(\d+)\s*h\s*(\d+)/)
-      expect(claimed, `manualTime should read like "~2 h 45 min", got "${locale.speed.manualTime}"`).
-        not.toBeNull()
+      expect(
+        claimed,
+        `manualTime should read like "~2 h 45 min", got "${locale.speed.manualTime}"`,
+      ).not.toBeNull()
       const claimedMinutes = Number(claimed?.[1]) * 60 + Number(claimed?.[2])
       // Rounded for readability, so allow the copy to sit within a few minutes of the
       // computed total rather than demanding an exact match.

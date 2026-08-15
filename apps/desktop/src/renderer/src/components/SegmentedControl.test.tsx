@@ -160,7 +160,9 @@ describe('SegmentedControl sliding highlight', () => {
     const spy = vi
       .spyOn(window, 'getComputedStyle')
       .mockImplementation((el, pseudo) =>
-        el === overlayEl ? ({ width: '527.6484375px' } as CSSStyleDeclaration) : realGCS(el, pseudo),
+        el === overlayEl
+          ? ({ width: '527.6484375px' } as CSSStyleDeclaration)
+          : realGCS(el, pseudo),
       )
     try {
       rerender(control('b'))

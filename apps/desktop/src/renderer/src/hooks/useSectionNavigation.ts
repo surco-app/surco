@@ -13,7 +13,9 @@ export function useSectionNavigation(): void {
   useEffect(() => {
     const jump = (dir: 1 | -1): void => {
       const headers = [
-        ...document.querySelectorAll<HTMLElement>('[data-shortcut-scope="editor"] [data-section-header]'),
+        ...document.querySelectorAll<HTMLElement>(
+          '[data-shortcut-scope="editor"] [data-section-header]',
+        ),
       ]
       if (headers.length === 0) return
       const shown = headers.map((h) => h.dataset.sectionHeader ?? '')

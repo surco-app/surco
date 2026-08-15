@@ -96,11 +96,6 @@ describe('statsImageCells', () => {
       deezerMatches: 500,
     })
     expect(cells).toHaveLength(4)
-    expect(cells.map((c) => c.key)).toEqual([
-      'imported',
-      'listened',
-      'analyzed',
-      'discogsMatches',
-    ])
+    expect(cells.map((c) => c.key)).toEqual(['imported', 'listened', 'analyzed', 'discogsMatches'])
   })
 })

@@ -833,7 +833,10 @@ export function TrimSection({
     if (which === 'start') {
       commit({ ...shown, startSec: Math.min(Math.max(0, sec), endSec - MIN_KEEP_SEC) }, true)
     } else {
-      commit({ ...shown, endSec: Math.max(Math.min(durationSec, sec), startSec + MIN_KEEP_SEC) }, true)
+      commit(
+        { ...shown, endSec: Math.max(Math.min(durationSec, sec), startSec + MIN_KEEP_SEC) },
+        true,
+      )
     }
   }
 
@@ -859,8 +862,24 @@ export function TrimSection({
   // handles: a macro pad presses a key and the cut moves, instead of the user having to
   // click the handle first. The ref keeps each handler reading the current cut, so the
   // claim registers once per open/close instead of on every nudge.
-  const actionsRef = useRef({ nudge, audition, clearSide, suggestion, onChange, setContext, contextIndex })
-  actionsRef.current = { nudge, audition, clearSide, suggestion, onChange, setContext, contextIndex }
+  const actionsRef = useRef({
+    nudge,
+    audition,
+    clearSide,
+    suggestion,
+    onChange,
+    setContext,
+    contextIndex,
+  })
+  actionsRef.current = {
+    nudge,
+    audition,
+    clearSide,
+    suggestion,
+    onChange,
+    setContext,
+    contextIndex,
+  }
   useEffect(() => {
     if (!open) return
     const step = (which: Side, dir: 1 | -1, ctx: { shift?: boolean }): void =>
@@ -963,10 +982,7 @@ export function TrimSection({
   }
 
   return (
-    <div
-      data-testid="editor-trim"
-      className="mt-5 border-t border-[var(--color-line)] pt-5"
-    >
+    <div data-testid="editor-trim" className="mt-5 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
         sectionId="trim"
         maximizable
