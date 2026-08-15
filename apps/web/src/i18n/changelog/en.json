@@ -7,6 +7,14 @@
       {
         "text": "The audio quality table now shows, next to each measurement, where the figure will land once you convert with your normalization settings. Until now you had to convert the file to find out, or switch to the Normalization section to see just two of the numbers. Loudness and peak get their estimate; range, dynamics and balance read “no change”, because normalizing moves the whole level up or down and leaves the distance between the quiet and loud parts alone.",
         "in": "0.84.0"
+      },
+      {
+        "text": "On Windows you can now update a track while you are listening to it. It used to fail with a warning that another program had the file open, and that program was Surco's own player: it wasn't letting go of the file in time for the rewrite. It now releases the file and waits until it is free before writing, and playback carries on where you left it.",
+        "in": "0.84.1"
+      },
+      {
+        "text": "If the destination file is locked when a conversion finishes, you no longer lose the work. A finished conversion — audio, tags and cues all written — used to be discarded because the last step, moving the file into place, couldn't complete. It is now kept next to it with ~ at the end of the name, so all that's left is renaming it.",
+        "in": "0.84.1"
       }
     ]
   },
