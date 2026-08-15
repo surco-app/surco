@@ -407,6 +407,14 @@ export function useTrackLibrary({
   // restamps diskSignature — all editor state, none of it ours. A failed read is
   // swallowed and, notably, does not set metaReadFailed: the export that triggered this
   // succeeded, so the file is fine and the row is merely stale.
+  //
+  // Artwork is re-read into BOTH fields the UI paints from — the list reads
+  // embeddedCover, the editor's preview reads coverUrl — because they describe the same
+  // bytes. Refreshing only the first left the editor on the pre-conversion image, and the
+  // only way out was removing the track and loading it again: the whole collection
+  // retouched twice. The staged coverRemoved/metaCleared flags clear here for the same
+  // reason: the export they asked for has happened, so leaving them set would make the
+  // next export strip a cover the user has since put back.
   const refreshTrackFromDisk = useStableCallback(async (id: string, path: string) => {
     try {
       const { tags, duration, cover } = await window.api.readMeta(path)
@@ -417,8 +425,11 @@ export function useTrackLibrary({
         listLabel: s.title || fileName,
         duration: duration ?? undefined,
         embeddedCover: cover?.thumbUrl,
+        coverUrl: cover?.thumbUrl,
         embeddedCoverDims:
           cover && cover.width > 0 ? { w: cover.width, h: cover.height } : undefined,
+        coverRemoved: false,
+        metaCleared: false,
       }))
     } catch {
       // Cosmetic: the row keeps the values it already had.
