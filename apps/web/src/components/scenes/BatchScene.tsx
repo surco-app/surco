@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { batchFrame, BATCH_QUEUE, BATCH_TOTAL } from '../../lib/scenes'
+import { BATCH_QUEUE, BATCH_TOTAL, batchFrame } from '../../lib/scenes'
 import { useSceneProgress } from '../../lib/useSceneProgress'
 import AppFrame from './AppFrame'
 import TrackRows, { type Row } from './TrackRows'
@@ -51,58 +51,58 @@ export default function BatchScene() {
       busy={!frame.finished}
       progress={(frame.done / BATCH_TOTAL) * 100}
     >
-    <div ref={ref} className="grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-      <TrackRows rows={rows} />
-      <div className="border-t border-line p-5 lg:border-t-0 lg:border-l">
-        <div className="relative overflow-hidden rounded-lg bg-blue/20 px-3 py-2 font-mono text-[11px]">
-          <span
-            aria-hidden="true"
-            className="absolute inset-y-0 left-0 bg-blue/30 transition-[width] duration-200 ease-linear"
-            style={{ width: `${frame.fill * 100}%` }}
-          />
-          <span className="relative flex justify-between">
-            <span className="text-fg">
-              {frame.finished ? t('home.batch.ready') : t('home.batch.stage')}
-            </span>
-            <span className="text-faint">{t('home.batch.cancel')}</span>
-          </span>
-        </div>
-        <p className="mt-4 font-mono text-[9px] tracking-wider text-faint uppercase">
-          {t('home.batch.toLibrary')}
-        </p>
-        <div className="mt-1.5 grid grid-cols-2 gap-2">
-          {LIBRARY_DESTINATIONS.map((d, i) => (
+      <div ref={ref} className="grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+        <TrackRows rows={rows} />
+        <div className="border-t border-line p-5 lg:border-t-0 lg:border-l">
+          <div className="relative overflow-hidden rounded-lg bg-blue/20 px-3 py-2 font-mono text-[11px]">
             <span
-              key={d}
-              className={`rounded border px-2 py-1.5 text-center font-mono text-[11px] transition-colors duration-500 ${
-                i < frame.destinationsLit
-                  ? 'border-blue/45 bg-blue/10 text-blue'
-                  : 'border-line text-muted'
-              }`}
-            >
-              {d}
+              aria-hidden="true"
+              className="absolute inset-y-0 left-0 bg-blue/30 transition-[width] duration-200 ease-linear"
+              style={{ width: `${frame.fill * 100}%` }}
+            />
+            <span className="relative flex justify-between">
+              <span className="text-fg">
+                {frame.finished ? t('home.batch.ready') : t('home.batch.stage')}
+              </span>
+              <span className="text-faint">{t('home.batch.cancel')}</span>
             </span>
-          ))}
+          </div>
+          <p className="mt-4 font-mono text-[9px] tracking-wider text-faint uppercase">
+            {t('home.batch.toLibrary')}
+          </p>
+          <div className="mt-1.5 grid grid-cols-2 gap-2">
+            {LIBRARY_DESTINATIONS.map((d, i) => (
+              <span
+                key={d}
+                className={`rounded border px-2 py-1.5 text-center font-mono text-[11px] transition-colors duration-500 ${
+                  i < frame.destinationsLit
+                    ? 'border-blue/45 bg-blue/10 text-blue'
+                    : 'border-line text-muted'
+                }`}
+              >
+                {d}
+              </span>
+            ))}
+          </div>
+          <p className="mt-3 font-mono text-[9px] tracking-wider text-faint uppercase">
+            {t('home.batch.toFile')}
+          </p>
+          <div className="mt-1.5 grid grid-cols-4 gap-1.5">
+            {EXPORT_DESTINATIONS.map((d) => (
+              <span
+                key={d}
+                className="rounded border border-line px-1.5 py-1 text-center font-mono text-[9px] text-muted"
+              >
+                {d}
+              </span>
+            ))}
+          </div>
+          <p className="mt-5 font-mono text-[11px] text-green">{t('home.batch.cues')}</p>
+          <p className="mt-2 min-h-4 font-mono text-[11px] text-faint">
+            {frame.finished ? t('home.batch.summary') : ''}
+          </p>
         </div>
-        <p className="mt-3 font-mono text-[9px] tracking-wider text-faint uppercase">
-          {t('home.batch.toFile')}
-        </p>
-        <div className="mt-1.5 grid grid-cols-4 gap-1.5">
-          {EXPORT_DESTINATIONS.map((d) => (
-            <span
-              key={d}
-              className="rounded border border-line px-1.5 py-1 text-center font-mono text-[9px] text-muted"
-            >
-              {d}
-            </span>
-          ))}
-        </div>
-        <p className="mt-5 font-mono text-[11px] text-green">{t('home.batch.cues')}</p>
-        <p className="mt-2 min-h-4 font-mono text-[11px] text-faint">
-          {frame.finished ? t('home.batch.summary') : ''}
-        </p>
       </div>
-    </div>
     </AppFrame>
   )
 }

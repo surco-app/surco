@@ -5,8 +5,8 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WaveformResult } from '../../../shared/types'
-import { runKeyClaim } from '../lib/spaceClaim'
 import { createQueryClient } from '../lib/queryClient'
+import { runKeyClaim } from '../lib/spaceClaim'
 import '../i18n'
 import { drawWaveform } from '../lib/waveform'
 
@@ -71,7 +71,6 @@ beforeEach(() => {
     waveformWindow: vi.fn().mockResolvedValue(null),
   }
 })
-
 
 function section(over: Partial<React.ComponentProps<typeof TrimSection>> = {}): React.JSX.Element {
   return (

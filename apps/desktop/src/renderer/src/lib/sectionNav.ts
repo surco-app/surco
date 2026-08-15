@@ -5,11 +5,7 @@
 // `shown` is the sections actually on screen, in the user's own order — hidden ones and
 // ones whose condition does not hold are already out, so a jump can never land on a
 // header that is not there.
-export function nextSection(
-  shown: string[],
-  current: string | null,
-  dir: 1 | -1,
-): string | null {
+export function nextSection(shown: string[], current: string | null, dir: 1 | -1): string | null {
   if (shown.length === 0) return null
   const at = current === null ? -1 : shown.indexOf(current)
   // Nothing focused yet, or the focused section vanished under the user: start at the

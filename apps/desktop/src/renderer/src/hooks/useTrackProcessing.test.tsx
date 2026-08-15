@@ -365,7 +365,12 @@ describe('useTrackProcessing', () => {
       await result.current.processAll(tracks)
     })
     await waitFor(() =>
-      expect(result.current.batchSummary).toEqual({ converted: 2, skipped: 0, failed: 0, cancelled: false }),
+      expect(result.current.batchSummary).toEqual({
+        converted: 2,
+        skipped: 0,
+        failed: 0,
+        cancelled: false,
+      }),
     )
   })
 
@@ -740,7 +745,12 @@ describe('useTrackProcessing', () => {
     await act(async () => {
       await run
     })
-    expect(result.current.batchSummary).toEqual({ converted: 1, skipped: 1, failed: 0, cancelled: false })
+    expect(result.current.batchSummary).toEqual({
+      converted: 1,
+      skipped: 1,
+      failed: 0,
+      cancelled: false,
+    })
   })
 
   // The multi-select Apple Music sweep used to be an uninterruptible serial loop with
@@ -817,7 +827,12 @@ describe('useTrackProcessing', () => {
       await act(async () => {
         await result.current.processAll(tracks)
       })
-      expect(result.current.batchSummary).toEqual({ converted: 1, skipped: 0, failed: 0, cancelled: false })
+      expect(result.current.batchSummary).toEqual({
+        converted: 1,
+        skipped: 0,
+        failed: 0,
+        cancelled: false,
+      })
       await act(async () => {
         vi.advanceTimersByTime(6000)
       })
@@ -842,11 +857,21 @@ describe('useTrackProcessing', () => {
       await act(async () => {
         await result.current.processAll(tracks)
       })
-      expect(result.current.batchSummary).toEqual({ converted: 0, skipped: 0, failed: 1, cancelled: false })
+      expect(result.current.batchSummary).toEqual({
+        converted: 0,
+        skipped: 0,
+        failed: 1,
+        cancelled: false,
+      })
       await act(async () => {
         vi.advanceTimersByTime(6000)
       })
-      expect(result.current.batchSummary).toEqual({ converted: 0, skipped: 0, failed: 1, cancelled: false })
+      expect(result.current.batchSummary).toEqual({
+        converted: 0,
+        skipped: 0,
+        failed: 1,
+        cancelled: false,
+      })
     } finally {
       vi.useRealTimers()
     }

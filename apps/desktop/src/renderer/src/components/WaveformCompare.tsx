@@ -768,9 +768,7 @@ export function WaveformSolo({
                     : `${formatDb(normalize.peakDb)} dBFS`}
               </span>
               {predicted && (
-                <span className="shrink-0 text-fg-faint">
-                  {tr('normalize.predictionEstimate')}
-                </span>
+                <span className="shrink-0 text-fg-faint">{tr('normalize.predictionEstimate')}</span>
               )}
               {/* The felt number, on its own chip: how hard the conversion pushes,
                   the single figure worth reading at a glance. Signed and toned so a

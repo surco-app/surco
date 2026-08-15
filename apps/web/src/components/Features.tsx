@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { useAutoLanguage } from '../lib/useAutoLanguage'
 import Band from './Band'
 import DownloadButton from './DownloadButton'
 import Faq from './Faq'
@@ -9,7 +10,6 @@ import InstallSection from './InstallSection'
 import Kicker from './Kicker'
 import Reveal from './Reveal'
 import Speed from './Speed'
-import { useAutoLanguage } from '../lib/useAutoLanguage'
 
 const FEATURE_ICONS: GlyphName[] = ['convert', 'tag', 'spectrum', 'upload']
 
