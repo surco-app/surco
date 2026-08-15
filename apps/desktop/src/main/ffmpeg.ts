@@ -64,7 +64,7 @@ import {
   volumedetectArgs,
   volumeFilter,
 } from './normalize'
-import { renameWithRetry } from './renameRetry'
+import { renameWithRetry, rescuePath } from './renameRetry'
 import { getSettings } from './settings'
 import { MANAGED_ALIASES, TAG_FIELDS } from './tagFields'
 import { readTagFormats } from './tagFormats'
@@ -1300,6 +1300,11 @@ export async function convertAudio(
         log.warn(
           `rename blocked: ${code} on ${path} (attempt ${attempt}${waitMs === null ? ', giving up' : `, retrying in ${waitMs}ms`})`,
         ),
+      // The temp is a finished conversion by now — audio, tags and cues all written —
+      // so a destination that never frees must not cost the user the whole job. The
+      // catch below still unlinks, but the rescue has already moved the file away, so
+      // that unlink finds nothing and the work survives under a visible sibling name.
+      rescue: rescuePath,
     })
     // Comes after the rename, not before: the patch has to describe the file as
     // it now exists at `output`, and the cue-writing branches above (copyCueFrames,

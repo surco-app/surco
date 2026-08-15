@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { FILE_IN_USE_MARKER, isFileInUseError, renameWithRetry } from './renameRetry'
+import { FILE_IN_USE_MARKER, isFileInUseError, renameWithRetry, rescuePath } from './renameRetry'
 
 const inUse = (code: string): NodeJS.ErrnoException =>
   Object.assign(new Error(`${code}: operation not permitted, rename`), { code })
@@ -50,6 +50,56 @@ describe('renameWithRetry', () => {
     // Backoff, not a busy loop: a scan needs time to finish, and hammering the
     // destination five times in a row would just fail five times in a row.
     expect(sleep.mock.calls.map(([ms]) => ms)).toEqual([100, 200, 400, 800])
+  })
+
+  // The conversion is finished by the time the rename runs — audio, tags and cues are
+  // all in the temp — so giving up must not throw that work away. convertAudio's catch
+  // deletes the temp, which is right for a truncated ffmpeg output and catastrophic
+  // here: the user loses a whole conversion because its cheapest step was blocked.
+  // Landing it beside the intended output is what turns a lost job into a file to move.
+  it('rescues the finished file when the destination never frees', async () => {
+    const rename = vi.fn().mockRejectedValue(inUse('EPERM'))
+    await expect(
+      renameWithRetry('/tmp/a.tmp', '/music/Song.flac', {
+        rename,
+        sleep: async () => {},
+        rescue: () => '/music/Song~.flac',
+      }),
+    ).rejects.toThrow(FILE_IN_USE_MARKER)
+    // The last call is the rescue: same temp, now aimed at the sibling name.
+    expect(rename).toHaveBeenLastCalledWith('/tmp/a.tmp', '/music/Song~.flac')
+  })
+
+  // The rescue is a best effort on a volume that is already refusing writes. If it
+  // fails too, the caller must still get the original file-in-use error rather than
+  // whatever the rescue attempt threw — that error is what picks the translated message.
+  it('still reports the original failure when the rescue cannot land either', async () => {
+    // The rescue fails for an unrelated reason (read-only volume). Surfacing THAT error
+    // would show the user a disk-space message for a file-in-use problem, and the
+    // renderer picks its translated string off this very message.
+    const rename = vi.fn().mockImplementation(async (_from: string, to: string) => {
+      if (to === '/music/Song~.flac') throw inUse('EROFS')
+      throw inUse('EPERM')
+    })
+    await expect(
+      renameWithRetry('/tmp/a.tmp', '/music/Song.flac', {
+        rename,
+        sleep: async () => {},
+        rescue: () => '/music/Song~.flac',
+      }),
+    ).rejects.toThrow(FILE_IN_USE_MARKER)
+  })
+
+  // Without a rescue path the behaviour is unchanged, so the Traktor and Engine
+  // library writers — whose temps are disposable rewrites, not user work — keep
+  // failing cleanly instead of littering the collection folder.
+  it('does not rescue when the caller asks for none', async () => {
+    const rename = vi.fn().mockRejectedValue(inUse('EPERM'))
+    await expect(
+      renameWithRetry('/tmp/a.tmp', '/music/Song.flac', { rename, sleep: async () => {} }),
+    ).rejects.toThrow(FILE_IN_USE_MARKER)
+    expect(rename).toHaveBeenCalledTimes(5)
+    expect(rename.mock.calls.every(([, to]) => to === '/music/Song.flac')).toBe(true)
   })
 
   // Retrying a missing directory or a full disk only delays the error the caller
@@ -124,5 +174,34 @@ describe('renameWithRetry', () => {
       onRetry,
     })
     expect(onRetry).not.toHaveBeenCalled()
+  })
+})
+
+// When the rename never succeeds, convertAudio used to delete the temp — throwing away
+// a file whose audio, tags and cues were all already written, because the cheapest step
+// of the whole conversion failed. The work is rescued under a visible name instead.
+describe('rescuePath', () => {
+  // The temp is hidden (leading dot) and carries a random suffix no one can recognise,
+  // so keeping it as-is would hide the rescued work rather than hand it back. The name
+  // has to sit beside the intended output and read as an obvious sibling of it. The
+  // suffix stays wordless on purpose: main has no UI locale, and a translated word
+  // landing in the wrong language reads as corruption.
+  it('names the rescue after the intended output, visibly', () => {
+    expect(rescuePath('/music/Song.flac')).toBe('/music/Song~.flac')
+  })
+
+  // Two blocked conversions of the same track must not collide: the second rescue would
+  // overwrite the first, losing exactly the work this exists to save.
+  it('does not collide when a rescue already exists', () => {
+    const taken = new Set(['/music/Song~.flac'])
+    // Disambiguated by the app's existing "keep both" convention (uniqueOutputPath),
+    // not a second scheme invented here.
+    expect(rescuePath('/music/Song.flac', (p) => taken.has(p))).toBe('/music/Song~ (2).flac')
+  })
+
+  // Names carrying dots ("Artist - Track 2.0.flac") must keep every one of them: only
+  // the real extension is the split point.
+  it('keeps dots inside the name and only splits the extension', () => {
+    expect(rescuePath('/music/Track 2.0.flac')).toBe('/music/Track 2.0~.flac')
   })
 })

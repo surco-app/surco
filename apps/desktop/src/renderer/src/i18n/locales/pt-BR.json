@@ -448,7 +448,7 @@
     "releaseError": "Não foi possível carregar o release",
     "analyzeError": "Não foi possível analisar o áudio",
     "processError": "Falha ao processar",
-    "fileInUseError": "Outro programa está usando este arquivo (antivírus, player…). Feche-o e tente novamente.",
+    "fileInUseError": "Outro programa está usando este arquivo (antivírus, player…). Sua conversão não foi perdida: ela foi salva ao lado, com ~ no final do nome.",
     "missingRequired": "Faltam campos obrigatórios: {{fields}}",
     "reportError": "Reportar",
     "inLibrary": "Na biblioteca",

@@ -1,4 +1,7 @@
+import { existsSync } from 'node:fs'
 import { rename as fsRename } from 'node:fs/promises'
+import { basename, dirname, extname, join } from 'node:path'
+import { uniqueOutputPath } from './inplace'
 
 // Windows refuses to rename over a destination another process holds open, and the
 // holder is usually not the user's doing: an antivirus scanning the file Surco just
@@ -31,6 +34,12 @@ interface RenameDeps {
   rename?: (from: string, to: string) => Promise<void>
   sleep?: (ms: number) => Promise<void>
   onRetry?: (info: RenameBlocked) => void
+  // Where to land `from` when the destination never frees. Only callers whose temp
+  // holds finished user work pass this: a conversion's temp has its audio, tags and
+  // cues already written, so deleting it costs the user the whole job. The library
+  // writers (Traktor .nml, Engine .db) leave it out — their temps are disposable
+  // rewrites, and a rescued copy beside the collection would just be litter.
+  rescue?: (to: string) => string
 }
 
 // Electron's IPC serializes a rejection down to its message alone — `code` and any
@@ -48,7 +57,7 @@ export const FILE_IN_USE_MARKER = 'SURCO_FILE_IN_USE'
 export async function renameWithRetry(
   from: string,
   to: string,
-  { rename = fsRename, sleep = defaultSleep, onRetry }: RenameDeps = {},
+  { rename = fsRename, sleep = defaultSleep, onRetry, rescue }: RenameDeps = {},
 ): Promise<void> {
   for (let attempt = 0; ; attempt++) {
     try {
@@ -65,6 +74,10 @@ export async function renameWithRetry(
       })
       if (lastAttempt) {
         const held = err as NodeJS.ErrnoException
+        // Best effort on a volume already refusing writes: if the rescue cannot land
+        // either, the caller still gets the original file-in-use error, since that is
+        // what the renderer matches to pick its translated message.
+        if (rescue) await rename(from, rescue(to)).catch(() => {})
         held.message = `${FILE_IN_USE_MARKER}: ${held.message}`
         throw held
       }
@@ -75,4 +88,23 @@ export async function renameWithRetry(
 
 function defaultSleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+// Where a conversion lands when the rename never succeeds. Deleting the temp — what
+// convertAudio did before — threw away a file whose audio, tags and cues were all
+// already written, because the cheapest step of the whole job failed. Keeping the temp
+// as-is would be no better: it is hidden (leading dot) under a random suffix nobody can
+// recognise, so the work would survive only in a place the user never looks. This puts
+// it beside the intended output under an obvious sibling name.
+//
+// The suffix is deliberately not a word: main would have to be handed the UI locale to
+// translate it, and a Spanish "(recuperado)" landing in an English user's folder (or the
+// reverse) reads as corruption rather than a rescue. "~" is the convention every OS
+// already uses for a recovered or backup sibling, and it sorts next to the original.
+const RESCUE_SUFFIX = '~'
+
+export function rescuePath(output: string, exists: (p: string) => boolean = existsSync): string {
+  const ext = extname(output)
+  const base = basename(output, ext)
+  return uniqueOutputPath(join(dirname(output), `${base}${RESCUE_SUFFIX}${ext}`), exists)
 }

@@ -448,7 +448,7 @@
     "releaseError": "Could not load the release",
     "analyzeError": "Could not analyze the audio",
     "processError": "Processing failed",
-    "fileInUseError": "Another program is using this file (antivirus, player…). Close it and try again.",
+    "fileInUseError": "Another program is using this file (antivirus, player…). Your conversion is safe: it was saved next to it, with ~ at the end of the name.",
     "missingRequired": "Missing required fields: {{fields}}",
     "reportError": "Report",
     "inLibrary": "In library",
