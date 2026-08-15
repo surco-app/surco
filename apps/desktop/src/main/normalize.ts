@@ -238,7 +238,12 @@ export function dcRemovalFilter(channels: ChannelStats[]): string | null {
   // Every channel has to be listed even when its own bias is nil: aeval emits only the
   // expressions it is given, so naming a subset would drop the rest of the audio.
   const exprs = channels.map((c, i) => `val(${i})-(${c.dc.toFixed(6)})`)
-  return `aeval=exprs=${exprs.join('|')}:c=same`
+  // aeval outputs a channel COUNT but no layout, and loudnorm's linear mode reinitializes
+  // the graph mid-stream — at which point the aresample stages after it cannot resolve a
+  // layout that was never declared, and the whole conversion dies with "Cannot select
+  // channel layout". Restating the layout right here keeps DC removal usable together
+  // with loudness normalization, which is the combination it was extended to serve.
+  return `aeval=exprs=${exprs.join('|')}:c=same,aformat=channel_layouts=mono|stereo`
 }
 
 // Audacity's Normalize, as one -af-compatible filter: aeval rewrites every channel
