@@ -658,6 +658,10 @@ export const Editor = memo(function Editor({
         matchProvider: undefined,
         inLibraryResolved: false,
         coverRemoved: true,
+        // Off the preview too, not just off the next export: coverRemoved is a promise
+        // about the conversion, and leaving the image on screen read as "clear didn't
+        // touch the artwork" — sending users to delete by hand what was already staged.
+        coverUrl: undefined,
         metaCleared: true,
         foreignRemoved: (item.foreignTags ?? []).map((t) => t.name),
       })
