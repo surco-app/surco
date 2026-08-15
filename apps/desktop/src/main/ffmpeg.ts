@@ -1338,9 +1338,11 @@ export async function convertAudio(
           `rename blocked: ${code} on ${path} (attempt ${attempt}${waitMs === null ? ', giving up' : `, retrying in ${waitMs}ms`})`,
         ),
       // The temp is a finished conversion by now — audio, tags and cues all written —
-      // so a destination that never frees must not cost the user the whole job. The
-      // catch below still unlinks, but the rescue has already moved the file away, so
-      // that unlink finds nothing and the work survives under a visible sibling name.
+      // so a destination that never frees must not cost the user the whole job. When
+      // the rescue lands, the error carries `rescuedTo` and the catch below leaves the
+      // temp alone; when it cannot land (read-only remount, quota, a scanner holding
+      // the whole directory), the temp is still where it was and the catch deletes it
+      // as it would any half-written output.
       rescue: rescuePath,
     })
     // Comes after the rename, not before: the patch has to describe the file as
@@ -1348,6 +1350,17 @@ export async function convertAudio(
     // copyCuesToFlac, shiftFlacCues) only ever touched `tmp`.
     recordConversionPatch(input, output, meta, !!(coverPath && !removeCover))
   } catch (e) {
+    // A rescued temp is no longer at `tmp` — the rescue renamed it away — so the unlink
+    // below finds nothing and the finished conversion survives on its own. Returning
+    // early anyway makes that explicit rather than load-bearing on an ENOENT, and puts
+    // the landing place in the log: without it a rescue leaves no trace anywhere, and
+    // the user is told only that another program holds the file, with no hint that the
+    // work is sitting right there under a sibling name.
+    const rescuedTo = (e as { rescuedTo?: string })?.rescuedTo
+    if (rescuedTo) {
+      log.warn(`rename never landed; conversion kept at ${rescuedTo}`)
+      throw e
+    }
     // Whether the half-written temp is still on disk decides who owns it next. The
     // delete usually succeeds and the file is gone for good; when it doesn't — a
     // network volume still holding the handle is the case that bites — the path has to
