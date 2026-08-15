@@ -1,0 +1,78 @@
+name: Test build
+
+# Hand-launched build for a tester, deliberately separate from release.yml: that one
+# only fires on a tag and publishes a live release to surco-releases, so before this
+# existed the only way to get a Windows binary to a tester was to ship it to everyone.
+# A Windows-only bug that cannot reproduce on the maintainer's macOS (the player
+# holding a file open across an in-place rename) is exactly the case that needs a
+# throwaway build first: v0.83.4 went out unverified and was still broken.
+#
+# Produces an unsigned installer as a workflow artifact. No tag, no release, nothing
+# published. Windows SmartScreen will warn on an unsigned build — "More info" then
+# "Run anyway" — which is expected here and not a sign of a bad download.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch or SHA to build
+        required: true
+        default: main
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # Same retry as the release job: ffmpeg-static's postinstall pulls its binary
+      # from GitHub Releases, which intermittently 504s.
+      - name: Install dependencies
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            npm ci && exit 0
+            echo "npm ci failed (attempt $attempt), retrying in 15s..."
+            sleep 15
+          done
+          exit 1
+
+      - name: Resolve Electron version
+        id: electron
+        shell: bash
+        run: echo "version=$(node -p "require('electron/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Electron binary
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/electron/Cache
+          key: electron-${{ runner.os }}-${{ runner.arch }}-${{ steps.electron.outputs.version }}
+
+      # Electron 42+ dropped its install postinstall, so the binary has to be fetched
+      # explicitly before electron-builder can package the app.
+      - name: Fetch Electron binary
+        shell: bash
+        run: node node_modules/electron/install.js
+
+      # No --publish, so electron-builder packages without touching surco-releases.
+      - name: Build the installer
+        working-directory: apps/desktop
+        run: npm run dist -- --win --publish never
+
+      # Artifact names reject "/", which any feature-branch ref would carry.
+      - name: Build a safe artifact name
+        id: name
+        shell: bash
+        run: echo "value=$(echo "${{ inputs.ref }}" | tr '/' '-')" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: surco-windows-test-${{ steps.name.outputs.value }}
+          path: apps/desktop/dist/*.exe
+          if-no-files-found: error
