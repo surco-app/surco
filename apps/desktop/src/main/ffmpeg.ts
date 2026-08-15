@@ -680,6 +680,9 @@ export function convertArgs(
   audioFilter?: string,
   clearExtras?: boolean,
   foreignRemoved?: string[],
+  // Whether the user asked for the artwork to go. Without it a re-encode would carry
+  // the source's picture across and quietly undo the removal.
+  removeCover?: boolean,
 ): string[] {
   // WAV is a single-stream RIFF container, so ffmpeg refuses to mux an attached
   // picture into it ("WAVE files have exactly one stream"). The cover still
@@ -693,6 +696,14 @@ export function convertArgs(
 
   args.push('-map', '0:a')
   if (embedCover) args.push('-map', '1:v', '-c:v', 'copy', '-disposition:v:0', 'attached_pic')
+  // No new cover and no removal asked for: carry the source's own picture across, or a
+  // conversion whose only job was fixing a title would strip artwork the file already
+  // had — "Surco deleted my cover" on an operation that never mentioned covers. The `?`
+  // makes it optional, so a source with no picture is not an error. Same container
+  // exclusions as embedCover: RIFF refuses a second stream, and M4A's art rides the
+  // TagLib pass instead.
+  else if (!removeCover && !WAV_INPUT.test(output) && !M4A_OUTPUT.test(output))
+    args.push('-map', '0:v?', '-c:v', 'copy', '-disposition:v:0', 'attached_pic')
   // "Empty every metadata field" must reach frames the app never wrote. The default
   // -map_metadata 0 copies the source's global metadata into the re-encode, so a
   // foreign NOTES/COMMENT the app doesn't manage would ride through untouched (only
@@ -1208,7 +1219,17 @@ export async function convertAudio(
     } else {
       const { stderr } = await run(
         ffmpegPath,
-        convertArgs(input, tmp, plan, meta, coverPath, audioFilter, clearExtras, foreignRemoved),
+        convertArgs(
+          input,
+          tmp,
+          plan,
+          meta,
+          coverPath,
+          audioFilter,
+          clearExtras,
+          foreignRemoved,
+          removeCover,
+        ),
         {
           maxBuffer: 1024 * 1024 * 32,
           onChild,
@@ -1289,8 +1310,24 @@ export async function convertAudio(
     // Last touch before the rename so the header rides the same atomic landing.
     // Only when there's a cover to show — the header exists solely for Finder's
     // thumbnail, so a coverless (or cover-removed) FLAC stays fully standard.
-    if (finderCovers && ext === '.flac' && coverPath && !removeCover)
-      await runInWorker({ type: 'prependFlacId3', file: tmp, meta, coverPath })
+    //
+    // The art can come from either side: a cover being applied now (coverPath), or one
+    // the file already carried. Requiring the former meant that merely fixing tags on a
+    // FLAC that already had art left it without the header and blank in Finder — users
+    // then ran their own tools to bolt it on, which is the chore this option exists to
+    // remove. Extracted from `input`, not from the output: convertArgs maps only `0:a`,
+    // so the encode never carries a picture across unless one is being applied. Returns
+    // null on a file with no art, the same "nothing to show" case as before, which
+    // leaves the FLAC standard.
+    if (finderCovers && ext === '.flac' && !removeCover) {
+      const headerCover = coverPath ?? (await extractCoverFile(input))
+      if (headerCover) {
+        await runInWorker({ type: 'prependFlacId3', file: tmp, meta, coverPath: headerCover })
+        // Only the extracted copy is ours to delete; a caller-supplied coverPath is
+        // owned by whoever passed it in.
+        if (!coverPath) await unlink(headerCover).catch(() => {})
+      }
+    }
     // Logged because this failure only reproduces on Windows machines we cannot
     // attach a debugger to: when a user reports "another program is using the file",
     // these lines are the whole evidence — whether the destination was still held,
