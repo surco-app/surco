@@ -756,6 +756,51 @@ describe('Editor loudness estimates', () => {
     }
   })
 
+  // The one case where the reasoning above breaks: per-channel peak normalization sizes
+  // a SEPARATE gain for left and right, which is the entire point of the checkbox, so the
+  // distance between them does move. A reporter measured it going from 0.8 dB to 0.3 dB
+  // while the row still read "no change" — the app contradicting its own output. No
+  // estimate is honest here (the shift depends on each channel's peak), so the row must
+  // simply not claim the figure stays put.
+  it('does not claim the balance is unchanged when the channels are normalized apart', async () => {
+    seedLoudness(measured)
+    renderEditor({ id: 'a' }, 'wav', {
+      showLoudness: true,
+      normalize: { ...club, mode: 'peak', peakDb: 0, peakPerChannel: true },
+    })
+    await screen.findByTestId('loudness-estimate-lufs')
+    expect(screen.queryByTestId('loudness-estimate-balance')).toBeNull()
+  })
+
+  // The flag persists in settings across modes, so a user who once normalized per channel
+  // in peak mode carries peakPerChannel: true into loudness mode — where it does nothing.
+  // Dropping the estimate there would hide a figure that genuinely cannot move.
+  it('keeps the balance estimate in loudness mode even with the per-channel flag set', async () => {
+    seedLoudness(measured)
+    renderEditor({ id: 'a' }, 'wav', {
+      showLoudness: true,
+      normalize: { ...club, peakPerChannel: true },
+    })
+    await screen.findByTestId('loudness-estimate-lufs')
+    expect(screen.getByTestId('loudness-estimate-balance')).toHaveTextContent(
+      i18n.t('editor.loudnessEstimateSame'),
+    )
+  })
+
+  // The same track normalized as one stereo pair keeps the promise: a single factor
+  // scales both channels, so their difference genuinely cannot move.
+  it('still marks the balance unchanged when both channels take the same gain', async () => {
+    seedLoudness(measured)
+    renderEditor({ id: 'a' }, 'wav', {
+      showLoudness: true,
+      normalize: { ...club, mode: 'peak', peakDb: 0, peakPerChannel: false },
+    })
+    await screen.findByTestId('loudness-estimate-lufs')
+    expect(screen.getByTestId('loudness-estimate-balance')).toHaveTextContent(
+      i18n.t('editor.loudnessEstimateSame'),
+    )
+  })
+
   // Removing the DC offset centres the signal, so the estimate is zero — but only when
   // the box is actually ticked, since the mode alone doesn't touch it.
   it('estimates a centred signal only when DC removal is on', async () => {

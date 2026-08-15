@@ -73,6 +73,14 @@ export function LoudnessReadout({
   // an estimate on every row; the honest one here is that these do not move, and saying
   // so is worth more than the blank the alternative leaves.
   const unchanged = predicted ? tr('editor.loudnessEstimateSame') : null
+  // ...except when peak mode sizes a separate gain per channel, which is exactly what the
+  // "normalize channels independently" box asks for. Two different factors DO move the
+  // distance between the channels — measured in the field going 0.8 dB → 0.3 dB while this
+  // row still read "no change". How far it moves depends on each channel's own peak, which
+  // the single-figure measurement here cannot know, so the row drops out rather than
+  // printing a claim the converted file contradicts.
+  const balanceEstimate =
+    normalize.mode === 'peak' && normalize.peakPerChannel === true ? null : unchanged
   // One flat list — Loudness and Signal used to be separate labelled groups stacked in two
   // grids; merged, they fill one two-column table, each row dropping out when its figure is
   // immeasurable (null).
@@ -119,7 +127,7 @@ export function LoudnessReadout({
         `${formatDb(loud.channelBalanceDb)} dB`,
         gradeBalance(loud.channelBalanceDb),
         tr('editor.loudnessBalanceHint'),
-        unchanged,
+        balanceEstimate,
       ),
     loud.dcOffset !== null &&
       cell(
