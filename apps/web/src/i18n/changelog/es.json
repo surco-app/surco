@@ -15,6 +15,22 @@
       {
         "text": "Si al terminar una conversión el archivo de destino está bloqueado, ya no pierdes el trabajo. Antes se descartaba una conversión que estaba entera —audio, etiquetas y cues— porque fallaba el último paso, el de mover el archivo a su sitio. Ahora se guarda al lado, con ~ al final del nombre, para que solo tengas que renombrarlo.",
         "in": "0.84.1"
+      },
+      {
+        "text": "Convertir ya no se lleva por delante la carátula. Si actualizabas una pista para corregirle el título, el archivo salía sin la portada que ya tenía: al reconvertir el audio se quedaba por el camino. Ahora la carátula viaja con la pista, también cuando cambias de formato, y sigue desapareciendo solo si tú pides quitarla.",
+        "in": "0.84.2"
+      },
+      {
+        "text": "La miniatura de la carátula se actualiza al momento. Después de aplicar metadatos o borrar la imagen había que quitar la pista de la lista, volver a cargarla y actualizar otra vez para verla bien: el doble de trabajo en toda la colección. Y al vaciar los metadatos la portada seguía en pantalla aunque ya estuviera marcada para borrarse.",
+        "in": "0.84.2"
+      },
+      {
+        "text": "En Mac, las portadas de los FLAC vuelven a verse en el Finder aunque no cambies la carátula. La cabecera que hace visible la imagen solo se escribía al aplicar una portada nueva, así que retocar las etiquetas dejaba el archivo con el icono en blanco. Requiere tener activado «Carátula visible en el Finder» en Ajustes.",
+        "in": "0.84.2"
+      },
+      {
+        "text": "Eliminar el desplazamiento DC junto con la normalización por loudness ya funciona: la combinación hacía fallar la conversión entera sin decir por qué. Y el balance de canales ya no anuncia «sin cambio» cuando normalizas los canales por separado, porque ahí cada canal lleva su propia ganancia y la diferencia entre ellos sí se mueve.",
+        "in": "0.84.2"
       }
     ]
   },

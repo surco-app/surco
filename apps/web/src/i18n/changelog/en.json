@@ -15,6 +15,22 @@
       {
         "text": "If the destination file is locked when a conversion finishes, you no longer lose the work. A finished conversion — audio, tags and cues all written — used to be discarded because the last step, moving the file into place, couldn't complete. It is now kept next to it with ~ at the end of the name, so all that's left is renaming it.",
         "in": "0.84.1"
+      },
+      {
+        "text": "Converting no longer throws the artwork away. Updating a track just to fix its title gave you back a file with no cover, because re-encoding the audio left the picture behind. The artwork now travels with the track, including across a format change, and still goes only when you ask for it to be removed.",
+        "in": "0.84.2"
+      },
+      {
+        "text": "The cover thumbnail refreshes right away. After applying metadata or removing the image you had to take the track out of the list, load it again and update a second time to see it properly — the whole collection retouched twice. And clearing the metadata left the cover on screen even though it was already staged for removal.",
+        "in": "0.84.2"
+      },
+      {
+        "text": "On Mac, FLAC covers show up in Finder again even when you don't change the artwork. The header that makes the image visible was written only when a new cover was applied, so editing the tags left the file with a blank icon. Needs \"Show cover in Finder\" turned on in Settings.",
+        "in": "0.84.2"
+      },
+      {
+        "text": "Removing DC offset together with loudness normalization now works: the combination made the whole conversion fail without saying why. And the channel balance no longer claims \"no change\" when you normalize the channels separately, since each channel takes its own gain there and the distance between them does move.",
+        "in": "0.84.2"
       }
     ]
   },
