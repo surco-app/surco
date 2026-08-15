@@ -752,6 +752,59 @@ describe('useTrackLibrary refresh after an in-place export', () => {
     expect(result.current.tracks[0].metaReadFailed).toBeUndefined()
   })
 
+  // The row and the editor read the artwork from two different fields — the list from
+  // embeddedCover, the editor's preview from coverUrl — so refreshing only the first left
+  // the editor showing the pre-conversion image. The user's fix was to remove the track,
+  // load it again and update a second time, which is retouching the whole collection
+  // twice. Both fields describe the same bytes on disk, so both have to be re-read.
+  it('refreshes the cover the editor shows, not just the one in the list', async () => {
+    const { result } = setupWith(
+      vi.fn().mockResolvedValue({
+        tags: { title: 'On Disk', artist: 'On Disk Artist' },
+        duration: 200,
+        cover: { thumbUrl: 'data:image/jpeg;base64,NEW', width: 700, height: 700 },
+        foreignTags: [],
+      }),
+    )
+    await act(() => result.current.addPaths(['/m/a.wav']))
+    const id = result.current.tracks[0].id
+    act(() => {
+      result.current.updateTrack(id, { coverUrl: 'data:image/jpeg;base64,STALE' })
+    })
+
+    await act(() => result.current.refreshTrackFromDisk(id, '/m/a.wav'))
+
+    expect(result.current.tracks[0].coverUrl).toBe('data:image/jpeg;base64,NEW')
+  })
+
+  // Removing the artwork and updating leaves the file with none, so the editor must show
+  // none either. The staged "remove" flag has to clear too: it already happened, and a
+  // flag that outlives its export makes the next one think the user wants it stripped
+  // again — the row would keep claiming a removal the disk already reflects.
+  it('clears the cover and the staged removal once the export has stripped it', async () => {
+    const { result } = setupWith(
+      vi.fn().mockResolvedValue({
+        tags: { title: 'On Disk', artist: 'On Disk Artist' },
+        duration: 200,
+        cover: null,
+        foreignTags: [],
+      }),
+    )
+    await act(() => result.current.addPaths(['/m/a.wav']))
+    const id = result.current.tracks[0].id
+    act(() => {
+      result.current.updateTrack(id, {
+        coverUrl: 'data:image/jpeg;base64,OLD',
+        coverRemoved: true,
+      })
+    })
+
+    await act(() => result.current.refreshTrackFromDisk(id, '/m/a.wav'))
+
+    expect(result.current.tracks[0].coverUrl).toBeUndefined()
+    expect(result.current.tracks[0].coverRemoved).toBeFalsy()
+  })
+
   // The refresh describes the file, nothing else: whatever the user has staged in the
   // editor — typed metadata, an applied match — was not part of what changed on disk
   // and must survive a conversion untouched.
