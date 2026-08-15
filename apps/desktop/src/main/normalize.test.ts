@@ -321,7 +321,7 @@ describe('dcRemovalFilter', () => {
   // filter of its own that either mode can prepend.
   it('subtracts each channel own mean', () => {
     expect(dcRemovalFilter([ch(0.02), ch(-0.01)])).toBe(
-      'aeval=exprs=val(0)-(0.020000)|val(1)-(-0.010000):c=same',
+      'aeval=exprs=val(0)-(0.020000)|val(1)-(-0.010000):c=same,aformat=channel_layouts=mono|stereo',
     )
   })
 
@@ -341,8 +341,17 @@ describe('dcRemovalFilter', () => {
   // would drop the ones it does not list.
   it('keeps the untouched channels in the expression list', () => {
     expect(dcRemovalFilter([ch(0.03), ch(0)])).toBe(
-      'aeval=exprs=val(0)-(0.030000)|val(1)-(0.000000):c=same',
+      'aeval=exprs=val(0)-(0.030000)|val(1)-(0.000000):c=same,aformat=channel_layouts=mono|stereo',
     )
+  })
+
+  // Not decoration: aeval emits a channel count but no layout, and loudnorm's linear mode
+  // reinitializes the filter graph mid-stream, after which the aresample stages cannot
+  // resolve a layout nobody declared — ffmpeg aborts the whole conversion with "Cannot
+  // select channel layout". Dropping this suffix silently breaks DC removal combined with
+  // loudness normalization, which reads to the user as "the correction does nothing".
+  it('restates the channel layout aeval drops, so loudnorm can reinit the graph', () => {
+    expect(dcRemovalFilter([ch(0.02)])).toContain('aformat=channel_layouts=')
   })
 })
 
