@@ -225,11 +225,20 @@ export async function runProcessTrack(
         job.clearExtras,
         job.foreignRemoved,
       ))
+    } catch (e) {
+      // convertAudio deletes the temp on failure and says so when it couldn't: that is
+      // the one case where the path must STAY listed, because the file is still on disk
+      // and the manifest is the only thing that will ever lead a sweep back to it.
+      // Untracking it here — which is what used to happen unconditionally — orphaned a
+      // half-written file in the user's own folder, most likely on a network volume
+      // where the delete is the operation that fails.
+      if (tmpPath && !(e as { tmpSurvived?: boolean })?.tmpSurvived) deps.untrackTmp(tmpPath)
+      tmpPath = undefined
+      throw e
     } finally {
       deps.unregisterActiveConversion(job.id)
-      // convertAudio's own catch already deleted the file on a normal failure —
-      // this only needs to keep the manifest honest so a later crash doesn't
-      // sweep a path that's already gone (harmless either way, but tidy).
+      // The success path: convertAudio renamed the temp into place, so nothing is left
+      // to sweep and the manifest entry is stale.
       if (tmpPath) deps.untrackTmp(tmpPath)
     }
     if (inPlace) await deps.removeRenamedOriginal(job.inputPath, target)

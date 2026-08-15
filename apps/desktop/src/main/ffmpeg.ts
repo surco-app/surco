@@ -1348,7 +1348,22 @@ export async function convertAudio(
     // copyCuesToFlac, shiftFlacCues) only ever touched `tmp`.
     recordConversionPatch(input, output, meta, !!(coverPath && !removeCover))
   } catch (e) {
-    await unlink(tmp).catch(() => {})
+    // Whether the half-written temp is still on disk decides who owns it next. The
+    // delete usually succeeds and the file is gone for good; when it doesn't — a
+    // network volume still holding the handle is the case that bites — the path has to
+    // stay in the manifest so the next launch sweeps it. Swallowing that failure left
+    // the temp parked in the user's music folder with nothing recording its existence,
+    // which reads as "a file that never finished converting".
+    // ENOENT means the temp was never created (the encode died before writing) or is
+    // already gone — nothing survived, so it must not be recorded as litter.
+    const survived = await unlink(tmp).then(
+      () => false,
+      (err: NodeJS.ErrnoException) => err?.code !== 'ENOENT',
+    )
+    if (survived) {
+      log.warn(`temp cleanup failed, left behind: ${tmp}`)
+      Object.assign(e as object, { tmpSurvived: true })
+    }
     throw e
   }
   return { normalizeSkipped, declickedSamples }

@@ -367,6 +367,38 @@ describe('runProcessTrack — orphaned tmp trail', () => {
     expect(deps.untrackTmp).toHaveBeenCalledWith('/out/Artist - Title.tmp-a1b2c3d4.aiff')
   })
 
+  // The manifest is the ONLY record of a temp that outlived its conversion, and
+  // untracking on a failed delete throws that record away: the file is still on disk,
+  // no longer listed, so no later sweep will ever find it. On a network volume — where
+  // the delete is the operation most likely to fail — that is how a `.tmp-` ends up
+  // parked in the user's music folder for good, read as "a file that never finished".
+  it('keeps the tmp path listed when the cleanup could not delete it', async () => {
+    const deps = makeDeps({
+      convertAudio: vi.fn(async (...args: unknown[]) => {
+        const onTmp = args[9] as (path: string) => void
+        onTmp('/nas/Artist - Title.tmp-a1b2c3d4.flac')
+        throw Object.assign(new Error('EBUSY: resource busy'), { tmpSurvived: true })
+      }),
+    })
+    await expect(runProcessTrack(job(), deps)).rejects.toThrow('EBUSY')
+    expect(deps.untrackTmp).not.toHaveBeenCalled()
+  })
+
+  // A delete that fails with ENOENT means there is nothing left behind: the encode died
+  // before writing the temp, or it is already gone. Recording that as litter would leave
+  // the manifest naming files that do not exist, and every later sweep chasing ghosts.
+  it('untracks normally when the temp was already gone', async () => {
+    const deps = makeDeps({
+      convertAudio: vi.fn(async (...args: unknown[]) => {
+        const onTmp = args[9] as (path: string) => void
+        onTmp('/out/Artist - Title.tmp-a1b2c3d4.aiff')
+        throw new Error('encode died before writing anything')
+      }),
+    })
+    await expect(runProcessTrack(job(), deps)).rejects.toThrow()
+    expect(deps.untrackTmp).toHaveBeenCalledWith('/out/Artist - Title.tmp-a1b2c3d4.aiff')
+  })
+
   it('never untracks when convertAudio never got as far as picking a tmp path', async () => {
     const deps = makeDeps({
       convertAudio: vi.fn(async () => {
