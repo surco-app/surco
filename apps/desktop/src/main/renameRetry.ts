@@ -76,8 +76,18 @@ export async function renameWithRetry(
         const held = err as NodeJS.ErrnoException
         // Best effort on a volume already refusing writes: if the rescue cannot land
         // either, the caller still gets the original file-in-use error, since that is
-        // what the renderer matches to pick its translated message.
-        if (rescue) await rename(from, rescue(to)).catch(() => {})
+        // what the renderer matches to pick its translated message. Whether it landed
+        // rides on the error as `rescuedTo`, because the caller deletes the temp on
+        // failure: told nothing, it would delete a finished conversion the rescue never
+        // actually moved — the very loss this exists to prevent.
+        if (rescue) {
+          const target = rescue(to)
+          const moved = await rename(from, target).then(
+            () => true,
+            () => false,
+          )
+          if (moved) Object.assign(held, { rescuedTo: target })
+        }
         held.message = `${FILE_IN_USE_MARKER}: ${held.message}`
         throw held
       }

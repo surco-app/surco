@@ -90,6 +90,35 @@ describe('renameWithRetry', () => {
     ).rejects.toThrow(FILE_IN_USE_MARKER)
   })
 
+  // Whether the rescue landed decides what the caller may do with the temp, and the
+  // caller (convertAudio) deletes it on failure. Reporting a rescue that never happened
+  // makes that delete throw away a finished conversion — the exact loss the rescue was
+  // added to prevent — so the outcome has to be told, not assumed.
+  it('reports that the work was rescued when the sibling rename lands', async () => {
+    const rename = vi.fn().mockImplementation(async (_from: string, to: string) => {
+      if (to === '/music/Song.flac') throw inUse('EPERM')
+    })
+    const err = await renameWithRetry('/tmp/a.tmp', '/music/Song.flac', {
+      rename,
+      sleep: async () => {},
+      rescue: () => '/music/Song~.flac',
+    }).catch((e: unknown) => e)
+    expect((err as { rescuedTo?: string }).rescuedTo).toBe('/music/Song~.flac')
+  })
+
+  // A volume that refuses the destination often refuses the sibling too (read-only
+  // remount, quota, the scanner holding the whole directory). The temp is then still
+  // where it was, and saying otherwise would license the caller to delete it.
+  it('does not claim a rescue when the sibling rename fails too', async () => {
+    const rename = vi.fn().mockRejectedValue(inUse('EPERM'))
+    const err = await renameWithRetry('/tmp/a.tmp', '/music/Song.flac', {
+      rename,
+      sleep: async () => {},
+      rescue: () => '/music/Song~.flac',
+    }).catch((e: unknown) => e)
+    expect((err as { rescuedTo?: string }).rescuedTo).toBeUndefined()
+  })
+
   // Without a rescue path the behaviour is unchanged, so the Traktor and Engine
   // library writers — whose temps are disposable rewrites, not user work — keep
   // failing cleanly instead of littering the collection folder.
