@@ -452,6 +452,40 @@ describe('useTrackLibrary foreign tags', () => {
     expect(rb.foreignRemoved).toEqual(['TRAKTOR4'])
   })
 
+  // The multi-select sibling of the single-track clear: staging the removal has to take
+  // the artwork off the editor as well, or a multi clear leaves every selected track
+  // still showing the cover it just promised to strip.
+  it('clearExtrasTracks takes the cover off the preview too', async () => {
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '' },
+        duration: 180,
+        cover: { thumbUrl: 'data:image/jpeg;base64,ART', width: 500, height: 500 },
+        foreignTags: [],
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() => result.current.addPaths(['/m/a.wav']))
+    const id = result.current.tracks[0].id
+    expect(result.current.tracks[0].coverUrl).toBe('data:image/jpeg;base64,ART')
+
+    act(() => result.current.clearExtrasTracks([id]))
+
+    expect(result.current.tracks[0].coverUrl).toBeUndefined()
+    expect(result.current.tracks[0].coverRemoved).toBe(true)
+  })
+
   // A per-tag delete staged before a crash/reopen must come back on the restored row,
   // exactly like metaCleared — otherwise the reopened session silently forgets which
   // foreign tags the user had already marked for removal.

@@ -85,6 +85,9 @@ beforeEach(() => {
     cancelDeclickPreview: vi.fn().mockResolvedValue(undefined),
     reveal: vi.fn(),
     recordStat: vi.fn(),
+    // CoverPicker preloads a draggable file whenever the track has artwork, so any test
+    // that gives one a cover mounts this effect.
+    prepareCoverDrag: vi.fn().mockResolvedValue(null),
     // The Properties effect probes once per single track on mount; resolve to null
     // so tests that don't care about it don't hit an undefined bridge method.
     properties: vi.fn().mockResolvedValue(null),
@@ -522,6 +525,24 @@ describe('Editor clear metadata', () => {
       metaCleared: true,
       foreignRemoved: [],
     })
+  })
+
+  // coverRemoved only tells the NEXT export to strip the artwork; the preview keeps
+  // painting coverUrl, so the image stayed on screen after a clear and the user read that
+  // as "it didn't delete the cover" and went hunting for a way to remove it by hand. What
+  // the editor shows has to match what the clear actually staged.
+  it('takes the cover off the preview, not just off the next export', () => {
+    const { onChange } = renderEditor({
+      id: 'a',
+      coverUrl: 'data:image/jpeg;base64,ART',
+      embeddedCover: 'data:image/jpeg;base64,ART',
+    })
+    fireEvent.click(screen.getByTestId('clear-meta-btn'))
+    const patch = onChange.mock.calls.at(-1)?.[0]
+    // The key must be PRESENT and undefined: a patch that simply omits it leaves the old
+    // image in place, which is the bug — so asserting the value alone would pass on it.
+    expect(patch).toHaveProperty('coverUrl', undefined)
+    expect(patch.coverRemoved).toBe(true)
   })
 
   // Clearing must also drop the third-party tags the app doesn't manage (Serato/Traktor

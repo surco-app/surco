@@ -562,6 +562,9 @@ export function useTrackLibrary({
           ? {
               ...t,
               coverRemoved: true,
+              // Off the preview as well as off the next export, matching the single-track
+              // clear: a staged removal that still shows the artwork reads as a no-op.
+              coverUrl: undefined,
               metaCleared: true,
               foreignRemoved: (t.foreignTags ?? []).map((tag) => tag.name),
             }
