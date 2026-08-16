@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { copyFile, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, stat, unlink, writeFile } from 'node:fs/promises'
 import { basename, extname, join, relative } from 'node:path'
 import type { Database } from 'sql.js'
 import { starsTagToEngineRating } from '../shared/rating'
@@ -170,7 +170,12 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
   await assertEngineClosed(dbPath)
   const SQL = await loadSqlJs()
   let db: Database
-  if ((await fileSize(dbPath)) >= 0) {
+  // Greater than zero, not "exists": an interrupted Engine write, a crashed session or
+  // a cloud-sync placeholder leaves a ZERO-byte m.db, which carries no schema. Treating
+  // that as a library copied the empty file over the backup — destroying the one copy
+  // that could have recovered the user's collection — and then threw on the missing
+  // Track table anyway. An empty file is no library, so it takes the rebuild path.
+  if ((await fileSize(dbPath)) > 0) {
     // Keep the pre-write database around: this file is the user's real library, and a
     // backup next to it is the recovery path if a write ever goes wrong.
     await copyFile(dbPath, join(database2, 'm.db.surco-backup'))
@@ -233,7 +238,16 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
     // Write-then-rename so a crash mid-write can never leave a truncated m.db behind.
     const tmp = `${dbPath}.surco-tmp`
     await writeFile(tmp, db.export())
-    await renameWithRetry(tmp, dbPath)
+    try {
+      await renameWithRetry(tmp, dbPath)
+    } catch (e) {
+      // A swap that never lands (Engine relaunched into the window, the volume gone
+      // read-only) must not park a half-written database blob next to the user's real
+      // library under a fixed name — the same reason traktorNmlLibrary sweeps its own
+      // temp. The backup taken before the write is the recovery path here, not this.
+      await unlink(tmp).catch(() => {})
+      throw e
+    }
   } finally {
     db.close()
   }
