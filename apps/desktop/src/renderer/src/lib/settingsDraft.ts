@@ -1,4 +1,5 @@
 import { autoMatchAvailable } from '../../../shared/autoMatch'
+import { normalizeImportFields } from '../../../shared/defaults'
 import { normalizeEditorSections } from '../../../shared/editorSections'
 import type { Settings } from '../../../shared/types'
 
@@ -25,6 +26,7 @@ export interface SyncedDraft {
   zeroPadTrack: boolean
   visibleFields: string[]
   requiredFields: string[]
+  importFields: string[]
   coverMaxSize: string
   coverSquare: boolean
   coverUpscale: boolean
@@ -96,6 +98,9 @@ export function pickSynced(s: Settings): SyncedDraft {
     zeroPadTrack: s.zeroPadTrack,
     visibleFields: s.visibleFields,
     requiredFields: s.requiredFields,
+    // Normalized on the way in so an older/hand-edited settings.json can't seed the
+    // checkboxes with a name that isn't a real field.
+    importFields: normalizeImportFields(s.importFields),
     coverMaxSize: String(s.coverMaxSize),
     coverSquare: s.coverSquare,
     coverUpscale: s.coverUpscale,

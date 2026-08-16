@@ -8,6 +8,7 @@ import { matchTargetOf } from '../lib/autoMatch'
 import { keepCoverArg } from '../lib/coverSource'
 import { formatTime } from '../lib/duration'
 import { buildReleaseMeta, confidenceTier, type ReleaseMetaPatch } from '../lib/release'
+import { useAppSettings } from '../lib/settingsContext'
 import { matchStatKey } from '../lib/stats'
 import type { TrackItem } from '../types'
 import { Select } from './Select'
@@ -35,6 +36,7 @@ interface Props {
 // reimplement the same Discogs plumbing.
 export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const { importFields } = useAppSettings()
   const [assignments, setAssignments] = useState<Assignment[]>([])
   // Applying is otherwise silent, so flash the button to "Applied" for a moment as the
   // acknowledgement; it reverts so the user can apply again after a correction.
@@ -79,7 +81,7 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
       return [
         {
           id: a.id,
-          patch: buildReleaseMeta(file.meta, release, a.track, keepCoverArg(file)),
+          patch: buildReleaseMeta(file.meta, release, a.track, keepCoverArg(file), importFields),
         },
       ]
     })

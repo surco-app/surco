@@ -732,6 +732,8 @@
     "autoMatchNeedsSource": "Aktivier mindestens eine Suchquelle, um automatisch abzugleichen.",
     "discogsFormats": "Nur diese Formate zeigen",
     "discogsFormatsHint": "Beschränkt die Discogs-Ergebnisse auf diese Formate.",
+    "importFields": "Diese Felder aus einem Treffer füllen",
+    "importFieldsHint": "Beim Anwenden einer Veröffentlichung werden nur die angehakten Felder geschrieben. Der Rest behält, was die Datei bereits hatte.",
     "maxResults": "Maximale Ergebnisse",
     "maxResultsHint": "Wie viele Suchergebnisse angezeigt werden. Weniger hält das richtige Release im Blick statt einer langen Liste von Compilations und Neuauflagen.",
     "searchIgnoreWords": "Bei der Suche zu ignorierende Wörter",

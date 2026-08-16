@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { METADATA_KEYS } from '../../../shared/metadata'
 import { cleanMatchTitle } from '../../../shared/searchClean'
+import { IMPORTABLE_FIELDS } from './fields'
 import type { Release, ReleaseTrack, SearchResult, TrackMetadata } from '../../../shared/types'
 import {
   bestMatch,
@@ -1041,5 +1043,110 @@ describe('buildReleaseMeta', () => {
   it('falls back to the current cover when the release has no image', () => {
     const patch = buildReleaseMeta(meta(), release(), undefined, { url: 'old.jpg', keep: false })
     expect(patch.coverUrl).toBe('old.jpg')
+  })
+
+  // Applying a release used to be all-or-nothing, so the fields added in 0.85 (style,
+  // country, media type, the Discogs link) started filling themselves in for users who
+  // never asked for them. The import list is what makes that opt-out: a field left out
+  // of it keeps whatever the file already had, exactly as if the release never carried it.
+  it('leaves an excluded field at its current value', () => {
+    const patch = buildReleaseMeta(
+      meta({ country: 'Spain' }),
+      release({ country: 'Europe' }),
+      undefined,
+      {},
+      ['album'],
+    )
+    expect(patch.meta.country).toBe('Spain')
+  })
+
+  // The other half of the same contract: naming a field in the list must still import it,
+  // or the preference would just be a way to turn Discogs off entirely.
+  it('imports a field that is on the list', () => {
+    const patch = buildReleaseMeta(
+      meta({ country: 'Spain' }),
+      release({ country: 'Europe' }),
+      undefined,
+      {},
+      ['country'],
+    )
+    expect(patch.meta.country).toBe('Europe')
+  })
+
+  // Excluding a field must not blank it when the file had nothing either: the excluded
+  // field is untouched, not emptied. '' rather than undefined because these values reach
+  // a tag writer, which must never receive the string "undefined".
+  it('leaves an excluded field empty rather than undefined when the file had no value', () => {
+    const patch = buildReleaseMeta(meta(), release({ country: 'Europe' }), undefined, {}, ['album'])
+    expect(patch.meta.country).toBe('')
+  })
+
+  // Every existing install has no preference stored, and an omitted list must mean "import
+  // everything" — the behaviour before this feature existed. Anything else would silently
+  // stop tagging for every current user on upgrade.
+  it('imports every field when no list is given', () => {
+    const patch = buildReleaseMeta(
+      meta({ country: 'Spain' }),
+      release({ country: 'Europe', title: 'Homework' }),
+      undefined,
+    )
+    expect(patch.meta.country).toBe('Europe')
+    expect(patch.meta.album).toBe('Homework')
+  })
+
+  // The track-level fields come from the picked track rather than the release, so they run
+  // through a different branch of the mapping and could easily be missed by a filter that
+  // only covered the album-level ones.
+  it('leaves an excluded track title at its current value', () => {
+    const patch = buildReleaseMeta(meta({ title: 'Mine' }), release(), track, {}, ['album'])
+    expect(patch.meta.title).toBe('Mine')
+  })
+
+  // The cover is deliberately outside the field list: it already has its own keep/replace
+  // policy, and folding it in would give two controls over one behaviour.
+  it('still applies the cover when the field list excludes everything', () => {
+    const rel = release({ images: [{ uri: 'discogs.jpg', type: 'primary', resource_url: '' }] })
+    const patch = buildReleaseMeta(meta(), rel, undefined, {}, [])
+    expect(patch.coverUrl).toBe('discogs.jpg')
+  })
+
+  // IMPORTABLE_FIELDS is hand-written, so it can drift from what this function actually
+  // writes — a field added to the mapping but not the catalog could never be switched off,
+  // and one listed but never written would be a dead switch. Rather than trusting the two
+  // to stay in step, this drives a release with every field populated and compares what
+  // moved against the catalog.
+  it('offers exactly the fields a full release actually changes', () => {
+    const full = release({
+      title: 'Homework',
+      artists: [{ name: 'Daft Punk' }],
+      year: 1997,
+      genres: ['Electronic'],
+      styles: ['House'],
+      country: 'Europe',
+      formats: [{ name: 'Vinyl', descriptions: ['LP'] }],
+      labels: [{ name: 'Virgin', catno: 'V2821' }],
+      extraartists: [{ name: 'T. Bangalter', role: 'Written-By' }],
+      uri: 'https://www.discogs.com/release/249504',
+    })
+    const before = meta()
+    // A multi-disc CD position ("2-3") rather than a vinyl side ("A1"): only that form
+    // fills discNumber, and a side-lettered fixture would leave the field untested.
+    const after = buildReleaseMeta(before, full, { position: '2-3', title: 'Track One' }).meta
+    const changed = METADATA_KEYS.filter((k) => (before[k] ?? '') !== (after[k] ?? ''))
+    expect([...changed].sort()).toEqual([...IMPORTABLE_FIELDS].sort())
+  })
+
+  // A field the user never listed must not be invented on the track: an empty list is a
+  // real choice ("tag nothing"), not a missing one, and must not fall back to importing all.
+  it('imports nothing when the list is empty', () => {
+    const patch = buildReleaseMeta(
+      meta({ album: 'Mine', country: 'Spain' }),
+      release({ title: 'Homework', country: 'Europe' }),
+      undefined,
+      {},
+      [],
+    )
+    expect(patch.meta.album).toBe('Mine')
+    expect(patch.meta.country).toBe('Spain')
   })
 })

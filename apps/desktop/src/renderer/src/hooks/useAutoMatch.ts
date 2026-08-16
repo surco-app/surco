@@ -1,6 +1,11 @@
 import { useCallback, useRef, useState } from 'react'
 import { searchHintsOf } from '../../../shared/metadata'
-import type { SearchHints, SearchPriority, SearchProviderId } from '../../../shared/types'
+import type {
+  SearchHints,
+  SearchPriority,
+  SearchProviderId,
+  TrackMetadata,
+} from '../../../shared/types'
 import type { LocalActivityReport } from '../lib/activityLog'
 import { type AppleMusicIndex, isInLibrary } from '../lib/appleMusicLibrary'
 import {
@@ -44,6 +49,7 @@ interface Params {
   // Bandcamp on/off takes effect without restarting the sweep. Discogs is always tried
   // first; Bandcamp, when enabled, is the fallback for what Discogs doesn't carry.
   searchProvidersRef: { readonly current: SearchProviderId[] }
+  importFieldsRef: { readonly current: (keyof TrackMetadata)[] }
   // Live view of the title-cleanup settings (the Naming pattern). Read at probe time so
   // editing the pattern applies to the next probe without restarting the sweep.
   matchCleanupRef: { readonly current: MatchCleanup }
@@ -82,6 +88,7 @@ export function useAutoMatch({
   updateTrack,
   libraryIndexRef,
   searchProvidersRef,
+  importFieldsRef,
   matchCleanupRef,
   editingRef,
   reportActivity,
@@ -167,7 +174,13 @@ export function useAutoMatch({
         })
         return
       }
-      const patch = buildReleaseMeta(live.meta, m.release, m.track, keepCoverArg(live))
+      const patch = buildReleaseMeta(
+        live.meta,
+        m.release,
+        m.track,
+        keepCoverArg(live),
+        importFieldsRef.current,
+      )
       // Re-check ownership against the release's canonical title/artist — the editor's second
       // attempt, run here for the whole crate so the filter agrees without opening each row.
       // Only pin a positive (the list recomputes the negative from the raw tags itself); the
@@ -199,6 +212,7 @@ export function useAutoMatch({
       updateTrack,
       tracksRef,
       libraryIndexRef,
+      importFieldsRef,
       matchCleanupRef,
       editingRef,
       reportActivity,

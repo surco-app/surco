@@ -168,4 +168,19 @@ describe('buildSettingsPatch', () => {
     expect(draft.autoApplyFilename).toBe(true)
     expect(buildSettingsPatch(draft, local).autoApplyFilename).toBe(true)
   })
+
+  // The choice of which fields Discogs may fill has to survive the draft round-trip, or
+  // unticking a field in Settings would look right on screen and change nothing on save.
+  it('round-trips the Discogs import fields', () => {
+    const draft = pickSynced({ ...settings, importFields: ['album', 'country'] })
+    expect(draft.importFields).toEqual(['album', 'country'])
+    expect(buildSettingsPatch(draft, local).importFields).toEqual(['album', 'country'])
+  })
+
+  // Unticking every field is a real choice — "let Discogs fill nothing" — and an empty
+  // array must reach the saved settings rather than being dropped as falsy along the way.
+  it('saves an empty import-field selection instead of dropping it', () => {
+    const draft = pickSynced({ ...settings, importFields: [] })
+    expect(buildSettingsPatch(draft, local).importFields).toEqual([])
+  })
 })

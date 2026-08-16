@@ -732,6 +732,8 @@
     "autoMatchNeedsSource": "Active au moins une source de recherche pour auto-associer.",
     "discogsFormats": "N'afficher que ces formats",
     "discogsFormatsHint": "Limite les résultats Discogs à ces formats.",
+    "importFields": "Remplir ces champs depuis une correspondance",
+    "importFieldsHint": "Lorsque vous appliquez un disque, seuls les champs cochés sont écrits. Les autres conservent ce que le fichier contenait déjà.",
     "maxResults": "Nombre maximum de résultats",
     "maxResultsHint": "Combien de résultats de recherche afficher. Moins garde la bonne release à l'écran plutôt qu'une longue traîne de compilations et de rééditions.",
     "searchIgnoreWords": "Mots à ignorer dans les recherches",

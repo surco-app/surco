@@ -1,6 +1,10 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import { DISCOGS_FORMATS, DISCOGS_MAX_RESULTS_OPTIONS } from '../../../../shared/defaults'
+import {
+  DISCOGS_FORMATS,
+  DISCOGS_MAX_RESULTS_OPTIONS,
+  IMPORTABLE_FIELDS,
+} from '../../../../shared/defaults'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchLocal, PatchSynced } from '../../lib/settingsTabs'
 import { AutoMatchControl } from '../AutoMatchControl'
@@ -127,6 +131,30 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
                   className="h-4 w-4 accent-[var(--color-accent)]"
                 />
                 <span className="text-sm">{tr(`settings.format.${f}`)}</span>
+              </label>
+            ))}
+          </div>
+
+          <SettingsLabel className="mt-6 mb-2">{tr('settings.importFields')}</SettingsLabel>
+          <SettingsHint className="mb-3">{tr('settings.importFieldsHint')}</SettingsHint>
+          <div className="flex flex-wrap gap-x-5 gap-y-2" data-testid="settings-import-fields">
+            {IMPORTABLE_FIELDS.map((f) => (
+              <label key={f} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  data-testid={`settings-import-${f}`}
+                  type="checkbox"
+                  checked={synced.importFields.includes(f)}
+                  onChange={(e) =>
+                    patch(
+                      'importFields',
+                      e.target.checked
+                        ? [...synced.importFields, f]
+                        : synced.importFields.filter((x) => x !== f),
+                    )
+                  }
+                  className="h-4 w-4 accent-[var(--color-accent)]"
+                />
+                <span className="text-sm">{tr(`fields.${f}`)}</span>
               </label>
             ))}
           </div>

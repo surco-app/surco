@@ -228,6 +228,7 @@ export const Editor = memo(function Editor({
     genrePresets,
     visibleFields,
     requiredFields,
+    importFields,
     discogsFormats,
     discogsMaxResults,
     resultsWidth,
@@ -541,7 +542,7 @@ export const Editor = memo(function Editor({
             effectiveCoverDims &&
             isLowResCover(effectiveCoverDims.w, effectiveCoverDims.h)
           ),
-      }),
+      }, importFields),
       // Mark the track matched so the sweep leaves this deliberate pick alone, even when
       // the source (Bandcamp) writes no Discogs id to guard it.
       matched: true,
