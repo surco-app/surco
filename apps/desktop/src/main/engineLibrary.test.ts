@@ -11,6 +11,21 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   return { ...real, readFile }
 })
 
+// Flipped by the test that needs the database swap to fail after the staged file has
+// really been written — the one window where a leftover tmp can be observed.
+const { swap } = vi.hoisted(() => ({ swap: { fails: false } }))
+vi.mock('./renameRetry', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./renameRetry')>()
+  return {
+    ...real,
+    renameWithRetry: async (from: string, to: string, deps?: unknown) => {
+      if (swap.fails) throw Object.assign(new Error('EPERM: swap refused'), { code: 'EPERM' })
+      return real.renameWithRetry(from, to, deps as Parameters<typeof real.renameWithRetry>[2])
+    },
+  }
+})
+
+import { existsSync } from 'node:fs'
 import { mkdtemp, readFile, stat, utimes, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
@@ -141,6 +156,67 @@ describe('addToEngineLibrary', () => {
     ])
     db.close()
     expect((await stat(join(lib, 'Database2', 'm.db.surco-backup'))).size).toBeGreaterThan(0)
+  })
+
+  // A zero-byte m.db is what an interrupted Engine write, a crashed session or a
+  // cloud-sync placeholder leaves behind — precisely when the backup matters most. It
+  // used to take the "existing library" branch (0 >= 0), so the empty file was copied
+  // OVER a good backup before the read blew up on the missing schema: the one copy that
+  // could have saved the user, destroyed by a run that then failed anyway.
+  it('does not overwrite the backup with an empty database', async () => {
+    const lib = join(root, 'empty-db', 'Engine Library')
+    const dbPath = join(lib, 'Database2', 'm.db')
+    const backup = join(lib, 'Database2', 'm.db.surco-backup')
+    const { mkdir } = await import('node:fs/promises')
+    await mkdir(join(lib, 'Database2'), { recursive: true })
+    await writeFile(backup, await buildEngineDatabase([], 'Sets'))
+    const goodBackupSize = (await stat(backup)).size
+    // The interrupted write: the library file exists but carries nothing.
+    await writeFile(dbPath, '')
+
+    const file = await makeFile(root, 'empty-case.aiff')
+    await addToEngineLibrary(lib, file, meta({ title: 'Rebuilt' }), 'Surco')
+
+    expect((await stat(backup)).size).toBe(goodBackupSize)
+  })
+
+  // With no usable library to extend, the add has to rebuild one rather than throw on a
+  // schema that was never written — otherwise the conversion fails for a file the user
+  // has nothing to do with.
+  it('rebuilds the library when the database file is empty', async () => {
+    const lib = join(root, 'empty-rebuild', 'Engine Library')
+    const dbPath = join(lib, 'Database2', 'm.db')
+    const { mkdir } = await import('node:fs/promises')
+    await mkdir(join(lib, 'Database2'), { recursive: true })
+    await writeFile(dbPath, '')
+
+    const file = await makeFile(root, 'rebuild.aiff')
+    await addToEngineLibrary(lib, file, meta({ title: 'Rebuilt' }), 'Surco')
+
+    const db = await open(dbPath)
+    expect(rows(db, 'SELECT title FROM Track').map((r) => r.title)).toEqual(['Rebuilt'])
+    db.close()
+  })
+
+  // The write is staged in m.db.surco-tmp and renamed over the library. When that rename
+  // cannot land — Engine relaunched into the window, the volume went read-only — the
+  // staged file used to stay in the user's Database2 folder for good: a partial database
+  // blob sitting next to their real library under a fixed name. traktorNmlLibrary already
+  // documents why a leftover tmp is not acceptable and deletes its own; this is the same
+  // contract, and it was missing here.
+  it('cleans up the staged database when the swap cannot land', async () => {
+    const lib = join(root, 'locked-swap', 'Engine Library')
+    const dbPath = join(lib, 'Database2', 'm.db')
+    const file = await makeFile(root, 'locked.aiff')
+    await addToEngineLibrary(lib, file, meta({ title: 'First' }), 'Surco')
+    // The swap is what fails, not the staging: everything up to it has to run for real,
+    // so the tmp genuinely exists on disk by the time cleanup is expected to remove it.
+    swap.fails = true
+
+    await addToEngineLibrary(lib, file, meta({ title: 'Second' }), 'Surco').catch(() => {})
+    swap.fails = false
+
+    expect(existsSync(`${dbPath}.surco-tmp`)).toBe(false)
   })
 
   // Re-converting an edited track must update its row, not import a duplicate — and it
