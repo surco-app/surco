@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.85",
+    "date": "August 16, 2026",
+    "title": "Tagging the way a collector does",
+    "items": [
+      {
+        "text": "Four new fields Discogs already knew and Surco threw away: Style, Country, Media type and the release URL. They are written under the same names mp3tag uses, so a collection tagged with that tool and one tagged here agree instead of growing duplicates. The URL is how you go back months later and check where a track came from.",
+        "in": "0.85.0"
+      },
+      {
+        "text": "Note this changes what lands in Genre: it used to hold the Discogs style (\"Deep House\"); Genre now holds the actual genre (\"Electronic\") and the style has a field of its own. When a release carries only a style, Genre still takes it rather than sitting empty.",
+        "in": "0.85.0"
+      },
+      {
+        "text": "Network drives no longer collect half-finished files. When a conversion failed and its temporary file could not be deleted either — routine on a NAS, which holds the file for a moment — that temporary stayed in your folder for good with nothing recording it, so no later cleanup could ever find it. It is now tracked and swept at the next launch.",
+        "in": "0.85.0"
+      },
+      {
+        "text": "Your Engine DJ library backup no longer disappears exactly when you need it. If m.db had been left empty — what an interrupted Engine write leaves behind — Surco copied that empty file over the good backup and then failed anyway. An empty file is now treated as what it is, a library to rebuild, and the backup is left untouched.",
+        "in": "0.85.0"
+      }
+    ]
+  },
+  {
     "version": "0.84",
     "date": "August 14, 2026",
     "title": "Seeing where a track lands before you convert it",
