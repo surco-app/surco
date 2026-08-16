@@ -44,6 +44,13 @@ const SAMPLE_META: TrackMetadata = {
   mood: 'Dark',
   energy: '8',
   compilation: '1',
+  style: 'Deep House',
+  country: 'Spain',
+  mediaType: 'Vinyl, 12"',
+  // Shown as a sample like every other token, though a URL in a filename is a poor
+  // choice: the separators are stripped by the same sanitiser every token goes through,
+  // so it degrades to an unreadable run of text rather than breaking the path.
+  discogsUrl: 'discogs.com/release/2406512',
 }
 
 // Every metadata field is a legal {token}, including rating — it lives outside

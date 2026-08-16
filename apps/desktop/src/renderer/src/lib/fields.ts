@@ -12,6 +12,7 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'album' },
   { key: 'year' },
   { key: 'genre' },
+  { key: 'style' },
   { key: 'grouping' },
   { key: 'trackNumber' },
   { key: 'comment', wide: true },
@@ -27,6 +28,9 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'publisher' },
   { key: 'catalogNumber' },
   { key: 'discogsReleaseId' },
+  { key: 'discogsUrl', wide: true },
+  { key: 'country' },
+  { key: 'mediaType' },
   { key: 'mood' },
   { key: 'energy' },
 ]
@@ -46,9 +50,21 @@ interface FieldGroup {
 export const FIELD_GROUPS: FieldGroup[] = [
   {
     id: 'identity',
-    fields: ['title', 'artist', 'albumArtist', 'album', 'year', 'genre', 'grouping'],
+    fields: ['title', 'artist', 'albumArtist', 'album', 'year', 'genre', 'style', 'grouping'],
   },
-  { id: 'catalog', fields: ['publisher', 'catalogNumber', 'isrc', 'discogsReleaseId', 'composer'] },
+  {
+    id: 'catalog',
+    fields: [
+      'publisher',
+      'catalogNumber',
+      'isrc',
+      'discogsReleaseId',
+      'discogsUrl',
+      'country',
+      'mediaType',
+      'composer',
+    ],
+  },
   { id: 'dj', fields: ['bpm', 'key', 'mood', 'energy', 'mixName', 'remixArtist', 'originalYear'] },
   { id: 'order', fields: ['trackNumber', 'discNumber', 'compilation', 'comment'] },
 ]

@@ -525,6 +525,10 @@
     "rating": "Note",
     "mood": "Ambiance",
     "energy": "Énergie",
+    "style": "Style",
+    "country": "Pays",
+    "mediaType": "Type de support",
+    "discogsUrl": "URL Discogs",
     "suggestionsMore": "Afficher {{count}} de plus"
   },
   "declick": {

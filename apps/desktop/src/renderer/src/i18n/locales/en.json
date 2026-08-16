@@ -525,6 +525,10 @@
     "rating": "Rating",
     "mood": "Mood",
     "energy": "Energy",
+    "style": "Style",
+    "country": "Country",
+    "mediaType": "Media type",
+    "discogsUrl": "Discogs URL",
     "suggestionsMore": "Show {{count}} more"
   },
   "declick": {

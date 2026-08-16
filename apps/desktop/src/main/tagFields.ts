@@ -110,6 +110,24 @@ export const TAG_FIELDS: TagField[] = [
   // value the user's other tools had already written — the very loss this field exists
   // to stop — so it stays free text, like the key or the comment.
   { key: 'energy', aliases: ['energy', 'energylevel'], id3: 'ENERGY' },
+  // The four a collector normalizes by, straight off the Discogs release. None has a
+  // standard frame, so they ride TXXX (ID3) and a plain Vorbis comment under the exact
+  // names mp3tag writes — the tool this was asked for is the one users already run by
+  // hand, and a library tagged with both has to agree rather than grow duplicates.
+  { key: 'style', aliases: ['style', 'styles'], id3: 'STYLE', vorbis: 'STYLE' },
+  { key: 'country', aliases: ['country', 'releasecountry'], id3: 'COUNTRY', vorbis: 'COUNTRY' },
+  {
+    key: 'mediaType',
+    aliases: ['mediatype', 'media', 'media_type'],
+    id3: 'MEDIATYPE',
+    vorbis: 'MEDIATYPE',
+  },
+  {
+    key: 'discogsUrl',
+    aliases: ['discogs_release_url', 'discogsreleaseurl', 'discogs_url', 'www'],
+    id3: 'DISCOGS_RELEASE_URL',
+    vorbis: 'DISCOGS_RELEASE_URL',
+  },
 ]
 
 // El conjunto plano de todos los alias que la app gestiona, en minúsculas. El lector

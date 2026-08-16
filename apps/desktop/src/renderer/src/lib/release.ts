@@ -481,7 +481,19 @@ export function buildReleaseMeta(
   cover: { url?: string; path?: string; keep?: boolean } = {},
 ): ReleaseMetaPatch {
   const albumArtist = joinArtists(rel.artists)
-  const genre = (rel.styles?.length ? rel.styles : (rel.genres ?? []))[0] ?? ''
+  // Discogs classifies twice: a broad genre ("Electronic") and finer styles ("House",
+  // "Deep House"). Both used to be crushed into `genre` with the style winning, which
+  // left collectors normalizing by hand. They now land in their own fields — except
+  // when a release carries only styles, where the genre still takes one rather than
+  // leaving the field a DJ already relies on empty.
+  const genre = (rel.genres?.length ? rel.genres : (rel.styles ?? []))[0] ?? ''
+  const style = (rel.styles ?? []).join(', ')
+  const country = rel.country?.trim() ?? ''
+  // Flattened the way Discogs itself prints it: the medium first, then its qualifiers.
+  const mediaType = (rel.formats ?? [])
+    .flatMap((f) => [f.name, ...(f.descriptions ?? [])])
+    .filter(Boolean)
+    .join(', ')
   const trackArtist = joinArtists(track?.artists)
   const label = rel.labels?.[0]
   const publisher = cleanName(label?.name?.trim() ?? '')
@@ -505,6 +517,11 @@ export function buildReleaseMeta(
       artist: trackArtist || albumArtist || current.artist,
       year: rel.year ? String(rel.year) : current.year,
       genre,
+      // Defaulted to '' rather than left undefined: these fields reach a tag writer, and
+      // an absent value has to mean "empty tag", never the string "undefined".
+      style: style || current.style || '',
+      country: country || current.country || '',
+      mediaType: mediaType || current.mediaType || '',
       publisher: publisher || current.publisher,
       catalogNumber: catalogNumber || current.catalogNumber,
       composer: composerOf(rel, track) || current.composer,
@@ -512,6 +529,16 @@ export function buildReleaseMeta(
       // Discogs field (it gates auto-match's "skip already-matched" and the release link),
       // so a non-Discogs apply leaves whatever was there untouched.
       discogsReleaseId: rel.provider === 'discogs' ? String(rel.id) : current.discogsReleaseId,
+      // Same provenance rule as the id above: a Bandcamp match must not stamp a
+      // discogs.com address onto the track. The API returns `uri`; falling back to the
+      // canonical /release/<id> form covers releases whose response omits it.
+      // Same provenance rule as the id above: a Bandcamp match must not stamp a
+      // discogs.com address onto the track. The API returns `uri`; falling back to the
+      // canonical /release/<id> form covers releases whose response omits it.
+      discogsUrl:
+        rel.provider === 'discogs'
+          ? rel.uri?.trim() || `https://www.discogs.com/release/${rel.id}`
+          : current.discogsUrl,
     },
   }
 }

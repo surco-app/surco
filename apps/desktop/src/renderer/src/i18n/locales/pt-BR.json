@@ -525,6 +525,10 @@
     "rating": "Avaliação",
     "mood": "Clima",
     "energy": "Energia",
+    "style": "Estilo",
+    "country": "País",
+    "mediaType": "Tipo de mídia",
+    "discogsUrl": "URL do Discogs",
     "suggestionsMore": "Mostrar mais {{count}}"
   },
   "declick": {

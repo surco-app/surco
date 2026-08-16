@@ -31,6 +31,10 @@ const FULLY_TAGGED: TrackMetadata = {
   compilation: '1',
   mood: 'Dark',
   energy: '4',
+  style: 'Deep House',
+  country: 'Spain',
+  mediaType: 'Vinyl, 12"',
+  discogsUrl: 'https://www.discogs.com/release/6294',
 }
 
 describe('emptyMetadata', () => {
