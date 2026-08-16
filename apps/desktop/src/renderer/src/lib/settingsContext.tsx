@@ -1,7 +1,11 @@
 import type React from 'react'
 import { createContext, useContext, useEffect, useMemo, useRef } from 'react'
 import { DEFAULT_DECLICK, normalizeDeclick } from '../../../shared/declick'
-import { DEFAULT_DISCOGS_MAX_RESULTS } from '../../../shared/defaults'
+import {
+  DEFAULT_DISCOGS_MAX_RESULTS,
+  DEFAULT_IMPORT_FIELDS,
+  normalizeImportFields,
+} from '../../../shared/defaults'
 import {
   DEFAULT_EDITOR_SECTIONS,
   type EditorSectionPref,
@@ -16,6 +20,7 @@ import type {
   OutputSampleRate,
   SearchProviderId,
   Settings,
+  TrackMetadata,
 } from '../../../shared/types'
 import { seedEditorSections } from '../hooks/useEditorSections'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './fields'
@@ -47,6 +52,7 @@ interface ResolvedSettings {
   genrePresets: string[]
   visibleFields: string[]
   requiredFields: string[]
+  importFields: (keyof TrackMetadata)[]
   discogsFormats: string[]
   discogsMaxResults: number
   searchProviders: SearchProviderId[]
@@ -83,6 +89,7 @@ const DEFAULTS: ResolvedSettings = {
   genrePresets: [],
   visibleFields: DEFAULT_FIELDS,
   requiredFields: DEFAULT_REQUIRED_FIELDS,
+  importFields: DEFAULT_IMPORT_FIELDS,
   discogsFormats: [],
   discogsMaxResults: DEFAULT_DISCOGS_MAX_RESULTS,
   searchProviders: ['discogs'],
@@ -117,6 +124,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     genrePresets: settings.genrePresets ?? DEFAULTS.genrePresets,
     visibleFields: settings.visibleFields ?? DEFAULTS.visibleFields,
     requiredFields: settings.requiredFields ?? DEFAULTS.requiredFields,
+    importFields: normalizeImportFields(settings.importFields),
     discogsFormats: settings.discogsFormats ?? DEFAULTS.discogsFormats,
     discogsMaxResults: settings.discogsMaxResults ?? DEFAULTS.discogsMaxResults,
     searchProviders: settings.searchProviders ?? DEFAULTS.searchProviders,

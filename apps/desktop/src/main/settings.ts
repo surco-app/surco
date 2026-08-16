@@ -6,6 +6,7 @@ import { DEFAULT_DECLICK, normalizeDeclick } from '../shared/declick'
 import {
   DEFAULT_DISCOGS_MAX_RESULTS,
   DEFAULT_FIELDS,
+  DEFAULT_IMPORT_FIELDS,
   DEFAULT_REQUIRED_FIELDS,
   SEARCH_PROVIDERS,
 } from '../shared/defaults'
@@ -59,6 +60,7 @@ export const defaults: Settings = {
   zeroPadTrack: true,
   visibleFields: DEFAULT_FIELDS,
   requiredFields: DEFAULT_REQUIRED_FIELDS,
+  importFields: DEFAULT_IMPORT_FIELDS,
   coverMaxSize: 1200,
   coverSquare: false,
   coverUpscale: false,

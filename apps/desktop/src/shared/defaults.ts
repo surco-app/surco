@@ -1,4 +1,4 @@
-import type { SearchProviderId } from './types'
+import type { SearchProviderId, TrackMetadata } from './types'
 
 // Single source of truth for the default field configuration. Lives in shared so
 // the renderer (lib/fields) and the persisted default settings (main/settings)
@@ -21,6 +21,45 @@ export const DEFAULT_FIELDS: string[] = [
 
 // The fields a track must have filled before it can be converted.
 export const DEFAULT_REQUIRED_FIELDS: string[] = ['title', 'artist']
+
+// The fields a Discogs release can fill, in form order — the menu the "which fields does
+// Discogs import" preference offers. A field absent here is one buildReleaseMeta never
+// writes, so offering it would be a switch that does nothing. Deliberately NOT the same
+// list as DEFAULT_FIELDS: that one governs which inputs the form shows and hides
+// publisher/catalogNumber, which releases have always filled.
+export const IMPORTABLE_FIELDS: (keyof TrackMetadata)[] = [
+  'title',
+  'artist',
+  'albumArtist',
+  'album',
+  'year',
+  'genre',
+  'style',
+  'trackNumber',
+  'discNumber',
+  'publisher',
+  'catalogNumber',
+  'composer',
+  'country',
+  'mediaType',
+  'discogsReleaseId',
+  'discogsUrl',
+]
+
+// Every importable field starts enabled, so applying a release keeps behaving exactly as it
+// did before this preference existed until the user opts something out.
+export const DEFAULT_IMPORT_FIELDS: (keyof TrackMetadata)[] = [...IMPORTABLE_FIELDS]
+
+// Turns the stored preference (a plain string[] on disk, so possibly written by another
+// version or edited by hand) into real metadata keys, dropping anything the catalog doesn't
+// offer. A missing or malformed value means "never chosen", which has to import everything
+// so an upgrade doesn't quietly stop tagging; an empty list is a deliberate choice and stays
+// empty. Casting instead of filtering would let a stale name through as if it were a field.
+export function normalizeImportFields(stored: string[] | undefined): (keyof TrackMetadata)[] {
+  if (!Array.isArray(stored)) return DEFAULT_IMPORT_FIELDS
+  const offered = new Set<string>(IMPORTABLE_FIELDS)
+  return stored.filter((f): f is keyof TrackMetadata => offered.has(f))
+}
 
 // The catalog sources offered as search-provider checkboxes, and all searched by default
 // on a new install. Lives in shared so the wizard, Settings and the persisted defaults

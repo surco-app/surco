@@ -732,6 +732,8 @@
     "autoMatchNeedsSource": "Enable at least one search source to auto-match.",
     "discogsFormats": "Show only these formats",
     "discogsFormatsHint": "Limit Discogs results to these formats.",
+    "importFields": "Fill these fields from a match",
+    "importFieldsHint": "When you apply a release, only the ticked fields are written. The rest keep whatever the file already had.",
     "maxResults": "Maximum results",
     "maxResultsHint": "How many search results to show. Fewer keeps the right release on screen instead of a long tail of compilations and reissues.",
     "searchIgnoreWords": "Words to ignore in searches",

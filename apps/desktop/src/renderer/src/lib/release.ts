@@ -5,6 +5,7 @@ import type {
   SearchResult,
   TrackMetadata,
 } from '../../../shared/types'
+import { METADATA_KEYS } from '../../../shared/metadata'
 import { parseDuration } from './duration'
 import { foldText } from './normalizeText'
 import { splitPosition } from './position'
@@ -479,6 +480,7 @@ export function buildReleaseMeta(
   rel: Release,
   track: ReleaseTrack | undefined,
   cover: { url?: string; path?: string; keep?: boolean } = {},
+  importFields?: readonly (keyof TrackMetadata)[],
 ): ReleaseMetaPatch {
   const albumArtist = joinArtists(rel.artists)
   // Discogs classifies twice: a broad genre ("Electronic") and finer styles ("House",
@@ -501,10 +503,7 @@ export function buildReleaseMeta(
   const catalogNumber = catno && catno.toLowerCase() !== 'none' ? catno : ''
   const pos = track ? splitPosition(track.position) : undefined
   const keepCover = cover.keep && !!cover.url
-  return {
-    coverUrl: keepCover ? cover.url : coverOf(rel, cover.url),
-    coverPath: keepCover ? cover.path : undefined,
-    meta: {
+  const imported: TrackMetadata = {
       ...current,
       title: track ? track.title : current.title,
       trackNumber: pos ? pos.track : current.trackNumber,
@@ -539,6 +538,29 @@ export function buildReleaseMeta(
         rel.provider === 'discogs'
           ? rel.uri?.trim() || `https://www.discogs.com/release/${rel.id}`
           : current.discogsUrl,
-    },
   }
+  return {
+    coverUrl: keepCover ? cover.url : coverOf(rel, cover.url),
+    coverPath: keepCover ? cover.path : undefined,
+    meta: importFields ? onlyImported(current, imported, importFields) : imported,
+  }
+}
+
+// Restores every field the user left out of the import list to the value the file already
+// carried, so opting a field out means "Discogs never touches this" rather than "Discogs
+// blanks this". Applied to the finished patch rather than woven into each field above: the
+// precedence rules (release wins, current is the fallback) stay in one readable place, and
+// a field added later is filtered without anyone remembering to wire it up. The cover is
+// deliberately not subject to this — it has its own keep/replace policy.
+function onlyImported(
+  current: TrackMetadata,
+  imported: TrackMetadata,
+  fields: readonly (keyof TrackMetadata)[],
+): TrackMetadata {
+  const allowed = new Set<keyof TrackMetadata>(fields)
+  const result = { ...imported }
+  for (const key of METADATA_KEYS) {
+    if (!allowed.has(key)) result[key] = current[key] ?? ''
+  }
+  return result
 }

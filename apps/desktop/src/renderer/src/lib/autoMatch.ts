@@ -1,5 +1,11 @@
 import { cleanMatchTitle, stripIgnoredWords } from '../../../shared/searchClean'
-import type { Release, ReleaseTrack, SearchProviderId, SearchResult } from '../../../shared/types'
+import type {
+  Release,
+  ReleaseTrack,
+  SearchProviderId,
+  SearchResult,
+  TrackMetadata,
+} from '../../../shared/types'
 import type { TrackItem } from '../types'
 import type { LocalActivityReport } from './activityLog'
 import { keepCoverArg } from './coverSource'
@@ -71,10 +77,13 @@ export function matchTargetOf(track: TrackItem, cleanup: MatchCleanup = {}): Tra
 // exactly like clicking the match in the editor (same buildReleaseMeta + keep-the-file's-cover
 // policy the sweep uses), then clears the pending review state and guards the row from a
 // re-probe. Returns undefined when there's nothing to accept, so the caller stays a no-op.
-export function acceptReviewPatch(track: TrackItem): Partial<TrackItem> | undefined {
+export function acceptReviewPatch(
+  track: TrackItem,
+  importFields?: readonly (keyof TrackMetadata)[],
+): Partial<TrackItem> | undefined {
   const rm = track.reviewMatch
   if (!rm) return undefined
-  const patch = buildReleaseMeta(track.meta, rm.release, rm.track, keepCoverArg(track))
+  const patch = buildReleaseMeta(track.meta, rm.release, rm.track, keepCoverArg(track), importFields)
   return {
     meta: patch.meta,
     coverUrl: patch.coverUrl,

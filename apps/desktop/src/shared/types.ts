@@ -188,6 +188,13 @@ export interface Settings {
   zeroPadTrack: boolean
   visibleFields: string[]
   requiredFields: string[]
+  // Which fields applying a Discogs release is allowed to fill. Separate from
+  // visibleFields on purpose: hiding an input is about the form, not about whether a
+  // release may overwrite the tag, and folding the two together would make hiding a
+  // field quietly stop it being tagged. A field left out keeps whatever the file had.
+  // Optional because every settings.json written before this existed lacks the key, and
+  // absent has to keep meaning "import everything" — see normalizeImportFields.
+  importFields?: string[]
   coverMaxSize: number
   coverSquare: boolean
   // When on, covers smaller than coverMaxSize are scaled up to it on embed, so the

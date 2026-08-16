@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { DEFAULT_IMPORT_FIELDS } from '../../../shared/defaults'
 import type { SearchProviderId, TrackMetadata } from '../../../shared/types'
 import { type AppleMusicIndex, buildLibraryIndex } from '../lib/appleMusicLibrary'
 import type { TrackItem } from '../types'
@@ -43,6 +44,7 @@ function setup(
   tracks: TrackItem[],
   libraryIndex: AppleMusicIndex | null = null,
   editingRef: { current: string | null } = { current: null },
+  importFields: (keyof TrackMetadata)[] = [...DEFAULT_IMPORT_FIELDS],
 ): {
   result: { current: ReturnType<typeof useAutoMatch> }
   updateTrack: ReturnType<typeof vi.fn>
@@ -54,6 +56,7 @@ function setup(
   const tracksRef = { current: tracks }
   const libraryIndexRef = { current: libraryIndex }
   const searchProvidersRef: { current: SearchProviderId[] } = { current: ['discogs'] }
+  const importFieldsRef = { current: importFields }
   const matchCleanupRef = { current: {} }
   const { result } = renderHook(() =>
     useAutoMatch({
@@ -61,6 +64,7 @@ function setup(
       updateTrack,
       libraryIndexRef,
       searchProvidersRef,
+      importFieldsRef,
       matchCleanupRef,
       editingRef,
       reportActivity,
@@ -83,6 +87,23 @@ describe('useAutoMatch', () => {
     expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ autoMatched: true }))
     expect(updateTrack).toHaveBeenCalledWith('b', expect.objectContaining({ autoMatched: true }))
     await waitFor(() => expect(result.current.matching).toBeNull())
+  })
+
+  // The sweep is the one path that tags without anyone watching — a crate of 600 files
+  // applies unattended — so it is where "don't fill this field" matters most. A field the
+  // user switched off must survive the sweep untouched, and one left on must still be
+  // written, or the preference would only hold in the editor.
+  it('respects the import-field choice when applying unattended', async () => {
+    setApi({ getRelease: vi.fn().mockResolvedValue({ ...release, country: 'Europe' }) })
+    const tracks = [track('a')]
+    const { result, updateTrack } = setup(tracks, null, { current: null }, ['album'])
+
+    act(() => result.current.enqueueAutoMatch(tracks, false))
+
+    await waitFor(() => expect(updateTrack).toHaveBeenCalledTimes(1))
+    const patch = updateTrack.mock.calls[0][1] as { meta: TrackMetadata }
+    expect(patch.meta.album).toBe('Album')
+    expect(patch.meta.country).toBe('')
   })
 
   // A field buffers its text and only commits to the track array on pause/blur, so while

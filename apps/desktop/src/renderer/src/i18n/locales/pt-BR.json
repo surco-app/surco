@@ -732,6 +732,8 @@
     "autoMatchNeedsSource": "Ative pelo menos uma fonte de busca para auto-associar.",
     "discogsFormats": "Mostrar só estes formatos",
     "discogsFormatsHint": "Limita os resultados do Discogs a estes formatos.",
+    "importFields": "Preencher estes campos a partir de um resultado",
+    "importFieldsHint": "Ao aplicar um lançamento, apenas os campos marcados são gravados. Os demais mantêm o que o arquivo já tinha.",
     "maxResults": "Máximo de resultados",
     "maxResultsHint": "Quantos resultados de busca mostrar. Menos mantém o release certo na tela em vez de uma fila longa de coletâneas e reedições.",
     "searchIgnoreWords": "Palavras a ignorar nas buscas",

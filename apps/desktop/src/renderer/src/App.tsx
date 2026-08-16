@@ -69,6 +69,7 @@ import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { deriveTagPatches } from './lib/deriveTags'
 import type { Destination } from './lib/destination'
+import { normalizeImportFields } from '../../shared/defaults'
 import { DEFAULT_REQUIRED_FIELDS } from './lib/fields'
 import {
   activeFocusPreset,
@@ -278,6 +279,12 @@ export default function App(): React.JSX.Element {
   // Live providers for the background sweep, read at probe time (Settings → Search).
   const searchProvidersRef = useRef<SearchProviderId[]>(DEFAULT_SEARCH_PROVIDERS)
   searchProvidersRef.current = settings?.searchProviders ?? DEFAULT_SEARCH_PROVIDERS
+  // Which fields a release may fill (Settings → Search). A ref for the same reason as the
+  // providers above: the sweep applies matches in the background, so it must read the
+  // current choice at apply time rather than one captured when the sweep started.
+  const importFields = normalizeImportFields(settings?.importFields)
+  const importFieldsRef = useRef<(keyof TrackMetadata)[]>(importFields)
+  importFieldsRef.current = importFields
   // Live title-cleanup settings for the sweep's scorer (the Naming pattern and the
   // user's junk phrases), read at probe time like the providers above.
   const matchCleanupRef = useRef<MatchCleanup>({})
@@ -633,6 +640,7 @@ export default function App(): React.JSX.Element {
     updateTrack,
     libraryIndexRef,
     searchProvidersRef,
+    importFieldsRef,
     matchCleanupRef,
     editingRef,
     reportActivity,
@@ -1395,7 +1403,7 @@ export default function App(): React.JSX.Element {
   // accept, so the command's enabled gate and this stay in agreement.
   const acceptReview = useStableCallback(() => {
     if (!selected) return
-    const patch = acceptReviewPatch(selected)
+    const patch = acceptReviewPatch(selected, importFields)
     if (patch && selected.reviewMatch) {
       updateTrack(selected.id, patch)
       window.api.recordStat(matchStatKey(selected.reviewMatch.release.provider))
@@ -1407,7 +1415,7 @@ export default function App(): React.JSX.Element {
   const acceptReviewRow = useStableCallback((id: string) => {
     const t = tracksRef.current.find((x) => x.id === id)
     if (!t) return
-    const patch = acceptReviewPatch(t)
+    const patch = acceptReviewPatch(t, importFields)
     if (patch && t.reviewMatch) {
       updateTrack(t.id, patch)
       window.api.recordStat(matchStatKey(t.reviewMatch.release.provider))

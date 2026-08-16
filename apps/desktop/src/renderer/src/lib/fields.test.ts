@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
 import {
   DEFAULT_FIELDS,
+  DEFAULT_IMPORT_FIELDS,
+  IMPORTABLE_FIELDS,
   DEFAULT_REQUIRED_FIELDS,
   FIELD_DEFS,
   FIELD_GROUPS,
@@ -41,6 +43,37 @@ describe('moveItem', () => {
   it('returns the array untouched when the move falls off either end', () => {
     expect(moveItem(['a', 'b'], 0, -1)).toEqual(['a', 'b'])
     expect(moveItem(['a', 'b'], 1, 1)).toEqual(['a', 'b'])
+  })
+})
+
+// The list the "which fields does Discogs fill" preference offers, and its default. It is
+// deliberately NOT DEFAULT_FIELDS: that one is about which inputs the form shows, and it
+// hides publisher/catalogNumber — defaulting to it would silently stop importing tags that
+// every install writes today. Offering a field Discogs never fills would be a dead switch,
+// so the catalog tracks what buildReleaseMeta actually writes.
+describe('IMPORTABLE_FIELDS', () => {
+  it('offers exactly the fields a release can fill', () => {
+    expect(IMPORTABLE_FIELDS).toContain('publisher')
+    expect(IMPORTABLE_FIELDS).toContain('catalogNumber')
+    expect(IMPORTABLE_FIELDS).toContain('country')
+    expect(IMPORTABLE_FIELDS).toContain('discogsUrl')
+    expect(IMPORTABLE_FIELDS).toContain('title')
+  })
+
+  // Fields no provider supplies are the DJ's own work; listing them would promise an import
+  // that never happens and, worse, let a user "enable" one and wonder why it stays empty.
+  it('leaves out the fields no release carries', () => {
+    expect(IMPORTABLE_FIELDS).not.toContain('bpm')
+    expect(IMPORTABLE_FIELDS).not.toContain('key')
+    expect(IMPORTABLE_FIELDS).not.toContain('mood')
+    expect(IMPORTABLE_FIELDS).not.toContain('energy')
+    expect(IMPORTABLE_FIELDS).not.toContain('comment')
+  })
+
+  // Upgrading must not change what gets tagged: everything importable starts enabled, so an
+  // install that never opens the preference behaves exactly as it did before it existed.
+  it('starts with every importable field enabled', () => {
+    expect(DEFAULT_IMPORT_FIELDS).toEqual(IMPORTABLE_FIELDS)
   })
 })
 

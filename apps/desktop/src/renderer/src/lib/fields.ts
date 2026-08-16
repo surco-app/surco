@@ -92,7 +92,12 @@ export function sortFieldsByGroup(visibleFields: string[]): string[] {
 
 // Re-exported from shared so renderer code can keep importing them from here
 // while main/settings reads the same source — see shared/defaults.
-export { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from '../../../shared/defaults'
+export {
+  DEFAULT_FIELDS,
+  DEFAULT_IMPORT_FIELDS,
+  DEFAULT_REQUIRED_FIELDS,
+  IMPORTABLE_FIELDS,
+} from '../../../shared/defaults'
 
 export function missingRequired(meta: TrackMetadata, requiredFields: string[]): string[] {
   return requiredFields.filter((key) => !meta[key as keyof TrackMetadata]?.trim())
