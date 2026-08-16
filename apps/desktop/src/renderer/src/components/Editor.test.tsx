@@ -513,6 +513,10 @@ describe('Editor clear metadata', () => {
         compilation: '',
         mood: '',
         energy: '',
+        style: '',
+        country: '',
+        mediaType: '',
+        discogsUrl: '',
       },
       matched: false,
       // Clearing the tags also drops any pending review flag, so a retag is probed afresh.

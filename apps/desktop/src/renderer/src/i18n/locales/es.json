@@ -525,6 +525,10 @@
     "rating": "Puntuación",
     "mood": "Estado de ánimo",
     "energy": "Energía",
+    "style": "Estilo",
+    "country": "País",
+    "mediaType": "Tipo de medio",
+    "discogsUrl": "URL de Discogs",
     "suggestionsMore": "Mostrar {{count}} más"
   },
   "declick": {

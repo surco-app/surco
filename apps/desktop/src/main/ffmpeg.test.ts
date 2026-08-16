@@ -1128,6 +1128,12 @@ describe('tagsFromProbe', () => {
           TORY: '1998',
           MOOD: 'Dark',
           ENERGY: '4',
+          // The collector fields, under the names mp3tag writes — reading them back is
+          // what makes a library tagged with that tool and one tagged here agree.
+          STYLE: 'Deep House',
+          COUNTRY: 'Germany',
+          MEDIATYPE: 'Vinyl, 12"',
+          DISCOGS_RELEASE_URL: 'https://www.discogs.com/release/123456',
         },
       },
     })
@@ -1156,6 +1162,10 @@ describe('tagsFromProbe', () => {
       compilation: '',
       mood: 'Dark',
       energy: '4',
+      style: 'Deep House',
+      country: 'Germany',
+      mediaType: 'Vinyl, 12"',
+      discogsUrl: 'https://www.discogs.com/release/123456',
     })
   })
 
@@ -1284,6 +1294,10 @@ describe('tagsFromProbe', () => {
       compilation: '',
       mood: '',
       energy: '',
+      style: '',
+      country: '',
+      mediaType: '',
+      discogsUrl: '',
     })
   })
 })

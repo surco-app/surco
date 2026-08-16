@@ -326,6 +326,19 @@ export interface TrackMetadata {
   // Kept strings like every other field.
   mood?: string
   energy?: string
+  // What a collector normalizes a library by, all four straight off the Discogs release
+  // and none of them with a standard frame — they ride TXXX/Vorbis under the names
+  // mp3tag writes, so a collection tagged with that tool and one tagged here agree.
+  // Style is Discogs' sub-classification ("Deep House") as opposed to the genre
+  // ("Electronic"); the two used to be crushed into `genre`, style winning.
+  style?: string
+  // The pressing's country of release, e.g. "Spain".
+  country?: string
+  // What it was pressed on, flattened from Discogs' format list: "Vinyl, 12\", 33 ⅓ RPM".
+  mediaType?: string
+  // The release page the track was matched against — the way to re-check a doubtful
+  // match months later without searching for it again.
+  discogsUrl?: string
 }
 
 // One track's editable state, persisted alongside the session paths so a crash or
@@ -414,6 +427,12 @@ export interface Release {
   genres?: string[]
   styles?: string[]
   labels?: { name: string; catno: string }[]
+  // Where the release was pressed, what it was pressed on, and its public page. All
+  // three come back in the same /releases response the rest of this shape is read from,
+  // so surfacing them costs no extra request.
+  country?: string
+  formats?: { name: string; descriptions?: string[] }[]
+  uri?: string
   images?: { uri: string; type: string; resource_url: string }[]
   tracklist: ReleaseTrack[]
   // Release-wide credits. `tracks` ("A1 to B2"), when present, scopes a credit to

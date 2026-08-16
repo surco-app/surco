@@ -840,15 +840,83 @@ describe('buildReleaseMeta', () => {
     expect(patch.meta.discogsReleaseId).toBe('111')
   })
 
-  it('prefers a style over a genre, and falls back to a genre with no style', () => {
-    const styled = buildReleaseMeta(
+  // Genre and style are separate things on Discogs — "Electronic" is the genre, "House"
+  // the style — and they used to be crushed into one field, with the style winning. DJs
+  // who normalize their collection want both, so each now lands where it belongs.
+  it('keeps the genre and the style in their own fields', () => {
+    const patch = buildReleaseMeta(
       meta(),
       release({ genres: ['Electronic'], styles: ['House'] }),
       undefined,
     )
-    expect(styled.meta.genre).toBe('House')
-    const genred = buildReleaseMeta(meta(), release({ genres: ['Electronic'] }), undefined)
-    expect(genred.meta.genre).toBe('Electronic')
+    expect(patch.meta.genre).toBe('Electronic')
+    expect(patch.meta.style).toBe('House')
+  })
+
+  // A release tagged only by style still has to fill the genre field: leaving it empty
+  // would be a regression for every track that carries no genre on Discogs.
+  it('falls back to the style when the release carries no genre', () => {
+    const patch = buildReleaseMeta(meta(), release({ styles: ['Techno'] }), undefined)
+    expect(patch.meta.genre).toBe('Techno')
+    expect(patch.meta.style).toBe('Techno')
+  })
+
+  // Several styles are the norm on Discogs ("House", "Deep House"); joining them keeps
+  // the information the user came for instead of silently dropping all but the first.
+  it('joins multiple styles rather than keeping only the first', () => {
+    const patch = buildReleaseMeta(
+      meta(),
+      release({ genres: ['Electronic'], styles: ['House', 'Deep House'] }),
+      undefined,
+    )
+    expect(patch.meta.style).toBe('House, Deep House')
+  })
+
+  // The three fields a collector normalizes by and Discogs already returns: where the
+  // pressing came from, what it was pressed on, and the page it was matched against —
+  // the last one being how you check a doubtful match months later.
+  it('carries the country, the media type and the release page', () => {
+    const patch = buildReleaseMeta(
+      meta(),
+      release({
+        country: 'Spain',
+        formats: [{ name: 'Vinyl', descriptions: ['12"', '33 ⅓ RPM'] }],
+        uri: 'https://www.discogs.com/release/6294',
+      }),
+      undefined,
+    )
+    expect(patch.meta.country).toBe('Spain')
+    expect(patch.meta.mediaType).toBe('Vinyl, 12", 33 ⅓ RPM')
+    expect(patch.meta.discogsUrl).toBe('https://www.discogs.com/release/6294')
+  })
+
+  // A release missing any of them must leave the field empty rather than writing
+  // "undefined" into the user's tag.
+  it('leaves the new fields empty when the release carries none', () => {
+    const patch = buildReleaseMeta(meta(), release({}), undefined)
+    expect(patch.meta.country).toBe('')
+    expect(patch.meta.mediaType).toBe('')
+    expect(patch.meta.style).toBe('')
+  })
+
+  // Same provenance rule the Discogs id already follows: a Bandcamp match must not stamp
+  // a discogs.com address onto the track, or the link would point at whatever release
+  // happens to share that number — a wrong reference that looks authoritative.
+  it('does not write a Discogs link for a match from another provider', () => {
+    const patch = buildReleaseMeta(
+      meta(),
+      { ...release({ id: 6294 }), provider: 'bandcamp' },
+      undefined,
+    )
+    expect(patch.meta.discogsUrl).toBeFalsy()
+  })
+
+  // Every Discogs release has a page, so the field is filled even when the response
+  // omits `uri` — the id is enough to address it, and an empty link would send the user
+  // searching for a release Surco already identified.
+  it('falls back to the canonical release page when the response omits the uri', () => {
+    const patch = buildReleaseMeta(meta(), release({ id: 6294 }), undefined)
+    expect(patch.meta.discogsUrl).toBe('https://www.discogs.com/release/6294')
   })
 
   it('takes title, track number and disc from the chosen track', () => {

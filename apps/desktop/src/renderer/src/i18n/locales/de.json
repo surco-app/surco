@@ -525,6 +525,10 @@
     "rating": "Bewertung",
     "mood": "Stimmung",
     "energy": "Energie",
+    "style": "Stil",
+    "country": "Land",
+    "mediaType": "Medientyp",
+    "discogsUrl": "Discogs-URL",
     "suggestionsMore": "{{count}} weitere anzeigen"
   },
   "declick": {

@@ -30,6 +30,10 @@ const FIELD_PRESENCE: Record<keyof TrackMetadata, true> = {
   compilation: true,
   mood: true,
   energy: true,
+  style: true,
+  country: true,
+  mediaType: true,
+  discogsUrl: true,
 }
 
 // Every metadata field name, derived from the presence map above so the two can't drift.
