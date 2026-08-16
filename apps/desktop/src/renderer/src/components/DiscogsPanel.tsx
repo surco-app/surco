@@ -6,7 +6,7 @@ import type { ReleaseTrack, SearchProviderId } from '../../../shared/types'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { DEFAULT_RESULTS_WIDTH } from '../lib/focusPreset'
 import { useOpenSettings } from '../lib/openSettingsContext'
-import type { ReleaseMetaPatch } from '../lib/release'
+import { type ReleaseMetaPatch, resultFacts } from '../lib/release'
 import { contentDeficit } from '../lib/resize'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
@@ -310,15 +310,14 @@ export const DiscogsPanel = memo(function DiscogsPanel({
               const loaded = expanded && !!release && !loading
               // Empty for every Bandcamp row — its search returns no year, label or
               // catalogue — so the facts span is dropped rather than rendered blank.
-              const facts = [r.year, r.label?.[0], r.catno, r.format?.slice(0, 2).join(', ')]
-                .filter(Boolean)
-                .join(' · ')
+              const facts = resultFacts(r)
               return (
                 <div key={rk} data-testid="result-card" className="px-1.5 pt-1.5">
                   {/* Result as a card, matching the track list's rows so both columns read as the
                       same component. The wide column earns the title a full two lines instead of a
-                      hard cut, and the release line shows year · label · catalogue no · format in
-                      full — the catalogue number being the surest way to tell pressings apart. */}
+                      hard cut, and the release line shows year · label · catalogue no · format ·
+                      country in full — the catalogue number and the pressing country being the
+                      surest ways to tell two near-identical results apart. */}
                   <button
                     type="button"
                     data-testid="discogs-result"

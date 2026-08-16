@@ -14,6 +14,7 @@ import {
   coverOf,
   durationProximitySec,
   joinArtists,
+  resultFacts,
   matchSignals,
   preRankResults,
   providerCountsOf,
@@ -801,6 +802,59 @@ describe('boostForCatalogMatch', () => {
 
   it('never exceeds a perfect score', () => {
     expect(boostForCatalogMatch(0.95)).toBeLessThanOrEqual(1)
+  })
+})
+
+// The one line under a search result's title. A DJ picking between a dozen pressings of the
+// same record reads it to tell them apart, and which country a record was pressed in is one
+// of the things that distinguishes them — a UK 12" and its German repress are different
+// records to a collector.
+describe('resultFacts', () => {
+  it('reads year, label, catalogue number, format and country', () => {
+    expect(
+      resultFacts({
+        provider: 'discogs',
+        id: 1,
+        title: 'X',
+        year: '1997',
+        label: ['Virgin'],
+        catno: 'V2821',
+        format: ['Vinyl', '12"'],
+        country: 'UK',
+      } as SearchResult),
+    ).toBe('1997 · Virgin · V2821 · Vinyl, 12" · UK')
+  })
+
+  // Bandcamp and Deezer results carry none of this, so the line has to collapse cleanly
+  // rather than render a row of stray separators.
+  it('drops the fields a provider does not supply', () => {
+    expect(resultFacts({ provider: 'bandcamp', id: 2, title: 'X' } as SearchResult)).toBe('')
+  })
+
+  // The country belongs after the format, reading medium-then-origin the way Discogs itself
+  // prints a pressing; putting it earlier would split the year/label/catalogue run that
+  // identifies the release.
+  it('places the country last, after the format', () => {
+    const facts = resultFacts({
+      provider: 'discogs',
+      id: 3,
+      title: 'X',
+      format: ['Vinyl'],
+      country: 'Spain',
+    } as SearchResult)
+    expect(facts).toBe('Vinyl · Spain')
+  })
+
+  // Discogs' own long-form descriptions (RPM, "Single", "Stereo") make the line unreadable,
+  // so it keeps only the medium and its size — the two that tell pressings apart.
+  it('keeps only the first two format descriptions', () => {
+    const facts = resultFacts({
+      provider: 'discogs',
+      id: 4,
+      title: 'X',
+      format: ['Vinyl', '12"', '33 ⅓ RPM', 'Stereo'],
+    } as SearchResult)
+    expect(facts).toBe('Vinyl, 12"')
   })
 })
 
