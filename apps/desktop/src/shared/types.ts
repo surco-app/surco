@@ -400,6 +400,10 @@ export interface SearchResult {
   // The release's catalogue number (e.g. "DNA-2034"), the surest way to tell two pressings
   // apart in the results. Discogs returns it in the search JSON; absent for Bandcamp.
   catno?: string
+  // Where the release was pressed (e.g. "UK", "Europe") — with the format, what separates a
+  // repress from the original in a list of near-identical results. Like catno, Discogs sends
+  // it in the search JSON, so showing it costs no extra request; absent for Bandcamp/Deezer.
+  country?: string
   // Bandcamp releases are fetched by their page URL, not a numeric id; unset for
   // Discogs, which loads by `id`.
   releaseUrl?: string

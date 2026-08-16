@@ -449,6 +449,18 @@ export function providerCountsOf(
   }))
 }
 
+// The single line under a search result's title: year · label · catalogue no · format ·
+// country. Only the first two format descriptions are kept — Discogs also lists RPM,
+// "Single", "Stereo" and the like, which crowd out the two that actually tell pressings
+// apart (the medium and its size). Every field is optional and absent ones are dropped, so
+// a Bandcamp row (which carries none of them) collapses to an empty string instead of a
+// line of stray separators.
+export function resultFacts(r: SearchResult): string {
+  return [r.year, r.label?.[0], r.catno, r.format?.slice(0, 2).join(', '), r.country]
+    .filter(Boolean)
+    .join(' · ')
+}
+
 export interface ReleaseMetaPatch {
   coverUrl: string | undefined
   coverPath: string | undefined
