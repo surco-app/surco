@@ -2,7 +2,8 @@ import { Check, ChevronDown, ChevronUp, GripVertical, Wand2 } from 'lucide-react
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FIELD_DEFS, moveItem, sortFieldsByGroup } from '../lib/fields'
+import type { TrackMetadata } from '../../../shared/types'
+import { FIELD_DEFS, IMPORTABLE_FIELDS, moveItem, sortFieldsByGroup } from '../lib/fields'
 import { Tooltip } from './Tooltip'
 
 // How long the auto-organize button holds its "done" confirmation before reverting.
@@ -23,8 +24,12 @@ function reorder(list: string[], fromKey: string, toKey: string): string[] {
 interface Props {
   visibleFields: string[]
   requiredFields: string[]
+  // Which fields a match may fill. A property of the field, like `required` — not a
+  // provider setting: it governs Discogs, Bandcamp and Deezer alike.
+  importFields: string[]
   onChangeVisible: (next: string[]) => void
   onChangeRequired: (next: string[]) => void
+  onChangeImport: (next: string[]) => void
 }
 
 // The editor's field list: which tags show (and in what order) and which must be filled
@@ -33,10 +38,42 @@ interface Props {
 export function FieldsEditor({
   visibleFields,
   requiredFields,
+  importFields,
   onChangeVisible,
   onChangeRequired,
+  onChangeImport,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  // The auto-fill toggle, shown on both the visible and hidden lists. Rendered only for a
+  // field a release can actually carry: offering it on bpm/key/mood would be a switch that
+  // never does anything. A hidden field keeps its toggle — it isn't shown in the form, but
+  // it is still written to the file, so it has to be configurable without unhiding it.
+  const autoToggle = (key: string): React.JSX.Element => {
+    // A field no provider fills gets an empty slot of the same width rather than nothing,
+    // so Required/Hide stay on one vertical line down the list instead of jumping left on
+    // every row without a toggle.
+    if (!IMPORTABLE_FIELDS.includes(key as keyof TrackMetadata))
+      return <span className="mr-1 inline-block w-[3.25rem]" aria-hidden="true" />
+    const on = importFields.includes(key)
+    return (
+      <button
+        type="button"
+        data-testid={`field-auto-${key}`}
+        aria-pressed={on}
+        onClick={() =>
+          onChangeImport(on ? importFields.filter((k) => k !== key) : [...importFields, key])
+        }
+        className={`mr-1 rounded px-2 py-0.5 text-xs ${
+          on
+            ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
+            : 'text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg-muted'
+        }`}
+      >
+        {tr('settings.autoFill')}
+        <Tooltip label={tr('settings.autoFillHint')} />
+      </button>
+    )
+  }
   // Reordering a scrolling (and possibly already-tidy) list gives no visible sign it ran,
   // so the button confirms in place, then reverts. The timer is cleared on unmount so a
   // late revert can't fire after the modal closes.
@@ -128,6 +165,7 @@ export function FieldsEditor({
                 <Tooltip label={`{${key}}`} />
               </span>
               <div className="flex items-center gap-1">
+                {autoToggle(key)}
                 <button
                   type="button"
                   data-testid={`field-required-${key}`}
@@ -200,6 +238,8 @@ export function FieldsEditor({
                   {tr(`fields.${d.key}`)}
                   <Tooltip label={`{${d.key}}`} />
                 </span>
+                <div className="flex items-center gap-1">
+                {autoToggle(d.key)}
                 <button
                   type="button"
                   onClick={() => onChangeVisible([...visibleFields, d.key])}
@@ -207,6 +247,7 @@ export function FieldsEditor({
                 >
                   {tr('settings.show')}
                 </button>
+                </div>
               </div>
             ))}
           {FIELD_DEFS.every((d) => visibleFields.includes(d.key)) && (

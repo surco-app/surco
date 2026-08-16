@@ -8,18 +8,23 @@ import { FieldsEditor } from './FieldsEditor'
 
 afterEach(cleanup)
 
-function setup(over: { visibleFields?: string[]; requiredFields?: string[] } = {}) {
+function setup(
+  over: { visibleFields?: string[]; requiredFields?: string[]; importFields?: string[] } = {},
+) {
   const onChangeVisible = vi.fn()
   const onChangeRequired = vi.fn()
+  const onChangeImport = vi.fn()
   render(
     <FieldsEditor
       visibleFields={over.visibleFields ?? ['title', 'artist', 'album']}
       requiredFields={over.requiredFields ?? ['title']}
+      importFields={over.importFields ?? ['title']}
       onChangeVisible={onChangeVisible}
       onChangeRequired={onChangeRequired}
+      onChangeImport={onChangeImport}
     />,
   )
-  return { onChangeVisible, onChangeRequired }
+  return { onChangeVisible, onChangeRequired, onChangeImport }
 }
 
 describe('FieldsEditor', () => {
@@ -146,5 +151,56 @@ describe('FieldsEditor', () => {
       'hidden-field-remixArtist',
       'hidden-field-trackNumber',
     ])
+  })
+})
+
+// Whether a match fills a field is a property OF the field, like "required" — not a
+// Discogs setting. It used to live in Settings → Search under a Discogs heading, which
+// both buried it and implied it only applied to Discogs; it governs every provider.
+describe('auto-fill toggle', () => {
+  it('turns auto-fill on for a field that is off', () => {
+    const { onChangeImport } = setup({ importFields: ['title'] })
+    fireEvent.click(screen.getByTestId('field-auto-artist'))
+    expect(onChangeImport).toHaveBeenCalledWith(['title', 'artist'])
+  })
+
+  it('turns auto-fill off for a field that is on', () => {
+    const { onChangeImport } = setup({ importFields: ['title', 'artist'] })
+    fireEvent.click(screen.getByTestId('field-auto-title'))
+    expect(onChangeImport).toHaveBeenCalledWith(['artist'])
+  })
+
+  // Pressed state drives the styling, and a screen reader has nothing else to go on.
+  it('reports its state to assistive tech', () => {
+    setup({ importFields: ['title'] })
+    expect(screen.getByTestId('field-auto-title')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('field-auto-artist')).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  // No provider supplies BPM, key, mood or a personal comment — they are the DJ's own
+  // work. A toggle there would promise an import that can never happen, so the button is
+  // absent rather than present-but-dead.
+  it('offers no toggle on a field no provider can fill', () => {
+    setup({ visibleFields: ['title', 'bpm', 'comment'], requiredFields: [] })
+    expect(screen.getByTestId('field-auto-title')).toBeInTheDocument()
+    expect(screen.queryByTestId('field-auto-bpm')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('field-auto-comment')).not.toBeInTheDocument()
+  })
+
+  // A hidden field still gets written to the file — the user just doesn't see it in the
+  // form. Someone who hides Country but wants it tagged has to be able to say so without
+  // showing it first, so the hidden list carries the toggle too.
+  it('offers the toggle on hidden fields as well', () => {
+    setup({ visibleFields: ['title'], requiredFields: [], importFields: ['country'] })
+    const row = screen.getByTestId('hidden-field-country')
+    expect(within(row).getByTestId('field-auto-country')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  // "Auto" is three letters carrying a non-obvious meaning, so the row's tooltip has to
+  // say what it does — otherwise the control is a guess.
+  it('explains what the toggle does on hover', () => {
+    setup()
+    fireEvent.focusIn(screen.getByTestId('field-auto-title'))
+    expect(screen.getByRole('tooltip')).toHaveTextContent(/fill/i)
   })
 })

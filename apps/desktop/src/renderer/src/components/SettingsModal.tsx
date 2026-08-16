@@ -315,8 +315,10 @@ export function SettingsModal({
               <FieldsEditor
                 visibleFields={synced.visibleFields}
                 requiredFields={synced.requiredFields}
+                importFields={synced.importFields}
                 onChangeVisible={(fields) => patch('visibleFields', fields)}
                 onChangeRequired={(fields) => patch('requiredFields', fields)}
+                onChangeImport={(fields) => patch('importFields', fields)}
               />
             )}
             {tab === 'shortcuts' && (
