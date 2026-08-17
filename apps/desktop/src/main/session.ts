@@ -33,22 +33,57 @@ function coverPreview(path: string): string | undefined {
   }
 }
 
+// What one cover file resolved to, cached per distinct path across the whole restore.
+// null means the file is gone (a pasted cover the OS temp cleaner took), which the
+// caller turns into "this track falls back to its own artwork". `preview` is minted on
+// first demand and remembered: a track that already carries a coverUrl needs none, so
+// asking for it eagerly would decode a print-size scan nobody displays.
+interface CoverEntry {
+  preview?: string | undefined
+  minted: boolean
+}
+type ResolvedCover = CoverEntry | null
+
+// One filesystem question per distinct cover, however many tracks reference it.
+function resolveCover(path: string, cache: Map<string, ResolvedCover>): ResolvedCover {
+  const hit = cache.get(path)
+  if (hit !== undefined) return hit
+  const resolved: ResolvedCover = existsSync(path) ? { minted: false } : null
+  cache.set(path, resolved)
+  return resolved
+}
+
+// The preview for a resolved cover, decoded once across every track that shares it.
+function previewOf(entry: CoverEntry, path: string): string | undefined {
+  if (!entry.minted) {
+    entry.preview = coverPreview(path)
+    entry.minted = true
+  }
+  return entry.preview
+}
+
 // An edit written by this app is well-formed, but the file is hand-editable and old
 // versions wrote no edits at all — anything that isn't the expected shape degrades to
 // "no staged edits for this track" instead of poisoning the restore.
-function sanitizeEdit(raw: unknown, previews: Map<string, string | undefined>): SessionEdit | null {
+function sanitizeEdit(raw: unknown, previews: Map<string, ResolvedCover>): SessionEdit | null {
   if (typeof raw !== 'object' || raw === null) return null
   const edit = { ...(raw as SessionEdit) }
   if (typeof edit.meta !== 'object' || edit.meta === null) return null
   // Pasted covers live in an OS temp dir that a reboot clears; a vanished file can't
   // be embedded, so the track falls back to its own artwork.
-  if (edit.coverPath && !existsSync(edit.coverPath)) delete edit.coverPath
-  if (edit.coverPath && !edit.coverUrl) {
-    // One preview per distinct file: a cover applied across a multi-selection is
-    // shared by many tracks, and minting it once keeps the load O(files) not O(tracks).
-    if (!previews.has(edit.coverPath)) previews.set(edit.coverPath, coverPreview(edit.coverPath))
-    const preview = previews.get(edit.coverPath)
-    if (preview) edit.coverUrl = preview
+  //
+  // Resolved through the same per-file cache as the preview, not ahead of it. A cover
+  // applied across a multi-selection is one file referenced by every track in it, so
+  // the old order asked the filesystem once per TRACK — and this runs inside a load the
+  // comment below calls async precisely so the window can paint. Local that is
+  // microseconds; for a cover picked off a NAS it is a round trip apiece.
+  if (edit.coverPath) {
+    const resolved = resolveCover(edit.coverPath, previews)
+    if (!resolved) delete edit.coverPath
+    else if (!edit.coverUrl) {
+      const preview = previewOf(resolved, edit.coverPath)
+      if (preview) edit.coverUrl = preview
+    }
   }
   // A malformed trim (hand-edited, or an inverted range) would make atrim emit an
   // empty stream at the next conversion — repair it to "no trim" here so every
@@ -92,7 +127,7 @@ export async function loadLastSession(): Promise<SessionData> {
     const paths = candidates.filter((_, i) => present[i])
     const edits: Record<string, SessionEdit> = {}
     if (typeof raw.edits === 'object' && raw.edits !== null) {
-      const previews = new Map<string, string | undefined>()
+      const previews = new Map<string, ResolvedCover>()
       for (const path of paths) {
         const edit = sanitizeEdit((raw.edits as Record<string, unknown>)[path], previews)
         if (edit) edits[path] = edit
