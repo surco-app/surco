@@ -12,6 +12,13 @@ bump="${1:?usage: release.sh <patch|minor|major>}"
 # before the tag exists.
 (cd apps/desktop && npx tsc --build)
 
+# Lint for the same reason, and before the type-check would have caught anything: CI's
+# check job runs lint FIRST, so a lint error skips every publish job just as surely as a
+# type error — and `npm test` doesn't run it either. v0.86.0 was tagged and pushed with a
+# lint error already on main, published nothing, and needed the tag moved.
+npm run lint -w apps/desktop
+npm run lint -w apps/web
+
 npm version "$bump" --no-git-tag-version -w apps/desktop
 version=$(node -p "require('./apps/desktop/package.json').version")
 
