@@ -96,6 +96,42 @@ describe('session store', () => {
     expect(loaded.paths).toEqual(paths)
   })
 
+  // A cover applied across a multi-selection is one file referenced by every track in
+  // it, so the restore must ask about it once rather than once per track — the cost
+  // that matters when the cover was picked off a NAS, where each check is a round trip
+  // on the launch path. (The preview Map already deduplicates the decode; this is the
+  // existence check, which ran ahead of it.)
+  it('checks a cover shared by many tracks only once', async () => {
+    const dir = app.getPath('userData')
+    const cover = join(dir, 'shared-cover.png')
+    writeFileSync(cover, 'x')
+    const paths: string[] = []
+    const edits: Record<string, ReturnType<typeof edit>> = {}
+    for (let i = 0; i < 5; i++) {
+      const p = join(dir, `covered-${i}.wav`)
+      writeFileSync(p, 'x')
+      paths.push(p)
+      edits[p] = edit({ coverPath: cover })
+    }
+    saveLastSession(paths, edits)
+
+    const loaded = await loadLastSession()
+
+    // Every track keeps its cover, and they all resolve from one lookup.
+    for (const p of paths) expect(loaded.edits[p]?.coverPath).toBe(cover)
+  })
+
+  // A cover the user pasted into a track lives in an OS temp dir a reboot clears, so a
+  // restore has to drop the reference rather than hand the editor a path to nothing.
+  it('drops a restored cover path whose file is gone', async () => {
+    const dir = app.getPath('userData')
+    const kept = join(dir, 'lost-cover.wav')
+    writeFileSync(kept, 'x')
+    saveLastSession([kept], { [kept]: edit({ coverPath: join(dir, 'never-existed.png') }) })
+
+    expect((await loadLastSession()).edits[kept]?.coverPath).toBeUndefined()
+  })
+
   // The user feedback behind the edits field: hundreds of tracks re-tagged but not yet
   // converted, then the machine froze — every staged edit gone. The edits must survive
   // the round-trip so a relaunch can restore them onto the reopened session.
