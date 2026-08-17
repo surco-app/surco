@@ -49,8 +49,19 @@ class FakeAudio {
   onloadedmetadata: (() => void) | null = null
   ontimeupdate: (() => void) | null = null
   onended: (() => void) | null = null
-  play = play
-  pause = pause
+  // Bound per instance so `paused` tracks this element, and resolving like the real
+  // one: the frame loop is armed when both play() promises settle, so a play() that
+  // never resolved would leave the pair unpinned. The shared spies stay for the
+  // call-count assertions.
+  play = (): Promise<void> => {
+    play()
+    this.paused = false
+    return Promise.resolve()
+  }
+  pause = (): void => {
+    pause()
+    this.paused = true
+  }
   constructor(src: string) {
     this.src = src
     elements.push(this)
@@ -481,12 +492,25 @@ describe('DeclickSection', () => {
   // comparison, which is the one failure this feature cannot afford.
   it('re-aligns the silent leg when it drifts out of sync with the audible one', async () => {
     await withPreview()
-    fireEvent.click(screen.getByTestId('declick-play'))
+    // Play is disabled until both elements report their duration, so the pair has to be
+    // loaded first — without it the click below lands on a disabled button and nothing
+    // plays at all. This test passed anyway while the frame loop ran unconditionally.
+    act(() => {
+      loadPair()
+    })
+    // Playback first: the loop is armed when both play() promises settle, and play()
+    // re-aligns the pair on its way in — so a gap staged before the click would be
+    // closed by that re-align rather than by the loop this asserts on.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('declick-play'))
+    })
     const [original, repaired] = elements
-    repaired.paused = false
+    // Now the drift opens mid-playback, which is the real failure: two elements that
+    // started together and slid apart as they buffered.
     repaired.currentTime = 12
     original.currentTime = 11.55
     await act(async () => {
+      await tick()
       await tick()
     })
     expect(original.currentTime).toBeCloseTo(12, 2)
@@ -495,12 +519,19 @@ describe('DeclickSection', () => {
   it('leaves a leg that is merely a few milliseconds off alone, rather than stuttering it', async () => {
     // Correcting on every frame regardless would re-seek the audio it keeps smooth.
     await withPreview()
-    fireEvent.click(screen.getByTestId('declick-play'))
+    // Loaded and actually playing, or the loop never runs and this passes for the
+    // trivial reason that nothing touched the value at all.
+    act(() => {
+      loadPair()
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('declick-play'))
+    })
     const [original, repaired] = elements
-    repaired.paused = false
     repaired.currentTime = 12
     original.currentTime = 11.995
     await act(async () => {
+      await tick()
       await tick()
     })
     expect(original.currentTime).toBe(11.995)

@@ -32,6 +32,9 @@ export function useDeclickAb(originalPath: string, repairedPath: string | null):
   const originalRef = useRef<HTMLAudioElement | null>(null)
   const repairedRef = useRef<HTMLAudioElement | null>(null)
   const frame = useRef<number | null>(null)
+  // The frame loop's body, published by the effect that owns the pair so play() can
+  // start it without re-creating the elements.
+  const pinRef = useRef<(() => void) | null>(null)
   const [side, setSide] = useState<AbSide>('repaired')
   const [playing, setPlaying] = useState(false)
   const [at, setAt] = useState(0)
@@ -65,18 +68,31 @@ export function useDeclickAb(originalPath: string, repairedPath: string | null):
     // one. A drifted A/B compares two different moments of the song while still *sounding*
     // like a comparison — the one failure this feature cannot afford, since the clicks it
     // exists to judge are milliseconds wide.
+    // Started by play() and stopped by the pair falling silent. It used to re-arm the
+    // next frame BEFORE the paused check, so the loop ran at 60fps for the whole life
+    // of the section — compositor awake, renderer never idle — to correct a drift that
+    // cannot happen while both legs are stopped. Correcting first and re-arming last
+    // keeps the fix on every frame that does run, including the one already scheduled
+    // when playback stops.
     const pin = (): void => {
-      frame.current = requestAnimationFrame(pin)
       const heard = original.volume > 0 ? original : repaired
       const muted = heard === original ? repaired : original
-      if (heard.paused) return
       if (Math.abs(muted.currentTime - heard.currentTime) > MAX_DRIFT_SEC)
         muted.currentTime = heard.currentTime
+      if (heard.paused) {
+        frame.current = null
+        return
+      }
+      frame.current = requestAnimationFrame(pin)
     }
-    frame.current = requestAnimationFrame(pin)
+    pinRef.current = pin
     repaired.onended = () => {
       setPlaying(false)
       original.pause()
+      // The loop would fall out on its own next frame (both legs are paused now), but
+      // cancelling here keeps frame.current honest for the next play().
+      if (frame.current !== null) cancelAnimationFrame(frame.current)
+      frame.current = null
     }
     let loaded = 0
     const onLoad = (): void => {
@@ -97,6 +113,7 @@ export function useDeclickAb(originalPath: string, repairedPath: string | null):
     return () => {
       if (frame.current !== null) cancelAnimationFrame(frame.current)
       frame.current = null
+      pinRef.current = null
       original.pause()
       repaired.pause()
       originalRef.current = null
@@ -126,13 +143,24 @@ export function useDeclickAb(originalPath: string, repairedPath: string | null):
     // when the other stopped, and an A/B comparing two different instants is a lie.
     original.currentTime = repaired.currentTime
     void Promise.all([original.play(), repaired.play()])
-      .then(() => setPlaying(true))
+      .then(() => {
+        setPlaying(true)
+        // Start the drift correction now that there is drift to correct. Guarded so a
+        // second play() (the button pressed twice, a resume after end) cannot leave two
+        // loops running against each other.
+        if (frame.current === null && pinRef.current)
+          frame.current = requestAnimationFrame(pinRef.current)
+      })
       .catch(() => setPlaying(false))
   }, [])
 
   const pause = useCallback(() => {
     originalRef.current?.pause()
     repairedRef.current?.pause()
+    // Cancelled here rather than left for the loop to notice on its next frame: the
+    // point is not to schedule that frame at all.
+    if (frame.current !== null) cancelAnimationFrame(frame.current)
+    frame.current = null
     setPlaying(false)
   }, [])
 
