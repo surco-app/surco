@@ -32,7 +32,15 @@ vi.mock('node:fs', async (importOriginal) => {
   return { ...real, writeFileSync, readFileSync }
 })
 
-import { mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs'
+import {
+  chmodSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  utimesSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app } from 'electron'
@@ -348,6 +356,29 @@ describe('configurable settings folder', () => {
     saveSettings({ keyNotation: 'camelot' })
     expect(read(syncedFile(dir)).keyNotation).toBe('camelot')
     expect(getSettings().keyNotation).toBe('camelot')
+  })
+
+  // The pointer was written BEFORE the folder was seeded, with no rollback: if seeding
+  // threw — a read-only volume, a full disk, an iCloud folder that is not there yet,
+  // which is exactly the kind of place this setting points at — the pointer already
+  // named a folder holding no settings.json. Every non-local key (theme, language,
+  // filename format, visible fields, the Discogs token) then read back as its default,
+  // silently, because getSettings merges an empty synced file over the defaults.
+  it('keeps the current preferences when the chosen folder cannot be seeded', () => {
+    saveSettings({ keyNotation: 'musical', filenameFormat: '{artist} — {title}' })
+    const dir = mkdtempSync(join(tmpdir(), 'surco-readonly-'))
+    // Refuse writes inside it, so seeding the synced file fails for a real reason.
+    chmodSync(dir, 0o500)
+
+    expect(() => setConfigDir(dir)).toThrow()
+
+    // The settings the user had are still theirs, and the app is not pointed at a
+    // folder it could not set up.
+    expect(getSettings().keyNotation).toBe('musical')
+    expect(getSettings().filenameFormat).toBe('{artist} — {title}')
+    expect(getConfigDir()).toBeNull()
+    chmodSync(dir, 0o700)
+    rmSync(dir, { recursive: true, force: true })
   })
 
   // Machine-bound values (output path, onboarding, stats) make no sense shared
