@@ -908,6 +908,8 @@ function registerIpc(): void {
       releasePath: outputReservations.release,
       registerActiveConversion: activeConversions.register,
       unregisterActiveConversion: activeConversions.unregister,
+      beginJob: activeConversions.beginJob,
+      endJob: activeConversions.endJob,
       trackTmp: tmpManifest.track,
       untrackTmp: tmpManifest.untrack,
       convertAudio: (

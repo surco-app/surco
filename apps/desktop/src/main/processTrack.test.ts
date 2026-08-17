@@ -57,6 +57,8 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     releasePath: vi.fn(),
     registerActiveConversion: vi.fn(),
     unregisterActiveConversion: vi.fn(),
+    beginJob: vi.fn(),
+    endJob: vi.fn(),
     trackTmp: vi.fn(),
     untrackTmp: vi.fn(),
     ...overrides,
@@ -333,6 +335,39 @@ describe('runProcessTrack — cancel reaches the running encode', () => {
     })
     await expect(runProcessTrack(job(), deps)).rejects.toThrow('killed by signal')
     expect(deps.unregisterActiveConversion).toHaveBeenCalledWith('job1')
+  })
+
+  // The test above hands onChild a process by hand, which hides the case that matters:
+  // the stream-copy shortcut copies bytes and edits the tag in place, so it never
+  // spawns a child and onChild never fires. That job is still work in flight — it is
+  // the ordinary same-format retag, and AIFF is the default output format — so the
+  // close guard has to see it. Registering only from onChild left a 300-track retag
+  // invisible: count() stayed 0, the window closed without asking, and the queue went
+  // with it. Exactly the loss quitGuard exists to prevent.
+  it('counts a stream-copy job that never spawns a child as in flight', async () => {
+    const deps = makeDeps({
+      convertAudio: vi.fn(async () => ({ normalizeSkipped: false })),
+    })
+
+    await runProcessTrack(job(), deps)
+
+    expect(deps.beginJob).toHaveBeenCalledWith('job1')
+    expect(deps.endJob).toHaveBeenCalledWith('job1')
+    const begun = (deps.beginJob as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0]
+    const ended = (deps.endJob as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0]
+    expect(ended).toBeGreaterThan(begun)
+  })
+
+  it('releases a stream-copy job from the in-flight count when it throws', async () => {
+    const deps = makeDeps({
+      convertAudio: vi.fn(async () => {
+        throw new Error('disk full')
+      }),
+    })
+
+    await expect(runProcessTrack(job(), deps)).rejects.toThrow('disk full')
+
+    expect(deps.endJob).toHaveBeenCalledWith('job1')
   })
 })
 

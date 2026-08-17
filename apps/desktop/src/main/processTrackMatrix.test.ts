@@ -59,6 +59,8 @@ function makeDeps(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
     releasePath: vi.fn(),
     registerActiveConversion: vi.fn(),
     unregisterActiveConversion: vi.fn(),
+    beginJob: vi.fn(),
+    endJob: vi.fn(),
     trackTmp: vi.fn(),
     untrackTmp: vi.fn(),
     ...overrides,

@@ -57,6 +57,12 @@ export interface ProcessTrackDeps {
   // finally so a cancel after the job settles is a no-op.
   registerActiveConversion: (jobId: string, kill: (signal: string) => void) => void
   unregisterActiveConversion: (jobId: string) => void
+  // Brackets the whole job for the close guard, which asks "is work in flight?" — a
+  // question registerActiveConversion cannot answer, since the stream-copy shortcut
+  // spawns no child and so never registers one. Bracketed around everything below,
+  // released in finally however the job ends.
+  beginJob: (jobId: string) => void
+  endJob: (jobId: string) => void
   // The trail a crash or force-quit mid-encode leaves for the next launch to
   // sweep — trackTmp fires the instant convertAudio picks its temp path, untrackTmp
   // once the job settles normally (convertAudio's own catch already deleted the
@@ -112,6 +118,7 @@ export async function runProcessTrack(
   // The path reserved via deps.reservePath, if any — released in finally regardless
   // of how the job ends.
   let reserved: string | undefined
+  deps.beginJob(job.id)
   try {
     if (deps.hasCoverSource(job)) {
       stage('cover')
@@ -328,6 +335,7 @@ export async function runProcessTrack(
       addedToEngineDj,
     }
   } finally {
+    deps.endJob(job.id)
     if (prepared) await prepared.cleanup()
     if (tmpDir) await deps.rm(tmpDir, { recursive: true, force: true })
     if (reserved) deps.releasePath(reserved)
