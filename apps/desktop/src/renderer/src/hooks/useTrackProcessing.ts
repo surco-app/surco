@@ -16,7 +16,7 @@ import { type Destination, fromDestination } from '../lib/destination'
 import { exportedPatch } from '../lib/export'
 import { DEFAULT_REQUIRED_FIELDS, missingRequired } from '../lib/fields'
 import { sanitizeMeta } from '../lib/hygiene'
-import { cleanIpcError, isFileInUseMessage } from '../lib/ipcError'
+import { cleanIpcError, isFileInUseMessage, mainErrorMessage } from '../lib/ipcError'
 import { renderOutputName } from '../lib/outputName'
 import { declickForJob, normalizeForJob } from '../lib/reapply'
 import type { TrackItem } from '../types'
@@ -306,11 +306,12 @@ export function useTrackProcessing({
         return 'converted'
       } catch (e) {
         const raw = e instanceof Error ? cleanIpcError(e.message) : ''
-        const message = !raw
-          ? tr('editor.processError')
-          : isFileInUseMessage(raw)
-            ? tr('editor.fileInUseError')
-            : raw
+        // The held-file case keeps its own string: it is matched on a marker embedded
+        // mid-message (renameRetry stamps it ahead of the OS error it wraps), not on
+        // the leading key mainErrorMessage reads.
+        const message = isFileInUseMessage(raw)
+          ? tr('editor.fileInUseError')
+          : mainErrorMessage(e, tr, tr('editor.processError'))
         updateTrack(id, {
           status: 'error',
           error: message,

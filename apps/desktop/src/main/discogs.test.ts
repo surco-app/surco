@@ -345,7 +345,10 @@ describe('search rate-limit retry', () => {
   // rate-limit message after a bounded number of attempts.
   it('gives up after the retry limit and surfaces the rate-limit error', async () => {
     const fetchMock = mockSequence([res(429, {}, '0')])
-    await expect(search('always limited query', 'tok')).rejects.toThrow(/[Ll]ímite/)
+    // The stamped key, not the sentence: the wording is the renderer's now.
+    await expect(search('always limited query', 'tok')).rejects.toThrow(
+      /SURCO_ERR:discogsRateLimit/,
+    )
     expect(fetchMock).toHaveBeenCalledTimes(4)
   })
 })

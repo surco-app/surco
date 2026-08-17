@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { mainErrorMessage } from '../lib/ipcError'
 import { buildM3u } from '../lib/m3u'
 import { buildRekordboxXml } from '../lib/rekordbox'
 import { buildTraktorNml } from '../lib/traktor'
@@ -88,7 +89,7 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
               // had been written. A cancelled save dialog resolves and closes quietly.
               t.run()
                 .then(onClose)
-                .catch((e) => setError(e instanceof Error ? e.message : String(e)))
+                .catch((e: unknown) => setError(mainErrorMessage(e, tr, String(e))))
             }}
             className="press block rounded-lg border border-[var(--color-line)] px-4 py-3 text-left hover:bg-[var(--color-panel-2)]"
           >

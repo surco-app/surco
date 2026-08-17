@@ -1,5 +1,6 @@
 import { stat, unlink } from 'node:fs/promises'
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
+import { errorWithKey } from '../shared/errorKeys'
 import { editsInPlace, formatExtension } from '../shared/format'
 import type { OutputFormat } from '../shared/types'
 
@@ -79,7 +80,7 @@ export function resolveOutputTarget(
   if (!inPlace) {
     const rel = relative(outputDir, resolve(outputDir, outputPath))
     if (rel.startsWith('..') || isAbsolute(rel)) {
-      throw new Error('El nombre de salida generaría una ruta fuera de la carpeta de destino')
+      throw errorWithKey('outputPathEscapes', outputPath)
     }
   }
   return { outputPath, inPlace }

@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { dialog, ipcMain } from 'electron'
+import { errorWithKey } from '../shared/errorKeys'
 import { buildSeratoCrate } from '../shared/serato'
 import type { Settings } from '../shared/types'
 import { activity } from './activity'
@@ -15,12 +16,12 @@ export function serializeSettingsForExport(): string {
 
 export function applyImportedSettings(raw: unknown): Settings {
   if (typeof raw !== 'object' || raw === null) {
-    throw new Error('El fichero no contiene una configuración de Surco.')
+    throw errorWithKey('settingsFileNotSurco')
   }
   const known = Object.keys(defaults) as (keyof Settings)[]
   const hasKnownKey = known.some((k) => k in (raw as object))
   if (!hasKnownKey) {
-    throw new Error('El fichero no contiene una configuración de Surco.')
+    throw errorWithKey('settingsFileNotSurco')
   }
   return replaceSettings(raw as Partial<Settings>)
 }
