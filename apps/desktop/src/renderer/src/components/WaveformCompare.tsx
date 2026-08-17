@@ -78,7 +78,15 @@ function useStripData(path: string, enabled: boolean): StripData {
   const { data: peaks } = useWaveform(path, enabled)
   const { data: scan } = useWaveformScan(path, enabled)
   const { data: loudness } = useTrackLoudness(path, enabled)
-  const wave = peaks ? { ...peaks, clipped: scan?.clipped, channels: scan?.channels } : peaks
+  // Memoized because this object is the draw effect's first dependency, and rebuilding
+  // it per render made every parent render repaint the canvas — 8192 buckets, ~32k
+  // canvas operations — for a wave that had not changed. The probes it merges are
+  // themselves stable references from the query cache, so the merge only re-runs when
+  // one of them actually lands.
+  const wave = useMemo(
+    () => (peaks ? { ...peaks, clipped: scan?.clipped, channels: scan?.channels } : peaks),
+    [peaks, scan],
+  )
   // Skeleton from the moment the strip is enabled until the wave lands — not `isFetching`,
   // which is briefly false after enable but before the query starts, leaving an empty
   // canvas. Same rule Trim/Grid use (`open && !wave`) so no blank strip shows on open.
@@ -724,14 +732,21 @@ export function WaveformSolo({
   // Guarded on rms too, not just the wave: a decode cached by a version that predates
   // the RMS layer carries peaks alone, and mapping over the missing array threw before
   // the section could render at all.
-  const previewWave =
-    preview && source.wave?.rms
-      ? {
-          peaks: preview.peaks,
-          rms: source.wave.rms.map((r) => r * 10 ** (preview.gainDb / 20)),
-          durationSec: source.wave.durationSec,
-        }
-      : null
+  // Memoized alongside `wave` above: this maps all 8192 RMS values and hands the result
+  // to a second canvas, so an unmemoized rebuild both allocated the array and repainted
+  // the preview strip on every render — and NormalizeControls commits per keystroke, so
+  // that was two passes and a full repaint for each digit typed into the LUFS target.
+  const previewWave = useMemo(
+    () =>
+      preview && source.wave?.rms
+        ? {
+            peaks: preview.peaks,
+            rms: source.wave.rms.map((r) => r * 10 ** (preview.gainDb / 20)),
+            durationSec: source.wave.durationSec,
+          }
+        : null,
+    [preview, source.wave],
+  )
   return (
     <div data-testid="waveform-solo" className="mt-3">
       <div className="mb-1.5 flex min-w-0 items-start justify-between gap-3">

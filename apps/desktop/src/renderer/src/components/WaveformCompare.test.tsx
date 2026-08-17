@@ -7,6 +7,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NormalizeConfig, WaveformResult, WaveformScan } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
+
+// Spied rather than stubbed: the redraw test counts how often the canvas is repainted,
+// and everything else in this file needs the real helpers.
+vi.mock('../lib/waveform', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/waveform')>()
+  return { ...actual, drawWaveform: vi.fn(actual.drawWaveform) }
+})
+
+import { drawWaveform } from '../lib/waveform'
 import { AFTER_COLOR, Strip, WaveformCompare, WaveformSolo } from './WaveformCompare'
 
 const wave: WaveformResult = {
@@ -738,5 +747,53 @@ describe('WaveformSolo', () => {
     await screen.findByTestId('waveform-solo')
     await new Promise((r) => setTimeout(r, 0))
     expect(screen.queryByTestId('waveform-preview')).not.toBeInTheDocument()
+  })
+})
+
+// drawWaveform walks WAVEFORM_BUCKETS (8192) and issues up to two fillRect plus two
+// fillStyle writes per bucket — ~16k canvas operations for one repaint. The strip's
+// wave object was rebuilt on every render (a fresh spread of the peaks probe), so it
+// was a new identity every time and the draw effect, which keys on it, ran again for
+// a wave that had not changed. A pinch-zoom fires setState at 60-120 Hz, which is when
+// this stops being theoretical.
+describe('redraw cost', () => {
+  beforeEach(() => {
+    ;(window as unknown as { api: unknown }).api = {
+      cancelAnalysis: vi.fn(),
+      waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+  })
+
+  // A parent re-render with the same props — the Editor re-rendering for a reason that
+  // has nothing to do with this strip, which is most of them — must not repaint the
+  // canvas. The strip rebuilt its wave object on every pass (a fresh spread of the
+  // peaks probe), so it was a new identity each time and the draw effect, which keys on
+  // it, ran again over the same 8192 buckets.
+  it('does not redraw when the parent re-renders with the same wave', async () => {
+    // One client across both renders: a fresh one would remount the tree and redraw
+    // legitimately, which would make this pass for the wrong reason.
+    const client = createQueryClient()
+    function Parent({ tick }: { tick: number }): React.JSX.Element {
+      return (
+        <QueryClientProvider client={client}>
+          {/* The tick only re-renders the parent; nothing the strip reads changes. */}
+          <span data-testid="tick">{tick}</span>
+          <WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />
+        </QueryClientProvider>
+      )
+    }
+    const { rerender } = render(<Parent tick={1} />)
+    await screen.findByTestId('waveform-solo')
+    const spy = drawWaveform as unknown as ReturnType<typeof vi.fn>
+    await waitFor(() => expect(spy).toHaveBeenCalled())
+    const afterFirstDraw = spy.mock.calls.length
+
+    rerender(<Parent tick={2} />)
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(screen.getByTestId('tick')).toHaveTextContent('2')
+    expect(spy.mock.calls.length).toBe(afterFirstDraw)
   })
 })
