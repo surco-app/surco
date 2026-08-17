@@ -11,18 +11,28 @@ vi.mock('electron', () => {
 })
 
 // Pass-through fs that records where writeFileSync lands, so the atomicity test can
-// assert the live settings.json is never written in place.
-const { writeTargets } = vi.hoisted(() => ({ writeTargets: [] as string[] }))
+// assert the live settings.json is never written in place — and counts settings reads,
+// which is how the memo tests tell a cached answer from a fresh round trip to disk.
+const { writeTargets, readTargets } = vi.hoisted(() => ({
+  writeTargets: [] as string[],
+  readTargets: [] as string[],
+}))
 vi.mock('node:fs', async (importOriginal) => {
   const real = await importOriginal<typeof import('node:fs')>()
   const writeFileSync: typeof real.writeFileSync = (path, data, opts) => {
     writeTargets.push(String(path))
     return real.writeFileSync(path, data, opts)
   }
-  return { ...real, writeFileSync }
+  // Cast rather than typed: readFileSync is overloaded, and a single arrow can satisfy
+  // none of its signatures — the passthrough forwards whatever it was given.
+  const readFileSync = ((path: unknown, opts: unknown) => {
+    readTargets.push(String(path))
+    return (real.readFileSync as (p: unknown, o: unknown) => unknown)(path, opts)
+  }) as typeof real.readFileSync
+  return { ...real, writeFileSync, readFileSync }
 })
 
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app } from 'electron'
@@ -66,6 +76,72 @@ describe('recordConversion', () => {
     recordConversion()
     recordConversion()
     expect(getSettings().conversionCount).toBe(2)
+  })
+})
+
+// getSettings is reached from 27 places in main, several of them per-track: every
+// finished conversion runs recordConversion, which reads, then calls saveSettings,
+// which reads again before writing. Each read is existsSync + readFileSync + parse —
+// and twice that with a synced config folder, whose whole point is to live in iCloud
+// or Dropbox. On local disk the cost is nothing (measured at 0.018 ms a call), but on
+// a synced folder those are network round trips on the thread that paints, and a
+// 300-track batch pays them 300 times over.
+describe('getSettings caching', () => {
+  it('does not re-read the file when nothing has changed', () => {
+    getSettings()
+    const afterFirst = readTargets.length
+
+    getSettings()
+    getSettings()
+
+    expect(readTargets.length).toBe(afterFirst)
+  })
+
+  // The cache must never be the reason a setting looks stale: every write path drops it.
+  it('sees a value written through saveSettings', () => {
+    saveSettings({ theme: 'dark' })
+    expect(getSettings().theme).toBe('dark')
+    saveSettings({ theme: 'light' })
+    expect(getSettings().theme).toBe('light')
+  })
+
+  it('sees the tallies a conversion bumps', () => {
+    const before = getSettings().conversionCount
+    recordConversion()
+    expect(getSettings().conversionCount).toBe(before + 1)
+  })
+
+  // Pointing at a folder that already holds a settings.json adopts it wholesale — a
+  // second Mac joining an existing sync folder. Nothing is written to that file, so
+  // only the pointer's own write drops the cache; without it the adopted preferences
+  // would be invisible until something else happened to invalidate.
+  it('adopts the settings of a folder it is pointed at', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-adopt-'))
+    writeFileSync(join(dir, 'settings.json'), JSON.stringify({ filenameFormat: '{album}' }))
+    // Read once first, so there is a cache entry that could go stale.
+    expect(getSettings().filenameFormat).not.toBe('{album}')
+
+    setConfigDir(dir)
+
+    expect(getSettings().filenameFormat).toBe('{album}')
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  // A settings.json edited by hand (or landed from the sync folder while the app is
+  // open) is outside every write path, so the mtime is what tells the cache to let go.
+  it('picks up a file changed behind its back', () => {
+    const first = getSettings()
+    expect(first.filenameFormat).not.toBe('{artist}')
+    const path = join(app.getPath('userData'), 'settings.json')
+    const raw = JSON.parse(readFileSync(path, 'utf-8'))
+    // The mtime has one-second resolution on some filesystems, so the write has to
+    // land in a different second for the staleness check to be honest.
+    const future = new Date(Date.now() + 2000)
+    writeFileSync(path, JSON.stringify({ ...raw, filenameFormat: '{artist}' }))
+    utimesSync(path, future, future)
+
+    expect(getSettings().filenameFormat).toBe('{artist}')
   })
 })
 
