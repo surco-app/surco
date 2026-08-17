@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { platform, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
@@ -111,4 +111,70 @@ describe('the temp a failed conversion leaves behind', () => {
     expect(existsSync(rescued)).toBe(true)
     expect(existsSync(from)).toBe(false)
   })
+
+  // The case the two tests above cannot reach: a temp that is still on disk after the
+  // cleanup tried to remove it. Both of them only ever hit ENOENT — one kills the
+  // encode before ffmpeg writes anything, the other moves the temp away — so the
+  // surviving branch, and with it the tmpSurvived flag processTrack reads to keep the
+  // path in the sweep manifest, went unexercised. Without that flag the half-written
+  // file sits in the user's music folder with nothing recording it, which is what the
+  // NAS reports looked like.
+  //
+  // Reproduced with real errors rather than a stubbed unlink: the temp is made
+  // immutable the moment it appears on disk, so the rename that follows fails, the
+  // rescue beside it fails too, and the cleanup's unlink comes back EPERM instead of
+  // ENOENT. macOS-only (chflags), skipped elsewhere rather than faked.
+  it.skipIf(platform() !== 'darwin')(
+    'flags the temp as surviving when the cleanup cannot delete it',
+    async () => {
+      const outDir = join(dir, 'held')
+      mkdirSync(outDir)
+      let tmpPath = ''
+      let locked = ''
+      // onTmp fires when the path is chosen, before ffmpeg writes it, so the flag has
+      // to wait for the file to exist — polling ends either way once the encode is done.
+      const lockWhenWritten = async (p: string): Promise<void> => {
+        for (let i = 0; i < 200 && !locked; i++) {
+          if (existsSync(p)) {
+            execFileSync('chflags', ['uchg', p])
+            locked = p
+            return
+          }
+          await new Promise((r) => setTimeout(r, 10))
+        }
+      }
+
+      let err: unknown
+      try {
+        const out = join(outDir, 'out.flac')
+        let watching: Promise<void> | undefined
+        err = await convertAudio(
+          src,
+          out,
+          'flac',
+          meta,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          (p) => {
+            tmpPath = p
+            watching = lockWhenWritten(p)
+          },
+        ).catch((e: unknown) => e)
+        await watching
+      } finally {
+        if (locked) execFileSync('chflags', ['nouchg', locked])
+      }
+
+      // The encode has to have produced a real temp, or the assertions below would pass
+      // on a file that never existed — exactly the vacuous green this test replaces.
+      expect(tmpPath).not.toBe('')
+      expect(locked).toBe(tmpPath)
+      expect(existsSync(tmpPath)).toBe(true)
+      expect((err as { tmpSurvived?: boolean }).tmpSurvived).toBe(true)
+    },
+  )
 })
