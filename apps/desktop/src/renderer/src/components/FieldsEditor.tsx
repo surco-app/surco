@@ -9,6 +9,14 @@ import { Tooltip } from './Tooltip'
 // How long the auto-organize button holds its "done" confirmation before reverting.
 const ORGANIZED_FEEDBACK_MS = 1500
 
+// The row's column track: name (takes the slack), the two toggles, the two arrows, Hide.
+// A grid rather than a flex row because the toggles repeat down every row and read as
+// columns — and only declared tracks let a heading line up with them. Sizing them by their
+// own text drifts per language (German's "Ausblenden" is twice the width of "Hide"), which
+// no hand-tuned heading offset can follow. `auto` on the last three lets each keep its
+// natural width while staying a column both the row and the heading resolve identically.
+const ROW_GRID = 'grid grid-cols-[1fr_5.5rem_5.5rem_auto_auto_auto] items-center gap-1'
+
 // Moves fromKey to toKey's slot: dragging down lands it after the target, dragging up
 // before it — how every list DnD reads, so the row stays where the user dropped it.
 function reorder(list: string[], fromKey: string, toKey: string): string[] {
@@ -53,7 +61,7 @@ export function FieldsEditor({
     // so Required/Hide stay on one vertical line down the list instead of jumping left on
     // every row without a toggle.
     if (!IMPORTABLE_FIELDS.includes(key as keyof TrackMetadata))
-      return <span className="mr-1 inline-block w-[3.25rem]" aria-hidden="true" />
+      return <span aria-hidden="true" />
     const on = importFields.includes(key)
     return (
       <button
@@ -63,7 +71,7 @@ export function FieldsEditor({
         onClick={() =>
           onChangeImport(on ? importFields.filter((k) => k !== key) : [...importFields, key])
         }
-        className={`mr-1 rounded px-2 py-0.5 text-xs ${
+        className={`rounded py-0.5 text-xs ${
           on
             ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
             : 'text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg-muted'
@@ -150,7 +158,7 @@ export function FieldsEditor({
                 setDropKey(null)
               }}
               onMouseUp={() => setDragKey(null)}
-              className={`flex items-center justify-between rounded-lg border bg-[var(--color-field)] py-1.5 pl-2 pr-2 ${
+              className={`${ROW_GRID} rounded-lg border bg-[var(--color-field)] py-1.5 pl-2 pr-2 ${
                 dropKey === key ? 'border-[var(--color-accent)]' : 'border-[var(--color-line)]'
               } ${dragKey === key ? 'opacity-40' : ''}`}
             >
@@ -164,8 +172,7 @@ export function FieldsEditor({
                 {tr(`fields.${key}`)}
                 <Tooltip label={`{${key}}`} />
               </span>
-              <div className="flex items-center gap-1">
-                {autoToggle(key)}
+              {autoToggle(key)}
                 <button
                   type="button"
                   data-testid={`field-required-${key}`}
@@ -177,7 +184,7 @@ export function FieldsEditor({
                         : [...requiredFields, key],
                     )
                   }
-                  className={`mr-1 rounded px-2 py-0.5 text-xs ${
+                  className={`rounded py-0.5 text-xs ${
                     requiredFields.includes(key)
                       ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
                       : 'text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg-muted'
@@ -213,7 +220,6 @@ export function FieldsEditor({
                 >
                   {tr('settings.hide')}
                 </button>
-              </div>
             </div>
           ))}
         </div>
@@ -232,13 +238,12 @@ export function FieldsEditor({
               <div
                 key={d.key}
                 data-testid={`hidden-field-${d.key}`}
-                className="flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
+                className="grid grid-cols-[1fr_5.5rem_auto] items-center gap-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
               >
                 <span className="text-sm text-fg-muted">
                   {tr(`fields.${d.key}`)}
                   <Tooltip label={`{${d.key}}`} />
                 </span>
-                <div className="flex items-center gap-1">
                 {autoToggle(d.key)}
                 <button
                   type="button"
@@ -247,7 +252,6 @@ export function FieldsEditor({
                 >
                   {tr('settings.show')}
                 </button>
-                </div>
               </div>
             ))}
           {FIELD_DEFS.every((d) => visibleFields.includes(d.key)) && (
