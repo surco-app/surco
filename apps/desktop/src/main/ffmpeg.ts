@@ -573,17 +573,25 @@ export async function probeProperties(input: string): Promise<TrackProperties> {
 interface SampleDepth {
   float: boolean
   bits: number
+  // Whether the samples reach the encoder as float regardless of the depth above. A lossy
+  // decode maps to 16-bit integer, but its decoder still emits float, and a reduction from
+  // a float chain needs dither — `float` alone stopped saying so once lossy stopped
+  // meaning 24-bit, and the flag is read where the dither is decided.
+  floatPipeline?: boolean
 }
 
 // float=true only for genuine float PCM sources (a field recorder's f32 WAV, a DAW
 // bounce): their full precision IS the source's depth and must survive. A lossy
 // decoder (mp3float/aac) also hands ffmpeg float samples, but that's an artifact of
-// decoding, not source precision — those map to 24-bit integer, the widest PCM DJ
-// gear actually plays (CDJs refuse 32-bit float WAV), which loses nothing audible
-// of a lossy decode.
+// decoding, not source precision: an MP3 stores transform coefficients and has no bit
+// depth to preserve at all. Those map to 16-bit — the precision a lossy decode really
+// carries. Mapping them to 24 invented precision and tripled the file (a 320k MP3 became
+// a 60KB FLAC where 16-bit gives 21KB, measured) for nothing audible, which is how
+// "Same as source" came to bloat a converted collection. 16-bit is also integer PCM, so
+// the reason float was ruled out (CDJs refuse float WAV) still holds.
 function sourceDepth(probe: ProbeResult): SampleDepth {
   if (probe.codecName.startsWith('pcm_f')) return { float: true, bits: 32 }
-  if (probe.sampleFmt.startsWith('f')) return { float: false, bits: 24 }
+  if (probe.sampleFmt.startsWith('f')) return { float: false, bits: 16, floatPipeline: true }
   const bits =
     probe.bitsPerRawSample ||
     (probe.sampleFmt.includes('32') ? 32 : probe.sampleFmt.includes('16') ? 16 : 24)
@@ -823,7 +831,7 @@ export async function planConversion(
     const dither =
       depth.bits === 16 &&
       !depth.float &&
-      (normalize || src.float || src.bits > 16 || rate !== undefined)
+      (normalize || src.float || src.floatPipeline || src.bits > 16 || rate !== undefined)
     return {
       ...(rate ? { sampleRateHz: rate } : {}),
       ...(dither ? { dither: true } : {}),
