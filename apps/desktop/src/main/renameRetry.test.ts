@@ -46,10 +46,24 @@ describe('renameWithRetry', () => {
     await expect(renameWithRetry('/tmp/a.tmp', '/out/a.flac', { rename, sleep })).rejects.toThrow(
       FILE_IN_USE_MARKER,
     )
-    expect(rename).toHaveBeenCalledTimes(5)
+    expect(rename).toHaveBeenCalledTimes(6)
     // Backoff, not a busy loop: a scan needs time to finish, and hammering the
-    // destination five times in a row would just fail five times in a row.
-    expect(sleep.mock.calls.map(([ms]) => ms)).toEqual([100, 200, 400, 800])
+    // destination six times in a row would just fail six times in a row. Every step
+    // in BACKOFF_MS is actually waited — the last one used to be skipped, halving the
+    // window the comment advertises (1.5s instead of ~3.1s) exactly where it matters:
+    // a Windows antivirus holding the destination through a big file.
+    expect(sleep.mock.calls.map(([ms]) => ms)).toEqual([100, 200, 400, 800, 1600])
+  })
+
+  // Pinned as a total, not just a shape: the window is the actual promise here — long
+  // enough to outlast a scan, short enough that a bulk conversion doesn't look stuck on
+  // one track. A step added or dropped changes that promise and should say so here.
+  it('waits the documented ~3.1s across all attempts', async () => {
+    const rename = vi.fn().mockRejectedValue(inUse('EPERM'))
+    const sleep = vi.fn().mockResolvedValue(undefined)
+    await expect(renameWithRetry('/tmp/a.tmp', '/out/a.flac', { rename, sleep })).rejects.toThrow()
+    const total = sleep.mock.calls.reduce((sum, [ms]) => sum + (ms as number), 0)
+    expect(total).toBe(3100)
   })
 
   // The conversion is finished by the time the rename runs — audio, tags and cues are
@@ -127,7 +141,7 @@ describe('renameWithRetry', () => {
     await expect(
       renameWithRetry('/tmp/a.tmp', '/music/Song.flac', { rename, sleep: async () => {} }),
     ).rejects.toThrow(FILE_IN_USE_MARKER)
-    expect(rename).toHaveBeenCalledTimes(5)
+    expect(rename).toHaveBeenCalledTimes(6)
     expect(rename.mock.calls.every(([, to]) => to === '/music/Song.flac')).toBe(true)
   })
 
@@ -186,7 +200,7 @@ describe('renameWithRetry', () => {
       renameWithRetry('/tmp/a.tmp', '/out/a.flac', { rename, sleep: async () => {}, onRetry }),
     ).rejects.toThrow(FILE_IN_USE_MARKER)
     expect(onRetry.mock.calls.map(([info]) => info).at(-1)).toEqual({
-      attempt: 5,
+      attempt: 6,
       code: 'EPERM',
       waitMs: null,
       path: '/out/a.flac',
