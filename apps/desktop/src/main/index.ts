@@ -1419,9 +1419,13 @@ app.on('window-all-closed', () => {
 // Previewing an AIFF (or a FLAC with broken art) leaves a transcoded copy in the
 // tmpdir that playback keeps re-serving, so it can only be deleted once the app is
 // done with it — sweep them on the way out rather than letting them pile up.
-// Quitting must not leave ffmpeg children orphaned to keep writing a .tmp file
-// after the app that owns them is gone; killAll's SIGTERM triggers convertAudio's
-// own catch, which deletes the tmp before the process actually exits.
+// Quitting must not leave ffmpeg children orphaned to keep writing a .tmp file after
+// the app that owns them is gone. killAll's SIGTERM does reach convertAudio's catch,
+// but this handler is synchronous and nothing awaits it: the `await unlink(tmp)` in
+// there is queued on an event loop the process never returns to, so the temp survives
+// the quit. That is what tmpManifest is for — the next launch sweeps it — and this
+// comment used to claim the delete happened here, which made the manifest look like
+// belt-and-braces rather than the only thing covering this path.
 app.on('will-quit', () => {
   activeConversions.killAll()
   cleanupPlaybackTemps()

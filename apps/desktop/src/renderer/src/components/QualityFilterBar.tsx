@@ -88,6 +88,11 @@ function axisOf(mode: Mode): keyof Omit<FilterSelection, 'format'> {
 
 // The attention dot draws the eye to buckets that need action: amber for suspect (likely
 // fake rips), accent for the still-to-convert backlog. Null for the rest.
+//
+// Deliberately unlabelled, and not a colour-only signal despite looking like one: the dot
+// appears exactly when the bucket's count is above zero, and that count is rendered as
+// text on the same row. A screen reader already hears "Suspect, 12"; the dot repeats it
+// for the eye, so giving it its own accessible name would only say the number twice.
 function attentionDot(mode: Mode, tally: Tally): string | null {
   if (mode === 'suspect' && tally.suspect > 0) return 'bg-warn'
   if (mode === 'unconverted' && tally.unconverted > 0) return 'bg-[var(--color-accent)]'

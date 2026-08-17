@@ -124,6 +124,14 @@ describe('the temp a failed conversion leaves behind', () => {
   // immutable the moment it appears on disk, so the rename that follows fails, the
   // rescue beside it fails too, and the cleanup's unlink comes back EPERM instead of
   // ENOENT. macOS-only (chflags), skipped elsewhere rather than faked.
+  //
+  // Known to be occasionally flaky under a loaded full-suite run, and not reproducible
+  // on demand (it survived eleven consecutive full runs while being chased). It leans
+  // on two pieces of real time — how long ffmpeg takes to create the temp, and the
+  // rename's ~3.1s retry window — so the poll below and the timeout at the end are both
+  // generous. If it fails again, the thing to check is whether `locked` was ever set:
+  // an empty one means the poll gave up before ffmpeg wrote the file, which is a slow
+  // machine rather than a broken guarantee.
   it.skipIf(platform() !== 'darwin')(
     'flags the temp as surviving when the cleanup cannot delete it',
     async () => {
