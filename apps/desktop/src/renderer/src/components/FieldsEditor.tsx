@@ -19,6 +19,15 @@ const ORGANIZED_FEEDBACK_MS = 1500
 // auto-sized first attempt did. Hide's track fits the longest translation.
 const ROW_GRID = 'grid grid-cols-[1fr_4.75rem_4.75rem_1.75rem_1.75rem_5.5rem] items-center gap-1'
 
+// The tick box for the two state columns. Dropping the words is the point — the heading
+// already says "Auto"/"Required", and repeating that on every row said nothing while
+// forcing each button wide enough to hold the longest translation ("Pflichtfeld" made it
+// 76px for a 33px word). What replaces them is a mark, so a column scans as a pattern
+// instead of a wall of repeated text. Wider than the tick needs: a 20px square is a mean
+// click target, and the extra width also lets the headings above sit unsqueezed. The off
+// state keeps an outline so the control is visible before it is ever used.
+const TOGGLE_BOX = 'mx-auto flex h-6 w-9 items-center justify-center rounded'
+
 // Moves fromKey to toKey's slot: dragging down lands it after the target, dragging up
 // before it — how every list DnD reads, so the row stays where the user dropped it.
 function reorder(list: string[], fromKey: string, toKey: string): string[] {
@@ -70,16 +79,19 @@ export function FieldsEditor({
         type="button"
         data-testid={`field-auto-${key}`}
         aria-pressed={on}
+        // The word lives in the column heading now, so the button shows state instead of
+        // repeating it — which means it no longer names itself, and the label has to.
+        aria-label={tr('settings.autoFill')}
         onClick={() =>
           onChangeImport(on ? importFields.filter((k) => k !== key) : [...importFields, key])
         }
-        className={`rounded py-0.5 text-xs ${
+        className={`${TOGGLE_BOX} ${
           on
             ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
-            : 'text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg-muted'
+            : 'border border-[var(--color-line)] text-transparent hover:border-[var(--color-line-strong)]'
         }`}
       >
-        {tr('settings.autoFill')}
+        <Check className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
     )
   }
@@ -140,13 +152,13 @@ export function FieldsEditor({
             focusable so the hint is reachable by keyboard as well as hover. */}
         <div
           data-testid="fields-columns"
-          className={`${ROW_GRID} mb-1 px-2 text-[10px] uppercase tracking-wide text-fg-faint`}
+          className={`${ROW_GRID} mb-1 px-2 text-[10px] uppercase text-fg-faint`}
         >
           <span />
           <span
             data-testid="fields-column-auto"
             role="note"
-            className="relative flex cursor-help items-center justify-center gap-1 text-fg-dim hover:text-fg-muted"
+            className="relative flex cursor-help items-center justify-center gap-1.5 whitespace-nowrap text-fg-dim hover:text-fg-muted"
           >
             {tr('settings.autoFill')}
             <Info className="h-3 w-3" aria-hidden="true" />
@@ -158,7 +170,7 @@ export function FieldsEditor({
           <span
             data-testid="fields-column-required"
             role="note"
-            className="relative flex cursor-help items-center justify-center gap-1 text-fg-dim hover:text-fg-muted"
+            className="relative flex cursor-help items-center justify-center gap-1.5 whitespace-nowrap text-fg-dim hover:text-fg-muted"
           >
             {tr('settings.required')}
             <Info className="h-3 w-3" aria-hidden="true" />
@@ -225,13 +237,14 @@ export function FieldsEditor({
                         : [...requiredFields, key],
                     )
                   }
-                  className={`rounded py-0.5 text-xs ${
+                  aria-label={tr('settings.required')}
+                  className={`${TOGGLE_BOX} ${
                     requiredFields.includes(key)
                       ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
-                      : 'text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg-muted'
+                      : 'border border-[var(--color-line)] text-transparent hover:border-[var(--color-line-strong)]'
                   }`}
                 >
-                  {tr('settings.required')}
+                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
                 <button
                   type="button"

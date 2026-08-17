@@ -177,6 +177,33 @@ describe('auto-fill toggle', () => {
     expect(screen.getByTestId('field-auto-artist')).toHaveAttribute('aria-pressed', 'false')
   })
 
+  // The column heading already says "Auto", so repeating the word on all twenty-seven rows
+  // said nothing and forced the button wide enough to hold it ("Pflichtfeld" pushed it to
+  // 76px for a 33px word). The button carries no text at all now — a tick shown or hidden
+  // reads as a column of marks rather than a column of words.
+  it('shows no label text on the toggle itself', () => {
+    setup({ importFields: ['title'] })
+    expect(screen.getByTestId('field-auto-title')).toHaveTextContent('')
+    expect(screen.getByTestId('field-required-title')).toHaveTextContent('')
+  })
+
+  // With the word gone, the on/off difference is carried by the tick's colour alone, so the
+  // two states must not render identically — otherwise nothing on screen says which fields
+  // are set.
+  it('renders the on and off states differently', () => {
+    setup({ importFields: ['title'] })
+    const on = screen.getByTestId('field-auto-title').className
+    const off = screen.getByTestId('field-auto-artist').className
+    expect(on).not.toEqual(off)
+  })
+
+  // Dropping the word costs a screen reader the only thing that named the control, so the
+  // label has to carry it — the tick is decoration, not the name.
+  it('still names the toggle for a screen reader', () => {
+    setup({ importFields: ['title'] })
+    expect(screen.getByTestId('field-auto-title')).toHaveAccessibleName(/auto/i)
+  })
+
   // No provider supplies BPM, key, mood or a personal comment — they are the DJ's own
   // work. A toggle there would promise an import that can never happen, so the button is
   // absent rather than present-but-dead.
