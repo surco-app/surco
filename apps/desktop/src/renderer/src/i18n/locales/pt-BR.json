@@ -44,6 +44,7 @@
     "analyzingCount": "Analisando qualidade… {{done}}/{{total}}",
     "convertingCount": "Convertendo… {{done}}/{{total}}",
     "cancelConvert": "Cancelar a conversão: as faixas na fila são puladas, as que estão em andamento terminam",
+    "cancelImport": "Parar a leitura: o que já foi lido fica, o resto é descartado",
     "autoMatch": "Auto-associar todas as faixas no Discogs",
     "autoMatchNoToken": "Adicione um token do Discogs em Ajustes para auto-associar",
     "addToken": "Adicionar token",

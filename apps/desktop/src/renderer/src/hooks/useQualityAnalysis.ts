@@ -14,10 +14,17 @@ interface Params {
   // selection narrows the analysis to what the list actually shows at the moment it starts.
   // Read through a ref so analyzeAllQuality keeps a stable identity for the command registry.
   targetsRef: { readonly current: TrackItem[] }
-  // Fired once when a sweep ends having had files ffmpeg couldn't read, with how many.
-  // A failed file is swallowed so it doesn't abort the run, but it must not pass as a
-  // silently-skipped track that looks identical to one never measured.
-  onErrors?: (count: number) => void
+  // The tracks the sweep could not measure, reported once when it ends. A failed file is
+  // swallowed so it doesn't abort the run, but it must not pass as a silently-skipped
+  // track that looks identical to one never measured. Ids rather than a count: "12 files
+  // could not be analyzed" names none of them, so the user cannot find or retry the
+  // twelve among six hundred. The import already flags its own failed rows this way
+  // (metaReadFailed).
+  onErrors?: (failedIds: string[]) => void
+  // Each track the sweep measured without incident. The counterpart of onErrors, which
+  // fires only when something failed and so can never clear a mark an earlier run left
+  // on a track that now reads fine.
+  onMeasured?: (id: string) => void
 }
 
 interface QualityAnalysis {
@@ -36,12 +43,14 @@ interface QualityAnalysis {
 
 // Batch quality triage: measures every not-yet-analyzed track's spectrum so a whole
 // dropped folder is checked for fake-lossless rips without opening each row.
-export function useQualityAnalysis({ targetsRef, onErrors }: Params): QualityAnalysis {
+export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params): QualityAnalysis {
   const queryClient = useQueryClient()
   // Bridged through a ref so analyzeAllQuality keeps a stable identity (the command
   // registry depends on it) while App's callback is recreated every render.
   const onErrorsRef = useRef(onErrors)
   onErrorsRef.current = onErrors
+  const onMeasuredRef = useRef(onMeasured)
+  onMeasuredRef.current = onMeasured
   // Progress (null when idle), and a cancel flag the in-flight workers poll so
   // cancelling stops new analyses without killing the ones already handed to ffmpeg.
   const [analysis, setAnalysis] = useState<{ done: number; total: number } | null>(null)
@@ -133,7 +142,7 @@ export function useQualityAnalysis({ targetsRef, onErrors }: Params): QualityAna
       runningRef.current = true
       analyzeCancel.current = false
       let done = 0
-      let failed = 0
+      const failed: string[] = []
       setAnalysis({ done: 0, total: targets.length })
       void mapWithConcurrency(targets, 3, async (t) => {
         if (analyzeCancel.current) return
@@ -186,10 +195,14 @@ export function useQualityAnalysis({ targetsRef, onErrors }: Params): QualityAna
               // of the same track — each fills its own cache entry independently.
             }
           }
+          // Reached only when the spectrum landed: the optional probes above are allowed
+          // to fail without the track counting as unmeasured.
+          onMeasuredRef.current?.(t.id)
         } catch {
-          // A single file ffmpeg can't read must not abort the whole sweep — count it so
-          // the run can report the total at the end instead of swallowing it.
-          failed += 1
+          // A single file ffmpeg can't read must not abort the whole sweep — remember
+          // WHICH one, so the run can flag those rows at the end instead of reporting a
+          // bare count the user cannot act on.
+          failed.push(t.id)
         } finally {
           done += 1
           measuredRef.current.add(t.id)
@@ -198,7 +211,7 @@ export function useQualityAnalysis({ targetsRef, onErrors }: Params): QualityAna
         }
       }).finally(() => {
         runningRef.current = false
-        if (failed > 0) onErrorsRef.current?.(failed)
+        if (failed.length > 0) onErrorsRef.current?.(failed)
         // A drop that landed mid-sweep added rows to targetsRef the running pass never saw;
         // re-evaluate (excluding what this run already measured, since targetsRef's own
         // objects may not have caught up with the fetched spectrum yet) and drain before

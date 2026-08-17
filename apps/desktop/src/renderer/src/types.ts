@@ -41,6 +41,11 @@ export interface TrackItem {
   // shows only its file-name parse, and the warning mark tells that apart from a file
   // that genuinely carries no tags. Cleared by rebuilding the row (start over).
   metaReadFailed?: boolean
+  // Set when the quality sweep could not measure this file (ffmpeg refused it, the
+  // mount went away mid-run). The sweep used to report only how many failed, which
+  // named none of them: with six hundred rows, "12 could not be analyzed" left the
+  // user no way to find or retry those twelve. Cleared by a later successful pass.
+  analyzeFailed?: boolean
   // Total length in seconds, probed when the file is added. Undefined when the
   // probe failed or has not run yet, so the row simply omits the time.
   duration?: number
