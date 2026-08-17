@@ -32,7 +32,7 @@ vi.mock('node:fs', async (importOriginal) => {
   return { ...real, writeFileSync, readFileSync }
 })
 
-import { mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app } from 'electron'
@@ -103,6 +103,27 @@ describe('getSettings caching', () => {
     expect(getSettings().theme).toBe('dark')
     saveSettings({ theme: 'light' })
     expect(getSettings().theme).toBe('light')
+  })
+
+  // The test above passes on mtime alone here — APFS stamps in nanoseconds, so any
+  // write moves it. Not every filesystem does: a one-second resolution (some network
+  // volumes, FAT) leaves two writes in the same second indistinguishable, and the cache
+  // would serve the first one back. Freezing the stamp to what it was models that, and
+  // is what makes the write-path invalidation load-bearing rather than incidental.
+  it('sees a written value even when the filesystem stamp does not move', () => {
+    const path = join(app.getPath('userData'), 'settings.json')
+    saveSettings({ titleFormat: 'first' })
+    // Seconds, not a Date: utimesSync truncates a Date to whole milliseconds, which on
+    // APFS is itself a change (its stamps carry a sub-millisecond fraction) and would
+    // drop the cache for the very reason this test exists to rule out.
+    const st = statSync(path)
+    const frozen = st.mtimeMs / 1000
+    expect(getSettings().titleFormat).toBe('first')
+
+    saveSettings({ titleFormat: 'second' })
+    utimesSync(path, frozen, frozen)
+
+    expect(getSettings().titleFormat).toBe('second')
   })
 
   it('sees the tallies a conversion bumps', () => {
