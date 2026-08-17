@@ -90,9 +90,23 @@ jobs:
           gh api repos/surco-app/surco-releases/git/refs \
             -f ref="refs/tags/$GITHUB_REF_NAME" -f sha="$sha" \
             || echo "tag already exists in the releases repo"
-          gh release view "$GITHUB_REF_NAME" --repo surco-app/surco-releases >/dev/null 2>&1 \
-            || gh release create "$GITHUB_REF_NAME" --repo surco-app/surco-releases \
-                 --prerelease --title "${GITHUB_REF_NAME#v}" --notes ""
+          # "already exists" is success here, not failure: this job's contract is only
+          # that the release EXISTS as a prerelease by the time it ends. The read that
+          # guards the create is answered by the same flaky release API as everything
+          # else (see the note on the build step), so it intermittently reports "not
+          # found" for a release that is right there — the create then fires and dies on
+          # 422, taking the whole run with it under `set -e`, which is exactly how
+          # v0.86.0's fourth attempt failed with the release already correctly in place.
+          # Any other create failure still stops the run.
+          if ! gh release view "$GITHUB_REF_NAME" --repo surco-app/surco-releases >/dev/null 2>&1; then
+            if ! create_err=$(gh release create "$GITHUB_REF_NAME" --repo surco-app/surco-releases \
+                 --prerelease --title "${GITHUB_REF_NAME#v}" --notes "" 2>&1); then
+              echo "$create_err"
+              echo "$create_err" | grep -qi "already exists" \
+                || { echo "::error::could not create the release for $GITHUB_REF_NAME"; exit 1; }
+              echo "release already exists — continuing"
+            fi
+          fi
 
   release:
     needs: prepare
