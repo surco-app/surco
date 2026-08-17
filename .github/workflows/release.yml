@@ -58,15 +58,22 @@ jobs:
   # Creating the tag AND the release once, before any builder starts, removes the
   # race: every job finds the release already there and only uploads.
   #
-  # The release is created as a DRAFT and only published (publish job, after verify)
-  # once every asset — including the merged latest-mac.yml — is in place. A draft is
-  # invisible to /releases/latest and to electron-updater's feed, so the slowest arch
+  # The release is created as a PRERELEASE and only promoted (publish job, after
+  # verify) once every asset — including the merged latest-mac.yml — is in place.
+  # /releases/latest serves the newest non-prerelease, non-draft release, so a
+  # prerelease is invisible there and to electron-updater's feed: the slowest arch
   # (Intel) can keep building without users seeing v0.27.0 and hitting a 404 on a
-  # latest-mac.yml that the merge job hasn't uploaded yet. electron-builder still
-  # reuses the existing release across the matrix jobs: its publisher returns any
-  # draft it finds for the tag (`if (release.draft) return release`), so the
-  # anti-race guarantee above holds — a draft bound to the tag is reused, not
-  # duplicated.
+  # latest-mac.yml that the merge job hasn't uploaded yet.
+  #
+  # NOT a draft, which is what v0.86.0 tried and why it broke: GitHub does not bind a
+  # draft to its tag (`gh release create --draft` answers with an `untagged-<hash>`
+  # URL), so electron-builder's find-by-tag missed it, all five matrix jobs fell back
+  # to find-or-create, and the v0.11.0 race returned — Linux created a LIVE release
+  # and won, Windows and macOS died on 422 already_exists, and /releases/latest served
+  # a Linux-only v0.86.0 to every platform. A prerelease IS tag-bound, so the
+  # anti-race guarantee above actually holds. See the matching note in
+  # apps/desktop/electron-builder.yml, which has required a tag-bound release all
+  # along.
   prepare:
     needs: check
     runs-on: ubuntu-latest
@@ -74,7 +81,7 @@ jobs:
       # The git tag lives in this source repo, not in surco-releases. Create the tag
       # there first, pointing at the releases repo's default branch HEAD, so the
       # release has a valid tag to bind to.
-      - name: Create the tag and the draft release in the releases repo
+      - name: Create the tag and the prerelease in the releases repo
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: |
@@ -85,7 +92,7 @@ jobs:
             || echo "tag already exists in the releases repo"
           gh release view "$GITHUB_REF_NAME" --repo surco-app/surco-releases >/dev/null 2>&1 \
             || gh release create "$GITHUB_REF_NAME" --repo surco-app/surco-releases \
-                 --draft --title "${GITHUB_REF_NAME#v}" --notes ""
+                 --prerelease --title "${GITHUB_REF_NAME#v}" --notes ""
 
   release:
     needs: prepare
@@ -321,10 +328,10 @@ jobs:
           done
           exit $status
 
-  # Flip the draft to a published release ONLY after verify confirms the full asset
-  # set is present. This is the moment the release becomes visible to
-  # /releases/latest and to electron-updater — so by construction no user can see
-  # v0.27.0 before latest-mac.yml (and every installer) is already there.
+  # Drop the prerelease flag ONLY after verify confirms the full asset set is present.
+  # This is the moment the release becomes visible to /releases/latest and to
+  # electron-updater — so by construction no user can see v0.27.0 before
+  # latest-mac.yml (and every installer) is already there.
   publish:
     needs: verify
     runs-on: ubuntu-latest
@@ -332,7 +339,7 @@ jobs:
       - name: Publish the release
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
-        run: gh release edit "$GITHUB_REF_NAME" --repo surco-app/surco-releases --draft=false
+        run: gh release edit "$GITHUB_REF_NAME" --repo surco-app/surco-releases --prerelease=false
 
   # Point the Homebrew tap at the freshly published version so `brew install` of a
   # clean machine grabs a current build. Existing installs ignore this — they
