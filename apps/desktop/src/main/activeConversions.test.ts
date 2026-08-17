@@ -62,22 +62,43 @@ describe('createActiveConversions', () => {
   // queued ones without a word, so the DJ came back to a half-converted crate with no
   // sign of where it stopped. The close handler asks before quitting, and to ask it
   // first has to know whether anything is actually running.
-  it('reports how many conversions are still running', () => {
+  it('reports how many jobs are still running', () => {
     const conversions = createActiveConversions()
     expect(conversions.count()).toBe(0)
-    conversions.register('a', vi.fn())
-    conversions.register('b', vi.fn())
+    conversions.beginJob('a')
+    conversions.beginJob('b')
     expect(conversions.count()).toBe(2)
-    conversions.unregister('a')
+    conversions.endJob('a')
     expect(conversions.count()).toBe(1)
-    conversions.killAll()
+    conversions.endJob('b')
     expect(conversions.count()).toBe(0)
   })
 
-  it('stops counting a conversion once it is cancelled', () => {
+  // The count follows jobs, not child processes, because the two differ exactly where
+  // it matters: the stream-copy shortcut (same-format retag — the default AIFF path)
+  // copies bytes and edits the tag in place without spawning anything. Counting
+  // registered children reported 0 for a 300-track retag, so the close guard let the
+  // window shut and the queue went with it.
+  it('counts a job that never registers a child process', () => {
     const conversions = createActiveConversions()
+    conversions.beginJob('copy-only')
+    expect(conversions.count()).toBe(1)
+    conversions.endJob('copy-only')
+    expect(conversions.count()).toBe(0)
+  })
+
+  // Killing the child is not the same as the job being over: convertAudio's rejection
+  // still has to unwind through processTrack's finally, which is what ends the job.
+  // Dropping the count on the kill would reopen the window mid-teardown.
+  it('keeps a killed job counted until it actually finishes unwinding', () => {
+    const conversions = createActiveConversions()
+    conversions.beginJob('a')
     conversions.register('a', vi.fn())
     conversions.cancel('a')
+    expect(conversions.count()).toBe(1)
+    conversions.killAll()
+    expect(conversions.count()).toBe(1)
+    conversions.endJob('a')
     expect(conversions.count()).toBe(0)
   })
 })
