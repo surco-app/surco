@@ -132,9 +132,12 @@ describe('the temp a failed conversion leaves behind', () => {
       let tmpPath = ''
       let locked = ''
       // onTmp fires when the path is chosen, before ffmpeg writes it, so the flag has
-      // to wait for the file to exist — polling ends either way once the encode is done.
+      // to wait for the file to exist. The window is generous on purpose: a two-second
+      // budget was enough alone and ran out under a full-suite run competing for CPU,
+      // which failed the assertions below for a reason that had nothing to do with what
+      // they test. It ends as soon as the file appears, so the slack costs nothing.
       const lockWhenWritten = async (p: string): Promise<void> => {
-        for (let i = 0; i < 200 && !locked; i++) {
+        for (let i = 0; i < 1000 && !locked; i++) {
           if (existsSync(p)) {
             execFileSync('chflags', ['uchg', p])
             locked = p
@@ -176,9 +179,10 @@ describe('the temp a failed conversion leaves behind', () => {
       expect(existsSync(tmpPath)).toBe(true)
       expect((err as { tmpSurvived?: boolean }).tmpSurvived).toBe(true)
     },
-    // The rename's full retry window is ~3.1s of real waiting, which leaves too little
-    // room under the default 5s once the rest of the suite is competing for CPU — it
-    // timed out once in a full run and passed alone every time.
-    15_000,
+    // The rename's full retry window is ~3.1s of real waiting, plus however long ffmpeg
+    // takes to create the temp the poll above is waiting on. Both are real time, and the
+    // default 5s leaves no room for either once the rest of the suite is competing for
+    // CPU.
+    30_000,
   )
 })
