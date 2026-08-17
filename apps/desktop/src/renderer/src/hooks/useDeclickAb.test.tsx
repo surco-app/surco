@@ -20,6 +20,9 @@ class FakeAudio {
   pause = vi.fn(() => {
     this.paused = true
   })
+  constructor() {
+    created.push(this)
+  }
 }
 
 let created: FakeAudio[] = []
@@ -30,16 +33,7 @@ beforeEach(() => {
   created = []
   rafCalls = 0
   rafQueue = []
-  vi.stubGlobal(
-    'Audio',
-    class {
-      constructor() {
-        const a = new FakeAudio()
-        created.push(a)
-        return a as unknown as HTMLAudioElement
-      }
-    },
-  )
+  vi.stubGlobal('Audio', FakeAudio)
   // Frames are pumped by hand: the loop re-arms itself, so running the queue once per
   // pump is what keeps a runaway loop from hanging the test.
   vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
