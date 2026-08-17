@@ -863,7 +863,9 @@
       "open": "Aberta",
       "show": "Mostrar a seção no editor",
       "hide": "Ocultar a seção do editor",
-      "pinned": "Fixa"
+      "visible": "Visível",
+      "visibleHint": "Mostra esta seção no editor. As ocultas não aparecem de forma alguma.",
+      "openHint": "Abre esta seção expandida ao abrir uma faixa."
     },
     "keyNotations": {
       "camelot": "Camelot (8A)",

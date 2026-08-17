@@ -1,10 +1,17 @@
-import { ChevronDown, ChevronUp, Eye, EyeOff, GripVertical } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, Eye, EyeOff, GripVertical, Info } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { EditorSectionPref } from '../../../../shared/editorSections'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
+import {
+  COLUMN_HEAD,
+  COLUMN_HEAD_CELL,
+  TOGGLE_BOX,
+  TOGGLE_OFF,
+  TOGGLE_ON,
+} from '../../lib/settingsRows'
 import { Tooltip } from '../Tooltip'
 import { SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
 
@@ -12,6 +19,12 @@ interface Props {
   synced: SyncedDraft
   patch: PatchSynced
 }
+
+// Same table shape as Settings → Fields: the name takes the slack, then the state columns,
+// then the reorder arrows. Declared tracks (not justify-between) are what let the headings
+// line up with the controls, and what keeps the pinned first row on the same columns as the
+// rest — it used to place its Open control wherever its "FIXED" label happened to end.
+const SECTION_GRID = 'grid grid-cols-[1fr_4.75rem_4.75rem_1.75rem_1.75rem] items-center gap-1'
 
 // Which editor sections show, in what order, and which start open — split out of the
 // Editor tab (which keeps the behaviour toggles) so this reorder manager gets its own room
@@ -49,6 +62,26 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
     <SettingsSection first>
       <SettingsLabel>{tr('settings.sections.title')}</SettingsLabel>
       <SettingsHint className="mt-2 mb-3">{tr('settings.sections.hint')}</SettingsHint>
+      {/* Column headings on the row grid, so each label sits over its own control. Each
+          carries what its column means, asked for once here rather than repeated on every
+          row — see FieldsEditor, which this list matches. */}
+      <div data-testid="sections-columns" className={`${SECTION_GRID} ${COLUMN_HEAD}`}>
+        <span />
+        <span data-testid="sections-column-visible" role="note" className={COLUMN_HEAD_CELL}>
+          {tr('settings.sections.visible')}
+          <Info className="h-3 w-3" aria-hidden="true" />
+          <span className="sr-only">{tr('settings.sections.visibleHint')}</span>
+          <Tooltip label={tr('settings.sections.visibleHint')} />
+        </span>
+        <span data-testid="sections-column-open" role="note" className={COLUMN_HEAD_CELL}>
+          {tr('settings.sections.open')}
+          <Info className="h-3 w-3" aria-hidden="true" />
+          <span className="sr-only">{tr('settings.sections.openHint')}</span>
+          <Tooltip label={tr('settings.sections.openHint')} />
+        </span>
+        <span />
+        <span />
+      </div>
       <div className="space-y-1.5">
         {sections.map((section, i) => {
           const movable = section.id !== 'form'
@@ -83,7 +116,7 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
                 setDropId(null)
               }}
               onMouseUp={() => setDragId(null)}
-              className={`flex items-center justify-between rounded-lg border bg-[var(--color-field)] py-1.5 pr-2 ${
+              className={`${SECTION_GRID} rounded-lg border bg-[var(--color-field)] py-1.5 pr-2 ${
                 movable ? 'pl-2' : 'pl-3'
               } ${
                 dropId === section.id
@@ -104,11 +137,10 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
                   {tr(`settings.sections.${section.id}`)}
                 </span>
               </span>
-              <div className="flex shrink-0 items-center gap-1">
                 {/* Hidden removes the section from the editor entirely; the form has no
                     toggle — it IS the editor. The open pill goes quiet meanwhile: a fold
                     default means nothing for a section that never renders. */}
-                {movable && (
+                {movable ? (
                   <button
                     type="button"
                     data-testid={`settings-section-hide-${section.id}`}
@@ -117,7 +149,7 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
                       section.hidden ? 'settings.sections.show' : 'settings.sections.hide',
                     )}
                     onClick={() => toggleHidden(section.id)}
-                    className="rounded px-1.5 py-0.5 text-fg-muted hover:text-fg"
+                    className="mx-auto flex h-6 w-6 items-center justify-center rounded text-fg-muted hover:text-fg"
                   >
                     {section.hidden ? (
                       <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -130,6 +162,10 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
                       )}
                     />
                   </button>
+                ) : (
+                  // The metadata form IS the editor — it can't be hidden, so its cell stays
+                  // empty rather than holding a control that would do nothing.
+                  <span />
                 )}
                 <button
                   type="button"
@@ -137,13 +173,12 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
                   aria-pressed={section.open}
                   disabled={section.hidden === true}
                   onClick={() => toggleOpen(section.id)}
-                  className={`mr-1 rounded px-2 py-0.5 text-xs disabled:opacity-25 ${
-                    section.open
-                      ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
-                      : 'text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg-muted'
+                  aria-label={tr('settings.sections.open')}
+                  className={`${TOGGLE_BOX} disabled:opacity-25 ${
+                    section.open ? TOGGLE_ON : TOGGLE_OFF
                   }`}
                 >
-                  {tr('settings.sections.open')}
+                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
                 {movable ? (
                   <>
@@ -153,7 +188,7 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
                       aria-label={tr('settings.moveUp')}
                       disabled={!canUp}
                       onClick={() => move(i, -1)}
-                      className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
+                      className="mx-auto rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
                     >
                       <ChevronUp className="h-4 w-4" aria-hidden="true" />
                     </button>
@@ -163,17 +198,20 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
                       aria-label={tr('settings.moveDown')}
                       disabled={!canDown}
                       onClick={() => move(i, 1)}
-                      className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
+                      className="mx-auto rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
                     >
                       <ChevronDown className="h-4 w-4" aria-hidden="true" />
                     </button>
                   </>
                 ) : (
-                  <span className="px-1.5 text-[10px] uppercase tracking-wider text-fg-faint">
-                    {tr('settings.sections.pinned')}
-                  </span>
+                  // No "FIXED" label: it sat in the arrows' columns and pushed this row's
+                  // Open control out of the line every other row keeps — and the row having
+                  // no grip and no arrows already says it doesn't move.
+                  <>
+                    <span />
+                    <span />
+                  </>
                 )}
-              </div>
             </div>
           )
         })}

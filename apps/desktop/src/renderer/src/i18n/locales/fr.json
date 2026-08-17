@@ -863,7 +863,9 @@
       "open": "Ouverte",
       "show": "Afficher la section dans l’éditeur",
       "hide": "Masquer la section de l’éditeur",
-      "pinned": "Fixe"
+      "visible": "Visible",
+      "visibleHint": "Affiche cette section dans l'éditeur. Les sections masquées n'apparaissent pas du tout.",
+      "openHint": "Ouvre cette section dépliée à l'ouverture d'une piste."
     },
     "keyNotations": {
       "camelot": "Camelot (8A)",

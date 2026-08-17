@@ -863,7 +863,9 @@
       "open": "Open",
       "show": "Show section in the editor",
       "hide": "Hide section from the editor",
-      "pinned": "Fixed"
+      "visible": "Visible",
+      "visibleHint": "Show this section in the editor. Hidden sections are left out entirely.",
+      "openHint": "Start this section unfolded when you open a track."
     },
     "keyNotations": {
       "camelot": "Camelot (8A)",
