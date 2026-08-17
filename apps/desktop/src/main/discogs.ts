@@ -1,3 +1,4 @@
+import { errorWithKey } from '../shared/errorKeys'
 import { dropOriginalMarker, dropPresentsAlias, trailingWordDrops } from '../shared/searchClean'
 import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
 import { activity } from './activity'
@@ -45,11 +46,10 @@ async function api<T>(path: string, token: string, priority?: SearchPriority): P
       headers: { 'User-Agent': USER_AGENT },
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     })
-    if (res.status === 401) throw new Error('Token de Discogs inválido.')
+    if (res.status === 401) throw errorWithKey('discogsToken')
     if (res.status === 429) {
       // Out of retries: surface the limit so the caller can tell the user to wait.
-      if (attempt >= MAX_RETRIES)
-        throw new Error('Límite de peticiones de Discogs alcanzado. Espera un momento.')
+      if (attempt >= MAX_RETRIES) throw errorWithKey('discogsRateLimit')
       await sleep(retryDelayMs(attempt, res.headers.get('Retry-After')))
       // The caller spent one token on the first attempt; a retry is another request,
       // so take a fresh token — otherwise a 429 storm bypasses the limiter exactly

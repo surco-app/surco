@@ -1,3 +1,4 @@
+import { errorWithKey } from '../shared/errorKeys'
 import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
 import { activity } from './activity'
 import { deezerLimiter } from './deezerLimiter'
@@ -35,8 +36,7 @@ async function api<T>(url: string, priority?: SearchPriority): Promise<T> {
     const data = (await res.json()) as T & DeezerErrorBody
     const code = data.error?.code
     if (code === QUOTA_CODE) {
-      if (attempt >= MAX_RETRIES)
-        throw new Error('Límite de peticiones de Deezer alcanzado. Espera un momento.')
+      if (attempt >= MAX_RETRIES) throw errorWithKey('deezerRateLimit')
       await sleep(Math.min(BASE_DELAY_MS * 2 ** attempt, MAX_DELAY_MS))
       continue
     }

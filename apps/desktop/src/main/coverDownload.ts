@@ -1,6 +1,7 @@
 import { writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { errorWithKey } from '../shared/errorKeys'
 import { activity } from './activity'
 import { REQUEST_TIMEOUT_MS, USER_AGENT } from './http'
 import { isBlockedFetchUrl } from './navigation'
@@ -33,7 +34,7 @@ export function imageExt(buf: Buffer): 'jpg' | 'png' | 'gif' | 'webp' | undefine
 export async function downloadCover(url: string): Promise<string> {
   // The renderer names this URL, so refuse the SSRF-shaped ones (loopback, cloud
   // metadata, private ranges) before the trusted main process ever connects.
-  if (isBlockedFetchUrl(url)) throw new Error('La URL de la carátula no está permitida')
+  if (isBlockedFetchUrl(url)) throw errorWithKey('coverUrlBlocked', url)
   return activity.track(
     'cover',
     'activity.downloadCover',

@@ -1,5 +1,6 @@
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
+import { errorWithKey } from '../shared/errorKeys'
 import { resolveJobFormat } from '../shared/format'
 import type {
   DeclickMode,
@@ -272,9 +273,7 @@ export async function runProcessTrack(
         const entryPath = await deps.appleMusicEntryLocation(musicPersistentId)
         if (entryPath.startsWith(tmpDir)) {
           await deps.deleteAppleMusic(musicPersistentId)
-          throw new Error(
-            'Música no copió el archivo a su carpeta multimedia, así que "Solo Apple Music" lo dejaría sin audio. Activa "Copiar archivos a la carpeta multimedia" en los ajustes de Música, o desactiva "Solo Apple Music".',
-          )
+          throw errorWithKey('appleMusicNoMediaCopy', entryPath)
         }
       }
     }

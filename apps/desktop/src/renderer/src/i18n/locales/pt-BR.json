@@ -111,7 +111,14 @@
     "trash": "Não foi possível mover {{detail}} para a Lixeira.",
     "qualityReport": "Não foi possível salvar o relatório de qualidade.",
     "statsImage": "Não foi possível salvar a imagem de estatísticas.",
-    "draggedCover": "Não foi possível usar essa imagem como capa."
+    "draggedCover": "Não foi possível usar essa imagem como capa.",
+    "coverUrlBlocked": "Esse endereço de capa não é permitido, então nada foi baixado.",
+    "deezerRateLimit": "O Deezer está limitando as buscas. Espere um momento e tente de novo.",
+    "discogsRateLimit": "O Discogs está limitando as buscas. Espere um momento e tente de novo.",
+    "discogsToken": "O Discogs recusou seu token. Confira nos Ajustes.",
+    "outputPathEscapes": "Esse nome de arquivo gravaria fora da pasta de destino.",
+    "settingsFileNotSurco": "Esse arquivo não contém uma configuração do Surco.",
+    "appleMusicNoMediaCopy": "O Música não copiou o arquivo para a pasta de mídia, então “Somente Apple Music” o deixaria sem áudio. Ative “Copiar arquivos para a pasta Mídia ao adicionar” no Música, ou desative “Somente Apple Music”."
   },
   "notices": {
     "duplicatesSkipped": "Já estavam na lista, ignoradas: {{count}}",

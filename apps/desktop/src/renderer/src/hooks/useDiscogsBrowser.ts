@@ -4,6 +4,7 @@ import { searchHintsOf } from '../../../shared/metadata'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
 import { type MatchCleanup, matchTargetOf, probeReleases } from '../lib/autoMatch'
 import { fetchRelease } from '../lib/fetchRelease'
+import { mainErrorMessage } from '../lib/ipcError'
 import { preRankResults, providerCountsOf, releaseKey, resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
@@ -61,10 +62,6 @@ export interface DiscogsBrowser {
   noResults: boolean
   error: string
   previewRelease: (result: SearchResult) => void
-}
-
-function errorMessage(e: unknown, fallback: string): string {
-  return e instanceof Error ? e.message : fallback
 }
 
 // Drives the Editor's Discogs column: the search box, its results, and which release
@@ -335,10 +332,13 @@ export function useDiscogsBrowser(
   // of the "choose an album" hint. Also true when a provider filter empties an otherwise
   // non-empty result set.
   const noResults = searchQuery.isSuccess && results.length === 0
+  // A refused token or a rate limit is thrown by the main process, which has no
+  // i18next instance to phrase it — those arrive stamped with a key and are resolved
+  // here; anything else keeps the provider's own wording.
   const error = searchQuery.isError
-    ? errorMessage(searchQuery.error, tr('editor.searchError'))
+    ? mainErrorMessage(searchQuery.error, tr, tr('editor.searchError'))
     : releaseQuery.isError
-      ? errorMessage(releaseQuery.error, tr('editor.releaseError'))
+      ? mainErrorMessage(releaseQuery.error, tr, tr('editor.releaseError'))
       : ''
 
   // Memoized so the hook's own consumers (DiscogsPanel, wrapped in memo — see

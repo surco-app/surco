@@ -52,8 +52,10 @@ describe('downloadCover image validation', () => {
   // fetch, so the main process never connects to an internal service on its behalf.
   it('refuses an SSRF-shaped URL without fetching it', async () => {
     const fetchMock = mockBytes([0xff, 0xd8, 0xff])
+    // Asserted on the stamped key rather than the sentence: the wording lives in the
+    // renderer's catalogue now, in five languages, and none of it reaches here.
     await expect(downloadCover('http://169.254.169.254/latest/meta-data/')).rejects.toThrow(
-      /no está permitida/i,
+      /SURCO_ERR:coverUrlBlocked/,
     )
     expect(fetchMock).not.toHaveBeenCalled()
   })

@@ -111,7 +111,14 @@
     "trash": "No se ha podido enviar {{detail}} a la papelera.",
     "qualityReport": "No se ha podido guardar el informe de calidad.",
     "statsImage": "No se ha podido guardar la imagen de estadísticas.",
-    "draggedCover": "Esa imagen no se ha podido usar como carátula."
+    "draggedCover": "Esa imagen no se ha podido usar como carátula.",
+    "coverUrlBlocked": "Esa dirección de carátula no está permitida, así que no se ha descargado nada.",
+    "deezerRateLimit": "Deezer está limitando las búsquedas. Espera un momento y vuelve a intentarlo.",
+    "discogsRateLimit": "Discogs está limitando las búsquedas. Espera un momento y vuelve a intentarlo.",
+    "discogsToken": "Discogs ha rechazado tu token. Revísalo en Ajustes.",
+    "outputPathEscapes": "Ese nombre de archivo escribiría fuera de la carpeta de destino.",
+    "settingsFileNotSurco": "Ese archivo no contiene una configuración de Surco.",
+    "appleMusicNoMediaCopy": "Música no ha copiado el archivo a su carpeta multimedia, así que “Solo Apple Music” lo dejaría sin audio. Activa “Copiar archivos a la carpeta multimedia” en Música, o desactiva “Solo Apple Music”."
   },
   "notices": {
     "duplicatesSkipped": "Ya en la lista, omitidas: {{count}}",
