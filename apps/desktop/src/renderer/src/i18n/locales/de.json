@@ -898,6 +898,7 @@
   },
   "errorBoundary": {
     "title": "Etwas konnte nicht dargestellt werden",
+    "details": "Technische Details",
     "retry": "Erneut versuchen",
     "report": "Diesen Fehler melden",
     "revealLog": "Protokoll anzeigen"

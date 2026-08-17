@@ -898,6 +898,7 @@
   },
   "errorBoundary": {
     "title": "Algo ha fallado al renderizar",
+    "details": "Detalles técnicos",
     "retry": "Reintentar",
     "report": "Reportar este error",
     "revealLog": "Ver el registro"

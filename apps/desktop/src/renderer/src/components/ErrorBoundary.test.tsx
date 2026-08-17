@@ -92,4 +92,26 @@ describe('ErrorBoundary', () => {
     expect(revealLog).toHaveBeenCalledTimes(1)
     silenced.mockRestore()
   })
+
+  // A DJ facing a crash needs the three buttons — retry, report, show the log — not a
+  // wall of JavaScript frames. The stack was printed full-height above them, which put
+  // the only actionable part of the screen below the illegible part. It stays on the
+  // page (a user who opens it can paste it into a report, and the report button sends
+  // it regardless), just folded away.
+  it('folds the stack away so the actions are what the screen leads with', () => {
+    const silenced = vi.spyOn(console, 'error').mockImplementation(() => {})
+    render(
+      <ErrorBoundary>
+        <Bomb />
+      </ErrorBoundary>,
+    )
+
+    const details = screen.getByTestId('error-stack')
+    expect(details.tagName).toBe('DETAILS')
+    expect((details as HTMLDetailsElement).open).toBe(false)
+    // The message itself is not hidden: it is the one line that sometimes explains the
+    // crash on its own.
+    expect(screen.getByTestId('error-boundary')).toHaveTextContent('boom')
+    silenced.mockRestore()
+  })
 })

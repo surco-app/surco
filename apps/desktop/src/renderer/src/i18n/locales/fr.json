@@ -898,6 +898,7 @@
   },
   "errorBoundary": {
     "title": "Quelque chose n'a pas pu s'afficher",
+    "details": "Détails techniques",
     "retry": "Réessayer",
     "report": "Signaler cette erreur",
     "revealLog": "Afficher le journal"
