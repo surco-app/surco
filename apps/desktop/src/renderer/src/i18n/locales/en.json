@@ -878,6 +878,8 @@
     "allVisible": "All fields are visible.",
     "required": "Required",
     "autoFill": "Auto",
+    "autoFillHint": "Fills this field from the release you pick. Off, the file keeps the value it already had.",
+    "requiredHint": "Blocks converting a track until this field has a value.",
     "autoOrganize": "Auto-organize",
     "autoOrganizeHint": "Reorder shown fields by group",
     "autoOrganized": "Organized"

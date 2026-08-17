@@ -212,4 +212,32 @@ describe('auto-fill toggle', () => {
     fireEvent.focusIn(screen.getByTestId('field-auto-title'))
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
   })
+
+  // "Auto" names the column but doesn't say what it does, so the meaning has to live
+  // somewhere. It hangs off the heading — one place, asked for once — rather than off all
+  // thirty-two buttons, where the same paragraph kept covering the rows underneath.
+  it('explains Auto from its column heading', () => {
+    setup()
+    fireEvent.focusIn(screen.getByTestId('fields-column-auto'))
+    expect(screen.getByRole('tooltip')).toHaveTextContent(/fill/i)
+  })
+
+  // Required has the same problem: the label alone doesn't say that an empty one blocks
+  // converting, which is the whole point of marking a field required.
+  it('explains Required from its column heading', () => {
+    setup()
+    fireEvent.focusIn(screen.getByTestId('fields-column-required'))
+    expect(screen.getByRole('tooltip')).toHaveTextContent(/convert/i)
+  })
+
+  // A hoverable heading with nothing to show for it is help you only find by accident.
+  // The (i) is what makes it discoverable, and the note carries the same sentence for a
+  // screen reader, which never sees the hover tooltip at all.
+  it('marks each heading as carrying help, readable without a pointer', () => {
+    setup()
+    const notes = within(screen.getByTestId('fields-columns')).getAllByRole('note')
+    expect(notes).toHaveLength(2)
+    expect(notes[0]).toHaveTextContent(/fill/i)
+    expect(notes[1]).toHaveTextContent(/convert/i)
+  })
 })

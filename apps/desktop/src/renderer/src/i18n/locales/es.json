@@ -878,6 +878,8 @@
     "allVisible": "Todos los campos están visibles.",
     "required": "Obligatorio",
     "autoFill": "Auto",
+    "autoFillHint": "Rellena este campo con el disco que elijas. Desactivado, el fichero conserva el valor que ya tenía.",
+    "requiredHint": "Impide convertir una pista hasta que este campo tenga valor.",
     "autoOrganize": "Auto-organizar",
     "autoOrganizeHint": "Reordena los campos mostrados por grupo",
     "autoOrganized": "Organizado"

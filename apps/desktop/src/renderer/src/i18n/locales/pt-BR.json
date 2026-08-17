@@ -878,6 +878,8 @@
     "allVisible": "Todos os campos estão visíveis.",
     "required": "Obrigatório",
     "autoFill": "Auto",
+    "autoFillHint": "Preenche este campo com o lançamento escolhido. Desativado, o arquivo mantém o valor que já tinha.",
+    "requiredHint": "Impede converter uma faixa enquanto este campo estiver vazio.",
     "autoOrganize": "Auto-organizar",
     "autoOrganizeHint": "Reordena os campos visíveis por grupo",
     "autoOrganized": "Organizado"

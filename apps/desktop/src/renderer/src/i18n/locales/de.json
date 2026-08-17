@@ -878,6 +878,8 @@
     "allVisible": "Alle Felder sind sichtbar.",
     "required": "Pflichtfeld",
     "autoFill": "Auto",
+    "autoFillHint": "Füllt dieses Feld aus der gewählten Veröffentlichung. Aus: Die Datei behält ihren bisherigen Wert.",
+    "requiredHint": "Verhindert das Konvertieren eines Tracks, solange dieses Feld leer ist.",
     "autoOrganize": "Auto-Sortieren",
     "autoOrganizeHint": "Ordnet die angezeigten Felder nach Gruppe",
     "autoOrganized": "Sortiert"
