@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createTmpManifest } from './tmpManifest'
 
+// What node's fs throws for a file that is not there — the one delete failure that
+// means the sweep is done with that path rather than blocked on it.
+const enoent = (): NodeJS.ErrnoException =>
+  Object.assign(new Error('ENOENT: no such file or directory'), { code: 'ENOENT' })
+
 function fakeFs(initial: string[] = []): {
   readFileSync: (p: string) => string
   writeFileSync: (p: string, data: string) => void
@@ -72,12 +77,55 @@ describe('createTmpManifest', () => {
   it('tolerates a listed path that no longer exists', () => {
     const fs = fakeFs(['/gone.tmp-1.aiff', '/still-there.tmp-2.aiff'])
     fs.unlinkSync = vi.fn((p: string) => {
-      if (p === '/gone.tmp-1.aiff') throw new Error('ENOENT')
+      if (p === '/gone.tmp-1.aiff') throw enoent()
       fs.removed.push(p)
     })
     const manifest = createTmpManifest('/manifest.json', fs)
     expect(() => manifest.sweepOrphans()).not.toThrow()
     expect(fs.removed).toEqual(['/still-there.tmp-2.aiff'])
+    // Gone means gone: nothing left to sweep, so the manifest empties.
+    expect(fs.written()).toEqual([])
+  })
+
+  // A delete that fails for any reason other than "already gone" leaves the file on
+  // disk — a network volume still holding the handle, or a Windows scanner. Clearing
+  // the manifest anyway destroyed the only record of it, which is what left orphaned
+  // temps parked in the user's music folder with nothing able to find them again.
+  // convertAudio takes the same care one layer down (its catch keeps the path listed
+  // when the unlink survives), and this line used to undo it at the next launch.
+  it('keeps a path it could not delete listed for the next sweep', () => {
+    const fs = fakeFs(['/held.tmp-1.aiff', '/gone.tmp-2.aiff', '/removed.tmp-3.aiff'])
+    fs.unlinkSync = vi.fn((p: string) => {
+      if (p === '/held.tmp-1.aiff')
+        throw Object.assign(new Error('EBUSY: resource busy'), {
+          code: 'EBUSY',
+        })
+      if (p === '/gone.tmp-2.aiff') throw enoent()
+      fs.removed.push(p)
+    })
+    const manifest = createTmpManifest('/manifest.json', fs)
+
+    manifest.sweepOrphans()
+
+    expect(fs.removed).toEqual(['/removed.tmp-3.aiff'])
+    // Only the survivor stays: the deleted one is gone and the never-there one would
+    // send every future sweep chasing a path that does not exist.
+    expect(fs.written()).toEqual(['/held.tmp-1.aiff'])
+  })
+
+  // Windows raises EPERM rather than EBUSY when an antivirus holds the file — the same
+  // situation, and the reason the retained-path rule is keyed on "not ENOENT" instead
+  // of on one platform's code.
+  it('keeps a path held under the Windows permission error too', () => {
+    const fs = fakeFs(['/scanned.tmp-1.aiff'])
+    fs.unlinkSync = vi.fn(() => {
+      throw Object.assign(new Error('EPERM: operation not permitted'), { code: 'EPERM' })
+    })
+    const manifest = createTmpManifest('/manifest.json', fs)
+
+    manifest.sweepOrphans()
+
+    expect(fs.written()).toEqual(['/scanned.tmp-1.aiff'])
   })
 
   it('tolerates a corrupt manifest file, sweeping nothing instead of throwing', () => {

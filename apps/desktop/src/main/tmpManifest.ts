@@ -16,8 +16,9 @@ export interface TmpManifest {
   track: (path: string) => void
   untrack: (path: string) => void
   // Deletes every path left over from a run that never got to untrack them
-  // (crash, force-quit), then clears the manifest. Call once at launch, before
-  // any new conversion starts.
+  // (crash, force-quit), then clears the manifest of everything it managed to
+  // remove — a path it could not delete stays listed for the next sweep. Call
+  // once at launch, before any new conversion starts.
   sweepOrphans: () => void
 }
 
@@ -52,15 +53,22 @@ export function createTmpManifest(manifestPath: string, fs: FsAdapter): TmpManif
     },
     sweepOrphans: () => {
       const paths = readPaths(manifestPath, fs)
+      // Paths still on disk after this pass. A delete that fails for anything other
+      // than "already gone" means the file is still there — a network volume holding
+      // the handle, or a Windows scanner — and the manifest is the only thing that
+      // will ever lead a later sweep back to it. Clearing it regardless was what left
+      // half-written temps parked in the user's own folder with no record anywhere.
+      const kept: string[] = []
       for (const path of paths) {
         try {
           fs.unlinkSync(path)
-        } catch {
-          // Already gone (user deleted it, or the crash happened before ffmpeg
-          // even created it) — never block the rest of the sweep over one file.
+        } catch (e) {
+          // ENOENT is the sweep succeeding by other means (user deleted it, or the
+          // crash happened before ffmpeg created it): nothing to chase next time.
+          if ((e as NodeJS.ErrnoException)?.code !== 'ENOENT') kept.push(path)
         }
       }
-      if (paths.length) writePaths(manifestPath, fs, [])
+      if (paths.length) writePaths(manifestPath, fs, kept)
     },
   }
 }
