@@ -917,6 +917,26 @@ describe('buildReleaseMeta', () => {
     expect(patch.meta.style).toBe('Techno')
   })
 
+  // A release with neither genres nor styles has nothing to say about the genre, so it must
+  // leave the file's own alone. It used to overwrite unconditionally — the one field that
+  // did — so applying an uncatalogued release wiped a genre the DJ had typed by hand, with
+  // no sign it had gone. Every neighbouring field already falls back this way.
+  it('keeps the current genre when the release carries neither genre nor style', () => {
+    const patch = buildReleaseMeta(meta({ genre: 'Hard Trance' }), release(), undefined)
+    expect(patch.meta.genre).toBe('Hard Trance')
+  })
+
+  // The release still wins when it HAS a genre: this is a fallback for missing data, not a
+  // rule that the file's existing value is preferred.
+  it('still takes the release genre over the current one', () => {
+    const patch = buildReleaseMeta(
+      meta({ genre: 'Hard Trance' }),
+      release({ genres: ['Electronic'] }),
+      undefined,
+    )
+    expect(patch.meta.genre).toBe('Electronic')
+  })
+
   // Several styles are the norm on Discogs ("House", "Deep House"); joining them keeps
   // the information the user came for instead of silently dropping all but the first.
   it('joins multiple styles rather than keeping only the first', () => {

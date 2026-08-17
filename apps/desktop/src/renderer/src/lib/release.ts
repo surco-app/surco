@@ -527,7 +527,10 @@ export function buildReleaseMeta(
       // value rather than keeping it. The current value stands only if Discogs has none.
       artist: trackArtist || albumArtist || current.artist,
       year: rel.year ? String(rel.year) : current.year,
-      genre,
+      // Falls back like every other field below: a release with neither genres nor styles
+      // knows nothing about the genre, so it must not blank one the DJ typed by hand. This
+      // was the one field that overwrote unconditionally, wiping it with nothing to show.
+      genre: genre || current.genre || '',
       // Defaulted to '' rather than left undefined: these fields reach a tag writer, and
       // an absent value has to mean "empty tag", never the string "undefined".
       style: style || current.style || '',
