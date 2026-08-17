@@ -122,4 +122,38 @@ describe('DC offset removal through a real conversion', () => {
     })
     expect(dcOffsetOf(out)).toBeGreaterThan(0.05)
   })
+
+  // Peak mode opts out of the shared DC stage because its own combined filter can
+  // subtract the mean while sizing each channel — but only actually does so under
+  // peakRemoveDc. Per-channel gain is a separate axis (each channel to its own peak
+  // vs one shared gain) that touches no DC at all, so opting out for it left nobody
+  // centring: the box was ticked, the editor's readout promised an offset of 0%, and
+  // the file kept its bias.
+  it('centres the signal in peak mode with per-channel gain', async () => {
+    const out = join(dir, 'peak-perchannel-dc.wav')
+    await convertAudio(biased, out, 'wav', meta, undefined, {
+      mode: 'peak',
+      targetLufs: -14,
+      peakDb: -1,
+      truePeakDb: -1,
+      peakPerChannel: true,
+      removeDcOffset: true,
+    })
+    expect(dcOffsetOf(out)).toBeLessThan(0.01)
+  })
+
+  // Peak mode's own centring still has to be the one that runs when it is asked for,
+  // rather than both stages subtracting the mean in turn.
+  it('centres the signal exactly once when peak mode owns the removal', async () => {
+    const out = join(dir, 'peak-owndc.wav')
+    await convertAudio(biased, out, 'wav', meta, undefined, {
+      mode: 'peak',
+      targetLufs: -14,
+      peakDb: -1,
+      truePeakDb: -1,
+      peakRemoveDc: true,
+      removeDcOffset: true,
+    })
+    expect(dcOffsetOf(out)).toBeLessThan(0.01)
+  })
 })

@@ -146,6 +146,29 @@ describe('isNormalizeStale', () => {
     expect(isNormalizeStale(t, cfg({ mode: 'peak', peakRemoveDc: false }))).toBe(false)
   })
 
+  // Centring applies in both modes, unlike the peak-only options above, and it changes
+  // the written audio — so toggling it after an export has to bring the Update button
+  // back like any other dial. Left out of the signature, the user ticked the box, saw
+  // nothing offer to re-run, and kept a file that was never centred.
+  it('is true when DC removal is toggled, in either mode', () => {
+    const peak = converted({ processedNormalize: cfg({ mode: 'peak' }) })
+    expect(isNormalizeStale(peak, cfg({ mode: 'peak', removeDcOffset: true }))).toBe(true)
+    const loud = converted({ processedNormalize: cfg({ mode: 'loudness' }) })
+    expect(isNormalizeStale(loud, cfg({ mode: 'loudness', removeDcOffset: true }))).toBe(true)
+  })
+
+  it('treats a missing DC removal flag as off, so old exports do not read as stale', () => {
+    const t = converted({ processedNormalize: cfg({ mode: 'loudness' }) })
+    expect(isNormalizeStale(t, cfg({ mode: 'loudness', removeDcOffset: false }))).toBe(false)
+  })
+
+  // With no normalization there is nothing to centre, so the flag is inert there and
+  // must not flag an update the export would not change.
+  it('ignores DC removal when no normalization is active', () => {
+    const t = converted({ processedNormalize: cfg({ mode: 'none' }) })
+    expect(isNormalizeStale(t, cfg({ mode: 'none', removeDcOffset: true }))).toBe(false)
+  })
+
   it('is never stale before a track is done', () => {
     const t = converted({ status: 'idle', processedNormalize: cfg() })
     expect(isNormalizeStale(t, cfg({ mode: 'peak' }))).toBe(false)

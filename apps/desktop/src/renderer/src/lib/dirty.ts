@@ -49,10 +49,15 @@ export function isStale(track: TrackItem): boolean {
 // Only the knobs the active mode actually applies: the other mode's numbers are
 // inert, so touching them must not flag an update the export wouldn't change.
 function normalizeEffect(cfg: NormalizeConfig): string {
-  if (cfg.mode === 'loudness') return `loudness ${cfg.targetLufs} ${cfg.truePeakDb}`
-  // The booleans coerced so a config saved before the options existed (undefined)
-  // reads identically to one with them off.
-  if (cfg.mode === 'peak') return `peak ${cfg.peakDb} ${!!cfg.peakRemoveDc} ${!!cfg.peakPerChannel}`
+  // Centring rides both modes (peak defers to its own combined filter when
+  // peakRemoveDc asks, the shared stage handles it otherwise), so it belongs to
+  // whichever is active — but not to 'none', where nothing normalizes and there is
+  // nothing to centre. The booleans coerced so a config saved before the options
+  // existed (undefined) reads identically to one with them off.
+  const dc = `${!!cfg.removeDcOffset}`
+  if (cfg.mode === 'loudness') return `loudness ${cfg.targetLufs} ${cfg.truePeakDb} ${dc}`
+  if (cfg.mode === 'peak')
+    return `peak ${cfg.peakDb} ${!!cfg.peakRemoveDc} ${!!cfg.peakPerChannel} ${dc}`
   return 'none'
 }
 
