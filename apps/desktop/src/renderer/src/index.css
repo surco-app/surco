@@ -606,6 +606,22 @@ textarea {
   display: none;
 }
 
+/* The applied tracklist row (Discogs column) shares the same solid selection-blue fill, so its
+   text and its suggestion sparkle flip the same way: title full-strength, the position number
+   softened, and the sparkle to white so amber-on-blue stops clashing. It sits above the
+   .is-primary block because its selectors are less specific: the two never meet on one element
+   (library list and editor panel are siblings), but source order matching specificity order is
+   what keeps that true if they ever nest. */
+.is-applied .text-fg {
+  color: var(--color-on-row-selected);
+}
+.is-applied .text-fg-dim {
+  color: color-mix(in srgb, var(--color-on-row-selected) 72%, transparent);
+}
+.is-applied [data-testid="track-confidence"] {
+  color: var(--color-on-row-selected);
+}
+
 /* The primary library row is a solid selection-blue fill (see TrackList). Its text and format
    badge were coloured for a dark panel — grey-on-blue is unreadable — so on the filled row
    they flip to the on-selection colour (white in both themes): the title full-strength, the
@@ -646,19 +662,6 @@ textarea {
 }
 .is-primary [data-testid="track-stage"] .bg-\[var\(--color-panel-2\)\] {
   background: color-mix(in srgb, var(--color-on-row-selected) 28%, transparent);
-}
-
-/* The applied tracklist row (Discogs column) shares the same solid selection-blue fill, so its
-   text and its suggestion sparkle flip the same way: title full-strength, the position number
-   softened, and the sparkle to white so amber-on-blue stops clashing. */
-.is-applied .text-fg {
-  color: var(--color-on-row-selected);
-}
-.is-applied .text-fg-dim {
-  color: color-mix(in srgb, var(--color-on-row-selected) 72%, transparent);
-}
-.is-applied [data-testid="track-confidence"] {
-  color: var(--color-on-row-selected);
 }
 
 /* Reduced motion means gentler, not nothing. The blanket rule this replaces collapsed every
