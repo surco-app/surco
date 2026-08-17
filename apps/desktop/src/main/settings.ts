@@ -374,9 +374,16 @@ export function setConfigDir(dir: string | null): Settings {
     writeAtomic(localFile(), current)
     return getSettings()
   }
-  writeAtomic(pointerFile(), { dir })
+  // Seed first, point second. The pointer used to be written before the folder was
+  // set up, with nothing to undo it: a folder that refused the write — read-only
+  // volume, full disk, an iCloud folder not there yet, all of them exactly what this
+  // setting points at — left the app aimed at a location holding no settings.json, and
+  // every non-local key (theme, language, filename format, the Discogs token) read
+  // back as its default. Failing before the pointer moves leaves the user where they
+  // were, which is the only safe half to fail on.
   const sf = join(dir, 'settings.json')
   if (!existsSync(sf)) writeAtomic(sf, split(current).synced)
+  writeAtomic(pointerFile(), { dir })
   return getSettings()
 }
 
