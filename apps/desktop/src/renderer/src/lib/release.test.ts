@@ -20,6 +20,8 @@ import {
   providerCountsOf,
   releaseKey,
   resultFromRelease,
+  resultIdentity,
+  resultPressing,
   scoreTrack,
   stepImageIndex,
   titleSimilarity,
@@ -855,6 +857,66 @@ describe('resultFacts', () => {
       format: ['Vinyl', '12"', '33 ⅓ RPM', 'Stereo'],
     } as SearchResult)
     expect(facts).toBe('Vinyl, 12"')
+  })
+})
+
+// The five facts do not fit on one line. Measured against 816 cached Discogs results at the
+// default results width, 19% of them overflowed and the ellipsis ate the country — the very
+// field a collector needs to tell a UK 12" from its German repress. So the line splits in
+// two where the meaning already splits: which release this is, then how it was pressed.
+describe('resultIdentity / resultPressing', () => {
+  const full = {
+    provider: 'discogs',
+    id: 1,
+    title: 'X',
+    year: '1997',
+    label: ['Virgin'],
+    catno: 'V2821',
+    format: ['Vinyl', '12"'],
+    country: 'UK',
+  } as SearchResult
+
+  it('names the release on the first line and the pressing on the second', () => {
+    expect(resultIdentity(full)).toBe('1997 · Virgin · V2821')
+    expect(resultPressing(full)).toBe('Vinyl, 12" · UK')
+  })
+
+  // Together they must still carry every field the single line did, or the split has quietly
+  // dropped data the user was reading before.
+  it('loses nothing that the single line showed', () => {
+    expect(`${resultIdentity(full)} · ${resultPressing(full)}`).toBe(resultFacts(full))
+  })
+
+  // Both lines are guarded separately in the row, so each has to collapse to '' on its own:
+  // a Bandcamp result renders neither, and a result with only a year renders just the first.
+  it('collapses each line independently', () => {
+    const bandcamp = { provider: 'bandcamp', id: 2, title: 'X' } as SearchResult
+    expect(resultIdentity(bandcamp)).toBe('')
+    expect(resultPressing(bandcamp)).toBe('')
+
+    const yearOnly = { provider: 'deezer', id: 3, title: 'X', year: '2009' } as SearchResult
+    expect(resultIdentity(yearOnly)).toBe('2009')
+    expect(resultPressing(yearOnly)).toBe('')
+  })
+
+  // A pressing with no format still has an origin worth showing, and it must not arrive with
+  // a leading separator.
+  it('shows the country alone when the format is missing', () => {
+    const noFormat = { provider: 'discogs', id: 4, title: 'X', country: 'Spain' } as SearchResult
+    expect(resultPressing(noFormat)).toBe('Spain')
+  })
+
+  // The format truncation rule belongs to the pressing line now; it is the same rule, so RPM
+  // and "Stereo" stay out of it.
+  it('keeps only the first two format descriptions', () => {
+    const noisy = {
+      provider: 'discogs',
+      id: 5,
+      title: 'X',
+      format: ['Vinyl', '12"', '33 ⅓ RPM', 'Stereo'],
+      country: 'UK',
+    } as SearchResult
+    expect(resultPressing(noisy)).toBe('Vinyl, 12" · UK')
   })
 })
 
