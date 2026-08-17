@@ -590,10 +590,13 @@ describe('planConversion', () => {
     })
   })
 
-  // A lossy decoder emits float as an artifact of decoding, not as source precision.
-  // Rendering it as 32-bit float WAV/AIFF bloats the file and CDJs refuse float WAV,
-  // so lossy sources land on 24-bit integer PCM — the widest depth DJ gear plays.
-  it('renders a lossy decode as 24-bit integer PCM, never 32-bit float', async () => {
+  // A lossy decoder emits float as an artifact of decoding, not as source precision: an
+  // MP3 stores transform coefficients, so it has no bit depth to preserve. Rendering that
+  // wide invents precision the source never had — a 320k MP3 came out a FLAC three times
+  // the size (60KB against 21KB, measured) with nothing audible gained, which is what
+  // "Same as source" bloating a converted collection looked like to the user who hit it.
+  // 16-bit is what a lossy decode actually carries, and CDJs still refuse float WAV.
+  it('renders a lossy decode as 16-bit integer PCM, never 32-bit float', async () => {
     const lossy = vi.fn(async () => ({
       codecName: 'mp3float',
       sampleFmt: 'fltp',
@@ -602,18 +605,41 @@ describe('planConversion', () => {
       channels: 2,
     }))
     expect(await planConversion('/in.mp3', 'wav', lossy)).toEqual({
-      codec: 'pcm_s24le',
+      codec: 'pcm_s16le',
+      dither: true,
       ext: '.wav',
     })
     expect(await planConversion('/in.mp3', 'aiff', lossy)).toEqual({
-      codec: 'pcm_s24be',
+      codec: 'pcm_s16be',
+      dither: true,
       ext: '.aiff',
     })
     expect(await planConversion('/in.mp3', 'flac', lossy)).toEqual({
       codec: 'flac',
-      sampleFmt: 's32',
+      sampleFmt: 's16',
+      dither: true,
       compressionLevel: '5',
       ext: '.flac',
+    })
+  })
+
+  // The decoder still hands over float samples even though the target is now 16-bit, so
+  // the requantization needs TPDF dither exactly as it did when lossy sources landed on
+  // 24 — without it a quiet passage gains quantization noise. The depth mapping and the
+  // dither flag are decided in different places, so narrowing one silently dropped the
+  // other: this pins them together.
+  it('dithers a lossy decode down to 16 bits', async () => {
+    const lossy = vi.fn(async () => ({
+      codecName: 'mp3float',
+      sampleFmt: 'fltp',
+      bitsPerRawSample: 0,
+      sampleRate: '44100',
+      channels: 2,
+    }))
+    expect(await planConversion('/in.mp3', 'wav', lossy)).toEqual({
+      codec: 'pcm_s16le',
+      dither: true,
+      ext: '.wav',
     })
   })
 
