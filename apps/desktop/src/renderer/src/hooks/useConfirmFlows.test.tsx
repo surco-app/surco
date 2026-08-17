@@ -27,14 +27,16 @@ function setup(
     onOldMusicCopyRemoved?: ReturnType<typeof vi.fn<() => void>>
     reportOldCopyRemoveFailure?: ReturnType<typeof vi.fn<(mismatch: boolean) => void>>
     updateTrack?: ReturnType<typeof vi.fn<(id: string, patch: Partial<TrackItem>) => void>>
+    removeTrack?: ReturnType<typeof vi.fn<(id: string) => void>>
     settings?: Settings | null
   } = {},
 ) {
   const opened: ConfirmModal[] = []
+  const removeTrack = extra.removeTrack ?? vi.fn()
   const { result } = renderHook(() =>
     useConfirmFlows({
       settings: extra.settings ?? null,
-      removeTrack: vi.fn(),
+      removeTrack,
       updateTrack: extra.updateTrack ?? vi.fn(),
       emptyTracks: vi.fn(),
       deriveTracks: vi.fn(),
@@ -46,8 +48,79 @@ function setup(
       tracksRef: { current: allTracks },
     }),
   )
-  return { flows: result.current, opened }
+  return { flows: result.current, opened, removeTrack }
 }
+
+// A track carries staged edits when its live state has diverged from what the file on
+// disk holds — the same test sessionEdits uses to decide what is worth saving across a
+// crash. diskSignature is the snapshot taken when the file was read.
+function edited(id: string): TrackItem {
+  return track(id, { diskSignature: 'what-the-file-had', meta: { ...emptyMetadata(), title: id } })
+}
+
+// Removing is not undoable: useMetaUndo filters to rows that still exist and never
+// resurrects a deleted one. The dialog was asked for by COUNT — one row went straight
+// through — so a single track carrying an hour of tagging was discarded on a stray click
+// of a hover-revealed ✕, with nothing to say it had anything on it. Asking by CONTENT
+// keeps the ordinary gesture free (which is what stops the dialog being trained away)
+// and stops exactly the case that loses work.
+describe('useConfirmFlows removing tracks from the list', () => {
+  it('removes a single untouched track without asking', () => {
+    const t = track('a')
+    const { flows, opened, removeTrack } = setup([t])
+
+    flows.askRemoveFromList([t])
+
+    expect(opened).toHaveLength(0)
+    expect(removeTrack).toHaveBeenCalledWith('a')
+  })
+
+  it('asks before discarding a single track that carries staged edits', () => {
+    const t = edited('a')
+    const { flows, opened, removeTrack } = setup([t])
+
+    flows.askRemoveFromList([t])
+
+    expect(opened).toHaveLength(1)
+    expect(removeTrack).not.toHaveBeenCalled()
+    opened[0].onConfirm?.()
+    expect(removeTrack).toHaveBeenCalledWith('a')
+  })
+
+  // The strings were written for the many-rows case only. Now that one row can raise the
+  // dialog too, a fixed plural would greet it with "Remove 1 tracks from the list?".
+  it('words the single-track dialog as one track', () => {
+    const t = edited('a')
+    const { flows, opened } = setup([t])
+
+    flows.askRemoveFromList([t])
+
+    expect(opened[0].title).not.toContain('1 tracks')
+    expect(opened[0].message).not.toContain('1 tracks')
+  })
+
+  // The expanded case keeps asking whatever the rows carry: one click on a hover-revealed
+  // ✕ acting on dozens of rows is worth confirming on its own.
+  it('still asks for a multi-row removal with nothing staged', () => {
+    const rows = [track('a'), track('b')]
+    const { flows, opened } = setup(rows)
+
+    flows.askRemoveFromList(rows)
+
+    expect(opened).toHaveLength(1)
+  })
+
+  it('does not ask when a converted track matches what is on disk', () => {
+    // Converted and unchanged since: the signature matches, so there is nothing staged
+    // to lose and the ✕ stays a one-click gesture.
+    const t = track('a', { diskSignature: undefined })
+    const { flows, opened } = setup([t])
+
+    flows.askRemoveFromList([t])
+
+    expect(opened).toHaveLength(0)
+  })
+})
 
 describe('useConfirmFlows scope wording', () => {
   // The toolbar's clear acts on the filtered-visible rows while the palette's acts on

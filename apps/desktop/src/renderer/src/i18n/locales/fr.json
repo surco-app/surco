@@ -569,7 +569,8 @@
     "hearingRepaired": "Écoute : réparé",
     "hearingOriginal": "Écoute : original",
     "abHint": "Bascule entre l’original et la version réparée sans couper le son : vous entendez si la réparation a supprimé les clics — et si elle a terni la musique.",
-    "nextClick": "Clic suivant"
+    "nextClick": "Clic suivant",
+    "appliesToSelection": "Ce réglage s’applique aux {{count}} morceaux sélectionnés."
   },
   "trim": {
     "title": "Rognage du silence",
@@ -628,7 +629,8 @@
       "club": "Chaud, pour la cabine : la plupart des morceaux exigent un limiteur pour y arriver, au prix d'un peu de punch.",
       "broadcast": "Le niveau TV et radio. Plus bas que le streaming, avec beaucoup de marge.",
       "custom": "Ta propre cible. L'aperçu sous l'onde montre où le morceau atterrira."
-    }
+    },
+    "appliesToSelection": "Ces réglages s’appliquent aux {{count}} morceaux sélectionnés."
   },
   "settings": {
     "tabs": {
@@ -1012,8 +1014,10 @@
     "clearMessageFiltered_one": "Retire le seul morceau visible de la liste — ceux masqués par le filtre restent. Le fichier sur le disque n'est pas supprimé.",
     "clearMessageFiltered_other": "Retire les {{count}} morceaux visibles de la liste — ceux masqués par le filtre restent. Les fichiers sur le disque ne sont pas supprimés.",
     "clearConfirm": "Vider",
-    "removeFromListTitle": "Retirer {{count}} pistes de la liste ?",
-    "removeFromListMessage": "Retire les {{count}} pistes sélectionnées ainsi que les modifications en attente. Les fichiers sur le disque ne sont pas supprimés, mais les modifications sont perdues.",
+    "removeFromListTitle_one": "Retirer ce morceau de la liste ?",
+    "removeFromListTitle_other": "Retirer {{count}} morceaux de la liste ?",
+    "removeFromListMessage_one": "Il porte des modifications que tu n'as pas encore converties. Le fichier sur le disque n'est pas supprimé, mais les modifications sont irrécupérables.",
+    "removeFromListMessage_other": "Retire les {{count}} morceaux sélectionnés et les modifications en attente. Les fichiers sur le disque ne sont pas supprimés, mais les modifications sont irrécupérables.",
     "removeFromListConfirm": "Retirer",
     "trashTitle_one": "Mettre le fichier à la corbeille ?",
     "trashTitle_other": "Mettre {{count}} fichiers à la corbeille ?",
