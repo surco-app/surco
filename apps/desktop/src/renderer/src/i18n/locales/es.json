@@ -569,7 +569,8 @@
     "hearingRepaired": "Escuchando: reparada",
     "hearingOriginal": "Escuchando: original",
     "abHint": "Alterna entre la pista original y la reparada sin cortar el audio, para que oigas si la reparación ha quitado los clics — y si ha apagado la música.",
-    "nextClick": "Siguiente clic"
+    "nextClick": "Siguiente clic",
+    "appliesToSelection": "Este ajuste se aplica a las {{count}} pistas seleccionadas."
   },
   "trim": {
     "title": "Recorte de silencio",
@@ -628,7 +629,8 @@
       "club": "Caliente, para cabina: la mayoría de pistas necesitan limitar picos para llegar, a costa de algo de pegada.",
       "broadcast": "El nivel de TV y radio. Más bajo que streaming, con mucho margen.",
       "custom": "Tu propio objetivo. La previsualización bajo la onda dice dónde quedará la pista."
-    }
+    },
+    "appliesToSelection": "Estos ajustes se aplican a las {{count}} pistas seleccionadas."
   },
   "settings": {
     "tabs": {
@@ -1012,8 +1014,10 @@
     "clearMessageFiltered_one": "Quita la única pista visible de la lista — las que el filtro oculta se quedan. El archivo en disco no se borra.",
     "clearMessageFiltered_other": "Quita las {{count}} pistas visibles de la lista — las que el filtro oculta se quedan. Los archivos en disco no se borran.",
     "clearConfirm": "Vaciar",
-    "removeFromListTitle": "¿Quitar {{count}} pistas de la lista?",
-    "removeFromListMessage": "Quita las {{count}} pistas seleccionadas y las ediciones que tengan pendientes. Los archivos en disco no se borran, pero las ediciones no se pueden recuperar.",
+    "removeFromListTitle_one": "¿Quitar esta pista de la lista?",
+    "removeFromListTitle_other": "¿Quitar {{count}} pistas de la lista?",
+    "removeFromListMessage_one": "Tiene ediciones que aún no has convertido. El archivo en disco no se borra, pero las ediciones no se pueden recuperar.",
+    "removeFromListMessage_other": "Quita las {{count}} pistas seleccionadas y las ediciones que tengan pendientes. Los archivos en disco no se borran, pero las ediciones no se pueden recuperar.",
     "removeFromListConfirm": "Quitar",
     "trashTitle_one": "¿Mover el archivo a la papelera?",
     "trashTitle_other": "¿Mover {{count}} archivos a la papelera?",

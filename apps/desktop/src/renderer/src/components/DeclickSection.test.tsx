@@ -135,7 +135,7 @@ function section(
         onToggle={() => {}}
         onChange={() => {}}
         inputPath="/in/track.wav"
-        isMulti={false}
+        selectedCount={1}
         format="wav"
         {...over}
       />
@@ -201,8 +201,22 @@ describe('DeclickSection', () => {
   })
 
   it('never counts for a multi-selection — the anchor track would misrepresent it', () => {
-    render(section({ isMulti: true }))
+    render(section({ selectedCount: 3 }))
     expect(screen.queryByTestId('declick-estimate-pill')).not.toBeInTheDocument()
+  })
+
+  // The batch hands one declick override to every selected track, so with a selection
+  // open this control is not the anchor track's setting — it is all of them. Hiding the
+  // waveform was the only thing that changed, which left the control looking exactly as
+  // it does for a single track.
+  it('says how many tracks the setting will apply to', () => {
+    render(section({ selectedCount: 40 }))
+    expect(screen.getByTestId('declick-scope')).toHaveTextContent('40')
+  })
+
+  it('says nothing about scope for a single track', () => {
+    render(section({ selectedCount: 1 }))
+    expect(screen.queryByTestId('declick-scope')).not.toBeInTheDocument()
   })
 
   it('states a clean track outright instead of showing a bare zero', async () => {
@@ -233,7 +247,7 @@ describe('DeclickSection', () => {
   })
 
   it('draws no marks for a multi-selection', async () => {
-    render(section({ value: 'standard', isMulti: true }))
+    render(section({ value: 'standard', selectedCount: 3 }))
     await waitFor(() => expect(screen.queryByTestId('declick-marks')).not.toBeInTheDocument())
   })
 
@@ -259,7 +273,7 @@ describe('DeclickSection', () => {
     expect(screen.queryByTestId('declick-render')).not.toBeInTheDocument()
     rerender(section({ value: 'standard' }))
     expect(await screen.findByTestId('declick-render')).toBeInTheDocument()
-    rerender(section({ value: 'standard', isMulti: true }))
+    rerender(section({ value: 'standard', selectedCount: 3 }))
     expect(screen.queryByTestId('declick-render')).not.toBeInTheDocument()
   })
 
