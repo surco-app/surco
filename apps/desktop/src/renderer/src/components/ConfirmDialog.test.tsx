@@ -44,6 +44,38 @@ describe('ConfirmDialog', () => {
     expect(screen.getByTestId('confirm-ok')).toHaveFocus()
   })
 
+  // The exception, and the reason the rule above is not universal: for a destructive
+  // action macOS puts the default on Cancel (NSAlert does this too). These dialogs are
+  // reached from ⌘K, mid keyboard flow, where a reflex Enter is exactly what happens —
+  // and the action on the other side is "overwrite the originals" or "move 40 files to
+  // the Trash", neither of which can be undone.
+  it('focuses cancel when the action is destructive', () => {
+    renderDialog({ destructive: true, confirmLabel: 'Overwrite' })
+    expect(screen.getByTestId('confirm-cancel')).toHaveFocus()
+    expect(screen.getByTestId('confirm-ok')).not.toHaveFocus()
+  })
+
+  // A reflex Enter on a destructive dialog must not run it. The form still submits on
+  // Enter, but with the focus on Cancel that Enter closes instead of confirming.
+  it('does not confirm on a keypress the user did not aim at the action', () => {
+    const { onConfirm, onClose } = renderDialog({ destructive: true })
+    fireEvent.click(document.activeElement as HTMLElement)
+    expect(onConfirm).not.toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  // The red button is the only visual difference between "clear the list" and "delete
+  // the originals". Nothing asserted it, so the styling could be dropped silently.
+  it('paints the confirm button as dangerous when the action is destructive', () => {
+    renderDialog({ destructive: true })
+    expect(screen.getByTestId('confirm-ok').className).toContain('--color-danger')
+  })
+
+  it('paints the confirm button as ordinary when the action is not destructive', () => {
+    renderDialog()
+    expect(screen.getByTestId('confirm-ok').className).not.toContain('--color-danger')
+  })
+
   // Pressing Enter submits the dialog's form; without form wiring it did nothing.
   it('confirms when the form is submitted (Enter)', () => {
     const { onConfirm, onClose } = renderDialog()

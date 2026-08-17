@@ -29,9 +29,17 @@ export function ConfirmDialog({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const confirmRef = useRef<HTMLButtonElement>(null)
+  const cancelRef = useRef<HTMLButtonElement>(null)
   // Focus the default button so Enter confirms immediately and the keyboard default
   // matches the native macOS dialog convention (runs after the shell's focus trap).
-  useEffect(() => confirmRef.current?.focus(), [])
+  // For a destructive action the convention inverts — NSAlert puts the default on
+  // Cancel — and so does this: these dialogs open from ⌘K, mid keyboard flow, where a
+  // reflex Enter is exactly what happens, and what it would run ("overwrite the
+  // originals", "move 40 files to the Trash") cannot be undone.
+  useEffect(() => {
+    const target = destructive ? cancelRef.current : confirmRef.current
+    target?.focus()
+  }, [destructive])
   return (
     <ModalShell
       onClose={onClose}
@@ -49,6 +57,7 @@ export function ConfirmDialog({
       <p className="mt-2 text-sm text-fg-dim">{message}</p>
       <div className="mt-6 flex justify-end gap-2">
         <button
+          ref={cancelRef}
           type="button"
           data-testid="confirm-cancel"
           onClick={onClose}
