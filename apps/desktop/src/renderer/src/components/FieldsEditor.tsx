@@ -4,6 +4,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrackMetadata } from '../../../shared/types'
 import { FIELD_DEFS, IMPORTABLE_FIELDS, moveItem, sortFieldsByGroup } from '../lib/fields'
+import {
+  COLUMN_HEAD,
+  COLUMN_HEAD_CELL,
+  TOGGLE_BOX,
+  TOGGLE_OFF,
+  TOGGLE_ON,
+} from '../lib/settingsRows'
 import { Tooltip } from './Tooltip'
 
 // How long the auto-organize button holds its "done" confirmation before reverting.
@@ -18,15 +25,6 @@ const ORGANIZED_FEEDBACK_MS = 1500
 // (empty) rather than the row's and land the labels in the wrong place — 143px off, as an
 // auto-sized first attempt did. Hide's track fits the longest translation.
 const ROW_GRID = 'grid grid-cols-[1fr_4.75rem_4.75rem_1.75rem_1.75rem_5.5rem] items-center gap-1'
-
-// The tick box for the two state columns. Dropping the words is the point — the heading
-// already says "Auto"/"Required", and repeating that on every row said nothing while
-// forcing each button wide enough to hold the longest translation ("Pflichtfeld" made it
-// 76px for a 33px word). What replaces them is a mark, so a column scans as a pattern
-// instead of a wall of repeated text. Wider than the tick needs: a 20px square is a mean
-// click target, and the extra width also lets the headings above sit unsqueezed. The off
-// state keeps an outline so the control is visible before it is ever used.
-const TOGGLE_BOX = 'mx-auto flex h-6 w-6 items-center justify-center rounded'
 
 // Moves fromKey to toKey's slot: dragging down lands it after the target, dragging up
 // before it — how every list DnD reads, so the row stays where the user dropped it.
@@ -71,8 +69,7 @@ export function FieldsEditor({
     // A field no provider fills gets an empty slot of the same width rather than nothing,
     // so Required/Hide stay on one vertical line down the list instead of jumping left on
     // every row without a toggle.
-    if (!IMPORTABLE_FIELDS.includes(key as keyof TrackMetadata))
-      return <span aria-hidden="true" />
+    if (!IMPORTABLE_FIELDS.includes(key as keyof TrackMetadata)) return <span aria-hidden="true" />
     const on = importFields.includes(key)
     return (
       <button
@@ -85,11 +82,7 @@ export function FieldsEditor({
         onClick={() =>
           onChangeImport(on ? importFields.filter((k) => k !== key) : [...importFields, key])
         }
-        className={`${TOGGLE_BOX} ${
-          on
-            ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
-            : 'border border-[var(--color-line)] text-transparent hover:border-[var(--color-line-strong)]'
-        }`}
+        className={`${TOGGLE_BOX} ${on ? TOGGLE_ON : TOGGLE_OFF}`}
       >
         <Check className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
@@ -150,16 +143,9 @@ export function FieldsEditor({
             over the rows below, again and again, long after it had been read. Asked for
             once, in one place, it stays out of the way — hence the button, which is
             focusable so the hint is reachable by keyboard as well as hover. */}
-        <div
-          data-testid="fields-columns"
-          className={`${ROW_GRID} mb-1 px-2 text-[10px] uppercase text-fg-faint`}
-        >
+        <div data-testid="fields-columns" className={`${ROW_GRID} ${COLUMN_HEAD}`}>
           <span />
-          <span
-            data-testid="fields-column-auto"
-            role="note"
-            className="relative flex cursor-help items-center justify-center gap-1.5 whitespace-nowrap text-fg-dim hover:text-fg-muted"
-          >
+          <span data-testid="fields-column-auto" role="note" className={COLUMN_HEAD_CELL}>
             {tr('settings.autoFill')}
             <Info className="h-3 w-3" aria-hidden="true" />
             {/* The sentence is the note's content for a screen reader and the tooltip's
@@ -167,11 +153,7 @@ export function FieldsEditor({
             <span className="sr-only">{tr('settings.autoFillHint')}</span>
             <Tooltip label={tr('settings.autoFillHint')} />
           </span>
-          <span
-            data-testid="fields-column-required"
-            role="note"
-            className="relative flex cursor-help items-center justify-center gap-1.5 whitespace-nowrap text-fg-dim hover:text-fg-muted"
-          >
+          <span data-testid="fields-column-required" role="note" className={COLUMN_HEAD_CELL}>
             {tr('settings.required')}
             <Info className="h-3 w-3" aria-hidden="true" />
             <span className="sr-only">{tr('settings.requiredHint')}</span>
@@ -226,54 +208,50 @@ export function FieldsEditor({
                 <Tooltip label={`{${key}}`} />
               </span>
               {autoToggle(key)}
-                <button
-                  type="button"
-                  data-testid={`field-required-${key}`}
-                  aria-pressed={requiredFields.includes(key)}
-                  onClick={() =>
-                    onChangeRequired(
-                      requiredFields.includes(key)
-                        ? requiredFields.filter((k) => k !== key)
-                        : [...requiredFields, key],
-                    )
-                  }
-                  aria-label={tr('settings.required')}
-                  className={`${TOGGLE_BOX} ${
+              <button
+                type="button"
+                data-testid={`field-required-${key}`}
+                aria-pressed={requiredFields.includes(key)}
+                onClick={() =>
+                  onChangeRequired(
                     requiredFields.includes(key)
-                      ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
-                      : 'border border-[var(--color-line)] text-transparent hover:border-[var(--color-line-strong)]'
-                  }`}
-                >
-                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onChangeVisible(moveItem(visibleFields, i, -1))}
-                  disabled={i === 0}
-                  className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
-                  aria-label={tr('settings.moveUp')}
-                >
-                  <ChevronUp className="h-4 w-4" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onChangeVisible(moveItem(visibleFields, i, 1))}
-                  disabled={i === visibleFields.length - 1}
-                  className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
-                  aria-label={tr('settings.moveDown')}
-                >
-                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onChangeVisible(visibleFields.filter((k) => k !== key))
-                    onChangeRequired(requiredFields.filter((k) => k !== key))
-                  }}
-                  className="ml-1 rounded px-2 py-0.5 text-xs text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
-                >
-                  {tr('settings.hide')}
-                </button>
+                      ? requiredFields.filter((k) => k !== key)
+                      : [...requiredFields, key],
+                  )
+                }
+                aria-label={tr('settings.required')}
+                className={`${TOGGLE_BOX} ${requiredFields.includes(key) ? TOGGLE_ON : TOGGLE_OFF}`}
+              >
+                <Check className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onChangeVisible(moveItem(visibleFields, i, -1))}
+                disabled={i === 0}
+                className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
+                aria-label={tr('settings.moveUp')}
+              >
+                <ChevronUp className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onChangeVisible(moveItem(visibleFields, i, 1))}
+                disabled={i === visibleFields.length - 1}
+                className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
+                aria-label={tr('settings.moveDown')}
+              >
+                <ChevronDown className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onChangeVisible(visibleFields.filter((k) => k !== key))
+                  onChangeRequired(requiredFields.filter((k) => k !== key))
+                }}
+                className="ml-1 rounded px-2 py-0.5 text-xs text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+              >
+                {tr('settings.hide')}
+              </button>
             </div>
           ))}
         </div>
