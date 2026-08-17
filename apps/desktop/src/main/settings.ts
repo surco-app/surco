@@ -300,11 +300,14 @@ export function saveSettings(patch: Partial<Settings>): Settings {
 // settings), this rebuilds from defaults so keys absent in the imported file fall
 // back to their default instead of keeping the value being replaced. Persistence
 // (and the local/synced split) is otherwise identical to saveSettings. The imported
-// file is sanitized like a renderer patch: an imported backup must not resurrect or
-// corrupt this machine's lifetime tallies, so stats/conversionCount always fall back
-// to their defaults instead of taking whatever the backup file says.
+// file is sanitized like a renderer patch, so a corrupt or hostile backup can't
+// inject a tally — and the tallies this machine already has are carried across
+// rather than rebuilt from defaults: they are its own history, not a preference the
+// backup describes, and rebuilding them zeroed the stats card on every restore.
 export function replaceSettings(imported: Partial<Settings>): Settings {
+  const current = getSettings()
   const next = mergeSettings(defaults, sanitizeSettingsPatch(imported))
+  for (const key of INTERNAL_ONLY_KEYS) next[key] = current[key] as never
   if (!autoMatchAvailable(next)) next.autoMatch = false
   return persist(next)
 }
