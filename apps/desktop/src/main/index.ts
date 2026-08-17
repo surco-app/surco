@@ -771,7 +771,9 @@ function registerIpc(): void {
   })
 
   // The renderer calls this when the crate is cleared so a torn-down library stops
-  // auto-detecting; the watcher is rebuilt on the next folder load.
+  // auto-detecting. The instance stays in the map and is reused by the next folder
+  // load — close() drops its watches and timers, and watch() reopens it (see
+  // watcher.ts), so the next crate starts from a clean slate on the same object.
   ipcMain.handle('folders:unwatch', (e) => {
     const win = BrowserWindow.fromWebContents(e.sender)
     if (win) folderWatchers.get(win)?.close()
