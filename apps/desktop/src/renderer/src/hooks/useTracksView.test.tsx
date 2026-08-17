@@ -160,6 +160,30 @@ describe('useTracksView', () => {
     expect(result.current.tracksView[1].audioIssues).toEqual({ silence: false, clipping: true })
   })
 
+  // The test above seeds both probes before the first render, where one memo pass sees
+  // everything and the deps never matter. The sweep does not work that way: analyze-all
+  // awaits the waveform and THEN the scan, so clipping lands on its own tick. The
+  // snapshot deliberately reuses each unchanged family's array by reference, so that
+  // tick hands back a new `scans` identity with `waves` untouched — and with scans
+  // missing from the memo's deps, the fold never re-ran and the fact never reached the
+  // list. The user analyzed a crate and the clipping filter stayed empty.
+  it('picks up clipping when the scan probe lands after the wave', () => {
+    const client = new QueryClient()
+    const peaks = Array.from({ length: 200 }, () => 0.5)
+    const clipped = peaks.map((_, i) => i === 100)
+    // Only the wave so far, which is the state right after fetchQuery(waveformOptions).
+    client.setQueryData(['waveform', '/music/a.wav'], { peaks, durationSec: 100 })
+    const tracks = [track('a')]
+    const { result, rerender } = setup(tracks, client)
+    expect(result.current.tracksView[0].audioIssues).toEqual({ silence: false, clipping: false })
+
+    // The scan resolves one await later and the list re-renders with the same tracks.
+    client.setQueryData(['waveformScan', '/music/a.wav'], { clipped })
+    rerender({ tracks })
+
+    expect(result.current.tracksView[0].audioIssues).toEqual({ silence: false, clipping: true })
+  })
+
   // The list reads the cache without subscribing to it per track. This is what lets the
   // heavy families (a waveform's peaks and a spectrogram's PNG — ~0.5 MB a track) ever be
   // collected: React Query only starts a query's gcTime countdown once it has no observers
