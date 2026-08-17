@@ -1,4 +1,4 @@
-import { access, link, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
+import { access, link, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -279,5 +279,24 @@ describe('removeRenamedOriginal', () => {
 
     expect(await exists(real)).toBe(true)
     expect(await readdir(dir)).toContain('song.wav')
+  })
+
+  // The hard-link case above can't fail: unlinking one of two directory entries always
+  // leaves the other, so it passes with the inode guard removed. This is the real
+  // shape of the bug — one directory entry reached through two casings, where the
+  // unlink targets the very entry holding the converted audio. Skipped rather than
+  // faked on case-sensitive volumes (Linux CI), where the premise cannot exist.
+  it('keeps the converted audio when a case-only rename resolves to one file', async () => {
+    dir = await mkdtemp(join(tmpdir(), 'surco-rm-'))
+    const upper = join(dir, 'Song.WAV')
+    const lower = join(dir, 'song.wav')
+    await writeFile(upper, 'converted audio')
+    if (!(await exists(lower))) return
+
+    // convertAudio wrote through the new casing; the old one names the same bytes.
+    await removeRenamedOriginal(upper, lower)
+
+    expect(await readdir(dir)).toHaveLength(1)
+    expect(await readFile(lower, 'utf-8')).toBe('converted audio')
   })
 })
