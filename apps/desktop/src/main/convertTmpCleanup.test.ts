@@ -176,5 +176,9 @@ describe('the temp a failed conversion leaves behind', () => {
       expect(existsSync(tmpPath)).toBe(true)
       expect((err as { tmpSurvived?: boolean }).tmpSurvived).toBe(true)
     },
+    // The rename's full retry window is ~3.1s of real waiting, which leaves too little
+    // room under the default 5s once the rest of the suite is competing for CPU — it
+    // timed out once in a full run and passed alone every time.
+    15_000,
   )
 })
