@@ -223,6 +223,18 @@ describe('auto-fill toggle', () => {
     expect(within(row).getByTestId('field-auto-country')).toHaveAttribute('aria-pressed', 'true')
   })
 
+  // Both lists sit under one set of column headings, so a hidden row has to resolve its
+  // Auto mark to the same track as a visible one. It used to run on a three-column grid of
+  // its own, which put its tick under the *Required* column — reading as if hidden fields
+  // were required. Sharing the row grid is what keeps the two lists on one vertical line.
+  it('lays hidden rows out on the same grid as visible ones', () => {
+    setup({ visibleFields: ['title'], requiredFields: [], importFields: ['country'] })
+    const visible = screen.getByTestId('field-row-title').className
+    const hidden = screen.getByTestId('hidden-field-country').className
+    const cols = (c: string) => c.match(/grid-cols-\[[^\]]+\]/)?.[0]
+    expect(cols(hidden)).toBe(cols(visible))
+  })
+
   // The two toggles repeat identically down every row, which makes them columns — so they
   // are headed once rather than explained on each button. A heading is read on arrival and
   // ignored from then on, where a tooltip on all sixteen kept covering the rows below long
