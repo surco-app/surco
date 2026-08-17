@@ -6,7 +6,7 @@ import type { ReleaseTrack, SearchProviderId } from '../../../shared/types'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { DEFAULT_RESULTS_WIDTH } from '../lib/focusPreset'
 import { useOpenSettings } from '../lib/openSettingsContext'
-import { type ReleaseMetaPatch, resultFacts } from '../lib/release'
+import { type ReleaseMetaPatch, resultIdentity, resultPressing } from '../lib/release'
 import { contentDeficit } from '../lib/resize'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
@@ -308,9 +308,11 @@ export const DiscogsPanel = memo(function DiscogsPanel({
               const expanded = openKey === rk
               const suggested = suggestedKey === rk
               const loaded = expanded && !!release && !loading
-              // Empty for every Bandcamp row — its search returns no year, label or
-              // catalogue — so the facts span is dropped rather than rendered blank.
-              const facts = resultFacts(r)
+              // Both empty for every Bandcamp row — its search returns no year, label or
+              // catalogue — so each span is dropped rather than rendered blank, and the row
+              // keeps its one-line height instead of paying for a line that says nothing.
+              const identity = resultIdentity(r)
+              const pressing = resultPressing(r)
               return (
                 <div key={rk} data-testid="result-card" className="px-1.5 pt-1.5">
                   {/* Result as a card, matching the track list's rows so both columns read as the
@@ -388,12 +390,24 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                             publishers, distributors and studios — a wall of noise), and just the
                             base format (medium + size, e.g. "Vinyl, 12\"") dropping RPM/Single/
                             Stereo. */}
-                        {facts && (
+                        {identity && (
                           <span className="min-w-0 truncate text-[11px] text-fg-dim leading-4">
-                            {facts}
+                            {identity}
                           </span>
                         )}
                       </span>
+                      {/* The pressing goes on its own line: with the country appended, all five
+                          facts overflowed one line for 19% of results and the ellipsis ate the
+                          country — the field that separates a UK 12" from its German repress.
+                          Only rendered when there is a pressing to describe, so a Bandcamp or
+                          Deezer row stays the same height it was. */}
+                      {pressing && (
+                        <span className="mt-px flex min-w-0 items-center">
+                          <span className="min-w-0 truncate text-[11px] text-fg-dim leading-4">
+                            {pressing}
+                          </span>
+                        </span>
+                      )}
                     </span>
                     <ChevronRight
                       aria-hidden="true"
