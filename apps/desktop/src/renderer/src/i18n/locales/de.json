@@ -863,7 +863,9 @@
       "open": "Offen",
       "show": "Abschnitt im Editor anzeigen",
       "hide": "Abschnitt im Editor ausblenden",
-      "pinned": "Fest"
+      "visible": "Sichtbar",
+      "visibleHint": "Zeigt diesen Abschnitt im Editor. Ausgeblendete erscheinen gar nicht.",
+      "openHint": "Öffnet diesen Abschnitt aufgeklappt, wenn du einen Track öffnest."
     },
     "keyNotations": {
       "camelot": "Camelot (8A)",

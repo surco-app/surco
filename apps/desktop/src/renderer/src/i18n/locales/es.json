@@ -863,7 +863,9 @@
       "open": "Abierta",
       "show": "Mostrar la sección en el editor",
       "hide": "Ocultar la sección del editor",
-      "pinned": "Fija"
+      "visible": "Visible",
+      "visibleHint": "Muestra esta sección en el editor. Las ocultas no aparecen en absoluto.",
+      "openHint": "Empieza esta sección desplegada al abrir una pista."
     },
     "keyNotations": {
       "camelot": "Camelot (8A)",

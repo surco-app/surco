@@ -180,4 +180,42 @@ describe('LayoutTab sections', () => {
     renderTab()
     expect(screen.getByTestId('settings-section-down-output')).toBeDisabled()
   })
+
+  // This list is the same kind of table as Settings → Fields: a name, repeating state
+  // columns, then the reorder arrows. It read differently only because it was laid out with
+  // justify-between, which lets every row place its controls wherever its own content ends.
+  it('heads the visible and open columns', () => {
+    renderTab()
+    const head = screen.getByTestId('sections-columns')
+    expect(head).toHaveTextContent(/visible/i)
+    expect(head).toHaveTextContent(/open/i)
+  })
+
+  // The word is in the heading now, so repeating "Open" on every row said nothing — and it
+  // was ambiguous besides: a greyed-out "Open" looked the same on a hidden section as on a
+  // visible-but-closed one. A mark distinguishes them.
+  it('shows no label text on the open toggle', () => {
+    renderTab()
+    expect(screen.getByTestId('settings-section-open-quality')).toHaveTextContent('')
+  })
+
+  it('still names the open toggle for a screen reader', () => {
+    renderTab()
+    expect(screen.getByTestId('settings-section-open-quality')).toHaveAccessibleName(/open/i)
+  })
+
+  // The pinned row carried a "FIXED" label in the arrows' place, which pushed its Open
+  // control out of the column every other row uses — the first row, the one that sets how
+  // the rest is read. Its lack of arrows already says it cannot move.
+  it('lays the pinned row out on the same grid as the rest', () => {
+    renderTab()
+    const cols = (id: string) =>
+      screen.getByTestId(id).className.match(/grid-cols-\[[^\]]+\]/)?.[0]
+    const pinned = cols('settings-section-row-form')
+    // Asserted present, not just equal: with no grid at all both sides read undefined and
+    // a bare equality check passes while the rows are back to placing their own controls.
+    expect(pinned).toMatch(/^grid-cols-/)
+    expect(cols('settings-section-row-quality')).toBe(pinned)
+    expect(cols('sections-columns')).toBe(pinned)
+  })
 })
