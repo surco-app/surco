@@ -910,9 +910,11 @@ export async function normalizeFilter(
   // returning it as part of this function's filter puts it in the encode chain too.
   //
   // Peak mode's own combined filter already subtracts the mean while sizing each channel,
-  // so it opts out here rather than centring twice.
-  const peakOwnsDc =
-    cfg.mode === 'peak' && (cfg.peakRemoveDc === true || cfg.peakPerChannel === true)
+  // so it opts out here rather than centring twice — but only when peakRemoveDc is what
+  // asked for it. peakPerChannel is a different axis (each channel to its own peak vs one
+  // shared gain) and peakChannelFilter subtracts nothing for it, so opting out on that
+  // left the bias untouched while the editor's readout promised an offset of 0%.
+  const peakOwnsDc = cfg.mode === 'peak' && cfg.peakRemoveDc === true
   let dcAf: string | undefined
   if (cfg.removeDcOffset === true && !peakOwnsDc) {
     const channels = await cachedAnalysis(ns('astats-channels-v1'), input, async () => {
@@ -942,12 +944,19 @@ export async function normalizeFilter(
         })
         return parseAstatsChannels(stderr)
       })
-      return channels === null ? null : peakChannelFilter(cfg, channels)
+      // withDc like every other return here: peakChannelFilter only subtracts the mean
+      // under peakRemoveDc, so a per-channel run that asked for centring gets it from
+      // the shared stage — and when peak mode owns the removal, dcAf is unset and this
+      // passes the filter through untouched rather than centring twice.
+      return channels === null ? null : withDc(peakChannelFilter(cfg, channels))
     }
     // Peak mode is a constant-gain `volume` filter, which doesn't resample, so it
-    // needs no rate restoration. The measured peak is a fact about the file alone,
-    // so one namespace serves every target.
-    const max = await cachedAnalysis(ns('volumedetect-v1'), input, async () => {
+    // needs no rate restoration. The measured peak is a fact about the file and the
+    // centring — it is measured through measurePrefilter, which carries dcAf — so the
+    // key marks it like the loudnorm key below. One namespace for both served a peak
+    // measured on the biased signal to a conversion that centres it, sizing the gain
+    // against a maximum the audio no longer has.
+    const max = await cachedAnalysis(ns(`volumedetect-v1${dcAf ? '-dc' : ''}`), input, async () => {
       const { stderr } = await run(ffmpegPath, volumedetectArgs(input, measurePrefilter), {
         maxBuffer: 1024 * 1024 * 16,
       })
