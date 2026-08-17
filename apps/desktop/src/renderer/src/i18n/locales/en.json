@@ -898,6 +898,7 @@
   },
   "errorBoundary": {
     "title": "Something failed to render",
+    "details": "Technical details",
     "retry": "Retry",
     "report": "Report this error",
     "revealLog": "Show log file"

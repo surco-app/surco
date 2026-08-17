@@ -44,11 +44,6 @@ export class ErrorBoundary extends Component<Props, State> {
         <pre className="whitespace-pre-wrap break-words rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-danger">
           {error.message}
         </pre>
-        {(error.stack || info) && (
-          <pre className="whitespace-pre-wrap break-words rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-fg-muted">
-            {error.stack ?? info}
-          </pre>
-        )}
         <div className="flex gap-2 self-start">
           <button
             type="button"
@@ -75,6 +70,20 @@ export class ErrorBoundary extends Component<Props, State> {
             {i18n.t('errorBoundary.revealLog')}
           </button>
         </div>
+        {/* Below the buttons and folded: the frames are what makes a report debuggable
+            (and the report button sends them either way), but printed open they filled
+            the screen ABOVE the actions — putting the only useful part of a crash under
+            the part a DJ cannot read. Opening it pushes nothing out of reach now. */}
+        {(error.stack || info) && (
+          <details data-testid="error-stack" className="self-start">
+            <summary className="cursor-pointer text-fg-muted hover:text-fg">
+              {i18n.t('errorBoundary.details')}
+            </summary>
+            <pre className="mt-2 whitespace-pre-wrap break-words rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-fg-muted">
+              {error.stack ?? info}
+            </pre>
+          </details>
+        )}
       </div>
     )
   }

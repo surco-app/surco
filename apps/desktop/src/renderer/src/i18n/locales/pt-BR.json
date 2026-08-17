@@ -898,6 +898,7 @@
   },
   "errorBoundary": {
     "title": "Algo falhou ao renderizar",
+    "details": "Detalhes técnicos",
     "retry": "Tentar de novo",
     "report": "Reportar este erro",
     "revealLog": "Mostrar registro"
