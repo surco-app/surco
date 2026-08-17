@@ -165,6 +165,32 @@ describe('LayoutTab sections', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent('Hide section from the editor')
   })
 
+  // Visible and Open are read as one pair of state columns, so "on" must look the same
+  // in both: accent when active, dim when not. The eye used to sit at a fixed muted grey,
+  // which left a visible section indistinguishable from a hidden one at a glance — the
+  // struck-through name was the only cue.
+  it('accents the eye while the section is visible and dims it once hidden', () => {
+    renderTab()
+    const eye = screen.getByTestId('settings-section-hide-properties')
+    // quality starts open, so its pill is the accent-on reference the eye must match.
+    const open = screen.getByTestId('settings-section-open-quality')
+    expect(eye.className).toContain('text-[var(--color-accent)]')
+    expect(eye.className).toBe(open.className)
+  })
+
+  it('dims the eye of a hidden section', () => {
+    // Rendered hidden rather than clicked: the row is controlled by the parent, and
+    // patch is a spy here, so a click never feeds the new state back in.
+    renderTab({
+      editorSections: DEFAULT_EDITOR_SECTIONS.map((s) =>
+        s.id === 'properties' ? { ...s, hidden: true } : s,
+      ),
+    })
+    const eye = screen.getByTestId('settings-section-hide-properties')
+    expect(eye.className).not.toContain('text-[var(--color-accent)]')
+    expect(eye.className).toContain('text-fg-dim')
+  })
+
   // The metadata form is the editor's fixed header: it can't move, and the first
   // movable section can't climb above it — so their arrows must not exist/act.
   it('offers no arrows on the form row and no up arrow past it', () => {
