@@ -174,10 +174,25 @@ describe('auto-fill toggle', () => {
   // app uses for a boolean (thirteen settings and counting), so it inherits the system's
   // own tick, focus ring and keyboard handling instead of re-implementing them — the
   // hand-rolled version needed aria-pressed and aria-label bolted on to pass for one.
-  it('is a checkbox carrying its own state', () => {
+  // The state reads as an icon rather than a tick box, matching the eye that marks a
+  // section visible. aria-pressed is what carries it to a screen reader, and it is also
+  // what the two icons are chosen from — so it must track the real state, not the styling.
+  it('reports its state as a pressed toggle', () => {
     setup({ importFields: ['title'] })
-    expect(screen.getByTestId('field-auto-title')).toBeChecked()
-    expect(screen.getByTestId('field-auto-artist')).not.toBeChecked()
+    expect(screen.getByTestId('field-auto-title')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('field-auto-artist')).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  // Colour alone can't carry the difference: the two states have to be different shapes, or
+  // a column of them says nothing at a glance (and nothing at all to anyone who can't tell
+  // the two colours apart). The on icon is a filled check, the off one a dashed outline.
+  it('draws a different icon for each state', () => {
+    setup({ importFields: ['title'] })
+    const on = screen.getByTestId('field-auto-title').querySelector('svg')?.innerHTML
+    const off = screen.getByTestId('field-auto-artist').querySelector('svg')?.innerHTML
+    expect(on).toBeTruthy()
+    expect(off).toBeTruthy()
+    expect(on).not.toEqual(off)
   })
 
   // The column heading says "Auto", so the control repeats nothing — but a screen reader
@@ -203,7 +218,7 @@ describe('auto-fill toggle', () => {
   it('offers the toggle on hidden fields as well', () => {
     setup({ visibleFields: ['title'], requiredFields: [], importFields: ['country'] })
     const row = screen.getByTestId('hidden-field-country')
-    expect(within(row).getByTestId('field-auto-country')).toBeChecked()
+    expect(within(row).getByTestId('field-auto-country')).toHaveAttribute('aria-pressed', 'true')
   })
 
   // Both lists sit under one set of column headings, so a hidden row has to resolve its

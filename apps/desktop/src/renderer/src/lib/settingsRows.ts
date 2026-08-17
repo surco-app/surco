@@ -4,13 +4,16 @@
 // two lists genuinely carry different controls; forcing one grid string on both would mean
 // a column that exists only to stay empty in one of them.
 
-// A state cell: the app's checkbox, centred in its column. It is the real `input` every
-// other boolean setting uses (see CheckboxRow) rather than a button drawn to look like one
-// — that version had to bolt on aria-pressed and aria-label to pass for a checkbox, and
-// still missed the platform's own tick, focus ring and space-to-toggle. The column heading
-// carries the word, so the cell holds no text: a column of ticks is scanned as a pattern
-// instead of read as a wall of the same word repeated down every row.
-export const TOGGLE_BOX = 'mx-auto h-4 w-4 accent-[var(--color-accent)]'
+// A state cell: an icon toggle, matching the eye that marks a section visible so the whole
+// table speaks one language. The two states are different SHAPES, not one shape in two
+// colours — CircleCheck filled when on, CircleDashed outlined when off — so the column can
+// be read at a glance and still works for anyone who can't separate the two colours.
+// aria-pressed carries the state for a screen reader, and aria-label the name, since the
+// word itself lives in the column heading rather than in every row.
+export const TOGGLE_BOX =
+  'mx-auto flex h-6 w-6 items-center justify-center rounded disabled:opacity-25'
+export const TOGGLE_ON = 'text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]'
+export const TOGGLE_OFF = 'text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg-muted'
 
 // The column headings strip above a list: same grid as its rows (passed in by the caller,
 // since the two lists differ), sized and coloured to sit quietly above them.
