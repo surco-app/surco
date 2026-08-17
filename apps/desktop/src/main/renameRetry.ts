@@ -16,9 +16,10 @@ export function isFileInUseError(err: unknown): boolean {
 }
 
 // Doubling waits rather than a busy loop: the holder is doing work (a virus scan on a
-// 40 MB FLAC) and needs time to finish, so five immediate attempts would just fail
-// five times. ~3.1s total across all attempts, which covers a scan without leaving a
-// bulk conversion visibly stuck on one track.
+// 40 MB FLAC) and needs time to finish, so immediate retries would just fail as fast
+// as they were made. One attempt per wait plus a final one after the last, ~3.1s total
+// across all attempts, which covers a scan without leaving a bulk conversion visibly
+// stuck on one track.
 const BACKOFF_MS = [100, 200, 400, 800, 1600]
 
 // What one blocked rename looked like. `waitMs` is null on the attempt that gave up,
@@ -65,7 +66,10 @@ export async function renameWithRetry(
     } catch (err) {
       if (!isFileInUseError(err)) throw err
       const code = (err as NodeJS.ErrnoException).code as string
-      const lastAttempt = attempt >= BACKOFF_MS.length - 1
+      // One attempt per wait, plus the final one after the last wait has elapsed —
+      // cutting at length - 1 skipped the longest wait entirely and gave up in 1.5s
+      // instead of the ~3.1s below.
+      const lastAttempt = attempt >= BACKOFF_MS.length
       onRetry?.({
         attempt: attempt + 1,
         code,
