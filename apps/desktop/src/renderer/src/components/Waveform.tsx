@@ -103,6 +103,14 @@ export function Waveform({
     onScrub(ratioFrom(clientX, el) * durationSec)
   }
 
+  // Pointer-only on purpose, unlike the Trim and Declick scrubbers, which carry
+  // role="slider" plus arrow keys. Two reasons this one does not follow them:
+  // seeking already has global commands (seek-back/seek-forward, ±5s, live whenever
+  // the player is), so the capability is not missing; and giving this strip focus and
+  // its own key scope would put a shortcut scope over the full width of the wave —
+  // which swallows those very keys instead of letting them fall through to their
+  // commands. The trim handle can own its scope because it is a small target the user
+  // deliberately focuses; the play wave is the surface the whole task happens on.
   return (
     <div
       data-testid="waveform"
