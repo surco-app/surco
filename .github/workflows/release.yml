@@ -167,9 +167,17 @@ jobs:
         shell: bash
         run: echo "${{ secrets.APPLE_API_KEY_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/apple-api-key.p8"
 
-      # electron-builder publishes a LIVE release bound to its tag (releaseType:
-      # release); the prepare job already created it, so every matrix job finds
-      # the same one and only uploads its assets.
+      # Builds with --publish never and uploads with `gh release upload` instead of
+      # letting electron-builder publish. Its publisher decides create-vs-reuse by
+      # listing releases over `GET /repos/{owner}/{repo}/releases`, and since
+      # 2026-08-17 that endpoint answers `[]` (200 OK, and 504 unauthenticated) for
+      # EVERY repo on GitHub — verified against cli/cli, microsoft/vscode and
+      # electron/electron, not just ours. Seeing no release, all five matrix jobs
+      # decide the release "doesn't exist" and race to create it: one wins, the rest
+      # die on `422 already_exists`, which is what broke v0.86.0's first three runs.
+      # `gh release upload` goes through the per-release endpoints, which are
+      # unaffected — as are /releases/latest and GraphQL. Revisit if GitHub restores
+      # the listing: --publish always is less machinery than this.
       - name: Build & publish (macOS)
         if: runner.os == 'macOS'
         working-directory: apps/desktop
@@ -195,7 +203,7 @@ jobs:
           attempts=3
           for i in $(seq 1 "$attempts"); do
             echo "::group::electron-builder --mac (attempt $i/$attempts)"
-            if npx electron-builder --mac --publish always 2>&1 | tee builder.log; then
+            if npx electron-builder --mac --publish never 2>&1 | tee builder.log; then
               echo "::endgroup::"
               exit 0
             fi
@@ -212,6 +220,23 @@ jobs:
             echo "Transient signing/notarization failure — retrying in ${backoff}s"
             sleep "$backoff"
           done
+
+      # Uploaded here rather than by electron-builder — see the note on the build step.
+      # --clobber so a re-run of a failed job replaces its own half-uploaded assets
+      # instead of failing on "asset already exists". The dmg/zip globs are anchored to
+      # this version so a stale artifact from an earlier build in the same workspace
+      # can't be swept in.
+      - name: Upload the macOS assets
+        if: runner.os == 'macOS'
+        working-directory: apps/desktop
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          gh release upload "$GITHUB_REF_NAME" --repo surco-app/surco-releases --clobber \
+            dist/Surco-"$version"-*.dmg dist/Surco-"$version"-*.dmg.blockmap \
+            dist/Surco-"$version"-*.zip dist/Surco-"$version"-*.zip.blockmap
 
       # Both macOS runners publish a file literally named latest-mac.yml, so on the
       # shared release the second upload clobbers the first and one arch loses its
@@ -231,7 +256,11 @@ jobs:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: |
           npx electron-vite build
-          npx electron-builder --win --publish always
+          npx electron-builder --win --publish never
+          version="${GITHUB_REF_NAME#v}"
+          gh release upload "$GITHUB_REF_NAME" --repo surco-app/surco-releases --clobber \
+            dist/Surco-"$version"-Setup.exe dist/Surco-"$version"-Setup.exe.blockmap \
+            dist/latest.yml
 
       # No signing or notarization step: Linux has no equivalent gatekeeper, so the
       # AppImage ships as-is. electron-builder emits latest-linux.yml alongside it,
@@ -245,7 +274,10 @@ jobs:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: |
           npx electron-vite build
-          npx electron-builder --linux --publish always
+          npx electron-builder --linux --publish never
+          version="${GITHUB_REF_NAME#v}"
+          gh release upload "$GITHUB_REF_NAME" --repo surco-app/surco-releases --clobber \
+            dist/Surco-"$version"-x86_64.AppImage dist/latest-linux.yml
 
   # The arm64 and x64 runners each uploaded a single-arch latest-mac.yml and the
   # last one won. Rebuild one feed that lists BOTH arch zips so electron-updater
@@ -302,12 +334,18 @@ jobs:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: |
           version="${GITHUB_REF_NAME#v}"
-          # --slurp (not --jq) so the filter sees ONE array of every page: with
-          # --paginate + --jq, gh runs the filter PER PAGE and concatenates the
-          # results, so a second (empty) page made count "1\n0" and the check
-          # failed on a release that was in fact complete.
-          count=$(gh api repos/surco-app/surco-releases/releases --paginate --slurp \
-            | jq "[.[][] | select(.tag_name == \"$GITHUB_REF_NAME\")] | length")
+          # Counted over GraphQL, not `GET /releases`: that REST listing has answered
+          # `[]` for every repo on GitHub since 2026-08-17 (see the note on the build
+          # step), which would make this check report 0 releases for a tag that is in
+          # fact complete — a false failure at the very end of a good run. GraphQL
+          # reports the same releases correctly. Restore the REST version if the
+          # listing comes back; the duplicate-release check it performs is the point,
+          # and it must keep working either way. first:100 sorted newest-first covers
+          # the tag being released by construction — it was created minutes ago by
+          # prepare — without paginating through every release in the repo.
+          count=$(gh api graphql -f owner=surco-app -f name=surco-releases \
+            -f query='query($owner:String!,$name:String!){repository(owner:$owner,name:$name){releases(first:100,orderBy:{field:CREATED_AT,direction:DESC}){nodes{tagName}}}}' \
+            --jq ".data.repository.releases.nodes | map(select(.tagName == \"$GITHUB_REF_NAME\")) | length")
           [ "$count" = "1" ] || { echo "expected 1 release for $GITHUB_REF_NAME, found $count"; exit 1; }
           names=$(gh release view "$GITHUB_REF_NAME" --repo surco-app/surco-releases \
             --json assets --jq '.assets[].name')
