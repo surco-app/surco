@@ -19,7 +19,11 @@ interface Props {
   onToggle: () => void
   onChange: (config: NormalizeConfig) => void
   item: TrackItem
-  isMulti: boolean
+  // How many tracks the dials below will apply to. The batch passes ONE override to
+  // every selected track (see normalizeForJob), so with a selection open these controls
+  // are not this track's loudness — they are all of them at once, and the section has to
+  // say so. A count rather than a boolean because the number is the warning.
+  selectedCount: number
   // Opens the loudness metric help ("What do these mean?"): the ranges and the
   // fixable/not-fixable notes lived only behind Quality's readout ⓘ, unreachable from
   // the section whose dials those metrics govern.
@@ -34,7 +38,7 @@ export function NormalizeSection({
   onToggle,
   onChange,
   item,
-  isMulti,
+  selectedCount,
   onShowHelp,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -45,6 +49,7 @@ export function NormalizeSection({
   // but only once there IS an after, never for an in-place export (the rewritten
   // source leaves no honest "before" to draw), and never in multi-select, where
   // `item` is just the anchor of the selection.
+  const isMulti = selectedCount > 1
   const compare = !isMulti && item.outputPath && item.outputPath !== item.inputPath
   // The staged trim as head/tail fractions, to dim the dropped audio over the
   // wave. Off item.duration (the read-once track length) — WaveformSolo decodes
@@ -128,6 +133,14 @@ export function NormalizeSection({
       />
       <SectionBody open={open}>
         <div className="mt-4">
+          {/* Above the dials, not below: the point is to be read BEFORE they are
+              touched. Without it the controls look identical to the single-track case
+              while the batch applies one shared value to every selected track. */}
+          {isMulti && (
+            <p data-testid="normalize-scope" className="mb-3 text-xs text-fg-dim">
+              {tr('normalize.appliesToSelection', { count: selectedCount })}
+            </p>
+          )}
           {/* The cue warning renders once, below the wave: inline it sat between the
               dials and the preview, right where the eye travels while tuning. */}
           <NormalizeControls value={value} onChange={onChange} showCueWarning={false} />

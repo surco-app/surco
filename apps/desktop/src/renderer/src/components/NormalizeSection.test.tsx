@@ -26,7 +26,7 @@ function track(over: Partial<TrackItem> = {}): TrackItem {
 
 function renderSection(
   item: TrackItem,
-  isMulti = false,
+  selectedCount = 1,
   loudness: unknown = null,
   // The estimate only exists with a mode active, so a test that reads it passes one in.
   value: NormalizeConfig = cfg,
@@ -44,7 +44,7 @@ function renderSection(
         onToggle={vi.fn()}
         onChange={vi.fn()}
         item={item}
-        isMulti={isMulti}
+        selectedCount={selectedCount}
         onShowHelp={vi.fn()}
       />
     </QueryClientProvider>,
@@ -83,7 +83,7 @@ describe('NormalizeSection before/after waveforms', () => {
   })
 
   it('shows no pair in multi-select', async () => {
-    renderSection(track({ outputPath: '/out/a.aiff', status: 'done' }), true)
+    renderSection(track({ outputPath: '/out/a.aiff', status: 'done' }), 3)
     await new Promise((r) => setTimeout(r, 0))
     expect(screen.queryByTestId('waveform-compare')).not.toBeInTheDocument()
   })
@@ -103,7 +103,7 @@ describe('NormalizeSection before/after waveforms', () => {
   })
 
   it('shows no solo waveform in multi-select', async () => {
-    renderSection(track(), true)
+    renderSection(track(), 3)
     await new Promise((r) => setTimeout(r, 0))
     expect(screen.queryByTestId('waveform-solo')).not.toBeInTheDocument()
   })
@@ -127,7 +127,7 @@ describe('NormalizeSection before/after waveforms', () => {
           onToggle={vi.fn()}
           onChange={vi.fn()}
           item={item}
-          isMulti={false}
+          selectedCount={1}
           onShowHelp={vi.fn()}
         />
       </QueryClientProvider>
@@ -167,7 +167,7 @@ describe('NormalizeSection layout', () => {
           onToggle={vi.fn()}
           onChange={vi.fn()}
           item={track()}
-          isMulti={false}
+          selectedCount={1}
           onShowHelp={vi.fn()}
         />
       </QueryClientProvider>,
@@ -242,7 +242,7 @@ describe('NormalizeSection measured figures', () => {
   it('opens the estimate with the source measurement instead of a header pill', async () => {
     renderSection(
       track(),
-      false,
+      1,
       { integratedLufs: -8.6, truePeakDb: 0.2, loudnessRange: 5, samplePeakDb: 0.1 },
       // The estimate only renders with a mode active — mode 'none' has nothing to predict.
       { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
@@ -265,5 +265,21 @@ describe('NormalizeSection measured figures', () => {
     renderSection(track())
     await screen.findByTestId('waveform-solo')
     expect(screen.queryByTestId('normalize-measured-pill')).not.toBeInTheDocument()
+  })
+
+  // With several rows selected the dials look exactly as they do for one track, but the
+  // batch applies whatever they say to EVERY selected track — one shared override, not a
+  // per-track value. The section hid its waveform and said nothing else, so a user tuning
+  // what looked like this track's loudness was silently setting it for all forty.
+  describe('scope of a multi-selection', () => {
+    it('says how many tracks the settings will apply to', () => {
+      renderSection(track(), 40)
+      expect(screen.getByTestId('normalize-scope')).toHaveTextContent('40')
+    })
+
+    it('says nothing about scope for a single track', () => {
+      renderSection(track(), 1)
+      expect(screen.queryByTestId('normalize-scope')).not.toBeInTheDocument()
+    })
   })
 })
