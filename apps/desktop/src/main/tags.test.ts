@@ -4,18 +4,28 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import {
+  ByteVector,
   Id3v2FrameClassType,
   Id3v2FrameIdentifiers,
+  Id3v2PopularimeterFrame,
+  Id3v2PrivateFrame,
   type Id3v2Tag,
   type Id3v2TextInformationFrame,
   Id3v2UserTextInformationFrame,
   type Mpeg4AppleTag,
   PictureType,
+  StringType,
   File as TagFile,
   TagTypes,
   type XiphComment,
 } from 'node-taglib-sharp'
 import { describe, expect, it } from 'vitest'
+import {
+  starsToRating,
+  starsToWmpRating,
+  TRAKTOR_RATING_USER,
+  WMP_RATING_USER,
+} from '../shared/rating'
 import type { TrackMetadata } from '../shared/types'
 import { decodeBase91, encodeBase91 } from './base91'
 import {
@@ -78,6 +88,34 @@ function popmCount(file: string): number {
   try {
     const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
     return id3?.frames.filter((fr) => fr.frameId.toString() === 'POPM').length ?? 0
+  } finally {
+    f.dispose()
+  }
+}
+
+// The byte length of each picture in a file's tag. Sizes rather than a count, so a
+// replacement that left the old artwork in place is visible as the wrong bytes and
+// not just the wrong number.
+function m4aPictureSizes(file: string): number[] {
+  const f = TagFile.createFromPath(file)
+  try {
+    return f.tag.pictures.map((p) => p.data.length)
+  } finally {
+    f.dispose()
+  }
+}
+
+// The rating byte one POPM user carries, or null when that user has no frame. Which
+// byte landed under which user is the part popmCount cannot see.
+function popmByUser(file: string, user: string): number | null {
+  const f = TagFile.createFromPath(file)
+  try {
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+    if (!id3) return null
+    const frames = id3.getFramesByClassType<Id3v2PopularimeterFrame>(
+      Id3v2FrameClassType.PopularimeterFrame,
+    )
+    return Id3v2PopularimeterFrame.find(frames, user)?.rating ?? null
   } finally {
     f.dispose()
   }
@@ -240,6 +278,23 @@ describe('writeTags', () => {
     f.dispose()
   })
 
+  // The seed carries no artwork, so the reset that empties the covr atom is a no-op in
+  // the test above and it passes with that line removed. Clearing a cover is the case
+  // that needs it: writing a new picture overwrites the atom on its own, but removeCover
+  // writes nothing, so without the reset the old artwork simply stays on the file.
+  it('drops the m4a cover when removeCover is set', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildM4aSeed(dir)
+    const cover = join(dir, 'cover.jpg')
+    writeFileSync(cover, Buffer.from('ffd8ffe000104a46494600ffd9', 'hex'))
+    writeTags(file, meta, cover)
+    expect(m4aPictureSizes(file)).toHaveLength(1)
+
+    writeTags(file, meta, undefined, true)
+
+    expect(m4aPictureSizes(file)).toEqual([])
+  })
+
   // "Empty every metadata field" must reach m4a's iTunes atoms too, not just the fields
   // the app manages — a foreign freeform atom a third-party tool left behind (e.g. a
   // ReplayGain scanner) used to survive clearExtras because the M4A branch had no
@@ -372,6 +427,38 @@ describe('writeTags', () => {
     writeTags(file, { ...meta, rating: '' })
 
     expect(popmCount(file)).toBe(2)
+  })
+
+  // Counting frames cannot tell the two apart, and the whole reason for writing two is
+  // that they disagree: Traktor steps by 51 (4★ = 204), WMP follows its own ramp
+  // (4★ = 196). Swapping the two ramps left every rating test green, so each byte is
+  // read back against the user it belongs to.
+  it('writes each rating ramp under its own user', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+
+    writeTags(file, { ...meta, rating: '4' })
+
+    expect(popmByUser(file, TRAKTOR_RATING_USER)).toBe(starsToRating(4))
+    expect(popmByUser(file, WMP_RATING_USER)).toBe(starsToWmpRating(4))
+    // Guards the assertions above against a future where both ramps return the same
+    // byte, which would make swapping them undetectable again.
+    expect(starsToRating(4)).not.toBe(starsToWmpRating(4))
+  })
+
+  // An empty rating under clearExtras leaves no POPM behind. Kept as a statement of the
+  // user-visible rule rather than of the mechanism: writeTags already drops every frame
+  // up front on clearExtras, so setRating's own POPM removal has nothing left to do by
+  // the time it runs. Asserting the outcome keeps this true if either side changes.
+  it('leaves no rating behind when clearExtras is set and the field is empty', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+    writeTags(file, { ...meta, rating: '4' })
+    expect(popmCount(file)).toBe(2)
+
+    writeTags(file, { ...meta, rating: '' }, undefined, false, undefined, undefined, true)
+
+    expect(popmCount(file)).toBe(0)
   })
 
   // "Clear metadata" means clear everything the app manages, not just the text fields:
@@ -733,6 +820,45 @@ describe('copyCueFrames', () => {
     const carried = readPrivTree(out)
     expect(carried).not.toBeNull()
     expect(Buffer.from(carried as Uint8Array).equals(Buffer.from(tree))).toBe(true)
+  })
+
+  // The cue carry-over removes the destination's Traktor PRIV before writing the new
+  // one, and that removal is filtered by owner on purpose: PRIV is a shared frame id,
+  // so every other tool's private data (Serato, MusicBrainz, a store's purchase token)
+  // lives under its own owner in a frame of the same name. Widening the filter to all
+  // PRIV frames left every test green while irreversibly dropping that data on each
+  // conversion — nothing was reading back what the destination kept.
+  it("leaves another vendor's PRIV frame on the destination", () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 61234.5, 1)])
+    const source = buildPrivSeed(dir, tree)
+    const out = join(dir, 'with-foreign-priv.mp3')
+    writeFileSync(out, readFileSync(buildSeed(dir)))
+    stripCues(out)
+
+    const foreign = TagFile.createFromPath(out)
+    const foreignFrame = Id3v2PrivateFrame.fromOwner('Serato Markers2')
+    foreignFrame.privateData = ByteVector.fromString('serato payload', StringType.Latin1)
+    ;(foreign.getTag(TagTypes.Id3v2, true) as Id3v2Tag).addFrame(foreignFrame)
+    foreign.save()
+    foreign.dispose()
+
+    copyCueFrames(source, out)
+
+    const f = TagFile.createFromPath(out)
+    try {
+      const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
+      const privs = id3.frames.filter(
+        (fr): fr is Id3v2PrivateFrame => fr instanceof Id3v2PrivateFrame,
+      )
+      // Traktor's own PRIV still lands — the carry-over has to have run for the
+      // survival of the foreign one to mean anything.
+      expect(privs.map((fr) => fr.owner).sort()).toEqual(['Serato Markers2', 'TRAKTOR4'])
+      const kept = privs.find((fr) => fr.owner === 'Serato Markers2')
+      expect(kept?.privateData.toString(StringType.Latin1)).toBe('serato payload')
+    } finally {
+      f.dispose()
+    }
   })
 
   // djotas's report: after a trim the audio moved under the stored cues. The copy
