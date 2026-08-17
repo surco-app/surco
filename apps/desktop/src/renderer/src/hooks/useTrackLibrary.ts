@@ -105,6 +105,7 @@ interface TrackLibrary {
   // bar can fill determinately and the toolbar can show a "212/319" counter instead of an
   // opaque animation while a big crate's tags load.
   importProgress: { done: number; total: number } | null
+  cancelImport: () => void
   setTracks: React.Dispatch<React.SetStateAction<TrackItem[]>>
   // Live view for long-lived callbacks (sweeps, batch loops) that must read each
   // track at the moment of use rather than from a render snapshot.
@@ -146,6 +147,11 @@ export function useTrackLibrary({
   // the render mirror): each drop bumps the total, each finished read bumps done, and the
   // pair resets to null once everything in flight has landed — like the auto-match sweep.
   const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null)
+  // Set while an import should stop. Read inside the read loop like the analyze and
+  // auto-match sweeps read theirs — importing is the longest operation in the app
+  // (thousands of files on a NAS, one tag read each) and was the only one with no way
+  // out. Cleared when the next import starts.
+  const importCancel = useRef(false)
   // Tracks the watcher found in a loaded folder, parked until the user accepts the prompt.
   const [pendingNew, setPendingNew] = useState<PendingNew | null>(null)
   // Paths the user said no to: removed from the crate (row X or the multi-delete button) or
@@ -274,10 +280,21 @@ export function useTrackLibrary({
     setSelection((s) => (s.anchor ? s : { ids: [bases[0].id], anchor: bases[0].id }))
     importTotal.current += bases.length
     setImportProgress({ done: importDone.current, total: importTotal.current })
+    importCancel.current = false
+    // The rows this import added that never got their tags read. A cancel drops them:
+    // they carry nothing but a filename, and leaving them would put rows in the crate
+    // that look like tracks with no metadata. Rows already read are finished work and
+    // stay — cancel means "stop working", not "undo".
+    const unread = new Set(bases.map((b) => b.id))
     void mapWithConcurrency(bases, READ_CONCURRENCY, async (base) => {
+      // Checked before the read, not after: the point is to not start the ones still
+      // queued behind the handful already in flight.
+      if (importCancel.current) return
       const ok = await loadTrackMeta(base)
+      unread.delete(base.id)
       if (!ok) importFailed.current += 1
       importDone.current += 1
+      if (importCancel.current) return
       if (importDone.current >= importTotal.current) {
         importDone.current = 0
         importTotal.current = 0
@@ -289,6 +306,13 @@ export function useTrackLibrary({
       } else {
         setImportProgress({ done: importDone.current, total: importTotal.current })
       }
+    }).then(() => {
+      if (!importCancel.current || unread.size === 0) return
+      // Dropped only once every worker has settled, so a row is never removed while its
+      // own read is still running and about to patch it.
+      const dropped = unread
+      tracksRef.current = tracksRef.current.filter((t) => !dropped.has(t.id))
+      setTracks((prev) => prev.filter((t) => !dropped.has(t.id)))
     })
   }
 
@@ -622,6 +646,9 @@ export function useTrackLibrary({
 
   function clearTracks(): void {
     const cleared = tracksRef.current
+    // An import still reading is reading for a crate that no longer exists: without
+    // this the pill kept counting toward a total whose rows had just been emptied out.
+    cancelImport()
     setTracks([])
     setSelection({ ids: [], anchor: null })
     setPendingNew(null)
@@ -635,12 +662,24 @@ export function useTrackLibrary({
     onClear(cleared)
   }
 
+  // Stops an import mid-flight: the reads already running finish (their results are
+  // worth keeping), nothing further is picked off the queue, and the rows that never
+  // got read are dropped by the settle handler in addPaths.
+  function cancelImport(): void {
+    importCancel.current = true
+    importDone.current = 0
+    importTotal.current = 0
+    importFailed.current = 0
+    setImportProgress(null)
+  }
+
   return {
     tracks,
     pendingNew,
     loadPending,
     dismissPending,
     importProgress,
+    cancelImport,
     setTracks,
     tracksRef,
     addPaths,

@@ -66,6 +66,7 @@ interface Props {
   // Stops the running batch between tracks: queued conversions bail as skipped, the
   // ones already in ffmpeg finish.
   onCancelBatch: () => void
+  onCancelImport: () => void
   onPalette: () => void
   onStats: () => void
   onActivity: () => void
@@ -102,6 +103,7 @@ export const Toolbar = memo(function Toolbar({
   onCancelAutoMatch,
   onFixToken,
   onCancelBatch,
+  onCancelImport,
   onPalette,
   onStats,
   onActivity,
@@ -202,26 +204,34 @@ export const Toolbar = memo(function Toolbar({
         )}
         {importing && (
           // A live pill matching the auto-match/analyze sweeps (accent ring, spinning
-          // glyph, done/total), so a big drop reads as active work rather than a static line.
-          <span
+          // glyph, done/total), so a big drop reads as active work rather than a static
+          // line — and clicking it cancels, like the batch pill beside it. This was the
+          // one sweep with no way out: a folder dropped by mistake had to be waited out.
+          <button
+            type="button"
             data-testid="import-progress"
-            role="status"
-            aria-label={tr('header.importingCount', {
-              done: importing.done,
-              total: importing.total,
-            })}
-            className="group relative flex h-8 items-center gap-1.5 rounded-lg border border-[var(--color-accent)] px-2.5 text-xs font-medium tabular-nums text-[var(--color-accent)]"
+            onClick={onCancelImport}
+            aria-label={tr('header.cancelImport')}
+            className="press group relative flex h-8 items-center gap-1.5 rounded-lg border border-[var(--color-accent)] px-2.5 text-xs font-medium tabular-nums text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
           >
             {/* FilePlus, not the shared Loader2: mid-conversion, a dropped folder painted
-                two identical spinning capsules — one cancels the batch when pressed, the
-                other is inert. The other sweeps identify themselves by glyph already;
-                this is the import's, echoing the Add files button it follows from. */}
+                two identical spinning capsules. The other sweeps identify themselves by
+                glyph already; this is the import's, echoing the Add files button it
+                follows from. */}
             <FilePlus className="h-4 w-4" aria-hidden="true" />
-            {/* The glyph alone doesn't say which sweep this is (the sparkles/activity
-                buttons identify themselves by icon, but a generic loader can't), so the import
-                pill names its phase inline rather than hiding it in a hover tooltip. */}
-            {tr('header.importingCount', { done: importing.done, total: importing.total })}
-          </span>
+            {/* A status region like the batch pill's: the visible counter alone is silent
+                to a screen reader, and the button's own name is the cancel action. */}
+            <span
+              role="status"
+              aria-label={tr('header.importingCount', {
+                done: importing.done,
+                total: importing.total,
+              })}
+            >
+              {tr('header.importingCount', { done: importing.done, total: importing.total })}
+            </span>
+            <Tooltip label={tr('header.cancelImport')} align="end" />
+          </button>
         )}
         {trackCount > 0 && (
           <>

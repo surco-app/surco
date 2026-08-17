@@ -134,7 +134,52 @@ describe('useQualityAnalysis', () => {
     await waitFor(() => expect(result.current.analysis).toBeNull())
 
     expect(onErrors).toHaveBeenCalledTimes(1)
-    expect(onErrors).toHaveBeenCalledWith(1)
+    expect(onErrors).toHaveBeenCalledWith(['b'])
+  })
+
+  // A count alone is a dead end: "12 files could not be analyzed" for four seconds, and
+  // no way to tell WHICH twelve out of six hundred, let alone retry them. The import
+  // already flags its own failed rows (metaReadFailed) so they can be found and dealt
+  // with; the sweep threw that identity away in its catch.
+  it('names the tracks that failed so their rows can be flagged', async () => {
+    const spectrogram = vi.fn(async (path: string) => {
+      if (path === '/music/a.wav' || path === '/music/c.wav') throw new Error('unreadable')
+      return spectrum
+    })
+    setApi({ spectrogram })
+    const targetsRef = { current: [track('a'), track('b'), track('c')] }
+    const onErrors = vi.fn()
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef, onErrors }), {
+      wrapper: wrapper(),
+    })
+
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+
+    expect(onErrors).toHaveBeenCalledWith(expect.arrayContaining(['a', 'c']))
+    expect((onErrors.mock.calls.at(-1) as [string[]])[0]).toHaveLength(2)
+  })
+
+  // The other half of the flag: onErrors only fires when something failed, so nothing
+  // would ever clear a mark left by an earlier run. A track that measures cleanly says
+  // so, and the row drops its warning.
+  it('reports each track that measured cleanly, so a stale failure mark can clear', async () => {
+    const spectrogram = vi.fn(async (path: string) => {
+      if (path === '/music/b.wav') throw new Error('unreadable')
+      return spectrum
+    })
+    setApi({ spectrogram })
+    const targetsRef = { current: [track('a'), track('b')] }
+    const onMeasured = vi.fn()
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef, onMeasured }), {
+      wrapper: wrapper(),
+    })
+
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+
+    expect(onMeasured).toHaveBeenCalledWith('a')
+    expect(onMeasured).not.toHaveBeenCalledWith('b')
   })
 
   // A clean sweep (every file measured) leaves the user undisturbed — the error report fires

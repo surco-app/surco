@@ -33,6 +33,7 @@ function renderBar(over: Partial<Props> = {}): Props {
     onAutoMatch: vi.fn(),
     onCancelAutoMatch: vi.fn(),
     onCancelBatch: vi.fn(),
+    onCancelImport: vi.fn(),
     onPalette: vi.fn(),
     onStats: vi.fn(),
     onActivity: vi.fn(),
@@ -115,6 +116,15 @@ describe('Toolbar', () => {
   it('shows the metadata-read progress while importing', () => {
     renderBar({ importing: { done: 212, total: 319 } })
     expect(screen.getByTestId('import-progress')).toHaveTextContent('212/319')
+  })
+
+  // Importing is the longest operation in the app — thousands of files on a NAS — and
+  // was the only sweep with no way out: the other three pills cancel on click and this
+  // one was an inert span, so a wrong folder meant waiting it out.
+  it('cancels the import when its pill is clicked', () => {
+    const props = renderBar({ importing: { done: 212, total: 319 } })
+    fireEvent.click(screen.getByTestId('import-progress'))
+    expect(props.onCancelImport).toHaveBeenCalledOnce()
   })
 
   // The other three counters were visible-only: without sight, a 500-track run is

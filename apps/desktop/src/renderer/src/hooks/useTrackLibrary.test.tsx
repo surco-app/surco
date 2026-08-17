@@ -162,6 +162,126 @@ function setupWithTracks(): ReturnType<typeof setup> {
   return { result, fire, fireBatch, onDuplicatesSkipped, onNoAudioFound }
 }
 
+// Importing is the longest operation in the app — thousands of files on a NAS, one tag
+// read each — and it was the only sweep with no way out: analyze, auto-match and the
+// conversion batch all have a cancel, this had none. Clearing the crate did not stop
+// the reads already in flight either, so the pill kept counting toward a total whose
+// rows were gone.
+describe('useTrackLibrary cancelling an import', () => {
+  // Reads are held open so the import can be caught mid-flight, the way a real NAS read
+  // would be.
+  function setupSlowReads(): {
+    result: { current: ReturnType<typeof useTrackLibrary> }
+    release: () => void
+    readCount: () => number
+  } {
+    const pending: (() => void)[] = []
+    let reads = 0
+    setApi({
+      readMeta: vi.fn(() => {
+        reads++
+        return new Promise((resolve) => {
+          pending.push(() =>
+            resolve({ tags: { title: '', artist: '' }, duration: 180, cover: null }),
+          )
+        })
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    return {
+      result,
+      release: () => {
+        for (const r of pending.splice(0)) r()
+      },
+      readCount: () => reads,
+    }
+  }
+
+  it('stops reading the rest of the queue when cancelled', async () => {
+    const { result, release, readCount } = setupSlowReads()
+    const paths = Array.from({ length: 40 }, (_, i) => `/m/${i}.wav`)
+    await act(async () => {
+      void result.current.addPaths(paths)
+      // A macrotask, so addPaths' own awaits (expandPaths, the dedupe) settle and the
+      // read workers actually start — a microtask flush leaves them unstarted and the
+      // count below would be zero for the wrong reason.
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    // Only READ_CONCURRENCY reads are in flight; the rest are queued behind them.
+    const startedBeforeCancel = readCount()
+    expect(startedBeforeCancel).toBeGreaterThan(0)
+    expect(startedBeforeCancel).toBeLessThan(paths.length)
+
+    act(() => result.current.cancelImport())
+    await act(async () => {
+      release()
+      await Promise.resolve()
+    })
+
+    // No further reads were picked up off the queue after the cancel.
+    expect(readCount()).toBe(startedBeforeCancel)
+  })
+
+  // Cancel means "stop working", not "undo": the tracks whose tags already landed are
+  // finished and stay. The rows still waiting for a read carry nothing but a filename,
+  // so they go rather than sit in the crate looking like tracks with no metadata.
+  it('keeps the tracks it already read and drops the ones it never got to', async () => {
+    const { result, release } = setupSlowReads()
+    const paths = Array.from({ length: 40 }, (_, i) => `/m/${i}.wav`)
+    await act(async () => {
+      void result.current.addPaths(paths)
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    // Every row is in the crate from the start — the list shows what was dropped while
+    // the tags are still being read.
+    expect(result.current.tracks.length).toBe(paths.length)
+
+    // One batch of reads lands (READ_CONCURRENCY of them), and the cancel comes before
+    // the next batch is picked up.
+    act(() => result.current.cancelImport())
+    await act(async () => {
+      release()
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    // What was read is kept; the untouched rest is gone rather than left as rows with
+    // nothing in them.
+    const kept = result.current.tracks.length
+    expect(kept).toBeGreaterThan(0)
+    expect(kept).toBeLessThan(paths.length)
+  })
+
+  it('clears the progress pill once cancelled', async () => {
+    const { result, release } = setupSlowReads()
+    act(() => {
+      void result.current.addPaths(['/m/a.wav', '/m/b.wav'])
+    })
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(result.current.importProgress).not.toBeNull()
+
+    act(() => result.current.cancelImport())
+    await act(async () => {
+      release()
+      await Promise.resolve()
+    })
+
+    expect(result.current.importProgress).toBeNull()
+  })
+})
+
 describe('useTrackLibrary removed tracks vs watcher', () => {
   // Removing a track with the X takes it out of the crate but not off the disk, so the
   // watcher's next report (a folder change, or the 60s safety poll) still lists its file.

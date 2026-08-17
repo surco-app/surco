@@ -44,6 +44,7 @@
     "analyzingCount": "Analyzing quality… {{done}}/{{total}}",
     "convertingCount": "Converting… {{done}}/{{total}}",
     "cancelConvert": "Cancel the conversion: queued tracks are skipped, the ones underway finish",
+    "cancelImport": "Stop reading: files already read are kept, the rest are dropped",
     "autoMatch": "Auto-match all tracks on Discogs",
     "autoMatchNoToken": "Add a Discogs token in Settings to auto-match",
     "addToken": "Add token",

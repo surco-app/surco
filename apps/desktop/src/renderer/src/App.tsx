@@ -394,6 +394,7 @@ export default function App(): React.JSX.Element {
     loadPending,
     dismissPending,
     importProgress,
+    cancelImport,
     setTracks,
     tracksRef,
     addPaths,
@@ -622,7 +623,16 @@ export default function App(): React.JSX.Element {
     // (filtered) rows. Already-measured tracks are skipped, so widening the scope never
     // re-analyses what a narrower one already did.
     targetsRef: bulkTracksRef,
-    onErrors: (count) => setNotice(tr('notices.qualityErrors', { count })),
+    // Both: the notice says how many, and the rows themselves carry the flag so the
+    // user can actually find them afterwards instead of hunting through the crate.
+    onErrors: (failedIds) => {
+      for (const id of failedIds) updateTrack(id, { analyzeFailed: true })
+      setNotice(tr('notices.qualityErrors', { count: failedIds.length }))
+    },
+    // Cleared on the way back up: onErrors only fires when something failed, so a
+    // later clean pass would otherwise leave the mark on a track that now measures
+    // fine. measuredRef is emptied when a sweep ends, so failed tracks are retried.
+    onMeasured: (id) => updateTrack(id, { analyzeFailed: undefined }),
   })
 
   // The Discogs auto-match sweep: queue, visibility gating, pump and progress live in
@@ -1633,6 +1643,7 @@ export default function App(): React.JSX.Element {
                 onCancelAutoMatch={cancelAutoMatch}
                 onFixToken={onFixToken}
                 onCancelBatch={cancelBatch}
+                onCancelImport={cancelImport}
                 onPalette={onOpenPalette}
                 onStats={onOpenStats}
                 onActivity={onToggleActivity}
