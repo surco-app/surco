@@ -1,4 +1,4 @@
-import { Check, ChevronDown, ChevronUp, GripVertical, Wand2 } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, GripVertical, Info, Wand2 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -17,7 +17,7 @@ const ORGANIZED_FEEDBACK_MS = 1500
 // width: the heading is a separate grid, so an `auto` track would resolve from ITS contents
 // (empty) rather than the row's and land the labels in the wrong place — 143px off, as an
 // auto-sized first attempt did. Hide's track fits the longest translation.
-const ROW_GRID = 'grid grid-cols-[1fr_5.5rem_5.5rem_1.75rem_1.75rem_6rem] items-center gap-1'
+const ROW_GRID = 'grid grid-cols-[1fr_4.75rem_4.75rem_1.75rem_1.75rem_5.5rem] items-center gap-1'
 
 // Moves fromKey to toKey's slot: dragging down lands it after the target, dragging up
 // before it — how every list DnD reads, so the row stays where the user dropped it.
@@ -132,16 +132,39 @@ export function FieldsEditor({
         {/* Column headings, laid out on the row's own grid so each label resolves to the
             same track as the buttons under it — no measured offsets, and nothing to drift
             when a translation makes a button wider. The empty spans hold the name, arrow
-            and Hide tracks. Aria-hidden: they caption a visual column, and every button
-            already carries its own label and pressed state. */}
+            and Hide tracks. Each heading carries what its column MEANS: a label alone
+            doesn't say that Auto fills from a release or that Required blocks converting,
+            and hanging that off every one of the thirty-plus buttons put the same paragraph
+            over the rows below, again and again, long after it had been read. Asked for
+            once, in one place, it stays out of the way — hence the button, which is
+            focusable so the hint is reachable by keyboard as well as hover. */}
         <div
           data-testid="fields-columns"
-          aria-hidden="true"
           className={`${ROW_GRID} mb-1 px-2 text-[10px] uppercase tracking-wide text-fg-faint`}
         >
           <span />
-          <span className="text-center">{tr('settings.autoFill')}</span>
-          <span className="text-center">{tr('settings.required')}</span>
+          <span
+            data-testid="fields-column-auto"
+            role="note"
+            className="relative flex cursor-help items-center justify-center gap-1 text-fg-dim hover:text-fg-muted"
+          >
+            {tr('settings.autoFill')}
+            <Info className="h-3 w-3" aria-hidden="true" />
+            {/* The sentence is the note's content for a screen reader and the tooltip's
+                label for a pointer — one source, both audiences (as SectionHeader does). */}
+            <span className="sr-only">{tr('settings.autoFillHint')}</span>
+            <Tooltip label={tr('settings.autoFillHint')} />
+          </span>
+          <span
+            data-testid="fields-column-required"
+            role="note"
+            className="relative flex cursor-help items-center justify-center gap-1 text-fg-dim hover:text-fg-muted"
+          >
+            {tr('settings.required')}
+            <Info className="h-3 w-3" aria-hidden="true" />
+            <span className="sr-only">{tr('settings.requiredHint')}</span>
+            <Tooltip label={tr('settings.requiredHint')} />
+          </span>
           <span />
           <span />
           <span />
@@ -256,7 +279,7 @@ export function FieldsEditor({
               <div
                 key={d.key}
                 data-testid={`hidden-field-${d.key}`}
-                className="grid grid-cols-[1fr_5.5rem_auto] items-center gap-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
+                className="grid grid-cols-[1fr_4.75rem_5.5rem] items-center gap-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
               >
                 <span className="text-sm text-fg-muted">
                   {tr(`fields.${d.key}`)}
