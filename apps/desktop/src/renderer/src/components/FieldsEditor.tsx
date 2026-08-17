@@ -26,7 +26,7 @@ const ROW_GRID = 'grid grid-cols-[1fr_4.75rem_4.75rem_1.75rem_1.75rem_5.5rem] it
 // instead of a wall of repeated text. Wider than the tick needs: a 20px square is a mean
 // click target, and the extra width also lets the headings above sit unsqueezed. The off
 // state keeps an outline so the control is visible before it is ever used.
-const TOGGLE_BOX = 'mx-auto flex h-6 w-9 items-center justify-center rounded'
+const TOGGLE_BOX = 'mx-auto flex h-6 w-6 items-center justify-center rounded'
 
 // Moves fromKey to toKey's slot: dragging down lands it after the target, dragging up
 // before it — how every list DnD reads, so the row stays where the user dropped it.
@@ -292,13 +292,21 @@ export function FieldsEditor({
               <div
                 key={d.key}
                 data-testid={`hidden-field-${d.key}`}
-                className="grid grid-cols-[1fr_4.75rem_5.5rem] items-center gap-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2"
+                // The row grid, not one of its own: both lists sit under the same column
+                // headings, so a hidden field's Auto mark has to land in the Auto column.
+                // On a narrower grid of its own it drifted under Required instead, reading
+                // as if the field were required. The empty spans hold the tracks a hidden
+                // row has no control for (required, both arrows).
+                className={`${ROW_GRID} rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2`}
               >
                 <span className="text-sm text-fg-muted">
                   {tr(`fields.${d.key}`)}
                   <Tooltip label={`{${d.key}}`} />
                 </span>
                 {autoToggle(d.key)}
+                <span />
+                <span />
+                <span />
                 <button
                   type="button"
                   onClick={() => onChangeVisible([...visibleFields, d.key])}
