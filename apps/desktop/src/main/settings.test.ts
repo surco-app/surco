@@ -310,7 +310,7 @@ describe('replaceSettings', () => {
   // or corrupt this machine's lifetime tallies. recordStat/recordConversion then do
   // `cur.stats[key] + n` / `cur.conversionCount + 1`, which would silently switch to
   // string concatenation ('HACKED' + 5, '999' + 1) instead of throwing.
-  it('resets stats and conversionCount to their defaults instead of taking corrupt imported values', () => {
+  it('ignores corrupt imported values for stats and conversionCount', () => {
     replaceSettings({
       theme: 'dark',
       stats: { imported: 'HACKED' } as unknown as Settings['stats'],
@@ -319,6 +319,47 @@ describe('replaceSettings', () => {
     expect(getSettings().stats.imported).toBe(0)
     expect(getSettings().conversionCount).toBe(0)
     expect(getSettings().theme).toBe('dark')
+  })
+
+  // The test above starts from zeroed tallies, so "ignore what the file says" and
+  // "reset to zero" look identical there — and the restore did the second one. The
+  // tallies are this machine's own history (they feed the stats card, and they are
+  // LOCAL_KEYS precisely because they never travel between machines), so restoring
+  // preferences must leave them exactly where they were. Importing a backup silently
+  // wiped them, permanently.
+  it("leaves this machine's tallies untouched when restoring a backup", () => {
+    const start = getSettings()
+    recordConversion()
+    recordConversion()
+    recordStat('imported', 40)
+    const conversions = start.conversionCount + 2
+    const imported = start.stats.imported + 40
+    expect(getSettings().conversionCount).toBe(conversions)
+    expect(getSettings().stats.imported).toBe(imported)
+
+    replaceSettings({ theme: 'dark' })
+
+    expect(getSettings().conversionCount).toBe(conversions)
+    expect(getSettings().stats.imported).toBe(imported)
+    expect(getSettings().theme).toBe('dark')
+  })
+
+  // Same rule when the backup carries its own tallies: the other machine's numbers are
+  // not this machine's, so they are neither adopted nor allowed to zero what is here.
+  // Read before rather than assumed, since these cases share one settings file.
+  it('keeps the local tallies even when the backup carries its own', () => {
+    recordConversion()
+    recordStat('imported', 7)
+    const before = getSettings()
+
+    replaceSettings({
+      theme: 'light',
+      stats: { imported: 999 } as unknown as Settings['stats'],
+      conversionCount: 500,
+    })
+
+    expect(getSettings().conversionCount).toBe(before.conversionCount)
+    expect(getSettings().stats.imported).toBe(before.stats.imported)
   })
 })
 
