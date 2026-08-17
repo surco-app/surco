@@ -158,7 +158,7 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
                     section.hidden ? 'settings.sections.show' : 'settings.sections.hide',
                   )}
                   onClick={() => toggleHidden(section.id)}
-                  className="mx-auto flex h-6 w-6 items-center justify-center rounded text-fg-muted hover:text-fg"
+                  className={`${TOGGLE_BOX} ${section.hidden ? TOGGLE_OFF : TOGGLE_ON}`}
                 >
                   {section.hidden ? (
                     <EyeOff className="h-4 w-4" aria-hidden="true" />
