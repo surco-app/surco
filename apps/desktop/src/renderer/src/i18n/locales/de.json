@@ -878,7 +878,7 @@
     "allVisible": "Alle Felder sind sichtbar.",
     "required": "Pflichtfeld",
     "autoFill": "Auto",
-    "autoFillHint": "Füllt dieses Feld automatisch, wenn du eine passende Veröffentlichung wählst (Discogs, Bandcamp oder Deezer). Aus: Die Datei behält, was sie bereits hatte.",
+    "autoFillHint": "Füllt dieses Feld automatisch, wenn du eine passende Veröffentlichung wählst. Aus: Die Datei behält, was sie bereits hatte.",
     "autoOrganize": "Auto-Sortieren",
     "autoOrganizeHint": "Ordnet die angezeigten Felder nach Gruppe",
     "autoOrganized": "Sortiert"

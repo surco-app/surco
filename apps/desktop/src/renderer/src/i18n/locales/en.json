@@ -878,7 +878,7 @@
     "allVisible": "All fields are visible.",
     "required": "Required",
     "autoFill": "Auto",
-    "autoFillHint": "Fill this field automatically when you pick a matching release (Discogs, Bandcamp or Deezer). Off means the file keeps whatever it already had.",
+    "autoFillHint": "Fill this field automatically when you pick a matching release. Off means the file keeps whatever it already had.",
     "autoOrganize": "Auto-organize",
     "autoOrganizeHint": "Reorder shown fields by group",
     "autoOrganized": "Organized"

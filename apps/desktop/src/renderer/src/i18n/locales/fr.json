@@ -878,7 +878,7 @@
     "allVisible": "Tous les champs sont visibles.",
     "required": "Obligatoire",
     "autoFill": "Auto",
-    "autoFillHint": "Remplit ce champ automatiquement quand vous choisissez un disque correspondant (Discogs, Bandcamp ou Deezer). Désactivé, le fichier conserve ce qu'il avait déjà.",
+    "autoFillHint": "Remplit ce champ automatiquement quand vous choisissez un disque correspondant. Désactivé, le fichier conserve ce qu'il avait déjà.",
     "autoOrganize": "Auto-organiser",
     "autoOrganizeHint": "Réordonne les champs affichés par groupe",
     "autoOrganized": "Organisé"
