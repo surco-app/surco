@@ -1,10 +1,25 @@
-import { Check, ChevronDown, ChevronUp, GripVertical, Info, Wand2 } from 'lucide-react'
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  CircleCheck,
+  CircleDashed,
+  GripVertical,
+  Info,
+  Wand2,
+} from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrackMetadata } from '../../../shared/types'
 import { FIELD_DEFS, IMPORTABLE_FIELDS, moveItem, sortFieldsByGroup } from '../lib/fields'
-import { COLUMN_HEAD, COLUMN_HEAD_CELL, TOGGLE_BOX } from '../lib/settingsRows'
+import {
+  COLUMN_HEAD,
+  COLUMN_HEAD_CELL,
+  TOGGLE_BOX,
+  TOGGLE_OFF,
+  TOGGLE_ON,
+} from '../lib/settingsRows'
 import { Tooltip } from './Tooltip'
 
 // How long the auto-organize button holds its "done" confirmation before reverting.
@@ -66,18 +81,24 @@ export function FieldsEditor({
     if (!IMPORTABLE_FIELDS.includes(key as keyof TrackMetadata)) return <span aria-hidden="true" />
     const on = importFields.includes(key)
     return (
-      <input
-        type="checkbox"
+      <button
+        type="button"
         data-testid={`field-auto-${key}`}
-        checked={on}
+        aria-pressed={on}
         // The word lives in the column heading, so the cell carries no text of its own —
         // which leaves a screen reader nothing to announce unless the label says it.
         aria-label={tr('settings.autoFill')}
-        onChange={() =>
+        onClick={() =>
           onChangeImport(on ? importFields.filter((k) => k !== key) : [...importFields, key])
         }
-        className={TOGGLE_BOX}
-      />
+        className={`${TOGGLE_BOX} ${on ? TOGGLE_ON : TOGGLE_OFF}`}
+      >
+        {on ? (
+          <CircleCheck className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <CircleDashed className="h-4 w-4" aria-hidden="true" />
+        )}
+      </button>
     )
   }
   // Reordering a scrolling (and possibly already-tidy) list gives no visible sign it ran,
@@ -200,11 +221,11 @@ export function FieldsEditor({
                 <Tooltip label={`{${key}}`} />
               </span>
               {autoToggle(key)}
-              <input
-                type="checkbox"
+              <button
+                type="button"
                 data-testid={`field-required-${key}`}
-                checked={requiredFields.includes(key)}
-                onChange={() =>
+                aria-pressed={requiredFields.includes(key)}
+                onClick={() =>
                   onChangeRequired(
                     requiredFields.includes(key)
                       ? requiredFields.filter((k) => k !== key)
@@ -212,8 +233,14 @@ export function FieldsEditor({
                   )
                 }
                 aria-label={tr('settings.required')}
-                className={TOGGLE_BOX}
-              />
+                className={`${TOGGLE_BOX} ${requiredFields.includes(key) ? TOGGLE_ON : TOGGLE_OFF}`}
+              >
+                {requiredFields.includes(key) ? (
+                  <CircleCheck className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <CircleDashed className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
               <button
                 type="button"
                 onClick={() => onChangeVisible(moveItem(visibleFields, i, -1))}

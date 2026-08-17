@@ -1,10 +1,25 @@
-import { ChevronDown, ChevronUp, Eye, EyeOff, GripVertical, Info } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronUp,
+  CircleCheck,
+  CircleDashed,
+  Eye,
+  EyeOff,
+  GripVertical,
+  Info,
+} from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { EditorSectionPref } from '../../../../shared/editorSections'
 import type { SyncedDraft } from '../../lib/settingsDraft'
-import { COLUMN_HEAD, COLUMN_HEAD_CELL, TOGGLE_BOX } from '../../lib/settingsRows'
+import {
+  COLUMN_HEAD,
+  COLUMN_HEAD_CELL,
+  TOGGLE_BOX,
+  TOGGLE_OFF,
+  TOGGLE_ON,
+} from '../../lib/settingsRows'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { Tooltip } from '../Tooltip'
 import { SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
@@ -159,15 +174,24 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
                 // empty rather than holding a control that would do nothing.
                 <span />
               )}
-              <input
-                type="checkbox"
+              <button
+                type="button"
                 data-testid={`settings-section-open-${section.id}`}
-                checked={section.open}
+                aria-pressed={section.open}
                 disabled={section.hidden === true}
-                onChange={() => toggleOpen(section.id)}
+                onClick={() => toggleOpen(section.id)}
                 aria-label={tr('settings.sections.open')}
-                className={`${TOGGLE_BOX} disabled:opacity-25`}
-              />
+                className={`${TOGGLE_BOX} ${section.open ? TOGGLE_ON : TOGGLE_OFF}`}
+              >
+                {/* The same check/dashed pair as the Fields columns, not the chevron the
+                    editor folds with: the reorder arrows sit two cells away, so a chevron
+                    here read as a third arrow rather than as a state. */}
+                {section.open ? (
+                  <CircleCheck className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <CircleDashed className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
               {movable ? (
                 <>
                   <button
