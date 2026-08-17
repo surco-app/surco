@@ -569,7 +569,8 @@
     "hearingRepaired": "Hearing: repaired",
     "hearingOriginal": "Hearing: original",
     "abHint": "Switches between the original and the repaired track without stopping the audio, so you can hear whether the repair removed the clicks — and whether it dulled the music.",
-    "nextClick": "Next click"
+    "nextClick": "Next click",
+    "appliesToSelection": "This setting applies to all {{count}} selected tracks."
   },
   "trim": {
     "title": "Silence trim",
@@ -628,7 +629,8 @@
       "club": "Hot, for the booth: most tracks need peak limiting to get there, trading a little punch.",
       "broadcast": "The TV and radio level. Quieter than streaming, with plenty of headroom.",
       "custom": "Your own target. The preview under the wave shows where the track will land."
-    }
+    },
+    "appliesToSelection": "These settings apply to all {{count}} selected tracks."
   },
   "settings": {
     "tabs": {
@@ -1012,8 +1014,10 @@
     "clearMessageFiltered_one": "This removes the 1 visible track from the list — tracks hidden by the filter stay. The file on disk is not deleted.",
     "clearMessageFiltered_other": "This removes the {{count}} visible tracks from the list — tracks hidden by the filter stay. The files on disk are not deleted.",
     "clearConfirm": "Clear",
-    "removeFromListTitle": "Remove {{count}} tracks from the list?",
-    "removeFromListMessage": "This removes the {{count}} selected tracks and any edits staged on them. The files on disk are not deleted, but the edits cannot be brought back.",
+    "removeFromListTitle_one": "Remove this track from the list?",
+    "removeFromListTitle_other": "Remove {{count}} tracks from the list?",
+    "removeFromListMessage_one": "It carries edits you have not converted yet. The file on disk is not deleted, but the edits cannot be brought back.",
+    "removeFromListMessage_other": "This removes the {{count}} selected tracks and any edits staged on them. The files on disk are not deleted, but the edits cannot be brought back.",
     "removeFromListConfirm": "Remove",
     "trashTitle_one": "Move file to Trash?",
     "trashTitle_other": "Move {{count}} files to Trash?",

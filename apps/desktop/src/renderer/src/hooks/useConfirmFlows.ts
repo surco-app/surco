@@ -13,6 +13,7 @@ import { deriveTagPatches } from '../lib/deriveTags'
 import type { Destination } from '../lib/destination'
 import { DEFAULT_REQUIRED_FIELDS } from '../lib/fields'
 import { declickForJob, normalizeForJob } from '../lib/reapply'
+import { hasStagedEdits } from '../lib/sessionEdits'
 import type { TrackItem } from '../types'
 import type { ConfirmModal } from './useOverlays'
 
@@ -289,12 +290,18 @@ export function useConfirmFlows({
 
   // A row's ✕ (and ⌫, and the context menu's Remove) acts on the whole selection when the
   // clicked row belongs to it — so one click on a hover-revealed target can discard dozens of
-  // rows along with every staged edit on them, and a removal is not undoable. Asking only for
-  // the expanded case is the point: a dialog on every single-row ✕ would be a tax on the
-  // ordinary gesture and would train the user to dismiss it unread, which is precisely what
-  // would let the lossy case through. Rare enough to be read.
+  // rows along with every staged edit on them, and a removal is not undoable (useMetaUndo
+  // filters to rows that still exist and never resurrects a deleted one). Not asking on the
+  // ordinary gesture is the point: a dialog on every single-row ✕ would be a tax on it and
+  // would train the user to dismiss it unread, which is precisely what would let the lossy
+  // case through.
+  //
+  // So the question is what the removal COSTS, not how many rows it spans: a lone track
+  // carrying an hour of tagging is the expensive case, and by count it went straight
+  // through with nothing to say it had anything on it. A clean row still goes in one
+  // click, whether it is one or one of many.
   function askRemoveFromList(targets: TrackItem[]): void {
-    if (targets.length <= 1) {
+    if (targets.length <= 1 && !targets.some(hasStagedEdits)) {
       for (const t of targets) removeTrack(t.id)
       return
     }

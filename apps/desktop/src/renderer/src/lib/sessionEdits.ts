@@ -16,7 +16,10 @@ export function sessionEdits(tracks: TrackItem[]): Record<string, SessionEdit> {
   return Object.fromEntries(tracks.filter(hasStagedEdits).map((t) => [t.inputPath, sessionEdit(t)]))
 }
 
-function hasStagedEdits(track: TrackItem): boolean {
+// Whether the track's live state has diverged from what the file on disk carries —
+// the edits a crash (or a removal) would cost. Exported because the same question
+// decides whether discarding a row is worth confirming.
+export function hasStagedEdits(track: TrackItem): boolean {
   return track.diskSignature !== undefined && trackSignature(track) !== track.diskSignature
 }
 

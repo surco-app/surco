@@ -34,7 +34,10 @@ interface Props {
   // The track the wave and the preview render from; both hide in multi-select, where
   // the anchor track's clicks would misrepresent the rest of the selection.
   inputPath: string
-  isMulti: boolean
+  // How many tracks the mode below will apply to. The batch hands ONE declick override
+  // to every selected track (see declickForJob), so with a selection open this is not
+  // the anchor track's setting — it is all of them, and the section has to say so.
+  selectedCount: number
   // The export format the convert button will use — the cue warning only shows for
   // the formats that actually drop the cues.
   format: OutputFormat
@@ -57,12 +60,13 @@ export function DeclickSection({
   onToggle,
   onChange,
   inputPath,
-  isMulti,
+  selectedCount,
   format,
   trim,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const settled = useSettled(SELECTION_SETTLE_MS)
+  const isMulti = selectedCount > 1
   const solo = open && !isMulti && settled
   const { data: clicks } = useClicks(inputPath, solo)
   const { data: wave } = useWaveform(inputPath, solo)
@@ -216,6 +220,14 @@ export function DeclickSection({
       />
       <SectionBody open={open}>
         <div className="mt-4">
+          {/* Above the control, so it is read before the mode is picked rather than
+              after. Hiding the waveform was the only thing multi-select changed, which
+              left this looking exactly like the single-track case. */}
+          {isMulti && (
+            <p data-testid="declick-scope" className="mb-3 text-xs text-fg-dim">
+              {tr('declick.appliesToSelection', { count: selectedCount })}
+            </p>
+          )}
           <DeclickControls value={value} onChange={onChange} />
           {!isMulti && (
             <div className="mt-4">

@@ -1202,7 +1202,7 @@ export const Editor = memo(function Editor({
                             onChange({ declick: d })
                           }}
                           inputPath={item.inputPath}
-                          isMulti={isMulti}
+                          selectedCount={selectedTracks?.length ?? 1}
                           format={format}
                           trim={item.trim}
                         />
@@ -1222,7 +1222,7 @@ export const Editor = memo(function Editor({
                             onChange({ normalize: n })
                           }}
                           item={item}
-                          isMulti={isMulti}
+                          selectedCount={selectedTracks?.length ?? 1}
                           onShowHelp={onShowLoudnessHelp}
                         />
                       )
