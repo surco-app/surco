@@ -4,13 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrackMetadata } from '../../../shared/types'
 import { FIELD_DEFS, IMPORTABLE_FIELDS, moveItem, sortFieldsByGroup } from '../lib/fields'
-import {
-  COLUMN_HEAD,
-  COLUMN_HEAD_CELL,
-  TOGGLE_BOX,
-  TOGGLE_OFF,
-  TOGGLE_ON,
-} from '../lib/settingsRows'
+import { COLUMN_HEAD, COLUMN_HEAD_CELL, TOGGLE_BOX } from '../lib/settingsRows'
 import { Tooltip } from './Tooltip'
 
 // How long the auto-organize button holds its "done" confirmation before reverting.
@@ -72,20 +66,18 @@ export function FieldsEditor({
     if (!IMPORTABLE_FIELDS.includes(key as keyof TrackMetadata)) return <span aria-hidden="true" />
     const on = importFields.includes(key)
     return (
-      <button
-        type="button"
+      <input
+        type="checkbox"
         data-testid={`field-auto-${key}`}
-        aria-pressed={on}
-        // The word lives in the column heading now, so the button shows state instead of
-        // repeating it — which means it no longer names itself, and the label has to.
+        checked={on}
+        // The word lives in the column heading, so the cell carries no text of its own —
+        // which leaves a screen reader nothing to announce unless the label says it.
         aria-label={tr('settings.autoFill')}
-        onClick={() =>
+        onChange={() =>
           onChangeImport(on ? importFields.filter((k) => k !== key) : [...importFields, key])
         }
-        className={`${TOGGLE_BOX} ${on ? TOGGLE_ON : TOGGLE_OFF}`}
-      >
-        <Check className="h-3.5 w-3.5" aria-hidden="true" />
-      </button>
+        className={TOGGLE_BOX}
+      />
     )
   }
   // Reordering a scrolling (and possibly already-tidy) list gives no visible sign it ran,
@@ -208,11 +200,11 @@ export function FieldsEditor({
                 <Tooltip label={`{${key}}`} />
               </span>
               {autoToggle(key)}
-              <button
-                type="button"
+              <input
+                type="checkbox"
                 data-testid={`field-required-${key}`}
-                aria-pressed={requiredFields.includes(key)}
-                onClick={() =>
+                checked={requiredFields.includes(key)}
+                onChange={() =>
                   onChangeRequired(
                     requiredFields.includes(key)
                       ? requiredFields.filter((k) => k !== key)
@@ -220,10 +212,8 @@ export function FieldsEditor({
                   )
                 }
                 aria-label={tr('settings.required')}
-                className={`${TOGGLE_BOX} ${requiredFields.includes(key) ? TOGGLE_ON : TOGGLE_OFF}`}
-              >
-                <Check className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
+                className={TOGGLE_BOX}
+              />
               <button
                 type="button"
                 onClick={() => onChangeVisible(moveItem(visibleFields, i, -1))}

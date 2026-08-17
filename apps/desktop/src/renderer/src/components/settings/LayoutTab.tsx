@@ -1,17 +1,11 @@
-import { Check, ChevronDown, ChevronUp, Eye, EyeOff, GripVertical, Info } from 'lucide-react'
+import { ChevronDown, ChevronUp, Eye, EyeOff, GripVertical, Info } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { EditorSectionPref } from '../../../../shared/editorSections'
 import type { SyncedDraft } from '../../lib/settingsDraft'
+import { COLUMN_HEAD, COLUMN_HEAD_CELL, TOGGLE_BOX } from '../../lib/settingsRows'
 import type { PatchSynced } from '../../lib/settingsTabs'
-import {
-  COLUMN_HEAD,
-  COLUMN_HEAD_CELL,
-  TOGGLE_BOX,
-  TOGGLE_OFF,
-  TOGGLE_ON,
-} from '../../lib/settingsRows'
 import { Tooltip } from '../Tooltip'
 import { SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
 
@@ -137,81 +131,75 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
                   {tr(`settings.sections.${section.id}`)}
                 </span>
               </span>
-                {/* Hidden removes the section from the editor entirely; the form has no
+              {/* Hidden removes the section from the editor entirely; the form has no
                     toggle — it IS the editor. The open pill goes quiet meanwhile: a fold
                     default means nothing for a section that never renders. */}
-                {movable ? (
-                  <button
-                    type="button"
-                    data-testid={`settings-section-hide-${section.id}`}
-                    aria-pressed={section.hidden === true}
-                    aria-label={tr(
-                      section.hidden ? 'settings.sections.show' : 'settings.sections.hide',
-                    )}
-                    onClick={() => toggleHidden(section.id)}
-                    className="mx-auto flex h-6 w-6 items-center justify-center rounded text-fg-muted hover:text-fg"
-                  >
-                    {section.hidden ? (
-                      <EyeOff className="h-4 w-4" aria-hidden="true" />
-                    ) : (
-                      <Eye className="h-4 w-4" aria-hidden="true" />
-                    )}
-                    <Tooltip
-                      label={tr(
-                        section.hidden ? 'settings.sections.show' : 'settings.sections.hide',
-                      )}
-                    />
-                  </button>
-                ) : (
-                  // The metadata form IS the editor — it can't be hidden, so its cell stays
-                  // empty rather than holding a control that would do nothing.
-                  <span />
-                )}
+              {movable ? (
                 <button
                   type="button"
-                  data-testid={`settings-section-open-${section.id}`}
-                  aria-pressed={section.open}
-                  disabled={section.hidden === true}
-                  onClick={() => toggleOpen(section.id)}
-                  aria-label={tr('settings.sections.open')}
-                  className={`${TOGGLE_BOX} disabled:opacity-25 ${
-                    section.open ? TOGGLE_ON : TOGGLE_OFF
-                  }`}
+                  data-testid={`settings-section-hide-${section.id}`}
+                  aria-pressed={section.hidden === true}
+                  aria-label={tr(
+                    section.hidden ? 'settings.sections.show' : 'settings.sections.hide',
+                  )}
+                  onClick={() => toggleHidden(section.id)}
+                  className="mx-auto flex h-6 w-6 items-center justify-center rounded text-fg-muted hover:text-fg"
                 >
-                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                  {section.hidden ? (
+                    <EyeOff className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <Eye className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  <Tooltip
+                    label={tr(section.hidden ? 'settings.sections.show' : 'settings.sections.hide')}
+                  />
                 </button>
-                {movable ? (
-                  <>
-                    <button
-                      type="button"
-                      data-testid={`settings-section-up-${section.id}`}
-                      aria-label={tr('settings.moveUp')}
-                      disabled={!canUp}
-                      onClick={() => move(i, -1)}
-                      className="mx-auto rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
-                    >
-                      <ChevronUp className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      data-testid={`settings-section-down-${section.id}`}
-                      aria-label={tr('settings.moveDown')}
-                      disabled={!canDown}
-                      onClick={() => move(i, 1)}
-                      className="mx-auto rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
-                    >
-                      <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                  </>
-                ) : (
-                  // No "FIXED" label: it sat in the arrows' columns and pushed this row's
-                  // Open control out of the line every other row keeps — and the row having
-                  // no grip and no arrows already says it doesn't move.
-                  <>
-                    <span />
-                    <span />
-                  </>
-                )}
+              ) : (
+                // The metadata form IS the editor — it can't be hidden, so its cell stays
+                // empty rather than holding a control that would do nothing.
+                <span />
+              )}
+              <input
+                type="checkbox"
+                data-testid={`settings-section-open-${section.id}`}
+                checked={section.open}
+                disabled={section.hidden === true}
+                onChange={() => toggleOpen(section.id)}
+                aria-label={tr('settings.sections.open')}
+                className={`${TOGGLE_BOX} disabled:opacity-25`}
+              />
+              {movable ? (
+                <>
+                  <button
+                    type="button"
+                    data-testid={`settings-section-up-${section.id}`}
+                    aria-label={tr('settings.moveUp')}
+                    disabled={!canUp}
+                    onClick={() => move(i, -1)}
+                    className="mx-auto rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
+                  >
+                    <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    data-testid={`settings-section-down-${section.id}`}
+                    aria-label={tr('settings.moveDown')}
+                    disabled={!canDown}
+                    onClick={() => move(i, 1)}
+                    className="mx-auto rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
+                  >
+                    <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </>
+              ) : (
+                // No "FIXED" label: it sat in the arrows' columns and pushed this row's
+                // Open control out of the line every other row keeps — and the row having
+                // no grip and no arrows already says it doesn't move.
+                <>
+                  <span />
+                  <span />
+                </>
+              )}
             </div>
           )
         })}

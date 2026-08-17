@@ -170,35 +170,18 @@ describe('auto-fill toggle', () => {
     expect(onChangeImport).toHaveBeenCalledWith(['artist'])
   })
 
-  // Pressed state drives the styling, and a screen reader has nothing else to go on.
-  it('reports its state to assistive tech', () => {
+  // A real checkbox rather than a button styled as one: it is the control the rest of the
+  // app uses for a boolean (thirteen settings and counting), so it inherits the system's
+  // own tick, focus ring and keyboard handling instead of re-implementing them — the
+  // hand-rolled version needed aria-pressed and aria-label bolted on to pass for one.
+  it('is a checkbox carrying its own state', () => {
     setup({ importFields: ['title'] })
-    expect(screen.getByTestId('field-auto-title')).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByTestId('field-auto-artist')).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByTestId('field-auto-title')).toBeChecked()
+    expect(screen.getByTestId('field-auto-artist')).not.toBeChecked()
   })
 
-  // The column heading already says "Auto", so repeating the word on all twenty-seven rows
-  // said nothing and forced the button wide enough to hold it ("Pflichtfeld" pushed it to
-  // 76px for a 33px word). The button carries no text at all now — a tick shown or hidden
-  // reads as a column of marks rather than a column of words.
-  it('shows no label text on the toggle itself', () => {
-    setup({ importFields: ['title'] })
-    expect(screen.getByTestId('field-auto-title')).toHaveTextContent('')
-    expect(screen.getByTestId('field-required-title')).toHaveTextContent('')
-  })
-
-  // With the word gone, the on/off difference is carried by the tick's colour alone, so the
-  // two states must not render identically — otherwise nothing on screen says which fields
-  // are set.
-  it('renders the on and off states differently', () => {
-    setup({ importFields: ['title'] })
-    const on = screen.getByTestId('field-auto-title').className
-    const off = screen.getByTestId('field-auto-artist').className
-    expect(on).not.toEqual(off)
-  })
-
-  // Dropping the word costs a screen reader the only thing that named the control, so the
-  // label has to carry it — the tick is decoration, not the name.
+  // The column heading says "Auto", so the control repeats nothing — but a screen reader
+  // reads controls out of context, so the accessible name still has to name it.
   it('still names the toggle for a screen reader', () => {
     setup({ importFields: ['title'] })
     expect(screen.getByTestId('field-auto-title')).toHaveAccessibleName(/auto/i)
@@ -220,7 +203,7 @@ describe('auto-fill toggle', () => {
   it('offers the toggle on hidden fields as well', () => {
     setup({ visibleFields: ['title'], requiredFields: [], importFields: ['country'] })
     const row = screen.getByTestId('hidden-field-country')
-    expect(within(row).getByTestId('field-auto-country')).toHaveAttribute('aria-pressed', 'true')
+    expect(within(row).getByTestId('field-auto-country')).toBeChecked()
   })
 
   // Both lists sit under one set of column headings, so a hidden row has to resolve its
