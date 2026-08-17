@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.86",
+    "date": "17 de agosto de 2026",
+    "title": "Tú decides qué toca Discogs",
+    "items": [
+      {
+        "text": "Ya puedes elegir qué campos rellena una edición cuando la aplicas. Hasta ahora aplicar un match lo escribía todo, y si tenías el género puesto a mano —o el año de tu copia, no el de la reedición que encontraste— se perdía sin remedio. Cada campo tiene ahora su interruptor «Auto» en Ajustes, Campos: apagado significa que el archivo se queda con lo que ya tenía. Vienen todos encendidos, así que si no tocas nada aplicar una edición hace exactamente lo de siempre.",
+        "in": "0.86.0"
+      },
+      {
+        "text": "Los resultados de búsqueda enseñan el país de la prensa. Cuando una referencia sale en cinco países con el mismo año y el mismo sello, era imposible saber cuál era tu copia sin abrir cada una; ahora el país va en su propia línea junto al resto de datos de la edición.",
+        "in": "0.86.0"
+      },
+      {
+        "text": "Importar una carpeta ya se puede cancelar. Era la operación más larga de la app —miles de archivos en un disco de red, leyendo etiquetas uno a uno— y la única sin salida: si soltabas la carpeta equivocada, tocaba esperar a que acabase. Ahora se pulsa sobre el contador de importación y para.",
+        "in": "0.86.0"
+      },
+      {
+        "text": "Convertir un MP3 con «Igual que el origen» ya no infla el archivo. Un MP3 no guarda profundidad de bits —guarda otra cosa—, y Surco se inventaba 24 bits al convertirlo: un MP3 de 320k salía como un FLAC de 60 KB donde 16 bits dan 21 KB, sin ninguna ganancia audible. Ahora sale a 16 bits, con su dither correspondiente. Si conviertes tu colección a FLAC, la diferencia se nota en el disco.",
+        "in": "0.86.0"
+      }
+    ]
+  },
+  {
     "version": "0.85",
     "date": "16 de agosto de 2026",
     "title": "Etiquetar como lo hace un coleccionista",

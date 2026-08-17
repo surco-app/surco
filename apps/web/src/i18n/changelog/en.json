@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.86",
+    "date": "August 17, 2026",
+    "title": "You decide what Discogs touches",
+    "items": [
+      {
+        "text": "You can now choose which fields a release fills when you apply it. Until now applying a match wrote everything, so a genre you had set by hand — or the year of your copy rather than the reissue you found — was gone for good. Every field now has its own \"Auto\" switch in Settings, Fields: off means the file keeps whatever it already had. They all start on, so leave them alone and applying a release behaves exactly as it always did.",
+        "in": "0.86.0"
+      },
+      {
+        "text": "Search results show the pressing country. When one catalogue number comes out in five countries with the same year and the same label, there was no way to tell which one was your copy without opening each; the country now sits on its own line with the rest of the release details.",
+        "in": "0.86.0"
+      },
+      {
+        "text": "Importing a folder can be cancelled. It was the longest operation in the app — thousands of files on a network drive, one tag read each — and the only one with no way out: drop the wrong folder and all you could do was wait. Clicking the import counter now stops it.",
+        "in": "0.86.0"
+      },
+      {
+        "text": "Converting an MP3 with \"Same as source\" no longer bloats the file. An MP3 has no bit depth to preserve — it stores something else entirely — and Surco was inventing 24 bits for it: a 320k MP3 came out as a 60 KB FLAC where 16-bit gives 21 KB, for nothing audible. It now converts at 16-bit, with the dither that calls for. If you convert your collection to FLAC, the difference shows up on disk.",
+        "in": "0.86.0"
+      }
+    ]
+  },
+  {
     "version": "0.85",
     "date": "August 16, 2026",
     "title": "Tagging the way a collector does",
