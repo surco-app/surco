@@ -348,6 +348,11 @@ describe('TrimSection', () => {
     render(section({ value: { startSec: 0.394 } }))
     await screen.findByTestId('trim-context-start', undefined, { timeout: 3000 })
     for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('trim-zoom-in-start'))
+    // La ventana se pide cuando el encuadre reposa (ver el settle en TrimLane), así que
+    // los cuatro zooms se funden en una sola petición: la de la ventana final.
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 120))
+    })
 
     // data-window se publica con dos decimales para que el test sea legible, así que
     // la comparación va contra la ventana real: corte 0,394 centrado en ±0,25 s.
@@ -357,6 +362,36 @@ describe('TrimSection', () => {
     // Sin margen: el inicio pedido es el inicio dibujado, al milisegundo.
     expect(asked?.[1]).toBeCloseTo(0.394 - 0.25, 3)
     expect(asked?.[2]).toBeCloseTo(0.5, 3)
+  })
+
+  // Every distinct (startSec, durSec) is its own cache entry AND its own ffmpeg decode,
+  // so a wheel pan that wrote the window per event enqueued one decode per wheel tick —
+  // dozens for a single swipe, with the lane lagging seconds behind the gesture. The
+  // Strip has a settle for exactly this; the trim lanes did not, and the comment above
+  // startLane claimed they only re-framed on zoom or a released drag, which was true of
+  // the handle drag and not of the wheel.
+  it('decodes once for a wheel pan instead of once per wheel event', async () => {
+    const waveformWindow = vi.fn().mockResolvedValue(null)
+    ;(window as unknown as { api: { waveformWindow: unknown } }).api.waveformWindow = waveformWindow
+    render(section({ value: { startSec: 30 } }))
+    await screen.findByTestId('trim-context-start', undefined, { timeout: 3000 })
+    const overlay = screen.getByTestId('trim-overlay-start')
+    const before = waveformWindow.mock.calls.length
+
+    // One swipe: the wheel fires many events in quick succession. deltaX must beat
+    // deltaY or the handler defers to the page's own vertical scroll.
+    for (let i = 0; i < 12; i++) {
+      fireEvent.wheel(overlay, { deltaX: 20, deltaY: 0 })
+    }
+    // Long enough for the settle to fire and its decode to be requested.
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 120))
+    })
+
+    // The lane has moved — the pan is not being swallowed — but the twelve intermediate
+    // windows it passed through never reached ffmpeg.
+    expect(screen.getByTestId('trim-lane-start')).not.toHaveAttribute('data-window', '25.00-35.00')
+    expect(waveformWindow.mock.calls.length - before).toBeLessThanOrEqual(2)
   })
 
   // Each lane zooms on its own: a dense head and a silent tail want different

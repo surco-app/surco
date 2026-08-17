@@ -167,14 +167,26 @@ function Lane({
   // the ruler it was drawn against. At ±0.5 s the user could see the gap open between
   // the cut line and the attack it was supposed to be touching, and trusting the
   // drawing meant nudging the cut INTO the transient — the swallowed first beat.
-  // The lane already only re-frames on a zoom or a released drag (see startLane), so
-  // the exact figures do not thrash the query either.
-  const { data: win } = useWaveformWindow(
-    inputPath,
-    Number(fromSec.toFixed(3)),
-    Number(spanSec.toFixed(3)),
-    enabled,
-  )
+  // Requested only once the frame RESTS. A zoom or a released drag moves the window
+  // once and this waits out a single tick, but a wheel pan writes it per event — a
+  // dozen for one swipe — and every distinct (start, span) is both a new cache entry
+  // and a new ffmpeg decode. Enqueuing all of them left the lane seconds behind the
+  // gesture; while the settle waits, the draw below falls back to the overview slice,
+  // so the lane stays live, just coarse. Same rule the Strip uses for its own window.
+  const askedFrom = Number(fromSec.toFixed(3))
+  const askedSpan = Number(spanSec.toFixed(3))
+  const [settled, setSettled] = useState({ from: askedFrom, span: askedSpan })
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setSettled((prev) =>
+        prev.from === askedFrom && prev.span === askedSpan
+          ? prev
+          : { from: askedFrom, span: askedSpan },
+      )
+    }, 40)
+    return () => clearTimeout(id)
+  }, [askedFrom, askedSpan])
+  const { data: win } = useWaveformWindow(inputPath, settled.from, settled.span, enabled)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
     const canvas = canvasRef.current
