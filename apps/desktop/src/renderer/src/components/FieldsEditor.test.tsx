@@ -196,11 +196,20 @@ describe('auto-fill toggle', () => {
     expect(within(row).getByTestId('field-auto-country')).toHaveAttribute('aria-pressed', 'true')
   })
 
-  // "Auto" is three letters carrying a non-obvious meaning, so the row's tooltip has to
-  // say what it does — otherwise the control is a guess.
-  it('explains what the toggle does on hover', () => {
+  // The two toggles repeat identically down every row, which makes them columns — so they
+  // are headed once rather than explained on each button. A heading is read on arrival and
+  // ignored from then on, where a tooltip on all sixteen kept covering the rows below long
+  // after the user had learnt what it meant.
+  it('heads the toggle columns', () => {
+    setup()
+    const head = screen.getByTestId('fields-columns')
+    expect(head).toHaveTextContent(/auto/i)
+    expect(head).toHaveTextContent(/required/i)
+  })
+
+  it('raises no tooltip from the toggle itself', () => {
     setup()
     fireEvent.focusIn(screen.getByTestId('field-auto-title'))
-    expect(screen.getByRole('tooltip')).toHaveTextContent(/fill/i)
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
   })
 })

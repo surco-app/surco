@@ -11,11 +11,13 @@ const ORGANIZED_FEEDBACK_MS = 1500
 
 // The row's column track: name (takes the slack), the two toggles, the two arrows, Hide.
 // A grid rather than a flex row because the toggles repeat down every row and read as
-// columns — and only declared tracks let a heading line up with them. Sizing them by their
-// own text drifts per language (German's "Ausblenden" is twice the width of "Hide"), which
-// no hand-tuned heading offset can follow. `auto` on the last three lets each keep its
-// natural width while staying a column both the row and the heading resolve identically.
-const ROW_GRID = 'grid grid-cols-[1fr_5.5rem_5.5rem_auto_auto_auto] items-center gap-1'
+// columns — and only declared tracks let a heading line up with them. Sizing a control by
+// its own text drifts per language (German's "Ausblenden" is twice the width of "Hide"),
+// which no hand-tuned heading offset can follow. Every track is therefore given an explicit
+// width: the heading is a separate grid, so an `auto` track would resolve from ITS contents
+// (empty) rather than the row's and land the labels in the wrong place — 143px off, as an
+// auto-sized first attempt did. Hide's track fits the longest translation.
+const ROW_GRID = 'grid grid-cols-[1fr_5.5rem_5.5rem_1.75rem_1.75rem_6rem] items-center gap-1'
 
 // Moves fromKey to toKey's slot: dragging down lands it after the target, dragging up
 // before it — how every list DnD reads, so the row stays where the user dropped it.
@@ -78,7 +80,6 @@ export function FieldsEditor({
         }`}
       >
         {tr('settings.autoFill')}
-        <Tooltip label={tr('settings.autoFillHint')} />
       </button>
     )
   }
@@ -127,6 +128,23 @@ export function FieldsEditor({
             {tr(organized ? 'settings.autoOrganized' : 'settings.autoOrganize')}
             <Tooltip label={tr('settings.autoOrganizeHint')} />
           </button>
+        </div>
+        {/* Column headings, laid out on the row's own grid so each label resolves to the
+            same track as the buttons under it — no measured offsets, and nothing to drift
+            when a translation makes a button wider. The empty spans hold the name, arrow
+            and Hide tracks. Aria-hidden: they caption a visual column, and every button
+            already carries its own label and pressed state. */}
+        <div
+          data-testid="fields-columns"
+          aria-hidden="true"
+          className={`${ROW_GRID} mb-1 px-2 text-[10px] uppercase tracking-wide text-fg-faint`}
+        >
+          <span />
+          <span className="text-center">{tr('settings.autoFill')}</span>
+          <span className="text-center">{tr('settings.required')}</span>
+          <span />
+          <span />
+          <span />
         </div>
         <div className="space-y-1.5">
           {visibleFields.map((key, i) => (
