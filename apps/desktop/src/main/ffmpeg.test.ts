@@ -1261,6 +1261,24 @@ describe('tagsFromProbe', () => {
     expect(tagsFromProbe({ format: { tags: { ENERGY: 'high' } } }).energy).toBe('high')
   })
 
+  it('prefers ENERGYLEVEL over an ENERGY frame holding a foreign blob', () => {
+    // Platinum Notes stashes its own base64 payload in TXXX "ENERGY" while leaving the
+    // human 1-10 level in ENERGYLEVEL, the name Mixed In Key and Traktor actually read.
+    // Reading ENERGY first painted that blob into the editor's energy box, and saving
+    // wrote it back as if the user had typed it. The readable level has to win whenever
+    // both are present.
+    const m = tagsFromProbe({
+      format: { tags: { ENERGY: 'eyJhbGciOiJIUzI1NiJ9.blob.xxx', ENERGYLEVEL: '7' } },
+    })
+    expect(m.energy).toBe('7')
+  })
+
+  it('still reads a lone ENERGY frame that carries a real level', () => {
+    // The Mixed In Key-only files that made ENERGY the primary alias must keep working:
+    // preferring ENERGYLEVEL must not mean ignoring ENERGY when it is all there is.
+    expect(tagsFromProbe({ format: { tags: { ENERGY: '8' } } }).energy).toBe('8')
+  })
+
   it('matches tag keys case-insensitively across muxers', () => {
     // WAV/AIFF muxers emit upper- or mixed-case keys; the values must still land
     const m = tagsFromProbe({ format: { tags: { TITLE: 'X', Artist: 'Y', ALBUM_ARTIST: 'Z' } } })
