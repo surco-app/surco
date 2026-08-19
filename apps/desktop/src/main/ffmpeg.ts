@@ -68,7 +68,13 @@ import { renameWithRetry, rescuePath } from './renameRetry'
 import { getSettings } from './settings'
 import { MANAGED_ALIASES, TAG_FIELDS } from './tagFields'
 import { readTagFormats } from './tagFormats'
-import { type CueShift, preservesCuesInPlace, readCueTree, readItunesGrouping } from './tags'
+import {
+  type CueShift,
+  preservesCuesInPlace,
+  readCueTree,
+  readItunesGrouping,
+  readPopmRating,
+} from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
 import { type ChannelWave, WAVEFORM_BUCKETS, WAVEFORM_SAMPLE_RATE } from './waveform'
@@ -444,6 +450,14 @@ async function readMetaUncached(input: string): Promise<MetaRead | null> {
     if (!tags.grouping.trim()) {
       const itunesGrouping = readItunesGrouping(input)
       if (itunesGrouping) tags.grouping = itunesGrouping
+    }
+    // Same gap for the star rating: ffprobe surfaces FLAC's Vorbis RATING comment but never
+    // the ID3 POPM frame, so a track rated in Traktor read back unrated on MP3/AIFF and the
+    // editor showed no stars at all. Fall back to reading POPM through TagLib when the probe
+    // found no rating (ID3 containers only; a no-op elsewhere).
+    if (!tags.rating?.trim()) {
+      const popmRating = readPopmRating(input)
+      if (popmRating) tags.rating = popmRating
     }
     return {
       tags,

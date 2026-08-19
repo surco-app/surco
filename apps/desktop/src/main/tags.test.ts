@@ -33,6 +33,7 @@ import {
   preservesCuesInPlace,
   readCueTree,
   readItunesGrouping,
+  readPopmRating,
   shiftFlacCues,
   writeTags,
 } from './tags'
@@ -745,6 +746,52 @@ describe('writeTags', () => {
     expect(userText(id3, 'MOOD')).toBeUndefined()
     expect(userText(id3, 'ENERGY')).toBeUndefined()
     f.dispose()
+  })
+})
+
+describe('readPopmRating', () => {
+  // Traktor's stars live in a POPM frame, and the bundled ffprobe does not surface POPM at
+  // all — so on MP3/AIFF every rated track read back unrated, and the editor showed no
+  // stars for a file Traktor shows as five. Reading the frame directly is the only way
+  // those ratings reach the editor.
+  it('reads a Traktor five-star POPM the probe cannot see', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-popm-'))
+    const file = buildSeed(dir)
+    writeTags(file, { ...meta, rating: '5' })
+    expect(popmByUser(file, TRAKTOR_RATING_USER)).toBe(255)
+    expect(readPopmRating(file)).toBe('5')
+  })
+
+  // Traktor's byte is the authority: a file rated in both Traktor and WMP carries two POPM
+  // frames whose bytes disagree by design (204 vs 196 for four stars), and picking whichever
+  // came first would make the star count depend on frame order.
+  it('prefers the Traktor frame over a WMP frame that lands first', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-popm-user-'))
+    const file = buildSeed(dir)
+    // The WMP frame is added FIRST and given a byte that reads as a different star count
+    // (51 = one star on Traktor's linear scale) so that simply taking whichever POPM comes
+    // first would answer '1'. Only reading Traktor's own user gives the four stars the DJ set.
+    const seeded = TagFile.createFromPath(file)
+    const id3 = seeded.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+    const wmp = Id3v2PopularimeterFrame.fromUser(WMP_RATING_USER)
+    wmp.rating = 51
+    id3.addFrame(wmp)
+    const traktor = Id3v2PopularimeterFrame.fromUser(TRAKTOR_RATING_USER)
+    traktor.rating = starsToRating(4)
+    id3.addFrame(traktor)
+    seeded.save()
+    seeded.dispose()
+
+    expect(popmByUser(file, WMP_RATING_USER)).toBe(51)
+    expect(popmByUser(file, TRAKTOR_RATING_USER)).toBe(204)
+    expect(readPopmRating(file)).toBe('4')
+  })
+
+  it('returns empty for an unrated file rather than inventing a zero', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-popm-none-'))
+    const file = buildSeed(dir)
+    writeTags(file, { ...meta, rating: '' })
+    expect(readPopmRating(file)).toBe('')
   })
 })
 
