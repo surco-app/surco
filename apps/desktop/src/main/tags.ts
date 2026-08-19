@@ -19,6 +19,7 @@ import {
   type XiphComment,
 } from 'node-taglib-sharp'
 import {
+  ratingToStars,
   starsToRating,
   starsToWmpRating,
   TRAKTOR_RATING_USER,
@@ -89,6 +90,35 @@ export function readItunesGrouping(file: string): string {
             ? text.toString('utf16le')
             : text.toString('latin1')
       return decoded.replace(/\0+$/, '')
+    } finally {
+      f.dispose()
+    }
+  } catch {
+    return ''
+  }
+}
+
+// Traktor's star rating lives in a POPM frame, which the bundled ffprobe never surfaces
+// (unlike FLAC's Vorbis RATING comment) — so on MP3/AIFF a rated track read back unrated
+// and the editor showed no stars for a file Traktor shows as five. This reads the frame
+// directly, preferring Traktor's own user: a file rated in both Traktor and Windows Media
+// Player carries two POPM frames whose bytes disagree by design (204 vs 196 for four
+// stars), so the star count must not depend on which frame happens to come first.
+// Best-effort — returns '' when there's no POPM, no ID3 tag, or the file can't be opened.
+export function readPopmRating(file: string): string {
+  try {
+    const f = TagFile.createFromPath(file)
+    try {
+      const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+      if (!id3) return ''
+      const frames = id3.getFramesByClassType<Id3v2PopularimeterFrame>(
+        Id3v2FrameClassType.PopularimeterFrame,
+      )
+      if (!frames?.length) return ''
+      const byte =
+        Id3v2PopularimeterFrame.find(frames, TRAKTOR_RATING_USER)?.rating ?? frames[0].rating
+      const stars = ratingToStars(byte)
+      return stars > 0 ? String(stars) : ''
     } finally {
       f.dispose()
     }
