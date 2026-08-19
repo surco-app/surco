@@ -19,6 +19,14 @@
       {
         "text": "Convertir un MP3 con «Igual que el origen» ya no infla el archivo. Un MP3 no guarda profundidad de bits —guarda otra cosa—, y Surco se inventaba 24 bits al convertirlo: un MP3 de 320k salía como un FLAC de 60 KB donde 16 bits dan 21 KB, sin ninguna ganancia audible. Ahora sale a 16 bits, con su dither correspondiente. Si conviertes tu colección a FLAC, la diferencia se nota en el disco.",
         "in": "0.86.0"
+      },
+      {
+        "text": "El campo Energía vuelve a mostrar tu nivel de energía. En los archivos pasados por Platinum Notes, Surco leía la etiqueta equivocada y pintaba en la casilla un churro de letras y números —el dato interno que deja esa herramienta— en vez del 7 que tenías puesto. Peor aún: al guardar reescribía ese churro como si lo hubieras tecleado tú. Ahora lee ENERGYLEVEL, que es donde vive el nivel de toda la vida, y los archivos que solo traen ENERGY siguen funcionando igual.",
+        "in": "0.86.1"
+      },
+      {
+        "text": "Las estrellas de Traktor ya se ven en MP3 y AIFF. Traktor guarda la puntuación en un sitio del archivo que la herramienta con la que Surco lee etiquetas no sabe mirar, así que un tema que tenías con cinco estrellas aparecía siempre sin ninguna. No es que se perdieran al convertir: es que no se llegaban a leer. Ahora se leen directamente, y si un archivo viene puntuado a la vez en Traktor y en Windows Media Player manda el valor de Traktor.",
+        "in": "0.86.1"
       }
     ]
   },

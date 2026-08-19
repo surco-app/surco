@@ -19,6 +19,14 @@
       {
         "text": "Converting an MP3 with \"Same as source\" no longer bloats the file. An MP3 has no bit depth to preserve — it stores something else entirely — and Surco was inventing 24 bits for it: a 320k MP3 came out as a 60 KB FLAC where 16-bit gives 21 KB, for nothing audible. It now converts at 16-bit, with the dither that calls for. If you convert your collection to FLAC, the difference shows up on disk.",
         "in": "0.86.0"
+      },
+      {
+        "text": "The Energy field shows your energy level again. On files that had been through Platinum Notes, Surco read the wrong tag and filled the box with a long string of letters and numbers — that tool's own internal data — instead of the 7 you had set. Worse, saving wrote that string back as if you had typed it. It now reads ENERGYLEVEL, where the level has always lived, and files carrying only ENERGY keep working exactly as before.",
+        "in": "0.86.1"
+      },
+      {
+        "text": "Traktor star ratings now show up on MP3 and AIFF. Traktor stores the rating in a part of the file that the library Surco reads tags with cannot see, so a track you had rated five stars always came up unrated. They were not being lost on conversion — they were never being read. Surco now reads them directly, and when a file is rated in both Traktor and Windows Media Player, Traktor's value wins.",
+        "in": "0.86.1"
       }
     ]
   },
