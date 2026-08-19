@@ -52,8 +52,18 @@ export const TAG_FIELDS: TagField[] = [
   // ffmpeg maps these to the real ID3 frames DJ software and Music read (TBPM/TKEY/TPE4);
   // the FLAC muxer has no ID3 mapping and writes keys verbatim, so a Vorbis target gets the
   // comment names Traktor and Mixed In Key read instead.
-  { key: 'bpm', aliases: ['tbpm', 'bpm'], id3: 'TBPM', vorbis: 'BPM' },
-  { key: 'key', aliases: ['tkey', 'initial_key', 'initialkey'], id3: 'TKEY', vorbis: 'INITIALKEY' },
+  // TBP/TKE are the ID3v2.2 spellings of TBPM/TKEY. ffprobe maps v2.2's common frames onto
+  // its own names (TT2 -> title, TP1 -> artist) but passes these two through verbatim, so an
+  // old v2.2 rip would otherwise read back with no key and no BPM. They go last: a file
+  // retagged by a modern tool can keep the three-letter frame beside the current one, and the
+  // frame the user's tagger just wrote is the one that must win.
+  { key: 'bpm', aliases: ['tbpm', 'bpm', 'tbp'], id3: 'TBPM', vorbis: 'BPM' },
+  {
+    key: 'key',
+    aliases: ['tkey', 'initial_key', 'initialkey', 'tke'],
+    id3: 'TKEY',
+    vorbis: 'INITIALKEY',
+  },
   { key: 'publisher', aliases: ['publisher', 'tpub', 'label', 'organization'], id3: 'publisher' },
   // The catalog number has no standard frame, so it rides the de-facto TXXX:CATALOGNUMBER.
   {
