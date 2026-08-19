@@ -109,7 +109,10 @@ export const TAG_FIELDS: TagField[] = [
   // Key writes 1-10, other taggers 1-5, some a word. Validating would mean dropping a
   // value the user's other tools had already written — the very loss this field exists
   // to stop — so it stays free text, like the key or the comment.
-  { key: 'energy', aliases: ['energy', 'energylevel'], id3: 'ENERGY' },
+  // ENERGYLEVEL comes first: Platinum Notes stores its own base64 payload in TXXX
+  // "ENERGY" while leaving the readable 1-10 level in ENERGYLEVEL, so on a file it has
+  // touched the lower-priority name is the only one holding an energy a human wrote.
+  { key: 'energy', aliases: ['energylevel', 'energy'], id3: 'ENERGY' },
   // The four a collector normalizes by, straight off the Discogs release. None has a
   // standard frame, so they ride TXXX (ID3) and a plain Vorbis comment under the exact
   // names mp3tag writes — the tool this was asked for is the one users already run by
