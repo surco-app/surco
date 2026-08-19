@@ -1279,6 +1279,26 @@ describe('tagsFromProbe', () => {
     expect(tagsFromProbe({ format: { tags: { ENERGY: '8' } } }).energy).toBe('8')
   })
 
+  it('reads the key and BPM off an ID3v2.2 tag, which ffprobe leaves untranslated', () => {
+    // ID3v2.2 names frames with three letters, not four. ffprobe maps the common ones onto
+    // its own names (TT2 -> title, TP1 -> artist) but passes TKE and TBP through verbatim,
+    // so without these aliases an old v2.2 rip lands in the editor with its title and artist
+    // filled and the two fields a DJ actually sorts by — key and BPM — silently empty.
+    const m = tagsFromProbe({ format: { tags: { TKE: '8A', TBP: '128' } } })
+    expect(m.key).toBe('8A')
+    expect(m.bpm).toBe('128')
+  })
+
+  it('still prefers the v2.3/v2.4 frame when a file carries both spellings', () => {
+    // A file retagged by a modern tool can keep the old three-letter frame beside the new
+    // one. The current frame is the one the user's tagger just wrote, so it has to win.
+    const m = tagsFromProbe({
+      format: { tags: { TKE: '8A', TKEY: '5A', TBP: '128', TBPM: '140' } },
+    })
+    expect(m.key).toBe('5A')
+    expect(m.bpm).toBe('140')
+  })
+
   it('matches tag keys case-insensitively across muxers', () => {
     // WAV/AIFF muxers emit upper- or mixed-case keys; the values must still land
     const m = tagsFromProbe({ format: { tags: { TITLE: 'X', Artist: 'Y', ALBUM_ARTIST: 'Z' } } })
