@@ -2670,3 +2670,42 @@ describe('App duplicates filter', () => {
     expect(screen.queryByTestId('quality-filter-duplicates')).toBeNull()
   })
 })
+
+describe('drop target', () => {
+  // The tracks land in the sidebar list, so that is where the drag has to answer. The old
+  // full-screen overlay covered both columns — including the one nothing was going to
+  // happen in — to say "drop here" without ever pointing at where "here" was.
+  it('marks the column the tracks will land in, covering nothing', async () => {
+    await renderApp()
+    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+
+    fireEvent.dragEnter(root)
+
+    expect(await screen.findByTestId('drop-ghosts')).toBeInTheDocument()
+    expect(screen.getByTestId('sidebar')).toHaveAttribute('data-drop-over', 'true')
+  })
+
+  it('clears the mark once the pointer really leaves', async () => {
+    await renderApp()
+    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+
+    fireEvent.dragEnter(root)
+    await screen.findByTestId('drop-ghosts')
+    fireEvent.dragLeave(root)
+
+    await waitFor(() => expect(screen.queryByTestId('drop-ghosts')).toBeNull())
+  })
+
+  // The ghost rows stand for "tracks go here", not for how many are coming: the count is
+  // unknown until the folder is expanded, and promising five when forty arrive would be a
+  // worse lie than promising nothing.
+  it('shows a fixed pattern of ghosts, not a count of the dragged files', async () => {
+    await renderApp()
+    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+
+    fireEvent.dragEnter(root)
+    const ghosts = await screen.findByTestId('drop-ghosts')
+
+    expect(ghosts.children.length).toBeGreaterThan(1)
+  })
+})
