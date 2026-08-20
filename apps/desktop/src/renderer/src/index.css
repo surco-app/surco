@@ -857,8 +857,20 @@ textarea {
   }
 }
 
+/* Each row fades in on its own beat so the placeholder list assembles downward — the
+   space filling in the order it will fill for real — instead of all six appearing at once
+   as a block. The same delay then offsets the breathing, so they never pulse in unison. */
+@keyframes drop-ghost-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
 .drop-ghosts > * {
-  animation: drop-ghost-breathe 1.8s ease-in-out infinite;
+  animation:
+    drop-ghost-in 0.24s cubic-bezier(0.2, 0, 0, 1) backwards,
+    drop-ghost-breathe 1.8s ease-in-out infinite;
 }
 
 /* The ghosts still mark the landing spot standing still — the dashed outlines and the lit
