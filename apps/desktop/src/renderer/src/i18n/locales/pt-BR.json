@@ -102,8 +102,11 @@
   },
   "empty": {
     "title": "Adicione faixas para começar.",
-    "subtitle": "Converte suas faixas para AIFF sem perdas, adiciona as tags do Discogs e envia para o Apple Music.",
-    "subtitleNoMusic": "Converte suas faixas para AIFF sem perdas e adiciona as tags do Discogs."
+    "subtitle": "Converte suas faixas para AIFF, WAV, FLAC, ALAC ou MP3, adiciona as tags do Discogs, Bandcamp e Deezer e envia para o Apple Music ou Engine DJ.",
+    "subtitleNoMusic": "Converte suas faixas para AIFF, WAV, FLAC, ALAC ou MP3, adiciona as tags do Discogs, Bandcamp e Deezer e envia para o Engine DJ.",
+    "stepConvert": "converte",
+    "stepTag": "adiciona tags",
+    "stepSend": "envia"
   },
   "errors": {
     "unexpected": "Algo deu errado: {{detail}}",
