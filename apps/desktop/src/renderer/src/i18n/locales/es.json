@@ -624,8 +624,8 @@
     "removeDcOffset": "Eliminar desplazamiento DC (centrar en 0.0)",
     "peakRemoveDc": "Eliminar desplazamiento DC (centrar en 0.0)",
     "peakPerChannel": "Normalizar canales estéreo independientemente",
-    "cueWarning": "Recodifica el audio. Los cues y el beatgrid de Traktor se conservan en MP3 y AIFF, pero se pierden en WAV y FLAC.",
-    "cueWarningShort": "Reencoda el audio · cues se mantienen en MP3/AIFF",
+    "cueWarning": "Recodifica el audio. Los cues y el beatgrid de Traktor se conservan en MP3, AIFF y FLAC; en WAV se pierden.",
+    "cueWarningShort": "Reencoda el audio · cues se mantienen en MP3/AIFF/FLAC",
     "predictionEstimate": "(estimado)",
     "presetHint": {
       "streaming": "Como nivelan Spotify y Apple Music: el valor seguro para una biblioteca de escucha.",
