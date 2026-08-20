@@ -27,6 +27,18 @@
       {
         "text": "Las estrellas de Traktor ya se ven en MP3 y AIFF. Traktor guarda la puntuación en un sitio del archivo que la herramienta con la que Surco lee etiquetas no sabe mirar, así que un tema que tenías con cinco estrellas aparecía siempre sin ninguna. No es que se perdieran al convertir: es que no se llegaban a leer. Ahora se leen directamente, y si un archivo viene puntuado a la vez en Traktor y en Windows Media Player manda el valor de Traktor.",
         "in": "0.86.1"
+      },
+      {
+        "text": "Los avisos sobre los cues de Traktor ya no te asustan sin motivo. Al convertir a FLAC, Surco te decía que perderías los puntos de cue, y no es verdad: los conserva. El aviso llevaba equivocado desde que se añadió esa conservación, así que si evitabas FLAC por eso, ya puedes usarlo con tranquilidad. WAV sigue siendo el único formato donde los cues se pierden de verdad.",
+        "in": "0.86.2"
+      },
+      {
+        "text": "La tonalidad y los BPM se leen en archivos más antiguos. Las etiquetas de tres letras que usaban los programas de hace años pasaban desapercibidas, y una pista bien etiquetada aparecía vacía. Ahora se leen, así que buena parte de esas carpetas viejas dejan de necesitar un repaso a mano.",
+        "in": "0.86.2"
+      },
+      {
+        "text": "La pantalla de inicio se ha rehecho. El disco de Surco gira mientras esperas, y el texto por fin cuenta lo que la app hace de verdad: los cinco formatos a los que convierte, las tres fuentes de las que saca las etiquetas y los dos destinos a los que manda la música.",
+        "in": "0.86.2"
       }
     ]
   },

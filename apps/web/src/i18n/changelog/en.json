@@ -27,6 +27,18 @@
       {
         "text": "Traktor star ratings now show up on MP3 and AIFF. Traktor stores the rating in a part of the file that the library Surco reads tags with cannot see, so a track you had rated five stars always came up unrated. They were not being lost on conversion — they were never being read. Surco now reads them directly, and when a file is rated in both Traktor and Windows Media Player, Traktor's value wins.",
         "in": "0.86.1"
+      },
+      {
+        "text": "The Traktor cue warnings no longer scare you off for nothing. Converting to FLAC told you the cue points would be lost, and that isn't true — they are kept. The warning had been wrong ever since that preservation was added, so if you were avoiding FLAC because of it, go ahead. WAV is still the one format where cues really are lost.",
+        "in": "0.86.2"
+      },
+      {
+        "text": "Key and BPM are read on older files. The three-letter tags that programs used years ago went unnoticed, so a properly tagged track showed up empty. They are read now, which means a good chunk of those old folders no longer needs a pass by hand.",
+        "in": "0.86.2"
+      },
+      {
+        "text": "The start screen has been rebuilt. The Surco record turns while you wait, and the text finally says what the app actually does: the five formats it converts to, the three sources it tags from and the two places it sends your music.",
+        "in": "0.86.2"
       }
     ]
   },
