@@ -103,10 +103,7 @@
   "empty": {
     "title": "Add tracks to get started.",
     "subtitle": "Converts your tracks to AIFF, WAV, FLAC, ALAC or MP3, tags them from Discogs, Bandcamp and Deezer, and sends them to Apple Music or Engine DJ.",
-    "subtitleNoMusic": "Converts your tracks to AIFF, WAV, FLAC, ALAC or MP3, tags them from Discogs, Bandcamp and Deezer, and sends them to Engine DJ.",
-    "stepConvert": "converts",
-    "stepTag": "tags",
-    "stepSend": "sends"
+    "subtitleNoMusic": "Converts your tracks to AIFF, WAV, FLAC, ALAC or MP3, tags them from Discogs, Bandcamp and Deezer, and sends them to Engine DJ."
   },
   "errors": {
     "unexpected": "Something went wrong: {{detail}}",
