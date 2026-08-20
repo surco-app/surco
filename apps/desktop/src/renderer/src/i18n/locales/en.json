@@ -97,9 +97,6 @@
     "selectedCount_one": "{{count}} selected",
     "selectedCount_other": "{{count}} selected"
   },
-  "drop": {
-    "release": "Drop to add"
-  },
   "empty": {
     "title": "Add tracks to get started.",
     "subtitle": "Converts your tracks to AIFF, WAV, FLAC, ALAC or MP3, tags them from Discogs, Bandcamp and Deezer, and sends them to Apple Music or Engine DJ.",
