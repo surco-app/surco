@@ -29,4 +29,15 @@ describe('EmptyDisc', () => {
     render(<EmptyDisc />)
     expect(screen.getByTestId('empty-disc')).toHaveAttribute('aria-hidden', 'true')
   })
+
+  // The entrance fades the whole svg in; the spin lives on the platter inside it. Putting
+  // both on one element would mean two animations writing transform, and the entrance —
+  // declared second — would win and freeze the rotation for its duration.
+  it('keeps the entrance off the element that spins', () => {
+    render(<EmptyDisc />)
+    const svg = screen.getByTestId('empty-disc')
+    expect(svg).toHaveClass('empty-disc-in')
+    expect(svg).not.toHaveClass('empty-disc-spin')
+    expect(screen.getByTestId('empty-disc-platter')).not.toHaveClass('empty-disc-in')
+  })
 })

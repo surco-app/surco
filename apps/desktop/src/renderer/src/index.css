@@ -789,3 +789,42 @@ textarea {
     animation: none;
   }
 }
+
+/* The empty state arriving. The record settles in from slightly small while it is already
+   turning, then the copy rises under it — the app opening rather than the window simply
+   being full. The scale sits on the outer svg because the platter inside owns transform for
+   the spin; one element carrying both would let this entrance overwrite the rotation for its
+   duration. Short and close-range, matching .result-in: this plays on every launch, and a
+   long entrance is a toll on the fiftieth. */
+@keyframes empty-disc-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+.empty-disc-in {
+  animation: empty-disc-in 0.34s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+@keyframes empty-copy-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+
+/* The three lines follow the disc in reading order, each a beat behind the last, so the eye
+   is walked down to the steps instead of meeting the whole block at once. */
+.empty-copy-in {
+  animation: empty-copy-in 0.28s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+/* The arrival is pure presentation — every element is already in its final place, so cutting
+   it costs nothing but the movement. The disc keeps turning; that is handled on its own rule. */
+@media (prefers-reduced-motion: reduce) {
+  .empty-disc-in,
+  .empty-copy-in {
+    animation: none;
+  }
+}
