@@ -766,3 +766,26 @@ textarea {
     animation: none;
   }
 }
+
+/* The empty state's record turns slowly — 12s a revolution, about 5rpm. Fast enough that
+   the app never looks frozen, slow enough that the eye isn't dragged into following the
+   groove mark while reading the copy beside it. transform-origin is given in viewBox units
+   because the SVG's own centre, not the element box, is the spindle. */
+@keyframes empty-disc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-disc-spin {
+  transform-origin: 512px 512px;
+  animation: empty-disc-spin 12s linear infinite;
+}
+
+/* The disc reads the same standing still — the grooves, label and waveform are all there,
+   so nothing is lost but the turning. */
+@media (prefers-reduced-motion: reduce) {
+  .empty-disc-spin {
+    animation: none;
+  }
+}
