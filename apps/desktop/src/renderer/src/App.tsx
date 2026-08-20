@@ -1,5 +1,4 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { AudioLines } from 'lucide-react'
 import type React from 'react'
 import {
   lazy,
@@ -26,6 +25,7 @@ import type {
 } from '../../shared/types'
 import { ActivityPanel } from './components/ActivityPanel'
 import { Confetti } from './components/Confetti'
+import { EmptyDisc } from './components/EmptyDisc'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Overlays } from './components/Overlays'
 import { LivePlayer } from './components/Player'
@@ -1830,11 +1830,9 @@ export default function App(): React.JSX.Element {
                 ) : (
                   <div className="flex h-full items-center justify-center p-10 text-center">
                     <div className="max-w-sm">
-                      <AudioLines
-                        aria-hidden="true"
-                        strokeWidth={1.75}
-                        className="mx-auto mb-5 h-12 w-12 text-fg-faint"
-                      />
+                      <div className="mb-5 flex justify-center text-fg-faint">
+                        <EmptyDisc />
+                      </div>
                       <p className="text-[15px] font-medium text-balance text-fg-muted">
                         {tr('empty.title')}
                       </p>
@@ -1845,6 +1843,26 @@ export default function App(): React.JSX.Element {
                             : 'empty.subtitleNoMusic',
                         )}
                       </p>
+                      <div
+                        data-testid="empty-steps"
+                        className="mt-4 flex flex-wrap items-center justify-center gap-1.5 text-xs text-fg-faint"
+                      >
+                        <span className="rounded-full border border-[var(--color-line)] px-2.5 py-1">
+                          {tr('empty.stepConvert')}
+                        </span>
+                        <span aria-hidden="true" className="opacity-50">
+                          →
+                        </span>
+                        <span className="rounded-full border border-[var(--color-line)] px-2.5 py-1">
+                          {tr('empty.stepTag')}
+                        </span>
+                        <span aria-hidden="true" className="opacity-50">
+                          →
+                        </span>
+                        <span className="rounded-full border border-[var(--color-line)] px-2.5 py-1">
+                          {tr('empty.stepSend')}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )}

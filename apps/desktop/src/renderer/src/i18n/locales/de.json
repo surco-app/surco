@@ -102,8 +102,11 @@
   },
   "empty": {
     "title": "Füg Tracks hinzu, um loszulegen.",
-    "subtitle": "Konvertiert deine Tracks in verlustfreies AIFF, taggt sie mit Discogs und schickt sie an Apple Music.",
-    "subtitleNoMusic": "Konvertiert deine Tracks in verlustfreies AIFF und taggt sie mit Discogs."
+    "subtitle": "Konvertiert deine Tracks in AIFF, WAV, FLAC, ALAC oder MP3, taggt sie mit Discogs, Bandcamp und Deezer und schickt sie an Apple Music oder Engine DJ.",
+    "subtitleNoMusic": "Konvertiert deine Tracks in AIFF, WAV, FLAC, ALAC oder MP3, taggt sie mit Discogs, Bandcamp und Deezer und schickt sie an Engine DJ.",
+    "stepConvert": "konvertiert",
+    "stepTag": "taggt",
+    "stepSend": "schickt"
   },
   "errors": {
     "unexpected": "Etwas ist schiefgelaufen: {{detail}}",
