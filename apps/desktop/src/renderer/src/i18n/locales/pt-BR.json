@@ -97,9 +97,6 @@
     "selectedCount_one": "{{count}} selecionada",
     "selectedCount_other": "{{count}} selecionadas"
   },
-  "drop": {
-    "release": "Solte para adicionar"
-  },
   "empty": {
     "title": "Adicione faixas para começar.",
     "subtitle": "Converte suas faixas para AIFF, WAV, FLAC, ALAC ou MP3, adiciona as tags do Discogs, Bandcamp e Deezer e envia para o Apple Music ou Engine DJ.",
