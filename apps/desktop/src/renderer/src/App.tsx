@@ -1833,10 +1833,16 @@ export default function App(): React.JSX.Element {
                       <div className="mb-5 flex justify-center text-fg-faint">
                         <EmptyDisc />
                       </div>
-                      <p className="text-[15px] font-medium text-balance text-fg-muted">
+                      <p
+                        className="empty-copy-in text-[15px] font-medium text-balance text-fg-muted"
+                        style={{ animationDelay: '0.10s' }}
+                      >
                         {tr('empty.title')}
                       </p>
-                      <p className="mt-1.5 text-sm text-pretty text-fg-dim">
+                      <p
+                        className="empty-copy-in mt-1.5 text-sm text-pretty text-fg-dim"
+                        style={{ animationDelay: '0.16s' }}
+                      >
                         {tr(
                           window.api.platform === 'darwin'
                             ? 'empty.subtitle'
@@ -1845,7 +1851,8 @@ export default function App(): React.JSX.Element {
                       </p>
                       <div
                         data-testid="empty-steps"
-                        className="mt-4 flex flex-wrap items-center justify-center gap-1.5 text-xs text-fg-faint"
+                        className="empty-copy-in mt-4 flex flex-wrap items-center justify-center gap-1.5 text-xs text-fg-faint"
+                        style={{ animationDelay: '0.22s' }}
                       >
                         <span className="rounded-full border border-[var(--color-line)] px-2.5 py-1">
                           {tr('empty.stepConvert')}
