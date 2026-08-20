@@ -119,6 +119,10 @@ import type { CopiedTags, TrackItem } from './types'
 // pointer across the list while scrolling doesn't fire a prefetch for every row.
 const PREFETCH_HOVER_MS = 150
 
+// Widths for the placeholder rows shown while a drag is over the window. Uneven on
+// purpose — equal bars read as a loading skeleton, ragged ones as track titles.
+const GHOST_ROWS = [62, 48, 70, 41, 55, 50, 66, 44, 58] as const
+
 // The editor (DiscogsPanel, metadata form, every section) is dead weight on first
 // paint, which shows the empty pane — split it into its own chunk, loaded the first
 // time a track is selected. The .then unwraps the named export React.lazy needs as a
@@ -1661,11 +1665,15 @@ export default function App(): React.JSX.Element {
             <div className="flex min-h-0 flex-1">
               <aside
                 data-testid="sidebar"
+                // The drag answers here because this is the column the tracks land in. The
+                // styling hangs off a data attribute rather than a class so the drop state
+                // is readable in the DOM (and in tests) as state, not as styling.
+                data-drop-over={dragging || undefined}
                 style={{ width: sidebar.width }}
                 // Clips its own children: the player enters on translateY(100%), so without
                 // this it is briefly drawn a card's height below the column and the page
                 // grows a scrollbar that flashes and disappears.
-                className="relative flex min-h-0 shrink-0 flex-col overflow-hidden bg-[var(--color-panel)]"
+                className="drop-column relative flex min-h-0 shrink-0 flex-col overflow-hidden bg-[var(--color-panel)]"
               >
                 <div ref={listScrollRef} className="min-h-0 flex-1 overflow-y-auto">
                   {tracks.length === 0 ? (
@@ -1772,6 +1780,26 @@ export default function App(): React.JSX.Element {
                     onClose={closePlayer}
                   />
                 )}
+
+                {tracks.length === 0 && dragging && (
+                  // The shape of the list that is about to exist, drawn in the space it will
+                  // fill. A fixed pattern on purpose: the real count isn't known until the
+                  // dropped folders are expanded, so a number here would be a guess the user
+                  // then watches turn out wrong.
+                  <div
+                    data-testid="drop-ghosts"
+                    aria-hidden="true"
+                    className="drop-ghosts pointer-events-none absolute inset-x-3 top-40 flex flex-col gap-2"
+                  >
+                    {GHOST_ROWS.map((width, i) => (
+                      <div
+                        key={width}
+                        style={{ width: `${width}%`, animationDelay: `${i * 0.09}s` }}
+                        className="h-6 rounded-md border border-dashed border-[var(--color-accent)]/45 bg-[var(--color-accent)]/5"
+                      />
+                    ))}
+                  </div>
+                )}
               </aside>
 
               <ResizeHandle
@@ -1860,14 +1888,6 @@ export default function App(): React.JSX.Element {
                 )}
               </main>
             </div>
-
-            {dragging && (
-              <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-[var(--color-accent)]/10 ring-2 ring-inset ring-[var(--color-accent)]">
-                <span className="rounded-xl bg-[var(--color-panel)] px-6 py-3 text-lg font-medium">
-                  {tr('drop.release')}
-                </span>
-              </div>
-            )}
 
             {/* The lazy overlays load their chunk on first open; fallback={null} because an
           overlay arriving a frame late is invisible (it fades in anyway). */}

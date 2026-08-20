@@ -97,9 +97,6 @@
     "selectedCount_one": "{{count}} ausgewählt",
     "selectedCount_other": "{{count}} ausgewählt"
   },
-  "drop": {
-    "release": "Loslassen zum Hinzufügen"
-  },
   "empty": {
     "title": "Füg Tracks hinzu, um loszulegen.",
     "subtitle": "Konvertiert deine Tracks in AIFF, WAV, FLAC, ALAC oder MP3, taggt sie mit Discogs, Bandcamp und Deezer und schickt sie an Apple Music oder Engine DJ.",
