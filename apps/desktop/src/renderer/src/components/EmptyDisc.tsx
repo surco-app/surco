@@ -12,7 +12,7 @@ export function EmptyDisc(): React.JSX.Element {
       data-testid="empty-disc"
       aria-hidden="true"
       viewBox="0 0 1024 1024"
-      className="h-32 w-32"
+      className="empty-disc-in h-32 w-32"
     >
       <defs>
         <radialGradient id="empty-disc-label-fill" cx="0.4" cy="0.34" r="0.9">
@@ -29,7 +29,9 @@ export function EmptyDisc(): React.JSX.Element {
           <circle cx="512" cy="512" r="212" />
         </g>
         {/* Load-bearing, not decoration: the grooves are perfectly concentric, so without an
-            asymmetric mark the rotation is invisible — every frame looks the same. */}
+            asymmetric mark the rotation is invisible — every frame looks the same. The
+            player's coverless vinyl solves the same problem with conic wedges (.player-vinyl
+            in index.css); an arc suits an outlined disc where a tonal sweep would not. */}
         <path
           data-testid="empty-disc-mark"
           d="M 512 220 A 292 292 0 0 1 706 296"
