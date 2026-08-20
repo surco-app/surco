@@ -68,6 +68,7 @@ import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { deriveTagPatches } from './lib/deriveTags'
+import { createDragDepth } from './lib/dragDepth'
 import type { Destination } from './lib/destination'
 import { normalizeImportFields } from '../../shared/defaults'
 import { DEFAULT_REQUIRED_FIELDS } from './lib/fields'
@@ -249,6 +250,10 @@ export default function App(): React.JSX.Element {
   )
   const dragging = useAppStore(store, (s) => s.dragging)
   const setDragging = useCallback((d: boolean) => store.setState({ dragging: d }), [store])
+  // Counts drag enters so crossing onto a child doesn't read as leaving the window. In a
+  // ref, not state: the depth changes on every element boundary the pointer crosses, and
+  // only its inside/outside answer is worth a render.
+  const dragDepth = useRef(createDragDepth())
   const copiedMeta = useAppStore(store, (s) => s.copiedMeta)
   const setCopiedMeta = useCallback(
     (m: CopiedTags | null) => store.setState({ copiedMeta: m }),
@@ -572,7 +577,7 @@ export default function App(): React.JSX.Element {
 
   async function onDrop(e: React.DragEvent): Promise<void> {
     e.preventDefault()
-    setDragging(false)
+    setDragging(dragDepth.current.reset())
     const dropped = Array.from(e.dataTransfer.files).map((f) => window.api.getPathForFile(f))
     addPaths(await window.api.expandPaths(dropped))
   }
@@ -1603,11 +1608,12 @@ export default function App(): React.JSX.Element {
           {/* biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control */}
           <div
             className="flex h-screen flex-col"
+            onDragEnter={() => setDragging(dragDepth.current.enter())}
             onDragOver={(e) => {
+              // Only to keep the drop allowed; the hint is driven by enter/leave counting.
               e.preventDefault()
-              setDragging(true)
             }}
-            onDragLeave={() => setDragging(false)}
+            onDragLeave={() => setDragging(dragDepth.current.leave())}
             onDrop={onDrop}
           >
             {/* Music preview playback — there is no speech to caption. The clock
