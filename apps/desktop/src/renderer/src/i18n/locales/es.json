@@ -103,10 +103,7 @@
   "empty": {
     "title": "Añade pistas para empezar.",
     "subtitle": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp y Deezer, y las manda a Apple Music o Engine DJ.",
-    "subtitleNoMusic": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp y Deezer, y las manda a Engine DJ.",
-    "stepConvert": "convierte",
-    "stepTag": "etiqueta",
-    "stepSend": "envía"
+    "subtitleNoMusic": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp y Deezer, y las manda a Engine DJ."
   },
   "errors": {
     "unexpected": "Algo ha fallado: {{detail}}",

@@ -1849,27 +1849,6 @@ export default function App(): React.JSX.Element {
                             : 'empty.subtitleNoMusic',
                         )}
                       </p>
-                      <div
-                        data-testid="empty-steps"
-                        className="empty-copy-in mt-4 flex flex-wrap items-center justify-center gap-1.5 text-xs text-fg-faint"
-                        style={{ animationDelay: '0.22s' }}
-                      >
-                        <span className="rounded-full border border-[var(--color-line)] px-2.5 py-1">
-                          {tr('empty.stepConvert')}
-                        </span>
-                        <span aria-hidden="true" className="opacity-50">
-                          →
-                        </span>
-                        <span className="rounded-full border border-[var(--color-line)] px-2.5 py-1">
-                          {tr('empty.stepTag')}
-                        </span>
-                        <span aria-hidden="true" className="opacity-50">
-                          →
-                        </span>
-                        <span className="rounded-full border border-[var(--color-line)] px-2.5 py-1">
-                          {tr('empty.stepSend')}
-                        </span>
-                      </div>
                     </div>
                   </div>
                 )}
