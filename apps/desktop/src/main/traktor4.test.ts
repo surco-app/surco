@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { shiftTraktorCues } from './traktor4'
+import { readTraktorMarkers, shiftTraktorCues } from './traktor4'
 import {
   buildTraktorTree as buildTree,
   traktorCue as cue,
@@ -116,5 +116,36 @@ describe('shiftTraktorCues', () => {
     const wrongMagic = new Uint8Array(tree)
     wrongMagic[0] = 0x58
     expect(shiftTraktorCues(wrongMagic, 500)).toBeNull()
+  })
+})
+
+describe('readTraktorMarkers', () => {
+  // Real Traktor MP3s carry the TRMD tree in a PRIV frame padded out with zeroes — 512 of
+  // them on every one of djotas' eight files. The walk demanded that the tree end exactly
+  // at the frame's last byte, so every single one of those files read back as "no cues",
+  // and a FLAC conversion carried none. shiftTraktorCues already trimmed this tail before
+  // walking (its own comment assumed only FLAC's basE91 armoring padded); the read path
+  // never did, so the two disagreed about the same bytes.
+  it('reads cues out of a tree padded with trailing zeroes', () => {
+    const tree = buildTree([cue('Intro', 0, 1000, 0), cue('Drop', 0, 60000, 1)])
+    const padded = new Uint8Array(tree.length + 512)
+    padded.set(tree, 0)
+
+    const markers = readTraktorMarkers(padded)
+
+    expect(markers.map((m) => m.name)).toEqual(['Intro', 'Drop'])
+    expect(markers.map((m) => Math.round(m.startMs))).toEqual([1000, 60000])
+  })
+
+  // The trim is only ever allowed to drop padding: a non-zero tail means these are bytes
+  // in a layout we have not reverse-engineered, and reading cues out of a tree we do not
+  // fully understand risks writing back something Traktor reads as wrong positions.
+  it('refuses a tree whose tail is not padding', () => {
+    const tree = buildTree([cue('Intro', 0, 1000, 0)])
+    const dirty = new Uint8Array(tree.length + 8)
+    dirty.set(tree, 0)
+    dirty[tree.length + 3] = 0x42
+
+    expect(readTraktorMarkers(dirty)).toEqual([])
   })
 })
