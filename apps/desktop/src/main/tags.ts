@@ -27,6 +27,7 @@ import {
 } from '../shared/rating'
 import type { TrackMetadata } from '../shared/types'
 import { decodeBase91, encodeBase91 } from './base91'
+import { mixedInKeyCuesToTraktorTree, parseMixedInKeyCues } from './mixedInKey'
 import { shiftTraktorCues } from './traktor4'
 
 // Every ID3 container we write gets v2.3, pinned per tag rather than through the
@@ -241,8 +242,19 @@ function readTraktorTree(source: string): Uint8Array | null {
       const tag = src.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
       const priv = tag?.frames.find(isTraktorPriv)
       if (priv) return priv.privateData.toByteArray()
-      const geob = tag?.frames.find((fr) => fr.frameId.toString() === 'GEOB')
-      return geob ? geobPayload(geob.render(4).toByteArray()) : null
+      // Every GEOB, not the first: a Mixed In Key file puts "Key" and "Energy" ahead of
+      // anything else, so Traktor's object is rarely the one at the front.
+      let mikCues: Uint8Array | null = null
+      for (const frame of tag?.frames ?? []) {
+        if (frame.frameId.toString() !== 'GEOB') continue
+        const parts = geobParts(frame.render(4).toByteArray())
+        if (!parts) continue
+        if (isTraktorGeob(parts.description)) return parts.payload
+        // Kept aside rather than returned on the spot: Traktor's own object always wins,
+        // and it may still be sitting further down the frame list.
+        if (parts.description === MIK_CUE_GEOB) mikCues = translateMixedInKey(parts.payload)
+      }
+      return mikCues
     } finally {
       src.dispose()
     }
@@ -275,15 +287,44 @@ export function readCueTree(file: string): Uint8Array | null {
   }
 }
 
-// Strips a rendered GEOB frame down to its stored object: past the 10-byte frame header,
-// the encoding byte, then the three NUL-terminated strings that precede the payload.
-function geobPayload(rendered: Uint8Array): Uint8Array | null {
+// Splits a rendered GEOB frame into the three NUL-terminated strings that describe the
+// stored object and the payload itself: past the 10-byte frame header and the encoding
+// byte come MIME type, filename and description.
+function geobParts(rendered: Uint8Array): { description: string; payload: Uint8Array } | null {
   let at = 11
+  const fields: string[] = []
   for (let field = 0; field < 3; field++) {
+    const start = at
     while (at < rendered.length && rendered[at] !== 0) at++
+    fields.push(String.fromCharCode(...rendered.subarray(start, at)))
     at++
   }
-  return at < rendered.length ? rendered.subarray(at) : null
+  if (at >= rendered.length) return null
+  return { description: fields[2], payload: rendered.subarray(at) }
+}
+
+// GEOB is a generic ID3 container, not Traktor's private frame: Mixed In Key stores "Key",
+// "Energy", "CuePoints" and "BeatGrid" there, Serato its "Serato Overview" waveform and
+// "Serato Markers2". Taking whichever GEOB came first shipped a 69-byte key string into
+// the FLAC's Traktor cue field on a file Mixed In Key had touched — and which object won
+// depended on the order the tools happened to write them in, so the same conversion gave
+// different results on different tracks. Only Traktor's own object carries a TRMD tree.
+function isTraktorGeob(description: string): boolean {
+  return description === 'TRAKTOR4'
+}
+
+// Mixed In Key's cue object. Its payload is base64'd JSON, not the binary tree Traktor
+// reads, so a track analysed only by Mixed In Key reached a FLAC with no cues at all —
+// the positions were right there in the file, just in the wrong alphabet.
+const MIK_CUE_GEOB = 'CuePoints'
+
+function translateMixedInKey(payload: Uint8Array): Uint8Array | null {
+  try {
+    const json = Buffer.from(String.fromCharCode(...payload), 'base64').toString('utf8')
+    return mixedInKeyCuesToTraktorTree(parseMixedInKeyCues(json))
+  } catch {
+    return null
+  }
 }
 
 function isTraktorPriv(frame: Id3v2Frame): frame is Id3v2PrivateFrame {
