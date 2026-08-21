@@ -39,6 +39,18 @@
       {
         "text": "La pantalla de inicio se ha rehecho. El disco de Surco gira mientras esperas, y el texto por fin cuenta lo que la app hace de verdad: los cinco formatos a los que convierte, las tres fuentes de las que saca las etiquetas y los dos destinos a los que manda la música.",
         "in": "0.86.2"
+      },
+      {
+        "text": "Los cues de Traktor vuelven a viajar al convertir. Los MP3 que Traktor escribe llevan un relleno al final de sus datos, y Surco descartaba la información entera al encontrarlo: los cues y la rejilla no llegaban al archivo convertido. Ahora se leen y se copian con las posiciones exactas que pusiste, sin moverlas ni un milisegundo.",
+        "in": "0.86.3"
+      },
+      {
+        "text": "Los cues de Mixed In Key también se conservan. Si tus pistas vienen analizadas con Mixed In Key, sus puntos se traducen al formato de Traktor al convertir, así que ya no se quedan por el camino. Y las etiquetas de otros programas dejan de colarse donde no deben: antes, en algunos archivos, la tonalidad acababa escrita en el sitio de los cues.",
+        "in": "0.86.3"
+      },
+      {
+        "text": "Al arrastrar música, la columna donde va a caer se ilumina. Antes un panel tapaba la ventana entera para decir «suelta aquí» sin señalar dónde era «aquí»; ahora se marca la lista y aparece el hueco que van a ocupar las pistas. De paso, el aviso ya no parpadea al mover el ratón.",
+        "in": "0.86.3"
       }
     ]
   },

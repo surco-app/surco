@@ -39,6 +39,18 @@
       {
         "text": "The start screen has been rebuilt. The Surco record turns while you wait, and the text finally says what the app actually does: the five formats it converts to, the three sources it tags from and the two places it sends your music.",
         "in": "0.86.2"
+      },
+      {
+        "text": "Traktor cues travel across a conversion again. The MP3s Traktor writes carry padding at the end of their data, and Surco threw the whole thing away when it found it — cues and beatgrid never reached the converted file. They are read and copied now, at the exact positions you set, without moving them by a millisecond.",
+        "in": "0.86.3"
+      },
+      {
+        "text": "Mixed In Key cues are kept too. If your tracks come analysed by Mixed In Key, its points are translated into Traktor's format on conversion instead of being left behind. And other tools' tags stop landing where they shouldn't: on some files the key used to end up written into the cue field.",
+        "in": "0.86.3"
+      },
+      {
+        "text": "Dragging music now lights up the column it will land in. A panel used to cover the whole window to say \"drop here\" without pointing at where \"here\" was; the list is marked instead, showing the space the tracks are about to fill. The hint also stops flickering as you move the mouse.",
+        "in": "0.86.3"
       }
     ]
   },
