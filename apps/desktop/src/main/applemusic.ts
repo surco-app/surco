@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
+import log from 'electron-log/main'
 import type { AppleMusicLookupCandidate, OutputFormat, TrackMetadata } from '../shared/types'
 import { createConcurrencyLimiter } from './analysisLimiter'
 
@@ -25,7 +26,13 @@ async function runOsascript(script: string, options?: { maxBuffer?: number }): P
     const { stdout } = await run('osascript', ['-e', script], { encoding: 'utf8', ...options })
     return stdout
   } catch (err) {
-    throw osascriptError(err)
+    const failure = osascriptError(err)
+    // The script goes to the log, never to the user: Music reports a failure by quoting its
+    // own error ("Argument out of range: index must be less than -1") with no hint of which
+    // statement raised it, and these scripts are assembled per track from the editor's
+    // fields — so without the exact text that ran, the message names nothing to fix.
+    log.error('osascript failed', failure.message, '\n--- script ---\n', script)
+    throw failure
   }
 }
 

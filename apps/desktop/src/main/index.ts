@@ -983,7 +983,14 @@ function registerIpc(): void {
           activity.track(
             'applemusic',
             'activity.appleMusicAdd',
-            () => addToAppleMusic(target, meta, coverPath),
+            () =>
+              addToAppleMusic(target, meta, coverPath).catch((err) => {
+                // The conversion path's own add — the one a "convert and send" runs, and the
+                // one that reaches users. It failed silently into the renderer's toast, which
+                // shows AppleScript's wording and names neither the file nor the step.
+                log.error('process:appleMusic add failed', target, err)
+                throw err
+              }),
             { labelParams: { track } },
           ),
         )
@@ -994,7 +1001,13 @@ function registerIpc(): void {
           activity.track(
             'applemusic',
             'activity.appleMusicUpdate',
-            () => updateInAppleMusic(persistentId, meta, coverPath),
+            () =>
+              updateInAppleMusic(persistentId, meta, coverPath).catch((err) => {
+                // Writes every field onto an existing library copy, so it touches far more
+                // of Music's scripting surface than the add — and fails the same silent way.
+                log.error('process:appleMusic update failed', persistentId, err)
+                throw err
+              }),
             { labelParams: { track } },
           ),
         )
