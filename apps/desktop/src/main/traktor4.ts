@@ -35,9 +35,11 @@ function tagAt(tree: Uint8Array, off: number): string {
   return String.fromCharCode(tree[off + 3], tree[off + 2], tree[off + 1], tree[off])
 }
 
-function checksum(tree: Uint8Array, chksOff: number): number {
+// `end` is the tree's declared end, not the buffer's: a padded PRIV or basE91 blob has
+// zeroes past it that Traktor never summed.
+function checksum(tree: Uint8Array, chksOff: number, end: number): number {
   let sum = 0
-  for (let i = 8; i < tree.length - 4; i++) {
+  for (let i = 8; i < end - 4; i++) {
     // The CHKS value itself is summed as zero — Traktor computes it before
     // writing the field.
     if (i >= chksOff && i < chksOff + 4) continue
@@ -57,6 +59,15 @@ function walkTraktorTree(
 ): { view: DataView; cueps: { off: number; len: number }[]; chksOff: number } | null {
   if (tree.length < CUE_HEADER_BYTES || tagAt(tree, 0) !== 'TRMD') return null
   const view = new DataView(tree.buffer, tree.byteOffset, tree.byteLength)
+  // The header's length is authoritative about where the tree ends, and real files pad
+  // past it: FLAC's basE91 armoring rounds up to a whole block, and Traktor's own ID3
+  // PRIV frames carry a 512-byte zero tail (every one of djotas' eight MP3s). Demanding
+  // the walk consume the buffer exactly made all of them read back as "no cues at all".
+  // Only zeroes may be dropped — anything else is a layout we have not decoded, and
+  // reading cues out of a tree we don't fully understand is how wrong positions ship.
+  const declared = CUE_HEADER_BYTES + view.getUint32(4, true)
+  if (declared > tree.length) return null
+  for (let i = declared; i < tree.length; i++) if (tree[i] !== 0) return null
 
   let chksOff = -1
   const cueps: { off: number; len: number }[] = []
@@ -78,12 +89,12 @@ function walkTraktorTree(
     if (tag === 'CUEP') cueps.push({ off: cursor, len: length })
     return cursor + length
   }
-  const consumed = walk(0, tree.length)
-  if (consumed !== tree.length || chksOff === -1) return null
+  const consumed = walk(0, declared)
+  if (consumed !== declared || chksOff === -1) return null
 
   // Only touch blobs whose checksum we can reproduce: a mismatch means a
   // scheme (or a corruption) we don't understand.
-  if (checksum(tree, chksOff) !== view.getUint32(chksOff, true)) return null
+  if (checksum(tree, chksOff, declared) !== view.getUint32(chksOff, true)) return null
 
   return { view, cueps, chksOff }
 }
@@ -204,7 +215,8 @@ export function shiftTraktorCues(
       }
     }
 
-    view.setUint32(chksOff, checksum(tree, chksOff), true)
+    // Already trimmed to its declared length above, so the buffer end IS the tree end.
+    view.setUint32(chksOff, checksum(tree, chksOff, tree.length), true)
     return tree
   } catch {
     return null
