@@ -1,4 +1,5 @@
 import { app, ipcMain, shell } from 'electron'
+import log from 'electron-log/main'
 import type { AppleMusicAddJob, AppleMusicUpdateJob, TrackMetadata } from '../shared/types'
 import { activity } from './activity'
 import { loadLibraryCache, saveLibraryCache } from './appleMusicLibraryCache'
@@ -80,7 +81,16 @@ export function registerAppleMusicIpc(): void {
                 upscale: settings.coverUpscale,
               })
             }
-            return await addToAppleMusic(job.outputPath, job.meta, prepared?.path)
+            try {
+              return await addToAppleMusic(job.outputPath, job.meta, prepared?.path)
+            } catch (err) {
+              // Failures surface to the user in AppleScript's own words ("Argument out of
+              // range: index must be less than -1") — no file, no step, nothing to act on.
+              // The renderer shows that; nothing recorded it, so a report arrived with no
+              // trace behind it. Path first: in a batch the message alone names no culprit.
+              log.error('applemusic:add failed', job.outputPath, err)
+              throw err
+            }
           } finally {
             if (prepared) await prepared.cleanup()
           }
@@ -118,7 +128,13 @@ export function registerAppleMusicIpc(): void {
               const t = createMenuT(app.getLocale())
               throw new Error(t('appleMusicGone'))
             }
-            return await addToAppleMusic(job.outputPath, job.meta, prepared?.path)
+            try {
+              return await addToAppleMusic(job.outputPath, job.meta, prepared?.path)
+            } catch (err) {
+              // Same blind spot on the re-import path an update falls back to.
+              log.error('applemusic:update re-add failed', job.outputPath, err)
+              throw err
+            }
           } finally {
             if (prepared) await prepared.cleanup()
           }
