@@ -1170,3 +1170,124 @@ describe('readCueTree', () => {
     expect(readCueTree(seedPlainMp3())).toBeNull()
   })
 })
+
+// Files that passed through Mixed In Key or Serato carry THEIR objects in GEOB frames too
+// — GEOB is a generic ID3 container, and each object is identified by its description
+// ("Key", "Energy", "BeatGrid", "Serato Overview"). The cue copy used to take the first
+// GEOB in the file whatever it was, so a track tagged by Mixed In Key shipped its 69-byte
+// key string into the FLAC's Traktor cue field. djotas saw it as "different results per
+// file": what got copied depended on which tool touched the file and in what order.
+describe('cue source selection', () => {
+  function buildMultiGeobMp3(dir: string, descriptions: string[]): string {
+    const syncsafe = (n: number) =>
+      Buffer.from([(n >> 21) & 0x7f, (n >> 14) & 0x7f, (n >> 7) & 0x7f, n & 0x7f])
+    const frame = (id: string, data: Buffer) => {
+      const head = Buffer.alloc(10)
+      head.write(id, 0, 'latin1')
+      head.writeUInt32BE(data.length, 4)
+      return Buffer.concat([head, data])
+    }
+    const geob = (description: string, payload: string) =>
+      frame(
+        'GEOB',
+        Buffer.concat([
+          Buffer.from([0]),
+          Buffer.from('application/json', 'latin1'),
+          Buffer.from([0, 0]),
+          Buffer.from(description, 'latin1'),
+          Buffer.from([0]),
+          Buffer.from(payload, 'latin1'),
+        ]),
+      )
+    const body = Buffer.concat(descriptions.map((d) => geob(d, `PAYLOAD-${d}`)))
+    const header = Buffer.concat([
+      Buffer.from('ID3'),
+      Buffer.from([3, 0, 0]),
+      syncsafe(body.length),
+    ])
+    const mpegFrame = Buffer.concat([Buffer.from([0xff, 0xfb, 0x90, 0x00]), Buffer.alloc(413)])
+    const audio = Buffer.concat(Array(20).fill(mpegFrame))
+    const path = join(dir, `multi-${descriptions.join('-')}.mp3`)
+    writeFileSync(path, Buffer.concat([header, body, audio]))
+    return path
+  }
+
+  it('ignores GEOB objects that belong to other tools', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-cue-src-'))
+    // Exactly the shape of djotas' files: Mixed In Key's Key and Energy first.
+    const src = buildMultiGeobMp3(dir, ['Key', 'Energy'])
+    expect(readCueTree(src)).toBeNull()
+  })
+
+  it("still finds Traktor's own GEOB when it is not the first one", () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-cue-src-'))
+    const src = buildMultiGeobMp3(dir, ['Key', 'Energy', 'TRAKTOR4'])
+    const tree = readCueTree(src)
+    expect(tree).not.toBeNull()
+    expect(Buffer.from(tree as Uint8Array).toString('latin1')).toContain('PAYLOAD-TRAKTOR4')
+  })
+})
+
+// The end of djotas' road: an MP3 that only ever saw Mixed In Key still reaches a FLAC
+// with its cues, translated into the tree Traktor reads. Before this they arrived as
+// nothing at best, and as Mixed In Key's 69-byte "Key" string at worst.
+describe('Mixed In Key cue carry-over', () => {
+  function buildMikMp3(dir: string): string {
+    const cues = JSON.stringify({
+      algorithm: 14,
+      cues: [
+        { name: 'Cue 1', time: 513.1115785817811 },
+        { name: 'Cue 2', time: 65089.103025421 },
+      ],
+      source: 'mixedinkey',
+    })
+    const syncsafe = (n: number) =>
+      Buffer.from([(n >> 21) & 0x7f, (n >> 14) & 0x7f, (n >> 7) & 0x7f, n & 0x7f])
+    const frame = (id: string, data: Buffer) => {
+      const head = Buffer.alloc(10)
+      head.write(id, 0, 'latin1')
+      head.writeUInt32BE(data.length, 4)
+      return Buffer.concat([head, data])
+    }
+    const geob = (description: string, payload: Buffer) =>
+      frame(
+        'GEOB',
+        Buffer.concat([
+          Buffer.from([0]),
+          Buffer.from('application/json', 'latin1'),
+          Buffer.from([0, 0]),
+          Buffer.from(description, 'latin1'),
+          Buffer.from([0]),
+          payload,
+        ]),
+      )
+    // Mixed In Key's own order: Key and Energy first, cues last.
+    const body = Buffer.concat([
+      geob('Key', Buffer.from('eyJrZXkiOiIxMUEifQ==', 'latin1')),
+      geob('Energy', Buffer.from('eyJlbmVyZ3kiOjZ9', 'latin1')),
+      geob('CuePoints', Buffer.from(Buffer.from(cues, 'utf8').toString('base64'), 'latin1')),
+    ])
+    const header = Buffer.concat([
+      Buffer.from('ID3'),
+      Buffer.from([3, 0, 0]),
+      syncsafe(body.length),
+    ])
+    const mpegFrame = Buffer.concat([Buffer.from([0xff, 0xfb, 0x90, 0x00]), Buffer.alloc(413)])
+    const audio = Buffer.concat(Array(20).fill(mpegFrame))
+    const path = join(dir, 'mik.mp3')
+    writeFileSync(path, Buffer.concat([header, body, audio]))
+    return path
+  }
+
+  it('translates Mixed In Key cues into a tree Traktor can read', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-mik-'))
+    const src = buildMikMp3(dir)
+
+    const tree = readCueTree(src)
+    expect(tree).not.toBeNull()
+
+    const markers = readTraktorMarkers(tree as Uint8Array)
+    expect(markers.map((m) => m.name)).toEqual(['Cue 1', 'Cue 2'])
+    expect(markers.map((m) => Math.round(m.startMs))).toEqual([513, 65089])
+  })
+})
