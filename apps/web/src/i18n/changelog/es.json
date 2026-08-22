@@ -51,6 +51,10 @@
       {
         "text": "Al arrastrar música, la columna donde va a caer se ilumina. Antes un panel tapaba la ventana entera para decir «suelta aquí» sin señalar dónde era «aquí»; ahora se marca la lista y aparece el hueco que van a ocupar las pistas. De paso, el aviso ya no parpadea al mover el ratón.",
         "in": "0.86.3"
+      },
+      {
+        "text": "El sello discográfico ya se ve en Traktor. En los FLAC, Surco lo guardaba en un campo que Traktor no mira, así que rellenabas el sello en el editor y en Traktor seguía vacío. Ahora se escribe también donde él lo busca, y de paso donde lo leen las tiendas y otros programas de etiquetas. En MP3 ya funcionaba y sigue igual.",
+        "in": "0.86.4"
       }
     ]
   },

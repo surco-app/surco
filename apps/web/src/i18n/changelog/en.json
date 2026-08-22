@@ -51,6 +51,10 @@
       {
         "text": "Dragging music now lights up the column it will land in. A panel used to cover the whole window to say \"drop here\" without pointing at where \"here\" was; the list is marked instead, showing the space the tracks are about to fill. The hint also stops flickering as you move the mouse.",
         "in": "0.86.3"
+      },
+      {
+        "text": "The record label now shows up in Traktor. On FLAC files Surco stored it in a field Traktor never looks at, so you would fill the label in the editor and still see it blank there. It is now written where Traktor looks for it, and where shops and other taggers read it too. MP3 already worked and is unchanged.",
+        "in": "0.86.4"
       }
     ]
   },
