@@ -652,10 +652,19 @@ function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
     if (!field.id3) return []
     const name = vorbis ? (field.vorbis ?? field.id3) : field.id3
     const value = (meta[field.key] ?? '').trim()
+    // Extra spellings the same value is written under (Vorbis only): they must be excluded
+    // from the clears below, or the alias sweep would erase what was just written.
+    const also = vorbis ? (field.vorbisAlso ?? []) : []
+    const written = new Set([name.toLowerCase(), ...also.map((n) => n.toLowerCase())])
     const clears = field.aliases
-      .filter((alias) => alias !== name.toLowerCase())
+      .filter((alias) => !written.has(alias))
       .flatMap((alias) => ['-metadata', `${alias}=`])
-    return ['-metadata', `${name}=${value}`, ...clears]
+    return [
+      '-metadata',
+      `${name}=${value}`,
+      ...also.flatMap((extra) => ['-metadata', `${extra}=${value}`]),
+      ...clears,
+    ]
   })
 }
 
