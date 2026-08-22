@@ -16,6 +16,10 @@ export interface TagField {
   // DJ software reads different names (BPM/INITIALKEY/REMIXER…). Defaults to id3 when the
   // two muxers share a name.
   vorbis?: string
+  // Extra Vorbis names written ALONGSIDE `vorbis`, for a field two programs spell
+  // differently and both matter. Unlike an alias — which is read from and actively
+  // cleared on write — every name here gets the value.
+  vorbisAlso?: string[]
   // Normalizes the raw probed string into the stored value: dropping a "3/12" track total,
   // the compilation flag, the rating stars. Identity when omitted.
   parse?: (raw: string) => string
@@ -64,7 +68,18 @@ export const TAG_FIELDS: TagField[] = [
     id3: 'TKEY',
     vorbis: 'INITIALKEY',
   },
-  { key: 'publisher', aliases: ['publisher', 'tpub', 'label', 'organization'], id3: 'publisher' },
+  // Traktor reads the record label from Vorbis LABEL and shows PUBLISHER as a separate
+  // column, so a FLAC carrying only one of them leaves the other blank — djotas proved it
+  // by setting the two to different values and watching which column filled. ffmpeg wrote
+  // just `publisher` here, and a FLAC conversion never takes the TagLib pass that would
+  // have added LABEL (that only runs for .wav and .m4a), so the fix has to live here.
+  {
+    key: 'publisher',
+    aliases: ['publisher', 'tpub', 'label', 'organization'],
+    id3: 'publisher',
+    vorbis: 'LABEL',
+    vorbisAlso: ['PUBLISHER'],
+  },
   // The catalog number has no standard frame, so it rides the de-facto TXXX:CATALOGNUMBER.
   {
     key: 'catalogNumber',
