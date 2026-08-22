@@ -313,8 +313,12 @@ describe('convertArgs', () => {
       { codec: 'copy' },
       { ...meta, publisher: 'Kontor' },
     )
-    expect(args).toContain('publisher=Kontor')
-    expect(args).toContain('label=')
+    expect(args).toContain('PUBLISHER=Kontor')
+    // LABEL is no longer cleared here: Traktor reads the record label from it, so it now
+    // carries the value instead of being blanked (see tagFields' publisher entry). The
+    // stale-alias problem this test guards stands — a leftover LABEL is overwritten with
+    // the current value rather than left to shadow it.
+    expect(args).toContain('LABEL=Kontor')
     expect(args).toContain('organization=')
     expect(args).toContain('albumartist2=')
     expect(args).toContain('labelno=')
