@@ -507,6 +507,21 @@ export function writeTags(
     tag.subtitle = meta.mixName ?? ''
     tag.isCompilation = meta.compilation === '1'
 
+    // TagLib maps `publisher` to Vorbis ORGANIZATION, the canonical name for the record
+    // label — and the one name Traktor does not look at. It reads LABEL, so on FLAC the
+    // label Surco wrote was invisible there while the same field on MP3 (ID3 TPUB) worked,
+    // which is exactly the asymmetry djotas hit. Write both aliases: LABEL for Traktor,
+    // PUBLISHER for the shops and taggers that use it (his purchased FLACs carry both).
+    // Cleared together too, or emptying the field in the editor leaves the old label in
+    // whichever alias the next program happens to read.
+    if (extname(file).toLowerCase() === '.flac') {
+      const xiph = f.getTag(TagTypes.Xiph, true) as XiphComment
+      for (const field of ['LABEL', 'PUBLISHER']) {
+        if (meta.publisher.trim()) xiph.setFieldAsStrings(field, meta.publisher)
+        else xiph.removeField(field)
+      }
+    }
+
     // M4A carries iTunes atoms, not ID3: the generic assignments above cover it
     // (TagLib maps bpm to tmpo, grouping to ©grp…), the cover rides the covr atom via
     // the generic pictures setter, and the ID3-only extras (POPM rating, TXXX catalog,
