@@ -55,6 +55,10 @@
       {
         "text": "The record label now shows up in Traktor. On FLAC files Surco stored it in a field Traktor never looks at, so you would fill the label in the editor and still see it blank there. It is now written where Traktor looks for it, and where shops and other taggers read it too. MP3 already worked and is unchanged.",
         "in": "0.86.4"
+      },
+      {
+        "text": "The record label survives a conversion to FLAC. The previous fix only reached files you edited, not files you converted: a freshly converted FLAC came out with the label in one field and blank in the other, so Traktor showed it in one column and not the other. It is now written to both, on conversion as well as on update.",
+        "in": "0.86.5"
       }
     ]
   },
