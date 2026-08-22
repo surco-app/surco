@@ -55,6 +55,10 @@
       {
         "text": "El sello discográfico ya se ve en Traktor. En los FLAC, Surco lo guardaba en un campo que Traktor no mira, así que rellenabas el sello en el editor y en Traktor seguía vacío. Ahora se escribe también donde él lo busca, y de paso donde lo leen las tiendas y otros programas de etiquetas. En MP3 ya funcionaba y sigue igual.",
         "in": "0.86.4"
+      },
+      {
+        "text": "El sello se conserva al convertir a FLAC. La corrección anterior solo llegaba a los archivos que editabas, no a los que convertías: un FLAC recién convertido salía con el sello en un campo y vacío en el otro, así que en Traktor lo veías en una columna y no en la otra. Ahora se escribe en los dos, tanto al convertir como al actualizar.",
+        "in": "0.86.5"
       }
     ]
   },
