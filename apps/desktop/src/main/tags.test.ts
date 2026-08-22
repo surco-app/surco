@@ -1291,3 +1291,69 @@ describe('Mixed In Key cue carry-over', () => {
     expect(markers.map((m) => Math.round(m.startMs))).toEqual([513, 65089])
   })
 })
+
+describe('record label on FLAC', () => {
+  function plainFlac(dir: string): string {
+    const file = join(dir, 'label.flac')
+    execFileSync(FFMPEG, [
+      '-v',
+      'quiet',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=1',
+      '-y',
+      file,
+    ])
+    return file
+  }
+
+  function xiphField(file: string, field: string): string[] {
+    const f = TagFile.createFromPath(file)
+    try {
+      const xiph = f.getTag(TagTypes.Xiph, false) as XiphComment | null
+      return xiph ? [...xiph.getField(field)] : []
+    } finally {
+      f.dispose()
+    }
+  }
+
+  // TagLib's `publisher` property maps to Vorbis ORGANIZATION, the canonical name — which
+  // Traktor does not read. It looks for LABEL, so the record label Surco wrote was simply
+  // invisible there on every FLAC, while the same tag on MP3 (ID3 TPUB) worked fine. That
+  // asymmetry is what djotas hit: the field was filled in the editor and blank in Traktor.
+  it('writes the label where Traktor reads it', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-label-'))
+    const file = plainFlac(dir)
+
+    writeTags(file, meta)
+
+    expect(xiphField(file, 'LABEL')).toEqual(['Kontor'])
+  })
+
+  // PUBLISHER too: it is what most other tools (and the FLACs djotas gets from his shops)
+  // carry, so writing only LABEL would leave Surco's files readable by Traktor and blank
+  // everywhere else.
+  it('keeps the label readable by tools that expect PUBLISHER', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-label-'))
+    const file = plainFlac(dir)
+
+    writeTags(file, meta)
+
+    expect(xiphField(file, 'PUBLISHER')).toEqual(['Kontor'])
+  })
+
+  // Clearing the field in the editor has to clear every alias, or the old label lingers in
+  // whichever one the next program happens to read.
+  it('clears every alias when the label is emptied', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-label-'))
+    const file = plainFlac(dir)
+
+    writeTags(file, meta)
+    writeTags(file, { ...meta, publisher: '' })
+
+    expect(xiphField(file, 'LABEL')).toEqual([])
+    expect(xiphField(file, 'PUBLISHER')).toEqual([])
+    expect(xiphField(file, 'ORGANIZATION')).toEqual([])
+  })
+})
