@@ -62,11 +62,15 @@ export const TAG_FIELDS: TagField[] = [
   // retagged by a modern tool can keep the three-letter frame beside the current one, and the
   // frame the user's tagger just wrote is the one that must win.
   { key: 'bpm', aliases: ['tbpm', 'bpm', 'tbp'], id3: 'TBPM', vorbis: 'BPM' },
+  // Both Vorbis spellings, for the same reason the record label carries LABEL and
+  // PUBLISHER: djotas reads the key from KEY, and dropping INITIALKEY would blind
+  // whatever reads that one instead. His own converted file carries both already.
   {
     key: 'key',
     aliases: ['tkey', 'initial_key', 'initialkey', 'tke'],
     id3: 'TKEY',
     vorbis: 'INITIALKEY',
+    vorbisAlso: ['KEY'],
   },
   // Traktor reads the record label from Vorbis LABEL and shows PUBLISHER as a separate
   // column, so a FLAC carrying only one of them leaves the other blank — djotas proved it
