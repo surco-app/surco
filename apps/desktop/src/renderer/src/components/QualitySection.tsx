@@ -6,6 +6,7 @@ import type { NormalizeConfig } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useSpectrogram } from '../hooks/useSpectrogram'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
+import { cleanIpcError, errorKeyOf } from '../lib/ipcError'
 import {
   formatKHz,
   GOOD_CUTOFF_HZ,
@@ -89,6 +90,13 @@ export function QualitySection({
   // user and is already logged in the main process; keep it only as a hover title
   // so the inline state can be a friendly icon + message instead of a red wall.
   const analyzeErrorDetail = spectrumQuery.error instanceof Error ? spectrumQuery.error.message : ''
+  // "Could not analyse the audio" blames the music for what is usually a stale path:
+  // the file was moved or renamed and is simply not there. The main process stamps
+  // that case with a key, so name the real cause when it is the one that happened.
+  const analyzeErrorKey =
+    spectrumQuery.error instanceof Error
+      ? errorKeyOf(cleanIpcError(spectrumQuery.error.message))
+      : null
   // Keyed by input path, so it measures once per file and reads the right figures on
   // a track switch. The ffmpeg pass waits for the selection to rest (this section
   // remounts with the per-track editor). A failed measure resolves null and the
@@ -215,7 +223,7 @@ export function QualitySection({
                 className="relative flex h-28 flex-col items-center justify-center gap-2 text-xs text-fg-dim"
               >
                 <TriangleAlert className="h-5 w-5 text-fg-faint" aria-hidden="true" />
-                {tr('editor.analyzeError')}
+                {tr(analyzeErrorKey ? `errors.${analyzeErrorKey}` : 'editor.analyzeError')}
                 {analyzeErrorDetail && <Tooltip label={analyzeErrorDetail} />}
               </div>
             ) : spectrum ? (
