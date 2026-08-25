@@ -110,6 +110,7 @@
     "qualityReport": "The quality report couldn't be saved.",
     "statsImage": "The stats image couldn't be saved.",
     "draggedCover": "That image couldn't be used as artwork.",
+    "fileMissing": "This file is no longer at that location. It may have been moved or renamed.",
     "coverUrlBlocked": "That artwork address isn't allowed, so nothing was downloaded.",
     "deezerRateLimit": "Deezer is rate-limiting searches. Wait a moment and try again.",
     "discogsRateLimit": "Discogs is rate-limiting searches. Wait a moment and try again.",

@@ -110,6 +110,7 @@
     "qualityReport": "Le rapport de qualité n'a pas pu être enregistré.",
     "statsImage": "L'image de statistiques n'a pas pu être enregistrée.",
     "draggedCover": "Cette image n'a pas pu être utilisée comme pochette.",
+    "fileMissing": "Ce fichier n'est plus à cet emplacement. Il a peut-être été déplacé ou renommé.",
     "coverUrlBlocked": "Cette adresse de pochette n'est pas autorisée, rien n'a été téléchargé.",
     "deezerRateLimit": "Deezer limite les recherches. Patiente un instant et réessaie.",
     "discogsRateLimit": "Discogs limite les recherches. Patiente un instant et réessaie.",
