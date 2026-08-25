@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { Api } from '../../../preload/api'
 import type { TrackMetadata } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
 import type { TrackItem } from '../types'
@@ -15,6 +16,7 @@ const searchResult = {
   cover_image: 'cover.jpg',
 }
 const release = {
+  provider: 'discogs' as const,
   id: 1,
   title: 'Some Album',
   artists: [{ name: 'The Artist' }],
@@ -28,7 +30,7 @@ function setApi(over: Record<string, unknown> = {}): void {
   ;(window as unknown as { api: unknown }).api = {
     platform: 'win32',
     search: vi.fn().mockResolvedValue([searchResult]),
-    getRelease: vi.fn().mockResolvedValue(release),
+    getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(release),
     ...over,
   }
 }

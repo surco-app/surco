@@ -5,6 +5,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import type React from 'react'
 import { createRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Api } from '../../../preload/api'
 import type {
   DeclickMode,
   FormatSetting,
@@ -2136,6 +2137,7 @@ describe('Editor required-field gate', () => {
 describe('Editor Discogs apply', () => {
   const searchResult = { id: 1, title: 'Some Album', cover_image: 'cover.jpg' }
   const release = {
+    provider: 'discogs' as const,
     id: 1,
     title: 'Some Album',
     artists: [{ name: 'The Artist' }],
@@ -2302,7 +2304,7 @@ describe('Editor Discogs apply', () => {
       onWindowFocus: vi.fn(() => () => {}),
       prepareCoverDrag: () => Promise.resolve(null),
       search: vi.fn().mockResolvedValue([searchResult]),
-      getRelease: vi.fn().mockResolvedValue(withImage),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(withImage),
     }
   }
 
@@ -2416,7 +2418,7 @@ describe('Editor Discogs apply', () => {
       onWindowFocus: vi.fn(() => () => {}),
       prepareCoverDrag: () => Promise.resolve(null),
       search: vi.fn().mockResolvedValue([searchResult]),
-      getRelease: vi.fn().mockResolvedValue(threeImages),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(threeImages),
     }
     renderEditor({ id: 'a', coverUrl: 'old-release.jpg' })
     await search()
@@ -2462,6 +2464,7 @@ describe('Editor Discogs apply', () => {
 describe('Editor track preselection', () => {
   const searchResult = { id: 2, title: 'Some Album', cover_image: 'cover.jpg' }
   const release = {
+    provider: 'discogs' as const,
     id: 2,
     title: 'Some Album',
     artists: [{ name: 'The Artist' }],
@@ -2485,7 +2488,7 @@ describe('Editor track preselection', () => {
       hasClipboardImage: vi.fn().mockResolvedValue(false),
       onWindowFocus: vi.fn(() => () => {}),
       search: vi.fn().mockResolvedValue([searchResult]),
-      getRelease: vi.fn().mockResolvedValue(release),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(release),
     }
   }
 
@@ -2863,6 +2866,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
   // spelling the user searched for — and the library is keyed by the canonical name. So a
   // confident suggested release bridges a tag the library can't recognise on its own.
   const release = {
+    provider: 'discogs' as const,
     id: 7,
     title: 'Some Album',
     artists: [{ name: 'The Artist' }],
@@ -2883,7 +2887,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
       hasClipboardImage: vi.fn().mockResolvedValue(false),
       onWindowFocus: vi.fn(() => () => {}),
       search: vi.fn().mockResolvedValue([{ id: 7, title: 'Some Album', cover_image: 'c.jpg' }]),
-      getRelease: vi.fn().mockResolvedValue(release),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(release),
     }
   }
 

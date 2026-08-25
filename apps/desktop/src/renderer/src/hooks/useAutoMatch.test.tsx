@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { Api } from '../../../preload/api'
 import { DEFAULT_IMPORT_FIELDS } from '../../../shared/defaults'
 import type { SearchProviderId, TrackMetadata } from '../../../shared/types'
 import { type AppleMusicIndex, buildLibraryIndex } from '../lib/appleMusicLibrary'
@@ -13,6 +14,9 @@ afterEach(() => {
 })
 
 const release = {
+  // Required, and it decides things: autoMatch branches on it and matchStatKey tallies
+  // the match under Discogs, Bandcamp or Deezer by reading it.
+  provider: 'discogs' as const,
   id: 1,
   title: 'Album',
   artists: [{ name: 'Artist' }],
@@ -22,7 +26,7 @@ const release = {
 function setApi(over: Record<string, unknown> = {}): void {
   ;(window as unknown as { api: unknown }).api = {
     search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
-    getRelease: vi.fn().mockResolvedValue(release),
+    getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(release),
     ...over,
   }
 }
@@ -94,7 +98,9 @@ describe('useAutoMatch', () => {
   // user switched off must survive the sweep untouched, and one left on must still be
   // written, or the preference would only hold in the editor.
   it('respects the import-field choice when applying unattended', async () => {
-    setApi({ getRelease: vi.fn().mockResolvedValue({ ...release, country: 'Europe' }) })
+    setApi({
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue({ ...release, country: 'Europe' }),
+    })
     const tracks = [track('a')]
     const { result, updateTrack } = setup(tracks, null, { current: null }, ['album'])
 
@@ -131,7 +137,8 @@ describe('useAutoMatch', () => {
   // the sweep won't re-probe it.
   it('flags a review-tier match without applying its metadata', async () => {
     setApi({
-      getRelease: vi.fn().mockResolvedValue({
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue({
+        provider: 'discogs',
         id: 1,
         title: 'Album',
         artists: [{ name: 'Artist' }],
@@ -371,7 +378,8 @@ describe('useAutoMatch', () => {
 
   it('reports a no-match verdict to the activity feed', async () => {
     setApi({
-      getRelease: vi.fn().mockResolvedValue({
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue({
+        provider: 'discogs',
         id: 1,
         title: 'Album',
         artists: [],
