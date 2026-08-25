@@ -76,6 +76,7 @@ import {
   readCueTree,
   readItunesGrouping,
   readPopmRating,
+  readWavId3Extras,
 } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
@@ -302,7 +303,21 @@ export async function readTags(input: string): Promise<TrackMetadata> {
     ],
     { timeout: ANALYSIS_TIMEOUT_MS },
   )
-  return tagsFromProbe(JSON.parse(stdout))
+  return withWavId3Extras(input, tagsFromProbe(JSON.parse(stdout)))
+}
+
+// A WAV carries a RIFF INFO chunk and an ID3 one at the same time, and ffmpeg's demuxer
+// reads INFO and ignores ID3 — so every field INFO has no room for (label, grouping, key,
+// BPM…) probes back empty even though it is on the file. Fills those from ID3, leaving
+// whatever the probe already found untouched. A no-op for every other container, and for
+// the fields INFO does carry. See readWavId3Extras for why the INFO chunk is kept at all.
+function withWavId3Extras(input: string, tags: TrackMetadata): TrackMetadata {
+  if (!WAV_INPUT.test(input)) return tags
+  for (const [field, value] of Object.entries(readWavId3Extras(input))) {
+    const key = field as keyof TrackMetadata
+    if (value && !tags[key]?.trim()) tags[key] = value
+  }
+  return tags
 }
 
 // Pulls the first embedded picture out as a still image (no audio), letting the
@@ -459,6 +474,7 @@ async function readMetaUncached(input: string): Promise<MetaRead | null> {
       const itunesGrouping = readItunesGrouping(input)
       if (itunesGrouping) tags.grouping = itunesGrouping
     }
+    withWavId3Extras(input, tags)
     // Same gap for the star rating: ffprobe surfaces FLAC's Vorbis RATING comment but never
     // the ID3 POPM frame, so a track rated in Traktor read back unrated on MP3/AIFF and the
     // editor showed no stars at all. Fall back to reading POPM through TagLib when the probe

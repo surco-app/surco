@@ -78,7 +78,11 @@ export function readItunesGrouping(file: string): string {
     try {
       const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
       const grp1 = id3?.frames.find((fr) => fr.frameId.toString() === 'GRP1')
-      if (!grp1) return ''
+      // No GRP1: fall back to the standard TIT1 frame, which is where TagLib puts a
+      // grouping and where every non-iTunes tagger looks for one. A WAV keeps its
+      // grouping only in ID3 (RIFF INFO has no field for it), and ffmpeg's WAV demuxer
+      // reads INFO — so without this the probe and this fallback would both miss it.
+      if (!grp1) return id3?.grouping ?? ''
       const bytes = (grp1 as Id3v2UnknownFrame).data.toByteArray()
       if (bytes.length < 2) return ''
       const encoding = bytes[0]
@@ -96,6 +100,55 @@ export function readItunesGrouping(file: string): string {
     }
   } catch {
     return ''
+  }
+}
+
+// The tag fields a WAV can only keep in its ID3 chunk, because RIFF INFO has no field for
+// them. A WAV carries both tags at once and ffmpeg's demuxer reads INFO, ignoring ID3 —
+// so these come back empty from the probe even though they are on the file. Read straight
+// from ID3 through TagLib instead, as a fallback the probe's own values still win over.
+// Keeping INFO is what lets Traktor see the track at all (it reads INFO too, and with the
+// chunk gone showed the file name as the title); this is the other half of that bargain.
+// Best-effort: '' for anything missing, unopenable, or not an ID3 container.
+export function readWavId3Extras(file: string): Partial<TrackMetadata> {
+  try {
+    const f = TagFile.createFromPath(file)
+    try {
+      const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+      if (!id3) return {}
+      const text = (id: string): string => {
+        const frame = id3.frames.find((fr) => fr.frameId.toString() === id)
+        return frame ? (frame as Id3v2TextInformationFrame).text?.[0]?.trim() || '' : ''
+      }
+      // Takes the TXXX frames, not the tag — passing the tag throws, and the catch below
+      // would turn that into a silent "no extras at all" for every field here.
+      const txxx = id3.getFramesByClassType<Id3v2UserTextInformationFrame>(
+        Id3v2FrameClassType.UserTextInformationFrame,
+      )
+      const userText = (desc: string): string =>
+        Id3v2UserTextInformationFrame.findUserTextInformationFrame(txxx, desc)?.text?.[0]?.trim() ||
+        ''
+      return {
+        publisher: id3.publisher?.trim() || '',
+        grouping: id3.grouping?.trim() || '',
+        key: id3.initialKey?.trim() || '',
+        bpm: id3.beatsPerMinute ? String(id3.beatsPerMinute) : '',
+        remixArtist: id3.remixedBy?.trim() || '',
+        mixName: id3.subtitle?.trim() || '',
+        isrc: text('TSRC'),
+        catalogNumber: userText('CATALOGNUMBER'),
+        discogsReleaseId: userText('DISCOGS_RELEASE_ID'),
+        energy: userText('ENERGYLEVEL') || userText('ENERGY'),
+        style: userText('STYLE'),
+        country: userText('COUNTRY'),
+        mediaType: userText('MEDIATYPE'),
+        mood: userText('MOOD'),
+      }
+    } finally {
+      f.dispose()
+    }
+  } catch {
+    return {}
   }
 }
 
@@ -627,13 +680,16 @@ export function writeTags(
       }
     }
 
-    // A WAV can hold both a RIFF "INFO" chunk and an ID3v2 "id3 " chunk, but
-    // ffmpeg's WAV demuxer reads tags from INFO and ignores the ID3 text frames
-    // (the artwork still comes through as a stream). INFO has no field for
-    // grouping, so leaving it in place would make grouping unreadable on
-    // re-import. Dropping INFO leaves a single ID3 tag that round-trips fully.
-    // It is a no-op on MP3/AIFF, which never carry a RIFF INFO tag.
-    f.removeTags(TagTypes.RiffInfo)
+    // A WAV can hold both a RIFF "INFO" chunk and an ID3v2 "id3 " chunk, and which one a
+    // program reads is not ours to choose: ffmpeg's WAV demuxer reads INFO and ignores the
+    // ID3 text frames, and so does Traktor. This used to delete INFO, so a converted WAV
+    // showed no artist and its file name as the title in Traktor while mp3tag (an ID3
+    // reader) showed it correctly — djotas hit exactly that. The deletion was there because
+    // INFO has no grouping field, so a stale chunk left grouping unreadable on re-import;
+    // but it traded a whole DJ program's view of the file for one field. Both tags stay
+    // now. ffmpeg wrote this conversion's own INFO from the same metadata moments ago, so
+    // nothing here is stale, and grouping keeps round-tripping through ID3 via the TIT1
+    // fallback in readItunesGrouping.
 
     f.save()
   } finally {
