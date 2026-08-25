@@ -75,6 +75,14 @@
       {
         "text": "The button that closes Traktor works on Windows. It never actually asked Traktor to quit: the command was rejected outright, and the app spent fifteen seconds waiting before telling you Traktor could not be closed. It closes now, so the collection can be updated without you quitting it by hand.",
         "in": "0.86.6"
+      },
+      {
+        "text": "Traktor reads your converted WAVs again. A WAV stores tags in two places at once, and Surco was deleting the one Traktor reads — so a track came out with no artist and its file name where the title should be, while a tag editor showed the same file perfectly. Both are kept now. One trade-off worth knowing: that chunk has no field for the record label, so a plain probe of a WAV will not show it. Surco still reads it, and it still travels when you convert that WAV to any other format.",
+        "in": "0.86.7"
+      },
+      {
+        "text": "The musical key is written where Traktor looks for it. Converting to FLAC wrote the key only as INITIALKEY, and Traktor reads KEY. Both spellings are written now, so whichever one your software reads, the key is there — the same bargain the record label already strikes with LABEL and PUBLISHER.",
+        "in": "0.86.7"
       }
     ]
   },
