@@ -3,20 +3,21 @@ import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Api } from '../../../preload/api'
 import '../i18n'
 import type { TrackItem } from '../types'
 import { CoverPicker } from './CoverPicker'
 
 const api = {
   // The drag-prepare effect runs on mount whenever a cover is present.
-  prepareCoverDrag: vi.fn().mockResolvedValue(null),
-  copyCoverImage: vi.fn().mockResolvedValue(true),
-  pasteCoverImage: vi.fn().mockResolvedValue(null),
+  prepareCoverDrag: vi.fn<Api['prepareCoverDrag']>().mockResolvedValue(null),
+  copyCoverImage: vi.fn<Api['copyCoverImage']>().mockResolvedValue(true),
+  pasteCoverImage: vi.fn<Api['pasteCoverImage']>().mockResolvedValue(null),
   // A browser-dragged image is resolved in main; default to "no usable image found".
-  resolveDraggedCover: vi.fn().mockResolvedValue(null),
+  resolveDraggedCover: vi.fn<Api['resolveDraggedCover']>().mockResolvedValue(null),
   // The paste affordance checks the clipboard on mount/focus; default to empty so the
   // button is absent unless a test opts in.
-  hasClipboardImage: vi.fn().mockResolvedValue(false),
+  hasClipboardImage: vi.fn<Api['hasClipboardImage']>().mockResolvedValue(false),
   onWindowFocus: vi.fn(() => () => {}),
   getPathForFile: vi.fn(),
   startCoverDrag: vi.fn(),
@@ -233,6 +234,39 @@ describe('CoverPicker drag and counter', () => {
         }),
       ),
     )
+  })
+
+  // The handler's third shape, and the one no test reached: an inline `data:` image small
+  // enough that main keeps it as a preview without writing a file, so coverPath comes back
+  // undefined (api.ts declares it optional for exactly this). The preview must still be
+  // applied — dropping it would leave the drop looking like it did nothing — and coverPath
+  // must stay absent rather than arrive as an empty string, which downstream would read as
+  // a real path to a file that was never written.
+  it('applies a dragged image that resolved to a preview with no file on disk', async () => {
+    api.resolveDraggedCover.mockResolvedValueOnce({ coverUrl: 'data:image/jpeg;base64,BBBB' })
+    const onChange = vi.fn()
+    render(
+      <CoverPicker
+        item={item()}
+        isMulti={false}
+        selectedTracks={undefined}
+        release={null}
+        coverDims={null}
+        setCoverDims={vi.fn()}
+        onChange={onChange}
+        onApplyCoverAll={vi.fn()}
+      />,
+    )
+    fireEvent.drop(screen.getByTestId('cover-dropzone'), {
+      dataTransfer: {
+        files: [],
+        getData: (t: string) => (t === 'text/uri-list' ? 'https://img.example/inline.jpg' : ''),
+      },
+    })
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    const patch = onChange.mock.calls[0][0]
+    expect(patch.coverUrl).toBe('data:image/jpeg;base64,BBBB')
+    expect(patch.coverPath).toBeUndefined()
   })
 
   // A drag whose URLs resolve to no real image (a link to a page, not a picture) must
