@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { ProcessJob, Settings, TrackMetadata } from '../shared/types'
+import { createOutputReservations } from './outputReservations'
 import { type ProcessTrackDeps, runProcessTrack } from './processTrack'
 
 function settings(overrides: Partial<Settings> = {}): Settings {
@@ -313,6 +314,31 @@ describe('runProcessTrack — output conflict', () => {
     const result = await runProcessTrack(job(), deps)
 
     expect(result.outputPath).toBe('/out/Artist - Title.aiff')
+  })
+
+  // The two halves wired together, against the real registry instead of a fake: the
+  // guards above prove runProcessTrack reacts to a reservation, and outputReservations'
+  // own tests prove it folds case, but only this says the batch is actually safe. Two
+  // tracks whose tags differ just in case (a Discogs match filling "Artist" beside a
+  // sibling tagged "artist") resolve to one file on macOS/Windows, and before the fold
+  // the second job saw the first job's claim as a different path, sailed past the
+  // conflict check and renamed over it: "2 converted", one file on disk.
+  it('sees a claim another job made under a different case', async () => {
+    const reservations = createOutputReservations(true)
+    const deps = makeDeps({
+      isPathReserved: reservations.isReserved,
+      reservePath: reservations.reserve,
+      releasePath: reservations.release,
+    })
+    deps.confirmConflict = vi.fn(async () => 'keepBoth' as const)
+
+    // The first job is still in flight — nothing on disk yet, only its claim.
+    reservations.reserve('/out/artist - title.aiff')
+
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.confirmConflict).toHaveBeenCalledWith('Artist - Title.aiff')
+    expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
   })
 
   it('releases the reservation once the job settles, success or failure', async () => {
