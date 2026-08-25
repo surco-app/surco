@@ -75,6 +75,14 @@
       {
         "text": "El botón que cierra Traktor funciona en Windows. Nunca llegaba a pedirle a Traktor que se cerrara: la orden se rechazaba de plano y la app se quedaba quince segundos esperando antes de decirte que no había podido cerrarlo. Ahora se cierra, así que la colección puede actualizarse sin que lo cierres tú a mano.",
         "in": "0.86.6"
+      },
+      {
+        "text": "Traktor vuelve a leer tus WAV convertidos. Un WAV guarda las etiquetas en dos sitios a la vez, y Surco estaba borrando justo el que lee Traktor: la pista salía sin artista y con el nombre del archivo donde debería ir el título, mientras un editor de etiquetas mostraba ese mismo archivo perfecto. Ahora se conservan los dos. Una contrapartida que conviene saber: ese bloque no tiene campo para el sello, así que un análisis simple de un WAV no lo mostrará. Surco lo sigue leyendo, y el sello sigue viajando cuando conviertes ese WAV a cualquier otro formato.",
+        "in": "0.86.7"
+      },
+      {
+        "text": "La clave musical se escribe donde Traktor la busca. Al convertir a FLAC solo se escribía como INITIALKEY, y Traktor lee KEY. Ahora se escriben las dos grafías, así que lea la que lea tu programa, la clave está ahí — el mismo trato que ya hacía el sello con LABEL y PUBLISHER.",
+        "in": "0.86.7"
       }
     ]
   },
