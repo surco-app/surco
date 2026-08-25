@@ -1307,15 +1307,39 @@ export async function convertAudio(
         // and grouping — and which ffmpeg reads back as a video stream on re-import.
         // M4A takes the same pass: TagLib writes the iTunes atoms (bpm, key, cover)
         // that ffmpeg's mp4 muxer has no -metadata names for.
-        await runInWorker({
-          type: 'writeTags',
-          file: tmp,
-          meta,
-          coverPath,
-          removeCover,
-          clearExtras,
-          foreignRemoved,
-        })
+        //
+        // cueSource rides this same save for the same reason the MP3/AIFF pass folds it
+        // in: a WAV's cues live in the very "id3 " chunk this pass writes, and it is the
+        // only pass a WAV target gets — the cue branches below are an else, so without
+        // this a cued crate converted to WAV came out with no beatgrid at all. Passing
+        // it on M4A is harmless: writeTags returns at the MP4 branch before the ID3
+        // merge, since an ID3 tag forced into an MP4 would corrupt it.
+        //
+        // And the artwork has to be carried the same way. Every other target keeps the
+        // source picture through convertArgs' `-map 0:v?`, but these two containers are
+        // excluded from it (RIFF genuinely refuses a second stream — "WAVE files have
+        // exactly one stream" — and M4A's art belongs in the covr atom), so this pass is
+        // their only route. It only ever wrote a NEW cover, which left a conversion that
+        // merely fixed a title stripping art the file already had: the same "Surco
+        // deleted my cover" the `-map 0:v?` exists to prevent, still live on two formats.
+        const carried = coverPath || removeCover ? null : await extractCoverFile(input)
+        try {
+          await runInWorker({
+            type: 'writeTags',
+            file: tmp,
+            meta,
+            coverPath: coverPath ?? carried ?? undefined,
+            removeCover,
+            clearExtras,
+            foreignRemoved,
+            cueSource: input,
+            cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
+          })
+        } finally {
+          // Only the extracted copy is ours to delete; a caller-supplied coverPath is
+          // owned by whoever passed it in.
+          if (carried) await unlink(carried).catch(() => {})
+        }
       } else if ((meta.rating?.trim() || clearExtras) && (ext === '.mp3' || ext === '.aiff')) {
         // ffmpeg can't emit a POPM frame, so a re-encoded MP3/AIFF needs a TagLib
         // pass to write the Traktor rating. Only done when there's a rating (or a
