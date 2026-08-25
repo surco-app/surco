@@ -198,6 +198,15 @@ export async function runProcessTrack(
       if (choice === 'skip') return { outputPath: '', inPlace, skipped: true }
       if (choice === 'keepBoth')
         target = uniqueOutputPath(outputPath, (p) => deps.existsSync(p) || deps.isPathReserved(p))
+      // "Overwrite" is a decision about the file the user can see in the destination
+      // folder. A reservation is not that file: it is a path another job in this same
+      // run claimed and has not written yet, so there is nothing there to replace.
+      // Overwriting it would aim both jobs at one destination and the second rename
+      // would land on the first — a track silently lost from a run that still counts
+      // it converted. Step aside the way keep-both does; the file the user meant to
+      // overwrite (if any) is still overwritten by whichever job owns that path.
+      else if (choice === 'overwrite' && !deps.existsSync(outputPath))
+        target = uniqueOutputPath(outputPath, (p) => deps.existsSync(p) || deps.isPathReserved(p))
     }
     // Claimed for the rest of the job — including the convertAudio write, which is
     // exactly the window existsSync can't see yet (temp file + rename). Released in
