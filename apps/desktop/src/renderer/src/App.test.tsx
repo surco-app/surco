@@ -4,8 +4,10 @@ import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Api } from '../../preload/api'
 import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
-import type { Settings } from '../../shared/types'
+import { emptyMetadata } from '../../shared/metadata'
+import type { Release, Settings } from '../../shared/types'
 import { resetEditorSections } from './hooks/useEditorSections'
 import { createQueryClient } from './lib/queryClient'
 import './i18n'
@@ -188,7 +190,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     platform: 'win32',
     version: '0.0.0-test',
     getSettings: vi.fn().mockResolvedValue(settings()),
-    saveSettings: vi.fn().mockResolvedValue(settings()),
+    saveSettings: vi.fn<Api['saveSettings']>().mockResolvedValue(settings()),
     recordStat: vi.fn(),
     logError: vi.fn(),
     getConfigDir: vi.fn().mockResolvedValue(null),
@@ -208,7 +210,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     onFoldersChanged: () => () => {},
     unwatchFolders: vi.fn().mockResolvedValue(undefined),
     takePendingFiles: vi.fn().mockResolvedValue([]),
-    getLastSession: vi.fn().mockResolvedValue({ paths: [], edits: {} }),
+    getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
     saveLastSession: vi.fn().mockResolvedValue(undefined),
     expandPaths: vi.fn((paths: string[]) => Promise.resolve(paths)),
     onWindowFocus: () => () => {},
@@ -235,9 +237,12 @@ function setApi(over: Record<string, unknown> = {}): void {
     key: vi.fn().mockResolvedValue(null),
     waveformScan: vi.fn().mockResolvedValue(null),
     search: vi.fn().mockResolvedValue([]),
-    getRelease: vi.fn().mockResolvedValue(null),
+    // Rejects rather than resolving null: the handler either returns a Release or
+    // throws (search:release calls straight into the provider), so a null here was a
+    // shape the app can never receive. Tests that need a release override this.
+    getRelease: vi.fn<Api['getRelease']>().mockRejectedValue(new Error('no release in this test')),
     spectrogram: vi.fn().mockResolvedValue(spectrum),
-    loadCachedAnalyses: vi.fn().mockResolvedValue({}),
+    loadCachedAnalyses: vi.fn<Api['loadCachedAnalyses']>().mockResolvedValue({}),
     waveform: vi.fn().mockResolvedValue(wave),
     cancelAnalysis: vi.fn().mockResolvedValue(undefined),
     clicks: vi.fn().mockResolvedValue(null),
@@ -473,7 +478,12 @@ describe('App auto-match', () => {
   // sweep searches each file, and when a release matches confidently it applies the
   // metadata outright and badges the row so the user can spot-check what was filled. This
   // is the end-to-end wiring (button → headless probe → apply → badge) that must hold.
-  const release = {
+  // `provider` is required and carries weight: matchStatKey reads it to tally the match
+  // under Discogs, Bandcamp or Deezer, and autoMatch branches on it. Leaving it off gave
+  // every test an undefined that fell through matchStatKey's default to 'discogsMatches',
+  // so a bug miscounting a Bandcamp or Deezer match would have read as correct here.
+  const release: Release = {
+    provider: 'discogs',
     id: 1,
     title: 'Album',
     artists: [{ name: 'Artist' }],
@@ -509,7 +519,7 @@ describe('App auto-match', () => {
       readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
       readDuration: vi.fn().mockResolvedValue(180),
       search,
-      getRelease: vi.fn().mockResolvedValue(release),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(release),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
@@ -544,7 +554,7 @@ describe('App auto-match', () => {
       readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
       readDuration: vi.fn().mockResolvedValue(180),
       search,
-      getRelease: vi.fn().mockResolvedValue(release),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(release),
     })
     await renderApp()
     await addTwoTracks()
@@ -569,7 +579,7 @@ describe('App auto-match', () => {
       readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
       readDuration: vi.fn().mockResolvedValue(180),
       search,
-      getRelease: vi.fn().mockResolvedValue(release),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(release),
     })
     await renderApp()
     await addTwoTracks()
@@ -1576,7 +1586,7 @@ describe('App track numbering', () => {
     const fields = settings({ visibleFields: ['title', 'artist', 'trackNumber'] })
     setApi({
       getSettings: vi.fn().mockResolvedValue(fields),
-      saveSettings: vi.fn().mockResolvedValue(fields),
+      saveSettings: vi.fn<Api['saveSettings']>().mockResolvedValue(fields),
       readTags: vi.fn().mockResolvedValue({}),
     })
     await renderApp()
@@ -2058,7 +2068,7 @@ describe('App donate nudge', () => {
       getSettings: vi.fn().mockResolvedValue(eligible()),
       readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
       processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff', inPlace: false }),
-      saveSettings: vi.fn().mockResolvedValue(eligible()),
+      saveSettings: vi.fn<Api['saveSettings']>().mockResolvedValue(eligible()),
     })
     await renderApp()
     const rows = await addTwoTracks()
@@ -2306,7 +2316,9 @@ describe('App reopen last session', () => {
   // press re-imported the same session and rained "already in the list" notices.
   it('dismisses the offer once accepted', async () => {
     setApi({
-      getLastSession: vi.fn().mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
+      getLastSession: vi
+        .fn<Api['getLastSession']>()
+        .mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
     })
     await renderApp()
     await screen.findByTestId('last-session')
@@ -2325,7 +2337,9 @@ describe('App reopen last session', () => {
   it('clears the stored session when the offer is dismissed with the ✕', async () => {
     const saveLastSession = vi.fn().mockResolvedValue(undefined)
     setApi({
-      getLastSession: vi.fn().mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
+      getLastSession: vi
+        .fn<Api['getLastSession']>()
+        .mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
       saveLastSession,
     })
     await renderApp()
@@ -2397,7 +2411,9 @@ describe('App reopen last session', () => {
   // because with no staged edits the countdown destroys nothing.
   it('auto-dismisses the offer with a visible countdown', async () => {
     setApi({
-      getLastSession: vi.fn().mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
+      getLastSession: vi
+        .fn<Api['getLastSession']>()
+        .mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
     })
     await renderApp()
     await screen.findByTestId('last-session')
@@ -2410,9 +2426,9 @@ describe('App reopen last session', () => {
   // no self-dismissal; only Load or the ✕ retire it.
   it('keeps the offer up without a countdown when the session carries staged edits', async () => {
     setApi({
-      getLastSession: vi.fn().mockResolvedValue({
+      getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({
         paths: ['/music/a.wav'],
-        edits: { '/music/a.wav': { meta: { title: 'Staged' } } },
+        edits: { '/music/a.wav': { meta: { ...emptyMetadata(), title: 'Staged' } } },
       }),
     })
     await renderApp()
@@ -2424,7 +2440,9 @@ describe('App reopen last session', () => {
   // two sessions — the offer withdraws itself the moment rows exist.
   it('withdraws the offer once tracks arrive another way', async () => {
     setApi({
-      getLastSession: vi.fn().mockResolvedValue({ paths: ['/music/old.wav'], edits: {} }),
+      getLastSession: vi
+        .fn<Api['getLastSession']>()
+        .mockResolvedValue({ paths: ['/music/old.wav'], edits: {} }),
     })
     await renderApp()
     await screen.findByTestId('last-session')
@@ -2489,7 +2507,7 @@ describe('App reopen last session', () => {
   // sweep doesn't re-probe and overwrite the restored values.
   it('restores staged edits when the session is reopened', async () => {
     setApi({
-      getLastSession: vi.fn().mockResolvedValue({
+      getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({
         paths: ['/music/a.wav'],
         edits: {
           '/music/a.wav': {
@@ -2531,7 +2549,9 @@ describe('App reopen last session', () => {
   it('does not overwrite the stored session with the empty launch list', async () => {
     const saveLastSession = vi.fn().mockResolvedValue(undefined)
     setApi({
-      getLastSession: vi.fn().mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
+      getLastSession: vi
+        .fn<Api['getLastSession']>()
+        .mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
       saveLastSession,
     })
     await renderApp()
