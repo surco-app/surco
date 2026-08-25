@@ -110,6 +110,7 @@
     "qualityReport": "Der Qualitätsbericht konnte nicht gespeichert werden.",
     "statsImage": "Das Statistikbild konnte nicht gespeichert werden.",
     "draggedCover": "Dieses Bild konnte nicht als Cover verwendet werden.",
+    "fileMissing": "Diese Datei befindet sich nicht mehr an diesem Ort. Womöglich wurde sie verschoben oder umbenannt.",
     "coverUrlBlocked": "Diese Cover-Adresse ist nicht zulässig, daher wurde nichts geladen.",
     "deezerRateLimit": "Deezer drosselt die Suche. Warte einen Moment und versuche es erneut.",
     "discogsRateLimit": "Discogs drosselt die Suche. Warte einen Moment und versuche es erneut.",

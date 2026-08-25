@@ -11,6 +11,7 @@ const PREFIX = 'SURCO_ERR:'
 // under `errors.*` in every locale. Anything not listed here keeps its own text —
 // ffmpeg's stderr says more in a bug report than a generic "something failed".
 export type ErrorKey =
+  | 'fileMissing'
   | 'coverUrlBlocked'
   | 'deezerRateLimit'
   | 'discogsRateLimit'

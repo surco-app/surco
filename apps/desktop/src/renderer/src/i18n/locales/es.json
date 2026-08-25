@@ -110,6 +110,7 @@
     "qualityReport": "No se ha podido guardar el informe de calidad.",
     "statsImage": "No se ha podido guardar la imagen de estadísticas.",
     "draggedCover": "Esa imagen no se ha podido usar como carátula.",
+    "fileMissing": "Este archivo ya no está en esa ubicación. Puede que se haya movido o renombrado.",
     "coverUrlBlocked": "Esa dirección de carátula no está permitida, así que no se ha descargado nada.",
     "deezerRateLimit": "Deezer está limitando las búsquedas. Espera un momento y vuelve a intentarlo.",
     "discogsRateLimit": "Discogs está limitando las búsquedas. Espera un momento y vuelve a intentarlo.",
