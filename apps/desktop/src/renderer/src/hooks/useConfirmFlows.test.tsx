@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import type { Api } from '../../../preload/api'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { Settings } from '../../../shared/types'
+import { installApi } from '../test/api'
 import type { TrackItem } from '../types'
 import '../i18n'
 import { useConfirmFlows } from './useConfirmFlows'
@@ -166,8 +168,14 @@ describe('useConfirmFlows remove old Apple Music copy', () => {
   // name the library entry by ITS OWN artist/title, not the fresh track's: the match can
   // be wrong, and the entry's label is the only thing that lets the user catch it.
   it('deletes the superseded copy only after a confirmation naming that copy', async () => {
-    const deleteAppleMusic = vi.fn().mockResolvedValue('deleted')
-    ;(window as unknown as { api: { deleteAppleMusic: unknown } }).api = { deleteAppleMusic }
+    // The shape the handler really resolves with. It used to be the bare string
+    // 'deleted', which `res?.location` reads as undefined — so the branch that retires
+    // the delete-original link never ran here and the test passed on a fiction. Typing
+    // the mock against the contract is what turned that into a compile error.
+    const deleteAppleMusic = vi
+      .fn<Api['deleteAppleMusic']>()
+      .mockResolvedValue({ outcome: 'deleted' })
+    installApi({ deleteAppleMusic })
     const onOldMusicCopyRemoved = vi.fn()
     const { flows, opened } = setup([], { onOldMusicCopyRemoved })
     flows.askRemoveOldMusicCopy(track('a'), {
@@ -188,8 +196,10 @@ describe('useConfirmFlows remove old Apple Music copy', () => {
   // The user confirmed a destructive dialog; a silent failure would read as "the old
   // copy is gone" when it isn't.
   it('reports a failed removal out loud', async () => {
-    const deleteAppleMusic = vi.fn().mockRejectedValue(new Error('osascript failed'))
-    ;(window as unknown as { api: { deleteAppleMusic: unknown } }).api = { deleteAppleMusic }
+    const deleteAppleMusic = vi
+      .fn<Api['deleteAppleMusic']>()
+      .mockRejectedValue(new Error('osascript failed'))
+    installApi({ deleteAppleMusic })
     const reportOldCopyRemoveFailure = vi.fn()
     const { flows, opened } = setup([], { reportOldCopyRemoveFailure })
     flows.askRemoveOldMusicCopy(track('a'), {
@@ -205,8 +215,10 @@ describe('useConfirmFlows remove old Apple Music copy', () => {
   // so the footer's own delete-original link retires instead of failing confusingly on
   // a file that is already in the Trash.
   it('marks a loaded track whose source file was the trashed old copy', async () => {
-    const deleteAppleMusic = vi.fn().mockResolvedValue({ outcome: 'deleted', location: '/a.wav' })
-    ;(window as unknown as { api: { deleteAppleMusic: unknown } }).api = { deleteAppleMusic }
+    const deleteAppleMusic = vi
+      .fn<Api['deleteAppleMusic']>()
+      .mockResolvedValue({ outcome: 'deleted', location: '/a.wav' })
+    installApi({ deleteAppleMusic })
     const updateTrack = vi.fn()
     const { flows, opened } = setup([track('a')], { updateTrack })
     flows.askRemoveOldMusicCopy(track('a'), {
@@ -223,11 +235,11 @@ describe('useConfirmFlows remove old Apple Music copy', () => {
   // also refresh the poisoned snapshot.
   it('reports a refused mismatched removal as a mismatch', async () => {
     const deleteAppleMusic = vi
-      .fn()
+      .fn<Api['deleteAppleMusic']>()
       .mockRejectedValue(
         new Error("Error invoking remote method 'applemusic:delete': applemusic-delete-mismatch"),
       )
-    ;(window as unknown as { api: { deleteAppleMusic: unknown } }).api = { deleteAppleMusic }
+    installApi({ deleteAppleMusic })
     const reportOldCopyRemoveFailure = vi.fn()
     const { flows, opened } = setup([], { reportOldCopyRemoveFailure })
     flows.askRemoveOldMusicCopy(track('a'), {
