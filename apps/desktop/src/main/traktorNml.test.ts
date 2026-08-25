@@ -297,6 +297,29 @@ describe('applyPatches', () => {
     expect(out).toContain('FILE="uno&amp;dos.flac"')
   })
 
+  // String.replace expande $&, $`, $' y $n dentro del texto de reemplazo, así que un
+  // nombre de fichero con un dólar empalmaría texto del propio documento dentro del
+  // atributo y escribiría XML inválido en la colección del DJ. El '$' es legal en los
+  // tres sistemas y sanitizeOutputName no lo filtra, así que llega hasta aquí intacto.
+  // Ojo: el fixture se monta con una función, porque montarlo con un replace de string
+  // expandiría los mismos dólares al construir el caso y taparía el fallo.
+  it('writes a file name containing a dollar sign literally', () => {
+    const cases: [string, string][] = [
+      ['a $& b.flac', 'a $&amp; b.flac'],
+      ['a $` b.flac', 'a $` b.flac'],
+      ["a $' b.flac", "a $' b.flac"],
+      ['a $1 b.flac', 'a $1 b.flac'],
+    ]
+
+    for (const [newFile, expected] of cases) {
+      const out = applyPatches(NML, [
+        { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', newFile },
+      ])
+
+      expect(out).toContain(`FILE="${expected}"`)
+    }
+  })
+
   // Sustitución de atrás hacia adelante: si dos ENTRY se parchean y la primera
   // cambia de longitud (nombre de fichero más largo), un bucle de-adelante-hacia-
   // atrás desplazaría los índices ya calculados para la segunda y corrompería su
