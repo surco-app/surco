@@ -135,25 +135,38 @@ export function resolveBindings(overrides: Record<string, Chord> = {}): Map<stri
 // beats a global that shares its chord: ← is seek-back everywhere, but inside the
 // silence editor it nudges the cut. Without that precedence the table's order would
 // decide, and seek-back is declared first.
+//
+// `scope` is the whole chain of active scopes, nearest the focus first (see activeScope),
+// because scopes nest: TrimSection declares 'trim' inside Editor's 'editor'. Matching only
+// the nearest one shadowed the outer scope, and ⌘]/⌘[ — declared 'editor' — stopped
+// resolving with the focus on the trim handle: the key reached the listener and died,
+// coming back only on leaving the section. Walking the chain in order keeps the same
+// precedence (nearest wins its own commands) while leaving the outer scope reachable, so
+// nesting a scope adds reach instead of taking the outer one away. A bare string is
+// accepted as a chain of one.
 export function matchChord(
   bindings: Map<string, Chord>,
   chord: Chord,
   typing: boolean,
-  scope: string | null = null,
+  scope: string | string[] | null = null,
 ): string | null {
   const hasMod = chord.includes('mod')
-  const match = (wantScoped: boolean): string | null => {
+  const chain = scope === null ? [] : typeof scope === 'string' ? [scope] : scope
+  const match = (wantScope: string | null): string | null => {
     for (const def of SHORTCUT_DEFAULTS) {
       const bound = bindings.get(def.id)
       if (!bound || bound.length === 0 || !chordEquals(bound, chord)) continue
-      if (def.scope && def.scope !== scope) continue
-      if (Boolean(def.scope) !== wantScoped) continue
+      if ((def.scope ?? null) !== wantScope) continue
       if (typing && (!hasMod || def.suppressWhileTyping)) return null
       return def.id
     }
     return null
   }
-  return (scope !== null ? match(true) : null) ?? match(false)
+  for (const name of chain) {
+    const id = match(name)
+    if (id) return id
+  }
+  return match(null)
 }
 
 // Groups of command ids that resolve to the same chord — used by the Shortcuts tab to

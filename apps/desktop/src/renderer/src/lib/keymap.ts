@@ -38,11 +38,24 @@ export function isTypingTarget(
   )
 }
 
-// El ámbito de atajos activo: el `data-shortcut-scope` del ancestro más cercano al
-// elemento enfocado. Se lee del DOM y no de estado en React a propósito — así no puede
-// desincronizarse de lo que el usuario ve enfocado.
-export function activeScope(el: Element | null): string | null {
-  return el?.closest?.('[data-shortcut-scope]')?.getAttribute('data-shortcut-scope') ?? null
+// Los ámbitos de atajos activos, del más cercano al foco hacia fuera. Se lee del DOM y no
+// de estado en React a propósito — así no puede desincronizarse de lo que el usuario ve
+// enfocado.
+//
+// La cadena entera y no sólo el ancestro más cercano: los ámbitos se anidan (TrimSection
+// declara 'trim' dentro del 'editor' de Editor), y con el más cercano el de fuera quedaba
+// tapado. Con el foco en el handle del recorte, ⌘] y ⌘[ —de ámbito 'editor'— dejaban de
+// resolver: la tecla llegaba al listener y moría, y sólo volvía al salir de la sección.
+// Anidar un ámbito añade alcance; no debe quitar el de arriba.
+export function activeScope(el: Element | null): string[] {
+  const scopes: string[] = []
+  let at = el?.closest?.('[data-shortcut-scope]') ?? null
+  while (at) {
+    const name = at.getAttribute('data-shortcut-scope')
+    if (name) scopes.push(name)
+    at = at.parentElement?.closest('[data-shortcut-scope]') ?? null
+  }
+  return scopes
 }
 
 export type Column = 'list' | 'matches' | 'editor'
@@ -78,7 +91,7 @@ export function keyToCommandId(
   typing: boolean,
   bindings: Map<string, Chord>,
   isMac: boolean,
-  scope: string | null = null,
+  scope: string | string[] | null = null,
 ): string | null {
   const chord = eventToChord(e, isMac)
   if (!chord) return null
