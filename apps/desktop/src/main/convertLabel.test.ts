@@ -77,17 +77,18 @@ describe('the record label survives a conversion', () => {
     })
   }
 
-  // WAV is the one container where a bare probe cannot answer this. It carries a RIFF
-  // INFO chunk and an ID3 one at once, ffmpeg's demuxer reads INFO and ignores ID3, and
-  // INFO has no field for a publisher — so the label lives in ID3 and no plain ffprobe
-  // read will show it. Keeping INFO is deliberate: without it Traktor showed a converted
-  // WAV with no artist and the file name as its title. What matters for the label is that
-  // Surco still reads it and it still travels, which the suites below cover.
-  it('keeps the label readable on wav even though a bare probe cannot see it', async () => {
+  // WAV keeps a RIFF INFO chunk and an ID3 one at once, and the label can only live in
+  // ID3 — INFO has no field for a publisher. Whether a bare `ffprobe` surfaces it from
+  // there is a property of the ffprobe build, not of Surco: the bundled 4.4.1 reads INFO
+  // and stops, newer ones also report the ID3 chunk. So this asserts the part that is
+  // ours — the label is on the file and Surco reads it back — rather than pinning one
+  // probe's behaviour, which would pass on a laptop and fail on CI. Keeping INFO is
+  // deliberate: without it Traktor showed a converted WAV with no artist and the file
+  // name as its title.
+  it('keeps the label readable on wav, where only ID3 can hold it', async () => {
     const out = join(dir, 'out.wav')
     await convertAudio(source, out, 'wav', meta)
 
-    expect(labelOf(out)).toBe('')
     expect((await readMeta(out)).tags.publisher).toBe('Kontor')
   })
 })
@@ -168,7 +169,8 @@ import { existsSync } from 'node:fs'
 
 // djotas' own file, through djotas' own conversions. Synthetic fixtures have said the
 // label survives every path; his does not, so the difference has to be in the file.
-const REAL = '/Users/vicent/Desktop/problema-cues/Chab And Jd Davis - Get High (The Club Science Edit).mp3'
+const REAL =
+  '/Users/vicent/Desktop/problema-cues/Chab And Jd Davis - Get High (The Club Science Edit).mp3'
 
 describe.skipIf(!existsSync(REAL))("djotas' own file", () => {
   for (const to of ['wav', 'aiff', 'flac', 'mp3'] as const) {
