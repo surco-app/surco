@@ -186,7 +186,12 @@ function replaceCues(block: string, tree: Uint8Array, bpm: number | undefined): 
 function patchEntry(block: string, patch: NmlPatch): string {
   let out = block
   if (patch.newFile) {
-    out = out.replace(/(<LOCATION\b[^>]*\bFILE)="[^"]*"/, `$1="${escapeAttr(patch.newFile)}"`)
+    // Callback form for the same reason replaceCues uses it: the file name is the DJ's
+    // own, and a string replacement expands $&, $`, $' and $n inside it — a track named
+    // with a dollar sign would splice surrounding document text into the attribute and
+    // write invalid XML into the collection.
+    const newFile = escapeAttr(patch.newFile)
+    out = out.replace(/(<LOCATION\b[^>]*\bFILE)="[^"]*"/, (_m, prefix) => `${prefix}="${newFile}"`)
   }
   if (patch.clearCoverArt) {
     out = stripCoverArt(out)
