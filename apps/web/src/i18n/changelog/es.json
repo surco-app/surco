@@ -59,6 +59,22 @@
       {
         "text": "El sello se conserva al convertir a FLAC. La corrección anterior solo llegaba a los archivos que editabas, no a los que convertías: un FLAC recién convertido salía con el sello en un campo y vacío en el otro, así que en Traktor lo veías en una columna y no en la otra. Ahora se escribe en los dos, tanto al convertir como al actualizar.",
         "in": "0.86.5"
+      },
+      {
+        "text": "Convertir un lote ya no puede perder pistas. Cuando dos pistas resolvían al mismo nombre de salida — algo fácil después de aplicar un match de Discogs que rellena el mismo artista y título, o con etiquetas vacías cayendo a la misma plantilla — elegir Sobrescribir apuntaba las dos al mismo destino, y la segunda en escribirse caía encima de la primera. El proceso las contaba todas igual: «3 convertidas», un solo fichero en disco. Ahora se aparta de un nombre que otra pista del mismo lote ya ha reservado, y sobrescribir un fichero que sí está en la carpeta funciona exactamente como antes.",
+        "in": "0.86.6"
+      },
+      {
+        "text": "Un signo de dólar en el nombre ya no corrompe tu colección de Traktor. Al actualizar collection.nml después de una conversión, una pista con un $ en el nombre empalmaba parte del texto del propio fichero dentro de la entrada y escribía XML roto — y Traktor se niega a abrir una colección que no puede leer. El nombre se escribe ahora tal cual, lleve los caracteres que lleve.",
+        "in": "0.86.6"
+      },
+      {
+        "text": "Un fichero que ya no está donde Surco lo dejó ahora lo dice. Si movías o renombrabas una pista en el Finder, todos los paneles ponían «No se ha podido analizar el audio», lo que te manda a buscar un fichero dañado cuando no le pasa nada: simplemente está en otro sitio. El mensaje ahora nombra la causa real.",
+        "in": "0.86.6"
+      },
+      {
+        "text": "El botón que cierra Traktor funciona en Windows. Nunca llegaba a pedirle a Traktor que se cerrara: la orden se rechazaba de plano y la app se quedaba quince segundos esperando antes de decirte que no había podido cerrarlo. Ahora se cierra, así que la colección puede actualizarse sin que lo cierres tú a mano.",
+        "in": "0.86.6"
       }
     ]
   },

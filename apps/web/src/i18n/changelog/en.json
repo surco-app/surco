@@ -59,6 +59,22 @@
       {
         "text": "The record label survives a conversion to FLAC. The previous fix only reached files you edited, not files you converted: a freshly converted FLAC came out with the label in one field and blank in the other, so Traktor showed it in one column and not the other. It is now written to both, on conversion as well as on update.",
         "in": "0.86.5"
+      },
+      {
+        "text": "Converting a batch can no longer lose tracks. When two tracks resolved to the same output name — easy after a Discogs match fills the same artist and title, or with empty tags falling back to the same template — choosing Overwrite pointed both at one destination, and the second one written landed on top of the first. The run still counted them all: \"3 converted\", one file on disk. A name another track in the same run has already claimed is now stepped around, and overwriting a file that really is in the folder works exactly as before.",
+        "in": "0.86.6"
+      },
+      {
+        "text": "A dollar sign in a file name no longer corrupts your Traktor collection. When Surco updated collection.nml after a conversion, a track named with a $ spliced part of the file's own text into the entry and wrote broken XML — and Traktor refuses to open a collection it cannot parse. The name is now written literally, whatever characters it carries.",
+        "in": "0.86.6"
+      },
+      {
+        "text": "A file that is no longer where Surco left it now says so. Move or rename a track in Finder and every panel reported \"Could not analyze the audio\", which sends you looking for a damaged file when nothing is wrong with it — it is simply somewhere else. The message now names the real cause.",
+        "in": "0.86.6"
+      },
+      {
+        "text": "The button that closes Traktor works on Windows. It never actually asked Traktor to quit: the command was rejected outright, and the app spent fifteen seconds waiting before telling you Traktor could not be closed. It closes now, so the collection can be updated without you quitting it by hand.",
+        "in": "0.86.6"
       }
     ]
   },
