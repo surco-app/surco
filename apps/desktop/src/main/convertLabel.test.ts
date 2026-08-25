@@ -69,18 +69,27 @@ function labelOf(path: string): string {
 // demás desaparece aif wav". The label survived to MP3 and (since the previous fix) to
 // FLAC, but a conversion to AIFF or WAV silently dropped it.
 describe('the record label survives a conversion', () => {
-  for (const format of ['mp3', 'flac', 'aiff', 'wav'] as const) {
+  for (const format of ['mp3', 'flac', 'aiff'] as const) {
     it(`is still on the file after converting to ${format}`, async () => {
       const out = join(dir, `out.${format}`)
       await convertAudio(source, out, format, meta)
-      const raw = require('node:fs').readFileSync(out)
-      const idx = raw.indexOf(Buffer.from('Kontor','latin1')) >= 0 ? raw.indexOf(Buffer.from('Kontor','latin1')) : raw.indexOf(Buffer.from('Kontor','utf16le'))
-      const ctx = idx >= 0 ? raw.subarray(Math.max(0, idx - 24), idx + 8).toString('latin1').replace(/[^\x20-\x7e]/g, '.') : '(no aparece)'
-      require('node:fs').appendFileSync('/tmp/label-formats.txt', `${format.padEnd(5)} ${ctx}
-`)
       expect(labelOf(out)).not.toBe('')
     })
   }
+
+  // WAV is the one container where a bare probe cannot answer this. It carries a RIFF
+  // INFO chunk and an ID3 one at once, ffmpeg's demuxer reads INFO and ignores ID3, and
+  // INFO has no field for a publisher — so the label lives in ID3 and no plain ffprobe
+  // read will show it. Keeping INFO is deliberate: without it Traktor showed a converted
+  // WAV with no artist and the file name as its title. What matters for the label is that
+  // Surco still reads it and it still travels, which the suites below cover.
+  it('keeps the label readable on wav even though a bare probe cannot see it', async () => {
+    const out = join(dir, 'out.wav')
+    await convertAudio(source, out, 'wav', meta)
+
+    expect(labelOf(out)).toBe('')
+    expect((await readMeta(out)).tags.publisher).toBe('Kontor')
+  })
 })
 
 // The other half of the report: djotas says the label survives when he UPDATES an MP3 but
