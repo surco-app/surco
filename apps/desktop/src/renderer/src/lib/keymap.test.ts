@@ -171,14 +171,14 @@ describe('isTypingTarget', () => {
 })
 
 describe('activeScope', () => {
-  it('devuelve null sin elemento enfocado', () => {
-    expect(activeScope(null)).toBeNull()
+  it('no devuelve ámbitos sin elemento enfocado', () => {
+    expect(activeScope(null)).toEqual([])
   })
 
-  it('devuelve null cuando el foco está fuera de cualquier ámbito', () => {
+  it('no devuelve ámbitos cuando el foco está fuera de cualquiera', () => {
     const el = document.createElement('div')
     document.body.appendChild(el)
-    expect(activeScope(el)).toBeNull()
+    expect(activeScope(el)).toEqual([])
     el.remove()
   })
 
@@ -188,8 +188,58 @@ describe('activeScope', () => {
     const inner = document.createElement('button')
     box.appendChild(inner)
     document.body.appendChild(box)
-    expect(activeScope(inner)).toBe('track-list')
+    expect(activeScope(inner)).toEqual(['track-list'])
     box.remove()
+  })
+
+  // El recorte declara su propio ámbito DENTRO del editor (TrimSection dentro de
+  // Editor), así que con el foco en el handle el ancestro más cercano es 'trim' y el
+  // de fuera queda tapado. Un comando de ámbito 'editor' —⌘] y ⌘[ para saltar de
+  // sección— dejaba de resolver ahí: la tecla llegaba al listener y moría, y al salir
+  // de la sección volvía a funcionar. El ámbito activo tiene que ser la cadena, no
+  // sólo el más cercano.
+  it('devuelve la cadena de ámbitos cuando están anidados', () => {
+    const outer = document.createElement('div')
+    outer.setAttribute('data-shortcut-scope', 'editor')
+    const inner = document.createElement('div')
+    inner.setAttribute('data-shortcut-scope', 'trim')
+    const handle = document.createElement('button')
+    inner.appendChild(handle)
+    outer.appendChild(inner)
+    document.body.appendChild(outer)
+    expect(activeScope(handle)).toEqual(['trim', 'editor'])
+    outer.remove()
+  })
+})
+
+describe('un ámbito anidado no tapa al de fuera', () => {
+  const bindings = resolveBindings()
+  const cmdBracket = (key: string): KeyLike => ({
+    key,
+    metaKey: true,
+    ctrlKey: false,
+    shiftKey: false,
+  })
+
+  it('⌘] salta de sección con el foco dentro del recorte', () => {
+    expect(keyToCommandId(cmdBracket(']'), false, bindings, true, ['trim', 'editor'])).toBe(
+      'section-next',
+    )
+    expect(keyToCommandId(cmdBracket('['), false, bindings, true, ['trim', 'editor'])).toBe(
+      'section-prev',
+    )
+  })
+
+  // Y el de dentro sigue ganando cuando el comando es suyo: el anidamiento añade
+  // alcance, no lo redefine.
+  it('el ámbito más cercano sigue resolviendo lo suyo', () => {
+    expect(keyToCommandId(cmdBracket(']'), false, bindings, true, ['editor'])).toBe('section-next')
+  })
+
+  // Fuera de la cadena la tecla no debe disparar nada, o un comando de sección saltaría
+  // desde la lista de pistas.
+  it('no dispara fuera de la cadena', () => {
+    expect(keyToCommandId(cmdBracket(']'), false, bindings, true, ['track-list'])).toBeNull()
   })
 })
 

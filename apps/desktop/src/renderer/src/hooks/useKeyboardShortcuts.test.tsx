@@ -140,3 +140,45 @@ describe('useKeyboardShortcuts space claim', () => {
     releaseBelow()
   })
 })
+
+// The scope chain through the real DOM, not a synthetic pair of nodes: the hook reads
+// document.activeElement, so this is the only test that says the fix reaches the user.
+// TrimSection declares scope 'trim' inside Editor's 'editor', and with the focus on the
+// trim handle ⌘] — declared 'editor' — used to resolve to nothing: the key reached this
+// listener and died. Leaving the section made it work again, which is what made it read
+// as a flaky app rather than a shortcut with a scope bug.
+describe('useKeyboardShortcuts inside a nested scope', () => {
+  it('runs an outer-scope command with the focus in the inner scope', () => {
+    const sectionNext = vi.fn()
+    const commands: Command[] = [
+      { id: 'section-next', title: '', enabled: true, group: 'navigate', run: sectionNext },
+    ]
+    renderHook(() =>
+      useKeyboardShortcuts({
+        isMac: true,
+        overlayOpen: false,
+        bindings: resolveBindings(),
+        getCommands: () => commands,
+        onTogglePalette: () => {},
+        onEscape: () => {},
+        onStepTrack: () => {},
+      }),
+    )
+
+    const editor = document.createElement('div')
+    editor.setAttribute('data-shortcut-scope', 'editor')
+    const trim = document.createElement('div')
+    trim.setAttribute('data-shortcut-scope', 'trim')
+    const handle = document.createElement('button')
+    trim.appendChild(handle)
+    editor.appendChild(trim)
+    document.body.appendChild(editor)
+    handle.focus()
+    expect(document.activeElement).toBe(handle)
+
+    press({ key: ']', metaKey: true })
+
+    expect(sectionNext).toHaveBeenCalledTimes(1)
+    editor.remove()
+  })
+})
