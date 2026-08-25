@@ -44,6 +44,10 @@ const ID3_V23 = new Set(['.mp3', '.aiff', '.wav'])
 // WAV/FLAC do not round-trip GEOB cleanly through TagLib, so they stay on ffmpeg.
 const ID3_IN_PLACE = new Set(['.mp3', '.aiff'])
 
+// Containers whose ID3 tag rides inside a RIFF chunk, where TagLib re-parses every
+// frame on save (see the cueSource merge in writeTags).
+const RIFF_HOSTED = new Set(['.wav'])
+
 // The Vorbis comment FLAC carries Traktor's cue/beatgrid tree in, the counterpart
 // of the ID3 PRIV frame owned "TRAKTOR4" — same tree, armored as text.
 const FLAC_CUE_FIELD = 'TRAKTOR4'
@@ -391,6 +395,27 @@ function isTraktorCue(frame: Id3v2Frame): boolean {
   return frame.frameId.toString() === 'GEOB' || isTraktorPriv(frame)
 }
 
+// The cues a RIFF host can actually hold: Traktor's PRIV, plus Traktor's own GEOB but
+// not a foreign one. Read through the same geobParts/isTraktorGeob pair the cue reader
+// uses, so "Traktor's object" means one thing in this file. A GEOB whose header won't
+// parse is by definition not Traktor's and is the shape that throws on save.
+//
+// The render() here is not only a read: TagLib parses a frame lazily, and rendering it
+// once leaves the object in the parsed state its RIFF save would otherwise reach halfway
+// through writing. That is a side effect worth keeping deliberate rather than tidying
+// into a cheaper header peek — measured against djotas' file, the four Mixed In Key
+// objects throw when saved unrendered and survive when rendered first.
+function isRiffSafeCue(frame: Id3v2Frame): boolean {
+  if (isTraktorPriv(frame)) return true
+  if (frame.frameId.toString() !== 'GEOB') return false
+  try {
+    const parts = geobParts(frame.render(4).toByteArray())
+    return parts !== null && isTraktorGeob(parts.description)
+  } catch {
+    return false
+  }
+}
+
 // Drops the frames a cue carry-over is about to rewrite: every GEOB, and the
 // Traktor PRIV specifically — other PRIV owners on the destination stay.
 function removeCueFrames(tag: Id3v2Tag): void {
@@ -673,7 +698,17 @@ export function writeTags(
     // writeTags call as the rating (see ffmpeg.ts), so without this guard "clear
     // everything" would silently bring the cue right back.
     if (cueSource && !clearExtras) {
-      const cues = applyCueShift(readCueFrames(cueSource), cueShift)
+      const carried = applyCueShift(readCueFrames(cueSource), cueShift)
+      // A GEOB is an opaque blob everywhere else, but RiffFile.save() renders every
+      // frame through TagLib's attachment parser, which throws "Argument out of range"
+      // on objects it cannot read as an attachment. Serato's and Mixed In Key's are
+      // exactly that, and real crates carry them alongside Traktor's — djotas' own file
+      // has four — so one foreign object killed the whole conversion. Traktor's own
+      // GEOB renders fine, so a WAV keeps that one (and the PRIV) and drops only what
+      // would take the file down with it.
+      const cues = RIFF_HOSTED.has(extname(file).toLowerCase())
+        ? carried.filter(isRiffSafeCue)
+        : carried
       if (cues.length > 0) {
         removeCueFrames(id3)
         for (const frame of cues) id3.addFrame(frame)

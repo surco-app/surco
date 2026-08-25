@@ -3,6 +3,7 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
+import { File as TagFile } from 'node-taglib-sharp'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
@@ -179,4 +180,31 @@ describe('a conversion that applies a new cover', () => {
       .filter(Boolean)
     expect(streams).toHaveLength(1)
   })
+})
+
+// Read through TagLib, not ffprobe: on WAV the artwork rides an ID3 "id3 " chunk and
+// on M4A the covr atom, and the bundled ffprobe surfaces neither as a video stream.
+// Asking ffprobe here would report "no art" even on a file that has it.
+function hasArtTagLib(path: string): boolean {
+  const f = TagFile.createFromPath(path)
+  try {
+    return (f.tag.pictures ?? []).length > 0
+  } finally {
+    f.dispose()
+  }
+}
+
+// convertArgs excludes WAV and M4A from the `-map 0:v?` carry-over (RIFF refuses a
+// second stream, and M4A's art is meant to ride the TagLib pass), but that pass only
+// ever writes a NEW cover. With no coverPath there is nothing to write, so a conversion
+// whose only job was fixing a title dropped the artwork the file already had — the very
+// "Surco deleted my cover" the carry-over exists to prevent, still live on two formats.
+describe('a conversion to WAV or M4A keeps the artwork it was given', () => {
+  for (const to of ['wav', 'alac'] as const) {
+    it(`keeps the source picture when converting to ${to} with no new cover`, async () => {
+      const out = join(dir, to === 'alac' ? 'kept.m4a' : `kept.${to}`)
+      await convertAudio(flacWithArt, out, to, meta)
+      expect(hasArtTagLib(out)).toBe(true)
+    })
+  }
 })

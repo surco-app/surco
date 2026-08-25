@@ -15,6 +15,7 @@ import type { TrackMetadata } from '../shared/types'
 import { decodeBase91, encodeBase91 } from './base91'
 import { convertAudio, toNmlLocation } from './ffmpeg'
 import { beginNmlBatch, endNmlBatch } from './nmlBatch'
+import { readCueTree } from './tags'
 import { buildTraktorTree, readTraktorCueStart, traktorCue } from './traktor4Fixture'
 
 const FF = ffmpegStatic as unknown as string
@@ -398,5 +399,51 @@ describe('toNmlLocation', () => {
 
   it('keeps nested folders in order', () => {
     expect(toNmlLocation('/Volumes/X/A/B/t.mp3').dir).toBe('/:A/:B/:')
+  })
+})
+
+// WAV never reached a cue branch. convertAudio's cascade sends it to its own writeTags
+// pass (the one that fixes RIFF/iTunes tags) and that pass ran without a cueSource, so
+// no carry-over happened; ID3_IN_PLACE covers only .mp3/.aiff and the FLAC arm is an
+// else. A DJ converting a cued crate to WAV got "converted" and a file with no beatgrid
+// — the loss Traktor shows as a track with no grid at all.
+describe('cues survive a conversion to WAV', () => {
+  it('carries the Traktor cue tree over to wav', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'surco-cue-wav-'))
+    const cued = join(own, 'in.aiff')
+    execFileSync(FF, ['-y', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1', cued])
+    injectAiffCue(cued)
+    expect(readCueTree(cued)).not.toBeNull()
+
+    const out = join(own, 'out.wav')
+    await convertAudio(cued, out, 'wav', meta)
+
+    expect(readCueTree(out)).not.toBeNull()
+  })
+
+  // ALAC is the deliberate exception, pinned here so the asymmetry is a decision on
+  // record rather than a gap someone "fixes" later. Traktor's tree is an ID3 structure
+  // and an MP4 has no ID3 to put it in — writeTags returns at its iTunes-atom branch
+  // precisely because forcing one in would corrupt the file. Armoring the tree into a
+  // freeform atom (the trick FLAC uses) would write bytes no program reads back, since
+  // Traktor does not read ALAC at all: it is offered for Apple Music, not for DJing.
+  // What must hold is that the conversion still succeeds and stays a valid MP4.
+  it('leaves an alac conversion without cues, and still valid', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'surco-cue-alac-'))
+    const cued = join(own, 'in.aiff')
+    execFileSync(FF, ['-y', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1', cued])
+    injectAiffCue(cued)
+
+    const out = join(own, 'out.m4a')
+    await convertAudio(cued, out, 'alac', meta)
+
+    expect(readCueTree(out)).toBeNull()
+    // The tags the container CAN hold still land, so "no cues" never means "no pass".
+    const f = TagFile.createFromPath(out)
+    try {
+      expect(f.tag.title).toBe(meta.title)
+    } finally {
+      f.dispose()
+    }
   })
 })
