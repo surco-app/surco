@@ -39,7 +39,12 @@ export async function isTraktorRunning(): Promise<boolean> {
 export async function quitTraktor(): Promise<boolean> {
   try {
     if (process.platform === 'win32') {
-      await run('taskkill', ['/IM', 'Traktor*.exe'])
+      // taskkill accepts the wildcard for /IM "only when a filter is applied", so
+      // `/IM Traktor*.exe` alone is rejected — the catch below would swallow that and
+      // the poll would spend its full 15 s waiting for a quit nothing ever requested.
+      // The documented shape carries the pattern in the filter and a bare * in /IM.
+      // Still no /F: this is the polite quit that lets Traktor save its collection.
+      await run('taskkill', ['/FI', 'IMAGENAME eq Traktor*', '/IM', '*'])
     } else {
       await run('osascript', [
         '-e',
