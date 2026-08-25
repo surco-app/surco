@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { isRecoveryUrl, mediaRecoveryUrl, mediaUrl } from '../../../shared/media'
+import { isWindows } from '../lib/platform'
 import type { TrackItem } from '../types'
 
 interface Params {
@@ -29,8 +30,9 @@ export interface Player {
   // when it's already the one playing — a play/stop toggle on the row itself.
   toggleTrack: (track: TrackItem) => void
   closePlayer: () => void
-  // Drops the stream when it is holding `path`, so a conversion about to rewrite that
-  // file can rename over it. No-op for any other path — see the implementation.
+  // On Windows, drops the stream when it is holding `path`, so a conversion about to
+  // rewrite that file can rename over it. No-op for any other path, and a no-op
+  // everywhere else — see the implementation.
   releaseFile: (path: string) => Promise<void>
 }
 
@@ -104,6 +106,12 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
   // v0.83.4 shipped that ask alone, leaving a race users hit as "it updates on the
   // third or fourth try". The awaited IPC is what turns it into a sequence.
   const releaseFile = useCallback(async (path: string): Promise<void> => {
+    // Windows is the only platform that refuses the rename, so it is the only one that
+    // pays for it. Elsewhere the kernel renames straight over an open descriptor: the
+    // track keeps sounding from the old inode and the rewrite watcher above moves it to
+    // the new path when the export lands, so the DJ never hears the gap. Cutting the
+    // audio there bought nothing and cost an audition mid-track.
+    if (!isWindows()) return
     if (playingPathRef.current !== path) return
     const audio = audioRef.current
     audio?.pause()

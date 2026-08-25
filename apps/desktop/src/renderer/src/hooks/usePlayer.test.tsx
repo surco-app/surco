@@ -99,7 +99,13 @@ describe('usePlayer', () => {
 // blocking itself: the export's rename hit EPERM and told the DJ to close "another
 // program" that was Surco's own player. Releasing the element before the write is
 // what unblocks it, so these cover the release contract the conversion depends on.
+// Every case here pins win32: the release only happens there, and the macOS block
+// below covers the platform that keeps playing.
 describe('usePlayer releaseFile', () => {
+  beforeEach(() => {
+    ;(window as unknown as { api: { platform: string } }).api.platform = 'win32'
+  })
+
   function ReleaseHarness({
     tracks,
     releasePath,
@@ -176,6 +182,71 @@ describe('usePlayer releaseFile', () => {
 
     fireEvent.click(screen.getByTestId('release'))
 
+    expect(window.api.releasePlayingFile).not.toHaveBeenCalled()
+  })
+})
+
+// Only Windows refuses the rename, so only Windows pays for it. Everywhere else the
+// kernel renames happily over an open descriptor — the playing track keeps sounding
+// from the old inode until the rewrite watcher moves it to the new path — so cutting
+// the audio there buys nothing and costs the DJ the audition mid-track. This is the
+// whole point of the platform gate: silence is a Windows tax, not a universal one.
+describe('usePlayer releaseFile off Windows', () => {
+  function ReleaseHarness({ releasePath }: { releasePath: string }): React.JSX.Element {
+    const tracks = [track('a', '/m/a.mp3')]
+    const { audioRef, togglePlay, releaseFile } = usePlayer({
+      tracks,
+      selected: tracks[0],
+      selectedId: tracks[0].id,
+    })
+    return (
+      <>
+        {/* biome-ignore lint/a11y/useMediaCaption: silent test fixture */}
+        <audio ref={audioRef} data-testid="audio" />
+        <button type="button" data-testid="toggle" onClick={togglePlay} />
+        <button type="button" data-testid="release" onClick={() => releaseFile(releasePath)} />
+      </>
+    )
+  }
+
+  function playingOn(platform: string): HTMLAudioElement {
+    ;(window as unknown as { api: { platform: string } }).api.platform = platform
+    render(<ReleaseHarness releasePath="/m/a.mp3" />)
+    const audio = screen.getByTestId('audio') as HTMLAudioElement
+    audio.play = vi.fn().mockResolvedValue(undefined)
+    audio.pause = vi.fn()
+    audio.load = vi.fn()
+    fireEvent.click(screen.getByTestId('toggle'))
+    return audio
+  }
+
+  it('keeps the track sounding when the export rewrites the file on macOS', () => {
+    const audio = playingOn('darwin')
+
+    fireEvent.click(screen.getByTestId('release'))
+
+    expect(audio.pause).not.toHaveBeenCalled()
+    expect(audio.src).toContain('a.mp3')
+    expect(audio.load).not.toHaveBeenCalled()
+  })
+
+  // Tearing down the element is only half the release; main closing the descriptor is
+  // the half that actually costs the audio. Asserting main is never asked proves the
+  // gate stops the whole sequence, not just its renderer half.
+  it('never asks main to close the descriptor on macOS', () => {
+    playingOn('darwin')
+
+    fireEvent.click(screen.getByTestId('release'))
+
+    expect(window.api.releasePlayingFile).not.toHaveBeenCalled()
+  })
+
+  it('keeps the track sounding on Linux too', () => {
+    const audio = playingOn('linux')
+
+    fireEvent.click(screen.getByTestId('release'))
+
+    expect(audio.pause).not.toHaveBeenCalled()
     expect(window.api.releasePlayingFile).not.toHaveBeenCalled()
   })
 })
