@@ -359,6 +359,35 @@ describe('QualitySection analysis failure', () => {
     expect(error).toHaveTextContent(i18n.t('editor.analyzeError'))
     expect(screen.queryByText(raw)).not.toBeInTheDocument()
   })
+
+  // A track moved or renamed in Finder is the everyday case, and "could not analyse the
+  // audio" sends the DJ looking for a damaged file instead of a stale path. The main
+  // process stamps that failure with a key, which must survive Electron's IPC wrapper.
+  it('names a file that is no longer there instead of blaming the audio', async () => {
+    const raw =
+      "Error invoking remote method 'audio:spectrogram': Error: SURCO_ERR:fileMissing: /Users/dj/Track.flac: No such file or directory"
+    ;(window as unknown as { api: unknown }).api = {
+      spectrogram: vi.fn().mockRejectedValue(new Error(raw)),
+    }
+    const client = createQueryClient()
+    render(
+      <QueryClientProvider client={client}>
+        <QualitySection
+          item={track()}
+          showSpectrum
+          showLoudness={false}
+          normalize={OFF}
+          open
+          onToggle={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
+        />
+      </QueryClientProvider>,
+    )
+
+    const error = await screen.findByTestId('quality-error')
+    expect(error).toHaveTextContent(i18n.t('errors.fileMissing'))
+    expect(error).not.toHaveTextContent(i18n.t('editor.analyzeError'))
+  })
 })
 
 // The report button is the shareable proof: "is this FLAC fake?" threads live on

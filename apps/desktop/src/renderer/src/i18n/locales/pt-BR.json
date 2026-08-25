@@ -110,6 +110,7 @@
     "qualityReport": "Não foi possível salvar o relatório de qualidade.",
     "statsImage": "Não foi possível salvar a imagem de estatísticas.",
     "draggedCover": "Não foi possível usar essa imagem como capa.",
+    "fileMissing": "Este arquivo não está mais nesse local. Ele pode ter sido movido ou renomeado.",
     "coverUrlBlocked": "Esse endereço de capa não é permitido, então nada foi baixado.",
     "deezerRateLimit": "O Deezer está limitando as buscas. Espere um momento e tente de novo.",
     "discogsRateLimit": "O Discogs está limitando as buscas. Espere um momento e tente de novo.",

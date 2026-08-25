@@ -6,6 +6,7 @@ import { basename, dirname, extname, join } from 'node:path'
 import { promisify } from 'node:util'
 import log from 'electron-log/main'
 import { declickFilter } from '../shared/declick'
+import { errorWithKey } from '../shared/errorKeys'
 import { formatRatingTag } from '../shared/rating'
 import { trimFilter } from '../shared/trim'
 import type {
@@ -48,6 +49,7 @@ import {
   BAND_START_HZ as SHELF_BAND_START_HZ,
   BAND_WIDTH_HZ as SHELF_BAND_WIDTH_HZ,
 } from './hfShelf'
+import { isMissingInputError } from './missingInput'
 import { recordNmlPatch } from './nmlBatch'
 import {
   astatsArgs,
@@ -135,6 +137,12 @@ const run = (async (file: string, args: string[], opts?: RunOpts) => {
   try {
     return await niceDecode(file, args, opts)
   } catch (err) {
+    // The file is simply not at that path any more — moved or renamed in Finder, or
+    // replaced by a conversion. Stamped so the renderer can say so instead of showing
+    // "could not analyse the audio", which blames the music for a stale path. Checked
+    // before the repair below because there is nothing to repair: repairWav would open
+    // every argument looking for a fixable WAV and find nothing.
+    if (isMissingInputError(err)) throw errorWithKey('fileMissing', String(err))
     if (!isMalformedInputError(err)) throw err
     for (let i = 0; i < args.length; i++) {
       const repaired = await repairWav(args[i])
