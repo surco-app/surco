@@ -83,6 +83,18 @@
       {
         "text": "La clave musical se escribe donde Traktor la busca. Al convertir a FLAC solo se escribía como INITIALKEY, y Traktor lee KEY. Ahora se escriben las dos grafías, así que lea la que lea tu programa, la clave está ahí — el mismo trato que ya hacía el sello con LABEL y PUBLISHER.",
         "in": "0.86.7"
+      },
+      {
+        "text": "Convertir a WAV o ALAC ya no pierde tus cues ni la carátula. Los otros formatos los conservaban desde hace tiempo, pero estos dos se quedaron fuera: pasabas un crate analizado a WAV y salía sin rejilla ni puntos de cue, con la app diciendo «convertida». Ahora viajan igual que en MP3, AIFF y FLAC. La carátula también: hasta ahora una conversión que solo corregía el título se llevaba por delante la portada que el archivo ya tenía.",
+        "in": "0.86.8"
+      },
+      {
+        "text": "Convertir un lote ya no pisa dos pistas cuyos nombres solo se diferencian en mayúsculas. En Mac y Windows «Artista - Tema.aiff» y «artista - tema.aiff» son el mismo archivo, algo fácil de provocar cuando un match de Discogs rellena el artista con otra caja que la que tenía el vecino. Surco los trataba como destinos distintos y la segunda conversión se escribía encima de la primera, contando las dos como hechas.",
+        "in": "0.86.8"
+      },
+      {
+        "text": "Los atajos de sección funcionan dentro de Recorte de silencio. Con el foco puesto en un tirador del recorte, ⌘] y ⌘[ dejaban de saltar de sección: la tecla no hacía nada y solo volvía a responder al salir de la sección.",
+        "in": "0.86.8"
       }
     ]
   },

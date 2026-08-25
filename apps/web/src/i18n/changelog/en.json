@@ -83,6 +83,18 @@
       {
         "text": "The musical key is written where Traktor looks for it. Converting to FLAC wrote the key only as INITIALKEY, and Traktor reads KEY. Both spellings are written now, so whichever one your software reads, the key is there — the same bargain the record label already strikes with LABEL and PUBLISHER.",
         "in": "0.86.7"
+      },
+      {
+        "text": "Converting to WAV or ALAC no longer loses your cues or artwork. The other formats had carried them for a while, but these two were left out: an analysed crate converted to WAV came out with no beatgrid and no cue points, while the app reported it converted. They now travel just as they do on MP3, AIFF and FLAC. So does the artwork — until now a conversion whose only job was fixing a title stripped the cover the file already had.",
+        "in": "0.86.8"
+      },
+      {
+        "text": "Converting a batch no longer overwrites two tracks whose names differ only in capitals. On Mac and Windows “Artist - Track.aiff” and “artist - track.aiff” are one and the same file, which is easy to hit when a Discogs match fills in an artist with different capitals from the one next to it. Surco treated them as separate destinations and the second conversion landed on top of the first, counting both as done.",
+        "in": "0.86.8"
+      },
+      {
+        "text": "The section shortcuts work inside Silence trim. With the focus on a trim handle, ⌘] and ⌘[ stopped jumping between sections: the key did nothing, and only started responding again once you left the section.",
+        "in": "0.86.8"
       }
     ]
   },
