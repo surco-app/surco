@@ -286,6 +286,35 @@ describe('runProcessTrack — output conflict', () => {
     expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
   })
 
+  // Overwriting a file the user can see in the destination folder is their call. A
+  // reservation is not that file: it is another in-flight job's path, with nothing
+  // written there yet. Honouring overwrite against one points both jobs at a single
+  // destination, so the second rename lands on the first and that track is gone while
+  // the run still counts it converted.
+  it('does not overwrite a path another in-flight job has reserved', async () => {
+    const deps = makeDeps({
+      isPathReserved: vi.fn((p: string) => p === '/out/Artist - Title.aiff'),
+    })
+    deps.confirmConflict = vi.fn(async () => 'overwrite' as const)
+
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
+  })
+
+  // The same choice against a real file on disk must still overwrite it — that is the
+  // whole point of the option, and the reservation guard above must not disarm it.
+  it('overwrites a file that really exists on disk', async () => {
+    const deps = makeDeps({
+      existsSync: vi.fn((p: string) => p === '/out/Artist - Title.aiff'),
+    })
+    deps.confirmConflict = vi.fn(async () => 'overwrite' as const)
+
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result.outputPath).toBe('/out/Artist - Title.aiff')
+  })
+
   it('releases the reservation once the job settles, success or failure', async () => {
     const deps = makeDeps()
     await runProcessTrack(job(), deps)
