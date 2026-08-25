@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { Api } from '../../../preload/api'
 import type { Settings, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import '../i18n'
@@ -69,7 +70,11 @@ describe('useTrackProcessing', () => {
   // The happy path: a track with its required tags converts, the row is marked
   // processing then written back from the result, and the outcome counts as converted.
   it('converts a valid track and reports it converted', async () => {
-    setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }) })
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
+    })
     const updateTrack = vi.fn()
     const { result } = renderHook(
       () =>
@@ -169,7 +174,11 @@ describe('useTrackProcessing', () => {
   // The hook is wired through App, where the player may not exist yet on the first
   // render — an optional dep must not turn a conversion into a crash.
   it('converts normally when no player is wired up', async () => {
-    setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }) })
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
+    })
     const { result } = renderHook(
       () =>
         useTrackProcessing({
@@ -190,7 +199,9 @@ describe('useTrackProcessing', () => {
   // every entry point — single convert, ⌘⏎, convert all — must send the staged
   // range without knowing it exists.
   it('sends the track’s staged silence trim with the job', async () => {
-    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' })
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
     setApi({ processTrack })
     const { result } = renderHook(
       () =>
@@ -349,7 +360,11 @@ describe('useTrackProcessing', () => {
   // Convert-all runs every eligible track and reports the run's tally, which is what
   // the toolbar's "3 converted" summary reads from.
   it('converts every eligible track and summarizes the run', async () => {
-    setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff' }) })
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/out/x.aiff', inPlace: false }),
+    })
     const updateTrack = vi.fn()
     const tracks = [track({ id: 'a' }), track({ id: 'b' })]
     const { result } = renderHook(
@@ -419,7 +434,11 @@ describe('useTrackProcessing', () => {
   // matter how many tracks it spans — firing per track would ask for support thirty
   // times in a thirty-track run, the exact nagware the nudge is built to avoid.
   it('fires onConversion once per run, not once per converted track', async () => {
-    setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff' }) })
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/out/x.aiff', inPlace: false }),
+    })
     const onConversion = vi.fn()
     const tracks = [track({ id: 'a' }), track({ id: 'b' })]
     const { result } = renderHook(
@@ -436,7 +455,11 @@ describe('useTrackProcessing', () => {
   // asking for a donation right after it produced no result reads as nagware, so the
   // nudge must stay silent unless at least one track actually converted.
   it('does not fire onConversion when a run converted nothing', async () => {
-    setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '', skipped: true }) })
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '', inPlace: false, skipped: true }),
+    })
     const onConversion = vi.fn()
     const tracks = [track({ id: 'a' })]
     const { result } = renderHook(
@@ -496,7 +519,9 @@ describe('useTrackProcessing', () => {
   // facets: main falls back to Settings for any facet the job omits, so a pick that
   // sent only the changed flag would still convert half to the old destination.
   it('expands a destination override into the full facet set on the job', async () => {
-    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' })
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
     setApi({ processTrack })
     const { result } = renderHook(
       () =>
@@ -547,7 +572,7 @@ describe('useTrackProcessing', () => {
   // overriding AWAY from configured overwrite: the pick said "new files this time", so
   // no track in the run may rewrite its source.
   it('pins the destination override across a batch over the overwrite setting', async () => {
-    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff' })
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x.aiff', inPlace: false })
     setApi({ processTrack })
     const tracks = [track({ id: 'a' }), track({ id: 'b' })]
     const { result } = renderHook(
@@ -795,7 +820,9 @@ describe('useTrackProcessing', () => {
   // the sweep's own progress UI.
   it('clears a lingering convert summary when the Apple Music sweep starts', async () => {
     setApi({
-      processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }),
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
       addToAppleMusic: vi.fn().mockResolvedValue(undefined),
     })
     const tracks = [track({ id: 'a', outputPath: '/out/a.aiff' })]
@@ -818,7 +845,11 @@ describe('useTrackProcessing', () => {
   it('auto-dismisses a summary with no failures after a few seconds', async () => {
     vi.useFakeTimers()
     try {
-      setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }) })
+      setApi({
+        processTrack: vi
+          .fn<Api['processTrack']>()
+          .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
+      })
       const tracks = [track({ id: 'a' })]
       const { result } = renderHook(
         () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
@@ -910,7 +941,11 @@ describe('useTrackProcessing', () => {
   // at {N,N} after the run it kept the bar pinned at 100% forever and skewed every later
   // sweep's pooled fraction. It must return to zero the moment the run ends.
   it('resets the batch progress once a convert-all run finishes', async () => {
-    setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }) })
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
+    })
     const tracks = [track({ id: 'a' })]
     const { result } = renderHook(
       () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
@@ -927,7 +962,9 @@ describe('useTrackProcessing', () => {
   it('closes the conversion batch so the collection is written once', async () => {
     const endConversionBatch = vi.fn()
     setApi({
-      processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }),
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
       endConversionBatch,
     })
     const tracks = [track({ id: 'a' }), track({ id: 'b' })]
@@ -982,7 +1019,9 @@ describe('useTrackProcessing', () => {
     const beginConversionBatch = vi.fn()
     const endConversionBatch = vi.fn()
     setApi({
-      processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }),
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
       beginConversionBatch,
       endConversionBatch,
     })
@@ -1007,7 +1046,9 @@ describe('useTrackProcessing', () => {
     const beginConversionBatch = vi.fn()
     const endConversionBatch = vi.fn()
     setApi({
-      processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }),
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
       beginConversionBatch,
       endConversionBatch,
     })
@@ -1029,7 +1070,11 @@ describe('useTrackProcessing', () => {
   // THROWS is the case that only a real finally catches — without it, a rejected
   // processOne would skip the flush and leak this batch's patches into the next run.
   it('closes the conversion batch even when a track conversion throws', async () => {
-    setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' }) })
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
+    })
     const endConversionBatch = vi.fn()
     ;(window as unknown as { api: { endConversionBatch: () => void } }).api.endConversionBatch =
       endConversionBatch
@@ -1067,7 +1112,9 @@ describe('useTrackProcessing', () => {
   })
 
   it('hands the stored persistent ID to the conversion, so the automatic Apple Music step syncs the existing library copy instead of importing a duplicate', async () => {
-    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' })
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
     setApi({ processTrack })
     const { result } = renderHook(
       () =>
@@ -1172,7 +1219,9 @@ describe('useTrackProcessing', () => {
   // job must name the source file so main embeds the original at full resolution
   // instead of permanently downscaling the user's artwork.
   it('takes the file’s own art from the source, never the renderer thumbnail', async () => {
-    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' })
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
     setApi({ processTrack })
     const thumb = 'data:image/jpeg;base64,thumb'
     const { result } = renderHook(
@@ -1198,7 +1247,11 @@ describe('useTrackProcessing', () => {
   // exists. Without eviction the loudness/properties/spectrum readouts keep showing the
   // pre-rewrite facts, in exactly the mode where the user just changed the file.
   it('evicts the rewritten path’s cached probes after an in-place export', async () => {
-    setApi({ processTrack: vi.fn().mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true }) })
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true }),
+    })
     const client = new QueryClient()
     client.setQueryData(['loudness', '/m/a.wav'], { integrated: -9 })
     client.setQueryData(['spectrogram', '/m/a.wav'], { image: 'x' })
@@ -1223,7 +1276,9 @@ describe('useTrackProcessing', () => {
   // strip pinned forever if the old query had errored.
   it('evicts the output path’s cached probes after a regular conversion', async () => {
     setApi({
-      processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
     })
     const client = new QueryClient()
     client.setQueryData(['waveform', '/out/a.aiff'], { peaks: [1], durationSec: 1 })
@@ -1357,7 +1412,9 @@ describe('useTrackProcessing', () => {
     // A concrete format pick is a deliberate override of "keep the source format" — an
     // .opus converting to AIFF is exactly what the user asked for, so it must proceed.
     it('still converts a file with no equivalent format when a concrete format is chosen', async () => {
-      const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' })
+      const processTrack = vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
       setApi({ processTrack })
       const settings = { outputFormat: 'aiff', overwriteOriginal: true } as Settings
       const track1 = track({ id: 'a', inputPath: '/music/a.opus' })
@@ -1471,7 +1528,9 @@ describe('useTrackProcessing', () => {
     // conversion.
     it('refreshes the row after an in-place export', async () => {
       setApi({
-        processTrack: vi.fn().mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true }),
+        processTrack: vi
+          .fn<Api['processTrack']>()
+          .mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true }),
       })
       const refreshTrackFromDisk = vi.fn().mockResolvedValue(undefined)
       const { result } = renderHook(
@@ -1497,7 +1556,9 @@ describe('useTrackProcessing', () => {
     // actually points at.
     it('leaves the row alone when the export went somewhere else', async () => {
       setApi({
-        processTrack: vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
+        processTrack: vi
+          .fn<Api['processTrack']>()
+          .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
       })
       const refreshTrackFromDisk = vi.fn().mockResolvedValue(undefined)
       const { result } = renderHook(
@@ -1549,7 +1610,9 @@ describe('useTrackProcessing', () => {
     // conversion into a failed one in the user's eyes.
     it('still reports the track converted when the refresh throws', async () => {
       setApi({
-        processTrack: vi.fn().mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true }),
+        processTrack: vi
+          .fn<Api['processTrack']>()
+          .mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true }),
       })
       const { result } = renderHook(
         () =>
