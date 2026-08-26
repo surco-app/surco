@@ -1353,13 +1353,19 @@ export async function convertAudio(
             dest: tmp,
             shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
           })
-      } else if ((meta.rating?.trim() || clearExtras) && (ext === '.mp3' || ext === '.aiff')) {
+      } else if (
+        (meta.rating?.trim() || meta.comment.trim() || clearExtras) &&
+        (ext === '.mp3' || ext === '.aiff')
+      ) {
         // ffmpeg can't emit a POPM frame, so a re-encoded MP3/AIFF needs a TagLib
-        // pass to write the Traktor rating. Only done when there's a rating (or a
-        // clear, which must actively wipe the POPM ffmpeg copied over), to avoid a
-        // second tag pass on every conversion. cueSource folds the cue carry-over
-        // (below) into this same save, so the rating never costs a second whole-file
-        // rewrite on top of it.
+        // pass to write the Traktor rating. Only done when there's something only this
+        // pass can write (or a clear, which must actively wipe the POPM ffmpeg copied
+        // over), to avoid a second tag pass on every conversion. cueSource folds the cue
+        // carry-over (below) into this same save, so the rating never costs a second
+        // whole-file rewrite on top of it.
+        // A comment counts too: ffmpeg writes one as a TXXX described "comment", not the
+        // COMM frame the spec defines and Traktor and mp3tag read, so an unrated track
+        // reached them with no comment at all.
         await runInWorker({
           type: 'writeTags',
           file: tmp,
