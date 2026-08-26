@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.87",
+    "date": "26 de agosto de 2026",
+    "title": "Tus cues llegan enteros a cualquier formato",
+    "items": [
+      {
+        "text": "Los cues y la rejilla de Traktor ya sobreviven a cualquier conversión. Hasta ahora solo se conservaban entre algunos formatos: al pasar un FLAC a MP3, AIFF o WAV los cues se perdían, y al pasar un WAV a FLAC también. No avisaba de nada, y el archivo nuevo parecía correcto hasta que lo abrías en Traktor y te encontrabas la pista desnuda. El caso del MP3 era el más traicionero: los datos sí viajaban, pero escritos de una forma que Traktor no lee, así que cualquier inspector de etiquetas te decía que estaban ahí. Ahora se escriben donde Traktor los busca, en los cinco formatos, y si recortas el principio de la pista los cues se recolocan solos.",
+        "in": "0.87.0"
+      },
+      {
+        "text": "La onda deja de teñirse de rojo en pistas que no están saturadas. Un tema masterizado justo al límite salía marcado de punta a punta, con un aviso de picos por encima del máximo que no se correspondía con nada: el fallo estaba en cómo Surco juntaba los dos canales para dibujar la onda, que subía el nivel algo más de 3 dB antes de medirlo. Ahora se mide al nivel real del archivo, así que las marcas de saturación solo aparecen cuando de verdad hay recorte.",
+        "in": "0.87.0"
+      }
+    ]
+  },
+  {
     "version": "0.86",
     "date": "17 de agosto de 2026",
     "title": "Tú decides qué toca Discogs",

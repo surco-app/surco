@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.87",
+    "date": "August 26, 2026",
+    "title": "Your cues survive every format",
+    "items": [
+      {
+        "text": "Traktor's cues and beatgrid now survive any conversion. Until now they only carried across some formats: going from FLAC to MP3, AIFF or WAV lost them, and so did WAV to FLAC. Nothing warned you, and the new file looked fine right up until you opened it in Traktor and found the track bare. MP3 was the sneakiest case: the data did travel, but written in a way Traktor doesn't read, so any tag inspector would happily tell you it was there. It now goes where Traktor looks for it, across all five formats, and if you trim the start of a track the cues move with it.",
+        "in": "0.87.0"
+      },
+      {
+        "text": "The waveform no longer turns red on tracks that aren't clipping. A track mastered right up to the ceiling showed up marked end to end, with a peaks-over-maximum warning that matched nothing: the fault was in how Surco folded the two channels together to draw the waveform, which pushed the level just over 3 dB before measuring it. It now measures at the file's own level, so clip marks only appear when there really is clipping.",
+        "in": "0.87.0"
+      }
+    ]
+  },
+  {
     "version": "0.86",
     "date": "August 17, 2026",
     "title": "You decide what Discogs touches",
