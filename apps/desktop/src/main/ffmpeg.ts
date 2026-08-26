@@ -1932,7 +1932,14 @@ async function decodePcm(
   if (opts.startSec !== undefined && opts.startSec > 0) args.push('-ss', String(opts.startSec))
   args.push('-i', input)
   if (opts.seconds !== undefined) args.push('-t', String(opts.seconds))
-  args.push('-ac', '1', '-ar', String(opts.sampleRate), '-f', 'f32le', '-')
+  // Cap the downmix matrix at unity gain. ffmpeg's mono downmix is power-preserving,
+  // so two correlated channels come back ×√2 (+3.01 dB) — and every threshold
+  // downstream reads this PCM as the file's own level. Most visibly the waveform's
+  // clip marks: a track mastered to the -1 dBTP ceiling decoded to +2 dB and lit up
+  // red end to end, reported as "Peaks over -1.0 dB". Unlike an explicit `pan`, this
+  // leaves channel counts other than stereo to ffmpeg's own matrix.
+  args.push('-ac', '1', '-rematrix_maxval', '1.0')
+  args.push('-ar', String(opts.sampleRate), '-f', 'f32le', '-')
   let stdout: Buffer
   try {
     // A failed decode rejects with the child's whole stdout attached — tens of MB of
