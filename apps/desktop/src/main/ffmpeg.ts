@@ -72,6 +72,7 @@ import { MANAGED_ALIASES, TAG_FIELDS } from './tagFields'
 import { readTagFormats } from './tagFormats'
 import {
   type CueShift,
+  keepsCuesInId3,
   preservesCuesInPlace,
   readCueTree,
   readItunesGrouping,
@@ -1340,6 +1341,18 @@ export async function convertAudio(
           // owned by whoever passed it in.
           if (carried) await unlink(carried).catch(() => {})
         }
+        // A WAV's cues live in an ID3 chunk, so a FLAC source hits the same wall the
+        // MP3/AIFF targets did: cueSource clones ID3 frames and a Vorbis comment is not
+        // one, leaving the WAV with no beatgrid at all. Re-armor it here, after the tag
+        // pass that created the chunk. M4A is excluded on purpose — it has no ID3 to
+        // write into, the same reason the ALAC path carries no cues.
+        if (!clearExtras && ext === '.wav' && extname(input).toLowerCase() === '.flac')
+          await runInWorker({
+            type: 'copyCuesFromFlac',
+            source: input,
+            dest: tmp,
+            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
+          })
       } else if ((meta.rating?.trim() || clearExtras) && (ext === '.mp3' || ext === '.aiff')) {
         // ffmpeg can't emit a POPM frame, so a re-encoded MP3/AIFF needs a TagLib
         // pass to write the Traktor rating. Only done when there's a rating (or a
@@ -1403,9 +1416,16 @@ export async function convertAudio(
       // Unless the source was ID3 (an AIFF crate moving to FLAC is the common
       // one): then no comment rode along, and the cues have to be re-armored out
       // of the source's PRIV frame instead.
+      // A WAV source needs copyCuesToFlac just as much as an MP3/AIFF one: its cues also
+      // live in an ID3 tag, which ffmpeg does not translate into a Vorbis comment. It is
+      // excluded from preservesCuesInPlace for an unrelated reason (its ID3 rides inside a
+      // RIFF chunk, so it takes the ffmpeg path rather than an in-place edit), and reusing
+      // that predicate here silently routed it to shiftFlacCues — which had no comment to
+      // re-anchor, so the cues were dropped. ID3_SOURCED names the real property this
+      // branch needs: "the source keeps its cues in an ID3 tag".
       else if (ext === '.flac')
         await runInWorker(
-          preservesCuesInPlace(extname(input))
+          keepsCuesInId3(extname(input))
             ? {
                 type: 'copyCuesToFlac',
                 source: input,

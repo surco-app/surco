@@ -44,6 +44,16 @@ const ID3_V23 = new Set(['.mp3', '.aiff', '.wav'])
 // WAV/FLAC do not round-trip GEOB cleanly through TagLib, so they stay on ffmpeg.
 const ID3_IN_PLACE = new Set(['.mp3', '.aiff'])
 
+// Containers that keep Traktor's cues in an ID3 tag, whatever the container wraps it in.
+// Broader than ID3_IN_PLACE on purpose: that set is about whether the tag can be edited in
+// place, which excludes WAV for a reason unrelated to where its cues live. A cue carry-over
+// that needs "is the source ID3-tagged?" must ask this, or a WAV source looks cue-less.
+const ID3_SOURCED = new Set(['.mp3', '.aiff', '.wav'])
+
+export function keepsCuesInId3(ext: string): boolean {
+  return ID3_SOURCED.has(ext.toLowerCase())
+}
+
 // Containers whose ID3 tag rides inside a RIFF chunk, where TagLib re-parses every
 // frame on save (see the cueSource merge in writeTags).
 const RIFF_HOSTED = new Set(['.wav'])
