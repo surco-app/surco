@@ -550,15 +550,22 @@ const toTrackNumber = (value: string): number => {
   return n || toNumber(value.replace(/\D/g, ''))
 }
 
-// The fields with no dedicated box in MP4, written as "----" freeform atoms under the same
-// names the ID3 path gives their TXXX frames (see the setUserText calls below), so a track
-// converted to m4a carries what the same track converted to mp3 does.
+// The fields no tag family gives a dedicated box: they ride TXXX descriptions in ID3 and
+// "----" freeform atoms in MP4, under the names mp3tag writes so a collection tagged with
+// that tool and one tagged here agree. One list for both containers, because the four
+// collector fields were in TAG_FIELDS (so a plain ffmpeg convert wrote them) yet in no
+// writeTags branch at all — which silently dropped them from every file the TagLib pass
+// finishes: a rated MP3/AIFF, a WAV, an m4a.
 function extendedFields(meta: TrackMetadata): Array<[string, string]> {
   return [
     ['CATALOGNUMBER', meta.catalogNumber],
     ['DISCOGS_RELEASE_ID', meta.discogsReleaseId ?? ''],
     ['MOOD', meta.mood ?? ''],
     ['ENERGY', meta.energy ?? ''],
+    ['STYLE', meta.style ?? ''],
+    ['COUNTRY', meta.country ?? ''],
+    ['MEDIATYPE', meta.mediaType ?? ''],
+    ['DISCOGS_RELEASE_URL', meta.discogsUrl ?? ''],
   ]
 }
 
@@ -736,11 +743,10 @@ export function writeTags(
         id3.removeFrame(fr)
       }
     }
-    // The catalog number has no standard frame, so it rides the de-facto TXXX
-    // "CATALOGNUMBER" one — the same key the ffmpeg path writes.
-    setUserText(id3, 'CATALOGNUMBER', meta.catalogNumber)
-    // Same TXXX treatment for the Discogs release id — no standard frame either.
-    setUserText(id3, 'DISCOGS_RELEASE_ID', meta.discogsReleaseId ?? '')
+    // The extras with no standard frame, on the de-facto TXXX keys the ffmpeg path writes:
+    // catalog number, Discogs ids, the DJ's mood/energy judgement and the collector fields
+    // off the release. Shared with the m4a branch above so neither container can drift.
+    for (const [name, value] of extendedFields(meta)) setUserText(id3, name, value)
     // Original year has no TagLib property, so it rides the raw frame. The TDOR
     // identifier is version-aware: on the v2.3 tags pinned above it renders as
     // TORY, its v2.3 predecessor.
@@ -758,13 +764,11 @@ export function writeTags(
     // rating printed as its raw byte next to the same rating printed as stars. The native
     // frame is the one every DJ tool reads, so the text mirror goes.
     for (const mirrored of TXXX_NATIVE_MIRRORS) setUserText(id3, mirrored, '')
-    // Quick Tag's judgement fields, both on the TXXX route. Mood's standard frame
-    // (TMOO) is ID3v2.4-only — TagLib has no v2.3 equivalent for it, so on the v2.3
-    // tags pinned above it would be silently dropped on save. TXXX "MOOD" is what
-    // ffmpeg writes for a mood tag anyway, and what mp3tag and Traktor read. Energy
-    // has no standard frame at all; TXXX "ENERGY" is Mixed In Key's key.
-    setUserText(id3, 'MOOD', meta.mood ?? '')
-    setUserText(id3, 'ENERGY', meta.energy ?? '')
+    // Mood and energy ride that same shared list. Mood's standard frame (TMOO) is
+    // ID3v2.4-only — TagLib has no v2.3 equivalent, so on the v2.3 tags pinned above it
+    // would be silently dropped on save. TXXX "MOOD" is what ffmpeg writes for a mood tag
+    // anyway, and what mp3tag and Traktor read. Energy has no standard frame at all;
+    // TXXX "ENERGY" is Mixed In Key's key.
 
     // A vinyl-position track number ("A2") is text the numeric tag.track setter
     // above cannot hold — it wrote the bare digits. Rewrite the TRCK frame with the
