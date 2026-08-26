@@ -712,6 +712,10 @@ export function writeTags(
       // TagLib itself uses to write every managed atom it doesn't have a dedicated
       // box for (ReplayGain, MusicBrainz ids…), under the MEAN every tagger writes.
       // Applies always, like the ID3 route below — independent of clearExtras.
+      // The rating is the one extra that stays behind: it lives in a POPM frame, an ID3
+      // structure MP4 has no counterpart for, and the reader on the other side (readMeta)
+      // only ever looks for POPM. Armoring it into a freeform atom would write bytes
+      // nothing reads back — not even Surco itself.
       const apple = f.tag as Mpeg4AppleTag
       for (const [name, value] of extendedFields(meta)) setItunesText(apple, name, value)
       for (const name of foreignRemoved) apple.setItunesStrings('com.apple.iTunes', name)
