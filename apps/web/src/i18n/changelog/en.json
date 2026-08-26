@@ -19,6 +19,10 @@
       {
         "text": "The comment and the rating no longer show up twice. A converted file listed the comment twice and the rating twice — once as the raw number, once as stars — because the value was written in two places at once and only one of them is what Traktor and mp3tag read. Each now goes where it belongs, once. An unrated track also keeps its comment: it used to be stored in a way those programs don't look at, so it came up empty.",
         "in": "0.87.1"
+      },
+      {
+        "text": "A broken tag no longer takes an AIFF conversion down. Some files analysed by other tools carry a tag whose declared size is wrong and overlaps the ones next to it: while copying the cues onto the new file, Surco choked on it, stopped, and left nothing behind — even though the audio had already been converted. That broken tag is now skipped and the conversion finishes with its cues intact. WAV had been handling this case for a while; AIFF was missing it.",
+        "in": "0.87.2"
       }
     ]
   },

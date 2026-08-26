@@ -19,6 +19,10 @@
       {
         "text": "El comentario y la puntuación dejan de salir por duplicado. Un archivo convertido enseñaba dos veces el comentario y dos veces la valoración —una con el número interno y otra con las estrellas—, porque el dato se escribía en dos sitios a la vez y solo uno es el que leen Traktor y mp3tag. Ahora cada uno va donde toca y una sola vez. De paso, un tema sin estrellas ya conserva su comentario: antes quedaba guardado de una forma que esos programas no miran, así que lo veías vacío.",
         "in": "0.87.1"
+      },
+      {
+        "text": "Una etiqueta estropeada ya no tumba la conversión a AIFF. Algunos archivos analizados con otras herramientas traen una etiqueta cuyo tamaño está mal apuntado y se solapa con las de al lado: al copiar los cues al archivo nuevo, Surco se atragantaba con ella, cortaba el proceso y no dejaba nada — aunque el audio ya estuviera convertido. Ahora se descarta esa etiqueta rota y la conversión termina con sus cues intactos. El mismo caso ya estaba resuelto en WAV desde hacía tiempo y le faltaba a AIFF.",
+        "in": "0.87.2"
       }
     ]
   },
