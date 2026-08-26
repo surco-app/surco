@@ -1,7 +1,8 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { gunzipSync } from 'node:zlib'
 import ffmpegStatic from 'ffmpeg-static'
 import {
   Id3v2PrivateFrame,
@@ -608,6 +609,78 @@ describe('toNmlLocation', () => {
 
   it('keeps nested folders in order', () => {
     expect(toNmlLocation('/Volumes/X/A/B/t.mp3').dir).toBe('/:A/:B/:')
+  })
+})
+
+// The first 1200 bytes of the "BeatGrid" GEOB out of the file djotas sent, gzipped: a
+// Mixed In Key object whose body starts as base64 JSON and then runs on into raw bytes
+// that are not part of it. Kept verbatim rather than hand-rolled because three synthetic
+// approximations of it all converted cleanly — what breaks TagLib is the exact shape of
+// this object, not "a foreign GEOB" in the abstract.
+const MIK_BEATGRID_GZIP =
+  'H4sIAAAAAAAC/y2T3Y6bMBSEc83LlB8j9ZbGKPWKYyuKSUvvsmTFYtLdVQky9tN3TsIFQuus53xnZthdvr5uY3+5j58f39z8+bHb/Xi73A//xuvuLbzE1+Icurwdzfhyv/x+v/053JZLfi7V6Mfr4XzvD99H4+qU9sKTrFIdyZNTqXZVqfd+7H6tH8lr8fJ1PbzflftcCRe7v+f3608azW32jRtyspMw9iggsGpJhZGtaGS9kJu8tm2pZY/3kCYku8Kc/Nq4fjW2DriEy3VGsc8weaZRQKDPjZ1SbeuCHKVadmUj1aJtn5PrIHYMCZQjWcop+Ni4yms5RIhFYho3BG27mYJIKVJKckpZiKLKyLZ8LrSrSx0nENkj9laB5DE28rghHzEFXlhQyinq4NONGA+VIEshJEAz69OTOOF/xN4F1gk6qrSR7YbclliPqbyxXYB/+UaM9SnXbshgC8jUrEcBokhYBVNtD+wqgmRtZLcY2WF6B7Fjgd+ZuoSXReNUSbLFHWKAzDC17edEBwGaacX+8AVvBx/kkDdyWLB2oV0PMfjgJghMhT550bgW5yqFGO6p3MheJJyMOXE/EDHIELOgOKArPcimBZGDeSh5iObfLNYZfblVA0SK7xUQGjJMWVE27F5luMBeZTAQD5Kx1aJBBBqIdUj4UYEMXUJlagzsUA2VwaMOEeLyHmInge7A2Ii/0Q1En7OZeBZutJFVyfEbrEOxChALjUNVIhUJ1HCBI8XEEWLj1g05BeLmujY3PCRsxBbnnFZsuRZ8zh57jp9dh2mt1xDS+2cvIIwO4Y3UeHWcP2nZqzgwMYo5gbZ90MIjkNhOGMklUwVwsw0Xu9cwk9j8laejfA9aCGDYhC0IXeoh1i3Js8nYHQ3XVkVOAmL5s8kVOlTjjL0ZxEMsbMSSq1KjmAgmtjM+kX5rMiah3TAzcDoQE88m9/j6a88N5yEcitk/vj2UePJcTKSaJ1qq+T+6Ol0isAQAAA=='
+
+function mikBeatgridFrame(): Buffer {
+  const body = gunzipSync(Buffer.from(MIK_BEATGRID_GZIP, 'base64'))
+  const head = Buffer.alloc(10)
+  head.write('GEOB', 0, 'latin1')
+  head.writeUInt32BE(body.length, 4)
+  return Buffer.concat([head, body])
+}
+
+function mp3WithMikBeatgrid(dir: string): string {
+  const path = join(dir, 'mik.mp3')
+  execFileSync(FF, [
+    '-v',
+    'quiet',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=440:duration=1',
+    '-y',
+    path,
+  ])
+  const frame = mikBeatgridFrame()
+  const syncsafe = (n: number) =>
+    Buffer.from([(n >> 21) & 0x7f, (n >> 14) & 0x7f, (n >> 7) & 0x7f, n & 0x7f])
+  const tag = Buffer.concat([
+    Buffer.from('ID3'),
+    Buffer.from([4, 0, 0]),
+    syncsafe(frame.length),
+    frame,
+  ])
+  writeFileSync(path, Buffer.concat([tag, readFileSync(path)]))
+  return path
+}
+
+// djotas, 27/08: "Argument out of range: index must be less than -1 / ESTO AL CONVERTIR DE
+// MP3 A AIF / NO LO CONVIERTE". The message comes from TagLib, not from the audio: saving
+// an ID3 tag renders every frame, and rendering a GEOB goes through the attachment parser,
+// which reads its encoding byte off an empty ByteVector and throws. WAV already filters
+// these out before writing (isRiffSafeCue) — but the filter was gated on RIFF_HOSTED, which
+// holds only .wav, so an AIFF target wrote them unfiltered and the whole conversion died.
+// The file was already encoded by then: the cue carry-over took a finished conversion down
+// with it, which is why he saw no output at all.
+describe('a foreign GEOB does not take an AIFF conversion down', () => {
+  it('converts an mp3 carrying a Mixed In Key BeatGrid object to aiff', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'surco-mik-aiff-'))
+    const src = mp3WithMikBeatgrid(own)
+
+    const out = join(own, 'out.aiff')
+    await convertAudio(src, out, 'aiff', { ...meta, rating: '5' })
+
+    expect(existsSync(out)).toBe(true)
+  })
+
+  // The WAV path this mirrors, kept alongside so a change to either filter shows up here.
+  it('still converts the same file to wav', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'surco-mik-wav-'))
+    const src = mp3WithMikBeatgrid(own)
+
+    const out = join(own, 'out.wav')
+    await convertAudio(src, out, 'wav', { ...meta, rating: '5' })
+
+    expect(existsSync(out)).toBe(true)
   })
 })
 
