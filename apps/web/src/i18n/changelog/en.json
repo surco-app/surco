@@ -11,6 +11,14 @@
       {
         "text": "The waveform no longer turns red on tracks that aren't clipping. A track mastered right up to the ceiling showed up marked end to end, with a peaks-over-maximum warning that matched nothing: the fault was in how Surco folded the two channels together to draw the waveform, which pushed the level just over 3 dB before measuring it. It now measures at the file's own level, so clip marks only appear when there really is clipping.",
         "in": "0.87.0"
+      },
+      {
+        "text": "Converting no longer leaves tags behind. Style, country, pressing format and the Discogs link were written when converting to FLAC but vanished on MP3, AIFF, WAV and M4A; an M4A also lost its catalogue number, Discogs reference and energy. They were all on the source file and never reached the new one, so a collection organised around those fields fell apart the moment you changed format. All five formats now carry the same set.",
+        "in": "0.87.1"
+      },
+      {
+        "text": "The comment and the rating no longer show up twice. A converted file listed the comment twice and the rating twice — once as the raw number, once as stars — because the value was written in two places at once and only one of them is what Traktor and mp3tag read. Each now goes where it belongs, once. An unrated track also keeps its comment: it used to be stored in a way those programs don't look at, so it came up empty.",
+        "in": "0.87.1"
       }
     ]
   },

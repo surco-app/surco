@@ -11,6 +11,14 @@
       {
         "text": "La onda deja de teñirse de rojo en pistas que no están saturadas. Un tema masterizado justo al límite salía marcado de punta a punta, con un aviso de picos por encima del máximo que no se correspondía con nada: el fallo estaba en cómo Surco juntaba los dos canales para dibujar la onda, que subía el nivel algo más de 3 dB antes de medirlo. Ahora se mide al nivel real del archivo, así que las marcas de saturación solo aparecen cuando de verdad hay recorte.",
         "in": "0.87.0"
+      },
+      {
+        "text": "Al convertir ya no se quedan etiquetas por el camino. El estilo, el país, el formato del prensaje y el enlace a Discogs se escribían al convertir a FLAC pero desaparecían en MP3, AIFF, WAV y M4A; y un M4A perdía además el número de catálogo, la referencia de Discogs y la energía. Estaban todos en el archivo de origen y no llegaban al nuevo, así que una colección ordenada a base de esos campos se desordenaba sola en cuanto cambiabas de formato. Ahora los cinco formatos llevan lo mismo.",
+        "in": "0.87.1"
+      },
+      {
+        "text": "El comentario y la puntuación dejan de salir por duplicado. Un archivo convertido enseñaba dos veces el comentario y dos veces la valoración —una con el número interno y otra con las estrellas—, porque el dato se escribía en dos sitios a la vez y solo uno es el que leen Traktor y mp3tag. Ahora cada uno va donde toca y una sola vez. De paso, un tema sin estrellas ya conserva su comentario: antes quedaba guardado de una forma que esos programas no miran, así que lo veías vacío.",
+        "in": "0.87.1"
       }
     ]
   },
