@@ -1357,6 +1357,17 @@ export async function convertAudio(
           cueSource: input,
           cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
         })
+        // cueSource only knows how to clone ID3 frames, so a FLAC source hands it nothing
+        // and the rated file would keep ffmpeg's TXXX — the same loss the unrated path had,
+        // reached through the other branch. Re-armor it here, after the rating is written:
+        // the carry-over rewrites only the cue frames, leaving that POPM in place.
+        if (!clearExtras && extname(input).toLowerCase() === '.flac')
+          await runInWorker({
+            type: 'copyCuesFromFlac',
+            source: input,
+            dest: tmp,
+            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
+          })
       }
       // Any re-encode through ffmpeg drops Traktor's cue/beatgrid frames — a
       // plain format change just as much as a normalizing gain pass. Neither moves
@@ -1366,13 +1377,26 @@ export async function convertAudio(
       // rather than only when normalizing. A trim DOES move the audio under them,
       // so the shift re-anchors each stored position (see tags.ts). A rated
       // MP3/AIFF already carried them in its writeTags pass above.
+      // Coming from a FLAC there are no ID3 frames to clone: the tree is armored in a
+      // Vorbis comment, which ffmpeg re-emits as a TXXX text frame Traktor does not read.
+      // That crossing needs the mirror of copyCuesToFlac — re-armor the comment into the
+      // PRIV frame real Traktor files carry (see tags.ts).
       else if (preservesCuesInPlace(ext))
-        await runInWorker({
-          type: 'copyCueFrames',
-          source: input,
-          dest: tmp,
-          shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
-        })
+        await runInWorker(
+          extname(input).toLowerCase() === '.flac'
+            ? {
+                type: 'copyCuesFromFlac',
+                source: input,
+                dest: tmp,
+                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
+              }
+            : {
+                type: 'copyCueFrames',
+                source: input,
+                dest: tmp,
+                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
+              },
+        )
       // FLAC needs the mirror image: its armored TRAKTOR4 comment rides the
       // re-encode by itself, so nothing is carried over and only a trim matters
       // — the surviving comment is what ends up measuring from the wrong start.

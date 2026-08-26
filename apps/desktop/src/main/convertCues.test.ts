@@ -3,7 +3,14 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
-import { type Id3v2Tag, File as TagFile, TagTypes, type XiphComment } from 'node-taglib-sharp'
+import {
+  Id3v2PrivateFrame,
+  type Id3v2Tag,
+  Id3v2UserTextInformationFrame,
+  File as TagFile,
+  TagTypes,
+  type XiphComment,
+} from 'node-taglib-sharp'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
@@ -84,6 +91,34 @@ function hasCue(file: string): boolean {
   try {
     const tag = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
     return (tag?.frames ?? []).some((fr) => fr.frameId.toString() === 'GEOB')
+  } finally {
+    f.dispose()
+  }
+}
+
+// The tree as Traktor actually stores it on an ID3 container: a PRIV frame owned
+// "TRAKTOR4", raw binary. Deliberately not accepting a TXXX of the same name — that is
+// exactly the shape the bug produced, and a test that took either would stay green.
+function traktorPrivTree(file: string): Uint8Array | null {
+  const f = TagFile.createFromPath(file)
+  try {
+    const tag = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+    const priv = (tag?.frames ?? []).find(
+      (fr) => fr instanceof Id3v2PrivateFrame && fr.owner === 'TRAKTOR4',
+    ) as Id3v2PrivateFrame | undefined
+    return priv ? priv.privateData.toByteArray() : null
+  } finally {
+    f.dispose()
+  }
+}
+
+function hasTraktorTxxx(file: string): boolean {
+  const f = TagFile.createFromPath(file)
+  try {
+    const tag = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+    return (tag?.frames ?? []).some(
+      (fr) => fr instanceof Id3v2UserTextInformationFrame && fr.description === 'TRAKTOR4',
+    )
   } finally {
     f.dispose()
   }
@@ -261,6 +296,68 @@ describe('convertAudio cue preservation', () => {
     expect(armored).toBeDefined()
   })
 
+  // The mirror of the AIFF→FLAC case, and the one djotas reported: a FLAC crate
+  // converted to MP3/AIFF. The output extension is ID3, so it routes to copyCueFrames —
+  // which reads ID3 frames off a FLAC source and finds none, leaving the destination with
+  // whatever ffmpeg made of the Vorbis comment. ffmpeg maps an unknown comment to a TXXX
+  // text frame, so the tree arrives armored as text under a description Traktor never
+  // reads: the analyzer sees "Traktor data" while Traktor itself shows no cues at all.
+  // Only a PRIV owned TRAKTOR4 counts as carried over.
+  it('carries the cues over as a PRIV frame when converting a cued FLAC to MP3', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'surco-flac2mp3-'))
+    const cued = join(own, 'in.flac')
+    const tree = buildTraktorTree([
+      traktorCue('AutoGrid', 4, 143.38, 0),
+      traktorCue('Drop', 0, 79672.64, 1),
+    ])
+    execFileSync(FF, [
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=4',
+      '-metadata',
+      `TRAKTOR4=${encodeBase91(tree)}`,
+      cued,
+    ])
+
+    const out = join(own, 'out.mp3')
+    await convertAudio(cued, out, 'mp3', meta)
+
+    expect(traktorPrivTree(out)).not.toBeNull()
+    expect(readTraktorCueStart(traktorPrivTree(out) as Uint8Array, 1)).toBeCloseTo(79672.64)
+    // The TXXX ffmpeg wrote is the wrong alphabet for Traktor; carrying the tree over
+    // must replace it, not sit alongside it as a second copy that tools disagree about.
+    expect(hasTraktorTxxx(out)).toBe(false)
+  })
+
+  // The rated variant of the case above. A rating routes the conversion through the
+  // writeTags branch instead (ffmpeg.ts), which folds the carry-over in through cueSource —
+  // and that read half only knows ID3 frames. So a FLAC that is both cued and rated took a
+  // different path to the same loss, which the unrated test alone would not catch.
+  it('carries the cues over as a PRIV frame from a rated FLAC to MP3', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'surco-flac2mp3rated-'))
+    const cued = join(own, 'in.flac')
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)])
+    execFileSync(FF, [
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=4',
+      '-metadata',
+      `TRAKTOR4=${encodeBase91(tree)}`,
+      cued,
+    ])
+
+    const out = join(own, 'out.mp3')
+    await convertAudio(cued, out, 'mp3', { ...meta, rating: '5' })
+
+    expect(hasPopm(out)).toBe(true)
+    expect(traktorPrivTree(out)).not.toBeNull()
+    expect(hasTraktorTxxx(out)).toBe(false)
+  })
+
   // The re-encode path folds the cue carry-over into the same writeTags call as the
   // rating (cueSource: input, see ffmpeg.ts), so a clearExtras re-encode must not let
   // that carry-over reinject the very cues clearExtras just wiped — converting a cued
@@ -287,6 +384,48 @@ describe('convertAudio cue preservation', () => {
       true, // clearExtras
     )
     expect(hasCue(out)).toBe(false)
+  })
+
+  // The clearExtras counterpart for a FLAC source: "clear metadata" must win over the
+  // FLAC→ID3 carry-over exactly as it already does over the ID3→ID3 one. Without the
+  // guard the re-armoring runs after the wipe and puts the cues back — a clear that
+  // silently keeps the cues is worse than no clear at all.
+  it('does not re-armor the FLAC cues on a cleared convert to MP3', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'surco-flac2mp3clear-'))
+    const cued = join(own, 'in.flac')
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)])
+    execFileSync(FF, [
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=4',
+      '-metadata',
+      `TRAKTOR4=${encodeBase91(tree)}`,
+      cued,
+    ])
+
+    const out = join(own, 'out.mp3')
+    await convertAudio(
+      cued,
+      out,
+      'mp3',
+      meta,
+      undefined, // coverPath
+      undefined, // normalize
+      false, // removeCover
+      undefined, // quality
+      undefined, // forceReencode
+      undefined, // onChild
+      undefined, // onTmp
+      undefined, // finderCovers
+      undefined, // declick
+      undefined, // trim
+      true, // clearExtras
+    )
+
+    expect(traktorPrivTree(out)).toBeNull()
+    expect(hasTraktorTxxx(out)).toBe(false)
   })
 
   // El NML se actualiza con lo que la conversión dejó en el fichero de salida, así
