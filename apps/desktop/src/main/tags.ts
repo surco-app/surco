@@ -288,6 +288,70 @@ export function copyCuesToFlac(source: string, dest: string, shift?: CueShift): 
   }
 }
 
+// The mirror of copyCuesToFlac: a FLAC source encoded to an ID3 target (MP3/AIFF).
+// copyCueFrames does not cover it — it reads ID3 frames off a FLAC and finds none — so the
+// destination kept whatever ffmpeg made of the Vorbis comment on its own. ffmpeg maps an
+// unrecognised comment to a TXXX text frame, which armors the tree under a description
+// Traktor never reads: the cues look present to a tag inspector and are invisible in
+// Traktor. Decode the comment, re-anchor through the shared parser, and write the PRIV
+// frame real Traktor files carry — dropping that TXXX, or the file would ship the same tree
+// twice in two alphabets.
+// Best-effort, like every other cue path here: cues never fail an otherwise good conversion.
+export function copyCuesFromFlac(source: string, dest: string, shift?: CueShift): void {
+  try {
+    const tree = readFlacCueTree(source)
+    if (!tree) return
+    // Same bargain as the siblings: a trim moved the audio under the stored positions, and
+    // a tree that cannot be re-anchored is dropped rather than left pointing at wrong beats.
+    const anchored = shift ? shiftTraktorCues(tree, shift.shiftMs, shift.maxMs, shift.bpm) : tree
+
+    const out = TagFile.createFromPath(dest)
+    try {
+      const tag = out.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+      removeTraktorTextMirror(tag)
+      removeCueFrames(tag)
+      if (anchored) {
+        const priv = Id3v2PrivateFrame.fromOwner('TRAKTOR4')
+        priv.privateData = ByteVector.fromByteArray(anchored)
+        tag.addFrame(priv)
+      }
+      out.save()
+    } finally {
+      out.dispose()
+    }
+  } catch {
+    // Same bargain as copyCueFrames, shiftFlacCues and copyCuesToFlac.
+  }
+}
+
+// The TXXX "TRAKTOR4" ffmpeg synthesises from the FLAC's Vorbis comment. Not a frame any
+// Traktor file carries, and it holds the same tree the PRIV is about to carry properly, so
+// it goes rather than lingering as a second, text-armored copy.
+function removeTraktorTextMirror(tag: Id3v2Tag): void {
+  const txxx = tag.getFramesByClassType<Id3v2UserTextInformationFrame>(
+    Id3v2FrameClassType.UserTextInformationFrame,
+  )
+  for (const frame of txxx) if (frame.description === FLAC_CUE_FIELD) tag.removeFrame(frame)
+}
+
+// The armored tree out of a FLAC's Vorbis comment, decoded. The read half readCueTree
+// already performs inline; split out so the FLAC→ID3 carry-over shares one definition of
+// "the FLAC's cue tree" with it.
+function readFlacCueTree(file: string): Uint8Array | null {
+  try {
+    const f = TagFile.createFromPath(file)
+    try {
+      const xiph = f.getTag(TagTypes.Xiph, false) as XiphComment | null
+      const armored = xiph?.getField(FLAC_CUE_FIELD)?.[0]
+      return armored ? decodeBase91(armored) : null
+    } finally {
+      f.dispose()
+    }
+  } catch {
+    return null
+  }
+}
+
 // The Traktor cue payload out of an ID3 source, or null when there is none to carry.
 // Prefers the PRIV frame (raw tree, the shape shiftTraktorCues parses) and falls back to
 // the GEOB blob, whose payload sits behind the frame's own header: an encoding byte, then
@@ -328,20 +392,7 @@ function readTraktorTree(source: string): Uint8Array | null {
 // readTraktorTree is a cheap, correct no-op there). Best-effort like every other cue path
 // in this file — an unreadable file or a missing tree both come back as null.
 export function readCueTree(file: string): Uint8Array | null {
-  const id3Tree = readTraktorTree(file)
-  if (id3Tree) return id3Tree
-  try {
-    const f = TagFile.createFromPath(file)
-    try {
-      const xiph = f.getTag(TagTypes.Xiph, false) as XiphComment | null
-      const armored = xiph?.getField(FLAC_CUE_FIELD)?.[0]
-      return armored ? decodeBase91(armored) : null
-    } finally {
-      f.dispose()
-    }
-  } catch {
-    return null
-  }
+  return readTraktorTree(file) ?? readFlacCueTree(file)
 }
 
 // Splits a rendered GEOB frame into the three NUL-terminated strings that describe the
