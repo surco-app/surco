@@ -279,6 +279,54 @@ describe('writeTags', () => {
     f.dispose()
   })
 
+  // djotas' report: an M4A converted from a fully tagged FLAC came back with the catalog
+  // number, Discogs ids, energy and rating simply gone. The comment on the m4a branch said
+  // those extras "have no MP4 home", which is true only of the ID3 frames themselves — MP4
+  // holds arbitrary values in "----" freeform atoms, the very route this file already uses
+  // to CLEAR foreign tags, and the one TagLib itself writes ReplayGain and MusicBrainz ids
+  // through. So the fields did have a home; nothing was writing them into it.
+  it('writes the extended fields into an m4a as freeform atoms', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildM4aSeed(dir)
+
+    writeTags(file, {
+      ...meta,
+      catalogNumber: 'NRF 001',
+      discogsReleaseId: '451993',
+      energy: '6',
+      mood: 'Dark',
+      originalYear: '2003',
+    })
+
+    const f = TagFile.createFromPath(file)
+    const apple = f.tag as Mpeg4AppleTag
+    const read = (name: string) => apple.getItunesStrings('com.apple.iTunes', name)[0] ?? ''
+    expect(read('CATALOGNUMBER')).toBe('NRF 001')
+    expect(read('DISCOGS_RELEASE_ID')).toBe('451993')
+    expect(read('ENERGY')).toBe('6')
+    expect(read('MOOD')).toBe('Dark')
+    // Still no ID3 tag: the whole point of the freeform route is that the container stays
+    // a valid MP4 for strict readers.
+    expect(f.getTag(TagTypes.Id3v2, false)).toBeFalsy()
+    f.dispose()
+  })
+
+  // An emptied field has to clear its atom rather than leave the old value behind, the same
+  // bargain setUserText strikes on the ID3 side — otherwise a catalog number the user
+  // deleted survives every later save.
+  it('clears an m4a freeform atom when the field is emptied', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildM4aSeed(dir)
+    writeTags(file, { ...meta, catalogNumber: 'NRF 001' })
+
+    writeTags(file, { ...meta, catalogNumber: '' })
+
+    const f = TagFile.createFromPath(file)
+    const apple = f.tag as Mpeg4AppleTag
+    expect(apple.getItunesStrings('com.apple.iTunes', 'CATALOGNUMBER')).toEqual([])
+    f.dispose()
+  })
+
   // The seed carries no artwork, so the reset that empties the covr atom is a no-op in
   // the test above and it passes with that line removed. Clearing a cover is the case
   // that needs it: writing a new picture overwrites the atom on its own, but removeCover
