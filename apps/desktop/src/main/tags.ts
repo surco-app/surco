@@ -30,6 +30,11 @@ import { decodeBase91, encodeBase91 } from './base91'
 import { mixedInKeyCuesToTraktorTree, parseMixedInKeyCues } from './mixedInKey'
 import { shiftTraktorCues } from './traktor4'
 
+// TXXX descriptions ffmpeg synthesises from a source's Vorbis fields that duplicate a frame
+// writeTags writes natively (COMM, POPM). Cleared on every ID3 save so the value lives in
+// one place — the frame DJ software actually reads — instead of two.
+const TXXX_NATIVE_MIRRORS = ['comment', 'RATING WMP']
+
 // Every ID3 container we write gets v2.3, pinned per tag rather than through the
 // global Id3v2Settings so a library upgrade can't silently change other tag kinds.
 // WAV included: mp3tag only reads a RIFF "id3 " chunk when it holds v2.3, so the
@@ -545,6 +550,33 @@ const toTrackNumber = (value: string): number => {
   return n || toNumber(value.replace(/\D/g, ''))
 }
 
+// The fields no tag family gives a dedicated box: they ride TXXX descriptions in ID3 and
+// "----" freeform atoms in MP4, under the names mp3tag writes so a collection tagged with
+// that tool and one tagged here agree. One list for both containers, because the four
+// collector fields were in TAG_FIELDS (so a plain ffmpeg convert wrote them) yet in no
+// writeTags branch at all — which silently dropped them from every file the TagLib pass
+// finishes: a rated MP3/AIFF, a WAV, an m4a.
+function extendedFields(meta: TrackMetadata): Array<[string, string]> {
+  return [
+    ['CATALOGNUMBER', meta.catalogNumber],
+    ['DISCOGS_RELEASE_ID', meta.discogsReleaseId ?? ''],
+    ['MOOD', meta.mood ?? ''],
+    ['ENERGY', meta.energy ?? ''],
+    ['STYLE', meta.style ?? ''],
+    ['COUNTRY', meta.country ?? ''],
+    ['MEDIATYPE', meta.mediaType ?? ''],
+    ['DISCOGS_RELEASE_URL', meta.discogsUrl ?? ''],
+  ]
+}
+
+// The MP4 counterpart of setUserText: writes a freeform atom, or removes it when the value
+// is empty. setItunesStrings with no data strings is TagLib's own way of clearing one, so
+// an emptied field leaves nothing behind rather than keeping the previous value.
+function setItunesText(apple: Mpeg4AppleTag, name: string, value: string): void {
+  if (value.trim()) apple.setItunesStrings('com.apple.iTunes', name, value)
+  else apple.setItunesStrings('com.apple.iTunes', name)
+}
+
 // node-taglib-sharp keeps its TXXX user-text accessors private, but the catalog
 // number lives in a TXXX frame. This mirrors the library's own setUserTextAsString
 // through its public frame API: an empty value clears the frame, otherwise it is
@@ -663,8 +695,12 @@ export function writeTags(
 
     // M4A carries iTunes atoms, not ID3: the generic assignments above cover it
     // (TagLib maps bpm to tmpo, grouping to ©grp…), the cover rides the covr atom via
-    // the generic pictures setter, and the ID3-only extras (POPM rating, TXXX catalog,
-    // TDOR) have no MP4 home — forcing an Id3v2 tag into an MP4 file would corrupt it.
+    // the generic pictures setter, and no Id3v2 tag is ever forced into the container —
+    // that genuinely corrupts the file for strict readers. What the extras needed was not
+    // ID3 but a home of their own: MP4 keeps arbitrary values in "----" freeform atoms,
+    // the same route the foreign-tag clearing below already uses and the one TagLib writes
+    // ReplayGain and MusicBrainz ids through. Without it a converted m4a came back with no
+    // catalog number, Discogs ids, energy or mood at all.
     if (extname(file).toLowerCase() === '.m4a') {
       if (coverPath || removeCover) f.tag.pictures = []
       if (coverPath) {
@@ -676,7 +712,12 @@ export function writeTags(
       // TagLib itself uses to write every managed atom it doesn't have a dedicated
       // box for (ReplayGain, MusicBrainz ids…), under the MEAN every tagger writes.
       // Applies always, like the ID3 route below — independent of clearExtras.
+      // The rating is the one extra that stays behind: it lives in a POPM frame, an ID3
+      // structure MP4 has no counterpart for, and the reader on the other side (readMeta)
+      // only ever looks for POPM. Armoring it into a freeform atom would write bytes
+      // nothing reads back — not even Surco itself.
       const apple = f.tag as Mpeg4AppleTag
+      for (const [name, value] of extendedFields(meta)) setItunesText(apple, name, value)
       for (const name of foreignRemoved) apple.setItunesStrings('com.apple.iTunes', name)
       f.save()
       return
@@ -706,11 +747,10 @@ export function writeTags(
         id3.removeFrame(fr)
       }
     }
-    // The catalog number has no standard frame, so it rides the de-facto TXXX
-    // "CATALOGNUMBER" one — the same key the ffmpeg path writes.
-    setUserText(id3, 'CATALOGNUMBER', meta.catalogNumber)
-    // Same TXXX treatment for the Discogs release id — no standard frame either.
-    setUserText(id3, 'DISCOGS_RELEASE_ID', meta.discogsReleaseId ?? '')
+    // The extras with no standard frame, on the de-facto TXXX keys the ffmpeg path writes:
+    // catalog number, Discogs ids, the DJ's mood/energy judgement and the collector fields
+    // off the release. Shared with the m4a branch above so neither container can drift.
+    for (const [name, value] of extendedFields(meta)) setUserText(id3, name, value)
     // Original year has no TagLib property, so it rides the raw frame. The TDOR
     // identifier is version-aware: on the v2.3 tags pinned above it renders as
     // TORY, its v2.3 predecessor.
@@ -721,13 +761,18 @@ export function writeTags(
       id3.addFrame(tory)
     }
     setRating(id3, meta.rating ?? '', clearExtras)
-    // Quick Tag's judgement fields, both on the TXXX route. Mood's standard frame
-    // (TMOO) is ID3v2.4-only — TagLib has no v2.3 equivalent for it, so on the v2.3
-    // tags pinned above it would be silently dropped on save. TXXX "MOOD" is what
-    // ffmpeg writes for a mood tag anyway, and what mp3tag and Traktor read. Energy
-    // has no standard frame at all; TXXX "ENERGY" is Mixed In Key's key.
-    setUserText(id3, 'MOOD', meta.mood ?? '')
-    setUserText(id3, 'ENERGY', meta.energy ?? '')
+    // ffmpeg maps a source's Vorbis fields onto TXXX frames when it muxes the ID3 tag, and
+    // for these two that mirrors a frame this pass writes natively: the comment lands in
+    // COMM, the rating in POPM. Neither setter touches a TXXX, so both values ended up on
+    // the file twice — mp3tag lists a second "COMMENT" and a second "RATING WMP" row, the
+    // rating printed as its raw byte next to the same rating printed as stars. The native
+    // frame is the one every DJ tool reads, so the text mirror goes.
+    for (const mirrored of TXXX_NATIVE_MIRRORS) setUserText(id3, mirrored, '')
+    // Mood and energy ride that same shared list. Mood's standard frame (TMOO) is
+    // ID3v2.4-only — TagLib has no v2.3 equivalent, so on the v2.3 tags pinned above it
+    // would be silently dropped on save. TXXX "MOOD" is what ffmpeg writes for a mood tag
+    // anyway, and what mp3tag and Traktor read. Energy has no standard frame at all;
+    // TXXX "ENERGY" is Mixed In Key's key.
 
     // A vinyl-position track number ("A2") is text the numeric tag.track setter
     // above cannot hold — it wrote the bare digits. Rewrite the TRCK frame with the
