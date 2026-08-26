@@ -162,6 +162,32 @@ describe('an ID3 conversion leaves exactly one comment', () => {
   })
 })
 
+// The unrated case, found while fixing the duplicate above. Without a rating the TagLib
+// pass never runs (it is gated on one, to avoid a second whole-file rewrite per convert),
+// so the comment is left exactly as ffmpeg muxed it: a TXXX described "comment". ffprobe
+// reads that back fine, which is why readMeta never noticed — but COMM is the frame the
+// ID3 spec defines for a comment and the one Traktor and mp3tag look in, so to them the
+// track simply had none.
+describe('an unrated ID3 conversion still writes a real comment frame', () => {
+  it('writes COMM, not only ffmpeg TXXX mirror, to an unrated mp3', async () => {
+    const out = join(dir, 'comment-unrated.mp3')
+    await convertAudio(source, out, 'mp3', meta)
+
+    expect(commentCount(out)).toBe(1)
+    expect(txxxComments(out)).toEqual([])
+  })
+
+  it('keeps every other field the unrated path already wrote', async () => {
+    const out = join(dir, 'comment-unrated-fields.mp3')
+    await convertAudio(source, out, 'mp3', { ...meta, catalogNumber: 'NRF 001' })
+
+    const back = await readMeta(out)
+    expect(back.tags.comment).toBe('11A - Energy 7')
+    expect(back.tags.catalogNumber).toBe('NRF 001')
+    expect(back.tags.key).toBe('11A')
+  })
+})
+
 // The other duplicate in the same screenshot. A rated source carries a Vorbis "RATING WMP"
 // field; metadataArgs skips the rating field entirely (it has no id3 mapping), so it emits
 // no clear for it either and ffmpeg's -map_metadata copies the raw byte across as a TXXX.
