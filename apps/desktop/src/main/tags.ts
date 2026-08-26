@@ -30,6 +30,11 @@ import { decodeBase91, encodeBase91 } from './base91'
 import { mixedInKeyCuesToTraktorTree, parseMixedInKeyCues } from './mixedInKey'
 import { shiftTraktorCues } from './traktor4'
 
+// TXXX descriptions ffmpeg synthesises from a source's Vorbis fields that duplicate a frame
+// writeTags writes natively (COMM, POPM). Cleared on every ID3 save so the value lives in
+// one place — the frame DJ software actually reads — instead of two.
+const TXXX_NATIVE_MIRRORS = ['comment', 'RATING WMP']
+
 // Every ID3 container we write gets v2.3, pinned per tag rather than through the
 // global Id3v2Settings so a library upgrade can't silently change other tag kinds.
 // WAV included: mp3tag only reads a RIFF "id3 " chunk when it holds v2.3, so the
@@ -721,6 +726,13 @@ export function writeTags(
       id3.addFrame(tory)
     }
     setRating(id3, meta.rating ?? '', clearExtras)
+    // ffmpeg maps a source's Vorbis fields onto TXXX frames when it muxes the ID3 tag, and
+    // for these two that mirrors a frame this pass writes natively: the comment lands in
+    // COMM, the rating in POPM. Neither setter touches a TXXX, so both values ended up on
+    // the file twice — mp3tag lists a second "COMMENT" and a second "RATING WMP" row, the
+    // rating printed as its raw byte next to the same rating printed as stars. The native
+    // frame is the one every DJ tool reads, so the text mirror goes.
+    for (const mirrored of TXXX_NATIVE_MIRRORS) setUserText(id3, mirrored, '')
     // Quick Tag's judgement fields, both on the TXXX route. Mood's standard frame
     // (TMOO) is ID3v2.4-only — TagLib has no v2.3 equivalent for it, so on the v2.3
     // tags pinned above it would be silently dropped on save. TXXX "MOOD" is what
