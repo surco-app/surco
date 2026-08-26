@@ -358,6 +358,76 @@ describe('convertAudio cue preservation', () => {
     expect(hasTraktorTxxx(out)).toBe(false)
   })
 
+  // AIFF is the other half of the report: it shares the ID3 route with MP3 but reaches it
+  // through a different container, and the AIFF in the user's own diff was the one showing
+  // the TXXX. Cheap to pin, and it fails independently if the route ever narrows to .mp3.
+  it('carries the cues over as a PRIV frame when converting a cued FLAC to AIFF', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'surco-flac2aiff-'))
+    const cued = join(own, 'in.flac')
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)])
+    execFileSync(FF, [
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=4',
+      '-metadata',
+      `TRAKTOR4=${encodeBase91(tree)}`,
+      cued,
+    ])
+
+    const out = join(own, 'out.aiff')
+    await convertAudio(cued, out, 'aiff', meta)
+
+    expect(traktorPrivTree(out)).not.toBeNull()
+    expect(hasTraktorTxxx(out)).toBe(false)
+  })
+
+  // A trim moves the audio under the stored positions, and this route re-anchors through
+  // the same parser the others use. Without this the shift argument could be dropped
+  // entirely and every other test here would stay green — the cues would just silently
+  // point at the wrong beats, which is the failure mode hardest to notice by ear.
+  it('re-anchors the cues through a trimming FLAC to MP3 convert', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'surco-flac2mp3trim-'))
+    const cued = join(own, 'in.flac')
+    const tree = buildTraktorTree([
+      traktorCue('AutoGrid', 4, 143.38, 0),
+      traktorCue('Drop', 0, 79672.64, 1),
+    ])
+    execFileSync(FF, [
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=4',
+      '-metadata',
+      `TRAKTOR4=${encodeBase91(tree)}`,
+      cued,
+    ])
+
+    const out = join(own, 'out.mp3')
+    await convertAudio(
+      cued,
+      out,
+      'mp3',
+      { ...meta, bpm: '138.30' },
+      undefined, // coverPath
+      undefined, // normalize
+      false, // removeCover
+      undefined, // quality
+      undefined, // forceReencode
+      undefined, // onChild
+      undefined, // onTmp
+      undefined, // finderCovers
+      undefined, // declick
+      { startSec: 1.3 }, // trim
+    )
+
+    const tree2 = traktorPrivTree(out)
+    expect(tree2).not.toBeNull()
+    expect(readTraktorCueStart(tree2 as Uint8Array, 1)).toBeCloseTo(78372.64)
+  })
+
   // The re-encode path folds the cue carry-over into the same writeTags call as the
   // rating (cueSource: input, see ffmpeg.ts), so a clearExtras re-encode must not let
   // that carry-over reinject the very cues clearExtras just wiped — converting a cued
