@@ -66,6 +66,22 @@ describe('clippedCount', () => {
   it('returns zero for a track that never reaches the ceiling', () => {
     expect(clippedCount([0.2, 0.6, 0.85], -1)).toBe(0)
   })
+
+  // A track mastered right up to the ceiling is the normal case, not a fault: that is
+  // what a limiter set to -1 dBTP produces. The envelope it is measured against comes
+  // from a 4 kHz mono decode, whose resampling ripples the reconstructed peaks by up
+  // to ~0.24 dB — so a compliant master lands a handful of buckets a hair over the
+  // line and the legend cried "Peaks over -1.0 dB" at a file that peaks at -1.0 dB.
+  // Only an excess past that decode slop is a real over.
+  it('ignores buckets riding the ceiling within the decode tolerance', () => {
+    // -1 dB = 0.891; +0.2 dB over it = 0.912 — inside the ripple, not clipping.
+    expect(clippedCount([0.912, 0.9, 0.891], -1)).toBe(0)
+  })
+
+  it('still counts peaks that clear the ceiling by more than the decode slop', () => {
+    // +0.5 dB over -1 dB = 0.944, past any resampling artefact: a genuine over.
+    expect(clippedCount([0.944, 1.0], -1)).toBe(2)
+  })
 })
 
 describe('skeletonPeaks', () => {

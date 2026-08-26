@@ -18,11 +18,19 @@ function rmsColor(base: string): string {
   return `rgba(${r},${g},${b}, 1)`
 }
 
+// How far past the ceiling a bucket must reach before it counts as an over. The
+// envelope is reconstructed from a 4 kHz mono decode (see main/waveform.ts), and that
+// resampling overshoots the source's own peaks by up to ~0.24 dB — measured against a
+// tone mastered to exactly -1.0 dBFS. Without this margin a track limited right to the
+// ceiling, which is what a limiter is *for*, reported itself as "Peaks over -1.0 dB".
+// Sized just past the measured slop: a real over clears it easily.
+const CLIP_TOLERANCE_DB = 0.3
+
 // Peaks are absolute (1.0 = 0 dBFS, see main/waveform.ts), so a dB ceiling converts
-// straight to a linear amplitude. Strictly above: a normalized output sitting exactly
-// AT its ceiling is compliant, not clipping.
+// straight to a linear amplitude. Strictly above, and past the decode's own ripple: a
+// normalized output sitting at its ceiling is compliant, not clipping.
 function clipsOver(amp: number, clipDb: number): boolean {
-  return amp > 10 ** (clipDb / 20)
+  return amp > 10 ** ((clipDb + CLIP_TOLERANCE_DB) / 20)
 }
 
 // How many peak buckets poke over the ceiling — the legend's cue to show (and the
