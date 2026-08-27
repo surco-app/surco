@@ -69,7 +69,7 @@ const CLICKS_NAMESPACE = 'clickcount-v2'
 const PROPERTIES_NAMESPACE = 'properties'
 const BPM_NAMESPACE = 'bpm'
 const KEY_NAMESPACE = 'key'
-const WAVEFORM_NAMESPACE = 'waveform-v5'
+const WAVEFORM_NAMESPACE = 'waveform-v6'
 const CHANNELSCAN_NAMESPACE = 'channelscan-v1'
 
 // The read-only audio analysis IPC: tags, duration, cover and the cached quality probes
@@ -289,6 +289,10 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
         // v3 entries carry the now-removed clipped/channels, so a rename drops them.
         // v5: results grew per-bucket rms for the two-layer draw; v4 entries have
         // no rms, so a rename re-decodes them rather than draw a body-less wave.
+        // v6: the envelope now rides the native-rate scan instead of its own 4 kHz decode.
+        // The 4 kHz resample rounded transients off — measured across a track, the native
+        // pass reads a higher peak in 8191 of 8192 buckets — so v5 entries hold a visibly
+        // flatter wave than the same file re-probed today.
         return await cachedAnalysis(WAVEFORM_NAMESPACE, inputPath, () =>
           probe('activity.probeWaveform', inputPath, () =>
             cancellable(inputPath, priority, (signal) =>
@@ -311,11 +315,16 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     try {
       return await cachedAnalysis(CHANNELSCAN_NAMESPACE, inputPath, () =>
         probe('activity.probeWaveform', inputPath, () =>
-          analysisLimiter.run(() => measureChannelScan(inputPath), 'high'),
+          // Registered for cancellation like audio:waveform: the two probes now share one
+          // native decode, and it is only stopped once BOTH have gone away — so the scan
+          // has to report its own departure or a browsed-past track keeps decoding.
+          cancellable(inputPath, 'high', (signal) =>
+            analysisLimiter.run(() => measureChannelScan(inputPath, signal), 'high', signal),
+          ),
         ),
       )
     } catch (err) {
-      log.error('audio:waveform-scan failed', err)
+      if (!isAbortError(err)) log.error('audio:waveform-scan failed', err)
       return null
     }
   })

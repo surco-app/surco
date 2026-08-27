@@ -1,5 +1,5 @@
-import type { BpmResult, KeyResult, TrackMetadata, WaveformScan } from '../shared/types'
-import { runChannelScan } from './channelScan'
+import type { BpmResult, KeyResult, TrackMetadata } from '../shared/types'
+import { type FullScan, killScansFor, runChannelScan } from './channelScan'
 import { detectClicks } from './clickDetect'
 import { prependFlacId3 } from './flacFinderCover'
 import { bandEnergiesDb } from './hfShelf'
@@ -64,19 +64,27 @@ export type WorkerJob =
   // no `app`/binaries to resolve them; running it here keeps that reduction off the main
   // process's event loop (the one worker job that is async — it awaits the decode).
   | { type: 'channelScan'; input: string; ffmpegPath: string; channels: number; timeoutMs: number }
+  // Stops the scan above for one file: the shared decode's last consumer went away (the
+  // user browsed past the track), so the child must stop burning a core rather than run to
+  // completion holding a limiter slot. A job rather than a signal because an AbortSignal
+  // does not survive the structured clone into the worker.
+  | { type: 'killChannelScan'; input: string }
 
 export type WorkerJobResult =
   | BpmResult
   | KeyResult
   | number[]
   | { peaks: number[]; rms: number[] }
-  | WaveformScan
+  | FullScan
   | null
 
 export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJobResult> {
   switch (job.type) {
     case 'channelScan':
       return runChannelScan(job.input, job.ffmpegPath, job.channels, job.timeoutMs)
+    case 'killChannelScan':
+      killScansFor(job.input)
+      return null
     case 'bpm':
       return detectBpm(job.pcm, job.sampleRate)
     case 'key':

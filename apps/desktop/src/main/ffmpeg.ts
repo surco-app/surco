@@ -28,7 +28,9 @@ import type {
   WaveformScan,
 } from '../shared/types'
 import { cachedAnalysis } from './analysisCache'
+import { isAbortError } from './analysisCancel'
 import { ffmpegPath, ffprobePath } from './binaries'
+import type { FullScan } from './channelScan'
 import {
   BAND_WIDTH_HZ,
   bandFrequencies,
@@ -68,6 +70,7 @@ import {
 } from './normalize'
 import { renameWithRetry, rescuePath } from './renameRetry'
 import { getSettings } from './settings'
+import { createSharedScan } from './sharedScan'
 import { MANAGED_ALIASES, TAG_FIELDS } from './tagFields'
 import { readTagFormats } from './tagFormats'
 import {
@@ -81,7 +84,7 @@ import {
 } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
-import { type ChannelWave, WAVEFORM_BUCKETS, WAVEFORM_SAMPLE_RATE } from './waveform'
+import { WAVEFORM_BUCKETS, WAVEFORM_SAMPLE_RATE } from './waveform'
 import { isMalformedInputError, repairWav } from './wavRepair'
 import { runInWorker } from './worker'
 
@@ -2184,13 +2187,6 @@ export function cacheableSpectrum(
   return { ...rest, cutoffFailed: built.cutoffError !== undefined }
 }
 
-// low-rate mono PCM for the editor waveform — the strip spans the full length (no
-// `seconds` window), so a truncated envelope would draw a track that ends early. The
-// 4 kHz rate keeps even a 2-hour mix around 115 MB, inside the 128 MB ceiling.
-function decodeWaveformPcm(input: string, signal?: AbortSignal): Promise<Float32Array> {
-  return decodePcm(input, { sampleRate: WAVEFORM_SAMPLE_RATE, maxBufferMb: 128, signal })
-}
-
 // A slice of the track re-decoded at full waveform fidelity for the strips' deep
 // zoom: past the global envelope's resolution, the visible window is decoded on
 // demand (DAW-style) instead of stretching the 8192 overview buckets into blocks.
@@ -2216,61 +2212,79 @@ export async function measureWaveformWindow(
   return wave ?? null
 }
 
-// Per-channel scan at the native rate and channel count: true-clipping flags plus
-// each channel's own envelope for the split L/R view. The 4 kHz waveform decode can
-// see neither — resampling smears the pinned flat tops and the mono downmix averages
-// a one-channel rail away — which is how near-ceiling masters used to paint solid
-// red while Audacity showed sparse marks. Streamed via spawn because a native stereo
-// decode of a long mix is gigabytes of f32, far past any exec buffer, while the scan
-// itself keeps only per-block accumulators.
-// Probe the channel count on the main process (cheap ffprobe), then hand the heavy
+// The one native-rate, native-channel pass both waveform probes now read: true-clipping
+// flags and each channel's envelope for the split L/R view, plus the mono envelope and
+// frame count the strip draws. A resampled decode can give none of the first three —
+// resampling smears the pinned flat tops and the mono downmix averages a one-channel rail
+// away — which is how near-ceiling masters used to paint solid red while Audacity showed
+// sparse marks. Streamed via spawn because a native stereo decode of a long mix is
+// gigabytes of f32, far past any exec buffer, while the scan itself keeps only per-block
+// accumulators.
+// Probe the channel count and rate on the main process (cheap ffprobe), then hand the heavy
 // spawn+stream reduction to the analysis worker so its ~32M-sample loop never blocks the
 // event loop (IPC, menu, the surco:// audio stream). ffmpegPath rides along because the
-// worker has no `app`/binaries to resolve it. The DSP itself is unchanged (runChannelScan).
-async function scanChannels(
-  input: string,
-): Promise<{ clipped: boolean[]; channels: ChannelWave[] }> {
-  const { channels } = await probeAudio(input)
-  return runInWorker<WaveformScan>({
+// worker has no `app`/binaries to resolve it.
+async function scanChannels(input: string): Promise<FullScan & { sampleRateHz: number }> {
+  const { channels, sampleRate } = await probeAudio(input)
+  const scan = (await runInWorker<FullScan>({
     type: 'channelScan',
     input,
     ffmpegPath,
     channels: Math.max(1, channels),
     timeoutMs: ANALYSIS_TIMEOUT_MS,
-  }) as Promise<{ clipped: boolean[]; channels: ChannelWave[] }>
+  })) as FullScan
+  // ffprobe reports the rate as a string; 0 when it is missing or unparseable, which
+  // measureWaveform reads as "no usable duration" rather than dividing into NaN.
+  return { ...scan, sampleRateHz: Number(sampleRate) || 0 }
 }
+
+// Selecting a track fires audio:waveform and audio:waveform-scan together, and both used to
+// decode the same file — the envelope at 4 kHz, the scan at native rate — so a play paid two
+// full decodes of the same audio. They now share one, reference-counted so that the decode
+// outlives every consumer but the last (see sharedScan.ts): the two probes abort
+// independently, and honouring the first would strand the one still on screen.
+const sharedScan = createSharedScan(scanChannels, (input: string) => {
+  void runInWorker({ type: 'killChannelScan', input })
+})
 
 export async function measureWaveform(
   input: string,
   signal?: AbortSignal,
 ): Promise<WaveformResult | null> {
-  // Peaks-only now: the cheap 4 kHz mono decode alone. The native-rate channel scan
-  // (clip flags + L/R lanes) is a SEPARATE probe (measureChannelScan / audio:waveform-scan)
-  // that only the player/compare strip requests — so the editor sections that draw just
-  // the envelope (trim, grid, declick, auto-trim) never pay for its ~32M-sample scan.
-  const samples = await decodeWaveformPcm(input, signal)
-  // Zero decoded samples means ffmpeg produced nothing (empty or undecodable
-  // stream): null tells the UI "no waveform", distinct from a decode error.
-  if (samples.length === 0) return null
-  // Read the duration before the buffer is transferred to the worker (transfer detaches it,
-  // leaving length 0). The max-abs reduction runs in the worker, off the main event loop —
-  // this fires on every play, exactly while surco:// is streaming.
-  const durationSec = samples.length / WAVEFORM_SAMPLE_RATE
-  const wave = await runInWorker<{ peaks: number[]; rms: number[] }>(
-    { type: 'waveformPeaks', pcm: samples },
-    [samples.buffer as ArrayBuffer],
-  )
-  return { peaks: wave?.peaks ?? [], rms: wave?.rms ?? [], durationSec }
+  // The envelope now rides the same native-rate pass as the clip/channel scan instead of
+  // decoding the file a second time at 4 kHz. That resample was not cheap — it cost more
+  // than the native decode it replaced (~120 ms of a 200 ms pass on a 7-minute FLAC) — and
+  // it rounded transients off: measured across a track, the native pass reads a HIGHER peak
+  // in 8191 of 8192 buckets, which is exactly the detail the max-abs reduction exists to keep.
+  const scan = await sharedScan(input, signal)
+  // Zero decoded frames means ffmpeg produced nothing (empty or undecodable stream): null
+  // tells the UI "no waveform", distinct from a decode error.
+  if (scan.frames === 0 || scan.sampleRateHz <= 0) return null
+  // Duration from the decoded frame count, not the container's header, which can lie —
+  // TrimSection maps its cut handles to seconds through this number.
+  return {
+    peaks: scan.mono.peaks,
+    rms: scan.mono.rms,
+    durationSec: scan.frames / scan.sampleRateHz,
+  }
 }
 
-// The heavy half of the old waveform, split out so only the compare/player strip pays for
-// it: a full native-rate, native-channel scan for true-clip flags and the split L/R lanes.
-// Best-effort — a failed scan resolves null and the strip just loses its marks, never its
-// wave. Aligned to the fixed WAVEFORM_BUCKETS grid the peaks also use, so the renderer can
-// index clip flags straight by peak bucket; a sub-second clip whose scan lands off-grid is
-// dropped rather than smeared across the wrong bars.
-export async function measureChannelScan(input: string): Promise<WaveformScan | null> {
-  const scan = await scanChannels(input).catch(() => null)
+// The clip flags and split L/R lanes for the compare/player strip, off the shared native
+// pass above. Best-effort — a failed scan resolves null and the strip just loses its marks,
+// never its wave. Aligned to the fixed WAVEFORM_BUCKETS grid the peaks also use, so the
+// renderer can index clip flags straight by peak bucket; a sub-second clip whose scan lands
+// off-grid is dropped rather than smeared across the wrong bars.
+export async function measureChannelScan(
+  input: string,
+  signal?: AbortSignal,
+): Promise<WaveformScan | null> {
+  // A genuine decode failure resolves null — the strip keeps its wave and just loses its
+  // marks. An abort must NOT: it has to reach the handler as a throw, or cachedAnalysis
+  // would pin "no marks" for the file's life because the user browsed past it mid-decode.
+  const scan = await sharedScan(input, signal).catch((err: unknown) => {
+    if (isAbortError(err)) throw err
+    return null
+  })
   if (scan === null || scan.clipped.length !== WAVEFORM_BUCKETS) return null
   return {
     clipped: scan.clipped,
