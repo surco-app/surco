@@ -129,6 +129,38 @@ describe('QualitySection analysis gating', () => {
     await vi.waitFor(() => expect(spectrogram).toHaveBeenCalled())
     expect(spectrogram).toHaveBeenCalledWith('/music/a.flac', 'high')
   })
+
+  // Arrowing down a crate with Quality open remounts this section per row. The spectrum
+  // is the heaviest probe in the app (a full decode plus an FFT), and it was the only
+  // one firing without waiting for the selection to rest — so passing over ten rows
+  // queued ten decodes for tracks the user never stopped on. Every other heavy probe
+  // here (loudness, bpm, key, trim, declick) already waits; this one now does too.
+  it('waits for the selection to rest before decoding a track just passed over', async () => {
+    const spectrogram = vi
+      .fn()
+      .mockResolvedValue({ image: '', cutoffHz: 21000, sampleRateHz: 44100, processed: false })
+    ;(window as unknown as { api: unknown }).api = { spectrogram }
+    const client = createQueryClient()
+    const { unmount } = render(
+      <QueryClientProvider client={client}>
+        <QualitySection
+          item={track()}
+          showSpectrum
+          showLoudness={false}
+          normalize={OFF}
+          open
+          onToggle={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
+        />
+      </QueryClientProvider>,
+    )
+    // Unmount well inside the settle window, the way the editor remounts when the
+    // selection moves on: the row was passed over, so it must never have decoded.
+    await new Promise((r) => setTimeout(r, 50))
+    unmount()
+    await new Promise((r) => setTimeout(r, 500))
+    expect(spectrogram).not.toHaveBeenCalled()
+  })
 })
 
 // The caption under the spectrogram is the only place that explains the verdict, so
