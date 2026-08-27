@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.88",
+    "date": "27 de agosto de 2026",
+    "title": "Las pistas se abren al instante",
+    "items": [
+      {
+        "text": "Abrir una pista es ahora entre dos y tres veces más rápido. Surco decodificaba el mismo archivo dos veces cada vez que le dabas al play: una para dibujar la onda y otra para buscar los picos que saturan. Ahora lo lee una sola vez y saca las dos cosas de esa misma lectura, así que la onda aparece en la mitad de tiempo y tu portátil hace la mitad de trabajo. En un FLAC de cinco minutos son 100 milisegundos en vez de 270; en un mix de dos horas, un segundo y medio en vez de tres y pico.",
+        "in": "0.88.0"
+      },
+      {
+        "text": "La onda enseña detalle que antes se perdía. Para dibujarla, Surco reducía el audio a una calidad muy baja, y ese atajo limaba los transitorios: los golpes salían más bajos de lo que son en el archivo. Ahora la onda se calcula sobre el audio a su calidad real, así que los picos son los de verdad y el cuerpo de la pista se distingue de los golpes en vez de fundirse todo en un bloque azul. Se nota sobre todo al buscar el punto exacto de un kick para colocar un corte.",
+        "in": "0.88.0"
+      },
+      {
+        "text": "Pasar rápido por la lista ya no dispara análisis inútiles. Con el panel de Calidad abierto, cada fila por la que pasabas con las flechas lanzaba su análisis de espectro, el más pesado de todos, aunque no te pararas en ella. Ahora espera a que te quedes en una pista, igual que ya hacían el resto de medidas. Las pistas ya analizadas siguen apareciendo al momento.",
+        "in": "0.88.0"
+      }
+    ]
+  },
+  {
     "version": "0.87",
     "date": "26 de agosto de 2026",
     "title": "Tus cues llegan enteros a cualquier formato",
