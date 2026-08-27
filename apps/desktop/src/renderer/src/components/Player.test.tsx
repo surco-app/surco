@@ -537,4 +537,90 @@ describe('LivePlayer', () => {
     act(() => audio.dispatchEvent(new Event('waiting')))
     expect(screen.getByTestId('player-loading')).toBeInTheDocument()
   })
+
+  // The clock ticks ~4 times a second for the whole length of a track, and it is the one
+  // thing in this app that re-renders continuously while a DJ works. Everything it touches
+  // is paid for on every tick, forever — so what it must NOT touch is the expensive part.
+  describe('the playback clock stays cheap', () => {
+    function playing() {
+      const audio = audioEl({ duration: 754, paused: false, readyState: 4 })
+      const ref = createRef<HTMLAudioElement>()
+      ;(ref as { current: HTMLAudioElement }).current = audio
+      return { audio, ref }
+    }
+
+    function live(ref: React.RefObject<HTMLAudioElement | null>): React.ReactElement {
+      return (
+        <LivePlayer
+          track={track()}
+          audioRef={ref}
+          continuous={false}
+          onToggleContinuous={vi.fn()}
+          showWaveform={true}
+          onToggleWaveform={vi.fn()}
+          onReveal={vi.fn()}
+          onClose={vi.fn()}
+        />
+      )
+    }
+
+    it('subscribes to the element clock once, not once per component', async () => {
+      // The card and the waveform strip both used to listen to timeupdate on the same
+      // element, so every tick woke two components and ran two setStates where the card
+      // already held the number the strip wanted. One subscription, passed down.
+      const { audio, ref } = playing()
+      const added: string[] = []
+      const spy = vi.spyOn(audio, 'addEventListener')
+      spy.mockImplementation(((type: string, ...rest: unknown[]) => {
+        added.push(type)
+        return HTMLMediaElement.prototype.addEventListener.call(
+          audio,
+          type as keyof HTMLMediaElementEventMap,
+          ...(rest as [EventListenerOrEventListenerObject]),
+        )
+      }) as typeof audio.addEventListener)
+      renderUI(live(ref))
+      await act(async () => {
+        await Promise.resolve()
+      })
+      expect(added.filter((t) => t === 'timeupdate')).toHaveLength(1)
+    })
+
+    it('does not repaint the waveform on a clock tick', async () => {
+      // Repainting the strip means ~16k canvas operations for an envelope that has not
+      // changed. The playhead moves by CSS (clip-path + transform) precisely so the
+      // canvas can stay untouched between decodes.
+      const { audio, ref } = playing()
+      const calls: string[] = []
+      HTMLCanvasElement.prototype.getContext = vi.fn(function (this: HTMLCanvasElement) {
+        calls.push(`w=${this.width} testid=${this.getAttribute('data-testid')}`)
+        return null
+      }) as unknown as typeof HTMLCanvasElement.prototype.getContext
+      renderUI(live(ref))
+      // Two flushes: the first lets the query resolve, the second lets the draw effect it
+      // triggers run. Counting before the envelope has settled would credit the decode's
+      // own (correct) paint to the clock.
+      await act(async () => {
+        await Promise.resolve()
+      })
+      await act(async () => {
+        await Promise.resolve()
+      })
+      // One tick first, so the strip is mounted and painted with a real duration before
+      // the count starts: the very first tick is what gives it one.
+      act(() => {
+        ;(audio as unknown as { currentTime: number }).currentTime = 0.5
+        audio.dispatchEvent(new Event('timeupdate'))
+      })
+      const afterDecode = calls.length
+      expect(afterDecode).toBeGreaterThan(0)
+      for (let i = 1; i <= 8; i++) {
+        act(() => {
+          ;(audio as unknown as { currentTime: number }).currentTime = i
+          audio.dispatchEvent(new Event('timeupdate'))
+        })
+      }
+      expect(calls.slice(afterDecode)).toEqual([])
+    })
+  })
 })

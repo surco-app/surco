@@ -62,14 +62,7 @@ describe('Waveform', () => {
     // quarter of the way across a 60 s track must request 15 s, not "play from 0".
     const onScrub = vi.fn()
     setWaveform(wave)
-    renderWithQuery(
-      <Waveform
-        inputPath="/m/a.wav"
-        audioRef={{ current: null }}
-        active={false}
-        onScrub={onScrub}
-      />,
-    )
+    renderWithQuery(<Waveform inputPath="/m/a.wav" active={false} onScrub={onScrub} />)
     const strip = await screen.findByTestId('waveform')
     // With no <audio> duration to lean on, the strip maps clicks once the decoded
     // peaks land (which carry the duration), so wait for the skeleton to clear.
@@ -88,14 +81,7 @@ describe('Waveform', () => {
     setWaveform(wave)
     document.documentElement.style.setProperty('--color-accent', '#2959aa')
     try {
-      renderWithQuery(
-        <Waveform
-          inputPath="/m/a.wav"
-          audioRef={{ current: null }}
-          active={false}
-          onScrub={vi.fn()}
-        />,
-      )
+      renderWithQuery(<Waveform inputPath="/m/a.wav" active={false} onScrub={vi.fn()} />)
       await waitFor(() =>
         expect(drawWaveform).toHaveBeenCalledWith(
           expect.anything(),
@@ -125,13 +111,7 @@ describe('Waveform', () => {
     const onScrub = vi.fn()
     setWaveformPending()
     renderWithQuery(
-      <Waveform
-        inputPath="/m/a.wav"
-        audioRef={{ current: null }}
-        active={false}
-        audioDurationSec={60}
-        onScrub={onScrub}
-      />,
+      <Waveform inputPath="/m/a.wav" active={false} audioDurationSec={60} onScrub={onScrub} />,
     )
     const strip = await screen.findByTestId('waveform')
     strip.getBoundingClientRect = () =>
@@ -146,13 +126,7 @@ describe('Waveform', () => {
     // strip so it previews the wave to come instead of a row of blocks.
     setWaveformPending()
     renderWithQuery(
-      <Waveform
-        inputPath="/m/a.wav"
-        audioRef={{ current: null }}
-        active={false}
-        audioDurationSec={60}
-        onScrub={vi.fn()}
-      />,
+      <Waveform inputPath="/m/a.wav" active={false} audioDurationSec={60} onScrub={vi.fn()} />,
     )
     expect((await screen.findByTestId('waveform-loading')).tagName).toBe('CANVAS')
   })
@@ -160,15 +134,9 @@ describe('Waveform', () => {
   it('shows the playhead at the playback position only while this track is active', async () => {
     // The playhead must reflect the shared player's clock — but only when that
     // player is streaming this track, so it never maps another track's time here.
-    const audio = {
-      currentTime: 15,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    } as unknown as HTMLAudioElement
+    // The clock arrives as a prop: the card above owns the one timeupdate listener.
     setWaveform(wave)
-    renderWithQuery(
-      <Waveform inputPath="/m/a.wav" audioRef={{ current: audio }} active onScrub={vi.fn()} />,
-    )
+    renderWithQuery(<Waveform inputPath="/m/a.wav" active playheadSec={15} onScrub={vi.fn()} />)
     const playhead = await screen.findByTestId('waveform-playhead')
     // 15 s of 60 s → a quarter of the way across. The position rides a transform on the
     // full-width carrier (not `left`) so each timeupdate composites instead of relayouts.
@@ -177,14 +145,7 @@ describe('Waveform', () => {
 
   it('hides the playhead when another track (or none) is playing', async () => {
     setWaveform(wave)
-    renderWithQuery(
-      <Waveform
-        inputPath="/m/a.wav"
-        audioRef={{ current: null }}
-        active={false}
-        onScrub={vi.fn()}
-      />,
-    )
+    renderWithQuery(<Waveform inputPath="/m/a.wav" active={false} onScrub={vi.fn()} />)
     await screen.findByTestId('waveform')
     expect(screen.queryByTestId('waveform-playhead')).not.toBeInTheDocument()
     // With no playback here there is no "played" portion either: the full-strength
@@ -196,18 +157,11 @@ describe('Waveform', () => {
     // Progress must read peripherally — the played/pending contrast (the
     // SoundCloud/Serato convention) — instead of forcing the eye to hunt for the
     // 2px playhead line on a uniform strip.
-    const audio = {
-      currentTime: 15,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    } as unknown as HTMLAudioElement
     setWaveform(wave)
     // Earlier tests drew the same shared envelope; drop their calls so the counts
     // below see only this render.
     vi.mocked(drawWaveform).mockClear()
-    renderWithQuery(
-      <Waveform inputPath="/m/a.wav" audioRef={{ current: audio }} active onScrub={vi.fn()} />,
-    )
+    renderWithQuery(<Waveform inputPath="/m/a.wav" active playheadSec={15} onScrub={vi.fn()} />)
     // 15 s of 60 s → the full-strength layer keeps the left quarter; the inset trims
     // the pending 75% off its right edge. A clip-path tween composites at ~4 Hz
     // without redrawing the canvas, like the playhead's translateX.
@@ -227,14 +181,7 @@ describe('Waveform', () => {
     // Scrubbing is a precision gesture: the ghost line and its time bubble tell the
     // DJ which second a click will land on, instead of seek-and-listen roulette.
     setWaveform(wave)
-    renderWithQuery(
-      <Waveform
-        inputPath="/m/a.wav"
-        audioRef={{ current: null }}
-        active={false}
-        onScrub={vi.fn()}
-      />,
-    )
+    renderWithQuery(<Waveform inputPath="/m/a.wav" active={false} onScrub={vi.fn()} />)
     const strip = await screen.findByTestId('waveform')
     await waitFor(() => expect(screen.queryByTestId('waveform-loading')).not.toBeInTheDocument())
     strip.getBoundingClientRect = () =>
@@ -256,12 +203,7 @@ describe('Waveform', () => {
     // imply a zero-length track instead of "no waveform".
     setWaveform(null)
     const { container } = renderWithQuery(
-      <Waveform
-        inputPath="/m/a.wav"
-        audioRef={{ current: null }}
-        active={false}
-        onScrub={vi.fn()}
-      />,
+      <Waveform inputPath="/m/a.wav" active={false} onScrub={vi.fn()} />,
     )
     await waitFor(() => expect(screen.queryByTestId('waveform-loading')).not.toBeInTheDocument())
     expect(screen.queryByTestId('waveform')).not.toBeInTheDocument()
@@ -274,14 +216,7 @@ describe('Waveform', () => {
   // kind of regression nobody spots in a screenshot.
   it('keeps the raster at exactly twice the strip height', async () => {
     setWaveform(wave)
-    renderWithQuery(
-      <Waveform
-        inputPath="/m/a.wav"
-        audioRef={{ current: null }}
-        active={false}
-        onScrub={vi.fn()}
-      />,
-    )
+    renderWithQuery(<Waveform inputPath="/m/a.wav" active={false} onScrub={vi.fn()} />)
     const canvas = await screen.findByTestId('waveform')
     const strip = canvas.querySelector('canvas')
     expect(strip).not.toBeNull()
