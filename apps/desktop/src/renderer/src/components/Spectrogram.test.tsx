@@ -127,3 +127,34 @@ describe('Spectrogram hover frequency crosshair', () => {
     expect(screen.queryByTestId('spectrum-crosshair')).toBeNull()
   })
 })
+
+// The duotone is an SVG filter referenced by id, and the ramp inside it follows the
+// theme. Two pictures sharing one id is not a stylistic problem: `url(#id)` resolves to
+// the FIRST match in document order, so one instance would recolor through the other's
+// filter. They coexist for real during the editor's per-track remount, where the old
+// subtree has not unmounted before the new one mounts, and the maximized section renders
+// through a portal appended to document.body — i.e. after the inline one.
+describe('Spectrogram duotone filter identity', () => {
+  it('gives each picture its own filter so one never recolors through another', () => {
+    render(
+      <div>
+        <Spectrogram spectrum={base} />
+        <Spectrogram spectrum={base} />
+      </div>,
+    )
+    const ids = [...document.querySelectorAll('filter')].map((f) => f.getAttribute('id'))
+    expect(ids).toHaveLength(2)
+    expect(new Set(ids).size).toBe(2)
+  })
+
+  it('points each picture at its own filter with a usable url() reference', () => {
+    // useId's raw value contains colons, which are not valid in a url(#…) fragment —
+    // a filter referenced that way silently fails to apply and the spectrum renders
+    // in the raw grayscale ffmpeg emitted.
+    render(<Spectrogram spectrum={base} />)
+    const id = document.querySelector('filter')?.getAttribute('id') ?? ''
+    expect(id).not.toBe('')
+    expect(id).toMatch(/^[A-Za-z][\w-]*$/)
+    expect(screen.getByTestId('spectrogram')).toHaveStyle({ filter: `url(#${id})` })
+  })
+})
