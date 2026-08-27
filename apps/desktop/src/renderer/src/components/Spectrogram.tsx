@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SpectrumResult } from '../../../shared/types'
 import { useMaximizedSection } from '../hooks/useEditorSections'
@@ -8,7 +8,6 @@ import { formatKHz } from '../lib/quality'
 import { freqAtFraction } from '../lib/spectrumAxis'
 
 const FREQ_MARKS = [0, 5000, 10000, 15000, 20000]
-const FILTER_ID = 'spectrum-duotone'
 
 export function Spectrogram({
   spectrum,
@@ -23,6 +22,13 @@ export function Spectrogram({
   const { t: tr } = useTranslation()
   const ramp = useSpectrumDuotone()
   const { maximized } = useMaximizedSection()
+  // Per-instance, because `url(#id)` resolves to the FIRST matching filter in the
+  // document: two pictures sharing one id means one recolors through the other's ramp,
+  // and the ramps differ by theme. Two do coexist for real — the editor remounts per
+  // track before the old subtree unmounts, and the maximized section renders through a
+  // portal appended to document.body, i.e. after any inline one. The colons useId puts
+  // in its value are not valid in a url() fragment, so strip them.
+  const filterId = `spectrum-duotone-${useId().replace(/:/g, '')}`
   // Maximized, the Audio Quality box fills the window; the image must grow with it so the
   // frequency marks (positioned by percent of this box) and the picture keep the same
   // height. Fixed at h-80 while maximized, the picture flattened into a thin band stretched
@@ -53,7 +59,7 @@ export function Spectrogram({
           the default linearRGB would darken the mid-blue and wash the ramp. */}
       <svg aria-hidden className="absolute h-0 w-0">
         <title>spectrum duotone</title>
-        <filter id={FILTER_ID} colorInterpolationFilters="sRGB">
+        <filter id={filterId} colorInterpolationFilters="sRGB">
           <feComponentTransfer>
             <feFuncR type="table" tableValues={ramp.r} />
             <feFuncG type="table" tableValues={ramp.g} />
@@ -67,7 +73,7 @@ export function Spectrogram({
         // browser refetch the whole page.
         src={spectrum.image || undefined}
         alt={tr('editor.spectrumAlt')}
-        style={{ filter: `url(#${FILTER_ID})` }}
+        style={{ filter: `url(#${filterId})` }}
         className={`block w-full object-fill ${tall ? 'h-full' : 'h-80'}`}
       />
       {nyquist > 0 &&
