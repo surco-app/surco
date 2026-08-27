@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { NormalizeConfig } from '../../../shared/types'
-import { clippedCount, previewPeaks, skeletonPeaks } from './waveform'
+import { clippedCount, drawWaveform, previewPeaks, skeletonPeaks } from './waveform'
 
 const cfg = (over: Partial<NormalizeConfig>): NormalizeConfig => ({
   mode: 'none',
@@ -101,5 +101,96 @@ describe('skeletonPeaks', () => {
 
   it('is deterministic so the pulsing placeholder never reflows its shape mid-decode', () => {
     expect(skeletonPeaks(64)).toEqual(skeletonPeaks(64))
+  })
+})
+
+// The overview always has far more buckets than raster pixels (8192 over ~1200), so the
+// strip reduces to one column per pixel before drawing instead of painting ~7 sub-pixel
+// bars into each one. That reduction is the part that can silently lie: whatever it
+// merges away is gone from the picture the DJ reads. These pin what must survive it.
+describe('drawWaveform column reduction', () => {
+  // jsdom has no 2D context, so record the geometry the draw asks for. Each fill is
+  // tagged with the colour in force, which is how a peak bar is told from an RMS core
+  // and from a clip mark.
+  function recordingCanvas(width: number, height = 96) {
+    const fills: { x: number; y: number; w: number; h: number; color: string }[] = []
+    const ctx = {
+      fillStyle: '',
+      clearRect: () => {},
+      fillRect(x: number, y: number, w: number, h: number) {
+        fills.push({ x, y, w, h, color: String(ctx.fillStyle) })
+      },
+    }
+    const canvas = { width, height, getContext: () => ctx } as unknown as HTMLCanvasElement
+    return { canvas, fills, ctx }
+  }
+
+  const BLUE = 'rgba(96, 165, 250, 0.8)'
+  const RED = 'rgba(247, 118, 142, 0.95)'
+  // A quiet envelope with one lone full-scale hit, the shape the max-abs reduction
+  // exists for: a kick is a handful of hot buckets inside an otherwise soft passage.
+  function withSpikeAt(index: number, count = 8192): { peaks: number[]; rms: number[] } {
+    const peaks = new Array<number>(count).fill(0.1)
+    peaks[index] = 1
+    return { peaks, rms: peaks.map((p) => p * 0.5) }
+  }
+
+  it('keeps a lone transient at full height when many buckets share one pixel', () => {
+    // Averaging the merged buckets would bury the hit under its quiet neighbours —
+    // erasing the very thing the DJ lines the playhead up against.
+    const { canvas, fills } = recordingCanvas(1200)
+    const { peaks, rms } = withSpikeAt(4001)
+    drawWaveform(canvas, peaks, { color: BLUE, rms })
+    const tallest = fills.reduce((m, f) => (f.h > m.h ? f : m), fills[0])
+    // Full scale spans the lane: 2 × (48 − 2).
+    expect(tallest.h).toBeCloseTo(92, 5)
+  })
+
+  it('draws one column per raster pixel rather than one bar per bucket', () => {
+    // The reason for the reduction: 8192 buckets over 1200 pixels painted each pixel
+    // ~7 times, at two canvas state changes per bar.
+    const { canvas, fills } = recordingCanvas(1200)
+    const { peaks, rms } = withSpikeAt(4001)
+    drawWaveform(canvas, peaks, { color: BLUE, rms })
+    expect(fills.length).toBeLessThanOrEqual(2400)
+    expect(fills.every((f) => f.w === 1)).toBe(true)
+  })
+
+  it('still marks a clip that shares its pixel with clean buckets', () => {
+    // Clip marks are per-bucket truth, and a single clipped bucket lands in a pixel
+    // with ~7 clean ones. Merging by "most buckets are fine" would drop the red mark
+    // that says a limiter acted — the strip would show a clean wave over a clipped file.
+    const { canvas, fills } = recordingCanvas(1200)
+    const peaks = new Array<number>(8192).fill(0.1)
+    const clipped = new Array<boolean>(8192).fill(false)
+    clipped[4001] = true
+    drawWaveform(canvas, peaks, { color: BLUE, clipped })
+    expect(fills.some((f) => f.color === RED)).toBe(true)
+  })
+
+  it('keeps the RMS body inside the peak outline it sits in', () => {
+    // The two-layer draw only reads if the solid core stays under the translucent
+    // envelope; a core merged by a rule that can exceed its own peak would paint
+    // outside the bar containing it.
+    const { canvas, fills } = recordingCanvas(1200)
+    const peaks = Array.from({ length: 8192 }, (_, i) => 0.2 + 0.7 * Math.abs(Math.sin(i / 40)))
+    const rms = peaks.map((p) => p * 0.8)
+    drawWaveform(canvas, peaks, { color: BLUE, rms })
+    const cores = fills.filter((f) => f.color !== BLUE && f.color !== RED)
+    expect(cores.length).toBeGreaterThan(0)
+    for (const core of cores) {
+      const outline = fills.find((f) => f.color === BLUE && f.x === core.x)
+      if (outline) expect(core.h).toBeLessThanOrEqual(outline.h + 1e-9)
+    }
+  })
+
+  it('leaves the zoomed-in draw alone, where each bucket is wider than a pixel', () => {
+    // Past the crossover the strip has FEWER buckets than pixels and interpolates
+    // between bucket centres instead. The reduction must not capture that path, or a
+    // deep zoom would redraw the blocky wave the interpolation exists to replace.
+    const { canvas, fills } = recordingCanvas(1200)
+    const peaks = Array.from({ length: 40 }, (_, i) => (i % 2 === 0 ? 0.9 : 0.2))
+    drawWaveform(canvas, peaks, { color: BLUE })
+    expect(fills.length).toBeGreaterThan(1000)
   })
 })

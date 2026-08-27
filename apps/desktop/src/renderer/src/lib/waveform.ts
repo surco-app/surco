@@ -162,6 +162,48 @@ export function drawWaveform(
     strikeClips(ctx, clipXs, mid, halfH, 1)
     return
   }
+  // More buckets than pixels — the overview at any normal width, where 8192 buckets
+  // land on a ~1200 px raster. Drawing one sub-pixel bar per bucket painted each pixel
+  // ~7 times over (32k canvas ops for a strip the player draws twice), so reduce to one
+  // column per pixel first: peak by max, so no transient is lost — the whole reason the
+  // envelope is max-abs — and the RMS body by quadratic mean, which is what an RMS over
+  // the merged span actually is. Two passes, one fillStyle each, instead of two per bar.
+  if (barW < 1) {
+    const first = Math.max(0, Math.floor(from))
+    const last = Math.min(peaks.length, Math.ceil(to))
+    const cols = Math.max(1, Math.ceil((last - first) * barW))
+    const colPeak = new Float64Array(cols)
+    const colRms = new Float64Array(cols)
+    const colCount = new Float64Array(cols)
+    const colClip = new Uint8Array(cols)
+    for (let i = first; i < last; i++) {
+      const col = Math.min(cols - 1, Math.floor((i - from) * barW))
+      const amp = limitLin !== null ? Math.min(peaks[i], limitLin) : peaks[i]
+      if (amp > colPeak[col]) colPeak[col] = amp
+      if (rms) {
+        const r = Math.min(rms[i], amp)
+        colRms[col] += r * r
+        colCount[col]++
+      }
+      if (isOver(i)) colClip[col] = 1
+    }
+    ctx.fillStyle = baseColor
+    for (let col = 0; col < cols; col++) {
+      const bar = Math.max(colPeak[col] * halfH, 0.5)
+      ctx.fillRect(col, mid - bar, 1, bar * 2)
+    }
+    if (rms) {
+      ctx.fillStyle = coreColor
+      for (let col = 0; col < cols; col++) {
+        if (colCount[col] === 0) continue
+        const core = Math.min(Math.sqrt(colRms[col] / colCount[col]), colPeak[col]) * halfH
+        if (core > 0.5) ctx.fillRect(col, mid - core, 1, core * 2)
+      }
+    }
+    for (let col = 0; col < cols; col++) if (colClip[col]) clipXs.push(col)
+    strikeClips(ctx, clipXs, mid, halfH, 1)
+    return
+  }
   const bw = Math.max(barW - 0.5, 0.5)
   for (let i = Math.max(0, Math.floor(from)); i < Math.min(peaks.length, Math.ceil(to)); i++) {
     const x = (i - from) * barW
