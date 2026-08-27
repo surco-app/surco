@@ -76,9 +76,18 @@ export function QualitySection({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { reportError } = useToast()
+  // Keyed by input path, so it measures once per file and reads the right figures on
+  // a track switch. The ffmpeg pass waits for the selection to rest (this section
+  // remounts with the per-track editor). A failed measure resolves null and the
+  // readout hides.
+  const settled = useSettled(SELECTION_SETTLE_MS)
   // Gated on the feature setting AND the section being open: folding Quality away stops
   // the (heavy) decode until the user reopens it. A failed analysis surfaces as analyzeError.
-  const spectrumQuery = useSpectrogram(item.inputPath, showSpectrum && open)
+  // Also waits for the selection to rest, like every other heavy probe: this is the most
+  // expensive one in the app (full decode + FFT), and arrowing down a crate with Quality
+  // open used to queue a decode for every row merely passed through. A track already in
+  // the cache still renders instantly — a disabled query keeps returning its cached data.
+  const spectrumQuery = useSpectrogram(item.inputPath, settled && showSpectrum && open)
   const spectrum = spectrumQuery.data
   const analyzeFailed = spectrumQuery.isError
   // Show the scanning frame the instant the section opens, not only once the query reports
@@ -97,11 +106,6 @@ export function QualitySection({
     spectrumQuery.error instanceof Error
       ? errorKeyOf(cleanIpcError(spectrumQuery.error.message))
       : null
-  // Keyed by input path, so it measures once per file and reads the right figures on
-  // a track switch. The ffmpeg pass waits for the selection to rest (this section
-  // remounts with the per-track editor). A failed measure resolves null and the
-  // readout hides.
-  const settled = useSettled(SELECTION_SETTLE_MS)
   const { data: loudness } = useTrackLoudness(item.inputPath, settled && showLoudness && open)
   // Resolve the verdict once and reuse it for the badge and the caption.
   const verdict =
