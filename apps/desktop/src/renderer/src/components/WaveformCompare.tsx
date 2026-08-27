@@ -201,44 +201,61 @@ export function Strip({
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !wave) return
-    // Past the raster cap the base bitmap is stretched over a box many times
-    // wider (×128 puts 32 640 px of pixels under 20 000+ px of CSS), which
-    // smears every bar into a solid block — the "deformed wave" seen while
-    // navigating, before the hi-res window lands over it. So once the viewport
-    // canvas is covering the lane, the base stays EMPTY: it still lays the lane
-    // out and paints the field, but it never draws a wave it cannot draw right.
-    if (hiResActive) {
-      canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
-      return
+    // Coalesced to one repaint per frame, the same shape as the scroll handler below.
+    // A trackpad pinch drives `zoom` continuously — far faster than the screen
+    // repaints — and this body is ~16k canvas operations over 8192 buckets, so an
+    // unthrottled redraw spends the whole gesture painting frames nobody sees. The
+    // zoom state itself stays synchronous: the label and the scroller geometry follow
+    // the fingers, only the bitmap waits for the frame.
+    let frame = 0
+    const paint = (): void => {
+      frame = 0
+      draw()
     }
-    if (background)
-      drawWaveform(canvas, background.peaks, { color: BEFORE_COLOR, rms: background.rms })
-    // With no dB line dialed in, the red marks come from the decoder's true-clipping
-    // flags — drawWaveform only consults them when clipDb/limitDb are absent.
-    const lanes = split && wave.channels?.length === 2 ? wave.channels : null
-    if (lanes) {
-      // Each lane is that channel's own envelope and clip flags, so a clip living
-      // in one channel only reads there — same as Audacity's two rows.
-      lanes.forEach((lane, i) => {
-        drawWaveform(canvas, lane.peaks, {
+    const draw = (): void => {
+      // Past the raster cap the base bitmap is stretched over a box many times
+      // wider (×128 puts 32 640 px of pixels under 20 000+ px of CSS), which
+      // smears every bar into a solid block — the "deformed wave" seen while
+      // navigating, before the hi-res window lands over it. So once the viewport
+      // canvas is covering the lane, the base stays EMPTY: it still lays the lane
+      // out and paints the field, but it never draws a wave it cannot draw right.
+      if (hiResActive) {
+        canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
+        return
+      }
+      if (background)
+        drawWaveform(canvas, background.peaks, { color: BEFORE_COLOR, rms: background.rms })
+      // With no dB line dialed in, the red marks come from the decoder's true-clipping
+      // flags — drawWaveform only consults them when clipDb/limitDb are absent.
+      const lanes = split && wave.channels?.length === 2 ? wave.channels : null
+      if (lanes) {
+        // Each lane is that channel's own envelope and clip flags, so a clip living
+        // in one channel only reads there — same as Audacity's two rows.
+        lanes.forEach((lane, i) => {
+          drawWaveform(canvas, lane.peaks, {
+            color,
+            clipDb,
+            clipped: lane.clipped,
+            marks,
+            clear: i === 0 && !background,
+            lane: { index: i, count: lanes.length },
+          })
+        })
+      } else {
+        drawWaveform(canvas, wave.peaks, {
           color,
           clipDb,
-          clipped: lane.clipped,
+          clipped: wave.clipped,
+          limitDb,
           marks,
-          clear: i === 0 && !background,
-          lane: { index: i, count: lanes.length },
+          rms: wave.rms,
+          clear: !background,
         })
-      })
-    } else {
-      drawWaveform(canvas, wave.peaks, {
-        color,
-        clipDb,
-        clipped: wave.clipped,
-        limitDb,
-        marks,
-        rms: wave.rms,
-        clear: !background,
-      })
+      }
+    }
+    frame = requestAnimationFrame(paint)
+    return () => {
+      if (frame !== 0) cancelAnimationFrame(frame)
     }
   }, [wave, color, clipDb, limitDb, marks, split, background, raster, zoom, tall, hiResActive])
   // A zoom step re-anchors the scroller so the spot the user is working on stays
@@ -583,11 +600,20 @@ function ClippedFlag({
   onToggle: () => void
 }): React.JSX.Element | null {
   const { t: tr } = useTranslation()
-  const count = !wave
-    ? 0
-    : clipDb !== undefined
-      ? clippedCount(wave.peaks, clipDb)
-      : (wave.clipped?.filter(Boolean).length ?? 0)
+  // Memoized for the same reason the preview envelopes above are: both branches walk all
+  // 8192 buckets (and allocate an intermediate array doing it), and this renders inside
+  // the strip, which re-renders on every pointer move across the wave and on every
+  // keystroke in the normalize controls. The walk only depends on the envelope and the
+  // ceiling, neither of which a mousemove changes.
+  const count = useMemo(
+    () =>
+      !wave
+        ? 0
+        : clipDb !== undefined
+          ? clippedCount(wave.peaks, clipDb)
+          : (wave.clipped?.filter(Boolean).length ?? 0),
+    [wave, clipDb],
+  )
   if (count === 0) return null
   return (
     <button
