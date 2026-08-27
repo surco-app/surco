@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.88",
+    "date": "August 27, 2026",
+    "title": "Tracks open instantly",
+    "items": [
+      {
+        "text": "Opening a track is now two to three times faster. Surco used to decode the same file twice every time you hit play: once to draw the waveform, once to find the peaks that clip. It now reads the file once and gets both from that single pass, so the wave shows up in half the time and your laptop does half the work. On a five-minute FLAC that is 100 milliseconds instead of 270; on a two-hour mix, a second and a half instead of over three.",
+        "in": "0.88.0"
+      },
+      {
+        "text": "The waveform shows detail it used to lose. To draw it, Surco reduced the audio to a very low quality first, and that shortcut rounded off the transients: hits came out lower than they really are in the file. The wave is now built from the audio at its real quality, so the peaks are the true ones and the body of the track reads apart from the hits instead of melting into one blue block. You notice it most when hunting the exact spot of a kick to place a cut.",
+        "in": "0.88.0"
+      },
+      {
+        "text": "Arrowing through the list no longer fires analyses you never asked for. With the Quality panel open, every row you passed through started its spectrum analysis, the heaviest one there is, even if you never stopped on it. It now waits for you to settle on a track, the same way every other measurement already did. Tracks you have already analysed still show up straight away.",
+        "in": "0.88.0"
+      }
+    ]
+  },
+  {
     "version": "0.87",
     "date": "August 26, 2026",
     "title": "Your cues survive every format",
