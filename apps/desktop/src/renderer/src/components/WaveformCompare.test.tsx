@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NormalizeConfig, WaveformResult, WaveformScan } from '../../../shared/types'
@@ -795,5 +795,64 @@ describe('redraw cost', () => {
 
     expect(screen.getByTestId('tick')).toHaveTextContent('2')
     expect(spy.mock.calls.length).toBe(afterFirstDraw)
+  })
+
+  // A trackpad pinch fires wheel events far faster than the screen repaints, and each
+  // one used to repaint the strip synchronously — 8192 buckets per event, on the same
+  // thread that has to keep the gesture smooth. The zoom itself must stay immediate
+  // (the label and the scroller geometry follow the fingers); it is the canvas that
+  // coalesces to one repaint per frame.
+  it('repaints once per frame during a pinch, not once per wheel event', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      cancelAnalysis: vi.fn(),
+      waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    // Hold the frame callbacks so a burst of events lands inside one frame, the way a
+    // real pinch does; then run them all at once, as the browser would at paint time.
+    // A faithful stub: cancelAnimationFrame must actually drop the callback, because
+    // the effect's cleanup cancels the pending frame on every re-run. A no-op cancel
+    // would leave one stale callback per event queued and the burst would "repaint"
+    // six times when the frames ran — measuring the stub, not the component.
+    const frames = new Map<number, FrameRequestCallback>()
+    let nextFrame = 1
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      const id = nextFrame++
+      frames.set(id, cb)
+      return id
+    })
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+      frames.delete(id)
+    })
+    try {
+      renderWithQuery(
+        <WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />,
+      )
+      const strip = await screen.findByTestId('waveform-strip')
+      const scroller = strip.parentElement as HTMLElement
+      const spy = drawWaveform as unknown as ReturnType<typeof vi.fn>
+      await waitFor(() => expect(spy).toHaveBeenCalled())
+      const before = spy.mock.calls.length
+
+      for (let i = 0; i < 6; i++) fireEvent.wheel(scroller, { deltaY: -20, ctrlKey: true })
+      // The zoom is not deferred: six pinch steps of exp(0.2) land on ×3.3 right away.
+      expect(screen.getByTestId('waveform-zoom-reset')).toHaveTextContent('×3.3')
+      const duringGesture = spy.mock.calls.length
+
+      await act(async () => {
+        const pending = [...frames.values()]
+        frames.clear()
+        for (const frame of pending) frame(0)
+        await Promise.resolve()
+      })
+
+      // Six events, at most one repaint when the frame ran — never six.
+      expect(duringGesture).toBe(before)
+      expect(spy.mock.calls.length).toBeLessThanOrEqual(before + 2)
+      expect(spy.mock.calls.length).toBeGreaterThan(before)
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })
