@@ -39,11 +39,25 @@ describe('cancellable analysis reads pass their AbortSignal to execFile', () => 
     await swallow(generateSpectrogram('/in.flac', signal))
     await swallow(analyzeCutoff('/in.flac', 44100, signal))
     await swallow(measureLoudness('/in.flac', signal))
-    await swallow(measureWaveform('/in.flac', signal))
 
     expect(calls.length).toBeGreaterThan(0)
     for (const call of calls) {
       expect(call.opts?.signal, `${call.args.join(' ')} ran without the signal`).toBe(signal)
     }
+  })
+
+  // measureWaveform is deliberately not in the sweep above. Its envelope no longer has a
+  // decode of its own: it rides the native scan, which is spawned inside the analysis
+  // worker and so never reaches this execFile mock at all. What it still runs here is the
+  // cheap ffprobe for the sample rate — metadata, milliseconds, nothing a browsed-past
+  // track needs killed. Its cancellation is reference-counted instead, because the scan is
+  // shared with audio:waveform-scan (see sharedScan.ts): the decode stops when the last
+  // consumer leaves, not the first. What must hold here is that an already-aborted signal
+  // never starts work at all.
+  it('does not decode at all when the waveform signal is already aborted', async () => {
+    const controller = new AbortController()
+    controller.abort()
+    await swallow(measureWaveform('/in.flac', controller.signal))
+    expect(calls).toHaveLength(0)
   })
 })
