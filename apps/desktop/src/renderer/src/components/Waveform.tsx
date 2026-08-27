@@ -6,9 +6,10 @@ import { parseColor } from '../lib/spectrumColors'
 import { drawWaveform } from '../lib/waveform'
 import { WaveformSkeleton } from './WaveformSkeleton'
 
-// Fixed internal raster scaled by CSS to the container: the peak array is 2048
-// buckets, so ~half a bucket per device pixel at typical panel widths —
-// resolution-independent enough without a resize observer.
+// Fixed internal raster scaled by CSS to the container: resolution-independent enough
+// without a resize observer. The envelope carries WAVEFORM_BUCKETS (8192) buckets, so
+// several land on each raster pixel and the sub-pixel bars overlap into the strip's
+// dense texture.
 const CANVAS_W = 1200
 // 96 keeps the raster 1:1 with device pixels at the strip's 48px CSS height on @2x
 // displays — the height the raster is scaled to, so it must track the h-12 below.
@@ -18,21 +19,26 @@ const CANVAS_H = 96
 // position in seconds); the playhead follows playback while `active`.
 export function Waveform({
   inputPath,
-  audioRef,
   active,
   audioDurationSec = 0,
+  playheadSec: playheadProp = null,
   onScrub,
 }: {
   inputPath: string
-  audioRef: React.RefObject<HTMLAudioElement | null>
   active: boolean
   audioDurationSec?: number
+  // The playback position, owned by the card above (which already subscribes to the
+  // element's ~4Hz timeupdate). This used to be a second listener on the same element,
+  // so every tick woke two components to compute the same number.
+  playheadSec?: number | null
   onScrub: (seconds: number) => void
 }): React.JSX.Element | null {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const playedCanvasRef = useRef<HTMLCanvasElement>(null)
-  const [playheadSec, setPlayheadSec] = useState<number | null>(null)
   const [hoverRatio, setHoverRatio] = useState<number | null>(null)
+  // Only shown while this strip is the one streaming; any other source (or a closed
+  // player) hides the playhead rather than leaving it parked at a stale position.
+  const playheadSec = active ? playheadProp : null
 
   const { data: wave, isFetching } = useWaveform(inputPath, true)
   // The strip's geometry follows the playback clock so a DJ can scrub the instant
@@ -71,20 +77,6 @@ export function Waveform({
     })
     return () => observer.disconnect()
   }, [wave])
-
-  // Track the player's position only while it streams this track; any other
-  // source (or a closed player) hides the playhead instead of lying.
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio || !active) {
-      setPlayheadSec(null)
-      return
-    }
-    const onTime = (): void => setPlayheadSec(audio.currentTime)
-    onTime()
-    audio.addEventListener('timeupdate', onTime)
-    return () => audio.removeEventListener('timeupdate', onTime)
-  }, [audioRef, active])
 
   // A null envelope (ffmpeg decoded nothing) with no playback duration to lean on
   // means there's nothing to scrub: render nothing rather than a strip that implies

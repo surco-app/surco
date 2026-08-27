@@ -89,20 +89,27 @@ export function LivePlayer({
     }
   }, [audioRef])
 
-  function onToggle(): void {
+  // Memoized like onSetVolume below, and for the same reason now that Player is memo'd:
+  // a fresh function identity on every tick of the ~4Hz clock would defeat the memo and
+  // re-render the whole card — waveform included — 4 times a second for the length of a
+  // track. Both read the element through the ref, so neither closes over changing state.
+  const onToggle = useCallback((): void => {
     const audio = audioRef.current
     if (!audio) return
     if (audio.paused) audio.play().catch(() => {})
     else audio.pause()
-  }
+  }, [audioRef])
 
   // Reads the live duration off the element rather than closing over state.
-  function onScrub(seconds: number): void {
-    const audio = audioRef.current
-    if (audio && Number.isFinite(audio.duration)) {
-      audio.currentTime = Math.min(Math.max(seconds, 0), audio.duration)
-    }
-  }
+  const onScrub = useCallback(
+    (seconds: number): void => {
+      const audio = audioRef.current
+      if (audio && Number.isFinite(audio.duration)) {
+        audio.currentTime = Math.min(Math.max(seconds, 0), audio.duration)
+      }
+    },
+    [audioRef],
+  )
 
   // The slider reports an absolute level; mirror it onto the element, which persists it
   // across tracks, and reflect it live on the slider.
@@ -124,7 +131,6 @@ export function LivePlayer({
       loading={loading}
       currentTime={currentTime}
       duration={duration}
-      audioRef={audioRef}
       continuous={continuous}
       volume={volume}
       onToggle={onToggle}
@@ -145,7 +151,6 @@ interface PlayerProps {
   loading: boolean
   currentTime: number
   duration: number
-  audioRef: React.RefObject<HTMLAudioElement | null>
   continuous: boolean
   volume: number
   onToggle: () => void
@@ -166,7 +171,6 @@ export function Player({
   loading,
   currentTime,
   duration,
-  audioRef,
   continuous,
   volume,
   onToggle,
@@ -301,9 +305,9 @@ export function Player({
           <Waveform
             key={track.inputPath}
             inputPath={track.inputPath}
-            audioRef={audioRef}
             active
             audioDurationSec={duration}
+            playheadSec={currentTime}
             onScrub={onScrub}
           />
         ) : (
