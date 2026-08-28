@@ -45,6 +45,7 @@ import {
 } from './cutoff'
 import { declickRepairedArgs, parseDeclickedSamples, parseProgressSeconds } from './declick'
 import { isPcmOverrun, slimDecodeError } from './decodeError'
+import { measureBands } from './fftBands'
 import {
   detectFftKnee,
   detectFlatShelf,
@@ -279,12 +280,12 @@ export async function readForeignTags(input: string): Promise<ForeignTag[]> {
 // Returns null rather than throwing on a missing/unparseable value, so a probe
 // failure leaves the row without a time instead of aborting the whole file add
 // (which runs this alongside readTags/readCover).
-export async function probeDuration(input: string): Promise<number | null> {
+export async function probeDuration(input: string, signal?: AbortSignal): Promise<number | null> {
   try {
     const { stdout } = await run(
       ffprobePath,
       ['-v', 'error', '-show_entries', 'format=duration', '-of', 'json', input],
-      { timeout: ANALYSIS_TIMEOUT_MS },
+      { timeout: ANALYSIS_TIMEOUT_MS, signal },
     )
     const seconds = Number(JSON.parse(stdout).format?.duration)
     return Number.isFinite(seconds) ? seconds : null
@@ -1705,62 +1706,14 @@ export async function processCover(input: string, opts: CoverProcessOpts): Promi
   return out
 }
 
-// Builds the single-decode filtergraph that splits the audio into one
-// bandpass→astats branch per band, prints each band's running stats to stdout
-// (file=-) tagged with a surcoband=<freq>x<width> metadata key, then mixes the
-// branches so ffmpeg has a single output to render. The width is part of the
-// tag because the coarse (1 kHz) and fine (500 Hz) probes share centre
-// frequencies — 13000x1000 and 13000x500 are different measurements.
-//
-// It writes no temp files on purpose. An ametadata file= path like
-// C:\Users\...\x.txt is unparseable by ffmpeg's filtergraph (':' separates
-// options and '\' escapes, and no escaping is reliable), which is exactly what
-// broke on Windows. Printing to stdout sidesteps filesystem paths entirely; the
-// surcoband tag lets analyzeCutoff split the merged stream back per band.
 export interface BandSpec {
   freqHz: number
   widthHz: number
 }
 
-export function cutoffFilter(specs: BandSpec[]): string {
-  const branches = specs
-    .map(
-      ({ freqHz, widthHz }, i) =>
-        `[b${i}]ametadata=mode=add:key=surcoband:value=${freqHz}x${widthHz},` +
-        `bandpass=f=${freqHz}:width_type=h:w=${widthHz},astats=metadata=1:reset=0,` +
-        `ametadata=mode=print:file=-[o${i}]`,
-    )
-    .join(';')
-  return (
-    `[0:a]asetnsamples=n=1048576:p=0,asplit=${specs.length}${specs.map((_, i) => `[b${i}]`).join('')};` +
-    `${branches};${specs.map((_, i) => `[o${i}]`).join('')}amix=inputs=${specs.length}`
-  )
-}
-
-// Pairs each band's "<freq>x<width>" tag with its cumulative RMS from the
-// tagged stdout the filter prints. Within a band's block the surcoband tag
-// prints just before its Overall RMS, so we attribute each RMS to the band
-// tagged most recently; astats runs with reset=0, so the last block per band
-// carries the whole-file level — last write wins.
-export function parseBands(stdout: string): Map<string, number> {
-  const rms = new Map<string, number>()
-  let band: string | null = null
-  for (const line of stdout.split('\n')) {
-    const tag = line.match(/surcoband=(\d+x\d+)/)
-    if (tag) {
-      band = tag[1]
-      continue
-    }
-    const level = line.match(/lavfi\.astats\.Overall\.RMS_level=(-?[\d.]+)/)
-    if (level && band !== null) rms.set(band, Number(level[1]))
-  }
-  return rms
-}
-
-// Measures the energy in each high-frequency band in a single decode (asplit
-// into one bandpass→astats branch per band, coarse and fine probes together)
-// and hands the per-band RMS to detectCutoff, which spots the codec's lowpass
-// and the saw-tooth of reconstructed highs.
+// Measures the energy in each high-frequency band by FFT over a sample of the
+// track (see fftBands.ts) and hands the per-band levels to detectCutoff, which
+// spots the codec's lowpass and the saw-tooth of reconstructed highs.
 export async function analyzeCutoff(
   input: string,
   sampleRateHz: number,
@@ -1785,23 +1738,10 @@ export async function analyzeCutoff(
         }))
       : []),
   ]
-  const { stdout } = await run(
-    ffmpegPath,
-    [
-      '-hide_banner',
-      '-loglevel',
-      'error',
-      '-i',
-      input,
-      '-filter_complex',
-      cutoffFilter(specs),
-      '-f',
-      'null',
-      '-',
-    ],
-    { maxBuffer: 1024 * 1024 * 16, timeout: ANALYSIS_TIMEOUT_MS, signal },
-  )
-  const rms = parseBands(stdout)
+  // Duration only positions the probes; without it they all fall at the start,
+  // which still measures the track, just less representatively.
+  const durationSec = (await probeDuration(input, signal)) ?? 0
+  const rms = await measureBands(input, specs, sampleRateHz, durationSec, signal)
   const bands = freqs.map((freqHz) => ({
     freqHz,
     rmsDb: rms.get(`${freqHz}x${BAND_WIDTH_HZ}`) ?? -Infinity,
@@ -2127,12 +2067,12 @@ interface SpectrumBuild {
 }
 
 // Builds the spectrogram image and measures the lossy cutoff in one go. The image
-// is the whole point of the panel, so a failure in the (far more fragile) cutoff
-// pass — a per-band filtergraph that writes and re-reads temp files and has
-// repeatedly broken on Windows — must not discard a perfectly good image. We run
-// both, but only a missing image rejects; a cutoff failure yields a null cutoff
-// (so the UI hides the quality verdict rather than inventing one) and the real
-// ffmpeg error is handed back for the caller to log instead of swallowing it.
+// is the whole point of the panel, so a failure in the cutoff pass — which spawns
+// its own decodes and so has more ways to go wrong than one ffmpeg call — must not
+// discard a perfectly good image. We run both, but only a missing image rejects; a
+// cutoff failure yields a null cutoff (so the UI hides the quality verdict rather
+// than inventing one) and the real ffmpeg error is handed back for the caller to
+// log instead of swallowing it.
 export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<SpectrumBuild> {
   const sampleRateHz = Number((await deps.probe(input)).sampleRate) || 0
   const [imageR, cutoffR, shelfR] = await Promise.allSettled([

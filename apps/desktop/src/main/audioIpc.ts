@@ -63,7 +63,7 @@ function cancellable<T>(
 // and the audio:cached-batch handler so the two can never drift onto different keys for
 // the same family — a batch peek under a stale namespace would silently show as a
 // permanent miss instead of the warm hit the live handler already wrote.
-const SPECTROGRAM_NAMESPACE = 'spectrogram-mono-v13'
+const SPECTROGRAM_NAMESPACE = 'spectrogram-mono-v14'
 const LOUDNESS_NAMESPACE = 'loudness'
 const CLICKS_NAMESPACE = 'clickcount-v2'
 const PROPERTIES_NAMESPACE = 'properties'
@@ -131,6 +131,10 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
             // changed (Good→Bad), so old entries must regenerate to pick it up. v13 reports
             // full-band high-rate audio (96 kHz) at the ~22 kHz probed ceiling instead of the
             // 48 kHz Nyquist, so cutoffHz changed for those files and old entries must regenerate.
+            // v14 measures the bands by FFT instead of a bandpass filter bank, whose own rolloff
+            // was reading ~11 dB of fall into a flat spectrum: it invented walls in genuine
+            // masters and hid real ones (a track cut at 14 kHz still read as 20 kHz). Every
+            // cached verdict came from that probe, so all of them must be measured again.
             SPECTROGRAM_NAMESPACE,
             inputPath,
             () =>
