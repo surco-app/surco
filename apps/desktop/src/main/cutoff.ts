@@ -36,12 +36,22 @@ const BAND_MAX_HZ = 22000
 // but on a 96 kHz file (Nyquist 48 kHz) the bands never looked past ~22 kHz, so reporting
 // Nyquist would claim a 48 kHz reach we never measured — and contradict the ~20 kHz caption.
 const PROBED_CEILING_HZ = 22050
-// A natural HF taper loses a few dB per band step (~3 dB/kHz at its steepest
-// for full-band pink noise, under 5 dB on measured real tracks); a codec
-// lowpass drops 7 dB or more in a single step even when its transition band is
-// soft (6.9–7.8 dB measured on real ~160–192 kbps re-encodes, 10–17 dB on
-// brick walls). 6 dB splits the two populations.
-const KNEE_DROP_DB = 6
+// A natural HF taper loses a few dB per band step; a codec lowpass collapses in
+// one. Calibrated on FFT bands (see fftBands.ts) over 12 lossless tracks and the
+// 108 real LAME/AAC encodes made from them. The old 6 dB was calibrated against
+// bandpass readings, which blunt a knee — the same encode reads 6.7 dB through
+// bandpass and 33.6 dB by FFT — so it sat well inside the natural range and
+// flagged 3 of the 12 lossless tracks.
+const KNEE_DROP_DB = 7
+// ...but a natural taper steepens as it runs into Nyquist, and that is the only
+// place the two populations overlap: every lossless track this rule would flag
+// does it in the top bands (9.7 and 9.9 dB at 20–21 kHz), while real walls lower
+// down run 12–55 dB. Raising the bar everywhere is not an option — a genuine 128k
+// wall measured 12.3 dB — so only the top bands answer to the stricter one. Over
+// the calibration set that pairing is the only one with no false positive at all,
+// and what it misses is V0, transparent enough that its lowpass is barely there.
+const KNEE_TOP_DROP_DB = 12
+const KNEE_TOP_FROM_HZ = 20000
 // A codec lowpass never recovers: everything above the knee stays collapsed.
 // A resonant notch can drop just as sharply but bounces back — allowing this
 // much rebound past measurement jitter tells the two apart.
@@ -138,10 +148,11 @@ function findHumpValley(bands: Band[], plateau: number): Band | null {
 // Sustained is what makes it a codec lowpass rather than a notch or a wiggle.
 function findKneeIndex(bands: Band[]): number {
   let kneeIndex = -1
-  let maxDrop = KNEE_DROP_DB
+  let maxDrop = 0
   for (let i = 0; i < bands.length - 1; i++) {
     const drop = bands[i].rmsDb - bands[i + 1].rmsDb
-    if (drop < maxDrop) continue
+    const required = bands[i].freqHz >= KNEE_TOP_FROM_HZ ? KNEE_TOP_DROP_DB : KNEE_DROP_DB
+    if (drop < required || drop < maxDrop) continue
     const ceiling = bands[i + 1].rmsDb + KNEE_RECOVERY_DB
     if (bands.slice(i + 2).some((b) => b.rmsDb > ceiling)) continue
     maxDrop = drop

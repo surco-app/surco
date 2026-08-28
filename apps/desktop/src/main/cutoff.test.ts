@@ -30,19 +30,16 @@ const AAC_CUT_16K = band([
 const MP3_CUT_20K = band([
   -33.0, -33.6, -34.4, -35.1, -36.0, -37.0, -38.0, -38.9, -40.0, -41.4, -42.8, -48.2, -65.4,
 ])
-// A low-bitrate MP3 with a soft transition band, re-wrapped as FLAC (measured
-// from a real file): a continuous rolloff whose steepest single step is 6.9 dB
-// at 15→16 kHz and which keeps collapsing afterwards. A sustained knee, even a
-// soft one, is a codec lowpass.
-const SLOPED_CUT_15K = band([
-  -34.28, -35.27, -36.27, -37.8, -41.15, -44.44, -48.91, -55.8, -59.27, -62.48, -65.95, -70.26,
-  -76.95,
+// The soft-knee population, re-measured by FFT: real LAME/AAC encodes of a
+// lossless source whose transition band is gentle rather than a brick wall. These
+// replace fixtures measured through bandpass, which blunted the same knees to
+// 6.9–7.5 dB — the probe's own rolloff eating the step. Measured honestly they are
+// 11.8–23.9 dB, so the knee rule catches them with room to spare.
+const SLOPED_CUT_17K = band([
+  -52.5, -53.8, -54.4, -55.3, -55.5, -57.1, -58.1, -63.0, -69.7, -93.5, -93.6, -94.5, -93.4,
 ])
-// Another real re-wrapped MP3, cut at ~16 kHz: its steepest step is 7.46 dB
-// (16→17 kHz) and never recovers — the sustained-knee pass must catch it.
-const SLOPED_CUT_16K = band([
-  -29.72, -30.54, -31.49, -33.08, -34.58, -36.43, -38.95, -44.54, -52.0, -55.75, -59.26, -63.28,
-  -68.99,
+const SLOPED_CUT_18K = band([
+  -52.3, -53.5, -54.1, -55.0, -55.2, -57.0, -57.9, -62.0, -65.9, -69.9, -81.6, -90.6, -91.1,
 ])
 // A REAL lossless full-band track (measured) that rolls off steeply through the
 // highs yet keeps energy all the way to Nyquist — only 24.9 dB down at 21 kHz.
@@ -74,15 +71,12 @@ const DARK_MASTER_FUCK = band([
 const DARK_MASTER_MAREAO = band([
   -35.9, -36.0, -36.7, -38.9, -41.3, -44.3, -47.3, -51.0, -54.5, -58.4, -62.2, -66.3, -70.7,
 ])
-// Real ~190 kbps-class MP3s (measured): quiet ~2 dB/band taper, then a 7–8 dB
-// step that keeps falling — the encoder's soft lowpass. These sit just under the
-// old 8 dB wall threshold, so they were graded "Good"; the sustained-knee pass
-// must place the cut at the knee.
-const SOFT_KNEE_16K = band([
-  -33.9, -34.1, -34.6, -36.1, -38.4, -39.0, -41.8, -44.3, -51.4, -57.2, -60.9, -64.5, -68.8,
-])
-const SOFT_KNEE_17K = band([
-  -36.6, -36.5, -37.4, -38.6, -40.6, -42.6, -44.5, -46.9, -50.9, -58.7, -63.0, -66.9, -71.1,
+// A real AAC 192k encode (FFT-measured): the gentlest knee in the corpus at
+// 16.6 dB, sitting high at 19 kHz where a natural taper is also steepest. This is
+// the case that decides the threshold's upper bound — the softest encoder wall we
+// must still catch.
+const SOFT_KNEE_19K = band([
+  -53.0, -54.1, -54.7, -55.5, -55.7, -57.5, -58.5, -61.9, -65.8, -69.3, -75.2, -91.8, -90.5,
 ])
 // Real file run through a spectral "enhancer" (measured): the energy falls to a
 // valley at 16 kHz then RISES 11.8 dB to peak at 19 kHz — louder than the 9 kHz
@@ -91,15 +85,16 @@ const SOFT_KNEE_17K = band([
 const SYNTHETIC_HUMP = band([
   -38.9, -39.9, -40.9, -42.2, -44.0, -45.7, -47.2, -48.6, -45.1, -39.5, -36.8, -40.3, -55.6,
 ])
-// Real ~270 kbps VBR at 48 kHz (measured, bands reach 22 kHz): smooth taper with
-// the encoder's lowpass showing as an 8 dB step at the very top. The cut is at
-// 21 kHz — not at 16 kHz where the slope happens to cross plateau−12 dB.
+// A real LAME VBR encode at 48 kHz (FFT-measured, bands reach 22 kHz). The file's
+// own Nyquist is 24 kHz, so the encoder's lowpass at 18 kHz leaves four bands of
+// collapsed spectrum above it — the cut must be read at the wall, not somewhere on
+// the taper below it or at the top band where the energy merely runs out.
 const FREQS_48K = [...FREQS, 22000]
 const VBR_48K = FREQS_48K.map((freqHz, i) => ({
   freqHz,
   rmsDb: [
-    -34.7, -34.1, -36.0, -37.8, -40.0, -41.8, -44.4, -47.3, -48.6, -49.6, -51.0, -54.0, -59.8,
-    -67.8,
+    -57.0, -57.5, -58.5, -61.7, -64.2, -67.0, -70.3, -76.9, -82.7, -88.2, -133.5, -133.7, -133.4,
+    -133.6,
   ][i],
 }))
 
@@ -117,16 +112,15 @@ describe('detectCutoff', () => {
     expect(detectCutoff(MP3_CUT_20K, NYQUIST).cutoffHz).toBe(20000)
   })
 
-  it('catches a sloped lowpass whose rolloff never drops 8 dB in one step', () => {
-    expect(detectCutoff(SLOPED_CUT_15K, NYQUIST).cutoffHz).toBe(15000)
-    expect(detectCutoff(SLOPED_CUT_16K, NYQUIST).cutoffHz).toBe(16000)
+  it('catches a lowpass with a gentle transition band, not just a brick wall', () => {
+    expect(detectCutoff(SLOPED_CUT_17K, NYQUIST).cutoffHz).toBe(17000)
+    expect(detectCutoff(SLOPED_CUT_18K, NYQUIST).cutoffHz).toBe(18000)
   })
 
   it('places a soft encoder knee at the knee, not where the slope crosses a level', () => {
-    // These were graded "Good" before: their 7–8 dB knees sit under the old 8 dB
-    // wall threshold, and the fallback either missed them or invented an edge.
-    expect(detectCutoff(SOFT_KNEE_16K, NYQUIST).cutoffHz).toBe(16000)
-    expect(detectCutoff(SOFT_KNEE_17K, NYQUIST).cutoffHz).toBe(17000)
+    // The softest wall in the corpus (16.6 dB) and the highest, at 19 kHz — where a
+    // natural taper is steepest too, so it is the easiest one to mistake for one.
+    expect(detectCutoff(SOFT_KNEE_19K, NYQUIST).cutoffHz).toBe(19000)
   })
 
   it('reports hasKnee only for a real codec lowpass, never for a knee-free taper', () => {
@@ -135,8 +129,8 @@ describe('detectCutoff', () => {
     // does not. Grading the extent of a knee-free taper on the codec scale is what
     // demoted healthy masters to "review".
     expect(detectCutoff(AAC_CUT_16K, NYQUIST).hasKnee).toBe(true)
-    expect(detectCutoff(SLOPED_CUT_15K, NYQUIST).hasKnee).toBe(true)
-    expect(detectCutoff(SOFT_KNEE_16K, NYQUIST).hasKnee).toBe(true)
+    expect(detectCutoff(SLOPED_CUT_17K, NYQUIST).hasKnee).toBe(true)
+    expect(detectCutoff(SOFT_KNEE_19K, NYQUIST).hasKnee).toBe(true)
     expect(detectCutoff(SMOOTH_TAPER_320, NYQUIST).hasKnee).toBe(false)
     expect(detectCutoff(FULL_BAND, NYQUIST).hasKnee).toBe(false)
     expect(detectCutoff(SYNTHETIC_HUMP, NYQUIST).hasKnee).toBe(false)
@@ -193,9 +187,9 @@ describe('detectCutoff', () => {
     })
   })
 
-  it('finds the encoder lowpass at the top of a 48 kHz taper instead of mid-slope', () => {
+  it('finds the encoder lowpass on a 48 kHz file, not the taper below it', () => {
     expect(detectCutoff(VBR_48K, 24000)).toEqual({
-      cutoffHz: 21000,
+      cutoffHz: 18000,
       processed: false,
       hasKnee: true,
     })
@@ -342,6 +336,101 @@ describe('bandFrequencies', () => {
 
   it('returns nothing when Nyquist is below the probing range', () => {
     expect(bandFrequencies(8000)).toEqual([])
+  })
+})
+
+// Bands measured by FFT (the sampled pass in ffmpeg.ts), not by the old bandpass
+// probe. One real lossless track, then the SAME track put through real encoders —
+// so every row's right answer is known: the lossless one has no cut, each encode
+// has its encoder's own lowpass. The old fixtures above were measured through
+// bandpass+astats, whose IIR rolloff adds a phantom ~11 dB droop by 21 kHz; these
+// carry no such bias, which is why the knee threshold they calibrate is higher.
+const FFT_FREQS = [
+  9000, 10000, 11000, 12000, 13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, 21000,
+]
+const fftBand = (rms: number[]): Band[] => FFT_FREQS.map((freqHz, i) => ({ freqHz, rmsDb: rms[i] }))
+
+const FFT_LOSSLESS = fftBand([
+  -57.5, -58.0, -59.0, -62.5, -64.8, -67.6, -71.2, -76.9, -81.0, -85.4, -89.5, -92.7, -92.8,
+])
+const FFT_MP3_320 = fftBand([
+  -57.5, -58.1, -59.0, -62.5, -64.8, -67.6, -71.1, -77.1, -82.0, -87.4, -92.2, -104.5, -133.4,
+])
+const FFT_MP3_192 = fftBand([
+  -57.6, -58.2, -59.1, -62.5, -64.9, -67.7, -70.9, -78.2, -85.0, -90.6, -103.7, -134.1, -133.5,
+])
+const FFT_MP3_128 = fftBand([
+  -57.1, -57.5, -58.9, -62.2, -64.5, -67.7, -71.9, -80.0, -111.9, -133.5, -133.5, -134.1, -133.5,
+])
+const FFT_AAC_128 = fftBand([
+  -57.4, -58.0, -58.8, -62.2, -64.6, -67.3, -70.4, -76.5, -83.0, -124.3, -127.7, -129.8, -131.4,
+])
+const FFT_MP3_96 = fftBand([
+  -58.0, -58.3, -59.1, -62.3, -65.4, -69.2, -76.0, -130.6, -133.0, -133.4, -133.5, -134.1, -133.5,
+])
+
+describe('detectCutoff on FFT-measured bands', () => {
+  it('finds each real encoder lowpass at the last band it passes', () => {
+    // Measured against real LAME/AAC encodes of one lossless source, so the cut is
+    // known by construction. Each lands within a band of the encoder's documented
+    // lowpass (320k ~20.5k, 192k ~19k, 128k ~16k, 96k ~15k).
+    expect(detectCutoff(FFT_MP3_320, NYQUIST).cutoffHz).toBe(20000)
+    expect(detectCutoff(FFT_MP3_192, NYQUIST).cutoffHz).toBe(19000)
+    expect(detectCutoff(FFT_MP3_128, NYQUIST).cutoffHz).toBe(16000)
+    expect(detectCutoff(FFT_AAC_128, NYQUIST).cutoffHz).toBe(17000)
+    expect(detectCutoff(FFT_MP3_96, NYQUIST).cutoffHz).toBe(15000)
+  })
+
+  it('reports every real encode as a knee and the lossless source as none', () => {
+    // The verdict hangs on this flag, and these six rows are the same music: the
+    // only difference is whether an encoder touched it.
+    expect(detectCutoff(FFT_MP3_320, NYQUIST).hasKnee).toBe(true)
+    expect(detectCutoff(FFT_MP3_192, NYQUIST).hasKnee).toBe(true)
+    expect(detectCutoff(FFT_MP3_128, NYQUIST).hasKnee).toBe(true)
+    expect(detectCutoff(FFT_AAC_128, NYQUIST).hasKnee).toBe(true)
+    expect(detectCutoff(FFT_MP3_96, NYQUIST).hasKnee).toBe(true)
+    expect(detectCutoff(FFT_LOSSLESS, NYQUIST).hasKnee).toBe(false)
+  })
+
+  it('does not invent a cut in the lossless source it was encoded from', () => {
+    expect(detectCutoff(FFT_LOSSLESS, NYQUIST).hasKnee).toBe(false)
+    expect(detectCutoff(FFT_LOSSLESS, NYQUIST).processed).toBe(false)
+  })
+
+  it('holds a steep natural rolloff into Nyquist to a stricter bar than a wall lower down', () => {
+    // Where the two populations actually overlap is the top of the range: a natural
+    // taper steepens as it runs into Nyquist, so the only lossless tracks that look
+    // like walls do it at 20–21 kHz (measured 9.7 and 9.9 dB). Raising the bar
+    // everywhere to exclude them would drop real 128/160k walls, which run as low as
+    // 12 dB — so the top bands, and only those, answer to a higher threshold.
+    const steepIntoNyquist = fftBand([
+      -50.3, -51.6, -54.1, -53.5, -53.9, -55.3, -56.6, -58.2, -59.0, -59.7, -61.6, -66.8, -76.5,
+    ])
+    expect(detectCutoff(steepIntoNyquist, NYQUIST).hasKnee).toBe(false)
+  })
+
+  it('still catches a real encoder wall below the top bands at the ordinary bar', () => {
+    // The counterweight to the rule above: this 128k wall drops only 12.3 dB, so a
+    // threshold raised high enough to silence the Nyquist-edge false positives would
+    // let a genuine fake through.
+    const softWall128k = fftBand([
+      -44.2, -45.1, -46.0, -47.3, -48.1, -49.6, -51.0, -54.4, -66.7, -70.1, -71.4, -72.0, -72.3,
+    ])
+    const verdict = detectCutoff(softWall128k, NYQUIST)
+    expect(verdict.hasKnee).toBe(true)
+    expect(verdict.cutoffHz).toBe(16000)
+  })
+
+  it('leaves headroom between a natural rolloff and a codec wall', () => {
+    // The margin is the whole point of the threshold. Measured on FFT bands, real
+    // encoder walls are 28-55 dB in one step, while a lossless track's steepest
+    // natural step reached 9.95 dB across the calibration set (3 of 12 lossless
+    // tracks exceeded 6 dB). A threshold inside that natural range flags genuine
+    // masters as fakes, which is exactly what the 6 dB one did.
+    const naturalRolloff = fftBand([
+      -47.1, -48.0, -50.1, -51.8, -54.6, -55.4, -59.0, -61.7, -66.3, -69.6, -71.1, -73.3, -83.2,
+    ])
+    expect(detectCutoff(naturalRolloff, NYQUIST).hasKnee).toBe(false)
   })
 })
 
