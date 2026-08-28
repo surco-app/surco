@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.89",
+    "date": "August 28, 2026",
+    "title": "The quality check now gets it right",
+    "items": [
+      {
+        "text": "The quality verdict was too forgiving, and it no longer is. To find out how far up a track reaches, Surco measured its energy through a bank of filters, and those filters had a rolloff of their own that added to the music's: they were measuring themselves as much as the file. The upshot was that tracks looked cleaner than they were. A file cut off at 14 kHz, a low-bitrate MP3 dressed up as a WAV, was reported as reaching 20 kHz, which is to say it passed. The measurement is now a direct frequency analysis of the audio, with no filters in the way, and it places the cut within a kilohertz instead of nearly three. If you have already analysed tracks you will see some verdicts change: they re-analyse themselves the first time you open them.",
+        "in": "0.89.0"
+      },
+      {
+        "text": "Opening a track no longer keeps you waiting. The cutoff analysis took almost twenty seconds on a six-minute track and was by far the slowest thing in the Quality panel. It now takes four hundredths of a second. It also no longer depends on how long the track is: a three-minute edit and a ten-minute mix cost the same. All told, opening a track drops from about nineteen seconds to just over three, and analysing a whole folder stops being something you leave running while you go for coffee.",
+        "in": "0.89.0"
+      }
+    ]
+  },
+  {
     "version": "0.88",
     "date": "August 27, 2026",
     "title": "Tracks open instantly",

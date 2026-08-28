@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.89",
+    "date": "28 de agosto de 2026",
+    "title": "El análisis de calidad ahora acierta",
+    "items": [
+      {
+        "text": "El veredicto de calidad era demasiado indulgente, y ya no lo es. Para saber hasta dónde llega una pista, Surco medía la energía con una batería de filtros, y esos filtros tenían una caída propia que se sumaba a la del audio: medían tanto el archivo como a sí mismos. El resultado es que las pistas parecían más limpias de lo que eran. Un archivo cortado a 14 kHz, un MP3 de baja calidad disfrazado de WAV, salía informado como si llegara a 20 kHz, es decir, aprobado. Ahora la medida se hace por análisis de frecuencia directo sobre el audio, sin filtros de por medio, y el corte se localiza con un margen de un kilohercio en vez de casi tres. Si tenías pistas analizadas, verás veredictos distintos: se vuelven a analizar solas la primera vez que las abras.",
+        "in": "0.89.0"
+      },
+      {
+        "text": "Abrir una pista ya no se hace esperar. El análisis de corte tardaba casi veinte segundos en un tema de seis minutos y era, con diferencia, lo más lento del panel de Calidad. Ahora tarda cuatro centésimas. Además ya no depende de lo larga que sea la pista: un edit de tres minutos y un mix de diez cuestan lo mismo. En conjunto, abrir una pista pasa de unos diecinueve segundos a algo más de tres, y analizar una carpeta entera deja de ser algo que dejas corriendo mientras te vas a por café.",
+        "in": "0.89.0"
+      }
+    ]
+  },
+  {
     "version": "0.88",
     "date": "27 de agosto de 2026",
     "title": "Las pistas se abren al instante",
