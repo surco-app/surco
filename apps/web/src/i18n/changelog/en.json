@@ -5,6 +5,10 @@
     "title": "The quality check now gets it right",
     "items": [
       {
+        "text": "Quiet masters are no longer flagged as Lossy source. Some discs, older recordings and a few remasters in particular, have a top end so faint that above 16 kHz little is left but the CD's own noise floor. Surco averaged that noise into one-kilohertz bands and came up with a step that looked like a codec cutoff, so a FLAC ripped straight from the disc stood accused of hiding an MP3. A suspected cut is now checked at five times the resolution before it counts, and there the difference is plain: a real codec collapses by more than 60 dB in one clean fall, noise wanders up and down. If you have already analysed tracks, they re-measure themselves the first time you open them.",
+        "in": "0.89.2"
+      },
+      {
         "text": "MP3s are no longer flagged as suspect. Every MP3 rolls off the highs: that is how the format works, not damage to the file. Surco wasn't taking that into account and measured an MP3 against the same line as a FLAC, so a spotless 320 cutting at 19 kHz came up amber, asking to be reviewed. Anyone with a folder of MP3s met a row of warnings about files that had nothing wrong with them. A lossy format is now judged on its own terms and comes up green. The cutoff is still measured and still reported under the graph, because knowing a track came from a lower bitrate is worth knowing, but it is no longer presented as a fault.",
         "in": "0.89.1"
       },
