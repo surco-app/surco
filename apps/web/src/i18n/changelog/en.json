@@ -5,6 +5,14 @@
     "title": "The quality check now gets it right",
     "items": [
       {
+        "text": "MP3s are no longer flagged as suspect. Every MP3 rolls off the highs: that is how the format works, not damage to the file. Surco wasn't taking that into account and measured an MP3 against the same line as a FLAC, so a spotless 320 cutting at 19 kHz came up amber, asking to be reviewed. Anyone with a folder of MP3s met a row of warnings about files that had nothing wrong with them. A lossy format is now judged on its own terms and comes up green. The cutoff is still measured and still reported under the graph, because knowing a track came from a lower bitrate is worth knowing, but it is no longer presented as a fault.",
+        "in": "0.89.1"
+      },
+      {
+        "text": "The fake lossless warning is now called Lossy source. When a FLAC or a WAV has a re-encoded MP3 inside it, Surco still catches it exactly as before, which is the whole point. What changes is the name: the old one sounded like an accusation aimed at whoever made the copy, when more often the file is a faithful rip of a disc whose master was already lossy to begin with. The wording now says so plainly, so it is clear where the problem lies and where it doesn't.",
+        "in": "0.89.1"
+      },
+      {
         "text": "The quality verdict was too forgiving, and it no longer is. To find out how far up a track reaches, Surco measured its energy through a bank of filters, and those filters had a rolloff of their own that added to the music's: they were measuring themselves as much as the file. The upshot was that tracks looked cleaner than they were. A file cut off at 14 kHz, a low-bitrate MP3 dressed up as a WAV, was reported as reaching 20 kHz, which is to say it passed. The measurement is now a direct frequency analysis of the audio, with no filters in the way, and it places the cut within a kilohertz instead of nearly three. If you have already analysed tracks you will see some verdicts change: they re-analyse themselves the first time you open them.",
         "in": "0.89.0"
       },
