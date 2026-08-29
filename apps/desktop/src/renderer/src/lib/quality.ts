@@ -18,14 +18,24 @@ const WARN_CUTOFF_HZ = 18000
 // no codec lowpass was found — every lossy source trips the knee — so the cutoff
 // is just how far a genuine (often dark) master extends, and grading that extent
 // as if it were a codec cut is what demoted healthy masters to "review".
+//
+// ext exempts a lossy container from the scale entirely. The bands measure a codec
+// lowpass, which is precisely what an .mp3 is made of: grading one against the
+// lossless line put "Review" on healthy 320s and taught users to distrust files that
+// were exactly what they claimed to be. The cutoff still gets reported, in the
+// caption, where a low-bitrate source is news rather than an accusation. Omitted (or
+// an ambiguous .m4a, which may hold AAC or ALAC) keeps the stricter grading, so an
+// unknown container is never assumed lossy.
 export function qualityVerdict(
   cutoffHz: number,
   sampleRateHz: number,
   processed = false,
   hasKnee = true,
+  ext = '',
 ): Verdict {
   if (processed) return 'processed'
   if (sampleRateHz <= 0) return 'warn'
+  if (isLossyContainer(ext)) return 'good'
   if (!hasKnee) return 'good'
   if (cutoffHz >= GOOD_CUTOFF_HZ) return 'good'
   return cutoffHz >= WARN_CUTOFF_HZ ? 'warn' : 'bad'
@@ -38,6 +48,16 @@ const LOSSLESS_CONTAINERS = ['flac', 'wav', 'aif', 'aiff', 'alac']
 
 export function isLosslessContainer(ext: string): boolean {
   return LOSSLESS_CONTAINERS.includes(ext.toLowerCase())
+}
+
+// Containers that are lossy by definition, so their lowpass is the format working as
+// designed. Listed explicitly rather than derived as "not lossless": an unrecognised
+// extension must fall through to the strict scale, and .m4a belongs to neither list
+// because it can hold AAC or ALAC.
+const LOSSY_CONTAINERS = ['mp3', 'aac', 'ogg', 'oga', 'opus', 'wma']
+
+export function isLossyContainer(ext: string): boolean {
+  return LOSSY_CONTAINERS.includes(ext.toLowerCase())
 }
 
 // A "fake lossless" / transcode: a lossless-container file whose spectrum carries a real

@@ -80,6 +80,44 @@ describe('qualityVerdict', () => {
   })
 })
 
+// A lossy container carries a codec lowpass by definition: that is what the format IS,
+// not a defect in the file. Grading one on the lossless scale is what put "Review" on a
+// healthy 320 and made users doubt files that were exactly what they claimed to be.
+describe('qualityVerdict on a lossy container', () => {
+  it('never demotes a lossy file for the lowpass its own format guarantees', () => {
+    // The reported case: a 320 kbps MP3 cutting at 19 kHz was graded "Review" purely
+    // because 19000 sits in the warn band. In an .mp3 that cut is the encoder doing
+    // its job, so the badge must stay good.
+    expect(qualityVerdict(19000, 44100, false, true, 'mp3')).toBe('good')
+  })
+
+  it('keeps a low-bitrate lossy file good too, since the badge judges the wrong thing', () => {
+    // A 128 kbps MP3 walls off at 16 kHz. It is a worse file than a 320, but it is not
+    // a fraud and the user usually cannot fix it, so the pill stays green and the
+    // caption carries the bitrate news instead.
+    expect(qualityVerdict(16000, 44100, false, true, 'mp3')).toBe('good')
+  })
+
+  it('still reports regenerated highs in a lossy container', () => {
+    // Reprocessing is manipulation someone applied on top, not a property of the
+    // format, so it survives the lossy exemption.
+    expect(qualityVerdict(16000, 44100, true, false, 'mp3')).toBe('processed')
+  })
+
+  it('grades a lossless container by the codec scale exactly as before', () => {
+    // The exemption must not leak: a knee inside .flac is still the damning signal.
+    expect(qualityVerdict(19000, 44100, false, true, 'flac')).toBe('warn')
+    expect(qualityVerdict(16000, 44100, false, true, 'flac')).toBe('bad')
+  })
+
+  it('grades on the codec scale when the container is unknown', () => {
+    // .m4a can hold AAC or ALAC, so the extension promises nothing: an omitted or
+    // ambiguous container keeps the stricter grading rather than assuming lossy.
+    expect(qualityVerdict(16000, 44100, false, true)).toBe('bad')
+    expect(qualityVerdict(16000, 44100, false, true, 'm4a')).toBe('bad')
+  })
+})
+
 describe('isLosslessContainer', () => {
   it('recognises the lossless containers a DJ rips to', () => {
     for (const ext of ['flac', 'wav', 'aif', 'aiff', 'alac', 'FLAC']) {
