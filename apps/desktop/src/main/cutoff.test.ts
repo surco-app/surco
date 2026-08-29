@@ -434,6 +434,93 @@ describe('detectCutoff on FFT-measured bands', () => {
   })
 })
 
+// Three CD rips of the same Gowan track, measured by the sampled FFT pass. Two
+// earlier pressings and a 2010 remaster of the same master: none of them was ever
+// through an encoder. Reported by a user whose remaster alone came back flagged.
+const FFT_GOWAN_QOBUZ = fftBand([
+  -71.38, -72.51, -72.12, -73.55, -78.25, -79.6, -85.03, -90.75, -100.87, -102.4, -107.81, -113.9,
+  -128.01,
+])
+const FFT_GOWAN_REISSUE = fftBand([
+  -72.51, -73.58, -72.79, -74.04, -78.62, -79.66, -84.73, -91.0, -100.18, -102.43, -107.49, -113.28,
+  -127.18,
+])
+const FFT_GOWAN_REMASTER = fftBand([
+  -62.29, -63.39, -62.32, -63.13, -67.37, -68.64, -73.9, -79.12, -87.98, -89.44, -94.21, -99.23,
+  -104.69,
+])
+// The same three files at 500 Hz, where the top end shows itself as hiss: the level
+// climbs again every other band (-105.2 to -100.3, -108.4 to -105.1) instead of
+// staying down the way a codec's stopband does.
+const FINE_GOWAN_QOBUZ = fine([
+  -78.04, -80.57, -81.61, -86.35, -90.27, -91.62, -93.72, -94.87, -105.18, -100.32, -108.38,
+  -105.06, -111.19, -112.37, -114.22, -126.62, -128.03,
+])
+const FINE_GOWAN_REISSUE = fine([
+  -77.6, -78.86, -79.76, -82.05, -86.02, -89.59, -92.62, -94.3, -103.31, -100.22, -106.8, -103.75,
+  -108.72, -110.19, -113.94, -125.61, -127.25,
+])
+const FINE_GOWAN_REMASTER = fine([
+  -66.81, -68.14, -68.86, -71.34, -75.28, -78.02, -80.33, -81.95, -87.91, -86.66, -90.8, -90.1,
+  -94.04, -95.38, -98.17, -101.44, -104.13,
+])
+
+describe('detectCutoff on a spectrum whose top end is hiss, not content', () => {
+  it('reads the same master the same way whether or not its rolloff is steep', () => {
+    // The three rips carry the same content and the same 16 kHz step (10.1, 9.2 and
+    // 8.9 dB). They differ only in how far the top band falls away: 14.1 and 13.9 dB
+    // on the quiet pressings, 5.5 dB on the louder remaster, whose noise floor covers
+    // the fade. Keying on the steepest coarse step let that difference alone decide
+    // the verdict, so the remaster was called lossy and the other two clean.
+    const qobuz = detectCutoff(FFT_GOWAN_QOBUZ, NYQUIST, FINE_GOWAN_QOBUZ)
+    const reissue = detectCutoff(FFT_GOWAN_REISSUE, NYQUIST, FINE_GOWAN_REISSUE)
+    const remaster = detectCutoff(FFT_GOWAN_REMASTER, NYQUIST, FINE_GOWAN_REMASTER)
+    expect(qobuz.hasKnee).toBe(remaster.hasKnee)
+    expect(reissue.hasKnee).toBe(remaster.hasKnee)
+  })
+
+  it('does not read the wander of a dithery top end as patched highs either', () => {
+    // Withdrawing the knee sends these files on to the roughness pass, which reads
+    // the same hiss: its rebounds (+4.9, +3.3 dB at -105 dB) summed past the 3 dB
+    // saw-tooth bar and came back as "processed", a heavier charge than the one just
+    // dropped. An enhancer's patches rise at -50 to -57 dB, never down there.
+    expect(detectCutoff(FFT_GOWAN_QOBUZ, NYQUIST, FINE_GOWAN_QOBUZ).processed).toBe(false)
+    expect(detectCutoff(FFT_GOWAN_REISSUE, NYQUIST, FINE_GOWAN_REISSUE).processed).toBe(false)
+  })
+
+  it('does not read a dithery top end as a codec lowpass', () => {
+    // A lossy source collapses monotonically through its whole cut: the weakest of 36
+    // real encodes falls 64.7 dB without once climbing back. These three manage 27.1,
+    // 25.7 and 21.1 dB before the level rebounds, because what is up there is hiss.
+    expect(detectCutoff(FFT_GOWAN_QOBUZ, NYQUIST, FINE_GOWAN_QOBUZ).hasKnee).toBe(false)
+    expect(detectCutoff(FFT_GOWAN_REISSUE, NYQUIST, FINE_GOWAN_REISSUE).hasKnee).toBe(false)
+    expect(detectCutoff(FFT_GOWAN_REMASTER, NYQUIST, FINE_GOWAN_REMASTER).hasKnee).toBe(false)
+  })
+
+  it('still trusts a coarse knee when there are no fine bands to check it against', () => {
+    // Callers that measure only the coarse bands get the old behaviour: there is
+    // nothing to confirm against, so the knee stands on its own.
+    expect(detectCutoff(FFT_MP3_128, NYQUIST).hasKnee).toBe(true)
+  })
+
+  it('confirms a real encoder wall through the same fine bands', () => {
+    // A real 128k encode, coarse and fine bands measured off the same file. Its fine
+    // descent runs 87.7 dB unbroken (-56.6 through -144.3), so the confirmation the
+    // Gowan rips fail is one this clears with room — the rule has to keep both sides.
+    const coarse = fftBand([
+      -50.83, -52.28, -54.44, -54.82, -56.59, -58.57, -60.49, -65.15, -84.95, -138.02, -137.95,
+      -144.82, -138.99,
+    ])
+    const fineBands = fine([
+      -56.6, -57.12, -59.07, -59.35, -61.01, -62.21, -65.44, -72.09, -111.63, -144.25, -135.41,
+      -145.61, -136.88, -137.49, -145.3, -136.84, -143.02,
+    ])
+    const verdict = detectCutoff(coarse, NYQUIST, fineBands)
+    expect(verdict.hasKnee).toBe(true)
+    expect(verdict.cutoffHz).toBe(17000)
+  })
+})
+
 describe('detectUpsample', () => {
   // RMS (dB) of the 21.5 kHz (below the wall) and 23.5 kHz (above it) probe bands,
   // measured on real and synthetic files. A genuine high-rate master tapers ~8 dB

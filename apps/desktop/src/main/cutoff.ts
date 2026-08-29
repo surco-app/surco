@@ -56,6 +56,18 @@ const KNEE_TOP_FROM_HZ = 20000
 // A resonant notch can drop just as sharply but bounces back — allowing this
 // much rebound past measurement jitter tells the two apart.
 const KNEE_RECOVERY_DB = 2
+// The 1 kHz bands are too coarse to tell a codec wall from noise: averaging a
+// quiet, dithery top end into 1 kHz buckets manufactures 8–14 dB steps out of
+// hiss, and three CD rips of one album were flagged on exactly that. At 500 Hz
+// the difference is plain — a real wall falls monotonically through the whole
+// cut, while noise rebounds every other band. Measured as the largest unbroken
+// descent in the fine bands, the two populations are far apart: 64.7 dB for the
+// weakest of 36 real encodes, 33.3 dB for the steepest of 12 clean files. This
+// sits in the gap.
+const KNEE_FINE_FALL_DB = 45
+// Rebound allowed inside that descent before it counts as broken. Below the
+// measurement's own jitter a "monotonic" run would never survive a real file.
+const KNEE_FINE_REBOUND_DB = 0.5
 // The 9–11 kHz bands are the reference plateau the rest of the curve is read
 // against: every real track keeps solid energy there, so it normalizes quiet
 // masters and loud ones alike.
@@ -93,6 +105,11 @@ const ROUGHNESS_TOTAL_DB = 3
 // With the saw-tooth established, the source's real ceiling is where the first
 // sharp fine-band drop appears — the edge the patches were grafted onto.
 const ROUGHNESS_EDGE_DROP_DB = 4
+// Below this a fine band is dither and CD noise, not content, and its wander
+// between neighbours is not structure. The calibration enhancer's patches sit at
+// -50 to -57 dB where they rise; the hiss that faked a saw-tooth on two clean rips
+// sat at -103 dB and below. Halfway between, with over 20 dB to either side.
+const ROUGHNESS_FLOOR_DB = -80
 
 // A 44.1→48/96 kHz upsample ("fake hi-res") walls off at 22.05 kHz — the source's
 // original Nyquist — even though the container claims headroom to 24/48 kHz. We
@@ -161,12 +178,38 @@ function findKneeIndex(bands: Band[]): number {
   return kneeIndex
 }
 
+// The largest unbroken descent anywhere in the fine bands. A codec lowpass falls
+// this way through its whole cut; hiss averaged into bands wanders up and down,
+// so its longest clean run stays short even when the coarse bands make it look
+// like a cliff. Non-finite readings end the run rather than joining it: an
+// unparsed band against a real one would read as an enormous fall.
+function steepestFineFall(fineBands: Band[]): number {
+  let best = 0
+  for (let i = 0; i < fineBands.length - 1; i++) {
+    let total = 0
+    for (let j = i; j < fineBands.length - 1; j++) {
+      const step = fineBands[j].rmsDb - fineBands[j + 1].rmsDb
+      if (!Number.isFinite(step) || step < -KNEE_FINE_REBOUND_DB) break
+      total += step
+      if (total > best) best = total
+    }
+  }
+  return best
+}
+
 // The ceiling the synthetic patches were grafted onto, or null when the fine
 // bands fall monotonically (genuine audio). Non-finite readings are dropped
 // rather than compared: one unparsed band against a real one would read as an
-// infinite rise and flag every track the moment parsing hiccups.
+// infinite rise and flag every track the moment parsing hiccups. Bands quieter
+// than ROUGHNESS_FLOOR_DB are dropped too: down at the dither floor the level
+// wanders several dB between neighbours, which sums into a saw-tooth out of
+// nothing — two CD rips were accused of patched highs on rises measured at
+// -100 dB, where an enhancer's patches (-38 to -65 dB on the calibration file)
+// never live.
 function roughnessCeiling(fineBands: Band[]): Band | null {
-  const finite = fineBands.filter((b) => Number.isFinite(b.rmsDb))
+  const finite = fineBands.filter(
+    (b) => Number.isFinite(b.rmsDb) && b.rmsDb >= ROUGHNESS_FLOOR_DB,
+  )
   let totalRise = 0
   for (let i = 0; i < finite.length - 1; i++) {
     if (finite[i + 1].freqHz <= ROUGHNESS_START_HZ) continue
@@ -180,12 +223,12 @@ function roughnessCeiling(fineBands: Band[]): Band | null {
   return finite[0] ?? null
 }
 
-// Returns where the audio's real bandwidth ends. A sustained knee places it at
-// the band before the drop; a synthetic hump places it at the valley the hump
-// papers over; a fine-band saw-tooth places it at the patch edge; a knee-free
-// taper reads as its energy extent — the last band still within EXTENT_DROP_DB
-// of the reference plateau — and full-band audio (extent reaching the top
-// probed band) reports Nyquist.
+// Returns where the audio's real bandwidth ends. A sustained knee, confirmed by a
+// matching wall in the fine bands, places it at the band before the drop; a
+// synthetic hump places it at the valley the hump papers over; a fine-band
+// saw-tooth places it at the patch edge; a knee-free taper reads as its energy
+// extent — the last band still within EXTENT_DROP_DB of the reference plateau —
+// and full-band audio (extent reaching the top probed band) reports Nyquist.
 export function detectCutoff(
   bands: Band[],
   nyquistHz: number,
@@ -197,8 +240,12 @@ export function detectCutoff(
   const valley = findHumpValley(bands, plateau)
   if (valley) return { cutoffHz: valley.freqHz, processed: true, hasKnee: false }
 
+  // A coarse knee is only believed when the fine bands show a real wall behind it.
+  // Without fine bands there is nothing to check it against, so the coarse reading
+  // stands on its own as it always has.
+  const wall = fineBands.length === 0 || steepestFineFall(fineBands) >= KNEE_FINE_FALL_DB
   const kneeIndex = findKneeIndex(bands)
-  if (kneeIndex !== -1)
+  if (kneeIndex !== -1 && wall)
     return { cutoffHz: bands[kneeIndex].freqHz, processed: false, hasKnee: true }
 
   const ceiling = roughnessCeiling(fineBands)
