@@ -5,6 +5,14 @@
     "title": "El análisis de calidad ahora acierta",
     "items": [
       {
+        "text": "Los MP3 ya no salen marcados como sospechosos. Todo MP3 recorta los agudos: es así como funciona el formato, no un defecto del archivo. Surco no lo tenía en cuenta y medía un MP3 con la misma vara que un FLAC, así que un 320 impecable que cortaba en 19 kHz aparecía en ámbar pidiendo revisión. Quien tuviera una carpeta de MP3 se encontraba una fila de avisos sobre archivos que no tenían nada de malo. Ahora un formato con pérdidas se juzga por lo que es y sale en verde. El corte se sigue midiendo y se sigue contando debajo de la gráfica, porque saber que una pista viene de un bitrate bajo es útil, pero ya no se presenta como un problema.",
+        "in": "0.89.1"
+      },
+      {
+        "text": "El aviso de lossless falso ahora se llama Fuente con pérdidas. Cuando un FLAC o un WAV lleva dentro un MP3 recomprimido, Surco lo sigue detectando igual, que para eso está. Lo que cambia es el nombre: el anterior sonaba a acusación contra quien había hecho la copia, cuando lo normal es que el archivo sea un volcado fiel de un disco cuyo máster ya venía con pérdidas de origen. El texto lo dice ahora tal cual, para que quede claro dónde está el problema y dónde no.",
+        "in": "0.89.1"
+      },
+      {
         "text": "El veredicto de calidad era demasiado indulgente, y ya no lo es. Para saber hasta dónde llega una pista, Surco medía la energía con una batería de filtros, y esos filtros tenían una caída propia que se sumaba a la del audio: medían tanto el archivo como a sí mismos. El resultado es que las pistas parecían más limpias de lo que eran. Un archivo cortado a 14 kHz, un MP3 de baja calidad disfrazado de WAV, salía informado como si llegara a 20 kHz, es decir, aprobado. Ahora la medida se hace por análisis de frecuencia directo sobre el audio, sin filtros de por medio, y el corte se localiza con un margen de un kilohercio en vez de casi tres. Si tenías pistas analizadas, verás veredictos distintos: se vuelven a analizar solas la primera vez que las abras.",
         "in": "0.89.0"
       },
