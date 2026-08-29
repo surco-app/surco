@@ -63,7 +63,7 @@ function cancellable<T>(
 // and the audio:cached-batch handler so the two can never drift onto different keys for
 // the same family — a batch peek under a stale namespace would silently show as a
 // permanent miss instead of the warm hit the live handler already wrote.
-const SPECTROGRAM_NAMESPACE = 'spectrogram-mono-v14'
+const SPECTROGRAM_NAMESPACE = 'spectrogram-mono-v15'
 const LOUDNESS_NAMESPACE = 'loudness'
 const CLICKS_NAMESPACE = 'clickcount-v2'
 const PROPERTIES_NAMESPACE = 'properties'
@@ -135,6 +135,10 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
             // was reading ~11 dB of fall into a flat spectrum: it invented walls in genuine
             // masters and hid real ones (a track cut at 14 kHz still read as 20 kHz). Every
             // cached verdict came from that probe, so all of them must be measured again.
+            // v15 confirms a coarse knee against the fine bands before calling it a codec
+            // wall: a quiet, dithery top end averaged into 1 kHz buckets read as an 8–14 dB
+            // step, and clean CD rips were cached as "Lossy source". Those verdicts flip to
+            // Good, so old entries must regenerate.
             SPECTROGRAM_NAMESPACE,
             inputPath,
             () =>
