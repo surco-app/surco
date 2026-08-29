@@ -1,7 +1,10 @@
-// gtag.js only reads a queued item as a command when it looks like an `arguments`
-// object: it checks for the "[object Arguments]" tag or an own `callee` property,
-// and treats a plain array as a GTM-style push instead, silently dropping every
-// config and event call. `callee` is what lets us keep a rest parameter.
-export function asGtagArguments(args: unknown[]): unknown[] {
-  return Object.assign(args, { callee: undefined })
+// gtag.js drains the dataLayer queue by dispatching only items that are real
+// `arguments` objects; it treats a plain array as a GTM-style push and drops the
+// config and event calls without any error. Marking an array with a `callee`
+// property is not enough either: verified against the live site, only a genuine
+// `arguments` object produces a /g/collect hit. Hence the official snippet's
+// shape, kept verbatim here.
+export function toGtagArguments(..._args: unknown[]): IArguments {
+  // biome-ignore lint/complexity/noArguments: gtag.js only dispatches real `arguments`
+  return arguments
 }
