@@ -10,6 +10,7 @@ import { cleanIpcError, errorKeyOf } from '../lib/ipcError'
 import {
   formatKHz,
   GOOD_CUTOFF_HZ,
+  isLossyContainer,
   isTranscode,
   qualityVerdict,
   type Verdict,
@@ -107,6 +108,9 @@ export function QualitySection({
       ? errorKeyOf(cleanIpcError(spectrumQuery.error.message))
       : null
   const { data: loudness } = useTrackLoudness(item.inputPath, settled && showLoudness && open)
+  // The container decides which scale the cutoff is read on, so it is resolved before the
+  // verdict: lossy files are exempt (their lowpass is the format), lossless ones are graded.
+  const ext = item.inputPath.split('.').pop()?.toLowerCase() ?? ''
   // Resolve the verdict once and reuse it for the badge and the caption.
   const verdict =
     spectrum && spectrum.cutoffHz !== null
@@ -115,29 +119,40 @@ export function QualitySection({
           spectrum.sampleRateHz,
           spectrum.processed,
           spectrum.hasKnee,
+          ext,
         )
       : null
   // A lossless container (.flac/.wav/.aiff) hiding a lossy source: a real codec knee can't
   // occur in genuine lossless, so it's the most damning verdict for a DJ. It outranks the
   // plain "Bad quality" badge/caption — the file lies about its format, which is the headline.
-  const ext = item.inputPath.split('.').pop()?.toLowerCase() ?? ''
   const transcoded =
     spectrum?.cutoffHz != null &&
     isTranscode(ext, spectrum.cutoffHz, spectrum.hasKnee, spectrum.processed)
-  // A knee-free taper graded good but stopping short of the full-quality line is a
-  // genuine, gently rolled-off (dark) master, not a lossy cut — its own caption, so
-  // "Good quality" doesn't sit over the "reaches the ~20 kHz line" text that a sub-20k
-  // extent contradicts.
+  // A lossy file always grades good, so the caption is the only place its ceiling gets
+  // reported: silently passing a 128 kbps encode would hide the one fact the user might
+  // act on. It states where the encoder cut without calling the file a fake.
+  const lossyCut =
+    isLossyContainer(ext) &&
+    !spectrum?.processed &&
+    spectrum?.hasKnee === true &&
+    spectrum.cutoffHz !== null &&
+    spectrum.cutoffHz < GOOD_CUTOFF_HZ
   const captionKey =
     verdict && spectrum
       ? transcoded
         ? 'editor.qualityCaptionTranscode'
-        : spectrum.hasKnee === false &&
-            !spectrum.processed &&
-            spectrum.cutoffHz !== null &&
-            spectrum.cutoffHz < GOOD_CUTOFF_HZ
-          ? 'editor.qualityCaptionGenuine'
-          : qualityCaption[verdict]
+        : lossyCut
+          ? 'editor.qualityCaptionLossy'
+          : // A knee-free taper graded good but stopping short of the full-quality line is a
+            // genuine, gently rolled-off (dark) master, not a lossy cut — its own caption, so
+            // "Good quality" doesn't sit over the "reaches the ~20 kHz line" text that a
+            // sub-20k extent contradicts.
+            spectrum.hasKnee === false &&
+              !spectrum.processed &&
+              spectrum.cutoffHz !== null &&
+              spectrum.cutoffHz < GOOD_CUTOFF_HZ
+            ? 'editor.qualityCaptionGenuine'
+            : qualityCaption[verdict]
       : null
   // Composes the shareable PNG (the verdict's proof for a "is this file fake?" thread)
   // and hands it to the save dialog. Guarded against double-clicks while composing.

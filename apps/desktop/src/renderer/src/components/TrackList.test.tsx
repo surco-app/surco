@@ -682,12 +682,21 @@ describe('TrackList quality badge', () => {
     processed: false,
   })
 
-  // The badge is the whole point of batch triage: a re-encoded MP3 (cutoff far below
-  // Nyquist) must be flaggable in the list without opening each track. An honest lossy
-  // container keeps the plain 'bad' — the deception verdict is reserved for lossless ones.
-  it('flags a deeply brick-walled lossy track in red', () => {
-    renderList([track({ id: 'a', inputPath: '/music/a.mp3', spectrum: spectrum(16000) })])
+  // The badge is the whole point of batch triage: a deep cut must be flaggable in the list
+  // without opening each track. Shown on .m4a, which can hold AAC or ALAC — the extension
+  // promises nothing, so it is graded strictly. A plain .mp3 is exempt (its lowpass is the
+  // format) and a lossless container gets the deception verdict instead.
+  it('flags a deeply brick-walled track in red', () => {
+    renderList([track({ id: 'a', inputPath: '/music/a.m4a', spectrum: spectrum(16000) })])
     expect(screen.getByTestId('track-quality')).toHaveAttribute('data-quality', 'bad')
+  })
+
+  // The complaint that drove the container gating: a healthy 320 cutting at 19 kHz was
+  // amber in every row of a crate of MP3s. Its lowpass is what the format IS, so the row
+  // stays green and triage highlights only what the user can act on.
+  it('leaves an honest lossy track green whatever its cut', () => {
+    renderList([track({ id: 'a', inputPath: '/music/a.mp3', spectrum: spectrum(16000) })])
+    expect(screen.getByTestId('track-quality')).toHaveAttribute('data-quality', 'good')
   })
 
   // Same cut, but hidden inside a lossless container: the editor's headline is "fake
@@ -698,7 +707,7 @@ describe('TrackList quality badge', () => {
   })
 
   it('flags a moderate shortfall in amber', () => {
-    renderList([track({ id: 'a', inputPath: '/music/a.mp3', spectrum: spectrum(18000) })])
+    renderList([track({ id: 'a', inputPath: '/music/a.m4a', spectrum: spectrum(18000) })])
     expect(screen.getByTestId('track-quality')).toHaveAttribute('data-quality', 'warn')
   })
 

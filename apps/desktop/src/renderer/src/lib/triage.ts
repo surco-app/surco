@@ -18,7 +18,7 @@ export function trackQuality(track: TrackItem): TrackQuality {
   // Needs the extension, so it reads inputPath — the spectrum alone can't tell the container.
   const ext = track.inputPath?.split('.').pop()?.toLowerCase() ?? ''
   if (isTranscode(ext, s.cutoffHz, s.hasKnee, s.processed)) return 'transcoded'
-  return qualityVerdict(s.cutoffHz, s.sampleRateHz, s.processed, s.hasKnee)
+  return qualityVerdict(s.cutoffHz, s.sampleRateHz, s.processed, s.hasKnee, ext)
 }
 
 // The tracks a "analyze quality" sweep should measure: those with no spectrum yet that

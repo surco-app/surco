@@ -74,12 +74,14 @@ describe('trackQuality', () => {
     expect(trackQuality(track)).toBe('transcoded')
   })
 
-  it('stays bad for the same cut inside a lossy container (an honest MP3)', () => {
-    // An MP3 with a 16 kHz knee is just a normal lossy file, not a lie about its format,
-    // so it keeps the plain 'bad' verdict — 'transcoded' is reserved for the deception.
+  it('stays good for the same cut inside a lossy container (an honest MP3)', () => {
+    // An MP3 with a 16 kHz knee is the format working as designed, not a lie about it and
+    // not a defect: the row badge stays green so a crate of MP3s doesn't triage as a wall
+    // of red. 'transcoded' is reserved for the deception, and the editor's caption is
+    // where the bitrate gets reported.
     const track = withSpectrum({ cutoffHz: 16000, sampleRateHz: 44100, hasKnee: true })
     ;(track as { inputPath: string }).inputPath = '/x/on-the-edge.mp3'
-    expect(trackQuality(track)).toBe('bad')
+    expect(trackQuality(track)).toBe('good')
   })
 })
 

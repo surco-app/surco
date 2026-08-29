@@ -167,17 +167,18 @@ describe('QualitySection analysis gating', () => {
 // it must say WHY this file earned its colour — a generic one-liner reads the same
 // under a green badge and a red one, leaving "Bad quality" unjustified.
 describe('QualitySection verdict caption', () => {
-  it('explains a bad verdict as a lossy signature for a lossy container', async () => {
-    // An mp3 with a low ceiling is just a low-bitrate file — bad, but expected for the
-    // format, so it gets the plain bad caption rather than the fake-lossless one.
-    renderSection({ image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false }, '/m/a.mp3')
+  it('explains a bad verdict as a lossy signature for an ambiguous container', async () => {
+    // .m4a can hold AAC or ALAC, so the extension promises nothing: it is graded on the
+    // strict scale and gets the plain bad caption rather than the transcode one, which is
+    // reserved for containers that are lossless by definition.
+    renderSection({ image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false }, '/m/a.m4a')
     expect(
       await screen.findByText(i18n.t('editor.qualityCaptionBad', { cutoff: '16.0 kHz' })),
     ).toBeInTheDocument()
   })
 
   it('explains a warn verdict as the high-bitrate-lossy ambiguity zone', async () => {
-    renderSection({ image: '', cutoffHz: 18000, sampleRateHz: 44100, processed: false }, '/m/a.mp3')
+    renderSection({ image: '', cutoffHz: 18000, sampleRateHz: 44100, processed: false }, '/m/a.m4a')
     expect(
       await screen.findByText(i18n.t('editor.qualityCaptionWarn', { cutoff: '18.0 kHz' })),
     ).toBeInTheDocument()
@@ -336,16 +337,21 @@ describe('QualitySection verdict caption', () => {
     ).toBeInTheDocument()
   })
 
-  // The same knee in a lossy container is just a low-bitrate file, not a fraud: no transcode
-  // badge — that distinction is the whole point of gating on the container.
-  it('does not flag the same knee in a lossy container as a transcode', async () => {
+  // The same knee in a lossy container is the format working as designed, not a fraud and
+  // not a defect: the badge stays green, and the caption is where the low bitrate is
+  // reported. Grading it red taught users to distrust files that were exactly what they
+  // claimed to be — the reported complaint this gating exists to prevent.
+  it('keeps a lossy container green and reports its cut in the caption', async () => {
     renderSection(
       { image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false, hasKnee: true },
       '/music/a.mp3',
     )
     expect(await screen.findByTestId('quality-badge')).toHaveTextContent(
-      i18n.t('editor.qualityBad'),
+      i18n.t('editor.qualityGood'),
     )
+    expect(
+      screen.getByText(i18n.t('editor.qualityCaptionLossy', { cutoff: '16.0 kHz' })),
+    ).toBeInTheDocument()
   })
 
   it('shows no upsample note for a genuine high-rate file', async () => {
