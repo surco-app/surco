@@ -5,6 +5,10 @@
     "title": "El análisis de calidad ahora acierta",
     "items": [
       {
+        "text": "Los másters silenciosos ya no salen marcados como Fuente con pérdidas. Hay discos, sobre todo grabaciones antiguas y algunas remasterizaciones, cuyo extremo agudo es tan tenue que por encima de 16 kHz apenas queda el ruido de fondo del propio CD. Surco promediaba ese ruido en bandas de un kilohercio y le salía un escalón que parecía el corte de un códec, así que un FLAC volcado directamente del disco aparecía acusado de esconder un MP3. Ahora, antes de dar un corte por bueno, se comprueba con una resolución cinco veces más fina, donde la diferencia es evidente: un códec de verdad se desploma más de 60 dB de una pieza, el ruido sube y baja. Si tienes pistas analizadas, se vuelven a medir solas la primera vez que las abras.",
+        "in": "0.89.2"
+      },
+      {
         "text": "Los MP3 ya no salen marcados como sospechosos. Todo MP3 recorta los agudos: es así como funciona el formato, no un defecto del archivo. Surco no lo tenía en cuenta y medía un MP3 con la misma vara que un FLAC, así que un 320 impecable que cortaba en 19 kHz aparecía en ámbar pidiendo revisión. Quien tuviera una carpeta de MP3 se encontraba una fila de avisos sobre archivos que no tenían nada de malo. Ahora un formato con pérdidas se juzga por lo que es y sale en verde. El corte se sigue midiendo y se sigue contando debajo de la gráfica, porque saber que una pista viene de un bitrate bajo es útil, pero ya no se presenta como un problema.",
         "in": "0.89.1"
       },
