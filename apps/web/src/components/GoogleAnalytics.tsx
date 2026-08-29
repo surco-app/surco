@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { GA_MEASUREMENT_ID } from '../config'
+import { asGtagArguments } from '../lib/gtag'
 
 // gtag pushes its arguments onto a global dataLayer queue; the loaded script
 // drains it. Typing it as a loose tuple keeps the call sites below honest.
@@ -30,7 +31,7 @@ export default function GoogleAnalytics() {
 
     window.dataLayer = window.dataLayer || []
     window.gtag = (...args: unknown[]) => {
-      window.dataLayer.push(args)
+      window.dataLayer.push(asGtagArguments(args))
     }
     window.gtag('js', new Date())
     window.gtag('config', GA_MEASUREMENT_ID, { send_page_view: false })
