@@ -1498,6 +1498,49 @@ describe('buildSpectrum', () => {
     expect(res.cutoffHz).toBe(15000)
   })
 
+  it('does not take the FFT knee on faith when the fine bands show no codec wall', async () => {
+    // A loud tech-house master rolls off 12 dB across 900 Hz near 19 kHz and keeps
+    // content 30 dB down all the way to Nyquist: a mastering lowpass, not a codec. The
+    // codec pass checks its own knee against the fine bands and drops it; the FFT knee
+    // read the same ramp as a wall and, unchecked, flagged the file "Lossy source".
+    const res = await buildSpectrum(
+      '/in.flac',
+      deps({
+        cutoff: vi.fn(async () => ({
+          cutoffHz: 19000,
+          processed: false,
+          hasKnee: false,
+          upsampled: false,
+          fineWall: false,
+        })),
+        shelf: vi.fn(async () => ({ shelfCutoffHz: null, kneeCutoffHz: 18000 })),
+      }),
+    )
+    expect(res.hasKnee).toBe(false)
+    expect(res.cutoffHz).toBe(19000)
+  })
+
+  it('still takes the FFT knee when the fine bands do show a codec wall', async () => {
+    // The 192k whose coarse knee the codec pass rejects (its floor wobbles 6 dB at
+    // -140 dB, read as "recovers") still collapses 65 dB through the fine bands. That
+    // is what the FFT knee is for, so a confirmed wall keeps it.
+    const res = await buildSpectrum(
+      '/in.flac',
+      deps({
+        cutoff: vi.fn(async () => ({
+          cutoffHz: 19000,
+          processed: false,
+          hasKnee: false,
+          upsampled: false,
+          fineWall: true,
+        })),
+        shelf: vi.fn(async () => ({ shelfCutoffHz: null, kneeCutoffHz: 19000 })),
+      }),
+    )
+    expect(res.hasKnee).toBe(true)
+    expect(res.cutoffHz).toBe(19000)
+  })
+
   it('ignores the FFT knee once a shelf already marked the file reprocessed', async () => {
     // A flat shelf is its own verdict (reprocessed); the FFT knee must not override the
     // shelf elbow or flip the file off the processed path.
