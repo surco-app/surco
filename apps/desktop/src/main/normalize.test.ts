@@ -331,10 +331,21 @@ describe('dcRemovalFilter', () => {
     expect(dcRemovalFilter([ch(0), ch(0)])).toBeNull()
   })
 
-  // The threshold matches the quality grade's "worth fixing" line (0.2% of full scale),
-  // so the app never spends a re-encode on a bias too small to hear or to matter.
-  it('ignores a bias below the audible threshold', () => {
-    expect(dcRemovalFilter([ch(0.0001), ch(0.0001)])).toBeNull()
+  // A small bias is still a bias: this filter only ever runs inside a normalization
+  // that re-encodes anyway, and the editor's readout promises 0% when the box is
+  // ticked. The old 0.2% floor here left sub-threshold offsets in on the loudness
+  // path — where the gain then scaled them — while peak mode subtracted its mean
+  // unconditionally: the same file came out centred or not depending on the mode.
+  it('subtracts a bias below the quality grade threshold too', () => {
+    expect(dcRemovalFilter([ch(0.0001), ch(0.0001)])).toBe(
+      'aeval=exprs=val(0)-(0.000100)|val(1)-(0.000100):c=same,aformat=channel_layouts=mono|stereo',
+    )
+  })
+
+  // ...but a mean the six-decimal expression would print as zero subtracts nothing,
+  // so it stays null rather than paying for a filter that cannot change a sample.
+  it('still returns null when the bias is too small to express', () => {
+    expect(dcRemovalFilter([ch(0.0000004), ch(-0.0000004)])).toBeNull()
   })
 
   // One offset channel is enough: the filter must still name every channel, or aeval

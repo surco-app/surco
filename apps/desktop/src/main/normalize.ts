@@ -221,10 +221,15 @@ export function parseAstatsChannels(stderr: string): ChannelStats[] | null {
   return channels.length > 0 && complete ? channels : null
 }
 
-// The bias below which a correction is not worth a re-encode: the same 0.2% of full
-// scale the quality readout grades as "worth fixing" (lib/quality's gradeDcOffset), so
-// the pill and the filter agree on what counts as an offset.
-const DC_FIX_THRESHOLD = 0.002
+// The smallest mean the six-decimal aeval expression can subtract at all: below it
+// the term prints as 0.000000 and the filter cannot change a sample. This used to be
+// the quality grade's 0.2% "worth fixing" line, borrowed from a decision this code
+// never makes — whether to start an encode. By the time it runs, the normalization
+// is re-encoding regardless, the editor's readout promises 0% when the box is
+// ticked, and the loudness gain then scaled whatever the floor left in — while peak
+// mode subtracted its mean unconditionally. A user measured exactly that: DC intact
+// under Loudness, gone under Peak, same file, same checkbox.
+const DC_MIN_EXPRESSIBLE = 0.0000005
 
 // Centring on its own, independent of how the gain is sized afterwards. DC removal used
 // to exist only inside peakChannelFilter, so a user who picked loudness normalization
@@ -232,9 +237,9 @@ const DC_FIX_THRESHOLD = 0.002
 // correction of the signal, sizing a gain is a decision about level. Returning a filter
 // the caller can prepend lets loudness mode measure ALREADY-CENTRED audio, which is what
 // makes the resulting target accurate rather than skewed by the bias.
-// Null when there is nothing to correct, so a centred file keeps its stream-copy path.
+// Null when there is nothing the expression could subtract — a genuinely centred file.
 export function dcRemovalFilter(channels: ChannelStats[]): string | null {
-  if (!channels.some((c) => Math.abs(c.dc) >= DC_FIX_THRESHOLD)) return null
+  if (!channels.some((c) => Math.abs(c.dc) >= DC_MIN_EXPRESSIBLE)) return null
   // Every channel has to be listed even when its own bias is nil: aeval emits only the
   // expressions it is given, so naming a subset would drop the rest of the audio.
   const exprs = channels.map((c, i) => `val(${i})-(${c.dc.toFixed(6)})`)
