@@ -63,7 +63,7 @@ function cancellable<T>(
 // and the audio:cached-batch handler so the two can never drift onto different keys for
 // the same family — a batch peek under a stale namespace would silently show as a
 // permanent miss instead of the warm hit the live handler already wrote.
-const SPECTROGRAM_NAMESPACE = 'spectrogram-mono-v15'
+const SPECTROGRAM_NAMESPACE = 'spectrogram-mono-v16'
 const LOUDNESS_NAMESPACE = 'loudness'
 const CLICKS_NAMESPACE = 'clickcount-v2'
 const PROPERTIES_NAMESPACE = 'properties'
@@ -138,7 +138,9 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
             // v15 confirms a coarse knee against the fine bands before calling it a codec
             // wall: a quiet, dithery top end averaged into 1 kHz buckets read as an 8–14 dB
             // step, and clean CD rips were cached as "Lossy source". Those verdicts flip to
-            // Good, so old entries must regenerate.
+            // Good, so old entries must regenerate. v16 asks the roughness pass for a run of
+            // rises, not one: a single harmonic bump was read as a saw-tooth of patches and
+            // clean rips came back "Reprocessed". Those verdicts change, so regenerate.
             SPECTROGRAM_NAMESPACE,
             inputPath,
             () =>
