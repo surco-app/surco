@@ -203,6 +203,15 @@ function steepestFineFall(fineBands: Band[]): number {
   return best
 }
 
+// Whether the fine bands carry a codec-grade collapse. A coarse knee is only
+// believed when they do, and the same answer gates the shelf pass's own knee: it
+// reads the same audio on a different grid and can mistake a mastering rolloff for
+// a wall exactly as the coarse bands can. Without fine bands there is nothing to
+// check against, so a knee stands on its own as it always did.
+export function fineBandsShowWall(fineBands: Band[]): boolean {
+  return fineBands.length === 0 || steepestFineFall(fineBands) >= KNEE_FINE_FALL_DB
+}
+
 // The ceiling the synthetic patches were grafted onto, or null when the fine
 // bands fall monotonically (genuine audio). Non-finite readings are dropped
 // rather than compared: one unparsed band against a real one would read as an
@@ -250,10 +259,7 @@ export function detectCutoff(
   const valley = findHumpValley(bands, plateau)
   if (valley) return { cutoffHz: valley.freqHz, processed: true, hasKnee: false }
 
-  // A coarse knee is only believed when the fine bands show a real wall behind it.
-  // Without fine bands there is nothing to check it against, so the coarse reading
-  // stands on its own as it always has.
-  const wall = fineBands.length === 0 || steepestFineFall(fineBands) >= KNEE_FINE_FALL_DB
+  const wall = fineBandsShowWall(fineBands)
   const kneeIndex = findKneeIndex(bands)
   if (kneeIndex !== -1 && wall)
     return { cutoffHz: bands[kneeIndex].freqHz, processed: false, hasKnee: true }

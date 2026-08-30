@@ -39,6 +39,7 @@ import {
   detectUpsample,
   FINE_BAND_WIDTH_HZ,
   fineBandFrequencies,
+  fineBandsShowWall,
   UPSAMPLE_MIN_NYQUIST_HZ,
   UPSAMPLE_PROBE_ABOVE_HZ,
   UPSAMPLE_PROBE_BELOW_HZ,
@@ -1718,7 +1719,7 @@ export async function analyzeCutoff(
   input: string,
   sampleRateHz: number,
   signal?: AbortSignal,
-): Promise<CutoffResult & { upsampled: boolean }> {
+): Promise<CutoffResult & { upsampled: boolean; fineWall?: boolean }> {
   const nyquist = sampleRateHz / 2
   const freqs = bandFrequencies(nyquist)
   if (freqs.length < 2)
@@ -1756,7 +1757,7 @@ export async function analyzeCutoff(
       rms.get(`${UPSAMPLE_PROBE_BELOW_HZ}x${FINE_BAND_WIDTH_HZ}`) ?? -Infinity,
       rms.get(`${UPSAMPLE_PROBE_ABOVE_HZ}x${FINE_BAND_WIDTH_HZ}`) ?? -Infinity,
     )
-  return { ...detectCutoff(bands, nyquist, fine), upsampled }
+  return { ...detectCutoff(bands, nyquist, fine), upsampled, fineWall: fineBandsShowWall(fine) }
 }
 
 // Reads the three figures we surface from ebur128's end-of-run Summary block.
@@ -2049,7 +2050,10 @@ export async function analyzeShelf(
 interface SpectrumDeps {
   probe: (input: string) => Promise<{ sampleRate: string }>
   spectrogram: (input: string) => Promise<string>
-  cutoff: (input: string, sampleRateHz: number) => Promise<CutoffResult & { upsampled: boolean }>
+  cutoff: (
+    input: string,
+    sampleRateHz: number,
+  ) => Promise<CutoffResult & { upsampled: boolean; fineWall?: boolean }>
   shelf: (
     input: string,
     sampleRateHz: number,
@@ -2091,7 +2095,11 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
   // when nothing else already explains the spectrum: a real codec wall the biquad pass
   // smeared below its knee threshold.
   const processed = (cutoff?.processed ?? false) || shelfCutoffHz !== null
-  const kneeCutoffHz = !processed ? (shelf?.kneeCutoffHz ?? null) : null
+  // ...and only when the codec pass's fine bands back it: the FFT knee reads the same
+  // audio on a coarser grid and takes a mastering rolloff for a wall just as readily.
+  // A codec pass that measured no fine bands (or failed) leaves the knee unchecked.
+  const kneeCutoffHz =
+    !processed && cutoff?.fineWall !== false ? (shelf?.kneeCutoffHz ?? null) : null
   return {
     image: imageR.value,
     // Prefer the codec pass's own cutoff when it found manipulation; otherwise fall
