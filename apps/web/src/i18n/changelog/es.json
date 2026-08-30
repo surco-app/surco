@@ -5,6 +5,10 @@
     "title": "El análisis de calidad ahora acierta",
     "items": [
       {
+        "text": "Un agudo aislado ya no convierte una pista en Reprocesada. Surco detecta los agudos regenerados por un programa porque dejan una sierra en el espectro: una fila de dientes donde cada parche se junta con el siguiente. Bastaba con que un solo armónico levantara una banda por encima de sus vecinas para que sumara lo mismo que esa sierra, y algunos volcados limpios de CD, sobre todo másters brillantes, salían acusados de llevar agudos sintéticos. Ahora hace falta una fila de subidas de verdad, no una sola, y esos discos vuelven al verde. Las pistas ya analizadas se vuelven a medir solas al abrirlas.",
+        "in": "0.89.3"
+      },
+      {
         "text": "Los másters silenciosos ya no salen marcados como Fuente con pérdidas. Hay discos, sobre todo grabaciones antiguas y algunas remasterizaciones, cuyo extremo agudo es tan tenue que por encima de 16 kHz apenas queda el ruido de fondo del propio CD. Surco promediaba ese ruido en bandas de un kilohercio y le salía un escalón que parecía el corte de un códec, así que un FLAC volcado directamente del disco aparecía acusado de esconder un MP3. Ahora, antes de dar un corte por bueno, se comprueba con una resolución cinco veces más fina, donde la diferencia es evidente: un códec de verdad se desploma más de 60 dB de una pieza, el ruido sube y baja. Si tienes pistas analizadas, se vuelven a medir solas la primera vez que las abras.",
         "in": "0.89.2"
       },
