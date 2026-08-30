@@ -5,6 +5,10 @@
     "title": "The quality check now gets it right",
     "items": [
       {
+        "text": "Removing DC offset now works the same in both normalization modes. With the box ticked, peak normalization always centred the signal, but loudness normalization only did so when the bias exceeded 0.2%: below that it was left in, the gain could even increase it, and the editor promised a 0.0% that never arrived. The same file with the same checkbox came out centred or not depending on the chosen mode. Any measurable bias is now subtracted before the level is set, whichever way you normalize.",
+        "in": "0.89.5"
+      },
+      {
         "text": "A loud master with a mastering rolloff no longer reads as Lossy source. Plenty of club productions are mastered with a gentle filter toward 19 kHz: the energy eases down a dozen decibels across nearly a kilohertz and there is still content right up to the top. A codec does nothing of the sort: it drops thirty-plus decibels inside three hundred hertz and leaves silence behind. Surco had a second cutoff detector that read that ramp as a wall and flagged a legitimate Beatport FLAC as hiding an MP3. That detector now answers to the same fine-grained check as the main one, so only a genuine codec collapse counts. Already-analysed tracks re-measure themselves when opened.",
         "in": "0.89.4"
       },

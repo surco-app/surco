@@ -5,6 +5,10 @@
     "title": "El análisis de calidad ahora acierta",
     "items": [
       {
+        "text": "Quitar el offset DC ahora funciona igual en los dos modos de normalización. Con la casilla marcada, normalizar por pico centraba la señal siempre, pero normalizar por sonoridad solo lo hacía si el sesgo superaba el 0,2%: por debajo se quedaba tal cual, la ganancia podía incluso aumentarlo, y el editor prometía un 0,0% que luego no se cumplía. El mismo archivo con la misma casilla salía centrado o no según el modo elegido. Ahora cualquier sesgo medible se resta antes de ajustar el nivel, se normalice como se normalice.",
+        "in": "0.89.5"
+      },
+      {
         "text": "Un máster alto con recorte de mastering ya no pasa por Fuente con pérdidas. Muchas producciones de club se masterizan con un filtro suave hacia los 19 kHz: la energía baja una docena de decibelios a lo largo de casi un kilohercio y sigue habiendo contenido hasta arriba del todo. Un códec no hace eso: cae más de treinta decibelios en trescientos hercios y deja el silencio detrás. Surco tenía un segundo detector de corte que leía esa rampa como un muro y marcaba un FLAC legítimo de Beatport como si escondiera un MP3. Ahora ese detector responde ante la misma comprobación fina que el principal, y solo un desplome de códec de verdad cuenta como tal. Las pistas ya analizadas se vuelven a medir solas al abrirlas.",
         "in": "0.89.4"
       },
