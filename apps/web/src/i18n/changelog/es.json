@@ -5,6 +5,10 @@
     "title": "El análisis de calidad ahora acierta",
     "items": [
       {
+        "text": "Un máster alto con recorte de mastering ya no pasa por Fuente con pérdidas. Muchas producciones de club se masterizan con un filtro suave hacia los 19 kHz: la energía baja una docena de decibelios a lo largo de casi un kilohercio y sigue habiendo contenido hasta arriba del todo. Un códec no hace eso: cae más de treinta decibelios en trescientos hercios y deja el silencio detrás. Surco tenía un segundo detector de corte que leía esa rampa como un muro y marcaba un FLAC legítimo de Beatport como si escondiera un MP3. Ahora ese detector responde ante la misma comprobación fina que el principal, y solo un desplome de códec de verdad cuenta como tal. Las pistas ya analizadas se vuelven a medir solas al abrirlas.",
+        "in": "0.89.4"
+      },
+      {
         "text": "Un agudo aislado ya no convierte una pista en Reprocesada. Surco detecta los agudos regenerados por un programa porque dejan una sierra en el espectro: una fila de dientes donde cada parche se junta con el siguiente. Bastaba con que un solo armónico levantara una banda por encima de sus vecinas para que sumara lo mismo que esa sierra, y algunos volcados limpios de CD, sobre todo másters brillantes, salían acusados de llevar agudos sintéticos. Ahora hace falta una fila de subidas de verdad, no una sola, y esos discos vuelven al verde. Las pistas ya analizadas se vuelven a medir solas al abrirlas.",
         "in": "0.89.3"
       },
