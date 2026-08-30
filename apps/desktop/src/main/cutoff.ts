@@ -102,6 +102,12 @@ const ROUGHNESS_START_HZ = 16500
 const ROUGHNESS_RISE_MIN_DB = 1
 // Total rise that marks a saw-tooth. Real files measured 0; synthetic 5–11.5.
 const ROUGHNESS_TOTAL_DB = 3
+// ...spread over at least this many separate rises. A saw-tooth is teeth in a
+// row: the calibration enhancer rises three times between 17.5 and 20 kHz. One
+// harmonic lifting a single band 4.6 dB cleared the total on its own and had a
+// clean CD rip reported as Reprocessed; one bump is a feature of the music, not
+// a seam between patches.
+const ROUGHNESS_MIN_RISES = 2
 // With the saw-tooth established, the source's real ceiling is where the first
 // sharp fine-band drop appears — the edge the patches were grafted onto.
 const ROUGHNESS_EDGE_DROP_DB = 4
@@ -211,12 +217,16 @@ function roughnessCeiling(fineBands: Band[]): Band | null {
     (b) => Number.isFinite(b.rmsDb) && b.rmsDb >= ROUGHNESS_FLOOR_DB,
   )
   let totalRise = 0
+  let rises = 0
   for (let i = 0; i < finite.length - 1; i++) {
     if (finite[i + 1].freqHz <= ROUGHNESS_START_HZ) continue
     const rise = finite[i + 1].rmsDb - finite[i].rmsDb
-    if (rise > ROUGHNESS_RISE_MIN_DB) totalRise += rise
+    if (rise > ROUGHNESS_RISE_MIN_DB) {
+      totalRise += rise
+      rises++
+    }
   }
-  if (totalRise < ROUGHNESS_TOTAL_DB) return null
+  if (totalRise < ROUGHNESS_TOTAL_DB || rises < ROUGHNESS_MIN_RISES) return null
   for (let i = 0; i < finite.length - 1; i++) {
     if (finite[i].rmsDb - finite[i + 1].rmsDb >= ROUGHNESS_EDGE_DROP_DB) return finite[i]
   }

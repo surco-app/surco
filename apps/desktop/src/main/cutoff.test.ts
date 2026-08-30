@@ -300,6 +300,23 @@ describe('detectCutoff fine-band roughness', () => {
     })
   })
 
+  it('does not read one spectral bump as a saw-tooth of patches', () => {
+    // A real lossless master, coarse and fine bands measured off the same file. One
+    // harmonic lifts the 17 kHz band 4.6 dB above its neighbour and nothing else
+    // rises: a single feature, where an enhancer's patches meet in a run of teeth
+    // (the SBR fixture rises three separate times). Summing rises let this one
+    // bump clear the 3 dB bar, and a clean rip was reported as Reprocessed.
+    const coarse = fftBand([
+      -53.91, -55.6, -56.01, -57.89, -58.65, -59.53, -60.72, -60.28, -55.81, -61.33, -63.61,
+      -64.49, -65.73,
+    ])
+    const oneBump = fine([
+      -59.06, -59.06, -59.55, -60.24, -60.64, -60.37, -60.75, -59.38, -54.76, -57.21, -61.52,
+      -63.07, -63.51, -64.39, -64.7, -64.43, -65.34,
+    ])
+    expect(detectCutoff(coarse, NYQUIST, oneBump).processed).toBe(false)
+  })
+
   it('behaves exactly as before when no fine bands are supplied', () => {
     expect(detectCutoff(SBR_COARSE, NYQUIST)).toEqual({
       cutoffHz: NYQUIST,
