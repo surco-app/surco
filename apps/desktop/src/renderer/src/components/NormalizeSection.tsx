@@ -84,7 +84,7 @@ export function NormalizeSection({
   // anchor's figures would masquerade as the batch's.
   const { data: planLoudness } = useTrackLoudness(
     item.inputPath,
-    settled && !isMulti && value.mode !== 'none',
+    settled && !isMulti && showHints && value.mode !== 'none',
   )
   const compareRef = useRef<HTMLDivElement>(null)
   const mounted = useRef(false)
@@ -160,7 +160,7 @@ export function NormalizeSection({
             showCueWarning={false}
             showHints={showHints}
           />
-          {!isMulti && <NormalizePlan normalize={value} loudness={planLoudness} />}
+          {!isMulti && showHints && <NormalizePlan normalize={value} loudness={planLoudness} />}
           {!isMulti && !compare && (
             <WaveformSolo
               inputPath={item.inputPath}
