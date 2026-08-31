@@ -146,6 +146,7 @@ interface Props {
   // shortcuts like every other dialog — a track-switch key pressed while it was
   // Editor-local used to remount the editor and silently destroy the open dialog.
   onShowLoudnessHelp: () => void
+  onHideEditorHints: () => void
   // Opens the output-name pattern builder for this track (App owns the modal so the
   // ⌘⇧R shortcut and the menu can open it too).
   onOpenRename: () => void
@@ -198,6 +199,7 @@ export const Editor = memo(function Editor({
   onRemoveOldMusicCopy,
   onResultsWidthChange,
   onShowLoudnessHelp,
+  onHideEditorHints,
   onOpenRename,
   onRegenerateName,
   onTrimDetectedAll,
@@ -1232,6 +1234,7 @@ export const Editor = memo(function Editor({
                           selectedCount={selectedTracks?.length ?? 1}
                           showHints={showEditorHints}
                           onShowHelp={onShowLoudnessHelp}
+                          onHideHints={onHideEditorHints}
                         />
                       )
                     default:

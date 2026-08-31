@@ -216,6 +216,7 @@ function renderEditor(
         onRemoveOldMusicCopy={onRemoveOldMusicCopy}
         onResultsWidthChange={vi.fn()}
         onShowLoudnessHelp={onShowLoudnessHelp}
+        onHideEditorHints={vi.fn()}
         onOpenRename={onOpenRename}
         onRegenerateName={onRegenerateName}
         onTrimDetectedAll={vi.fn()}
@@ -916,6 +917,7 @@ function MultiHarness() {
         onProcess={vi.fn()}
         onAddToAppleMusic={vi.fn()}
         onShowLoudnessHelp={vi.fn()}
+        onHideEditorHints={vi.fn()}
         onOpenRename={vi.fn()}
         onRegenerateName={vi.fn()}
         onTrimDetectedAll={vi.fn()}
@@ -1231,6 +1233,7 @@ describe('Editor multi-select', () => {
         onProcess={vi.fn()}
         onAddToAppleMusic={vi.fn()}
         onShowLoudnessHelp={vi.fn()}
+        onHideEditorHints={vi.fn()}
         onOpenRename={vi.fn()}
         onRegenerateName={vi.fn()}
         onTrimDetectedAll={vi.fn()}

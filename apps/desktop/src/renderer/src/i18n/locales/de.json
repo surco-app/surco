@@ -644,7 +644,8 @@
       "gainSub": "Nichts wird limitiert oder komprimiert; die Dynamik bleibt erhalten.",
       "peak": "Er wird um {{gain}} dB verschoben: sein lautestes Sample landet genau bei {{peak}} dBFS.",
       "peakSub": "Konstante Verstärkung, kein Limiter. Er wird etwa {{lufs}} LUFS laut sein."
-    }
+    },
+    "hideHints": "Diese Erklärungen ausblenden (zurück über Einstellungen → Editor)"
   },
   "settings": {
     "tabs": {

@@ -644,7 +644,8 @@
       "gainSub": "Nothing is limited or compressed; the dynamics stay intact.",
       "peak": "It will move {{gain}} dB: its loudest sample will sit exactly at {{peak}} dBFS.",
       "peakSub": "One constant gain, no limiter. It will play at about {{lufs}} LUFS."
-    }
+    },
+    "hideHints": "Hide these explanations (bring them back in Settings → Editor)"
   },
   "settings": {
     "tabs": {
