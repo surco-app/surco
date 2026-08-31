@@ -117,7 +117,8 @@
     "discogsToken": "Discogs a refusé ton jeton. Vérifie-le dans les Réglages.",
     "outputPathEscapes": "Ce nom de fichier écrirait hors du dossier de destination.",
     "settingsFileNotSurco": "Ce fichier ne contient pas de configuration Surco.",
-    "appleMusicNoMediaCopy": "Musique n’a pas copié le fichier dans son dossier multimédia : avec « Apple Music uniquement », il resterait sans audio. Active « Copier les fichiers dans le dossier Musique » dans Musique, ou désactive « Apple Music uniquement »."
+    "appleMusicNoMediaCopy": "Musique n’a pas copié le fichier dans son dossier multimédia : avec « Apple Music uniquement », il resterait sans audio. Active « Copier les fichiers dans le dossier Musique » dans Musique, ou désactive « Apple Music uniquement ».",
+    "convertedOutputUnreadable": "Le fichier converti est sorti illisible, il a donc été écarté et l'original laissé intact. Réessayez avec d'autres réglages de conversion."
   },
   "notices": {
     "duplicatesSkipped": "Déjà dans la liste, ignorés : {{count}}",
