@@ -778,7 +778,7 @@
     "walkthrough": {
       "kicker": "Step by step",
       "title": "One track, start to finish",
-      "lede": "Everything Surco does to a file between dropping it in and having it where you listen. Six steps, one window."
+      "lede": "Six steps, one window. Along the way you'll find out which of your FLACs are really MP3s."
     },
     "drop": {
       "step": "01 · in",
@@ -804,7 +804,7 @@
     },
     "tag": {
       "step": "03 · tagged",
-      "title": "Every track, under its own name.",
+      "title": "The tags, from Discogs, in one click.",
       "lede": "Discogs for labels, Bandcamp for self-released, Deezer for the charts. One click fills it all in: artist, label, year, BPM and artwork.",
       "pill": "12/40",
       "before": "Artist · before",
@@ -830,7 +830,7 @@
     },
     "trim": {
       "step": "05 · trimmed",
-      "title": "End where the music ends.",
+      "title": "Cut the silence off the end.",
       "lede": "It finds the silence at both ends and the cut magnets onto the last hit. To the millisecond, with its own audition on each side.",
       "pill": "−4.6s at the end",
       "tailLabel": "End · last 12s",
@@ -842,7 +842,7 @@
     },
     "batch": {
       "step": "06 · out",
-      "title": "And it ends up where you listen.",
+      "title": "And it lands in your Apple Music.",
       "lede": "Pick a format and a destination and convert the whole folder. With Apple Music and Engine DJ you import nothing: the track shows up in your library with its artwork on — and on Engine DJ, with rating and playlist. Everything else gets the file it expects.",
       "pill": "Converting 11/40",
       "stage": "Converting to AIFF…",
@@ -855,11 +855,12 @@
       "pillRunning": "Converting {{done}}/{{total}}",
       "pillDone": "{{total}}/{{total}} done"
     },
-    "heroLede": "Surco opens every file and tells you what you actually have: whether the lossless is genuine, which tags are missing, where the clicks and the dead air are. Then it fixes all of it and files it into your player or your DJ gear.",
-    "heroFree": "Free · macOS, Windows and Linux",
+    "heroLede": "The app that gets your music ready to play: converts to lossless, tags from Discogs, catches the MP3s dressed up as FLAC and files it all into Apple Music, Engine DJ or rekordbox.",
+    "heroFree": "Free, forever. macOS, Windows and Linux. No account.",
     "closeTitle": "All of it, in one window.",
-    "closeNote": "Free, forever. No account, no cloud, no limits.",
-    "closeSafety": "Changing format leaves your original untouched and writes elsewhere; re-exporting to the same format rewrites the file where it is. Notarized by Apple.",
-    "allFeatures": "See everything it does →"
+    "closeNote": "No cloud, no limits, nothing to sign up for. It updates itself.",
+    "closeSafety": "Your originals stay untouched: change format and the copy goes to a folder of its own. It only rewrites the file itself if you re-export to the same format, which is how it updates tags without re-encoding. Notarized by Apple.",
+    "allFeatures": "See everything it does →",
+    "worksWith": "Works with"
   }
 }

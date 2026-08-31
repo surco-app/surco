@@ -14,6 +14,19 @@ import { useAutoLanguage } from './lib/useAutoLanguage'
 // get it. Everything that used to sit below — the feature lists, the five-app
 // comparison, the shortcut table, the FAQ — moved to the features page, because
 // eight stacked sections can each be well designed and still never feel minimal.
+
+// Proper nouns, so the same list serves every language.
+const INTEGRATIONS = [
+  'Discogs',
+  'Bandcamp',
+  'Deezer',
+  'Apple Music',
+  'Engine DJ',
+  'rekordbox',
+  'Traktor',
+  'Serato',
+]
+
 export default function App() {
   const { t, i18n } = useTranslation()
   useAutoLanguage()
@@ -42,13 +55,39 @@ export default function App() {
               </p>
             </Reveal>
             <Reveal eager delay={150}>
-              <DownloadButton />
+              {/* Free, the three platforms and "no account" ride with the CTA itself.
+                  The page never said any of it above the fold: the only mention of the
+                  price sat in the closing note, a full scroll of walkthrough away, so a
+                  visitor deciding whether to bother had to take the download on faith. */}
+              <DownloadButton note={t('home.heroFree')} />
             </Reveal>
           </div>
           <Reveal eager delay={220}>
             <HeroApp video />
           </Reveal>
         </section>
+
+        {/* The names of the tools Surco talks to, doing two jobs at once: they stand in
+            for social proof the download count can't carry at three digits, and they say
+            what kind of program this is faster than a sentence can: a visitor who knows
+            Discogs and rekordbox places Surco the moment they read them. */}
+        {/* Eager like the rest of the hero: the row sits right on the fold, and a
+            scroll-triggered reveal would hold the one piece of category context back
+            until after the visitor had already decided whether to stay. */}
+        <Reveal eager delay={300}>
+          <section className="mx-auto max-w-5xl px-6 pb-4">
+            <div className="flex flex-col gap-3 border-y border-line py-5 sm:flex-row sm:items-center sm:gap-6">
+              <p className="font-mono text-xs tracking-wider text-faint uppercase">
+                {t('home.worksWith')}
+              </p>
+              <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted">
+                {INTEGRATIONS.map((name) => (
+                  <li key={name}>{name}</li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        </Reveal>
 
         <div className="mx-auto max-w-5xl px-6">
           <Walkthrough />
