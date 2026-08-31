@@ -1,11 +1,16 @@
+import { X } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LoudnessResult, NormalizeConfig } from '../../../shared/types'
 import { formatDb, predictNormalized } from '../lib/quality'
+import { Tooltip } from './Tooltip'
 
 interface Props {
   normalize: NormalizeConfig
   loudness: LoudnessResult | null | undefined
+  // Flips the SAME persisted setting as Settings > Editor's "Inline explanations":
+  // the lever lives where the eyes are, the way back lives in Settings.
+  onDismiss?: () => void
 }
 
 // The sentence the prediction was always able to say and never did. predictNormalized
@@ -14,7 +19,7 @@ interface Props {
 // ceiling and sometimes under it. The figures live in the waveform legend below; this
 // card owns the mechanism: constant gain, or gain plus the limiter holding the overs.
 // Accent edge when the limiter will engage, the calm "good" edge when it will not.
-export function NormalizePlan({ normalize, loudness }: Props): React.JSX.Element | null {
+export function NormalizePlan({ normalize, loudness, onDismiss }: Props): React.JSX.Element | null {
   const { t: tr } = useTranslation()
   const predicted = loudness ? predictNormalized(normalize, loudness) : null
   if (!loudness || !predicted) return null
@@ -37,9 +42,23 @@ export function NormalizePlan({ normalize, loudness }: Props): React.JSX.Element
         predicted.limited ? 'border-l-[var(--color-accent)]' : 'border-l-[var(--color-good)]'
       }`}
     >
-      <p className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
-        {tr('normalize.plan.head')}
-      </p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
+          {tr('normalize.plan.head')}
+        </p>
+        {onDismiss && (
+          <button
+            type="button"
+            data-testid="normalize-plan-dismiss"
+            aria-label={tr('normalize.hideHints')}
+            onClick={onDismiss}
+            className="press group relative -mt-1 -mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+          >
+            <X className="h-3 w-3" aria-hidden="true" />
+            <Tooltip label={tr('normalize.hideHints')} />
+          </button>
+        )}
+      </div>
       <p className="mt-1 text-xs leading-relaxed text-fg tabular-nums">
         {tr(`normalize.plan.${kind}`, values)}
       </p>

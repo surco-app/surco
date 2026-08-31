@@ -31,6 +31,7 @@ interface Props {
   // the section whose dials those metrics govern.
   onShowHelp: () => void
   showHints?: boolean
+  onHideHints?: () => void
 }
 
 // The per-track normalization override, with the active mode badged on the header so
@@ -44,6 +45,7 @@ export function NormalizeSection({
   selectedCount,
   onShowHelp,
   showHints = true,
+  onHideHints,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // The waveform is the one full-length decode, so it waits for the selection to
@@ -160,7 +162,9 @@ export function NormalizeSection({
             showCueWarning={false}
             showHints={showHints}
           />
-          {!isMulti && showHints && <NormalizePlan normalize={value} loudness={planLoudness} />}
+          {!isMulti && showHints && (
+            <NormalizePlan normalize={value} loudness={planLoudness} onDismiss={onHideHints} />
+          )}
           {!isMulti && !compare && (
             <WaveformSolo
               inputPath={item.inputPath}

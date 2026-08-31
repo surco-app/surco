@@ -644,7 +644,8 @@
       "gainSub": "No se limita ni comprime nada; la dinámica queda intacta.",
       "peak": "Cambiará {{gain}} dB: su sample más alto quedará exactamente en {{peak}} dBFS.",
       "peakSub": "Ganancia constante, sin limitador. Sonará a unos {{lufs}} LUFS."
-    }
+    },
+    "hideHints": "Ocultar estas explicaciones (se reactivan en Ajustes → Editor)"
   },
   "settings": {
     "tabs": {

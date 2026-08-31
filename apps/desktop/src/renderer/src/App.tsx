@@ -12,6 +12,7 @@ import {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import { autoMatchAvailable } from '../../shared/autoMatch'
+import { normalizeImportFields } from '../../shared/defaults'
 import { emptyMetadata } from '../../shared/metadata'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import type {
@@ -68,9 +69,8 @@ import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { deriveTagPatches } from './lib/deriveTags'
-import { createDragDepth } from './lib/dragDepth'
 import type { Destination } from './lib/destination'
-import { normalizeImportFields } from '../../shared/defaults'
+import { createDragDepth } from './lib/dragDepth'
 import { DEFAULT_REQUIRED_FIELDS } from './lib/fields'
 import {
   activeFocusPreset,
@@ -1244,6 +1244,9 @@ export default function App(): React.JSX.Element {
     if (selected) askRemoveOldMusicCopy(selected, stale)
   })
   const onShowLoudnessHelp = useStableCallback(overlays.openLoudnessHelp)
+  // The X on the plan card: the same synced flag the Settings checkbox writes, so one
+  // click quiets every inline explanation and Settings > Editor brings them back.
+  const onHideEditorHints = useStableCallback(() => saveSettings({ showEditorHints: false }))
   const onOpenRename = useStableCallback(overlays.openRename)
   // Rebuilds file names from the Settings pattern over the whole selection when there
   // is one (djotas's flow: retag a crate, then stamp every name at once), else the
@@ -1852,6 +1855,7 @@ export default function App(): React.JSX.Element {
                         onRemoveOldMusicCopy={onRemoveOldMusicCopy}
                         onResultsWidthChange={onResultsWidthChange}
                         onShowLoudnessHelp={onShowLoudnessHelp}
+                        onHideEditorHints={onHideEditorHints}
                         onOpenRename={onOpenRename}
                         onRegenerateName={onRegenerateName}
                         onTrimDetectedAll={onTrimDetectedAll}

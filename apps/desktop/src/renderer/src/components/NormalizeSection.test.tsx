@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NormalizeConfig, TrackMetadata } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
@@ -31,6 +31,7 @@ function renderSection(
   // The estimate only exists with a mode active, so a test that reads it passes one in.
   value: NormalizeConfig = cfg,
   showHints?: boolean,
+  onHideHints?: () => void,
 ): void {
   ;(window as unknown as { api: unknown }).api = {
     waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], rms: [0.2, 0.4], durationSec: 10 }),
@@ -48,6 +49,7 @@ function renderSection(
         selectedCount={selectedCount}
         onShowHelp={vi.fn()}
         showHints={showHints}
+        onHideHints={onHideHints}
       />
     </QueryClientProvider>,
   )
@@ -360,5 +362,25 @@ describe('NormalizeSection with hints off', () => {
     expect(screen.queryByTestId('normalize-plan')).not.toBeInTheDocument()
     expect(screen.queryByTestId('normalize-mode-line')).not.toBeInTheDocument()
     expect(screen.queryByTestId('normalize-ceiling-caption')).not.toBeInTheDocument()
+  })
+})
+
+describe('NormalizeSection plan dismissal', () => {
+  // The Settings toggle exists, but the user asked for the lever where the eyes are:
+  // an X on the card itself that flips the SAME persisted setting — one click quiets
+  // the section everywhere, and Settings > Editor is the way back.
+  it('offers an X on the card that persists hints off', async () => {
+    const hide = vi.fn()
+    renderSection(
+      track(),
+      1,
+      measuredLoud,
+      { ...cfg, mode: 'loudness', targetLufs: -13 },
+      undefined,
+      hide,
+    )
+    const dismiss = await screen.findByTestId('normalize-plan-dismiss')
+    fireEvent.click(dismiss)
+    expect(hide).toHaveBeenCalledTimes(1)
   })
 })
