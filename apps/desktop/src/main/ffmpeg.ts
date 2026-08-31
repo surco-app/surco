@@ -1049,6 +1049,25 @@ export async function normalizeFilter(
   )
 }
 
+// ffmpeg reading back its own fresh output, with -xerror so the first packet it cannot
+// decode fails the run. A user's build once wrote an MP3 whose every frame the decoder
+// rejected ("Header missing"), and it went through the tag pass and the rename as a
+// finished conversion: with "replace the original" it took the source's place, and the
+// user learned of it only when Surco itself could not open the result. Only the audio
+// is read; the attached picture is never what breaks.
+export async function assertDecodable(file: string): Promise<void> {
+  try {
+    await run(
+      ffmpegPath,
+      ['-hide_banner', '-v', 'error', '-xerror', '-i', file, '-map', '0:a', '-f', 'null', '-'],
+      { maxBuffer: 1024 * 1024 * 16 },
+    )
+  } catch (e) {
+    const stderr = String((e as { stderr?: unknown })?.stderr ?? '').trim()
+    throw errorWithKey('convertedOutputUnreadable', stderr.split('\n')[0] || String(e))
+  }
+}
+
 // The cue re-anchoring a trim demands, in Traktor's millisecond units: positions
 // move back by the head cut and clamp to the trimmed length when the tail was
 // cut too. Undefined while no trim filter ran — the carried frames then stay
@@ -1306,6 +1325,7 @@ export async function convertAudio(
         },
       )
       if (declickAf) declickedSamples = parseDeclickedSamples(String(stderr)) ?? undefined
+      await assertDecodable(tmp)
       if (ext === '.wav' || ext === '.m4a') {
         // RIFF rejects an attached-picture stream, so convertArgs can't embed the
         // cover and drops tags with no RIFF-INFO field (grouping). TagLib writes a

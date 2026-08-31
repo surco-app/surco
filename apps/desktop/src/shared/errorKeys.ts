@@ -19,6 +19,7 @@ export type ErrorKey =
   | 'outputPathEscapes'
   | 'settingsFileNotSurco'
   | 'appleMusicNoMediaCopy'
+  | 'convertedOutputUnreadable'
 
 // Builds the message an ipcMain handler throws. Detail is appended for the log and any
 // bug report; the renderer shows the translated string and never this text.

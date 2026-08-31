@@ -117,7 +117,8 @@
     "discogsToken": "Discogs hat dein Token abgelehnt. Prüfe es in den Einstellungen.",
     "outputPathEscapes": "Dieser Dateiname würde außerhalb des Zielordners schreiben.",
     "settingsFileNotSurco": "Diese Datei enthält keine Surco-Konfiguration.",
-    "appleMusicNoMediaCopy": "Musik hat die Datei nicht in seinen Medienordner kopiert, daher bliebe sie mit „Nur Apple Music“ ohne Audio. Aktiviere in Musik „Dateien beim Hinzufügen in den Medienordner kopieren“ oder deaktiviere „Nur Apple Music“."
+    "appleMusicNoMediaCopy": "Musik hat die Datei nicht in seinen Medienordner kopiert, daher bliebe sie mit „Nur Apple Music“ ohne Audio. Aktiviere in Musik „Dateien beim Hinzufügen in den Medienordner kopieren“ oder deaktiviere „Nur Apple Music“.",
+    "convertedOutputUnreadable": "Die konvertierte Datei war nicht lesbar, daher wurde sie verworfen und das Original unverändert gelassen. Versuche es mit anderen Konvertierungseinstellungen."
   },
   "notices": {
     "duplicatesSkipped": "Schon in der Liste, übersprungen: {{count}}",
