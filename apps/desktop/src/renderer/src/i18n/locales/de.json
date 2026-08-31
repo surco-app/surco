@@ -871,6 +871,8 @@
     "autoAnalyzeHint": "Berechnet beim Import alle Analysen jedes Tracks im Hintergrund vor, sodass das erneute Öffnen deiner Bibliothek sofort geht; verdächtige Rips werden markiert, ohne Analysieren zu drücken.",
     "showLoudness": "Loudness (LUFS) anzeigen",
     "showLoudnessHint": "Misst integrierte Loudness, True Peak und Loudness Range (EBU R128) beim Bearbeiten eines Tracks. Wenn aus, entfällt die Messung komplett.",
+    "showEditorHints": "Erklärungen im Editor",
+    "showEditorHintsHint": "Einzeilige Erklärungen unter den Editor-Reglern: was jeder Modus tut und was die Peak-Obergrenze ist. Ausschalten, wenn du sie auswendig kennst.",
     "keyNotation": "Tonart-Notation",
     "keyNotationHint": "Wie der erkannte Tonart-Vorschlag unter dem Feld Tonart angezeigt wird. Camelot ist das, wonach DJ-Software sortiert.",
     "sections": {

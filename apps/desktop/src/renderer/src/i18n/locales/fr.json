@@ -871,6 +871,8 @@
     "autoAnalyzeHint": "Précalcule en arrière-plan toutes les analyses de chaque morceau dès l'import, pour que rouvrir votre bibliothèque soit instantané ; et les rips suspects sont signalés sans appuyer sur Analyser.",
     "showLoudness": "Afficher le loudness (LUFS)",
     "showLoudnessHint": "Mesure le loudness intégré, le pic réel et la plage de loudness (EBU R128) à l'édition d'un morceau. Si désactivé, la mesure est entièrement sautée.",
+    "showEditorHints": "Explications en ligne",
+    "showEditorHintsHint": "Explications d'une ligne sous les contrôles de l'éditeur : ce que fait chaque mode et ce qu'est le plafond de crête. À désactiver une fois connues par cœur.",
     "keyNotation": "Notation de la tonalité",
     "keyNotationHint": "Comment la suggestion de tonalité détectée s'affiche sous le champ Tonalité. Camelot est ce que les logiciels DJ utilisent pour trier.",
     "sections": {

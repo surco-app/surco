@@ -236,6 +236,7 @@ export const Editor = memo(function Editor({
     searchIgnoreWords,
     showSpectrum,
     showLoudness,
+    showEditorHints,
     keyNotation,
     normalize,
     declick,
@@ -532,17 +533,23 @@ export const Editor = memo(function Editor({
     // protect, so a pick always takes the release image.
     const coverIsOriginal = !!item.coverUrl && item.coverUrl === item.embeddedCover
     onChange({
-      ...buildReleaseMeta(item.meta, release, track, {
-        url: item.coverUrl,
-        path: item.coverPath,
-        keep:
-          coverIsOriginal &&
-          !(
-            replaceLowResCover &&
-            effectiveCoverDims &&
-            isLowResCover(effectiveCoverDims.w, effectiveCoverDims.h)
-          ),
-      }, importFields),
+      ...buildReleaseMeta(
+        item.meta,
+        release,
+        track,
+        {
+          url: item.coverUrl,
+          path: item.coverPath,
+          keep:
+            coverIsOriginal &&
+            !(
+              replaceLowResCover &&
+              effectiveCoverDims &&
+              isLowResCover(effectiveCoverDims.w, effectiveCoverDims.h)
+            ),
+        },
+        importFields,
+      ),
       // Mark the track matched so the sweep leaves this deliberate pick alone, even when
       // the source (Bandcamp) writes no Discogs id to guard it.
       matched: true,
@@ -1223,6 +1230,7 @@ export const Editor = memo(function Editor({
                           }}
                           item={item}
                           selectedCount={selectedTracks?.length ?? 1}
+                          showHints={showEditorHints}
                           onShowHelp={onShowLoudnessHelp}
                         />
                       )

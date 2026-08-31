@@ -10,6 +10,7 @@ interface Props {
   // The editor's section shows the warning itself, below its waveform, so it can
   // silence this inline copy; Settings keeps the default.
   showCueWarning?: boolean
+  showHints?: boolean
 }
 
 const MODES: NormalizeMode[] = ['none', 'loudness', 'peak']
@@ -79,6 +80,7 @@ export function NormalizeControls({
   value,
   onChange,
   showCueWarning = true,
+  showHints = true,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // Focus targets for the Custom chip, so picking "Custom" drops the caret straight
@@ -122,7 +124,7 @@ export function NormalizeControls({
       {/* The mode named by its effect on the batch, which is the only fact that picks
           between the two: same perceived loudness everywhere, or same loudest sample
           with the perceived loudness still varying. Mechanisms stay out of it. */}
-      {value.mode !== 'none' && (
+      {showHints && value.mode !== 'none' && (
         <p data-testid="normalize-mode-line" className="mt-2 text-xs text-fg-dim">
           {tr(`normalize.modeLine.${value.mode}`)}
         </p>
@@ -188,12 +190,14 @@ export function NormalizeControls({
               />
               {/* The caption that undoes the "two targets" reading: a user watched his
                   files land under the ceiling and asked why they missed "the target". */}
-              <p
-                data-testid="normalize-ceiling-caption"
-                className="mt-1 max-w-[180px] text-[10px] leading-snug text-fg-faint"
-              >
-                {tr('normalize.truePeakCaption')}
-              </p>
+              {showHints && (
+                <p
+                  data-testid="normalize-ceiling-caption"
+                  className="mt-1 max-w-[180px] text-[10px] leading-snug text-fg-faint"
+                >
+                  {tr('normalize.truePeakCaption')}
+                </p>
+              )}
             </div>
           </div>
         </div>

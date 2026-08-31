@@ -59,6 +59,7 @@ interface ResolvedSettings {
   searchIgnoreWords: string[]
   showSpectrum: boolean
   showLoudness: boolean
+  showEditorHints: boolean
   keyNotation: KeyNotation
   normalize: NormalizeConfig
   declick: DeclickMode
@@ -96,6 +97,7 @@ const DEFAULTS: ResolvedSettings = {
   searchIgnoreWords: ['vinyl', 'rip'],
   showSpectrum: true,
   showLoudness: true,
+  showEditorHints: true,
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
   declick: DEFAULT_DECLICK,
@@ -131,6 +133,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     searchIgnoreWords: settings.searchIgnoreWords ?? DEFAULTS.searchIgnoreWords,
     showSpectrum: settings.showSpectrum ?? DEFAULTS.showSpectrum,
     showLoudness: settings.showLoudness ?? DEFAULTS.showLoudness,
+    showEditorHints: settings.showEditorHints ?? DEFAULTS.showEditorHints,
     keyNotation: settings.keyNotation ?? DEFAULTS.keyNotation,
     normalize: settings.normalize ?? DEFAULTS.normalize,
     declick: normalizeDeclick(settings.declick),

@@ -78,6 +78,13 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
             label={tr('settings.showLoudness')}
             hint={tr('settings.showLoudnessHint')}
           />
+          <SettingsCheckboxField
+            testid="settings-show-editor-hints"
+            checked={synced.showEditorHints}
+            onChange={(v) => patch('showEditorHints', v)}
+            label={tr('settings.showEditorHints')}
+            hint={tr('settings.showEditorHintsHint')}
+          />
           <SettingsField label={tr('settings.keyNotation')} hint={tr('settings.keyNotationHint')}>
             <SegmentedControl
               options={['camelot', 'musical'] as const}

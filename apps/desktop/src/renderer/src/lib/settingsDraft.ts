@@ -38,6 +38,7 @@ export interface SyncedDraft {
   flacCompression: Settings['flacCompression']
   showSpectrum: boolean
   showLoudness: boolean
+  showEditorHints: boolean
   autoAnalyze: boolean
   keyNotation: Settings['keyNotation']
   normalize: Settings['normalize']
@@ -112,6 +113,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     flacCompression: s.flacCompression,
     showSpectrum: s.showSpectrum,
     showLoudness: s.showLoudness,
+    showEditorHints: s.showEditorHints,
     autoAnalyze: s.autoAnalyze,
     keyNotation: s.keyNotation,
     normalize: s.normalize,

@@ -75,6 +75,7 @@ export const defaults: Settings = {
   flacCompression: '5',
   showSpectrum: true,
   showLoudness: true,
+  showEditorHints: true,
   activityPanel: null,
   resultsWidth: null,
   showWaveform: true,
