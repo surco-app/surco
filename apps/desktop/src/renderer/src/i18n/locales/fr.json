@@ -405,8 +405,7 @@
     "loudnessGradeGood": "Bien",
     "loudnessGradeWarn": "Moyen",
     "loudnessGradeBad": "À vérifier",
-    "loudnessEstimateSame": "inchangé",
-    "loudnessEstimateLegend": "En italique : estimation après conversion avec tes réglages de normalisation.",
+    "loudnessEstimateSame": "=",
     "spectrumAlt": "Spectrogramme de fréquences du morceau",
     "spectrumCutoff": "coupure ~{{cutoff}}",
     "spectrumHighs": "aigus jusqu'à ~{{cutoff}}",
@@ -504,7 +503,8 @@
     "loudnessRangeDc": "Bon : moins de 0,2 %.",
     "loudnessFixDc": "Corrigible : coche « Supprimer le décalage DC » sous Normalisation.",
     "loudnessRangeNoise": "Bon : -45 dB ou moins.",
-    "loudnessFixNoise": "Non corrigible ici : Surco ne débruite pas. Cela vient de la source ou de la captation."
+    "loudnessFixNoise": "Non corrigible ici : Surco ne débruite pas. Cela vient de la source ou de la captation.",
+    "loudnessAfterHeader": "avant → après conversion"
   },
   "fields": {
     "groupFilled_one": "{{count}} rempli",
@@ -616,7 +616,7 @@
       "custom": "Personnalisé"
     },
     "targetLufs": "Cible (LUFS)",
-    "truePeak": "Pic réel (dBTP)",
+    "truePeak": "Plafond de crête (dBTP)",
     "peakDb": "Pic (dBFS)",
     "removeDcOffset": "Supprimer le décalage DC (centrer sur 0.0)",
     "peakRemoveDc": "Supprimer le décalage DC (centrer sur 0.0)",
@@ -630,7 +630,21 @@
       "broadcast": "Le niveau TV et radio. Plus bas que le streaming, avec beaucoup de marge.",
       "custom": "Ta propre cible. L'aperçu sous l'onde montre où le morceau atterrira."
     },
-    "appliesToSelection": "Ces réglages s’appliquent aux {{count}} morceaux sélectionnés."
+    "appliesToSelection": "Ces réglages s’appliquent aux {{count}} morceaux sélectionnés.",
+    "truePeakCaption": "Une limite de sécurité, pas un second objectif : elle n'agit que si les crêtes l'atteignent.",
+    "modeLine": {
+      "loudness": "Toutes les pistes sortiront au même volume : le gain amène chacune à l'objectif.",
+      "peak": "Aligne l'échantillon le plus fort de chaque piste ; le volume perçu variera encore."
+    },
+    "plan": {
+      "head": "Ce qui arrivera à cette piste",
+      "limited": "Elle bougera de {{gain}} dB jusqu'à {{lufs}} LUFS. Ses crêtes dépasseraient le plafond, le limiteur les retiendra donc à {{peak}} dBTP.",
+      "limitedSub": "Seules les crêtes en excès sont écrêtées ; le reste de la piste n'est pas touché.",
+      "gain": "Elle bougera de {{gain}} dB jusqu'à {{lufs}} LUFS avec un gain constant. Ses crêtes resteront à {{peak}} dBTP : le plafond n'agit pas.",
+      "gainSub": "Rien n'est limité ni compressé ; la dynamique reste intacte.",
+      "peak": "Elle bougera de {{gain}} dB : son échantillon le plus fort sera exactement à {{peak}} dBFS.",
+      "peakSub": "Gain constant, sans limiteur. Elle jouera à environ {{lufs}} LUFS."
+    }
   },
   "settings": {
     "tabs": {

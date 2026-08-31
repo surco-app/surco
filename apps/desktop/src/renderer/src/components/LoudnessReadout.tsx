@@ -169,6 +169,13 @@ export function LoudnessReadout({
           <Info className="h-3.5 w-3.5" aria-hidden="true" />
           <Tooltip label={tr('editor.loudnessHelpTitle')} align="start" />
         </button>
+        {/* The two columns named where the eye starts, replacing the footnote legend
+            that explained the old italics from the very bottom of the section. */}
+        {predicted && (
+          <span data-testid="loudness-after-header" className="ml-auto text-[10px] text-fg-muted">
+            {tr('editor.loudnessAfterHeader')}
+          </span>
+        )}
       </div>
       {/* Same table as PropertiesReadout — two label·value pairs per row, 1px gaps over the
           line-coloured backing drawing the rules and the column seam — so the two sections
@@ -194,16 +201,19 @@ export function LoudnessReadout({
                 <span className={`text-sm font-medium tabular-nums ${GRADE_TEXT[c.grade]}`}>
                   {c.value}
                 </span>
-                {/* The pending conversion's figure, set in italics beside the measured one
-                    so a glance separates what the file IS from what it WILL BE. Dimmed
-                    rather than grade-coloured: two colour verdicts in one cell would
-                    compete with the status dot the row already carries. */}
+                {/* The pending conversion's figure: an arrow marks only what the
+                    conversion moves, and the figures a constant gain cannot move say
+                    "=" instead of a shifted number the converted file would contradict.
+                    Accent rather than grade-coloured: two colour verdicts in one cell
+                    would compete with the status dot the row already carries. */}
                 {c.estimate && (
                   <span
                     data-testid={`loudness-estimate-${c.id}`}
-                    className="text-xs text-fg-muted italic tabular-nums"
+                    className={`text-xs tabular-nums ${
+                      c.estimate === unchanged ? 'text-fg-faint' : 'text-[var(--color-accent)]'
+                    }`}
                   >
-                    {c.estimate}
+                    {c.estimate === unchanged ? c.estimate : `→ ${c.estimate}`}
                   </span>
                 )}
               </span>
@@ -212,11 +222,6 @@ export function LoudnessReadout({
           )
         })}
       </div>
-      {predicted && (
-        <p data-testid="loudness-estimate-legend" className="mt-1.5 text-[11px] text-fg-muted">
-          {tr('editor.loudnessEstimateLegend')}
-        </p>
-      )}
     </div>
   )
 }

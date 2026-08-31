@@ -4,9 +4,11 @@ import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
+import { useTrackLoudness } from '../hooks/useTrackLoudness'
 
 import type { TrackItem } from '../types'
 import { NormalizeControls } from './NormalizeControls'
+import { NormalizePlan } from './NormalizePlan'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
@@ -75,6 +77,13 @@ export function NormalizeSection({
   // conversion just finished (not on mount — flipping back to a done track must not
   // yank the view), scroll it into view or most users never see it. Same reveal
   // pattern as NormalizeControls' mode switch.
+  // The plan card reads the same measurement the waveform legend uses (one shared
+  // query, so no second decode) and only for a single selected track: in multi the
+  // anchor's figures would masquerade as the batch's.
+  const { data: planLoudness } = useTrackLoudness(
+    item.inputPath,
+    settled && !isMulti && value.mode !== 'none',
+  )
   const compareRef = useRef<HTMLDivElement>(null)
   const mounted = useRef(false)
   useEffect(() => {
@@ -144,6 +153,7 @@ export function NormalizeSection({
           {/* The cue warning renders once, below the wave: inline it sat between the
               dials and the preview, right where the eye travels while tuning. */}
           <NormalizeControls value={value} onChange={onChange} showCueWarning={false} />
+          {!isMulti && <NormalizePlan normalize={value} loudness={planLoudness} />}
           {!isMulti && !compare && (
             <WaveformSolo
               inputPath={item.inputPath}

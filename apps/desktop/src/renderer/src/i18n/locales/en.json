@@ -405,8 +405,7 @@
     "loudnessGradeGood": "Good",
     "loudnessGradeWarn": "So-so",
     "loudnessGradeBad": "Check it",
-    "loudnessEstimateSame": "no change",
-    "loudnessEstimateLegend": "In italics: estimated after converting with your normalization settings.",
+    "loudnessEstimateSame": "=",
     "spectrumAlt": "Frequency spectrogram of the track",
     "spectrumCutoff": "cutoff ~{{cutoff}}",
     "spectrumHighs": "highs to ~{{cutoff}}",
@@ -504,7 +503,8 @@
     "loudnessRangeDc": "Good: under 0.2%.",
     "loudnessFixDc": "Fixable here: tick “Remove DC offset” under Normalization.",
     "loudnessRangeNoise": "Good: -45 dB or lower.",
-    "loudnessFixNoise": "Not fixable here: Surco does not denoise. It comes from the source or the capture."
+    "loudnessFixNoise": "Not fixable here: Surco does not denoise. It comes from the source or the capture.",
+    "loudnessAfterHeader": "now → after converting"
   },
   "fields": {
     "groupFilled_one": "{{count}} filled",
@@ -616,7 +616,7 @@
       "custom": "Custom"
     },
     "targetLufs": "Target (LUFS)",
-    "truePeak": "True peak (dBTP)",
+    "truePeak": "Peak ceiling (dBTP)",
     "peakDb": "Peak (dBFS)",
     "removeDcOffset": "Remove DC offset (center on 0.0)",
     "peakRemoveDc": "Remove DC offset (center on 0.0)",
@@ -630,7 +630,21 @@
       "broadcast": "The TV and radio level. Quieter than streaming, with plenty of headroom.",
       "custom": "Your own target. The preview under the wave shows where the track will land."
     },
-    "appliesToSelection": "These settings apply to all {{count}} selected tracks."
+    "appliesToSelection": "These settings apply to all {{count}} selected tracks.",
+    "truePeakCaption": "A safety limit, not a second target: it only acts if the peaks reach it.",
+    "modeLine": {
+      "loudness": "Every track will come out equally loud: the gain moves each one to the target.",
+      "peak": "Matches each track's loudest sample; how loud they feel will still vary."
+    },
+    "plan": {
+      "head": "What will happen to this track",
+      "limited": "It will move {{gain}} dB to {{lufs}} LUFS. Its peaks would pass the ceiling, so the limiter will hold them at {{peak}} dBTP.",
+      "limitedSub": "Only the overshooting peaks are trimmed; the rest of the track is untouched.",
+      "gain": "It will move {{gain}} dB to {{lufs}} LUFS with one constant gain. Its peaks will sit at {{peak}} dBTP: the ceiling never engages.",
+      "gainSub": "Nothing is limited or compressed; the dynamics stay intact.",
+      "peak": "It will move {{gain}} dB: its loudest sample will sit exactly at {{peak}} dBFS.",
+      "peakSub": "One constant gain, no limiter. It will play at about {{lufs}} LUFS."
+    }
   },
   "settings": {
     "tabs": {

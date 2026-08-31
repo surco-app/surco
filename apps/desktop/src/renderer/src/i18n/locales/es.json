@@ -405,8 +405,7 @@
     "loudnessGradeGood": "Bien",
     "loudnessGradeWarn": "Regular",
     "loudnessGradeBad": "Revisar",
-    "loudnessEstimateSame": "sin cambio",
-    "loudnessEstimateLegend": "En cursiva: estimación tras convertir con tus ajustes de normalización.",
+    "loudnessEstimateSame": "=",
     "spectrumAlt": "Espectrograma de frecuencias de la pista",
     "spectrumCutoff": "corte ~{{cutoff}}",
     "spectrumHighs": "agudos hasta ~{{cutoff}}",
@@ -504,7 +503,8 @@
     "loudnessRangeDc": "Bueno: menos del 0,2%.",
     "loudnessFixDc": "Se puede corregir: marca «Quitar el offset de DC» en Normalización.",
     "loudnessRangeNoise": "Bueno: -45 dB o menos.",
-    "loudnessFixNoise": "No se puede corregir aquí: Surco no elimina ruido. Viene del origen o de la captura."
+    "loudnessFixNoise": "No se puede corregir aquí: Surco no elimina ruido. Viene del origen o de la captura.",
+    "loudnessAfterHeader": "ahora → tras convertir"
   },
   "fields": {
     "groupFilled_one": "{{count}} con datos",
@@ -616,7 +616,7 @@
       "custom": "Personalizado"
     },
     "targetLufs": "Objetivo (LUFS)",
-    "truePeak": "Pico real (dBTP)",
+    "truePeak": "Techo de picos (dBTP)",
     "peakDb": "Pico (dBFS)",
     "removeDcOffset": "Eliminar desplazamiento DC (centrar en 0.0)",
     "peakRemoveDc": "Eliminar desplazamiento DC (centrar en 0.0)",
@@ -630,7 +630,21 @@
       "broadcast": "El nivel de TV y radio. Más bajo que streaming, con mucho margen.",
       "custom": "Tu propio objetivo. La previsualización bajo la onda dice dónde quedará la pista."
     },
-    "appliesToSelection": "Estos ajustes se aplican a las {{count}} pistas seleccionadas."
+    "appliesToSelection": "Estos ajustes se aplican a las {{count}} pistas seleccionadas.",
+    "truePeakCaption": "Límite de seguridad, no un segundo objetivo: solo actúa si los picos lo tocan.",
+    "modeLine": {
+      "loudness": "Todas las pistas saldrán igual de fuertes: la ganancia lleva cada una hasta el objetivo.",
+      "peak": "Iguala el sample más alto de cada pista; el volumen percibido seguirá variando."
+    },
+    "plan": {
+      "head": "Qué pasará con esta pista",
+      "limited": "Cambiará {{gain}} dB hasta {{lufs}} LUFS. Sus picos pasarían del techo, así que el limitador los frenará en {{peak}} dBTP.",
+      "limitedSub": "Solo se recortan los picos que sobran; el resto de la pista no se toca.",
+      "gain": "Cambiará {{gain}} dB hasta {{lufs}} LUFS con una ganancia constante. Sus picos quedarán en {{peak}} dBTP: el techo no llega a actuar.",
+      "gainSub": "No se limita ni comprime nada; la dinámica queda intacta.",
+      "peak": "Cambiará {{gain}} dB: su sample más alto quedará exactamente en {{peak}} dBFS.",
+      "peakSub": "Ganancia constante, sin limitador. Sonará a unos {{lufs}} LUFS."
+    }
   },
   "settings": {
     "tabs": {

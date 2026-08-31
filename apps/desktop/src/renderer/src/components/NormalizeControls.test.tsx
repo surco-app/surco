@@ -167,3 +167,27 @@ describe('NormalizeControls DC offset', () => {
     expect(screen.queryByTestId('normalize-remove-dc')).not.toBeInTheDocument()
   })
 })
+
+// The old label pair read as two targets: "Target (LUFS)" next to "True peak (dBTP)"
+// led a user to expect every file to land at exactly -1.0 dBTP, when the peak figure
+// is a ceiling that only engages when the gained peaks would cross it. The rename and
+// the caption make the roles unmistakable before anything is converted.
+describe('NormalizeControls clarity copy', () => {
+  it('names the true-peak field as a ceiling with its safety caption', () => {
+    render(<Harness initial={loudness} />)
+    expect(screen.getByText(/Peak ceiling/)).toBeTruthy()
+    expect(screen.getByTestId('normalize-ceiling-caption').textContent).toContain(
+      'not a second target',
+    )
+  })
+
+  // Loudness vs Peak is a choice between outcomes, not mechanisms: one line under the
+  // segmented control states each mode's effect on the batch, which is the only fact a
+  // DJ needs to pick one.
+  it('explains the active mode by its effect', () => {
+    render(<Harness initial={loudness} />)
+    expect(screen.getByTestId('normalize-mode-line').textContent).toContain('equally loud')
+    fireEvent.click(screen.getByTestId('normalize-mode-peak'))
+    expect(screen.getByTestId('normalize-mode-line').textContent).toContain('loudest sample')
+  })
+})

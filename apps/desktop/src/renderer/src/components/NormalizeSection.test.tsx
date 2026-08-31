@@ -283,3 +283,67 @@ describe('NormalizeSection measured figures', () => {
     })
   })
 })
+
+const measuredLoud = {
+  integratedLufs: -16.3,
+  truePeakDb: -3.3,
+  lra: 6.8,
+  channelBalanceDb: null,
+  dcOffset: null,
+  crestDb: null,
+  noiseFloorDb: null,
+}
+
+// The prediction already computes `limited` and `gainDb`; the plan line is where those
+// facts finally reach the user as a sentence, BEFORE converting. A user emailed asking
+// why his files sometimes came out at -1.0 dBTP and sometimes lower: the answer is
+// which of these two branches his track took, and nothing in the UI said so.
+describe('NormalizeSection plan line', () => {
+  it('says the limiter will hold the peaks when the ceiling is in play', async () => {
+    renderSection(track(), 1, measuredLoud, { ...cfg, mode: 'loudness', targetLufs: -13 })
+    const plan = await screen.findByTestId('normalize-plan')
+    expect(plan.dataset.plan).toBe('limited')
+    expect(plan.textContent).toContain('limiter')
+  })
+
+  it('says a constant gain is enough when the peaks stay under the ceiling', async () => {
+    renderSection(
+      track(),
+      1,
+      { ...measuredLoud, integratedLufs: -18.2, truePeakDb: -6.5 },
+      { ...cfg, mode: 'loudness', targetLufs: -13 },
+    )
+    const plan = await screen.findByTestId('normalize-plan')
+    expect(plan.dataset.plan).toBe('gain')
+    expect(plan.textContent).toContain('never engages')
+  })
+
+  it('describes peak mode by where the loudest sample lands', async () => {
+    renderSection(track(), 1, measuredLoud, { ...cfg, mode: 'peak' })
+    const plan = await screen.findByTestId('normalize-plan')
+    expect(plan.dataset.plan).toBe('gain')
+    expect(plan.textContent).toContain('loudest sample')
+  })
+
+  // No measurement means no honest sentence: the card vanishes rather than promising
+  // figures the conversion might contradict — same contract as the readout estimates.
+  it('shows no plan without a loudness measurement', async () => {
+    renderSection(track(), 1, null, { ...cfg, mode: 'loudness' })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.queryByTestId('normalize-plan')).not.toBeInTheDocument()
+  })
+
+  // In multi-select the anchor track's figures would masquerade as the batch's: the
+  // scope line above the controls already owns that story.
+  it('shows no plan in multi-select', async () => {
+    renderSection(track(), 3, measuredLoud, { ...cfg, mode: 'loudness' })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.queryByTestId('normalize-plan')).not.toBeInTheDocument()
+  })
+
+  it('shows no plan with normalization off', async () => {
+    renderSection(track(), 1, measuredLoud)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(screen.queryByTestId('normalize-plan')).not.toBeInTheDocument()
+  })
+})
