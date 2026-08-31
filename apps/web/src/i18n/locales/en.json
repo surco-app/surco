@@ -855,11 +855,12 @@
       "pillRunning": "Converting {{done}}/{{total}}",
       "pillDone": "{{total}}/{{total}} done"
     },
-    "heroLede": "Surco opens every file and tells you what you actually have: whether the lossless is genuine, which tags are missing, where the clicks and the dead air are. Then it fixes all of it and files it into your player or your DJ gear.",
-    "heroFree": "Free · macOS, Windows and Linux",
+    "heroLede": "The app that gets your music ready to play: converts to lossless, tags from Discogs, catches the MP3s dressed up as FLAC and files it all into Apple Music, Engine DJ or rekordbox.",
+    "heroFree": "Free, forever. macOS, Windows and Linux. No account.",
     "closeTitle": "All of it, in one window.",
     "closeNote": "Free, forever. No account, no cloud, no limits.",
     "closeSafety": "Changing format leaves your original untouched and writes elsewhere; re-exporting to the same format rewrites the file where it is. Notarized by Apple.",
-    "allFeatures": "See everything it does →"
+    "allFeatures": "See everything it does →",
+    "worksWith": "Works with"
   }
 }

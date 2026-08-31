@@ -855,11 +855,12 @@
       "pillRunning": "Convirtiendo {{done}}/{{total}}",
       "pillDone": "{{total}}/{{total}} listas"
     },
-    "heroLede": "Surco abre cada archivo y te dice qué tienes de verdad: si el lossless es auténtico, qué etiquetas faltan, dónde hay clics y silencio de sobra. Lo arregla y lo deja listo en tu reproductor o en tu equipo de DJ.",
-    "heroFree": "Gratis · macOS, Windows y Linux",
+    "heroLede": "La app que prepara tu música para pinchar: convierte a lossless, etiqueta desde Discogs, caza los MP3 disfrazados de FLAC y lo deja todo en Apple Music, Engine DJ o rekordbox.",
+    "heroFree": "Gratis, para siempre. macOS, Windows y Linux. Sin cuenta.",
     "closeTitle": "Todo esto, en una ventana.",
     "closeNote": "Gratis, para siempre. Sin cuenta, sin nube, sin límites.",
     "closeSafety": "Cambiar de formato deja tu original intacto y escribe aparte; reexportar al mismo formato reescribe el fichero donde está. Notarizado por Apple.",
-    "allFeatures": "Ver todo lo que hace →"
+    "allFeatures": "Ver todo lo que hace →",
+    "worksWith": "Funciona con"
   }
 }
