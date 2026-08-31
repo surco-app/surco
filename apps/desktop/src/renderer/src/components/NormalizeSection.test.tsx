@@ -351,11 +351,13 @@ describe('NormalizeSection plan line', () => {
 })
 
 describe('NormalizeSection with hints off', () => {
-  // The switch silences the teaching copy, never the data: the plan card keeps
-  // describing what the conversion will do to this exact track.
-  it('keeps the plan card while hiding the static hints', async () => {
+  // First shipped as data-not-help and exempt from the switch, but the user overruled
+  // it: an experienced DJ flips ONE persisted switch and the whole section goes quiet,
+  // card included. The wait covers the settle delay after which the card would mount.
+  it('hides the plan card along with the static hints', async () => {
     renderSection(track(), 1, measuredLoud, { ...cfg, mode: 'loudness', targetLufs: -13 }, false)
-    expect(await screen.findByTestId('normalize-plan')).toBeInTheDocument()
+    await new Promise((r) => setTimeout(r, 700))
+    expect(screen.queryByTestId('normalize-plan')).not.toBeInTheDocument()
     expect(screen.queryByTestId('normalize-mode-line')).not.toBeInTheDocument()
     expect(screen.queryByTestId('normalize-ceiling-caption')).not.toBeInTheDocument()
   })
