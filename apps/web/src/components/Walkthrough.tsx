@@ -21,16 +21,23 @@ export default function Walkthrough() {
   return (
     <>
       <Reveal>
-        <div id="como" className="scroll-mt-24 pt-24 text-center">
-          <div className="flex justify-center">
-            <Kicker>{t('home.walkthrough.kicker')}</Kicker>
+        {/* The anchor sits on the heading block, not on the padding that precedes it.
+            With `id` on the padded wrapper, "Cómo funciona" scrolled to the top of a
+            pt-24 gap and the scroll-mt pushed it further still, landing the visitor on
+            roughly a screen of empty background with the title grazing the bottom
+            edge, on the one link whose job is to show what the app does. */}
+        <div className="pt-24">
+          <div id="como" className="scroll-mt-8 text-center">
+            <div className="flex justify-center">
+              <Kicker>{t('home.walkthrough.kicker')}</Kicker>
+            </div>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+              {t('home.walkthrough.title')}
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl leading-relaxed text-pretty text-muted">
+              {t('home.walkthrough.lede')}
+            </p>
           </div>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-            {t('home.walkthrough.title')}
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl leading-relaxed text-pretty text-muted">
-            {t('home.walkthrough.lede')}
-          </p>
         </div>
       </Reveal>
 
