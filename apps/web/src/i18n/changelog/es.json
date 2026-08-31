@@ -5,6 +5,10 @@
     "title": "El análisis de calidad ahora acierta",
     "items": [
       {
+        "text": "Un MP3 perfectamente válido podía aparecer como ilegible: sin espectro, sin forma de onda, con lecturas de sonoridad absurdas o con una conversión que el propio Surco no podía abrir después, aunque cualquier reproductor lo tocara sin quejarse. La culpa era del detector de formato del motor de audio: con una carátula grande y ciertos patrones de bits en el audio, confundía el MP3 con un vídeo MPEG, y cada codificación podía cambiar el resultado. Ahora un archivo .mp3 se lee siempre como MP3, incluidos los que ya salieron señalados, sin reconvertir nada. Además, cada conversión comprueba que su resultado se puede decodificar antes de darla por buena: si no, se descarta y el original queda intacto.",
+        "in": "0.89.6"
+      },
+      {
         "text": "Quitar el offset DC ahora funciona igual en los dos modos de normalización. Con la casilla marcada, normalizar por pico centraba la señal siempre, pero normalizar por sonoridad solo lo hacía si el sesgo superaba el 0,2%: por debajo se quedaba tal cual, la ganancia podía incluso aumentarlo, y el editor prometía un 0,0% que luego no se cumplía. El mismo archivo con la misma casilla salía centrado o no según el modo elegido. Ahora cualquier sesgo medible se resta antes de ajustar el nivel, se normalice como se normalice.",
         "in": "0.89.5"
       },
