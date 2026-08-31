@@ -865,7 +865,7 @@ describe('Editor loudness estimates', () => {
     seedLoudness(measured)
     renderEditor({ id: 'a' }, 'wav', { showLoudness: true, normalize: club })
     const estimate = await screen.findByTestId('loudness-estimate-lufs')
-    expect(estimate.textContent).toBe('-9.0')
+    expect(estimate.textContent).toBe('→ -9.0')
     expect(estimate.textContent).not.toMatch(/LUFS/)
   })
 

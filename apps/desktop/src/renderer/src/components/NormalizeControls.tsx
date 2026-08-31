@@ -119,6 +119,14 @@ export function NormalizeControls({
         testidPrefix="normalize-mode"
         labelFor={(mode) => tr(`normalize.mode.${mode}`)}
       />
+      {/* The mode named by its effect on the batch, which is the only fact that picks
+          between the two: same perceived loudness everywhere, or same loudest sample
+          with the perceived loudness still varying. Mechanisms stay out of it. */}
+      {value.mode !== 'none' && (
+        <p data-testid="normalize-mode-line" className="mt-2 text-xs text-fg-dim">
+          {tr(`normalize.modeLine.${value.mode}`)}
+        </p>
+      )}
 
       {value.mode === 'loudness' && (
         <div ref={detailRef} className="mt-3 space-y-3">
@@ -171,12 +179,22 @@ export function NormalizeControls({
               onChange={(n) => onChange({ ...value, targetLufs: n })}
               inputRef={lufsRef}
             />
-            <NumberField
-              testid="normalize-true-peak"
-              label={tr('normalize.truePeak')}
-              value={value.truePeakDb}
-              onChange={(n) => onChange({ ...value, truePeakDb: n })}
-            />
+            <div>
+              <NumberField
+                testid="normalize-true-peak"
+                label={tr('normalize.truePeak')}
+                value={value.truePeakDb}
+                onChange={(n) => onChange({ ...value, truePeakDb: n })}
+              />
+              {/* The caption that undoes the "two targets" reading: a user watched his
+                  files land under the ceiling and asked why they missed "the target". */}
+              <p
+                data-testid="normalize-ceiling-caption"
+                className="mt-1 max-w-[180px] text-[10px] leading-snug text-fg-faint"
+              >
+                {tr('normalize.truePeakCaption')}
+              </p>
+            </div>
           </div>
         </div>
       )}

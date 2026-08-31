@@ -405,8 +405,7 @@
     "loudnessGradeGood": "Gut",
     "loudnessGradeWarn": "Mittel",
     "loudnessGradeBad": "Prüfen",
-    "loudnessEstimateSame": "unverändert",
-    "loudnessEstimateLegend": "Kursiv: Schätzung nach der Konvertierung mit deinen Normalisierungseinstellungen.",
+    "loudnessEstimateSame": "=",
     "spectrumAlt": "Frequenz-Spektrogramm des Tracks",
     "spectrumCutoff": "Cutoff ~{{cutoff}}",
     "spectrumHighs": "Höhen bis ~{{cutoff}}",
@@ -504,7 +503,8 @@
     "loudnessRangeDc": "Gut: unter 0,2 %.",
     "loudnessFixDc": "Korrigierbar: „DC-Offset entfernen“ unter Normalisierung aktivieren.",
     "loudnessRangeNoise": "Gut: -45 dB oder niedriger.",
-    "loudnessFixNoise": "Hier nicht korrigierbar: Surco entrauscht nicht. Es stammt aus Quelle oder Aufnahme."
+    "loudnessFixNoise": "Hier nicht korrigierbar: Surco entrauscht nicht. Es stammt aus Quelle oder Aufnahme.",
+    "loudnessAfterHeader": "jetzt → nach dem Konvertieren"
   },
   "fields": {
     "groupFilled_one": "{{count}} ausgefüllt",
@@ -616,7 +616,7 @@
       "custom": "Benutzerdefiniert"
     },
     "targetLufs": "Ziel (LUFS)",
-    "truePeak": "True Peak (dBTP)",
+    "truePeak": "Peak-Obergrenze (dBTP)",
     "peakDb": "Peak (dBFS)",
     "removeDcOffset": "DC-Versatz entfernen (auf 0.0 zentrieren)",
     "peakRemoveDc": "DC-Versatz entfernen (auf 0.0 zentrieren)",
@@ -630,7 +630,21 @@
       "broadcast": "Der TV- und Radiopegel. Leiser als Streaming, mit viel Headroom.",
       "custom": "Dein eigenes Ziel. Die Vorschau unter der Wellenform zeigt, wo der Track landet."
     },
-    "appliesToSelection": "Diese Einstellungen gelten für alle {{count}} ausgewählten Titel."
+    "appliesToSelection": "Diese Einstellungen gelten für alle {{count}} ausgewählten Titel.",
+    "truePeakCaption": "Eine Sicherheitsgrenze, kein zweites Ziel: sie greift nur, wenn die Peaks sie erreichen.",
+    "modeLine": {
+      "loudness": "Alle Tracks kommen gleich laut heraus: die Verstärkung bringt jeden auf das Ziel.",
+      "peak": "Gleicht das lauteste Sample jedes Tracks an; die gefühlte Lautheit bleibt unterschiedlich."
+    },
+    "plan": {
+      "head": "Was mit diesem Track passiert",
+      "limited": "Er wird um {{gain}} dB auf {{lufs}} LUFS verschoben. Seine Peaks würden die Obergrenze überschreiten, daher hält der Limiter sie bei {{peak}} dBTP.",
+      "limitedSub": "Nur die überstehenden Peaks werden gekappt; der Rest bleibt unangetastet.",
+      "gain": "Er wird um {{gain}} dB auf {{lufs}} LUFS verschoben, mit konstanter Verstärkung. Seine Peaks landen bei {{peak}} dBTP: die Obergrenze greift nicht.",
+      "gainSub": "Nichts wird limitiert oder komprimiert; die Dynamik bleibt erhalten.",
+      "peak": "Er wird um {{gain}} dB verschoben: sein lautestes Sample landet genau bei {{peak}} dBFS.",
+      "peakSub": "Konstante Verstärkung, kein Limiter. Er wird etwa {{lufs}} LUFS laut sein."
+    }
   },
   "settings": {
     "tabs": {
