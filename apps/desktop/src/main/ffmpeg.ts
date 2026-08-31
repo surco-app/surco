@@ -7,6 +7,7 @@ import { promisify } from 'node:util'
 import log from 'electron-log/main'
 import { declickFilter } from '../shared/declick'
 import { errorWithKey } from '../shared/errorKeys'
+import { forcedInputArgs } from '../shared/inputFormat'
 import { formatRatingTag } from '../shared/rating'
 import { trimFilter } from '../shared/trim'
 import type {
@@ -268,7 +269,7 @@ export async function readForeignTags(input: string): Promise<ForeignTag[]> {
   try {
     const { stdout } = await run(
       ffmpegPath,
-      ['-v', 'error', '-i', input, '-f', 'ffmetadata', '-'],
+      ['-v', 'error', ...forcedInputArgs(input), '-i', input, '-f', 'ffmetadata', '-'],
       { timeout: ANALYSIS_TIMEOUT_MS },
     )
     return foreignTagsFromFfmetadata(String(stdout))
@@ -285,7 +286,16 @@ export async function probeDuration(input: string, signal?: AbortSignal): Promis
   try {
     const { stdout } = await run(
       ffprobePath,
-      ['-v', 'error', '-show_entries', 'format=duration', '-of', 'json', input],
+      [
+        '-v',
+        'error',
+        '-show_entries',
+        'format=duration',
+        '-of',
+        'json',
+        ...forcedInputArgs(input),
+        input,
+      ],
       { timeout: ANALYSIS_TIMEOUT_MS, signal },
     )
     const seconds = Number(JSON.parse(stdout).format?.duration)
@@ -305,6 +315,7 @@ export async function readTags(input: string): Promise<TrackMetadata> {
       'format_tags:stream_tags:stream=codec_type',
       '-of',
       'json',
+      ...forcedInputArgs(input),
       input,
     ],
     { timeout: ANALYSIS_TIMEOUT_MS },
@@ -336,6 +347,7 @@ export function coverArgs(input: string, output: string, maxPx?: number): string
     '-loglevel',
     'error',
     '-y',
+    ...forcedInputArgs(input),
     '-i',
     input,
     '-an',
@@ -369,6 +381,7 @@ async function probeCoverDims(input: string): Promise<{ width: number; height: n
       'stream=width,height',
       '-of',
       'json',
+      ...forcedInputArgs(input),
       input,
     ])
     const s = JSON.parse(stdout).streams?.[0]
@@ -457,6 +470,7 @@ async function readMetaUncached(input: string): Promise<MetaRead | null> {
         'format=duration:format_tags:stream_tags:stream=codec_type,width,height',
         '-of',
         'json',
+        ...forcedInputArgs(input),
         input,
       ],
       { timeout: ANALYSIS_TIMEOUT_MS },
@@ -527,6 +541,7 @@ export async function probeAudio(input: string): Promise<ProbeResult> {
       'stream=codec_name,sample_fmt,bits_per_raw_sample,sample_rate,channels',
       '-of',
       'json',
+      ...forcedInputArgs(input),
       input,
     ],
     { timeout: ANALYSIS_TIMEOUT_MS },
@@ -597,6 +612,7 @@ export async function probeProperties(input: string): Promise<TrackProperties> {
       'stream=codec_name,bits_per_raw_sample,sample_rate,channels,bit_rate:format=format_name,bit_rate,size',
       '-of',
       'json',
+      ...forcedInputArgs(input),
       input,
     ],
     { timeout: ANALYSIS_TIMEOUT_MS },
@@ -752,7 +768,7 @@ export function convertArgs(
   // iTunes tags ffmpeg's mp4 muxer can't name), so embedding here would be redundant.
   const embedCover =
     coverPath && !WAV_INPUT.test(output) && !M4A_OUTPUT.test(output) ? coverPath : undefined
-  const args = ['-y', '-i', input]
+  const args = ['-y', ...forcedInputArgs(input), '-i', input]
   if (embedCover) args.push('-i', embedCover)
 
   args.push('-map', '0:a')
@@ -1059,7 +1075,20 @@ export async function assertDecodable(file: string): Promise<void> {
   try {
     await run(
       ffmpegPath,
-      ['-hide_banner', '-v', 'error', '-xerror', '-i', file, '-map', '0:a', '-f', 'null', '-'],
+      [
+        '-hide_banner',
+        '-v',
+        'error',
+        '-xerror',
+        ...forcedInputArgs(file),
+        '-i',
+        file,
+        '-map',
+        '0:a',
+        '-f',
+        'null',
+        '-',
+      ],
       { maxBuffer: 1024 * 1024 * 16 },
     )
   } catch (e) {
@@ -1556,6 +1585,7 @@ export function previewWavArgs(input: string, output: string, codec: string): st
     '-loglevel',
     'error',
     '-y',
+    ...forcedInputArgs(input),
     '-i',
     input,
     '-map',
@@ -1656,6 +1686,7 @@ export async function generateSpectrogram(input: string, signal?: AbortSignal): 
         '-loglevel',
         'error',
         '-y',
+        ...forcedInputArgs(input),
         '-i',
         input,
         '-lavfi',
@@ -1881,11 +1912,26 @@ export async function measureLoudness(
   // Feeding both from one decode via asplit does not help (1.89s) — ffmpeg runs the
   // branches on the same thread, and the decode itself is only 0.05s of the total.
   const pass = (filter: string): Promise<{ stderr: string }> =>
-    run(ffmpegPath, ['-hide_banner', '-nostats', '-i', input, '-af', filter, '-f', 'null', '-'], {
-      maxBuffer: 1024 * 1024 * 16,
-      timeout: ANALYSIS_TIMEOUT_MS,
-      signal,
-    })
+    run(
+      ffmpegPath,
+      [
+        '-hide_banner',
+        '-nostats',
+        ...forcedInputArgs(input),
+        '-i',
+        input,
+        '-af',
+        filter,
+        '-f',
+        'null',
+        '-',
+      ],
+      {
+        maxBuffer: 1024 * 1024 * 16,
+        timeout: ANALYSIS_TIMEOUT_MS,
+        signal,
+      },
+    )
   const [peakPass, statsPass] = await Promise.all([
     pass('ebur128=peak=true'),
     pass('astats=metadata=1:reset=0'),
@@ -1921,7 +1967,7 @@ async function decodePcm(
   // Input seek (-ss before -i): ffmpeg jumps straight to the window instead of
   // decoding its way there — what keeps the zoomed re-decode interactive.
   if (opts.startSec !== undefined && opts.startSec > 0) args.push('-ss', String(opts.startSec))
-  args.push('-i', input)
+  args.push(...forcedInputArgs(input), '-i', input)
   if (opts.seconds !== undefined) args.push('-t', String(opts.seconds))
   // Cap the downmix matrix at unity gain. ffmpeg's mono downmix is power-preserving,
   // so two correlated channels come back ×√2 (+3.01 dB) — and every threshold
