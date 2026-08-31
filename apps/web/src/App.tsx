@@ -70,10 +70,9 @@ export default function App() {
         {/* The names of the tools Surco talks to, doing two jobs at once: they stand in
             for social proof the download count can't carry at three digits, and they say
             what kind of program this is faster than a sentence can: a visitor who knows
-            Discogs and rekordbox places Surco the moment they read them. */}
-        {/* Eager like the rest of the hero: the row sits right on the fold, and a
-            scroll-triggered reveal would hold the one piece of category context back
-            until after the visitor had already decided whether to stay. */}
+            Discogs and rekordbox places Surco the moment they read them. Eager like the
+            rest of the hero, because the row sits right on the fold and a scroll-triggered
+            reveal would hold that context back until the visitor had already decided. */}
         <Reveal eager delay={300}>
           <section className="mx-auto max-w-5xl px-6 pb-4">
             <div className="flex flex-col gap-3 border-y border-line py-5 sm:flex-row sm:items-center sm:gap-6">
