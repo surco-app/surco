@@ -14,6 +14,7 @@ import { useAutoLanguage } from './lib/useAutoLanguage'
 // get it. Everything that used to sit below — the feature lists, the five-app
 // comparison, the shortcut table, the FAQ — moved to the features page, because
 // eight stacked sections can each be well designed and still never feel minimal.
+
 export default function App() {
   const { t, i18n } = useTranslation()
   useAutoLanguage()
@@ -42,7 +43,11 @@ export default function App() {
               </p>
             </Reveal>
             <Reveal eager delay={150}>
-              <DownloadButton />
+              {/* Free, the three platforms and "no account" ride with the CTA itself.
+                  The page never said any of it above the fold: the only mention of the
+                  price sat in the closing note, a full scroll of walkthrough away, so a
+                  visitor deciding whether to bother had to take the download on faith. */}
+              <DownloadButton note={t('home.heroFree')} />
             </Reveal>
           </div>
           <Reveal eager delay={220}>

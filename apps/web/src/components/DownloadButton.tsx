@@ -27,7 +27,17 @@ const primary = `inline-flex ${btnPrimary} px-7 py-3 text-sm`
 // macOS ships two builds. The browser can't tell Apple Silicon from Intel (Safari
 // reports both as "Intel Mac"), so the big button defaults to arm64 — the vast
 // majority of Macs — and a discreet link below covers Intel.
-export default function DownloadButton({ showMeta = true }: { showMeta?: boolean }) {
+export default function DownloadButton({
+  showMeta = true,
+  note,
+}: {
+  showMeta?: boolean
+  // Reassurance that belongs to the button rather than the section around it.
+  // The hero uses it for price and platforms. Sits directly under the CTA, above
+  // the reserved Intel line, so it reads as part of the offer and not as a stray
+  // caption floating below the fold.
+  note?: string
+}) {
   const { t } = useTranslation()
   // Starts 'unknown' in the prerender (no navigator) and resolves on mount, so the
   // static HTML carries a pending CTA rather than the generic fallback link.
@@ -141,6 +151,7 @@ export default function DownloadButton({ showMeta = true }: { showMeta?: boolean
           </button>
         )}
       </div>
+      {note && <p className="mt-4 text-sm text-muted">{note}</p>}
       {/* Always mounted (invisible until the Intel build resolves on a Mac) so the
           link occupies its line in the prerendered HTML and every client state
           alike. The page is statically prerendered with os='other', so gating this
