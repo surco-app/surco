@@ -5,6 +5,10 @@
     "title": "The quality check now gets it right",
     "items": [
       {
+        "text": "A perfectly valid MP3 could show up as unreadable: no spectrum, no waveform, absurd loudness readings, or a conversion Surco itself could not open afterwards, even though any player handled the file just fine. The audio engine's format detector was to blame: with large cover art and certain bit patterns in the audio it mistook the MP3 for an MPEG video, and every encode could flip the outcome. An .mp3 file is now always read as an MP3, including the ones already flagged, no reconversion needed. On top of that, every conversion now verifies its result decodes before calling it done: if it does not, the file is discarded and your original stays untouched.",
+        "in": "0.89.6"
+      },
+      {
         "text": "Removing DC offset now works the same in both normalization modes. With the box ticked, peak normalization always centred the signal, but loudness normalization only did so when the bias exceeded 0.2%: below that it was left in, the gain could even increase it, and the editor promised a 0.0% that never arrived. The same file with the same checkbox came out centred or not depending on the chosen mode. Any measurable bias is now subtracted before the level is set, whichever way you normalize.",
         "in": "0.89.5"
       },
