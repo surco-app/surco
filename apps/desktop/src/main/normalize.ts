@@ -1,3 +1,4 @@
+import { forcedInputArgs } from '../shared/inputFormat'
 import type { NormalizeConfig } from '../shared/types'
 
 // loudnorm's loudness range target. Kept fixed (the EBU R128 default) rather than
@@ -41,6 +42,7 @@ export function loudnormArgs(input: string, cfg: NormalizeConfig, prefilter?: st
   return [
     '-hide_banner',
     '-nostats',
+    ...forcedInputArgs(input),
     '-i',
     input,
     '-af',
@@ -146,6 +148,7 @@ export function volumedetectArgs(input: string, prefilter?: string): string[] {
   return [
     '-hide_banner',
     '-nostats',
+    ...forcedInputArgs(input),
     '-i',
     input,
     '-af',
@@ -178,6 +181,7 @@ export function astatsArgs(input: string, prefilter?: string): string[] {
   return [
     '-hide_banner',
     '-nostats',
+    ...forcedInputArgs(input),
     '-i',
     input,
     '-af',

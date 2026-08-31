@@ -1,6 +1,7 @@
 import type { ChildProcess } from 'node:child_process'
 import { spawn } from 'node:child_process'
 import { constants as osConstants, setPriority } from 'node:os'
+import { forcedInputArgs } from '../shared/inputFormat'
 import { type ChannelWave, createChannelScan, type MonoWave } from './waveform'
 
 // The scans decoding right now, keyed by the file each one is reading. This spawn happens
@@ -68,7 +69,19 @@ export function runChannelScan(
   return new Promise((resolve, reject) => {
     const child = spawn(
       ffmpegPath,
-      ['-hide_banner', '-loglevel', 'error', '-i', input, '-map', '0:a:0', '-f', 'f32le', '-'],
+      [
+        '-hide_banner',
+        '-loglevel',
+        'error',
+        ...forcedInputArgs(input),
+        '-i',
+        input,
+        '-map',
+        '0:a:0',
+        '-f',
+        'f32le',
+        '-',
+      ],
       { stdio: ['ignore', 'pipe', 'ignore'], timeout: timeoutMs },
     )
     if (child.pid !== undefined) {

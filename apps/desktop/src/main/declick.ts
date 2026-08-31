@@ -1,4 +1,5 @@
 import { declickFilter } from '../shared/declick'
+import { forcedInputArgs } from '../shared/inputFormat'
 import type { DeclickMode } from '../shared/types'
 
 // The repaired track, rendered whole, for the A/B against the original. Whole and not
@@ -27,6 +28,7 @@ export function declickRepairedArgs(
     '-progress',
     'pipe:1',
     '-y',
+    ...forcedInputArgs(input),
     '-i',
     input,
     '-af',
