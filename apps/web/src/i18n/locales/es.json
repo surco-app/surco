@@ -778,7 +778,7 @@
     "walkthrough": {
       "kicker": "Paso a paso",
       "title": "Una pista, de principio a fin",
-      "lede": "Todo lo que Surco le hace a un archivo desde que lo sueltas hasta que está donde lo escuchas. Seis pasos, una sola ventana."
+      "lede": "Seis pasos, una sola ventana. Por el camino descubrirás cuáles de tus FLAC son en realidad MP3."
     },
     "drop": {
       "step": "01 · entra",
@@ -804,7 +804,7 @@
     },
     "tag": {
       "step": "03 · se etiqueta",
-      "title": "Cada pista, con su nombre puesto.",
+      "title": "Las etiquetas, de Discogs, en un clic.",
       "lede": "Discogs para sellos, Bandcamp para autoeditados y Deezer para lo comercial. Un clic y entra todo: artista, sello, año, BPM y carátula.",
       "pill": "12/40",
       "before": "Artista · antes",
@@ -830,7 +830,7 @@
     },
     "trim": {
       "step": "05 · se ajusta",
-      "title": "Acaba donde acaba la música.",
+      "title": "Fuera el silencio del final.",
       "lede": "Detecta el silencio de entrada y de salida y el corte se engancha solo al último golpe. Al milisegundo, con escucha a cada lado.",
       "pill": "−4.6 s al final",
       "tailLabel": "Final · últimos 12 s",
@@ -842,7 +842,7 @@
     },
     "batch": {
       "step": "06 · sale",
-      "title": "Y acaba donde tú la escuchas.",
+      "title": "Y aparece sola en tu Apple Music.",
       "lede": "Elige formato y destino y convierte la carpeta entera. En Apple Music y Engine DJ no importas nada: la pista aparece en tu biblioteca con la carátula puesta — y en Engine DJ, con rating y playlist. A los demás les deja el fichero que esperan.",
       "pill": "Convirtiendo 11/40",
       "stage": "Convirtiendo a AIFF…",
@@ -858,8 +858,8 @@
     "heroLede": "La app que prepara tu música para pinchar: convierte a lossless, etiqueta desde Discogs, caza los MP3 disfrazados de FLAC y lo deja todo en Apple Music, Engine DJ o rekordbox.",
     "heroFree": "Gratis, para siempre. macOS, Windows y Linux. Sin cuenta.",
     "closeTitle": "Todo esto, en una ventana.",
-    "closeNote": "Gratis, para siempre. Sin cuenta, sin nube, sin límites.",
-    "closeSafety": "Cambiar de formato deja tu original intacto y escribe aparte; reexportar al mismo formato reescribe el fichero donde está. Notarizado por Apple.",
+    "closeNote": "Sin nube, sin límites y sin nada que registrar. Se actualiza solo.",
+    "closeSafety": "Tus originales no se tocan: al cambiar de formato, la copia va a una carpeta aparte. Solo reescribe el fichero si reexportas al mismo formato, que es como actualiza las etiquetas sin recodificar. Notarizado por Apple.",
     "allFeatures": "Ver todo lo que hace →",
     "worksWith": "Funciona con"
   }
