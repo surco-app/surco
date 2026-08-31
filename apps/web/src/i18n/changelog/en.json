@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.90",
+    "date": "August 31, 2026",
+    "title": "Normalization tells you what it will do",
+    "items": [
+      {
+        "text": "Every track now carries a \"What will happen to this track\" card under the normalization controls: how many decibels it will move, whether one constant gain is enough or the limiter will have to hold the peaks at the ceiling, and where the loudness will land. It is the same prediction that already fed the preview, told as a sentence before you convert, so the result never surprises.",
+        "in": "0.90.0"
+      },
+      {
+        "text": "The \"True peak\" field is now called \"Peak ceiling\", with the clarification it was missing: a safety limit, not a second target, and it only acts if the peaks reach it. Each mode also explains its real effect in one line: make every track equally loud, or match their loudest sample and let perceived loudness vary.",
+        "in": "0.90.0"
+      },
+      {
+        "text": "The loudness table draws an arrow only on what the conversion will change (loudness, peak, DC offset) and an \"=\" on what it cannot change (range, dynamics, balance), under a \"now → after converting\" label. No more italics with a footnote.",
+        "in": "0.90.0"
+      },
+      {
+        "text": "All of these explanations can be switched off once you know them by heart: with the X on the card itself, or from Settings → Editor → \"Inline explanations\". The preference is saved and synced across machines.",
+        "in": "0.90.0"
+      }
+    ]
+  },
+  {
     "version": "0.89",
     "date": "August 28, 2026",
     "title": "The quality check now gets it right",
