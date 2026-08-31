@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.90",
+    "date": "31 de agosto de 2026",
+    "title": "La normalización te dice qué va a hacer",
+    "items": [
+      {
+        "text": "Cada pista lleva ahora una tarjeta \"Qué pasará con esta pista\" bajo los controles de normalización: cuántos decibelios se moverá, si bastará una ganancia constante o si el limitador tendrá que frenar los picos en el techo, y a qué sonoridad saldrá. Es la misma predicción que ya alimentaba la vista previa, contada en una frase antes de convertir, para que el resultado nunca sorprenda.",
+        "in": "0.90.0"
+      },
+      {
+        "text": "El campo \"True peak\" pasa a llamarse \"Techo de picos\", con la aclaración que le faltaba: es un límite de seguridad, no un segundo objetivo, y solo actúa si los picos lo alcanzan. Cada modo explica además en una línea su efecto real: igualar cómo de fuerte suenan todas las pistas, o igualar su sample más alto dejando que el volumen percibido varíe.",
+        "in": "0.90.0"
+      },
+      {
+        "text": "La tabla de sonoridad marca con una flecha solo lo que la conversión va a cambiar (sonoridad, pico, offset DC) y con un \"=\" lo que no puede cambiar (rango, dinámica, balance), bajo el rótulo \"ahora → tras convertir\". Se acabaron las cursivas con leyenda al pie.",
+        "in": "0.90.0"
+      },
+      {
+        "text": "Todas estas explicaciones se pueden apagar cuando ya te las sabes: con la X de la propia tarjeta o desde Ajustes → Editor → \"Explicaciones en línea\". La preferencia se guarda y se sincroniza entre equipos.",
+        "in": "0.90.0"
+      }
+    ]
+  },
+  {
     "version": "0.89",
     "date": "28 de agosto de 2026",
     "title": "El análisis de calidad ahora acierta",
