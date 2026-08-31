@@ -8,7 +8,10 @@ export default function InstallSection() {
   const { t } = useTranslation()
 
   return (
-    <section id="instalar" className="scroll-mt-24 pb-24">
+    // The band around this section carries no padding of its own, so the first
+    // section inside it has to open the gap: without pt the kicker sat flush against
+    // the band's top border. pb-24 alone was enough while this sat mid-page.
+    <section id="instalar" className="scroll-mt-24 py-24">
       <Reveal>
         <Kicker>{t('install.kicker')}</Kicker>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
