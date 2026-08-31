@@ -191,3 +191,20 @@ describe('NormalizeControls clarity copy', () => {
     expect(screen.getByTestId('normalize-mode-line').textContent).toContain('loudest sample')
   })
 })
+
+// The inline copy teaches the section once; a user who knows it by heart can turn it
+// off in Settings. Only the static teaching lines obey the switch — the plan card is
+// per-track data, not help, and stays regardless.
+describe('NormalizeControls hidden hints', () => {
+  it('hides the mode line and the ceiling caption when hints are off', () => {
+    render(<NormalizeControls value={loudness} onChange={vi.fn()} showHints={false} />)
+    expect(screen.queryByTestId('normalize-mode-line')).toBeNull()
+    expect(screen.queryByTestId('normalize-ceiling-caption')).toBeNull()
+  })
+
+  it('shows them by default', () => {
+    render(<NormalizeControls value={loudness} onChange={vi.fn()} />)
+    expect(screen.getByTestId('normalize-mode-line')).toBeTruthy()
+    expect(screen.getByTestId('normalize-ceiling-caption')).toBeTruthy()
+  })
+})

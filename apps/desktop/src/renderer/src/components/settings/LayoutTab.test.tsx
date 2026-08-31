@@ -41,6 +41,7 @@ const synced: SyncedDraft = {
   flacCompression: '5',
   showSpectrum: true,
   showLoudness: true,
+  showEditorHints: true,
   autoAnalyze: false,
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
@@ -235,8 +236,7 @@ describe('LayoutTab sections', () => {
   // the rest is read. Its lack of arrows already says it cannot move.
   it('lays the pinned row out on the same grid as the rest', () => {
     renderTab()
-    const cols = (id: string) =>
-      screen.getByTestId(id).className.match(/grid-cols-\[[^\]]+\]/)?.[0]
+    const cols = (id: string) => screen.getByTestId(id).className.match(/grid-cols-\[[^\]]+\]/)?.[0]
     const pinned = cols('settings-section-row-form')
     // Asserted present, not just equal: with no grid at all both sides read undefined and
     // a bare equality check passes while the rows are back to placing their own controls.

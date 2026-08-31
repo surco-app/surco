@@ -30,6 +30,7 @@ function renderSection(
   loudness: unknown = null,
   // The estimate only exists with a mode active, so a test that reads it passes one in.
   value: NormalizeConfig = cfg,
+  showHints?: boolean,
 ): void {
   ;(window as unknown as { api: unknown }).api = {
     waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], rms: [0.2, 0.4], durationSec: 10 }),
@@ -46,6 +47,7 @@ function renderSection(
         item={item}
         selectedCount={selectedCount}
         onShowHelp={vi.fn()}
+        showHints={showHints}
       />
     </QueryClientProvider>,
   )
@@ -345,5 +347,16 @@ describe('NormalizeSection plan line', () => {
     renderSection(track(), 1, measuredLoud)
     await new Promise((r) => setTimeout(r, 0))
     expect(screen.queryByTestId('normalize-plan')).not.toBeInTheDocument()
+  })
+})
+
+describe('NormalizeSection with hints off', () => {
+  // The switch silences the teaching copy, never the data: the plan card keeps
+  // describing what the conversion will do to this exact track.
+  it('keeps the plan card while hiding the static hints', async () => {
+    renderSection(track(), 1, measuredLoud, { ...cfg, mode: 'loudness', targetLufs: -13 }, false)
+    expect(await screen.findByTestId('normalize-plan')).toBeInTheDocument()
+    expect(screen.queryByTestId('normalize-mode-line')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('normalize-ceiling-caption')).not.toBeInTheDocument()
   })
 })

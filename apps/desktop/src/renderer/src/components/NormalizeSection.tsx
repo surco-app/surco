@@ -30,6 +30,7 @@ interface Props {
   // fixable/not-fixable notes lived only behind Quality's readout ⓘ, unreachable from
   // the section whose dials those metrics govern.
   onShowHelp: () => void
+  showHints?: boolean
 }
 
 // The per-track normalization override, with the active mode badged on the header so
@@ -42,6 +43,7 @@ export function NormalizeSection({
   item,
   selectedCount,
   onShowHelp,
+  showHints = true,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // The waveform is the one full-length decode, so it waits for the selection to
@@ -152,7 +154,12 @@ export function NormalizeSection({
           )}
           {/* The cue warning renders once, below the wave: inline it sat between the
               dials and the preview, right where the eye travels while tuning. */}
-          <NormalizeControls value={value} onChange={onChange} showCueWarning={false} />
+          <NormalizeControls
+            value={value}
+            onChange={onChange}
+            showCueWarning={false}
+            showHints={showHints}
+          />
           {!isMulti && <NormalizePlan normalize={value} loudness={planLoudness} />}
           {!isMulti && !compare && (
             <WaveformSolo

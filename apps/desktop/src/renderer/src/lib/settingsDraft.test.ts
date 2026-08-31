@@ -46,6 +46,7 @@ const settings: Settings = {
   autoAnalyze: false,
   showWaveform: true,
   showLoudness: true,
+  showEditorHints: true,
   autoMatch: false,
   continuousPlayback: false,
   keyNotation: 'camelot',

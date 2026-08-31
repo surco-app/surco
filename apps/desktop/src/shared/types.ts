@@ -225,6 +225,10 @@ export interface Settings {
   flacCompression: FlacCompression
   showSpectrum: boolean
   showLoudness: boolean
+  // The one-line teaching copy under the editor controls (what each normalization
+  // mode does, what the peak ceiling is). On for newcomers; a user who knows the
+  // section by heart turns it off here without losing the per-track plan card.
+  showEditorHints: boolean
   // Where the floating activity panel was last parked and its size, in window pixels.
   // Machine-local (screen-dependent), null until the user first moves or resizes it.
   activityPanel: { x: number; y: number; width: number; height: number } | null

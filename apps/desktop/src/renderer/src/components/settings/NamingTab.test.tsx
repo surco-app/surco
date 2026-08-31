@@ -41,6 +41,7 @@ const synced: SyncedDraft = {
   flacCompression: '5',
   showSpectrum: true,
   showLoudness: true,
+  showEditorHints: true,
   autoAnalyze: false,
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },

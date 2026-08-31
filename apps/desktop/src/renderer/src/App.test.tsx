@@ -117,6 +117,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     autoAnalyze: false,
     showWaveform: true,
     showLoudness: false,
+    showEditorHints: true,
     autoMatch: false,
     continuousPlayback: false,
     keyNotation: 'camelot',

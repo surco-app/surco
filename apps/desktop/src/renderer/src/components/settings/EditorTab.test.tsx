@@ -41,6 +41,7 @@ const synced: SyncedDraft = {
   flacCompression: '5',
   showSpectrum: true,
   showLoudness: true,
+  showEditorHints: true,
   autoAnalyze: false,
   keyNotation: 'camelot',
   normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
@@ -95,5 +96,13 @@ describe('EditorTab preferences', () => {
   it('no longer renders the section rows', () => {
     renderTab()
     expect(screen.queryByTestId('settings-section-row-form')).not.toBeInTheDocument()
+  })
+})
+
+describe('EditorTab inline explanations toggle', () => {
+  it('stages the inline explanations preference', () => {
+    const patch = renderTab()
+    fireEvent.click(screen.getByTestId('settings-show-editor-hints'))
+    expect(patch).toHaveBeenCalledWith('showEditorHints', false)
   })
 })

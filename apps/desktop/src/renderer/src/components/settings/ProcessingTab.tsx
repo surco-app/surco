@@ -27,7 +27,11 @@ export function ProcessingTab({ synced, patch }: Props): React.JSX.Element {
       <SettingsSection>
         <SettingsLabel>{tr('normalize.title')}</SettingsLabel>
         <SettingsHint className="mt-2 mb-3">{tr('normalize.hint')}</SettingsHint>
-        <NormalizeControls value={synced.normalize} onChange={(n) => patch('normalize', n)} />
+        <NormalizeControls
+          value={synced.normalize}
+          onChange={(n) => patch('normalize', n)}
+          showHints={synced.showEditorHints}
+        />
       </SettingsSection>
     </>
   )
