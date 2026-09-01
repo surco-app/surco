@@ -597,3 +597,31 @@ describe('detectCutoff roughness is level-invariant', () => {
     expect(detectCutoff(lift(REISSUE_COARSE), NYQUIST, lift(REISSUE_FINE)).processed).toBe(false)
   })
 })
+
+// Two files out of a 6000-track lossless library swept through the verdict,
+// measured off the real files and judged by shape: what the detector got wrong at
+// scale. Both are digital productions that roll off 2-7 dB per fine band from
+// 15 kHz down to -100 dB at Nyquist; summed, that descent is 45 and 38 dB, and
+// reading the fine bands as a total (45 in one release, 38 in the next) flagged 64
+// and then 161 such files as lossy. A codec wall is not a long slope, it is a cliff:
+// tens of dB inside a kilohertz.
+describe('detectCutoff over the library sweep', () => {
+  const ALFREDO_COARSE = fftBand([
+    -50.6, -51.1, -52.3, -55.1, -57.6, -60.9, -64.1, -67.4, -69.1, -73.2, -78.8, -87.2, -101.4,
+  ])
+  const ALFREDO_FINE = fine([
+    -58.3, -57.8, -61, -63, -64.2, -65.7, -66.7, -67.7, -69.3, -71.3, -73.3, -76.1, -79.3, -83.3,
+    -88.7, -95.2, -102.8,
+  ])
+  const BEN_COARSE = fftBand([
+    -53.5, -54, -56, -58.3, -60.6, -63.1, -65.4, -69.4, -75, -80.8, -88.6, -95.4, -99.1,
+  ])
+  const BEN_FINE = fine([
+    -60.8, -62.2, -63.1, -63.8, -66.2, -67.8, -68.6, -72.6, -75.2, -78.2, -80.5, -84.9, -88.6,
+    -92.6, -96, -98.6, -98.9,
+  ])
+  it('does not read a mastering rolloff that reaches -100 dB as a codec wall', () => {
+    expect(detectCutoff(ALFREDO_COARSE, NYQUIST, ALFREDO_FINE).hasKnee).toBe(false)
+    expect(detectCutoff(BEN_COARSE, NYQUIST, BEN_FINE).hasKnee).toBe(false)
+  })
+})

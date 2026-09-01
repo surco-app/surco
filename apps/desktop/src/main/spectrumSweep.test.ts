@@ -20,8 +20,8 @@ import { analyzeCutoff, analyzeShelf, buildSpectrum, probeAudio } from './ffmpeg
 //   SURCO_SWEEP_DIR=/Volumes/Public/Musica/FLAC npm run sweep
 //
 // Every verdict is appended to SURCO_SWEEP_OUT (default ~/surco-sweep.jsonl) as it
-// lands, and a rerun skips what is already there, so a stopped sweep resumes and a
-// changed detector can be re-swept file by file. A summary of the flagged files is
+// lands, and a rerun skips what is already graded (errors are retried), so a stopped
+// sweep resumes and a changed detector can be re-swept file by file. A summary of the flagged files is
 // written beside it. SURCO_SWEEP_CONCURRENCY (default 4) bounds the decodes in flight.
 const root = process.env.SURCO_SWEEP_DIR
 const out = process.env.SURCO_SWEEP_OUT ?? join(homedir(), 'surco-sweep.jsonl')
@@ -52,12 +52,16 @@ async function walk(dir: string): Promise<string[]> {
   return files
 }
 
+// Last row per path wins, so a file retried after a transient error (an SMB
+// hiccup mid-sweep left ten of them) is read by its retry, not its failure.
 function readRows(): Row[] {
   if (!existsSync(out)) return []
-  return readFileSync(out, 'utf8')
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => JSON.parse(line) as Row)
+  const byPath = new Map<string, Row>()
+  for (const line of readFileSync(out, 'utf8').split('\n').filter(Boolean)) {
+    const row = JSON.parse(line) as Row
+    byPath.set(row.path, row)
+  }
+  return [...byPath.values()]
 }
 
 const flagged = (r: Row): boolean => !!(r.hasKnee || r.processed || r.upsampled)
@@ -89,7 +93,11 @@ it.skipIf(!root)(
   'sweeps a lossless library through the real spectrum verdict',
   async () => {
     const files = await walk(resolve(root as string))
-    const done = new Set(readRows().map((r) => r.path))
+    const done = new Set(
+      readRows()
+        .filter((r) => !r.error)
+        .map((r) => r.path),
+    )
     const pending = files.filter((f) => !done.has(f))
     let next = 0
     const worker = async (): Promise<void> => {
