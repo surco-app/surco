@@ -29,10 +29,15 @@ export function NormalizePlan({ normalize, loudness, onDismiss }: Props): React.
   const gainDb = predicted.gainDb ?? predicted.lufs - loudness.integratedLufs
   const gain = `${gainDb >= 0 ? '+' : ''}${gainDb.toFixed(1)}`
   const kind = predicted.limited ? 'limited' : normalize.mode === 'peak' ? 'peak' : 'gain'
+  // How far the gained peaks would have flown past the ceiling had nothing held them:
+  // the limiter's workload on this track, and the honest measure of the punch a loud
+  // target trades. Only meaningful in the limited branch, where truePeakDb IS the ceiling.
+  const overshoot = loudness.truePeakDb + gainDb - predicted.truePeakDb
   const values = {
     gain,
     lufs: formatDb(predicted.lufs),
     peak: formatDb(predicted.truePeakDb),
+    over: formatDb(Math.max(0, overshoot)),
   }
   return (
     <div

@@ -384,3 +384,15 @@ describe('NormalizeSection plan dismissal', () => {
     expect(hide).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('NormalizeSection plan overshoot', () => {
+  // A user asked for it after reading the note: knowing THAT the limiter engages is
+  // half the story; by how much says how hard it works on this track, which is what
+  // decides whether the club target is worth the punch it trades. -16.3 LUFS / -3.3 dBTP
+  // to -13 needs +3.3 dB, which lands the peak at 0.0: one full dB over the -1 ceiling.
+  it('says by how much the peaks would pass the ceiling', async () => {
+    renderSection(track(), 1, measuredLoud, { ...cfg, mode: 'loudness', targetLufs: -13 })
+    const plan = await screen.findByTestId('normalize-plan')
+    expect(plan.textContent).toContain('by 1.0 dB')
+  })
+})

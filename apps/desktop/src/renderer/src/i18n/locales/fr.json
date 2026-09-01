@@ -638,7 +638,7 @@
     },
     "plan": {
       "head": "Ce qui arrivera à cette piste",
-      "limited": "Elle bougera de {{gain}} dB jusqu'à {{lufs}} LUFS. Ses crêtes dépasseraient le plafond, le limiteur les retiendra donc à {{peak}} dBTP.",
+      "limited": "Elle bougera de {{gain}} dB jusqu'à {{lufs}} LUFS. Ses crêtes dépasseraient le plafond de {{over}} dB, le limiteur les retiendra donc à {{peak}} dBTP.",
       "limitedSub": "Seules les crêtes en excès sont écrêtées ; le reste de la piste n'est pas touché.",
       "gain": "Elle bougera de {{gain}} dB jusqu'à {{lufs}} LUFS avec un gain constant. Ses crêtes resteront à {{peak}} dBTP : le plafond n'agit pas.",
       "gainSub": "Rien n'est limité ni compressé ; la dynamique reste intacte.",

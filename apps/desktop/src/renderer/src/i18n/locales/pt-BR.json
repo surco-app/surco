@@ -638,7 +638,7 @@
     },
     "plan": {
       "head": "O que vai acontecer com esta faixa",
-      "limited": "Vai mover {{gain}} dB até {{lufs}} LUFS. Seus picos passariam do teto, então o limitador vai segurá-los em {{peak}} dBTP.",
+      "limited": "Vai mover {{gain}} dB até {{lufs}} LUFS. Seus picos passariam do teto em {{over}} dB, então o limitador vai segurá-los em {{peak}} dBTP.",
       "limitedSub": "Só os picos excedentes são aparados; o resto da faixa não é tocado.",
       "gain": "Vai mover {{gain}} dB até {{lufs}} LUFS com ganho constante. Seus picos ficarão em {{peak}} dBTP: o teto nem chega a agir.",
       "gainSub": "Nada é limitado nem comprimido; a dinâmica fica intacta.",

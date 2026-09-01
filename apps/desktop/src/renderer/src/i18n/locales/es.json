@@ -638,7 +638,7 @@
     },
     "plan": {
       "head": "Qué pasará con esta pista",
-      "limited": "Cambiará {{gain}} dB hasta {{lufs}} LUFS. Sus picos pasarían del techo, así que el limitador los frenará en {{peak}} dBTP.",
+      "limited": "Cambiará {{gain}} dB hasta {{lufs}} LUFS. Sus picos pasarían del techo en {{over}} dB, así que el limitador los frenará en {{peak}} dBTP.",
       "limitedSub": "Solo se recortan los picos que sobran; el resto de la pista no se toca.",
       "gain": "Cambiará {{gain}} dB hasta {{lufs}} LUFS con una ganancia constante. Sus picos quedarán en {{peak}} dBTP: el techo no llega a actuar.",
       "gainSub": "No se limita ni comprime nada; la dinámica queda intacta.",
