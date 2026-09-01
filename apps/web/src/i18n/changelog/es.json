@@ -5,6 +5,10 @@
     "title": "La normalización te dice qué va a hacer",
     "items": [
       {
+        "text": "El detector de \"fuente con pérdidas\" ahora reconoce el muro de un códec por su forma, no por su profundidad: un acantilado de decenas de decibelios dentro de un kilohercio, en vez de sumar toda la caída del agudo. Un barrido de 6000 pistas lossless reales enseñó la diferencia: las producciones digitales bajan suavemente 2-7 dB por banda hasta el silencio y sumaban de sobra para ser acusadas de MP3, mientras que un códec de verdad corta a pico. Con el criterio nuevo, los avisos falsos de ese barrido pasaron de 161 a 19, sin perder ninguno de los 40 encodes de referencia, incluidos los pasados a CD. Las pistas ya analizadas se vuelven a medir solas.",
+        "in": "0.90.3"
+      },
+      {
         "text": "Un MP3 de 256 o 320 kbps pasado a CD o a FLAC/WAV/AIFF de 16 bits ya no cuela como \"Good quality\". El detector de fuente con pérdidas se calibró con MP3 decodificados en coma flotante, donde el muro del códec cae 65 dB; con el dither de 16 bits que deja cualquier grabación real, el mismo muro solo cae 43 dB y quedaba justo por debajo del listón. Se encontró con una batería nueva de pruebas que exige el mismo veredicto a un espectro suba o baje de nivel o se le sume un suelo de ruido, y se confirmó con ficheros reales antes de tocar nada. El umbral baja a 38 dB, con margen a ambos lados, y las pistas ya analizadas se vuelven a medir solas.",
         "in": "0.90.2"
       },
