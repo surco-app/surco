@@ -5,6 +5,10 @@
     "title": "Normalization tells you what it will do",
     "items": [
       {
+        "text": "A 256 or 320 kbps MP3 burned to CD or written to 16-bit FLAC/WAV/AIFF no longer passes as \"Good quality\". The lossy-source detector was calibrated on MP3s decoded in floating point, where the codec wall falls 65 dB; with the 16-bit dither any real transfer leaves behind, the same wall falls only 43 dB and landed just under the bar. It was found by a new battery of tests that demand the same verdict when a spectrum is raised, lowered or given a noise floor, and confirmed on real files before anything was touched. The threshold drops to 38 dB with margin on both sides, and already-analysed tracks re-measure themselves.",
+        "in": "0.90.2"
+      },
+      {
         "text": "A loud master no longer reads as \"Reprocessed\" because of its own harmonics. Two versions of the same song, the quiet reissue and the remaster 8 dB louder, share one spectrum and got different verdicts: the same two high harmonics that sat under the noise floor in one counted as the saw-tooth of a spectral \"enhancer\" in the other. Three teeth in a row are now required, which is what a real enhancer leaves, and the verdict no longer changes with the level of the master. Already-analysed tracks re-measure themselves.",
         "in": "0.90.1"
       },

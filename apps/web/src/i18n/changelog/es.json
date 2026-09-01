@@ -5,6 +5,10 @@
     "title": "La normalización te dice qué va a hacer",
     "items": [
       {
+        "text": "Un MP3 de 256 o 320 kbps pasado a CD o a FLAC/WAV/AIFF de 16 bits ya no cuela como \"Good quality\". El detector de fuente con pérdidas se calibró con MP3 decodificados en coma flotante, donde el muro del códec cae 65 dB; con el dither de 16 bits que deja cualquier grabación real, el mismo muro solo cae 43 dB y quedaba justo por debajo del listón. Se encontró con una batería nueva de pruebas que exige el mismo veredicto a un espectro suba o baje de nivel o se le sume un suelo de ruido, y se confirmó con ficheros reales antes de tocar nada. El umbral baja a 38 dB, con margen a ambos lados, y las pistas ya analizadas se vuelven a medir solas.",
+        "in": "0.90.2"
+      },
+      {
         "text": "Un máster alto ya no sale como \"Reprocessed\" por sus propios armónicos. Dos versiones de la misma canción, la reedición tranquila y la remasterización 8 dB más alta, tienen el mismo espectro y recibían veredictos distintos: los mismos dos armónicos agudos que en una quedaban bajo el suelo de ruido, en la otra contaban como dientes de sierra de un \"enhancer\". Ahora hacen falta tres dientes seguidos, que es lo que deja un enhancer de verdad, y el veredicto ya no cambia con el volumen del máster. Las pistas ya analizadas se vuelven a medir solas.",
         "in": "0.90.1"
       },
