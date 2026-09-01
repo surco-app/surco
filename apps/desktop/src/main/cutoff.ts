@@ -62,9 +62,14 @@ const KNEE_RECOVERY_DB = 2
 // the difference is plain — a real wall falls monotonically through the whole
 // cut, while noise rebounds every other band. Measured as the largest unbroken
 // descent in the fine bands, the two populations are far apart: 64.7 dB for the
-// weakest of 36 real encodes, 33.3 dB for the steepest of 12 clean files. This
-// sits in the gap.
-const KNEE_FINE_FALL_DB = 45
+// weakest of 36 real encodes decoded in float, 33.3 dB for the steepest of 12 clean
+// files. But float is not how a lossy source reaches a library: burned to 16-bit,
+// the dither floor sits at -126 dB and cuts the descent to content-minus-floor,
+// 42.7 dB for a 320 and 43.4 for a 256, both of which 45 waved through as "Good
+// quality" (the -cd16 corpus entries, and the app's own MP3-to-lossless output).
+// 38 keeps a 4.7 dB margin under the shallowest dithered wall and 5.7 over the
+// steepest clean fall; the invariance suite holds it at the measured floor.
+const KNEE_FINE_FALL_DB = 38
 // Rebound allowed inside that descent before it counts as broken. Below the
 // measurement's own jitter a "monotonic" run would never survive a real file.
 const KNEE_FINE_REBOUND_DB = 0.5
