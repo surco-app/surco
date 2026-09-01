@@ -5,6 +5,14 @@
     "title": "La normalización te dice qué va a hacer",
     "items": [
       {
+        "text": "Un máster alto ya no sale como \"Reprocessed\" por sus propios armónicos. Dos versiones de la misma canción, la reedición tranquila y la remasterización 8 dB más alta, tienen el mismo espectro y recibían veredictos distintos: los mismos dos armónicos agudos que en una quedaban bajo el suelo de ruido, en la otra contaban como dientes de sierra de un \"enhancer\". Ahora hacen falta tres dientes seguidos, que es lo que deja un enhancer de verdad, y el veredicto ya no cambia con el volumen del máster. Las pistas ya analizadas se vuelven a medir solas.",
+        "in": "0.90.1"
+      },
+      {
+        "text": "La nota \"Qué pasará con esta pista\" dice ahora cuánto pasarían los picos del techo antes de que actúe el limitador (\"en 4,0 dB\"), para ver de un vistazo cuánto trabaja en esa pista.",
+        "in": "0.90.1"
+      },
+      {
         "text": "Cada pista lleva ahora una tarjeta \"Qué pasará con esta pista\" bajo los controles de normalización: cuántos decibelios se moverá, si bastará una ganancia constante o si el limitador tendrá que frenar los picos en el techo, y a qué sonoridad saldrá. Es la misma predicción que ya alimentaba la vista previa, contada en una frase antes de convertir, para que el resultado nunca sorprenda.",
         "in": "0.90.0"
       },

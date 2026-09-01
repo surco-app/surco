@@ -5,6 +5,14 @@
     "title": "Normalization tells you what it will do",
     "items": [
       {
+        "text": "A loud master no longer reads as \"Reprocessed\" because of its own harmonics. Two versions of the same song, the quiet reissue and the remaster 8 dB louder, share one spectrum and got different verdicts: the same two high harmonics that sat under the noise floor in one counted as the saw-tooth of a spectral \"enhancer\" in the other. Three teeth in a row are now required, which is what a real enhancer leaves, and the verdict no longer changes with the level of the master. Already-analysed tracks re-measure themselves.",
+        "in": "0.90.1"
+      },
+      {
+        "text": "The \"What will happen to this track\" note now says by how much the peaks would pass the ceiling before the limiter steps in (\"by 4.0 dB\"), so you can see at a glance how hard it works on that track.",
+        "in": "0.90.1"
+      },
+      {
         "text": "Every track now carries a \"What will happen to this track\" card under the normalization controls: how many decibels it will move, whether one constant gain is enough or the limiter will have to hold the peaks at the ceiling, and where the loudness will land. It is the same prediction that already fed the preview, told as a sentence before you convert, so the result never surprises.",
         "in": "0.90.0"
       },
