@@ -5,6 +5,10 @@
     "title": "Normalization tells you what it will do",
     "items": [
       {
+        "text": "The \"lossy source\" detector now recognises a codec wall by its shape, not its depth: a cliff of tens of decibels inside one kilohertz, instead of summing the whole descent of the top end. A sweep of 6000 real lossless tracks showed the difference: digital productions ease down 2-7 dB per band into silence and summed more than enough to be accused of being MP3s, while a real codec cuts like a cliff. Under the new rule the false alarms in that sweep dropped from 161 to 19, without losing any of the 40 reference encodes, CD-burned ones included. Already-analysed tracks re-measure themselves.",
+        "in": "0.90.3"
+      },
+      {
         "text": "A 256 or 320 kbps MP3 burned to CD or written to 16-bit FLAC/WAV/AIFF no longer passes as \"Good quality\". The lossy-source detector was calibrated on MP3s decoded in floating point, where the codec wall falls 65 dB; with the 16-bit dither any real transfer leaves behind, the same wall falls only 43 dB and landed just under the bar. It was found by a new battery of tests that demand the same verdict when a spectrum is raised, lowered or given a noise floor, and confirmed on real files before anything was touched. The threshold drops to 38 dB with margin on both sides, and already-analysed tracks re-measure themselves.",
         "in": "0.90.2"
       },
