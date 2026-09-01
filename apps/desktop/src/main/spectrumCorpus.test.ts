@@ -50,7 +50,7 @@ describe('spectrum verdicts over the measured corpus', () => {
   it('covers every population the thresholds were calibrated on', () => {
     expect(byKind('encode')).toHaveLength(36)
     expect(byKind('lossless')).toHaveLength(9)
-    expect(byKind('clean')).toHaveLength(4)
+    expect(byKind('clean')).toHaveLength(6)
   })
 
   it.each(byKind('encode').map((e) => [e.name, e] as const))(

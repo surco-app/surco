@@ -63,7 +63,7 @@ function cancellable<T>(
 // and the audio:cached-batch handler so the two can never drift onto different keys for
 // the same family — a batch peek under a stale namespace would silently show as a
 // permanent miss instead of the warm hit the live handler already wrote.
-const SPECTROGRAM_NAMESPACE = 'spectrogram-mono-v17'
+const SPECTROGRAM_NAMESPACE = 'spectrogram-mono-v18'
 const LOUDNESS_NAMESPACE = 'loudness'
 const CLICKS_NAMESPACE = 'clickcount-v2'
 const PROPERTIES_NAMESPACE = 'properties'

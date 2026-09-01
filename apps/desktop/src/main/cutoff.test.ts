@@ -560,3 +560,40 @@ describe('detectUpsample', () => {
     expect(detectUpsample(Number.NEGATIVE_INFINITY, -90)).toBe(false)
   })
 })
+
+// Two masters of the same Gowan song, measured off the real files: a 2008 reissue and
+// a 2010 remaster whose spectrum is the reissue's shifted up 8 dB, harmonic for
+// harmonic. The reissue graded clean and the remaster came back "Reprocessed" at
+// 14 kHz, because the absolute floor that keeps dither out of the saw-tooth count
+// also kept the reissue's two high harmonics (17 and 19 kHz) out of it, while the
+// louder remaster lifted the same two above the floor. Two bumps 2 kHz apart are a
+// feature of the music; the enhancer the pass was calibrated on rises three times
+// in a row. The verdict has to survive a level change: same shape, same answer.
+describe('detectCutoff roughness is level-invariant', () => {
+  const REISSUE_COARSE = fftBand([
+    -66.24, -67.45, -67.97, -72, -72.63, -70.78, -74.09, -80.07, -74.68, -85.42, -84.31, -88.44,
+    -100.57,
+  ])
+  const REISSUE_FINE = fine([
+    -73.53, -75.95, -68.69, -73.38, -73.78, -79.03, -80.45, -77.11, -72.87, -84.04, -85.24, -85.82,
+    -82.83, -87.59, -88.63, -91.87, -110.72,
+  ])
+  const REMASTER_COARSE = fftBand([
+    -58.06, -59.22, -59.74, -63.48, -64.04, -62.43, -65.54, -71.59, -65.53, -76.88, -75.68, -79.69,
+    -91.31,
+  ])
+  const REMASTER_FINE = fine([
+    -64.89, -67.52, -60.36, -65.01, -65.08, -70.38, -72.01, -67.78, -63.78, -75.56, -76.65, -77.16,
+    -74.25, -78.78, -80.04, -82.88, -100.6,
+  ])
+
+  it('leaves both masters of the same song unflagged', () => {
+    expect(detectCutoff(REISSUE_COARSE, NYQUIST, REISSUE_FINE).processed).toBe(false)
+    expect(detectCutoff(REMASTER_COARSE, NYQUIST, REMASTER_FINE).processed).toBe(false)
+  })
+
+  it('grades the reissue the same after lifting it clear of the dither floor', () => {
+    const lift = (bands: Band[]): Band[] => bands.map((b) => ({ ...b, rmsDb: b.rmsDb + 20 }))
+    expect(detectCutoff(lift(REISSUE_COARSE), NYQUIST, lift(REISSUE_FINE)).processed).toBe(false)
+  })
+})

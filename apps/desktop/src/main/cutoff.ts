@@ -106,8 +106,13 @@ const ROUGHNESS_TOTAL_DB = 3
 // row: the calibration enhancer rises three times between 17.5 and 20 kHz. One
 // harmonic lifting a single band 4.6 dB cleared the total on its own and had a
 // clean CD rip reported as Reprocessed; one bump is a feature of the music, not
-// a seam between patches.
-const ROUGHNESS_MIN_RISES = 2
+// a seam between patches. Nor are two: a 2010 remaster of a Gowan song carries the
+// same two high harmonics (17 and 19 kHz, 2 kHz apart) as its 2008 reissue, and
+// only the remaster was accused, because sitting 8 dB louder lifted both bumps
+// over ROUGHNESS_FLOOR_DB while the reissue kept one of them under it. The verdict
+// must not depend on the level a spectrum is played back at; the enhancer's teeth
+// come in threes, so three is where a run of teeth starts.
+const ROUGHNESS_MIN_RISES = 3
 // With the saw-tooth established, the source's real ceiling is where the first
 // sharp fine-band drop appears — the edge the patches were grafted onto.
 const ROUGHNESS_EDGE_DROP_DB = 4
