@@ -10,7 +10,7 @@ const byKind = (kind: CorpusEntry['kind']) => SPECTRUM_CORPUS.filter((e) => e.ki
 
 describe('spectrum verdicts over the measured corpus', () => {
   it('covers every population the thresholds were calibrated on', () => {
-    expect(byKind('encode')).toHaveLength(36)
+    expect(byKind('encode')).toHaveLength(40)
     expect(byKind('lossless')).toHaveLength(9)
     expect(byKind('clean')).toHaveLength(6)
   })
