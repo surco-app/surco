@@ -3,46 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
-import {
-  type Band,
-  bandFrequencies,
-  detectCutoff,
-  fineBandFrequencies,
-  fineBandsShowWall,
-} from './cutoff'
-import { buildSpectrum } from './ffmpeg'
-import {
-  BAND_START_HZ as SHELF_START_HZ,
-  BAND_WIDTH_HZ as SHELF_WIDTH_HZ,
-  detectFftKnee,
-  detectFlatShelf,
-} from './hfShelf'
 import { type CorpusEntry, SPECTRUM_CORPUS } from './spectrumCorpus.fixture'
-
-const NYQUIST = 22050
-
-const toBands = (freqs: number[], rms: number[]): Band[] =>
-  freqs.map((freqHz, i) => ({ freqHz, rmsDb: rms[i] }))
-
-// The same wiring audioIpc.ts gives buildSpectrum, minus the decodes: every pure
-// detector runs on the recorded bands, so a verdict here is the verdict the app shows.
-async function grade(entry: CorpusEntry) {
-  const coarse = toBands(bandFrequencies(NYQUIST), entry.coarse)
-  const fine = toBands(fineBandFrequencies(NYQUIST), entry.fine)
-  return buildSpectrum(entry.name, {
-    probe: async () => ({ sampleRate: '44100' }),
-    spectrogram: async () => '',
-    cutoff: async () => ({
-      ...detectCutoff(coarse, NYQUIST, fine),
-      upsampled: false,
-      fineWall: fineBandsShowWall(fine),
-    }),
-    shelf: async () => ({
-      shelfCutoffHz: detectFlatShelf(entry.shelf, SHELF_START_HZ, SHELF_WIDTH_HZ, NYQUIST),
-      kneeCutoffHz: detectFftKnee(entry.shelf, SHELF_START_HZ, SHELF_WIDTH_HZ),
-    }),
-  })
-}
+import { gradeEntry as grade } from './spectrumCorpus.grade'
 
 const byKind = (kind: CorpusEntry['kind']) => SPECTRUM_CORPUS.filter((e) => e.kind === kind)
 
