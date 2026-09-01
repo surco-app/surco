@@ -59,20 +59,21 @@ const KNEE_RECOVERY_DB = 2
 // The 1 kHz bands are too coarse to tell a codec wall from noise: averaging a
 // quiet, dithery top end into 1 kHz buckets manufactures 8–14 dB steps out of
 // hiss, and three CD rips of one album were flagged on exactly that. At 500 Hz
-// the difference is plain — a real wall falls monotonically through the whole
-// cut, while noise rebounds every other band. Measured as the largest unbroken
-// descent in the fine bands, the two populations are far apart: 64.7 dB for the
-// weakest of 36 real encodes decoded in float, 33.3 dB for the steepest of 12 clean
-// files. But float is not how a lossy source reaches a library: burned to 16-bit,
-// the dither floor sits at -126 dB and cuts the descent to content-minus-floor,
-// 42.7 dB for a 320 and 43.4 for a 256, both of which 45 waved through as "Good
-// quality" (the -cd16 corpus entries, and the app's own MP3-to-lossless output).
-// 38 keeps a 4.7 dB margin under the shallowest dithered wall and 5.7 over the
-// steepest clean fall; the invariance suite holds it at the measured floor.
-const KNEE_FINE_FALL_DB = 38
-// Rebound allowed inside that descent before it counts as broken. Below the
-// measurement's own jitter a "monotonic" run would never survive a real file.
-const KNEE_FINE_REBOUND_DB = 0.5
+// the wall shows its shape: an encoder's lowpass drops tens of dB inside a
+// kilohertz, a mastering rolloff loses a few dB per band, hiss wanders. Two
+// earlier readings summed the whole descent instead (45 dB, then 38 to reach
+// walls cut short by a 16-bit dither floor), and a sweep of 6000 real lossless
+// files showed why a total cannot work: digital productions roll off 2–7 dB per
+// band from 15 kHz to -100 dB at Nyquist and sum 40–55 dB without one steep step,
+// so 38 flagged 161 of them as lossy and 45 still 64. The largest drop across two
+// fine bands separates: 35.7 dB for the weakest of 40 real encodes, float-decoded
+// or dithered to 16-bit, against 19.5 for the steepest of 15 clean masters; on the
+// sweep it keeps 17 files, every one a 31–45 dB cliff. The band at Nyquist is left
+// out: a CD's anti-alias filter drops 20 dB into it on perfectly clean rips, and a
+// 320's lowpass lands a band lower. What this gives up is the shallow wall over a
+// noisy floor (a 90s dance master with -79 dB highs cut to a -104 floor measures
+// 24), which stays reported as a cutoff without the accusation.
+const KNEE_FINE_STEP_DB = 28
 // The 9–11 kHz bands are the reference plateau the rest of the curve is read
 // against: every real track keeps solid energy there, so it normalizes quiet
 // masters and loud ones alike.
@@ -194,21 +195,14 @@ function findKneeIndex(bands: Band[]): number {
   return kneeIndex
 }
 
-// The largest unbroken descent anywhere in the fine bands. A codec lowpass falls
-// this way through its whole cut; hiss averaged into bands wanders up and down,
-// so its longest clean run stays short even when the coarse bands make it look
-// like a cliff. Non-finite readings end the run rather than joining it: an
+// The largest drop across two consecutive fine bands (one kilohertz), the band
+// at Nyquist excluded. Non-finite readings are skipped rather than compared: an
 // unparsed band against a real one would read as an enormous fall.
-function steepestFineFall(fineBands: Band[]): number {
+function steepestFineStep(fineBands: Band[]): number {
   let best = 0
-  for (let i = 0; i < fineBands.length - 1; i++) {
-    let total = 0
-    for (let j = i; j < fineBands.length - 1; j++) {
-      const step = fineBands[j].rmsDb - fineBands[j + 1].rmsDb
-      if (!Number.isFinite(step) || step < -KNEE_FINE_REBOUND_DB) break
-      total += step
-      if (total > best) best = total
-    }
+  for (let i = 2; i < fineBands.length - 1; i++) {
+    const drop = fineBands[i - 2].rmsDb - fineBands[i].rmsDb
+    if (Number.isFinite(drop) && drop > best) best = drop
   }
   return best
 }
@@ -219,7 +213,7 @@ function steepestFineFall(fineBands: Band[]): number {
 // a wall exactly as the coarse bands can. Without fine bands there is nothing to
 // check against, so a knee stands on its own as it always did.
 export function fineBandsShowWall(fineBands: Band[]): boolean {
-  return fineBands.length === 0 || steepestFineFall(fineBands) >= KNEE_FINE_FALL_DB
+  return fineBands.length === 0 || steepestFineStep(fineBands) >= KNEE_FINE_STEP_DB
 }
 
 // The ceiling the synthetic patches were grafted onto, or null when the fine
