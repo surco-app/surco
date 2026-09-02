@@ -23,11 +23,6 @@
   },
   "header": {
     "add": "Añadir archivos",
-    "focus": {
-      "match": "Ensanchar resultados para emparejar",
-      "balanced": "Columnas equilibradas",
-      "edit": "Ensanchar el editor"
-    },
     "batchConverted": "{{count}} convertidas",
     "batchSkipped": "{{count}} saltadas",
     "batchFailed": "{{count}} con error",
@@ -43,6 +38,7 @@
     "analyzeQuality": "Analizar la calidad de todas las pistas",
     "analyzingCount": "Analizando calidad… {{done}}/{{total}}",
     "convertingCount": "Convirtiendo… {{done}}/{{total}}",
+    "convertAll": "Convertir las {{count}}",
     "cancelConvert": "Cancelar la conversión: las pistas en cola se saltan, las que están en curso terminan",
     "cancelImport": "Dejar de leer: lo ya leído se queda, el resto se descarta",
     "autoMatch": "Auto-emparejar todas las pistas en Discogs",

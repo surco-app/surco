@@ -3,6 +3,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { nextWidth } from '../lib/resize'
 import { Tooltip } from './Tooltip'
 
+// The width the results column opens at before the user has ever dragged it — wide, since
+// a fresh crate's first task is finding the release. Lives here, beside the hook that
+// clamps and commits the width, rather than with the caller that renders it.
+export const DEFAULT_RESULTS_WIDTH = 480
+
 export function useResizableWidth(
   initial: number,
   min: number,

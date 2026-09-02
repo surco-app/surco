@@ -72,12 +72,6 @@ import { deriveTagPatches } from './lib/deriveTags'
 import type { Destination } from './lib/destination'
 import { createDragDepth } from './lib/dragDepth'
 import { DEFAULT_REQUIRED_FIELDS } from './lib/fields'
-import {
-  activeFocusPreset,
-  DEFAULT_RESULTS_WIDTH,
-  type FocusPresetId,
-  focusPresetWidth,
-} from './lib/focusPreset'
 import { pushImportNotice } from './lib/importNotices'
 import { columnOf, isTypingTarget, nextColumn } from './lib/keymap'
 import { librarySourceOf } from './lib/librarySource'
@@ -1132,18 +1126,17 @@ export default function App(): React.JSX.Element {
     saveSettings({ resultsWidth: width }),
   )
 
-  // The results column width the editor actually renders at (the match-preset default
-  // until the user first sizes it) — the same fallback DiscogsPanel seeds its resize hook with.
-  const resultsWidth = settings?.resultsWidth ?? DEFAULT_RESULTS_WIDTH
-  // Applies a header focus preset: parks the results column at the preset's width in one
-  // click (the editor, flex-1, takes the rest). The list is left where the user dragged it.
-  // Saved directly, since the editor reads its width from settings.
-  const applyFocusPreset = useStableCallback((id: FocusPresetId) =>
-    saveSettings({ resultsWidth: focusPresetWidth(id) }),
+  // The header's convert-all: the same bulk scope and editor settings the palette command
+  // uses, so pressing the button and running the command cannot diverge.
+  const onConvertAllTracks = useStableCallback(() =>
+    askConvertAll(
+      bulkTracksRef.current,
+      editorFormatRef.current ?? undefined,
+      editorNormalizeRef.current ?? undefined,
+      editorDestinationRef.current ?? undefined,
+      editorDeclickRef.current ?? undefined,
+    ),
   )
-  // Which preset the results column currently matches (null once a drag lands between
-  // presets), so the header control lights the active one and clears when the user drags off.
-  const focusPreset = activeFocusPreset(resultsWidth)
 
   // Stable like the other editor props so a search keystroke doesn't re-render the
   // memoized Editor: records which track's field has focus for the sweep's edit guard.
@@ -1638,8 +1631,9 @@ export default function App(): React.JSX.Element {
                 isMac={isMac}
                 hintFor={hintFor}
                 trackCount={tracks.length}
-                focusPreset={focusPreset}
-                onFocusPreset={applyFocusPreset}
+                convertibleCount={eligibleCount}
+                canConvertAll={canProcessAll}
+                onConvertAll={onConvertAllTracks}
                 importing={importProgress}
                 batchSummary={batchSummary}
                 batching={batching}

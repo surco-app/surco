@@ -1,30 +1,18 @@
 import {
   Activity,
+  ArrowRightLeft,
   ChartColumn,
-  Columns3,
-  Disc3,
   FilePlus,
   Loader2,
   Radio,
   Settings as SettingsIcon,
-  SlidersHorizontal,
   Sparkles,
 } from 'lucide-react'
 import type React from 'react'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { BatchSummary } from '../lib/batch'
-import { FOCUS_PRESETS, type FocusPresetId } from '../lib/focusPreset'
 import { Tooltip } from './Tooltip'
-
-// The glyph for each focus preset, in the same order FOCUS_PRESETS lists them: a record
-// for "find the release", three even columns for the balanced split, the audio sliders
-// for "edit".
-const PRESET_ICONS: Record<FocusPresetId, typeof Disc3> = {
-  match: Disc3,
-  balanced: Columns3,
-  edit: SlidersHorizontal,
-}
 
 interface Props {
   isMac: boolean
@@ -33,10 +21,13 @@ interface Props {
   // binding table in App the single source of truth.
   hintFor: (id: string) => string
   trackCount: number
-  // The focus preset whose column widths currently match (null when a drag has moved them
-  // between presets, so no segment is lit), and the handler that reparks both columns.
-  focusPreset: FocusPresetId | null
-  onFocusPreset: (id: FocusPresetId) => void
+  // How many tracks the button would convert, and whether it can run at all (false once
+  // nothing is eligible, which greys it rather than hiding it, so it stays where the user
+  // last saw it). The count is named in the label on purpose: the editor footer carries a
+  // "Convert to AIFF" for the open track, and without a count the two read as one action.
+  convertibleCount: number
+  canConvertAll: boolean
+  onConvertAll: () => void
   // Metadata-read progress of an in-flight import (null when idle), shown as a "212/319"
   // counter beside "Add files" so a big drop isn't an opaque wait.
   importing: { done: number; total: number } | null
@@ -85,8 +76,9 @@ export const Toolbar = memo(function Toolbar({
   isMac,
   hintFor,
   trackCount,
-  focusPreset,
-  onFocusPreset,
+  convertibleCount,
+  canConvertAll,
+  onConvertAll,
   importing,
   batchSummary,
   batching,
@@ -116,39 +108,67 @@ export const Toolbar = memo(function Toolbar({
       className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-20"
       style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
-      {trackCount > 0 ? (
-        // Focus presets: repark the results column for the task at hand (find a match /
-        // balanced / edit) in one click. The divider still fine-tunes; dragging off a
-        // preset clears its highlight (focusPreset goes null). Hidden with no tracks, since
-        // there's no results or editor column to focus yet. Each button carries its own
-        // aria-label/aria-pressed, matching SegmentedControl's plain-div grouping.
+      {trackCount > 1 ? (
+        // Converting the list is the app's whole point, and it used to have no button at
+        // all — only a shortcut and a palette entry, while the toolbar carried the two
+        // sweeps that merely PREPARE that work. It leads the header for the same reason it
+        // reads left to right: what you do, what prepares it, the command, the app.
+        // Labelled rather than a bare glyph: it rewrites many files at once, and an icon
+        // alone would be a button that doesn't say what it touches.
         <div
-          data-testid="focus-presets"
-          className="ml-3 inline-flex items-center gap-1"
+          className="ml-3 inline-flex items-center"
           style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         >
-          {FOCUS_PRESETS.map(({ id }) => {
-            const Icon = PRESET_ICONS[id]
-            const active = focusPreset === id
-            return (
-              <button
-                key={id}
-                type="button"
-                data-testid={`focus-preset-${id}`}
-                aria-pressed={active}
-                onClick={() => onFocusPreset(id)}
-                aria-label={tr(`header.focus.${id}`)}
-                className={`press group relative flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
-                  active
-                    ? 'bg-[var(--color-panel-2)] text-fg'
-                    : 'text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg'
-                }`}
-              >
-                <Icon className="h-4 w-4" aria-hidden="true" />
-                <Tooltip label={tr(`header.focus.${id}`)} />
-              </button>
-            )
-          })}
+          <button
+            type="button"
+            data-testid="convert-all"
+            onClick={batching ? onCancelBatch : onConvertAll}
+            disabled={!batching && !canConvertAll}
+            aria-label={
+              batching
+                ? tr('header.cancelConvert')
+                : tr('header.convertAll', { count: convertibleCount })
+            }
+            className={`press group relative flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
+              batching
+                ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
+                : 'border-[var(--color-line-strong)] text-fg'
+            }`}
+          >
+            {batching ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                {/* The digits alone are silent to a screen reader, and the button's own
+                    name is the cancel action — so the count needs its own status region. */}
+                <span
+                  role="status"
+                  aria-label={tr('header.convertingCount', {
+                    done: batchProgress.done,
+                    total: batchProgress.total,
+                  })}
+                  className="tabular-nums"
+                >
+                  {tr('header.convertingCount', {
+                    done: batchProgress.done,
+                    total: batchProgress.total,
+                  })}
+                </span>
+              </>
+            ) : (
+              <>
+                <ArrowRightLeft className="h-4 w-4" aria-hidden="true" />
+                {tr('header.convertAll', { count: convertibleCount })}
+              </>
+            )}
+            <Tooltip
+              label={
+                batching
+                  ? tr('header.cancelConvert')
+                  : tr('header.convertAll', { count: convertibleCount })
+              }
+              hint={batching ? undefined : hintFor('process-all')}
+            />
+          </button>
         </div>
       ) : (
         <div />
@@ -171,36 +191,6 @@ export const Toolbar = memo(function Toolbar({
               .filter(Boolean)
               .join(' · ')}
           </span>
-        )}
-        {batching && (
-          // The running batch's pill: same accent ring and inline phase text as the
-          // import pill (a generic loader can't identify its sweep by icon alone), but
-          // clickable — like the sweep buttons, the control that shows the run is the
-          // one that cancels it, so a misfired Convert all can be stopped right here.
-          <button
-            type="button"
-            data-testid="batch-progress"
-            onClick={onCancelBatch}
-            aria-label={tr('header.cancelConvert')}
-            className="press group relative flex h-8 items-center gap-1.5 rounded-lg border border-[var(--color-accent)] px-2.5 text-xs font-medium tabular-nums text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
-          >
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            {/* A status region like the import pill's: the visible counter alone is
-                silent to a screen reader, and the button's own name is the cancel action. */}
-            <span
-              role="status"
-              aria-label={tr('header.convertingCount', {
-                done: batchProgress.done,
-                total: batchProgress.total,
-              })}
-            >
-              {tr('header.convertingCount', {
-                done: batchProgress.done,
-                total: batchProgress.total,
-              })}
-            </span>
-            <Tooltip label={tr('header.cancelConvert')} align="end" />
-          </button>
         )}
         {importing && (
           // A live pill matching the auto-match/analyze sweeps (accent ring, spinning
