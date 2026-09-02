@@ -497,7 +497,7 @@
           "The { } menu on any text field inserts another field's value right where your cursor is, and switches case: Title Case, lowercase or UPPERCASE.",
           "One click strips the numbering from a title —“05 Name”, “05. Name”, “05 - Name”— without touching 2 Unlimited or 3 Heads.",
           "Mystery track? A button searches Google with the filename already filled in —also from the list's context menu—, and a command numbers the selection in list order (1, 2, 3…).",
-          "Three focus presets in the header split the space between results and editor in one click, no dragging the divider.",
+          "Drag the divider between results and editor to split the space however suits you; each machine remembers its own.",
           "The Properties section shows the file's technical details —codec, sample rate, bits, channels, bitrate, path and size— and warns you when the file doesn't match the quality you asked for in Settings, in case you want to reconvert it.",
           "Editor sections collapse, reorder and hide to taste in Settings → Editor; collapsed they summarize their state, and any one expands to full screen (Esc to come back)."
         ],
