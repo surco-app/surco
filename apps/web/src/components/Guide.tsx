@@ -178,7 +178,7 @@ export default function Guide() {
               {t('guide.outroLede')}
             </p>
             <div className="mt-2 flex flex-col items-center text-center">
-              <DownloadButton />
+              <DownloadButton location="guide" />
             </div>
           </Reveal>
         </section>
