@@ -1,11 +1,19 @@
 # Funcionalidades de Surco
 
-Inventario levantado leyendo el código y los tests el 2026-07-30. Cada afirmación
-tiene su evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer
-en la web.
+Inventario levantado leyendo el código y los tests. Cada afirmación tiene su
+evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la web.
 
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
+
+**Última revisión: 2026-09-02** (v0.90.3). Levantado por primera vez el
+2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
+habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
+umbrales del espectro que el código había recalibrado.
+
+**Este documento se revisa en cada release minor**, como paso del flujo de
+`/release`. Un doc congelado no solo envejece: hace que la web calle
+funcionalidades que sí existen, que es la forma más cara de equivocarse aquí.
 
 ---
 
@@ -102,12 +110,41 @@ en vez de quedarse corto, aplica la ganancia completa y limita solo los picos.
 el factor true-peak de la ITU-R BS.1770 — para cazar los picos inter-muestra
 (`normalize.ts:118-142`).
 
-**Modo pico avanzado** (estilo Audacity): quitar offset de DC y ganancia
-independiente por canal. Esta última **cambia la imagen estéreo**, y por eso no
-es el comportamiento por defecto (`normalize.ts:173-247`).
+**Lo que se puede prometer del limitador tiene un límite.** Por debajo de 3 dB de
+overshoot solo rebaja las puntas de los transitorios más afilados y no se oye; por
+encima, la pérdida de pegada es real y la app lo dice en vez de prometer una
+transparencia que no puede sostener (`NormalizePlan.tsx:42-46`). No escribir «solo
+limita los picos, transparente» a secas.
+
+**Modo pico avanzado** (estilo Audacity): ganancia independiente por canal, que
+**cambia la imagen estéreo** y por eso no es el comportamiento por defecto
+(`normalize.ts:173-247`).
+
+**Quitar el offset de DC es ortogonal al modo.** Vivía solo dentro del modo pico,
+así que quien elegía loudness lo perdía en silencio — mismo fichero, misma casilla,
+DC intacto en loudness y limpio en pico. Hoy es un filtro que se antepone a
+cualquiera de las dos rutas (`normalize.ts:238-257`), y el umbral es el mínimo que
+la `aeval` de seis decimales puede expresar, 0,0000005 (`normalize.ts:236`), no el
+0,2 % de la nota de calidad, que era una decisión que este código nunca toma.
 
 Si la medición falla, la conversión sigue sin normalizar y avisa, en vez de
 fallar (`normalize.ts:57-59`).
+
+### El plan por pista, antes de convertir
+
+Una tarjeta dice qué le va a pasar a **esta** pista antes de tocarla, con tres
+formas según el caso: solo ganancia, ganancia con limitador, o modo pico
+(`NormalizePlan.tsx:31`). Cuando el limitador va a actuar, dice **por cuánto** se
+pasarían los picos del techo: «Sus picos pasarían del techo en X dB, así que el
+limitador los frenará en Y dBTP» (`NormalizePlan.tsx:35`).
+
+La predicción es un espejo deliberado del cálculo real del proceso principal —
+mismos clamps, misma prueba de alcanzabilidad (`lib/quality.ts:195-228`).
+
+**Explicaciones en línea** (`showEditorHints`, activado por defecto):
+`shared/types.ts:231`, `main/settings.ts:78`. Se apagan desde Ajustes → Editor
+(`EditorTab.tsx:83-86`) o desde la X de la propia tarjeta, que persiste el mismo
+ajuste (`NormalizePlan.tsx:59-70`).
 
 ---
 
@@ -118,12 +155,27 @@ Tres detectores independientes que se combinan (`ffmpeg.ts:1878-1918`).
 ### 4.1 Transcodificación (fake lossless)
 
 Mide bandas de 1 kHz de 9 a 22 kHz y busca una caída de la que el espectro
-**nunca se recupera** (`cutoff.ts:29-58`).
+**nunca se recupera** (`cutoff.ts:29-58`). Todas las bandas se miden **por FFT**,
+no con un banco de filtros (`fftBands.ts:1-15`).
 
 | Umbral | Valor | Calibración |
 |---|---|---|
-| Caída de rodilla | 6 dB en un paso | Re-encodes reales caen 6.9–7.8 dB; el taper natural más pronunciado, menos de 5 |
+| Caída de rodilla | 7 dB en un paso (`cutoff.ts:45`) | El viejo 6 dB venía de lecturas bandpass, que achatan la rodilla: el mismo encode lee 6.7 dB por bandpass y 33.6 por FFT |
+| Rodilla por encima de 20 kHz | 12 dB (`cutoff.ts:53-54`) | Un taper natural se empina contra Nyquist, y ahí es donde las dos poblaciones se solapan |
+| Acantilado de banda fina | **28 dB** dentro de un kilohercio (`cutoff.ts:76`) | 35,7 dB en el más flojo de 40 encodes reales, contra 19,5 en el máster limpio más empinado |
 | Recuperación | 2 dB | Un lowpass de códec nunca rebota; un notch resonante sí |
+
+**Una rodilla gruesa no basta.** Solo se cree si las bandas de 500 Hz confirman el
+muro (`cutoff.ts:215-217`, `:266-269`). Las de 1 kHz son demasiado gruesas para
+distinguir un muro de códec del siseo: promediar un agudo dithery en cubos de
+1 kHz fabrica escalones de 8 a 14 dB, y tres rips de CD del mismo disco se
+marcaron por eso.
+
+Dos lecturas anteriores **sumaban todo el descenso** (45 dB, luego 38). Un barrido
+de 6000 ficheros lossless reales enseñó por qué un total no puede funcionar: las
+producciones digitales caen de 2 a 7 dB por banda desde 15 kHz y suman de 40 a
+55 dB sin un solo paso empinado, así que 38 marcaba 161 de ellas como lossy y 45
+todavía 64 (`cutoff.ts:59-75`). La banda de Nyquist se deja fuera a propósito.
 
 **Lo importante: sin rodilla, no hay veredicto de corte.** Si no hay caída
 sostenida, Surco reporta hasta dónde llega la energía y marca `hasKnee: false` —
@@ -133,21 +185,30 @@ fijarse en cualquiera de los dos es lo que marcaba 320 sanos como falsos»*
 (`cutoff.ts:1-8`). Verificado con dos FLAC reales que un usuario reportó mal
 calificados (`cutoff.test.ts:153-184`).
 
-Una segunda pasada por FFT caza los muros que el filtro biquad difumina: un muro
-de 16 kHz (un MP3 de 128–160 re-empaquetado como FLAC) se leía como un taper
-suave de 5 dB y pasaba como bueno (`hfShelf.ts:105-112`). **Solo corre en
-ficheros nativos a 44.1 kHz.**
+Una pasada aparte de `hfShelf` caza el muro que el resto difumina: un muro de
+16 kHz (un MP3 de 128–160 re-empaquetado como FLAC) se leía como un taper suave
+de 5 dB y pasaba como bueno (`hfShelf.ts:105-112`). **Solo corre en ficheros
+nativos a 44.1 kHz** (`ffmpeg.ts:2100`), y su rodilla también queda condicionada a
+la confirmación de banda fina (`ffmpeg.ts:2167-2168`).
+
+Por qué se mide por FFT y no con un banco de filtros: el probe viejo leía 11,2 dB
+de caída a 21 kHz sobre ruido blanco plano — su propio rolloff IIR —, erraba
+2,9 kHz de media y **siempre hacia «más limpia»**, y una pista amurallada en
+14 kHz la leía cortada en 20 (`fftBands.ts:1-15`). El FFT lee ruido plano plano,
+±0,06 dB.
 
 ### 4.2 Altos regenerados (enhancer)
 
 Tres firmas distintas: joroba sintética, sierra de banda fina (SBR/HE-AAC) y
 estante plano. Esta última es el umbral más ajustado de todo el sistema: 1.3 dB
-de rango, con ~0.5 dB de margen a cada lado (`hfShelf.ts:31-36`).
+de rango, con ~0.5 dB de margen a cada lado (`hfShelf.ts:30`).
 
-Detalle técnico que obliga a usar FFT y no el biquad: *«ese biquad se deforma
-cerca de Nyquist — fabrica ~11.6 dB de falso roll-off sobre ruido blanco plano —
-lo que disfraza exactamente este estante plano como una caída»*
-(`hfShelf.ts:11-15`).
+**La sierra exige tres dientes seguidos** por encima de 16,5 kHz, sumando 3 dB o
+más, con cada banda por encima de −80 dB (`cutoff.ts:121`, `:242`). El veredicto
+no puede depender del nivel al que se reproduce el espectro: un remaster de 2010
+llevaba los mismos dos armónicos que su reedición de 2008, y solo el remaster
+salía acusado porque estar 8 dB más alto subía ambos bultos por encima del suelo
+(`cutoff.ts:113-120`).
 
 ### 4.3 Hi-res falso (upsample)
 
@@ -163,8 +224,22 @@ Bandas absolutas, no relativas a Nyquist: ~20.5 kHz es lossless, ~18.5–19 la
 clase 192 kbps, ~16 el clásico 128 re-empaquetado. Calificar contra Nyquist
 penalizaba a los ficheros de 48 kHz por el mismo audio (`lib/quality.ts:1-8`).
 
-El badge «fake lossless» exige cuatro condiciones a la vez, y `.m4a` está
-excluido a propósito porque puede llevar ALAC o AAC (`lib/quality.ts:35-57`).
+El badge «Fuente con pérdidas» (`qualityTranscode`) exige cuatro cosas a la vez:
+contenedor lossless, rodilla confirmada, no procesado, y corte por debajo de
+19,5 kHz (`lib/quality.ts:70-79`). `.m4a` está excluido a propósito porque puede
+llevar ALAC o AAC — no aparece ni en la lista lossless ni en la lossy
+(`lib/quality.ts:47`, `:57`).
+
+**Un contenedor con pérdidas no se gradúa nunca como defecto.** Un MP3 sale
+siempre `good` (`lib/quality.ts:38`): su corte es el formato, no una tara.
+Medirlo contra la línea lossless ponía «Revisar» sobre 320 sanos y enseñaba al
+usuario a desconfiar de ficheros que eran exactamente lo que decían ser
+(`lib/quality.ts:22-28`). Lo que recibe es una leyenda, no un veredicto: «Corte de
+códec en ~X, normal en este formato. Por debajo de ~19 kHz apunta a un bitrate
+más bajo» (`qualityCaptionLossy`, `QualitySection.tsx:134-139`).
+
+Cuidado al redactar la web: **«Fuente con pérdidas» es el badge del fake lossless,
+no el del MP3 sano.** El MP3 sano sale verde.
 
 ### 4.5 Métricas de loudness
 
@@ -187,7 +262,15 @@ pintaban de rojo entero mientras Audacity mostraba marcas dispersas
   L/R, que mide desequilibrio de nivel: dos canales idénticos medirían 0 dB =
   bueno.
 - Un fake cuya única deficiencia esté por debajo de 8 kHz.
-- Los umbrales están calibrados sobre decenas de ficheros reales, no miles.
+- El muro poco profundo sobre un suelo ruidoso: un máster dance de los 90 con los
+  agudos a −79 dB cortados contra un suelo de −104 mide 24 dB y se queda en corte
+  reportado, sin acusación (`cutoff.ts:73-75`).
+
+**Calibración.** Un corpus de regresión de 55 ficheros reales medidos —40 encodes,
+9 lossless, 6 limpios— corre como test en cada cambio
+(`spectrumCorpus.test.ts:13-17`). Y `npm run sweep` pasa una biblioteca entera por
+el veredicto real (`spectrumSweep.test.ts:11-28`); el barrido que fijó los
+umbrales actuales fueron 6000 ficheros lossless.
 
 ---
 
@@ -260,9 +343,23 @@ que es exactamente por qué el resultado solo se ofrece como sugerencia»*
 
 ## 8. Metadatos
 
-25 campos, con una única definición por campo que declara de dónde se lee y con
-qué nombre se escribe en cada contenedor (`tagFields.ts:8-113`). Un test impide
+28 campos, con una única definición por campo que declara de dónde se lee y con
+qué nombre se escribe en cada contenedor (`tagFields.ts:31-163`). Un test impide
 que un campo nuevo quede ilegible o inescribible.
+
+**Los campos de coleccionista llegan a todos los contenedores.** Ocho pares que
+ninguna familia de etiquetas tiene en una caja propia —número de catálogo, ID de
+la edición de Discogs, mood, energía, **estilo, país, tipo de medio y URL de la
+edición**— viajan como descripciones TXXX en ID3 y como átomos freeform `----` en
+MP4, bajo los nombres que escribe mp3tag para que una colección etiquetada con esa
+herramienta y otra etiquetada aquí coincidan en vez de duplicarse
+(`tags.ts:549-566`, `:700-716`, `:748`). Una sola lista para ambos contenedores:
+los cuatro de coleccionista estaban en `TAG_FIELDS` pero en ninguna rama de
+`writeTags`, así que desaparecían de todo fichero que termina la pasada de TagLib.
+
+También se borran los espejos TXXX que ffmpeg deja junto a COMM y POPM, que hacían
+que mp3tag listara un segundo «COMMENT» y un segundo «RATING WMP»
+(`tags.ts:759-765`).
 
 ### 8.1 ID3v2.3, nunca v2.4
 
@@ -304,11 +401,21 @@ comprueba que la carátula y el campo grouping se recuperan al releer
 
 Se escribe en **dos** frames POPM distintos para que dé la vuelta en dos mundos:
 Traktor (pasos lineales de 51) y Windows Media Player/foobar (rampa no lineal)
-(`tags.ts:377-385`).
+(`tags.ts:609-623`).
 
-Asimetría deliberada al borrar: en MP3/AIFF/WAV un rating vacío **se conserva**,
-porque ffprobe no expone POPM y la app no puede saber si el fichero tenía uno. En
-FLAC sí se borra, porque ahí sí da la vuelta (`tagFields.ts:75-77`).
+**Y ahora también se lee.** ffprobe nunca expone el frame POPM, así que una pista
+valorada en Traktor volvía sin estrellas en MP3/AIFF. Cuando el probe no encuentra
+rating, se lee el POPM con TagLib (`ffmpeg.ts:499-504`, lector en
+`tags.ts:170-176`). El lector contempla que WMP escriba dos POPM cuyos bytes
+discrepan por diseño (204 contra 196 para cuatro estrellas).
+
+Asimetría deliberada al borrar: en MP3/AIFF/WAV un rating vacío **se conserva**;
+en FLAC sí se borra (`tagFields.ts:104-106`).
+
+**En M4A no hay rating, y es a propósito**: el rating vive en un frame POPM, una
+estructura ID3 sin equivalente en MP4, y el lector del otro lado solo busca POPM.
+Meterlo en un átomo freeform escribiría bytes que no lee nadie, ni el propio Surco
+(`tags.ts:711-714`).
 
 ### 8.4 Otros casos peculiares
 
@@ -328,15 +435,18 @@ FLAC sí se borra, porque ahí sí da la vuelta (`tagFields.ts:75-77`).
 
 ### 8.5 Matriz de pérdidas
 
+Actualizada 2026-09-02: dos celdas daban por perdido lo que hoy se escribe.
+
 | Campo | MP3 | AIFF | WAV | FLAC | M4A/ALAC |
 |---|---|---|---|---|---|
-| 20 campos base | Sí | Sí | Sí (chunk `id3 `) | Sí | Sí |
+| 28 campos base | Sí | Sí | Sí (chunk `id3 `) | Sí | Sí |
 | Carátula | Sí | Sí | Sí (vía `id3 `) | Sí | Sí |
-| Rating | Sí | Sí | Sí | Sí | **No** |
-| Nº de catálogo | Sí | Sí | Sí | Sí | **No** |
+| Rating | Sí | Sí | Sí | Sí | **No** (`tags.ts:711-714`) |
+| Nº de catálogo | Sí | Sí | Sí | Sí | **Sí** (freeform) |
+| Estilo, país, tipo de medio, URL Discogs | Sí | Sí | Sí | Sí | **Sí** (freeform) |
 | Año original | Sí | Sí | Sí | Sí | **No** |
 | Posición vinilo «A2» | Sí | Sí | Sí | Sí | **No** (solo dígitos) |
-| Cues de Traktor | Sí | Sí | **No** | Sí | **No** |
+| Cues de Traktor | Sí | Sí | **Sí** | Sí | **No** |
 
 ---
 
@@ -469,17 +579,39 @@ Sin BPM utilizable el blob se descarta entero: *«sin tempo no hay fase que
 calcular; tirar el blob hace que Traktor reanalice, que es mejor que devolver una
 regla silenciosamente desplazada»*.
 
-**Matriz de conservación:**
+**Matriz de conservación** (actualizada 2026-09-02; la tabla anterior daba tres
+celdas por perdidas que hoy se conservan):
 
 | Origen → destino | ¿Cues? |
 |---|---|
 | MP3/AIFF → MP3/AIFF | **Sí** |
 | MP3/AIFF → FLAC | **Sí** (re-armado a basE91) |
 | FLAC → FLAC | **Sí** |
-| Cualquiera → **WAV** | **No** |
-| Cualquiera → **ALAC/M4A** | **No** |
-| **FLAC → MP3/AIFF** | **No** |
+| **FLAC → MP3/AIFF** | **Sí** (`ffmpeg.ts:1436-1443`) |
+| **Cualquiera → WAV** | **Sí** (`ffmpeg.ts:1400-1409`, `:1487-1490`) |
+| Cualquiera → **ALAC/M4A** | **No**, a propósito |
 | Con «limpiar metadatos» | **No**, a propósito |
+
+Los cuatro formatos cruzados están enumerados en un test que recorre la matriz
+entera y comprueba que la posición del cue sobrevive
+(`cueMatrix.test.ts:161-193`). El comentario dice por qué se enumeró toda:
+*«el bug que reportó djotas era una sola celda vacía; enumerar la matriz entera es
+lo que convierte "arreglamos el que reportaron" en "los comprobamos todos"»*.
+
+M4A queda fuera porque no tiene ID3 donde escribir, la misma razón por la que la
+ruta ALAC no lleva cues (`ffmpeg.ts:1401-1402`, test `convertCues.test.ts:713-720`).
+
+**Cues de Mixed In Key.** MIK guarda su JSON en base64 dentro de un GEOB
+llamado `CuePoints`; Surco lo traduce al árbol binario de Traktor
+(`mixedInKey.ts`, enganchado en `tags.ts:387`, `:438-443`). Si no hay cues devuelve
+`null` en vez de escribir un CUEP vacío, que Traktor leería como «analizada, sin
+cues».
+
+**Lectura tolerante al padding.** La longitud declarada en la cabecera manda: los
+ficheros reales rellenan más allá (basE91 redondea al bloque, y los PRIV de
+Traktor arrastran una cola de 512 ceros — en los ocho MP3 de djotas). Exigir que
+el recorrido consumiera el buffer exacto hacía que todos leyeran «sin cues»
+(`traktor4.ts:62-70`, `:167-176`).
 
 ### Sync del `.nml` de Traktor
 
@@ -599,8 +731,8 @@ comparación»* (`useDeclickAb.ts:60-67`).
 
 Recopilado de los cinco informes. Cada punto está verificado.
 
-1. **Cue points:** solo MP3, AIFF y FLAC. No en WAV ni ALAC, ni de FLAC hacia
-   MP3/AIFF.
+1. **Cue points:** en MP3, AIFF, FLAC y WAV, en cualquier cruce entre esos cuatro.
+   **No en ALAC/M4A**, que no tiene ID3 donde escribirlos.
 2. **Apple Music:** solo macOS, nunca FLAC. Clave, sello, catálogo y remixer no
    llegan a la biblioteca. No se transfiere rating ni se crean playlists.
 3. **Engine DJ:** no lleva cue points ni beatgrid. Exige Engine cerrado.
@@ -616,3 +748,8 @@ Recopilado de los cinco informes. Cada punto está verificado.
     sesiones antiguas.
 12. **Los ajustes de calidad no se aplican** cuando el fichero ya está en el
     formato de destino.
+13. **El limitador no es transparente por encima de 3 dB de overshoot.** Por
+    debajo no se oye; por encima la pérdida de pegada es real y la app lo dice.
+14. **El muro poco profundo sobre un suelo ruidoso no se acusa**: se reporta el
+    corte, sin veredicto de fuente con pérdidas.
+15. **Un MP3 nunca se califica como defectuoso.** Su corte es el formato.
