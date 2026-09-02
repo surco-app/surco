@@ -18,7 +18,7 @@ export default function InstallSection() {
           {t('install.title')}
         </h2>
         <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">{t('install.lede')}</p>
-        <DownloadButton showMeta={false} />
+        <DownloadButton location="install" showMeta={false} />
       </Reveal>
 
       <Reveal delay={120}>

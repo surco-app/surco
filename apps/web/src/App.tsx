@@ -59,7 +59,7 @@ export default function App() {
                   The page never said any of it above the fold: the only mention of the
                   price sat in the closing note, a full scroll of walkthrough away, so a
                   visitor deciding whether to bother had to take the download on faith. */}
-              <DownloadButton note={t('home.heroFree')} />
+              <DownloadButton location="hero" note={t('home.heroFree')} />
             </Reveal>
           </div>
           <Reveal eager delay={220}>
@@ -98,7 +98,7 @@ export default function App() {
               {t('home.closeTitle')}
             </h2>
             <div className="mt-10 flex flex-col items-center gap-4">
-              <DownloadButton />
+              <DownloadButton location="home-closing" />
               <p className="font-mono text-xs text-faint">{t('home.closeNote')}</p>
             </div>
             <div className="mx-auto mt-14 max-w-xl text-left">
