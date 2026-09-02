@@ -39,6 +39,11 @@ export function NormalizePlan({ normalize, loudness, onDismiss }: Props): React.
     peak: formatDb(predicted.truePeakDb),
     over: formatDb(Math.max(0, overshoot)),
   }
+  // Below this much overshoot the limiter only shaves transient tips, which no ear
+  // picks out; past it the trade the club preset's hint concedes ("a little punch")
+  // is real, and the card says so instead of promising transparency it cannot keep.
+  const LIGHT_TRIM_DB = 3
+  const subKey = kind === 'limited' && overshoot <= LIGHT_TRIM_DB ? 'limitedSubLight' : `${kind}Sub`
   return (
     <div
       data-testid="normalize-plan"
@@ -68,7 +73,7 @@ export function NormalizePlan({ normalize, loudness, onDismiss }: Props): React.
         {tr(`normalize.plan.${kind}`, values)}
       </p>
       <p className="mt-0.5 text-[11px] text-fg-muted tabular-nums">
-        {tr(`normalize.plan.${kind}Sub`, values)}
+        {tr(`normalize.plan.${subKey}`, values)}
       </p>
     </div>
   )

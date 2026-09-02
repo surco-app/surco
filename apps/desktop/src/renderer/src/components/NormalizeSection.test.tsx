@@ -396,3 +396,24 @@ describe('NormalizeSection plan overshoot', () => {
     expect(plan.textContent).toContain('by 1.0 dB')
   })
 })
+
+// A user asked what the limiter does to the peaks it holds, worried it might squash
+// the song. The honest answer depends on how far the peaks would overshoot, and the
+// card already computes that: a decibel or two of true-peak trimming touches only
+// transients and cannot be heard, while the club target's several dB genuinely trade
+// a little punch, which the preset hint already concedes. One sentence for each.
+describe('NormalizeSection plan limiter reassurance', () => {
+  it('promises inaudibility when the overshoot is small', async () => {
+    renderSection(track(), 1, measuredLoud, { ...cfg, mode: 'loudness', targetLufs: -13 })
+    const plan = await screen.findByTestId('normalize-plan')
+    expect(plan.textContent).toContain('by 1.0 dB')
+    expect(plan.textContent).toContain('not audible')
+  })
+
+  it('concedes the punch trade when the limiter works hard', async () => {
+    renderSection(track(), 1, measuredLoud, { ...cfg, mode: 'loudness', targetLufs: -9 })
+    const plan = await screen.findByTestId('normalize-plan')
+    expect(plan.textContent).toContain('by 5.0 dB')
+    expect(plan.textContent).toContain('less punch')
+  })
+})
