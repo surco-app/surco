@@ -497,7 +497,7 @@
           "El menú { } de cualquier campo de texto inserta el valor de otro campo justo donde tengas el cursor, y cambia mayúsculas y minúsculas: Tipo Título, todo en bajo o TODO EN ALTO.",
           "Un clic quita la numeración del título —«05 Nombre», «05. Nombre», «05 - Nombre»— sin tocar a 2 Unlimited ni a 3 Heads.",
           "¿Pista misteriosa? Un botón la busca en Google con el nombre del archivo ya escrito —también desde el menú contextual de la lista—, y un comando numera la selección en orden de lista (1, 2, 3…).",
-          "Tres presets de foco en la cabecera reparten el espacio entre resultados y editor de un clic, sin arrastrar el divisor.",
+          "Arrastra el divisor entre resultados y editor para repartir el espacio como te convenga; cada equipo recuerda el suyo.",
           "La sección Propiedades te enseña la ficha técnica del archivo —códec, frecuencia, bits, canales, bitrate, ruta y tamaño— y te avisa si el archivo no coincide con la calidad que pides en Ajustes, por si quieres reconvertirlo.",
           "Las secciones del editor se pliegan, se reordenan y se ocultan a tu gusto en Ajustes → Editor; plegadas resumen su estado, y cualquiera se agranda a pantalla completa (Esc para volver)."
         ],
