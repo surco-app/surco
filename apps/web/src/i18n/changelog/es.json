@@ -9,7 +9,7 @@
         "in": "0.91.0"
       },
       {
-        "text": "El aviso de los cues deja de mentir en WAV: los cues y el beatgrid de Traktor también sobreviven al convertir a WAV, y la app ya lo dice.",
+        "text": "Los avisos de los cues dejan de mentir sobre WAV: los cues y el beatgrid de Traktor también sobreviven al convertir y al recortar en WAV, y tanto el aviso de conversión como la nota del corte ya lo dicen. Solo ALAC los pierde, porque no tiene dónde guardarlos.",
         "in": "0.91.0"
       },
       {

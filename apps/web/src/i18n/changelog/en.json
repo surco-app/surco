@@ -9,7 +9,7 @@
         "in": "0.91.0"
       },
       {
-        "text": "The cue warning stops lying about WAV: Traktor's cues and beatgrid also survive a conversion to WAV, and the app now says so.",
+        "text": "The cue warnings stop lying about WAV: Traktor's cues and beatgrid also survive both converting and trimming to WAV, and the conversion warning and the trim note now say so. Only ALAC loses them, because it has nowhere to keep them.",
         "in": "0.91.0"
       },
       {
