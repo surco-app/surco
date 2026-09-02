@@ -60,6 +60,7 @@ interface Props {
   open: boolean
   onToggle: () => void
   onShowLoudnessHelp: () => void
+  showHints?: boolean
 }
 
 // The audio-quality section: spectrogram with its lossless-cutoff verdict, and the
@@ -74,6 +75,7 @@ export function QualitySection({
   open,
   onToggle,
   onShowLoudnessHelp,
+  showHints = true,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { reportError } = useToast()
@@ -154,6 +156,73 @@ export function QualitySection({
             ? 'editor.qualityCaptionGenuine'
             : qualityCaption[verdict]
       : null
+  // The same verdict, argued with the numbers the detectors decided on. Each
+  // processed branch carries its own signature; the wall cases cite the measured
+  // fine step. A cached analysis without the fields falls back to the
+  // un-numbered captions below, and the didactic why-line obeys the same
+  // inline-explanations toggle as the other sections' teaching text.
+  const evidence = (() => {
+    if (!spectrum || spectrum.cutoffHz === null) return null
+    const cutoff = formatKHz(spectrum.cutoffHz)
+    if (
+      spectrum.teethCount !== undefined &&
+      spectrum.teethFromHz !== undefined &&
+      spectrum.teethToHz !== undefined
+    )
+      return {
+        key: 'editor.qualityEvidenceTeeth',
+        why: 'editor.qualityEvidenceTeethWhy',
+        tone: 'danger' as const,
+        params: {
+          cutoff,
+          teeth: spectrum.teethCount,
+          from: formatKHz(spectrum.teethFromHz),
+          to: formatKHz(spectrum.teethToHz),
+        },
+      }
+    if (spectrum.humpPeakHz !== undefined)
+      return {
+        key: 'editor.qualityEvidenceHump',
+        why: 'editor.qualityEvidenceHumpWhy',
+        tone: 'danger' as const,
+        params: { cutoff, peak: formatKHz(spectrum.humpPeakHz) },
+      }
+    if (spectrum.flatShelf)
+      return {
+        key: 'editor.qualityEvidenceShelf',
+        why: 'editor.qualityEvidenceShelfWhy',
+        tone: 'danger' as const,
+        params: { cutoff },
+      }
+    if (spectrum.fineStepDb === undefined) return null
+    const drop = Math.round(spectrum.fineStepDb)
+    if (transcoded)
+      return {
+        key: 'editor.qualityEvidenceTranscode',
+        why: 'editor.qualityEvidenceWallWhy',
+        tone: 'danger' as const,
+        params: { cutoff, drop },
+      }
+    if (lossyCut)
+      return {
+        key: 'editor.qualityEvidenceLossy',
+        why: 'editor.qualityEvidenceWallWhy',
+        tone: 'warn' as const,
+        params: { cutoff, drop },
+      }
+    // The good verdict earns its badge only while hints are on: it is
+    // reassurance, not a warning, and hints-off users already trust the badge.
+    // A knee at or past the good line still reads good but its step is a wall,
+    // so the fade claim would lie; only a knee-free spectrum gets the line.
+    if (showHints && spectrum.hasKnee !== true && captionKey === 'editor.qualityCaptionGood')
+      return {
+        key: 'editor.qualityEvidenceGood',
+        why: null,
+        tone: 'good' as const,
+        params: { cutoff, drop },
+      }
+    return null
+  })()
   // Composes the shareable PNG (the verdict's proof for a "is this file fake?" thread)
   // and hands it to the save dialog. Guarded against double-clicks while composing.
   const [savingReport, setSavingReport] = useState(false)
@@ -250,14 +319,29 @@ export function QualitySection({
                 <Spectrogram spectrum={spectrum} transcoded={transcoded} />
                 {/* Only when the verdict needs justifying: a full-band good file is
                     already said twice (green badge, cutoff chip), so its caption
-                    would be the third telling of the same fact. */}
-                {spectrum.cutoffHz !== null &&
+                    would be the third telling of the same fact. With measured
+                    evidence available, the numbered claim replaces the caption
+                    outright; saying "cut at 16 kHz" twice would be noise. */}
+                {evidence ? (
+                  <div
+                    data-testid="quality-evidence"
+                    className="mt-2 border-l-2 pl-2.5 text-xs"
+                    style={{ borderColor: `var(--color-${evidence.tone})` }}
+                  >
+                    <p className="text-fg-dim">{tr(evidence.key, evidence.params)}</p>
+                    {showHints && evidence.why && (
+                      <p className="mt-1 text-fg-muted">{tr(evidence.why)}</p>
+                    )}
+                  </div>
+                ) : (
+                  spectrum.cutoffHz !== null &&
                   captionKey &&
                   captionKey !== 'editor.qualityCaptionGood' && (
                     <p className="mt-2 text-xs text-fg-dim">
                       {tr(captionKey, { cutoff: formatKHz(spectrum.cutoffHz) })}
                     </p>
-                  )}
+                  )
+                )}
                 {/* Orthogonal to the codec verdict: the bandwidth claim, not the
                     fidelity. Shown amber so a green "good" badge over an upsampled
                     file doesn't read as a clean bill of hi-res. */}

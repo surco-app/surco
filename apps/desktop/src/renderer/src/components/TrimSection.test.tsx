@@ -915,3 +915,42 @@ describe('TrimSection', () => {
     })
   })
 })
+
+// The trim already computes everything the user fears losing — the cut seconds,
+// the new duration, the cue re-anchoring — but showed only a terse warning. The
+// plan card states the outcome the way the normalize card does, and the yellow
+// line stays for users who turned hints off.
+describe('trim plan card', () => {
+  it('states the cut in seconds and the new duration', async () => {
+    render(section({ value: { startSec: 0.8, endSec: 97.5 }, showHints: true }))
+    const plan = await screen.findByTestId('trim-plan', undefined, { timeout: 3000 })
+    expect(plan).toHaveTextContent('0.8 s')
+    expect(plan).toHaveTextContent('2.5 s')
+    expect(plan).toHaveTextContent('1:40')
+    expect(plan).toHaveTextContent('1:36')
+  })
+
+  it('words a start-only cut without a phantom end cut', async () => {
+    render(section({ value: { startSec: 1.2 }, showHints: true }))
+    const plan = await screen.findByTestId('trim-plan', undefined, { timeout: 3000 })
+    expect(plan).toHaveTextContent('1.2 s')
+    expect(plan).not.toHaveTextContent('from the end')
+    expect(plan).toHaveTextContent('1:38')
+  })
+
+  it('explains that Traktor cues and the beatgrid ride the cut', async () => {
+    render(section({ value: { startSec: 0.8, endSec: 97.5 }, showHints: true }))
+    const plan = await screen.findByTestId('trim-plan', undefined, { timeout: 3000 })
+    expect(plan).toHaveTextContent('Traktor cues')
+    // The card absorbs the old yellow warning; saying "re-encodes, cues move"
+    // twice would be noise.
+    expect(screen.queryByTestId('trim-cue-warning')).not.toBeInTheDocument()
+  })
+
+  it('falls back to the terse cue warning when hints are off', async () => {
+    render(section({ value: { startSec: 0.8, endSec: 97.5 }, showHints: false }))
+    await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
+    expect(screen.queryByTestId('trim-plan')).not.toBeInTheDocument()
+    expect(screen.getByTestId('trim-cue-warning')).toBeInTheDocument()
+  })
+})

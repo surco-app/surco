@@ -53,7 +53,7 @@ function track(inputPath = '/music/a.flac'): TrackItem {
   }
 }
 
-function renderSection(spectrum: SpectrumResult, inputPath?: string): void {
+function renderSection(spectrum: SpectrumResult, inputPath?: string, showHints = true): void {
   ;(window as unknown as { api: unknown }).api = {
     spectrogram: vi.fn().mockResolvedValue(spectrum),
   }
@@ -68,6 +68,7 @@ function renderSection(spectrum: SpectrumResult, inputPath?: string): void {
         open
         onToggle={vi.fn()}
         onShowLoudnessHelp={vi.fn()}
+        showHints={showHints}
       />
     </QueryClientProvider>,
   )
@@ -266,6 +267,7 @@ describe('QualitySection verdict caption', () => {
             open
             onToggle={vi.fn()}
             onShowLoudnessHelp={vi.fn()}
+            showHints
           />
         </ToastProvider>
       </QueryClientProvider>,
@@ -454,5 +456,195 @@ describe('QualitySection shareable report', () => {
     )
     expect(await screen.findByTestId('spectrogram')).toBeInTheDocument()
     expect(screen.queryByTestId('quality-save-report')).not.toBeInTheDocument()
+  })
+})
+
+// The verdict argues itself with the numbers it was decided on — the same
+// pedagogy the normalize plan card brought: a "my FLAC is not lossy" dispute
+// should arrive with the measured evidence already on screen.
+describe('verdict evidence', () => {
+  it('argues a transcode with the measured wall: the size of the drop in decibels', async () => {
+    renderSection(
+      {
+        image: '',
+        cutoffHz: 16000,
+        sampleRateHz: 44100,
+        processed: false,
+        hasKnee: true,
+        fineStepDb: 43.2,
+      },
+      '/m/a.flac',
+    )
+    const evidence = await screen.findByTestId('quality-evidence')
+    expect(evidence).toHaveTextContent('drops 43 dB within one kilohertz')
+    expect(evidence).toHaveTextContent('16.0 kHz')
+    // The didactic why-line rides along while hints are on.
+    expect(evidence).toHaveTextContent(i18n.t('editor.qualityEvidenceWallWhy'))
+    // The evidence replaces the old caption; both would say "cut at 16 kHz" twice.
+    expect(
+      screen.queryByText(i18n.t('editor.qualityCaptionTranscode', { cutoff: '16.0 kHz' })),
+    ).not.toBeInTheDocument()
+  })
+
+  it('argues a lossy-container cut with the same measured wall', async () => {
+    renderSection(
+      {
+        image: '',
+        cutoffHz: 16000,
+        sampleRateHz: 44100,
+        processed: false,
+        hasKnee: true,
+        fineStepDb: 30.6,
+      },
+      '/m/a.mp3',
+    )
+    const evidence = await screen.findByTestId('quality-evidence')
+    expect(evidence).toHaveTextContent('drops 31 dB within one kilohertz')
+  })
+
+  it('keeps the measured claim but drops the didactic why-line when hints are off', async () => {
+    renderSection(
+      {
+        image: '',
+        cutoffHz: 16000,
+        sampleRateHz: 44100,
+        processed: false,
+        hasKnee: true,
+        fineStepDb: 43.2,
+      },
+      '/m/a.flac',
+      false,
+    )
+    const evidence = await screen.findByTestId('quality-evidence')
+    expect(evidence).toHaveTextContent('drops 43 dB within one kilohertz')
+    expect(screen.queryByText(i18n.t('editor.qualityEvidenceWallWhy'))).not.toBeInTheDocument()
+  })
+
+  it('counts the saw-tooth for a Reprocessed verdict: how many rises and where', async () => {
+    renderSection(
+      {
+        image: '',
+        cutoffHz: 16500,
+        sampleRateHz: 44100,
+        processed: true,
+        teethCount: 3,
+        teethFromHz: 17500,
+        teethToHz: 20000,
+      },
+      '/m/a.flac',
+    )
+    const evidence = await screen.findByTestId('quality-evidence')
+    expect(evidence).toHaveTextContent('rise 3 times between 17.5 kHz and 20.0 kHz')
+    expect(evidence).toHaveTextContent('16.5 kHz')
+  })
+
+  it('names the hump peak over the valley for an enhancer verdict', async () => {
+    renderSection(
+      {
+        image: '',
+        cutoffHz: 16000,
+        sampleRateHz: 44100,
+        processed: true,
+        humpPeakHz: 19000,
+      },
+      '/m/a.flac',
+    )
+    const evidence = await screen.findByTestId('quality-evidence')
+    expect(evidence).toHaveTextContent(
+      i18n.t('editor.qualityEvidenceHump', { cutoff: '16.0 kHz', peak: '19.0 kHz' }),
+    )
+  })
+
+  it('describes the dead-flat shelf for a shelf-decided verdict', async () => {
+    renderSection(
+      {
+        image: '',
+        cutoffHz: 16000,
+        sampleRateHz: 44100,
+        processed: true,
+        flatShelf: true,
+      },
+      '/m/a.flac',
+    )
+    const evidence = await screen.findByTestId('quality-evidence')
+    expect(evidence).toHaveTextContent(
+      i18n.t('editor.qualityEvidenceShelf', { cutoff: '16.0 kHz' }),
+    )
+  })
+
+  it('lets a full-band good verdict earn its badge while hints are on', async () => {
+    // The plain good verdict stays caption-free (badge + chip already tell it
+    // twice); with hints on and a measured step available, the reassurance line
+    // says WHY it is good — the shape, not just the reach.
+    renderSection({
+      image: '',
+      cutoffHz: 21000,
+      sampleRateHz: 44100,
+      processed: false,
+      hasKnee: false,
+      fineStepDb: 4.5,
+    })
+    const evidence = await screen.findByTestId('quality-evidence')
+    expect(evidence).toHaveTextContent('5 dB')
+  })
+
+  it('keeps the plain good verdict silent when hints are off', async () => {
+    renderSection(
+      {
+        image: '',
+        cutoffHz: 21000,
+        sampleRateHz: 44100,
+        processed: false,
+        hasKnee: false,
+        fineStepDb: 4.5,
+      },
+      '/m/a.flac',
+      false,
+    )
+    await screen.findByTestId('quality-badge')
+    expect(screen.queryByTestId('quality-evidence')).not.toBeInTheDocument()
+  })
+
+  it('falls back to the old captions when a cached analysis has no evidence', async () => {
+    // Analyses cached before the evidence fields existed still deserve a verdict
+    // sentence — the un-numbered caption, exactly as before.
+    renderSection(
+      { image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false, hasKnee: true },
+      '/m/a.flac',
+    )
+    expect(
+      await screen.findByText(i18n.t('editor.qualityCaptionTranscode', { cutoff: '16.0 kHz' })),
+    ).toBeInTheDocument()
+    expect(screen.queryByTestId('quality-evidence')).not.toBeInTheDocument()
+  })
+
+  // The same discipline the captions live under: state the measurement, never
+  // guess a bitrate, never coach a listen.
+  const EVIDENCE_PARAMS = {
+    cutoff: '19.0 kHz',
+    drop: 43,
+    teeth: 3,
+    from: '17.5 kHz',
+    to: '20.0 kHz',
+    peak: '19.0 kHz',
+  }
+  it.each([
+    'editor.qualityEvidenceGood',
+    'editor.qualityEvidenceTranscode',
+    'editor.qualityEvidenceLossy',
+    'editor.qualityEvidenceWallWhy',
+    'editor.qualityEvidenceTeeth',
+    'editor.qualityEvidenceTeethWhy',
+    'editor.qualityEvidenceHump',
+    'editor.qualityEvidenceHumpWhy',
+    'editor.qualityEvidenceShelf',
+    'editor.qualityEvidenceShelfWhy',
+  ])('keeps %s a measurement: no bitrate guess, no listening advice', (key) => {
+    for (const lng of ['en', 'es']) {
+      const text = i18n.getFixedT(lng)(key, EVIDENCE_PARAMS)
+      expect(text).not.toBe(key)
+      expect(text).not.toMatch(/kbps/)
+      expect(text).not.toMatch(/listen|escúcha|antes de pinchar|before you play/i)
+    }
   })
 })

@@ -15,6 +15,7 @@ import type { TrimRange, WaveformResult } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
 import { useWaveformWindow } from '../hooks/useWaveformWindow'
+import { formatTime } from '../lib/duration'
 import { claimKeys } from '../lib/spaceClaim'
 import { detectOnsets, detectTrim, refineOnset } from '../lib/trim'
 import { drawWaveform } from '../lib/waveform'
@@ -74,10 +75,47 @@ interface Props {
   onToggle: () => void
   onChange: (trim: TrimRange | undefined) => void
   inputPath: string
+  showHints?: boolean
 }
 
 function cutSeconds(seconds: number): string {
   return `${seconds.toFixed(1)} s`
+}
+
+// The plan card: the outcome of the staged cut in plain numbers, mirroring the
+// normalize plan. While inline explanations are on it replaces the terse cue
+// warning, and the didactic line under the numbers tells the same fact the
+// warning compressed: cues and beatgrid re-anchor to the cut.
+function TrimPlan({
+  value,
+  durationSec,
+}: {
+  value: TrimRange
+  durationSec: number
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const startCut = value.startSec ?? 0
+  const endCut = value.endSec !== undefined ? durationSec - value.endSec : 0
+  const planKey = startCut > 0 && endCut > 0 ? 'planBoth' : endCut > 0 ? 'planEnd' : 'planStart'
+  return (
+    <div
+      data-testid="trim-plan"
+      className="mt-3 rounded-lg border border-[var(--color-line)] border-l-[3px] border-l-[var(--color-accent)] bg-[var(--color-field)] px-3 py-2.5"
+    >
+      <p className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
+        {tr('trim.planHead')}
+      </p>
+      <p className="mt-1 text-xs leading-relaxed text-fg tabular-nums">
+        {tr(`trim.${planKey}`, {
+          start: cutSeconds(startCut),
+          end: cutSeconds(endCut),
+          from: formatTime(durationSec),
+          to: formatTime(Math.max(0, durationSec - startCut - endCut)),
+        })}
+      </p>
+      <p className="mt-0.5 text-[11px] text-fg-muted">{tr('trim.planCues')}</p>
+    </div>
+  )
 }
 
 type Side = 'start' | 'end'
@@ -510,6 +548,7 @@ export function TrimSection({
   onToggle,
   onChange,
   inputPath,
+  showHints = true,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // The waveform decodes the full file, so it waits for the selection to rest and
@@ -1066,17 +1105,23 @@ export function TrimSection({
                 </div>
               )}
               {/* The warning matters (a WAV or FLAC loses its cues on the re-encode),
-                  but it was two lines of yellow prose under every trim. A short line
-                  states the consequence; the full sentence rides its tooltip. */}
-              {value && (
-                <p
-                  data-testid="trim-cue-warning"
-                  className="relative mt-2 inline-flex items-center gap-1.5 text-[10px] text-warn"
-                >
-                  <TriangleAlert className="h-3 w-3 shrink-0" aria-hidden="true" />
-                  {tr('trim.cueWarningShort')}
-                  <Tooltip label={tr('trim.cueWarning')} />
-                </p>
+                  but it was two lines of yellow prose under every trim. With hints
+                  on, the plan card states the whole outcome instead; with hints
+                  off, the short line states the consequence and the full sentence
+                  rides its tooltip. */}
+              {value && showHints && durationSec > 0 ? (
+                <TrimPlan value={value} durationSec={durationSec} />
+              ) : (
+                value && (
+                  <p
+                    data-testid="trim-cue-warning"
+                    className="relative mt-2 inline-flex items-center gap-1.5 text-[10px] text-warn"
+                  >
+                    <TriangleAlert className="h-3 w-3 shrink-0" aria-hidden="true" />
+                    {tr('trim.cueWarningShort')}
+                    <Tooltip label={tr('trim.cueWarning')} />
+                  </p>
+                )
               )}
             </>
           )}

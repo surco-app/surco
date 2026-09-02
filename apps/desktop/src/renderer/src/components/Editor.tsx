@@ -1113,6 +1113,7 @@ export const Editor = memo(function Editor({
                             open={spectrumOpen}
                             onToggle={() => setSectionOpen('quality', !spectrumOpen)}
                             onShowLoudnessHelp={onShowLoudnessHelp}
+                            showHints={showEditorHints}
                           />
                         )
                       )
@@ -1194,6 +1195,7 @@ export const Editor = memo(function Editor({
                           onToggle={() => setSectionOpen('trim', !trimOpen)}
                           onChange={(trim) => onChange({ trim })}
                           inputPath={item.inputPath}
+                          showHints={showEditorHints}
                         />
                       )
                     case 'declick':

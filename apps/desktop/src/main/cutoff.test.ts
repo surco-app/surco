@@ -184,6 +184,9 @@ describe('detectCutoff', () => {
       cutoffHz: 16000,
       processed: true,
       hasKnee: false,
+      // The evidence the verdict shows: the hump peaks at 19 kHz, louder than the
+      // 16 kHz valley it grew from — the rise a natural spectrum never makes.
+      humpPeakHz: 19000,
     })
   })
 
@@ -278,6 +281,11 @@ describe('detectCutoff fine-band roughness', () => {
       cutoffHz: 16500,
       processed: true,
       hasKnee: false,
+      // The evidence the verdict shows: three separate fine-band rises between
+      // 17.5 and 20 kHz (18, 19 and 20 kHz), counted off this very fixture.
+      teethCount: 3,
+      teethFromHz: 17500,
+      teethToHz: 20000,
     })
   })
 
@@ -307,8 +315,8 @@ describe('detectCutoff fine-band roughness', () => {
     // (the SBR fixture rises three separate times). Summing rises let this one
     // bump clear the 3 dB bar, and a clean rip was reported as Reprocessed.
     const coarse = fftBand([
-      -53.91, -55.6, -56.01, -57.89, -58.65, -59.53, -60.72, -60.28, -55.81, -61.33, -63.61,
-      -64.49, -65.73,
+      -53.91, -55.6, -56.01, -57.89, -58.65, -59.53, -60.72, -60.28, -55.81, -61.33, -63.61, -64.49,
+      -65.73,
     ])
     const oneBump = fine([
       -59.06, -59.06, -59.55, -60.24, -60.64, -60.37, -60.75, -59.38, -54.76, -57.21, -61.52,

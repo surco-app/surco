@@ -23,6 +23,9 @@ describe('spectrum verdicts over the measured corpus', () => {
       const verdict = await grade(entry)
       expect(verdict.hasKnee).toBe(true)
       expect(verdict.processed).toBe(false)
+      // The wall step the caption cites must be the same measurement that let the
+      // knee stand — at least the KNEE_FINE_STEP_DB bar every encode here clears.
+      expect(verdict.fineStepDb).toBeGreaterThanOrEqual(28)
     },
   )
 
