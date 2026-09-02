@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DONATE_URL } from '../config'
+import { trackDonate } from '../lib/analytics'
 import { isCondensed } from '../lib/header'
 import { HEADER_SECTIONS, PAGES, type Page } from '../lib/nav'
 import { btnPrimary } from '../lib/ui'
@@ -119,6 +120,7 @@ export default function Header({ page }: { page?: Page }) {
             href={DONATE_URL}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackDonate('header')}
             className={`hidden gap-1.5 ${btnPrimary} px-3.5 py-2 text-xs sm:inline-flex`}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -221,7 +223,10 @@ export default function Header({ page }: { page?: Page }) {
             href={DONATE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              trackDonate('header-mobile')
+              setOpen(false)
+            }}
             className="flex items-center gap-2 py-3 text-sm text-blue transition-colors hover:text-cyan"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
