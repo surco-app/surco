@@ -61,7 +61,10 @@ function makeToneWav(secs = 5) {
 async function launch() {
   const app = await electron.launch({
     executablePath: electronPath,
-    args: [mainEntry],
+    // Pin the scale factor: on a Retina display the window renders at DPR 2 and every
+    // screenshot comes out at twice the guide's 1440x895, which silently forks the
+    // capture set into two resolutions.
+    args: [mainEntry, '--force-device-scale-factor=1'],
     // Headed on macOS shows a real window; that's fine and lets screenshots capture it.
     env: { ...process.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
   })
@@ -163,6 +166,45 @@ async function repl() {
         const box = await loc.boundingBox()
         await page.mouse.click(box.x + box.width * frac, box.y + box.height / 2)
         console.log('clicked ' + sel + ' at ' + frac)
+      }
+      // win <w> <h>: size the window so a screenshot comes out at exactly w×h device
+      // pixels. The guide's captures are 1440x895 and this display runs at DPR 2, so
+      // launching untouched yields 2640x1640 and a set that no longer matches the rest.
+      // zoomFactor 1/DPR makes the CSS viewport w×h at one device pixel each.
+      else if (cmd === 'win') {
+        const [w, h] = arg.split(/\s+/).map(Number)
+        await app.evaluate(async ({ BrowserWindow }, [w, h]) => {
+          const win = BrowserWindow.getAllWindows()[0]
+          // Zoom is persisted per origin by Chromium, so a stale factor from an earlier
+          // run silently rescales every capture. Pin it back to 1 before sizing.
+          win.webContents.setZoomFactor(1)
+          win.setContentSize(w, h)
+        }, [w, h])
+        await page.waitForTimeout(400)
+        // setContentSize can land short when the OS clamps the frame, so correct once
+        // against what the renderer actually reports rather than trusting the request.
+        const [iw, ih] = await page.evaluate('[window.innerWidth,window.innerHeight]')
+        if (iw !== w || ih !== h) {
+          await app.evaluate(async ({ BrowserWindow }, [w, h, iw, ih]) => {
+            const win = BrowserWindow.getAllWindows()[0]
+            const [cw, ch] = win.getContentSize()
+            win.setContentSize(cw + (w - iw), ch + (h - ih))
+          }, [w, h, iw, ih])
+          await page.waitForTimeout(400)
+        }
+        console.log('win ' + (await page.evaluate('window.innerWidth+"x"+window.innerHeight')))
+      }
+      // park: move the pointer to a dead corner. A row left under the cursor keeps its
+      // hover affordances up (the play button and the remove ✕ sit on top of the title),
+      // which is not what the guide should show.
+      else if (cmd === 'park') { await page.mouse.move(2, 2); await page.waitForTimeout(250); console.log('parked') }
+      // scrollto <selector>: bring a panel into view inside the editor's own scroller.
+      // The editor column scrolls independently, so a section below the fold is present
+      // in the DOM but absent from the screenshot.
+      else if (cmd === 'scrollto') {
+        await page.locator(arg).first().scrollIntoViewIfNeeded()
+        await page.waitForTimeout(600)
+        console.log('scrolled to ' + arg)
       }
       else if (cmd === 'hover') { await page.locator(arg).first().hover(); console.log('hovered ' + arg) }
       // clicktext <text>: click the first button whose label contains <text>. Some section

@@ -77,7 +77,10 @@ printf 'launch\ntone 5\nplay\nss player\nquit\n' | node driver.mjs repl
 Commands: `launch` · `tone [secs]` (make + open a tone WAV) · `open <wavPath>` ·
 `play` (double-click the track row → open the floating player) · `ss <name>`
 (→ `/tmp/surco-<name>.png`) · `click <selector>` · `hover <selector>` (to raise a
-tooltip before `ss`) · `eval <js>` (prints JSON) · `quit`.
+tooltip before `ss`) · `eval <js>` (prints JSON) · `win <w> <h>` (size the window so
+`ss` lands at exactly w×h) · `park` (move the pointer to a dead corner) ·
+`scrollto <selector>` (bring a panel into view inside the editor's own scroller) ·
+`quit`.
 Selectors use the renderer's `data-testid`s — e.g. `[data-testid="player"]`,
 `[data-testid="track-row"]`, `[data-testid="player-volume-slider"]`,
 `[data-testid="player-volume"]` (the % readout).
@@ -126,6 +129,13 @@ Renderer components (e.g. `src/renderer/src/components/Player.tsx`) likewise hav
   ~20 kHz cutoff and real loudness numbers once that section is open. (A first screenshot taken
   before the panel finishes may briefly read "Could not analyze the audio" — that's the analysis
   still running, not a failure.)
+- **Capturing for `/guia`?** The published set is 1440x867: run `win 1440 867` right
+  after `launch`, and `park` before every `ss` or the hovered row covers its own title
+  with the play button. The settings tabs are `role="tab"`, so `clicktext` never matches
+  them and fails *silently* — address them by testid (`settings-tab-conversion` is
+  "Formato", `-destination` is "Destino"), or two sections end up with the same picture.
+  Shoot the onboarding wizard LAST: it needs `hasSeenOnboarding:false`, which otherwise
+  covers every later screen.
 - **The player card hides its pills until hovered.** The driver hovers before screenshotting;
   in the REPL, `eval` a `.hover()` or just screenshot right after a `click` that left the
   pointer on the card.
