@@ -639,7 +639,8 @@
     "plan": {
       "head": "Was mit diesem Track passiert",
       "limited": "Er wird um {{gain}} dB auf {{lufs}} LUFS verschoben. Seine Peaks würden die Obergrenze um {{over}} dB überschreiten, daher hält der Limiter sie bei {{peak}} dBTP.",
-      "limitedSub": "Nur die überstehenden Peaks werden gekappt; der Rest bleibt unangetastet.",
+      "limitedSub": "Nur die überstehenden Peaks werden gekappt, aber bei so viel Limiting klingen die lautesten Schläge einen Hauch weniger druckvoll.",
+      "limitedSubLight": "Nur die Spitzen der schärfsten Transienten werden gekappt; ein so leichter Eingriff ist nicht hörbar.",
       "gain": "Er wird um {{gain}} dB auf {{lufs}} LUFS verschoben, mit konstanter Verstärkung. Seine Peaks landen bei {{peak}} dBTP: die Obergrenze greift nicht.",
       "gainSub": "Nichts wird limitiert oder komprimiert; die Dynamik bleibt erhalten.",
       "peak": "Er wird um {{gain}} dB verschoben: sein lautestes Sample landet genau bei {{peak}} dBFS.",

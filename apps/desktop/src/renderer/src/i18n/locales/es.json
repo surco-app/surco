@@ -639,7 +639,8 @@
     "plan": {
       "head": "Qué pasará con esta pista",
       "limited": "Cambiará {{gain}} dB hasta {{lufs}} LUFS. Sus picos pasarían del techo en {{over}} dB, así que el limitador los frenará en {{peak}} dBTP.",
-      "limitedSub": "Solo se recortan los picos que sobran; el resto de la pista no se toca.",
+      "limitedSub": "Solo se recortan los picos que sobran, pero con tanto limitador espera un pelín menos de pegada en los golpes más fuertes.",
+      "limitedSubLight": "Solo se recortan las puntas de los transitorios más afilados; un toque tan ligero no se oye.",
       "gain": "Cambiará {{gain}} dB hasta {{lufs}} LUFS con una ganancia constante. Sus picos quedarán en {{peak}} dBTP: el techo no llega a actuar.",
       "gainSub": "No se limita ni comprime nada; la dinámica queda intacta.",
       "peak": "Cambiará {{gain}} dB: su sample más alto quedará exactamente en {{peak}} dBFS.",

@@ -639,7 +639,8 @@
     "plan": {
       "head": "What will happen to this track",
       "limited": "It will move {{gain}} dB to {{lufs}} LUFS. Its peaks would pass the ceiling by {{over}} dB, so the limiter will hold them at {{peak}} dBTP.",
-      "limitedSub": "Only the overshooting peaks are trimmed; the rest of the track is untouched.",
+      "limitedSub": "Only the overshooting peaks are trimmed, but at this much limiting expect a touch less punch in the loudest hits.",
+      "limitedSubLight": "Only the sharpest transient tips get trimmed; a touch this light is not audible.",
       "gain": "It will move {{gain}} dB to {{lufs}} LUFS with one constant gain. Its peaks will sit at {{peak}} dBTP: the ceiling never engages.",
       "gainSub": "Nothing is limited or compressed; the dynamics stay intact.",
       "peak": "It will move {{gain}} dB: its loudest sample will sit exactly at {{peak}} dBFS.",
