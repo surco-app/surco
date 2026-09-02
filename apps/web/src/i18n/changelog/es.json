@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.91",
+    "date": "2 de septiembre de 2026",
+    "title": "El veredicto de calidad enseña sus cuentas",
+    "items": [
+      {
+        "text": "El veredicto de calidad ya no se limita a etiquetar la pista: cuenta la medida que lo sostiene. Dice hasta dónde llega la energía, cuánto cae en un kilohercio y por qué esa forma delata a un códec, a un enhancer o a un upscaler, en vez de pedirte que te fíes de una palabra. La nota del corte hace lo mismo: además de la duración que queda, avisa de que recodifica el audio y de que los cues y el beatgrid de Traktor se mueven con el corte, así que todo sigue cayendo en el mismo golpe.",
+        "in": "0.91.0"
+      },
+      {
+        "text": "El aviso de los cues deja de mentir en WAV: los cues y el beatgrid de Traktor también sobreviven al convertir a WAV, y la app ya lo dice.",
+        "in": "0.91.0"
+      },
+      {
+        "text": "Los tres presets de columnas (\"ensanchar resultados\", \"equilibradas\", \"ensanchar el editor\") desaparecen de la barra y dejan su sitio a \"Convertir las N\", que lanza la conversión de toda la lista de una vez. El ancho de las columnas se sigue ajustando arrastrando el divisor, que es como se hacía de todos modos.",
+        "in": "0.91.0"
+      },
+      {
+        "text": "La tarjeta \"Qué pasará con esta pista\" cuenta la verdad sobre el limitador: cuando solo lima las puntas de los transitorios más afilados dice que un toque así no se oye, y cuando el recorte es grande avisa de que esperes un pelín menos de pegada en los golpes más fuertes, en lugar de prometer siempre que no se toca nada.",
+        "in": "0.91.0"
+      }
+    ]
+  },
+  {
     "version": "0.90",
     "date": "31 de agosto de 2026",
     "title": "La normalización te dice qué va a hacer",
