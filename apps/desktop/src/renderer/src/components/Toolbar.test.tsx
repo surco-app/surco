@@ -15,8 +15,9 @@ function renderBar(over: Partial<Props> = {}): Props {
     isMac: true,
     hintFor: () => '',
     trackCount: 3,
-    focusPreset: 'match',
-    onFocusPreset: vi.fn(),
+    convertibleCount: 3,
+    canConvertAll: true,
+    onConvertAll: vi.fn(),
     importing: null,
     batchSummary: null,
     batching: false,
@@ -98,17 +99,11 @@ describe('Toolbar', () => {
   // pill is the conversion's counterpart of the sweep buttons: visible only while a
   // batch runs, naming its done/total, and clicking it cancels — queued tracks bail,
   // the ones already converting finish.
-  it('shows the batch progress pill while converting and cancels on click', () => {
-    const props = renderBar({ batching: true, batchProgress: { done: 3, total: 12 } })
-    const pill = screen.getByTestId('batch-progress')
-    expect(pill).toHaveTextContent('3/12')
-    fireEvent.click(pill)
-    expect(props.onCancelBatch).toHaveBeenCalledOnce()
-  })
-
-  it('hides the batch pill when no batch is running', () => {
-    renderBar({ batchProgress: { done: 5, total: 5 } })
-    expect(screen.queryByTestId('batch-progress')).toBeNull()
+  // The run's progress lives on the convert button itself now, not a pill beside it — see
+  // the convert-all cases below, which cover the same counter and cancel.
+  it('shows the count on the convert button while a run is going', () => {
+    renderBar({ batching: true, batchProgress: { done: 3, total: 12 } })
+    expect(screen.getByTestId('convert-all')).toHaveTextContent('3/12')
   })
 
   // A big drop used to be an opaque wait; the counter is the import's only progress
@@ -147,31 +142,60 @@ describe('Toolbar', () => {
     }
   })
 
-  // A focus preset reparks both columns in one click — the reason the control exists over
-  // dragging two dividers. Clicking a segment must fire with that segment's id.
-  it('applies the clicked focus preset', () => {
+  // Converting the whole list is what Surco is for, and it had no button anywhere: only a
+  // shortcut and a palette entry. The toolbar carried the two sweeps that PREPARE the work
+  // (match, analyze) and nothing that runs it.
+  it('converts the whole list', () => {
     const props = renderBar()
-    fireEvent.click(screen.getByTestId('focus-preset-edit'))
-    expect(props.onFocusPreset).toHaveBeenCalledWith('edit')
+    fireEvent.click(screen.getByTestId('convert-all'))
+    expect(props.onConvertAll).toHaveBeenCalled()
   })
 
-  // The active preset is lit (aria-pressed) so the user can see which layout they're in;
-  // the others stay unpressed. A drag off every preset (focusPreset null) lights none.
-  it('marks only the active preset, and none once dragged off', () => {
-    renderBar({ focusPreset: 'match' })
-    expect(screen.getByTestId('focus-preset-match')).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByTestId('focus-preset-balanced')).toHaveAttribute('aria-pressed', 'false')
-    expect(screen.getByTestId('focus-preset-edit')).toHaveAttribute('aria-pressed', 'false')
-    cleanup()
-    renderBar({ focusPreset: null })
-    expect(screen.getByTestId('focus-preset-balanced')).toHaveAttribute('aria-pressed', 'false')
+  // The editor footer carries its own "Convert to AIFF" for the open track. Seen together
+  // on one screen the two read as the same action, so this one names its scope: the count
+  // is what says "the list", not "this track".
+  it('names how many tracks it would convert', () => {
+    renderBar({ convertibleCount: 12 })
+    expect(screen.getByTestId('convert-all')).toHaveTextContent('12')
   })
 
-  // The presets act on the results and editor columns, which don't exist until the crate
-  // has tracks — an empty list hides the whole control.
-  it('hides the focus presets when the list is empty', () => {
+  // On a one-track crate "convert them all" and the editor footer's "Convert to AIFF" are
+  // the same click, and no wording can tell them apart — so the header stays out of the way
+  // and lets the footer, which names the format, own it.
+  it('stays away on a single-track crate', () => {
+    renderBar({ trackCount: 1, convertibleCount: 1 })
+    expect(screen.queryByTestId('convert-all')).toBeNull()
+  })
+
+  // Same shape as the sweeps beside it: the control that shows a run is the one that stops
+  // it, so a misfired convert-all doesn't have to be waited out.
+  it('cancels the run from the same button', () => {
+    const props = renderBar({ batching: true, batchProgress: { done: 12, total: 40 } })
+    fireEvent.click(screen.getByTestId('convert-all'))
+    expect(props.onCancelBatch).toHaveBeenCalled()
+    expect(props.onConvertAll).not.toHaveBeenCalled()
+  })
+
+  // The count has to reach a screen reader as one label; the digits alone are silent. And
+  // exactly once: this button replaced a separate progress pill that announced the same
+  // run, which would have read the count out twice.
+  it('announces how far the run has got, once', () => {
+    renderBar({ batching: true, batchProgress: { done: 12, total: 40 } })
+    const name = i18n.t('header.convertingCount', { done: 12, total: 40 })
+    expect(screen.getAllByRole('status', { name })).toHaveLength(1)
+  })
+
+  // Nothing eligible (every track converted, or a run already going) leaves the button
+  // visible but dead, like the sweeps — not hidden, which would make it hard to find again.
+  it('disables itself when there is nothing to convert', () => {
+    renderBar({ canConvertAll: false })
+    expect(screen.getByTestId('convert-all')).toBeDisabled()
+  })
+
+  // It acts on the list, which doesn't exist until the crate has tracks.
+  it('hides the convert button when the list is empty', () => {
     renderBar({ trackCount: 0 })
-    expect(screen.queryByTestId('focus-presets')).toBeNull()
+    expect(screen.queryByTestId('convert-all')).toBeNull()
   })
 
   // The dot is the only always-visible signal that background work is running while

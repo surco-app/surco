@@ -23,11 +23,6 @@
   },
   "header": {
     "add": "Dateien hinzufügen",
-    "focus": {
-      "match": "Ergebnisse zum Zuordnen verbreitern",
-      "balanced": "Ausgewogene Spalten",
-      "edit": "Editor verbreitern"
-    },
     "batchConverted": "{{count}} konvertiert",
     "batchSkipped": "{{count}} übersprungen",
     "batchFailed": "{{count}} fehlgeschlagen",
@@ -43,6 +38,7 @@
     "analyzeQuality": "Qualität aller Tracks analysieren",
     "analyzingCount": "Analysiere Qualität… {{done}}/{{total}}",
     "convertingCount": "Konvertiere… {{done}}/{{total}}",
+    "convertAll": "Alle {{count}} konvertieren",
     "cancelConvert": "Konvertierung abbrechen: Tracks in der Warteschlange werden übersprungen, laufende werden beendet",
     "cancelImport": "Einlesen stoppen: bereits Gelesenes bleibt, der Rest entfällt",
     "autoMatch": "Alle Tracks automatisch mit Discogs abgleichen",

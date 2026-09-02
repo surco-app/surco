@@ -4,13 +4,12 @@ import { memo, useCallback, useEffect, useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type { ReleaseTrack, SearchProviderId } from '../../../shared/types'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
-import { DEFAULT_RESULTS_WIDTH } from '../lib/focusPreset'
 import { useOpenSettings } from '../lib/openSettingsContext'
 import { type ReleaseMetaPatch, resultIdentity, resultPressing } from '../lib/release'
 import { contentDeficit } from '../lib/resize'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
-import { ResizeHandle, useResizableWidth } from './ResizeHandle'
+import { DEFAULT_RESULTS_WIDTH, ResizeHandle, useResizableWidth } from './ResizeHandle'
 import { SearchInput } from './SearchInput'
 import { Select } from './Select'
 import { Tooltip } from './Tooltip'
@@ -102,13 +101,6 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     720,
     onResultsWidthChange,
   )
-  // A header focus preset parks this column by writing resultsWidth to settings, which
-  // arrives here as a prop change. Mirror it into the drag state so the column actually
-  // moves (a drag commits the same value back, so this no-ops on the user's own drags).
-  useEffect(() => {
-    if (resultsWidth != null) discogs.syncTo(resultsWidth)
-  }, [resultsWidth, discogs.syncTo])
-
   // Double-clicking the divider fits the Discogs column to its results: measure how far each
   // release and track title is clipped (or has to spare) and resize by the widest, so long
   // album names stop truncating — and a column left too wide tightens back up.

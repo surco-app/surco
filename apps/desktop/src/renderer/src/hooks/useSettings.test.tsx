@@ -182,11 +182,11 @@ describe('useSettings optimistic saves', () => {
 })
 
 describe('useSettings optimistic layout width', () => {
-  // A focus preset (and a divider drag) writes resultsWidth through saveSettings, which
-  // round-trips to disk before returning. On a slow config volume that round-trip is
-  // visible lag — the column doesn't move until the write lands, so rapid preset clicks
-  // feel unresponsive. resultsWidth applies optimistically, like the theme, so the column
-  // reparks in the same frame as the click and the disk write catches up in the background.
+  // A divider drag writes resultsWidth through saveSettings, which round-trips to disk
+  // before returning. On a slow config volume that round-trip is visible lag — the column
+  // doesn't settle until the write lands, so the drag feels like it snaps back.
+  // resultsWidth applies optimistically, like the theme, so the column lands in the same
+  // frame as the release and the disk write catches up in the background.
   it('applies resultsWidth immediately, before the disk write resolves', async () => {
     const initial = settings({ conversionCount: 1, resultsWidth: 315 })
     let resolveSave: (s: Settings) => void = () => {}
