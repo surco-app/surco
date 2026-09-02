@@ -65,7 +65,9 @@ describe('applemusic:add logging', () => {
   it('records the failure, the file and the AppleScript message', async () => {
     const original = process.platform
     Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true })
-    addToAppleMusic.mockRejectedValue(new Error('Argument out of range: index must be less than -1'))
+    addToAppleMusic.mockRejectedValue(
+      new Error('Argument out of range: index must be less than -1'),
+    )
 
     await expect(handlers.get('applemusic:add')?.(null, JOB)).rejects.toThrow('index must be less')
 

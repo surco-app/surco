@@ -1,3 +1,4 @@
+import { METADATA_KEYS } from '../../../shared/metadata'
 import type {
   Release,
   ReleaseTrack,
@@ -5,7 +6,6 @@ import type {
   SearchResult,
   TrackMetadata,
 } from '../../../shared/types'
-import { METADATA_KEYS } from '../../../shared/metadata'
 import { parseDuration } from './duration'
 import { foldText } from './normalizeText'
 import { splitPosition } from './position'
@@ -529,43 +529,43 @@ export function buildReleaseMeta(
   const pos = track ? splitPosition(track.position) : undefined
   const keepCover = cover.keep && !!cover.url
   const imported: TrackMetadata = {
-      ...current,
-      title: track ? track.title : current.title,
-      trackNumber: pos ? pos.track : current.trackNumber,
-      discNumber: pos ? pos.disc : current.discNumber,
-      album: rel.title,
-      albumArtist,
-      // Like every other field, the artist applies from the release: the track's own
-      // artist (compilations) first, then the album artist — overwriting a wrong existing
-      // value rather than keeping it. The current value stands only if Discogs has none.
-      artist: trackArtist || albumArtist || current.artist,
-      year: rel.year ? String(rel.year) : current.year,
-      // Falls back like every other field below: a release with neither genres nor styles
-      // knows nothing about the genre, so it must not blank one the DJ typed by hand. This
-      // was the one field that overwrote unconditionally, wiping it with nothing to show.
-      genre: genre || current.genre || '',
-      // Defaulted to '' rather than left undefined: these fields reach a tag writer, and
-      // an absent value has to mean "empty tag", never the string "undefined".
-      style: style || current.style || '',
-      country: country || current.country || '',
-      mediaType: mediaType || current.mediaType || '',
-      publisher: publisher || current.publisher,
-      catalogNumber: catalogNumber || current.catalogNumber,
-      composer: composerOf(rel, track) || current.composer,
-      // Provenance is Discogs-specific: a Bandcamp match must not stamp its id into the
-      // Discogs field (it gates auto-match's "skip already-matched" and the release link),
-      // so a non-Discogs apply leaves whatever was there untouched.
-      discogsReleaseId: rel.provider === 'discogs' ? String(rel.id) : current.discogsReleaseId,
-      // Same provenance rule as the id above: a Bandcamp match must not stamp a
-      // discogs.com address onto the track. The API returns `uri`; falling back to the
-      // canonical /release/<id> form covers releases whose response omits it.
-      // Same provenance rule as the id above: a Bandcamp match must not stamp a
-      // discogs.com address onto the track. The API returns `uri`; falling back to the
-      // canonical /release/<id> form covers releases whose response omits it.
-      discogsUrl:
-        rel.provider === 'discogs'
-          ? rel.uri?.trim() || `https://www.discogs.com/release/${rel.id}`
-          : current.discogsUrl,
+    ...current,
+    title: track ? track.title : current.title,
+    trackNumber: pos ? pos.track : current.trackNumber,
+    discNumber: pos ? pos.disc : current.discNumber,
+    album: rel.title,
+    albumArtist,
+    // Like every other field, the artist applies from the release: the track's own
+    // artist (compilations) first, then the album artist — overwriting a wrong existing
+    // value rather than keeping it. The current value stands only if Discogs has none.
+    artist: trackArtist || albumArtist || current.artist,
+    year: rel.year ? String(rel.year) : current.year,
+    // Falls back like every other field below: a release with neither genres nor styles
+    // knows nothing about the genre, so it must not blank one the DJ typed by hand. This
+    // was the one field that overwrote unconditionally, wiping it with nothing to show.
+    genre: genre || current.genre || '',
+    // Defaulted to '' rather than left undefined: these fields reach a tag writer, and
+    // an absent value has to mean "empty tag", never the string "undefined".
+    style: style || current.style || '',
+    country: country || current.country || '',
+    mediaType: mediaType || current.mediaType || '',
+    publisher: publisher || current.publisher,
+    catalogNumber: catalogNumber || current.catalogNumber,
+    composer: composerOf(rel, track) || current.composer,
+    // Provenance is Discogs-specific: a Bandcamp match must not stamp its id into the
+    // Discogs field (it gates auto-match's "skip already-matched" and the release link),
+    // so a non-Discogs apply leaves whatever was there untouched.
+    discogsReleaseId: rel.provider === 'discogs' ? String(rel.id) : current.discogsReleaseId,
+    // Same provenance rule as the id above: a Bandcamp match must not stamp a
+    // discogs.com address onto the track. The API returns `uri`; falling back to the
+    // canonical /release/<id> form covers releases whose response omits it.
+    // Same provenance rule as the id above: a Bandcamp match must not stamp a
+    // discogs.com address onto the track. The API returns `uri`; falling back to the
+    // canonical /release/<id> form covers releases whose response omits it.
+    discogsUrl:
+      rel.provider === 'discogs'
+        ? rel.uri?.trim() || `https://www.discogs.com/release/${rel.id}`
+        : current.discogsUrl,
   }
   return {
     coverUrl: keepCover ? cover.url : coverOf(rel, cover.url),
