@@ -41,6 +41,7 @@ import {
   FINE_BAND_WIDTH_HZ,
   fineBandFrequencies,
   fineBandsShowWall,
+  steepestFineStep,
   UPSAMPLE_MIN_NYQUIST_HZ,
   UPSAMPLE_PROBE_ABOVE_HZ,
   UPSAMPLE_PROBE_BELOW_HZ,
@@ -1770,7 +1771,7 @@ export async function analyzeCutoff(
   input: string,
   sampleRateHz: number,
   signal?: AbortSignal,
-): Promise<CutoffResult & { upsampled: boolean; fineWall?: boolean }> {
+): Promise<CutoffResult & { upsampled: boolean; fineWall?: boolean; fineStepDb?: number }> {
   const nyquist = sampleRateHz / 2
   const freqs = bandFrequencies(nyquist)
   if (freqs.length < 2)
@@ -1808,7 +1809,14 @@ export async function analyzeCutoff(
       rms.get(`${UPSAMPLE_PROBE_BELOW_HZ}x${FINE_BAND_WIDTH_HZ}`) ?? -Infinity,
       rms.get(`${UPSAMPLE_PROBE_ABOVE_HZ}x${FINE_BAND_WIDTH_HZ}`) ?? -Infinity,
     )
-  return { ...detectCutoff(bands, nyquist, fine), upsampled, fineWall: fineBandsShowWall(fine) }
+  // The steepest fine step is the number the wall verdict rests on; measured
+  // here once so the caption can cite it instead of the UI re-deriving anything.
+  return {
+    ...detectCutoff(bands, nyquist, fine),
+    upsampled,
+    fineWall: fineBandsShowWall(fine),
+    fineStepDb: steepestFineStep(fine),
+  }
 }
 
 // Reads the three figures we surface from ebur128's end-of-run Summary block.
@@ -2119,7 +2127,7 @@ interface SpectrumDeps {
   cutoff: (
     input: string,
     sampleRateHz: number,
-  ) => Promise<CutoffResult & { upsampled: boolean; fineWall?: boolean }>
+  ) => Promise<CutoffResult & { upsampled: boolean; fineWall?: boolean; fineStepDb?: number }>
   shelf: (
     input: string,
     sampleRateHz: number,
@@ -2133,6 +2141,16 @@ interface SpectrumBuild {
   processed: boolean
   hasKnee: boolean
   upsampled: boolean
+  // Evidence for the verdict captions: the numbers the detectors decided on,
+  // threaded through so the UI can cite them instead of discarding them.
+  fineStepDb?: number
+  teethCount?: number
+  teethFromHz?: number
+  teethToHz?: number
+  humpPeakHz?: number
+  // True when the shelf probe (not the codec pass) produced the processed
+  // verdict; the caption then describes the dead-flat top octave it found.
+  flatShelf?: boolean
   cutoffError?: unknown
   shelfError?: unknown
 }
@@ -2184,6 +2202,12 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
     processed,
     hasKnee: (cutoff?.hasKnee ?? false) || kneeCutoffHz !== null,
     upsampled: cutoff?.upsampled ?? false,
+    fineStepDb: cutoff?.fineStepDb,
+    teethCount: cutoff?.teethCount,
+    teethFromHz: cutoff?.teethFromHz,
+    teethToHz: cutoff?.teethToHz,
+    humpPeakHz: cutoff?.humpPeakHz,
+    flatShelf: cutoff?.processed !== true && shelfCutoffHz !== null ? true : undefined,
     cutoffError: cutoffR.status === 'rejected' ? cutoffR.reason : undefined,
     shelfError: shelfR.status === 'rejected' ? shelfR.reason : undefined,
   }

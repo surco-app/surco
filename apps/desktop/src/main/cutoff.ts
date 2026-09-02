@@ -24,6 +24,13 @@ export interface CutoffResult {
   // a genuine master (often a dark one). The verdict leans on this so it never
   // demotes a knee-free taper the way grading its extent on the codec scale did.
   hasKnee: boolean
+  // Evidence for the verdict caption, present only on the branch that produced
+  // it: how many separate fine-band rises the saw-tooth counted and the span
+  // they cover, or where a synthetic hump crests above the valley at cutoffHz.
+  teethCount?: number
+  teethFromHz?: number
+  teethToHz?: number
+  humpPeakHz?: number
 }
 
 export const BAND_WIDTH_HZ = 1000
@@ -168,12 +175,19 @@ function plateauDb(bands: Band[]): number {
 // spectrum. Tracks the running minimum and looks for a later band that climbs
 // HUMP_RISE_DB back above it AND reaches the reference plateau — both
 // conditions, so a notch recovering to the falling trend stays clean.
-function findHumpValley(bands: Band[], plateau: number): Band | null {
+function findHumpValley(bands: Band[], plateau: number): { valley: Band; peak: Band } | null {
   let valley = bands[0]
   for (const b of bands) {
     if (b.rmsDb < valley.rmsDb) valley = b
     const rise = b.rmsDb - valley.rmsDb
-    if (rise >= HUMP_RISE_DB && b.rmsDb >= plateau - HUMP_PLATEAU_MARGIN_DB) return valley
+    if (rise >= HUMP_RISE_DB && b.rmsDb >= plateau - HUMP_PLATEAU_MARGIN_DB) {
+      // The caption cites where the hump actually crests, not the band that
+      // happened to trip the rise rule, so scan past the valley for the loudest.
+      let peak = b
+      for (const after of bands)
+        if (after.freqHz > valley.freqHz && after.rmsDb > peak.rmsDb) peak = after
+      return { valley, peak }
+    }
   }
   return null
 }
@@ -198,7 +212,7 @@ function findKneeIndex(bands: Band[]): number {
 // The largest drop across two consecutive fine bands (one kilohertz), the band
 // at Nyquist excluded. Non-finite readings are skipped rather than compared: an
 // unparsed band against a real one would read as an enormous fall.
-function steepestFineStep(fineBands: Band[]): number {
+export function steepestFineStep(fineBands: Band[]): number {
   let best = 0
   for (let i = 2; i < fineBands.length - 1; i++) {
     const drop = fineBands[i - 2].rmsDb - fineBands[i].rmsDb
@@ -225,25 +239,32 @@ export function fineBandsShowWall(fineBands: Band[]): boolean {
 // nothing — two CD rips were accused of patched highs on rises measured at
 // -100 dB, where an enhancer's patches (-38 to -65 dB on the calibration file)
 // never live.
-function roughnessCeiling(fineBands: Band[]): Band | null {
-  const finite = fineBands.filter(
-    (b) => Number.isFinite(b.rmsDb) && b.rmsDb >= ROUGHNESS_FLOOR_DB,
-  )
+function roughnessCeiling(
+  fineBands: Band[],
+): { band: Band; teeth: number; fromHz: number; toHz: number } | null {
+  const finite = fineBands.filter((b) => Number.isFinite(b.rmsDb) && b.rmsDb >= ROUGHNESS_FLOOR_DB)
   let totalRise = 0
   let rises = 0
+  let fromHz = 0
+  let toHz = 0
   for (let i = 0; i < finite.length - 1; i++) {
     if (finite[i + 1].freqHz <= ROUGHNESS_START_HZ) continue
     const rise = finite[i + 1].rmsDb - finite[i].rmsDb
     if (rise > ROUGHNESS_RISE_MIN_DB) {
+      // The caption cites the span of the saw-tooth: from the foot of the first
+      // rise to the top of the last one.
+      if (rises === 0) fromHz = finite[i].freqHz
+      toHz = finite[i + 1].freqHz
       totalRise += rise
       rises++
     }
   }
   if (totalRise < ROUGHNESS_TOTAL_DB || rises < ROUGHNESS_MIN_RISES) return null
   for (let i = 0; i < finite.length - 1; i++) {
-    if (finite[i].rmsDb - finite[i + 1].rmsDb >= ROUGHNESS_EDGE_DROP_DB) return finite[i]
+    if (finite[i].rmsDb - finite[i + 1].rmsDb >= ROUGHNESS_EDGE_DROP_DB)
+      return { band: finite[i], teeth: rises, fromHz, toHz }
   }
-  return finite[0] ?? null
+  return finite[0] ? { band: finite[0], teeth: rises, fromHz, toHz } : null
 }
 
 // Returns where the audio's real bandwidth ends. A sustained knee, confirmed by a
@@ -260,8 +281,14 @@ export function detectCutoff(
   if (bands.length < 2) return { cutoffHz: nyquistHz, processed: false, hasKnee: false }
 
   const plateau = plateauDb(bands)
-  const valley = findHumpValley(bands, plateau)
-  if (valley) return { cutoffHz: valley.freqHz, processed: true, hasKnee: false }
+  const hump = findHumpValley(bands, plateau)
+  if (hump)
+    return {
+      cutoffHz: hump.valley.freqHz,
+      processed: true,
+      hasKnee: false,
+      humpPeakHz: hump.peak.freqHz,
+    }
 
   const wall = fineBandsShowWall(fineBands)
   const kneeIndex = findKneeIndex(bands)
@@ -269,7 +296,15 @@ export function detectCutoff(
     return { cutoffHz: bands[kneeIndex].freqHz, processed: false, hasKnee: true }
 
   const ceiling = roughnessCeiling(fineBands)
-  if (ceiling) return { cutoffHz: ceiling.freqHz, processed: true, hasKnee: false }
+  if (ceiling)
+    return {
+      cutoffHz: ceiling.band.freqHz,
+      processed: true,
+      hasKnee: false,
+      teethCount: ceiling.teeth,
+      teethFromHz: ceiling.fromHz,
+      teethToHz: ceiling.toHz,
+    }
 
   // Full-band audio (energy reaching the last probed band) reports the probed ceiling, not
   // the file's Nyquist — capped so a high-rate file never claims a reach above where the

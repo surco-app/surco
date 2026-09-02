@@ -4,6 +4,7 @@ import {
   detectCutoff,
   fineBandFrequencies,
   fineBandsShowWall,
+  steepestFineStep,
 } from './cutoff'
 import { buildSpectrum } from './ffmpeg'
 import {
@@ -36,6 +37,7 @@ export async function gradeEntry(
       ...detectCutoff(coarse, NYQUIST, fine),
       upsampled: false,
       fineWall: fineBandsShowWall(fine),
+      fineStepDb: steepestFineStep(fine),
     }),
     shelf: async () => ({
       shelfCutoffHz: detectFlatShelf(entry.shelf, SHELF_START_HZ, SHELF_WIDTH_HZ, NYQUIST),

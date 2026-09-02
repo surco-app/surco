@@ -1460,6 +1460,79 @@ describe('buildSpectrum', () => {
     expect(res.cutoffHz).toBe(16000)
   })
 
+  // The captions argue the verdict with measured numbers, so the numbers the
+  // detectors already computed must survive the trip instead of being discarded.
+  it('passes the measured wall step through, so the caption can show its decibels', async () => {
+    const res = await buildSpectrum(
+      '/in.flac',
+      deps({
+        cutoff: vi.fn(async () => ({
+          cutoffHz: 16000,
+          processed: false,
+          hasKnee: true,
+          upsampled: false,
+          fineStepDb: 43.2,
+        })),
+      }),
+    )
+    expect(res.fineStepDb).toBe(43.2)
+  })
+
+  it('passes the roughness teeth and hump evidence through untouched', async () => {
+    const res = await buildSpectrum(
+      '/in.flac',
+      deps({
+        cutoff: vi.fn(async () => ({
+          cutoffHz: 16500,
+          processed: true,
+          hasKnee: false,
+          upsampled: false,
+          teethCount: 3,
+          teethFromHz: 17500,
+          teethToHz: 20000,
+          humpPeakHz: 19000,
+        })),
+      }),
+    )
+    expect(res.teethCount).toBe(3)
+    expect(res.teethFromHz).toBe(17500)
+    expect(res.teethToHz).toBe(20000)
+    expect(res.humpPeakHz).toBe(19000)
+  })
+
+  it('marks a shelf-decided verdict as flatShelf, and never when the codec pass already ruled', async () => {
+    // The flat-shelf caption must only ever describe a verdict the shelf probe
+    // produced; when the codec pass found the manipulation itself, its own
+    // teeth/hump evidence speaks and the shelf flag would mislabel it.
+    const shelfDecided = await buildSpectrum(
+      '/in.flac',
+      deps({
+        shelf: vi.fn(async () => ({ shelfCutoffHz: 16000, kneeCutoffHz: null })),
+        cutoff: vi.fn(async () => ({
+          cutoffHz: 22050,
+          processed: false,
+          hasKnee: false,
+          upsampled: false,
+        })),
+      }),
+    )
+    expect(shelfDecided.flatShelf).toBe(true)
+
+    const codecRuled = await buildSpectrum(
+      '/in.flac',
+      deps({
+        shelf: vi.fn(async () => ({ shelfCutoffHz: 16000, kneeCutoffHz: null })),
+        cutoff: vi.fn(async () => ({
+          cutoffHz: 15000,
+          processed: true,
+          hasKnee: false,
+          upsampled: false,
+        })),
+      }),
+    )
+    expect(codecRuled.flatShelf).toBeUndefined()
+  })
+
   it('keeps the codec pass cutoff when it already found manipulation, even if a shelf is also seen', async () => {
     const res = await buildSpectrum(
       '/in.flac',

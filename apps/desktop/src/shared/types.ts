@@ -722,6 +722,22 @@ export interface SpectrumResult {
   // (fake hi-res). Independent of the codec verdict; surfaced as a separate note.
   // Optional: undefined on older cached analyses and on native 44.1 kHz files.
   upsampled?: boolean
+  // Measured evidence behind the verdict, so the caption argues with numbers
+  // instead of asserting. All optional: analyses cached before these fields
+  // existed fall back to the un-numbered captions.
+  // Steepest fall across two consecutive fine bands (one kilohertz), in dB.
+  // Enormous for a codec wall, a few dB for a genuine fade.
+  fineStepDb?: number
+  // The Reprocessed saw-tooth: how many separate fine-band rises, spanning
+  // teethFromHz to teethToHz.
+  teethCount?: number
+  teethFromHz?: number
+  teethToHz?: number
+  // Where a synthetic hump crests above the valley at cutoffHz.
+  humpPeakHz?: number
+  // True when the flat-shelf probe (not the codec pass) produced the processed
+  // verdict.
+  flatShelf?: boolean
 }
 
 // One track in an Engine DJ export request. The renderer ships this serializable shape
