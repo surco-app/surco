@@ -67,6 +67,10 @@
             "d": "One constant gain, and a limiter only when the target cannot be hit otherwise."
           },
           {
+            "t": "It tells you what it will do first",
+            "d": "How far this track will move, whether the limiter steps in, and by how many decibels the peaks would overshoot."
+          },
+          {
             "t": "Silence trimming",
             "d": "The cut visible on the wave, with millisecond nudging."
           },
@@ -107,7 +111,15 @@
           },
           {
             "t": "Ratings that round-trip",
-            "d": "In both frames Traktor and Windows Media Player read."
+            "d": "In both frames Traktor and Windows Media Player read. And the stars you already set in Traktor show up here."
+          },
+          {
+            "t": "Collector fields",
+            "d": "Style, country, media type and the release URL, under the names mp3tag uses so they never double up."
+          },
+          {
+            "t": "You decide what Discogs touches",
+            "d": "A switch per field: the genre you set by hand survives applying a release."
           },
           {
             "t": "Apple Music grouping",
@@ -138,7 +150,11 @@
           },
           {
             "t": "No false positives",
-            "d": "It checks there is a real cut first: a dull master is not a fake."
+            "d": "It checks there is a real cut first, a cliff inside one kilohertz: a dull master is not a fake. Calibrated against 6000 real lossless tracks."
+          },
+          {
+            "t": "An MP3 is not a defect",
+            "d": "Its cut is the format, not a flaw: it is graded on its own scale and comes out clean when it is."
           },
           {
             "t": "Colour-coded read",
@@ -185,7 +201,7 @@
           },
           {
             "t": "Traktor cue points",
-            "d": "Intact between MP3 and AIFF, and into FLAC. Trim and the grid re-anchors by phase."
+            "d": "Intact across MP3, AIFF, FLAC and WAV, in any combination. Trim and the grid re-anchors by phase."
           },
           {
             "t": "Your Traktor collection",
@@ -514,6 +530,7 @@
         ],
         "points": [
           "Green “good quality”: the sound reaches all the way up, nothing missing. Amber “suspect”: it cuts off early. Red: bad quality.",
+          "An MP3 isn't measured against a lossless yardstick: its cut is the format, not a flaw, so it comes out clean when it is. What does get called out is a FLAC or a WAV with a codec's cut inside it.",
           "“Reprocessed” is a different warning: it's not that information is missing, it's that someone manufactured highs the file no longer had.",
           "It also catches fake hi-res —a file claiming 96 kHz but stretched up from 44.1— and fake lossless, a FLAC or WAV that's really a repackaged MP3.",
           "A crosshair over the spectrum reads out the exact frequency under your cursor.",
@@ -645,7 +662,7 @@
         "points": [
           "Formats: AIFF, WAV, FLAC and ALAC (lossless) and MP3 — 320 down to 128 kbps, or VBR V0/V2.",
           "Re-exporting to the same format, without touching the audio, keeps Traktor's cue points.",
-          "Normalization, trimming and click repair re-encode the audio: Traktor's cues survive within MP3, AIFF and FLAC, and also when going from MP3 or AIFF to FLAC; on WAV and ALAC they're lost, and they don't travel from FLAC back to MP3 or AIFF either. They ship off and Surco warns you before converting.",
+          "Normalization, trimming and click repair re-encode the audio: Traktor's cues survive across MP3, AIFF, FLAC and WAV in any combination; they're lost only on ALAC, which has nowhere to keep them. They ship off and Surco warns you before converting.",
           "Re-exporting a track onto itself doesn't re-apply the normalization or declick already baked in: changing only the metadata doesn't reprocess the audio, so you never stack gain or lose a generation.",
           "Dropping to 16 bits applies dither; and Surco keeps the original's depth instead of widening it behind your back.",
           "“Keep MP3s as MP3” stops your MP3s bloating for nothing when you export to a lossless format: they stay as they are and only their tags are updated.",
@@ -755,6 +772,7 @@
           "The Stats tab tracks your lifetime numbers —tracks loaded, converted, analyzed, found on each source…— and generates an image ready to share.",
           "Under Cover art, small covers can be upscaled to your minimum size, cropped square, and a macOS option makes Finder show the cover art of converted FLACs.",
           "Under Search you can limit Discogs results to vinyl, CD, file or cassette, and decide how many to see.",
+          "In Editor you can turn the inline explanations off once you know them by heart, and back on whenever you like.",
           "Analysis is cached so it isn't repeated; you can clear it, and open the error log, from Settings.",
           "Export your configuration as a backup, or point the config folder at iCloud Drive or Dropbox to share your preferences across Macs — your Discogs token travels with it, so you don't have to set it up again on each machine. None of this goes through any Surco server: no account, no cloud, no telemetry.",
           "Turn on your system's reduced motion setting and the animations simplify rather than disappear."
