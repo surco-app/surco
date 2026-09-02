@@ -125,7 +125,7 @@ export default function Features() {
         <section className="py-24 text-center">
           <Reveal>
             <div className="flex flex-col items-center gap-4">
-              <DownloadButton />
+              <DownloadButton location="features" />
               <p className="font-mono text-xs text-faint">{t('home.closeNote')}</p>
             </div>
           </Reveal>
