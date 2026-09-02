@@ -1,9 +1,16 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { type SectionLocation, trackBrewCopy } from '../lib/analytics'
 
 const COMMAND = 'brew install --cask surco-app/surco/surco'
 
-export default function BrewCommand({ className = '' }: { className?: string }) {
+export default function BrewCommand({
+  location,
+  className = '',
+}: {
+  location: SectionLocation
+  className?: string
+}) {
   const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
 
@@ -11,6 +18,9 @@ export default function BrewCommand({ className = '' }: { className?: string }) 
   // on click, so prerendering stays untouched and a missing API just no-ops.
   const copy = () => {
     void navigator.clipboard?.writeText(COMMAND).then(() => {
+      // Counted inside the resolved promise, not on the click: a denied or absent
+      // clipboard leaves the visitor without the command, and that is not an install.
+      trackBrewCopy(location)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })

@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { downloadEvent, trackDownload } from './analytics'
+import {
+  downloadEvent,
+  trackBrewCopy,
+  trackDonate,
+  trackDownload,
+  trackSectionView,
+} from './analytics'
 
 const RELEASE = 'https://github.com/surco-app/surco-releases/releases/latest'
 const DMG =
@@ -72,5 +78,71 @@ describe('trackDownload', () => {
   // button must still download rather than throw on a missing global.
   it('does nothing when gtag was never loaded', () => {
     expect(() => trackDownload({ href: DMG, os: 'mac', location: 'hero' })).not.toThrow()
+  })
+})
+
+describe('trackBrewCopy', () => {
+  afterEach(() => {
+    delete (globalThis as { gtag?: unknown }).gtag
+  })
+
+  // Copying the Homebrew command is a download that never touches a release asset, so it
+  // is invisible to file_download. Left uncounted, every Mac visitor who installs the way
+  // the install section recommends looks like a visitor who bounced.
+  it('reports the copy as its own event with the section', () => {
+    const gtag = vi.fn()
+    ;(globalThis as { gtag?: unknown }).gtag = gtag
+
+    trackBrewCopy('install')
+
+    expect(gtag).toHaveBeenCalledWith('event', 'brew_copy', { surco_location: 'install' })
+  })
+
+  it('does nothing when gtag was never loaded', () => {
+    expect(() => trackBrewCopy('install')).not.toThrow()
+  })
+})
+
+describe('trackDonate', () => {
+  afterEach(() => {
+    delete (globalThis as { gtag?: unknown }).gtag
+  })
+
+  // PayPal is a different domain, so the click is the last thing this site can observe.
+  // The donate links sit in different places, and only the location separates the
+  // header's permanently visible button from a deliberate scroll to the donate section.
+  it('reports the outbound click with the section', () => {
+    const gtag = vi.fn()
+    ;(globalThis as { gtag?: unknown }).gtag = gtag
+
+    trackDonate('header')
+
+    expect(gtag).toHaveBeenCalledWith('event', 'donate_click', { surco_location: 'header' })
+  })
+
+  it('does nothing when gtag was never loaded', () => {
+    expect(() => trackDonate('header')).not.toThrow()
+  })
+})
+
+describe('trackSectionView', () => {
+  afterEach(() => {
+    delete (globalThis as { gtag?: unknown }).gtag
+  })
+
+  // The home carries two download CTAs with a full walkthrough between them. How many
+  // visitors reach the closing one is what says whether that walkthrough persuades or
+  // merely delays, and it is the denominator its downloads are measured against.
+  it('reports the section that came into view', () => {
+    const gtag = vi.fn()
+    ;(globalThis as { gtag?: unknown }).gtag = gtag
+
+    trackSectionView('home-closing')
+
+    expect(gtag).toHaveBeenCalledWith('event', 'section_view', { surco_location: 'home-closing' })
+  })
+
+  it('does nothing when gtag was never loaded', () => {
+    expect(() => trackSectionView('home-closing')).not.toThrow()
   })
 })
