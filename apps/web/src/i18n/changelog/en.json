@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.91",
+    "date": "September 2, 2026",
+    "title": "The quality verdict shows its work",
+    "items": [
+      {
+        "text": "The quality verdict no longer just labels the track: it shows the measurement behind it. It tells you how far the energy reaches, how much it drops within one kilohertz, and why that shape gives away a codec, an enhancer or an upscaler, instead of asking you to trust a single word. The trim note does the same: besides the length you are left with, it warns that the audio is re-encoded and that Traktor's cues and beatgrid move with the cut, so everything still lands on the same beat.",
+        "in": "0.91.0"
+      },
+      {
+        "text": "The cue warning stops lying about WAV: Traktor's cues and beatgrid also survive a conversion to WAV, and the app now says so.",
+        "in": "0.91.0"
+      },
+      {
+        "text": "The three column presets (\"widen results\", \"balanced\", \"widen the editor\") are gone from the toolbar, replaced by \"Convert all N\", which converts the whole list in one go. Column widths are still adjusted by dragging the divider, which is how it was done anyway.",
+        "in": "0.91.0"
+      },
+      {
+        "text": "The \"What will happen to this track\" card tells the truth about the limiter: when it only shaves the tips of the sharpest transients it says a touch that light is inaudible, and when the clipping is heavy it warns you to expect slightly less punch on the loudest hits, instead of always promising nothing is touched.",
+        "in": "0.91.0"
+      }
+    ]
+  },
+  {
     "version": "0.90",
     "date": "August 31, 2026",
     "title": "Normalization tells you what it will do",
