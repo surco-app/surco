@@ -165,27 +165,6 @@ describe('the label read back off a file feeds the next conversion', () => {
   }
 })
 
-import { existsSync } from 'node:fs'
-
-// djotas' own file, through djotas' own conversions. Synthetic fixtures have said the
-// label survives every path; his does not, so the difference has to be in the file.
-const REAL =
-  '/Users/vicent/Desktop/problema-cues/Chab And Jd Davis - Get High (The Club Science Edit).mp3'
-
-describe.skipIf(!existsSync(REAL))("djotas' own file", () => {
-  for (const to of ['wav', 'aiff', 'flac', 'mp3'] as const) {
-    it(`keeps the label converting his mp3 to ${to}`, async () => {
-      const asRead = (await readMeta(REAL)).tags
-      expect(asRead.publisher).toBe('Platipus Music GB')
-
-      const out = join(dir, `real-to.${to}`)
-      await convertAudio(REAL, out, to, asRead)
-
-      expect((await readMeta(out)).tags.publisher).toBe('Platipus Music GB')
-    })
-  }
-})
-
 // The field NAMES as they sit in the file, which is what a program matching on them sees.
 // ffprobe normalises Vorbis LABEL, PUBLISHER and ORGANIZATION all to "publisher", so it
 // cannot answer this question — only the raw bytes can.
@@ -211,20 +190,5 @@ describe('a FLAC conversion writes the label where Traktor reads it', () => {
     // in another, and the shops he buys from fill PUBLISHER.
     expect(rawVorbisFields(out)).toContain('LABEL')
     expect(rawVorbisFields(out)).toContain('PUBLISHER')
-  })
-})
-
-// The same conversion djotas runs, on his own file, checked for the field names Traktor
-// actually matches on.
-describe.skipIf(!existsSync(REAL))("djotas' file to FLAC carries both spellings", () => {
-  it('writes LABEL and PUBLISHER', async () => {
-    const asRead = (await readMeta(REAL)).tags
-    const out = join(dir, 'djotas-real.flac')
-    await convertAudio(REAL, out, 'flac', asRead)
-
-    const names = rawVorbisFields(out)
-    expect(names).toContain('LABEL')
-    expect(names).toContain('PUBLISHER')
-    expect((await readMeta(out)).tags.publisher).toBe('Platipus Music GB')
   })
 })
