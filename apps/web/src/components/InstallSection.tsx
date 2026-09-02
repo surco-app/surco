@@ -3,6 +3,7 @@ import BrewCommand from './BrewCommand'
 import DownloadButton from './DownloadButton'
 import Kicker from './Kicker'
 import Reveal from './Reveal'
+import SectionView from './SectionView'
 
 export default function InstallSection() {
   const { t } = useTranslation()
@@ -12,6 +13,7 @@ export default function InstallSection() {
     // section inside it has to open the gap: without pt the kicker sat flush against
     // the band's top border. pb-24 alone was enough while this sat mid-page.
     <section id="instalar" className="scroll-mt-24 py-24">
+      <SectionView location="install" />
       <Reveal>
         <Kicker>{t('install.kicker')}</Kicker>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
@@ -22,7 +24,7 @@ export default function InstallSection() {
       </Reveal>
 
       <Reveal delay={120}>
-        <BrewCommand className="mt-10 max-w-2xl" />
+        <BrewCommand location="install" className="mt-10 max-w-2xl" />
       </Reveal>
     </section>
   )

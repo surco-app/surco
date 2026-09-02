@@ -6,6 +6,7 @@ import Header from './components/Header'
 import HeroApp from './components/HeroApp'
 import Reveal from './components/Reveal'
 import ScrollProgress from './components/ScrollProgress'
+import SectionView from './components/SectionView'
 import Walkthrough from './components/Walkthrough'
 import { PAGES } from './lib/nav'
 import { useAutoLanguage } from './lib/useAutoLanguage'
@@ -93,6 +94,7 @@ export default function App() {
         </div>
 
         <section className="mx-auto max-w-5xl px-6 py-28 text-center sm:py-36">
+          <SectionView location="home-closing" />
           <Reveal>
             <h2 className="mx-auto max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
               {t('home.closeTitle')}
@@ -102,7 +104,7 @@ export default function App() {
               <p className="font-mono text-xs text-faint">{t('home.closeNote')}</p>
             </div>
             <div className="mx-auto mt-14 max-w-xl text-left">
-              <BrewCommand />
+              <BrewCommand location="home-closing" />
               {/* Full-strength faint, not /80: this is the line warning that re-exporting to
                   the same format rewrites the original in place, and fading it put small mono
                   text at 3.8:1 — back on the colour index.css already records as failing AA.

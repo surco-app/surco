@@ -10,6 +10,15 @@ export type DownloadLocation =
   | 'changelog'
   | 'install'
 
+// Which donate link left for PayPal. 'donate-retry' is the odd one out and the reason
+// this is not just a boolean: it sits on the page PayPal returns a cancelled payment to,
+// so it counts recovered donations rather than intent.
+export type DonateLocation = 'header' | 'header-mobile' | 'donate-retry'
+
+// Sections worth knowing a visitor reached. Deliberately few: a section_view on every
+// band would drown the report and cost a listener per section for questions nobody asks.
+export type SectionLocation = 'home-closing' | 'install'
+
 // An installer is a file the visitor can run; the releases page is the fallback link
 // shown on a platform with no Surco build. Both are worth counting and they must not be
 // added together, or the download report counts clicks that downloaded nothing.
@@ -51,9 +60,32 @@ export function downloadEvent({ href, os, location, version }: DownloadClick): D
 }
 
 // gtag is defined only in production, by GoogleAnalytics.tsx. In dev, in the prerender
-// and behind an ad blocker it is absent, and the click must still reach the download.
-export function trackDownload(click: DownloadClick): void {
+// and behind an ad blocker it is absent, and every one of these events rides on a click
+// that must still do its job — download, copy, navigate — rather than throw on a
+// missing global. Measuring is never allowed to break the thing being measured.
+function sendEvent(name: string, params: Record<string, unknown>): void {
   const gtag = (globalThis as { gtag?: (...args: unknown[]) => void }).gtag
   if (typeof gtag !== 'function') return
-  gtag('event', 'file_download', downloadEvent(click))
+  gtag('event', name, params)
+}
+
+export function trackDownload(click: DownloadClick): void {
+  sendEvent('file_download', downloadEvent(click))
+}
+
+// Copying the Homebrew command installs Surco without ever fetching a release asset,
+// so file_download cannot see it: on macOS it is the other half of the install story.
+export function trackBrewCopy(location: SectionLocation): void {
+  sendEvent('brew_copy', { surco_location: location })
+}
+
+// The donate links leave for PayPal, so this click is the last thing the site observes.
+export function trackDonate(location: DonateLocation): void {
+  sendEvent('donate_click', { surco_location: location })
+}
+
+// Fired once when a section scrolls into view, to measure how far down the page the
+// visitors who convert actually get.
+export function trackSectionView(location: SectionLocation): void {
+  sendEvent('section_view', { surco_location: location })
 }

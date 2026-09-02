@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { DONATE_URL } from '../config'
+import { trackDonate } from '../lib/analytics'
 
 // PayPal sends donors here when they back out of the donate flow. Thank them for
 // considering it and leave the door open — no guilt, one retry link. Self-contained
@@ -41,6 +42,7 @@ export default function DonateCancel() {
       <p className="mt-4 text-sm leading-relaxed text-muted">{t.body}</p>
       <a
         href={DONATE_URL}
+        onClick={() => trackDonate('donate-retry')}
         className="mt-6 inline-flex w-fit items-center rounded-full border border-line px-4 py-2 text-sm font-medium text-fg transition-colors hover:border-blue/50 hover:text-blue"
       >
         {t.retry} →
