@@ -101,8 +101,10 @@ export const TAG_FIELDS: TagField[] = [
     aliases: ['discogs_release_id', 'discogs_releaseid', 'discogsreleaseid'],
     id3: 'DISCOGS_RELEASE_ID',
   },
-  // ffprobe exposes FLAC's Vorbis RATING comment but not the ID3 POPM frame, so a rating
-  // only round-trips for FLAC; MP3/AIFF start unrated. Written by the TagLib pass, not here.
+  // ffprobe exposes FLAC's Vorbis RATING comment but not the ID3 POPM frame, which is why
+  // this parse alone left MP3/AIFF unrated. readMeta closes that gap by falling back to
+  // TagLib's POPM reader when the probe finds nothing, so a rating round-trips everywhere
+  // an ID3 tag can hold one. Written by the TagLib pass, not here.
   { key: 'rating', aliases: ['rating', 'rating wmp'], parse: ratingTagToStars },
   { key: 'composer', aliases: ['composer', 'tcom'], id3: 'composer' },
   { key: 'isrc', aliases: ['tsrc', 'isrc'], id3: 'TSRC', vorbis: 'ISRC' },
