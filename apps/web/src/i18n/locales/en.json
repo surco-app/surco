@@ -153,6 +153,10 @@
             "d": "It checks there is a real cut first, a cliff inside one kilohertz: a dull master is not a fake. Calibrated against 6000 real lossless tracks."
           },
           {
+            "t": "It shows its work",
+            "d": "Every verdict comes with the measurement behind it: how far the energy reaches, how much it drops within one kilohertz, and why that shape gives the culprit away."
+          },
+          {
             "t": "An MP3 is not a defect",
             "d": "Its cut is the format, not a flaw: it is graded on its own scale and comes out clean when it is."
           },

@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 2026-09-02** (v0.90.3). Levantado por primera vez el
+**Última revisión: 2026-09-02** (v0.91.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -136,7 +136,13 @@ Una tarjeta dice qué le va a pasar a **esta** pista antes de tocarla, con tres
 formas según el caso: solo ganancia, ganancia con limitador, o modo pico
 (`NormalizePlan.tsx:31`). Cuando el limitador va a actuar, dice **por cuánto** se
 pasarían los picos del techo: «Sus picos pasarían del techo en X dB, así que el
-limitador los frenará en Y dBTP» (`NormalizePlan.tsx:35`).
+limitador los frenará en Y dBTP» (`NormalizePlan.tsx:38`).
+
+**La segunda línea no promete transparencia que no puede cumplir.** Por debajo de
+3 dB de exceso el limitador solo lima las puntas de los transitorios más afilados
+y la tarjeta dice que un toque así no se oye; por encima, avisa de que hay algo
+menos de pegada en los golpes más fuertes, que es el trato real de un objetivo
+alto (`NormalizePlan.tsx:45-46`, claves `limitedSubLight` y `limitedSub`).
 
 La predicción es un espejo deliberado del cálculo real del proceso principal —
 mismos clamps, misma prueba de alcanzabilidad (`lib/quality.ts:195-228`).
@@ -241,6 +247,14 @@ más bajo» (`qualityCaptionLossy`, `QualitySection.tsx:134-139`).
 Cuidado al redactar la web: **«Fuente con pérdidas» es el badge del fake lossless,
 no el del MP3 sano.** El MP3 sano sale verde.
 
+**El veredicto enseña la medida que lo sostiene.** Bajo la etiqueta va una frase
+con los números medidos y otra que explica por qué esa forma delata al culpable:
+hasta dónde llega la energía, cuánto cae en un kilohercio, cuántos dientes de
+sierra suben donde un espectro natural solo baja, o dónde está el valle que un
+upscaler tapó con una joroba (`QualitySection.tsx:164-222`, claves
+`qualityEvidence*`). Cada detector trae la suya, incluido el caso sano, que
+argumenta que es un fundido y no un acantilado de códec.
+
 ### 4.5 Métricas de loudness
 
 Loudness integrada, true peak, LRA, dinámica, balance L/R, offset de DC y suelo
@@ -316,6 +330,16 @@ superficie, no ceros (`renderer/lib/trim.ts:3-5`).
 Micro-fade de 20 ms en cada borde cortado: un corte a través de ruido de
 superficie no es silencio digital, y un escalón ahí hace clic
 (`shared/trim.ts:36-39`).
+
+**Nota «Tras el corte».** Antes de convertir, una tarjeta dice cuánto se va por
+cada lado y con qué duración queda la pista, y añade que el corte recodifica el
+audio y que los cues y el beatgrid de Traktor se mueven con él, así que todo
+sigue cayendo en el mismo golpe (`TrimSection.tsx:99-116`, claves `trim.plan*`).
+**Ojo: el texto de ese aviso miente sobre WAV.** `planCues` dice «se conservan en
+MP3, AIFF y FLAC; WAV los pierde», pero WAV los conserva desde 2026-09-02
+(`ffmpeg.ts:1400-1409`, matriz de §10, `cueMatrix.test.ts:161-166`). Es la misma
+celda que ya se corrigió en el aviso de conversión, reintroducida aquí. Pendiente
+de corregir en los cinco locales.
 
 ---
 
