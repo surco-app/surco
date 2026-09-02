@@ -603,7 +603,7 @@
     "planBoth": "Cuts {{start}} from the start and {{end}} from the end: {{from}} → {{to}}.",
     "planStart": "Cuts {{start}} from the start: {{from}} → {{to}}.",
     "planEnd": "Cuts {{end}} from the end: {{from}} → {{to}}.",
-    "planCues": "Re-encodes the audio. Traktor cues and beatgrid move with the cut, so everything still lands on the same beat (kept on MP3, AIFF and FLAC; WAV loses them).",
+    "planCues": "Re-encodes the audio. Traktor cues and beatgrid move with the cut, so everything still lands on the same beat (kept on MP3, AIFF, FLAC and WAV; only ALAC loses them).",
     "handleStart": "Trim start",
     "handleEnd": "Trim end",
     "auditionStart": "Hear the start",

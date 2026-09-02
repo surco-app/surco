@@ -603,7 +603,7 @@
     "planBoth": "Schneidet {{start}} vom Anfang und {{end}} vom Ende: {{from}} → {{to}}.",
     "planStart": "Schneidet {{start}} vom Anfang: {{from}} → {{to}}.",
     "planEnd": "Schneidet {{end}} vom Ende: {{from}} → {{to}}.",
-    "planCues": "Kodiert das Audio neu. Traktor-Cues und Beatgrid wandern mit dem Schnitt, alles sitzt weiter auf demselben Beat (erhalten bei MP3, AIFF und FLAC; WAV verliert sie).",
+    "planCues": "Kodiert das Audio neu. Traktor-Cues und Beatgrid wandern mit dem Schnitt, alles sitzt weiter auf demselben Beat (erhalten bei MP3, AIFF, FLAC und WAV; nur ALAC verliert sie).",
     "handleStart": "Schnittanfang",
     "handleEnd": "Schnittende",
     "auditionStart": "Anfang anhören",

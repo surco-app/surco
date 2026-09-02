@@ -603,7 +603,7 @@
     "planBoth": "Corta {{start}} do início e {{end}} do fim: {{from}} → {{to}}.",
     "planStart": "Corta {{start}} do início: {{from}} → {{to}}.",
     "planEnd": "Corta {{end}} do fim: {{from}} → {{to}}.",
-    "planCues": "Recodifica o áudio. Os cues e o beatgrid do Traktor se movem com o corte, tudo continua caindo no mesmo beat (mantidos em MP3, AIFF e FLAC; WAV os perde).",
+    "planCues": "Recodifica o áudio. Os cues e o beatgrid do Traktor se movem com o corte, tudo continua caindo no mesmo beat (mantidos em MP3, AIFF, FLAC e WAV; só o ALAC os perde).",
     "handleStart": "Início do corte",
     "handleEnd": "Final do corte",
     "auditionStart": "Ouvir o início",

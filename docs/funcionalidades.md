@@ -335,11 +335,11 @@ superficie no es silencio digital, y un escalón ahí hace clic
 cada lado y con qué duración queda la pista, y añade que el corte recodifica el
 audio y que los cues y el beatgrid de Traktor se mueven con él, así que todo
 sigue cayendo en el mismo golpe (`TrimSection.tsx:99-116`, claves `trim.plan*`).
-**Ojo: el texto de ese aviso miente sobre WAV.** `planCues` dice «se conservan en
-MP3, AIFF y FLAC; WAV los pierde», pero WAV los conserva desde 2026-09-02
-(`ffmpeg.ts:1400-1409`, matriz de §10, `cueMatrix.test.ts:161-166`). Es la misma
-celda que ya se corrigió en el aviso de conversión, reintroducida aquí. Pendiente
-de corregir en los cinco locales.
+El aviso enumera los cuatro formatos que conservan los cues: MP3, AIFF, FLAC y
+WAV; solo ALAC los pierde. Nació diciendo «WAV los pierde», la misma celda ya
+corregida en el aviso de conversión y reintroducida aquí por una clave nueva; lo
+pinado ahora es `trim.planCues` dentro del propio guard
+(`cueWarning.test.ts:48-57`), que ya cubría `cueWarning` y no la veía.
 
 ---
 

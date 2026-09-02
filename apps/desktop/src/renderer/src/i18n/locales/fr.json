@@ -603,7 +603,7 @@
     "planBoth": "Coupe {{start}} au début et {{end}} à la fin : {{from}} → {{to}}.",
     "planStart": "Coupe {{start}} au début : {{from}} → {{to}}.",
     "planEnd": "Coupe {{end}} à la fin : {{from}} → {{to}}.",
-    "planCues": "Réencode l'audio. Les cues et la grille de Traktor suivent la coupe, tout retombe sur le même temps (conservés en MP3, AIFF et FLAC ; le WAV les perd).",
+    "planCues": "Réencode l'audio. Les cues et la grille de Traktor suivent la coupe, tout retombe sur le même temps (conservés en MP3, AIFF, FLAC et WAV ; seul l'ALAC les perd).",
     "handleStart": "Début du rognage",
     "handleEnd": "Fin du rognage",
     "auditionStart": "Écouter le début",

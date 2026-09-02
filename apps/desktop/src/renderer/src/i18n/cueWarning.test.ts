@@ -46,6 +46,15 @@ describe('cue warning copy', () => {
           }
         }
       }
+      // The trim card grew its own copy of the same claim (trim.planCues), and the drift
+      // this file exists to catch reappeared there verbatim: it shipped "WAV loses them"
+      // while the convert path preserved them. Any key that repeats the fact gets pinned.
+      for (const format of KEEPS) {
+        const clause = clauseFor(l.trim.planCues, format)
+        if (clause) {
+          expect(clause, `${name} trim.planCues on ${format}`).not.toMatch(LOSES)
+        }
+      }
     }
   })
 
