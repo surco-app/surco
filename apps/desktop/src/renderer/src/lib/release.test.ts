@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { METADATA_KEYS } from '../../../shared/metadata'
 import { cleanMatchTitle } from '../../../shared/searchClean'
-import { IMPORTABLE_FIELDS } from './fields'
 import type { Release, ReleaseTrack, SearchResult, TrackMetadata } from '../../../shared/types'
+import { IMPORTABLE_FIELDS } from './fields'
 import {
   bestMatch,
   boostForCatalogMatch,
@@ -14,11 +14,11 @@ import {
   coverOf,
   durationProximitySec,
   joinArtists,
-  resultFacts,
   matchSignals,
   preRankResults,
   providerCountsOf,
   releaseKey,
+  resultFacts,
   resultFromRelease,
   resultIdentity,
   resultPressing,

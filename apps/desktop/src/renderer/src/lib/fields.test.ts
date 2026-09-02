@@ -3,11 +3,11 @@ import type { TrackMetadata } from '../../../shared/types'
 import {
   DEFAULT_FIELDS,
   DEFAULT_IMPORT_FIELDS,
-  IMPORTABLE_FIELDS,
   DEFAULT_REQUIRED_FIELDS,
   FIELD_DEFS,
   FIELD_GROUPS,
   groupOfField,
+  IMPORTABLE_FIELDS,
   missingRequired,
   moveItem,
   sortFieldsByGroup,

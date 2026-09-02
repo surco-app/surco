@@ -83,7 +83,13 @@ export function acceptReviewPatch(
 ): Partial<TrackItem> | undefined {
   const rm = track.reviewMatch
   if (!rm) return undefined
-  const patch = buildReleaseMeta(track.meta, rm.release, rm.track, keepCoverArg(track), importFields)
+  const patch = buildReleaseMeta(
+    track.meta,
+    rm.release,
+    rm.track,
+    keepCoverArg(track),
+    importFields,
+  )
   return {
     meta: patch.meta,
     coverUrl: patch.coverUrl,
