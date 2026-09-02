@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { type DownloadLocation, trackDownload } from '../lib/analytics'
 import { pickInstallerRelease } from '../lib/downloads'
 import { detectOS, installerSuffix, type OS } from '../lib/os'
 import { btnPrimary } from '../lib/ui'
@@ -28,9 +29,13 @@ const primary = `inline-flex ${btnPrimary} px-7 py-3 text-sm`
 // reports both as "Intel Mac"), so the big button defaults to arm64 — the vast
 // majority of Macs — and a discreet link below covers Intel.
 export default function DownloadButton({
+  location,
   showMeta = true,
   note,
 }: {
+  // Which of the six placements this is, reported with the click. Several of them share
+  // a page, so page_path alone cannot say which CTA earned the download.
+  location: DownloadLocation
   showMeta?: boolean
   // Reassurance that belongs to the button rather than the section around it.
   // The hero uses it for price and platforms. Sits directly under the CTA, above
@@ -116,11 +121,19 @@ export default function DownloadButton({
             {t('download.cta', { os: 'macOS' })}
           </button>
         ) : os === 'other' ? (
-          <a href={RELEASES} className={primary}>
+          <a
+            href={RELEASES}
+            className={primary}
+            onClick={() => trackDownload({ href: RELEASES, os, location })}
+          >
             {t('download.viewDownloads')}
           </a>
         ) : href ? (
-          <a href={href} className={primary}>
+          <a
+            href={href}
+            className={primary}
+            onClick={() => trackDownload({ href, os, location, ...(version ? { version } : {}) })}
+          >
             {t('download.cta', { os: LABEL[os] })}
           </a>
         ) : (
@@ -161,6 +174,12 @@ export default function DownloadButton({
       {/* biome-ignore lint/a11y/useAnchorContent: intentionally aria-hidden when there's no Intel link to show — it's a CLS-reserving placeholder (see above), not a real link for assistive tech */}
       <a
         href={os === 'mac' && intelHref ? intelHref : undefined}
+        // The link stays mounted with no href when there is no Intel build (it reserves
+        // its line against CLS), so the click only counts when it points somewhere.
+        onClick={() => {
+          if (os === 'mac' && intelHref)
+            trackDownload({ href: intelHref, os, location, ...(version ? { version } : {}) })
+        }}
         aria-hidden={os === 'mac' && intelHref ? undefined : true}
         tabIndex={os === 'mac' && intelHref ? undefined : -1}
         // On an Intel Mac this link IS the working download — the big button offers
