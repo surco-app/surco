@@ -331,3 +331,27 @@ export function detectUpsample(belowDb: number, aboveDb: number): boolean {
   if (!Number.isFinite(belowDb) || !Number.isFinite(aboveDb)) return false
   return belowDb - aboveDb >= UPSAMPLE_WALL_DROP_DB
 }
+
+// What the file's sample rate is actually worth, from the same two probe bands detectUpsample
+// reads. The boolean could only ever say "upsampled or nothing", so a genuine hi-res file got
+// silence — indistinguishable, from the outside, from an analysis that never ran. These are
+// the four honest answers:
+//
+//   native     — 44.1/48 kHz: no headroom above the 22.05 kHz wall to read, so there is no
+//                hi-res claim to check. Not a defect; most music is this.
+//   hires      — content carries across the wall: the high rate is doing real work.
+//   upsampled  — the energy collapses above the wall: 44.1 kHz content in a hi-res container.
+//   unknown    — a probe band could not be read, so neither answer is provable. Said out loud
+//                rather than dressed up as a pass; a verdict nobody measured is worse than
+//                admitting the gap.
+export type Resolution = 'native' | 'hires' | 'upsampled' | 'unknown'
+
+export function detectResolution(
+  sampleRateHz: number,
+  belowDb: number,
+  aboveDb: number,
+): Resolution {
+  if (sampleRateHz / 2 < UPSAMPLE_MIN_NYQUIST_HZ) return 'native'
+  if (!Number.isFinite(belowDb) || !Number.isFinite(aboveDb)) return 'unknown'
+  return belowDb - aboveDb >= UPSAMPLE_WALL_DROP_DB ? 'upsampled' : 'hires'
+}

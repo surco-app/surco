@@ -356,6 +356,8 @@
     "qualityCaptionBad": "Plafond à ~{{cutoff}}, la marque d'une source avec perte.",
     "qualityCaptionProcessed": "Des aigus qui montent là où un spectre naturel descend — régénérés au-dessus d'un vrai plafond vers ~{{cutoff}}.",
     "qualityUpsampled": "Annoncé au-dessus de 44,1 kHz, mais le contenu réel s'arrête net à 22,05 kHz — suréchantillonné depuis 44,1 kHz, pas du vrai hi-res.",
+    "qualityHiRes": "Le contenu monte réellement au-dessus de 22,05 kHz : les {{rate}} font un vrai travail au lieu de gonfler une source en 44,1 kHz.",
+    "qualityResolutionUnknown": "La fréquence d'échantillonnage n'a pas pu être vérifiée : la sonde au-dessus de 22,05 kHz était illisible, ce fichier n'est donc ni confirmé hi-res ni signalé comme suréchantillonné.",
     "saveQualityReport": "Enregistrer le rapport…",
     "reportFooter": "Analysé avec Surco — getsurco.app",
     "qualityCaptionGenuine": "Pas de coupure de codec : décroît en douceur jusqu'à ~{{cutoff}}, un master aux aigus discrets mais authentique.",

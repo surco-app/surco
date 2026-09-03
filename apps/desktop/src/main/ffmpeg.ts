@@ -37,10 +37,12 @@ import {
   bandFrequencies,
   type CutoffResult,
   detectCutoff,
+  detectResolution,
   detectUpsample,
   FINE_BAND_WIDTH_HZ,
   fineBandFrequencies,
   fineBandsShowWall,
+  type Resolution,
   steepestFineStep,
   UPSAMPLE_MIN_NYQUIST_HZ,
   UPSAMPLE_PROBE_ABOVE_HZ,
@@ -1677,7 +1679,59 @@ export async function stripFlacPicture(input: string, output: string): Promise<v
   await run(ffmpegPath, stripPictureArgs(input, output), { maxBuffer: 1024 * 1024 * 32 })
 }
 
-export async function generateSpectrogram(input: string, signal?: AbortSignal): Promise<string> {
+// The highest frequency the spectrogram image is ever drawn to. showspectrumpic always spans
+// 0..Nyquist, so on a hi-res file the scale stretched with the container: at 192 kHz (Nyquist
+// 96 kHz) the whole audible band was crushed into the bottom fifth of a fixed-height panel
+// while 79% of it showed the empty octaves above 20 kHz. Capping the drawn range keeps the
+// music filling the panel at every sample rate. 24 kHz (not 22.05) so a 48 kHz file — already
+// drawn to exactly this — needs no resample, and so the ~22 kHz region the cutoff analysis
+// cares about stays visible with a little air above it rather than sitting on the top edge.
+export const SPECTRUM_TOP_HZ = 24000
+
+// The top of the drawn range for a given file: the cap, or the file's own Nyquist when that
+// is lower (44.1 kHz), since the cap must only ever remove empty headroom, never invent it.
+// An unreadable sample rate falls back to the cap so the image is still framed like every
+// other file's instead of collapsing to a zero-width band.
+export function spectrogramTopHz(sampleRateHz: number): number {
+  if (sampleRateHz <= 0) return SPECTRUM_TOP_HZ
+  return Math.min(sampleRateHz / 2, SPECTRUM_TOP_HZ)
+}
+
+// showspectrumpic has no "draw up to N Hz" option — it always spans the input's full
+// 0..Nyquist. The only way to stop it at the cap is to hand it audio whose Nyquist already IS
+// the cap, so a hi-res file is resampled to twice the cap first. Everything at or below the
+// cap is passed through untouched, so those images stay byte-for-byte what they were.
+export function spectrogramFilter(sampleRateHz: number): string {
+  // Emit a grayscale intensity map (loud = bright) and let the renderer recolor it
+  // with theme tokens, so the same image follows both the light and dark Tokyo Night
+  // palettes. cividis grays to a monotonic ramp, so its luminance still tracks
+  // amplitude cleanly. Bump the cache namespace when this changes so images cached
+  // under the old palette regenerate instead of showing stale colors.
+  //
+  // gain=1 (not 2) with the default 120 dB range, mirroring Spek's own −120…0 dBFS
+  // map (spek-fft.cc emits 10·log10(power); spek-spectrogram.cc spans LRANGE=−120 to
+  // URANGE=0). gain=2 doubled the intensity, lifting the quantization noise above a
+  // codec wall (~16 kHz on a fake 320) from black into the renderer's mid-blue ramp,
+  // so a wall the file does not pass read as full band. But narrowing the range to
+  // hide that noise (an earlier 60 dB attempt) also clipped the genuine −60…−90 dB HF
+  // transients Spek shows reaching ~22 kHz. The honest fix keeps the full range here
+  // and fades the bottom of the recolor ramp to the panel instead (see
+  // spectrumColors.ts), exactly how Spek's palette sinks its low end to black.
+  const draw = 'showspectrumpic=s=1000x320:legend=0:color=cividis:gain=1,format=gray'
+  if (sampleRateHz <= SPECTRUM_TOP_HZ * 2) return draw
+  // The default (swr) resampler, deliberately: soxr is an optional build flag, and the
+  // bundled ffmpeg-static fails outright with "Error reinitializing filters!" when asked for
+  // it. That build also differs between macOS and Windows, so a filter that depends on an
+  // optional component is a per-platform breakage waiting to happen. swr's quality is
+  // irrelevant here anyway — this feeds a 1000x320 picture, not the audio the user keeps.
+  return `aresample=${SPECTRUM_TOP_HZ * 2},${draw}`
+}
+
+export async function generateSpectrogram(
+  input: string,
+  sampleRateHz: number,
+  signal?: AbortSignal,
+): Promise<string> {
   const out = join(tmpdir(), tmpName('spec', 'png'))
   try {
     await run(
@@ -1691,22 +1745,7 @@ export async function generateSpectrogram(input: string, signal?: AbortSignal): 
         '-i',
         input,
         '-lavfi',
-        // Emit a grayscale intensity map (loud = bright) and let the renderer recolor it
-        // with theme tokens, so the same image follows both the light and dark Tokyo Night
-        // palettes. cividis grays to a monotonic ramp, so its luminance still tracks
-        // amplitude cleanly. Bump the cache namespace when this changes so images cached
-        // under the old palette regenerate instead of showing stale colors.
-        //
-        // gain=1 (not 2) with the default 120 dB range, mirroring Spek's own −120…0 dBFS
-        // map (spek-fft.cc emits 10·log10(power); spek-spectrogram.cc spans LRANGE=−120 to
-        // URANGE=0). gain=2 doubled the intensity, lifting the quantization noise above a
-        // codec wall (~16 kHz on a fake 320) from black into the renderer's mid-blue ramp,
-        // so a wall the file does not pass read as full band. But narrowing the range to
-        // hide that noise (an earlier 60 dB attempt) also clipped the genuine −60…−90 dB HF
-        // transients Spek shows reaching ~22 kHz. The honest fix keeps the full range here
-        // and fades the bottom of the recolor ramp to the panel instead (see
-        // spectrumColors.ts), exactly how Spek's palette sinks its low end to black.
-        'showspectrumpic=s=1000x320:legend=0:color=cividis:gain=1,format=gray',
+        spectrogramFilter(sampleRateHz),
         out,
       ],
       { timeout: ANALYSIS_TIMEOUT_MS, signal },
@@ -1771,11 +1810,25 @@ export async function analyzeCutoff(
   input: string,
   sampleRateHz: number,
   signal?: AbortSignal,
-): Promise<CutoffResult & { upsampled: boolean; fineWall?: boolean; fineStepDb?: number }> {
+): Promise<
+  CutoffResult & {
+    upsampled: boolean
+    resolution: Resolution
+    fineWall?: boolean
+    fineStepDb?: number
+  }
+> {
   const nyquist = sampleRateHz / 2
   const freqs = bandFrequencies(nyquist)
   if (freqs.length < 2)
-    return { cutoffHz: nyquist, processed: false, hasKnee: false, upsampled: false }
+    return {
+      cutoffHz: nyquist,
+      processed: false,
+      hasKnee: false,
+      upsampled: false,
+      // Too few bands to measure anything, so the rate claim was never checked either.
+      resolution: 'unknown',
+    }
   const fineFreqs = fineBandFrequencies(nyquist)
   // Only worth probing the 22.05 kHz wall when Nyquist clears the upper band; on a
   // native 44.1 kHz file there is no headroom above it to read.
@@ -1803,17 +1856,19 @@ export async function analyzeCutoff(
     freqHz,
     rmsDb: rms.get(`${freqHz}x${FINE_BAND_WIDTH_HZ}`) ?? -Infinity,
   }))
-  const upsampled =
-    probesUpsample &&
-    detectUpsample(
-      rms.get(`${UPSAMPLE_PROBE_BELOW_HZ}x${FINE_BAND_WIDTH_HZ}`) ?? -Infinity,
-      rms.get(`${UPSAMPLE_PROBE_ABOVE_HZ}x${FINE_BAND_WIDTH_HZ}`) ?? -Infinity,
-    )
+  const belowDb = rms.get(`${UPSAMPLE_PROBE_BELOW_HZ}x${FINE_BAND_WIDTH_HZ}`) ?? -Infinity
+  const aboveDb = rms.get(`${UPSAMPLE_PROBE_ABOVE_HZ}x${FINE_BAND_WIDTH_HZ}`) ?? -Infinity
+  const upsampled = probesUpsample && detectUpsample(belowDb, aboveDb)
+  // The same two bands read as a full answer rather than one accusation: an upsample, a
+  // confirmed hi-res, or an honest "could not tell". Without it a genuine hi-res file got
+  // no statement at all, which reads exactly like an analysis that never ran.
+  const resolution = detectResolution(sampleRateHz, belowDb, aboveDb)
   // The steepest fine step is the number the wall verdict rests on; measured
   // here once so the caption can cite it instead of the UI re-deriving anything.
   return {
     ...detectCutoff(bands, nyquist, fine),
     upsampled,
+    resolution,
     fineWall: fineBandsShowWall(fine),
     fineStepDb: steepestFineStep(fine),
   }
@@ -2123,11 +2178,18 @@ export async function analyzeShelf(
 
 interface SpectrumDeps {
   probe: (input: string) => Promise<{ sampleRate: string }>
-  spectrogram: (input: string) => Promise<string>
+  spectrogram: (input: string, sampleRateHz: number) => Promise<string>
   cutoff: (
     input: string,
     sampleRateHz: number,
-  ) => Promise<CutoffResult & { upsampled: boolean; fineWall?: boolean; fineStepDb?: number }>
+  ) => Promise<
+    CutoffResult & {
+      upsampled: boolean
+      resolution?: Resolution
+      fineWall?: boolean
+      fineStepDb?: number
+    }
+  >
   shelf: (
     input: string,
     sampleRateHz: number,
@@ -2138,9 +2200,17 @@ interface SpectrumBuild {
   image: string
   cutoffHz: number | null
   sampleRateHz: number
+  // The frequency at the top edge of the image. Below the cap this is just Nyquist, but a
+  // hi-res image is drawn to the cap instead, and every reader of the axis (the kHz marks,
+  // the cutoff line, the hover crosshair) has to scale against the range actually drawn.
+  imageTopHz: number
   processed: boolean
   hasKnee: boolean
   upsampled: boolean
+  // What the sample rate is actually worth: native, genuine hi-res, an upsample, or an
+  // honest unknown. The UI states this on every file, so "checked and fine" is never
+  // indistinguishable from "never checked".
+  resolution: Resolution
   // Evidence for the verdict captions: the numbers the detectors decided on,
   // threaded through so the UI can cite them instead of discarding them.
   fineStepDb?: number
@@ -2165,7 +2235,7 @@ interface SpectrumBuild {
 export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<SpectrumBuild> {
   const sampleRateHz = Number((await deps.probe(input)).sampleRate) || 0
   const [imageR, cutoffR, shelfR] = await Promise.allSettled([
-    deps.spectrogram(input),
+    deps.spectrogram(input, sampleRateHz),
     deps.cutoff(input, sampleRateHz),
     deps.shelf(input, sampleRateHz),
   ])
@@ -2199,9 +2269,13 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
             ? Math.min(kneeCutoffHz, cutoff?.cutoffHz ?? kneeCutoffHz)
             : (cutoff?.cutoffHz ?? null),
     sampleRateHz,
+    imageTopHz: spectrogramTopHz(sampleRateHz),
     processed,
     hasKnee: (cutoff?.hasKnee ?? false) || kneeCutoffHz !== null,
     upsampled: cutoff?.upsampled ?? false,
+    // A failed cutoff pass measured nothing, so the rate claim is unverified rather than
+    // cleared: say unknown instead of implying the file passed a check that never ran.
+    resolution: cutoff?.resolution ?? 'unknown',
     fineStepDb: cutoff?.fineStepDb,
     teethCount: cutoff?.teethCount,
     teethFromHz: cutoff?.teethFromHz,
