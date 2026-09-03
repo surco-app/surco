@@ -33,8 +33,8 @@
     "space": "Space"
   },
   "hero": {
-    "h1a": "Your music,",
-    "h1b": "the way it should be.",
+    "h1a": "Get your tracks ready",
+    "h1b": "before you play them.",
     "ledeShort": "Convert, tag, check the quality and file into Apple Music or Engine DJ: what used to take four or five apps, Surco does in one. From minutes per track to a couple of seconds."
   },
   "features": {
@@ -877,12 +877,25 @@
       "pillRunning": "Converting {{done}}/{{total}}",
       "pillDone": "{{total}}/{{total}} done"
     },
-    "heroLede": "The app that gets your music ready to play: converts to lossless, tags from Discogs, catches the MP3s dressed up as FLAC and files it all into Apple Music, Engine DJ or rekordbox.",
     "heroFree": "Free, forever. macOS, Windows and Linux. No account.",
     "closeTitle": "All of it, in one window.",
     "closeNote": "No cloud, no limits, nothing to sign up for. It updates itself.",
     "closeSafety": "Your originals stay untouched: change format and the copy goes to a folder of its own. It only rewrites the file itself if you re-export to the same format, which is how it updates tags without re-encoding. Notarized by Apple.",
     "allFeatures": "See everything it does →",
-    "worksWith": "Works with"
+    "worksWith": "Works with",
+    "anchors": {
+      "tag": {
+        "title": "Every tag, in one click",
+        "note": "Discogs, Bandcamp and Deezer. Artist, label, year, BPM and artwork."
+      },
+      "audio": {
+        "title": "And it cleans up the audio",
+        "note": "Catches the FLACs that came from an MP3, trims silence, removes vinyl clicks and levels the volume."
+      },
+      "export": {
+        "title": "And it lands in your program",
+        "note": "Apple Music, Engine DJ, rekordbox, Traktor or Serato. Nothing to import."
+      }
+    }
   }
 }
