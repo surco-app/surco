@@ -36,7 +36,7 @@ describe('cancellable analysis reads pass their AbortSignal to execFile', () => 
 
   it('hands the signal to every decode of the selected-track probes', async () => {
     const signal = new AbortController().signal
-    await swallow(generateSpectrogram('/in.flac', signal))
+    await swallow(generateSpectrogram('/in.flac', 44100, signal))
     await swallow(analyzeCutoff('/in.flac', 44100, signal))
     await swallow(measureLoudness('/in.flac', signal))
 

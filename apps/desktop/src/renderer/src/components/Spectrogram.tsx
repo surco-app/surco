@@ -5,7 +5,7 @@ import type { SpectrumResult } from '../../../shared/types'
 import { useMaximizedSection } from '../hooks/useEditorSections'
 import { useSpectrumDuotone } from '../hooks/useSpectrumDuotone'
 import { formatKHz } from '../lib/quality'
-import { freqAtFraction } from '../lib/spectrumAxis'
+import { freqAtFraction, spectrumTopHz } from '../lib/spectrumAxis'
 
 const FREQ_MARKS = [0, 5000, 10000, 15000, 20000]
 
@@ -37,14 +37,17 @@ export function Spectrogram({
   // grows the box to most of the window the same way the maximized trim does.
   const tall = maximized === 'quality'
   const heightClass = tall ? 'h-[70vh]' : 'h-80'
-  const nyquist = spectrum.sampleRateHz / 2
+  // The top of the picture, which is Nyquist only up to the cap: a hi-res image is drawn to
+  // 24 kHz, so positioning anything against its 96 kHz Nyquist would put every mark and line
+  // at the wrong row. Everything that reads the axis scales against this one number.
+  const topHz = spectrumTopHz(spectrum.sampleRateHz, spectrum.imageTopHz)
   // The hover crosshair: where the cursor sits as a percent from the top, and the frequency
   // that row maps to. Null while the cursor is outside, so the line shows only when reading.
   const [hover, setHover] = useState<{ topPct: number; hz: number } | null>(null)
   const onMove = (e: React.MouseEvent<HTMLDivElement>): void => {
     const rect = e.currentTarget.getBoundingClientRect()
     const fraction = (e.clientY - rect.top) / rect.height
-    const hz = freqAtFraction(fraction, spectrum.sampleRateHz)
+    const hz = freqAtFraction(fraction, spectrum.sampleRateHz, spectrum.imageTopHz)
     if (hz === null) return
     setHover({ topPct: Math.min(100, Math.max(0, fraction * 100)), hz })
   }
@@ -76,11 +79,11 @@ export function Spectrogram({
         style={{ filter: `url(#${filterId})` }}
         className={`block w-full object-fill ${tall ? 'h-full' : 'h-80'}`}
       />
-      {nyquist > 0 &&
-        FREQ_MARKS.filter((f) => f <= nyquist).map((f) => (
+      {topHz > 0 &&
+        FREQ_MARKS.filter((f) => f <= topHz).map((f) => (
           <span
             key={f}
-            style={{ top: `${(1 - f / nyquist) * 100}%` }}
+            style={{ top: `${(1 - f / topHz) * 100}%` }}
             className="pointer-events-none absolute left-1 -translate-y-1/2 rounded border border-[var(--color-line)] bg-[var(--color-panel)]/80 px-1 text-[10px] tabular-nums text-[var(--color-fg)]"
           >
             {f / 1000}k
@@ -91,17 +94,17 @@ export function Spectrogram({
           frame — turns the verdict into something you read at a glance, without decoding
           the picture. Only for a real transcode, so a genuine dark master is never dressed
           up as a fake. */}
-      {transcoded && nyquist > 0 && spectrum.cutoffHz !== null && (
+      {transcoded && topHz > 0 && spectrum.cutoffHz !== null && (
         <div
           data-testid="spectrum-deadband"
           aria-hidden="true"
-          style={{ height: `${(1 - spectrum.cutoffHz / nyquist) * 100}%` }}
+          style={{ height: `${(1 - spectrum.cutoffHz / topHz) * 100}%` }}
           className="spectrum-deadband pointer-events-none absolute inset-x-0 top-0"
         />
       )}
-      {nyquist > 0 && spectrum.cutoffHz !== null && (
+      {topHz > 0 && spectrum.cutoffHz !== null && (
         <div
-          style={{ top: `${(1 - spectrum.cutoffHz / nyquist) * 100}%` }}
+          style={{ top: `${(1 - spectrum.cutoffHz / topHz) * 100}%` }}
           className={`pointer-events-none absolute inset-x-0 border-t border-dashed ${
             transcoded ? 'border-[var(--color-danger)]' : 'border-[var(--color-fg-muted)]'
           }`}

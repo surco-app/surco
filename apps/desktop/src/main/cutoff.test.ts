@@ -3,6 +3,7 @@ import {
   type Band,
   bandFrequencies,
   detectCutoff,
+  detectResolution,
   detectUpsample,
   fineBandFrequencies,
 } from './cutoff'
@@ -566,6 +567,45 @@ describe('detectUpsample', () => {
     // would risk a false positive the moment ffmpeg drops a line — stay quiet.
     expect(detectUpsample(-50, Number.NEGATIVE_INFINITY)).toBe(false)
     expect(detectUpsample(Number.NEGATIVE_INFINITY, -90)).toBe(false)
+  })
+})
+
+// The same two probe bands, read as a three-state answer instead of one boolean. A user
+// looking at a 192 kHz file wants to know what the rate is worth, and silence gave them no
+// way to tell "checked, the content is really there" from "never looked". Only the upsample
+// branch is an accusation; the other two just say what was and was not measured.
+describe('detectResolution', () => {
+  // Native 44.1 kHz: Nyquist is the wall itself, so there is no headroom above it to read and
+  // no hi-res claim to check. Not a defect, just the format most music ships in.
+  it('reports a 44.1 kHz file as making no hi-res claim', () => {
+    expect(detectResolution(44100, -47.6, -55.6)).toBe('native')
+  })
+
+  // 48 kHz is the boundary case and it does get probed: its Nyquist (24 kHz) clears the upper
+  // band, and 44.1→48 is a real upsample worth catching, so it is graded like any high rate.
+  it('still grades a 48 kHz file, whose Nyquist clears the probe band', () => {
+    expect(detectResolution(48000, -47.6, -55.6)).toBe('hires')
+    expect(detectResolution(48000, -51.2, -71.5)).toBe('upsampled')
+  })
+
+  // The reverse of the upsample verdict, and the whole point of the change: content that
+  // survives across 22.05 kHz on a high-rate file is the rate doing real work.
+  it('confirms genuine hi-res when content carries across the 22.05 kHz wall', () => {
+    expect(detectResolution(96000, -47.6, -55.6)).toBe('hires')
+    expect(detectResolution(192000, -72.5, -81.4)).toBe('hires')
+  })
+
+  it('reports an upsample when the energy collapses above the wall', () => {
+    expect(detectResolution(96000, -51.2, -71.5)).toBe('upsampled')
+    expect(detectResolution(192000, -79.5, -94.9)).toBe('upsampled')
+  })
+
+  // The honest third state. An unreadable probe cannot prove the content is there OR that it
+  // is missing, and claiming either would be inventing a verdict; the UI says so plainly
+  // rather than showing a green badge that means nothing.
+  it('stays inconclusive when a probe band could not be read', () => {
+    expect(detectResolution(192000, -50, Number.NEGATIVE_INFINITY)).toBe('unknown')
+    expect(detectResolution(192000, Number.NEGATIVE_INFINITY, -90)).toBe('unknown')
   })
 })
 

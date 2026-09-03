@@ -29,3 +29,30 @@ describe('freqAtFraction', () => {
     expect(freqAtFraction(0.5, 0)).toBeNull()
   })
 })
+
+// A hi-res file's image is not drawn to Nyquist: above ~22 kHz there is nothing to see, and
+// spending 79% of the panel on it (192 kHz, Nyquist 96 kHz) squashed the music into the
+// bottom fifth. The image is capped, so the axis must read against the cap the image was
+// actually drawn to, not the file's Nyquist. Otherwise every kHz mark, the cutoff line and
+// this readout point at a row holding a different frequency.
+describe('freqAtFraction with a capped image', () => {
+  it('reads the top edge as the cap, not Nyquist, on a hi-res file', () => {
+    expect(freqAtFraction(0, 192000, 24000)).toBe(24000)
+  })
+
+  it('scales the middle against the cap', () => {
+    expect(freqAtFraction(0.5, 192000, 24000)).toBe(12000)
+  })
+
+  // A 44.1 kHz file's Nyquist already sits below the cap, so nothing changes for it: the
+  // image still runs to 22.05 kHz and so must the axis.
+  it('falls back to Nyquist when it sits below the cap', () => {
+    expect(freqAtFraction(0, 44100, 24000)).toBe(22050)
+  })
+
+  // Analyses cached before the cap existed were drawn to Nyquist, and must keep reading
+  // that way rather than rescaling to a cap their image never used.
+  it('uses Nyquist when no cap is given', () => {
+    expect(freqAtFraction(0, 192000)).toBe(96000)
+  })
+})
