@@ -72,8 +72,7 @@ export default function Walkthrough() {
       </SceneLayout>
 
       <SceneLayout step={t('home.tag.step')} title={t('home.tag.title')} app={<TagScene />}>
-        <p>{t('home.tag.lede')}</p>
-        <p className="mt-3 font-mono text-xs text-faint">{t('home.tag.note')}</p>
+        {t('home.tag.lede')}
       </SceneLayout>
 
       <SceneLayout
@@ -86,8 +85,7 @@ export default function Walkthrough() {
           </AppFrame>
         }
       >
-        <p>{t('home.quality.lede')}</p>
-        <p className="mt-3 font-mono text-xs text-faint">{t('home.quality.note')}</p>
+        {t('home.quality.lede')}
       </SceneLayout>
 
       <SceneLayout

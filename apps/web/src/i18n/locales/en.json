@@ -812,7 +812,7 @@
     "quality": {
       "step": "03 · checked",
       "title": "That FLAC was an MP3.",
-      "lede": "Buying lossless is no guarantee it is. If someone converted an MP3 to FLAC, the file weighs what a lossless weighs but half the treble is gone — and on the spectrum it shows as a flat wall. Surco flags it before the track ever leaves the house.",
+      "lede": "Buying lossless is no guarantee it is. If someone converted an MP3 to FLAC, the file weighs the same but the spectrum shows the wall. Surco flags it before the track ever leaves the house.",
       "pill": "quality",
       "goodBadge": "● Good quality",
       "fakeBadge": "● Fake lossless",
@@ -821,8 +821,7 @@
       "goodCaptionPre": "reaches ",
       "goodCaptionPost": " · no wall",
       "fakeCaptionPre": "cuts off at ",
-      "fakeCaptionPost": " · codec wall",
-      "note": "Two tracks bought as FLAC. The second one says so on the tag, but its audio went through an MP3 first: above the wall there is nothing left."
+      "fakeCaptionPost": " · codec wall"
     },
     "tag": {
       "step": "02 · tagged",
@@ -831,7 +830,6 @@
       "pill": "12/40",
       "before": "Artist · before",
       "after": "Artist · after",
-      "note": "A real tag from a purchased FLAC — that is how the artist came. What your player shows is the tag, not the filename.",
       "fields": {
         "label": "Label",
         "bpm": "BPM",
@@ -842,12 +840,11 @@
     "declick": {
       "step": "04 · cleaned",
       "title": "Vinyl clicks, gone.",
-      "lede": "If your tracks came off a record, they carry clicks. Surco finds them, marks them on the wave and takes them out — and you can switch between the original and the repaired audio while it plays, with no gap, to check the repair didn't take any of the music with it.",
+      "lede": "If your tracks came off a record, they carry clicks. Surco finds them, marks them on the wave and takes them out, and you can compare against the original while it plays to check the repair took nothing with it.",
       "pill": "9 clicks",
       "hearing": "Hearing the repair",
       "original": "↔ the original",
       "next": "Next click →",
-      "note": "If the repair eats the attack of a snare, the difference is subtle. And subtle differences only show up when you switch on the fly.",
       "clickCount": "{{count}} clicks"
     },
     "trim": {
