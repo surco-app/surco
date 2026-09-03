@@ -5,15 +5,20 @@ import Reveal from './Reveal'
 import AppFrame from './scenes/AppFrame'
 import BatchScene from './scenes/BatchScene'
 import DeclickScene from './scenes/DeclickScene'
+import NormalizeScene from './scenes/NormalizeScene'
 import SceneLayout from './scenes/SceneLayout'
 import SpectrumPair from './scenes/SpectrumPair'
 import TagScene from './scenes/TagScene'
 import TrackRows from './scenes/TrackRows'
 import TrimScene from './scenes/TrimScene'
 
-// The six steps a file goes through, in order, each one showing the part of the app
+// The seven steps a file goes through, in order, each one showing the part of the app
 // that does it. The page sells the whole preparation flow, so it walks the flow
 // rather than listing features — and the app is on screen in every scene.
+//
+// Tagging leads and quality follows it, matching the order the app itself is
+// explained in: the metadata is the job people come for, and the fake-lossless
+// verdict lands harder once they already know what Surco is for.
 export default function Walkthrough() {
   const { t, i18n } = useTranslation()
   const guideHref = PAGES.guide[i18n.language === 'en' ? 'en' : 'es']
@@ -66,6 +71,11 @@ export default function Walkthrough() {
         {t('home.drop.lede')}
       </SceneLayout>
 
+      <SceneLayout step={t('home.tag.step')} title={t('home.tag.title')} app={<TagScene />}>
+        <p>{t('home.tag.lede')}</p>
+        <p className="mt-3 font-mono text-xs text-faint">{t('home.tag.note')}</p>
+      </SceneLayout>
+
       <SceneLayout
         wide
         step={t('home.quality.step')}
@@ -78,11 +88,6 @@ export default function Walkthrough() {
       >
         <p>{t('home.quality.lede')}</p>
         <p className="mt-3 font-mono text-xs text-faint">{t('home.quality.note')}</p>
-      </SceneLayout>
-
-      <SceneLayout step={t('home.tag.step')} title={t('home.tag.title')} app={<TagScene />}>
-        <p>{t('home.tag.lede')}</p>
-        <p className="mt-3 font-mono text-xs text-faint">{t('home.tag.note')}</p>
       </SceneLayout>
 
       <SceneLayout
@@ -108,6 +113,18 @@ export default function Walkthrough() {
         }
       >
         {t('home.trim.lede')}
+      </SceneLayout>
+
+      <SceneLayout
+        step={t('home.normalize.step')}
+        title={t('home.normalize.title')}
+        app={
+          <AppFrame pill={t('home.normalize.pill')}>
+            <NormalizeScene />
+          </AppFrame>
+        }
+      >
+        {t('home.normalize.lede')}
       </SceneLayout>
 
       <SceneLayout

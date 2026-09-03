@@ -800,7 +800,7 @@
     "walkthrough": {
       "kicker": "Paso a paso",
       "title": "Una pista, de principio a fin",
-      "lede": "Seis pasos, una sola ventana. Por el camino descubrirás cuáles de tus FLAC son en realidad MP3."
+      "lede": "Siete pasos, una sola ventana. Por el camino descubrirás cuáles de tus FLAC son en realidad MP3."
     },
     "drop": {
       "step": "01 · entra",
@@ -810,7 +810,7 @@
       "caption": "319 pistas leídas en 4 s"
     },
     "quality": {
-      "step": "02 · se comprueba",
+      "step": "03 · se comprueba",
       "title": "Ese FLAC era un MP3.",
       "lede": "Comprar lossless no garantiza que lo sea. Si alguien convirtió un MP3 a FLAC, el archivo pesa lo mismo que un lossless pero le falta la mitad de los agudos — y en el espectro se ve como un muro plano. Surco te lo marca antes de que la pista salga de casa.",
       "pill": "calidad",
@@ -825,7 +825,7 @@
       "note": "Dos pistas compradas como FLAC. La segunda lo dice en la etiqueta, pero su audio pasó por un MP3 antes: por encima del muro no queda nada."
     },
     "tag": {
-      "step": "03 · se etiqueta",
+      "step": "02 · se etiqueta",
       "title": "Las etiquetas, de Discogs, en un clic.",
       "lede": "Discogs para sellos, Bandcamp para autoeditados y Deezer para lo comercial. Un clic y entra todo: artista, sello, año, BPM y carátula.",
       "pill": "12/40",
@@ -862,8 +862,15 @@
       "seeking": "buscando el último golpe…",
       "trimmed": "−{{seconds}} s al final"
     },
+    "normalize": {
+      "step": "06 · se nivela",
+      "title": "Todas al mismo volumen.",
+      "lede": "Cada pista viene con el volumen que le puso su máster, y en cabina se nota al encadenar. Surco las iguala todas al mismo nivel con los presets de streaming, club o broadcast, y te dice antes de tocar nada cuánto va a cambiar cada una.",
+      "pill": "Streaming −14",
+      "target": "objetivo · {{target}} LUFS · ganancia constante, sin comprimir"
+    },
     "batch": {
-      "step": "06 · sale",
+      "step": "07 · sale",
       "title": "Y aparece sola en tu Apple Music.",
       "lede": "Elige formato y destino y convierte la carpeta entera. En Apple Music y Engine DJ no importas nada: la pista aparece en tu biblioteca con la carátula puesta — y en Engine DJ, con rating y playlist. A los demás les deja el fichero que esperan.",
       "pill": "Convirtiendo 11/40",
