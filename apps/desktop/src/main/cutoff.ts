@@ -166,7 +166,7 @@ export function fineBandFrequencies(nyquistHz: number): number[] {
   return freqs
 }
 
-function plateauDb(bands: Band[]): number {
+export function plateauDb(bands: Band[]): number {
   const refCount = Math.min(REFERENCE_BANDS, bands.length)
   return bands.slice(0, refCount).reduce((sum, b) => sum + b.rmsDb, 0) / refCount
 }
@@ -332,26 +332,54 @@ export function detectUpsample(belowDb: number, aboveDb: number): boolean {
   return belowDb - aboveDb >= UPSAMPLE_WALL_DROP_DB
 }
 
+export type Resolution = 'native' | 'hires' | 'upsampled' | 'unknown'
+
+// How far below the music's own plateau the upper probe band may sit and still count as
+// content. The wall test compares the two probe bands against EACH OTHER, which silently
+// assumes there is something up there to compare: on a 192 kHz file whose content dies at
+// 20 kHz, both bands sit in the dither (-117.7 and -120.7 against a -45.2 plateau) and their
+// 3 dB gap read as a gentle taper, i.e. "genuine hi-res" — the exact opposite of the truth.
+//
+// Measured, not guessed. Ten real 96 kHz/24-bit masters off the NAS carry their ultrasonics
+// at -16.5 to -34.8 dB below plateau; the user's fake sits at -75.5 and a real 44.1→48
+// upsample at -79.9. 55 splits a 40 dB no-man's-land with ~20 dB of margin either side.
+// Relative to the plateau rather than an absolute dBFS line, because the same master mixed
+// quieter is the same recording: an absolute floor is what made a loud remaster and its quiet
+// reissue disagree in the roughness pass (see ROUGHNESS_FLOOR_DB above).
+const HIRES_FLOOR_BELOW_PLATEAU_DB = 55
+
 // What the file's sample rate is actually worth, from the same two probe bands detectUpsample
 // reads. The boolean could only ever say "upsampled or nothing", so a genuine hi-res file got
 // silence — indistinguishable, from the outside, from an analysis that never ran. These are
 // the four honest answers:
 //
-//   native     — 44.1/48 kHz: no headroom above the 22.05 kHz wall to read, so there is no
+//   native     — 44.1 kHz: no headroom above the 22.05 kHz wall to read, so there is no
 //                hi-res claim to check. Not a defect; most music is this.
 //   hires      — content carries across the wall: the high rate is doing real work.
 //   upsampled  — the energy collapses above the wall: 44.1 kHz content in a hi-res container.
-//   unknown    — a probe band could not be read, so neither answer is provable. Said out loud
-//                rather than dressed up as a pass; a verdict nobody measured is worse than
-//                admitting the gap.
-export type Resolution = 'native' | 'hires' | 'upsampled' | 'unknown'
-
+//   unknown    — a probe band could not be read, or there is nothing above the wall to read
+//                at all. Said out loud rather than dressed up as a pass; a verdict nobody
+//                measured is worse than admitting the gap.
+//
+// plateauDb is the 9–11 kHz music reference. Optional: without it the floor guard cannot run
+// and the wall test answers alone, so callers predating the guard keep their old behaviour
+// instead of gaining a verdict never calibrated for them.
 export function detectResolution(
   sampleRateHz: number,
   belowDb: number,
   aboveDb: number,
+  plateauDb?: number,
 ): Resolution {
   if (sampleRateHz / 2 < UPSAMPLE_MIN_NYQUIST_HZ) return 'native'
   if (!Number.isFinite(belowDb) || !Number.isFinite(aboveDb)) return 'unknown'
-  return belowDb - aboveDb >= UPSAMPLE_WALL_DROP_DB ? 'upsampled' : 'hires'
+  // A wall is still a wall even in the quiet: check it before the floor guard, so a file that
+  // collapses across 22.05 kHz is named an upsample rather than softened to "unknown".
+  if (belowDb - aboveDb >= UPSAMPLE_WALL_DROP_DB) return 'upsampled'
+  if (
+    plateauDb !== undefined &&
+    Number.isFinite(plateauDb) &&
+    aboveDb < plateauDb - HIRES_FLOOR_BELOW_PLATEAU_DB
+  )
+    return 'unknown'
+  return 'hires'
 }
