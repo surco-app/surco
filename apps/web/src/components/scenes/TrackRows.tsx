@@ -8,6 +8,7 @@ export type Row = {
   name: string
   state?: 'idle' | 'loading' | 'working' | 'done' | 'flagged'
   format?: string
+  duration?: string
   stage?: string
   progress?: number
   selected?: boolean
@@ -69,8 +70,15 @@ export default function TrackRows({ rows }: { rows: Row[] }) {
             )}
           </span>
           {r.state === 'flagged' && <span className="shrink-0 text-red">◆</span>}
+          {/* Fixed width, whether or not the length has been read yet: the badges to
+              its right would otherwise shift sideways as each row finishes. */}
+          {r.duration !== undefined && (
+            <span className="w-9 shrink-0 text-right text-[10px] tabular-nums text-faint">
+              {r.duration}
+            </span>
+          )}
           {r.format && (
-            <span className="shrink-0 rounded border border-line px-1.5 text-[9px] text-muted">
+            <span className="w-11 shrink-0 rounded border border-line px-1.5 text-center text-[9px] text-muted">
               {r.format}
             </span>
           )}

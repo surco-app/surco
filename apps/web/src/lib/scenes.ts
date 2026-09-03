@@ -8,31 +8,173 @@ import { DECLICK_MARKS, TAIL_CUT } from './waveforms'
 
 const clamp = (t: number) => Math.min(Math.max(t, 0), 1)
 
-/* ---------------------------------------------------------------- 03 · tagging */
+/* ------------------------------------------------------------------- 01 · drop */
+
+// A crate of real 90s eurodance filenames — "Artist 01 - Track 01" is the fastest
+// way to tell a DJ he is looking at a mockup. The formats are mixed on purpose: a
+// folder that has been collected over years holds shop downloads, vinyl rips and
+// whatever a friend sent, and a column of identical FLAC badges reads as filler.
+// Lengths are the 12" runtimes the genre actually has, not round numbers.
+export const DROP_TRACKS = [
+  { name: 'Kaleidos - Take Me To The Limit', format: 'FLAC', duration: '6:12' },
+  { name: 'Kalura - Pay For Love', format: 'MP3', duration: '5:48' },
+  { name: 'Karen B - Natural Woman', format: 'WAV', duration: '7:03' },
+  { name: 'Ken Laszlo - When I Fall In Love', format: 'FLAC', duration: '6:41' },
+  { name: 'Kim Sanders - Ride', format: 'AIFF', duration: '5:22' },
+  { name: 'Kriss - Tonight', format: 'MP3', duration: '4:57' },
+  { name: 'Lia - Private Fantasy', format: 'FLAC', duration: '6:35' },
+] as const
+
+// What the whole folder holds, against which the counter runs: the queue shows seven
+// rows, but the step is about dropping a crate in, not seven files.
+export const DROP_TOTAL = 319
+
+export interface DropRow {
+  name: string
+  format: string
+  duration: string
+  state: 'loading' | 'done'
+}
+
+export interface DropFrame {
+  rows: DropRow[]
+  read: number
+  total: number
+}
+
+// Tracks land one after another and each reads its tags a beat after landing, so the
+// queue is visibly filling rather than sitting complete. The previous version passed
+// seven rows frozen on "loading" from the outside: the step that promises "drop them
+// in and they're there" never showed a single file arriving or finishing.
+export function dropFrame(t: number): DropFrame {
+  const p = clamp(t)
+  const landed = Math.min(DROP_TRACKS.length, Math.floor(p * 1.25 * DROP_TRACKS.length))
+
+  const rows = DROP_TRACKS.slice(0, landed).map(({ name, format, duration }, i) => {
+    // Each row needs a moment reading before it settles, which is what makes the
+    // queue look like work in flight instead of a list that appeared finished.
+    const read = p > (i + 1) / (DROP_TRACKS.length * 1.25) + 0.12
+    return {
+      name,
+      format,
+      // The length comes off the file, so it cannot be on screen before the read
+      // finishes — that is the difference between showing work and asserting it.
+      duration: read ? duration : '',
+      state: (read ? 'done' : 'loading') as DropRow['state'],
+    }
+  })
+
+  return {
+    rows,
+    read: Math.round((landed / DROP_TRACKS.length) * DROP_TOTAL),
+    total: DROP_TOTAL,
+  }
+}
+
+/* ---------------------------------------------------------------- 02 · tagging */
 
 export const TAG_TOTAL = 40
 const TAG_FROM = 8
 export const TAG_ARTIST = 'Lil Suzy'
 export const TAG_FIELDS = ['Factory Team', '135', 'Fm · 9A', '1995'] as const
+export const TAG_QUERY = 'when i fall in love'
+
+export const TAG_MATCHES = [
+  { title: 'When I Fall In Love', meta: '1995 · Factory Team · FT-012', src: 'Discogs' },
+  { title: 'Euro Club Vol. 3', meta: '1995 · Rise', src: 'Deezer' },
+  { title: 'When I Fall In Love', meta: '1996 · self-released', src: 'Bandcamp' },
+] as const
+
+// The act the section sells is "tags, in one click", so the scene has to contain the
+// click — and everything that makes it meaningful either side. It runs in four beats:
+// the query types in, the releases arrive one by one, one gets picked, and only then
+// does the artwork drop and the fields fill. An earlier version opened with the
+// results already listed and the panels already resolved, which showed the outcome of
+// an act the visitor never saw, and left the before/after floating with no file
+// attached to it.
+const TAG_TYPING_ENDS = 0.22
+const TAG_RESULTS_END = 0.48
+const TAG_PICK = 0.52
 
 export interface TagFrame {
   done: number
+  query: string
+  results: number
   activeRow: number
+  picked: boolean
+  artwork: number
   artist: string
   fields: string[]
 }
 
 export function tagFrame(t: number): TagFrame {
   const p = clamp(t)
-  // The good name types in over the junk one. The replacement is the scene's whole
-  // argument, and a swap that lands in a single frame reads as a rendering glitch
-  // rather than as work being done.
-  const typed = Math.round(Math.max(0, (p - 0.16) / 0.22) * TAG_ARTIST.length)
+
+  const typed = Math.round(Math.min(1, p / TAG_TYPING_ENDS) * TAG_QUERY.length)
+
+  // Results only start landing once there is a query to match, and arrive staggered
+  // rather than as a block: a list that appears whole reads as a static mockup.
+  const searching = (p - TAG_TYPING_ENDS) / (TAG_RESULTS_END - TAG_TYPING_ENDS)
+  const results = Math.max(
+    0,
+    Math.min(
+      TAG_MATCHES.length,
+      Math.floor(searching * TAG_MATCHES.length) + (searching > 0 ? 1 : 0),
+    ),
+  )
+
+  const picked = p >= TAG_PICK
+
+  // Artwork drops in first and the text follows it, which is the order that reads as
+  // "the release was applied" rather than as fields being typed by hand.
+  const artwork = picked ? Math.min(1, (p - TAG_PICK) / 0.14) : 0
+
+  // The good name types in over the junk one, after the pick — the replacement is the
+  // scene's argument, and a swap landing in one frame reads as a rendering glitch.
+  const naming = picked ? Math.max(0, (p - TAG_PICK - 0.08) / 0.18) : 0
+  const named = Math.round(Math.min(1, naming) * TAG_ARTIST.length)
+
   return {
     done: Math.round(TAG_FROM + p * (TAG_TOTAL - TAG_FROM)),
-    activeRow: Math.min(2, Math.floor(p * 3.2)),
-    artist: TAG_ARTIST.slice(0, Math.min(TAG_ARTIST.length, typed)),
-    fields: TAG_FIELDS.map((v, i) => (p > 0.34 + i * 0.08 ? v : '')),
+    query: TAG_QUERY.slice(0, Math.min(TAG_QUERY.length, typed)),
+    results,
+    activeRow: picked ? 0 : Math.max(0, results - 1),
+    picked,
+    artwork,
+    artist: TAG_ARTIST.slice(0, named),
+    fields: TAG_FIELDS.map((v, i) => (picked && p > TAG_PICK + 0.16 + i * 0.07 ? v : '')),
+  }
+}
+
+/* ---------------------------------------------------------------- 03 · quality */
+
+// Where the fake's codec wall sits, as a fraction of the image height from the top —
+// the 16 kHz edge on a linear scale. The sweep has to travel past it before the
+// verdict can appear, because that edge is the evidence for the verdict.
+export const SPECTRUM_WALL = 0.273
+
+export interface SpectrumFrame {
+  sweep: number
+  wall: number
+  goodVerdict: boolean
+  fakeVerdict: boolean
+}
+
+// A scan line crosses both spectra and the verdicts land behind it. The previous
+// version drew both images with their badges already attached, which states two
+// conclusions without showing Surco reach either — the one step whose whole claim is
+// that it inspects the audio for you.
+export function spectrumFrame(t: number): SpectrumFrame {
+  const p = clamp(t)
+  const sweep = Math.min(1, p / 0.72)
+
+  return {
+    sweep,
+    // The wall draws in as the sweep passes it, so the picture never makes the claim
+    // ahead of the analysis.
+    wall: Math.max(0, Math.min(1, (sweep - SPECTRUM_WALL) / 0.18)),
+    goodVerdict: sweep >= 1,
+    fakeVerdict: sweep > SPECTRUM_WALL + 0.18,
   }
 }
 

@@ -1,4 +1,7 @@
+import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { spectrumFrame } from '../../lib/scenes'
+import { useSceneProgress } from '../../lib/useSceneProgress'
 
 const AXIS = ['20k', '15k', '10k', '5k', '0k']
 
@@ -9,7 +12,19 @@ const AXIS = ['20k', '15k', '10k', '5k', '0k']
 //
 // They're rendered on a linear frequency scale on purpose. On the log scale a codec
 // cutoff barely registers; linear is what makes it a straight edge you can point at.
-function Spectrum({ src, alt, cutoff }: { src: string; alt: string; cutoff?: number }) {
+function Spectrum({
+  src,
+  alt,
+  cutoff,
+  sweep,
+  wall,
+}: {
+  src: string
+  alt: string
+  cutoff?: number
+  sweep: number
+  wall: number
+}) {
   return (
     <div className="relative overflow-hidden rounded-lg border border-line bg-black">
       <img
@@ -29,20 +44,38 @@ function Spectrum({ src, alt, cutoff }: { src: string; alt: string; cutoff?: num
           <span key={hz}>{hz}</span>
         ))}
       </div>
-      {cutoff !== undefined && (
+
+      {/* The analysis, made visible: a line travels the spectrum and everything it has
+          already crossed is what the verdict is based on. Without it the badges state
+          conclusions the visitor never watched Surco reach. */}
+      {sweep < 1 && (
+        <span
+          aria-hidden="true"
+          className="absolute inset-x-0 h-px bg-cyan"
+          style={{ top: `${sweep * 100}%`, boxShadow: '0 0 8px 1px rgba(125,207,255,.7)' }}
+        />
+      )}
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 bg-cyan/5"
+        style={{ height: `${sweep * 100}%` }}
+      />
+
+      {cutoff !== undefined && wall > 0 && (
         <>
           <span
             aria-hidden="true"
             className="absolute inset-x-0 top-0 border-b border-dashed border-red"
             style={{
               height: `${cutoff}%`,
+              opacity: wall,
               backgroundImage:
                 'repeating-linear-gradient(135deg, rgba(247,118,142,.22) 0 5px, transparent 5px 10px)',
             }}
           />
           <span
             className="absolute right-1.5 rounded bg-black/60 px-1.5 py-px font-mono text-[10px] text-red"
-            style={{ top: `calc(${cutoff}% + 4px)` }}
+            style={{ top: `calc(${cutoff}% + 4px)`, opacity: wall }}
           >
             16.0 kHz
           </span>
@@ -52,27 +85,67 @@ function Spectrum({ src, alt, cutoff }: { src: string; alt: string; cutoff?: num
   )
 }
 
+function Verdict({
+  shown,
+  className,
+  children,
+}: {
+  shown: boolean
+  className: string
+  children: React.ReactNode
+}) {
+  return (
+    <span
+      className={`mb-2.5 inline-flex rounded-full px-2.5 py-0.5 font-mono text-[11px] transition-all duration-500 ${className} ${
+        shown ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0'
+      }`}
+    >
+      {children}
+    </span>
+  )
+}
+
 export default function SpectrumPair() {
   const { t } = useTranslation()
+  const ref = useRef<HTMLDivElement>(null)
+  const frame = spectrumFrame(useSceneProgress(ref, 4600))
+
   return (
-    <div className="space-y-5 p-4">
+    <div ref={ref} className="space-y-5 p-4">
       <div>
-        <span className="mb-2.5 inline-flex rounded-full bg-green/15 px-2.5 py-0.5 font-mono text-[11px] text-green">
+        <Verdict shown={frame.goodVerdict} className="bg-green/15 text-green">
           {t('home.quality.goodBadge')}
-        </span>
-        <Spectrum src="/spectrum/lossless-real.jpg" alt={t('home.quality.goodAlt')} />
-        <p className="mt-2 font-mono text-xs text-muted">
+        </Verdict>
+        <Spectrum
+          src="/spectrum/lossless-real.jpg"
+          alt={t('home.quality.goodAlt')}
+          sweep={frame.sweep}
+          wall={0}
+        />
+        <p
+          className="mt-2 font-mono text-xs text-muted transition-opacity duration-500"
+          style={{ opacity: frame.goodVerdict ? 1 : 0 }}
+        >
           {t('home.quality.goodCaptionPre')}
           <span className="text-green">21.2 kHz</span>
           {t('home.quality.goodCaptionPost')}
         </p>
       </div>
       <div>
-        <span className="mb-2.5 inline-flex rounded-full bg-red/15 px-2.5 py-0.5 font-mono text-[11px] text-red">
+        <Verdict shown={frame.fakeVerdict} className="bg-red/15 text-red">
           {t('home.quality.fakeBadge')}
-        </span>
-        <Spectrum src="/spectrum/lossless-fake.jpg" alt={t('home.quality.fakeAlt')} cutoff={27.3} />
-        <p className="mt-2 font-mono text-xs text-muted">
+        </Verdict>
+        <Spectrum
+          src="/spectrum/lossless-fake.jpg"
+          alt={t('home.quality.fakeAlt')}
+          cutoff={27.3}
+          sweep={frame.sweep}
+          wall={frame.wall}
+        />
+        <p
+          className="mt-2 font-mono text-xs text-muted transition-opacity duration-500"
+          style={{ opacity: frame.fakeVerdict ? 1 : 0 }}
+        >
           {t('home.quality.fakeCaptionPre')}
           <span className="text-red">16.0 kHz</span>
           {t('home.quality.fakeCaptionPost')}

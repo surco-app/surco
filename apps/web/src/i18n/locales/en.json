@@ -806,8 +806,10 @@
       "step": "01 · in",
       "title": "Drop them and they're in.",
       "lede": "Whole folders. Surco reads tags, length and artwork on the fly, and never adds the same track twice.",
-      "pill": "Reading 212/319",
-      "caption": "319 tracks read in 4s"
+      "pill": "Reading {{read}}/{{total}}",
+      "pillDone": "{{total}} tracks",
+      "caption": "{{total}} tracks read in 4s",
+      "captionBusy": "reading tags, length and artwork…"
     },
     "quality": {
       "step": "03 · checked",
@@ -830,6 +832,7 @@
       "pill": "12/40",
       "before": "Artist · before",
       "after": "Artist · after",
+      "applied": "applied",
       "fields": {
         "label": "Label",
         "bpm": "BPM",
