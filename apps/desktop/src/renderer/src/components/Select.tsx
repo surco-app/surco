@@ -4,6 +4,11 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 
+// Breathing room between the trigger and its menu, and the height below which dropping
+// down is not worth it and the menu flips above instead.
+const GAP = 4
+const MIN_MENU_HEIGHT = 160
+
 interface SelectOption {
   value: string
   label: string
@@ -41,7 +46,15 @@ export function Select({
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
   // Where the portaled (full-width) menu sits, measured from the trigger when it opens.
-  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null)
+  // It anchors by `top` when it drops below the trigger and by `bottom` when it flips
+  // above, so the menu grows away from the viewport edge either way.
+  const [pos, setPos] = useState<{
+    top?: number
+    bottom?: number
+    left: number
+    width: number
+    maxHeight: number
+  } | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const selected = options.find((o) => o.value === value)
@@ -58,11 +71,24 @@ export function Select({
       close()
       return
     }
-    // Anchor the portaled menu under the trigger before it opens, so it renders in place
-    // with no first-frame jump.
+    // Anchor the portaled menu against the trigger before it opens, so it renders in place
+    // with no first-frame jump. The menu is fixed, so a trigger near the bottom of the
+    // window would push it past the edge where scrolling cannot reach it: flip it above
+    // the trigger when there is more room up there, and cap it to the room it has.
     if (fullWidth) {
       const r = triggerRef.current?.getBoundingClientRect()
-      if (r) setPos({ top: r.bottom + 4, left: r.left, width: r.width })
+      if (r) {
+        const below = window.innerHeight - r.bottom - GAP
+        const above = r.top - GAP
+        const flip = below < MIN_MENU_HEIGHT && above > below
+        setPos({
+          top: flip ? undefined : r.bottom + GAP,
+          bottom: flip ? window.innerHeight - r.top + GAP : undefined,
+          left: r.left,
+          width: r.width,
+          maxHeight: Math.max(flip ? above : below, MIN_MENU_HEIGHT),
+        })
+      }
     }
     setOpen(true)
   }
@@ -115,14 +141,24 @@ export function Select({
       aria-label={label}
       onKeyDown={onListKeyDown}
       // Full-width: fixed and body-portaled, sized to content (min the trigger width) and
-      // capped to the viewport so a long tracklist scrolls. Otherwise: absolute, right-
-      // aligned and at least the trigger width.
+      // capped to the room on the side it opens toward so a long tracklist scrolls.
+      // Otherwise: absolute, right-aligned and at least the trigger width.
       className={`animate-pop z-50 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl ${
         fullWidth
-          ? 'fixed max-h-[60vh] max-w-[calc(100vw-1rem)] overflow-auto'
+          ? 'fixed max-w-[calc(100vw-1rem)] overflow-auto'
           : 'absolute right-0 mt-1 min-w-full'
       }`}
-      style={fullWidth && pos ? { top: pos.top, left: pos.left, minWidth: pos.width } : undefined}
+      style={
+        fullWidth && pos
+          ? {
+              top: pos.top,
+              bottom: pos.bottom,
+              left: pos.left,
+              minWidth: pos.width,
+              maxHeight: pos.maxHeight,
+            }
+          : undefined
+      }
     >
       {options.map((o) => (
         <button
