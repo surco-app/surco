@@ -356,6 +356,8 @@
     "qualityCaptionBad": "Ceiling at ~{{cutoff}}, the mark of a lossy source.",
     "qualityCaptionProcessed": "Highs that rise where a natural spectrum falls — regenerated over a real ceiling near ~{{cutoff}}.",
     "qualityUpsampled": "Declared above 44.1 kHz, but the real content walls off at 22.05 kHz — upsampled from 44.1 kHz, not true hi-res.",
+    "qualityHiRes": "Content really carries above 22.05 kHz, so the {{rate}} rate is doing real work rather than padding a 44.1 kHz source.",
+    "qualityResolutionUnknown": "The sample rate could not be verified: the probe above 22.05 kHz was unreadable, so this file is neither confirmed hi-res nor flagged as upsampled.",
     "saveQualityReport": "Save report…",
     "reportFooter": "Analyzed with Surco — getsurco.app",
     "qualityCaptionGenuine": "No codec cut: tapers smoothly to ~{{cutoff}}, a gently rolled-off but genuine master.",

@@ -159,7 +159,7 @@ describe('reading an mp3 whose bytes fool ffmpeg format detection', () => {
   })
 
   it('renders the spectrogram', async () => {
-    const png = await generateSpectrogram(adversarial)
+    const png = await generateSpectrogram(adversarial, 44100)
     expect(png.startsWith('data:image/png;base64,')).toBe(true)
     expect(png.length).toBeGreaterThan(100)
   })
