@@ -893,11 +893,11 @@
         "note": "Discogs, Bandcamp y Deezer. Artista, sello, año, BPM y carátula."
       },
       "audio": {
-        "title": "Y de paso, mejora el audio",
+        "title": "Y de paso, mejor audio",
         "note": "Caza los FLAC que salieron de un MP3, quita silencios, clics de vinilo y nivela el volumen."
       },
       "export": {
-        "title": "Y aparece en tu programa",
+        "title": "Y aparecen en tu programa",
         "note": "Apple Music, Engine DJ, rekordbox, Traktor o Serato. Sin importar nada."
       }
     }

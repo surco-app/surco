@@ -893,11 +893,11 @@
         "note": "Discogs, Bandcamp and Deezer. Artist, label, year, BPM and artwork."
       },
       "audio": {
-        "title": "And it cleans up the audio",
+        "title": "And better audio while it does",
         "note": "Catches the FLACs that came from an MP3, trims silence, removes vinyl clicks and levels the volume."
       },
       "export": {
-        "title": "And it lands in your program",
+        "title": "And they land in your program",
         "note": "Apple Music, Engine DJ, rekordbox, Traktor or Serato. Nothing to import."
       }
     }
