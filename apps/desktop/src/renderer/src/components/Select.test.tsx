@@ -119,3 +119,49 @@ describe('Select', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 })
+
+// The full-width menu is fixed-positioned, so a trigger near the bottom of the window
+// dropped its menu past the viewport edge: unreachable, because scrolling the page does
+// not move a fixed element. The last row of the album-match picker is exactly that case,
+// and it left that row's picker unusable.
+describe('Select full-width menu placement', () => {
+  const many = Array.from({ length: 12 }, (_, i) => ({
+    value: String(i),
+    label: `Track ${i + 1}`,
+  }))
+
+  function openAt(bottom: number, viewport = 800): HTMLElement {
+    window.innerHeight = viewport
+    render(
+      <Select value="0" options={many} onChange={vi.fn()} label="Track" testid="pick" fullWidth />,
+    )
+    const trigger = screen.getByTestId('pick')
+    trigger.getBoundingClientRect = () =>
+      ({ top: bottom - 32, bottom, left: 20, width: 200, height: 32 }) as DOMRect
+    fireEvent.click(trigger)
+    return screen.getByTestId('pick-listbox')
+  }
+
+  // Anchored by its bottom edge just above the trigger's top (760), which on an 800-tall
+  // window is 800 - 760 + gap up from the floor: the menu grows upward, into the room.
+  it('flips the menu above a trigger sitting at the bottom of the window', () => {
+    const style = openAt(792).style
+    expect(style.top).toBe('')
+    expect(Number.parseFloat(style.bottom)).toBe(800 - 760 + 4)
+  })
+
+  it('still drops below the trigger when there is room underneath', () => {
+    const style = openAt(132).style
+    expect(style.bottom).toBe('')
+    expect(Number.parseFloat(style.top)).toBeGreaterThanOrEqual(132)
+  })
+
+  // Whichever way it opens, the menu may not grow past the edge it is anchored to.
+  it('caps a flipped menu to the room above the trigger', () => {
+    expect(Number.parseFloat(openAt(792).style.maxHeight)).toBeLessThanOrEqual(792 - 32)
+  })
+
+  it('caps a dropped menu to the room below the trigger', () => {
+    expect(Number.parseFloat(openAt(132).style.maxHeight)).toBeLessThanOrEqual(800 - 132)
+  })
+})
