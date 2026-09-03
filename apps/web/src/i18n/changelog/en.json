@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.92",
+    "date": "September 3, 2026",
+    "title": "The sample rate always gets an answer",
+    "items": [
+      {
+        "text": "A file that declares more than 44.1 kHz now always gets an answer about its sample rate: confirmed as genuine hi-res, flagged as upsampled from 44.1 kHz, or an honest \"could not be verified\" when the probe was unreadable. Saying nothing used to leave a real hi-res file looking exactly like one nobody had analysed. A plain 44.1 kHz file makes no claim to check, so it stays silent rather than gaining a line that says nothing.",
+        "in": "0.92.0"
+      },
+      {
+        "text": "The upsampling detector stopped passing a fake hi-res as the real thing. It compared two high probes against each other, and when the content died at 20 kHz both landed in the noise floor: their similarity read as a gentle taper, that is, as genuine hi-res. Those bands must now also rise above the noise floor, measured against the track's own level so the same master mixed quieter is still the same record. Calibrated on real and fake hi-res files from an actual library, with wide margin on both sides.",
+        "in": "0.92.0"
+      },
+      {
+        "text": "The spectrum of a hi-res track is drawn with the music at a readable size. Painting up to the theoretical ceiling of a 96 or 192 kHz file gave the top octaves, where there is nothing to see, most of the panel and squashed the music into a strip along the bottom. The image is now framed on the range that matters. Files at 44.1 and 48 kHz are drawn exactly as before.",
+        "in": "0.92.0"
+      },
+      {
+        "text": "Silence trimming adapts to each track's own noise instead of using one fixed bar. A lead-in with hiss or hum around -50 dB cleared that bar, counted as music and left the cut loose, above all on vinyl rips. The threshold is now anchored to the track's own noise floor, with margin for its peaks and a ceiling that never climbs into a quiet intro. On tracks with a clean floor the cut comes out exactly as it always did.",
+        "in": "0.92.0"
+      }
+    ]
+  },
+  {
     "version": "0.91",
     "date": "September 2, 2026",
     "title": "The quality verdict shows its work",
