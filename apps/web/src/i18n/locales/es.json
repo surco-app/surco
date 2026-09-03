@@ -806,8 +806,10 @@
       "step": "01 · entra",
       "title": "Suéltalas y ya están dentro.",
       "lede": "Carpetas enteras. Surco lee etiquetas, duración y carátula al vuelo, y la misma pista nunca entra dos veces.",
-      "pill": "Leyendo 212/319",
-      "caption": "319 pistas leídas en 4 s"
+      "pill": "Leyendo {{read}}/{{total}}",
+      "pillDone": "{{total}} pistas",
+      "caption": "{{total}} pistas leídas en 4 s",
+      "captionBusy": "leyendo etiquetas, duración y carátula…"
     },
     "quality": {
       "step": "03 · se comprueba",
@@ -830,6 +832,7 @@
       "pill": "12/40",
       "before": "Artista · antes",
       "after": "Artista · después",
+      "applied": "aplicado",
       "fields": {
         "label": "Sello",
         "bpm": "BPM",

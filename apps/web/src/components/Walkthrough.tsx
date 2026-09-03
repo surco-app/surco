@@ -5,11 +5,11 @@ import Reveal from './Reveal'
 import AppFrame from './scenes/AppFrame'
 import BatchScene from './scenes/BatchScene'
 import DeclickScene from './scenes/DeclickScene'
+import DropScene from './scenes/DropScene'
 import NormalizeScene from './scenes/NormalizeScene'
 import SceneLayout from './scenes/SceneLayout'
 import SpectrumPair from './scenes/SpectrumPair'
 import TagScene from './scenes/TagScene'
-import TrackRows from './scenes/TrackRows'
 import TrimScene from './scenes/TrimScene'
 
 // The seven steps a file goes through, in order, each one showing the part of the app
@@ -46,28 +46,7 @@ export default function Walkthrough() {
         </div>
       </Reveal>
 
-      <SceneLayout
-        step={t('home.drop.step')}
-        title={t('home.drop.title')}
-        app={
-          <AppFrame pill={t('home.drop.pill')} busy progress={66}>
-            <TrackRows
-              rows={[
-                { name: 'Kaleidos - Take Me To The Limit', format: 'FLAC' },
-                { name: 'Kalura - Pay For Love', state: 'loading', format: 'FLAC' },
-                { name: 'Karen B - Natural Woman', state: 'loading', format: 'FLAC' },
-                { name: 'Ken Laszlo - When I Fall In Love', state: 'loading', format: 'FLAC' },
-                { name: 'Kim Sanders - Ride', state: 'loading', format: 'FLAC' },
-                { name: 'Kriss - Tonight', state: 'loading', format: 'FLAC' },
-                { name: 'Lia - Private Fantasy', state: 'loading', format: 'FLAC' },
-              ]}
-            />
-            <p className="border-t border-line px-4 py-2.5 font-mono text-[11px] text-faint">
-              {t('home.drop.caption')}
-            </p>
-          </AppFrame>
-        }
-      >
+      <SceneLayout step={t('home.drop.step')} title={t('home.drop.title')} app={<DropScene />}>
         {t('home.drop.lede')}
       </SceneLayout>
 

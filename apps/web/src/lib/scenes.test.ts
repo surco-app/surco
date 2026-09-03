@@ -3,10 +3,16 @@ import {
   BATCH_QUEUE,
   batchFrame,
   declickFrame,
+  DROP_TRACKS,
+  dropFrame,
+  spectrumFrame,
   NORMALIZE_TARGET,
   NORMALIZE_TRACKS,
   normalizeFrame,
+  TAG_ARTIST,
   TAG_FIELDS,
+  TAG_MATCHES,
+  TAG_QUERY,
   TRIM_CUT,
   tagFrame,
   trimFrame,
@@ -27,15 +33,67 @@ describe('tagFrame', () => {
   // The name types in rather than appearing: the swap is the whole point of the
   // scene, and a cut that lands in one frame reads as a page glitch.
   it('types the name in progressively', () => {
-    const mid = tagFrame(0.3).artist
-    expect(mid.length).toBeGreaterThan(0)
-    expect(mid.length).toBeLessThan('Lil Suzy'.length)
-    expect('Lil Suzy'.startsWith(mid)).toBe(true)
+    const partials = Array.from({ length: 40 }, (_, i) => tagFrame(i / 40).artist).filter(
+      (a) => a.length > 0 && a.length < TAG_ARTIST.length,
+    )
+    expect(partials.length).toBeGreaterThan(0)
+    for (const p of partials) expect(TAG_ARTIST.startsWith(p)).toBe(true)
   })
 
   it('fills every metadata field by the end, none at the start', () => {
     expect(tagFrame(0).fields.filter(Boolean)).toHaveLength(0)
     expect(tagFrame(1).fields).toEqual(TAG_FIELDS)
+  })
+
+  // The section claims tags arrive "in one click", so the scene has to show the
+  // search that precedes the click. Starting with results already on screen states
+  // the outcome and skips the act the copy is selling.
+  it('types the query in before any result arrives', () => {
+    expect(tagFrame(0).query).toBe('')
+    expect(tagFrame(0).results).toBe(0)
+
+    const early = tagFrame(0.1)
+    expect(early.query.length).toBeGreaterThan(0)
+    expect(TAG_QUERY.startsWith(early.query)).toBe(true)
+
+    expect(tagFrame(1).query).toBe(TAG_QUERY)
+  })
+
+  it('brings the results in one at a time, after the query is typed', () => {
+    const counts = Array.from({ length: 30 }, (_, i) => tagFrame(i / 30).results)
+    expect(new Set(counts).size).toBeGreaterThan(2)
+    expect(tagFrame(1).results).toBe(TAG_MATCHES.length)
+  })
+
+  // Nothing is applied until a release is picked: the artwork and the fields are the
+  // consequence of the click, and showing them land before it would misdescribe how
+  // the app works.
+  it('picks a release only once the results are in, and applies nothing before', () => {
+    expect(tagFrame(0.2).picked).toBe(false)
+    const atPick = Array.from({ length: 40 }, (_, i) => tagFrame(i / 40)).find((f) => f.picked)
+    expect(atPick).toBeDefined()
+    expect(atPick?.results).toBe(TAG_MATCHES.length)
+
+    for (let i = 0; i <= 40; i++) {
+      const f = tagFrame(i / 40)
+      if (!f.picked) {
+        expect(f.artwork).toBe(0)
+        expect(f.fields.filter(Boolean)).toHaveLength(0)
+      }
+    }
+  })
+
+  it('drops the artwork in after the pick and settles it', () => {
+    expect(tagFrame(0).artwork).toBe(0)
+    expect(tagFrame(1).artwork).toBe(1)
+
+    let prev = -1
+    for (let i = 0; i <= 40; i++) {
+      const { artwork } = tagFrame(i / 40)
+      expect(artwork).toBeGreaterThanOrEqual(prev)
+      expect(artwork).toBeLessThanOrEqual(1)
+      prev = artwork
+    }
   })
 
   it('counts up without ever going backwards', () => {
@@ -151,6 +209,101 @@ describe('batchFrame', () => {
 
   it('covers the whole queue', () => {
     expect(batchFrame(1).states).toHaveLength(BATCH_QUEUE.length)
+  })
+})
+
+describe('dropFrame', () => {
+  // The step is called "drop them in and they're there". A queue that starts full
+  // shows the aftermath of an import, not an import — the tracks have to arrive.
+  it('starts empty and ends with the whole crate in', () => {
+    expect(dropFrame(0).rows).toHaveLength(0)
+    expect(dropFrame(1).rows).toHaveLength(DROP_TRACKS.length)
+  })
+
+  it('lands the tracks one after another, never losing one', () => {
+    let prev = -1
+    for (let i = 0; i <= 40; i++) {
+      const n = dropFrame(i / 40).rows.length
+      expect(n).toBeGreaterThanOrEqual(prev)
+      prev = n
+    }
+  })
+
+  // Each row reads its tags after it lands, so the queue shows work in flight rather
+  // than a list that was complete the moment it appeared.
+  it('reads each track after it arrives, and finishes them all', () => {
+    const mid = dropFrame(0.5).rows
+    expect(mid.some((r) => r.state === 'loading')).toBe(true)
+    expect(dropFrame(1).rows.every((r) => r.state === 'done')).toBe(true)
+  })
+
+  it('counts only what has actually landed', () => {
+    for (let i = 0; i <= 20; i++) {
+      const f = dropFrame(i / 20)
+      expect(f.read).toBeLessThanOrEqual(f.total)
+    }
+    expect(dropFrame(1).read).toBe(dropFrame(1).total)
+  })
+
+  // A real crate is not seven identical FLACs — it is whatever the shops and the rips
+  // left behind. A single-format queue reads as placeholder data and undersells the
+  // one thing this step does: take the folder exactly as it is.
+  it('carries a mix of formats, not one repeated', () => {
+    const formats = new Set(DROP_TRACKS.map((tr) => tr.format))
+    expect(formats.size).toBeGreaterThan(2)
+  })
+
+  // The lede promises Surco reads length as it goes, so the length has to arrive with
+  // the row rather than being absent from the thing the copy points at.
+  it('reads a length for every track it finishes', () => {
+    for (const row of dropFrame(1).rows) {
+      expect(row.duration).toMatch(/^\d+:\d{2}$/)
+    }
+  })
+
+  // Lengths are only known once the file has been read, so a row still loading cannot
+  // already display one.
+  it('shows no length on a track it is still reading', () => {
+    for (let i = 0; i <= 40; i++) {
+      for (const row of dropFrame(i / 40).rows) {
+        if (row.state === 'loading') expect(row.duration).toBe('')
+      }
+    }
+  })
+})
+
+describe('spectrumFrame', () => {
+  // The verdict is the product of a scan, so the scan has to happen: a sweep crosses
+  // the spectrum and the verdict only lands once it has passed the cutoff it is
+  // judging. Showing both badges from frame one states conclusions nobody watched
+  // Surco reach.
+  it('sweeps across the spectrum and settles at the end', () => {
+    expect(spectrumFrame(0).sweep).toBe(0)
+    expect(spectrumFrame(1).sweep).toBe(1)
+
+    let prev = -1
+    for (let i = 0; i <= 20; i++) {
+      const { sweep } = spectrumFrame(i / 20)
+      expect(sweep).toBeGreaterThanOrEqual(prev)
+      prev = sweep
+    }
+  })
+
+  it('withholds both verdicts until the sweep has passed them', () => {
+    expect(spectrumFrame(0).goodVerdict).toBe(false)
+    expect(spectrumFrame(0).fakeVerdict).toBe(false)
+    expect(spectrumFrame(1).goodVerdict).toBe(true)
+    expect(spectrumFrame(1).fakeVerdict).toBe(true)
+  })
+
+  // The wall is the evidence for the fake verdict, so it cannot be drawn before the
+  // sweep reaches it — the picture would be making the claim ahead of the analysis.
+  it('draws the wall only once the sweep has reached the cutoff', () => {
+    for (let i = 0; i <= 40; i++) {
+      const f = spectrumFrame(i / 40)
+      if (f.wall > 0) expect(f.sweep).toBeGreaterThan(0)
+    }
+    expect(spectrumFrame(1).wall).toBe(1)
   })
 })
 
