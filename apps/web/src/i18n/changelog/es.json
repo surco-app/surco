@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.92",
+    "date": "3 de septiembre de 2026",
+    "title": "La frecuencia de muestreo, respondida siempre",
+    "items": [
+      {
+        "text": "Un fichero que declara más de 44.1 kHz recibe siempre una respuesta sobre su frecuencia de muestreo: confirmado como hi-res de verdad, señalado como reescalado desde 44.1 kHz, o un honesto \"no se ha podido verificar\" cuando la sonda no se pudo leer. Antes, callar dejaba a un hi-res auténtico con exactamente el mismo aspecto que un fichero que nadie había analizado. Un 44.1 kHz normal no afirma nada que comprobar, así que sigue en silencio en vez de ganar una línea que no dice nada.",
+        "in": "0.92.0"
+      },
+      {
+        "text": "El detector de reescalado dejó de dar por bueno un hi-res falso. Comparaba dos sondas agudas entre sí, y cuando el contenido moría a 20 kHz las dos caían en el ruido de fondo: su parecido se leía como una caída suave, o sea, como hi-res genuino. Ahora se exige además que esas bandas asomen sobre el suelo de ruido, medido contra el propio nivel de la pista para que el mismo máster mezclado más bajo siga siendo el mismo disco. Calibrado sobre hi-res reales y falsos de una biblioteca de verdad, con margen amplio a cada lado.",
+        "in": "0.92.0"
+      },
+      {
+        "text": "El espectro de una pista hi-res se dibuja con la música a tamaño legible. Al pintar hasta el tope teórico de un fichero de 96 o 192 kHz, las octavas de arriba, donde no hay nada que ver, se comían el panel y aplastaban la música en una franja del fondo. Ahora la imagen se encuadra en la zona que importa. Los ficheros de 44.1 y 48 kHz se dibujan exactamente como antes.",
+        "in": "0.92.0"
+      },
+      {
+        "text": "El recorte de silencio se adapta al ruido de cada pista en vez de usar un listón fijo. Una entrada con hiss o zumbido a unos -50 dB superaba ese listón, contaba como música y dejaba el corte ancho, sobre todo en rips de vinilo. Ahora el umbral se ancla al suelo de ruido de la propia pista, con margen para sus picos y un techo que nunca se mete en una intro suave. En pistas de suelo limpio el corte sale idéntico al de siempre.",
+        "in": "0.92.0"
+      }
+    ]
+  },
+  {
     "version": "0.91",
     "date": "2 de septiembre de 2026",
     "title": "El veredicto de calidad enseña sus cuentas",
