@@ -1,8 +1,30 @@
 import type { TrimRange } from '../../../shared/types'
 
-// Generous compared to a digital-silence gate (-90 dB): a vinyl track's lead-in
-// is surface noise, not zeros, and the suggestion must see through it.
-const THRESHOLD_DB = -60
+// The gate's floor, generous compared to a digital-silence gate (-90 dB): a
+// vinyl track's lead-in is surface noise, not zeros, and the suggestion must see
+// through it. Real clean floors measure -73..-87 dB, all safely below it.
+const GATE_MIN_DB = -60
+// The gate's ceiling: quiet musical builds measure -35..-26 dB on real intros,
+// and whatever the lead-in noise, the gate must never climb into them.
+const GATE_MAX_DB = -40
+// How far the gate clears the measured floor: hiss peak flutter spans 2-3 dB on
+// real rips, so the margin keeps the noise's own peaks under the gate.
+const GATE_MARGIN_DB = 12
+// The envelope's quietest percentile, past a couple of glitch buckets. The
+// estimator errs low on odd material, which fails safe: the gate falls back
+// toward GATE_MIN_DB and the suggestion behaves exactly as it always did.
+const FLOOR_PERCENTILE = 0.01
+
+// The per-track gate, measured off the same envelope the detection reads: a
+// lead-in of -50 dB hiss (a real user report) sits ABOVE a fixed -60 dB gate and
+// used to read as music, leaving the cut loose. Anchored to the track's own
+// floor, the gate clears that hiss on noisy rips and stays at -60 on clean ones.
+export function trimThresholdDb(peaks: number[]): number {
+  const nonzero = peaks.filter((peak) => peak > 0).sort((a, b) => a - b)
+  if (nonzero.length === 0) return GATE_MIN_DB
+  const floorDb = 20 * Math.log10(nonzero[Math.floor(nonzero.length * FLOOR_PERCENTILE)])
+  return Math.min(GATE_MAX_DB, Math.max(GATE_MIN_DB, floorDb + GATE_MARGIN_DB))
+}
 // Backed off from the first/last audible bucket so the cut never bites a fade-in.
 // Small: at 8192 buckets a bucket covers tens of milliseconds, and a fatter pad
 // used to leave a visible gap between the suggested cut and the wave at deep zoom.
@@ -14,13 +36,16 @@ const MIN_TRIM_SEC = 0.5
 // above the threshold, unpadded. What the trim handles snap to while dragging —
 // the spot the user is aiming for when they say "cut at the wave". Undefined for
 // an empty or all-silent decode.
-export function detectOnsets(wave: {
-  peaks: number[]
-  durationSec: number
-}): { startSec: number; endSec: number } | undefined {
+export function detectOnsets(
+  wave: {
+    peaks: number[]
+    durationSec: number
+  },
+  thresholdDb = trimThresholdDb(wave.peaks),
+): { startSec: number; endSec: number } | undefined {
   const { peaks, durationSec } = wave
   if (peaks.length === 0 || durationSec <= 0) return undefined
-  const threshold = 10 ** (THRESHOLD_DB / 20)
+  const threshold = 10 ** (thresholdDb / 20)
   const first = peaks.findIndex((p) => p > threshold)
   if (first === -1) return undefined
   const last = peaks.findLastIndex((p) => p > threshold)
@@ -38,9 +63,12 @@ export function refineOnset(
   windowStartSec: number,
   windowDurSec: number,
   side: 'start' | 'end',
+  // The track's gate, not the window's: a refine window is mostly the noise the
+  // coarse pass already cut, and measuring a floor off it would move the line.
+  thresholdDb: number,
 ): number | undefined {
   if (peaks.length === 0 || windowDurSec <= 0) return undefined
-  const threshold = 10 ** (THRESHOLD_DB / 20)
+  const threshold = 10 ** (thresholdDb / 20)
   const bucketSec = windowDurSec / peaks.length
   if (side === 'start') {
     const first = peaks.findIndex((p) => p > threshold)
