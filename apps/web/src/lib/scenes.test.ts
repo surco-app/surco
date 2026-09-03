@@ -3,6 +3,9 @@ import {
   BATCH_QUEUE,
   batchFrame,
   declickFrame,
+  NORMALIZE_TARGET,
+  NORMALIZE_TRACKS,
+  normalizeFrame,
   TAG_FIELDS,
   TRIM_CUT,
   tagFrame,
@@ -148,5 +151,49 @@ describe('batchFrame', () => {
 
   it('covers the whole queue', () => {
     expect(batchFrame(1).states).toHaveLength(BATCH_QUEUE.length)
+  })
+})
+
+describe('normalizeFrame', () => {
+  // The scene sells one idea: three tracks that arrive at different volumes and
+  // leave matched. If they start level there is nothing to show, and if they end
+  // ragged the section is lying about what normalization does.
+  it('starts with tracks at their own levels and ends with them matched', () => {
+    const start = normalizeFrame(0).bars.map((b) => b.level)
+    expect(new Set(start).size).toBe(NORMALIZE_TRACKS.length)
+
+    const end = normalizeFrame(1).bars.map((b) => Math.round(b.level * 1000))
+    expect(new Set(end).size).toBe(1)
+  })
+
+  // Each track carries its own gain, positive or negative: the quiet one comes up
+  // and the loud one comes down. A frame where every bar moved the same direction
+  // would describe a volume knob, not normalization.
+  it('moves the quiet track up and the loud one down', () => {
+    const [quiet, , loud] = NORMALIZE_TRACKS
+    expect(quiet.lufs).toBeLessThan(NORMALIZE_TARGET)
+    expect(loud.lufs).toBeGreaterThan(NORMALIZE_TARGET)
+
+    const bars = normalizeFrame(1).bars
+    expect(bars[0].gain).toBeGreaterThan(0)
+    expect(bars[2].gain).toBeLessThan(0)
+  })
+
+  it('never overshoots the target on the way there', () => {
+    const settled = normalizeFrame(1).bars
+    for (let i = 0; i <= 20; i++) {
+      const { bars } = normalizeFrame(i / 20)
+      expect(bars[0].level).toBeLessThanOrEqual(settled[0].level + 1e-9)
+      expect(bars[2].level).toBeGreaterThanOrEqual(settled[2].level - 1e-9)
+    }
+  })
+
+  it('holds every bar inside the meter', () => {
+    for (let i = 0; i <= 20; i++) {
+      for (const bar of normalizeFrame(i / 20).bars) {
+        expect(bar.level).toBeGreaterThan(0)
+        expect(bar.level).toBeLessThanOrEqual(1)
+      }
+    }
   })
 })

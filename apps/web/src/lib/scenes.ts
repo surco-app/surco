@@ -85,7 +85,63 @@ export function trimFrame(t: number): TrimFrame {
   return { cut: Math.max(0, Math.min(1, cut)), locked: p > 0.82 }
 }
 
-/* ------------------------------------------------------------------ 06 · batch */
+/* -------------------------------------------------------------- 06 · normalize */
+
+// Three tracks bought at three different masters, and the target they all land on.
+// Streaming −14 LUFS is the app's own default preset, so the numbers on the page are
+// the numbers a visitor will meet in the editor. The quiet one has to rise and the
+// hot one has to fall: a set that only moved one way would describe a volume knob.
+export const NORMALIZE_TARGET = -14
+
+export const NORMALIZE_TRACKS = [
+  { title: 'Kim Sanders - Ride', lufs: -16.4 },
+  { title: 'Kriss - Tonight', lufs: -13.1 },
+  { title: 'Lia - Private Fantasy', lufs: -7.8 },
+] as const
+
+// Where the quietest track sits on the meter, so even the softest bar reads as audio
+// rather than an empty track. The rest scale against it by their real dB distance.
+const METER_FLOOR = 0.34
+const METER_PER_DB = 0.035
+
+const meterLevel = (lufs: number) =>
+  Math.min(1, METER_FLOOR + (lufs - NORMALIZE_TRACKS[0].lufs) * METER_PER_DB)
+
+export interface NormalizeBar {
+  title: string
+  lufs: number
+  gain: number
+  level: number
+}
+
+export interface NormalizeFrame {
+  bars: NormalizeBar[]
+  matched: boolean
+}
+
+export function normalizeFrame(t: number): NormalizeFrame {
+  const p = clamp(t)
+  // Eased so the bars glide into line instead of snapping; monotonic, so no bar ever
+  // passes the target and comes back — an overshoot here would read as the gain
+  // hunting, which is not what a constant-gain normalization does.
+  const eased = 1 - (1 - p) ** 3
+  const target = meterLevel(NORMALIZE_TARGET)
+
+  return {
+    bars: NORMALIZE_TRACKS.map(({ title, lufs }) => {
+      const from = meterLevel(lufs)
+      return {
+        title,
+        lufs,
+        gain: NORMALIZE_TARGET - lufs,
+        level: from + (target - from) * eased,
+      }
+    }),
+    matched: p >= 1,
+  }
+}
+
+/* ------------------------------------------------------------------ 07 · batch */
 
 export const BATCH_QUEUE = [
   { name: 'Jill Dreski — Let Me Know', format: 'AIFF' },

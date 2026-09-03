@@ -800,7 +800,7 @@
     "walkthrough": {
       "kicker": "Step by step",
       "title": "One track, start to finish",
-      "lede": "Six steps, one window. Along the way you'll find out which of your FLACs are really MP3s."
+      "lede": "Seven steps, one window. Along the way you'll find out which of your FLACs are really MP3s."
     },
     "drop": {
       "step": "01 · in",
@@ -810,7 +810,7 @@
       "caption": "319 tracks read in 4s"
     },
     "quality": {
-      "step": "02 · checked",
+      "step": "03 · checked",
       "title": "That FLAC was an MP3.",
       "lede": "Buying lossless is no guarantee it is. If someone converted an MP3 to FLAC, the file weighs what a lossless weighs but half the treble is gone — and on the spectrum it shows as a flat wall. Surco flags it before the track ever leaves the house.",
       "pill": "quality",
@@ -825,7 +825,7 @@
       "note": "Two tracks bought as FLAC. The second one says so on the tag, but its audio went through an MP3 first: above the wall there is nothing left."
     },
     "tag": {
-      "step": "03 · tagged",
+      "step": "02 · tagged",
       "title": "The tags, from Discogs, in one click.",
       "lede": "Discogs for labels, Bandcamp for self-released, Deezer for the charts. One click fills it all in: artist, label, year, BPM and artwork.",
       "pill": "12/40",
@@ -862,8 +862,15 @@
       "seeking": "looking for the last beat…",
       "trimmed": "−{{seconds}} s at the end"
     },
+    "normalize": {
+      "step": "06 · levelled",
+      "title": "All at the same volume.",
+      "lede": "Every track arrives at whatever volume its master was cut to, and it shows the moment you mix one into the next. Surco levels them all to the same target with streaming, club or broadcast presets, and tells you how far each one will move before it touches anything.",
+      "pill": "Streaming −14",
+      "target": "target · {{target}} LUFS · constant gain, no compression"
+    },
     "batch": {
-      "step": "06 · out",
+      "step": "07 · out",
       "title": "And it lands in your Apple Music.",
       "lede": "Pick a format and a destination and convert the whole folder. With Apple Music and Engine DJ you import nothing: the track shows up in your library with its artwork on — and on Engine DJ, with rating and playlist. Everything else gets the file it expects.",
       "pill": "Converting 11/40",
