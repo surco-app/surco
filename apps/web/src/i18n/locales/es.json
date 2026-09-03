@@ -371,7 +371,7 @@
       },
       {
         "q": "¿Conserva los cue points?",
-        "a": "Depende del formato de destino. Se conservan al convertir entre MP3 y AIFF, y al pasar cualquiera de los tres —MP3, AIFF o FLAC— a FLAC: Surco lee el árbol que Traktor guarda dentro del fichero y lo vuelve a escribir en el formato que toca. Se pierden al convertir a WAV o a ALAC, que no tienen dónde guardarlo, y al pasar de FLAC a MP3 o AIFF. Si recortas silencio, los cues se recolocan solos según lo que hayas cortado —incluida la rejilla, que se reancla por fase para que no se descuadre—, y si algo no se puede recolocar con garantías se descarta en vez de quedar mal puesto. Surco te lo avisa antes de convertir."
+        "a": "Depende del formato de destino. Se conservan al convertir entre MP3 y AIFF, y al pasar cualquiera de los tres —MP3, AIFF o FLAC— a FLAC: Surco lee el árbol que Traktor guarda dentro del fichero y lo vuelve a escribir en el formato que toca. Se conservan también al convertir a WAV, y al pasar de FLAC a MP3 o AIFF. Solo se pierden en ALAC, que no tiene dónde guardarlo. Si recortas silencio, los cues se recolocan solos según lo que hayas cortado —incluida la rejilla, que se reancla por fase para que no se descuadre—, y si algo no se puede recolocar con garantías se descarta en vez de quedar mal puesto. Surco te lo avisa antes de convertir."
       },
       {
         "q": "¿Puedo recortar el silencio de mis rips?",
@@ -536,7 +536,7 @@
           "Verde «buena calidad»: el sonido llega arriba del todo, no falta nada. Ámbar «sospechoso»: corte antes de tiempo. Rojo: mala calidad.",
           "Un MP3 no se juzga contra la vara de un lossless: su corte es el formato, no un defecto, así que sale limpio si lo está. Lo que sí se acusa es un FLAC o un WAV con el corte de un códec dentro.",
           "«Reprocesado» es un aviso distinto: no es que falte información, es que alguien ha fabricado agudos que el archivo ya no tenía.",
-          "Detecta también el hi-res falso —un archivo que dice ir a 96 kHz pero viene estirado de 44,1— y el lossless falso, un FLAC o un WAV que en realidad es un MP3 reempaquetado.",
+          "Detecta también el lossless falso, un FLAC o un WAV que en realidad es un MP3 reempaquetado. Y a todo archivo que diga ir por encima de 44,1 kHz le contesta siempre por su frecuencia: hi-res de verdad, estirado desde 44,1, o un honesto «no se ha podido verificar» cuando no hay nada arriba que medir.",
           "Un retículo sobre el espectro te dice la frecuencia exacta bajo el cursor.",
           "La sección de loudness dibuja la onda con el clipping marcado en rojo, se amplía hasta el detalle de la muestra, separa los dos canales y previsualiza cómo quedará al normalizar — y, una vez convertida, compara el antes y el después lado a lado o superpuestos.",
           "Guarda un informe del espectro en PNG —con su veredicto y su línea de corte— para compartirlo cuando alguien te pregunte por esa pista.",
@@ -574,10 +574,10 @@
         ],
         "points": [
           "Dos carriles: uno para el corte de entrada y otro para el de salida, cada uno con su zoom y su escucha.",
-          "Ajuste al milisegundo con las asas o con los pasos, y un imán que engancha al primer golpe real de la música.",
+          "Ajuste al milisegundo con las asas o con los pasos, y un imán que engancha al primer golpe real de la música. La detección mide el ruido de fondo de cada pista antes de decidir qué es silencio, así que un rip con hiss o zumbido de entrada ya no se lleva un corte de más.",
           "La onda se dibuja justo donde está y se centra en el corte al ampliar, así que ajustas contra lo que de verdad vas a cortar.",
           "El filtro «Silencio por recortar» de la lista te reúne las pistas que lo necesitan.",
-          "Recortar recodifica el audio y recoloca los cues de Traktor según lo cortado, conservando la fase de la rejilla; en WAV y ALAC se pierden. Surco te lo avisa en la sección."
+          "Recortar recodifica el audio y recoloca los cues de Traktor según lo cortado, conservando la fase de la rejilla; solo se pierden en ALAC. Surco te lo avisa en la sección."
         ],
         "shot": "recorte-es.webp",
         "shotCaption": "Los cortes de entrada y salida sobre la onda."

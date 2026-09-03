@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 2026-09-02** (v0.91.0). Levantado por primera vez el
+**Última revisión: 2026-09-03** (v0.92.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -216,10 +216,48 @@ llevaba los mismos dos armónicos que su reedición de 2008, y solo el remaster
 salía acusado porque estar 8 dB más alto subía ambos bultos por encima del suelo
 (`cutoff.ts:113-120`).
 
-### 4.3 Hi-res falso (upsample)
+### 4.3 Frecuencia de muestreo (hi-res, upsample)
 
 Compara dos bandas a 21.5 y 23.5 kHz: un máster genuino cae ~8 dB, un upsample
-colapsa 15–20 (`cutoff.ts:87-99`).
+colapsa 15–20 (`cutoff.ts:140-149`).
+
+**El veredicto tiene cuatro salidas, no una** (`detectResolution`,
+`cutoff.ts:367-385`), porque un booleano solo sabía decir «upsampled o nada» y un
+hi-res auténtico quedaba en silencio, indistinguible desde fuera de un fichero
+que nadie había analizado:
+
+| Salida | Qué significa |
+|---|---|
+| `native` | 44.1 kHz: no hay hueco sobre el muro de 22.05 kHz, así que no hay nada que comprobar. No es un defecto. |
+| `hires` | El contenido cruza el muro: la frecuencia alta hace trabajo real. |
+| `upsampled` | La energía se derrumba sobre el muro: contenido de 44.1 kHz en un envase hi-res. |
+| `unknown` | Una sonda no se pudo leer, o no hay nada que leer arriba. Se dice en voz alta en vez de disfrazarlo de aprobado. |
+
+La UI enseña las tres primeras respuestas relevantes (`QualitySection.tsx:347-366`,
+claves `qualityUpsampled`, `qualityHiRes`, `qualityResolutionUnknown`); un fichero
+`native` sigue en silencio, porque no afirma nada que verificar.
+
+**Guarda de suelo.** El test de muro compara las dos sondas ENTRE SÍ, lo que asume
+que hay algo arriba que comparar: en un 192 kHz cuyo contenido muere a 20 kHz las
+dos caen en el dither y su parecido se leía como caída suave, o sea, como hi-res
+genuino. Se exige además que la sonda de arriba no esté más de 55 dB por debajo
+del plateau de 9–11 kHz (`HIRES_FLOOR_BELOW_PLATEAU_DB`, `cutoff.ts:349`).
+Relativa al plateau, nunca absoluta, porque el mismo máster mezclado más bajo es
+el mismo disco. Medido: diez másters 96/24 reales llevan sus ultrasonidos a −16,5
+a −34,8 dB bajo plateau; un hi-res falso real está a −75,5 y un upsample 44.1→48 a
+−79,9. El orden importa: el muro se comprueba ANTES de la guarda, para que un
+upsample de verdad se llame `upsampled` y no se ablande a `unknown`.
+
+**Encuadre del espectro.** La imagen se dibuja hasta 24 kHz, no hasta el Nyquist
+del fichero (`SPECTRUM_TOP_HZ`, `ffmpeg.ts:1690`; `spectrogramTopHz`,
+`ffmpeg.ts:1696-1699`). A 192 kHz el panel dedicaba el 79% a octavas vacías y
+aplastaba la música en la quinta parte de abajo. El tope es 24 kHz y no 22.05 para
+que un fichero de 48 kHz no necesite remuestreo y la zona de ~22 kHz que mira el
+análisis quede visible con algo de aire. Por debajo del tope manda el Nyquist, así
+que 44.1 y 48 kHz se dibujan exactamente como antes. Todos los lectores del eje
+(marcas de kHz, línea de corte, cruceta del ratón) leen el mismo tope
+(`spectrumTopHz`, `lib/spectrumAxis.ts`); un análisis cacheado de antes del tope no
+trae `imageTopHz` y se sigue leyendo contra Nyquist, que es como se dibujó.
 
 **Limitación:** solo detecta el muro de 22.05 kHz. Un 48→96 kHz upsampleado **no
 se detecta**.
@@ -324,8 +362,23 @@ La detección **solo sugiere**; el usuario confirma los segundos exactos y la
 conversión corta de forma determinista, nunca re-detectando en tiempo de
 conversión (`shared/trim.ts:33-36`).
 
-Umbral de sugerencia a −60 dB, no −90: la entrada de un vinilo es ruido de
-superficie, no ceros (`renderer/lib/trim.ts:3-5`).
+**El umbral se adapta al suelo de ruido de cada pista**, no es fijo
+(`trimThresholdDb`, `renderer/lib/trim.ts:22-27`): percentil 1 de la envolvente no
+nula, más 12 dB de margen, acotado entre −60 y −40 dB. El suelo de −60 dB sigue
+siendo el mínimo, generoso frente a un gate de silencio digital (−90) porque la
+entrada de un vinilo es ruido de superficie, no ceros. Lo que cambia es el caso
+ruidoso: un hiss o zumbido de entrada a ~−50 dB superaba el −60 fijo, contaba como
+música y dejaba el corte ancho. El techo de −40 existe porque las intros suaves
+reales miden −35 a −26 dB y el gate no debe meterse nunca en ellas. Medido sobre
+ficheros reales: los suelos limpios están a −73…−87 dB, así que en ellos el gate se
+queda en −60 y la sugerencia sale idéntica a la de siempre; el estimador falla hacia
+abajo en material raro, lo que falla en seguro. `refineOnset` exige que le pasen el
+gate de la pista y no lo mide sobre su ventana, porque una ventana de refinado es
+casi toda el ruido que el paso grueso ya cortó (`renderer/lib/trim.ts:63-72`).
+
+**Sin arreglo honesto:** un fundido de salida largo que muere en −61 dB en el último
+cubo. El gate sube, pero el recorte resultante queda por debajo de `MIN_TRIM_SEC` y
+se descarta. Cortar por encima del suelo ahí sería cortar música audible.
 
 Micro-fade de 20 ms en cada borde cortado: un corte a través de ruido de
 superficie no es silencio digital, y un escalón ahí hace clic
