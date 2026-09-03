@@ -1,0 +1,46 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "A · Centrada y luminosa", "x": 0, "y": 0, "w": 1180, "h": 1060 },
+    { "file": "DirectionB.dc.html", "title": "B · Dos columnas, con pruebas", "x": 1300, "y": 0, "w": 1180, "h": 1060 },
+    { "file": "DirectionC.dc.html", "title": "C · Editorial, el flujo manda", "x": 0, "y": 1300, "w": 1180, "h": 1060 },
+    { "file": "DirectionD.dc.html", "title": "D · El producto en bruto", "x": 1300, "y": 1300, "w": 1180, "h": 1060 }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "x": 0,
+      "y": -230,
+      "w": 760,
+      "text": "Cuatro direcciones para la home de Surco. Misma identidad: Tokyo Night (#1a1b26 / #7aa2f7 → #7dcfff), degradado azul-cian, botón píldora.\n\nMENSAJE (corregido): lo que hacías saltando entre cuatro o cinco apps, Surco lo hace en una. De minutos por pista a un par de segundos.\nLas cuatro llevan ahora el lede completo de hero.ledeShort, y cada una argumenta la consolidación de una forma distinta.\nElige una y la construyo entera, con móvil."
+    },
+    {
+      "id": "note-a",
+      "x": 0,
+      "y": 1100,
+      "w": 540,
+      "text": "A · Centrada y luminosa\nEje: presencia. Titular a 66px, halo azul, rejilla que se desvanece y la ventana de la app entrando recortada por abajo.\nArgumenta la consolidación con una fila de cinco oficios tachados que desembocan en Surco.\nA favor: la que más se parece a una web de 2026 y la que mejor luce compartida.\nEn contra: el hero ocupa casi toda la pantalla; el contenido empieza más abajo que hoy."
+    },
+    {
+      "id": "note-b",
+      "x": 1300,
+      "y": 1100,
+      "w": 540,
+      "text": "B · Dos columnas, con pruebas\nEje: argumento. Mantiene la estructura actual y pone al lado la lista de las cinco tareas, cada una con la app que ya no necesitas.\nCifras: 5 → 1 apps, 2 s por pista, 0 €.\nA favor: es la que deja el mensaje más explícito y literal — se lee sin interpretar.\nEn contra: la menos rompedora — un refresco, no un cambio de aire."
+    },
+    {
+      "id": "note-c",
+      "x": 0,
+      "y": 2400,
+      "w": 540,
+      "text": "C · Editorial, el flujo manda\nEje: claridad. Alineada a la izquierda, más oscura, con los seis pasos como pestañas fijas — y bajo cada paso, tachada, la app que sustituye.\nA favor: une flujo y consolidación en un solo gesto; muy sobria, envejece bien.\nEn contra: menos impacto emocional; parece más documentación que producto."
+    },
+    {
+      "id": "note-d",
+      "x": 1300,
+      "y": 2400,
+      "w": 540,
+      "text": "D · El producto en bruto\nEje: carácter. La app como protagonista, con dos tarjetas inclinadas que dicen «antes: analizador» y «antes: editor de etiquetas», ahora aquí dentro.\nA favor: la más distinta y con más personalidad; se ve el producto de inmediato.\nEn contra: las tarjetas rotadas son delicadas en móvil y hay que resolver cómo se apilan."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

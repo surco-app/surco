@@ -15,3 +15,7 @@ dist
 *.mp4
 # …but the landing page's own clips ship with the site.
 !apps/web/public/*.mp4
+
+# Bundle generado del lienzo de diseno: se republica desde los .dc.html
+.design-*/*.html
+!.design-*/*.dc.html
