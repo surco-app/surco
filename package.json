@@ -8,8 +8,8 @@
   ],
   "overrides": {
     "react-helmet-async": {
-      "react": "19.2.7",
-      "react-dom": "19.2.7"
+      "react": "$react",
+      "react-dom": "$react-dom"
     }
   },
   "devDependencies": {
