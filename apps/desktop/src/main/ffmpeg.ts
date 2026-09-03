@@ -42,6 +42,7 @@ import {
   FINE_BAND_WIDTH_HZ,
   fineBandFrequencies,
   fineBandsShowWall,
+  plateauDb,
   type Resolution,
   steepestFineStep,
   UPSAMPLE_MIN_NYQUIST_HZ,
@@ -1861,8 +1862,10 @@ export async function analyzeCutoff(
   const upsampled = probesUpsample && detectUpsample(belowDb, aboveDb)
   // The same two bands read as a full answer rather than one accusation: an upsample, a
   // confirmed hi-res, or an honest "could not tell". Without it a genuine hi-res file got
-  // no statement at all, which reads exactly like an analysis that never ran.
-  const resolution = detectResolution(sampleRateHz, belowDb, aboveDb)
+  // no statement at all, which reads exactly like an analysis that never ran. The 9–11 kHz
+  // plateau goes with them so the floor guard can tell real (if quiet) ultrasonics from two
+  // bands of dither, which on their own look like a gentle taper and read as genuine hi-res.
+  const resolution = detectResolution(sampleRateHz, belowDb, aboveDb, plateauDb(bands))
   // The steepest fine step is the number the wall verdict rests on; measured
   // here once so the caption can cite it instead of the UI re-deriving anything.
   return {

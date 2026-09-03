@@ -607,6 +607,38 @@ describe('detectResolution', () => {
     expect(detectResolution(192000, -50, Number.NEGATIVE_INFINITY)).toBe('unknown')
     expect(detectResolution(192000, Number.NEGATIVE_INFINITY, -90)).toBe('unknown')
   })
+
+  // The false positive this guard exists for, from a real user file: a 192 kHz download whose
+  // content dies at ~20 kHz. BOTH probe bands sit at the dither floor (-117.7 / -120.7 against
+  // a -45.2 plateau), so the wall test sees only a 3 dB "taper" and called it genuine hi-res.
+  // A gap between two silences is not a taper: with nothing up there to measure, the only
+  // honest answer is that the rate could not be verified.
+  it('does not confirm hi-res when both probe bands sit at the noise floor', () => {
+    expect(detectResolution(192000, -117.7, -120.7, -45.2)).toBe('unknown')
+  })
+
+  // ...and the guard must not swallow the genuine article. Ten real 96 kHz/24-bit masters off
+  // the NAS measure -16.5 to -34.8 dB below their own plateau up there: quieter than the music,
+  // but unmistakably present. The worst of them still has 20 dB of margin over the guard.
+  it('still confirms real hi-res whose ultrasonic content is quiet but present', () => {
+    expect(detectResolution(96000, -49.3, -51.6, -30.0)).toBe('hires') // Absolom, above-plateau -21.6
+    expect(detectResolution(96000, -61.3, -64.8, -30.0)).toBe('hires') // Yomanda, above-plateau -34.8
+  })
+
+  // The guard is relative to the music, never an absolute dB line: the same master mixed 20 dB
+  // quieter is the same recording and must get the same verdict. An absolute floor is exactly
+  // what made a loud remaster and its quiet reissue disagree elsewhere in this file.
+  it('judges against the plateau, so playback level cannot flip the verdict', () => {
+    expect(detectResolution(96000, -49.3, -51.6, -30.0)).toBe('hires')
+    expect(detectResolution(96000, -69.3, -71.6, -50.0)).toBe('hires')
+  })
+
+  // Without a plateau there is nothing to measure the floor against, so the guard cannot run.
+  // Callers that never had one keep the old two-band behaviour rather than silently gaining a
+  // verdict that was never calibrated for them.
+  it('falls back to the wall test when no plateau is supplied', () => {
+    expect(detectResolution(192000, -72.5, -81.4)).toBe('hires')
+  })
 })
 
 // Two masters of the same Gowan song, measured off the real files: a 2008 reissue and
