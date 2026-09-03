@@ -812,7 +812,7 @@
     "quality": {
       "step": "03 · se comprueba",
       "title": "Ese FLAC era un MP3.",
-      "lede": "Comprar lossless no garantiza que lo sea. Si alguien convirtió un MP3 a FLAC, el archivo pesa lo mismo que un lossless pero le falta la mitad de los agudos — y en el espectro se ve como un muro plano. Surco te lo marca antes de que la pista salga de casa.",
+      "lede": "Comprar lossless no garantiza que lo sea. Si alguien convirtió un MP3 a FLAC, el archivo pesa lo mismo pero en el espectro se ve el muro. Surco te lo marca antes de que la pista salga de casa.",
       "pill": "calidad",
       "goodBadge": "● Buena calidad",
       "fakeBadge": "● Fake lossless",
@@ -821,8 +821,7 @@
       "goodCaptionPre": "llega hasta ",
       "goodCaptionPost": " · sin muro",
       "fakeCaptionPre": "se corta en ",
-      "fakeCaptionPost": " · muro de códec",
-      "note": "Dos pistas compradas como FLAC. La segunda lo dice en la etiqueta, pero su audio pasó por un MP3 antes: por encima del muro no queda nada."
+      "fakeCaptionPost": " · muro de códec"
     },
     "tag": {
       "step": "02 · se etiqueta",
@@ -831,7 +830,6 @@
       "pill": "12/40",
       "before": "Artista · antes",
       "after": "Artista · después",
-      "note": "Tag real de un FLAC comprado: el artista venía así. Lo que se lee en tu reproductor es la etiqueta, no el nombre del archivo.",
       "fields": {
         "label": "Sello",
         "bpm": "BPM",
@@ -842,12 +840,11 @@
     "declick": {
       "step": "04 · se limpia",
       "title": "Los clics del vinilo, fuera.",
-      "lede": "Si tus pistas vienen de un disco, traen chasquidos. Surco los encuentra, los marca sobre la onda y los quita — y puedes cambiar entre el audio original y el reparado mientras suena, sin cortes, para comprobar que no se ha llevado nada de la música por delante.",
+      "lede": "Si tus pistas vienen de un disco, traen chasquidos. Surco los encuentra, los marca sobre la onda y los quita, y puedes comparar con el original mientras suena para comprobar que no se ha llevado nada por delante.",
       "pill": "9 clics",
       "hearing": "Oyendo la reparada",
       "original": "↔ la original",
       "next": "Siguiente clic →",
-      "note": "Si la reparación se come el ataque de una caja, la diferencia es sutil. Y las diferencias sutiles solo se aprecian cambiando en caliente.",
       "clickCount": "{{count}} clics"
     },
     "trim": {
