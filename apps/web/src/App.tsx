@@ -3,6 +3,7 @@ import BrewCommand from './components/BrewCommand'
 import DownloadButton from './components/DownloadButton'
 import Footer from './components/Footer'
 import Header from './components/Header'
+import HeroAnchors from './components/HeroAnchors'
 import HeroApp from './components/HeroApp'
 import Reveal from './components/Reveal'
 import ScrollProgress from './components/ScrollProgress'
@@ -51,9 +52,7 @@ export default function App() {
               </h1>
             </Reveal>
             <Reveal eager delay={80}>
-              <p className="mt-6 max-w-md text-lg leading-relaxed text-pretty text-muted">
-                {t('home.heroLede')}
-              </p>
+              <HeroAnchors />
             </Reveal>
             <Reveal eager delay={150}>
               {/* Free, the three platforms and "no account" ride with the CTA itself.
