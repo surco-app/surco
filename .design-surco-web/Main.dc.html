@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: #1a1b26; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    a { color: #7aa2f7; text-decoration: none; } a:hover { color: #7dcfff; }
+    .mono { font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace; }
+  </style>
+</helmet>
+
+<div style="background: #1a1b26; color: #c0caf5; min-height: 100%; position: relative; overflow: hidden">
+
+  <div style="position: absolute; top: -180px; left: 50%; width: 900px; height: 520px; margin-left: -450px; background: radial-gradient(ellipse at center, rgba(122,162,247,0.16), rgba(26,27,38,0) 70%); pointer-events: none"></div>
+
+  <div style="position: absolute; top: 0; left: 0; right: 0; height: 620px; background-image: linear-gradient(rgba(47,52,73,0.28) 1px, transparent 1px), linear-gradient(90deg, rgba(47,52,73,0.28) 1px, transparent 1px); background-size: 64px 64px; mask-image: radial-gradient(ellipse 70% 60% at 50% 20%, #000 30%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 20%, #000 30%, transparent 75%); pointer-events: none"></div>
+
+  <div style="position: relative; display: flex; align-items: center; justify-content: space-between; height: 80px; padding: 0 40px; max-width: 1180px; margin: 0 auto">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <div style="width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg, #7aa2f7, #7dcfff)"></div>
+      <span style="font-size: 21px; font-weight: 600; letter-spacing: -0.02em">Surco</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 26px; font-size: 13px; color: #9aa6cf">
+      <span>Cómo funciona</span>
+      <span>Funciones</span>
+      <span>Guía</span>
+      <span>Cambios</span>
+      <span style="border: 1px solid #2f3449; border-radius: 999px; padding: 6px 12px; font-size: 11px" class="mono">ES</span>
+    </div>
+  </div>
+
+  <div style="position: relative; max-width: 1000px; margin: 0 auto; padding: 56px 40px 0; text-align: center">
+
+    <div style="display: inline-flex; align-items: center; gap: 9px; border: 1px solid rgba(122,162,247,0.28); background: rgba(122,162,247,0.07); border-radius: 999px; padding: 7px 15px; font-size: 12px; color: #9aa6cf">
+      <span style="width: 6px; height: 6px; border-radius: 999px; background: #9ece6a"></span>
+      <span class="mono">v0.86 · macOS · Windows · Linux</span>
+    </div>
+
+    <div style="font-size: 66px; line-height: 1.04; font-weight: 700; letter-spacing: -0.035em; margin-top: 28px">
+      <div>Tu música,</div>
+      <div style="background: linear-gradient(100deg, #7aa2f7, #7dcfff); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 28px rgba(125,207,255,0.28))">como debería estar.</div>
+    </div>
+
+    <div style="max-width: 620px; margin: 24px auto 0; font-size: 17px; line-height: 1.62; color: #9aa6cf">
+      Convertir, etiquetar, comprobar la calidad y ordenar en Apple Music o Engine DJ: lo que hacías saltando entre cuatro o cinco apps, Surco lo hace en una. De minutos por pista a un par de segundos.
+    </div>
+
+    <div style="display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 34px">
+      <div style="display: inline-flex; align-items: center; gap: 9px; border-radius: 999px; background: linear-gradient(135deg, #7aa2f7, #7dcfff); color: #1a1b26; font-weight: 600; font-size: 14px; padding: 14px 28px; box-shadow: 0 12px 34px rgba(122,162,247,0.3)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1a1b26" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 12l5 5 5-5"/><path d="M4 20h16"/></svg>
+        Descargar para macOS
+      </div>
+      <div style="display: inline-flex; align-items: center; gap: 9px; border: 1px solid #2f3449; border-radius: 999px; padding: 13px 22px; font-size: 13px; color: #9aa6cf" class="mono">
+        brew install --cask surco
+      </div>
+    </div>
+
+    <div style="margin-top: 14px; font-size: 12px; color: #828bb8" class="mono">Gratis, para siempre. Sin cuenta, sin nube, sin límites.</div>
+
+    <div style="display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 40px; flex-wrap: wrap">
+      <span style="font-size: 12px; color: #828bb8; text-decoration: line-through; text-decoration-color: rgba(247,118,142,0.7)" class="mono">conversor</span>
+      <span style="font-size: 12px; color: #828bb8; text-decoration: line-through; text-decoration-color: rgba(247,118,142,0.7)" class="mono">editor de etiquetas</span>
+      <span style="font-size: 12px; color: #828bb8; text-decoration: line-through; text-decoration-color: rgba(247,118,142,0.7)" class="mono">analizador de espectro</span>
+      <span style="font-size: 12px; color: #828bb8; text-decoration: line-through; text-decoration-color: rgba(247,118,142,0.7)" class="mono">limpiador de clics</span>
+      <span style="font-size: 12px; color: #828bb8; text-decoration: line-through; text-decoration-color: rgba(247,118,142,0.7)" class="mono">gestor de biblioteca</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7dcfff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+      <span style="font-size: 13px; font-weight: 600; color: #c0caf5">Surco</span>
+    </div>
+
+    <div style="margin-top: 52px; border: 1px solid #2f3449; border-radius: 16px 16px 0 0; background: #16161e; box-shadow: 0 -1px 0 rgba(192,202,245,0.07) inset, 0 40px 90px rgba(0,0,0,0.5); overflow: hidden; text-align: left">
+      <div style="display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #2f3449; background: #1f2335">
+        <span style="width: 10px; height: 10px; border-radius: 999px; background: #f7768e"></span>
+        <span style="width: 10px; height: 10px; border-radius: 999px; background: #e0af68"></span>
+        <span style="width: 10px; height: 10px; border-radius: 999px; background: #9ece6a"></span>
+        <span style="margin-left: 10px; font-size: 11px; color: #828bb8" class="mono">319 pistas · 4 s</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(1, minmax(0, 1fr))">
+        <div style="display: flex; align-items: center; gap: 14px; padding: 13px 18px; border-bottom: 1px solid rgba(47,52,73,0.6)">
+          <span style="width: 30px; height: 30px; border-radius: 6px; background: #24283b"></span>
+          <span style="flex-grow: 1; font-size: 13px">Kaleidos — Take Me To The Limit</span>
+          <span style="font-size: 11px; color: #9ece6a" class="mono">● Buena calidad</span>
+          <span style="font-size: 11px; color: #828bb8" class="mono">FLAC</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px; padding: 13px 18px; border-bottom: 1px solid rgba(47,52,73,0.6)">
+          <span style="width: 30px; height: 30px; border-radius: 6px; background: #24283b"></span>
+          <span style="flex-grow: 1; font-size: 13px">Kalura — Pay For Love</span>
+          <span style="font-size: 11px; color: #f7768e" class="mono">● Fake lossless</span>
+          <span style="font-size: 11px; color: #828bb8" class="mono">FLAC</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px; padding: 13px 18px">
+          <span style="width: 30px; height: 30px; border-radius: 6px; background: #24283b"></span>
+          <span style="flex-grow: 1; font-size: 13px">Ken Laszlo — When I Fall In Love</span>
+          <span style="font-size: 11px; color: #9ece6a" class="mono">● Buena calidad</span>
+          <span style="font-size: 11px; color: #828bb8" class="mono">FLAC</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
