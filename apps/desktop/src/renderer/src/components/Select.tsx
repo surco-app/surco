@@ -66,6 +66,21 @@ export function Select({
     items?.[Math.max(idx, 0)]?.focus()
   }, [open, options, value])
 
+  // The menu's placement is measured once, at open. Anything that moves the trigger
+  // afterwards would strand it away from what it points at, so close instead of chasing
+  // the trigger every frame — the same thing a native select does. The scroll is caught on
+  // the way down, so the editor's own scrolling column counts, not just the window.
+  useEffect(() => {
+    if (!open) return
+    const dismiss = (): void => setOpen(false)
+    window.addEventListener('resize', dismiss)
+    window.addEventListener('scroll', dismiss, true)
+    return () => {
+      window.removeEventListener('resize', dismiss)
+      window.removeEventListener('scroll', dismiss, true)
+    }
+  }, [open])
+
   function toggle(): void {
     if (open) {
       close()

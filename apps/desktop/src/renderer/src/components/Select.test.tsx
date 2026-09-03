@@ -164,4 +164,32 @@ describe('Select full-width menu placement', () => {
   it('caps a dropped menu to the room below the trigger', () => {
     expect(Number.parseFloat(openAt(132).style.maxHeight)).toBeLessThanOrEqual(800 - 132)
   })
+
+  // The placement is measured once, when the menu opens. Anything that moves the trigger
+  // afterwards leaves the menu stranded away from it — pointing at nothing, and in the
+  // album-match column (its own scroller) covering rows it no longer belongs to. Closing
+  // is what a native select does, and it beats chasing the trigger every frame.
+  it('closes when the window is resized under an open menu', () => {
+    openAt(132)
+    fireEvent(window, new Event('resize'))
+    expect(screen.queryByTestId('pick-listbox')).toBeNull()
+  })
+
+  // Captured on the way down, so a scroll inside the editor's own column counts too, not
+  // just one on the window: that inner scroller is what moves the album-match rows.
+  it('closes when an ancestor scrolls under an open menu', () => {
+    openAt(132)
+    fireEvent.scroll(document.body)
+    expect(screen.queryByTestId('pick-listbox')).toBeNull()
+  })
+
+  // Only while it is open: a stray scroll must not fight the click that opens it.
+  it('leaves the trigger alone when nothing is open', () => {
+    render(
+      <Select value="0" options={many} onChange={vi.fn()} label="Track" testid="quiet" fullWidth />,
+    )
+    fireEvent(window, new Event('resize'))
+    fireEvent.scroll(document.body)
+    expect(screen.getByTestId('quiet')).toHaveAttribute('aria-expanded', 'false')
+  })
 })
