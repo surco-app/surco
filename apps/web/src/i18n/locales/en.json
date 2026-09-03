@@ -371,7 +371,7 @@
       },
       {
         "q": "Does it keep cue points?",
-        "a": "It depends on the target format. They survive when you convert between MP3 and AIFF, and when any of the three — MP3, AIFF or FLAC — goes into FLAC: Surco reads the tree Traktor stores inside the file and writes it back in whichever form that format needs. They're lost converting to WAV or ALAC, which have nowhere to keep it, and going from FLAC to MP3 or AIFF. If you trim silence the cues move with it, the beatgrid included — it's re-anchored by phase so the ruler doesn't drift — and anything that can't be re-anchored reliably is dropped rather than left pointing at the wrong beat. Surco warns you before you convert."
+        "a": "It depends on the target format. They survive when you convert between MP3 and AIFF, and when any of the three — MP3, AIFF or FLAC — goes into FLAC: Surco reads the tree Traktor stores inside the file and writes it back in whichever form that format needs. They also survive converting to WAV, and going from FLAC to MP3 or AIFF. Only ALAC loses them, because it has nowhere to keep it. If you trim silence the cues move with it, the beatgrid included — it's re-anchored by phase so the ruler doesn't drift — and anything that can't be re-anchored reliably is dropped rather than left pointing at the wrong beat. Surco warns you before you convert."
       },
       {
         "q": "Can I trim the silence off my rips?",
@@ -536,7 +536,7 @@
           "Green “good quality”: the sound reaches all the way up, nothing missing. Amber “suspect”: it cuts off early. Red: bad quality.",
           "An MP3 isn't measured against a lossless yardstick: its cut is the format, not a flaw, so it comes out clean when it is. What does get called out is a FLAC or a WAV with a codec's cut inside it.",
           "“Reprocessed” is a different warning: it's not that information is missing, it's that someone manufactured highs the file no longer had.",
-          "It also catches fake hi-res —a file claiming 96 kHz but stretched up from 44.1— and fake lossless, a FLAC or WAV that's really a repackaged MP3.",
+          "It also catches fake lossless, a FLAC or WAV that's really a repackaged MP3. And any file claiming more than 44.1 kHz always gets an answer about its rate: genuine hi-res, stretched up from 44.1, or an honest \"could not be verified\" when there is nothing up there to measure.",
           "A crosshair over the spectrum reads out the exact frequency under your cursor.",
           "The loudness section draws the waveform with clipping marked in red, zooms all the way to sample detail, splits the two channels and previews how normalizing will leave it — and once converted, compares before and after side by side or overlaid.",
           "Save a spectrum report as a PNG —with its verdict and cutoff line— to share when someone asks you about that track.",
@@ -574,10 +574,10 @@
         ],
         "points": [
           "Two lanes: one for the leading cut and one for the trailing cut, each with its own zoom and preview.",
-          "Millisecond adjustment with the handles or the steps, plus a magnet that snaps to the first real hit of the music.",
+          "Millisecond adjustment with the handles or the steps, plus a magnet that snaps to the first real hit of the music. Detection measures each track's own noise floor before deciding what counts as silence, so a rip with hiss or hum in the lead-in no longer gets a loose cut.",
           "The waveform is drawn exactly where it is and re-centers on the cut as you zoom, so you're tuning against what you'll actually cut.",
           "The “Silence to trim” filter in the list gathers the tracks that need it.",
-          "Trimming re-encodes the audio and moves Traktor's cues to match the cut, keeping the grid's phase; on WAV and ALAC they're lost. Surco warns you in the section."
+          "Trimming re-encodes the audio and moves Traktor's cues to match the cut, keeping the grid's phase; only ALAC loses them. Surco warns you in the section."
         ],
         "shot": "recorte-en.webp",
         "shotCaption": "The leading and trailing cuts on the waveform."
