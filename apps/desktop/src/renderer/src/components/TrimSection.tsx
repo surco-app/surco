@@ -17,7 +17,7 @@ import { useWaveform } from '../hooks/useWaveform'
 import { useWaveformWindow } from '../hooks/useWaveformWindow'
 import { formatTime } from '../lib/duration'
 import { claimKeys } from '../lib/spaceClaim'
-import { detectOnsets, detectTrim, refineOnset } from '../lib/trim'
+import { detectOnsets, detectTrim, refineOnset, trimThresholdDb } from '../lib/trim'
 import { drawWaveform } from '../lib/waveform'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
@@ -561,6 +561,10 @@ export function TrimSection({
   // opened at all. While it's open and the wave hasn't landed, it's loading.
   const loading = open && !wave
   const durationSec = wave?.durationSec ?? 0
+  // One gate for everything in this section: the suggestion, the drag magnet
+  // and the refine pass must all agree on where silence ends, or the handle
+  // would snap to hiss the suggestion already cut.
+  const gateDb = useMemo(() => (wave ? trimThresholdDb(wave.peaks) : -60), [wave])
   const suggestion = useMemo(() => (wave ? detectTrim(wave) : undefined), [wave])
   // The unpadded truth the drag magnet aims at: where the music actually starts/ends.
   const onsets = useMemo(() => (wave ? detectOnsets(wave) : undefined), [wave])
@@ -586,14 +590,15 @@ export function TrimSection({
   const snapTargets = useMemo(
     () => ({
       startSec: startWin
-        ? (refineOnset(startWin.peaks, startWin.startSec, startWin.durSec, 'start') ??
+        ? (refineOnset(startWin.peaks, startWin.startSec, startWin.durSec, 'start', gateDb) ??
           onsets?.startSec)
         : onsets?.startSec,
       endSec: endWin
-        ? (refineOnset(endWin.peaks, endWin.startSec, endWin.durSec, 'end') ?? onsets?.endSec)
+        ? (refineOnset(endWin.peaks, endWin.startSec, endWin.durSec, 'end', gateDb) ??
+          onsets?.endSec)
         : onsets?.endSec,
     }),
-    [onsets, startWin, endWin],
+    [onsets, startWin, endWin, gateDb],
   )
   // How much track flanks each cut. Replaces the old zoom: there is no scrolling
   // here, so the only question left is how wide a window each lane shows.
