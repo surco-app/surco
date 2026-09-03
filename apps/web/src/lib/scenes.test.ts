@@ -11,6 +11,7 @@ import {
   normalizeFrame,
   TAG_ARTIST,
   TAG_FIELDS,
+  TAG_JUNK_ARTIST,
   TAG_MATCHES,
   TAG_QUERY,
   TRIM_CUT,
@@ -25,19 +26,41 @@ import { DECLICK_MARKS } from './waveforms'
 // bug the animation exists to fix.
 
 describe('tagFrame', () => {
-  it('replaces the junk artist with the real one as it runs', () => {
-    expect(tagFrame(0).artist).toBe('')
-    expect(tagFrame(1).artist).toBe('Lil Suzy')
+  // One field, overwritten — which is what the app does. A before panel and an after
+  // panel explain the swap; a single field being rewritten in place *is* the swap,
+  // and it is the whole argument of the step.
+  it('starts on the junk name and ends on the real one', () => {
+    expect(tagFrame(0).artist).toBe(TAG_JUNK_ARTIST)
+    expect(tagFrame(1).artist).toBe(TAG_ARTIST)
   })
 
-  // The name types in rather than appearing: the swap is the whole point of the
-  // scene, and a cut that lands in one frame reads as a page glitch.
+  // The junk clears before the good name arrives, rather than the two crossfading
+  // into a frame that shows a value belonging to neither.
+  it('never shows a name that is neither the junk nor the real one', () => {
+    for (let i = 0; i <= 60; i++) {
+      const { artist } = tagFrame(i / 60)
+      const valid =
+        TAG_JUNK_ARTIST.startsWith(artist) || TAG_ARTIST.startsWith(artist) || artist === ''
+      expect(valid).toBe(true)
+    }
+  })
+
+  // The name types in rather than appearing: a cut that lands in one frame reads as
+  // a page glitch instead of as a field being rewritten.
   it('types the name in progressively', () => {
-    const partials = Array.from({ length: 40 }, (_, i) => tagFrame(i / 40).artist).filter(
-      (a) => a.length > 0 && a.length < TAG_ARTIST.length,
+    const partials = Array.from({ length: 60 }, (_, i) => tagFrame(i / 60).artist).filter(
+      (a) => a.length > 0 && a.length < TAG_ARTIST.length && TAG_ARTIST.startsWith(a),
     )
     expect(partials.length).toBeGreaterThan(0)
-    for (const p of partials) expect(TAG_ARTIST.startsWith(p)).toBe(true)
+  })
+
+  // Nothing is overwritten until a release is picked: the field still holds its
+  // original value while the visitor is choosing.
+  it('holds the junk name until the release is applied', () => {
+    for (let i = 0; i <= 60; i++) {
+      const f = tagFrame(i / 60)
+      if (!f.picked) expect(f.artist).toBe(TAG_JUNK_ARTIST)
+    }
   })
 
   it('fills every metadata field by the end, none at the start', () => {

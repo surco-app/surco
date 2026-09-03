@@ -830,13 +830,15 @@
       "title": "Las etiquetas, de Discogs, en un clic.",
       "lede": "Discogs para sellos, Bandcamp para autoeditados y Deezer para lo comercial. Un clic y entra todo: artista, sello, año, BPM y carátula.",
       "pill": "12/40",
-      "before": "Artista · antes",
-      "after": "Artista · después",
+      "section": "Metadatos",
+      "titleField": "Título",
+      "artistField": "Artista",
+      "catalogField": "Nº catálogo",
       "applied": "aplicado",
       "fields": {
-        "label": "Sello",
+        "label": "Sello / Editora",
         "bpm": "BPM",
-        "key": "Tono",
+        "key": "Tonalidad",
         "year": "Año"
       }
     },

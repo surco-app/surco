@@ -830,8 +830,10 @@
       "title": "The tags, from Discogs, in one click.",
       "lede": "Discogs for labels, Bandcamp for self-released, Deezer for the charts. One click fills it all in: artist, label, year, BPM and artwork.",
       "pill": "12/40",
-      "before": "Artist · before",
-      "after": "Artist · after",
+      "section": "Metadata",
+      "titleField": "Title",
+      "artistField": "Artist",
+      "catalogField": "Cat. number",
       "applied": "applied",
       "fields": {
         "label": "Label",

@@ -75,7 +75,12 @@ export function dropFrame(t: number): DropFrame {
 
 export const TAG_TOTAL = 40
 const TAG_FROM = 8
-export const TAG_ARTIST = 'Lil Suzy'
+export const TAG_ARTIST = 'Ken Laszlo'
+export const TAG_TITLE = 'When I Fall In Love (Euro Club Mix)'
+
+// What the file carried before Discogs was applied — the kind of string a badly
+// ripped download leaves in the artist tag.
+export const TAG_JUNK_ARTIST = '2-2-2c-2e-1-2c-2e-1-2y4c-EF'
 export const TAG_FIELDS = ['Factory Team', '135', 'Fm · 9A', '1995'] as const
 export const TAG_QUERY = 'when i fall in love'
 
@@ -129,10 +134,21 @@ export function tagFrame(t: number): TagFrame {
   // "the release was applied" rather than as fields being typed by hand.
   const artwork = picked ? Math.min(1, (p - TAG_PICK) / 0.14) : 0
 
-  // The good name types in over the junk one, after the pick — the replacement is the
-  // scene's argument, and a swap landing in one frame reads as a rendering glitch.
-  const naming = picked ? Math.max(0, (p - TAG_PICK - 0.08) / 0.18) : 0
-  const named = Math.round(Math.min(1, naming) * TAG_ARTIST.length)
+  // One field, rewritten in place: the junk name deletes itself and the real one is
+  // typed over it. Two panels showing before and after would explain the swap; the
+  // field being overwritten is the swap, and it is what the app actually does.
+  const rewriting = picked ? (p - TAG_PICK - 0.06) / 0.3 : -1
+  const artist =
+    rewriting < 0
+      ? TAG_JUNK_ARTIST
+      : rewriting < 0.45
+        ? // Clearing: the junk shortens from the end.
+          TAG_JUNK_ARTIST.slice(0, Math.ceil((1 - rewriting / 0.45) * TAG_JUNK_ARTIST.length))
+        : // Typing: the real name goes in over the now-empty field.
+          TAG_ARTIST.slice(
+            0,
+            Math.round(Math.min(1, (rewriting - 0.45) / 0.55) * TAG_ARTIST.length),
+          )
 
   return {
     done: Math.round(TAG_FROM + p * (TAG_TOTAL - TAG_FROM)),
@@ -141,7 +157,7 @@ export function tagFrame(t: number): TagFrame {
     activeRow: picked ? 0 : Math.max(0, results - 1),
     picked,
     artwork,
-    artist: TAG_ARTIST.slice(0, named),
+    artist,
     fields: TAG_FIELDS.map((v, i) => (picked && p > TAG_PICK + 0.16 + i * 0.07 ? v : '')),
   }
 }
