@@ -1,9 +1,47 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { TAG_MATCHES, TAG_TOTAL, tagFrame } from '../../lib/scenes'
+import { TAG_ARTIST, TAG_MATCHES, TAG_TITLE, TAG_TOTAL, tagFrame } from '../../lib/scenes'
 import { useSceneProgress } from '../../lib/useSceneProgress'
 import AppFrame from './AppFrame'
 import CoverArt from './CoverArt'
+
+// One input as the app draws it: a plain sentence-case label above a filled box that
+// holds its height whether or not it has a value. Empty ones stay on screen — a form
+// that only renders the fields this release happens to fill reads as a summary, not
+// as the editor the visitor will actually meet.
+function Field({
+  label,
+  children,
+  accent,
+  caret,
+}: {
+  label: string
+  children: React.ReactNode
+  accent?: 'green' | 'red'
+  caret?: boolean
+}) {
+  const value = accent === 'green' ? 'text-green' : accent === 'red' ? 'text-red' : 'text-fg/90'
+  return (
+    <div className="min-w-0">
+      <span className="block text-[10px] text-muted">{label}</span>
+      <div
+        className={`mt-0.5 rounded border bg-bg/60 px-1.5 py-1 transition-colors duration-500 ${
+          accent === 'green' ? 'border-green/45' : 'border-line'
+        }`}
+      >
+        <span className={`block min-h-[1.05rem] truncate font-mono ${value}`}>
+          {children}
+          {caret && (
+            <span
+              aria-hidden="true"
+              className="ml-px inline-block h-3 w-px translate-y-0.5 bg-green"
+            />
+          )}
+        </span>
+      </div>
+    </div>
+  )
+}
 
 // The whole act, in order: the query types itself, releases arrive one by one, one
 // gets picked, and the artwork and fields land as its consequence. The previous
@@ -94,44 +132,63 @@ export default function TagScene() {
           </div>
         </div>
 
-        <div className="space-y-2 font-mono text-[11px]">
-          {/* Artwork and artist side by side: the cover landing is what says a release
-              was applied, where a name alone reads as a field someone typed. */}
-          <div className="flex gap-2">
-            <div className="relative size-[4.5rem] shrink-0 overflow-hidden rounded-lg border border-line bg-bg/60">
-              <div
-                className="size-full"
-                style={{
-                  opacity: frame.artwork,
-                  transform: `scale(${0.92 + frame.artwork * 0.08})`,
-                }}
-              >
-                <CoverArt className="size-full" />
-              </div>
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col gap-2">
-              <div className="rounded-lg border border-red/45 bg-bg/60 p-2">
-                <span className="block text-[9px] tracking-wider text-faint uppercase">
-                  {t('home.tag.before')}
-                </span>
-                <span className="mt-1 block truncate text-red">2-2-2c-2e-1-2c-2e-1-2y4c-EF</span>
-              </div>
-              <div className="flex-1 rounded-lg border border-green/45 bg-bg/60 p-2">
-                <span className="block text-[9px] tracking-wider text-faint uppercase">
-                  {t('home.tag.after')}
-                </span>
-                <span className="mt-1 block min-h-4 text-green">{frame.artist}</span>
-              </div>
-            </div>
-          </div>
+        {/* The editor panel as the app lays it out: a METADATOS heading, the title
+            across the full width, artwork beside the fields, and labelled inputs in
+            two columns — including the ones this release leaves empty. Six free
+            floating cards were a diagram of a form rather than the form. */}
+        <div className="text-[11px]">
+          <p className="border-b border-line pb-1.5 font-mono text-[9px] tracking-[0.14em] text-faint uppercase">
+            {t('home.tag.section')}
+          </p>
 
-          <div className="grid grid-cols-2 gap-2">
-            {fieldLabels.map((k, i) => (
-              <div key={k} className="rounded-lg border border-line bg-bg/60 p-2">
-                <span className="block text-[9px] tracking-wider text-faint uppercase">{k}</span>
-                <span className="mt-1 block min-h-4 truncate text-fg/90">{frame.fields[i]}</span>
+          {/* One grid for the whole block, artwork included: separate grids gave each
+              row a different column width, so no input lined up with the one above
+              it. Every field sits in columns 2-3 and the artwork holds column 1, so
+              the left edge of the form is a single line all the way down. */}
+          <div className="mt-2.5 grid grid-cols-[4.6rem_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 gap-y-2">
+            {/* The artwork tops the column, level with the first field rather than
+                starting halfway down the form — it belongs to the whole release, not
+                to the row it happens to sit beside. */}
+            <div className="col-start-1 row-start-1 row-span-3">
+              <div className="relative size-[4.6rem] overflow-hidden rounded border border-line bg-bg/60">
+                <div
+                  className="size-full"
+                  style={{
+                    opacity: frame.artwork,
+                    transform: `scale(${0.92 + frame.artwork * 0.08})`,
+                  }}
+                >
+                  <CoverArt className="size-full" />
+                </div>
               </div>
-            ))}
+              <p className="mt-1 text-center font-mono text-[9px] text-faint tabular-nums">
+                {frame.artwork > 0 ? '1/4' : '0/4'}
+              </p>
+            </div>
+
+            <div className="col-start-2 col-span-2 row-start-1">
+              <Field label={t('home.tag.titleField')}>{TAG_TITLE}</Field>
+            </div>
+
+            {/* One field, overwritten in place — the same single Artista input the
+                app has. A before box and an after box explain the swap; watching
+                the value be rewritten is the swap. */}
+            <Field
+              label={t('home.tag.artistField')}
+              accent={frame.picked ? 'green' : 'red'}
+              caret={frame.picked && frame.artist !== TAG_ARTIST}
+            >
+              {frame.artist}
+            </Field>
+            <Field label={fieldLabels[3]}>{frame.fields[3]}</Field>
+            <Field label={fieldLabels[0]}>{frame.fields[0]}</Field>
+            <Field label={fieldLabels[1]}>{frame.fields[1]}</Field>
+            {/* The artwork's three rows end above this one, so without pinning it the
+                row would start in column 1 and sit left of every field above it. */}
+            <div className="col-start-2">
+              <Field label={fieldLabels[2]}>{frame.fields[2]}</Field>
+            </div>
+            <Field label={t('home.tag.catalogField')}>{frame.fields[0] ? 'FT-012' : ''}</Field>
           </div>
         </div>
       </div>
