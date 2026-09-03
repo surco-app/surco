@@ -1,5 +1,6 @@
 import type { SpectrumResult } from '../../../shared/types'
 import type { Verdict } from './quality'
+import { spectrumTopHz } from './spectrumAxis'
 import { parseColor, type Ramp, spectrumRampTable } from './spectrumColors'
 
 // The exported report uses a FIXED dark palette (the dark theme's tokens) instead of the
@@ -190,21 +191,14 @@ export async function renderQualityReport(input: QualityReportInput): Promise<st
   ctx.drawImage(scratch, PAD, y, contentWidth, IMAGE_HEIGHT)
   ctx.strokeStyle = REPORT.line
   ctx.strokeRect(PAD + 0.5, y + 0.5, contentWidth - 1, IMAGE_HEIGHT - 1)
-  const nyquist = spectrum.sampleRateHz / 2
+  const topHz = spectrumTopHz(spectrum.sampleRateHz, spectrum.imageTopHz)
   ctx.font = '600 12px system-ui, sans-serif'
-  if (nyquist > 0) {
-    for (const f of FREQ_MARKS.filter((f) => f <= nyquist)) {
-      pill(
-        ctx,
-        PAD + 8,
-        y + (1 - f / nyquist) * IMAGE_HEIGHT - 12,
-        `${f / 1000}k`,
-        REPORT.fg,
-        'left',
-      )
+  if (topHz > 0) {
+    for (const f of FREQ_MARKS.filter((f) => f <= topHz)) {
+      pill(ctx, PAD + 8, y + (1 - f / topHz) * IMAGE_HEIGHT - 12, `${f / 1000}k`, REPORT.fg, 'left')
     }
     if (spectrum.cutoffHz !== null && input.cutoffLabel) {
-      const lineY = y + (1 - spectrum.cutoffHz / nyquist) * IMAGE_HEIGHT
+      const lineY = y + (1 - spectrum.cutoffHz / topHz) * IMAGE_HEIGHT
       ctx.strokeStyle = REPORT.fgDim
       ctx.setLineDash([6, 4])
       ctx.beginPath()

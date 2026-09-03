@@ -30,6 +30,9 @@ import {
   previewWavArgs,
   propertiesFromProbe,
   readMeta,
+  SPECTRUM_TOP_HZ,
+  spectrogramFilter,
+  spectrogramTopHz,
   stripPictureArgs,
   tagsFromProbe,
 } from './ffmpeg'
@@ -1692,9 +1695,11 @@ describe('cacheableSpectrum', () => {
     image: 'data:image/png;base64,AAAA',
     cutoffHz: 18000,
     sampleRateHz: 44100,
+    imageTopHz: 22050,
     processed: false,
     hasKnee: false,
     upsampled: false,
+    resolution: 'native' as const,
     ...over,
   })
 
@@ -1846,5 +1851,55 @@ describe('readMeta', () => {
     const result = await readMeta(mp3)
 
     expect(result.tags.grouping).toBe('Bases, Cantaditas')
+  })
+})
+
+// showspectrumpic always draws 0..Nyquist, and the panel height is fixed, so the scale moved
+// with the sample rate: on a 192 kHz file 20 kHz landed a fifth of the way up and the whole
+// audible band was squashed into that strip while 79% of the panel showed the empty octaves
+// above it. Capping the drawn range keeps every file's music filling the panel.
+describe('spectrogramTopHz', () => {
+  it('caps a hi-res file so the music is not squashed into the bottom of the panel', () => {
+    expect(spectrogramTopHz(192000)).toBe(SPECTRUM_TOP_HZ)
+    expect(spectrogramTopHz(96000)).toBe(SPECTRUM_TOP_HZ)
+  })
+
+  // The cap only ever removes empty headroom. A 44.1 kHz file's Nyquist is already below it,
+  // so those images must be drawn exactly as before, all the way to 22.05 kHz.
+  it('leaves 44.1 and 48 kHz files drawn to their own Nyquist', () => {
+    expect(spectrogramTopHz(44100)).toBe(22050)
+    expect(spectrogramTopHz(48000)).toBe(24000)
+  })
+
+  // An unreadable sample rate must not produce a zero-width band; falling back to the cap
+  // draws the same picture every other file gets rather than nothing at all.
+  it('falls back to the cap when the sample rate is unknown', () => {
+    expect(spectrogramTopHz(0)).toBe(SPECTRUM_TOP_HZ)
+  })
+})
+
+describe('spectrogramFilter', () => {
+  // Below the cap there is no band to remove, so the chain must stay byte-for-byte what it
+  // was: no resample, no extra pass over audio that is already framed correctly.
+  it('does not resample a file already within the cap', () => {
+    const filter = spectrogramFilter(44100)
+    expect(filter).not.toContain('aresample')
+    expect(filter).toContain('showspectrumpic')
+  })
+
+  // Above the cap, the only way to make showspectrumpic stop at the cap is to hand it audio
+  // whose own Nyquist IS the cap, i.e. resample to twice it.
+  it('resamples a hi-res file so the drawn range stops at the cap', () => {
+    const filter = spectrogramFilter(192000)
+    expect(filter).toContain(`aresample=${SPECTRUM_TOP_HZ * 2}`)
+    expect(filter).toContain('showspectrumpic')
+  })
+
+  // soxr is an optional ffmpeg build flag and the bundled ffmpeg-static dies with "Error
+  // reinitializing filters!" when a filter asks for it — a failure the unit tests could not
+  // see because they never run ffmpeg. Naming a resampler at all is the hazard, so the chain
+  // must stay on the default one.
+  it('does not ask for an optional resampler the bundled ffmpeg may not have', () => {
+    expect(spectrogramFilter(192000)).not.toContain('resampler=')
   })
 })

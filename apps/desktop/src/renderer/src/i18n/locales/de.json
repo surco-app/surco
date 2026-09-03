@@ -356,6 +356,8 @@
     "qualityCaptionBad": "Obergrenze bei ~{{cutoff}}, das Kennzeichen einer verlustbehafteten Quelle.",
     "qualityCaptionProcessed": "Höhen, die steigen, wo ein natürliches Spektrum fällt — regeneriert über einer echten Obergrenze bei ~{{cutoff}}.",
     "qualityUpsampled": "Deklariert über 44,1 kHz, aber der echte Inhalt endet bei 22,05 kHz — von 44,1 kHz hochgerechnet, kein echtes Hi-Res.",
+    "qualityHiRes": "Der Inhalt reicht wirklich über 22,05 kHz hinaus, die {{rate}} leisten also echte Arbeit, statt eine 44,1-kHz-Quelle zu strecken.",
+    "qualityResolutionUnknown": "Die Abtastrate konnte nicht überprüft werden: die Messung oberhalb von 22,05 kHz war nicht lesbar, diese Datei ist also weder als Hi-Res bestätigt noch als hochgerechnet markiert.",
     "saveQualityReport": "Bericht speichern…",
     "reportFooter": "Analysiert mit Surco — getsurco.app",
     "qualityCaptionGenuine": "Kein Codec-Schnitt: fällt sanft bis ~{{cutoff}} ab — ein weich abgerundetes, aber echtes Master.",

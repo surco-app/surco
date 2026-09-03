@@ -356,6 +356,8 @@
     "qualityCaptionBad": "Teto em ~{{cutoff}}, marca de uma fonte com perdas.",
     "qualityCaptionProcessed": "Agudos que sobem onde um espectro natural cai — regenerados sobre um teto real perto de ~{{cutoff}}.",
     "qualityUpsampled": "Declara mais de 44,1 kHz, mas o conteúdo real corta em 22,05 kHz — reamostrado de 44,1 kHz, não é hi-res de verdade.",
+    "qualityHiRes": "O conteúdo chega mesmo acima de 22,05 kHz, então os {{rate}} fazem trabalho real em vez de encher uma fonte de 44,1 kHz.",
+    "qualityResolutionUnknown": "Não foi possível verificar a taxa de amostragem: a sondagem acima de 22,05 kHz ficou ilegível, então este arquivo não é confirmado como hi-res nem marcado como reamostrado.",
     "saveQualityReport": "Salvar relatório…",
     "reportFooter": "Analisado com Surco — getsurco.app",
     "qualityCaptionGenuine": "Sem corte de codec: cai suavemente até ~{{cutoff}}, um master com agudos discretos, mas genuíno.",

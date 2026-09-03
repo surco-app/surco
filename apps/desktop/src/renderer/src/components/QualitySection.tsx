@@ -344,12 +344,26 @@ export function QualitySection({
                 )}
                 {/* Orthogonal to the codec verdict: the bandwidth claim, not the
                     fidelity. Shown amber so a green "good" badge over an upsampled
-                    file doesn't read as a clean bill of hi-res. */}
-                {spectrum.upsampled && (
+                    file doesn't read as a clean bill of hi-res. A file that declares a
+                    high rate always gets an answer here — confirmed, denied, or an honest
+                    "couldn't tell" — because saying nothing left a real hi-res file looking
+                    exactly like one nobody analysed. A plain 44.1 kHz file makes no claim to
+                    check, so it stays silent rather than gaining a line that says nothing. */}
+                {spectrum.upsampled || spectrum.resolution === 'upsampled' ? (
                   <p data-testid="quality-upsampled" className="mt-2 text-xs text-warn">
                     {tr('editor.qualityUpsampled')}
                   </p>
-                )}
+                ) : spectrum.resolution === 'hires' ? (
+                  <p data-testid="quality-hires" className="mt-2 text-xs text-fg-dim">
+                    {tr('editor.qualityHiRes', {
+                      rate: formatKHz(spectrum.sampleRateHz),
+                    })}
+                  </p>
+                ) : spectrum.resolution === 'unknown' ? (
+                  <p data-testid="quality-resolution-unknown" className="mt-2 text-xs text-fg-dim">
+                    {tr('editor.qualityResolutionUnknown')}
+                  </p>
+                ) : null}
               </>
             ) : null)}
           {showLoudness &&

@@ -368,6 +368,56 @@ describe('QualitySection verdict caption', () => {
     await screen.findByTestId('quality-badge')
     expect(screen.queryByTestId('quality-upsampled')).not.toBeInTheDocument()
   })
+
+  // The reported gap: a real 192 kHz file said nothing at all about its rate, so "checked and
+  // the content is genuinely there" looked identical to "never analysed". A confirmed hi-res
+  // file now says so, and must not be mistaken for the upsample accusation.
+  it('confirms a verified hi-res file instead of staying silent about its rate', async () => {
+    renderSection({
+      image: '',
+      cutoffHz: 22050,
+      sampleRateHz: 192000,
+      processed: false,
+      hasKnee: false,
+      upsampled: false,
+      resolution: 'hires',
+    })
+    expect(await screen.findByTestId('quality-hires')).toBeInTheDocument()
+    expect(screen.queryByTestId('quality-upsampled')).not.toBeInTheDocument()
+  })
+
+  // The honest third state: an unreadable probe proves nothing either way, and dressing that
+  // up as a pass would be inventing a verdict nobody measured.
+  it('says the rate could not be verified rather than implying it passed', async () => {
+    renderSection({
+      image: '',
+      cutoffHz: 22050,
+      sampleRateHz: 192000,
+      processed: false,
+      hasKnee: false,
+      upsampled: false,
+      resolution: 'unknown',
+    })
+    expect(await screen.findByTestId('quality-resolution-unknown')).toBeInTheDocument()
+    expect(screen.queryByTestId('quality-hires')).not.toBeInTheDocument()
+  })
+
+  // A plain 44.1 kHz file makes no hi-res claim, so it must not gain a line telling the user
+  // something they did not ask about and that carries no signal.
+  it('stays silent about the rate on a native 44.1 kHz file', async () => {
+    renderSection({
+      image: '',
+      cutoffHz: 20000,
+      sampleRateHz: 44100,
+      processed: false,
+      hasKnee: false,
+      upsampled: false,
+      resolution: 'native',
+    })
+    await screen.findByTestId('quality-badge')
+    expect(screen.queryByTestId('quality-hires')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('quality-resolution-unknown')).not.toBeInTheDocument()
+  })
 })
 
 describe('QualitySection analysis failure', () => {

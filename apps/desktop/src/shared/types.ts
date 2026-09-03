@@ -710,6 +710,12 @@ export interface SpectrumResult {
   // still rendered — the UI then hides the quality verdict instead of inventing one.
   cutoffHz: number | null
   sampleRateHz: number
+  // The frequency at the top edge of the image. A hi-res file is drawn to a 24 kHz cap
+  // instead of its own Nyquist (96 kHz at 192 kHz), which would squash the audible band
+  // into the bottom fifth of the panel, so the kHz marks, the cutoff line and the hover
+  // crosshair all scale against this rather than the sample rate. Optional: analyses cached
+  // before the cap existed were drawn to Nyquist and keep reading that way.
+  imageTopHz?: number
   // True when the spectrum shows regenerated highs (an "enhancer"/upscaler
   // hump); cutoffHz then carries the source's real ceiling under the gloss.
   processed: boolean
@@ -722,6 +728,12 @@ export interface SpectrumResult {
   // (fake hi-res). Independent of the codec verdict; surfaced as a separate note.
   // Optional: undefined on older cached analyses and on native 44.1 kHz files.
   upsampled?: boolean
+  // What the sample rate is worth, stated on every file: 'native' (44.1 kHz, no hi-res claim
+  // to check), 'hires' (content really carries above 22.05 kHz), 'upsampled' (it does not),
+  // or 'unknown' (the probe could not read it). The boolean above can only accuse, so a
+  // genuine hi-res file used to get no statement at all — indistinguishable from an analysis
+  // that never ran. Optional: undefined on analyses cached before this existed.
+  resolution?: 'native' | 'hires' | 'upsampled' | 'unknown'
   // Measured evidence behind the verdict, so the caption argues with numbers
   // instead of asserting. All optional: analyses cached before these fields
   // existed fall back to the un-numbered captions.
