@@ -81,6 +81,10 @@
           {
             "t": "You choose where it lands",
             "d": "A folder, beside the original, Apple Music or Engine DJ."
+          },
+          {
+            "t": "Corrected sample rate",
+            "d": "The \"Corrected\" mode rewrites at 44.1 only the tracks measured as upsampled; genuine and unverifiable files come out untouched. And \"same as source\" bit depth writes the real width: proven 16-in-24 padding comes out as true 16-bit, losslessly."
           }
         ]
       },
@@ -183,6 +187,10 @@
           {
             "t": "What you already have",
             "d": "Tells you if a track is in your Apple Music or Engine DJ, and filters the rest."
+          },
+          {
+            "t": "Bits, checked",
+            "d": "A declared 24-bit file is verified against its own samples: 16-bit padding gives itself away with the low 8 bits at zero in every one, arithmetic proof. The real thing earns its line with the measurement in front."
           }
         ]
       },

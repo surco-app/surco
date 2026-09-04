@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 2026-09-03** (v0.92.0). Levantado por primera vez el
+**Última revisión: 2026-09-04** (v0.93.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -59,7 +59,7 @@ renderiza un fichero nuevo, incluso en modo sobrescribir
 |---|---|---|
 | Bitrate MP3 | 320/256/192/160/128 CBR, V0, V2 | 320 |
 | Profundidad | origen / 16 / 24 | origen |
-| Frecuencia | origen / 44100 / 48000 | origen |
+| Frecuencia | origen / 44100 / 48000 / corregido | origen |
 | Compresión FLAC | 0 / 5 / 8 | 5 |
 
 Todo por defecto a máxima fidelidad (`ffmpeg.ts:654-661`).
@@ -78,6 +78,21 @@ ancho que reproduce el equipo de DJ real (los CDJ rechazan WAV de 32 bits float)
 **Dither TPDF** solo cuando el resultado baja a 16 bits desde una cadena más
 ancha (`ffmpeg.ts:816-819`). Un 16→16 sin filtros pasa tal cual: el dither solo
 añadiría ruido.
+
+**«Origen» es la anchura real, no la declarada.** Si la sonda de bits (§4.7)
+prueba que un 24 bits es relleno de 16, la profundidad «origen» escribe 16 bits
+de verdad, y sin dither: los bits que se tiran son ceros, la truncación es sin
+pérdidas (`ffmpeg.ts:913-926`). Un pipeline float, una normalización o un
+resample siguen ganándose su dither.
+
+**Frecuencia «corregido»: una política por fichero, no un valor fijo.** Solo las
+pistas que Surco mide como upsampleadas desde 44.1 kHz (mismo detector que el
+veredicto, §4.3) se reescriben a 44.1; hi-res confirmado, no verificable y 44.1
+nativo salen intactos. Se resuelve una sola vez por conversión
+(`ffmpeg.ts:1303-1319`) con una sonda ligera (`measureResolution`,
+`ffmpeg.ts:1932`), y la tarjeta «Al convertir» del análisis de calidad avisa en
+la propia pista antes de tocar nada. Solo aplica a recodificaciones, como la
+profundidad.
 
 **Sin sellos del muxer:** `-fflags +bitexact` evita que cada muxer estampe su
 anuncio (ENCODER en FLAC, TSSE en MP3, ISFT en RIFF) que el usuario lee como
@@ -195,7 +210,11 @@ Una pasada aparte de `hfShelf` caza el muro que el resto difumina: un muro de
 16 kHz (un MP3 de 128–160 re-empaquetado como FLAC) se leía como un taper suave
 de 5 dB y pasaba como bueno (`hfShelf.ts:105-112`). **Solo corre en ficheros
 nativos a 44.1 kHz** (`ffmpeg.ts:2100`), y su rodilla también queda condicionada a
-la confirmación de banda fina (`ffmpeg.ts:2167-2168`).
+la confirmación de banda fina (`ffmpeg.ts:2167-2168`). Reporta el borde donde
+ACABA el contenido (`hfShelf.ts:155`): devolver el borde inferior de la última
+banda sonora leía una banda de menos, y como este pase solo corre a 44.1, la
+misma canción salía «Fuente con pérdidas» en su copia 44.1 y «Good quality» en
+la de 48 (dos copias gemelas reales, corregido el 2026-09-04).
 
 Por qué se mide por FFT y no con un banco de filtros: el probe viejo leía 11,2 dB
 de caída a 21 kHz sobre ruido blanco plano — su propio rolloff IIR —, erraba
@@ -308,7 +327,25 @@ decode de 4 kHz mono no puede verlo, y por eso los másters cerca del techo
 pintaban de rojo entero mientras Audacity mostraba marcas dispersas
 (`waveform.ts:55-62`).
 
-### 4.7 Lo que NO detecta
+### 4.7 Profundidad de bits declarada
+
+Un contenedor sin pérdidas que declara 24 bits se comprueba contra sus propias
+muestras (`analyzeBitsUsage`, `ffmpeg.ts:1978`): se decodifica un minuto a
+`s24le` crudo — sin downmix ni resample, que fabricarían bytes bajos falsos — y
+se cuenta cuántas muestras con contenido usan el byte bajo. La separación medida
+es total: el relleno 16→24 da exactamente 0% y cualquier cadena real de 24 bits
+(interpolación, dither, ruido analógico) da más del 99%; la franja intermedia,
+nunca observada, devuelve un null honesto (`ffmpeg.ts:1962-1970`). Solo aplica a
+declaraciones enteras de 24 bits: MP3 y float no tienen anchura fija que
+verificar.
+
+En la UI: etiqueta «Padded depth» junto al badge de calidad, nota con la prueba
+aritmética (las líneas didácticas obedecen el toggle de explicaciones) y la
+línea positiva «los 24 bits declarados son reales: N%» solo con las
+explicaciones activas (claves `qualityBits*`). El resultado viaja en el análisis
+cacheado (namespace v23) y alimenta la profundidad «origen» del convert (§2).
+
+### 4.8 Lo que NO detecta
 
 - **Estéreo falso.** No existe detector de correlación. Lo que hay es balance
   L/R, que mide desequilibrio de nivel: dos canales idénticos medirían 0 dB =
@@ -317,6 +354,9 @@ pintaban de rojo entero mientras Audacity mostraba marcas dispersas
 - El muro poco profundo sobre un suelo ruidoso: un máster dance de los 90 con los
   agudos a −79 dB cortados contra un suelo de −104 mide 24 dB y se queda en corte
   reportado, sin acusación (`cutoff.ts:73-75`).
+- **16 bits con dither subido a 24.** La sonda de bits solo prueba el relleno
+  exacto (bytes bajos a cero); el caso con dither posterior llenaría el byte
+  bajo y necesitaría el suelo estadístico por banda. Fase 2.
 
 **Calibración.** Un corpus de regresión de 55 ficheros reales medidos —40 encodes,
 9 lossless, 6 limpios— corre como test en cada cambio
@@ -830,3 +870,8 @@ Recopilado de los cinco informes. Cada punto está verificado.
 14. **El muro poco profundo sobre un suelo ruidoso no se acusa**: se reporta el
     corte, sin veredicto de fuente con pérdidas.
 15. **Un MP3 nunca se califica como defectuoso.** Su corte es el formato.
+16. **«Los 24 bits son reales» no afirma procedencia**: dice que el byte bajo
+    lleva señal, no que la captura fuera de 24 bits — un resampleo de un origen
+    de 16 también lo llena.
+17. **«Corregido» no recupera calidad**: solo quita el relleno probado de un
+    upsample; nunca toca lo genuino ni lo dudoso, y solo actúa al recodificar.
