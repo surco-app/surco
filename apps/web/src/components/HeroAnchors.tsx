@@ -10,6 +10,11 @@ import Icon, { type GlyphName } from './Icon'
 // The weighting is the point: tagging is the headline job and carries the accent,
 // the audio work is the "and it also" and stays muted. Flattening them into three
 // equal bullets would say Surco is three tools, which is the confusion this fixes.
+//
+// One line each, not a titled block with its own paragraph: the rows sit below the
+// download button now, so their job is to confirm what the visitor just read rather
+// than to compete with the headline for the top of the column. The full sentences
+// still live in `note`, on the features page.
 const ANCHORS: { key: string; icon: GlyphName; lead?: boolean }[] = [
   { key: 'tag', icon: 'tag', lead: true },
   { key: 'audio', icon: 'spectrum' },
@@ -20,24 +25,17 @@ export default function HeroAnchors() {
   const { t } = useTranslation()
 
   return (
-    <ul className="mt-7 flex flex-col">
+    <ul className="mt-7 flex flex-col gap-3">
       {ANCHORS.map(({ key, icon, lead }) => (
-        <li
-          key={key}
-          className="flex items-start gap-3.5 border-t border-line py-3.5 last:border-b"
-        >
+        <li key={key} className="flex items-start gap-3">
           <Icon
             name={icon}
             className={`mt-0.5 size-[17px] flex-none ${lead ? 'text-blue' : 'text-faint'}`}
           />
-          <div>
-            <b className="block text-[0.95rem] font-semibold tracking-[-0.005em]">
-              {t(`home.anchors.${key}.title`)}
-            </b>
-            <span className="mt-0.5 block text-[0.82rem] leading-relaxed text-faint">
-              {t(`home.anchors.${key}.note`)}
-            </span>
-          </div>
+          <p className="text-[0.9rem] leading-snug">
+            <b className="font-semibold tracking-[-0.005em]">{t(`home.anchors.${key}.lead`)}</b>{' '}
+            <span className="text-faint">{t(`home.anchors.${key}.rest`)}</span>
+          </p>
         </li>
       ))}
     </ul>

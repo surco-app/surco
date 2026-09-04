@@ -833,6 +833,11 @@
       "fakeCaptionPre": "cuts off at ",
       "fakeCaptionPost": " · codec wall"
     },
+    "audioGroup": {
+      "step": "04 · 05 · 06 — the polish",
+      "title": "And better audio while it does.",
+      "lede": "Three fixes Surco makes to the same track: it removes the vinyl clicks, trims the silence off the end and levels every track to the same volume."
+    },
     "tag": {
       "step": "02 · tagged",
       "title": "The tags, from Discogs, in one click.",
@@ -858,7 +863,8 @@
       "hearing": "Hearing the repair",
       "original": "↔ the original",
       "next": "Next click →",
-      "clickCount": "{{count}} clicks"
+      "clickCount": "{{count}} clicks",
+      "short": "It finds them, marks them on the waveform and removes them. You can A/B against the original as it plays."
     },
     "trim": {
       "step": "05 · trimmed",
@@ -870,14 +876,16 @@
       "magnet": "magnet · locked to the last hit",
       "clipping": "14 peaks at 0 dBFS · master clipping",
       "seeking": "looking for the last beat…",
-      "trimmed": "−{{seconds}} s at the end"
+      "trimmed": "−{{seconds}} s at the end",
+      "short": "The cut latches onto the last hit. To the millisecond, with a listen either side."
     },
     "normalize": {
       "step": "06 · levelled",
       "title": "All at the same volume.",
       "lede": "Every track arrives at whatever volume its master was cut to, and it shows the moment you mix one into the next. Surco levels them all to the same target with streaming, club or broadcast presets, and tells you how far each one will move before it touches anything.",
       "pill": "Streaming −14",
-      "target": "target · {{target}} LUFS · constant gain, no compression"
+      "target": "target · {{target}} LUFS · constant gain, no compression",
+      "short": "Streaming, club or broadcast presets, and it tells you how much each track will move before it touches anything."
     },
     "batch": {
       "step": "07 · out",
@@ -898,20 +906,30 @@
     "closeTitle": "All of it, in one window.",
     "closeNote": "No cloud, no limits, nothing to sign up for. It updates itself.",
     "closeSafety": "Your originals stay untouched: change format and the copy goes to a folder of its own. It only rewrites the file itself if you re-export to the same format, which is how it updates tags without re-encoding. Notarized by Apple.",
+    "closeDirect": "Direct download",
+    "closeSafeLead": "Your originals are left alone.",
+    "closeSafeRest": "When you change format, the copy goes to a separate folder. It only rewrites the file if you re-export to the same format, which is how it updates tags without re-encoding. Notarised by Apple.",
     "allFeatures": "See everything it does →",
     "worksWith": "Works with",
+    "heroLede": "What used to take four or five apps, Surco does in one.",
     "anchors": {
       "tag": {
         "title": "Every tag, in one click",
-        "note": "Discogs, Bandcamp and Deezer. Artist, label, year, BPM and artwork."
+        "note": "Discogs, Bandcamp and Deezer. Artist, label, year, BPM and artwork.",
+        "lead": "Every tag, in one click.",
+        "rest": "Discogs, Bandcamp and Deezer."
       },
       "audio": {
         "title": "And better audio while it does",
-        "note": "Catches the FLACs that came from an MP3, trims silence, removes vinyl clicks and levels the volume."
+        "note": "Catches the FLACs that came from an MP3, trims silence, removes vinyl clicks and levels the volume.",
+        "lead": "And better audio while it does.",
+        "rest": "Catches the FLACs that came from an MP3."
       },
       "export": {
         "title": "And they land in your program",
-        "note": "Apple Music, Engine DJ, rekordbox, Traktor or Serato. Nothing to import."
+        "note": "Apple Music, Engine DJ, rekordbox, Traktor or Serato. Nothing to import.",
+        "lead": "And they land in your program.",
+        "rest": "Apple Music, Engine DJ, rekordbox."
       }
     }
   }

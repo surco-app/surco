@@ -42,17 +42,25 @@ export default function App() {
       <Header />
 
       <main id="main" className="relative">
-        <section className="mx-auto grid max-w-5xl items-center gap-10 px-6 pt-14 pb-14 sm:pt-20 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-12 lg:pt-24 lg:pb-20">
+        {/* The text column is wider than the 24rem it used to be and the screenshot takes
+            the rest: at 1440 the old grid spent 464px on margins while the headline wrapped
+            inside 384px — four lines in English, where the copy is longer. */}
+        <section className="mx-auto grid max-w-6xl items-center gap-10 px-6 pt-10 pb-12 sm:pt-14 lg:grid-cols-[minmax(0,30rem)_minmax(0,1fr)] lg:gap-12 lg:pt-16 lg:pb-16">
           <div>
             <Reveal eager>
-              <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-[2.6rem] lg:leading-[1.06]">
+              <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-[3rem] lg:leading-[1.05]">
                 {t('hero.h1a')}
                 <br />
                 <span className="text-grad text-grad-glow">{t('hero.h1b')}</span>
               </h1>
             </Reveal>
             <Reveal eager delay={80}>
-              <HeroAnchors />
+              {/* One sentence between the headline and the button. Without it the visitor
+                  went straight from a four-word claim to a list of features, with nothing
+                  saying what the program actually is. */}
+              <p className="mt-5 max-w-md leading-relaxed text-pretty text-muted">
+                {t('home.heroLede')}
+              </p>
             </Reveal>
             <Reveal eager delay={150}>
               {/* Free, the three platforms and "no account" ride with the CTA itself.
@@ -61,8 +69,14 @@ export default function App() {
                   visitor deciding whether to bother had to take the download on faith. */}
               <DownloadButton location="hero" note={t('home.heroFree')} />
             </Reveal>
+            {/* Below the button, not above it: these three lines confirm what Surco does
+                once the visitor has the offer, instead of standing between the headline
+                and the only action on the page. */}
+            <Reveal eager delay={220}>
+              <HeroAnchors />
+            </Reveal>
           </div>
-          <Reveal eager delay={220}>
+          <Reveal eager delay={280}>
             <HeroApp video />
           </Reveal>
         </section>
@@ -92,32 +106,69 @@ export default function App() {
           <Walkthrough />
         </div>
 
-        <section className="mx-auto max-w-5xl px-6 py-28 text-center sm:py-36">
+        <section className="mx-auto max-w-5xl px-6 py-20 sm:py-28">
           <SectionView location="home-closing" />
           <Reveal>
-            <h2 className="mx-auto max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
-              {t('home.closeTitle')}
-            </h2>
-            <div className="mt-10 flex flex-col items-center gap-4">
-              <DownloadButton location="home-closing" />
-              <p className="font-mono text-xs text-faint">{t('home.closeNote')}</p>
-            </div>
-            <div className="mx-auto mt-14 max-w-xl text-left">
-              <BrewCommand location="home-closing" />
-              {/* Full-strength faint, not /80: this is the line warning that re-exporting to
-                  the same format rewrites the original in place, and fading it put small mono
-                  text at 3.8:1 — back on the colour index.css already records as failing AA.
-                  The margin above separates it from the command; the contrast stays. */}
-              <p className="mt-3 font-mono text-xs leading-relaxed text-faint">
-                {t('home.closeSafety')}
+            <div className="text-center">
+              <h2 className="mx-auto max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
+                {t('home.closeTitle')}
+              </h2>
+              {/* Was a mono footnote below the button, in the pile of small print. It is an
+                  argument, not a caveat, so it sits with the headline it supports. */}
+              <p className="mx-auto mt-4 max-w-lg leading-relaxed text-pretty text-muted">
+                {t('home.closeNote')}
               </p>
             </div>
-            <a
-              href={featuresHref}
-              className="mt-14 inline-flex items-center text-sm font-medium text-muted transition-colors hover:text-blue"
-            >
-              {t('home.allFeatures')}
-            </a>
+
+            {/* The two ways in, side by side. They used to be stacked with five other lines
+                between and below them — button, Intel link, count, note, command, warning —
+                all at a similar weight, so the actual choice the visitor makes was buried. */}
+            <div className="mx-auto mt-10 grid max-w-3xl gap-5 sm:grid-cols-2">
+              <div className="inset-shadow-edge rounded-2xl border border-blue/30 bg-gradient-to-b from-blue/[0.07] to-transparent p-6">
+                <p className="font-mono text-xs tracking-wider text-faint uppercase">
+                  {t('home.closeDirect')}
+                </p>
+                <DownloadButton location="home-closing" />
+              </div>
+              <BrewCommand
+                location="home-closing"
+                className="inset-shadow-edge rounded-2xl border border-line bg-surface2/40 p-6"
+              />
+            </div>
+
+            <div className="mx-auto mt-6 flex max-w-3xl items-start gap-3 rounded-2xl border border-line bg-surface/25 px-5 py-4">
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className="mt-0.5 flex-none text-green"
+              >
+                <path d="M12 3l7 3v6c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6l7-3z" />
+                <path d="M9 12.5l2 2 4-4" />
+              </svg>
+              {/* The originals promise is a reason to trust the download, so it reads as one:
+                  the claim in the page's own text colour, the mechanism after it. As a block
+                  of small mono type it was the last thing a visitor saw before leaving. */}
+              <p className="text-sm leading-relaxed text-pretty text-faint">
+                <b className="font-semibold text-muted">{t('home.closeSafeLead')}</b>{' '}
+                {t('home.closeSafeRest')}
+              </p>
+            </div>
+
+            <div className="text-center">
+              <a
+                href={featuresHref}
+                className="mt-10 inline-flex items-center text-sm font-medium text-muted transition-colors hover:text-blue"
+              >
+                {t('home.allFeatures')}
+              </a>
+            </div>
           </Reveal>
         </section>
       </main>
