@@ -124,10 +124,20 @@ describe('detectFftKnee', () => {
     70.6, 70.8, 68.4, 68.0, 66.7, 65.8, 62.7, 60.1, 57.4, 51.5, 50.0, 43.2, 17.3, -16.5,
   ]
 
+  // The knee must name the boundary where content ENDS, not the lower edge of
+  // the last loud band. Reporting the lower edge read one band low: a real pair
+  // of store FLACs with the same ~20 kHz cut graded "Lossy" at 44.1 kHz (shelf
+  // knee 19000 dragging the verdict under the 19.5 kHz good line) yet "Good" at
+  // 48 kHz, where this pass never runs. Same audio, twin verdicts.
+  it('reports the boundary where the content ends, one band above the last loud one', () => {
+    const wall = [70, 69, 68, 67, 66, 65, 64, 63, 62, 61, 60, 59, 20, 19]
+    expect(detectFftKnee(wall, BAND_START_HZ, BAND_WIDTH_HZ)).toBe(20000)
+  })
+
   it('catches a codec wall the biquad pass smears below its knee threshold', () => {
     // The cutoff is the last full band before the cliff (the biquad pass reports the
     // same way) — enough for the verdict to grade it "Bad" instead of "Good".
-    expect(detectFftKnee(DREAMCHILD, BAND_START_HZ, BAND_WIDTH_HZ)).toBe(15000)
+    expect(detectFftKnee(DREAMCHILD, BAND_START_HZ, BAND_WIDTH_HZ)).toBe(16000)
   })
 
   it('catches a top-edge collapse spikes papered into a creep — a fake 320', () => {

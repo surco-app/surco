@@ -145,7 +145,14 @@ export function detectFftKnee(
     maxDrop = drop
     kneeIndex = i
   }
-  return kneeIndex === -1 ? null : startHz + kneeIndex * bandWidthHz
+  // The boundary where the content ends: one band width above the last loud
+  // band's lower edge. Returning the lower edge itself read one band LOW and,
+  // since this pass only runs at 44.1 kHz, handed the same ~20 kHz-cut master
+  // a "Lossy" verdict in its 44.1 copy and "Good" in its 48 kHz twin (real
+  // user-reported pair). The codec pass reports band centres; at this width the
+  // end boundary and the centre of the last loud band coincide, so the two
+  // opinions finally speak the same number.
+  return kneeIndex === -1 ? null : startHz + (kneeIndex + 1) * bandWidthHz
 }
 
 // Returns the real ceiling (Hz) when the top octave is a flat, detached synthetic
