@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.93",
+    "date": "4 de septiembre de 2026",
+    "title": "Los bits declarados también se verifican",
+    "items": [
+      {
+        "text": "Un fichero que declara 24 bits ya no se cree por su envase: Surco decodifica la pista y comprueba qué bytes llevan señal. El audio de 16 bits rellenado en un contenedor de 24 se delata solo (los 8 bits bajos a cero en todas las muestras, prueba aritmética, no estadística) y sale señalado con su propia etiqueta; un 24 bits real se gana su frase con la medida delante.",
+        "in": "0.93.0"
+      },
+      {
+        "text": "Con la profundidad de salida en \"igual que el origen\", un fichero con relleno probado se escribe como 16 bits reales. Los bits que sobran son ceros, así que quitarlos no pierde nada y ni siquiera hace falta dither.",
+        "in": "0.93.0"
+      },
+      {
+        "text": "La frecuencia de salida gana el modo \"Corregido\": solo las pistas que Surco ha medido como upsampleadas desde 44.1 kHz se reescriben a 44.1; lo genuino y lo no verificable sale intacto. La tarjeta \"Al convertir\" avisa en la propia pista de lo que va a pasar y por qué, antes de tocar nada.",
+        "in": "0.93.0"
+      },
+      {
+        "text": "La misma canción ya no puede salir \"Fuente con pérdidas\" en su copia de 44.1 kHz y \"Good quality\" en la de 48: el segundo detector de rodilla leía el corte una banda por debajo de donde acaba la música, y solo corre en ficheros de 44.1. Encontrado gracias a un usuario con dos copias gemelas de la misma pista.",
+        "in": "0.93.0"
+      }
+    ]
+  },
+  {
     "version": "0.92",
     "date": "3 de septiembre de 2026",
     "title": "La frecuencia de muestreo, respondida siempre",
