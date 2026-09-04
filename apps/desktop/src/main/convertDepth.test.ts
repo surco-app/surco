@@ -79,6 +79,40 @@ beforeAll(() => {
 // widest input format. The unit tests assert the planned flags; this asserts the
 // bytes ffmpeg actually writes.
 describe('convertAudio output bit depth', () => {
+  // "Same as source" means the width the audio really has, not the container's
+  // claim: a proven 16-in-24 padding converts to honest 16-bit, and dropping
+  // all-zero bits is mathematically lossless, so no dither rides along.
+  it('writes a padded 16-in-24 source as true 16-bit under Same as source', async () => {
+    const padded = join(dir, 'padded24.flac')
+    execFileSync(FF, ['-y', '-v', 'error', '-i', src, '-c:a', 'flac', '-sample_fmt', 's32', padded])
+    const out = join(dir, 'out-padded.wav')
+    await convertAudio(padded, out, 'wav', meta)
+    // ffprobe reports no bits_per_raw_sample for 16-bit PCM in WAV/AIFF, so the
+    // sample format is the honest witness here.
+    expect(depthOf(out).sampleFmt).toBe('s16')
+  }, 30000)
+
+  it('keeps genuinely 24-bit audio at 24 bits under Same as source', async () => {
+    const noisy = join(dir, 'true24.flac')
+    execFileSync(FF, [
+      '-y',
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'anoisesrc=d=3:a=0.3',
+      '-c:a',
+      'flac',
+      '-sample_fmt',
+      's32',
+      noisy,
+    ])
+    const out = join(dir, 'out-true24.aiff')
+    await convertAudio(noisy, out, 'aiff', meta)
+    expect(depthOf(out).bits).toBe(24)
+  }, 30000)
+
   it('keeps a normalized 44.1/16 source at 16 bits in FLAC', async () => {
     const out = join(dir, 'out.flac')
     await convertAudio(src, out, 'flac', meta, undefined, {

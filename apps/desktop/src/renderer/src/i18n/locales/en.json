@@ -358,6 +358,14 @@
     "qualityUpsampled": "Declared above 44.1 kHz, but the real content walls off at 22.05 kHz — upsampled from 44.1 kHz, not true hi-res.",
     "qualityHiRes": "Content really carries above 22.05 kHz, so the {{rate}} rate is doing real work rather than padding a 44.1 kHz source.",
     "qualityResolutionUnknown": "The sample rate could not be verified: the probe above 22.05 kHz was unreadable, so this file is neither confirmed hi-res nor flagged as upsampled.",
+    "qualityBitsPill": "Padded depth",
+    "qualityBitsPadded": "Declared 24-bit, but the low 8 bits are zero in every sample: 16-bit audio padded into a 24-bit container.",
+    "qualityBitsPaddedWhy": "Interpolation, dither, any real 24-bit pipeline fills those bits; all-zero is arithmetic proof, not statistics.",
+    "qualityBitsPaddedNote": "Converting with bit depth “Same as source” writes true 16-bit; dropping the padding is lossless.",
+    "qualityBitsFull": "The declared 24-bit depth is real: {{pct}}% of samples use the lowest byte.",
+    "qualityConvertHead": "On convert",
+    "qualityConvertRate": "{{from}} → {{to}}",
+    "qualityConvertRateSub": "Sample rate is set to “Corrected” and this file's wall is measured at 22.05 kHz, so the copy is written at the rate the audio really has. Nothing musical above it is lost.",
     "saveQualityReport": "Save report…",
     "reportFooter": "Analyzed with Surco — getsurco.app",
     "qualityCaptionGenuine": "No codec cut: tapers smoothly to ~{{cutoff}}, a gently rolled-off but genuine master.",
@@ -818,14 +826,15 @@
       "16": "16-bit",
       "24": "24-bit"
     },
-    "bitDepthHint": "“Same as source” keeps the file's exact depth. Reducing to 16-bit applies dither; a file already in the output format is copied without re-encoding.",
+    "bitDepthHint": "“Same as source” keeps the file's exact depth. Reducing to 16-bit applies dither; a file already in the output format is copied without re-encoding. With “Same as source”, a file proven to carry 16-bit audio padded to 24 is written as true 16-bit, losslessly.",
     "sampleRate": "Sample rate",
     "sampleRates": {
       "source": "Same as source",
       "44100": "44.1 kHz",
-      "48000": "48 kHz"
+      "48000": "48 kHz",
+      "corrected": "Corrected"
     },
-    "sampleRateHint": "“Same as source” never resamples. Pin a rate to unify your library for gear that expects one.",
+    "sampleRateHint": "“Same as source” never resamples. Pin a rate to unify your library for gear that expects one. “Corrected” rewrites files measured as upsampled from 44.1 kHz back at 44.1; confirmed hi-res and unverified files keep their rate (re-encodes only).",
     "flacCompression": "FLAC compression",
     "flacCompressions": {
       "0": "Fast",

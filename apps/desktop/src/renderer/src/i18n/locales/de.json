@@ -358,6 +358,14 @@
     "qualityUpsampled": "Deklariert über 44,1 kHz, aber der echte Inhalt endet bei 22,05 kHz — von 44,1 kHz hochgerechnet, kein echtes Hi-Res.",
     "qualityHiRes": "Der Inhalt reicht wirklich über 22,05 kHz hinaus, die {{rate}} leisten also echte Arbeit, statt eine 44,1-kHz-Quelle zu strecken.",
     "qualityResolutionUnknown": "Die Abtastrate konnte nicht überprüft werden: die Messung oberhalb von 22,05 kHz war nicht lesbar, diese Datei ist also weder als Hi-Res bestätigt noch als hochgerechnet markiert.",
+    "qualityBitsPill": "Aufgefüllte Tiefe",
+    "qualityBitsPadded": "Deklariert 24 Bit, aber die unteren 8 Bits sind in jedem Sample null: 16-Bit-Audio, aufgefüllt in einem 24-Bit-Container.",
+    "qualityBitsPaddedWhy": "Interpolation, Dither, jede echte 24-Bit-Kette füllt diese Bits; alles auf null ist arithmetischer Beweis, keine Statistik.",
+    "qualityBitsPaddedNote": "Beim Konvertieren mit Bittiefe „Wie Quelle“ werden echte 16 Bit geschrieben; das Entfernen der Füllung ist verlustfrei.",
+    "qualityBitsFull": "Die deklarierten 24 Bit sind echt: {{pct}}% der Samples nutzen das unterste Byte.",
+    "qualityConvertHead": "Beim Konvertieren",
+    "qualityConvertRate": "{{from}} → {{to}}",
+    "qualityConvertRateSub": "Die Ausgaberate steht auf „Korrigiert“ und die Wand dieser Datei ist bei 22,05 kHz gemessen, also wird die Kopie mit der Rate geschrieben, die das Audio wirklich hat. Darüber geht nichts Musikalisches verloren.",
     "saveQualityReport": "Bericht speichern…",
     "reportFooter": "Analysiert mit Surco — getsurco.app",
     "qualityCaptionGenuine": "Kein Codec-Schnitt: fällt sanft bis ~{{cutoff}} ab — ein weich abgerundetes, aber echtes Master.",
@@ -818,14 +826,15 @@
       "16": "16 Bit",
       "24": "24 Bit"
     },
-    "bitDepthHint": "„Wie die Quelle“ behält die exakte Bittiefe der Datei. Beim Reduzieren auf 16 Bit wird Dithering angewendet; eine Datei im Zielformat wird ohne Neukodierung kopiert.",
+    "bitDepthHint": "„Wie die Quelle“ behält die exakte Bittiefe der Datei. Beim Reduzieren auf 16 Bit wird Dithering angewendet; eine Datei im Zielformat wird ohne Neukodierung kopiert. Mit „Wie Quelle“ wird eine Datei mit nachweislich auf 24 Bit aufgefülltem 16-Bit-Audio verlustfrei als echte 16 Bit geschrieben.",
     "sampleRate": "Abtastrate",
     "sampleRates": {
       "source": "Wie die Quelle",
       "44100": "44,1 kHz",
-      "48000": "48 kHz"
+      "48000": "48 kHz",
+      "corrected": "Korrigiert"
     },
-    "sampleRateHint": "„Wie die Quelle“ resampelt nie. Lege eine Rate fest, um deine Bibliothek zu vereinheitlichen.",
+    "sampleRateHint": "„Wie die Quelle“ resampelt nie. Lege eine Rate fest, um deine Bibliothek zu vereinheitlichen. „Korrigiert“ schreibt Dateien, die messbar von 44,1 kHz hochgerechnet wurden, wieder mit 44,1; bestätigtes Hi-Res und Unverifiziertes behält seine Rate (nur bei Neukodierung).",
     "flacCompression": "FLAC-Kompression",
     "flacCompressions": {
       "0": "Schnell",

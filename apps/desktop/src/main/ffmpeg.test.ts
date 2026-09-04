@@ -1401,6 +1401,25 @@ describe('propertiesFromProbe', () => {
   })
 })
 
+describe('planConversion with a corrected sample rate', () => {
+  // 'corrected' is resolved to a concrete rate (or left alone) BEFORE planning,
+  // by the caller that can afford the measurement. If it ever leaks this far,
+  // the planner must treat it as 'source' rather than Number('corrected') = NaN.
+  it('never resamples on the unresolved policy value', async () => {
+    const probe = vi.fn(async () => ({
+      codecName: 'flac',
+      sampleFmt: 's16',
+      bitsPerRawSample: 16,
+      sampleRate: '48000',
+      channels: 2,
+    }))
+    const plan = await planConversion('/in.flac', 'wav', probe, false, {
+      sampleRate: 'corrected',
+    })
+    expect(plan.sampleRateHz).toBeUndefined()
+  })
+})
+
 describe('buildSpectrum', () => {
   const deps = (over: Record<string, unknown> = {}) => ({
     probe: vi.fn(async () => ({ sampleRate: '44100' })),
@@ -1412,6 +1431,7 @@ describe('buildSpectrum', () => {
       upsampled: false,
     })),
     shelf: vi.fn(async () => ({ shelfCutoffHz: null, kneeCutoffHz: null })),
+    bits: vi.fn(async () => null),
     ...over,
   })
 
@@ -1534,6 +1554,25 @@ describe('buildSpectrum', () => {
       }),
     )
     expect(codecRuled.flatShelf).toBeUndefined()
+  })
+
+  // The padding verdict rides the same cached analysis as the spectrum, so the
+  // probe's answer must survive the build untouched, and a failed probe must
+  // cost nothing but the note (the image and codec verdict still stand).
+  it('passes the bit-usage verdict through, and absorbs a failed bits probe', async () => {
+    const res = await buildSpectrum(
+      '/in.flac',
+      deps({ bits: vi.fn(async () => ({ usage: 'padded16', lowBytePct: 0 })) }),
+    )
+    expect(res.bitsUsage).toBe('padded16')
+    expect(res.bitsLowPct).toBe(0)
+
+    const failed = await buildSpectrum(
+      '/in.flac',
+      deps({ bits: vi.fn(async () => Promise.reject(new Error('boom'))) }),
+    )
+    expect(failed.bitsUsage).toBeUndefined()
+    expect(failed.image).toBe('data:image/png;base64,AAAA')
   })
 
   it('keeps the codec pass cutoff when it already found manipulation, even if a shelf is also seen', async () => {

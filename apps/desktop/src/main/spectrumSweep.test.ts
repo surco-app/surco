@@ -74,6 +74,7 @@ async function grade(path: string): Promise<Row> {
       spectrogram: async () => '',
       cutoff: (i, s) => analyzeCutoff(i, s),
       shelf: (i, s) => analyzeShelf(i, s),
+      bits: async () => null,
     })
     return {
       path,

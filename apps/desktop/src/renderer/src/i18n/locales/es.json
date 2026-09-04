@@ -358,6 +358,14 @@
     "qualityUpsampled": "Declara más de 44.1 kHz, pero el contenido real se corta en 22.05 kHz — reescalado desde 44.1 kHz, no es hi-res real.",
     "qualityHiRes": "El contenido llega de verdad por encima de 22.05 kHz, así que los {{rate}} hacen trabajo real en vez de rellenar una fuente de 44.1 kHz.",
     "qualityResolutionUnknown": "No se ha podido verificar la frecuencia de muestreo: la sonda por encima de 22.05 kHz no se pudo leer, así que este fichero ni se confirma como hi-res ni se marca como reescalado.",
+    "qualityBitsPill": "Bits rellenados",
+    "qualityBitsPadded": "Declara 24 bits, pero los 8 bits bajos son cero en todas las muestras: audio de 16 bits rellenado en un contenedor de 24.",
+    "qualityBitsPaddedWhy": "La interpolación, el dither, cualquier cadena real de 24 bits llena esos bits; todo a cero es prueba aritmética, no estadística.",
+    "qualityBitsPaddedNote": "Al convertir con profundidad “Igual que el origen” se escriben 16 bits reales; quitar el relleno es sin pérdidas.",
+    "qualityBitsFull": "Los 24 bits declarados son reales: el {{pct}}% de las muestras usa el byte más bajo.",
+    "qualityConvertHead": "Al convertir",
+    "qualityConvertRate": "{{from}} → {{to}}",
+    "qualityConvertRateSub": "La frecuencia de salida está en “Corregido” y el muro de este fichero está medido en 22.05 kHz, así que la copia se escribe a la frecuencia que el audio tiene de verdad. No se pierde nada musical por encima.",
     "saveQualityReport": "Guardar informe…",
     "reportFooter": "Analizado con Surco — getsurco.app",
     "qualityCaptionGenuine": "Sin corte de códec: cae con suavidad hasta ~{{cutoff}}, un máster con agudos discretos pero genuino.",
@@ -818,14 +826,15 @@
       "16": "16 bits",
       "24": "24 bits"
     },
-    "bitDepthHint": "«Igual que el origen» conserva la profundidad exacta del archivo. Al reducir a 16 bits se aplica dither; un archivo ya en el formato de salida se copia sin reconvertir.",
+    "bitDepthHint": "«Igual que el origen» conserva la profundidad exacta del archivo. Al reducir a 16 bits se aplica dither; un archivo ya en el formato de salida se copia sin reconvertir. Con “Igual que el origen”, un fichero con audio de 16 bits demostrado y rellenado a 24 se escribe como 16 bits reales, sin pérdidas.",
     "sampleRate": "Frecuencia de muestreo",
     "sampleRates": {
       "source": "Igual que el origen",
       "44100": "44,1 kHz",
-      "48000": "48 kHz"
+      "48000": "48 kHz",
+      "corrected": "Corregido"
     },
-    "sampleRateHint": "«Igual que el origen» nunca remuestrea. Fija una frecuencia para unificar tu biblioteca.",
+    "sampleRateHint": "«Igual que el origen» nunca remuestrea. Fija una frecuencia para unificar tu biblioteca. “Corregido” reescribe a 44.1 los ficheros medidos como upsampleados desde 44.1 kHz; los hi-res confirmados y los no verificados conservan su frecuencia (solo recodificaciones).",
     "flacCompression": "Compresión FLAC",
     "flacCompressions": {
       "0": "Rápida",

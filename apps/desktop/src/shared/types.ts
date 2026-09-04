@@ -25,8 +25,10 @@ export type Mp3Quality = '320' | '256' | '192' | '160' | '128' | 'v0' | 'v2'
 export type OutputBitDepth = 'source' | '16' | '24'
 
 // Output sample rate: 'source' (the default) never resamples; pinning 44.1/48 kHz
-// unifies a library for gear that expects one rate.
-export type OutputSampleRate = 'source' | '44100' | '48000'
+// unifies a library for gear that expects one rate. 'corrected' is a per-file
+// policy, not a pin: only files Surco measured as upsampled from 44.1 kHz are
+// written back at 44.1, everything genuine or unverified keeps its source rate.
+export type OutputSampleRate = 'source' | '44100' | '48000' | 'corrected'
 
 // FLAC -compression_level: a pure size/speed trade-off, the decoded audio is
 // identical at every level.
@@ -750,6 +752,14 @@ export interface SpectrumResult {
   // True when the flat-shelf probe (not the codec pass) produced the processed
   // verdict.
   flatShelf?: boolean
+  // The bit-depth verdict for lossless files declaring 24 bits: 'full' when the
+  // lowest byte carries signal (a real 24-bit pipeline fills it), 'padded16'
+  // when it is zero in every content sample, which is arithmetic proof of
+  // 16-bit audio in a 24-bit container. Absent when not applicable (lossy,
+  // 16-bit, float) or on analyses cached before the probe existed.
+  bitsUsage?: 'full' | 'padded16'
+  // Share of content samples whose lowest byte is non-zero, 0-100.
+  bitsLowPct?: number
 }
 
 // One track in an Engine DJ export request. The renderer ships this serializable shape

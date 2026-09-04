@@ -358,6 +358,14 @@
     "qualityUpsampled": "Declara mais de 44,1 kHz, mas o conteúdo real corta em 22,05 kHz — reamostrado de 44,1 kHz, não é hi-res de verdade.",
     "qualityHiRes": "O conteúdo chega mesmo acima de 22,05 kHz, então os {{rate}} fazem trabalho real em vez de encher uma fonte de 44,1 kHz.",
     "qualityResolutionUnknown": "Não foi possível verificar a taxa de amostragem: a sondagem acima de 22,05 kHz ficou ilegível, então este arquivo não é confirmado como hi-res nem marcado como reamostrado.",
+    "qualityBitsPill": "Bits preenchidos",
+    "qualityBitsPadded": "Declara 24 bits, mas os 8 bits baixos são zero em todas as amostras: áudio de 16 bits preenchido em um contêiner de 24.",
+    "qualityBitsPaddedWhy": "Interpolação, dither, qualquer cadeia real de 24 bits preenche esses bits; tudo zero é prova aritmética, não estatística.",
+    "qualityBitsPaddedNote": "Converter com profundidade “Igual à origem” grava 16 bits reais; remover o preenchimento é sem perdas.",
+    "qualityBitsFull": "Os 24 bits declarados são reais: {{pct}}% das amostras usam o byte mais baixo.",
+    "qualityConvertHead": "Ao converter",
+    "qualityConvertRate": "{{from}} → {{to}}",
+    "qualityConvertRateSub": "A taxa de saída está em “Corrigido” e o muro deste arquivo foi medido em 22.05 kHz, então a cópia é gravada na taxa que o áudio realmente tem. Nada musical acima se perde.",
     "saveQualityReport": "Salvar relatório…",
     "reportFooter": "Analisado com Surco — getsurco.app",
     "qualityCaptionGenuine": "Sem corte de codec: cai suavemente até ~{{cutoff}}, um master com agudos discretos, mas genuíno.",
@@ -818,14 +826,15 @@
       "16": "16 bits",
       "24": "24 bits"
     },
-    "bitDepthHint": "“Igual à origem” mantém a profundidade exata do arquivo. Reduzir para 16 bits aplica dither; um arquivo já no formato de saída é copiado sem recodificação.",
+    "bitDepthHint": "“Igual à origem” mantém a profundidade exata do arquivo. Reduzir para 16 bits aplica dither; um arquivo já no formato de saída é copiado sem recodificação. Com “Igual à origem”, um arquivo com áudio de 16 bits comprovadamente preenchido para 24 é gravado como 16 bits reais, sem perdas.",
     "sampleRate": "Taxa de amostragem",
     "sampleRates": {
       "source": "Igual à origem",
       "44100": "44,1 kHz",
-      "48000": "48 kHz"
+      "48000": "48 kHz",
+      "corrected": "Corrigido"
     },
-    "sampleRateHint": "“Igual à origem” nunca reamostra. Fixe uma taxa para unificar sua biblioteca.",
+    "sampleRateHint": "“Igual à origem” nunca reamostra. Fixe uma taxa para unificar sua biblioteca. “Corrigido” regrava em 44.1 os arquivos medidos como upsampleados de 44.1 kHz; hi-res confirmado e não verificados mantêm sua taxa (só recodificações).",
     "flacCompression": "Compressão FLAC",
     "flacCompressions": {
       "0": "Rápida",

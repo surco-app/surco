@@ -358,6 +358,14 @@
     "qualityUpsampled": "Annoncé au-dessus de 44,1 kHz, mais le contenu réel s'arrête net à 22,05 kHz — suréchantillonné depuis 44,1 kHz, pas du vrai hi-res.",
     "qualityHiRes": "Le contenu monte réellement au-dessus de 22,05 kHz : les {{rate}} font un vrai travail au lieu de gonfler une source en 44,1 kHz.",
     "qualityResolutionUnknown": "La fréquence d'échantillonnage n'a pas pu être vérifiée : la sonde au-dessus de 22,05 kHz était illisible, ce fichier n'est donc ni confirmé hi-res ni signalé comme suréchantillonné.",
+    "qualityBitsPill": "Bits de remplissage",
+    "qualityBitsPadded": "Déclaré 24 bits, mais les 8 bits bas sont à zéro dans chaque échantillon : de l'audio 16 bits rembourré dans un conteneur 24 bits.",
+    "qualityBitsPaddedWhy": "L'interpolation, le dither, toute vraie chaîne 24 bits remplit ces bits ; tout à zéro est une preuve arithmétique, pas une statistique.",
+    "qualityBitsPaddedNote": "Convertir avec la profondeur « Comme la source » écrit du vrai 16 bits ; retirer le remplissage est sans perte.",
+    "qualityBitsFull": "Les 24 bits déclarés sont réels : {{pct}}% des échantillons utilisent l'octet le plus bas.",
+    "qualityConvertHead": "À la conversion",
+    "qualityConvertRate": "{{from}} → {{to}}",
+    "qualityConvertRateSub": "La fréquence de sortie est sur « Corrigé » et le mur de ce fichier est mesuré à 22,05 kHz : la copie est écrite à la fréquence que l'audio a vraiment. Rien de musical au-dessus n'est perdu.",
     "saveQualityReport": "Enregistrer le rapport…",
     "reportFooter": "Analysé avec Surco — getsurco.app",
     "qualityCaptionGenuine": "Pas de coupure de codec : décroît en douceur jusqu'à ~{{cutoff}}, un master aux aigus discrets mais authentique.",
@@ -818,14 +826,15 @@
       "16": "16 bits",
       "24": "24 bits"
     },
-    "bitDepthHint": "« Comme la source » conserve la profondeur exacte du fichier. La réduction à 16 bits applique un dither ; un fichier déjà au format de sortie est copié sans réencodage.",
+    "bitDepthHint": "« Comme la source » conserve la profondeur exacte du fichier. La réduction à 16 bits applique un dither ; un fichier déjà au format de sortie est copié sans réencodage. Avec « Comme la source », un fichier dont l'audio 16 bits rembourré en 24 est prouvé est écrit en vrai 16 bits, sans perte.",
     "sampleRate": "Fréquence d'échantillonnage",
     "sampleRates": {
       "source": "Comme la source",
       "44100": "44,1 kHz",
-      "48000": "48 kHz"
+      "48000": "48 kHz",
+      "corrected": "Corrigé"
     },
-    "sampleRateHint": "« Comme la source » ne rééchantillonne jamais. Fixez une fréquence pour unifier votre bibliothèque.",
+    "sampleRateHint": "« Comme la source » ne rééchantillonne jamais. Fixez une fréquence pour unifier votre bibliothèque. « Corrigé » réécrit à 44,1 les fichiers mesurés comme suréchantillonnés depuis 44,1 kHz ; le hi-res confirmé et le non vérifié gardent leur fréquence (réencodages seulement).",
     "flacCompression": "Compression FLAC",
     "flacCompressions": {
       "0": "Rapide",

@@ -53,7 +53,12 @@ function track(inputPath = '/music/a.flac'): TrackItem {
   }
 }
 
-function renderSection(spectrum: SpectrumResult, inputPath?: string, showHints = true): void {
+function renderSection(
+  spectrum: SpectrumResult,
+  inputPath?: string,
+  showHints = true,
+  outputSampleRate: 'source' | '44100' | '48000' | 'corrected' = 'source',
+): void {
   ;(window as unknown as { api: unknown }).api = {
     spectrogram: vi.fn().mockResolvedValue(spectrum),
   }
@@ -69,6 +74,7 @@ function renderSection(spectrum: SpectrumResult, inputPath?: string, showHints =
         onToggle={vi.fn()}
         onShowLoudnessHelp={vi.fn()}
         showHints={showHints}
+        outputSampleRate={outputSampleRate}
       />
     </QueryClientProvider>,
   )
@@ -696,5 +702,87 @@ describe('verdict evidence', () => {
       expect(text).not.toMatch(/kbps/)
       expect(text).not.toMatch(/listen|escúcha|antes de pinchar|before you play/i)
     }
+  })
+})
+
+// The bit-depth verdict and the corrected-rate plan, both argued with the
+// measurement: the padding proof is arithmetic (every low byte zero), and the
+// on-convert card says what the policy will do to THIS file before it happens.
+describe('bit depth verdict and corrected-rate plan', () => {
+  const base = {
+    image: '',
+    cutoffHz: 21000,
+    sampleRateHz: 44100,
+    processed: false,
+    hasKnee: false,
+  }
+
+  it('flags a padded 16-in-24 container with its pill and the arithmetic proof', async () => {
+    renderSection({ ...base, bitsUsage: 'padded16', bitsLowPct: 0 }, '/m/a.flac')
+    const note = await screen.findByTestId('quality-bits-padded')
+    expect(note).toHaveTextContent('low 8 bits are zero')
+    expect(screen.getByTestId('quality-bits-pill')).toHaveTextContent(
+      i18n.t('editor.qualityBitsPill'),
+    )
+    // The didactic why-line and the convert consequence ride the hints toggle.
+    expect(note).toHaveTextContent(i18n.t('editor.qualityBitsPaddedWhy'))
+  })
+
+  it('keeps the padding proof but drops the didactic lines when hints are off', async () => {
+    renderSection({ ...base, bitsUsage: 'padded16', bitsLowPct: 0 }, '/m/a.flac', false)
+    const note = await screen.findByTestId('quality-bits-padded')
+    expect(note).toHaveTextContent('low 8 bits are zero')
+    expect(screen.queryByText(i18n.t('editor.qualityBitsPaddedWhy'))).not.toBeInTheDocument()
+  })
+
+  it('lets a real 24-bit file earn its depth while hints are on', async () => {
+    renderSection({ ...base, bitsUsage: 'full', bitsLowPct: 99.6 }, '/m/a.flac')
+    const note = await screen.findByTestId('quality-bits-full')
+    expect(note).toHaveTextContent('99.6%')
+  })
+
+  it('keeps the real-24 reassurance quiet when hints are off', async () => {
+    renderSection({ ...base, bitsUsage: 'full', bitsLowPct: 99.6 }, '/m/a.flac', false)
+    await screen.findByTestId('quality-badge')
+    expect(screen.queryByTestId('quality-bits-full')).not.toBeInTheDocument()
+  })
+
+  it('says nothing about bits when a cached analysis has no verdict', async () => {
+    renderSection({ ...base }, '/m/a.flac')
+    await screen.findByTestId('quality-badge')
+    expect(screen.queryByTestId('quality-bits-padded')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('quality-bits-full')).not.toBeInTheDocument()
+  })
+
+  it('announces the corrected-rate rewrite on a proven upsample', async () => {
+    renderSection(
+      { ...base, sampleRateHz: 48000, resolution: 'upsampled' },
+      '/m/a.flac',
+      true,
+      'corrected',
+    )
+    const plan = await screen.findByTestId('quality-convert-plan')
+    expect(plan).toHaveTextContent('48 kHz')
+    expect(plan).toHaveTextContent('44.1 kHz')
+  })
+
+  it('shows no rewrite card when the policy is off or the verdict clears the file', async () => {
+    renderSection(
+      { ...base, sampleRateHz: 48000, resolution: 'upsampled' },
+      '/m/a.flac',
+      true,
+      'source',
+    )
+    await screen.findByTestId('quality-badge')
+    expect(screen.queryByTestId('quality-convert-plan')).not.toBeInTheDocument()
+    cleanup()
+    renderSection(
+      { ...base, sampleRateHz: 96000, resolution: 'hires' },
+      '/m/a.flac',
+      true,
+      'corrected',
+    )
+    await screen.findByTestId('quality-badge')
+    expect(screen.queryByTestId('quality-convert-plan')).not.toBeInTheDocument()
   })
 })

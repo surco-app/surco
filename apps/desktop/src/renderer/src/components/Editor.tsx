@@ -741,7 +741,12 @@ export const Editor = memo(function Editor({
   // offer: a passive line naming the gap plus a "Re-encode" action — never a silent
   // re-encode. Lossless formats only (re-encoding an MP3 onto itself just degrades it);
   // hidden in overwrite mode, whose contract is rewriting the source, not a fresh copy.
-  const qualityPinned = outputSampleRate !== 'source' || outputBitDepth !== 'source'
+  // 'corrected' is a per-file policy, not a fixed pin: whether THIS file gets
+  // resampled is its own verdict's call, so the pinned-rate re-encode note
+  // (which compares the source against one concrete number) treats it as
+  // unpinned instead of comparing rates against Number('corrected') = NaN.
+  const ratePinned = outputSampleRate !== 'source' && outputSampleRate !== 'corrected'
+  const qualityPinned = ratePinned || outputBitDepth !== 'source'
   const reencodeCandidate =
     !isMulti &&
     !picked.overwriteOriginal &&
@@ -750,7 +755,7 @@ export const Editor = memo(function Editor({
     formatMatchesInput(format, item.inputPath)
   const sourceProps = useTrackProperties(item.inputPath, reencodeCandidate).data
   const rateMismatch =
-    outputSampleRate !== 'source' &&
+    ratePinned &&
     !!sourceProps?.sampleRateHz &&
     sourceProps.sampleRateHz !== Number(outputSampleRate)
   const depthMismatch =
@@ -1114,6 +1119,7 @@ export const Editor = memo(function Editor({
                             onToggle={() => setSectionOpen('quality', !spectrumOpen)}
                             onShowLoudnessHelp={onShowLoudnessHelp}
                             showHints={showEditorHints}
+                            outputSampleRate={outputSampleRate}
                           />
                         )
                       )
