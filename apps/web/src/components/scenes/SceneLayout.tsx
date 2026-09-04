@@ -40,8 +40,12 @@ export default function SceneLayout({
   // step's heading broke into two short lines ("Suéltalas y ya / están dentro.") and
   // the paragraph under it ran seven lines deep. A hairline replaces the 168px of
   // empty background that used to separate one step from the next.
+  // grid-cols-[minmax(0,1fr)] on the single-column layout: the implicit track is `auto`,
+  // which sizes to the widest content, so the queue's truncated track names stretched the
+  // step past the viewport and clipped its heading and copy off the right edge on a phone.
+  // `minmax(0, …)` lets the column shrink below its content.
   return (
-    <section className="grid items-center gap-8 border-b border-line/50 py-10 last:border-b-0 sm:py-12 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)] lg:gap-14">
+    <section className="grid grid-cols-[minmax(0,1fr)] items-center gap-8 border-b border-line/50 py-10 last:border-b-0 sm:py-12 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)] lg:gap-14">
       <Reveal from={flip ? 'right' : 'left'} className={flip ? 'lg:order-2' : ''}>
         <p className="font-mono text-xs tracking-wider text-blue uppercase">{step}</p>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
