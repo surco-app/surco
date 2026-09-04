@@ -50,7 +50,10 @@ export default function Walkthrough() {
         {t('home.drop.lede')}
       </SceneLayout>
 
-      <SceneLayout flip step={t('home.tag.step')} title={t('home.tag.title')} app={<TagScene />}>
+      {/* Wide, like the quality scene: the editor is a form, and a form needs the width
+          for its values. In the half-width column every value — the title, the label,
+          even "Ken Laszlo" — was truncated to a couple of characters and an ellipsis. */}
+      <SceneLayout wide step={t('home.tag.step')} title={t('home.tag.title')} app={<TagScene />}>
         {t('home.tag.lede')}
       </SceneLayout>
 
