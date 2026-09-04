@@ -50,7 +50,7 @@ export default function Walkthrough() {
         {t('home.drop.lede')}
       </SceneLayout>
 
-      <SceneLayout step={t('home.tag.step')} title={t('home.tag.title')} app={<TagScene />}>
+      <SceneLayout flip step={t('home.tag.step')} title={t('home.tag.title')} app={<TagScene />}>
         {t('home.tag.lede')}
       </SceneLayout>
 
@@ -67,42 +67,51 @@ export default function Walkthrough() {
         {t('home.quality.lede')}
       </SceneLayout>
 
-      <SceneLayout
-        wide
-        step={t('home.declick.step')}
-        title={t('home.declick.title')}
-        app={
-          <AppFrame pill={t('home.declick.pill')}>
-            <DeclickScene />
-          </AppFrame>
-        }
-      >
-        {t('home.declick.lede')}
-      </SceneLayout>
-
-      <SceneLayout
-        step={t('home.trim.step')}
-        title={t('home.trim.title')}
-        app={
-          <AppFrame pill={t('home.trim.pill')}>
-            <TrimScene />
-          </AppFrame>
-        }
-      >
-        {t('home.trim.lede')}
-      </SceneLayout>
-
-      <SceneLayout
-        step={t('home.normalize.step')}
-        title={t('home.normalize.title')}
-        app={
-          <AppFrame pill={t('home.normalize.pill')}>
-            <NormalizeScene />
-          </AppFrame>
-        }
-      >
-        {t('home.normalize.lede')}
-      </SceneLayout>
+      {/* Declick, trim and normalize under one heading. Each was a full-height section of
+          its own, which spent three screens of scroll on the part of the flow the page
+          itself calls "and while it's at it": the tagging and the fake-lossless verdict are
+          what a visitor comes for, and they were being crowded out by their own footnotes. */}
+      <section className="border-b border-line/50 py-10 sm:py-12">
+        <Reveal>
+          <p className="font-mono text-xs tracking-wider text-blue uppercase">
+            {t('home.audioGroup.step')}
+          </p>
+          <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+            {t('home.audioGroup.title')}
+          </h2>
+          <div className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">
+            {t('home.audioGroup.lede')}
+          </div>
+        </Reveal>
+        <Reveal delay={120} className="mt-7">
+          <div className="grid gap-5 lg:grid-cols-3">
+            <div>
+              <AppFrame pill={t('home.declick.pill')}>
+                <DeclickScene />
+              </AppFrame>
+              <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
+                {t('home.declick.short')}
+              </p>
+            </div>
+            <div>
+              <AppFrame pill={t('home.trim.pill')}>
+                <TrimScene />
+              </AppFrame>
+              <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
+                {t('home.trim.short')}
+              </p>
+            </div>
+            <div>
+              <AppFrame pill={t('home.normalize.pill')}>
+                <NormalizeScene />
+              </AppFrame>
+              <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
+                {t('home.normalize.short')}
+              </p>
+            </div>
+          </div>
+        </Reveal>
+      </section>
 
       <SceneLayout
         wide

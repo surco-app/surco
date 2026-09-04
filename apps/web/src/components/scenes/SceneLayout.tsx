@@ -22,28 +22,32 @@ export default function SceneLayout({
 }) {
   if (wide) {
     return (
-      <section className="py-14 sm:py-20">
+      <section className="border-b border-line/50 py-10 last:border-b-0 sm:py-12">
         <Reveal>
           <p className="font-mono text-xs tracking-wider text-blue uppercase">{step}</p>
-          <h2 className="mt-4 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+          <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
             {title}
           </h2>
-          <div className="mt-4 max-w-2xl leading-relaxed text-pretty text-muted">{children}</div>
+          <div className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">{children}</div>
         </Reveal>
-        <Reveal delay={120} className="mt-8">
+        <Reveal delay={120} className="mt-7">
           {app}
         </Reveal>
       </section>
     )
   }
+  // The caption column is wider than the 17rem it used to be: at that width every
+  // step's heading broke into two short lines ("Suéltalas y ya / están dentro.") and
+  // the paragraph under it ran seven lines deep. A hairline replaces the 168px of
+  // empty background that used to separate one step from the next.
   return (
-    <section className="grid items-center gap-8 py-14 sm:py-20 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)] lg:gap-14">
+    <section className="grid items-center gap-8 border-b border-line/50 py-10 last:border-b-0 sm:py-12 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)] lg:gap-14">
       <Reveal from={flip ? 'right' : 'left'} className={flip ? 'lg:order-2' : ''}>
         <p className="font-mono text-xs tracking-wider text-blue uppercase">{step}</p>
-        <h2 className="mt-4 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
           {title}
         </h2>
-        <div className="mt-4 leading-relaxed text-pretty text-muted">{children}</div>
+        <div className="mt-3 leading-relaxed text-pretty text-muted">{children}</div>
       </Reveal>
       <Reveal from={flip ? 'left' : 'right'} delay={120} className={flip ? 'lg:order-1' : ''}>
         {app}

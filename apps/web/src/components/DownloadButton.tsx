@@ -92,7 +92,7 @@ export default function DownloadButton({
 
   return (
     <>
-      <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+      <div className="mt-7 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
         {pending ? (
           <button
             type="button"
@@ -164,7 +164,7 @@ export default function DownloadButton({
           </button>
         )}
       </div>
-      {note && <p className="mt-4 text-sm text-muted">{note}</p>}
+      {note && <p className="mt-3.5 text-sm text-muted">{note}</p>}
       {/* Always mounted (invisible until the Intel build resolves on a Mac) so the
           link occupies its line in the prerendered HTML and every client state
           alike. The page is statically prerendered with os='other', so gating this
@@ -205,7 +205,7 @@ export default function DownloadButton({
       {showMeta && (
         // min-h reserves one line so the row doesn't grow from empty (prerender) to
         // count+version once the releases fetch lands, which would shift the hero.
-        <div className="mt-5 min-h-5 font-mono text-xs text-faint">
+        <div className="mt-4 min-h-5 font-mono text-xs text-faint">
           {!ready && !settled ? (
             // The fetch is still in flight — a pulse placeholder, not the
             // "unavailable" copy, which is reserved for a fetch that came back empty.

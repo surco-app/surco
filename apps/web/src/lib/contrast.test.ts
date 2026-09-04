@@ -52,8 +52,8 @@ describe('body text contrast (WCAG 1.4.3 AA)', () => {
   // to 3.80:1 and lands it back on the very colour index.css records as failing AA. Small
   // mono text carrying a data-loss warning is the last thing that should be faded.
   it('does not fade the overwrite warning below AA', () => {
-    const safety = app.match(/className="([^"]*)"[^>]*>\s*\{t\('home\.closeSafety'\)\}/)
-    expect(safety, 'closeSafety paragraph not found').not.toBeNull()
+    const safety = app.match(/className="([^"]*)"[^>]*>\s*<b[^>]*>\{t\('home\.closeSafeLead'\)\}/)
+    expect(safety, 'closeSafeRest paragraph not found').not.toBeNull()
     const faded = safety?.[1].match(/text-(faint|muted)\/(\d+)/)
     if (faded) {
       const ratio = contrast(

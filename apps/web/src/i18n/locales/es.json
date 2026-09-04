@@ -833,6 +833,11 @@
       "fakeCaptionPre": "se corta en ",
       "fakeCaptionPost": " · muro de códec"
     },
+    "audioGroup": {
+      "step": "04 · 05 · 06 — se afina",
+      "title": "Y de paso, mejor audio.",
+      "lede": "Tres arreglos que Surco hace sobre la misma pista: quita los chasquidos del vinilo, recorta el silencio del final y las deja todas al mismo volumen."
+    },
     "tag": {
       "step": "02 · se etiqueta",
       "title": "Las etiquetas, de Discogs, en un clic.",
@@ -858,7 +863,8 @@
       "hearing": "Oyendo la reparada",
       "original": "↔ la original",
       "next": "Siguiente clic →",
-      "clickCount": "{{count}} clics"
+      "clickCount": "{{count}} clics",
+      "short": "Los encuentra, los marca sobre la onda y los quita. Puedes comparar con el original mientras suena."
     },
     "trim": {
       "step": "05 · se ajusta",
@@ -870,14 +876,16 @@
       "magnet": "imán · enganchado al último golpe",
       "clipping": "14 picos en 0 dBFS · clipping del máster",
       "seeking": "buscando el último golpe…",
-      "trimmed": "−{{seconds}} s al final"
+      "trimmed": "−{{seconds}} s al final",
+      "short": "El corte se engancha solo al último golpe. Al milisegundo, con escucha a cada lado."
     },
     "normalize": {
       "step": "06 · se nivela",
       "title": "Todas al mismo volumen.",
       "lede": "Cada pista viene con el volumen que le puso su máster, y en cabina se nota al encadenar. Surco las iguala todas al mismo nivel con los presets de streaming, club o broadcast, y te dice antes de tocar nada cuánto va a cambiar cada una.",
       "pill": "Streaming −14",
-      "target": "objetivo · {{target}} LUFS · ganancia constante, sin comprimir"
+      "target": "objetivo · {{target}} LUFS · ganancia constante, sin comprimir",
+      "short": "Presets de streaming, club o broadcast, y te dice cuánto va a cambiar cada una antes de tocar nada."
     },
     "batch": {
       "step": "07 · sale",
@@ -898,20 +906,30 @@
     "closeTitle": "Todo esto, en una ventana.",
     "closeNote": "Sin nube, sin límites y sin nada que registrar. Se actualiza solo.",
     "closeSafety": "Tus originales no se tocan: al cambiar de formato, la copia va a una carpeta aparte. Solo reescribe el fichero si reexportas al mismo formato, que es como actualiza las etiquetas sin recodificar. Notarizado por Apple.",
+    "closeDirect": "Descarga directa",
+    "closeSafeLead": "Tus originales no se tocan.",
+    "closeSafeRest": "Al cambiar de formato, la copia va a una carpeta aparte. Solo reescribe el fichero si reexportas al mismo formato, que es como actualiza las etiquetas sin recodificar. Notarizado por Apple.",
     "allFeatures": "Ver todo lo que hace →",
     "worksWith": "Funciona con",
+    "heroLede": "Lo que hacías saltando entre cuatro o cinco apps, Surco lo hace en una.",
     "anchors": {
       "tag": {
         "title": "Todos los metadatos, en un clic",
-        "note": "Discogs, Bandcamp y Deezer. Artista, sello, año, BPM y carátula."
+        "note": "Discogs, Bandcamp y Deezer. Artista, sello, año, BPM y carátula.",
+        "lead": "Todos los metadatos, en un clic.",
+        "rest": "Discogs, Bandcamp y Deezer."
       },
       "audio": {
         "title": "Y de paso, mejor audio",
-        "note": "Caza los FLAC que salieron de un MP3, quita silencios, clics de vinilo y nivela el volumen."
+        "note": "Caza los FLAC que salieron de un MP3, quita silencios, clics de vinilo y nivela el volumen.",
+        "lead": "Y de paso, mejor audio.",
+        "rest": "Caza los FLAC que salieron de un MP3."
       },
       "export": {
         "title": "Y aparecen en tu programa",
-        "note": "Apple Music, Engine DJ, rekordbox, Traktor o Serato. Sin importar nada."
+        "note": "Apple Music, Engine DJ, rekordbox, Traktor o Serato. Sin importar nada.",
+        "lead": "Y aparecen en tu programa.",
+        "rest": "Apple Music, Engine DJ, rekordbox."
       }
     }
   }
