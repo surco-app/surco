@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.93",
+    "date": "September 4, 2026",
+    "title": "Declared bits get verified too",
+    "items": [
+      {
+        "text": "A file declaring 24 bits is no longer taken at its container's word: Surco decodes the track and checks which bytes actually carry signal. 16-bit audio padded into a 24-bit shell gives itself away (the low 8 bits are zero in every sample, arithmetic proof rather than statistics) and gets its own badge; a real 24-bit file earns its line with the measurement in front.",
+        "in": "0.93.0"
+      },
+      {
+        "text": "With the output bit depth on \"same as source\", a file with proven padding is written as true 16-bit. The spare bits are zeros, so dropping them loses nothing and needs no dither.",
+        "in": "0.93.0"
+      },
+      {
+        "text": "The output sample rate gains a \"Corrected\" mode: only tracks Surco has measured as upsampled from 44.1 kHz are rewritten at 44.1; genuine and unverifiable files come out untouched. The \"On convert\" card announces on the track itself what will happen and why, before anything is touched.",
+        "in": "0.93.0"
+      },
+      {
+        "text": "The same song can no longer grade \"Lossy source\" in its 44.1 kHz copy and \"Good quality\" in the 48 kHz one: the second knee detector read the cut one band below where the music ends, and it only runs on 44.1 files. Found thanks to a user with twin copies of one track.",
+        "in": "0.93.0"
+      }
+    ]
+  },
+  {
     "version": "0.92",
     "date": "September 3, 2026",
     "title": "The sample rate always gets an answer",
