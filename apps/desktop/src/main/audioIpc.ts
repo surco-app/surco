@@ -7,6 +7,7 @@ import { cachedAnalysis, peekAnalysis } from './analysisCache'
 import { analysisCancels, isAbortError } from './analysisCancel'
 import { analysisLimiter } from './analysisLimiter'
 import {
+  analyzeBitsUsage,
   analyzeCutoff,
   analyzeShelf,
   buildSpectrum,
@@ -63,7 +64,7 @@ function cancellable<T>(
 // and the audio:cached-batch handler so the two can never drift onto different keys for
 // the same family — a batch peek under a stale namespace would silently show as a
 // permanent miss instead of the warm hit the live handler already wrote.
-const SPECTROGRAM_NAMESPACE = 'spectrogram-mono-v22'
+const SPECTROGRAM_NAMESPACE = 'spectrogram-mono-v23'
 const LOUDNESS_NAMESPACE = 'loudness'
 const CLICKS_NAMESPACE = 'clickcount-v2'
 const PROPERTIES_NAMESPACE = 'properties'
@@ -180,6 +181,8 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
                     analysisLimiter.run(() => analyzeCutoff(i, sr, signal), priority, signal),
                   shelf: (i, sr) =>
                     analysisLimiter.run(() => analyzeShelf(i, sr, signal), priority, signal),
+                  bits: (i) =>
+                    analysisLimiter.run(() => analyzeBitsUsage(i, signal), priority, signal),
                 })
                 // This producer only runs on a cache miss (disk cache hits return above, and
                 // the renderer's React Query cache dedups repeats), so bumping here counts

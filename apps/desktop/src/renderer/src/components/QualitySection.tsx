@@ -2,7 +2,7 @@ import { ImageDown, TriangleAlert } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { NormalizeConfig } from '../../../shared/types'
+import type { NormalizeConfig, OutputSampleRate } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useSpectrogram } from '../hooks/useSpectrogram'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
@@ -61,6 +61,9 @@ interface Props {
   onToggle: () => void
   onShowLoudnessHelp: () => void
   showHints?: boolean
+  // The output sample-rate policy, read so the 'corrected' mode can announce on
+  // the verdict itself what the next conversion will do to THIS file.
+  outputSampleRate?: OutputSampleRate
 }
 
 // The audio-quality section: spectrogram with its lossless-cutoff verdict, and the
@@ -76,6 +79,7 @@ export function QualitySection({
   onToggle,
   onShowLoudnessHelp,
   showHints = true,
+  outputSampleRate = 'source',
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { reportError } = useToast()
@@ -297,6 +301,11 @@ export function QualitySection({
                 {tr(transcoded ? 'editor.qualityTranscode' : qualityBadge[verdict].label)}
               </SectionPill>
             )}
+            {spectrum?.bitsUsage === 'padded16' && (
+              <SectionPill tone="danger" testid="quality-bits-pill">
+                {tr('editor.qualityBitsPill')}
+              </SectionPill>
+            )}
           </div>
         }
       />
@@ -364,6 +373,54 @@ export function QualitySection({
                     {tr('editor.qualityResolutionUnknown')}
                   </p>
                 ) : null}
+                {/* The bit-depth verdict, argued the arithmetic way: which bytes
+                    actually carry signal. Padding is a finding, so its proof always
+                    shows and only the didactic lines ride the hints toggle; a
+                    confirmed real depth is reassurance and shows only with hints. */}
+                {spectrum.bitsUsage === 'padded16' ? (
+                  <div
+                    data-testid="quality-bits-padded"
+                    className="mt-2 border-l-2 pl-2.5 text-xs"
+                    style={{ borderColor: 'var(--color-danger)' }}
+                  >
+                    <p className="text-fg-dim">{tr('editor.qualityBitsPadded')}</p>
+                    {showHints && (
+                      <>
+                        <p className="mt-1 text-fg-muted">{tr('editor.qualityBitsPaddedWhy')}</p>
+                        <p className="mt-1 text-fg-muted">{tr('editor.qualityBitsPaddedNote')}</p>
+                      </>
+                    )}
+                  </div>
+                ) : spectrum.bitsUsage === 'full' && showHints ? (
+                  <p data-testid="quality-bits-full" className="mt-2 text-xs text-fg-dim">
+                    {tr('editor.qualityBitsFull', { pct: spectrum.bitsLowPct ?? 0 })}
+                  </p>
+                ) : null}
+                {/* The corrected-rate plan card: what the policy will do to THIS
+                    file, said before it happens and beside the verdict that
+                    decided it. Same visual family as the normalize and trim plans,
+                    and hints-gated like both of them. */}
+                {showHints &&
+                  outputSampleRate === 'corrected' &&
+                  spectrum.resolution === 'upsampled' && (
+                    <div
+                      data-testid="quality-convert-plan"
+                      className="mt-3 rounded-lg border border-[var(--color-line)] border-l-[3px] border-l-[var(--color-accent)] bg-[var(--color-field)] px-3 py-2.5"
+                    >
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
+                        {tr('editor.qualityConvertHead')}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-fg tabular-nums">
+                        {tr('editor.qualityConvertRate', {
+                          from: `${spectrum.sampleRateHz / 1000} kHz`,
+                          to: '44.1 kHz',
+                        })}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-fg-muted">
+                        {tr('editor.qualityConvertRateSub')}
+                      </p>
+                    </div>
+                  )}
               </>
             ) : null)}
           {showLoudness &&

@@ -861,6 +861,10 @@ export async function planConversion(
   normalize = false,
   quality: Partial<ConversionQuality> = {},
   forceReencode = false,
+  // Injected so plan-level tests run without a real decode; conversions use the
+  // real probe. A probe failure reads as "not padded": the plan then keeps the
+  // declared width, which is the pre-probe behaviour.
+  bitsProbe: typeof analyzeBitsUsage = analyzeBitsUsage,
 ): Promise<ConversionPlan> {
   const q = { ...DEFAULT_QUALITY, ...quality }
   const copyOk = !normalize && !forceReencode
@@ -872,7 +876,10 @@ export async function planConversion(
   // Output rate flag, present only when the pinned rate differs from the source's —
   // resampling a file already at the target rate would be pure quality-neutral churn.
   const pinnedRate = async (): Promise<number | undefined> => {
-    if (q.sampleRate === 'source') return undefined
+    // 'corrected' is resolved to a concrete rate before planning, by the caller
+    // that can afford the measurement (convertAudio). If the raw policy value
+    // ever reaches this planner, doing nothing beats Number('corrected') = NaN.
+    if (q.sampleRate === 'source' || q.sampleRate === 'corrected') return undefined
     const target = Number(q.sampleRate)
     return Number((await probeOnce()).sampleRate) === target ? undefined : target
   }
@@ -899,12 +906,25 @@ export async function planConversion(
     Pick<ConversionPlan, 'sampleRateHz' | 'dither'> & { depth: SampleDepth }
   > => {
     const src = sourceDepth(await probeOnce())
-    const depth = targetDepth(src, q.bitDepth)
+    // "Same as source" means the width the audio really has, not the container's
+    // claim: a proven 16-in-24 padding is written as true 16-bit. The dropped
+    // bits are all zero, so the truncation is lossless and earns no dither on
+    // its own; a float pipeline, a normalize pass or a resample still does.
+    const padded =
+      q.bitDepth === 'source' &&
+      !src.float &&
+      src.bits > 16 &&
+      (await bitsProbe(input).catch(() => null))?.usage === 'padded16'
+    const depth = padded ? { float: false, bits: 16 } : targetDepth(src, q.bitDepth)
     const rate = await pinnedRate()
     const dither =
       depth.bits === 16 &&
       !depth.float &&
-      (normalize || src.float || src.floatPipeline || src.bits > 16 || rate !== undefined)
+      (normalize ||
+        src.float ||
+        src.floatPipeline ||
+        (src.bits > 16 && !padded) ||
+        rate !== undefined)
     return {
       ...(rate ? { sampleRateHz: rate } : {}),
       ...(dither ? { dither: true } : {}),
@@ -1280,8 +1300,27 @@ export async function convertAudio(
   // loudnorm emits 192 kHz; pass the rate the filter should resample back to — the
   // pinned output rate when the settings set one, else the source's own rate.
   // Only probed for the loudnorm path — peak mode's volume filter keeps the rate.
+  // 'corrected' resolves here, once, where the measurement can be afforded: to
+  // 44.1 kHz when this file's own probes prove a 44.1-to-48/96 upsample, and to
+  // 'source' (no resample) for anything genuine, unverifiable or already 44.1.
+  // Downstream (the normalize filter and the planner) only ever sees concrete
+  // values, so the policy string can never reach a Number() as NaN.
+  const resolvedQuality =
+    quality?.sampleRate === 'corrected'
+      ? {
+          ...quality,
+          sampleRate: ((await measureResolution(
+            input,
+            Number((await probeOnce(input)).sampleRate) || 0,
+          )) === 'upsampled'
+            ? '44100'
+            : 'source') as ConversionQuality['sampleRate'],
+        }
+      : quality
   const pinnedRateHz =
-    quality?.sampleRate && quality.sampleRate !== 'source' ? Number(quality.sampleRate) : undefined
+    resolvedQuality?.sampleRate && resolvedQuality.sampleRate !== 'source'
+      ? Number(resolvedQuality.sampleRate)
+      : undefined
   const sampleRate =
     normalize?.mode === 'loudness'
       ? (pinnedRateHz ?? (Number((await probeOnce(input)).sampleRate) || undefined))
@@ -1300,7 +1339,7 @@ export async function convertAudio(
     format,
     probeOnce,
     normalizing || declickAf !== undefined || trimAf !== undefined,
-    quality,
+    resolvedQuality,
     forceReencode ?? false,
   )
   const { codec, dither, ext } = plan
@@ -1885,6 +1924,101 @@ export async function analyzeCutoff(
 // unique to the integrated-loudness and true-peak rows; "LRA:" matches the
 // range value but not "LRA low/high:" (no colon right after "LRA"). A -inf
 // reading (silence) becomes -Infinity so the UI shows "−∞" instead of NaN.
+// The convert-time face of the resolution verdict: just the bands the decision
+// needs (the 9-11 kHz plateau reference and the two probes around the 22.05 kHz
+// wall), one astats pass instead of the full spectrum analysis. Same detectors,
+// same thresholds, so the corrected-rate policy can never disagree with the
+// verdict the editor shows.
+export async function measureResolution(
+  input: string,
+  sampleRateHz: number,
+  signal?: AbortSignal,
+): Promise<Resolution> {
+  if (sampleRateHz / 2 < UPSAMPLE_MIN_NYQUIST_HZ) return 'native'
+  const plateauFreqs = [9000, 10000, 11000]
+  const specs: BandSpec[] = [
+    ...plateauFreqs.map((freqHz) => ({ freqHz, widthHz: BAND_WIDTH_HZ })),
+    ...[UPSAMPLE_PROBE_BELOW_HZ, UPSAMPLE_PROBE_ABOVE_HZ].map((freqHz) => ({
+      freqHz,
+      widthHz: FINE_BAND_WIDTH_HZ,
+    })),
+  ]
+  const durationSec = (await probeDuration(input, signal)) ?? 0
+  const rms = await measureBands(input, specs, sampleRateHz, durationSec, signal)
+  const bands = plateauFreqs.map((freqHz) => ({
+    freqHz,
+    rmsDb: rms.get(`${freqHz}x${BAND_WIDTH_HZ}`) ?? -Infinity,
+  }))
+  return detectResolution(
+    sampleRateHz,
+    rms.get(`${UPSAMPLE_PROBE_BELOW_HZ}x${FINE_BAND_WIDTH_HZ}`) ?? -Infinity,
+    rms.get(`${UPSAMPLE_PROBE_ABOVE_HZ}x${FINE_BAND_WIDTH_HZ}`) ?? -Infinity,
+    plateauDb(bands),
+  )
+}
+
+// One minute of decoded samples is plenty: the measured separation is total
+// (padding reads exactly 0% low-byte use, every real 24-bit source 99.5%+).
+const BITS_SCAN_SECONDS = 60
+// Below this many non-silent samples the scan saw mostly digital silence and
+// makes no claim; silence has zero in EVERY byte and proves nothing.
+const BITS_MIN_CONTENT_SAMPLES = 100_000
+// The verdict bands, wide apart on purpose: under this share of used low bytes
+// the padding is proven, above BITS_FULL_MIN_PCT the depth is real, and the
+// (never observed) middle stays an honest null.
+const BITS_PADDED_MAX_PCT = 0.01
+const BITS_FULL_MIN_PCT = 50
+
+// The exact bit-depth check: 16-bit audio padded into a 24-bit container leaves
+// the lowest byte of every sample at zero, while any genuine 24-bit pipeline
+// (interpolation, dither, analog noise) fills it. Only integer 24-bit
+// declarations qualify: lossy codecs and float PCM have no fixed width to
+// verify. Channels are decoded as they are; a downmix would blend low bytes
+// into false signal, and a resample would synthesize them.
+export async function analyzeBitsUsage(
+  input: string,
+  signal?: AbortSignal,
+): Promise<{ usage: 'full' | 'padded16'; lowBytePct: number } | null> {
+  const probed = await probeAudio(input)
+  if (probed.bitsPerRawSample !== 24 || probed.sampleFmt.includes('flt')) return null
+  const args = [
+    '-hide_banner',
+    '-loglevel',
+    'error',
+    ...forcedInputArgs(input),
+    '-i',
+    input,
+    '-t',
+    String(BITS_SCAN_SECONDS),
+    '-c:a',
+    'pcm_s24le',
+    '-f',
+    's24le',
+    '-',
+  ]
+  const { stdout } = await run(ffmpegPath, args, {
+    encoding: 'buffer',
+    maxBuffer: 1024 * 1024 * 96,
+    timeout: ANALYSIS_TIMEOUT_MS,
+    signal,
+  })
+  const buf = stdout as unknown as Buffer
+  const n = Math.floor(buf.length / 3)
+  let content = 0
+  let lowUsed = 0
+  for (let i = 0; i < n; i++) {
+    const o = i * 3
+    if (buf[o] === 0 && buf[o + 1] === 0 && buf[o + 2] === 0) continue
+    content++
+    if (buf[o] !== 0) lowUsed++
+  }
+  if (content < BITS_MIN_CONTENT_SAMPLES) return null
+  const lowBytePct = Number(((lowUsed / content) * 100).toFixed(1))
+  if (lowBytePct <= BITS_PADDED_MAX_PCT) return { usage: 'padded16', lowBytePct }
+  if (lowBytePct >= BITS_FULL_MIN_PCT) return { usage: 'full', lowBytePct }
+  return null
+}
+
 export function parseLoudness(
   stderr: string,
 ): Pick<LoudnessResult, 'integratedLufs' | 'truePeakDb' | 'lra'> | null {
@@ -2197,6 +2331,7 @@ interface SpectrumDeps {
     input: string,
     sampleRateHz: number,
   ) => Promise<{ shelfCutoffHz: number | null; kneeCutoffHz: number | null }>
+  bits: (input: string) => Promise<{ usage: 'full' | 'padded16'; lowBytePct: number } | null>
 }
 
 interface SpectrumBuild {
@@ -2224,6 +2359,8 @@ interface SpectrumBuild {
   // True when the shelf probe (not the codec pass) produced the processed
   // verdict; the caption then describes the dead-flat top octave it found.
   flatShelf?: boolean
+  bitsUsage?: 'full' | 'padded16'
+  bitsLowPct?: number
   cutoffError?: unknown
   shelfError?: unknown
 }
@@ -2237,10 +2374,11 @@ interface SpectrumBuild {
 // log instead of swallowing it.
 export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<SpectrumBuild> {
   const sampleRateHz = Number((await deps.probe(input)).sampleRate) || 0
-  const [imageR, cutoffR, shelfR] = await Promise.allSettled([
+  const [imageR, cutoffR, shelfR, bitsR] = await Promise.allSettled([
     deps.spectrogram(input, sampleRateHz),
     deps.cutoff(input, sampleRateHz),
     deps.shelf(input, sampleRateHz),
+    deps.bits(input),
   ])
   if (imageR.status === 'rejected') throw imageR.reason
   const cutoff = cutoffR.status === 'fulfilled' ? cutoffR.value : null
@@ -2285,6 +2423,8 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
     teethToHz: cutoff?.teethToHz,
     humpPeakHz: cutoff?.humpPeakHz,
     flatShelf: cutoff?.processed !== true && shelfCutoffHz !== null ? true : undefined,
+    bitsUsage: bitsR.status === 'fulfilled' ? (bitsR.value?.usage ?? undefined) : undefined,
+    bitsLowPct: bitsR.status === 'fulfilled' ? (bitsR.value?.lowBytePct ?? undefined) : undefined,
     cutoffError: cutoffR.status === 'rejected' ? cutoffR.reason : undefined,
     shelfError: shelfR.status === 'rejected' ? shelfR.reason : undefined,
   }

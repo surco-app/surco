@@ -69,7 +69,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
 
         <SettingsField label={tr('settings.sampleRate')} hint={tr('settings.sampleRateHint')}>
           <SegmentedControl
-            options={['source', '44100', '48000'] as const}
+            options={['source', '44100', '48000', 'corrected'] as const}
             value={synced.outputSampleRate}
             onChange={(id) => patch('outputSampleRate', id)}
             testidPrefix="settings-sample-rate"

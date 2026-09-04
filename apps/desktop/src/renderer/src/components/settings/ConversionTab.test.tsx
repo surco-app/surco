@@ -109,6 +109,14 @@ describe('ConversionTab MP3 quality', () => {
     expect(patch).toHaveBeenCalledWith('outputSampleRate', '44100')
   })
 
+  // The corrected policy: only files Surco itself measured as upsampled get
+  // written back at 44.1; everything genuine or unverified keeps its rate.
+  it('offers the corrected sample-rate policy and stages it', () => {
+    const patch = renderTab({ outputFormat: 'flac' })
+    fireEvent.click(screen.getByTestId('settings-sample-rate-corrected'))
+    expect(patch).toHaveBeenCalledWith('outputSampleRate', 'corrected')
+  })
+
   it('shows the FLAC compression control only while FLAC is the format', () => {
     renderTab()
     expect(screen.queryByTestId('settings-flac-compression-8')).toBeNull()
