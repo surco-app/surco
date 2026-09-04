@@ -25,9 +25,12 @@ function Field({
   caret?: boolean
 }) {
   const value = accent === 'green' ? 'text-green' : accent === 'red' ? 'text-red' : 'text-fg/90'
+  // The label sits above the box on a phone and beside it from `sm` up. Pinned to the
+  // side at every width it took 64px off a 342px column and pushed every value right,
+  // so the form read as right-aligned on the one screen where it had least room.
   return (
-    <div className="flex items-center gap-3">
-      <span className="w-16 shrink-0 text-right text-[10px] text-muted">{label}</span>
+    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+      <span className="text-[10px] text-muted sm:w-16 sm:shrink-0 sm:text-right">{label}</span>
       <div
         className={`min-w-0 flex-1 rounded border bg-bg/60 px-2 py-1 transition-colors duration-500 ${
           accent === 'green' ? 'border-green/45' : 'border-line'

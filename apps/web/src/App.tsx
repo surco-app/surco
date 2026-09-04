@@ -123,8 +123,11 @@ export default function App() {
             {/* The two ways in, side by side. They used to be stacked with five other lines
                 between and below them — button, Intel link, count, note, command, warning —
                 all at a similar weight, so the actual choice the visitor makes was buried. */}
+            {/* min-w-0 on both cards: a grid item's default `min-width: auto` sizes it to
+                its widest child, so the download meta and the brew command held the cards
+                at 513px inside a 342px column and the page clipped them off the right. */}
             <div className="mx-auto mt-10 grid max-w-3xl gap-5 sm:grid-cols-2">
-              <div className="inset-shadow-edge rounded-2xl border border-blue/30 bg-gradient-to-b from-blue/[0.07] to-transparent p-6">
+              <div className="inset-shadow-edge min-w-0 rounded-2xl border border-blue/30 bg-gradient-to-b from-blue/[0.07] to-transparent p-5 sm:p-6">
                 <p className="font-mono text-xs tracking-wider text-faint uppercase">
                   {t('home.closeDirect')}
                 </p>
@@ -132,7 +135,7 @@ export default function App() {
               </div>
               <BrewCommand
                 location="home-closing"
-                className="inset-shadow-edge rounded-2xl border border-line bg-surface2/40 p-6"
+                className="inset-shadow-edge min-w-0 rounded-2xl border border-line bg-surface2/40 p-5 sm:p-6"
               />
             </div>
 
