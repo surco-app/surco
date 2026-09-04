@@ -81,6 +81,10 @@
           {
             "t": "Tú eliges dónde cae",
             "d": "Una carpeta, junto al original, Apple Music o Engine DJ."
+          },
+          {
+            "t": "Frecuencia corregida",
+            "d": "El modo «Corregido» reescribe a 44.1 solo las pistas medidas como upsampleadas; lo genuino y lo dudoso sale intacto. Y la profundidad «igual que el origen» escribe la anchura real: el relleno probado de 16-en-24 sale como 16 bits, sin pérdidas."
           }
         ]
       },
@@ -183,6 +187,10 @@
           {
             "t": "Lo que ya tienes",
             "d": "Avisa si la pista está en tu Apple Music o Engine DJ y filtra las que te faltan."
+          },
+          {
+            "t": "Los bits, comprobados",
+            "d": "Un 24 bits declarado se verifica contra sus propias muestras: el relleno de 16 bits se delata con los 8 bits bajos a cero en todas, prueba aritmética. Lo real se gana su frase con la medida delante."
           }
         ]
       },
