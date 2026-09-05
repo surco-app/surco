@@ -5,6 +5,10 @@
     "title": "Declared bits get verified too",
     "items": [
       {
+        "text": "The bits check no longer goes quiet when it cannot make a call: a 24-bit file whose scan gives no clean reading (a mostly silent minute, for example) says so out loud, so it never looks like a file the check skipped.",
+        "in": "0.93.1"
+      },
+      {
         "text": "A file declaring 24 bits is no longer taken at its container's word: Surco decodes the track and checks which bytes actually carry signal. 16-bit audio padded into a 24-bit shell gives itself away (the low 8 bits are zero in every sample, arithmetic proof rather than statistics) and gets its own badge; a real 24-bit file earns its line with the measurement in front.",
         "in": "0.93.0"
       },
