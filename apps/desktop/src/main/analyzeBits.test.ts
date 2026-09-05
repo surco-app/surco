@@ -16,6 +16,7 @@ const src16 = join(dir, 'src16.flac')
 const padded24 = join(dir, 'padded24.flac')
 const true24 = join(dir, 'true24.flac')
 const lossy = join(dir, 'lossy.mp3')
+const silent24 = join(dir, 'silent24.flac')
 
 beforeAll(() => {
   // A 16-bit source, the same audio padded into a 24-bit FLAC (zero low bits by
@@ -73,6 +74,20 @@ beforeAll(() => {
     'libmp3lame',
     lossy,
   ])
+  execFileSync(FF, [
+    '-y',
+    '-v',
+    'error',
+    '-f',
+    'lavfi',
+    '-i',
+    'anullsrc=d=70',
+    '-c:a',
+    'flac',
+    '-sample_fmt',
+    's32',
+    silent24,
+  ])
 }, 60000)
 
 describe('analyzeBitsUsage', () => {
@@ -86,6 +101,14 @@ describe('analyzeBitsUsage', () => {
     const res = await analyzeBitsUsage(true24)
     expect(res?.usage).toBe('full')
     expect(res?.lowBytePct).toBeGreaterThan(50)
+  }, 30000)
+
+  // An eligible file the probe cannot judge must SAY so: silence is what made
+  // the pre-0.92 resolution verdict indistinguishable from "never analysed",
+  // and a user asked exactly this question about the bits line's absence.
+  it('answers unknown, out loud, for a 24-bit file whose scan is all silence', async () => {
+    const res = await analyzeBitsUsage(silent24)
+    expect(res?.usage).toBe('unknown')
   }, 30000)
 
   it('makes no claim about files that declare 16 bits', async () => {

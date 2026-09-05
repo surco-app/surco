@@ -395,6 +395,10 @@ export function QualitySection({
                   <p data-testid="quality-bits-full" className="mt-2 text-xs text-fg-dim">
                     {tr('editor.qualityBitsFull', { pct: spectrum.bitsLowPct ?? 0 })}
                   </p>
+                ) : spectrum.bitsUsage === 'unknown' && showHints ? (
+                  <p data-testid="quality-bits-unknown" className="mt-2 text-xs text-fg-dim">
+                    {tr('editor.qualityBitsUnknown')}
+                  </p>
                 ) : null}
                 {/* The corrected-rate plan card: what the policy will do to THIS
                     file, said before it happens and beside the verdict that

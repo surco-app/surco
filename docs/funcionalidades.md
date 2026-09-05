@@ -335,14 +335,16 @@ muestras (`analyzeBitsUsage`, `ffmpeg.ts:1978`): se decodifica un minuto a
 se cuenta cuántas muestras con contenido usan el byte bajo. La separación medida
 es total: el relleno 16→24 da exactamente 0% y cualquier cadena real de 24 bits
 (interpolación, dither, ruido analógico) da más del 99%; la franja intermedia,
-nunca observada, devuelve un null honesto (`ffmpeg.ts:1962-1970`). Solo aplica a
-declaraciones enteras de 24 bits: MP3 y float no tienen anchura fija que
+nunca observada, y un escaneo sin contenido (silencio digital) responden
+«unknown» en voz alta, para que un fichero elegible sin lectura limpia nunca se
+confunda con uno al que el check ni aplica (`ffmpeg.ts:1962-1970`). Solo aplica
+a declaraciones enteras de 24 bits: MP3 y float no tienen anchura fija que
 verificar.
 
 En la UI: etiqueta «Padded depth» junto al badge de calidad, nota con la prueba
 aritmética (las líneas didácticas obedecen el toggle de explicaciones) y la
-línea positiva «los 24 bits declarados son reales: N%» solo con las
-explicaciones activas (claves `qualityBits*`). El resultado viaja en el análisis
+línea positiva «los 24 bits declarados son reales: N%» y la de «no se pudo
+verificar» solo con las explicaciones activas (claves `qualityBits*`). El resultado viaja en el análisis
 cacheado (namespace v23) y alimenta la profundidad «origen» del convert (§2).
 
 ### 4.8 Lo que NO detecta

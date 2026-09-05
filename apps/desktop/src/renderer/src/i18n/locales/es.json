@@ -363,6 +363,7 @@
     "qualityBitsPaddedWhy": "La interpolación, el dither, cualquier cadena real de 24 bits llena esos bits; todo a cero es prueba aritmética, no estadística.",
     "qualityBitsPaddedNote": "Al convertir con profundidad “Igual que el origen” se escriben 16 bits reales; quitar el relleno es sin pérdidas.",
     "qualityBitsFull": "Los 24 bits declarados son reales: el {{pct}}% de las muestras usa el byte más bajo.",
+    "qualityBitsUnknown": "La profundidad de 24 bits declarada no se pudo verificar: el minuto escaneado no dio una lectura clara en ningún sentido.",
     "qualityConvertHead": "Al convertir",
     "qualityConvertRate": "{{from}} → {{to}}",
     "qualityConvertRateSub": "La frecuencia de salida está en “Corregido” y el muro de este fichero está medido en 22.05 kHz, así que la copia se escribe a la frecuencia que el audio tiene de verdad. No se pierde nada musical por encima.",

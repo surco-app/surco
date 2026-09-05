@@ -363,6 +363,7 @@
     "qualityBitsPaddedWhy": "L'interpolation, le dither, toute vraie chaîne 24 bits remplit ces bits ; tout à zéro est une preuve arithmétique, pas une statistique.",
     "qualityBitsPaddedNote": "Convertir avec la profondeur « Comme la source » écrit du vrai 16 bits ; retirer le remplissage est sans perte.",
     "qualityBitsFull": "Les 24 bits déclarés sont réels : {{pct}}% des échantillons utilisent l'octet le plus bas.",
+    "qualityBitsUnknown": "La profondeur de 24 bits déclarée n'a pas pu être vérifiée : la minute analysée n'a donné de lecture nette dans aucun sens.",
     "qualityConvertHead": "À la conversion",
     "qualityConvertRate": "{{from}} → {{to}}",
     "qualityConvertRateSub": "La fréquence de sortie est sur « Corrigé » et le mur de ce fichier est mesuré à 22,05 kHz : la copie est écrite à la fréquence que l'audio a vraiment. Rien de musical au-dessus n'est perdu.",

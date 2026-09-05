@@ -363,6 +363,7 @@
     "qualityBitsPaddedWhy": "Interpolation, dither, any real 24-bit pipeline fills those bits; all-zero is arithmetic proof, not statistics.",
     "qualityBitsPaddedNote": "Converting with bit depth “Same as source” writes true 16-bit; dropping the padding is lossless.",
     "qualityBitsFull": "The declared 24-bit depth is real: {{pct}}% of samples use the lowest byte.",
+    "qualityBitsUnknown": "The declared 24-bit depth could not be verified: the scanned minute gave no clean reading either way.",
     "qualityConvertHead": "On convert",
     "qualityConvertRate": "{{from}} → {{to}}",
     "qualityConvertRateSub": "Sample rate is set to “Corrected” and this file's wall is measured at 22.05 kHz, so the copy is written at the rate the audio really has. Nothing musical above it is lost.",

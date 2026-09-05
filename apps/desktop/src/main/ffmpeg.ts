@@ -1965,7 +1965,9 @@ const BITS_SCAN_SECONDS = 60
 const BITS_MIN_CONTENT_SAMPLES = 100_000
 // The verdict bands, wide apart on purpose: under this share of used low bytes
 // the padding is proven, above BITS_FULL_MIN_PCT the depth is real, and the
-// (never observed) middle stays an honest null.
+// (never observed) middle answers 'unknown' out loud — silence here would be
+// indistinguishable from a file the probe never qualified for, the exact
+// ambiguity the resolution verdict already learned to avoid.
 const BITS_PADDED_MAX_PCT = 0.01
 const BITS_FULL_MIN_PCT = 50
 
@@ -1978,7 +1980,7 @@ const BITS_FULL_MIN_PCT = 50
 export async function analyzeBitsUsage(
   input: string,
   signal?: AbortSignal,
-): Promise<{ usage: 'full' | 'padded16'; lowBytePct: number } | null> {
+): Promise<{ usage: 'full' | 'padded16' | 'unknown'; lowBytePct?: number } | null> {
   const probed = await probeAudio(input)
   if (probed.bitsPerRawSample !== 24 || probed.sampleFmt.includes('flt')) return null
   const args = [
@@ -2012,11 +2014,13 @@ export async function analyzeBitsUsage(
     content++
     if (buf[o] !== 0) lowUsed++
   }
-  if (content < BITS_MIN_CONTENT_SAMPLES) return null
+  // The file qualified but the scan cannot judge it: say so instead of the
+  // silence a 16-bit file gets. Null stays reserved for "nothing to verify".
+  if (content < BITS_MIN_CONTENT_SAMPLES) return { usage: 'unknown' }
   const lowBytePct = Number(((lowUsed / content) * 100).toFixed(1))
   if (lowBytePct <= BITS_PADDED_MAX_PCT) return { usage: 'padded16', lowBytePct }
   if (lowBytePct >= BITS_FULL_MIN_PCT) return { usage: 'full', lowBytePct }
-  return null
+  return { usage: 'unknown', lowBytePct }
 }
 
 export function parseLoudness(
@@ -2331,7 +2335,9 @@ interface SpectrumDeps {
     input: string,
     sampleRateHz: number,
   ) => Promise<{ shelfCutoffHz: number | null; kneeCutoffHz: number | null }>
-  bits: (input: string) => Promise<{ usage: 'full' | 'padded16'; lowBytePct: number } | null>
+  bits: (
+    input: string,
+  ) => Promise<{ usage: 'full' | 'padded16' | 'unknown'; lowBytePct?: number } | null>
 }
 
 interface SpectrumBuild {
@@ -2359,7 +2365,7 @@ interface SpectrumBuild {
   // True when the shelf probe (not the codec pass) produced the processed
   // verdict; the caption then describes the dead-flat top octave it found.
   flatShelf?: boolean
-  bitsUsage?: 'full' | 'padded16'
+  bitsUsage?: 'full' | 'padded16' | 'unknown'
   bitsLowPct?: number
   cutoffError?: unknown
   shelfError?: unknown

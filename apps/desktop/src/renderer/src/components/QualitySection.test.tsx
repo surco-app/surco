@@ -747,6 +747,18 @@ describe('bit depth verdict and corrected-rate plan', () => {
     expect(screen.queryByTestId('quality-bits-full')).not.toBeInTheDocument()
   })
 
+  it('says the depth could not be verified instead of staying silent', async () => {
+    renderSection({ ...base, bitsUsage: 'unknown' }, '/m/a.flac')
+    const note = await screen.findByTestId('quality-bits-unknown')
+    expect(note).toHaveTextContent(i18n.t('editor.qualityBitsUnknown'))
+  })
+
+  it('keeps the could-not-verify line quiet when hints are off', async () => {
+    renderSection({ ...base, bitsUsage: 'unknown' }, '/m/a.flac', false)
+    await screen.findByTestId('quality-badge')
+    expect(screen.queryByTestId('quality-bits-unknown')).not.toBeInTheDocument()
+  })
+
   it('says nothing about bits when a cached analysis has no verdict', async () => {
     renderSection({ ...base }, '/m/a.flac')
     await screen.findByTestId('quality-badge')
