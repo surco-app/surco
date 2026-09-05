@@ -5,6 +5,10 @@
     "title": "Los bits declarados también se verifican",
     "items": [
       {
+        "text": "El check de bits ya no se calla cuando no puede afirmar: un 24 bits al que el escaneo no le da una lectura clara (un minuto casi todo silencio, por ejemplo) lo dice en voz alta, para que no se confunda con un fichero al que la comprobación ni aplica.",
+        "in": "0.93.1"
+      },
+      {
         "text": "Un fichero que declara 24 bits ya no se cree por su envase: Surco decodifica la pista y comprueba qué bytes llevan señal. El audio de 16 bits rellenado en un contenedor de 24 se delata solo (los 8 bits bajos a cero en todas las muestras, prueba aritmética, no estadística) y sale señalado con su propia etiqueta; un 24 bits real se gana su frase con la medida delante.",
         "in": "0.93.0"
       },
