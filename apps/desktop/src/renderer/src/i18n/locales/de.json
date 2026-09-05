@@ -363,6 +363,7 @@
     "qualityBitsPaddedWhy": "Interpolation, Dither, jede echte 24-Bit-Kette füllt diese Bits; alles auf null ist arithmetischer Beweis, keine Statistik.",
     "qualityBitsPaddedNote": "Beim Konvertieren mit Bittiefe „Wie Quelle“ werden echte 16 Bit geschrieben; das Entfernen der Füllung ist verlustfrei.",
     "qualityBitsFull": "Die deklarierten 24 Bit sind echt: {{pct}}% der Samples nutzen das unterste Byte.",
+    "qualityBitsUnknown": "Die deklarierten 24 Bit ließen sich nicht überprüfen: die gescannte Minute ergab in keine Richtung eine klare Lesung.",
     "qualityConvertHead": "Beim Konvertieren",
     "qualityConvertRate": "{{from}} → {{to}}",
     "qualityConvertRateSub": "Die Ausgaberate steht auf „Korrigiert“ und die Wand dieser Datei ist bei 22,05 kHz gemessen, also wird die Kopie mit der Rate geschrieben, die das Audio wirklich hat. Darüber geht nichts Musikalisches verloren.",

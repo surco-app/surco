@@ -755,9 +755,12 @@ export interface SpectrumResult {
   // The bit-depth verdict for lossless files declaring 24 bits: 'full' when the
   // lowest byte carries signal (a real 24-bit pipeline fills it), 'padded16'
   // when it is zero in every content sample, which is arithmetic proof of
-  // 16-bit audio in a 24-bit container. Absent when not applicable (lossy,
-  // 16-bit, float) or on analyses cached before the probe existed.
-  bitsUsage?: 'full' | 'padded16'
+  // 16-bit audio in a 24-bit container, and 'unknown' when the file qualifies
+  // but the scan could not make a clean call (a silence-dominated minute, or a
+  // reading between the two clear bands) — said out loud so it never looks like
+  // a file the probe skipped. Absent when not applicable (lossy, 16-bit, float)
+  // or on analyses cached before the probe existed.
+  bitsUsage?: 'full' | 'padded16' | 'unknown'
   // Share of content samples whose lowest byte is non-zero, 0-100.
   bitsLowPct?: number
 }
