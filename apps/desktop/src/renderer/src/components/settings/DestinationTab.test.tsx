@@ -411,4 +411,17 @@ describe('DestinationTab Traktor collection', () => {
     fireEvent.change(input, { target: { value: '-30' } })
     expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '-30')
   })
+
+  // Once the box is editable by hand, the sign is the thing the user cannot guess: the
+  // question only covers the two presets, and typing a figure means choosing a direction.
+  // The hint has to name both, and say what the adjustment does NOT touch — a DJ whose
+  // loops changed length would rightly never trust the setting again.
+  it('explains both directions of the adjustment in the hint', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '-51')
+
+    const hint = screen.getByText(i18n.t('settings.traktorCueOffsetHint'))
+    expect(hint.textContent).toMatch(/negative/i)
+    expect(hint.textContent).toMatch(/positive/i)
+    expect(hint.textContent).toMatch(/loops/i)
+  })
 })
