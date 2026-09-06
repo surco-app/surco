@@ -125,7 +125,10 @@ export default function App() {
           <Walkthrough />
         </div>
 
-        <section className="mx-auto max-w-6xl px-6 py-20 sm:py-28">
+        {/* pb is smaller than pt: the footer brings its own py-14, and the two
+            together left about 150px of empty background between the last link on
+            the page and the first line of the footer. */}
+        <section className="mx-auto max-w-6xl px-6 pt-20 pb-12 sm:pt-28 sm:pb-16">
           <SectionView location="home-closing" />
           <Reveal>
             <div className="text-center">
