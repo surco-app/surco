@@ -5,6 +5,7 @@ import DownloadButton from './DownloadButton'
 import Faq from './Faq'
 import Footer from './Footer'
 import Header from './Header'
+import HeroApp from './HeroApp'
 import Icon, { type GlyphName } from './Icon'
 import InstallSection from './InstallSection'
 import Kicker from './Kicker'
@@ -59,9 +60,20 @@ export default function Features() {
               {t('features.title')}
             </h1>
           </Reveal>
+          {/* The page used to go from this title straight into twenty bullets, with no
+              picture of the thing being described until the walkthrough far below. The
+              window says what kind of program this is faster than the list can, and it
+              is the home's own asset, already cached for anyone arriving from there.
+              No video here: on this page the still does the job and the loop would be
+              a second copy of a megabyte for a decoration. */}
+          <Reveal eager delay={120}>
+            <div className="mt-10">
+              <HeroApp />
+            </div>
+          </Reveal>
         </section>
 
-        <section id="funciones" className="scroll-mt-24 pb-20">
+        <section id="funciones" className="scroll-mt-24 pt-6 pb-20">
           <div className="grid gap-12 sm:grid-cols-2">
             {featureGroups.map((g, i) => (
               <Reveal key={g.title} delay={(i % 2) * 90}>
