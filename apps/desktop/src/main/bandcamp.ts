@@ -1,7 +1,7 @@
 import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
 import { activity } from './activity'
 import { bandcampLimiter } from './bandcampLimiter'
-import { createLookupCacheStore } from './lookupCacheStore'
+import { cacheIfUsable, createLookupCacheStore } from './lookupCacheStore'
 import { isBlockedFetchUrl } from './navigation'
 import { buildSearchCandidates } from './searchQuery'
 
@@ -73,7 +73,7 @@ async function searchOnce(text: string, priority?: SearchPriority): Promise<Sear
   const results = (data.auto?.results ?? [])
     .map(mapResult)
     .filter((r): r is SearchResult => r !== undefined)
-  cacheStore.setSearch(key, results)
+  cacheIfUsable(cacheStore, key, results)
   return results
 }
 

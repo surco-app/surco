@@ -93,6 +93,22 @@ describe('search', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
+  // An empty result is the one answer this client cannot tell apart from a failure: a
+  // rate limit answered with an empty body, a 200 whose shape drifted, or a genuine miss
+  // all arrive as []. Pinning it meant the query never went back to the network — and
+  // since the cache is on disk, not even after a relaunch, leaving the track permanently
+  // unmatchable with no way for the user to force a retry.
+  it('retries the network after a search that came back empty', async () => {
+    mockFetch([])
+    await search('nothing here', 'tok')
+    const second = mockFetch([{ id: 9 }])
+
+    const results = await search('nothing here', 'tok')
+
+    expect(second, 'the empty answer was pinned and never re-fetched').toHaveBeenCalledTimes(1)
+    expect(results).toHaveLength(1)
+  })
+
   // The rate limiter peeks this to let a cached repeat through without spending a token —
   // a cache hit makes no network call, so it must not be paced. Keyed like the cache itself.
   it('reports a query as cached only once it has been fetched, normalizing the key', async () => {

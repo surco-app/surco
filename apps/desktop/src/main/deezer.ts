@@ -3,7 +3,7 @@ import type { Release, SearchHints, SearchPriority, SearchResult } from '../shar
 import { activity } from './activity'
 import { deezerLimiter } from './deezerLimiter'
 import { REQUEST_TIMEOUT_MS, USER_AGENT } from './http'
-import { createLookupCacheStore } from './lookupCacheStore'
+import { cacheIfUsable, createLookupCacheStore } from './lookupCacheStore'
 import { buildSearchCandidates } from './searchQuery'
 
 const BASE = 'https://api.deezer.com'
@@ -95,7 +95,7 @@ async function searchOnce(text: string, priority?: SearchPriority): Promise<Sear
     priority,
   )
   const results = groupByAlbum(data.data ?? [])
-  cacheStore.setSearch(key, results)
+  cacheIfUsable(cacheStore, key, results)
   return results
 }
 
@@ -103,6 +103,11 @@ async function searchOnce(text: string, priority?: SearchPriority): Promise<Sear
 // its own `isrc:` prefix while text searches use `q:` — the two families are namespaced
 // so an ISRC key and a literal text query can never collide. A miss (Deezer's code-800
 // body has no album) caches as empty and reads back as such.
+//
+// Deliberately keeps setSearch rather than the cacheIfUsable the text search above uses:
+// an ISRC is an exact identifier, so "Deezer does not have this recording" is a stable
+// fact worth remembering, not the ambiguous empty a fuzzy text query returns. The reason
+// that one must not be pinned is that it cannot be told apart from a failure.
 async function trackByIsrc(
   isrc: string,
   priority?: SearchPriority,
