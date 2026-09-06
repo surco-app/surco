@@ -4,7 +4,7 @@ import type { Release, SearchHints, SearchPriority, SearchResult } from '../shar
 import { activity } from './activity'
 import { discogsLimiterFor } from './discogsLimiter'
 import { REQUEST_TIMEOUT_MS, USER_AGENT } from './http'
-import { createLookupCacheStore } from './lookupCacheStore'
+import { cacheIfUsable, createLookupCacheStore } from './lookupCacheStore'
 import { buildSearchCandidates } from './searchQuery'
 
 const BASE = 'https://api.discogs.com'
@@ -126,7 +126,7 @@ async function runSearch(
   // Discogs' JSON carries no provider tag; stamp it here so the normalized result
   // identifies its source for the pill and release routing downstream.
   const results: SearchResult[] = (data.results ?? []).map((r) => ({ ...r, provider: 'discogs' }))
-  cacheStore.setSearch(key, results)
+  cacheIfUsable(cacheStore, key, results)
   return results
 }
 
