@@ -1,5 +1,60 @@
 [
   {
+    "version": "0.94",
+    "date": "6 de septiembre de 2026",
+    "title": "Cada pista se convierte con lo que tú le pusiste",
+    "items": [
+      {
+        "text": "Los diales de normalización y declick vuelven a ser de cada pista en el lote. El editor los deja puestos fila a fila, pero la conversión leía un solo valor para toda la tanda: si ponías una pista a -18 y otra a -7, las dos salían a -7, y un vinilo rasposo con el declick fuerte salía sin declick. De paso vuelve el aviso de re-codificar un MP3 con pérdidas, que se saltaba en las pistas que llevaban su propio ajuste.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "Surco comprueba que el fichero convertido llega hasta el final antes de darlo por bueno. Un MP3 cortado a medias declara la misma duración que el entero, así que ni la cabecera ni un error de decodificación lo delataban: ahora se compara lo que promete con lo que de verdad suena, y la copia truncada se caza en lugar de sustituir al original como si nada.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "Los cues llevables se pueden desplazar desde Ajustes, en el idioma del que pincha: dices si quieren caer antes o después y cuánto, no milisegundos a ciegas, con un ejemplo dibujado sobre la rejilla que se mueve mientras lo ajustas.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "Un AIFF guardado como .aif ya no pierde los cues al convertir a FLAC. Surco solo reconocía la grafía larga .aiff, y con la corta se iba a buscar los puntos donde un AIFF nunca los ha tenido: se perdían todos los hot cues y la rejilla, en una conversión que además decía haber ido bien.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "La carátula nueva se ve en Traktor sin trucos. En vez de borrar la referencia a la imagen, Surco reescribe las miniaturas que Traktor tiene cacheadas, que es lo único que le hace redibujar la portada.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "Al tocar la colección de Traktor, Surco toca lo mínimo: los cues vuelven al sitio exacto que ocupaban dentro de la entrada, en vez de subir por delante del tempo y del resto de lo que Traktor había escrito. Y si no puede descartar que Traktor esté abierto, no escribe: antes, ante la duda, escribía igual.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "El filtro de clipping ya no aparece vacío al reabrir una biblioteca ya analizada. La marca de clipping se leía del análisis de onda, que no siempre está cargado, cuando en realidad viaja en el escaneo: había que volver a tocar pista por pista para que apareciera.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "El contador de clicks deja de tragarse la mitad de una ráfaga. La ventana que junta clicks pegados se re-armaba con cada cruce, encadenándose hasta décimas de segundo: una tanda de crujidos de un vinilo sucio se contaba como \"1 click\", con una sola marca a la que saltar. Medido sobre 25 pistas reales, el recuento solo puede subir.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "Una búsqueda de metadatos que vuelve vacía ya no se queda pegada. Un límite de peticiones y un \"no lo tengo\" llegan igual, así que guardarlo dejaba la pista sin match para siempre, ni relanzando Surco. Ahora se vuelve a preguntar la próxima vez.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "Con la ganancia por canal y el quitado de DC marcados a la vez, la ganancia se calcula ya sobre el audio centrado: se medía sobre la señal desviada y la pista acababa muy por debajo del techo prometido.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "Un MP3 sin cabecera Xing ya no descoloca los cues al convertir: se compensa el retardo que mete el codificador en vez de darlo por cero.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "Una biblioteca de Apple Music vacía se lee como cero pistas, no como un error.",
+        "in": "0.94.0"
+      }
+    ]
+  },
+  {
     "version": "0.93",
     "date": "4 de septiembre de 2026",
     "title": "Los bits declarados también se verifican",

@@ -1,5 +1,60 @@
 [
   {
+    "version": "0.94",
+    "date": "September 6, 2026",
+    "title": "Every track converts with the dials you gave it",
+    "items": [
+      {
+        "text": "Normalize and declick are per track again in a batch. The editor stages them row by row, but the conversion read a single value for the whole run: set one track to -18 and another to -7 and both came out at -7, and a dusty rip dialled to strong declick converted with none. The lossy re-encode warning comes back with it, as it was skipped on any track carrying its own setting.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "Surco checks that the converted file reaches the end before publishing it. A half-written MP3 declares the same duration as the whole one, so neither the header nor a decode error gave it away: now what the file promises is compared against what actually plays, and the truncated copy gets caught instead of quietly replacing the original.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "Carried cue points can be nudged from Settings, in a DJ's own terms: you say whether they should land earlier or later and by how much, not milliseconds in the dark, with an example drawn against the beat grid that moves as you adjust it.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "An AIFF saved as .aif no longer loses its cues converting to FLAC. Surco only recognised the long .aiff spelling, so the short one went looking for the cues where an AIFF has never kept them: every hot cue and the beat grid were dropped, on a conversion that reported success.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "New artwork shows up in Traktor without tricks. Instead of clearing the reference to the image, Surco rewrites the thumbnails Traktor has cached, which is the only thing that makes it redraw the cover.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "When it touches your Traktor collection, Surco touches as little as possible: cues go back exactly where they sat inside the entry rather than jumping ahead of the tempo and everything else Traktor wrote. And if it cannot rule out that Traktor is running, it does not write at all: it used to write anyway when in doubt.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "The clipping filter no longer comes back empty when you reopen an already analysed library. The clipping fact was read from the waveform, which is not always loaded, when it actually rides along with the scan: you had to touch each track again for it to show up.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "The click counter stops swallowing half a burst. The window that merges clicks together re-armed on every crossing, chaining on for tenths of a second: a dirty record's whole run of crackle counted as \"1 click\", with a single mark to jump to. Measured across 25 real tracks, the count can only go up.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "A metadata search that comes back empty no longer sticks. A rate limit and a genuine \"not here\" arrive the same way, so caching it left the track unmatchable forever, not even fixed by relaunching Surco. It now asks again next time.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "With per-channel gain and DC removal both ticked, the gain is now sized on the centred audio: it was measured on the biased signal and the track landed well under the ceiling it was promised.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "An MP3 with no Xing header no longer shifts its cues on conversion: the delay the encoder adds is compensated instead of assumed to be zero.",
+        "in": "0.94.0"
+      },
+      {
+        "text": "An empty Apple Music library reads as zero tracks rather than an error.",
+        "in": "0.94.0"
+      }
+    ]
+  },
+  {
     "version": "0.93",
     "date": "September 4, 2026",
     "title": "Declared bits get verified too",
