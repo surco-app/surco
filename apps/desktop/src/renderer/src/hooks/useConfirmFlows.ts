@@ -12,25 +12,32 @@ import { eligibleForBatch } from '../lib/batch'
 import { deriveTagPatches } from '../lib/deriveTags'
 import type { Destination } from '../lib/destination'
 import { DEFAULT_REQUIRED_FIELDS } from '../lib/fields'
-import { declickForJob, normalizeForJob } from '../lib/reapply'
+import { declickFor, declickForJob, normalizeFor, normalizeForJob } from '../lib/reapply'
 import { hasStagedEdits } from '../lib/sessionEdits'
 import type { TrackItem } from '../types'
 import type { ConfirmModal } from './useOverlays'
 
 // Whether a track's own filters (normalize, trim, declick) will actually reach the
-// job — mirrors processTrack's job.normalize ?? settings.normalize fallback, so a job
-// with no picks of its own (nothing selected) is checked against the same filter the
-// main process will actually run, then normalizeForJob/declickForJob's skip of a
-// filter already baked into an in-place export, so a track that reads its own prior
-// export doesn't trip the warning for work that already happened and won't run again.
+// job — resolved through the same normalizeFor/declickFor precedence the conversion
+// itself uses (the track's own dial, then the batch pick, then the Settings default
+// processTrack falls back to), so a job with no picks of its own is checked against the
+// filter the main process will actually run. Then normalizeForJob/declickForJob's skip
+// of a filter already baked into an in-place export, so a track that reads its own
+// prior export doesn't trip the warning for work that already happened and won't run
+// again. Sharing the resolvers is what keeps this prediction and the conversion from
+// disagreeing: reading only the pick here let a track carrying its own normalization
+// convert in place as a lossy re-encode without the warning that exists to catch it.
 function hasActiveFilters(
   track: TrackItem,
   normalize: NormalizeConfig | undefined,
   declick: DeclickMode | undefined,
   settings: Settings | null,
 ): boolean {
-  const effectiveNormalize = normalizeForJob(track, normalize ?? settings?.normalize)
-  const effectiveDeclick = declickForJob(track, declick ?? settings?.declick)
+  const effectiveNormalize = normalizeForJob(
+    track,
+    normalizeFor(track, normalize, settings?.normalize),
+  )
+  const effectiveDeclick = declickForJob(track, declickFor(track, declick, settings?.declick))
   return (
     (effectiveNormalize !== undefined && effectiveNormalize.mode !== 'none') ||
     (effectiveDeclick !== undefined && effectiveDeclick !== 'off') ||

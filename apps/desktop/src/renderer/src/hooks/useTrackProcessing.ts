@@ -18,7 +18,7 @@ import { DEFAULT_REQUIRED_FIELDS, missingRequired } from '../lib/fields'
 import { sanitizeMeta } from '../lib/hygiene'
 import { cleanIpcError, isFileInUseMessage, mainErrorMessage } from '../lib/ipcError'
 import { renderOutputName } from '../lib/outputName'
-import { declickForJob, normalizeForJob } from '../lib/reapply'
+import { declickFor, declickForJob, normalizeFor, normalizeForJob } from '../lib/reapply'
 import type { TrackItem } from '../types'
 import { useStableCallback } from './useStableCallback'
 
@@ -254,8 +254,8 @@ export function useTrackProcessing({
           clearExtras: track.metaCleared,
           foreignRemoved: track.foreignRemoved,
           format: jobFormat,
-          normalize: normalizeForJob(track, normalizeOverride),
-          declick: declickForJob(track, declickOverride),
+          normalize: normalizeForJob(track, normalizeFor(track, normalizeOverride)),
+          declick: declickForJob(track, declickFor(track, declickOverride)),
           trim: track.trim,
           overwriteOriginal: overwriteOverride ?? destination?.overwriteOriginal,
           addToAppleMusic: destination?.addToAppleMusic,
@@ -285,8 +285,8 @@ export function useTrackProcessing({
           exportedPatch(
             track,
             result,
-            normalizeOverride ?? settings?.normalize,
-            declickOverride ?? settings?.declick,
+            normalizeFor(track, normalizeOverride, settings?.normalize),
+            declickFor(track, declickOverride, settings?.declick),
           ),
         )
         // Every conversion replaces the file at the output path, so probes cached for
