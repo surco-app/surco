@@ -395,6 +395,29 @@ function readTraktorTree(source: string): Uint8Array | null {
   }
 }
 
+// The front cover embedded in a converted file, for rebuilding Traktor's own thumbnail
+// cache (see traktorCoverCache.ts). Read straight off the finished output rather than
+// carried from the conversion: the temp files a conversion works from are unlinked when
+// it ends, long before the batch closes and the collection is written. Falls back to the
+// first attached picture when nothing is tagged as the front cover — a file whose art
+// carries no type is still the art Traktor is showing. Best-effort: an unreadable file
+// or one with no picture comes back null, and the cached thumbnail simply stays as it is.
+export function readEmbeddedCover(file: string): Buffer | null {
+  try {
+    const f = TagFile.createFromPath(file)
+    try {
+      const pictures = f.tag.pictures ?? []
+      if (pictures.length === 0) return null
+      const front = pictures.find((p) => p.type === PictureType.FrontCover) ?? pictures[0]
+      return Buffer.from(front.data.toByteArray())
+    } finally {
+      f.dispose()
+    }
+  } catch {
+    return null
+  }
+}
+
 // The NML sync needs the cue tree of the file that was just converted, not the source —
 // a trim already re-anchored it there. ID3 (MP3/AIFF) and FLAC armor the same tree two
 // different ways, so this decides by what the file actually carries rather than by

@@ -64,7 +64,15 @@ export interface NmlPatch {
   cueTree?: Uint8Array
   bpm?: number
   newFile?: string
-  clearCoverArt?: boolean
+  // Asks for this track's cached thumbnails to be rewritten after the collection is
+  // saved. It does NOT change the ENTRY: the COVERARTID stays exactly as Traktor wrote
+  // it, which is the whole point (see refreshedCoverIds).
+  refreshCoverArt?: boolean
+  // Where the converted file ended up, so the thumbnails can be rendered from the cover
+  // it actually carries. Read at sync time rather than carried as an image: the temp
+  // files a conversion works from are unlinked when it finishes, long before the batch
+  // ends and the collection is written.
+  outputPath?: string
 }
 
 const baseName = (file: string): string => file.replace(/\.[^.]*$/, '')
@@ -122,12 +130,33 @@ function matchPatch(
   return (exact ?? byBase)?.[1]
 }
 
-// Traktor writes COVERARTID only on <INFO>, so the removal is anchored there
-// rather than to a bare `COVERARTID="..."` search — anchoring to the element it
-// actually lives on is what makes stripping the "first occurrence" correct
-// instead of coincidental. Non-global: the schema has exactly one INFO per ENTRY.
-function stripCoverArt(block: string): string {
-  return block.replace(/(<INFO\b[^>]*?)\s*COVERARTID="[^"]*"/, '$1')
+// Traktor writes COVERARTID only on <INFO>, so the read is anchored there rather than
+// to a bare `COVERARTID="..."` search — anchoring to the element it actually lives on is
+// what makes taking the "first occurrence" correct instead of coincidental. Non-global:
+// the schema has exactly one INFO per ENTRY.
+const COVER_ID_RE = /<INFO\b[^>]*?\sCOVERARTID="([^"]*)"/
+
+export interface CoverRefresh {
+  coverId: string
+  file: string
+}
+
+// Each entry whose artwork this patch set refreshes, paired with the converted file its
+// new cover lives in. The id is kept, never stripped: Traktor serves the library's
+// artwork from its own thumbnail cache, so removing the id only asks it to re-read that
+// same stale cache — what actually retires the old picture is overwriting the files
+// under the id it already has (see traktorCoverCache.ts).
+export function refreshedCoverIds(nml: string, patches: NmlPatch[]): CoverRefresh[] {
+  const entries = findEntries(nml)
+  const index = indexPatches(patches)
+  const out: CoverRefresh[] = []
+  for (const entry of entries) {
+    const patch = matchPatch(entry, index)
+    if (!patch?.refreshCoverArt || !patch.outputPath) continue
+    const coverId = nml.slice(entry.start, entry.end).match(COVER_ID_RE)?.[1]
+    if (coverId) out.push({ coverId, file: patch.outputPath })
+  }
+  return out
 }
 
 // CUE_V2 has no children in the schema Traktor itself writes (see cuesToXml),
@@ -192,9 +221,6 @@ function patchEntry(block: string, patch: NmlPatch): string {
     // write invalid XML into the collection.
     const newFile = escapeAttr(patch.newFile)
     out = out.replace(/(<LOCATION\b[^>]*\bFILE)="[^"]*"/, (_m, prefix) => `${prefix}="${newFile}"`)
-  }
-  if (patch.clearCoverArt) {
-    out = stripCoverArt(out)
   }
   if (patch.cueTree) {
     out = replaceCues(out, patch.cueTree, patch.bpm)

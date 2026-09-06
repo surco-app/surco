@@ -37,6 +37,22 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   return { ...real, rename, copyFile }
 })
 
+// The converted files these patches name don't exist on disk — the collection write is
+// what's under test, not TagLib — so the cover read is stubbed to a fixed image, and
+// nativeImage (Electron's, unavailable here) to a rasteriser that records its size.
+vi.mock('./tags', () => ({ readEmbeddedCover: () => Buffer.from('art') }))
+vi.mock('electron', () => ({
+  nativeImage: {
+    createFromBuffer: () => ({
+      isEmpty: () => false,
+      resize: ({ width }: { width: number }) => ({
+        isEmpty: () => false,
+        toPNG: () => Buffer.from(`png:${width}`),
+      }),
+    }),
+  },
+}))
+
 import { syncCollection } from './traktorNmlLibrary'
 import { isTraktorRunning } from './traktorProcess'
 
@@ -240,5 +256,70 @@ describe('syncCollection', () => {
     expect(readFileSync(join(dir, 'collection.nml.surco-2026-07-01T00-00.bak'), 'utf8')).toBe(
       'old dated backup',
     )
+  })
+})
+
+// El reporte del 06/09/2026, reproducido en cinco equipos: tras convertir, Traktor
+// seguía pintando la carátula vieja. Traktor no lee el arte del audio, lo sirve de su
+// propia caché de miniaturas, así que la portada nueva no aparece hasta que esos
+// ficheros la llevan. El COVERARTID se conserva: borrarlo sólo lo mandaría a releer la
+// misma caché rancia.
+describe('syncCollection refreshes the cached artwork', () => {
+  const COVER_NML = `<NML VERSION="19"><COLLECTION ENTRIES="1">
+<ENTRY TITLE="Uno"><INFO COVERARTID="042/ABC"></INFO><LOCATION DIR="/:M/:" FILE="uno.aiff" VOLUME="HD"></LOCATION></ENTRY>
+</COLLECTION></NML>`
+
+  const coverPatch = {
+    volume: 'HD',
+    dir: '/:M/:',
+    file: 'uno.aiff',
+    newFile: 'uno.flac',
+    refreshCoverArt: true,
+    outputPath: '/Music/uno.flac',
+  }
+
+  function seedCache(): string {
+    const cache = join(dir, 'Coverart', '042')
+    mkdirSync(cache, { recursive: true })
+    for (const variant of ['000', '001', '002']) {
+      writeFileSync(join(cache, `ABC${variant}`), 'stale thumbnail')
+    }
+    return cache
+  }
+
+  it('rewrites the cached thumbnails and keeps the id that points at them', async () => {
+    writeFileSync(nmlPath, COVER_NML)
+    const cache = seedCache()
+
+    const result = await syncCollection(nmlPath, [coverPatch])
+
+    expect(result.written).toBe(true)
+    expect(readFileSync(nmlPath, 'utf8')).toContain('COVERARTID="042/ABC"')
+    for (const variant of ['000', '001', '002']) {
+      expect(readFileSync(join(cache, `ABC${variant}`), 'utf8')).not.toBe('stale thumbnail')
+    }
+  })
+
+  // Sin escritura no hay nada que refrescar: la miniatura que Traktor tiene sigue
+  // correspondiendo a la colección que sigue en disco.
+  it('leaves the cache alone when the collection was not written', async () => {
+    writeFileSync(nmlPath, COVER_NML)
+    const cache = seedCache()
+    vi.mocked(isTraktorRunning).mockResolvedValue(true)
+
+    const result = await syncCollection(nmlPath, [coverPatch])
+
+    expect(result.written).toBe(false)
+    expect(readFileSync(join(cache, 'ABC000'), 'utf8')).toBe('stale thumbnail')
+  })
+
+  // Una caché ausente no puede tumbar una sincronización ya escrita: el fichero está
+  // convertido y la colección actualizada.
+  it('still reports the write when there is no cache to refresh', async () => {
+    writeFileSync(nmlPath, COVER_NML)
+
+    const result = await syncCollection(nmlPath, [coverPatch])
+
+    expect(result.written).toBe(true)
   })
 })

@@ -1247,19 +1247,17 @@ function recordConversionPatch(
       newFile: sameDir && outputName !== file ? outputName : undefined,
       cueTree: readCueTree(output) ?? undefined,
       bpm,
-      // Traktor caches artwork by COVERARTID and keeps serving it even after the
-      // file on disk gets a new cover — the same stale-cache mechanism the cue
-      // handling above exists to fix. Any output that ends up WITH artwork needs
-      // that cache dropped, not just one the user picked a new cover for: a
-      // conversion that carried the source's own cover across (-map 0:v?) still
-      // wrote a different file, and the thumbnail Traktor cached belongs to the
-      // old one. Scoping this to a fresh coverPath is what left the reported case
-      // — convert, and Traktor keeps showing the previous artwork — unfixed.
-      // Only an explicit removeCover leaves nothing to re-read. A source that had no
-      // art to begin with still clears the ID: Traktor re-reads and finds nothing,
-      // which is where it already was, and paying that re-read is the cheap side of
-      // the trade — the expensive one is the stale thumbnail this exists to kill.
-      clearCoverArt: keptArtwork || undefined,
+      // Traktor draws the library's artwork from its own thumbnail cache, keyed by
+      // COVERARTID, and keeps serving it after the file on disk gets a new cover — the
+      // same stale-cache mechanism the cue handling above exists to fix. Any output
+      // that ends up WITH artwork needs those thumbnails rewritten, not just one the
+      // user picked a new cover for: a conversion that carried the source's own cover
+      // across (-map 0:v?) still wrote a different file, and the cached thumbnail
+      // belongs to the old one. Scoping this to a fresh coverPath is what left the
+      // reported case — convert, and Traktor keeps showing the previous artwork —
+      // unfixed. Only an explicit removeCover leaves nothing to redraw.
+      refreshCoverArt: keptArtwork || undefined,
+      outputPath: keptArtwork ? output : undefined,
     })
   } catch {
     // Best-effort: see comment above.
