@@ -276,4 +276,50 @@ describe('search with an ISRC hint', () => {
     const results = await search('una cancion alguien', 'high', { isrc: 'XX9999999999' })
     expect(results.map((r) => r.id)).toEqual([900])
   })
+
+  // The text ladder must go back to the network after an empty answer: a rate limit
+  // answered with an empty body, a drifted payload shape and a genuine miss are
+  // indistinguishable here, and this cache is on disk, so pinning one left the track
+  // unmatchable across relaunches with no way for the user to force a retry.
+  //
+  // (The `q:`/`isrc:` key namespacing the test above pins is a different fix for a
+  // different half of the same truthy-[] problem: it stops the two families colliding.
+  // This one stops the ambiguous empty being remembered at all.)
+  it('retries the network after a text search that came back empty', async () => {
+    mockFetch([{ data: [] }])
+    await search('nada de nada xyz', 'high', {})
+
+    const second = mockFetch([
+      {
+        data: [
+          {
+            id: 5,
+            title: 'aparecio',
+            artist: { name: 'Alguien' },
+            album: { id: 55, title: 'album', cover_medium: 'm', cover_xl: 'xl' },
+          },
+        ],
+      },
+    ])
+    const results = await search('nada de nada xyz', 'high', {})
+
+    expect(second, 'el vacío quedó fijado y no se volvió a consultar').toHaveBeenCalled()
+    expect(results.map((r) => r.id)).toEqual([55])
+  })
+
+  // The deliberate exception, pinned so it is not "unified" away later: an ISRC is an
+  // exact identifier, so "Deezer does not have this recording" is a stable fact, not the
+  // ambiguous empty a fuzzy text query returns. It stays cached, and the second lookup
+  // must not spend a request on it.
+  it('keeps caching an unknown ISRC so it is not looked up twice', async () => {
+    mockFetch([{ error: { code: 800 } }, { data: [] }])
+    await search('primera vuelta', 'high', { isrc: 'ZZ1111111111' })
+
+    const second = mockFetch([{ data: [] }])
+    await search('segunda vuelta', 'high', { isrc: 'ZZ1111111111' })
+
+    // Only the text ladder should have gone out; the ISRC came from the cache.
+    const isrcCalls = second.mock.calls.filter(([url]) => String(url).includes('isrc:'))
+    expect(isrcCalls).toHaveLength(0)
+  })
 })
