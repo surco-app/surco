@@ -172,11 +172,9 @@ const LOCATION_END_RE = /<LOCATION\b[^>]*?(?:\/>|>(?:(?!<\/LOCATION>)[\s\S])*<\/
 // CUE_V2 elements are not always one contiguous run — another element can sit
 // between two of them — so a single non-global replace can leave a later run
 // behind, coexisting with the freshly written set. Global removal, then insert
-// the fresh XML at one fixed anchor: right after LOCATION's close, the one
-// element every ENTRY that reaches here is guaranteed to have (matches()
-// requires it). This also covers the entry that had no CUE_V2 at all: nothing
-// to remove, the new cues still land at the same anchor instead of being
-// silently discarded.
+// the fresh XML back where the first one stood, falling back to right after
+// LOCATION's close for an ENTRY that had no CUE_V2 at all, so the new cues still
+// land somewhere instead of being silently discarded.
 //
 // cuesToXml drops TYPE=4 when no usable bpm was passed (see its own comment) —
 // but the removal above is unconditional, so without this guard a track that
@@ -201,14 +199,30 @@ function replaceCues(block: string, tree: Uint8Array, bpm: number | undefined): 
     ? block.match(new RegExp(CUE_V2_RE.source.replace('[^>]*?', '[^>]*?TYPE="4"[^>]*?')))?.[0]
     : undefined
 
-  const withoutCues = block.replace(CUE_V2_RE, '')
   const cuesXml = existingGrid ? existingGrid + newCues : newCues
+  // Where the ENTRY already kept its cues, when it had any. The fixed anchor below is
+  // right after LOCATION, which is the FIRST child of an ENTRY — so using it for a block
+  // that already had cues further down moves them ahead of INFO, TEMPO, LOUDNESS and
+  // everything else Traktor wrote between the two. That turns the tight diff this module
+  // exists to produce (see the file header) into a rewrite of the whole block, on every
+  // entry that gets patched. Reinserting where they were keeps the rest of the ENTRY
+  // byte-identical.
+  const firstCue = block.match(CUE_V2_RE)?.[0]
+  const withoutCues = block.replace(CUE_V2_RE, '')
+  if (firstCue) {
+    // Sliced, not replaced: the surrounding text is the DJ's own document and cuesXml
+    // carries the cue NAMEs they typed, so neither side may be handed to a replacement
+    // that expands $&, $`, $' and $n (a marker named with a dollar sign would splice
+    // document text into the element and write invalid XML into the collection).
+    const at = block.indexOf(firstCue)
+    return withoutCues.slice(0, at) + cuesXml + withoutCues.slice(at)
+  }
+  // No cues on this ENTRY: land them after LOCATION, the one element every entry that
+  // reaches here is guaranteed to have (matches() requires it), rather than discarding
+  // them for want of an anchor.
   const location = withoutCues.match(LOCATION_END_RE)?.[0]
   if (!location) return withoutCues
-  // Replacement as a function, not a string: cuesXml carries cue NAMEs the DJ typed,
-  // and a string replacement expands $&, $`, $' and $n inside it — a marker named
-  // with a dollar sign would splice surrounding document text into the element and
-  // write invalid XML into the collection. The callback form never interprets them.
+  // Replacement as a function, not a string, for the reason stated above.
   return withoutCues.replace(location, () => `${location}${cuesXml}`)
 }
 
