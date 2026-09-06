@@ -6,9 +6,9 @@
     "htmlLang": "en",
     "ogLocale": "en_US",
     "inLanguage": "en",
-    "title": "Surco — Get your DJ tracks ready in seconds",
-    "description": "Surco automates DJ track prep: convert to lossless AIFF, WAV, FLAC or ALAC (or a lighter MP3), edit tags and metadata from Discogs, Bandcamp and Deezer, and send to Apple Music or your Engine DJ (Denon) library in seconds — and catch re-encoded MP3s disguised as lossless.",
-    "ogTitle": "Surco — Get your DJ tracks ready in seconds",
+    "title": "Surco: Get your DJ tracks ready in seconds",
+    "description": "Surco automates DJ track prep: convert to lossless AIFF, WAV, FLAC or ALAC (or a lighter MP3), edit tags and metadata from Discogs, Bandcamp and Deezer, and send to Apple Music or your Engine DJ (Denon) library in seconds. And catch re-encoded MP3s disguised as lossless.",
+    "ogTitle": "Surco: Get your DJ tracks ready in seconds",
     "ogDescription": "Less prepping, more playing: convert to lossless AIFF, WAV, FLAC or ALAC (or a lighter MP3), tag from Discogs, Bandcamp and Deezer, and organize in seconds. And catch MP3s disguised as lossless.",
     "jsonLdDescription": "Audio track organizer for DJs: convert to lossless AIFF, WAV, FLAC or ALAC, tag from Discogs, Bandcamp and Deezer, send to Apple Music or Engine DJ (Denon) and analyze the spectrum to detect re-encoded MP3s."
   },
@@ -56,7 +56,7 @@
           },
           {
             "t": "Quality your way",
-            "d": "MP3 bitrate, bit depth and sample rate — or the source's own, which is the default."
+            "d": "MP3 bitrate, bit depth and sample rate, or the source's own, which is the default."
           },
           {
             "t": "No silent widening",
@@ -221,7 +221,7 @@
           },
           {
             "t": "rekordbox, Serato, M3U8",
-            "d": "Bridge files: paths and metadata — Serato's crate, paths only. No cues, no ratings."
+            "d": "Bridge files: paths and metadata. Serato's crate, paths only. No cues, no ratings."
           },
           {
             "t": "Name templates",
@@ -240,7 +240,7 @@
   "shortcuts": {
     "kicker": "Keyboard first",
     "title": "Fly without touching the mouse",
-    "lede": "A command palette and shortcuts for the whole flow — add, tag, analyze and process track after track without leaving the keyboard, and remap any of them.",
+    "lede": "A command palette and shortcuts for the whole flow: add, tag, analyze and process track after track without leaving the keyboard, and remap any of them.",
     "items": [
       "Add files",
       "Process track",
@@ -253,7 +253,7 @@
   "speed": {
     "kicker": "One app, not five",
     "title": "The work of five apps, in one click",
-    "lede": "Converter, Discogs, tag editor and Apple Music: five programs, about five minutes per track — and the tags have to be redone inside Music, cover art included. Surco folds that whole flow into one button.",
+    "lede": "Converter, Discogs, tag editor and Apple Music: five programs, about five minutes per track, and the tags have to be redone inside Music, cover art included. Surco folds that whole flow into one button.",
     "manual": "By hand",
     "manualTime": "~2 h 45 min",
     "manualSteps": [
@@ -329,11 +329,11 @@
       },
       "discogs": {
         "title": "Discogs, Bandcamp & Deezer match",
-        "desc": "Find the exact release on Discogs, Bandcamp or Deezer — from club pressings to chart singles — and pick the right version."
+        "desc": "Find the exact release on Discogs, Bandcamp or Deezer, from club pressings to chart singles, and pick the right version."
       },
       "metadata": {
         "title": "Metadata editor",
-        "desc": "Title, artist, album, genre and artwork — edit it all in one place."
+        "desc": "Title, artist, album, genre and artwork: edit it all in one place."
       },
       "quality": {
         "title": "Audio quality",
@@ -346,7 +346,7 @@
     }
   },
   "footer": {
-    "tagline": "Convert, tag and organize your DJ tracks — ready to play in seconds.",
+    "tagline": "Convert, tag and organize your DJ tracks, ready to play in seconds.",
     "product": "Product",
     "contactHeading": "Contact",
     "copyright": "© 2026 Surco · getsurco.app",
@@ -375,11 +375,11 @@
       },
       {
         "q": "Does it touch my original files?",
-        "a": "It depends on whether the format changes. Convert to a different format and the original is left alone, with the copy going to a separate folder (Music/Surco). Re-export to the same format and Surco rewrites that file where it is — which is what lets it update the tags without re-encoding the audio. With \"Overwrite original\" on, it always rewrites."
+        "a": "It depends on whether the format changes. Convert to a different format and the original is left alone, with the copy going to a separate folder (Music/Surco). Re-export to the same format and Surco rewrites that file where it is, which is what lets it update the tags without re-encoding the audio. With \"Overwrite original\" on, it always rewrites."
       },
       {
         "q": "Does it keep cue points?",
-        "a": "It depends on the target format. They survive when you convert between MP3 and AIFF, and when any of the three — MP3, AIFF or FLAC — goes into FLAC: Surco reads the tree Traktor stores inside the file and writes it back in whichever form that format needs. They also survive converting to WAV, and going from FLAC to MP3 or AIFF. Only ALAC loses them, because it has nowhere to keep it. If you trim silence the cues move with it, the beatgrid included — it's re-anchored by phase so the ruler doesn't drift — and anything that can't be re-anchored reliably is dropped rather than left pointing at the wrong beat. Surco warns you before you convert."
+        "a": "It depends on the target format. They survive when you convert between MP3 and AIFF, and when any of the three (MP3, AIFF or FLAC) goes into FLAC: Surco reads the tree Traktor stores inside the file and writes it back in whichever form that format needs. They also survive converting to WAV, and going from FLAC to MP3 or AIFF. Only ALAC loses them, because it has nowhere to keep it. If you trim silence the cues move with it, the beatgrid included (it's re-anchored by phase so the ruler doesn't drift) and anything that can't be re-anchored reliably is dropped rather than left pointing at the wrong beat. Surco warns you before you convert."
       },
       {
         "q": "Can I trim the silence off my rips?",
@@ -387,11 +387,11 @@
       },
       {
         "q": "What about vinyl clicks and pops?",
-        "a": "Surco detects them and interpolates them away as it converts, with four strengths. It marks every click it finds on the waveform so you can jump from one to the next, and it renders the repaired track so you can A/B it against the original while it plays, with no gap in the audio — so you hear whether the repair took the clicks out, and whether it took some of the music with them. It ships off."
+        "a": "Surco detects them and interpolates them away as it converts, with four strengths. It marks every click it finds on the waveform so you can jump from one to the next, and it renders the repaired track so you can A/B it against the original while it plays, with no gap in the audio. So you hear whether the repair took the clicks out, and whether it took some of the music with them. It ships off."
       },
       {
         "q": "Does it work with Denon gear (Engine DJ)?",
-        "a": "Yes. Pick Engine DJ as the destination and every converted track is registered straight into your Engine DJ library — with its cover, rating and a configurable playlist — ready to sync to your players. It also exports collections to rekordbox, Traktor and Serato."
+        "a": "Yes. Pick Engine DJ as the destination and every converted track is registered straight into your Engine DJ library (with its cover, rating and a configurable playlist), ready to sync to your players. It also exports collections to rekordbox, Traktor and Serato."
       },
       {
         "q": "Windows says \"Windows protected your PC\". Is it safe?",
@@ -399,15 +399,15 @@
       },
       {
         "q": "Which formats does it support?",
-        "a": "It converts between lossless AIFF, WAV, FLAC and ALAC and MP3, any to any. The quality is yours to pick: MP3 bitrate (320 down to 128 kbps, or VBR V0/V2), bit depth and sample rate — by default the source's are kept. It also reads M4A, AAC, OGG and OPUS."
+        "a": "It converts between lossless AIFF, WAV, FLAC and ALAC and MP3, any to any. The quality is yours to pick: MP3 bitrate (320 down to 128 kbps, or VBR V0/V2), bit depth and sample rate. By default the source's are kept. It also reads M4A, AAC, OGG and OPUS."
       },
       {
         "q": "What about broken WAV files?",
-        "a": "Old downloads sometimes carry malformed WAV headers that other apps choke on. Surco repairs them on a temporary copy as it reads — your original is never touched — so the track plays, analyzes and converts normally."
+        "a": "Old downloads sometimes carry malformed WAV headers that other apps choke on. Surco repairs them on a temporary copy as it reads (your original is never touched) so the track plays, analyzes and converts normally."
       },
       {
         "q": "What if the app closes mid-session?",
-        "a": "You lose nothing. Surco saves your unapplied edits on its own as you work, and on reopening it offers to restore the session with everything just as you left it — metadata, covers and matches included, even after the machine froze."
+        "a": "You lose nothing. Surco saves your unapplied edits on its own as you work, and on reopening it offers to restore the session with everything just as you left it. Metadata, covers and matches included, even after the machine froze."
       },
       {
         "q": "Which languages is it in?",
@@ -424,15 +424,15 @@
     "cta": "Download for {{os}}",
     "intel": "Intel Mac (2020 or earlier)? Download it here",
     "smartscreen": "When you open the installer, Windows will show “Windows protected your PC”: click “More info”, then “Run anyway”. That’s SmartScreen saying it doesn’t recognise the publisher, not that anything is wrong with the file.",
-    "unavailable": "The download isn't available yet — we're polishing the first version.",
+    "unavailable": "The download isn't available yet, we're polishing the first version.",
     "countSuffix": "downloads and counting"
   },
   "guide": {
-    "metaTitle": "How to use Surco — step-by-step guide",
+    "metaTitle": "How to use Surco: step-by-step guide",
     "metaDescription": "The complete Surco guide: import tracks, tag from Discogs, Bandcamp and Deezer, match a whole release, analyze the spectrum, convert and export to Apple Music, Engine DJ, rekordbox or Traktor.",
     "kicker": "Guide",
     "title": "How to use Surco",
-    "lede": "From dropping your tracks to having them ready to play. This guide walks the whole flow, step by step — no rush, nothing skipped.",
+    "lede": "From dropping your tracks to having them ready to play. This guide walks the whole flow, step by step. No rush, nothing skipped.",
     "tocLabel": "In this guide",
     "shotPlaceholder": "Screenshot coming soon",
     "outroTitle": "Ready to try it",
@@ -446,7 +446,7 @@
           "No account, no subscription. Surco updates itself, so you'll always have the latest version without downloading again, and it shows you what changed the next time you open it after an update."
         ],
         "points": [
-          "Available for macOS (Apple Silicon and Intel, notarized by Apple), Windows and Linux — on Linux as an AppImage —, in five languages.",
+          "Available for macOS (Apple Silicon and Intel, notarized by Apple), Windows and Linux (on Linux as an AppImage), in five languages.",
           "The welcome wizard is just four steps; naming, genres and editor fields wait for you in Settings.",
           "Rushed through it? You can reopen it any time from the Help menu or ⌘K: it starts from your current settings and only changes what you touch.",
           "It ships with the useful things already on: quality analysis on import, and Discogs, Bandcamp and Deezer all searched without configuring anything.",
@@ -459,16 +459,16 @@
         "id": "importar",
         "title": "Add your tracks",
         "body": [
-          "Drag files —or whole folders— onto the Surco window, or click “Add files” (⌘O) to pick them; the picker takes folders too. You can also open an audio file with Surco from Finder or Explorer.",
+          "Drag files (or whole folders) onto the Surco window, or click “Add files” (⌘O) to pick them; the picker takes folders too. You can also open an audio file with Surco from Finder or Explorer.",
           "Surco reads each file's tags, duration and cover art on the fly and shows them in the list instantly. The same file is never added twice."
         ],
         "points": [
           "Formats: WAV, FLAC, AIFF, ALAC, MP3, M4A, AAC, OGG, OPUS and more.",
-          "Drop whole folders: Surco walks them and adds every audio file it finds — and tells you when new files show up in them later.",
+          "Drop whole folders: Surco walks them and adds every audio file it finds, and tells you when new files show up in them later.",
           "Tracks appear as they're found, so a large or network folder starts filling the list right away instead of leaving you on an empty screen.",
           "A live counter and a progress bar show how far along the read is.",
           "A damaged file neither freezes the app nor stops the import: it's flagged and skipped, and a WAV with a broken header is repaired on the fly so you can still play it.",
-          "Closed the app? On launch it offers to reopen your last session — with your unapplied edits intact, even after an unexpected quit."
+          "Closed the app? On launch it offers to reopen your last session, with your unapplied edits intact, even after an unexpected quit."
         ],
         "shot": "importar-en.webp",
         "shotCaption": "Dragging and dropping tracks into the list."
@@ -481,13 +481,13 @@
           "Press Space to preview the selected track in the player, docked in its own bar at the bottom so it never covers your list. Double-click a row to play it, double-click again to stop. Drag the right edge to widen the list, or double-click it to fit the longest track name."
         ],
         "points": [
-          "Quick filters up top: Suspect, Good, Unanalyzed, Unconverted, Auto-matched — by source too —, Duplicates, Clipping, Silence to trim, and what's in (or missing from) your Apple Music or Engine DJ library. Each one appears only when there are tracks to justify it.",
+          "Quick filters up top: Suspect, Good, Unanalyzed, Unconverted, Auto-matched (by source too), Duplicates, Clipping, Silence to trim, and what's in (or missing from) your Apple Music or Engine DJ library. Each one appears only when there are tracks to justify it.",
           "A search box filters the list by text, and you can sort it by name, artist, duration or format, either direction.",
           "Click to select one track; ⌘ (or Ctrl) + click to add several, and Shift + click for a range. Delete removes the selected track, and Surco asks first if you're removing a whole selection.",
-          "Filtering really narrows things down: filter, hit convert, and only what you see gets converted. Same for select all, filling tags, find and replace or analyzing — they never quietly act on the rest of the queue.",
+          "Filtering really narrows things down: filter, hit convert, and only what you see gets converted. Same for select all, filling tags, find and replace or analyzing. They never quietly act on the rest of the queue.",
           "The ✦ icon marks tracks Surco filled in automatically, and an amber dot marks the ones you've edited since converting.",
-          "The player draws the waveform so you can scrub straight to any part —with the unplayed part dimmed and a preview as you hover—, the cover art spins like a record while it plays, and continuous playback chains the list on its own.",
-          "Drag tracks out of Surco —one or several— into any other app without exporting them first.",
+          "The player draws the waveform so you can scrub straight to any part (with the unplayed part dimmed and a preview as you hover), the cover art spins like a record while it plays, and continuous playback chains the list on its own.",
+          "Drag tracks out of Surco, one or several, into any other app without exporting them first.",
           "Lost track of what's playing? A button takes you to it, and the command palette (⌘K) jumps to any track as you type its title or artist."
         ],
         "shot": "lista-en.webp",
@@ -498,19 +498,19 @@
         "title": "Edit the metadata",
         "body": [
           "Select a track and the editor on the right shows every field: title, artist, album, year, genre, label, catalog number, BPM, key, grouping, composer, ISRC, mix, remixer, comment and more. Edit whatever you like and you'll see your saved genres and groupings as one-click suggestions. Enter confirms a field and jumps to the next, so you can fill a whole record without leaving the keyboard.",
-          "Its sections are grouped into three phases —File, Audio and Output— so you can see at a glance whether you're fixing data, cleaning up sound or deciding how the track comes out. Up top you can give it a star rating and manage the cover art: drop one in —straight from your browser, even—, export it, or step between the file's own and the Discogs ones with the arrows. Track named properly but with no tags at all? Hit “Fill from filename” and Surco works out the title and artist."
+          "Its sections are grouped into three phases (File, Audio and Output) so you can see at a glance whether you're fixing data, cleaning up sound or deciding how the track comes out. Up top you can give it a star rating and manage the cover art: drop one in (straight from your browser, even), export it, or step between the file's own and the Discogs ones with the arrows. Track named properly but with no tags at all? Hit “Fill from filename” and Surco works out the title and artist."
         ],
         "points": [
-          "Under BPM and key you'll see what Surco detects from the audio itself — in Camelot or musical notation, your choice in Settings — ready to apply in one click. They're suggestions: nothing is written without you confirming it.",
+          "Under BPM and key you'll see what Surco detects from the audio itself (in Camelot or musical notation, your choice in Settings), ready to apply in one click. They're suggestions: nothing is written without you confirming it.",
           "Only the fields you choose in Settings → Fields are shown, in a single list, in the order you pick.",
           "Required fields turn red if you leave them empty, and when converting a selection the button tells you exactly what's missing.",
           "The cover art shows its real dimensions so you can judge whether it's sharp enough, and clicking it opens it full size, cycling through every image the track has.",
-          "Copy and paste metadata —cover art included— from one track to another from the context menu; ⌘Z undoes the whole thing, up to twenty steps back.",
+          "Copy and paste metadata, cover art included, from one track to another from the context menu; ⌘Z undoes the whole thing, up to twenty steps back.",
           "The { } menu on any text field inserts another field's value right where your cursor is, and switches case: Title Case, lowercase or UPPERCASE.",
-          "One click strips the numbering from a title —“05 Name”, “05. Name”, “05 - Name”— without touching 2 Unlimited or 3 Heads.",
-          "Mystery track? A button searches Google with the filename already filled in —also from the list's context menu—, and a command numbers the selection in list order (1, 2, 3…).",
+          "One click strips the numbering from a title (“05 Name”, “05. Name”, “05 - Name”) without touching 2 Unlimited or 3 Heads.",
+          "Mystery track? A button searches Google with the filename already filled in (also from the list's context menu), and a command numbers the selection in list order (1, 2, 3…).",
           "Drag the divider between results and editor to split the space however suits you; each machine remembers its own.",
-          "The Properties section shows the file's technical details —codec, sample rate, bits, channels, bitrate, path and size— and warns you when the file doesn't match the quality you asked for in Settings, in case you want to reconvert it.",
+          "The Properties section shows the file's technical details (codec, sample rate, bits, channels, bitrate, path and size) and warns you when the file doesn't match the quality you asked for in Settings, in case you want to reconvert it.",
           "Editor sections collapse, reorder and hide to taste in Settings → Editor; collapsed they summarize their state, and any one expands to full screen (Esc to come back)."
         ],
         "shot": "editor-en.webp",
@@ -524,7 +524,7 @@
           "The “Other metadata” section lists them all exactly as they sit in the file, and you remove them one by one or all at once. Changed your mind? Just untick them before converting."
         ],
         "points": [
-          "You see the file's real tags, not just the fields Surco understands — in WAV files too.",
+          "You see the file's real tags, not just the fields Surco understands, in WAV files too.",
           "Delete them individually, or use “Clear all metadata” to leave the track clean, rating and cover art included.",
           "On conversion Surco unifies the variants of the same field and doesn't stamp its own encoder signature, so it adds no new clutter.",
           "Mood and energy tags written by other DJ tools are preserved on conversion."
@@ -537,7 +537,7 @@
         "title": "Check the real quality",
         "body": [
           "Open the quality section and Surco draws the track's spectrum: the frequencies top to bottom across the song. A genuinely lossless file keeps energy all the way up; an MP3 dressed up as a WAV cuts off abruptly and leaves a gap at the top. A dotted line marks where it cuts, and the spectrum shades the dead band so you can see where the sound stops.",
-          "The verdict reads in absolute terms, the way a DJ reads it: reaching about 20 kHz is full quality, 18 to 19.5 kHz is suspect and below 18 kHz is bad — whatever the file's sample rate. Below it, a color-coded readout sums up the levels: integrated LUFS, true peak, dynamics, channel balance, DC offset and noise floor. To analyze the whole queue at once, use the toolbar button or ⌘⇧A.",
+          "The verdict reads in absolute terms, the way a DJ reads it: reaching about 20 kHz is full quality, 18 to 19.5 kHz is suspect and below 18 kHz is bad, whatever the file's sample rate. Below it, a color-coded readout sums up the levels: integrated LUFS, true peak, dynamics, channel balance, DC offset and noise floor. To analyze the whole queue at once, use the toolbar button or ⌘⇧A.",
           "Each track wears its verdict in the list itself, and you can filter by “Suspect”, “Good” or “Unanalyzed” to triage a folder you just dropped in. The pass is worth it: a cutoff you'd never notice on headphones is obvious the moment the track plays on a big system."
         ],
         "points": [
@@ -546,8 +546,8 @@
           "“Reprocessed” is a different warning: it's not that information is missing, it's that someone manufactured highs the file no longer had.",
           "It also catches fake lossless, a FLAC or WAV that's really a repackaged MP3. And any file claiming more than 44.1 kHz always gets an answer about its rate: genuine hi-res, stretched up from 44.1, or an honest \"could not be verified\" when there is nothing up there to measure.",
           "A crosshair over the spectrum reads out the exact frequency under your cursor.",
-          "The loudness section draws the waveform with clipping marked in red, zooms all the way to sample detail, splits the two channels and previews how normalizing will leave it — and once converted, compares before and after side by side or overlaid.",
-          "Save a spectrum report as a PNG —with its verdict and cutoff line— to share when someone asks you about that track.",
+          "The loudness section draws the waveform with clipping marked in red, zooms all the way to sample detail, splits the two channels and previews how normalizing will leave it. And once converted, compares before and after side by side or overlaid.",
+          "Save a spectrum report as a PNG, with its verdict and cutoff line, to share when someone asks you about that track.",
           "With “Analyze quality on import” on, every file you drop is analyzed in full in the background and everything is ready by the time you open the track.",
           "Analysis is cached so it isn't repeated; you can clear the cache in Settings to recompute everything from scratch."
         ],
@@ -560,7 +560,7 @@
         "body": [
           "A vinyl rip carries the needle's clicks and pops baked into the audio. The click repair section detects and interpolates them as it converts, with four levels: off, light, standard and strong. Light is the minimal touch, for delicate material; strong catches the long pops too, at the cost of softening the odd transient.",
           "Before you decide anything, Surco tells you how many audible clicks it estimates the track has, so you know whether it's worth it. It marks every one it finds on the waveform, so a dirty record reads at a glance instead of as a number. A click lasts milliseconds and hunting for it by dragging is hopeless: hit “Next click” to step through them one by one, click a mark to hear that one, or put the cursor wherever you like and press Space to play from there.",
-          "The thing that matters is “Preview the result”: Surco renders the whole repaired track and lets you switch between it and the original while it plays, with no gap in the audio. That instant switch is exactly what's needed — if the repair has eaten the attack of a snare, the difference is subtle, and subtle differences only show up switching on the fly."
+          "The thing that matters is “Preview the result”: Surco renders the whole repaired track and lets you switch between it and the original while it plays, with no gap in the audio. That instant switch is exactly what's needed. If the repair has eaten the attack of a snare, the difference is subtle, and subtle differences only show up switching on the fly."
         ],
         "points": [
           "It ships off: you decide whether the track needs it.",
@@ -595,15 +595,15 @@
         "title": "Tag from Discogs, Bandcamp and Deezer",
         "body": [
           "In the editor, search for the release by name or paste a Discogs release id directly and hit “Search” (or the / key). Surco lists the results with cover art, year, label, catalog number and format, so you can tell the exact pressing apart; expand one to see its tracklist.",
-          "Click the matching track and Surco applies artist, album, year, genre, label, catalog number and cover art in one go — the closest one is flagged “Suggested”. Search works with nothing configured; add your own Discogs token in Settings and you get a higher, private and faster limit.",
-          "After self-released or exclusive material? Turn on Bandcamp too in Settings → Search: its results sit alongside the Discogs ones in the same list, each labelled with its source, and you pick them the same way. Bandcamp needs no account or token. And the commercial stuff — pop, urban, radio hits — that's on neither? That's what Deezer is on by default for: no account or token either, and it covers exactly the catalog Discogs and Bandcamp miss."
+          "Click the matching track and Surco applies artist, album, year, genre, label, catalog number and cover art in one go. The closest one is flagged “Suggested”. Search works with nothing configured; add your own Discogs token in Settings and you get a higher, private and faster limit.",
+          "After self-released or exclusive material? Turn on Bandcamp too in Settings → Search: its results sit alongside the Discogs ones in the same list, each labelled with its source, and you pick them the same way. Bandcamp needs no account or token. And the commercial stuff (pop, urban, radio hits) that's on neither? That's what Deezer is on by default for: no account or token either, and it covers exactly the catalog Discogs and Bandcamp miss."
         ],
         "points": [
           "Search by text or paste a release id if you already know which one it is. If the file already carries one, Surco opens that record directly.",
           "If the first search comes up empty, Surco retries on its own: dropping the DJ prefix, trying the main artist, or searching by catalog number or title alone.",
           "With a token and the option on, Surco auto-matches tracks the moment you import them.",
           "Your own cover art is kept if you already have one; the Discogs one stays as an alternative, and you can have it replace only the low-resolution ones.",
-          "Rip signatures or watermarks dirtying your titles? List them in Settings → Search —“vinyl” and “rip” come as standard— and they're ignored when searching and matching; your tags aren't touched.",
+          "Rip signatures or watermarks dirtying your titles? List them in Settings → Search, “vinyl” and “rip” come as standard, and they're ignored when searching and matching; your tags aren't touched.",
           "With several sources on, a filter narrows the results down to just one, and you can limit the Discogs ones to vinyl, CD, file or cassette.",
           "Pick the release with the arrow keys; a band tells you how many tracks it has before you expand it.",
           "If you already renamed with your own title format, Surco undoes it before searching so your template doesn't leak into the query."
@@ -615,8 +615,8 @@
         "id": "automatch",
         "title": "Auto-match: tagging without touching a thing",
         "body": [
-          "With “Auto-match on import” on in Settings, every file you drop is looked up on its own in the background across the sources you have enabled: Discogs first, with Bandcamp and Deezer as backup. Surco compares title, duration, track number and artist against each candidate, and only applies the metadata for you when the match is reliable — artist, album, year, genre, label and cover art, exactly as if you'd picked it by hand. If the file carries an ISRC in its tags (common on streaming downloads), Surco uses it to pin the exact recording on Deezer, so the original single doesn't get confused with similarly named remixes.",
-          "An identical title isn't enough on its own: something else has to corroborate it —the duration, the artist or the catalog number— because a one-word title exists on dozens of completely unrelated records. When nothing confirms it, the track isn't tagged automatically: it's flagged “to review” with its confidence grade, and you accept it in one step from ⌘K without even opening the editor. With the switch off (that's how it ships) Surco suggests, but never updates on its own."
+          "With “Auto-match on import” on in Settings, every file you drop is looked up on its own in the background across the sources you have enabled: Discogs first, with Bandcamp and Deezer as backup. Surco compares title, duration, track number and artist against each candidate, and only applies the metadata for you when the match is reliable. Artist, album, year, genre, label and cover art, exactly as if you'd picked it by hand. If the file carries an ISRC in its tags (common on streaming downloads), Surco uses it to pin the exact recording on Deezer, so the original single doesn't get confused with similarly named remixes.",
+          "An identical title isn't enough on its own: something else has to corroborate it (the duration, the artist or the catalog number) because a one-word title exists on dozens of completely unrelated records. When nothing confirms it, the track isn't tagged automatically: it's flagged “to review” with its confidence grade, and you accept it in one step from ⌘K without even opening the editor. With the switch off (that's how it ships) Surco suggests, but never updates on its own."
         ],
         "points": [
           "It never overwrites your work: it skips already-matched tracks, keeps your cover art, and running it again only fills the gaps.",
@@ -632,8 +632,8 @@
         "id": "album",
         "title": "Match a whole release",
         "body": [
-          "Imported an album or a multi-track EP? Select them all —⌘ + click one by one, or Shift + click for a range— and the editor switches to multi-track mode: the header reads “Editing N tracks” and the fields you edit apply to the whole selection at once.",
-          "In the Discogs column, search the release just once. Surco loads it and builds a grid: your files on the left, a dropdown with the release's tracklist on the right. It assigns each file to its song by duration —even when they all share the same name— and you reassign by hand any it got wrong. When it looks right, hit “Apply to N” and tag them all at once."
+          "Imported an album or a multi-track EP? Select them all (⌘ + click one by one, or Shift + click for a range) and the editor switches to multi-track mode: the header reads “Editing N tracks” and the fields you edit apply to the whole selection at once.",
+          "In the Discogs column, search the release just once. Surco loads it and builds a grid: your files on the left, a dropdown with the release's tracklist on the right. It assigns each file to its song by duration, even when they all share the same name, and you reassign by hand any it got wrong. When it looks right, hit “Apply to N” and tag them all at once."
         ],
         "points": [
           "“Editing N tracks” header: edit title, artist, album or genre once for all of them.",
@@ -658,7 +658,7 @@
           "The / separator creates subfolders on export.",
           "Optional: trim spaces and zero-pad track numbers (03 instead of 3).",
           "Discogs vinyl positions (A1, B2…) are kept as the track number, in the tags and in the filename.",
-          "Titles have their own format too, collector style: define a pattern like ({trackNumber}) {title} ({year}) and apply it when you want — to one track or the whole selection —, never automatically. Applying it twice doesn't duplicate the prefix, and Surco tells you how many titles changed and which it skipped.",
+          "Titles have their own format too, collector style: define a pattern like ({trackNumber}) {title} ({year}) and apply it when you want (to one track or the whole selection), never automatically. Applying it twice doesn't duplicate the prefix, and Surco tells you how many titles changed and which it skipped.",
           "You can regenerate the filenames of a whole selection from their metadata in one go."
         ],
         "shot": "nombres-en.webp",
@@ -669,17 +669,17 @@
         "title": "Convert the track",
         "body": [
           "The button at the bottom of the editor converts the selected track, and tells you which format it's about to write before you click. The dropdown to its right picks the format: AIFF, WAV, FLAC or ALAC lossless, MP3, or “Same as source”. If the track is already in that format, Surco copies it as-is, instantly, without re-encoding.",
-          "Quality is set in Settings → Conversion: MP3 bitrate (320 down to 128 kbps, or VBR V0/V2), bit depth, sample rate and FLAC compression — by default the original's are kept, with no needless re-encoding. In Settings → Destination you decide where it goes: an output folder, your Apple Music library, your Engine DJ (Denon) library, next to the original — same-format exports take a “(2)” name, the source is untouched — or overwrite the original in place, which Surco confirms with you first. If you want, turn on normalization (loudness or peak, with streaming, club or broadcast presets) to even out the volume. When it's done, “Show file” takes you to the result in Finder or Explorer."
+          "Quality is set in Settings → Conversion: MP3 bitrate (320 down to 128 kbps, or VBR V0/V2), bit depth, sample rate and FLAC compression. By default the original's are kept, with no needless re-encoding. In Settings → Destination you decide where it goes: an output folder, your Apple Music library, your Engine DJ (Denon) library, next to the original (same-format exports take a “(2)” name and the source is untouched), or overwrite the original in place, which Surco confirms with you first. If you want, turn on normalization (loudness or peak, with streaming, club or broadcast presets) to even out the volume. When it's done, “Show file” takes you to the result in Finder or Explorer."
         ],
         "points": [
-          "Formats: AIFF, WAV, FLAC and ALAC (lossless) and MP3 — 320 down to 128 kbps, or VBR V0/V2.",
+          "Formats: AIFF, WAV, FLAC and ALAC (lossless) and MP3. 320 down to 128 kbps, or VBR V0/V2.",
           "Re-exporting to the same format, without touching the audio, keeps Traktor's cue points.",
           "Normalization, trimming and click repair re-encode the audio: Traktor's cues survive across MP3, AIFF, FLAC and WAV in any combination; they're lost only on ALAC, which has nowhere to keep them. They ship off and Surco warns you before converting.",
           "Re-exporting a track onto itself doesn't re-apply the normalization or declick already baked in: changing only the metadata doesn't reprocess the audio, so you never stack gain or lose a generation.",
           "Dropping to 16 bits applies dither; and Surco keeps the original's depth instead of widening it behind your back.",
           "“Keep MP3s as MP3” stops your MP3s bloating for nothing when you export to a lossless format: they stay as they are and only their tags are updated.",
           "You can cancel a conversion midway, and apply the same decision to the rest of the batch at once when a file already exists.",
-          "Once converted, you can send the originals to the trash in a single action — to the trash, never a hard delete."
+          "Once converted, you can send the originals to the trash in a single action. To the trash, never a hard delete."
         ],
         "shot": "convertir-en.webp",
         "shotCaption": "The convert button with its format picker."
@@ -705,14 +705,14 @@
         "title": "Convert every track",
         "body": [
           "When the queue is ready, “Convert all” (⌘⇧Enter) processes every convertible track in one go and skips the ones already done. You'll see the progress in the toolbar and, at the end, a summary of how many were converted, skipped or errored.",
-          "One thing to know: convert all only converts and renames with the metadata the tracks already have — it never goes to Discogs on its own. If you want fresh data first, run “Auto-match” (⌘⇧D) from the toolbar."
+          "One thing to know: convert all only converts and renames with the metadata the tracks already have, it never goes to Discogs on its own. If you want fresh data first, run “Auto-match” (⌘⇧D) from the toolbar."
         ],
         "points": [
           "Processes the whole queue at once; cancel it from the toolbar progress or the command palette.",
           "If you've filtered the list, the batch converts only what you can see.",
           "Conversions run in parallel across your machine's cores; same-format ones are near-instant.",
           "It only uses the current metadata: nothing is downloaded from Discogs during the batch.",
-          "The arrow next to the convert button changes the format and destination for that run only — your defaults stay as they were."
+          "The arrow next to the convert button changes the format and destination for that run only, your defaults stay as they were."
         ],
         "shot": "lote-en.webp",
         "shotCaption": "A batch conversion in progress."
@@ -722,15 +722,15 @@
         "title": "Take it to your decks",
         "body": [
           "Surco doesn't stop at converting: it sends tracks straight into your Apple Music (on macOS) or Engine DJ (Denon) library as it converts them, or exports the queue as a rekordbox (.xml), Traktor (.nml), Serato (.crate) collection or an M3U8 playlist. Exporting lives in the editor, right where conversion ends.",
-          "Tags and cover art travel inside the file itself, so your DJ software reads them with no extra steps. The bridge files are a different matter: they carry the metadata and the paths, but no cue points, no rating and no cover art — each program pulls that from the file or from its own database."
+          "Tags and cover art travel inside the file itself, so your DJ software reads them with no extra steps. The bridge files are a different matter: they carry the metadata and the paths, but no cue points, no rating and no cover art. Each program pulls that from the file or from its own database."
         ],
         "points": [
           "To Apple Music or Engine DJ in one click, during conversion.",
           "Engine DJ also gets the rating and the cover art, and the track lands in the playlist you choose. Cue points and beatgrid don't: Engine analyzes the audio itself on first load.",
           "Engine DJ and Traktor have to be closed to write to their library; Surco offers to close them and backs up before touching anything.",
-          "Surco tells you when a track is already in your library, checking whichever one matches your destination — it's a well-tuned hint, not a guarantee.",
+          "Surco tells you when a track is already in your library, checking whichever one matches your destination. It's a well-tuned hint, not a guarantee.",
           "Edit a track later and Surco updates its Apple Music copy instead of duplicating it, and if an older copy was already there it offers to remove it.",
-          "Key, label, catalog number and remixer don't reach Apple Music —they only live in the file's tags— and FLAC is never sent, because Music can't handle it."
+          "Key, label, catalog number and remixer don't reach Apple Music (they only live in the file's tags) and FLAC is never sent, because Music can't handle it."
         ],
         "shot": "exportar-en.webp",
         "shotCaption": "Sending the track to Apple Music or exporting the collection."
@@ -739,8 +739,8 @@
         "id": "traktor",
         "title": "Make Traktor actually see your changes",
         "body": [
-          "If you play with Traktor you'll know the feeling: you convert a track, the cue points are correctly written inside the file, and Traktor still shows the old ones. It isn't the conversion failing — Traktor doesn't re-read the file: it reads its own database, the collection.nml.",
-          "That's why Surco can update your collection as it converts. You point it at your collection.nml in Settings —Surco proposes the one it finds, and touches nothing until you confirm— and from then on it brings the cues, the grid and the cover art of tracks Traktor already had up to date."
+          "If you play with Traktor you'll know the feeling: you convert a track, the cue points are correctly written inside the file, and Traktor still shows the old ones. It isn't the conversion failing, Traktor doesn't re-read the file: it reads its own database, the collection.nml.",
+          "That's why Surco can update your collection as it converts. You point it at your collection.nml in Settings (Surco proposes the one it finds, and touches nothing until you confirm) and from then on it brings the cues, the grid and the cover art of tracks Traktor already had up to date."
         ],
         "points": [
           "It ships off: until you pick your collection.nml, Surco doesn't write to the collection.",
@@ -756,7 +756,7 @@
         "id": "atajos",
         "title": "Fly with the keyboard",
         "body": [
-          "Surco is built to work without a mouse. The command palette (⌘K) puts everything behind one search box —grouped by topic, accent-insensitive, and learning which ones you use most—, and nearly every action has its shortcut: add files (⌘O), process track (⌘Enter), process all (⌘⇧Enter), analyze quality (⌘⇧A), auto-match (⌘⇧D), search Discogs (/) and arrow keys to move through the list.",
+          "Surco is built to work without a mouse. The command palette (⌘K) puts everything behind one search box (grouped by topic, accent-insensitive, and learning which ones you use most), and nearly every action has its shortcut: add files (⌘O), process track (⌘Enter), process all (⌘⇧Enter), analyze quality (⌘⇧A), auto-match (⌘⇧D), search Discogs (/) and arrow keys to move through the list.",
           "Press ? at any time for the full list, and rebind whichever you like in Settings → Shortcuts. Every action shows its shortcut in its own tooltip, so you pick them up as you go."
         ],
         "points": [
@@ -775,18 +775,18 @@
         "id": "ajustes",
         "title": "Make it yours",
         "body": [
-          "Settings (⌘ ,) holds everything that isn't day-to-day, organized in a sidebar by blocks —Editing, Output and App—: General and Search up top, then Editor, Sections, Fields and Cover art; then Format, Processing, Naming and Destination; and finally Shortcuts and Stats.",
+          "Settings (⌘ ,) holds everything that isn't day-to-day, organized in a sidebar by blocks (Editing, Output and App): General and Search up top, then Editor, Sections, Fields and Cover art; then Format, Processing, Naming and Destination; and finally Shortcuts and Stats.",
           "Set it up once and Surco respects your decisions on every track. And if you want to take it to another machine, you can export your whole configuration to a file and import it back whenever you need it."
         ],
         "points": [
           "Define recurring genres and groupings so they show up as suggestions.",
           "Choose which fields to see and which to require, and reorder them by dragging or hit “Auto-organize” to put them in a sensible order in one click.",
-          "The Stats tab tracks your lifetime numbers —tracks loaded, converted, analyzed, found on each source…— and generates an image ready to share.",
+          "The Stats tab tracks your lifetime numbers (tracks loaded, converted, analyzed, found on each source…) and generates an image ready to share.",
           "Under Cover art, small covers can be upscaled to your minimum size, cropped square, and a macOS option makes Finder show the cover art of converted FLACs.",
           "Under Search you can limit Discogs results to vinyl, CD, file or cassette, and decide how many to see.",
           "In Editor you can turn the inline explanations off once you know them by heart, and back on whenever you like.",
           "Analysis is cached so it isn't repeated; you can clear it, and open the error log, from Settings.",
-          "Export your configuration as a backup, or point the config folder at iCloud Drive or Dropbox to share your preferences across Macs — your Discogs token travels with it, so you don't have to set it up again on each machine. None of this goes through any Surco server: no account, no cloud, no telemetry.",
+          "Export your configuration as a backup, or point the config folder at iCloud Drive or Dropbox to share your preferences across Macs. Your Discogs token travels with it, so you don't have to set it up again on each machine. None of this goes through any Surco server: no account, no cloud, no telemetry.",
           "Turn on your system's reduced motion setting and the animations simplify rather than disappear."
         ],
         "shot": "ajustes-en.webp",
@@ -795,7 +795,7 @@
     ]
   },
   "changelog": {
-    "metaTitle": "Surco changelog — What's new in each release",
+    "metaTitle": "Surco changelog, What's new in each release",
     "metaDescription": "What's new in each Surco release: Discogs auto-match, rekordbox and Traktor export, loudness analysis, multi-track editing and more.",
     "kicker": "What's new",
     "title": "What's new",
@@ -834,7 +834,7 @@
       "fakeCaptionPost": " · codec wall"
     },
     "audioGroup": {
-      "step": "04 · 05 · 06 — the polish",
+      "step": "04 · 05 · 06 · the polish",
       "title": "And better audio while it does.",
       "lede": "Three fixes Surco makes to the same track: it removes the vinyl clicks, trims the silence off the end and levels every track to the same volume."
     },
@@ -890,7 +890,7 @@
     "batch": {
       "step": "07 · out",
       "title": "And it lands in your Apple Music.",
-      "lede": "Pick a format and a destination and convert the whole folder. With Apple Music and Engine DJ you import nothing: the track shows up in your library with its artwork on — and on Engine DJ, with rating and playlist. Everything else gets the file it expects.",
+      "lede": "Pick a format and a destination and convert the whole folder. With Apple Music and Engine DJ you import nothing: the track shows up in your library with its artwork on, and on Engine DJ, with rating and playlist. Everything else gets the file it expects.",
       "pill": "Converting 11/40",
       "stage": "Converting to AIFF…",
       "cancel": "cancel",
@@ -931,6 +931,17 @@
         "lead": "And they land in your program.",
         "rest": "Apple Music, Engine DJ, rekordbox."
       }
+    },
+    "figures": {
+      "apps": "apps",
+      "appsLabel": "Apps it replaces",
+      "seconds": "{{seconds}}s",
+      "secondsLabel": "Time for one batch",
+      "tracks": "for {{count}} tracks",
+      "price": "$0",
+      "priceLabel": "Price",
+      "forever": "forever",
+      "appsValue": "5→1"
     }
   }
 }
