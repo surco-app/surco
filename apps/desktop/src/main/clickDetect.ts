@@ -40,11 +40,14 @@ export function detectClicks(samples: Float32Array, sampleRate: number): number[
     const threshold = Math.max(FLOOR, K * (sum / BLOCK))
     for (let i = b; i < b + BLOCK; i++) {
       if (d[i] <= threshold) continue
-      // Within the gap of the previous detection: same click, extend it silently.
-      if (i - last <= minGap) {
-        last = i
-        continue
-      }
+      // Within the gap of the previous COUNTED click: the same physical event, still
+      // ringing. Skipped without moving the window — re-arming it here made the gap
+      // measure from the last crossing instead of the last click, so a run of crossings
+      // each under 5 ms from the previous one dragged the window along indefinitely and
+      // collapsed into a single count however long it ran. Measured: ten impulses 4 ms
+      // apart, spanning 36 ms, counted as one. That is a dusty rip's whole burst of
+      // crackle reported as "1 click", with one mark to jump to instead of ten.
+      if (i - last <= minGap) continue
       let env = 0
       let n = 0
       for (let j = Math.max(0, i - ISO_REACH); j < Math.min(d.length, i + ISO_REACH); j++) {
@@ -52,6 +55,13 @@ export function detectClicks(samples: Float32Array, sampleRate: number): number[
         env += d[j]
         n++
       }
+      // `last` is armed on every surviving candidate, counted or rejected by the
+      // isolation test, and deliberately left that way: a rejected crossing is the
+      // shoulder of a kick or a snare, so arming on it could in principle swallow a real
+      // click 5 ms behind a transient — but no fixture reproduces that (an exponential
+      // 200-sample attack 3 ms ahead of an impulse counts the same either way), and this
+      // detector's thresholds are calibrated empirically. Not changed without a
+      // measurement that shows the difference.
       if (d[i] > ISO * K * (env / n)) at.push(i / sampleRate)
       last = i
     }
