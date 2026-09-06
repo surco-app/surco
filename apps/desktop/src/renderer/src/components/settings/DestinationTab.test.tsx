@@ -193,7 +193,7 @@ describe('DestinationTab Traktor collection', () => {
   it('always shows the collection.nml field regardless of the chosen destination', () => {
     renderTab()
     expect(screen.getByTestId('settings-traktor-nml').closest('[inert]')).toBeNull()
-    expect(screen.getByTestId('settings-traktor-nml')).toHaveValue('')
+    expect(screen.getByTestId('settings-traktor-nml')).toHaveTextContent('')
   })
 
   it('opens the file picker when Change is clicked', () => {
@@ -327,10 +327,15 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
       />,
     )
-    const input = screen.getByTestId('settings-traktor-nml')
-    expect(input).toHaveAttribute('tabindex', '-1')
-    // Still reachable and readable for anyone who needs the whole string.
-    expect(input).toHaveAttribute('title', expect.stringContaining('collection.nml'))
+    const field = screen.getByTestId('settings-traktor-nml')
+    // tabIndex alone did not fix this: it stops tabbing, not clicking, and clicking is
+    // what the user does. Only a non-input element can't take a caret at all.
+    expect(field.tagName).not.toBe('INPUT')
+    field.focus()
+    expect(document.activeElement).not.toBe(field)
+    // The path still has to be readable, in full, without a caret.
+    expect(field).toHaveTextContent('collection.nml')
+    expect(field).toHaveAttribute('title', expect.stringContaining('/Users/dj/Documents'))
   })
 
   // The number alone tells the user nothing, and this one adjusts something Surco
