@@ -10,7 +10,7 @@ export default function Footer() {
 
   return (
     <footer className="relative mt-10 border-t border-line/60">
-      <div className="mx-auto grid max-w-5xl gap-8 px-6 py-14 sm:grid-cols-2 lg:grid-cols-[1.8fr_1fr_1fr]">
+      <div className="mx-auto grid max-w-6xl gap-8 px-6 py-14 sm:grid-cols-2 lg:grid-cols-[1.8fr_1fr_1fr]">
         <div>
           <div className="flex items-center gap-2.5">
             <img src="/icon-128.webp" alt="Surco" width={128} height={128} className="h-9 w-9" />
@@ -81,7 +81,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-line/60">
-        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 px-6 py-6 font-mono text-xs text-faint sm:flex-row">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-6 font-mono text-xs text-faint sm:flex-row">
           <span>{t('footer.copyright')}</span>
           <span>{t('footer.slogan')}</span>
         </div>

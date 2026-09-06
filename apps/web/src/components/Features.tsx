@@ -49,7 +49,9 @@ export default function Features() {
       <div className="grain pointer-events-none fixed inset-0 z-[1] opacity-[0.03] mix-blend-soft-light" />
       <Header page="features" />
 
-      <main id="main" className="relative mx-auto max-w-5xl px-6">
+      {/* Same measure as the home. The two pages sit one click apart in the nav and
+          the body used to step from 1152px to 1024px on the way over. */}
+      <main id="main" className="relative mx-auto max-w-6xl px-6">
         <section className="pt-16 pb-8 sm:pt-24">
           <Reveal eager>
             <Kicker>{t('features.kicker')}</Kicker>
