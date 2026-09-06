@@ -114,7 +114,8 @@
     "outputPathEscapes": "That file name would write outside the destination folder.",
     "settingsFileNotSurco": "That file doesn't hold a Surco configuration.",
     "appleMusicNoMediaCopy": "Music didn’t copy the file into its media folder, so “Apple Music only” would leave it with no audio. Turn on “Copy files to the Media folder when adding” in Music, or turn off “Apple Music only”.",
-    "convertedOutputUnreadable": "The converted file came out unreadable, so it was discarded and the original left untouched. Try again with different conversion settings."
+    "convertedOutputUnreadable": "The converted file came out unreadable, so it was discarded and the original left untouched. Try again with different conversion settings.",
+    "convertedOutputTruncated": "The converted file came out shorter than the original, so it was discarded and the original left untouched. Try again with different conversion settings."
   },
   "notices": {
     "duplicatesSkipped": "Already in the list, skipped: {{count}}",
