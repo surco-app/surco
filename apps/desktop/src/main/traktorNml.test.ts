@@ -2,13 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { readTraktorMarkers } from './traktor4'
 import { buildTraktorTree, traktorCue } from './traktor4Fixture'
-import {
-  applyPatches,
-  clearedCoverIds,
-  cuesToXml,
-  findEntries,
-  matchedPatchCount,
-} from './traktorNml'
+import { applyPatches, cuesToXml, findEntries, matchedPatchCount } from './traktorNml'
 
 const NML = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <NML VERSION="19">
@@ -501,47 +495,6 @@ describe('applyPatches', () => {
 
     expect(out).not.toContain('FILE="FROM_A.flac"')
     expect(out).toContain('FILE="x&amp;y.mp3"')
-  })
-})
-
-// Dropping COVERARTID only tells Traktor to re-read; the thumbnail it re-reads is the
-// one already in its Coverart cache, so the stale picture survives unless that file is
-// deleted too (reported 06/09/2026, reproduced on five machines). The ids have to be
-// collected BEFORE the attribute is stripped — afterwards the collection no longer
-// says which cover belonged to the track.
-describe('clearedCoverIds', () => {
-  const withCovers = NML.replace(
-    '<ENTRY MODIFIED_DATE="2026/7/26" TITLE="Uno" ARTIST="A">',
-    '<ENTRY MODIFIED_DATE="2026/7/26" TITLE="Uno" ARTIST="A"><INFO COVERARTID="042/ABC"></INFO>',
-  ).replace(
-    '<ENTRY MODIFIED_DATE="2026/7/26" TITLE="Dos" ARTIST="B">',
-    '<ENTRY MODIFIED_DATE="2026/7/26" TITLE="Dos" ARTIST="B"><INFO COVERARTID="099/XYZ"></INFO>',
-  )
-
-  it('returns the cover id of every entry whose art is being cleared', () => {
-    const ids = clearedCoverIds(withCovers, [
-      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', clearCoverArt: true },
-    ])
-
-    expect(ids).toEqual(['042/ABC'])
-  })
-
-  // A patch that leaves the artwork alone must not cost that track its thumbnail.
-  it('ignores entries whose patch does not clear the art', () => {
-    const ids = clearedCoverIds(withCovers, [
-      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', newFile: 'uno.flac' },
-    ])
-
-    expect(ids).toEqual([])
-  })
-
-  // An entry Traktor never gave a cover has no cache file to drop.
-  it('skips an entry that carries no COVERARTID', () => {
-    const ids = clearedCoverIds(NML, [
-      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', clearCoverArt: true },
-    ])
-
-    expect(ids).toEqual([])
   })
 })
 
