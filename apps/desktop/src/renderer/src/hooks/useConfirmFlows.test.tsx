@@ -452,6 +452,36 @@ describe('useConfirmFlows lossy in-place re-encode', () => {
     flows.askConvertAll([mp3])
     expect(opened).toHaveLength(0)
   })
+
+  // The dial the user set on THIS track counts as an active filter exactly like the
+  // batch pick and the Settings default already do above. hasActiveFilters asks
+  // `normalize ?? settings?.normalize` and never looks at track.normalize, so a track
+  // carrying its own normalization reads as filter-free: planConversion will still lose
+  // copyOk and re-encode the mp3 in place, but the warning that exists to catch exactly
+  // that never fires. The user loses a lossy generation on the only copy, unasked.
+  it('confirms an in-place mp3 whose normalization was dialled on the track itself', () => {
+    const mp3 = track('a', {
+      inputPath: '/a.mp3',
+      fileName: 'a.mp3',
+      normalize: { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+    })
+    const { flows, opened } = setup([mp3])
+
+    flows.askConvertAll([mp3], 'source')
+
+    expect(opened[0]?.destructive).toBe(true)
+  })
+
+  // Same for the click repair: it alters samples the same way, so the track's own
+  // declick has to reach the check too.
+  it('confirms an in-place mp3 whose declick was dialled on the track itself', () => {
+    const mp3 = track('a', { inputPath: '/a.mp3', fileName: 'a.mp3', declick: 'strong' })
+    const { flows, opened } = setup([mp3])
+
+    flows.askConvertAll([mp3], 'source')
+
+    expect(opened[0]?.destructive).toBe(true)
+  })
 })
 
 describe('useConfirmFlows fill-all selection scope', () => {
