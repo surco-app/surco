@@ -88,9 +88,11 @@ export default function App() {
           </Reveal>
         </section>
 
-        {/* The window, at the width the grid can actually give it. */}
+        {/* The window on the same measure as the headline above it: wider and it
+            detaches from the copy it illustrates, narrower and it goes back to being
+            a texture. */}
         <Reveal eager delay={340}>
-          <div className="mx-auto max-w-7xl px-6 pb-12 lg:pb-16">
+          <div className="mx-auto max-w-6xl px-6 pb-12 lg:pb-16">
             <HeroApp video />
           </div>
         </Reveal>
@@ -102,7 +104,7 @@ export default function App() {
             rest of the hero, because the row sits right on the fold and a scroll-triggered
             reveal would hold that context back until the visitor had already decided. */}
         <Reveal eager delay={300}>
-          <section className="mx-auto max-w-5xl px-6 pb-4">
+          <section className="mx-auto max-w-6xl px-6 pb-4">
             <div className="flex flex-col gap-3 border-y border-line py-5 sm:flex-row sm:items-center sm:gap-6">
               <p className="font-mono text-xs tracking-wider text-faint uppercase">
                 {t('home.worksWith')}
@@ -116,11 +118,14 @@ export default function App() {
           </section>
         </Reveal>
 
-        <div className="mx-auto max-w-5xl px-6">
+        {/* One measure from the hero down through the walkthrough. The page used to
+            step from a 1152px hero to a 1024px body, and the seam landed exactly on
+            the heading that introduces the steps. */}
+        <div className="mx-auto max-w-6xl px-6">
           <Walkthrough />
         </div>
 
-        <section className="mx-auto max-w-5xl px-6 py-20 sm:py-28">
+        <section className="mx-auto max-w-6xl px-6 py-20 sm:py-28">
           <SectionView location="home-closing" />
           <Reveal>
             <div className="text-center">
