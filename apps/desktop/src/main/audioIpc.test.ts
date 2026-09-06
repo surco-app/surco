@@ -62,6 +62,7 @@ import { join } from 'node:path'
 import { app, ipcMain } from 'electron'
 import { cachedAnalysis } from './analysisCache'
 import { registerAudioIpc } from './audioIpc'
+import { buildSpectrum, cacheableSpectrum } from './ffmpeg'
 
 function handlerFor(channel: string): (e: unknown, ...args: unknown[]) => unknown {
   const call = (ipcMain.handle as ReturnType<typeof vi.fn>).mock.calls.find(
@@ -94,6 +95,41 @@ describe('audio:cached-batch', () => {
   // The hydration's whole point: a warm spectrogram entry surfaces without invoking
   // any compute (ffmpeg is fully mocked above — a call would throw as "not a function"
   // wired for use, proving this path never falls through to a live probe).
+  // A field-by-field projection at the IPC boundary strands every field added
+  // after it: the measured evidence and the bits verdict reached the renderer
+  // only through the cached-batch warm path, so their lines appeared late or
+  // only after clearing and re-adding files (user-reported lag). The fresh
+  // handler must return the analysis whole, with only the cache's own
+  // bookkeeping flag held back.
+  it('returns the full fresh analysis, not a projection that strands new fields', async () => {
+    const file = await makeFile()
+    vi.mocked(buildSpectrum).mockResolvedValue({
+      image: 'data:image/png;base64,AAAA',
+      cutoffHz: 16000,
+      sampleRateHz: 44100,
+      imageTopHz: 24000,
+      processed: false,
+      hasKnee: true,
+      upsampled: false,
+      resolution: 'native',
+      fineStepDb: 43.2,
+      teethCount: 3,
+      bitsUsage: 'padded16',
+      bitsLowPct: 0,
+    } as Awaited<ReturnType<typeof buildSpectrum>>)
+    vi.mocked(cacheableSpectrum).mockImplementation(
+      (b) => ({ ...b, cutoffFailed: false }) as ReturnType<typeof cacheableSpectrum>,
+    )
+
+    const res = (await handlerFor('audio:spectrogram')({}, file)) as Record<string, unknown>
+
+    expect(res.fineStepDb).toBe(43.2)
+    expect(res.teethCount).toBe(3)
+    expect(res.bitsUsage).toBe('padded16')
+    expect(res.bitsLowPct).toBe(0)
+    expect('cutoffFailed' in res).toBe(false)
+  })
+
   it('returns the cached spectrogram for a warm entry, keyed by path', async () => {
     const file = await makeFile()
     await cachedAnalysis('spectrogram-mono-v23', file, async () => ({
