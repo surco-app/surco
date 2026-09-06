@@ -12,6 +12,45 @@ import { SettingsField, SettingsHint, SettingsLabel, SettingsSection } from './S
 // other platforms where a track simply finishes in the output folder.
 const isMac = isMacOS()
 
+// The starting figure each answer sets. 51 ms is what the DJ who reported this arrived
+// at by ear over a long session with AudioFinder, which uses the same constant; it is
+// NOT a measured property of the conversion — that one is the MP3 encoder delay
+// (25.06 ms) and Surco already compensates it on its own (see mp3EncoderDelay.ts).
+// Treat this as a starting point the user then tunes, not as a correct value.
+const CUE_DRIFT_START_MS = 51
+
+// Negative delays a cue, positive brings it forward: shiftTraktorCues subtracts, so a
+// cue heard EARLY has to move later, which is the negative one.
+const CUE_DRIFT_ANSWERS = [
+  {
+    id: 'none',
+    ms: 0,
+    labelKey: 'settings.traktorCueDriftNone',
+    hintKey: 'settings.traktorCueDriftNoneHint',
+  },
+  {
+    id: 'early',
+    ms: -CUE_DRIFT_START_MS,
+    labelKey: 'settings.traktorCueDriftEarly',
+    hintKey: 'settings.traktorCueDriftEarlyHint',
+  },
+  {
+    id: 'late',
+    ms: CUE_DRIFT_START_MS,
+    labelKey: 'settings.traktorCueDriftLate',
+    hintKey: 'settings.traktorCueDriftLateHint',
+  },
+] as const
+
+// Which answer the stored value corresponds to, so reopening Settings shows the state
+// the conversion will actually use. Any non-zero figure the user typed by hand still
+// reads as its own direction rather than falling back to "no adjustment".
+function driftOf(value: string): 'none' | 'early' | 'late' {
+  const ms = Number(value)
+  if (!Number.isFinite(ms) || ms === 0) return 'none'
+  return ms < 0 ? 'early' : 'late'
+}
+
 interface Props {
   synced: SyncedDraft
   local: LocalDraft
@@ -175,17 +214,49 @@ export function DestinationTab({
             </button>
           </div>
         )}
-        {/* Always rendered, never conditionally mounted: a field that appears and
-            disappears leaves the user unable to tell whether the setting exists at all.
-            Without a collection there is nothing for it to act on, so it is disabled and
-            says why — which also refuses a number that would sit there doing nothing.
-            The hint carries the whole explanation rather than a tooltip per control:
-            what it is, that 0 is correct, and the one symptom that justifies moving it. */}
+        {/* Asked as a question, not as a number: milliseconds are a unit no DJ can
+            estimate, while "my cues come in early" is exactly what they hear. The answer
+            picks the sign and a starting value; the figure stays visible and editable
+            below for anyone who has their own. Always rendered, never conditionally
+            mounted — a control that appears and disappears leaves the user unable to tell
+            whether the setting exists at all; without a collection it is disabled and
+            says what is missing. */}
         <div className="mt-6">
-          <SettingsLabel htmlFor="settings-traktor-cue-offset">
-            {tr('settings.traktorCueOffset')}
-          </SettingsLabel>
-          <div className="mt-2 flex items-center gap-2">
+          <SettingsLabel>{tr('settings.traktorCueOffset')}</SettingsLabel>
+          <p className="mt-1 text-sm text-fg-muted">{tr('settings.traktorCueDriftQuestion')}</p>
+          <div className="mt-3 flex flex-col gap-2">
+            {CUE_DRIFT_ANSWERS.map((answer) => {
+              const chosen = driftOf(synced.traktorCueOffsetMs) === answer.id
+              return (
+                <button
+                  key={answer.id}
+                  type="button"
+                  data-testid={`settings-cue-drift-${answer.id}`}
+                  aria-pressed={chosen}
+                  disabled={!local.traktorNmlPath}
+                  onClick={() => patch('traktorCueOffsetMs', String(answer.ms))}
+                  className={`press flex items-start gap-3 rounded-lg border px-3 py-2.5 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
+                    chosen
+                      ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/12'
+                      : 'border-[var(--color-line)] hover:bg-[var(--color-panel-2)]/40'
+                  }`}
+                >
+                  <span
+                    className={`mt-0.5 size-3.5 shrink-0 rounded-full border ${
+                      chosen
+                        ? 'border-[5px] border-[var(--color-accent)]'
+                        : 'border-[var(--color-line-strong)]'
+                    }`}
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-sm">{tr(answer.labelKey)}</span>
+                    <span className="block text-xs text-fg-dim">{tr(answer.hintKey)}</span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+          <div className="mt-3 flex items-center gap-2">
             <input
               id="settings-traktor-cue-offset"
               data-testid="settings-traktor-cue-offset"
@@ -201,7 +272,7 @@ export function DestinationTab({
                   patch('traktorCueOffsetMs', '0')
                 }
               }}
-              className="w-28 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-24 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-50"
             />
             <span className="text-sm text-fg-dim">{tr('settings.traktorCueOffsetUnit')}</span>
           </div>

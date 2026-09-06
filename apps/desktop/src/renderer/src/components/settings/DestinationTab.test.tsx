@@ -8,6 +8,7 @@ import i18n from '../../i18n'
 // DestinationTab reads window.api.platform at module scope (isMacOS), so the bridge
 // must exist before the module loads — hence the dynamic import below.
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
+import type { PatchSynced } from '../../lib/settingsTabs'
 ;(window as unknown as { api: unknown }).api = { platform: 'darwin' }
 const { DestinationTab } = await import('./DestinationTab')
 
@@ -82,6 +83,23 @@ function renderTab(over: Partial<SyncedDraft> = {}, localOver: Partial<LocalDraf
     />,
   )
   return patch
+}
+
+// The cue offset only does anything with a collection set, so every test of it renders
+// the tab already pointed at one.
+function renderWithCollection(patch: PatchSynced, offset = '0'): void {
+  render(
+    <DestinationTab
+      synced={{ ...synced, traktorCueOffsetMs: offset }}
+      local={{ ...local, traktorNmlPath: '/dj/collection.nml' }}
+      patch={patch}
+      onOutputDirChange={vi.fn()}
+      onChangeEngineDir={vi.fn()}
+      onChangeTraktorNmlPath={vi.fn()}
+      detectedNmlPath={null}
+      onAcceptDetectedNmlPath={vi.fn()}
+    />,
+  )
 }
 
 describe('DestinationTab FLAC restriction', () => {
@@ -341,24 +359,56 @@ describe('DestinationTab Traktor collection', () => {
   // The number alone tells the user nothing, and this one adjusts something Surco
   // already gets right on its own — so the field has to carry the explanation with it,
   // or it reads as a knob worth turning.
-  it('explains what the offset is for next to the field', () => {
-    render(
-      <DestinationTab
-        synced={synced}
-        local={{ ...local, traktorNmlPath: '/dj/collection.nml' }}
-        patch={vi.fn()}
-        onOutputDirChange={vi.fn()}
-        onChangeEngineDir={vi.fn()}
-        onChangeTraktorNmlPath={vi.fn()}
-        detectedNmlPath={null}
-        onAcceptDetectedNmlPath={vi.fn()}
-      />,
-    )
-    const hint = screen.getByText(i18n.t('settings.traktorCueOffsetHint'))
-    expect(hint).toBeInTheDocument()
-    // The two things a bare number can't say: that zero is the right answer, and that
-    // it moves the cue rather than resizing the loops around it.
-    expect(hint.textContent).toMatch(/\b0\b/)
-    expect(hint.textContent).toMatch(/loops/i)
+  // Asking for milliseconds asked for a unit no DJ can estimate; the symptom they do
+  // perceive is "my cues come in early". The question carries that symptom, and the
+  // answer sets the sign and a starting value — the number stays editable underneath.
+  it('sets a negative offset when the cues come in early', () => {
+    const patch = vi.fn<PatchSynced>()
+    renderWithCollection(patch)
+
+    fireEvent.click(screen.getByTestId('settings-cue-drift-early'))
+
+    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '-51')
+  })
+
+  it('sets a positive offset when the cues come in late', () => {
+    const patch = vi.fn<PatchSynced>()
+    renderWithCollection(patch)
+
+    fireEvent.click(screen.getByTestId('settings-cue-drift-late'))
+
+    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '51')
+  })
+
+  // The default answer, and the one that has to stay reachable: a DJ who tried an
+  // adjustment and found it wrong needs the way back to "leave them alone".
+  it('clears the offset when the cues land where they were left', () => {
+    const patch = vi.fn<PatchSynced>()
+    renderWithCollection(patch, '-51')
+
+    fireEvent.click(screen.getByTestId('settings-cue-drift-none'))
+
+    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '0')
+  })
+
+  // Which answer reads as chosen follows the stored value, so reopening Settings shows
+  // the state the conversion will actually use rather than a reset default.
+  it('marks the answer that matches the stored offset', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '-51')
+
+    expect(screen.getByTestId('settings-cue-drift-early')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('settings-cue-drift-none')).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  // The exact figure stays the user's: the reporter arrived at his own after hours of
+  // trial and error, and the question only offers a starting point.
+  it('keeps the millisecond value editable under the question', () => {
+    const patch = vi.fn<PatchSynced>()
+    renderWithCollection(patch, '-51')
+
+    const input = screen.getByTestId('settings-traktor-cue-offset')
+    expect(input).toHaveValue(-51)
+    fireEvent.change(input, { target: { value: '-30' } })
+    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '-30')
   })
 })
