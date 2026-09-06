@@ -34,6 +34,7 @@ const synced: SyncedDraft = {
   importFields: [],
   requiredFields: [],
   coverMaxSize: '1200',
+  traktorCueOffsetMs: '0',
   coverSquare: false,
   coverUpscale: false,
   replaceLowResCover: false,

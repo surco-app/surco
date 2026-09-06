@@ -3,10 +3,14 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
-vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
+
+let traktorCueOffsetMs = 0
+vi.mock('./settings', () => ({
+  getSettings: () => ({ traktorNmlPath: '', traktorCueOffsetMs }),
+}))
 
 import type { TrackMetadata } from '../shared/types'
 import { convertAudio } from './ffmpeg'
@@ -107,5 +111,50 @@ describe('MP3 encoder delay compensation on conversion', () => {
     const tree = readCueTree(out)
     expect(tree).toBeDefined()
     expect(readTraktorCueStart(tree as Uint8Array, 0)).toBeCloseTo(CUE_START_MS + 25.06, 1)
+  })
+})
+
+// The measured compensation above answers "did the conversion move the audio". It cannot
+// answer "do this DJ's cues feel early in Traktor", which is a property of their ears and
+// their rig, not of the file — one reporter runs AudioFinder's fixed -51 ms and finds it
+// right. So the offset is a setting they own, applied on top of the measured correction
+// rather than replacing it: the codec fix keeps working on the files that need it, and
+// the taste adjustment moves every cue by the same amount whatever the source.
+describe('the user cue offset setting', () => {
+  afterAll(() => {
+    traktorCueOffsetMs = 0
+  })
+
+  // A negative value delays the cue, matching how a DJ describes it: "my cues hit early,
+  // push them back".
+  it('applies a negative offset on top of a source that needs no codec fix', async () => {
+    traktorCueOffsetMs = -51
+    const out = join(dir, 'offset-xing.flac')
+    await convertAudio(withXing, out, 'flac', meta)
+
+    const tree = readCueTree(out)
+    expect(readTraktorCueStart(tree as Uint8Array, 0)).toBeCloseTo(CUE_START_MS - 51, 0)
+  })
+
+  // Both corrections stack: the 25.06 ms the missing Xing header costs, plus whatever the
+  // DJ dialled in. Replacing one with the other is what makes a fixed offset wrong.
+  it('adds the offset to the encoder delay compensation, not instead of it', async () => {
+    traktorCueOffsetMs = -51
+    const out = join(dir, 'offset-no-xing.flac')
+    await convertAudio(withoutXing, out, 'flac', meta)
+
+    const tree = readCueTree(out)
+    expect(readTraktorCueStart(tree as Uint8Array, 0)).toBeCloseTo(CUE_START_MS + 25.06 - 51, 0)
+  })
+
+  // The default. Nobody who has not gone looking for this setting should have their cues
+  // moved by it.
+  it('leaves cues exactly where they are at zero', async () => {
+    traktorCueOffsetMs = 0
+    const out = join(dir, 'offset-zero.flac')
+    await convertAudio(withXing, out, 'flac', meta)
+
+    const tree = readCueTree(out)
+    expect(readTraktorCueStart(tree as Uint8Array, 0)).toBeCloseTo(CUE_START_MS, 0)
   })
 })
