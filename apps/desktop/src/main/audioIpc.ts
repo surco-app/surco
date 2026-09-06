@@ -116,16 +116,14 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       try {
         // Cache only a clean run: a cutoff failure yields a valid image but a null
         // cutoff, and we'd rather retry that next open than pin it for the file's life.
-        const {
-          image,
-          cutoffHz,
-          sampleRateHz,
-          imageTopHz,
-          processed,
-          hasKnee,
-          upsampled,
-          resolution,
-        } = await cachedAnalysis(
+        // The whole entry crosses the IPC, minus the cache's own bookkeeping
+        // flag. A field-by-field projection here once stranded everything added
+        // after it (the measured evidence, the bits verdict): a fresh analysis
+        // reached the renderer without those fields while the cached-batch warm
+        // path returned the full entry, so their lines showed up late or only
+        // after clearing and re-adding files. Spreading keeps every future
+        // SpectrumBuild field flowing without this handler knowing about it.
+        const { cutoffFailed: _cutoffFailed, ...spectrum } = await cachedAnalysis(
           // Namespace carries the palette and the cutoff-algorithm generation, so
           // changing either invalidates entries cached under the previous one — they
           // regenerate on next open instead of serving stale colors or verdicts. v7
@@ -204,16 +202,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
             ),
           (b) => !b.cutoffFailed,
         )
-        return {
-          image,
-          cutoffHz,
-          sampleRateHz,
-          imageTopHz,
-          processed,
-          hasKnee,
-          upsampled,
-          resolution,
-        }
+        return spectrum
       } catch (err) {
         if (!isAbortError(err)) log.error('audio:spectrogram failed', err)
         throw err
