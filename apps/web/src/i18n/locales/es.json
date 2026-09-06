@@ -85,6 +85,10 @@
           {
             "t": "Frecuencia corregida",
             "d": "El modo «Corregido» reescribe a 44.1 solo las pistas medidas como upsampleadas; lo genuino y lo dudoso sale intacto. Y la profundidad «igual que el origen» escribe la anchura real: el relleno probado de 16-en-24 sale como 16 bits, sin pérdidas."
+          },
+          {
+            "t": "Comprueba la copia antes de darla por buena",
+            "d": "Un fichero cortado a medias declara la misma duración que el entero. Surco compara lo que promete con lo que de verdad suena y no publica una conversión truncada."
           }
         ]
       },

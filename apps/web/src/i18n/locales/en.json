@@ -85,6 +85,10 @@
           {
             "t": "Corrected sample rate",
             "d": "The \"Corrected\" mode rewrites at 44.1 only the tracks measured as upsampled; genuine and unverifiable files come out untouched. And \"same as source\" bit depth writes the real width: proven 16-in-24 padding comes out as true 16-bit, losslessly."
+          },
+          {
+            "t": "Checks the copy before trusting it",
+            "d": "A half-written file declares the same duration as the whole one. Surco compares what it promises against what actually plays, and never publishes a truncated conversion."
           }
         ]
       },
