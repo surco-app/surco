@@ -1,6 +1,7 @@
 import { copyFile, readFile, unlink, writeFile } from 'node:fs/promises'
 import { renameWithRetry } from './renameRetry'
-import { applyPatches, matchedPatchCount, type NmlPatch } from './traktorNml'
+import { dropCachedCoverArt } from './traktorCoverCache'
+import { applyPatches, clearedCoverIds, matchedPatchCount, type NmlPatch } from './traktorNml'
 import { isTraktorRunning } from './traktorProcess'
 
 // Writes converted tracks back into the user's real collection.nml — the whole Traktor
@@ -76,6 +77,13 @@ export async function syncCollection(nmlPath: string, patches: NmlPatch[]): Prom
     await unlink(tmp).catch(() => {})
     return { written: false, matched: 0, reason: 'write-failed' }
   }
+
+  // Only now the collection is actually on disk: dropping COVERARTID asks Traktor to
+  // re-read the artwork, but what it re-reads is the thumbnail still sitting in its own
+  // cache, so the old picture survives until those files go (see traktorCoverCache.ts).
+  // Read off `original` because the ids are gone from `patched`, and after the rename
+  // so a sync that never landed leaves a still-valid cache alone.
+  dropCachedCoverArt(nmlPath, clearedCoverIds(original, patches))
 
   return { written: true, matched: matchedPatchCount(original, patches) }
 }
