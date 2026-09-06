@@ -320,6 +320,15 @@ export function isAppleMusicOnly(
 export function buildLibraryDumpScript(): string {
   return [
     'tell application "Music"',
+    // An empty library is an ordinary state (a fresh Mac, a library whose external drive
+    // is unplugged), but asking for a property of every track of one raises "Can't get
+    // name of every track of library playlist 1. (-1728)": AppleScript will not coerce
+    // the empty list. Measured on macOS 26.5.2, `count of tracks` returns 0 cleanly there
+    // while `name of every track` throws, and `exists library playlist 1` is true either
+    // way, so the count is the only thing that tells the two apart. Returning "" makes an
+    // empty library parse as zero candidates instead of failing the whole snapshot, which
+    // stripped every track of its "already in your library" verdict without saying why.
+    '  if (count of tracks of library playlist 1) is 0 then return ""',
     '  set theNames to name of every track of library playlist 1',
     '  set theArtists to artist of every track of library playlist 1',
     '  set theDurations to duration of every track of library playlist 1',
