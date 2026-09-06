@@ -53,7 +53,18 @@ const ID3_IN_PLACE = new Set(['.mp3', '.aiff'])
 // Broader than ID3_IN_PLACE on purpose: that set is about whether the tag can be edited in
 // place, which excludes WAV for a reason unrelated to where its cues live. A cue carry-over
 // that needs "is the source ID3-tagged?" must ask this, or a WAV source looks cue-less.
-const ID3_SOURCED = new Set(['.mp3', '.aiff', '.wav'])
+// Both AIFF spellings, and only in this set of the three: shared/format.ts states the
+// rule outright ("AIFF rips use both .aif and .aiff") and expand.ts imports the pair, so
+// a crate can hold either, while every sibling predicate matches them with /\.aiff?$/i.
+// This is the one set asked about a SOURCE extension — the user's own file, whose name
+// they chose. The other two are only ever asked about an output (planConversion fixes
+// AIFF output at '.aiff', and writeTags is only ever handed the temp, which carries the
+// output's extension), so a '.aif' entry there would be unreachable.
+// Listing only the long spelling here meant a .aif source answered false to
+// keepsCuesInId3, sending its cue carry-over to shiftFlacCues — which looks for a Vorbis
+// comment an AIFF has never had, and drops every hot cue and the beatgrid. The same loss
+// that was fixed for WAV, reached through the spelling instead of the container.
+const ID3_SOURCED = new Set(['.mp3', '.aiff', '.aif', '.wav'])
 
 export function keepsCuesInId3(ext: string): boolean {
   return ID3_SOURCED.has(ext.toLowerCase())
