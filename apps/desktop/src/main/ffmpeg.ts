@@ -1040,12 +1040,27 @@ export async function normalizeFilter(
     // gains) need per-channel figures volumedetect can't give, so they measure
     // with astats instead. Same fact-about-the-file-alone caching as below.
     if (cfg.peakRemoveDc || cfg.peakPerChannel) {
-      const channels = await cachedAnalysis(ns('astats-channels-v1'), input, async () => {
-        const { stderr } = await run(ffmpegPath, astatsArgs(input, prefilter), {
-          maxBuffer: 1024 * 1024 * 16,
-        })
-        return parseAstatsChannels(stderr)
-      })
+      // Through measurePrefilter, not prefilter, for the reason stated at its
+      // definition: every measurement has to read the audio the encode will actually
+      // gain. Under peakRemoveDc the two are the same string — peakOwnsDc leaves dcAf
+      // unset, so nothing is centred here and peakChannelFilter subtracts the mean
+      // itself, as it always did. Under peakPerChannel with the DC box ticked they
+      // differ, and reading the biased signal there sized each channel's gain against
+      // an extent the centred audio no longer has: measured on a 0.2-biased tone,
+      // 0.25 against 0.05, a factor of 5 that landed the track 14 dB under its ceiling.
+      // The key has to carry the distinction for the same reason volumedetect's does
+      // below — one namespace for both would serve the biased figures to the centred
+      // conversion and pin the shortfall for as long as the file is unchanged.
+      const channels = await cachedAnalysis(
+        ns(`astats-channels-v1${dcAf ? '-dc' : ''}`),
+        input,
+        async () => {
+          const { stderr } = await run(ffmpegPath, astatsArgs(input, measurePrefilter), {
+            maxBuffer: 1024 * 1024 * 16,
+          })
+          return parseAstatsChannels(stderr)
+        },
+      )
       // withDc like every other return here: peakChannelFilter only subtracts the mean
       // under peakRemoveDc, so a per-channel run that asked for centring gets it from
       // the shared stage — and when peak mode owns the removal, dcAf is unset and this
