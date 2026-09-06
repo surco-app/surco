@@ -235,7 +235,7 @@ export function DestinationTab({
         <div className="mt-6">
           <SettingsLabel>{tr('settings.traktorCueOffset')}</SettingsLabel>
           <p className="mt-1 text-sm text-fg-muted">{tr('settings.traktorCueDriftQuestion')}</p>
-          <div className="mt-3 flex flex-col gap-2">
+          <div className="mt-2 flex flex-col gap-0.5">
             {CUE_DRIFT_ANSWERS.map((answer) => {
               const chosen = driftOf(synced.traktorCueOffsetMs) === answer.id
               return (
@@ -246,22 +246,21 @@ export function DestinationTab({
                   aria-pressed={chosen}
                   disabled={!local.traktorNmlPath}
                   onClick={() => patch('traktorCueOffsetMs', String(answer.ms))}
-                  className={`press flex items-start gap-3 rounded-lg border px-3 py-2.5 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
-                    chosen
-                      ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/12'
-                      : 'border-[var(--color-line)] hover:bg-[var(--color-panel-2)]/40'
-                  }`}
+                  className="press flex w-full items-baseline gap-2.5 rounded-md px-1 py-1 text-left hover:bg-[var(--color-panel-2)]/40 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <span
-                    className={`mt-0.5 size-3.5 shrink-0 rounded-full border ${
+                    className={`size-3.5 shrink-0 self-center rounded-full border ${
                       chosen
                         ? 'border-[5px] border-[var(--color-accent)]'
                         : 'border-[var(--color-line-strong)]'
                     }`}
                   />
-                  <span className="min-w-0">
-                    <span className="block text-sm">{tr(answer.labelKey)}</span>
-                    <span className="block text-xs text-fg-dim">{tr(answer.hintKey)}</span>
+                  {/* One line per answer: the label carries the choice, the note trails it
+                      in dim text. As bordered cards these three outweighed the
+                      collection.nml field above, which is the setting that actually
+                      matters in this section. */}
+                  <span className="min-w-0 text-sm">
+                    {tr(answer.labelKey)} <span className="text-fg-dim">{tr(answer.hintKey)}</span>
                   </span>
                 </button>
               )

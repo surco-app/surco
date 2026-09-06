@@ -1,10 +1,8 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 
-// Milliseconds are meaningless until you see them against a beat. At the 128 BPM the BPM
-// field itself suggests, a beat runs 469 ms — so the 51 ms a DJ might dial in is 11% of
-// one. Framing a single beat across the panel makes that 49 px and plainly visible; four
-// beats would shrink it to 12 px, which is the same as not drawing it at all.
+// Milliseconds mean nothing until you see them against a beat: at the 128 BPM the BPM
+// field itself suggests, a beat runs 469 ms, so a 51 ms adjustment is 11% of one.
 const REFERENCE_BPM = 128
 const MS_PER_BEAT = 60000 / REFERENCE_BPM
 
@@ -16,8 +14,12 @@ const MS_PER_BEAT = 60000 / REFERENCE_BPM
 const BEATS = 4
 const SPAN_MS = MS_PER_BEAT * BEATS
 
+// A strip, not a panel. The first version framed this like a chart — 76 units tall with
+// its own border and background — which spent more room than the question above it to
+// draw a single vertical line, and at rest showed nothing at all. Kept low and unframed,
+// it reads as an annotation of the field it sits under.
 const W = 447
-const H = 76
+const H = 34
 // The beat the cue belongs to sits left of centre, leaving room for the displacement to
 // run either way without the marker ever leaving the frame.
 const ORIGIN_X = W * 0.42
@@ -54,7 +56,7 @@ export function CueGrid({ offsetMs }: Props): React.JSX.Element {
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}
-      className="mt-3 w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)]"
+      className="mt-2 w-full"
       role="img"
       aria-label={tr('settings.traktorCueGridAlt')}
     >
@@ -66,27 +68,28 @@ export function CueGrid({ offsetMs }: Props): React.JSX.Element {
             key={beat}
             x1={x}
             x2={x}
-            y1={10}
-            y2={H - 10}
+            y1={6}
+            y2={H - 6}
             stroke="var(--color-line-strong)"
-            strokeWidth={beat === 0 ? 1.5 : 1}
+            strokeWidth={1}
           />
         )
       })}
 
-      {/* Where the cue sat before the adjustment, so the direction reads without the
-          user having to remember which way the minus sign goes. Dashed and dim: it is a
-          reference, not a second cue. */}
+      {/* The beat the cue belongs to, always drawn — at rest it is what says the cue and
+          its beat coincide. Hiding it at zero left the strip showing a grid with one line
+          on top of it, which is a diagram of nothing. It runs the full height while the
+          cue marker above covers only the top half, so at zero the two are still telling
+          apart instead of one painting over the other. */}
       <line
         data-testid="cue-grid-origin"
         x1={ORIGIN_X}
         x2={ORIGIN_X}
-        y1={8}
-        y2={H - 8}
+        y1={4}
+        y2={H - 4}
         stroke="var(--color-fg-dim)"
         strokeWidth={1}
-        strokeDasharray="3 3"
-        opacity={moved ? 0.8 : 0}
+        strokeDasharray="2 3"
       />
 
       {moved && (
@@ -104,12 +107,12 @@ export function CueGrid({ offsetMs }: Props): React.JSX.Element {
         data-testid="cue-grid-cue"
         x1={cueX}
         x2={cueX}
-        y1={8}
-        y2={H - 8}
+        y1={2}
+        y2={H / 2 + 2}
         stroke="var(--color-accent)"
         strokeWidth={2}
       />
-      <rect x={cueX - 4} y={6} width={8} height={8} rx={2} fill="var(--color-accent)" />
+      <rect x={cueX - 3} y={2} width={6} height={6} rx={1.5} fill="var(--color-accent)" />
     </svg>
   )
 }
