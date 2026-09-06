@@ -56,7 +56,7 @@
           },
           {
             "t": "Quality your way",
-            "d": "MP3 bitrate, bit depth and sample rate — or the source's own, which is the default."
+            "d": "MP3 bitrate, bit depth and sample rate, or the source's own, which is the default."
           },
           {
             "t": "No silent widening",
@@ -221,7 +221,7 @@
           },
           {
             "t": "rekordbox, Serato, M3U8",
-            "d": "Bridge files: paths and metadata — Serato's crate, paths only. No cues, no ratings."
+            "d": "Bridge files: paths and metadata. Serato's crate, paths only. No cues, no ratings."
           },
           {
             "t": "Name templates",
@@ -240,7 +240,7 @@
   "shortcuts": {
     "kicker": "Keyboard first",
     "title": "Fly without touching the mouse",
-    "lede": "A command palette and shortcuts for the whole flow — add, tag, analyze and process track after track without leaving the keyboard, and remap any of them.",
+    "lede": "A command palette and shortcuts for the whole flow: add, tag, analyze and process track after track without leaving the keyboard, and remap any of them.",
     "items": [
       "Add files",
       "Process track",
@@ -253,7 +253,7 @@
   "speed": {
     "kicker": "One app, not five",
     "title": "The work of five apps, in one click",
-    "lede": "Converter, Discogs, tag editor and Apple Music: five programs, about five minutes per track — and the tags have to be redone inside Music, cover art included. Surco folds that whole flow into one button.",
+    "lede": "Converter, Discogs, tag editor and Apple Music: five programs, about five minutes per track, and the tags have to be redone inside Music, cover art included. Surco folds that whole flow into one button.",
     "manual": "By hand",
     "manualTime": "~2 h 45 min",
     "manualSteps": [
@@ -329,11 +329,11 @@
       },
       "discogs": {
         "title": "Discogs, Bandcamp & Deezer match",
-        "desc": "Find the exact release on Discogs, Bandcamp or Deezer — from club pressings to chart singles — and pick the right version."
+        "desc": "Find the exact release on Discogs, Bandcamp or Deezer, from club pressings to chart singles, and pick the right version."
       },
       "metadata": {
         "title": "Metadata editor",
-        "desc": "Title, artist, album, genre and artwork — edit it all in one place."
+        "desc": "Title, artist, album, genre and artwork: edit it all in one place."
       },
       "quality": {
         "title": "Audio quality",
@@ -424,7 +424,7 @@
     "cta": "Download for {{os}}",
     "intel": "Intel Mac (2020 or earlier)? Download it here",
     "smartscreen": "When you open the installer, Windows will show “Windows protected your PC”: click “More info”, then “Run anyway”. That’s SmartScreen saying it doesn’t recognise the publisher, not that anything is wrong with the file.",
-    "unavailable": "The download isn't available yet — we're polishing the first version.",
+    "unavailable": "The download isn't available yet, we're polishing the first version.",
     "countSuffix": "downloads and counting"
   },
   "guide": {

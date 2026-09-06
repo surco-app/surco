@@ -56,7 +56,7 @@
           },
           {
             "t": "Calidad a tu gusto",
-            "d": "Bitrate del MP3, bits y frecuencia — o los del original, que es lo que viene por defecto."
+            "d": "Bitrate del MP3, bits y frecuencia, o los del original, que es lo que viene por defecto."
           },
           {
             "t": "Sin ensanchados por sorpresa",
@@ -221,7 +221,7 @@
           },
           {
             "t": "rekordbox, Serato y M3U8",
-            "d": "Ficheros puente: llevan rutas y metadatos — el crate de Serato, solo rutas. Ni cues ni rating."
+            "d": "Ficheros puente: llevan rutas y metadatos. El crate de Serato, solo rutas. Ni cues ni rating."
           },
           {
             "t": "Plantillas de nombre",
@@ -240,7 +240,7 @@
   "shortcuts": {
     "kicker": "Teclado primero",
     "title": "Vuela sin tocar el ratón",
-    "lede": "Una paleta de comandos y atajos para todo el flujo — añade, etiqueta, analiza y procesa pista tras pista sin soltar el teclado, y reasigna los que quieras.",
+    "lede": "Una paleta de comandos y atajos para todo el flujo: añade, etiqueta, analiza y procesa pista tras pista sin soltar el teclado, y reasigna los que quieras.",
     "items": [
       "Añadir archivos",
       "Procesar pista",
@@ -253,7 +253,7 @@
   "speed": {
     "kicker": "Una app, no cinco",
     "title": "El trabajo de cinco apps, en un clic",
-    "lede": "Conversor, Discogs, editor de tags y Apple Music: cinco programas, unos cinco minutos por pista — y los tags hay que rehacerlos dentro de Music, carátula incluida. Surco reúne todo ese flujo en un botón.",
+    "lede": "Conversor, Discogs, editor de tags y Apple Music: cinco programas, unos cinco minutos por pista, y los tags hay que rehacerlos dentro de Music, carátula incluida. Surco reúne todo ese flujo en un botón.",
     "manual": "A mano",
     "manualTime": "~2 h 45 min",
     "manualSteps": [
@@ -329,7 +329,7 @@
       },
       "discogs": {
         "title": "Match de Discogs, Bandcamp y Deezer",
-        "desc": "Busca el lanzamiento exacto en Discogs, Bandcamp o Deezer — de la edición de club al single comercial — y elige la versión correcta."
+        "desc": "Busca el lanzamiento exacto en Discogs, Bandcamp o Deezer, de la edición de club al single comercial, y elige la versión correcta."
       },
       "metadata": {
         "title": "Editor de metadatos",
@@ -424,7 +424,7 @@
     "cta": "Descargar para {{os}}",
     "intel": "¿Mac con Intel (2020 o anterior)? Descárgalo aquí",
     "smartscreen": "Al abrir el instalador, Windows mostrará «Windows protegió tu PC»: pulsa «Más información» y luego «Ejecutar de todas formas». Es SmartScreen avisando de que no reconoce al editor, no de que el archivo tenga nada malo.",
-    "unavailable": "La descarga aún no está disponible — estamos puliendo la primera versión.",
+    "unavailable": "La descarga aún no está disponible, estamos puliendo la primera versión.",
     "countSuffix": "descargas y subiendo"
   },
   "guide": {
