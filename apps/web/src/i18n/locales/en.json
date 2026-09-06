@@ -931,6 +931,17 @@
         "lead": "And they land in your program.",
         "rest": "Apple Music, Engine DJ, rekordbox."
       }
+    },
+    "figures": {
+      "apps": "apps",
+      "appsLabel": "Apps it replaces",
+      "seconds": "{{seconds}}s",
+      "secondsLabel": "Time for one batch",
+      "tracks": "for {{count}} tracks",
+      "price": "$0",
+      "priceLabel": "Price",
+      "forever": "forever",
+      "appsValue": "5→1"
     }
   }
 }

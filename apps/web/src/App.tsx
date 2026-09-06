@@ -5,6 +5,7 @@ import Footer from './components/Footer'
 import Header from './components/Header'
 import HeroAnchors from './components/HeroAnchors'
 import HeroApp from './components/HeroApp'
+import HeroFigures from './components/HeroFigures'
 import Reveal from './components/Reveal'
 import ScrollProgress from './components/ScrollProgress'
 import SectionView from './components/SectionView'
@@ -42,10 +43,12 @@ export default function App() {
       <Header />
 
       <main id="main" className="relative">
-        {/* The text column is wider than the 24rem it used to be and the screenshot takes
-            the rest: at 1440 the old grid spent 464px on margins while the headline wrapped
-            inside 384px — four lines in English, where the copy is longer. */}
-        <section className="mx-auto grid max-w-6xl items-center gap-10 px-6 pt-10 pb-12 sm:pt-14 lg:grid-cols-[minmax(0,30rem)_minmax(0,1fr)] lg:gap-12 lg:pt-16 lg:pb-16">
+        {/* Headline and action on the left, the measured figures on the right. The
+            screenshot used to share this row and came out 575px wide — a texture of
+            the product rather than a readable window — while at desktop widths the
+            right half below it sat empty. Now the window gets the full width of its
+            own band underneath, and the figures fill the space the copy leaves. */}
+        <section className="mx-auto grid max-w-6xl items-end gap-10 px-6 pt-10 pb-10 sm:pt-14 lg:grid-cols-[minmax(0,34rem)_auto] lg:gap-16 lg:pt-16">
           <div>
             <Reveal eager>
               <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-[3rem] lg:leading-[1.05]">
@@ -76,10 +79,21 @@ export default function App() {
               <HeroAnchors />
             </Reveal>
           </div>
+          {/* The lg:border-l is the only rule this column needs: below lg the figures
+              lie in a row under the button, where a left edge would point at nothing. */}
           <Reveal eager delay={280}>
-            <HeroApp video />
+            <div className="lg:border-l lg:border-line lg:pb-1.5 lg:pl-10">
+              <HeroFigures />
+            </div>
           </Reveal>
         </section>
+
+        {/* The window, at the width the grid can actually give it. */}
+        <Reveal eager delay={340}>
+          <div className="mx-auto max-w-7xl px-6 pb-12 lg:pb-16">
+            <HeroApp video />
+          </div>
+        </Reveal>
 
         {/* The names of the tools Surco talks to, doing two jobs at once: they stand in
             for social proof the download count can't carry at three digits, and they say

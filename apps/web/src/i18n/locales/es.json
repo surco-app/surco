@@ -931,6 +931,17 @@
         "lead": "Y aparecen en tu programa.",
         "rest": "Apple Music, Engine DJ, rekordbox."
       }
+    },
+    "figures": {
+      "apps": "apps",
+      "appsLabel": "Apps que sustituye",
+      "seconds": "{{seconds}} s",
+      "secondsLabel": "Tiempo para un lote",
+      "tracks": "para {{count}} pistas",
+      "price": "0 €",
+      "priceLabel": "Precio",
+      "forever": "para siempre",
+      "appsValue": "5→1"
     }
   }
 }
