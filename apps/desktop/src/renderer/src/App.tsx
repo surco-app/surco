@@ -42,6 +42,7 @@ import { useAutoMatch } from './hooks/useAutoMatch'
 import { useConfirmFlows } from './hooks/useConfirmFlows'
 import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
 import { useEditorPicks } from './hooks/useEditorPicks'
+import { type GrowTarget, useGrowColumnsOnResize } from './hooks/useGrowColumnsOnResize'
 import { editorSectionOpen, useMaximizedSection } from './hooks/useEditorSections'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useLaunchModals } from './hooks/useLaunchModals'
@@ -82,7 +83,7 @@ import { isMacOS } from './lib/platform'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { applyProgress, topBarProgress } from './lib/progress'
 import type { ReleaseMetaPatch } from './lib/release'
-import { contentDeficit } from './lib/resize'
+import { contentDeficit, fitProbe } from './lib/resize'
 import { sameTracks } from './lib/sameTracks'
 import {
   type ClickMods,
@@ -856,17 +857,56 @@ export default function App(): React.JSX.Element {
 
   const sidebar = useResizableWidth(300, 300, 600)
 
-  // Double-clicking the divider fits the list to its tracks: measure how far each title and
-  // artist is clipped (or has to spare) and resize by the widest, so long names stop
-  // truncating without the user dragging — and an over-wide column tightens back up.
-  const autoFitSidebar = useCallback((): void => {
+  // How far the widest title or artist is clipped (or has to spare). Shared by the two
+  // things that resize this column: the double-click gesture and the window-growth pass.
+  const sidebarDeficit = useCallback((): number => {
     const rows = []
     for (const el of rowEls.current.values()) {
       const span = el.querySelector<HTMLElement>('[data-fit]')
-      if (span) rows.push({ scrollWidth: span.scrollWidth, clientWidth: span.clientWidth })
+      if (span) rows.push(fitProbe(span))
     }
-    sidebar.autoFit(contentDeficit(rows))
-  }, [sidebar.autoFit])
+    return contentDeficit(rows)
+  }, [])
+
+  // Double-clicking the divider fits the list to its tracks: resize by the widest clipped
+  // row, so long names stop truncating without the user dragging — and an over-wide column
+  // tightens back up.
+  const autoFitSidebar = useCallback((): void => {
+    sidebar.autoFit(sidebarDeficit())
+  }, [sidebar.autoFit, sidebarDeficit])
+
+  // The Discogs column reports itself up here (it lives inside the editor, which remounts
+  // per track), so both left columns are widened from one spare-width budget.
+  const resultsTarget = useRef<GrowTarget | null>(null)
+  const onResultsGrowTargetChange = useStableCallback((target: GrowTarget) => {
+    resultsTarget.current = target
+  })
+
+  // A wider window feeds the clipped columns before it feeds the editor. The track list
+  // comes first: it is the column the user reads to pick what to work on. Only with tracks
+  // loaded — an empty list has nothing to measure and nothing to widen for.
+  //
+  // Rebuilt every render on purpose: the hook reads it through a ref, so this costs nothing
+  // and always carries the current sidebar width and whatever the Discogs column last
+  // reported (it mounts and unmounts with the editor).
+  // Everything left of the editor, measured off the DOM: the track list plus the Discogs
+  // column, which lives inside the editor's subtree and so can't be summed from state here.
+  const occupiedWidth = useCallback((): number => {
+    const list = document.querySelector('[data-testid="sidebar"]')?.getBoundingClientRect().width
+    const results = document
+      .querySelector('[data-testid="matches-column"]')
+      ?.getBoundingClientRect().width
+    return (list ?? 0) + (results ?? 0)
+  }, [])
+
+  useGrowColumnsOnResize(
+    [
+      { width: sidebar.width, deficit: sidebarDeficit, max: 600, apply: sidebar.syncTo },
+      ...(resultsTarget.current ? [resultsTarget.current] : []),
+    ],
+    tracks.length > 0,
+    occupiedWidth,
+  )
 
   // Memoized so the O(n) lookup runs only when the list or the selection changes, not on
   // every App render (a progress tick, a drag-over, a hover prefetch) — on a large crate
@@ -1848,6 +1888,7 @@ export default function App(): React.JSX.Element {
                         onTrashOriginal={onTrashOriginal}
                         onRemoveOldMusicCopy={onRemoveOldMusicCopy}
                         onResultsWidthChange={onResultsWidthChange}
+                        onResultsGrowTargetChange={onResultsGrowTargetChange}
                         onShowLoudnessHelp={onShowLoudnessHelp}
                         onHideEditorHints={onHideEditorHints}
                         onOpenRename={onOpenRename}
