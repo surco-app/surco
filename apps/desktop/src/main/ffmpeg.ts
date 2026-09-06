@@ -59,6 +59,7 @@ import {
   BAND_WIDTH_HZ as SHELF_BAND_WIDTH_HZ,
 } from './hfShelf'
 import { isMissingInputError } from './missingInput'
+import { MP3_ENCODER_DELAY_MS, mp3DecoderPadsHead } from './mp3EncoderDelay'
 import { recordNmlPatch } from './nmlBatch'
 import {
   astatsArgs,
@@ -1123,21 +1124,33 @@ export async function assertDecodable(file: string): Promise<void> {
 
 // The cue re-anchoring a trim demands, in Traktor's millisecond units: positions
 // move back by the head cut and clamp to the trimmed length when the tail was
-// cut too. Undefined while no trim filter ran — the carried frames then stay
-// byte-exact, as they always did for plain re-encodes and constant gains. The
-// tempo rides along for the grid marker, whose phase can't be recomputed without
-// it; a non-numeric or absent bpm tag simply leaves it undefined.
+// cut too. The tempo rides along for the grid marker, whose phase can't be
+// recomputed without it; a non-numeric or absent bpm tag simply leaves it undefined.
+//
+// A second, independent source of drift rides on the same shift: an MP3 whose
+// Xing/LAME header was stripped decodes MP3_ENCODER_DELAY_MS late, because that
+// header is what tells the decoder to drop the encoder's priming samples (measured,
+// see mp3EncoderDelay.ts). The audio moves later, so the cues must move later too —
+// a negative shift, since shiftTraktorCues subtracts. An MP3 that still has its
+// header decodes sample-aligned and gets nothing: compensating there would drag a
+// correctly placed cue off the grid, which is exactly what a fixed offset does.
+// Undefined only when neither source applies — the carried frames then stay
+// byte-exact, as they always did for plain re-encodes and constant gains.
 function cueShiftFor(
   trim: TrimRange | undefined,
   active: boolean,
   bpm: string,
+  input: string,
 ): CueShift | undefined {
-  if (!active || !trim) return undefined
-  const startSec = trim.startSec ?? 0
+  const decoderDelayMs = mp3DecoderPadsHead(input) ? MP3_ENCODER_DELAY_MS : 0
+  const trimmed = active && trim !== undefined
+  if (!trimmed && decoderDelayMs === 0) return undefined
+  const startSec = trimmed ? (trim?.startSec ?? 0) : 0
   const tempo = Number(bpm)
+  const endSec = trimmed ? trim?.endSec : undefined
   return {
-    shiftMs: Math.round(startSec * 1000),
-    maxMs: trim.endSec !== undefined ? Math.round((trim.endSec - startSec) * 1000) : undefined,
+    shiftMs: Math.round(startSec * 1000) - decoderDelayMs,
+    maxMs: endSec !== undefined ? Math.round((endSec - startSec) * 1000) : undefined,
     bpm: Number.isFinite(tempo) && tempo > 0 ? tempo : undefined,
   }
 }
@@ -1431,7 +1444,7 @@ export async function convertAudio(
             clearExtras,
             foreignRemoved,
             cueSource: input,
-            cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
+            cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input),
           })
         } finally {
           // Only the extracted copy is ours to delete; a caller-supplied coverPath is
@@ -1448,7 +1461,7 @@ export async function convertAudio(
             type: 'copyCuesFromFlac',
             source: input,
             dest: tmp,
-            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
+            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input),
           })
       } else if (
         (meta.rating?.trim() || meta.comment.trim() || clearExtras) &&
@@ -1471,7 +1484,7 @@ export async function convertAudio(
           clearExtras,
           foreignRemoved,
           cueSource: input,
-          cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
+          cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input),
         })
         // cueSource only knows how to clone ID3 frames, so a FLAC source hands it nothing
         // and the rated file would keep ffmpeg's TXXX — the same loss the unrated path had,
@@ -1482,7 +1495,7 @@ export async function convertAudio(
             type: 'copyCuesFromFlac',
             source: input,
             dest: tmp,
-            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
+            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input),
           })
       }
       // Any re-encode through ffmpeg drops Traktor's cue/beatgrid frames — a
@@ -1504,13 +1517,13 @@ export async function convertAudio(
                 type: 'copyCuesFromFlac',
                 source: input,
                 dest: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
+                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input),
               }
             : {
                 type: 'copyCueFrames',
                 source: input,
                 dest: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
+                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input),
               },
         )
       // FLAC needs the mirror image: its armored TRAKTOR4 comment rides the
@@ -1533,12 +1546,12 @@ export async function convertAudio(
                 type: 'copyCuesToFlac',
                 source: input,
                 dest: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
+                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input),
               }
             : {
                 type: 'shiftFlacCues',
                 file: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm),
+                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input),
               },
         )
     }
