@@ -115,8 +115,11 @@ export default function Speed() {
   }[]
   const bullets = t('speed.bullets', { returnObjects: true }) as string[]
 
+  // pt-24 on top of the feature grid's own pb-20 left 176px of empty background
+  // between the last bullet and this heading. The section still gets its air, it
+  // just is not paying for the gap twice.
   return (
-    <section id="velocidad" className="scroll-mt-24 pt-24 pb-24">
+    <section id="velocidad" className="scroll-mt-24 pt-12 pb-24">
       <Reveal>
         <Kicker>{t('speed.kicker')}</Kicker>
         <h2 className="mt-3 max-w-2xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">

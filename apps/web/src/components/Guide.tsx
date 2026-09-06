@@ -99,7 +99,9 @@ export default function Guide() {
       <Header page="guide" />
 
       <main id="main" className="relative mx-auto max-w-3xl px-6">
-        <section className="pt-12 pb-12 sm:pt-16">
+        {/* pb smaller than pt: each section below brings its own py-12, so the
+            index used to sit in about 150px of empty background. */}
+        <section className="pt-12 pb-4 sm:pt-16">
           <Reveal>
             <p className="font-mono text-xs tracking-wider text-blue uppercase">
               {t('guide.kicker')}
