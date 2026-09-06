@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
+import type { AudioAnalysisIpc } from '../shared/audioIpcContract'
 import type {
   ActivityEvent,
   AppleMusicLookupCandidate,
@@ -18,6 +19,14 @@ import type {
   WaveformScan,
 } from '../shared/types'
 import type { Api } from './api'
+
+// The renderer half of shared/audioIpcContract.ts: every analysis invoke goes
+// through here, so its channel name, arguments and promised result stay welded
+// to what the main handler was compiled against.
+const invokeAudio = <K extends keyof AudioAnalysisIpc>(
+  channel: K,
+  ...args: AudioAnalysisIpc[K]['args']
+): Promise<AudioAnalysisIpc[K]['result']> => ipcRenderer.invoke(channel, ...args)
 
 const api: Api = {
   platform: process.platform,
@@ -116,32 +125,32 @@ const api: Api = {
   openFeedback: (error?: string, stack?: string): Promise<void> =>
     ipcRenderer.invoke('feedback:open', error, stack),
   spectrogram: (path: string, priority: 'high' | 'low' = 'low') =>
-    ipcRenderer.invoke('audio:spectrogram', path, priority),
+    invokeAudio('audio:spectrogram', path, priority),
   loadCachedAnalyses: (
     paths: string[],
   ): Promise<Record<string, { spectrogram?: SpectrumResult; waveformScan?: WaveformScan }>> =>
-    ipcRenderer.invoke('audio:cached-batch', paths),
+    invokeAudio('audio:cached-batch', paths),
   loudness: (path: string, priority: 'high' | 'low' = 'low'): Promise<LoudnessResult | null> =>
-    ipcRenderer.invoke('audio:loudness', path, priority),
+    invokeAudio('audio:loudness', path, priority),
   properties: (path: string): Promise<TrackProperties | null> =>
-    ipcRenderer.invoke('audio:properties', path),
+    invokeAudio('audio:properties', path),
   bpm: (path: string, priority: 'high' | 'low' = 'low'): Promise<BpmResult | null> =>
-    ipcRenderer.invoke('audio:bpm', path, priority),
+    invokeAudio('audio:bpm', path, priority),
   key: (path: string, priority: 'high' | 'low' = 'low'): Promise<KeyResult | null> =>
-    ipcRenderer.invoke('audio:key', path, priority),
+    invokeAudio('audio:key', path, priority),
   waveform: (
     path: string,
     priority: 'urgent' | 'high' | 'low' = 'low',
-  ): Promise<WaveformResult | null> => ipcRenderer.invoke('audio:waveform', path, priority),
+  ): Promise<WaveformResult | null> => invokeAudio('audio:waveform', path, priority),
   waveformScan: (path: string): Promise<WaveformScan | null> =>
-    ipcRenderer.invoke('audio:waveform-scan', path),
+    invokeAudio('audio:waveform-scan', path),
   waveformWindow: (
     path: string,
     startSec: number,
     durSec: number,
     buckets: number,
   ): Promise<{ peaks: number[]; rms: number[] } | null> =>
-    ipcRenderer.invoke('audio:waveformWindow', path, startSec, durSec, buckets),
+    invokeAudio('audio:waveformWindow', path, startSec, durSec, buckets),
   declickPreview: (path, mode) => ipcRenderer.invoke('audio:declickPreview', path, mode),
   onDeclickPreviewProgress: (fn: (done: number) => void) => {
     const listener = (_e: unknown, done: number): void => fn(done)
@@ -154,7 +163,7 @@ const api: Api = {
     path: string,
     priority: 'high' | 'low' = 'low',
   ): Promise<{ count: number; marks: number[]; scannedSec: number } | null> =>
-    ipcRenderer.invoke('audio:clicks', path, priority),
+    invokeAudio('audio:clicks', path, priority),
   readTags: (path: string) => ipcRenderer.invoke('audio:tags', path),
   readDuration: (path: string) => ipcRenderer.invoke('audio:duration', path),
   readMeta: (path: string) => ipcRenderer.invoke('audio:meta', path),

@@ -62,7 +62,17 @@ import { join } from 'node:path'
 import { app, ipcMain } from 'electron'
 import { cachedAnalysis } from './analysisCache'
 import { registerAudioIpc } from './audioIpc'
-import { buildSpectrum, cacheableSpectrum } from './ffmpeg'
+import {
+  buildSpectrum,
+  cacheableSpectrum,
+  detectTrackClicks,
+  measureBpm,
+  measureChannelScan,
+  measureKey,
+  measureLoudness,
+  measureWaveform,
+  probeProperties,
+} from './ffmpeg'
 
 function handlerFor(channel: string): (e: unknown, ...args: unknown[]) => unknown {
   const call = (ipcMain.handle as ReturnType<typeof vi.fn>).mock.calls.find(
@@ -101,6 +111,59 @@ describe('audio:cached-batch', () => {
   // only after clearing and re-adding files (user-reported lag). The fresh
   // handler must return the analysis whole, with only the cache's own
   // bookkeeping flag held back.
+  // One datum, two routes, one shape: the fresh handler and the cached-batch
+  // warm path must serve deep-equal objects. When their shapes diverged, fields
+  // existed only on the warm route and their UI lines appeared late or only
+  // after re-adding files — a bug class that reads as intermittent "lag".
+  it('serves the same object on the fresh route and the warm route', async () => {
+    const file = await makeFile()
+    vi.mocked(buildSpectrum).mockResolvedValue({
+      image: 'data:image/png;base64,BBBB',
+      cutoffHz: 18000,
+      sampleRateHz: 44100,
+      imageTopHz: 24000,
+      processed: false,
+      hasKnee: true,
+      upsampled: false,
+      resolution: 'native',
+      fineStepDb: 30.1,
+      bitsUsage: 'full',
+      bitsLowPct: 99.5,
+    } as Awaited<ReturnType<typeof buildSpectrum>>)
+    vi.mocked(cacheableSpectrum).mockImplementation(
+      (b) => ({ ...b, cutoffFailed: false }) as ReturnType<typeof cacheableSpectrum>,
+    )
+
+    const fresh = await handlerFor('audio:spectrogram')({}, file)
+    const batch = (await handlerFor('audio:cached-batch')({}, [file])) as Record<
+      string,
+      { spectrogram?: unknown }
+    >
+
+    expect(batch[file].spectrogram).toEqual(fresh)
+  })
+
+  // Every cachedAnalysis-backed handler ships the cached object whole. The
+  // marker field stands in for whatever the analysis learns to measure next:
+  // if a handler starts projecting fields, the future field vanishes and this
+  // trips before a user has to report the missing line.
+  it.each([
+    ['audio:loudness', measureLoudness],
+    ['audio:clicks', detectTrackClicks],
+    ['audio:properties', probeProperties],
+    ['audio:bpm', measureBpm],
+    ['audio:key', measureKey],
+    ['audio:waveform', measureWaveform],
+    ['audio:waveform-scan', measureChannelScan],
+  ] as const)('%s ships future fields through untouched', async (channel, producer) => {
+    const file = await makeFile()
+    vi.mocked(producer).mockResolvedValue({ futureField: 'still-here' } as never)
+
+    const res = (await handlerFor(channel)({}, file)) as Record<string, unknown> | null
+
+    expect(res?.futureField).toBe('still-here')
+  })
+
   it('returns the full fresh analysis, not a projection that strands new fields', async () => {
     const file = await makeFile()
     vi.mocked(buildSpectrum).mockResolvedValue({
