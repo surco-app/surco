@@ -488,6 +488,15 @@ describe('DestinationTab Traktor collection', () => {
     expect(moved.getAttribute('x1')).toBe(origin.getAttribute('x1'))
   })
 
+  // Zero is the state nearly every user sees, so it is the one that has to say something.
+  // The first version hid the beat marker until an adjustment existed, which left a grid
+  // with a lone line on it — a diagram of nothing. Drawn, it reads as "cue and beat agree".
+  it('still marks the beat when nothing has been adjusted', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '0')
+
+    expect(screen.getByTestId('cue-grid-origin')).not.toHaveAttribute('opacity', '0')
+  })
+
   // The drawing only ever claims what Surco actually knows — the beat grid and where the
   // cue sits on it. It must not draw a waveform: Surco cannot know where the transient
   // of this DJ's track falls, and a drawn hit would suggest the cue is being aligned to
