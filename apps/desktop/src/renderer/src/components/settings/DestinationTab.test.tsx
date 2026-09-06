@@ -457,4 +457,64 @@ describe('DestinationTab Traktor collection', () => {
       i18n.t('settings.traktorCueOffsetNone'),
     )
   })
+
+  // Milliseconds mean nothing until you see them against a beat: at 128 BPM a beat runs
+  // 469 ms, so 51 ms is 11% of one. The drawing puts the cue on the grid and marks where
+  // it used to sit, which shows the size and the direction of the change at a glance.
+  it('draws the cue displaced from the beat it was on', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '-51')
+
+    const moved = screen.getByTestId('cue-grid-cue')
+    const origin = screen.getByTestId('cue-grid-origin')
+    // A negative offset delays the cue, and later means further right on a timeline.
+    expect(Number(moved.getAttribute('x1'))).toBeGreaterThan(Number(origin.getAttribute('x1')))
+  })
+
+  it('draws the cue ahead of the beat for a positive offset', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '51')
+
+    const moved = screen.getByTestId('cue-grid-cue')
+    const origin = screen.getByTestId('cue-grid-origin')
+    expect(Number(moved.getAttribute('x1'))).toBeLessThan(Number(origin.getAttribute('x1')))
+  })
+
+  // Nothing has moved, so the cue sits exactly on its beat and there is no displacement
+  // to draw — a visible gap at zero would contradict the reading right next to it.
+  it('draws the cue on the beat when there is no adjustment', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '0')
+
+    const moved = screen.getByTestId('cue-grid-cue')
+    const origin = screen.getByTestId('cue-grid-origin')
+    expect(moved.getAttribute('x1')).toBe(origin.getAttribute('x1'))
+  })
+
+  // The drawing only ever claims what Surco actually knows — the beat grid and where the
+  // cue sits on it. It must not draw a waveform: Surco cannot know where the transient
+  // of this DJ's track falls, and a drawn hit would suggest the cue is being aligned to
+  // real audio rather than to the grid.
+  it('draws no waveform it cannot know', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '-51')
+
+    expect(screen.queryByTestId('cue-grid-waveform')).not.toBeInTheDocument()
+  })
+
+  // Caught in the real app: the first geometry drew six beat lines of which only two
+  // landed inside the frame, so there was effectively no grid to read the cue against.
+  // The point of the drawing is the comparison, so several lines have to be visible.
+  it('keeps enough of the grid inside the frame to read the cue against', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '-51')
+
+    const svg = screen.getByRole('img')
+    const width = Number(svg.getAttribute('viewBox')?.split(' ')[2])
+    // Only the grid lines: counting every line would also count the cue, its dotted
+    // origin and the displacement bar, all of which sit inside the frame by construction
+    // — which is how the first version of this test passed against the broken geometry.
+    const gridInside = [...svg.querySelectorAll('line')].filter((line) => {
+      if (line.getAttribute('stroke') !== 'var(--color-line-strong)') return false
+      const x = Number(line.getAttribute('x1'))
+      return x >= 0 && x <= width
+    })
+
+    expect(gridInside.length).toBeGreaterThanOrEqual(4)
+  })
 })

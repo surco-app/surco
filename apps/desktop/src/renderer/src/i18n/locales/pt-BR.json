@@ -877,6 +877,7 @@
     "traktorCueOffsetLater": "Os cue points vão soar {{ms}} ms mais tarde",
     "traktorCueOffsetEarlier": "Os cue points vão soar {{ms}} ms antes",
     "traktorCueOffsetNone": "Os cue points ficam onde você deixou",
+    "traktorCueGridAlt": "A grade de beats com o cue point em sua posição e uma linha pontilhada onde ele estava antes do ajuste.",
     "traktorCueOffsetIdle": "Ajusta os cue points gravados na sua coleção do Traktor. Defina seu collection.nml acima para usar.",
     "appleMusicFlacNote": "O Apple Music não reproduz FLAC, então as faixas convertidas ficam na pasta de saída enquanto seu formato for FLAC.",
     "filenameFormat": "Formato do nome do arquivo",

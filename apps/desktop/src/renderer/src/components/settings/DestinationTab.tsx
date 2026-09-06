@@ -6,6 +6,7 @@ import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { DestinationPicker } from '../DestinationPicker'
 import { OutputFolderField } from '../OutputFolderField'
+import { CueGrid } from './CueGrid'
 import { SettingsField, SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
 
 // Apple Music automation only exists on macOS, so the destination is meaningless on
@@ -294,6 +295,9 @@ export function DestinationTab({
               })}
             </span>
           </div>
+          {/* The same value again, against a beat: milliseconds only mean something once
+              you can see how much of a beat they are. */}
+          <CueGrid offsetMs={Number(synced.traktorCueOffsetMs)} />
           <SettingsHint className="mt-2">
             {local.traktorNmlPath
               ? tr('settings.traktorCueOffsetHint')
