@@ -877,6 +877,7 @@
     "traktorCueOffsetLater": "Les points de repère tomberont {{ms}} ms plus tard",
     "traktorCueOffsetEarlier": "Les points de repère tomberont {{ms}} ms plus tôt",
     "traktorCueOffsetNone": "Les points de repère restent où tu les as mis",
+    "traktorCueGridAlt": "La grille de beats avec le point de repère à sa place, et une ligne pointillée là où il était avant le réglage.",
     "traktorCueOffsetIdle": "Ajuste les points de repère écrits dans ta collection Traktor. Indique ta collection.nml ci-dessus pour l'utiliser.",
     "appleMusicFlacNote": "Apple Music ne lit pas le FLAC, donc les morceaux convertis restent dans le dossier de sortie tant que ton format est FLAC.",
     "filenameFormat": "Format du nom de fichier",
