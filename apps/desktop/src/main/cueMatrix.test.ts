@@ -116,7 +116,7 @@ function makeSource(dir: string, ext: string): string {
     path,
   ])
   if (ext === '.wav') injectWavPriv(path, tree)
-  else if (ext === '.aiff') injectAiffPriv(path, tree)
+  else if (ext === '.aiff' || ext === '.aif') injectAiffPriv(path, tree)
   // An MP3 carries its ID3 tag as a plain prefix, not inside a container chunk.
   else writeFileSync(path, Buffer.concat([id3WithPriv(tree), readFileSync(path)]))
   return path
@@ -158,7 +158,11 @@ function hasTextMirror(file: string): boolean {
 // Every source→target crossing the converter supports, as one table. The bug djotas
 // reported was a single empty cell in it (FLAC→MP3/AIFF); enumerating the whole matrix is
 // what turns "we fixed the one that was reported" into "we checked all of them".
-const SOURCES = ['.flac', '.mp3', '.aiff', '.wav'] as const
+// '.aif' is a separate row from '.aiff' and not a duplicate of it: an AIFF rip wears
+// either spelling (shared/format.ts says so, expand.ts imports both), and the cue
+// carry-over asks the SOURCE extension which tag it keeps its cues in. Listing only the
+// long one is exactly how this cell stayed empty while every other crossing was covered.
+const SOURCES = ['.flac', '.mp3', '.aiff', '.aif', '.wav'] as const
 const TARGETS = [
   { format: 'flac', ext: '.flac' },
   { format: 'mp3', ext: '.mp3' },
