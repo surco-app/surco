@@ -66,6 +66,57 @@ describe('isTraktorRunning', () => {
 
     expect(running).toBe(false)
   })
+
+  // The dangerous direction. pgrep exiting non-zero because nothing matched is a real
+  // "not running", but a command that could not run at all — tasklist missing from a
+  // stripped PATH, a spawn refused, a timeout — tells us nothing, and answering "not
+  // running" to that lets the write through. Traktor rewrites collection.nml wholesale
+  // on quit, so a write underneath a live Traktor is silently discarded: the cues and
+  // grid the user just synced are gone with no error anywhere. Refusing to answer costs
+  // one skipped sync the user is told about; guessing costs their work.
+  it('reports Traktor running when Windows cannot answer', async () => {
+    vi.resetModules()
+    execFile.mockReset()
+    respond(() => new Error('spawn tasklist ENOENT'))
+
+    const running = await withPlatform('win32', async () => {
+      const { isTraktorRunning } = await import('./traktorProcess')
+      return isTraktorRunning()
+    })
+
+    expect(running).toBe(true)
+  })
+
+  // Same on Unix, but only for a genuine failure to run the tool: see the next test for
+  // the exit code that legitimately means "no match".
+  it('reports Traktor running when pgrep cannot be run at all', async () => {
+    vi.resetModules()
+    execFile.mockReset()
+    respond(() => Object.assign(new Error('spawn pgrep ENOENT'), { code: 'ENOENT' }))
+
+    const running = await withPlatform('darwin', async () => {
+      const { isTraktorRunning } = await import('./traktorProcess')
+      return isTraktorRunning()
+    })
+
+    expect(running).toBe(true)
+  })
+
+  // pgrep's documented "no processes matched" exit. This one really does mean Traktor
+  // is closed, and must keep letting the sync through — a guard that blocked here would
+  // refuse every sync on every machine.
+  it('reports Traktor gone when pgrep exits 1 with no match', async () => {
+    vi.resetModules()
+    execFile.mockReset()
+    respond(() => Object.assign(new Error('Command failed: pgrep'), { code: 1 }))
+
+    const running = await withPlatform('darwin', async () => {
+      const { isTraktorRunning } = await import('./traktorProcess')
+      return isTraktorRunning()
+    })
+
+    expect(running).toBe(false)
+  })
 })
 
 describe('quitTraktor', () => {
@@ -94,5 +145,35 @@ describe('quitTraktor', () => {
     expect(args).toContain('/FI')
     expect(args.join(' ')).toContain('IMAGENAME eq Traktor*')
     expect(args).not.toContain('/F')
+  })
+
+  // Follows from isTraktorRunning refusing to guess: if the check cannot run, the poll
+  // never sees Traktor disappear and the quit is reported as failed. That is the honest
+  // answer — we did not confirm it closed — and the caller then declines to write the
+  // collection, which is the safe side. The cost is the user waiting out the poll.
+  it('reports the quit unconfirmed when the running check cannot answer', async () => {
+    vi.resetModules()
+    execFile.mockReset()
+    respond((cmd) =>
+      cmd === 'taskkill'
+        ? { stdout: 'SUCCESS' }
+        : Object.assign(new Error('spawn tasklist ENOENT'), { code: 'ENOENT' }),
+    )
+
+    // The poll waits 500 ms between 30 attempts; fake timers run those out instantly
+    // rather than making the suite sit through the real 15 s.
+    vi.useFakeTimers()
+    try {
+      const gone = await withPlatform('win32', async () => {
+        const { quitTraktor } = await import('./traktorProcess')
+        const pending = quitTraktor()
+        await vi.runAllTimersAsync()
+        return pending
+      })
+
+      expect(gone).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
