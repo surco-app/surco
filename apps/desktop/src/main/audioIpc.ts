@@ -1,6 +1,8 @@
 import { basename } from 'node:path'
+import type { IpcMainInvokeEvent } from 'electron'
 import { ipcMain } from 'electron'
 import log from 'electron-log/main'
+import type { AudioAnalysisIpc } from '../shared/audioIpcContract'
 import type { DeclickMode, SpectrumResult, WaveformScan } from '../shared/types'
 import { activity } from './activity'
 import { cachedAnalysis, peekAnalysis } from './analysisCache'
@@ -85,6 +87,21 @@ const CHANNELSCAN_NAMESPACE = 'channelscan-v1'
 // stall the waveform and loudness reads the editor needs *while the user waits*.
 let declickRender: { kill: (signal: string) => void } | null = null
 
+// The typed face of ipcMain.handle for the analysis family: the handler's
+// arguments and return are compiled against the contract table the preload
+// invokes through, so a channel typo, an argument drift or a dropped REQUIRED
+// field dies at tsc. See shared/audioIpcContract.ts for what this cannot catch
+// (optional fields), and the passthrough tests that guard that half.
+function handleAudio<K extends keyof AudioAnalysisIpc>(
+  channel: K,
+  handler: (
+    e: IpcMainInvokeEvent,
+    ...args: AudioAnalysisIpc[K]['args']
+  ) => AudioAnalysisIpc[K]['result'] | Promise<AudioAnalysisIpc[K]['result']>,
+): void {
+  ipcMain.handle(channel, handler as (e: IpcMainInvokeEvent, ...args: unknown[]) => unknown)
+}
+
 export function registerAudioIpc(allowMedia: (path: string) => void): void {
   ipcMain.handle('audio:tags', async (_e, inputPath: string) => {
     try {
@@ -110,7 +127,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   ipcMain.handle('audio:cover', (_e, inputPath: string) => extractCover(inputPath))
   ipcMain.handle('audio:coverFull', (_e, inputPath: string) => extractCoverDataUrl(inputPath))
 
-  ipcMain.handle(
+  handleAudio(
     'audio:spectrogram',
     async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
       try {
@@ -210,45 +227,39 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     },
   )
 
-  ipcMain.handle(
-    'audio:loudness',
-    async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
-      try {
-        return await cachedAnalysis(LOUDNESS_NAMESPACE, inputPath, () =>
-          probe('activity.probeLoudness', inputPath, () =>
-            cancellable(inputPath, priority, (signal) =>
-              analysisLimiter.run(() => measureLoudness(inputPath, signal), priority, signal),
-            ),
+  handleAudio('audio:loudness', async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
+    try {
+      return await cachedAnalysis(LOUDNESS_NAMESPACE, inputPath, () =>
+        probe('activity.probeLoudness', inputPath, () =>
+          cancellable(inputPath, priority, (signal) =>
+            analysisLimiter.run(() => measureLoudness(inputPath, signal), priority, signal),
           ),
-        )
-      } catch (err) {
-        if (!isAbortError(err)) log.error('audio:loudness failed', err)
-        return null
-      }
-    },
-  )
+        ),
+      )
+    } catch (err) {
+      if (!isAbortError(err)) log.error('audio:loudness failed', err)
+      return null
+    }
+  })
 
   // The repair section's clicks: the count for the header pill, and the marks the wave
   // draws (and "jump to the next click" seeks to) — one detector pass, one cache entry,
   // so the number and the marks can never disagree. v2: the v1 entries hold a bare
   // count, and a stale hit would leave a track showing its pill with no marks.
-  ipcMain.handle(
-    'audio:clicks',
-    async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
-      try {
-        return await cachedAnalysis(CLICKS_NAMESPACE, inputPath, () =>
-          probe('activity.probeClicks', inputPath, () =>
-            analysisLimiter.run(() => detectTrackClicks(inputPath), priority),
-          ),
-        )
-      } catch (err) {
-        log.error('audio:clicks failed', err)
-        return null
-      }
-    },
-  )
+  handleAudio('audio:clicks', async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
+    try {
+      return await cachedAnalysis(CLICKS_NAMESPACE, inputPath, () =>
+        probe('activity.probeClicks', inputPath, () =>
+          analysisLimiter.run(() => detectTrackClicks(inputPath), priority),
+        ),
+      )
+    } catch (err) {
+      log.error('audio:clicks failed', err)
+      return null
+    }
+  })
 
-  ipcMain.handle('audio:properties', async (_e, inputPath: string) => {
+  handleAudio('audio:properties', async (_e, inputPath: string) => {
     try {
       return await cachedAnalysis(PROPERTIES_NAMESPACE, inputPath, () =>
         probe('activity.probeProperties', inputPath, () => probeProperties(inputPath)),
@@ -259,7 +270,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     }
   })
 
-  ipcMain.handle('audio:bpm', async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
+  handleAudio('audio:bpm', async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
     try {
       // Unlike a null loudness (a parse failure worth retrying), a null here is
       // a real measurement — beatless material, or a corrupt file whose decode
@@ -281,7 +292,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     }
   })
 
-  ipcMain.handle('audio:key', async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
+  handleAudio('audio:key', async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
     try {
       // Same caching contract as audio:bpm: a null (atonal material, or the
       // corrupt-file overrun) is a real measurement and is cached; only a
@@ -301,7 +312,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
     }
   })
 
-  ipcMain.handle(
+  handleAudio(
     'audio:waveform',
     async (_e, inputPath: string, priority: 'urgent' | 'high' | 'low' = 'low') => {
       try {
@@ -341,7 +352,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   // player/compare strip pays for it. Its own cache namespace, so each entry always holds a
   // complete answer for its own contract — the peaks-only wave is never starved of marks,
   // and this is never served a wave with no scan.
-  ipcMain.handle('audio:waveform-scan', async (_e, inputPath: string) => {
+  handleAudio('audio:waveform-scan', async (_e, inputPath: string) => {
     try {
       return await cachedAnalysis(CHANNELSCAN_NAMESPACE, inputPath, () =>
         probe('activity.probeWaveform', inputPath, () =>
@@ -371,7 +382,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   // it here would turn a big library's opening batch into a multi-MB read for a filter
   // bucket few tracks even hit. loudness/properties/bpm/key/clicks are editor-only detail
   // panels; tracksSnapshot never reads them, so they stay lazy too.
-  ipcMain.handle('audio:cached-batch', async (_e, paths: string[]) => {
+  handleAudio('audio:cached-batch', async (_e, paths: string[]) => {
     const entries = await Promise.all(
       paths.map(async (path) => {
         const [spectrogram, waveformScan] = await Promise.all([
@@ -379,7 +390,12 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
           peekAnalysis<WaveformScan>(CHANNELSCAN_NAMESPACE, path),
         ])
         const hit: { spectrogram?: SpectrumResult; waveformScan?: WaveformScan } = {}
-        if (spectrogram) hit.spectrogram = spectrogram
+        if (spectrogram) {
+          const { cutoffFailed: _cutoffFailed, ...entry } = spectrogram as SpectrumResult & {
+            cutoffFailed?: boolean
+          }
+          hit.spectrogram = entry
+        }
         if (waveformScan) hit.waveformScan = waveformScan
         return [path, hit] as const
       }),
@@ -399,7 +415,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   // row (it fires per scroll step — the feed would flood). Params are clamped: the
   // renderer is trusted UI, but a compromised renderer must not be able to ask for an
   // unbounded decode. 'high' like the full waveform — the user is looking right at it.
-  ipcMain.handle(
+  handleAudio(
     'audio:waveformWindow',
     async (_e, inputPath: string, startSec: number, durSec: number, buckets: number) => {
       try {
