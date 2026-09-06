@@ -129,6 +129,17 @@ Renderer components (e.g. `src/renderer/src/components/Player.tsx`) likewise hav
   ~20 kHz cutoff and real loudness numbers once that section is open. (A first screenshot taken
   before the panel finishes may briefly read "Could not analyze the audio" — that's the analysis
   still running, not a failure.)
+- **The driven app's userData persists ACROSS sessions.** It lives in
+  `~/Library/Application Support/Electron/` (the bare Electron binary's default), so
+  two things survive from past driver runs and will lie to you:
+  - `analysis-cache/`: a warm entry only exercises the CACHED route to the renderer.
+    A real regression once dropped fields on the fresh route only, and driver checks
+    passed because the entry was already cached. When verifying NEW analysis UI,
+    delete `analysis-cache/` first (or use a file never analysed) so the FIRST
+    analysis is what you see.
+  - `settings.json`: toggles flipped by past sessions (inline explanations, output
+    policies) gate what renders. If a feature "doesn't show", read this file before
+    debugging code.
 - **Capturing for `/guia`?** The published set is 1440x867: run `win 1440 867` right
   after `launch`, and `park` before every `ss` or the hovered row covers its own title
   with the play button. The settings tabs are `role="tab"`, so `clicktext` never matches
