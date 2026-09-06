@@ -20,6 +20,7 @@ export type ErrorKey =
   | 'settingsFileNotSurco'
   | 'appleMusicNoMediaCopy'
   | 'convertedOutputUnreadable'
+  | 'convertedOutputTruncated'
 
 // Builds the message an ipcMain handler throws. Detail is appended for the log and any
 // bug report; the renderer shows the translated string and never this text.
