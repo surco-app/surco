@@ -126,23 +126,24 @@ export function DestinationTab({
           it isn't itself a place the converted file goes. Empty path means the feature
           is off (see settings.ts), so this is the only control that turns it on. */}
       <SettingsSection eyebrow={tr('settings.traktorSync')}>
-        <SettingsLabel htmlFor="settings-traktor-nml">
-          {tr('settings.traktorNmlPath')}
-        </SettingsLabel>
+        {/* No htmlFor: the value below is a read-only display, not a form control, so
+            there is nothing for a label to focus. */}
+        <SettingsLabel>{tr('settings.traktorNmlPath')}</SettingsLabel>
         <div className="mt-2 flex gap-2">
-          {/* Not focusable: the value only ever changes through "Change", and focusing a
-              readOnly input makes the browser scroll the text to put the caret at the end,
-              hiding the start of the path on top of the truncation already clipping the
-              end. title carries the full path for anyone who needs to read it whole. */}
-          <input
+          {/* Not an input: nothing can be typed here, the path only ever changes through
+              "Change". As an input it took a caret on click, and the browser then scrolled
+              the text sideways to reveal the end — hiding the start of the path on top of
+              the truncation already clipping the end (tabIndex={-1} did not help: it stops
+              tabbing, not clicking). A plain element can't be focused or scrolled, and
+              title still carries the full path for anyone who needs to read it whole. */}
+          <div
             id="settings-traktor-nml"
             data-testid="settings-traktor-nml"
-            value={local.traktorNmlPath}
             title={local.traktorNmlPath}
-            tabIndex={-1}
-            readOnly
             className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
-          />
+          >
+            {local.traktorNmlPath}
+          </div>
           <button
             type="button"
             data-testid="settings-traktor-nml-change"
