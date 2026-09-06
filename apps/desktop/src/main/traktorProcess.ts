@@ -15,6 +15,13 @@ const NAME_PATTERN = 'traktor'
 // runs — so no artifact reliably says "in use" while it idles. The process itself is
 // the signal: writing collection.nml under a live Traktor loses whichever side saves
 // last, and Traktor always wins because it saves on exit regardless of what's on disk.
+// pgrep's documented exit status: 1 means "no processes matched", which is a real
+// answer. Anything else — 2 for a syntax error, 3 for a fatal one, ENOENT for a missing
+// binary, a timeout — means the question went unanswered.
+function meansNoMatch(err: unknown): boolean {
+  return (err as { code?: unknown })?.code === 1
+}
+
 export async function isTraktorRunning(): Promise<boolean> {
   try {
     if (process.platform === 'win32') {
@@ -23,10 +30,15 @@ export async function isTraktorRunning(): Promise<boolean> {
     }
     await run('pgrep', ['-i', NAME_PATTERN])
     return true
-  } catch {
-    // pgrep exits non-zero when nothing matches; a missing tool also means "can't
-    // tell", where blocking every sync would be worse than proceeding.
-    return false
+  } catch (err) {
+    // Only pgrep's "nothing matched" counts as Traktor being closed. Every other failure
+    // means we could not find out, and the two answers are not equally safe: Traktor
+    // rewrites collection.nml wholesale when it quits, so a write underneath a live
+    // Traktor is discarded without an error anywhere — the cues, grid and artwork just
+    // synced are silently gone. Reporting "running" when we cannot tell costs one skipped
+    // sync the user is told about; reporting "not running" costs their work.
+    if (process.platform !== 'win32' && meansNoMatch(err)) return false
+    return true
   }
 }
 
