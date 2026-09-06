@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 2026-09-04** (v0.93.0). Levantado por primera vez el
+**Última revisión: 2026-09-06** (v0.94.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -101,6 +101,24 @@ basura que nunca escribió. La cabecera LAME de gapless sobrevive
 
 ---
 
+### El fichero convertido se verifica antes de publicarse
+
+Ni la cabecera del contenedor ni un error de decodificación delatan un fichero
+cortado a medias: un MP3 truncado declara la misma duración que el entero, porque
+la cifra sale de la cabecera Xing, y pasa `-xerror`. Lo que sí lo delata es
+comparar lo que la cabecera promete contra lo que el decodificado entrega
+(`ffmpeg.ts:1141`, llamado en `:1702`).
+
+Corre en las dos ramas y **después** de las pasadas de TagLib que reescriben el
+fichero entero: antes solo miraba la rama de recodificación, y encima antes de
+esas pasadas, así que una copia por stream nunca se verificaba y una pasada de
+tags muerta a medias se renombraba sobre el destino como conversión terminada.
+
+Medido: la deriva normal va del 0,25 % al 0,75 % en seis códecs y una truncación
+da 76 %. Cuesta de 0,06 s (flac) a 0,15 s (mp3) en una pista de seis minutos.
+
+---
+
 ## 3. Normalización de volumen
 
 Tres modos: ninguno (por defecto), loudness (EBU R128) y pico.
@@ -161,6 +179,12 @@ alto (`NormalizePlan.tsx:45-46`, claves `limitedSubLight` y `limitedSub`).
 
 La predicción es un espejo deliberado del cálculo real del proceso principal —
 mismos clamps, misma prueba de alcanzabilidad (`lib/quality.ts:195-228`).
+
+**El lote convierte cada pista con su propio dial.** La normalización y el
+declick que el editor deja puestos fila a fila llegan a la conversión de esa
+pista, no aplanados al valor del lote (`lib/reapply.ts`). El aviso de recodificar
+un MP3 con pérdidas resuelve por el mismo par, para que la conversión y la
+predicción que la anuncia no puedan divergir.
 
 **Explicaciones en línea** (`showEditorHints`, activado por defecto):
 `shared/types.ts:231`, `main/settings.ts:78`. Se apagan desde Ajustes → Editor
@@ -711,6 +735,12 @@ celdas por perdidas que hoy se conservan):
 | Cualquiera → **ALAC/M4A** | **No**, a propósito |
 | Con «limpiar metadatos» | **No**, a propósito |
 
+**Las dos grafías de AIFF cuentan.** Los rips llevan `.aif` y `.aiff`
+indistintamente, y listar solo la larga hacía que un origen `.aif` fuese a buscar
+los cues por la ruta de FLAC, donde un AIFF nunca los ha tenido: se perdían todos
+los hot cues y la rejilla, en una conversión que reportaba éxito
+(`tags.ts:63-67`). La matriz lleva `.aif` como fila propia.
+
 Los cuatro formatos cruzados están enumerados en un test que recorre la matriz
 entera y comprueba que la posición del cue sobrevive
 (`cueMatrix.test.ts:161-193`). El comentario dice por qué se enumeró toda:
@@ -735,14 +765,26 @@ el recorrido consumiera el buffer exacto hacía que todos leyeran «sin cues»
 ### Sync del `.nml` de Traktor
 
 Apagado por defecto. Cuando se configura la ruta de la colección, actualiza el
-`.nml` real: repunta la ruta si cambió la extensión, limpia el `COVERARTID` para
-que Traktor relea la carátula, y reemplaza los `CUE_V2`.
+`.nml` real: repunta la ruta si cambió la extensión, reescribe las miniaturas que
+Traktor tiene cacheadas para que redibuje la carátula, y reemplaza los `CUE_V2`.
+
+**El `COVERARTID` se conserva tal cual lo escribió Traktor.** Borrarlo solo
+devolvía la entrada a la misma caché vieja; lo que hace redibujar la portada es
+reescribir los tres tamaños cacheados (`traktorCoverCache.ts:73`, enganchado en
+`traktorNmlLibrary.ts:85-88`).
+
+**Los cues se reinsertan donde estaban**, no al principio de la entrada. Meterlos
+justo detrás de `LOCATION` empujaba por delante de `INFO` y `TEMPO` todo lo que
+Traktor hubiera escrito entre medias, convirtiendo el diff mínimo que este módulo
+existe para producir en una reescritura del bloque entero (`traktorNml.ts:1-4`).
 
 Se edita como texto y no con un parser XML, porque un round-trip genérico
 normalizaría comillas y espaciado de todo el documento y convertiría un cambio de
 tres atributos en un diff de la colección entera (`traktorNml.ts:1-4`).
 
-**Exige Traktor cerrado**, igual que Engine DJ: Traktor carga el `.nml` al
+**Exige Traktor cerrado**, y ante la duda no escribe: si la comprobación misma
+falla, se responde «puede que esté abierto» en vez de dar vía libre
+(`traktorProcess.ts:32`, `:41`). Igual que Engine DJ: Traktor carga el `.nml` al
 arrancar y lo reescribe entero al salir, así que escribir con él abierto sería
 invisible en el mejor caso y revertido en el peor. Surco se ofrece a cerrarlo, y
 si el usuario declina no escribe y avisa (`traktorNmlLibrary.ts:28`, `:57`;
@@ -850,8 +892,9 @@ comparación»* (`useDeclickAb.ts:60-67`).
 
 Recopilado de los cinco informes. Cada punto está verificado.
 
-1. **Cue points:** en MP3, AIFF, FLAC y WAV, en cualquier cruce entre esos cuatro.
-   **No en ALAC/M4A**, que no tiene ID3 donde escribirlos.
+1. **Cue points:** en MP3, AIFF (las dos grafías, `.aif` y `.aiff`), FLAC y WAV,
+   en cualquier cruce entre esos cuatro. **No en ALAC/M4A**, que no tiene ID3
+   donde escribirlos.
 2. **Apple Music:** solo macOS, nunca FLAC. Clave, sello, catálogo y remixer no
    llegan a la biblioteca. No se transfiere rating ni se crean playlists.
 3. **Engine DJ:** no lleva cue points ni beatgrid. Exige Engine cerrado.
@@ -860,7 +903,10 @@ Recopilado de los cinco informes. Cada punto está verificado.
 6. **El hi-res falso** solo se detecta en el muro de 22.05 kHz, no en 48→96.
 7. **«Ya está en tu biblioteca»** es un indicio puntuado, no una garantía.
 8. **BPM y tonalidad** son sugerencias; nunca se escriben sin confirmar.
-9. **Los clics enterrados** bajo pasajes densos se pierden parcialmente.
+9. **Los clics enterrados** bajo pasajes densos se pierden parcialmente. El
+    recuento sí dejó de tragarse las ráfagas: la ventana que junta clics pegados
+    se mide desde el último clic contado, no desde el último cruce, que se
+    encadenaba hasta décimas de segundo (`clickDetect.ts`).
 10. **Exportar una biblioteca Engine nueva a una carpeta no está expuesto**:
     `buildEngineDatabase` existe y está probado, pero solo lo llaman los tests.
 11. **El beatgrid fue eliminado** de la app y se descarta activamente al leer
