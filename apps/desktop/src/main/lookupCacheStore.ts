@@ -34,6 +34,26 @@ interface Persisted<S, R> {
   release: [string, R][]
 }
 
+// Stores a search result only when it carries something. An empty list is not a fact
+// about the query, it is the one answer the providers cannot tell apart from a failure:
+// a 200 whose payload shape drifted, a rate limit answered with an empty body, or every
+// hit rejected by the mapper all arrive here as []. Pinning that meant the query never
+// reached the network again — not on retry, not after a relaunch, since this cache is on
+// disk — and the track stayed permanently unmatchable with no way for the user to force
+// a retry. A genuine "nothing found" costs one request the next time it is asked, which
+// is the cheap side of that trade.
+//
+// Kept beside the store rather than in it because the store is generic over S: only the
+// caller knows the shape it persists, and only these three persist a list.
+export function cacheIfUsable<S, R>(
+  store: LookupCacheStore<S[], R>,
+  key: string,
+  results: S[],
+): void {
+  if (results.length === 0) return
+  store.setSearch(key, results)
+}
+
 // A future shape change to the persisted SearchResult/Release entries is handled by
 // bumping the store's file name (e.g. `-v2`), the same convention analysisCache.ts's
 // namespaces use — old files are simply orphaned, never migrated in place.
