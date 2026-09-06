@@ -51,6 +51,16 @@ function driftOf(value: string): 'none' | 'early' | 'late' {
   return ms < 0 ? 'early' : 'late'
 }
 
+// The typed figure restated as what the DJ will hear. A negative offset delays the cue
+// (see cueShiftFor, which subtracts it), so it fires LATER — the opposite reading of the
+// minus sign is the one people reach for first, which is exactly why this exists. An
+// unreadable or zero value has no effect to describe.
+function cueEffectKey(value: string): string {
+  const ms = Number(value)
+  if (!Number.isFinite(ms) || ms === 0) return 'settings.traktorCueOffsetNone'
+  return ms < 0 ? 'settings.traktorCueOffsetLater' : 'settings.traktorCueOffsetEarlier'
+}
+
 interface Props {
   synced: SyncedDraft
   local: LocalDraft
@@ -275,6 +285,14 @@ export function DestinationTab({
               className="w-24 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-50"
             />
             <span className="text-sm text-fg-dim">{tr('settings.traktorCueOffsetUnit')}</span>
+            {/* The sign in the box is arithmetic; this is the same thing in the words the
+                answers above use, so a figure typed by hand is confirmed in terms of what
+                the DJ will actually hear instead of leaving them to interpret a minus. */}
+            <span data-testid="settings-cue-offset-effect" className="text-sm text-fg-muted">
+              {tr(cueEffectKey(synced.traktorCueOffsetMs), {
+                ms: Math.abs(Number(synced.traktorCueOffsetMs) || 0),
+              })}
+            </span>
           </div>
           <SettingsHint className="mt-2">
             {local.traktorNmlPath
