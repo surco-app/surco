@@ -4,9 +4,10 @@ import { memo, useCallback, useEffect, useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type { ReleaseTrack, SearchProviderId } from '../../../shared/types'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
+import type { GrowTarget } from '../hooks/useGrowColumnsOnResize'
 import { useOpenSettings } from '../lib/openSettingsContext'
 import { type ReleaseMetaPatch, resultIdentity, resultPressing } from '../lib/release'
-import { contentDeficit } from '../lib/resize'
+import { contentDeficit, fitProbe } from '../lib/resize'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
 import { DEFAULT_RESULTS_WIDTH, ResizeHandle, useResizableWidth } from './ResizeHandle'
@@ -51,6 +52,10 @@ interface Props {
   // used to snap back the moment the user changed tracks.
   resultsWidth: number | null
   onResultsWidthChange: (width: number) => void
+  // Reports this column up to App, which widens both left columns out of one spare-width
+  // budget when the window grows — it can't be done per panel without the two of them
+  // claiming the same pixels.
+  onGrowTargetChange?: (target: GrowTarget) => void
 }
 
 // The Discogs column: the search box, its results, and the expanded release's
@@ -75,6 +80,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   formatFilter,
   resultsWidth,
   onResultsWidthChange,
+  onGrowTargetChange,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const onOpenSettings = useOpenSettings()
@@ -101,19 +107,39 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     720,
     onResultsWidthChange,
   )
-  // Double-clicking the divider fits the Discogs column to its results: measure how far each
-  // release and track title is clipped (or has to spare) and resize by the widest, so long
-  // album names stop truncating — and a column left too wide tightens back up.
+  // How far the widest release or track title is clipped (or has to spare). Shared by the
+  // double-click gesture and by App's window-growth pass, which drives both left columns
+  // from one place so they can't each claim the same spare width.
+  const discogsDeficit = useCallback(
+    (): number =>
+      contentDeficit(
+        Array.from(
+          document.querySelectorAll<HTMLElement>(
+            '[data-testid="discogs-result"] [data-fit], [data-testid="discogs-track"] [data-fit]',
+          ),
+          fitProbe,
+        ),
+      ),
+    [],
+  )
+
+  // Double-clicking the divider fits the Discogs column to its results: resize by the widest
+  // clipped row, so long album names stop truncating — and a column left too wide tightens
+  // back up.
   const autoFitDiscogs = useCallback((): void => {
-    const spans = document.querySelectorAll<HTMLElement>(
-      '[data-testid="discogs-result"] [data-fit], [data-testid="discogs-track"] [data-fit]',
-    )
-    const rows = Array.from(spans, (s) => ({
-      scrollWidth: s.scrollWidth,
-      clientWidth: s.clientWidth,
-    }))
-    discogs.autoFit(contentDeficit(rows))
-  }, [discogs.autoFit])
+    discogs.autoFit(discogsDeficit())
+  }, [discogs.autoFit, discogsDeficit])
+
+  // Hand the column up so App can widen it when the window grows; it owns the spare-width
+  // budget because it is the only place that sees both left columns at once.
+  useEffect(() => {
+    onGrowTargetChange?.({
+      width: discogs.width,
+      deficit: discogsDeficit,
+      max: 720,
+      apply: discogs.syncTo,
+    })
+  }, [onGrowTargetChange, discogs.width, discogs.syncTo, discogsDeficit])
 
   // The source filter is keyed to the enabled catalogs, not to which ones a given search
   // happened to return: showing it whenever two sources are configured (and there's a

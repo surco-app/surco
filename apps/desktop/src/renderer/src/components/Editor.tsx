@@ -18,6 +18,7 @@ import type {
 import { useBpm } from '../hooks/useBpm'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
+import type { GrowTarget } from '../hooks/useGrowColumnsOnResize'
 import { useKey } from '../hooks/useKey'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
@@ -142,6 +143,9 @@ interface Props {
   // Persists the results column's width (Settings.resultsWidth): the panel
   // remounts per track, so the width must round-trip through settings to stick.
   onResultsWidthChange: (width: number) => void
+  // Passed straight through to the Discogs column so App can widen it when the window
+  // grows, alongside the track list, out of one shared spare-width budget.
+  onResultsGrowTargetChange?: (target: GrowTarget) => void
   // Opens the loudness-pills explainer. App owns the modal so it gates the global
   // shortcuts like every other dialog — a track-switch key pressed while it was
   // Editor-local used to remount the editor and silently destroy the open dialog.
@@ -198,6 +202,7 @@ export const Editor = memo(function Editor({
   onTrashOriginal,
   onRemoveOldMusicCopy,
   onResultsWidthChange,
+  onResultsGrowTargetChange,
   onShowLoudnessHelp,
   onHideEditorHints,
   onOpenRename,
@@ -937,6 +942,7 @@ export const Editor = memo(function Editor({
         formatFilter={discogsFormats}
         resultsWidth={resultsWidth}
         onResultsWidthChange={onResultsWidthChange}
+        onGrowTargetChange={onResultsGrowTargetChange}
       />
 
       <div data-shortcut-scope="editor" className="flex min-w-0 flex-1 flex-col">
