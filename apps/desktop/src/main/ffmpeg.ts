@@ -1228,7 +1228,7 @@ function recordConversionPatch(
   input: string,
   output: string,
   meta: TrackMetadata,
-  wroteArtwork: boolean,
+  keptArtwork: boolean,
 ): void {
   if (!getSettings().traktorNmlPath) return
   try {
@@ -1249,10 +1249,17 @@ function recordConversionPatch(
       bpm,
       // Traktor caches artwork by COVERARTID and keeps serving it even after the
       // file on disk gets a new cover — the same stale-cache mechanism the cue
-      // handling above exists to fix. wroteArtwork mirrors embedCover/finderCovers'
-      // own signal (coverPath present, removeCover not set): only when a fresh
-      // cover actually landed in the output is there anything for Traktor to re-read.
-      clearCoverArt: wroteArtwork || undefined,
+      // handling above exists to fix. Any output that ends up WITH artwork needs
+      // that cache dropped, not just one the user picked a new cover for: a
+      // conversion that carried the source's own cover across (-map 0:v?) still
+      // wrote a different file, and the thumbnail Traktor cached belongs to the
+      // old one. Scoping this to a fresh coverPath is what left the reported case
+      // — convert, and Traktor keeps showing the previous artwork — unfixed.
+      // Only an explicit removeCover leaves nothing to re-read. A source that had no
+      // art to begin with still clears the ID: Traktor re-reads and finds nothing,
+      // which is where it already was, and paying that re-read is the cheap side of
+      // the trade — the expensive one is the stale thumbnail this exists to kill.
+      clearCoverArt: keptArtwork || undefined,
     })
   } catch {
     // Best-effort: see comment above.
@@ -1596,7 +1603,7 @@ export async function convertAudio(
     // Comes after the rename, not before: the patch has to describe the file as
     // it now exists at `output`, and the cue-writing branches above (copyCueFrames,
     // copyCuesToFlac, shiftFlacCues) only ever touched `tmp`.
-    recordConversionPatch(input, output, meta, !!(coverPath && !removeCover))
+    recordConversionPatch(input, output, meta, !removeCover)
   } catch (e) {
     // A rescued temp is no longer at `tmp` — the rescue renamed it away — so the unlink
     // below finds nothing and the finished conversion survives on its own. Returning

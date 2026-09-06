@@ -581,13 +581,31 @@ describe('convertAudio cue preservation', () => {
     expect(patches[0].clearCoverArt).toBe(true)
   })
 
-  // La otra cara: sin carátula que escribir (coverPath ausente), el patch no debe
-  // pedir un borrado que no corresponde a nada que la conversión haya cambiado.
-  it('does not set clearCoverArt when the conversion wrote no artwork', async () => {
+  // Reportado el 06/09/2026 y reproducido en cinco equipos: Traktor seguía mostrando
+  // la carátula vieja tras convertir. La condición anterior (coverPath presente) sólo
+  // cubría al usuario que aplica arte NUEVO; una conversión que ARRASTRA la carátula
+  // del origen (-map 0:v?) escribe igualmente un fichero nuevo, y la miniatura que
+  // Traktor tiene cacheada bajo el COVERARTID sigue siendo la del fichero viejo. La
+  // conversión sí cambió el arte de sitio, así que la caché hay que invalidarla igual.
+  it('sets clearCoverArt when the conversion carried the artwork over', async () => {
     traktorNmlPath = '/Users/dj/collection.nml'
     beginNmlBatch()
     const out = join(dir, 'out-nocover.flac')
     await convertAudio(src, out, 'flac', meta)
+
+    const patches = endNmlBatch()
+
+    expect(patches[0].clearCoverArt).toBe(true)
+  })
+
+  // La otra cara: si se pidió BORRAR la carátula, el fichero sale sin arte y no hay
+  // nada que Traktor deba releer. Limpiar el COVERARTID entonces sólo le costaría un
+  // re-análisis para acabar sin miniatura igual.
+  it('does not set clearCoverArt when the conversion removed the artwork', async () => {
+    traktorNmlPath = '/Users/dj/collection.nml'
+    beginNmlBatch()
+    const out = join(dir, 'out-removed.flac')
+    await convertAudio(src, out, 'flac', meta, undefined, undefined, true)
 
     const patches = endNmlBatch()
 
