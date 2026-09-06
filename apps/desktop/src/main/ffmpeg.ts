@@ -1090,36 +1090,120 @@ export async function normalizeFilter(
   )
 }
 
+// How far the decoded audio may fall short of what the container's header promises
+// before the file counts as truncated. Measured across six codecs on an 8 s tone
+// (mp3 CBR and VBR, flac, wav, alac, aac, aiff): the decode always lands between
+// 0.25% and 0.75% under the header, worst case flac at 8.00 vs 7.94 — encoder
+// padding and frame rounding, not loss. A file whose tag pass died partway reads
+// 76% short on the same measurement, so the two are three orders of magnitude
+// apart and this sits far from both.
+const MAX_DECODE_SHORTFALL = 0.1
+// Below this there is no ratio worth trusting: a two-second jingle's rounding is a
+// large fraction of itself, and nothing an encoder does to a file this short is
+// distinguishable from a truncation by duration alone.
+const MIN_VERIFIABLE_SEC = 3
+
 // ffmpeg reading back its own fresh output, with -xerror so the first packet it cannot
 // decode fails the run. A user's build once wrote an MP3 whose every frame the decoder
 // rejected ("Header missing"), and it went through the tag pass and the rename as a
 // finished conversion: with "replace the original" it took the source's place, and the
 // user learned of it only when Surco itself could not open the result. Only the audio
 // is read; the attached picture is never what breaks.
+//
+// The decode also has to reach the END of the file, not merely start cleanly. A tag
+// pass that dies partway leaves audio every decoder accepts — it is a valid file, just
+// a shorter one — so -xerror exits 0 on it and the container's own header still
+// advertises the original length (measured: an MP3 truncated to a quarter reports the
+// same 8.045714 as the whole one, because that number comes from the Xing header the
+// truncation never touched). Comparing the header against what the decode actually
+// delivers is what separates them, and it needs no knowledge of the source or the
+// trim: both sides of the comparison come from the file being checked, so a
+// deliberately shortened output carries a correspondingly shortened header and
+// cancels out.
+//
+// -v error is deliberately not passed: ffmpeg reports the decoded length on the
+// progress line, so one decode answers both questions instead of paying for two.
 export async function assertDecodable(file: string): Promise<void> {
+  let stderr: string
+  let stdout: string
   try {
-    await run(
+    ;({ stderr, stdout } = await run(
       ffmpegPath,
       [
         '-hide_banner',
-        '-v',
-        'error',
+        '-nostats',
         '-xerror',
         ...forcedInputArgs(file),
         '-i',
         file,
         '-map',
         '0:a',
+        '-progress',
+        '-',
         '-f',
         'null',
         '-',
       ],
       { maxBuffer: 1024 * 1024 * 16 },
-    )
+    ))
   } catch (e) {
-    const stderr = String((e as { stderr?: unknown })?.stderr ?? '').trim()
-    throw errorWithKey('convertedOutputUnreadable', stderr.split('\n')[0] || String(e))
+    const text = String((e as { stderr?: unknown })?.stderr ?? '').trim()
+    throw errorWithKey('convertedOutputUnreadable', firstErrorLine(text) || String(e))
   }
+  // The two figures arrive on different streams: the input banner (with Duration) on
+  // stderr, and -progress's own report on stdout, which is what `-progress -` means.
+  assertNotTruncated(file, String(stderr), String(stdout))
+}
+
+// The banner rides on stderr now that -v error is gone (the progress figures need it),
+// so the first line is no longer the failure. Measured on an MP3 corrupted mid-file:
+// line one is "filesize and duration do not match (growing file?)" — a warning, not the
+// cause — while the real diagnosis, "[mp3float] Header missing", is second from last,
+// under a closing "Conversion failed!" that names nothing. This detail is the whole
+// description of WHY a conversion was refused in the user's bug report, so prefer the
+// decoder's own tagged line, fall back to the last real line, and only then to line one.
+function firstErrorLine(stderr: string): string {
+  const lines = stderr
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .filter((l) => !/^(Input #|Output #|Stream mapping:|Metadata:|Press \[q\]|Duration:)/.test(l))
+  // "[mp3float @ 0x...] Header missing" and friends: the component that actually
+  // refused the data says so in brackets. The generic tail line never does.
+  const tagged = lines.filter((l) => /^\[[^\]]+]/.test(l) && !/^\[.*] Press /.test(l))
+  return tagged.at(-1) ?? lines.at(-1) ?? stderr.split('\n')[0] ?? ''
+}
+
+// Parses `Duration: HH:MM:SS.cc` out of the decode's own banner rather than probing
+// again: it is the same number ffprobe would report and it is already in hand.
+function headerDurationSec(stderr: string): number | null {
+  const m = stderr.match(/Duration:\s*(\d+):(\d\d):(\d\d(?:\.\d+)?)/)
+  if (!m) return null
+  return Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3])
+}
+
+// -progress writes `out_time_us=` (microseconds) on its own line, repeated as the
+// decode advances; the last one is the decoder's account of how much audio it emitted
+// in total. N/A appears on the lines written before any audio has come through.
+function decodedDurationSec(stdout: string): number | null {
+  const matches = [...stdout.matchAll(/out_time_us=(\d+)/g)]
+  const last = matches.at(-1)
+  return last ? Number(last[1]) / 1_000_000 : null
+}
+
+function assertNotTruncated(file: string, stderr: string, stdout: string): void {
+  const header = headerDurationSec(stderr)
+  const decoded = decodedDurationSec(stdout)
+  // Either figure missing means the check cannot run, not that the file is bad: an
+  // unparseable banner must never turn a good conversion into a failed one. The
+  // decode already passed -xerror, which is the guarantee this function had before.
+  if (header === null || decoded === null) return
+  if (header < MIN_VERIFIABLE_SEC) return
+  if (decoded >= header * (1 - MAX_DECODE_SHORTFALL)) return
+  throw errorWithKey(
+    'convertedOutputTruncated',
+    `${decoded.toFixed(2)}s of ${header.toFixed(2)}s in ${basename(file)}`,
+  )
 }
 
 // The cue re-anchoring a trim demands, in Traktor's millisecond units: positions
@@ -1427,7 +1511,6 @@ export async function convertAudio(
         },
       )
       if (declickAf) declickedSamples = parseDeclickedSamples(String(stderr)) ?? undefined
-      await assertDecodable(tmp)
       if (ext === '.wav' || ext === '.m4a') {
         // RIFF rejects an attached-picture stream, so convertArgs can't embed the
         // cover and drops tags with no RIFF-INFO field (grouping). TagLib writes a
@@ -1593,6 +1676,15 @@ export async function convertAudio(
         if (!coverPath) await unlink(headerCover).catch(() => {})
       }
     }
+    // Here rather than right after the encode, which is where it used to sit: every
+    // TagLib pass above rewrites the whole file synchronously when the tag grows, so a
+    // check that ran before them verified a file none of them had touched yet. And the
+    // stream-copy branch skipped the encode entirely, so it was never verified at all —
+    // a copy or a tag pass that died partway was renamed over the destination and
+    // reported as a finished conversion. Immediately before the rename is the one point
+    // both branches share and nothing further writes to the temp, which is exactly what
+    // the rename's own comment below already claims to be true of it.
+    await assertDecodable(tmp)
     // Logged because this failure only reproduces on Windows machines we cannot
     // attach a debugger to: when a user reports "another program is using the file",
     // these lines are the whole evidence — whether the destination was still held,

@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { chmodSync, existsSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { platform, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -26,6 +26,7 @@ const fakeFfmpeg = join(tmpdir(), `surco-fake-ffmpeg-${process.pid}.sh`)
 const dir = mkdtempSync(join(tmpdir(), 'surco-verify-'))
 const src = join(dir, 'in.flac')
 const garbage = join(dir, 'garbage.mp3')
+const midCorrupt = join(dir, 'midcorrupt.mp3')
 
 const meta: TrackMetadata = {
   title: 'T',
@@ -59,6 +60,32 @@ beforeAll(() => {
     src,
   ])
   writeFileSync(garbage, Buffer.from('ID3'.repeat(4).concat('x'.repeat(65536))))
+  // A real MP3 whose middle was overwritten: the header and opening frames are intact,
+  // so ffmpeg opens it and prints a full banner, and only the decode hits the damage.
+  // That is what makes it the fixture for "the failure is not the first stderr line" —
+  // the all-garbage file above never gets far enough to print a banner at all.
+  const whole = join(dir, 'whole.mp3')
+  execFileSync(FF, [
+    '-v',
+    'error',
+    '-y',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=440:duration=8',
+    '-c:a',
+    'libmp3lame',
+    whole,
+  ])
+  const bytes = readFileSync(whole)
+  writeFileSync(
+    midCorrupt,
+    Buffer.concat([
+      bytes.subarray(0, 8000),
+      Buffer.alloc(4000, 0x5a),
+      bytes.subarray(bytes.length - 40000),
+    ]),
+  )
   writeFileSync(
     fakeFfmpeg,
     [
@@ -85,6 +112,29 @@ describe('assertDecodable', () => {
 
   it('accepts a file ffmpeg decodes cleanly', async () => {
     await expect(assertDecodable(src)).resolves.toBeUndefined()
+  })
+
+  // The detail appended to the key is the only description of WHY a conversion was
+  // refused that reaches the user's bug report. The check now runs without -v error (the
+  // truncation comparison needs the banner that flag suppresses), so this stderr carries
+  // the full banner and the failure is no longer line one.
+  //
+  // Measured on this fixture — a valid MP3 header and frames, garbage spliced into the
+  // middle, tail restored — ffmpeg's stderr opens with "filesize and duration do not
+  // match (growing file?)", a warning that is NOT why it died, and closes with a bare
+  // "Conversion failed!" that names nothing. The real diagnosis sits between them.
+  it('reports the decoder failure, not the warning above it or the generic tail', async () => {
+    const err = await assertDecodable(midCorrupt).catch((e: unknown) => e)
+
+    expect(err, 'the fixture has to actually fail for this test to mean anything').toBeInstanceOf(
+      Error,
+    )
+    const detail = (err as Error).message
+    expect(detail, 'reported the opening warning instead of the cause').not.toMatch(/growing file/)
+    expect(detail, 'reported the generic tail instead of the cause').not.toMatch(
+      /Conversion failed/,
+    )
+    expect(detail).toMatch(/Header missing/)
   })
 })
 
