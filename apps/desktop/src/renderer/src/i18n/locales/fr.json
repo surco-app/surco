@@ -873,7 +873,7 @@
     "traktorCueDriftEarlyHint": "Les retarde pour qu'ils tombent juste.",
     "traktorCueDriftLate": "Trop tard, après le temps",
     "traktorCueDriftLateHint": "Les avance pour qu'ils tombent juste.",
-    "traktorCueOffsetHint": "Le réglage appliqué aux points de repère de chaque morceau converti. Affine la valeur si celle de départ ne tombe toujours pas juste. Cela déplace le point de départ, jamais la durée de tes boucles.",
+    "traktorCueOffsetHint": "Le réglage appliqué aux points de repère de chaque morceau converti, que tu peux affiner à la main. Une valeur négative les retarde : à −51 ms, un repère placé à 1,000 s passe à 0,949 s, donc il sonne plus tard. Une valeur positive les avance. Cela déplace le point de départ, jamais la durée de tes boucles.",
     "traktorCueOffsetIdle": "Ajuste les points de repère écrits dans ta collection Traktor. Indique ta collection.nml ci-dessus pour l'utiliser.",
     "appleMusicFlacNote": "Apple Music ne lit pas le FLAC, donc les morceaux convertis restent dans le dossier de sortie tant que ton format est FLAC.",
     "filenameFormat": "Format du nom de fichier",

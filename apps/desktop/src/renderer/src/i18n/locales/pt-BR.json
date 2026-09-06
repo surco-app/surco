@@ -873,7 +873,7 @@
     "traktorCueDriftEarlyHint": "Atrasa os cues para caírem no lugar.",
     "traktorCueDriftLate": "Atrasados, depois da batida",
     "traktorCueDriftLateHint": "Adianta os cues para caírem no lugar.",
-    "traktorCueOffsetHint": "O ajuste aplicado aos cue points de cada faixa convertida. Refine o número se o valor inicial ainda não encaixar. Move o ponto de início, nunca a duração dos loops.",
+    "traktorCueOffsetHint": "O ajuste aplicado aos cue points de cada faixa convertida, que você pode refinar à mão. Um valor negativo os atrasa: com −51 ms, um cue que estava em 1,000 s passa a 0,949 s, então soa mais tarde. Um positivo os adianta. Move o ponto de início, nunca a duração dos loops.",
     "traktorCueOffsetIdle": "Ajusta os cue points gravados na sua coleção do Traktor. Defina seu collection.nml acima para usar.",
     "appleMusicFlacNote": "O Apple Music não reproduz FLAC, então as faixas convertidas ficam na pasta de saída enquanto seu formato for FLAC.",
     "filenameFormat": "Formato do nome do arquivo",

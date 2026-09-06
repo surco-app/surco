@@ -873,7 +873,7 @@
     "traktorCueDriftEarlyHint": "Verschiebt sie nach hinten, damit sie sitzen.",
     "traktorCueDriftLate": "Zu spät, nach dem Beat",
     "traktorCueDriftLateHint": "Verschiebt sie nach vorn, damit sie sitzen.",
-    "traktorCueOffsetHint": "Die Korrektur, die auf die Cue-Points jedes konvertierten Tracks angewendet wird. Passe den Wert an, wenn der Startwert bei dir noch nicht passt. Verschoben wird nur der Startpunkt, nie die Länge deiner Loops.",
+    "traktorCueOffsetHint": "Die Korrektur für die Cue-Points jedes konvertierten Tracks, die du von Hand nachjustieren kannst. Ein negativer Wert verzögert sie: bei −51 ms rückt ein Cue von 1,000 s auf 0,949 s, klingt also später. Ein positiver zieht sie nach vorn. Verschoben wird nur der Startpunkt, nie die Länge deiner Loops.",
     "traktorCueOffsetIdle": "Passt die Cue-Points an, die in deine Traktor-Sammlung geschrieben werden. Lege oben deine collection.nml fest, um es zu nutzen.",
     "appleMusicFlacNote": "Apple Music kann FLAC nicht abspielen, deshalb bleiben konvertierte Tracks im Ausgabeordner, solange FLAC dein Format ist.",
     "filenameFormat": "Dateinamen-Format",
