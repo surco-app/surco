@@ -220,6 +220,29 @@ export function applyPatches(nml: string, patches: NmlPatch[]): string {
   return out
 }
 
+// Reads COVERARTID off the INFO element, the only place Traktor writes it — the same
+// anchor stripCoverArt removes it from, so the two can never disagree about which
+// attribute is the real one.
+const COVER_ID_RE = /<INFO\b[^>]*?\sCOVERARTID="([^"]*)"/
+
+// The cover ids of the entries this patch set is about to clear, collected before the
+// rewrite: once stripCoverArt has run, the collection no longer records which cached
+// thumbnail belonged to the track. Clearing COVERARTID only asks Traktor to re-read,
+// and what it re-reads is the file still sitting in its Coverart cache, so the caller
+// needs these to delete those files and actually retire the old artwork.
+export function clearedCoverIds(nml: string, patches: NmlPatch[]): string[] {
+  const entries = findEntries(nml)
+  const index = indexPatches(patches)
+  const ids: string[] = []
+  for (const entry of entries) {
+    const patch = matchPatch(entry, index)
+    if (!patch?.clearCoverArt) continue
+    const id = nml.slice(entry.start, entry.end).match(COVER_ID_RE)?.[1]
+    if (id) ids.push(id)
+  }
+  return ids
+}
+
 // Same matching rules as applyPatches, in one pass over the entries instead of
 // one applyPatches (itself a full sweep) per patch — a caller that ran the
 // per-patch version against a real collection (tens of thousands of entries,
