@@ -578,7 +578,7 @@ describe('convertAudio cue preservation', () => {
     const patches = endNmlBatch()
 
     expect(patches).toHaveLength(1)
-    expect(patches[0].clearCoverArt).toBe(true)
+    expect(patches[0].refreshCoverArt).toBe(true)
   })
 
   // Reportado el 06/09/2026 y reproducido en cinco equipos: Traktor seguía mostrando
@@ -595,7 +595,7 @@ describe('convertAudio cue preservation', () => {
 
     const patches = endNmlBatch()
 
-    expect(patches[0].clearCoverArt).toBe(true)
+    expect(patches[0].refreshCoverArt).toBe(true)
   })
 
   // La otra cara: si se pidió BORRAR la carátula, el fichero sale sin arte y no hay
@@ -609,7 +609,7 @@ describe('convertAudio cue preservation', () => {
 
     const patches = endNmlBatch()
 
-    expect(patches[0].clearCoverArt).toBeFalsy()
+    expect(patches[0].refreshCoverArt).toBeFalsy()
   })
 })
 

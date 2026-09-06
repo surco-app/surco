@@ -2,7 +2,13 @@
 import { describe, expect, it } from 'vitest'
 import { readTraktorMarkers } from './traktor4'
 import { buildTraktorTree, traktorCue } from './traktor4Fixture'
-import { applyPatches, cuesToXml, findEntries, matchedPatchCount } from './traktorNml'
+import {
+  applyPatches,
+  cuesToXml,
+  findEntries,
+  matchedPatchCount,
+  refreshedCoverIds,
+} from './traktorNml'
 
 const NML = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <NML VERSION="19">
@@ -139,40 +145,23 @@ describe('applyPatches', () => {
     expect(out).toContain('FILE="dos.flac"')
   })
 
-  // COVERARTID es una referencia a la caché de carátulas de Traktor: mientras esté,
-  // Traktor sigue mostrando la vieja aunque el fichero lleve otra imagen.
-  it('drops COVERARTID so Traktor re-reads the artwork', () => {
+  // El COVERARTID se CONSERVA. Borrarlo sólo pide a Traktor que relea, y lo que relee
+  // es la miniatura que ya tiene cacheada: la imagen vieja sobrevive igual. El usuario
+  // recorrió ese camino y lo abandonó. Lo que retira de verdad la portada antigua es
+  // reescribir los ficheros bajo el id que Traktor ya tiene (ver traktorCoverCache.ts),
+  // y para eso el id tiene que seguir ahí.
+  it('keeps COVERARTID so the ENTRY still points at the cache being refreshed', () => {
     const withCover = NML.replace(
       '<ENTRY MODIFIED_DATE="2026/7/26" TITLE="Uno" ARTIST="A">',
       '<ENTRY MODIFIED_DATE="2026/7/26" TITLE="Uno" ARTIST="A"><INFO COVERARTID="042/ABC" BITRATE="1411"></INFO>',
     )
 
     const out = applyPatches(withCover, [
-      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', clearCoverArt: true },
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', refreshCoverArt: true },
     ])
 
-    expect(out).not.toContain('COVERARTID')
+    expect(out).toContain('COVERARTID="042/ABC"')
     expect(out).toContain('BITRATE="1411"')
-  })
-
-  // El borrado debe estar anclado a <INFO>, el único elemento en el que Traktor
-  // escribe COVERARTID. Un comentario ANTES de INFO que contenga literalmente
-  // `COVERARTID="..."` no es el atributo real y no debe tocarse: una sustitución
-  // sin anclar (primera ocurrencia en cualquier parte del bloque, en vez de
-  // "el COVERARTID que cuelga de INFO") se comería esto en vez del de INFO.
-  it('only strips COVERARTID from the INFO element, not an earlier lookalike string', () => {
-    const withDecoy = NML.replace(
-      '<ENTRY MODIFIED_DATE="2026/7/26" TITLE="Uno" ARTIST="A">',
-      '<ENTRY MODIFIED_DATE="2026/7/26" TITLE="Uno" ARTIST="A">' +
-        '<!-- decoy COVERARTID="999/ZZZ" --><INFO COVERARTID="042/ABC" BITRATE="1411"></INFO>',
-    )
-
-    const out = applyPatches(withDecoy, [
-      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', clearCoverArt: true },
-    ])
-
-    expect(out).toContain('COVERARTID="999/ZZZ"')
-    expect(out).not.toContain('COVERARTID="042/ABC"')
   })
 
   // Lo esencial del enfoque por texto: una pista que no está en la colección no
@@ -339,7 +328,7 @@ describe('applyPatches', () => {
       dir: '/:M/:',
       file,
       newFile,
-      clearCoverArt: true,
+      refreshCoverArt: true,
     })
 
     const out = applyPatches(three, [
@@ -351,7 +340,7 @@ describe('applyPatches', () => {
     expect(out).toContain('FILE="uno-nombre-mucho-mas-largo-tras-convertir.flac"')
     expect(out).toContain('FILE="dos-nombre-mucho-mas-largo-tras-convertir.flac"')
     expect(out).toContain('FILE="tres-nombre-mucho-mas-largo-tras-convertir.flac"')
-    expect(out).not.toContain('COVERARTID')
+    expect(out).toContain('COVERARTID="3/C"')
     expect(out).toContain('TITLE="Tres"')
     expect(out).toContain('BITRATE="1411"')
   })
@@ -473,7 +462,7 @@ describe('applyPatches', () => {
 
     const out = applyPatches(nml, [
       { volume: 'HD', dir: '/:M/:', file: 'x&y.aiff', newFile: 'FROM_A.flac' },
-      { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', clearCoverArt: true },
+      { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', refreshCoverArt: true },
     ])
 
     expect(out).toContain('FILE="FROM_A.flac"')
@@ -489,12 +478,72 @@ describe('applyPatches', () => {
       '</COLLECTION></NML>'
 
     const out = applyPatches(nml, [
-      { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', clearCoverArt: true },
+      { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', refreshCoverArt: true },
       { volume: 'HD', dir: '/:M/:', file: 'x&y.aiff', newFile: 'FROM_A.flac' },
     ])
 
     expect(out).not.toContain('FILE="FROM_A.flac"')
     expect(out).toContain('FILE="x&amp;y.mp3"')
+  })
+})
+
+// Los ids que hay que refrescar se leen de la colección, que es lo único que sabe qué
+// portada tiene cada pista. Sin ellos no se puede localizar la caché que Traktor sirve.
+describe('refreshedCoverIds', () => {
+  const withCovers = NML.replace(
+    '<ENTRY MODIFIED_DATE="2026/7/26" TITLE="Uno" ARTIST="A">',
+    '<ENTRY MODIFIED_DATE="2026/7/26" TITLE="Uno" ARTIST="A"><INFO COVERARTID="042/ABC"></INFO>',
+  ).replace(
+    '<ENTRY MODIFIED_DATE="2026/7/26" TITLE="Dos" ARTIST="B">',
+    '<ENTRY MODIFIED_DATE="2026/7/26" TITLE="Dos" ARTIST="B"><INFO COVERARTID="099/XYZ"></INFO>',
+  )
+
+  it('pairs each refreshed cover id with the converted file it came from', () => {
+    const ids = refreshedCoverIds(withCovers, [
+      {
+        volume: 'Macintosh HD',
+        dir: '/:Musica/:',
+        file: 'uno.aiff',
+        refreshCoverArt: true,
+        outputPath: '/Music/uno.flac',
+      },
+    ])
+
+    expect(ids).toEqual([{ coverId: '042/ABC', file: '/Music/uno.flac' }])
+  })
+
+  // Una pista que el patch no toca no puede perder su miniatura por el camino.
+  it('ignores entries whose patch does not refresh the art', () => {
+    const ids = refreshedCoverIds(withCovers, [
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', newFile: 'uno.flac' },
+    ])
+
+    expect(ids).toEqual([])
+  })
+
+  // Una ENTRY sin COVERARTID no tiene caché que refrescar: Traktor nunca le dibujó una.
+  it('skips an entry that carries no COVERARTID', () => {
+    const ids = refreshedCoverIds(NML, [
+      {
+        volume: 'Macintosh HD',
+        dir: '/:Musica/:',
+        file: 'uno.aiff',
+        refreshCoverArt: true,
+        outputPath: '/Music/uno.flac',
+      },
+    ])
+
+    expect(ids).toEqual([])
+  })
+
+  // Sin la ruta del fichero convertido no hay imagen de la que sacar las miniaturas:
+  // refrescar tendría que inventarse una portada.
+  it('skips a patch that does not say where the converted file is', () => {
+    const ids = refreshedCoverIds(withCovers, [
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', refreshCoverArt: true },
+    ])
+
+    expect(ids).toEqual([])
   })
 })
 
@@ -509,7 +558,7 @@ describe('matchedPatchCount', () => {
 
     const count = matchedPatchCount(nml, [
       { volume: 'HD', dir: '/:M/:', file: 'x&y.aiff', newFile: 'FROM_A.flac' },
-      { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', clearCoverArt: true },
+      { volume: 'HD', dir: '/:M/:', file: 'x&y.mp3', refreshCoverArt: true },
     ])
 
     expect(count).toBe(1)
