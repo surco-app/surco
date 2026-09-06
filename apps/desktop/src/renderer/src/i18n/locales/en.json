@@ -867,6 +867,7 @@
     "traktorCueOffset": "Cue point adjustment",
     "traktorCueOffsetUnit": "ms",
     "traktorCueOffsetHint": "Leave this at 0. Surco already corrects the offset the codec introduces when converting an MP3, so cue points land where they were. Change it only if your cues consistently hit early or late when you play in Traktor: a negative value moves them later, a positive one earlier. It shifts the start point, never the length of your loops.",
+    "traktorCueOffsetIdle": "Adjusts the cue points written into your Traktor collection. Set your collection.nml above to use it.",
     "appleMusicFlacNote": "Apple Music can't play FLAC, so converted tracks stay in the output folder while FLAC is your format.",
     "filenameFormat": "File name format",
     "titleFormatHint": "Rebuilds the title from other fields. Applied only when you ask — from the title field’s ⋯ menu or the command palette — never automatically.",

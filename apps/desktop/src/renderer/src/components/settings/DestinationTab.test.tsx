@@ -270,7 +270,11 @@ describe('DestinationTab Traktor collection', () => {
   // The offset only means anything once cues are being written into a collection. Shown
   // without one it is an unexplained millisecond box on a feature the user hasn't turned
   // on, which is exactly the invitation to type a number into it that we don't want.
-  it('offers the cue offset only once a collection is configured', () => {
+  // Hiding it until a collection is set made the setting impossible to find: the user
+  // opens this tab, sees no such field, and has no way to tell whether it exists. Shown
+  // but disabled says both things at once — this exists, and it does nothing until you
+  // point Surco at a collection — and refuses a number that would sit there inert.
+  it('shows the cue offset disabled while no collection is configured', () => {
     render(
       <DestinationTab
         synced={synced}
@@ -283,7 +287,8 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
       />,
     )
-    expect(screen.queryByTestId('settings-traktor-cue-offset')).not.toBeInTheDocument()
+    expect(screen.getByTestId('settings-traktor-cue-offset')).toBeDisabled()
+    expect(screen.getByText(i18n.t('settings.traktorCueOffsetIdle'))).toBeInTheDocument()
     cleanup()
     render(
       <DestinationTab
@@ -297,7 +302,35 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
       />,
     )
-    expect(screen.getByTestId('settings-traktor-cue-offset')).toBeInTheDocument()
+    expect(screen.getByTestId('settings-traktor-cue-offset')).toBeEnabled()
+    expect(screen.queryByText(i18n.t('settings.traktorCueOffsetIdle'))).not.toBeInTheDocument()
+  })
+
+  // Reported from a screenshot: focusing the path box scrolls the text sideways to put
+  // the caret at the end, so the start of the path — the part that says which collection
+  // this is — slides out of view, on top of the truncation already clipping the end.
+  // Nothing can be typed here anyway (the value only changes through "Change"), so the
+  // box does not take keyboard focus and the text stays where it was rendered.
+  it('keeps the collection path from scrolling out of view', () => {
+    render(
+      <DestinationTab
+        synced={synced}
+        local={{
+          ...local,
+          traktorNmlPath: '/Users/dj/Documents/Native Instruments/Traktor 4.5.0/collection.nml',
+        }}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+      />,
+    )
+    const input = screen.getByTestId('settings-traktor-nml')
+    expect(input).toHaveAttribute('tabindex', '-1')
+    // Still reachable and readable for anyone who needs the whole string.
+    expect(input).toHaveAttribute('title', expect.stringContaining('collection.nml'))
   })
 
   // The number alone tells the user nothing, and this one adjusts something Surco

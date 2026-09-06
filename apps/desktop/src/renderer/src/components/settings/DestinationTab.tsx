@@ -130,10 +130,16 @@ export function DestinationTab({
           {tr('settings.traktorNmlPath')}
         </SettingsLabel>
         <div className="mt-2 flex gap-2">
+          {/* Not focusable: the value only ever changes through "Change", and focusing a
+              readOnly input makes the browser scroll the text to put the caret at the end,
+              hiding the start of the path on top of the truncation already clipping the
+              end. title carries the full path for anyone who needs to read it whole. */}
           <input
             id="settings-traktor-nml"
             data-testid="settings-traktor-nml"
             value={local.traktorNmlPath}
+            title={local.traktorNmlPath}
+            tabIndex={-1}
             readOnly
             className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
           />
@@ -168,37 +174,42 @@ export function DestinationTab({
             </button>
           </div>
         )}
-        {/* Only once a collection is set: with the sync off the number changes nothing,
-            and an unexplained millisecond box is an invitation to type something into it.
-            The hint carries the whole explanation rather than a tooltip per control —
+        {/* Always rendered, never conditionally mounted: a field that appears and
+            disappears leaves the user unable to tell whether the setting exists at all.
+            Without a collection there is nothing for it to act on, so it is disabled and
+            says why — which also refuses a number that would sit there doing nothing.
+            The hint carries the whole explanation rather than a tooltip per control:
             what it is, that 0 is correct, and the one symptom that justifies moving it. */}
-        {local.traktorNmlPath && (
-          <div className="mt-6">
-            <SettingsLabel htmlFor="settings-traktor-cue-offset">
-              {tr('settings.traktorCueOffset')}
-            </SettingsLabel>
-            <div className="mt-2 flex items-center gap-2">
-              <input
-                id="settings-traktor-cue-offset"
-                data-testid="settings-traktor-cue-offset"
-                type="number"
-                step={1}
-                value={synced.traktorCueOffsetMs}
-                onChange={(e) => patch('traktorCueOffsetMs', e.target.value)}
-                // A blank or non-numeric box means "no adjustment", and saying so on blur
-                // beats storing something the conversion would have to guess about.
-                onBlur={() => {
-                  if (!Number.isFinite(Number(synced.traktorCueOffsetMs))) {
-                    patch('traktorCueOffsetMs', '0')
-                  }
-                }}
-                className="w-28 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
-              />
-              <span className="text-sm text-fg-dim">{tr('settings.traktorCueOffsetUnit')}</span>
-            </div>
-            <SettingsHint className="mt-2">{tr('settings.traktorCueOffsetHint')}</SettingsHint>
+        <div className="mt-6">
+          <SettingsLabel htmlFor="settings-traktor-cue-offset">
+            {tr('settings.traktorCueOffset')}
+          </SettingsLabel>
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              id="settings-traktor-cue-offset"
+              data-testid="settings-traktor-cue-offset"
+              type="number"
+              step={1}
+              disabled={!local.traktorNmlPath}
+              value={synced.traktorCueOffsetMs}
+              onChange={(e) => patch('traktorCueOffsetMs', e.target.value)}
+              // A blank or non-numeric box means "no adjustment", and saying so on blur
+              // beats storing something the conversion would have to guess about.
+              onBlur={() => {
+                if (!Number.isFinite(Number(synced.traktorCueOffsetMs))) {
+                  patch('traktorCueOffsetMs', '0')
+                }
+              }}
+              className="w-28 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-50"
+            />
+            <span className="text-sm text-fg-dim">{tr('settings.traktorCueOffsetUnit')}</span>
           </div>
-        )}
+          <SettingsHint className="mt-2">
+            {local.traktorNmlPath
+              ? tr('settings.traktorCueOffsetHint')
+              : tr('settings.traktorCueOffsetIdle')}
+          </SettingsHint>
+        </div>
       </SettingsSection>
     </>
   )

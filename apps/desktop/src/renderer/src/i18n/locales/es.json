@@ -867,6 +867,7 @@
     "traktorCueOffset": "Ajuste de los cue points",
     "traktorCueOffsetUnit": "ms",
     "traktorCueOffsetHint": "Déjalo en 0. Surco ya corrige solo el desfase que introduce el códec al convertir un MP3, así que los cue points caen donde estaban. Cámbialo solo si, escuchando en Traktor, tus cues entran siempre pronto o siempre tarde: un valor negativo los atrasa y uno positivo los adelanta. Mueve el punto de inicio, nunca la duración de los loops.",
+    "traktorCueOffsetIdle": "Ajusta los cue points que se escriben en la colección de Traktor. Indica arriba tu collection.nml para poder usarlo.",
     "appleMusicFlacNote": "Apple Music no reproduce FLAC, así que las pistas convertidas se quedan en la carpeta de salida mientras tu formato sea FLAC.",
     "filenameFormat": "Formato del nombre",
     "titleFormatHint": "Reconstruye el título a partir de otros campos. Se aplica solo cuando tú lo pides — desde el menú ⋯ del campo título o la paleta de comandos — nunca automáticamente.",

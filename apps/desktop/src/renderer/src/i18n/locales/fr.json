@@ -867,6 +867,7 @@
     "traktorCueOffset": "Ajustement des points de repère",
     "traktorCueOffsetUnit": "ms",
     "traktorCueOffsetHint": "Laisse 0. Surco corrige déjà le décalage introduit par le codec lors de la conversion d'un MP3, donc les points de repère restent où ils étaient. Ne le change que si tes repères tombent systématiquement trop tôt ou trop tard à l'écoute dans Traktor : une valeur négative les retarde, une valeur positive les avance. Cela déplace le point de départ, jamais la durée de tes boucles.",
+    "traktorCueOffsetIdle": "Ajuste les points de repère écrits dans ta collection Traktor. Indique ta collection.nml ci-dessus pour l'utiliser.",
     "appleMusicFlacNote": "Apple Music ne lit pas le FLAC, donc les morceaux convertis restent dans le dossier de sortie tant que ton format est FLAC.",
     "filenameFormat": "Format du nom de fichier",
     "titleFormatHint": "Reconstruit le titre à partir des autres champs. Appliqué uniquement à la demande — via le menu ⋯ du champ titre ou la palette de commandes — jamais automatiquement.",
