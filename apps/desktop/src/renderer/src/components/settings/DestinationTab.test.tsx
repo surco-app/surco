@@ -35,6 +35,7 @@ const synced: SyncedDraft = {
   importFields: [],
   requiredFields: [],
   coverMaxSize: '1200',
+  traktorCueOffsetMs: '0',
   coverSquare: false,
   coverUpscale: false,
   replaceLowResCover: false,
@@ -264,5 +265,62 @@ describe('DestinationTab Traktor collection', () => {
     )
     fireEvent.click(screen.getByTestId('settings-traktor-nml-use-detected'))
     expect(onAcceptDetectedNmlPath).toHaveBeenCalled()
+  })
+
+  // The offset only means anything once cues are being written into a collection. Shown
+  // without one it is an unexplained millisecond box on a feature the user hasn't turned
+  // on, which is exactly the invitation to type a number into it that we don't want.
+  it('offers the cue offset only once a collection is configured', () => {
+    render(
+      <DestinationTab
+        synced={synced}
+        local={local}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+      />,
+    )
+    expect(screen.queryByTestId('settings-traktor-cue-offset')).not.toBeInTheDocument()
+    cleanup()
+    render(
+      <DestinationTab
+        synced={synced}
+        local={{ ...local, traktorNmlPath: '/dj/collection.nml' }}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('settings-traktor-cue-offset')).toBeInTheDocument()
+  })
+
+  // The number alone tells the user nothing, and this one adjusts something Surco
+  // already gets right on its own — so the field has to carry the explanation with it,
+  // or it reads as a knob worth turning.
+  it('explains what the offset is for next to the field', () => {
+    render(
+      <DestinationTab
+        synced={synced}
+        local={{ ...local, traktorNmlPath: '/dj/collection.nml' }}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+      />,
+    )
+    const hint = screen.getByText(i18n.t('settings.traktorCueOffsetHint'))
+    expect(hint).toBeInTheDocument()
+    // The two things a bare number can't say: that zero is the right answer, and that
+    // it moves the cue rather than resizing the loops around it.
+    expect(hint.textContent).toMatch(/\b0\b/)
+    expect(hint.textContent).toMatch(/loops/i)
   })
 })

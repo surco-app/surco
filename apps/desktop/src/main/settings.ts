@@ -46,6 +46,9 @@ export const defaults: Settings = {
   // often kept outside the standard location), so no reliable default — empty means the feature
   // is off until the user points Surco at their collection.nml.
   traktorNmlPath: '',
+  // Zero: the conversion already puts cues back where they were, so nobody who hasn't
+  // gone looking for this should have theirs moved.
+  traktorCueOffsetMs: 0,
   engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
   titleFormat: '',

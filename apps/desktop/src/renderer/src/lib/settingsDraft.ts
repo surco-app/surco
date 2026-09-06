@@ -28,6 +28,7 @@ export interface SyncedDraft {
   requiredFields: string[]
   importFields: string[]
   coverMaxSize: string
+  traktorCueOffsetMs: string
   coverSquare: boolean
   coverUpscale: boolean
   replaceLowResCover: boolean
@@ -103,6 +104,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     // checkboxes with a name that isn't a real field.
     importFields: normalizeImportFields(s.importFields),
     coverMaxSize: String(s.coverMaxSize),
+    traktorCueOffsetMs: String(s.traktorCueOffsetMs),
     coverSquare: s.coverSquare,
     coverUpscale: s.coverUpscale,
     replaceLowResCover: s.replaceLowResCover,
@@ -144,12 +146,16 @@ export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Part
     grouping,
     genre,
     coverMaxSize,
+    traktorCueOffsetMs,
     filenameFormat,
     engineDjPlaylist,
     searchIgnoreWords,
     ...rest
   } = synced
   const max = parseInt(coverMaxSize, 10)
+  // A blank or garbage box means no adjustment: the conversion already lands cues where
+  // they were, so "I could not read this" and "leave them alone" are the same answer.
+  const cueOffset = Number(traktorCueOffsetMs)
   const token = local.token.trim()
   return {
     ...rest,
@@ -163,6 +169,7 @@ export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Part
     genrePresets: splitPresets(genre),
     searchIgnoreWords: splitPresets(searchIgnoreWords),
     coverMaxSize: Number.isFinite(max) && max >= 0 ? max : DEFAULT_COVER_MAX_SIZE,
+    traktorCueOffsetMs: Number.isFinite(cueOffset) ? cueOffset : 0,
     // Gated on the same rule the toggle, the wizard and the main process apply — a lax
     // token-only gate here once dropped a Bandcamp-only save the UI had just allowed.
     autoMatch:

@@ -168,6 +168,37 @@ export function DestinationTab({
             </button>
           </div>
         )}
+        {/* Only once a collection is set: with the sync off the number changes nothing,
+            and an unexplained millisecond box is an invitation to type something into it.
+            The hint carries the whole explanation rather than a tooltip per control —
+            what it is, that 0 is correct, and the one symptom that justifies moving it. */}
+        {local.traktorNmlPath && (
+          <div className="mt-6">
+            <SettingsLabel htmlFor="settings-traktor-cue-offset">
+              {tr('settings.traktorCueOffset')}
+            </SettingsLabel>
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                id="settings-traktor-cue-offset"
+                data-testid="settings-traktor-cue-offset"
+                type="number"
+                step={1}
+                value={synced.traktorCueOffsetMs}
+                onChange={(e) => patch('traktorCueOffsetMs', e.target.value)}
+                // A blank or non-numeric box means "no adjustment", and saying so on blur
+                // beats storing something the conversion would have to guess about.
+                onBlur={() => {
+                  if (!Number.isFinite(Number(synced.traktorCueOffsetMs))) {
+                    patch('traktorCueOffsetMs', '0')
+                  }
+                }}
+                className="w-28 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+              />
+              <span className="text-sm text-fg-dim">{tr('settings.traktorCueOffsetUnit')}</span>
+            </div>
+            <SettingsHint className="mt-2">{tr('settings.traktorCueOffsetHint')}</SettingsHint>
+          </div>
+        )}
       </SettingsSection>
     </>
   )

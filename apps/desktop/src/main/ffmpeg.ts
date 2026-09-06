@@ -1134,7 +1134,13 @@ export async function assertDecodable(file: string): Promise<void> {
 // a negative shift, since shiftTraktorCues subtracts. An MP3 that still has its
 // header decodes sample-aligned and gets nothing: compensating there would drag a
 // correctly placed cue off the grid, which is exactly what a fixed offset does.
-// Undefined only when neither source applies — the carried frames then stay
+// A third rides on top of both: the user's own offset. That one answers a question
+// measurement can't — whether this DJ's cues feel early when they play in Traktor, which
+// depends on their ears and their rig, not the file. It ADDS to the codec correction
+// rather than replacing it, so the files that genuinely drifted still get fixed. Zero by
+// default; see the Settings copy for what it is and when to touch it.
+//
+// Undefined only when none of the three applies — the carried frames then stay
 // byte-exact, as they always did for plain re-encodes and constant gains.
 function cueShiftFor(
   trim: TrimRange | undefined,
@@ -1143,13 +1149,19 @@ function cueShiftFor(
   input: string,
 ): CueShift | undefined {
   const decoderDelayMs = mp3DecoderPadsHead(input) ? MP3_ENCODER_DELAY_MS : 0
+  // Free-text in the UI, so a blank or garbage value has to read as "no adjustment"
+  // rather than a NaN that would silently drop every cue at shiftTraktorCues.
+  const configured = Number(getSettings().traktorCueOffsetMs)
+  const userOffsetMs = Number.isFinite(configured) ? configured : 0
   const trimmed = active && trim !== undefined
-  if (!trimmed && decoderDelayMs === 0) return undefined
+  if (!trimmed && decoderDelayMs === 0 && userOffsetMs === 0) return undefined
   const startSec = trimmed ? (trim?.startSec ?? 0) : 0
   const tempo = Number(bpm)
   const endSec = trimmed ? trim?.endSec : undefined
   return {
-    shiftMs: Math.round(startSec * 1000) - decoderDelayMs,
+    // Both corrections push the cue later, and shiftTraktorCues subtracts, so both
+    // arrive negative: the head trim is the only term that moves a cue earlier.
+    shiftMs: Math.round(startSec * 1000) - decoderDelayMs - userOffsetMs,
     maxMs: endSec !== undefined ? Math.round((endSec - startSec) * 1000) : undefined,
     bpm: Number.isFinite(tempo) && tempo > 0 ? tempo : undefined,
   }

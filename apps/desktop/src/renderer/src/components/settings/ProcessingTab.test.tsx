@@ -20,6 +20,7 @@ const synced: SyncedDraft = {
   convertBesideOriginal: false,
   addToEngineDj: false,
   engineDjPlaylist: 'Surco',
+  traktorCueOffsetMs: '0',
   filenameFormat: '{artist} - {title}',
   titleFormat: '',
   autoApplyFilename: false,
