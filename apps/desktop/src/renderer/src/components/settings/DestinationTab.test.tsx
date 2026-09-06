@@ -414,14 +414,47 @@ describe('DestinationTab Traktor collection', () => {
 
   // Once the box is editable by hand, the sign is the thing the user cannot guess: the
   // question only covers the two presets, and typing a figure means choosing a direction.
-  // The hint has to name both, and say what the adjustment does NOT touch — a DJ whose
-  // loops changed length would rightly never trust the setting again.
-  it('explains both directions of the adjustment in the hint', () => {
+  // The hint has to name both, say how to converge on a value (convert, listen, correct —
+  // nobody knows whether to try 20 or 80 the first time), and say what the adjustment
+  // does NOT touch: a DJ whose loops changed length would never trust it again.
+  it('explains both directions and how to converge on a value', () => {
     renderWithCollection(vi.fn<PatchSynced>(), '-51')
 
     const hint = screen.getByText(i18n.t('settings.traktorCueOffsetHint'))
-    expect(hint.textContent).toMatch(/negative/i)
-    expect(hint.textContent).toMatch(/positive/i)
+    expect(hint.textContent).toMatch(/lower|negative/i)
+    expect(hint.textContent).toMatch(/raise|positive/i)
+    // The loop the user has to run: convert something, hear it in Traktor, adjust again.
+    expect(hint.textContent).toMatch(/convert/i)
+    expect(hint.textContent).toMatch(/listen|hear/i)
     expect(hint.textContent).toMatch(/loops/i)
+  })
+
+  // The sign alone makes the user translate between milliseconds and what they hear.
+  // The readout does that translation for them, and follows the value as it is typed —
+  // so a figure entered by hand is confirmed in the same words the answers above use.
+  it('says in plain words what the typed value does', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '-51')
+
+    expect(screen.getByTestId('settings-cue-offset-effect')).toHaveTextContent(
+      i18n.t('settings.traktorCueOffsetLater', { ms: 51 }),
+    )
+  })
+
+  it('flips the readout for a positive value', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '30')
+
+    expect(screen.getByTestId('settings-cue-offset-effect')).toHaveTextContent(
+      i18n.t('settings.traktorCueOffsetEarlier', { ms: 30 }),
+    )
+  })
+
+  // At zero there is no effect to describe, and inventing one ("moves them 0 ms") would
+  // read as though the setting were doing something.
+  it('says the cues are untouched at zero', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '0')
+
+    expect(screen.getByTestId('settings-cue-offset-effect')).toHaveTextContent(
+      i18n.t('settings.traktorCueOffsetNone'),
+    )
   })
 })
