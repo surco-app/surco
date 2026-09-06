@@ -279,6 +279,21 @@ describe('buildLibraryDumpScript', () => {
     expect(script).toContain('persistent ID of every track of library playlist 1')
   })
 
+  // Measured on macOS 26.5.2: with Music running and `library playlist 1` existing,
+  // `count of tracks` returns 0 cleanly but `name of every track` raises "Can't get name
+  // of every track of library playlist 1. (-1728)": AppleScript will not coerce an empty
+  // list of properties. An empty library is an ordinary state (a fresh Mac, a library on a
+  // disconnected external drive), so the dump has to read as zero tracks, not as a failure:
+  // without this the snapshot never lands and every track silently loses its "already in
+  // your library" verdict. `exists library playlist 1` does NOT catch this: it is true.
+  it('returns nothing instead of reading the track lists when the library is empty, because asking for a property of every track of an empty library is what raises -1728', () => {
+    const script = buildLibraryDumpScript()
+    const guard = script.indexOf('count of tracks of library playlist 1')
+    expect(guard).toBeGreaterThanOrEqual(0)
+    expect(script).toMatch(/if \(count of tracks of library playlist 1\) is 0 then return ""/)
+    expect(guard).toBeLessThan(script.indexOf('name of every track of library playlist 1'))
+  })
+
   it('joins each name and artist with a tab and the rows with linefeeds so the renderer can split the snapshot back into pairs', () => {
     const script = buildLibraryDumpScript()
     // Building a list with `set end of` then coercing once is O(n); string concat in
