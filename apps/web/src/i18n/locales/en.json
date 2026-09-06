@@ -346,7 +346,7 @@
     }
   },
   "footer": {
-    "tagline": "Convert, tag and organize your DJ tracks — ready to play in seconds.",
+    "tagline": "Convert, tag and organize your DJ tracks, ready to play in seconds.",
     "product": "Product",
     "contactHeading": "Contact",
     "copyright": "© 2026 Surco · getsurco.app",
@@ -834,7 +834,7 @@
       "fakeCaptionPost": " · codec wall"
     },
     "audioGroup": {
-      "step": "04 · 05 · 06 — the polish",
+      "step": "04 · 05 · 06 · the polish",
       "title": "And better audio while it does.",
       "lede": "Three fixes Surco makes to the same track: it removes the vinyl clicks, trims the silence off the end and levels every track to the same volume."
     },
@@ -890,7 +890,7 @@
     "batch": {
       "step": "07 · out",
       "title": "And it lands in your Apple Music.",
-      "lede": "Pick a format and a destination and convert the whole folder. With Apple Music and Engine DJ you import nothing: the track shows up in your library with its artwork on — and on Engine DJ, with rating and playlist. Everything else gets the file it expects.",
+      "lede": "Pick a format and a destination and convert the whole folder. With Apple Music and Engine DJ you import nothing: the track shows up in your library with its artwork on, and on Engine DJ, with rating and playlist. Everything else gets the file it expects.",
       "pill": "Converting 11/40",
       "stage": "Converting to AIFF…",
       "cancel": "cancel",

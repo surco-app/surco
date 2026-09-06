@@ -346,7 +346,7 @@
     }
   },
   "footer": {
-    "tagline": "Convierte, etiqueta y organiza tus pistas de DJ — listas para pinchar en segundos.",
+    "tagline": "Convierte, etiqueta y organiza tus pistas de DJ, listas para pinchar en segundos.",
     "product": "Producto",
     "contactHeading": "Contacto",
     "copyright": "© 2026 Surco · getsurco.app",
@@ -834,7 +834,7 @@
       "fakeCaptionPost": " · muro de códec"
     },
     "audioGroup": {
-      "step": "04 · 05 · 06 — se afina",
+      "step": "04 · 05 · 06 · se afina",
       "title": "Y de paso, mejor audio.",
       "lede": "Tres arreglos que Surco hace sobre la misma pista: quita los chasquidos del vinilo, recorta el silencio del final y las deja todas al mismo volumen."
     },
@@ -890,7 +890,7 @@
     "batch": {
       "step": "07 · sale",
       "title": "Y aparece sola en tu Apple Music.",
-      "lede": "Elige formato y destino y convierte la carpeta entera. En Apple Music y Engine DJ no importas nada: la pista aparece en tu biblioteca con la carátula puesta — y en Engine DJ, con rating y playlist. A los demás les deja el fichero que esperan.",
+      "lede": "Elige formato y destino y convierte la carpeta entera. En Apple Music y Engine DJ no importas nada: la pista aparece en tu biblioteca con la carátula puesta, y en Engine DJ, con rating y playlist. A los demás les deja el fichero que esperan.",
       "pill": "Convirtiendo 11/40",
       "stage": "Convirtiendo a AIFF…",
       "cancel": "cancelar",
