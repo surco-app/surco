@@ -43,6 +43,17 @@ const CUE_DRIFT_ANSWERS = [
   },
 ] as const
 
+// The sizes offered once a direction is chosen, taken from the scale the hint teaches
+// rather than picked for roundness: under 20 ms the shift is barely audible and from
+// 50 ms it is unmistakable, so these bracket the range where the DJ can actually hear
+// what they changed. Unsigned — the answer above owns the direction, which is what lets
+// one row of steps serve both "early" and "late".
+const CUE_STEPS_MS = [10, 25, 50, 75] as const
+
+// Half a beat at 128 BPM (234 ms) is where this stops being a cue adjustment: past it
+// the cue is nearer the next beat than its own, and CueGrid stops drawing it too.
+const CUE_FINE_MAX_MS = 120
+
 // Which answer the stored value corresponds to, so reopening Settings shows the state
 // the conversion will actually use. Any non-zero figure the user typed by hand still
 // reads as its own direction rather than falling back to "no adjustment".
@@ -91,6 +102,15 @@ export function DestinationTab({
   onAcceptDetectedNmlPath,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  // The stored offset split into the two things the UI edits separately: the answer owns
+  // the direction, the steps and slider own the size. Keeping them apart is what lets one
+  // unsigned row of steps serve both directions without ever flipping the user's answer.
+  const drift = driftOf(synced.traktorCueOffsetMs)
+  const magnitude = Math.min(
+    CUE_FINE_MAX_MS,
+    Math.round(Math.abs(Number(synced.traktorCueOffsetMs)) || 0),
+  )
+  const sign = drift === 'early' ? -1 : 1
   // FLAC can't go to Apple Music, so the destination is pinned to the output folder
   // while it's the format. Otherwise the stored booleans map onto the single radio choice.
   const flacOnly = synced.outputFormat === 'flac'
@@ -237,7 +257,7 @@ export function DestinationTab({
           <p className="mt-1 text-sm text-fg-muted">{tr('settings.traktorCueDriftQuestion')}</p>
           <div className="mt-2 flex flex-col gap-0.5">
             {CUE_DRIFT_ANSWERS.map((answer) => {
-              const chosen = driftOf(synced.traktorCueOffsetMs) === answer.id
+              const chosen = drift === answer.id
               return (
                 <button
                   key={answer.id}
@@ -266,34 +286,71 @@ export function DestinationTab({
               )
             })}
           </div>
-          <div className="mt-3 flex items-center gap-2">
-            <input
-              id="settings-traktor-cue-offset"
-              data-testid="settings-traktor-cue-offset"
-              type="number"
-              step={1}
-              disabled={!local.traktorNmlPath}
-              value={synced.traktorCueOffsetMs}
-              onChange={(e) => patch('traktorCueOffsetMs', e.target.value)}
-              // A blank or non-numeric box means "no adjustment", and saying so on blur
-              // beats storing something the conversion would have to guess about.
-              onBlur={() => {
-                if (!Number.isFinite(Number(synced.traktorCueOffsetMs))) {
-                  patch('traktorCueOffsetMs', '0')
-                }
-              }}
-              className="w-24 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-50"
-            />
-            <span className="text-sm text-fg-dim">{tr('settings.traktorCueOffsetUnit')}</span>
-            {/* The sign in the box is arithmetic; this is the same thing in the words the
-                answers above use, so a figure typed by hand is confirmed in terms of what
-                the DJ will actually hear instead of leaving them to interpret a minus. */}
-            <span data-testid="settings-cue-offset-effect" className="text-sm text-fg-muted">
-              {tr(cueEffectKey(synced.traktorCueOffsetMs), {
-                ms: Math.abs(Number(synced.traktorCueOffsetMs) || 0),
-              })}
-            </span>
-          </div>
+          {/* Only once a direction is chosen. At "where I left them" there is nothing to
+              size, and offering a step there would both ask the DJ to tune an adjustment
+              they just said they don't need and give the value a sign the question never
+              chose. */}
+          {drift !== 'none' && (
+            <div className="mt-4">
+              <p className="text-sm text-fg-muted">{tr('settings.traktorCueStepsLabel')}</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {CUE_STEPS_MS.map((step) => {
+                  const chosen = magnitude === step
+                  return (
+                    <button
+                      key={step}
+                      type="button"
+                      data-testid={`settings-cue-step-${step}`}
+                      aria-pressed={chosen}
+                      onClick={() => patch('traktorCueOffsetMs', String(sign * step))}
+                      className={`press rounded-lg border px-3 py-1.5 text-sm tabular-nums ${
+                        chosen
+                          ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/20 text-fg'
+                          : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-panel-2)]/40'
+                      }`}
+                    >
+                      {step} ms
+                    </button>
+                  )
+                })}
+              </div>
+              {/* The extremes of the row named, so the numbers carry the thing the DJ can
+                  hear. Naming every step would repeat the same idea four times. */}
+              <div className="mt-1.5 flex justify-between text-xs text-fg-dim">
+                <span>{tr('settings.traktorCueStepBarely')}</span>
+                <span>{tr('settings.traktorCueStepClear')}</span>
+              </div>
+
+              {/* The steps are shortcuts, not the range. This is what keeps every value
+                  reachable now that the figure cannot be typed — the reporter's own 51 ms
+                  is not on the row, and rounding him to 50 would be changing his setting.
+                  Unsigned like the steps: the slider sizes, the answer directs. */}
+              <div className="mt-3 flex items-center gap-3">
+                <input
+                  id="settings-cue-fine"
+                  data-testid="settings-cue-fine"
+                  type="range"
+                  min={0}
+                  max={CUE_FINE_MAX_MS}
+                  step={1}
+                  value={magnitude}
+                  aria-label={tr('settings.traktorCueFineLabel')}
+                  onChange={(e) => patch('traktorCueOffsetMs', String(sign * Number(e.target.value)))}
+                  className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-[var(--color-line-strong)] accent-[var(--color-accent)]"
+                />
+                <span className="w-14 shrink-0 text-right text-sm tabular-nums text-fg-muted">
+                  {magnitude} ms
+                </span>
+              </div>
+            </div>
+          )}
+          {/* The stored figure restated as what the DJ will hear: the sign is arithmetic,
+              this is the same thing in the words the answers above use. */}
+          <p data-testid="settings-cue-offset-effect" className="mt-3 text-sm text-fg-muted">
+            {tr(cueEffectKey(synced.traktorCueOffsetMs), {
+              ms: Math.abs(Number(synced.traktorCueOffsetMs) || 0),
+            })}
+          </p>
           {/* The same value again, against a beat: milliseconds only mean something once
               you can see how much of a beat they are. */}
           <CueGrid offsetMs={Number(synced.traktorCueOffsetMs)} />
