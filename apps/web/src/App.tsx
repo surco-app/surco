@@ -5,7 +5,6 @@ import Footer from './components/Footer'
 import Header from './components/Header'
 import HeroAnchors from './components/HeroAnchors'
 import HeroApp from './components/HeroApp'
-import HeroFigures from './components/HeroFigures'
 import Reveal from './components/Reveal'
 import ScrollProgress from './components/ScrollProgress'
 import SectionView from './components/SectionView'
@@ -42,13 +41,22 @@ export default function App() {
 
       <Header />
 
-      <main id="main" className="relative">
-        {/* Headline and action on the left, the measured figures on the right. The
-            screenshot used to share this row and came out 575px wide — a texture of
-            the product rather than a readable window — while at desktop widths the
-            right half below it sat empty. Now the window gets the full width of its
-            own band underneath, and the figures fill the space the copy leaves. */}
-        <section className="mx-auto grid max-w-6xl items-end gap-10 px-6 pt-10 pb-10 sm:pt-14 lg:grid-cols-[minmax(0,34rem)_auto] lg:gap-16 lg:pt-16">
+      <main id="main" className="relative overflow-x-clip">
+        {/* Headline and action on the left, the product itself on the right. The three
+            figures that used to hold this column said nothing the page doesn't say
+            better elsewhere: the price is already in the note under the button, the
+            "five apps" is the lede one line above, and the seven seconds are the whole
+            Velocidad section. What they did do was mark a band the copy left empty,
+            since the right column only ever grew to the width of a two-digit number.
+            The window takes that width now, and arrives above the fold instead of a
+            screen below it.
+
+            items-center, not items-end: with the window in this row, aligning to the
+            bottom left the headline floating against the top of a much taller
+            neighbour. The clip that keeps the overrun off the scrollbar lives on
+            <main>, not here — this section is max-w-6xl, so clipping it would cut the
+            window at the page measure, which is exactly the edge it needs to cross. */}
+        <section className="mx-auto grid max-w-6xl items-center gap-10 px-6 pt-10 pb-12 sm:pt-14 lg:grid-cols-[minmax(0,30rem)_minmax(0,1fr)] lg:gap-14 lg:pt-16 lg:pb-16">
           <div>
             <Reveal eager>
               <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-[3rem] lg:leading-[1.05]">
@@ -79,23 +87,28 @@ export default function App() {
               <HeroAnchors />
             </Reveal>
           </div>
-          {/* The lg:border-l is the only rule this column needs: below lg the figures
-              lie in a row under the button, where a left edge would point at nothing. */}
+          {/* Wider than the column that holds it, so the window runs past the right
+              edge of the page and gets cut by the viewport. Two things come out of
+              that: the interface is legible at this size (inside the grid it landed
+              at 575px, a texture of the product rather than a window), and the crop
+              reads as "there is more application here than fits".
+
+              The width has to be measured against the viewport, not fixed in rem: this
+              column starts wherever the centred 72rem page puts it, so any constant
+              either stops short of the edge on a wide screen (leaving the same dead
+              band the figures used to mark) or overruns a narrow one by a different
+              amount. 60vw clears the gap to the right edge at every lg width and the
+              surplus is what <main> clips.
+
+              Below lg it drops under the copy at plain full width — there is no
+              column to overrun, and a crop with nothing beside it is just a cut-off
+              picture. */}
           <Reveal eager delay={280}>
-            <div className="lg:border-l lg:border-line lg:pb-1.5 lg:pl-10">
-              <HeroFigures />
+            <div className="lg:w-[60vw]">
+              <HeroApp video />
             </div>
           </Reveal>
         </section>
-
-        {/* The window on the same measure as the headline above it: wider and it
-            detaches from the copy it illustrates, narrower and it goes back to being
-            a texture. */}
-        <Reveal eager delay={340}>
-          <div className="mx-auto max-w-6xl px-6 pb-12 lg:pb-16">
-            <HeroApp video />
-          </div>
-        </Reveal>
 
         {/* The names of the tools Surco talks to, doing two jobs at once: they stand in
             for social proof the download count can't carry at three digits, and they say
