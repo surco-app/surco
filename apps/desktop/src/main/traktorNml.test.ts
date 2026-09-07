@@ -132,6 +132,55 @@ describe('readTraktorMarkers', () => {
   })
 })
 
+// Reported 07/09/2026, found by diffing the user's own backup against the collection
+// Surco had written: the ONLY substantive change in the whole file was the grid tempo,
+// 141.999619 -> 142.000000. Traktor had analysed the track to six decimals; meta.bpm is
+// the rounded text of the BPM tag, and writing it over the analysed figure retunes the
+// beatgrid. At 142 BPM that 0.000381 drifts about 7 ms across a five-minute track, which
+// is the far end of the grid walking off the beat.
+describe('grid tempo already in the collection', () => {
+  const WITH_GRID = `<NML VERSION="20"><COLLECTION ENTRIES="1">
+<ENTRY TITLE="Uno"><LOCATION DIR="/:M/:" FILE="uno.mp3" VOLUME="HD"></LOCATION>
+<CUE_V2 NAME="AutoGrid" DISPL_ORDER="0" TYPE="4" START="10.187472" LEN="0.000000" REPEATS="-1" HOTCUE="-1"><GRID BPM="141.999619"></GRID></CUE_V2>
+</ENTRY>
+</COLLECTION></NML>`
+
+  const tree = buildTraktorTree([traktorCue('AutoGrid', 4, 10.187472, -1)])
+
+  it('keeps the analysed tempo instead of the rounded tag value', () => {
+    const out = applyPatches(WITH_GRID, [
+      { volume: 'HD', dir: '/:M/:', file: 'uno.mp3', cueTree: tree, bpm: 142 },
+    ])
+
+    expect(out).toContain('BPM="141.999619"')
+    expect(out).not.toContain('BPM="142.000000"')
+  })
+
+  // An entry Traktor never analysed has no tempo of its own, so the tag is the only
+  // figure available and still has to be written — otherwise the grid marker is dropped
+  // for lack of a BPM and the DJ loses the anchor entirely.
+  it('falls back to the tag when the entry carries no grid tempo', () => {
+    const noGrid = WITH_GRID.replace('<GRID BPM="141.999619"></GRID>', '')
+
+    const out = applyPatches(noGrid, [
+      { volume: 'HD', dir: '/:M/:', file: 'uno.mp3', cueTree: tree, bpm: 142 },
+    ])
+
+    expect(out).toContain('BPM="142.000000"')
+  })
+
+  // The DJ retyping the BPM field is the one case where the tag SHOULD win: they are
+  // telling Surco the analysed figure is wrong. Only a value that differs beyond the
+  // rounding counts, or every track whose tag reads 142 would overwrite its own 141.9996.
+  it('takes the tag when the DJ typed a genuinely different tempo', () => {
+    const out = applyPatches(WITH_GRID, [
+      { volume: 'HD', dir: '/:M/:', file: 'uno.mp3', cueTree: tree, bpm: 128 },
+    ])
+
+    expect(out).toContain('BPM="128.000000"')
+  })
+})
+
 describe('applyPatches', () => {
   // El caso AIFF→FLAC: la ENTRY existe pero apunta al fichero viejo. Se reapunta
   // LOCATION para que la pista siga siendo UNA en Traktor, con sus playlists.
@@ -394,13 +443,17 @@ describe('applyPatches', () => {
       traktorCue('Drop', 0, 79672.64, 1),
     ])
 
+    // Sin bpm en el patch, el tempo sale del propio ENTRY (ver gridBpmFor), así que la
+    // rejilla se reescribe con su nombre normalizado en vez de rescatarse tal cual. Lo
+    // que sigue importando es que ni un nombre lleno de patrones de reemplazo ni el
+    // tempo analizado se pierdan por el camino.
     const out = applyPatches(withGrid, [
       { volume: 'HD', dir: '/:M/:', file: 'uno.aiff', cueTree: tree },
     ])
 
-    expect(out).toContain(`NAME="${named}"`)
     expect(out).not.toContain('NAME="$&amp; Beat <')
     expect(out).toContain('<GRID BPM="128.000000">')
+    expect(out).toContain('START="79672.640000"')
   })
 
   // El mismo caso desde matchedPatchCount/syncCollection: si la rejilla se

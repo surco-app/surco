@@ -905,7 +905,7 @@
     "replaceLowRes": "Remplacer les pochettes basse résolution en appliquant une release",
     "replaceLowResHint": "Si désactivé, la pochette du fichier est toujours conservée — une basse résolution est seulement signalée, jamais remplacée par l'image de la release.",
     "flacFinderCovers": "Afficher les pochettes FLAC dans le Finder",
-    "flacFinderCoversHint": "Le Finder ne sait pas lire la pochette des fichiers FLAC et affiche une icône générique. Cette option le contourne pour les fichiers convertis ; la lecture n'est pas affectée.",
+    "flacFinderCoversHint": "Le Finder ne sait pas lire la pochette contenue dans les FLAC, il leur met donc une icône générique. Cette option contourne le problème sur les fichiers convertis et la lecture n'est pas affectée, mais le FLAC devient non conforme : Traktor refuse ces fichiers et les retire de sa collection. Laisse-la désactivée si tu synchronises avec Traktor.",
     "showSpectrum": "Analyse de la qualité audio",
     "showSpectrumHint": "Affiche le spectre et le contrôle de qualité à l'édition d'un morceau. Si désactivé, l'analyse est entièrement sautée.",
     "autoAnalyze": "Tout analyser à l'import",

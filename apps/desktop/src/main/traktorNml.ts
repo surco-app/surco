@@ -184,6 +184,27 @@ const LOCATION_END_RE = /<LOCATION\b[^>]*?(?:\/>|>(?:(?!<\/LOCATION>)[\s\S])*<\/
 // a usable bpm) and refuses by returning null rather than writing a guess; the
 // same refusal here means keeping whatever GRID element was already on disk
 // instead of letting the unconditional removal above delete it for nothing.
+// The tempo Traktor already analysed for this entry, to six decimals. meta.bpm is the
+// rounded text of the BPM tag, so writing that over the analysed figure retunes the grid:
+// the reported case was 141.999619 becoming 142.000000, which drifts ~7 ms across a
+// five-minute track. Reading it back is what lets the analysed value stand.
+const GRID_BPM_RE = /<GRID\b[^>]*\sBPM="([^"]*)"/
+
+// Past this the two figures are not the same tempo rounded differently but a genuinely
+// different one — the DJ retyped the BPM field, and their value has to win. Half a
+// hundredth covers every rounding of a six-decimal analysis without swallowing an edit.
+const SAME_TEMPO_MS = 0.005
+
+// The tempo to write: the entry's own analysed figure whenever the caller's only differs
+// from it by rounding, and the caller's otherwise (nothing analysed yet, or the DJ typed
+// a real change).
+function gridBpmFor(block: string, bpm: number | undefined): number | undefined {
+  const analysed = Number(block.match(GRID_BPM_RE)?.[1])
+  if (!Number.isFinite(analysed) || analysed <= 0) return bpm
+  if (bpm === undefined) return analysed
+  return Math.abs(analysed - bpm) < SAME_TEMPO_MS ? analysed : bpm
+}
+
 function replaceCues(block: string, tree: Uint8Array, bpm: number | undefined): string {
   const markers = readTraktorMarkers(tree)
   // readTraktorMarkers never throws: a bad checksum, an unknown Traktor variant or
@@ -193,7 +214,7 @@ function replaceCues(block: string, tree: Uint8Array, bpm: number | undefined): 
   // and insert nothing — an unreadable tree carries no information worth writing,
   // so leave the block exactly as it is instead of erasing what Traktor already has.
   if (markers.length === 0) return block
-  const newCues = cuesToXml(tree, bpm)
+  const newCues = cuesToXml(tree, gridBpmFor(block, bpm))
   const droppedGrid = markers.some((m) => m.type === 4) && !newCues.includes('TYPE="4"')
   const existingGrid = droppedGrid
     ? block.match(new RegExp(CUE_V2_RE.source.replace('[^>]*?', '[^>]*?TYPE="4"[^>]*?')))?.[0]
