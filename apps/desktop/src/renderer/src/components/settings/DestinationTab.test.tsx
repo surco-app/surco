@@ -438,14 +438,47 @@ describe('DestinationTab Traktor collection', () => {
     expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '-38')
   })
 
-  // At "where I left them" there is nothing to size: a step or a slider there would ask
-  // the DJ to tune an adjustment they just said they don't need, and picking one would
-  // silently give the value a direction the question never chose.
-  it('offers no steps while the cues land where they were left', () => {
+  // Mounted at "where I left them" too, disabled rather than absent. Rendering them only
+  // once a direction is chosen made the sizes impossible to discover: the setting opens on
+  // this answer, so a DJ who never picks early or late has no way to tell the steps exist
+  // at all — and their absence reads as a UI that changes shape under you rather than as
+  // "not applicable yet".
+  it('keeps the steps visible but disabled while the cues land where they were left', () => {
     renderWithCollection(vi.fn<PatchSynced>(), '0')
 
-    expect(screen.queryByTestId('settings-cue-step-25')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('settings-cue-fine')).not.toBeInTheDocument()
+    expect(screen.getByTestId('settings-cue-step-25')).toBeDisabled()
+    expect(screen.getByTestId('settings-cue-fine')).toBeDisabled()
+  })
+
+  // Disabled has to mean inert, not merely dim: a click that still wrote a value would
+  // give the offset a direction the question never chose.
+  it('ignores a step picked before a direction is chosen', () => {
+    const patch = vi.fn<PatchSynced>()
+    renderWithCollection(patch, '0')
+
+    fireEvent.click(screen.getByTestId('settings-cue-step-25'))
+
+    expect(patch).not.toHaveBeenCalled()
+  })
+
+  // The steps belong to the collection gate exactly like the answers above them: with no
+  // collection.nml there is nothing to write cues into, and the hint already says so.
+  it('disables the steps while no collection is configured', () => {
+    render(
+      <DestinationTab
+        synced={synced}
+        local={local}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByTestId('settings-cue-step-25')).toBeDisabled()
+    expect(screen.getByTestId('settings-cue-fine')).toBeDisabled()
   })
 
   // The step that matches the stored figure reads as chosen, so reopening Settings shows
