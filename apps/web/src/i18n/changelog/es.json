@@ -13,7 +13,7 @@
         "in": "0.94.0"
       },
       {
-        "text": "Los cues llevables se pueden desplazar desde Ajustes, en el idioma del que pincha: dices si quieren caer antes o después y cuánto, no milisegundos a ciegas, con un ejemplo dibujado sobre la rejilla que se mueve mientras lo ajustas.",
+        "text": "Los cues llevables se pueden desplazar desde Ajustes, en el idioma del que pincha: eliges si entran antes o después y en pasos que se oyen, de apenas perceptible a claramente audible, en vez de teclear milisegundos a ciegas. Debajo queda un ajuste fino para afinarlo. Mueve el punto de inicio, nunca la duración de los loops.",
         "in": "0.94.0"
       },
       {
@@ -51,6 +51,14 @@
       {
         "text": "Una biblioteca de Apple Music vacía se lee como cero pistas, no como un error.",
         "in": "0.94.0"
+      },
+      {
+        "text": "Al sincronizar con Traktor se respeta el tempo que Traktor analizó. Surco escribía encima el BPM redondeado de la etiqueta, así que un 141,999619 analizado pasaba a 142,000000 y la rejilla se desplazaba: unos 7 ms de deriva a lo largo de una pista de cinco minutos. Si eres tú quien cambia el BPM a mano, tu valor sigue mandando.",
+        "in": "0.94.1"
+      },
+      {
+        "text": "La opción de carátulas para el Finder avisa de lo que cuesta. Deja el FLAC fuera de norma y Traktor no lo acepta: se lo quita de la colección. Ahora lo dice en Ajustes, antes de que las pistas desaparezcan.",
+        "in": "0.94.1"
       }
     ]
   },
