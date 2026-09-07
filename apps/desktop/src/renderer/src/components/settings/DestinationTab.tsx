@@ -111,6 +111,10 @@ export function DestinationTab({
     Math.round(Math.abs(Number(synced.traktorCueOffsetMs)) || 0),
   )
   const sign = drift === 'early' ? -1 : 1
+  // There is a size to set only once cues are being written at all and the DJ has said
+  // which way they land. Both halves stay visible when it is false, so the panel never
+  // changes shape — they just cannot be moved, and the hint below says what is missing.
+  const sizingEnabled = Boolean(local.traktorNmlPath) && drift !== 'none'
   // FLAC can't go to Apple Music, so the destination is pinned to the output folder
   // while it's the format. Otherwise the stored booleans map onto the single radio choice.
   const flacOnly = synced.outputFormat === 'flac'
@@ -286,64 +290,75 @@ export function DestinationTab({
               )
             })}
           </div>
-          {/* Only once a direction is chosen. At "where I left them" there is nothing to
-              size, and offering a step there would both ask the DJ to tune an adjustment
-              they just said they don't need and give the value a sign the question never
-              chose. */}
-          {drift !== 'none' && (
-            <div className="mt-4">
-              <p className="text-sm text-fg-muted">{tr('settings.traktorCueStepsLabel')}</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {CUE_STEPS_MS.map((step) => {
-                  const chosen = magnitude === step
-                  return (
-                    <button
-                      key={step}
-                      type="button"
-                      data-testid={`settings-cue-step-${step}`}
-                      aria-pressed={chosen}
-                      onClick={() => patch('traktorCueOffsetMs', String(sign * step))}
-                      className={`press rounded-lg border px-3 py-1.5 text-sm tabular-nums ${
-                        chosen
-                          ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/20 text-fg'
-                          : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-panel-2)]/40'
-                      }`}
-                    >
-                      {step} ms
-                    </button>
-                  )
-                })}
-              </div>
-              {/* The extremes of the row named, so the numbers carry the thing the DJ can
-                  hear. Naming every step would repeat the same idea four times. */}
-              <div className="mt-1.5 flex justify-between text-xs text-fg-dim">
-                <span>{tr('settings.traktorCueStepBarely')}</span>
-                <span>{tr('settings.traktorCueStepClear')}</span>
-              </div>
-
-              {/* The steps are shortcuts, not the range. This is what keeps every value
-                  reachable now that the figure cannot be typed — the reporter's own 51 ms
-                  is not on the row, and rounding him to 50 would be changing his setting.
-                  Unsigned like the steps: the slider sizes, the answer directs. */}
-              <div className="mt-3 flex items-center gap-3">
-                <input
-                  id="settings-cue-fine"
-                  data-testid="settings-cue-fine"
-                  type="range"
-                  min={0}
-                  max={CUE_FINE_MAX_MS}
-                  step={1}
-                  value={magnitude}
-                  aria-label={tr('settings.traktorCueFineLabel')}
-                  onChange={(e) => patch('traktorCueOffsetMs', String(sign * Number(e.target.value)))}
-                  className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-[var(--color-line-strong)] accent-[var(--color-accent)]"
-                />
-                <span className="w-14 shrink-0 text-right text-sm tabular-nums text-fg-muted">
-                  {magnitude} ms
-                </span>
-              </div>
+          {/* Always mounted, disabled when there is nothing to size — never unmounted.
+              Rendering these only once a direction was chosen hid them in the state the
+              panel opens in, so a DJ who never picks early or late could not tell the
+              sizes existed; and a block that materialises under the answer reads as a UI
+              changing shape rather than as a control that does not apply yet. Same reason
+              the answers above are disabled instead of hidden without a collection. */}
+          <div className="mt-4">
+            <p className={`text-sm ${sizingEnabled ? 'text-fg-muted' : 'text-fg-dim'}`}>
+              {tr('settings.traktorCueStepsLabel')}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {CUE_STEPS_MS.map((step) => {
+                // Only a chosen direction can mark a step: at "where I left them" the
+                // stored 0 matches no step, and lighting one up would claim a size for an
+                // adjustment that isn't happening.
+                const chosen = sizingEnabled && magnitude === step
+                return (
+                  <button
+                    key={step}
+                    type="button"
+                    data-testid={`settings-cue-step-${step}`}
+                    aria-pressed={chosen}
+                    disabled={!sizingEnabled}
+                    onClick={() => patch('traktorCueOffsetMs', String(sign * step))}
+                    className={`press rounded-lg border px-3 py-1.5 text-sm tabular-nums disabled:cursor-not-allowed disabled:opacity-50 ${
+                      chosen
+                        ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/20 text-fg'
+                        : 'border-[var(--color-line-strong)] text-fg-muted enabled:hover:bg-[var(--color-panel-2)]/40'
+                    }`}
+                  >
+                    {step} ms
+                  </button>
+                )
+              })}
             </div>
-          )}
+            {/* The extremes of the row named, so the numbers carry the thing the DJ can
+                hear. Naming every step would repeat the same idea four times. */}
+            <div className="mt-1.5 flex justify-between text-xs text-fg-dim">
+              <span>{tr('settings.traktorCueStepBarely')}</span>
+              <span>{tr('settings.traktorCueStepClear')}</span>
+            </div>
+
+            {/* The steps are shortcuts, not the range. This is what keeps every value
+                reachable now that the figure cannot be typed — the reporter's own 51 ms
+                is not on the row, and rounding him to 50 would be changing his setting.
+                Unsigned like the steps: the slider sizes, the answer directs. */}
+            <div className="mt-3 flex items-center gap-3">
+              <input
+                id="settings-cue-fine"
+                data-testid="settings-cue-fine"
+                type="range"
+                min={0}
+                max={CUE_FINE_MAX_MS}
+                step={1}
+                disabled={!sizingEnabled}
+                value={magnitude}
+                aria-label={tr('settings.traktorCueFineLabel')}
+                onChange={(e) => patch('traktorCueOffsetMs', String(sign * Number(e.target.value)))}
+                className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-[var(--color-line-strong)] accent-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              <span
+                className={`w-14 shrink-0 text-right text-sm tabular-nums ${
+                  sizingEnabled ? 'text-fg-muted' : 'text-fg-dim'
+                }`}
+              >
+                {magnitude} ms
+              </span>
+            </div>
+          </div>
           {/* The stored figure restated as what the DJ will hear: the sign is arithmetic,
               this is the same thing in the words the answers above use. */}
           <p data-testid="settings-cue-offset-effect" className="mt-3 text-sm text-fg-muted">
