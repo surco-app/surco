@@ -181,6 +181,76 @@ describe('grid tempo already in the collection', () => {
   })
 })
 
+// Reported 07/09/2026 from a controlled A/B against AudioFinder on a real 8,321-entry
+// collection: after one FLAC->MP3 conversion Surco left 8,320 unique paths for 8,321
+// entries — one duplicate — while AudioFinder left none. Traktor indexes by path, so
+// every conversion added another clone, and the DJ's own broken collection had the same
+// track three times over. The cause is repointing: the FLAC's entry gets its FILE
+// rewritten to .mp3, and if the collection already holds an entry for that .mp3 there
+// are now two, the repointed one still carrying the FLAC's BITRATE and FILESIZE.
+describe('repointing onto a path the collection already has', () => {
+  const BOTH = `<NML VERSION="20"><COLLECTION ENTRIES="2">
+<ENTRY TITLE="Open Eyes"><LOCATION DIR="/:M/:" FILE="uno.flac" VOLUME="HD"></LOCATION><INFO BITRATE="1042000" PLAYTIME="369"></INFO></ENTRY>
+<ENTRY TITLE="Open Eyes"><LOCATION DIR="/:M/:" FILE="uno.mp3" VOLUME="HD"></LOCATION><INFO BITRATE="320000" PLAYTIME="368"></INFO></ENTRY>
+</COLLECTION></NML>`
+
+  it('does not repoint when the target path is already in the collection', () => {
+    const out = applyPatches(BOTH, [
+      { volume: 'HD', dir: '/:M/:', file: 'uno.flac', newFile: 'uno.mp3' },
+    ])
+
+    const mp3s = out.match(/FILE="uno\.mp3"/g) ?? []
+    expect(mp3s).toHaveLength(1)
+    // The entry Traktor already had for the MP3 is the one that describes it correctly,
+    // so that is the one that must survive intact.
+    expect(out).toContain('BITRATE="320000"')
+  })
+
+  // The shape of the reporter's own collection, transcribed from the file he sent rather
+  // than invented: LOCATION carries VOLUMEID next to VOLUME, and INFO the technical
+  // fields repointing never updates. VOLUMEID is why the attribute reads are \b-anchored
+  // — a VOLUME lookup that also matched VOLUMEID would compare the wrong strings and let
+  // the duplicate through on exactly the collections this guard exists for.
+  it('leaves both entries alone on a real-shaped collection', () => {
+    const real = `<NML VERSION="20"><COLLECTION ENTRIES="2">
+<ENTRY MODIFIED_DATE="2026/9/7" TITLE="Open Eyes" ARTIST="Sola Brothers"><LOCATION DIR="/:Users/:dj/:Music/:Surco/:" FILE="Open Eyes.flac" VOLUME="Mac_Os_Tahoe" VOLUMEID="Mac_Os_Tahoe"></LOCATION><INFO BITRATE="1042000" FILESIZE="47184" PLAYTIME="369" IMPORT_DATE="2026/9/7"></INFO></ENTRY>
+<ENTRY MODIFIED_DATE="2026/9/7" TITLE="Open Eyes" ARTIST="Sola Brothers"><LOCATION DIR="/:Users/:dj/:Music/:Surco/:" FILE="Open Eyes.mp3" VOLUME="Mac_Os_Tahoe" VOLUMEID="Mac_Os_Tahoe"></LOCATION><INFO BITRATE="320000" FILESIZE="14598" PLAYTIME="368" PLAYCOUNT="1"></INFO></ENTRY>
+</COLLECTION></NML>`
+
+    const out = applyPatches(real, [
+      {
+        volume: 'Mac_Os_Tahoe',
+        dir: '/:Users/:dj/:Music/:Surco/:',
+        file: 'Open Eyes.flac',
+        newFile: 'Open Eyes.mp3',
+      },
+    ])
+
+    expect(out.match(/FILE="Open Eyes\.mp3"/g)).toHaveLength(1)
+    expect(out).toContain('FILE="Open Eyes.flac"')
+    // The MP3's own entry keeps describing the MP3: repointing never refreshed BITRATE or
+    // FILESIZE, so a clone would have claimed 1042 kbps and 47 MB for a 320 kbps file.
+    expect(out).toContain('BITRATE="320000"')
+    expect(out).toContain('PLAYCOUNT="1"')
+  })
+
+  // The case repointing exists for: the source entry is the only one, so following the
+  // file to its new extension keeps the track — with its playlists and play count — as
+  // one track in Traktor instead of orphaning it.
+  it('still repoints when nothing else claims that path', () => {
+    const onlyFlac = `<NML VERSION="20"><COLLECTION ENTRIES="1">
+<ENTRY TITLE="Open Eyes"><LOCATION DIR="/:M/:" FILE="uno.flac" VOLUME="HD"></LOCATION></ENTRY>
+</COLLECTION></NML>`
+
+    const out = applyPatches(onlyFlac, [
+      { volume: 'HD', dir: '/:M/:', file: 'uno.flac', newFile: 'uno.mp3' },
+    ])
+
+    expect(out).toContain('FILE="uno.mp3"')
+    expect(out).not.toContain('FILE="uno.flac"')
+  })
+})
+
 describe('applyPatches', () => {
   // El caso AIFF→FLAC: la ENTRY existe pero apunta al fichero viejo. Se reapunta
   // LOCATION para que la pista siga siendo UNA en Traktor, con sus playlists.
