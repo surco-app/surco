@@ -305,7 +305,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
       />,
     )
-    expect(screen.getByTestId('settings-traktor-cue-offset')).toBeDisabled()
+    expect(screen.getByTestId('settings-cue-drift-early')).toBeDisabled()
     expect(screen.getByText(i18n.t('settings.traktorCueOffsetIdle'))).toBeInTheDocument()
     cleanup()
     render(
@@ -320,7 +320,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
       />,
     )
-    expect(screen.getByTestId('settings-traktor-cue-offset')).toBeEnabled()
+    expect(screen.getByTestId('settings-cue-drift-early')).toBeEnabled()
     expect(screen.queryByText(i18n.t('settings.traktorCueOffsetIdle'))).not.toBeInTheDocument()
   })
 
@@ -400,32 +400,83 @@ describe('DestinationTab Traktor collection', () => {
     expect(screen.getByTestId('settings-cue-drift-none')).toHaveAttribute('aria-pressed', 'false')
   })
 
-  // The exact figure stays the user's: the reporter arrived at his own after hours of
-  // trial and error, and the question only offers a starting point.
-  it('keeps the millisecond value editable under the question', () => {
+  // Typing the figure asked the DJ for the one thing they cannot estimate. The steps are
+  // the scale the hint already teaches — 10 ms barely audible, 50 ms unmistakable — so
+  // the choice is between sizes of a change they can hear rather than between numbers.
+  it('offers the audible steps once a direction is chosen', () => {
     const patch = vi.fn<PatchSynced>()
     renderWithCollection(patch, '-51')
 
-    const input = screen.getByTestId('settings-traktor-cue-offset')
-    expect(input).toHaveValue(-51)
-    fireEvent.change(input, { target: { value: '-30' } })
-    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '-30')
+    fireEvent.click(screen.getByTestId('settings-cue-step-25'))
+
+    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '-25')
   })
 
-  // Once the box is editable by hand, the sign is the thing the user cannot guess: the
-  // question only covers the two presets, and typing a figure means choosing a direction.
-  // The hint has to name both, say how to converge on a value (convert, listen, correct —
-  // nobody knows whether to try 20 or 80 the first time), and say what the adjustment
-  // does NOT touch: a DJ whose loops changed length would never trust it again.
-  it('explains both directions and how to converge on a value', () => {
+  // The direction belongs to the answer above, so a step never changes it: picking 25 on
+  // "late" has to stay late. Sharing one set of unsigned steps between both answers is
+  // the whole reason they can be labelled by size instead of by sign.
+  it('keeps the direction of the answer when a step is picked', () => {
+    const patch = vi.fn<PatchSynced>()
+    renderWithCollection(patch, '51')
+
+    fireEvent.click(screen.getByTestId('settings-cue-step-25'))
+
+    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '25')
+  })
+
+  // The steps are shortcuts, not the whole range: the reporter arrived at 51 ms by ear
+  // over a long session, and no list of round numbers contains it. The slider is what
+  // keeps every value reachable now that the number cannot be typed.
+  it('tunes to a value no step offers', () => {
+    const patch = vi.fn<PatchSynced>()
+    renderWithCollection(patch, '-51')
+
+    const slider = screen.getByTestId('settings-cue-fine')
+    expect(slider).toHaveValue('51')
+    fireEvent.change(slider, { target: { value: '38' } })
+
+    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '-38')
+  })
+
+  // At "where I left them" there is nothing to size: a step or a slider there would ask
+  // the DJ to tune an adjustment they just said they don't need, and picking one would
+  // silently give the value a direction the question never chose.
+  it('offers no steps while the cues land where they were left', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '0')
+
+    expect(screen.queryByTestId('settings-cue-step-25')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('settings-cue-fine')).not.toBeInTheDocument()
+  })
+
+  // The step that matches the stored figure reads as chosen, so reopening Settings shows
+  // which size is in force instead of an unmarked row of options.
+  it('marks the step that matches the stored offset', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '-50')
+
+    expect(screen.getByTestId('settings-cue-step-50')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('settings-cue-step-25')).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  // A hand-tuned figure between steps must not light one up: 51 is not 50, and marking
+  // the nearest step would tell the user their value had been rounded.
+  it('marks no step for a value between them', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '-51')
+
+    expect(screen.getByTestId('settings-cue-step-50')).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  // The sign is no longer the user's problem — the answer above chose the direction and
+  // the steps are unsigned — so the hint no longer teaches "lower it / raise it". What it
+  // still has to carry is the loop nobody can shortcut (convert, listen, correct again:
+  // nobody knows whether to try 20 or 80 the first time) and what the adjustment does NOT
+  // touch: a DJ whose loops changed length would never trust it again.
+  it('explains how to converge on a value and what it leaves alone', () => {
     renderWithCollection(vi.fn<PatchSynced>(), '-51')
 
     const hint = screen.getByText(i18n.t('settings.traktorCueOffsetHint'))
-    expect(hint.textContent).toMatch(/lower|negative/i)
-    expect(hint.textContent).toMatch(/raise|positive/i)
-    // The loop the user has to run: convert something, hear it in Traktor, adjust again.
     expect(hint.textContent).toMatch(/convert/i)
     expect(hint.textContent).toMatch(/listen|hear/i)
+    expect(hint.textContent).toMatch(/step|slider/i)
     expect(hint.textContent).toMatch(/loops/i)
   })
 
