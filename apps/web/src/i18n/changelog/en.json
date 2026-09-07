@@ -13,7 +13,7 @@
         "in": "0.94.0"
       },
       {
-        "text": "Carried cue points can be nudged from Settings, in a DJ's own terms: you say whether they should land earlier or later and by how much, not milliseconds in the dark, with an example drawn against the beat grid that moves as you adjust it.",
+        "text": "Carried cue points can be nudged from Settings, in a DJ's own terms: you pick whether they come in earlier or later, in steps you can actually hear, from barely audible to clearly audible, instead of typing milliseconds in the dark. A fine adjustment sits underneath for the rest. It shifts the start point, never the length of your loops.",
         "in": "0.94.0"
       },
       {
@@ -51,6 +51,14 @@
       {
         "text": "An empty Apple Music library reads as zero tracks rather than an error.",
         "in": "0.94.0"
+      },
+      {
+        "text": "Syncing with Traktor now keeps the tempo Traktor analysed. Surco was writing the rounded BPM from the tag over it, so an analysed 141.999619 became 142.000000 and the grid drifted: around 7 ms across a five-minute track. If you are the one who retyped the BPM, your value still wins.",
+        "in": "0.94.1"
+      },
+      {
+        "text": "The Finder artwork option now says what it costs. It leaves the FLAC off-spec and Traktor will not accept it, dropping the file from its collection. Settings warns you before the tracks go missing.",
+        "in": "0.94.1"
       }
     ]
   },
