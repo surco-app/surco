@@ -5,6 +5,10 @@
     "title": "Every track converts with the dials you gave it",
     "items": [
       {
+        "text": "Converting a track no longer leaves two entries for the same file in your Traktor collection. When the collection already held the track in the new format, Surco repointed the old one onto it and both remained, one still claiming the original's size and bitrate; now it leaves that entry alone.",
+        "in": "0.94.2"
+      },
+      {
         "text": "Normalize and declick are per track again in a batch. The editor stages them row by row, but the conversion read a single value for the whole run: set one track to -18 and another to -7 and both came out at -7, and a dusty rip dialled to strong declick converted with none. The lossy re-encode warning comes back with it, as it was skipped on any track carrying its own setting.",
         "in": "0.94.0"
       },

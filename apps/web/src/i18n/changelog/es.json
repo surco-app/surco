@@ -5,6 +5,10 @@
     "title": "Cada pista se convierte con lo que tú le pusiste",
     "items": [
       {
+        "text": "Convertir una pista ya no deja dos entradas para el mismo fichero en la colección de Traktor. Cuando la colección ya tenía la pista con el formato nuevo, Surco reapuntaba la vieja encima y quedaban dos, una de ellas con el tamaño y el bitrate del original; ahora deja esa entrada como está.",
+        "in": "0.94.2"
+      },
+      {
         "text": "Los diales de normalización y declick vuelven a ser de cada pista en el lote. El editor los deja puestos fila a fila, pero la conversión leía un solo valor para toda la tanda: si ponías una pista a -18 y otra a -7, las dos salían a -7, y un vinilo rasposo con el declick fuerte salía sin declick. De paso vuelve el aviso de re-codificar un MP3 con pérdidas, que se saltaba en las pistas que llevaban su propio ajuste.",
         "in": "0.94.0"
       },
