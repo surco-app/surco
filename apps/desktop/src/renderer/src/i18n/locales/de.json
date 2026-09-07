@@ -904,7 +904,7 @@
     "replaceLowRes": "Niedrig aufgelöste Cover beim Anwenden eines Releases ersetzen",
     "replaceLowResHint": "Wenn aus, bleibt immer das Cover deiner Datei erhalten — ein niedrig aufgelöstes wird nur markiert, nie gegen das Release-Bild getauscht.",
     "flacFinderCovers": "FLAC-Cover im Finder anzeigen",
-    "flacFinderCoversHint": "Der Finder kann das Cover in FLAC-Dateien nicht lesen und zeigt ein generisches Symbol. Diese Option umgeht das bei konvertierten Dateien; die Wiedergabe ist nicht betroffen.",
+    "flacFinderCoversHint": "Der Finder kann das Cover in FLAC-Dateien nicht lesen und zeigt deshalb ein generisches Symbol. Diese Option umgeht das bei konvertierten Dateien, die Wiedergabe bleibt unberührt — aber die FLAC-Datei ist dann nicht mehr normgerecht: Traktor akzeptiert solche Dateien nicht und entfernt sie aus seiner Sammlung. Lass sie aus, wenn du mit Traktor synchronisierst.",
     "showSpectrum": "Audioqualitätsanalyse",
     "showSpectrumHint": "Zeigt Spektrum und Qualitätsprüfung beim Bearbeiten eines Tracks. Wenn aus, entfällt die Analyse komplett.",
     "autoAnalyze": "Beim Import alles analysieren",
