@@ -305,7 +305,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
       />,
     )
-    expect(screen.getByTestId('settings-cue-drift-early')).toBeDisabled()
+    expect(screen.getByTestId('settings-cue-preset--25')).toBeDisabled()
     expect(screen.getByText(i18n.t('settings.traktorCueOffsetIdle'))).toBeInTheDocument()
     cleanup()
     render(
@@ -320,7 +320,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
       />,
     )
-    expect(screen.getByTestId('settings-cue-drift-early')).toBeEnabled()
+    expect(screen.getByTestId('settings-cue-preset--25')).toBeEnabled()
     expect(screen.queryByText(i18n.t('settings.traktorCueOffsetIdle'))).not.toBeInTheDocument()
   })
 
@@ -356,114 +356,73 @@ describe('DestinationTab Traktor collection', () => {
     expect(field).toHaveAttribute('title', expect.stringContaining('/Users/dj/Documents'))
   })
 
-  // The number alone tells the user nothing, and this one adjusts something Surco
-  // already gets right on its own — so the field has to carry the explanation with it,
-  // or it reads as a knob worth turning.
-  // Asking for milliseconds asked for a unit no DJ can estimate; the symptom they do
-  // perceive is "my cues come in early". The question carries that symptom, and the
-  // answer sets the sign and a starting value — the number stays editable underneath.
-  it('sets a negative offset when the cues come in early', () => {
+  // One signed row instead of a question plus an unsigned row of sizes. Splitting the
+  // sign from the size needed a question to carry the direction, a second control to
+  // carry the magnitude, and a sentence to translate the result back into words — four
+  // controls for one number. A button that already says "-25 ms" is the whole decision.
+  it('sets the offset the chosen preset names', () => {
     const patch = vi.fn<PatchSynced>()
     renderWithCollection(patch)
 
-    fireEvent.click(screen.getByTestId('settings-cue-drift-early'))
-
-    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '-51')
-  })
-
-  it('sets a positive offset when the cues come in late', () => {
-    const patch = vi.fn<PatchSynced>()
-    renderWithCollection(patch)
-
-    fireEvent.click(screen.getByTestId('settings-cue-drift-late'))
-
-    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '51')
-  })
-
-  // The default answer, and the one that has to stay reachable: a DJ who tried an
-  // adjustment and found it wrong needs the way back to "leave them alone".
-  it('clears the offset when the cues land where they were left', () => {
-    const patch = vi.fn<PatchSynced>()
-    renderWithCollection(patch, '-51')
-
-    fireEvent.click(screen.getByTestId('settings-cue-drift-none'))
-
-    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '0')
-  })
-
-  // Which answer reads as chosen follows the stored value, so reopening Settings shows
-  // the state the conversion will actually use rather than a reset default.
-  it('marks the answer that matches the stored offset', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '-51')
-
-    expect(screen.getByTestId('settings-cue-drift-early')).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByTestId('settings-cue-drift-none')).toHaveAttribute('aria-pressed', 'false')
-  })
-
-  // Typing the figure asked the DJ for the one thing they cannot estimate. The steps are
-  // the scale the hint already teaches — 10 ms barely audible, 50 ms unmistakable — so
-  // the choice is between sizes of a change they can hear rather than between numbers.
-  it('offers the audible steps once a direction is chosen', () => {
-    const patch = vi.fn<PatchSynced>()
-    renderWithCollection(patch, '-51')
-
-    fireEvent.click(screen.getByTestId('settings-cue-step-25'))
+    fireEvent.click(screen.getByTestId('settings-cue-preset--25'))
 
     expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '-25')
   })
 
-  // The direction belongs to the answer above, so a step never changes it: picking 25 on
-  // "late" has to stay late. Sharing one set of unsigned steps between both answers is
-  // the whole reason they can be labelled by size instead of by sign.
-  it('keeps the direction of the answer when a step is picked', () => {
+  it('sets a positive offset from the positive preset', () => {
     const patch = vi.fn<PatchSynced>()
-    renderWithCollection(patch, '51')
+    renderWithCollection(patch)
 
-    fireEvent.click(screen.getByTestId('settings-cue-step-25'))
+    fireEvent.click(screen.getByTestId('settings-cue-preset-25'))
 
     expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '25')
   })
 
-  // The steps are shortcuts, not the whole range: the reporter arrived at 51 ms by ear
-  // over a long session, and no list of round numbers contains it. The slider is what
-  // keeps every value reachable now that the number cannot be typed.
-  it('tunes to a value no step offers', () => {
+  // The way back to "leave them alone" is a preset like any other, not a separate answer:
+  // a DJ who tried an adjustment and found it wrong needs it in the same row they used.
+  it('clears the offset from the middle preset', () => {
+    const patch = vi.fn<PatchSynced>()
+    renderWithCollection(patch, '-51')
+
+    fireEvent.click(screen.getByTestId('settings-cue-preset-0'))
+
+    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '0')
+  })
+
+  // Which preset reads as chosen follows the stored value, so reopening Settings shows the
+  // state the conversion will actually use rather than a reset default.
+  it('marks the preset that matches the stored offset', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '-25')
+
+    expect(screen.getByTestId('settings-cue-preset--25')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('settings-cue-preset-0')).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  // A hand-tuned figure between presets must not light one up: 51 is not 50, and marking
+  // the nearest would tell the user their value had been rounded.
+  it('marks no preset for a value between them', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '-51')
+
+    expect(screen.getByTestId('settings-cue-preset--50')).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  // The presets are shortcuts, not the range. The reporter arrived at 51 ms by ear over a
+  // long session and no row of round numbers contains it, so the slider is what keeps
+  // every value reachable — signed like the presets, so it needs no direction of its own.
+  it('tunes to a value no preset offers', () => {
     const patch = vi.fn<PatchSynced>()
     renderWithCollection(patch, '-51')
 
     const slider = screen.getByTestId('settings-cue-fine')
-    expect(slider).toHaveValue('51')
-    fireEvent.change(slider, { target: { value: '38' } })
+    expect(slider).toHaveValue('-51')
+    fireEvent.change(slider, { target: { value: '-38' } })
 
     expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '-38')
   })
 
-  // Mounted at "where I left them" too, disabled rather than absent. Rendering them only
-  // once a direction is chosen made the sizes impossible to discover: the setting opens on
-  // this answer, so a DJ who never picks early or late has no way to tell the steps exist
-  // at all — and their absence reads as a UI that changes shape under you rather than as
-  // "not applicable yet".
-  it('keeps the steps visible but disabled while the cues land where they were left', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '0')
-
-    expect(screen.getByTestId('settings-cue-step-25')).toBeDisabled()
-    expect(screen.getByTestId('settings-cue-fine')).toBeDisabled()
-  })
-
-  // Disabled has to mean inert, not merely dim: a click that still wrote a value would
-  // give the offset a direction the question never chose.
-  it('ignores a step picked before a direction is chosen', () => {
-    const patch = vi.fn<PatchSynced>()
-    renderWithCollection(patch, '0')
-
-    fireEvent.click(screen.getByTestId('settings-cue-step-25'))
-
-    expect(patch).not.toHaveBeenCalled()
-  })
-
-  // The steps belong to the collection gate exactly like the answers above them: with no
-  // collection.nml there is nothing to write cues into, and the hint already says so.
-  it('disables the steps while no collection is configured', () => {
+  // Always mounted, disabled without a collection — never unmounted. A control that
+  // materialises leaves the user unable to tell the setting exists at all.
+  it('keeps the presets visible but disabled while no collection is configured', () => {
     render(
       <DestinationTab
         synced={synced}
@@ -477,137 +436,41 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    expect(screen.getByTestId('settings-cue-step-25')).toBeDisabled()
+    expect(screen.getByTestId('settings-cue-preset--25')).toBeDisabled()
     expect(screen.getByTestId('settings-cue-fine')).toBeDisabled()
   })
 
-  // The step that matches the stored figure reads as chosen, so reopening Settings shows
-  // which size is in force instead of an unmarked row of options.
-  it('marks the step that matches the stored offset', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '-50')
+  // Disabled has to mean inert, not merely dim.
+  it('ignores a preset picked with no collection set', () => {
+    const patch = vi.fn<PatchSynced>()
+    render(
+      <DestinationTab
+        synced={synced}
+        local={local}
+        patch={patch}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+      />,
+    )
 
-    expect(screen.getByTestId('settings-cue-step-50')).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByTestId('settings-cue-step-25')).toHaveAttribute('aria-pressed', 'false')
+    fireEvent.click(screen.getByTestId('settings-cue-preset--25'))
+
+    expect(patch).not.toHaveBeenCalled()
   })
 
-  // A hand-tuned figure between steps must not light one up: 51 is not 50, and marking
-  // the nearest step would tell the user their value had been rounded.
-  it('marks no step for a value between them', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '-51')
-
-    expect(screen.getByTestId('settings-cue-step-50')).toHaveAttribute('aria-pressed', 'false')
-  })
-
-  // The sign is no longer the user's problem — the answer above chose the direction and
-  // the steps are unsigned — so the hint no longer teaches "lower it / raise it". What it
-  // still has to carry is the loop nobody can shortcut (convert, listen, correct again:
-  // nobody knows whether to try 20 or 80 the first time) and what the adjustment does NOT
-  // touch: a DJ whose loops changed length would never trust it again.
-  it('explains how to converge on a value and what it leaves alone', () => {
+  // The hint is the only prose left, so it carries what the controls cannot: that the
+  // normal state is no adjustment (this corrects something Surco already gets right), the
+  // loop nobody can shortcut, and what the adjustment does NOT touch — a DJ whose loops
+  // changed length would never trust it again.
+  it('says the normal case is no adjustment and what it leaves alone', () => {
     renderWithCollection(vi.fn<PatchSynced>(), '-51')
 
     const hint = screen.getByText(i18n.t('settings.traktorCueOffsetHint'))
-    expect(hint.textContent).toMatch(/convert/i)
+    expect(hint.textContent).toMatch(/already corrects|no adjustment/i)
     expect(hint.textContent).toMatch(/listen|hear/i)
-    expect(hint.textContent).toMatch(/step|slider/i)
     expect(hint.textContent).toMatch(/loops/i)
-  })
-
-  // The sign alone makes the user translate between milliseconds and what they hear.
-  // The readout does that translation for them, and follows the value as it is typed —
-  // so a figure entered by hand is confirmed in the same words the answers above use.
-  it('says in plain words what the typed value does', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '-51')
-
-    expect(screen.getByTestId('settings-cue-offset-effect')).toHaveTextContent(
-      i18n.t('settings.traktorCueOffsetLater', { ms: 51 }),
-    )
-  })
-
-  it('flips the readout for a positive value', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '30')
-
-    expect(screen.getByTestId('settings-cue-offset-effect')).toHaveTextContent(
-      i18n.t('settings.traktorCueOffsetEarlier', { ms: 30 }),
-    )
-  })
-
-  // At zero there is no effect to describe, and inventing one ("moves them 0 ms") would
-  // read as though the setting were doing something.
-  it('says the cues are untouched at zero', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '0')
-
-    expect(screen.getByTestId('settings-cue-offset-effect')).toHaveTextContent(
-      i18n.t('settings.traktorCueOffsetNone'),
-    )
-  })
-
-  // Milliseconds mean nothing until you see them against a beat: at 128 BPM a beat runs
-  // 469 ms, so 51 ms is 11% of one. The drawing puts the cue on the grid and marks where
-  // it used to sit, which shows the size and the direction of the change at a glance.
-  it('draws the cue displaced from the beat it was on', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '-51')
-
-    const moved = screen.getByTestId('cue-grid-cue')
-    const origin = screen.getByTestId('cue-grid-origin')
-    // A negative offset delays the cue, and later means further right on a timeline.
-    expect(Number(moved.getAttribute('x1'))).toBeGreaterThan(Number(origin.getAttribute('x1')))
-  })
-
-  it('draws the cue ahead of the beat for a positive offset', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '51')
-
-    const moved = screen.getByTestId('cue-grid-cue')
-    const origin = screen.getByTestId('cue-grid-origin')
-    expect(Number(moved.getAttribute('x1'))).toBeLessThan(Number(origin.getAttribute('x1')))
-  })
-
-  // Nothing has moved, so the cue sits exactly on its beat and there is no displacement
-  // to draw — a visible gap at zero would contradict the reading right next to it.
-  it('draws the cue on the beat when there is no adjustment', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '0')
-
-    const moved = screen.getByTestId('cue-grid-cue')
-    const origin = screen.getByTestId('cue-grid-origin')
-    expect(moved.getAttribute('x1')).toBe(origin.getAttribute('x1'))
-  })
-
-  // Zero is the state nearly every user sees, so it is the one that has to say something.
-  // The first version hid the beat marker until an adjustment existed, which left a grid
-  // with a lone line on it — a diagram of nothing. Drawn, it reads as "cue and beat agree".
-  it('still marks the beat when nothing has been adjusted', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '0')
-
-    expect(screen.getByTestId('cue-grid-origin')).not.toHaveAttribute('opacity', '0')
-  })
-
-  // The drawing only ever claims what Surco actually knows — the beat grid and where the
-  // cue sits on it. It must not draw a waveform: Surco cannot know where the transient
-  // of this DJ's track falls, and a drawn hit would suggest the cue is being aligned to
-  // real audio rather than to the grid.
-  it('draws no waveform it cannot know', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '-51')
-
-    expect(screen.queryByTestId('cue-grid-waveform')).not.toBeInTheDocument()
-  })
-
-  // Caught in the real app: the first geometry drew six beat lines of which only two
-  // landed inside the frame, so there was effectively no grid to read the cue against.
-  // The point of the drawing is the comparison, so several lines have to be visible.
-  it('keeps enough of the grid inside the frame to read the cue against', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '-51')
-
-    const svg = screen.getByRole('img')
-    const width = Number(svg.getAttribute('viewBox')?.split(' ')[2])
-    // Only the grid lines: counting every line would also count the cue, its dotted
-    // origin and the displacement bar, all of which sit inside the frame by construction
-    // — which is how the first version of this test passed against the broken geometry.
-    const gridInside = [...svg.querySelectorAll('line')].filter((line) => {
-      if (line.getAttribute('stroke') !== 'var(--color-line-strong)') return false
-      const x = Number(line.getAttribute('x1'))
-      return x >= 0 && x <= width
-    })
-
-    expect(gridInside.length).toBeGreaterThanOrEqual(4)
   })
 })
