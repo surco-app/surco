@@ -253,6 +253,19 @@ function patchEntry(block: string, patch: NmlPatch): string {
 // that changed. Substitution runs back-to-front (descending index) so editing
 // one entry never shifts the start/end span findEntries already computed for
 // an earlier one still waiting to be patched.
+// Repointing an entry onto a path the collection ALREADY holds would leave two entries
+// for one file. Traktor indexes by path, so that duplicate is not cosmetic: measured on
+// a real 8,321-entry collection, one conversion left 8,320 unique paths, and repeated
+// conversions of the same track stacked up more clones. The entry that already describes
+// the output is also the accurate one — it carries the real BITRATE and FILESIZE, which
+// repointing does not update — so the right move is to leave both alone and let the cues
+// land on whichever entry matched.
+function pathTaken(entries: NmlEntry[], patch: NmlPatch, self: NmlEntry): boolean {
+  if (!patch.newFile) return false
+  const target = key(patch.volume, patch.dir, patch.newFile)
+  return entries.some((e) => e !== self && key(e.volume, e.dir, e.file) === target)
+}
+
 export function applyPatches(nml: string, patches: NmlPatch[]): string {
   const entries = findEntries(nml)
   const index = indexPatches(patches)
@@ -261,7 +274,8 @@ export function applyPatches(nml: string, patches: NmlPatch[]): string {
     const entry = entries[i]
     const patch = matchPatch(entry, index)
     if (!patch) continue
-    const patched = patchEntry(out.slice(entry.start, entry.end), patch)
+    const safe = pathTaken(entries, patch, entry) ? { ...patch, newFile: undefined } : patch
+    const patched = patchEntry(out.slice(entry.start, entry.end), safe)
     out = out.slice(0, entry.start) + patched + out.slice(entry.end)
   }
   return out
@@ -284,8 +298,11 @@ export function matchedPatchCount(nml: string, patches: NmlPatch[]): number {
   for (const entry of entries) {
     const patch = matchPatch(entry, index)
     if (!patch) continue
+    // Same suppression applyPatches makes, or the count would claim a rename that the
+    // write itself declines to make.
+    const safe = pathTaken(entries, patch, entry) ? { ...patch, newFile: undefined } : patch
     const block = nml.slice(entry.start, entry.end)
-    if (patchEntry(block, patch) !== block) matched.add(patch)
+    if (patchEntry(block, safe) !== block) matched.add(patch)
   }
   return matched.size
 }
