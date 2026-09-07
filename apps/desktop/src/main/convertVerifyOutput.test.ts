@@ -123,6 +123,12 @@ describe('assertDecodable', () => {
   // middle, tail restored — ffmpeg's stderr opens with "filesize and duration do not
   // match (growing file?)", a warning that is NOT why it died, and closes with a bare
   // "Conversion failed!" that names nothing. The real diagnosis sits between them.
+  //
+  // What that diagnosis SAYS is the one thing not asserted here. ffmpeg-static ships 6.0
+  // to macOS and 6.1.1 to Linux and Windows, and they word a failed mp3 decode
+  // differently; pinning 6.0's "Header missing" passed on a developer's Mac and failed
+  // the release on CI. The choice between candidate lines is pinned as data against both
+  // builds' real output in convertVerifyErrorLine.test.ts, which needs no binary at all.
   it('reports the decoder failure, not the warning above it or the generic tail', async () => {
     const err = await assertDecodable(midCorrupt).catch((e: unknown) => e)
 
@@ -134,7 +140,12 @@ describe('assertDecodable', () => {
     expect(detail, 'reported the generic tail instead of the cause').not.toMatch(
       /Conversion failed/,
     )
-    expect(detail).toMatch(/Header missing/)
+    // Whichever build ran it, the line has to name the component that refused the data
+    // and carry a diagnosis, not ffmpeg's end-of-run byte count.
+    expect(detail, 'named no component at all').toMatch(/\[[^\]]+]/)
+    expect(detail, 'reported the byte-count summary instead of the cause').not.toMatch(
+      /muxing overhead/,
+    )
   })
 })
 
