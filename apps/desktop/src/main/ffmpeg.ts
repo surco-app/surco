@@ -1177,7 +1177,7 @@ export async function assertDecodable(file: string): Promise<void> {
 // under a closing "Conversion failed!" that names nothing. This detail is the whole
 // description of WHY a conversion was refused in the user's bug report, so prefer the
 // decoder's own tagged line, fall back to the last real line, and only then to line one.
-function firstErrorLine(stderr: string): string {
+export function firstErrorLine(stderr: string): string {
   const lines = stderr
     .split('\n')
     .map((l) => l.trim())
@@ -1185,7 +1185,19 @@ function firstErrorLine(stderr: string): string {
     .filter((l) => !/^(Input #|Output #|Stream mapping:|Metadata:|Press \[q\]|Duration:)/.test(l))
   // "[mp3float @ 0x...] Header missing" and friends: the component that actually
   // refused the data says so in brackets. The generic tail line never does.
-  const tagged = lines.filter((l) => /^\[[^\]]+]/.test(l) && !/^\[.*] Press /.test(l))
+  //
+  // ffmpeg 6.1.1 (Linux and Windows; macOS gets 6.0 from the same package) keeps going
+  // after the decoder gives up and signs off with its own bracket-tagged summary —
+  // "[out#0/null @ 0x...] video:0KiB audio:83KiB ... muxing overhead: unknown" — so
+  // taking the last tagged line reported a byte count as the diagnosis on the builds
+  // most users run. Those output-stream accounting lines are not diagnoses of anything.
+  const tagged = lines.filter(
+    (l) =>
+      /^\[[^\]]+]/.test(l) &&
+      !/^\[.*] Press /.test(l) &&
+      !/^\[(out|in)#\d/.test(l) &&
+      !/muxing overhead/.test(l),
+  )
   return tagged.at(-1) ?? lines.at(-1) ?? stderr.split('\n')[0] ?? ''
 }
 
