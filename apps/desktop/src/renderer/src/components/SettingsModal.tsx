@@ -119,6 +119,12 @@ export function SettingsModal({
     if (path) patchLocal('traktorNmlPath', path)
   }
 
+  // An empty path is what turns the sync off, and the picker can only ever return one:
+  // without this the feature could be started and never stopped.
+  function clearTraktorNmlPath(): void {
+    patchLocal('traktorNmlPath', '')
+  }
+
   // Autodetection only ever PROPOSES: the path varies by Traktor version and the
   // target user's real collection isn't even in the standard folder (his Documents
   // are in iCloud), so this never writes traktorNmlPath itself — only offers a
@@ -303,6 +309,7 @@ export function SettingsModal({
                 onOutputDirChange={(dir) => patchLocal('outputDir', dir)}
                 onChangeEngineDir={changeEngineDir}
                 onChangeTraktorNmlPath={changeTraktorNmlPath}
+                onClearTraktorNmlPath={clearTraktorNmlPath}
                 detectedNmlPath={detectedNmlPath}
                 onAcceptDetectedNmlPath={acceptDetectedNmlPath}
               />
