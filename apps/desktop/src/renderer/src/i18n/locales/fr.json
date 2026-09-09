@@ -760,6 +760,7 @@
     "configDirHint": "Choisis un dossier dans iCloud Drive ou Dropbox pour partager ces préférences entre tes Mac. S'applique immédiatement ; les statistiques de ce Mac ne quittent jamais cette machine.",
     "backup": "Sauvegarde",
     "backupHint": "Exporte toute ta configuration dans un fichier (jeton Discogs inclus) ou restaure-la depuis un fichier.",
+    "updates": "Mises à jour",
     "betaUpdates": "Recevoir les versions bêta",
     "betaUpdatesHint": "Les bêtas arrivent avant les versions stables et servent à essayer les nouveautés, mais elles comportent des bugs que personne n'a encore trouvés. Cela ne concerne que cette machine, et le changement prend effet au redémarrage de Surco.",
     "exportConfig": "Exporter…",
