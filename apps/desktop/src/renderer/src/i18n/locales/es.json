@@ -760,6 +760,8 @@
     "configDirHint": "Elige una carpeta en iCloud Drive o Dropbox para compartir estas preferencias entre tus Macs. Se aplica al momento; las estadísticas y rutas de este Mac se quedan en local.",
     "backup": "Copia de seguridad",
     "backupHint": "Exporta toda tu configuración a un fichero (incluido el token de Discogs) o restáurala desde uno.",
+    "betaUpdates": "Recibir versiones beta",
+    "betaUpdatesHint": "Las betas llegan antes que las versiones estables y sirven para probar lo nuevo, pero traen errores que aún no se han encontrado. Solo afecta a este equipo, y el cambio se aplica al reiniciar Surco.",
     "exportConfig": "Exportar…",
     "importConfig": "Importar…",
     "importConfirm": "Esto reemplazará toda tu configuración actual. ¿Continuar?",

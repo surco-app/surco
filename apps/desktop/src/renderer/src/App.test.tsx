@@ -93,6 +93,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     addToEngineDj: false,
     engineLibraryDir: '/music/Engine Library',
     traktorNmlPath: '',
+    betaUpdates: false,
     traktorCueOffsetMs: 0,
     engineDjPlaylist: 'Surco',
     filenameFormat: '{artist} - {title}',

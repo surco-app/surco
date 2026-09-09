@@ -287,6 +287,8 @@ export function SettingsModal({
               <GeneralTab
                 synced={synced}
                 patch={patch}
+                local={local}
+                patchLocal={patchLocal}
                 onPreviewTheme={onPreviewTheme}
                 configDir={configDir}
                 defaultDir={defaultDir}

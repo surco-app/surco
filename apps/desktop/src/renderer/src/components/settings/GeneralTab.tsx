@@ -3,10 +3,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LanguagePref, ThemePref } from '../../../../shared/types'
 import { formatFileSize } from '../../lib/properties'
-import type { SyncedDraft } from '../../lib/settingsDraft'
-import type { PatchSynced } from '../../lib/settingsTabs'
+import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
+import type { PatchLocal, PatchSynced } from '../../lib/settingsTabs'
 import { SegmentedControl } from '../SegmentedControl'
-import { SettingsField, SettingsSection } from './SettingsPrimitives'
+import { SettingsCheckboxField, SettingsField, SettingsSection } from './SettingsPrimitives'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR']
@@ -14,6 +14,8 @@ const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR']
 interface Props {
   synced: SyncedDraft
   patch: PatchSynced
+  local: LocalDraft
+  patchLocal: PatchLocal
   onPreviewTheme: (theme: ThemePref) => void
   configDir: string | null
   defaultDir: string | null
@@ -26,6 +28,8 @@ interface Props {
 export function GeneralTab({
   synced,
   patch,
+  local,
+  patchLocal,
   onPreviewTheme,
   configDir,
   defaultDir,
@@ -104,6 +108,17 @@ export function GeneralTab({
             )}
           </div>
         </SettingsField>
+
+        {/* Machine-bound (see settings.ts), so it stages through patchLocal: a tester
+            runs betas on the laptop he tries them on and stable on the one he plays
+            gigs from, and a synced flag would drag one into the other. */}
+        <SettingsCheckboxField
+          testid="settings-beta-updates"
+          checked={local.betaUpdates}
+          onChange={(v) => patchLocal('betaUpdates', v)}
+          label={tr('settings.betaUpdates')}
+          hint={tr('settings.betaUpdatesHint')}
+        />
 
         <SettingsField label={tr('settings.backup')} hint={tr('settings.backupHint')}>
           <div className="flex gap-2">

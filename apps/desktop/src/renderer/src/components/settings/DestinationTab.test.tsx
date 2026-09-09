@@ -65,6 +65,7 @@ const local: LocalDraft = {
   outputDir: '/out',
   engineLibraryDir: '/music/Engine Library',
   traktorNmlPath: '',
+  betaUpdates: false,
   autoMatch: false,
 }
 

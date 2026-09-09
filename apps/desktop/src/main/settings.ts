@@ -109,6 +109,7 @@ export const defaults: Settings = {
   donateNudgeDismissed: false,
   donateNudgeLastShown: '',
   lastSeenChangelogVersion: '',
+  betaUpdates: false,
 }
 
 // Settings that never leave this machine, even when the user points the settings
@@ -129,6 +130,9 @@ const LOCAL_KEYS = [
   // Each machine updates on its own schedule, so "which changelog did I already
   // see" only means something locally.
   'lastSeenChangelogVersion',
+  // Which channel this machine takes, for the same reason: one machine can be trying a
+  // beta while another stays on stable.
+  'betaUpdates',
   // A pixel position only means something on the screen it was saved on.
   'activityPanel',
   'resultsWidth',
