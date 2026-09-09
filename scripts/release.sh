@@ -4,7 +4,7 @@
 # workspace, so we do the commit, tag and push here explicitly.
 set -euo pipefail
 
-bump="${1:?usage: release.sh <patch|minor|major>}"
+bump="${1:?usage: release.sh <patch|minor|major|beta>}"
 
 # Type-check the desktop app before touching the version — `npm test` doesn't run tsc,
 # so a type error (which the release CI's build DOES catch) would otherwise pass the
@@ -19,7 +19,16 @@ bump="${1:?usage: release.sh <patch|minor|major>}"
 npm run lint -w apps/desktop
 npm run lint -w apps/web
 
-npm version "$bump" --no-git-tag-version -w apps/desktop
+# A beta rides the same tag/build pipeline as a stable release; what makes it a beta is
+# the -beta.N suffix, which release.yml reads to leave the release flagged as a
+# prerelease. electron-updater then hides it from everyone whose betaUpdates is off, so
+# one repo serves both channels. `npm version prerelease --preid beta` walks
+# 0.94.3 -> 0.94.4-beta.0 and a second run -> 0.94.4-beta.1.
+if [ "$bump" = beta ]; then
+  npm version prerelease --preid beta --no-git-tag-version -w apps/desktop
+else
+  npm version "$bump" --no-git-tag-version -w apps/desktop
+fi
 version=$(node -p "require('./apps/desktop/package.json').version")
 
 git add apps/desktop/package.json package-lock.json
