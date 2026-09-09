@@ -5,6 +5,14 @@
     "title": "Every track converts with the dials you gave it",
     "items": [
       {
+        "text": "The cue point adjustment now applies when converting to the same format too. An MP3 coming out as an MP3 carried its cues across untouched, so the offset you set never reached those conversions.",
+        "in": "0.94.3"
+      },
+      {
+        "text": "The collection.nml path can be cleared with a button. It could only be swapped for another one before, so once the Traktor sync was on there was no way to turn it off.",
+        "in": "0.94.3"
+      },
+      {
         "text": "Converting a track no longer leaves two entries for the same file in your Traktor collection. When the collection already held the track in the new format, Surco repointed the old one onto it and both remained, one still claiming the original's size and bitrate; now it leaves that entry alone.",
         "in": "0.94.2"
       },
