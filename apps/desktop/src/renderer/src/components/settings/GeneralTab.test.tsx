@@ -56,6 +56,18 @@ describe('GeneralTab beta channel', () => {
     expect(screen.getByTestId('settings-beta-updates')).toBeChecked()
   })
 
+  // Reported from a screenshot: dropped in as a bare checkbox, it sat right under the
+  // settings-folder hint and read as an option OF that folder. It is about updates, so
+  // it needs its own titled section — the same shape every other block on this tab has.
+  it('sits in its own section, not under the settings folder', () => {
+    renderTab()
+
+    const section = screen.getByTestId('settings-beta-updates').closest('section')
+    expect(section).not.toBeNull()
+    expect(section?.textContent).toContain(i18n.t('settings.updates'))
+    expect(section?.textContent).not.toContain(i18n.t('settings.configDirHint'))
+  })
+
   it('stages the channel switch', () => {
     const patchLocal = renderTab()
 

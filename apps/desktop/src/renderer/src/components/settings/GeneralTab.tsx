@@ -55,63 +55,137 @@ export function GeneralTab({
   }, [])
 
   return (
-    <SettingsSection first>
-      <div className="flex flex-col gap-5">
-        <SettingsField label={tr('settings.theme')}>
-          <SegmentedControl
-            options={THEMES}
-            value={synced.theme}
-            onChange={(id) => {
-              patch('theme', id)
-              onPreviewTheme(id)
-            }}
-            testidPrefix="settings-theme"
-            labelFor={(id) => tr(`settings.themes.${id}`)}
-          />
-        </SettingsField>
-
-        <SettingsField label={tr('settings.language')}>
-          <SegmentedControl
-            options={LANGUAGES}
-            value={synced.language}
-            onChange={(id) => patch('language', id)}
-            testidPrefix="settings-language"
-            labelFor={(id) => tr(`settings.languages.${id}`)}
-          />
-        </SettingsField>
-
-        <SettingsField label={tr('settings.configDir')} hint={tr('settings.configDirHint')}>
-          <div className="flex gap-2">
-            <input
-              data-testid="settings-config-dir"
-              value={configDir ?? defaultDir ?? tr('settings.configDirDefault')}
-              readOnly
-              className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
+    <>
+      <SettingsSection first>
+        <div className="flex flex-col gap-5">
+          <SettingsField label={tr('settings.theme')}>
+            <SegmentedControl
+              options={THEMES}
+              value={synced.theme}
+              onChange={(id) => {
+                patch('theme', id)
+                onPreviewTheme(id)
+              }}
+              testidPrefix="settings-theme"
+              labelFor={(id) => tr(`settings.themes.${id}`)}
             />
-            <button
-              type="button"
-              data-testid="settings-config-dir-change"
-              onClick={onChangeConfigDir}
-              className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
-            >
-              {tr('common.change')}
-            </button>
-            {configDir && (
+          </SettingsField>
+
+          <SettingsField label={tr('settings.language')}>
+            <SegmentedControl
+              options={LANGUAGES}
+              value={synced.language}
+              onChange={(id) => patch('language', id)}
+              testidPrefix="settings-language"
+              labelFor={(id) => tr(`settings.languages.${id}`)}
+            />
+          </SettingsField>
+
+          <SettingsField label={tr('settings.configDir')} hint={tr('settings.configDirHint')}>
+            <div className="flex gap-2">
+              <input
+                data-testid="settings-config-dir"
+                value={configDir ?? defaultDir ?? tr('settings.configDirDefault')}
+                readOnly
+                className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
+              />
               <button
                 type="button"
-                data-testid="settings-config-dir-reset"
-                onClick={onResetConfigDir}
+                data-testid="settings-config-dir-change"
+                onClick={onChangeConfigDir}
                 className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
               >
-                {tr('settings.configDirReset')}
+                {tr('common.change')}
               </button>
-            )}
-          </div>
-        </SettingsField>
+              {configDir && (
+                <button
+                  type="button"
+                  data-testid="settings-config-dir-reset"
+                  onClick={onResetConfigDir}
+                  className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+                >
+                  {tr('settings.configDirReset')}
+                </button>
+              )}
+            </div>
+          </SettingsField>
 
-        {/* Machine-bound (see settings.ts), so it stages through patchLocal: a tester
-            runs betas on the laptop he tries them on and stable on the one he plays
-            gigs from, and a synced flag would drag one into the other. */}
+          <SettingsField label={tr('settings.backup')} hint={tr('settings.backupHint')}>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                data-testid="settings-export"
+                onClick={onExportSettings}
+                className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+              >
+                {tr('settings.exportConfig')}
+              </button>
+              <button
+                type="button"
+                data-testid="settings-import"
+                onClick={() => {
+                  if (window.confirm(tr('settings.importConfirm'))) onImportSettings()
+                }}
+                className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+              >
+                {tr('settings.importConfig')}
+              </button>
+            </div>
+          </SettingsField>
+
+          <SettingsField
+            label={tr('settings.cache')}
+            hint={
+              cacheStats && cacheStats.files > 0
+                ? tr('settings.cacheHint', {
+                    count: cacheStats.files,
+                    size: formatFileSize(cacheStats.bytes),
+                  })
+                : tr('settings.cacheHintEmpty')
+            }
+          >
+            <div className="flex gap-2">
+              <input
+                data-testid="settings-cache-stats"
+                value={
+                  cacheStats
+                    ? `${cacheStats.files} · ${formatFileSize(cacheStats.bytes)}`
+                    : tr('settings.configDirDefault')
+                }
+                readOnly
+                className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
+              />
+              <button
+                type="button"
+                data-testid="settings-cache-clear"
+                onClick={clearCache}
+                disabled={clearing || cacheStats?.files === 0}
+                className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {tr('settings.cacheClear')}
+              </button>
+            </div>
+          </SettingsField>
+
+          <SettingsField label={tr('settings.log')} hint={tr('settings.logHint')}>
+            <button
+              type="button"
+              data-testid="settings-log-reveal"
+              onClick={() => window.api.revealLog()}
+              className="press self-start rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+            >
+              {tr('settings.logReveal')}
+            </button>
+          </SettingsField>
+        </div>
+      </SettingsSection>
+
+      {/* Its own section, with the rule and eyebrow every other block on this tab has:
+        dropped in bare it sat under the settings-folder hint and read as an option OF
+        that folder, when it is about which builds this machine installs. Machine-bound
+        (see settings.ts), so it stages through patchLocal — a synced flag would drag a
+        tester's laptop channel onto the machine he plays gigs from. */}
+      <SettingsSection eyebrow={tr('settings.updates')}>
         <SettingsCheckboxField
           testid="settings-beta-updates"
           checked={local.betaUpdates}
@@ -119,75 +193,7 @@ export function GeneralTab({
           label={tr('settings.betaUpdates')}
           hint={tr('settings.betaUpdatesHint')}
         />
-
-        <SettingsField label={tr('settings.backup')} hint={tr('settings.backupHint')}>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              data-testid="settings-export"
-              onClick={onExportSettings}
-              className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
-            >
-              {tr('settings.exportConfig')}
-            </button>
-            <button
-              type="button"
-              data-testid="settings-import"
-              onClick={() => {
-                if (window.confirm(tr('settings.importConfirm'))) onImportSettings()
-              }}
-              className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
-            >
-              {tr('settings.importConfig')}
-            </button>
-          </div>
-        </SettingsField>
-
-        <SettingsField
-          label={tr('settings.cache')}
-          hint={
-            cacheStats && cacheStats.files > 0
-              ? tr('settings.cacheHint', {
-                  count: cacheStats.files,
-                  size: formatFileSize(cacheStats.bytes),
-                })
-              : tr('settings.cacheHintEmpty')
-          }
-        >
-          <div className="flex gap-2">
-            <input
-              data-testid="settings-cache-stats"
-              value={
-                cacheStats
-                  ? `${cacheStats.files} · ${formatFileSize(cacheStats.bytes)}`
-                  : tr('settings.configDirDefault')
-              }
-              readOnly
-              className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
-            />
-            <button
-              type="button"
-              data-testid="settings-cache-clear"
-              onClick={clearCache}
-              disabled={clearing || cacheStats?.files === 0}
-              className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {tr('settings.cacheClear')}
-            </button>
-          </div>
-        </SettingsField>
-
-        <SettingsField label={tr('settings.log')} hint={tr('settings.logHint')}>
-          <button
-            type="button"
-            data-testid="settings-log-reveal"
-            onClick={() => window.api.revealLog()}
-            className="press self-start rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
-          >
-            {tr('settings.logReveal')}
-          </button>
-        </SettingsField>
-      </div>
-    </SettingsSection>
+      </SettingsSection>
+    </>
   )
 }
