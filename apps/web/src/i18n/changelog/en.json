@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.95",
+    "date": "September 9, 2026",
+    "title": "Try what is new before anyone else, if you want to",
+    "items": [
+      {
+        "text": "Surco can take beta versions. Settings → General has a switch to ask for them: they arrive before stable releases and are there to try what is new, with the bugs that implies. It is set per machine, so you can test on the laptop and leave the one you play on with stable builds. Anyone who leaves it off will never see a beta.",
+        "in": "0.95.0"
+      }
+    ]
+  },
+  {
     "version": "0.94",
     "date": "September 6, 2026",
     "title": "Every track converts with the dials you gave it",

@@ -1,5 +1,16 @@
 [
   {
+    "version": "0.95",
+    "date": "9 de septiembre de 2026",
+    "title": "Prueba lo nuevo antes que nadie, si quieres",
+    "items": [
+      {
+        "text": "Surco puede recibir versiones beta. En Ajustes → General hay un interruptor para pedirlas: llegan antes que las estables y sirven para probar lo nuevo, con los errores que eso implica. Se configura por equipo, así que puedes probar en el portátil y dejar el de directo en versiones estables. Quien no lo active no verá ninguna beta.",
+        "in": "0.95.0"
+      }
+    ]
+  },
+  {
     "version": "0.94",
     "date": "6 de septiembre de 2026",
     "title": "Cada pista se convierte con lo que tú le pusiste",
