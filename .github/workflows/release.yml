@@ -388,7 +388,12 @@ jobs:
     needs: verify
     runs-on: ubuntu-latest
     steps:
+      # A beta tag (v0.95.0-beta.1) STAYS a prerelease: /releases/latest keeps serving
+      # the last stable one, so only a machine with betaUpdates on — which sets
+      # electron-updater's allowPrerelease — is ever offered it. Everyone else's feed
+      # cannot see it, which is what makes one repo enough for both channels.
       - name: Publish the release
+        if: ${{ !contains(github.ref_name, '-beta.') }}
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: gh release edit "$GITHUB_REF_NAME" --repo surco-app/surco-releases --prerelease=false
@@ -400,6 +405,9 @@ jobs:
   # for publish so the cask only ever points at a live, fully-uploaded release.
   update-tap:
     needs: [release, merge-mac-feed, verify, publish]
+    # Never on a beta: the cask is what a clean `brew install` gets, and that has to stay
+    # the last stable build no matter what is being tested.
+    if: ${{ !contains(github.ref_name, '-beta.') }}
     runs-on: ubuntu-latest
     steps:
       # GitHub computes a sha256 for every release asset, so read those instead of

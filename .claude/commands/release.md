@@ -1,9 +1,11 @@
 ---
-description: Cut a Surco release (patch, minor or major) with a curated web changelog
-argument-hint: patch | minor | major
+description: Cut a Surco release (patch, minor, major or beta) with a curated web changelog
+argument-hint: patch | minor | major | beta
 ---
 
-Cut a Surco release. Bump level: `$ARGUMENTS` — it must be exactly `patch`, `minor` or `major`; if it's anything else (or empty), stop and ask.
+Cut a Surco release. Bump level: `$ARGUMENTS` — it must be exactly `patch`, `minor`, `major` or `beta`; if it's anything else (or empty), stop and ask.
+
+`beta` cuts a prerelease: `npm version prerelease --preid beta` walks 0.94.3 → 0.94.4-beta.0, and running it again → -beta.1. The tag carries the `-beta.` suffix, which `release.yml` reads to leave the GitHub release flagged as a prerelease and to skip the Homebrew tap. `/releases/latest` keeps serving the last stable build, so the only machines offered a beta are the ones whose **Settings → General → Get beta versions** is on (it sets electron-updater's `allowPrerelease`). That is what lets one repo serve both channels.
 
 Work directly on `main` for this flow (the one exception to the worktree rule): `scripts/release.sh` commits the version bump on main and pushes it, so a worktree would only add a merge step between two pushes.
 
@@ -25,6 +27,7 @@ Work directly on `main` for this flow (the one exception to the worktree rule): 
 - Update the releases in BOTH `apps/web/src/i18n/changelog/es.json` and `apps/web/src/i18n/changelog/en.json` (these files feed the web's /cambios page AND the desktop's post-update "what's new" popup):
   - **minor / major**: prepend a new entry `{version, date, title, items}` (newest first). `version` is `X.Y` (no patch digit — the shape test enforces it). Dates are written out per locale, e.g. `10 de junio de 2026` / `June 10, 2026` — get today with `date`.
   - **patch**: fold noteworthy items into the existing top entry for the current minor. A pure-fix patch can add one high-level stability item, or nothing at all.
+  - **beta**: skip the changelog entirely. A beta is for testers, its version never reaches the stable feed, and stamping items with a `-beta.N` version would make the desktop's "what's new" popup filter them out for everyone who later updates to the stable release that actually carries them. Write the changelog when the stable version ships.
   - Every NEW item is an object `{"text": "…", "in": "X.Y.Z"}` where `in` is the exact version being released (patch digit included) — the desktop popup filters by it, so an unstamped item never reaches users who update. Old plain-string items predate stamping; leave them as they are.
 - If there is nothing user-facing since the last tag, say so and skip the changelog edit entirely — never pad it with filler.
 - Verify: `npm test -w apps/web && npm run build -w apps/web` (locale parity and the changelog shape test must pass).
@@ -45,7 +48,7 @@ En un patch, salta este paso. En un minor o major es obligatorio, y va ANTES del
 
 ## 4. Release
 
-- Run `npm run release:patch`, `release:minor` or `release:major` to match `$ARGUMENTS`. The script bumps `apps/desktop/package.json`, commits `Release vX.Y.Z`, creates the annotated tag and pushes main with tags, which triggers `.github/workflows/release.yml` (binaries publish to `surco-app/surco-releases`; the web deploys from the same push).
+- Run `npm run release:patch`, `release:minor`, `release:major` or `release:beta` to match `$ARGUMENTS`. The script bumps `apps/desktop/package.json`, commits `Release vX.Y.Z`, creates the annotated tag and pushes main with tags, which triggers `.github/workflows/release.yml` (binaries publish to `surco-app/surco-releases`; the web deploys from the same push).
 
 ## 5. Report
 
