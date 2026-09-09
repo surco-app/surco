@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 2026-09-06** (v0.94.0). Levantado por primera vez el
+**Última revisión: 2026-09-09** (v0.95.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -879,6 +879,13 @@ comparación»* (`useDeclickAb.ts:60-67`).
 - **Actualizaciones automáticas** con re-comprobación cada 2 horas y backoff de
   60 s → 5 min → 15 min. Nunca avisa por estar sin conexión: *«no tener wifi es
   vida normal, no una incidencia»*.
+- **Canal beta opcional** (Ajustes → General, `betaUpdates`). Apagado por
+  defecto. Las betas se publican en el mismo repositorio marcadas como
+  prerelease, y `electron-updater` sólo las ofrece con `allowPrerelease`
+  (`index.ts`), así que quien no lo active no puede recibir una. El ajuste es
+  por equipo (`LOCAL_KEYS` en `settings.ts`): el mismo usuario puede probar en un
+  portátil y dejar el equipo de directo en estable. `brew install` sigue
+  instalando siempre la última estable.
 - **Sin telemetría por diseño**, sin cuenta y sin nube. El renderer va en sandbox
   con lista blanca de ficheros: sin ella, un renderer comprometido podría leer
   cualquier fichero del disco a través de un `<audio src>` (`mediaAccess.ts:1-8`).
