@@ -294,6 +294,9 @@ export interface Settings {
   // The app version whose changelog the user last saw ('' = never stamped), which
   // lib/whatsNew gates the post-update "what's new" popup on.
   lastSeenChangelogVersion: string
+  // Takes prerelease builds on this machine. Machine-bound on purpose: a tester runs
+  // betas on the laptop he tries them on and stable on the one he plays gigs from.
+  betaUpdates: boolean
 }
 
 export interface LifetimeStats {

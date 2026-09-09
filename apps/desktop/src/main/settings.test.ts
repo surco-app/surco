@@ -76,6 +76,13 @@ describe('defaults for a fresh install', () => {
   })
 })
 
+describe('the update channel default', () => {
+  // Nobody who has not asked for betas should ever be offered one.
+  it('is stable on a fresh install', () => {
+    expect(getSettings().betaUpdates).toBe(false)
+  })
+})
+
 describe('recordConversion', () => {
   // The Stats tab is only as honest as this counter: each completed conversion
   // must bump the persisted total by exactly one and survive a reload.
@@ -384,6 +391,20 @@ describe('configurable settings folder', () => {
   // Machine-bound values (output path, onboarding, stats) make no sense shared
   // between Macs — they stay local. The Discogs token now syncs (identical on both
   // Macs, user accepts it in their own cloud), but autoMatch still syncs with it.
+  // Reported after a run of regressions reaching users straight from a release: a tester
+  // wants prereleases on the laptop he tries them on, and emphatically NOT on the machine
+  // he plays gigs from. Same reason lastSeenChangelogVersion is local — each machine
+  // updates on its own terms — so the channel must never travel through the synced file.
+  it('keeps the beta channel on the machine that opted in', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))
+    setConfigDir(dir)
+    saveSettings({ betaUpdates: true })
+    expect(read(syncedFile(dir))).not.toHaveProperty('betaUpdates')
+    expect(read(localFile()).betaUpdates).toBe(true)
+    expect(getSettings().betaUpdates).toBe(true)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   it('keeps per-machine values out of the synced file but allows the token through', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))
     setConfigDir(dir)

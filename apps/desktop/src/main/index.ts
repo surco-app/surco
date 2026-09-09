@@ -1345,6 +1345,12 @@ app.whenReady().then(() => {
     // macOS) so a failed install — which Squirrel.Mac otherwise swallows — leaves
     // a trace we can read.
     updater.logger = log
+    // Prereleases are published to the same repo as the stable builds (see
+    // electron-builder.yml), and electron-updater skips them unless this is on — so a
+    // machine that never opted in cannot be offered a beta by accident. Read once at
+    // startup rather than per check: switching channels takes effect on the next launch,
+    // which keeps a mid-session toggle from swapping the feed under a download in flight.
+    updater.allowPrerelease = getSettings().betaUpdates
     // Never capture `win` here: on macOS ⌘W destroys the window while the app and
     // the updater keep running, so anything bound to the launch window would send
     // its events into a destroyed webContents after a Dock reopen.

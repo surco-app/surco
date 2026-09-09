@@ -21,6 +21,7 @@ const settings: Settings = {
   addToEngineDj: false,
   engineLibraryDir: '/music/Engine Library',
   traktorNmlPath: '',
+  betaUpdates: false,
   traktorCueOffsetMs: 0,
   engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
@@ -77,6 +78,7 @@ const local: LocalDraft = {
   outputDir: '/out',
   engineLibraryDir: '/music/Engine Library',
   traktorNmlPath: '',
+  betaUpdates: false,
   autoMatch: false,
 }
 

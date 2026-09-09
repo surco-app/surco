@@ -760,6 +760,8 @@
     "configDirHint": "Wähl einen Ordner in iCloud Drive oder Dropbox, um diese Einstellungen zwischen deinen Macs zu teilen. Gilt sofort; die Statistiken dieses Macs verlassen den Rechner nie.",
     "backup": "Sicherung",
     "backupHint": "Exportiere all deine Einstellungen in eine Datei (inklusive Discogs-Token) oder stelle sie aus einer wieder her.",
+    "betaUpdates": "Beta-Versionen erhalten",
+    "betaUpdatesHint": "Betas kommen vor den stabilen Versionen und sind zum Ausprobieren von Neuem da, enthalten aber Fehler, die noch niemand gefunden hat. Betrifft nur diesen Rechner; die Änderung greift beim Neustart von Surco.",
     "exportConfig": "Exportieren…",
     "importConfig": "Importieren…",
     "importConfirm": "Dadurch werden alle deine aktuellen Einstellungen ersetzt. Fortfahren?",

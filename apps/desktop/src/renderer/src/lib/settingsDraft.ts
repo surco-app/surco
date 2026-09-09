@@ -59,6 +59,7 @@ export interface LocalDraft {
   outputDir: string
   engineLibraryDir: string
   traktorNmlPath: string
+  betaUpdates: boolean
   autoMatch: boolean
 }
 
@@ -71,6 +72,7 @@ export function pickLocal(s: Settings): LocalDraft {
     outputDir: s.outputDir,
     engineLibraryDir: s.engineLibraryDir,
     traktorNmlPath: s.traktorNmlPath,
+    betaUpdates: s.betaUpdates,
     autoMatch: s.autoMatch,
   }
 }
@@ -163,6 +165,7 @@ export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Part
     outputDir: local.outputDir,
     engineLibraryDir: local.engineLibraryDir,
     traktorNmlPath: local.traktorNmlPath,
+    betaUpdates: local.betaUpdates,
     engineDjPlaylist: engineDjPlaylist.trim() || DEFAULT_ENGINE_DJ_PLAYLIST,
     filenameFormat: filenameFormat.trim() || DEFAULT_FILENAME_FORMAT,
     groupingPresets: splitPresets(grouping),
