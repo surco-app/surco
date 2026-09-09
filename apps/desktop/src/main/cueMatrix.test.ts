@@ -18,7 +18,14 @@ import { convertAudio } from './ffmpeg'
 import { buildTraktorTree, readTraktorCueStart, traktorCue } from './traktor4Fixture'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
-vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
+
+// The offset the DJ dials in Settings, read through getSettings by cueShiftFor. Mocking
+// it as a fixed 0 is how this matrix stayed green while the setting reached only some of
+// the crossings: every row ran with no adjustment to lose.
+let traktorCueOffsetMs = 0
+vi.mock('./settings', () => ({
+  getSettings: () => ({ traktorNmlPath: '', traktorCueOffsetMs }),
+}))
 
 const FF = ffmpegStatic as unknown as string
 
@@ -191,6 +198,47 @@ describe('the cue carry-over matrix', () => {
           `${src} → ${target.ext} moved the cue`,
         ).toBeCloseTo(DROP_MS)
         expect(hasTextMirror(out), `${src} → ${target.ext} left ffmpeg's TXXX behind`).toBe(false)
+      })
+    }
+  }
+})
+
+// The offset was wired into the eight re-encode call sites and verified on the one
+// crossing being written at the time (MP3 → FLAC). It reached the user as "the MP3 it
+// converts does not have the -51 ms applied": a same-format conversion takes the
+// stream-copy branch, which hands writeTags no cueShift at all, so the cues ride across
+// untouched. The matrix above could not catch it — it skips same-format rows on the
+// premise that they keep the original bytes and tag, which stopped being true the moment
+// an offset had to move the cues on every route.
+const OFFSET_MS = -51
+
+describe('the cue offset reaches every conversion', () => {
+  const ALL_TARGETS = [...TARGETS]
+
+  for (const src of SOURCES) {
+    for (const target of ALL_TARGETS) {
+      it(`applies the offset from ${src} to ${target.ext}`, async () => {
+        const dir = mkdtempSync(join(tmpdir(), 'surco-offset-'))
+        const input = makeSource(dir, src)
+        const out = join(dir, `out${target.ext}`)
+
+        traktorCueOffsetMs = OFFSET_MS
+        try {
+          await convertAudio(input, out, target.format, meta)
+        } finally {
+          traktorCueOffsetMs = 0
+        }
+
+        const tree = storedTree(out)
+        expect(tree, `${src} → ${target.ext} lost its cues`).not.toBeNull()
+        // The setting's sign is the DJ's, not the stored value's: cueShiftFor negates it
+        // into a shiftMs that shiftTraktorCues then SUBTRACTS, so a -51 ms adjustment
+        // leaves the stored position 51 ms lower. Asserting the other way round is how
+        // the first version of this test failed all twenty rows on a bug in itself.
+        expect(
+          readTraktorCueStart(tree as Uint8Array, 1),
+          `${src} → ${target.ext} ignored the cue offset`,
+        ).toBeCloseTo(DROP_MS + OFFSET_MS, 0)
       })
     }
   }
