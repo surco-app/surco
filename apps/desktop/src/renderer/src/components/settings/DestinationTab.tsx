@@ -37,6 +37,8 @@ interface Props {
   onOutputDirChange: (dir: string) => void
   onChangeEngineDir: () => void
   onChangeTraktorNmlPath: () => void
+  // Empties the path, which is what turns the collection sync off (see settings.ts).
+  onClearTraktorNmlPath: () => void
   // A candidate collection.nml autodetection found — null while unresolved or once
   // traktorNmlPath is already set (see SettingsModal). Never applied on its own; the
   // user accepts it explicitly via onAcceptDetectedNmlPath.
@@ -55,6 +57,7 @@ export function DestinationTab({
   onOutputDirChange,
   onChangeEngineDir,
   onChangeTraktorNmlPath,
+  onClearTraktorNmlPath,
   detectedNmlPath,
   onAcceptDetectedNmlPath,
 }: Props): React.JSX.Element {
@@ -176,6 +179,20 @@ export function DestinationTab({
           >
             {tr('common.change')}
           </button>
+          {/* The hint promises "leave it empty to turn this off" and Change only ever
+              opens a file picker, so the sync could be started and never stopped: a DJ
+              wanting Surco to stop touching his collection had to point it at some other
+              path instead. Only shown with something to clear. */}
+          {local.traktorNmlPath && (
+            <button
+              type="button"
+              data-testid="settings-traktor-nml-clear"
+              onClick={onClearTraktorNmlPath}
+              className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+            >
+              {tr('common.clear')}
+            </button>
+          )}
         </div>
         <SettingsHint className="mt-2">{tr('settings.traktorNmlPathHint')}</SettingsHint>
         {/* Never applied without this explicit click — autodetection only proposes,

@@ -78,6 +78,7 @@ function renderTab(over: Partial<SyncedDraft> = {}, localOver: Partial<LocalDraf
       onOutputDirChange={vi.fn()}
       onChangeEngineDir={vi.fn()}
       onChangeTraktorNmlPath={vi.fn()}
+      onClearTraktorNmlPath={vi.fn()}
       detectedNmlPath={null}
       onAcceptDetectedNmlPath={vi.fn()}
     />,
@@ -96,6 +97,7 @@ function renderWithCollection(patch: PatchSynced, offset = '0'): void {
       onOutputDirChange={vi.fn()}
       onChangeEngineDir={vi.fn()}
       onChangeTraktorNmlPath={vi.fn()}
+      onClearTraktorNmlPath={vi.fn()}
       detectedNmlPath={null}
       onAcceptDetectedNmlPath={vi.fn()}
     />,
@@ -224,6 +226,7 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={onChangeTraktorNmlPath}
+        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
       />,
@@ -244,6 +247,7 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
+        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath="/Users/dj/Documents/Native Instruments/Traktor 4.5.0/collection.nml"
         onAcceptDetectedNmlPath={vi.fn()}
       />,
@@ -258,6 +262,7 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
+        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath="/Users/dj/Documents/Native Instruments/Traktor 4.5.0/collection.nml"
         onAcceptDetectedNmlPath={vi.fn()}
       />,
@@ -277,12 +282,58 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
+        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath="/Users/dj/Documents/Native Instruments/Traktor 4.5.0/collection.nml"
         onAcceptDetectedNmlPath={onAcceptDetectedNmlPath}
       />,
     )
     fireEvent.click(screen.getByTestId('settings-traktor-nml-use-detected'))
     expect(onAcceptDetectedNmlPath).toHaveBeenCalled()
+  })
+
+  // Reported 09/09/2026: "look into being able to turn off loading the nml, because
+  // there's no way to leave it empty — I have to point it at another path to test".
+  // The hint says "leave it empty to turn this off" and the tab offered only Change,
+  // which opens a file picker: the one promise the UI could not keep, and the only way
+  // to stop Surco touching a collection while something is being debugged.
+  it('clears the collection path so the sync can be turned off', () => {
+    const onClearTraktorNmlPath = vi.fn()
+    render(
+      <DestinationTab
+        synced={synced}
+        local={{ ...local, traktorNmlPath: '/dj/collection.nml' }}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        onClearTraktorNmlPath={onClearTraktorNmlPath}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByTestId('settings-traktor-nml-clear'))
+    expect(onClearTraktorNmlPath).toHaveBeenCalled()
+  })
+
+  // Nothing configured means nothing to clear, and a live button that does nothing reads
+  // as broken.
+  it('offers nothing to clear while no collection is set', () => {
+    render(
+      <DestinationTab
+        synced={synced}
+        local={local}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        onClearTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+      />,
+    )
+
+    expect(screen.queryByTestId('settings-traktor-nml-clear')).not.toBeInTheDocument()
   })
 
   // The offset only means anything once cues are being written into a collection. Shown
@@ -301,6 +352,7 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
+        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
       />,
@@ -316,6 +368,7 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
+        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
       />,
@@ -341,6 +394,7 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
+        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
       />,
@@ -431,6 +485,7 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
+        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
       />,
@@ -451,6 +506,7 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
+        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
       />,
