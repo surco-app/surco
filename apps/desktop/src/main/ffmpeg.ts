@@ -1518,6 +1518,15 @@ export async function convertAudio(
         clearExtras,
         foreignRemoved,
       })
+      // The copy carries the source's cues verbatim, which is right for a trim (this
+      // branch never trims) but wrong for the DJ's cue offset: that has to move them on
+      // every route, and a same-format conversion is still a conversion. Reported as "the
+      // MP3 it converts does not have the -51 ms applied" — the offset was wired into the
+      // re-encode call sites below and this one was missed. copyCueFrames re-reads the
+      // source and writes the shifted frames over the copy's own.
+      const copyShift = cueShiftFor(trim, trimAf !== undefined, meta.bpm, input)
+      if (copyShift && !clearExtras)
+        await runInWorker({ type: 'copyCueFrames', source: input, dest: tmp, shift: copyShift })
     } else {
       const { stderr } = await run(
         ffmpegPath,
