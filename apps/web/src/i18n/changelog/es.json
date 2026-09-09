@@ -5,6 +5,14 @@
     "title": "Cada pista se convierte con lo que tú le pusiste",
     "items": [
       {
+        "text": "El ajuste de los cue points ya se aplica también al convertir a su mismo formato. Un MP3 que salía como MP3 se llevaba los cues sin tocar, así que el desplazamiento configurado no llegaba a esas conversiones.",
+        "in": "0.94.3"
+      },
+      {
+        "text": "La ruta del collection.nml se puede vaciar con un botón. Antes solo se podía cambiar por otra, así que una vez activada la sincronización con Traktor no había forma de apagarla.",
+        "in": "0.94.3"
+      },
+      {
         "text": "Convertir una pista ya no deja dos entradas para el mismo fichero en la colección de Traktor. Cuando la colección ya tenía la pista con el formato nuevo, Surco reapuntaba la vieja encima y quedaban dos, una de ellas con el tamaño y el bitrate del original; ahora deja esa entrada como está.",
         "in": "0.94.2"
       },
