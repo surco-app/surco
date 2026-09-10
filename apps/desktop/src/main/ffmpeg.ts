@@ -32,6 +32,7 @@ import { cachedAnalysis } from './analysisCache'
 import { isAbortError } from './analysisCancel'
 import { ffmpegPath, ffprobePath } from './binaries'
 import type { FullScan } from './channelScan'
+import { automaticCueOffsetMs } from './cueCalibration'
 import {
   BAND_WIDTH_HZ,
   bandFrequencies,
@@ -1258,21 +1259,42 @@ function cueShiftFor(
   active: boolean,
   bpm: string,
   input: string,
+  outputExt: string,
 ): CueShift | undefined {
+  // Two corrections for the same thing — "the codec moved where this lands" — so they
+  // REPLACE each other rather than stacking. The DJ reported (10/09/2026), converting and
+  // watching Traktor, that the marker sits 51 ms out going into MP3 and the other way
+  // coming out of it. That is where Traktor DRAWS the marker; the audio itself does not
+  // move, measured with a click on a known sample through every one of these routes. He
+  // has Traktor in front of him, so the figure is his.
+  //
+  // The encoder-delay fix is different in kind: it is measured here, it applies only to an
+  // MP3 whose Xing/LAME header was stripped, and for those files the audio really does
+  // arrive 25.06 ms late. Adding both would put a rip or an edit 76 ms out — and his own
+  // testing cannot catch it, because a normally encoded MP3 keeps its header and never
+  // takes that branch. Where both would apply, the measured one wins.
   const decoderDelayMs = mp3DecoderPadsHead(input) ? MP3_ENCODER_DELAY_MS : 0
+  const codecCueOffsetMs =
+    decoderDelayMs === 0 ? automaticCueOffsetMs(extname(input), outputExt) : 0
   // Free-text in the UI, so a blank or garbage value has to read as "no adjustment"
   // rather than a NaN that would silently drop every cue at shiftTraktorCues.
   const configured = Number(getSettings().traktorCueOffsetMs)
   const userOffsetMs = Number.isFinite(configured) ? configured : 0
   const trimmed = active && trim !== undefined
-  if (!trimmed && decoderDelayMs === 0 && userOffsetMs === 0) return undefined
+  if (!trimmed && decoderDelayMs === 0 && userOffsetMs === 0 && codecCueOffsetMs === 0)
+    return undefined
   const startSec = trimmed ? (trim?.startSec ?? 0) : 0
   const tempo = Number(bpm)
   const endSec = trimmed ? trim?.endSec : undefined
   return {
     // Both corrections push the cue later, and shiftTraktorCues subtracts, so both
     // arrive negative: the head trim is the only term that moves a cue earlier.
-    shiftMs: Math.round(startSec * 1000) - decoderDelayMs - userOffsetMs,
+    shiftMs: Math.round(startSec * 1000) - decoderDelayMs - userOffsetMs - codecCueOffsetMs,
+    // A trim relocates the audio, and a stripped Xing header means it decodes late: in
+    // both the stored positions really do stop describing the file, so a cue tree that
+    // cannot be re-anchored is worthless and gets dropped. The calibration and the DJ's
+    // own slider only nudge markers over audio that never moved, so there they are kept.
+    movesAudio: trimmed || decoderDelayMs !== 0,
     maxMs: endSec !== undefined ? Math.round((endSec - startSec) * 1000) : undefined,
     bpm: Number.isFinite(tempo) && tempo > 0 ? tempo : undefined,
   }
@@ -1542,7 +1564,7 @@ export async function convertAudio(
       // MP3 it converts does not have the -51 ms applied" — the offset was wired into the
       // re-encode call sites below and this one was missed. copyCueFrames re-reads the
       // source and writes the shifted frames over the copy's own.
-      const copyShift = cueShiftFor(trim, trimAf !== undefined, meta.bpm, input)
+      const copyShift = cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext)
       if (copyShift && !clearExtras)
         await runInWorker({ type: 'copyCueFrames', source: input, dest: tmp, shift: copyShift })
     } else {
@@ -1598,7 +1620,7 @@ export async function convertAudio(
             clearExtras,
             foreignRemoved,
             cueSource: input,
-            cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input),
+            cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
           })
         } finally {
           // Only the extracted copy is ours to delete; a caller-supplied coverPath is
@@ -1615,7 +1637,7 @@ export async function convertAudio(
             type: 'copyCuesFromFlac',
             source: input,
             dest: tmp,
-            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input),
+            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
           })
       } else if (
         (meta.rating?.trim() || meta.comment.trim() || clearExtras) &&
@@ -1638,7 +1660,7 @@ export async function convertAudio(
           clearExtras,
           foreignRemoved,
           cueSource: input,
-          cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input),
+          cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
         })
         // cueSource only knows how to clone ID3 frames, so a FLAC source hands it nothing
         // and the rated file would keep ffmpeg's TXXX — the same loss the unrated path had,
@@ -1649,7 +1671,7 @@ export async function convertAudio(
             type: 'copyCuesFromFlac',
             source: input,
             dest: tmp,
-            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input),
+            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
           })
       }
       // Any re-encode through ffmpeg drops Traktor's cue/beatgrid frames — a
@@ -1671,13 +1693,13 @@ export async function convertAudio(
                 type: 'copyCuesFromFlac',
                 source: input,
                 dest: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input),
+                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
               }
             : {
                 type: 'copyCueFrames',
                 source: input,
                 dest: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input),
+                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
               },
         )
       // FLAC needs the mirror image: its armored TRAKTOR4 comment rides the
@@ -1700,12 +1722,12 @@ export async function convertAudio(
                 type: 'copyCuesToFlac',
                 source: input,
                 dest: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input),
+                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
               }
             : {
                 type: 'shiftFlacCues',
                 file: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input),
+                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
               },
         )
     }
