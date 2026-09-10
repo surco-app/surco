@@ -216,6 +216,11 @@ export interface CueShift {
   shiftMs: number
   maxMs?: number
   bpm?: number
+  // Whether the audio itself was relocated (a head trim), as opposed to the cue markers
+  // merely being nudged. Only the first justifies discarding cues this build cannot
+  // re-anchor: with the audio moved they would point at the wrong beats, while a marker
+  // nudge that drops them destroys work nothing had invalidated.
+  movesAudio?: boolean
 }
 
 // Carries Traktor's cue/beatgrid frames from a source file into a freshly
@@ -543,17 +548,28 @@ function readCueFrames(source: string): Id3v2Frame[] {
 
 // Applies a trim's re-anchoring to the carried frames; without a shift they pass
 // through verbatim (a plain format change or gain never moves the cues in time).
+// Dropping what cannot be re-anchored is right when the AUDIO moved under the cues: a
+// trim leaves stored positions measuring from a start the file no longer has, and a
+// ruler that is silently off is worse than none. It is wrong when nothing moved. The
+// directional calibration (cueCalibration.ts) means the MP3 routes now always carry a
+// shift, so without this distinction every frame this build cannot parse — another
+// tool's blob, a future Traktor's — would be discarded on a plain format change. That is
+// the v0.76 bug ("converting loses every cue") coming back through a new door.
+//
+// `movesAudio` is what tells the two apart: only a trim actually relocates the audio.
 function applyCueShift(frames: Id3v2Frame[], shift?: CueShift): Id3v2Frame[] {
   if (!shift) return frames
   return frames.flatMap((frame) => {
-    if (!isTraktorPriv(frame)) return []
+    // A frame that is not Traktor's own is never ours to rewrite. It is dropped only
+    // when a trim invalidated it; otherwise it rides across exactly as it arrived.
+    if (!isTraktorPriv(frame)) return shift.movesAudio ? [] : [frame]
     const patched = shiftTraktorCues(
       frame.privateData.toByteArray(),
       shift.shiftMs,
       shift.maxMs,
       shift.bpm,
     )
-    if (!patched) return []
+    if (!patched) return shift.movesAudio ? [] : [frame]
     frame.privateData = ByteVector.fromByteArray(patched)
     return [frame]
   })
