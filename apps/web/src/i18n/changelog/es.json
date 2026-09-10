@@ -5,6 +5,10 @@
     "title": "Prueba lo nuevo antes que nadie, si quieres",
     "items": [
       {
+        "text": "El ajuste de los cue points se puede usar sin haber indicado tu collection.nml. El control estaba apagado hasta que dabas esa ruta, pero el desplazamiento se aplica a los cues que Surco escribe dentro del propio fichero, así que quien no sincroniza con Traktor tampoco podía tocarlo.",
+        "in": "0.95.3"
+      },
+      {
         "text": "El ajuste de los cue points dice ahora hacia dónde mueve cada valor. Debajo del control aparece en palabras lo que vas a oír, y la ayuda explica que un valor negativo los adelanta y uno positivo los atrasa. Antes sólo se veía el número con su signo, y la única forma de saber en qué dirección iba era convertir y escuchar.",
         "in": "0.95.2"
       },
