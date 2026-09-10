@@ -5,6 +5,22 @@
     "title": "Try what is new before anyone else, if you want to",
     "items": [
       {
+        "text": "The cue point adjustment now asks what you hear instead of asking for a signed number. You pick whether your cues come in early, late or stay where you left them, and Surco works out the direction. The number is always positive, so there is nothing to remember about what each sign did.",
+        "in": "0.95.4"
+      },
+      {
+        "text": "Converting a track and keeping the original no longer confuses Traktor. Both copies used to share the same internal identity, so their artwork became linked and in some cases Traktor would not open at all. The converted track is now independent and keeps its cues, its grid and its loops.",
+        "in": "0.95.4"
+      },
+      {
+        "text": "The stars you set in Surco now show up in Traktor. They were written to the file but not to your collection, and for a track Traktor already held the collection won, so you kept seeing the old rating.",
+        "in": "0.95.4"
+      },
+      {
+        "text": "New artwork shows up in Traktor after converting, including when you keep the original. The thumbnails are rewritten in the format Traktor uses on your machine, and it is told the file changed so it reads it again.",
+        "in": "0.95.4"
+      },
+      {
         "text": "The cue point adjustment can be used without pointing Surco at your collection.nml. The control stayed switched off until you gave that path, but the offset applies to the cues Surco writes inside the file itself, so anyone not syncing with Traktor could not touch it either.",
         "in": "0.95.3"
       },
