@@ -5,6 +5,10 @@
     "title": "Try what is new before anyone else, if you want to",
     "items": [
       {
+        "text": "The cue point adjustment now says which way each value moves them. Under the control you get in plain words what you will hear, and the hint explains that a negative value makes them fire earlier and a positive one later. Before you only saw a signed number, and the only way to learn the direction was to convert and listen.",
+        "in": "0.95.2"
+      },
+      {
         "text": "Surco can take beta versions. Settings → General has a switch to ask for them: they arrive before stable releases and are there to try what is new, with the bugs that implies. It is set per machine, so you can test on the laptop and leave the one you play on with stable builds. Anyone who leaves it off will never see a beta.",
         "in": "0.95.0"
       }

@@ -5,6 +5,10 @@
     "title": "Prueba lo nuevo antes que nadie, si quieres",
     "items": [
       {
+        "text": "El ajuste de los cue points dice ahora hacia dónde mueve cada valor. Debajo del control aparece en palabras lo que vas a oír, y la ayuda explica que un valor negativo los adelanta y uno positivo los atrasa. Antes sólo se veía el número con su signo, y la única forma de saber en qué dirección iba era convertir y escuchar.",
+        "in": "0.95.2"
+      },
+      {
         "text": "Surco puede recibir versiones beta. En Ajustes → General hay un interruptor para pedirlas: llegan antes que las estables y sirven para probar lo nuevo, con los errores que eso implica. Se configura por equipo, así que puedes probar en el portátil y dejar el de directo en versiones estables. Quien no lo active no verá ninguna beta.",
         "in": "0.95.0"
       }
