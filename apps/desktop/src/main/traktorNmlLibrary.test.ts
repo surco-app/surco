@@ -6,6 +6,8 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  statSync,
+  utimesSync,
   writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -286,6 +288,55 @@ describe('syncCollection refreshes the cached artwork', () => {
     }
     return cache
   }
+
+  // A converted file that coexists with its source has just had AUDIO_ID/COVERARTID
+  // stripped, so Traktor knows no artwork for it at all. It mints a fresh id and cache
+  // entry only when it sees the audio is newer than the collection it just read — so
+  // without this the converted track shows no cover instead of its embedded one. Ahead
+  // of the NML rather than merely "now": the collection is written microseconds earlier,
+  // and on a filesystem with coarse timestamps the two would otherwise tie.
+  it('makes a detached conversion newer than the collection it was written into', async () => {
+    const coexisting = `<NML VERSION="19"><COLLECTION ENTRIES="2">
+<ENTRY TITLE="Uno"><INFO COVERARTID="042/ABC"></INFO><LOCATION DIR="/:M/:" FILE="uno.aiff" VOLUME="HD"></LOCATION></ENTRY>
+<ENTRY TITLE="Uno"><INFO COVERARTID="042/ABC"></INFO><LOCATION DIR="/:M/:" FILE="uno.flac" VOLUME="HD"></LOCATION></ENTRY>
+</COLLECTION></NML>`
+    writeFileSync(nmlPath, coexisting)
+    const audio = join(dir, 'uno.flac')
+    writeFileSync(audio, 'audio')
+    const stale = new Date(Date.now() - 60_000)
+    utimesSync(audio, stale, stale)
+
+    await syncCollection(nmlPath, [
+      {
+        volume: 'HD',
+        dir: '/:M/:',
+        file: 'uno.aiff',
+        refreshCoverArt: true,
+        outputPath: audio,
+        outputVolume: 'HD',
+        outputDir: '/:M/:',
+        outputFile: 'uno.flac',
+      },
+    ])
+
+    expect(statSync(audio).mtimeMs).toBeGreaterThan(statSync(nmlPath).mtimeMs)
+  })
+
+  // A substitution keeps its identity and its cache entry, so its artwork is already
+  // correct. Touching it would ask Traktor to redo work for nothing, and would rewrite a
+  // timestamp the user's own backup and sync tools read.
+  it('leaves the file date alone for a substitution', async () => {
+    writeFileSync(nmlPath, COVER_NML)
+    seedCache()
+    const audio = join(dir, 'uno.flac')
+    writeFileSync(audio, 'audio')
+    const stale = new Date(Date.now() - 60_000)
+    utimesSync(audio, stale, stale)
+
+    await syncCollection(nmlPath, [{ ...coverPatch, outputPath: audio }])
+
+    expect(statSync(audio).mtimeMs).toBeCloseTo(stale.getTime(), -2)
+  })
 
   it('rewrites the cached thumbnails and keeps the id that points at them', async () => {
     writeFileSync(nmlPath, COVER_NML)

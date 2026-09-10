@@ -1,8 +1,14 @@
-import { copyFile, readFile, unlink, writeFile } from 'node:fs/promises'
+import { copyFile, readFile, stat, unlink, utimes, writeFile } from 'node:fs/promises'
 import { renameWithRetry } from './renameRetry'
 import { readEmbeddedCover } from './tags'
 import { refreshCachedCoverArt } from './traktorCoverCache'
-import { applyPatches, matchedPatchCount, type NmlPatch, refreshedCoverIds } from './traktorNml'
+import {
+  applyPatches,
+  detachedOutputPaths,
+  matchedPatchCount,
+  type NmlPatch,
+  refreshedCoverIds,
+} from './traktorNml'
 import { isTraktorRunning } from './traktorProcess'
 
 // Writes converted tracks back into the user's real collection.nml — the whole Traktor
@@ -17,6 +23,11 @@ import { isTraktorRunning } from './traktorProcess'
 // he only wants as a safety net. What he can lose is the state before the previous
 // write, which the write he is undoing had already replaced anyway.
 const BACKUP_SUFFIX = '.surco-backup'
+
+// How far ahead of the collection a detached conversion's timestamp is placed. Seconds
+// rather than milliseconds because the comparison has to survive a filesystem that
+// stores whole-second mtimes, and because Traktor reads it on a later launch, not now.
+const MTIME_LEAD_MS = 5000
 
 export interface SyncResult {
   written: boolean
@@ -86,6 +97,28 @@ export async function syncCollection(nmlPath: string, patches: NmlPatch[]): Prom
   // traktorCoverCache.ts). Read off `original`, which still has the ids, and after the
   // rename so a sync that never landed leaves a matching cache alone.
   refreshCachedCoverArt(nmlPath, refreshedCoverIds(original, patches), readEmbeddedCover)
+
+  // A conversion that coexists with its source just had the inherited AUDIO_ID and
+  // COVERARTID stripped, so Traktor knows no artwork for it and has nothing cached to
+  // refresh above. It builds an independent id and cache entry only when it finds the
+  // audio newer than the collection it just read, so without this the converted track
+  // shows no cover at all rather than the one embedded in the file.
+  //
+  // Ahead of the NML's own timestamp, not merely "now": the collection was written
+  // microseconds earlier, and on a filesystem with coarse timestamps the two would
+  // otherwise land on the same second and Traktor would not count the file as newer.
+  try {
+    const writtenAt = (await stat(nmlPath)).mtimeMs
+    const newer = new Date(Math.max(Date.now(), writtenAt) + MTIME_LEAD_MS)
+    for (const file of detachedOutputPaths(original, patches)) {
+      // Per file: a read-only or missing output must not stop the rest from being
+      // touched, and the collection on disk is already correct either way.
+      await utimes(file, newer, newer).catch(() => {})
+    }
+  } catch {
+    // The collection is written and the sync succeeded. A failure to read its timestamp
+    // only postpones Traktor noticing the new cover; it must not report the sync failed.
+  }
 
   return { written: true, matched: matchedPatchCount(original, patches) }
 }

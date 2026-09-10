@@ -5,6 +5,7 @@ import { buildTraktorTree, traktorCue } from './traktor4Fixture'
 import {
   applyPatches,
   cuesToXml,
+  detachedOutputPaths,
   findEntries,
   matchedPatchCount,
   refreshedCoverIds,
@@ -338,6 +339,23 @@ describe('identity of a converted file that coexists with its source', () => {
     ])
 
     expect(refreshes).toEqual([{ coverId: '121/ZHCAA3BM', file: '/M/uno.mp3' }])
+  })
+
+  // A detached output has no COVERARTID of its own, so Traktor has nothing cached to
+  // show for it. It only mints one when it notices the audio is newer than the
+  // collection, which is what the caller uses this list for.
+  it('names the converted file whose identity was detached', () => {
+    expect(detachedOutputPaths(SHARED, [patch])).toEqual(['/M/uno.mp3'])
+  })
+
+  // A substitution keeps its identity and its cache entry, so touching its mtime would
+  // ask Traktor to redo work for a track whose artwork is already correct.
+  it('names nothing for a substitution', () => {
+    const onlyOne = `<NML VERSION="20"><COLLECTION ENTRIES="1">
+<ENTRY TITLE="Scratch" AUDIO_ID="AYgFVndld3Vndmia"><LOCATION DIR="/:M/:" FILE="uno.flac" VOLUME="HD"></LOCATION><INFO COVERARTID="121/ZHCAA3BM"></INFO></ENTRY>
+</COLLECTION></NML>`
+
+    expect(detachedOutputPaths(onlyOne, [{ ...patch, newFile: 'uno.mp3' }])).toEqual([])
   })
 
   it('keeps the identity when only the output is in the collection', () => {
