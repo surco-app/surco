@@ -168,6 +168,29 @@ describe('convertAudio cue preservation', () => {
     expect(hasCue(out)).toBe(true)
   })
 
+  // Regression guard for the directional calibration (10/09/2026). That calibration means
+  // there is now ALWAYS a shift to apply on the MP3 routes, so every cue frame goes
+  // through the re-anchoring parser — including one whose payload this build cannot read,
+  // such as a blob written by another tool or a future Traktor. The parser's policy is to
+  // drop what it cannot re-anchor rather than leave it pointing at wrong beats, which is
+  // right for a trim (the audio really moved) but wrong here: nothing moved under these
+  // cues, so dropping them turns a cosmetic marker correction into silent data loss.
+  //
+  // A frame Surco cannot re-anchor is copied across untouched instead, so the DJ keeps the
+  // cues they had. This is exactly the v0.76 bug ("converting loses every cue") reached
+  // through a new door, and it is the one thing the calibration must not resurrect.
+  it('keeps a cue frame it cannot re-anchor instead of dropping it', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'surco-unreadable-'))
+    const cued = join(own, 'in.aiff')
+    execFileSync(FF, ['-y', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1', cued])
+    injectAiffCue(cued)
+
+    const out = join(own, 'out.mp3')
+    await convertAudio(cued, out, 'mp3', meta)
+
+    expect(hasCue(out)).toBe(true)
+  })
+
   // A rated track exercises the encode path's TagLib pass (POPM has no ffmpeg
   // flag) on top of the cue carry-over — both must land in the output, whatever
   // shape the tag passes take.
@@ -326,7 +349,7 @@ describe('convertAudio cue preservation', () => {
     await convertAudio(cued, out, 'mp3', meta)
 
     expect(traktorPrivTree(out)).not.toBeNull()
-    expect(readTraktorCueStart(traktorPrivTree(out) as Uint8Array, 1)).toBeCloseTo(79672.64)
+    expect(readTraktorCueStart(traktorPrivTree(out) as Uint8Array, 1)).toBeCloseTo(79672.64 + 51)
     // The TXXX ffmpeg wrote is the wrong alphabet for Traktor; carrying the tree over
     // must replace it, not sit alongside it as a second copy that tools disagree about.
     expect(hasTraktorTxxx(out)).toBe(false)
@@ -426,7 +449,7 @@ describe('convertAudio cue preservation', () => {
 
     const tree2 = traktorPrivTree(out)
     expect(tree2).not.toBeNull()
-    expect(readTraktorCueStart(tree2 as Uint8Array, 1)).toBeCloseTo(78372.64)
+    expect(readTraktorCueStart(tree2 as Uint8Array, 1)).toBeCloseTo(78372.64 + 51)
   })
 
   // The re-encode path folds the cue carry-over into the same writeTags call as the

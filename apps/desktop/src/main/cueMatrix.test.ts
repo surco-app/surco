@@ -14,6 +14,7 @@ import {
 import { describe, expect, it, vi } from 'vitest'
 import type { TrackMetadata } from '../shared/types'
 import { decodeBase91, encodeBase91 } from './base91'
+import { automaticCueOffsetMs } from './cueCalibration'
 import { convertAudio } from './ffmpeg'
 import { buildTraktorTree, readTraktorCueStart, traktorCue } from './traktor4Fixture'
 
@@ -193,10 +194,13 @@ describe('the cue carry-over matrix', () => {
 
         const tree = storedTree(out)
         expect(tree, `${src} → ${target.ext} lost its cues`).not.toBeNull()
+        // Not DROP_MS flat: the DJ's directional calibration (cueCalibration.ts) moves
+        // the marker on the MP3 crossings, which is the whole point of it. Every other
+        // route still has to land exactly where it started.
         expect(
           readTraktorCueStart(tree as Uint8Array, 1),
           `${src} → ${target.ext} moved the cue`,
-        ).toBeCloseTo(DROP_MS)
+        ).toBeCloseTo(DROP_MS + automaticCueOffsetMs(src, target.ext), 0)
         expect(hasTextMirror(out), `${src} → ${target.ext} left ffmpeg's TXXX behind`).toBe(false)
       })
     }
@@ -238,7 +242,7 @@ describe('the cue offset reaches every conversion', () => {
         expect(
           readTraktorCueStart(tree as Uint8Array, 1),
           `${src} → ${target.ext} ignored the cue offset`,
-        ).toBeCloseTo(DROP_MS + OFFSET_MS, 0)
+        ).toBeCloseTo(DROP_MS + OFFSET_MS + automaticCueOffsetMs(src, target.ext), 0)
       })
     }
   }
