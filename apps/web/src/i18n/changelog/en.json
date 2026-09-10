@@ -5,6 +5,10 @@
     "title": "Try what is new before anyone else, if you want to",
     "items": [
       {
+        "text": "The cue point adjustment can be used without pointing Surco at your collection.nml. The control stayed switched off until you gave that path, but the offset applies to the cues Surco writes inside the file itself, so anyone not syncing with Traktor could not touch it either.",
+        "in": "0.95.3"
+      },
+      {
         "text": "The cue point adjustment now says which way each value moves them. Under the control you get in plain words what you will hear, and the hint explains that a negative value makes them fire earlier and a positive one later. Before you only saw a signed number, and the only way to learn the direction was to convert and listen.",
         "in": "0.95.2"
       },
