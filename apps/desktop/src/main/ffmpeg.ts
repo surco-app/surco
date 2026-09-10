@@ -8,7 +8,7 @@ import log from 'electron-log/main'
 import { declickFilter } from '../shared/declick'
 import { errorWithKey } from '../shared/errorKeys'
 import { forcedInputArgs } from '../shared/inputFormat'
-import { formatRatingTag } from '../shared/rating'
+import { formatRatingTag, starsToRating } from '../shared/rating'
 import { trimFilter } from '../shared/trim'
 import type {
   BpmResult,
@@ -1352,6 +1352,7 @@ function recordConversionPatch(
   output: string,
   meta: TrackMetadata,
   keptArtwork: boolean,
+  clearedExtras: boolean,
 ): void {
   if (!getSettings().traktorNmlPath) return
   try {
@@ -1373,6 +1374,17 @@ function recordConversionPatch(
       newFile: sameDir && outputName !== file ? outputName : undefined,
       cueTree: readCueTree(output) ?? undefined,
       bpm,
+      // Traktor reads a library track's stars from the collection, not the file, so
+      // writing the POPM byte alone left the DJ looking at the ENTRY's stale RANKING —
+      // the reported AIFF that showed 2 stars where 5 were set. An empty rating normally
+      // means "preserve", matching what the file side does; only an explicit clear
+      // wipes it, and zero is how Traktor spells unrated.
+      ranking:
+        (meta.rating ?? '').trim() !== ''
+          ? starsToRating(Number.parseInt(meta.rating ?? '', 10))
+          : clearedExtras
+            ? 0
+            : undefined,
       // Traktor draws the library's artwork from its own thumbnail cache, keyed by
       // COVERARTID, and keeps serving it after the file on disk gets a new cover — the
       // same stale-cache mechanism the cue handling above exists to fix. Any output
@@ -1747,7 +1759,7 @@ export async function convertAudio(
     // Comes after the rename, not before: the patch has to describe the file as
     // it now exists at `output`, and the cue-writing branches above (copyCueFrames,
     // copyCuesToFlac, shiftFlacCues) only ever touched `tmp`.
-    recordConversionPatch(input, output, meta, !removeCover)
+    recordConversionPatch(input, output, meta, !removeCover, clearExtras ?? false)
   } catch (e) {
     // A rescued temp is no longer at `tmp` — the rescue renamed it away — so the unlink
     // below finds nothing and the finished conversion survives on its own. Returning

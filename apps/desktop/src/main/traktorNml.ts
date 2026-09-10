@@ -63,6 +63,12 @@ export interface NmlPatch {
   file: string
   cueTree?: Uint8Array
   bpm?: number
+  // Stars as Traktor's own 0-255 byte, 51 per star, the same scale it uses for the POPM
+  // frame in the file (see shared/rating.ts). The collection wins over the file for a
+  // track already in the library, so a rating written only to the file showed the DJ the
+  // ENTRY's stale value instead. Undefined leaves the existing stars untouched; zero is
+  // a real value that clears them.
+  ranking?: number
   newFile?: string
   // Asks for this track's cached thumbnails to be rewritten after the collection is
   // saved. It does NOT change the ENTRY: the COVERARTID stays exactly as Traktor wrote
@@ -291,6 +297,16 @@ function replaceCues(block: string, tree: Uint8Array, bpm: number | undefined): 
   return withoutCues.replace(location, () => `${location}${cuesXml}`)
 }
 
+// Traktor writes RANKING on <INFO>, like COVERARTID, so an entry that has never been
+// rated has the attribute absent rather than zero and needs it inserted.
+function replaceRanking(block: string, ranking: number): string {
+  const value = String(Math.max(0, Math.min(255, Math.round(ranking))))
+  if (/<INFO\b[^>]*\sRANKING="[^"]*"/.test(block)) {
+    return block.replace(/(<INFO\b[^>]*\sRANKING)="[^"]*"/, `$1="${value}"`)
+  }
+  return block.replace(/<INFO\b/, `<INFO RANKING="${value}"`)
+}
+
 function patchEntry(block: string, patch: NmlPatch): string {
   let out = block
   if (patch.newFile) {
@@ -303,6 +319,9 @@ function patchEntry(block: string, patch: NmlPatch): string {
   }
   if (patch.cueTree) {
     out = replaceCues(out, patch.cueTree, patch.bpm)
+  }
+  if (patch.ranking !== undefined) {
+    out = replaceRanking(out, patch.ranking)
   }
   return out
 }
