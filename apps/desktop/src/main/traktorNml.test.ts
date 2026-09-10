@@ -188,6 +188,126 @@ describe('grid tempo already in the collection', () => {
 // track three times over. The cause is repointing: the FLAC's entry gets its FILE
 // rewritten to .mp3, and if the collection already holds an entry for that .mp3 there
 // are now two, the repointed one still carrying the FLAC's BITRATE and FILESIZE.
+// Reported 10/09/2026, with the collection in hand: converting Scratch.flac to
+// Scratch.mp3 while keeping both left TWO ENTRY blocks carrying the same AUDIO_ID and
+// COVERARTID. That coupled their artwork — changing the FLAC's cover changed the MP3's —
+// and Traktor stopped opening until those two attributes were stripped from the MP3
+// entry. Traktor identifies a track by AUDIO_ID and hangs its artwork off COVERARTID, so
+// two files sharing them are one track as far as it is concerned.
+//
+// The rule, in the reporter's own words: a converted file that will COEXIST with its
+// source inherits the musical metadata, cues, GRID and loops, but never the internal
+// identity or the Traktor artwork. Only a real substitution keeps the identity and
+// repoints LOCATION.
+describe('identity of a converted file that coexists with its source', () => {
+  const SHARED = `<NML VERSION="20"><COLLECTION ENTRIES="2">
+<ENTRY MODIFIED_DATE="2026/9/10" TITLE="Scratch" AUDIO_ID="AYgFVndld3Vndmia"><LOCATION DIR="/:M/:" FILE="uno.flac" VOLUME="HD"></LOCATION><INFO COVERARTID="121/ZHCAA3BM" BITRATE="1042000"></INFO><CUE_V2 NAME="A" DISPL_ORDER="0" TYPE="0" START="1000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="1"></CUE_V2></ENTRY>
+<ENTRY MODIFIED_DATE="2026/9/10" TITLE="Scratch" AUDIO_ID="AYgFVndld3Vndmia"><LOCATION DIR="/:M/:" FILE="uno.mp3" VOLUME="HD"></LOCATION><INFO COVERARTID="121/ZHCAA3BM" BITRATE="320000"></INFO></ENTRY>
+</COLLECTION></NML>`
+
+  const patch = {
+    volume: 'HD',
+    dir: '/:M/:',
+    file: 'uno.flac',
+    outputVolume: 'HD',
+    outputDir: '/:M/:',
+    outputFile: 'uno.mp3',
+    outputPath: '/M/uno.mp3',
+  }
+
+  // Slicing from FILE= would cut after the ENTRY tag that carries AUDIO_ID and measure
+  // nothing; the whole block is what has to be inspected.
+  function entryFor(nml: string, file: string): string {
+    const at = nml.indexOf(`FILE="${file}"`)
+    return nml.slice(nml.lastIndexOf('<ENTRY', at), nml.indexOf('</ENTRY>', at))
+  }
+
+  it('strips the inherited identity from the converted entry', () => {
+    const out = applyPatches(SHARED, [patch])
+
+    const mp3 = entryFor(out, 'uno.mp3')
+    expect(mp3).not.toContain('AUDIO_ID')
+    expect(mp3).not.toContain('COVERARTID')
+  })
+
+  // The source is still a real track with a valid cache entry: stripping ITS identity
+  // would cost the DJ the artwork and analysis of a file nobody converted away.
+  it('leaves the source entry untouched', () => {
+    const out = applyPatches(SHARED, [patch])
+
+    const flac = entryFor(out, 'uno.flac')
+    expect(flac).toContain('AUDIO_ID="AYgFVndld3Vndmia"')
+    expect(flac).toContain('COVERARTID="121/ZHCAA3BM"')
+  })
+
+  // Only the identity goes. Everything that makes the converted file playable the way
+  // the DJ left it — cues, grid, loops, tags — is exactly what it was there to inherit.
+  it('keeps the cues and tags it was meant to carry over', () => {
+    const out = applyPatches(SHARED, [patch])
+
+    expect(out).toContain('START="1000.000000"')
+    expect(out).toContain('TITLE="Scratch"')
+    expect(out).toContain('BITRATE="320000"')
+  })
+
+  // A substitution is the other operation entirely: one logical track that changed
+  // format, so it keeps its identity and its LOCATION follows the file. Detaching there
+  // would throw away the play counts and playlist membership of a track that still
+  // exists — which is why this is decided by whether the two coexist, not by the
+  // conversion having happened.
+  it('keeps the identity when the source is not in the collection', () => {
+    const onlyOne = `<NML VERSION="20"><COLLECTION ENTRIES="1">
+<ENTRY TITLE="Scratch" AUDIO_ID="AYgFVndld3Vndmia"><LOCATION DIR="/:M/:" FILE="uno.flac" VOLUME="HD"></LOCATION><INFO COVERARTID="121/ZHCAA3BM"></INFO></ENTRY>
+</COLLECTION></NML>`
+
+    const out = applyPatches(onlyOne, [{ ...patch, newFile: 'uno.mp3' }])
+
+    expect(out).toContain('AUDIO_ID="AYgFVndld3Vndmia"')
+    expect(out).toContain('COVERARTID="121/ZHCAA3BM"')
+    expect(out).toContain('FILE="uno.mp3"')
+  })
+
+  // The substitution already consumed: the collection holds the OUTPUT and no longer the
+  // source, so this is one track that changed format and its identity is its own. A
+  // guard that only asked "is the output present?" would strip it here — the source has
+  // to be present too for the two to be coexisting files.
+  // The source keeps a COVERARTID that is still correct for it, and the cache files
+  // under that id are the source's own artwork. Rendering the CONVERTED file's cover
+  // into the source's id would replace the artwork of a track nobody converted away —
+  // the same coupling in the cache that stripping the attribute fixes in the collection.
+  // The converted file has no id of its own yet; Traktor mints one when it re-reads it.
+  it('does not repaint the source thumbnails with the converted cover', () => {
+    const refreshes = refreshedCoverIds(SHARED, [{ ...patch, refreshCoverArt: true }])
+
+    expect(refreshes).toEqual([])
+  })
+
+  // A substitution is still one track, so its cache entry is exactly the one that has to
+  // be redrawn: the file behind that id really did change.
+  it('still refreshes the thumbnails of a substituted track', () => {
+    const onlyOne = `<NML VERSION="20"><COLLECTION ENTRIES="1">
+<ENTRY TITLE="Scratch" AUDIO_ID="AYgFVndld3Vndmia"><LOCATION DIR="/:M/:" FILE="uno.flac" VOLUME="HD"></LOCATION><INFO COVERARTID="121/ZHCAA3BM"></INFO></ENTRY>
+</COLLECTION></NML>`
+
+    const refreshes = refreshedCoverIds(onlyOne, [
+      { ...patch, newFile: 'uno.mp3', refreshCoverArt: true },
+    ])
+
+    expect(refreshes).toEqual([{ coverId: '121/ZHCAA3BM', file: '/M/uno.mp3' }])
+  })
+
+  it('keeps the identity when only the output is in the collection', () => {
+    const onlyOutput = `<NML VERSION="20"><COLLECTION ENTRIES="1">
+<ENTRY TITLE="Scratch" AUDIO_ID="AYgFVndld3Vndmia"><LOCATION DIR="/:M/:" FILE="uno.mp3" VOLUME="HD"></LOCATION><INFO COVERARTID="121/ZHCAA3BM"></INFO></ENTRY>
+</COLLECTION></NML>`
+
+    const out = applyPatches(onlyOutput, [patch])
+
+    expect(out).toContain('AUDIO_ID="AYgFVndld3Vndmia"')
+    expect(out).toContain('COVERARTID="121/ZHCAA3BM"')
+  })
+})
+
 describe('repointing onto a path the collection already has', () => {
   const BOTH = `<NML VERSION="20"><COLLECTION ENTRIES="2">
 <ENTRY TITLE="Open Eyes"><LOCATION DIR="/:M/:" FILE="uno.flac" VOLUME="HD"></LOCATION><INFO BITRATE="1042000" PLAYTIME="369"></INFO></ENTRY>

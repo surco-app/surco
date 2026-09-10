@@ -73,6 +73,13 @@ export interface NmlPatch {
   // files a conversion works from are unlinked when it finishes, long before the batch
   // ends and the collection is written.
   outputPath?: string
+  // The same output as Traktor addresses it. Present, and different from the source,
+  // this is what tells a coexisting conversion apart from a substitution: if the
+  // collection holds an ENTRY at this location as well as at the source's, the two files
+  // are separate tracks and must not share a Traktor identity.
+  outputVolume?: string
+  outputDir?: string
+  outputFile?: string
 }
 
 const baseName = (file: string): string => file.replace(/\.[^.]*$/, '')
@@ -149,12 +156,49 @@ export interface CoverRefresh {
 export function refreshedCoverIds(nml: string, patches: NmlPatch[]): CoverRefresh[] {
   const entries = findEntries(nml)
   const index = indexPatches(patches)
+  // The id read below comes from the entry the patch MATCHED, which is the source's. For a
+  // coexisting conversion that id is still the source's own and its cache files still hold
+  // the source's artwork, so rendering the converted cover into it would repaint a track
+  // nobody converted away, and do it twice over, once per entry sharing the id. The
+  // converted file has no id yet; Traktor mints one when it re-reads the file.
+  const coexisting = coexistingOutputs(entries, patches)
+  const detached = new Set([...coexisting.values()])
   const out: CoverRefresh[] = []
   for (const entry of entries) {
     const patch = matchPatch(entry, index)
     if (!patch?.refreshCoverArt || !patch.outputPath) continue
+    if (detached.has(patch)) continue
     const coverId = nml.slice(entry.start, entry.end).match(COVER_ID_RE)?.[1]
     if (coverId) out.push({ coverId, file: patch.outputPath })
+  }
+  return out
+}
+
+// Traktor treats AUDIO_ID as the track's identity and hangs its artwork off COVERARTID,
+// so two ENTRY blocks carrying the same pair are one track to it — which is how a
+// conversion that kept its source ended up coupling their covers and, reported
+// 10/09/2026 with the collection in hand, stopping Traktor from opening at all. Only
+// those two attributes go: cues, grid, loops, playlists and every other byte stay, since
+// what the converted file was meant to inherit is the music, not the identity.
+// AUDIO_ID sits on ENTRY, COVERARTID on INFO.
+function detachSharedIdentity(block: string): string {
+  return block
+    .replace(/(<ENTRY\b[^>]*?)\s+AUDIO_ID="[^"]*"/, '$1')
+    .replace(/(<INFO\b[^>]*?)\s+COVERARTID="[^"]*"/, '$1')
+}
+
+// The patches whose output has its own ENTRY alongside the source's — the coexisting
+// case. A substitution (the source is gone, LOCATION follows the file) is deliberately
+// not here: there the identity is the same track's and has to survive.
+function coexistingOutputs(entries: NmlEntry[], patches: NmlPatch[]): Map<string, NmlPatch> {
+  const present = new Set(entries.map((e) => key(e.volume, e.dir, e.file)))
+  const out = new Map<string, NmlPatch>()
+  for (const patch of patches) {
+    if (!patch.outputVolume || !patch.outputDir || !patch.outputFile) continue
+    const source = key(patch.volume, patch.dir, patch.file)
+    const output = key(patch.outputVolume, patch.outputDir, patch.outputFile)
+    if (source === output || !present.has(output) || !present.has(source)) continue
+    if (!out.has(output)) out.set(output, patch)
   }
   return out
 }
@@ -283,13 +327,22 @@ function pathTaken(entries: NmlEntry[], patch: NmlPatch, self: NmlEntry): boolea
 export function applyPatches(nml: string, patches: NmlPatch[]): string {
   const entries = findEntries(nml)
   const index = indexPatches(patches)
+  const coexisting = coexistingOutputs(entries, patches)
   let out = nml
   for (let i = entries.length - 1; i >= 0; i--) {
     const entry = entries[i]
+    const block = out.slice(entry.start, entry.end)
     const patch = matchPatch(entry, index)
-    if (!patch) continue
-    const safe = pathTaken(entries, patch, entry) ? { ...patch, newFile: undefined } : patch
-    const patched = patchEntry(out.slice(entry.start, entry.end), safe)
+    // The converted file's own ENTRY is not the one the patch matches (that is the
+    // source's), so the detach is keyed on the entry's location rather than on a match.
+    let patched = coexisting.has(key(entry.volume, entry.dir, entry.file))
+      ? detachSharedIdentity(block)
+      : block
+    if (patch) {
+      const safe = pathTaken(entries, patch, entry) ? { ...patch, newFile: undefined } : patch
+      patched = patchEntry(patched, safe)
+    }
+    if (patched === block) continue
     out = out.slice(0, entry.start) + patched + out.slice(entry.end)
   }
   return out

@@ -1356,6 +1356,9 @@ function recordConversionPatch(
   if (!getSettings().traktorNmlPath) return
   try {
     const { volume, dir, file } = toNmlLocation(input)
+    // Where Traktor would address the output. Compared against the source below, this is
+    // what separates a conversion whose source survives from a substitution.
+    const outputLocation = toNmlLocation(output)
     const outputName = basename(output)
     const sameDir = dirname(input) === dirname(output)
     // meta.bpm is user-editable free text; empty or non-numeric must come out as
@@ -1381,6 +1384,9 @@ function recordConversionPatch(
       // unfixed. Only an explicit removeCover leaves nothing to redraw.
       refreshCoverArt: keptArtwork || undefined,
       outputPath: keptArtwork ? output : undefined,
+      outputVolume: outputLocation.volume,
+      outputDir: outputLocation.dir,
+      outputFile: outputLocation.file,
     })
   } catch {
     // Best-effort: see comment above.
