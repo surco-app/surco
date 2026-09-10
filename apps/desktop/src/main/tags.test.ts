@@ -1055,10 +1055,29 @@ describe('copyCueFrames', () => {
     writeFileSync(out, readFileSync(buildSeed(dir)))
     stripCues(out)
 
-    copyCueFrames(source, out, { shiftMs: 1300 })
+    copyCueFrames(source, out, { shiftMs: 1300, movesAudio: true })
 
     expect(readPrivTree(out)).toBeNull()
     expect(readFileSync(out).includes(Buffer.from('TRAKTORCUEBLOB'))).toBe(false)
+  })
+
+  // The counterpart, and the reason movesAudio exists: the directional calibration
+  // (cueCalibration.ts) nudges markers over audio that never moved, so the same blob
+  // Surco cannot parse must survive rather than be discarded. Without this a plain
+  // format change would silently destroy the cues of anyone whose tree this build does
+  // not recognise — another tool's, or a future Traktor's.
+  it('keeps un-anchorable frames when only the markers are being nudged', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 61234.5, 1)])
+    tree[tree.length - 6] ^= 0xff // break the checksum inside the summed span
+    const source = buildPrivSeed(dir, tree)
+    const out = join(dir, 'nudged.mp3')
+    writeFileSync(out, readFileSync(buildSeed(dir)))
+    stripCues(out)
+
+    copyCueFrames(source, out, { shiftMs: 51 })
+
+    expect(readPrivTree(out)).not.toBeNull()
   })
 
   it('leaves the output untouched when the source carries no cue frame', () => {
