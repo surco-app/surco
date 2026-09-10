@@ -337,14 +337,14 @@ describe('DestinationTab Traktor collection', () => {
     expect(screen.queryByTestId('settings-traktor-nml-clear')).not.toBeInTheDocument()
   })
 
-  // The offset only means anything once cues are being written into a collection. Shown
-  // without one it is an unexplained millisecond box on a feature the user hasn't turned
-  // on, which is exactly the invitation to type a number into it that we don't want.
-  // Hiding it until a collection is set made the setting impossible to find: the user
-  // opens this tab, sees no such field, and has no way to tell whether it exists. Shown
-  // but disabled says both things at once — this exists, and it does nothing until you
-  // point Surco at a collection — and refuses a number that would sit there inert.
-  it('shows the cue offset disabled while no collection is configured', () => {
+  // Reported 10/09/2026: "if I don't set the nml I can't leave that set", and "the nml
+  // isn't needed for converting". He is right, and the premise this was built on was
+  // wrong: the offset moves the cues written INTO THE CONVERTED FILE, which happens on
+  // every conversion whether or not Traktor's collection is involved. Measured with the
+  // collection unset — flac to mp3 at +51 moves a cue from 10000 to 10051 — so disabling
+  // the control was the UI refusing an adjustment the conversion was ready to apply.
+  // The collection path only decides whether the tracks ALREADY in Traktor get updated.
+  it('keeps the cue offset usable with no collection configured', () => {
     render(
       <DestinationTab
         synced={synced}
@@ -358,8 +358,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
       />,
     )
-    expect(screen.getByTestId('settings-cue-preset--25')).toBeDisabled()
-    expect(screen.getByText(i18n.t('settings.traktorCueOffsetIdle'))).toBeInTheDocument()
+    expect(screen.getByTestId('settings-cue-preset--25')).toBeEnabled()
     cleanup()
     render(
       <DestinationTab
@@ -375,7 +374,6 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
     expect(screen.getByTestId('settings-cue-preset--25')).toBeEnabled()
-    expect(screen.queryByText(i18n.t('settings.traktorCueOffsetIdle'))).not.toBeInTheDocument()
   })
 
   // Reported from a screenshot: focusing the path box scrolls the text sideways to put
@@ -475,9 +473,10 @@ describe('DestinationTab Traktor collection', () => {
     expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '-38')
   })
 
-  // Always mounted, disabled without a collection — never unmounted. A control that
-  // materialises leaves the user unable to tell the setting exists at all.
-  it('keeps the presets visible but disabled while no collection is configured', () => {
+  // The collection path gates what Traktor is told about tracks it ALREADY holds — their
+  // cues and their metadata. It does not gate the cues written into the converted file,
+  // which is what this offset moves, so the controls stay usable without one.
+  it('keeps the presets usable while no collection is configured', () => {
     render(
       <DestinationTab
         synced={synced}
@@ -492,12 +491,14 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    expect(screen.getByTestId('settings-cue-preset--25')).toBeDisabled()
-    expect(screen.getByTestId('settings-cue-fine')).toBeDisabled()
+    expect(screen.getByTestId('settings-cue-preset--25')).toBeEnabled()
+    expect(screen.getByTestId('settings-cue-fine')).toBeEnabled()
   })
 
-  // Disabled has to mean inert, not merely dim.
-  it('ignores a preset picked with no collection set', () => {
+  // The other half of the same correction: not merely enabled to look at, but actually
+  // staging the value. The reporter's whole complaint was that he could not leave his
+  // +51 set without pointing Surco at a collection he did not need for converting.
+  it('stages a preset picked with no collection set', () => {
     const patch = vi.fn<PatchSynced>()
     render(
       <DestinationTab
@@ -515,7 +516,7 @@ describe('DestinationTab Traktor collection', () => {
 
     fireEvent.click(screen.getByTestId('settings-cue-preset--25'))
 
-    expect(patch).not.toHaveBeenCalled()
+    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '-25')
   })
 
   // The hint is the only prose left, so it carries what the controls cannot: that the

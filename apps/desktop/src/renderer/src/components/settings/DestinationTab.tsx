@@ -248,7 +248,6 @@ export function DestinationTab({
                   type="button"
                   data-testid={`settings-cue-preset-${preset}`}
                   aria-pressed={chosen}
-                  disabled={!local.traktorNmlPath}
                   onClick={() => patch('traktorCueOffsetMs', String(preset))}
                   className={`press rounded-lg border px-3 py-1.5 text-sm tabular-nums disabled:cursor-not-allowed disabled:opacity-50 ${
                     chosen
@@ -273,17 +272,12 @@ export function DestinationTab({
               min={-CUE_FINE_MAX_MS}
               max={CUE_FINE_MAX_MS}
               step={1}
-              disabled={!local.traktorNmlPath}
               value={stored}
               aria-label={tr('settings.traktorCueFineLabel')}
               onChange={(e) => patch('traktorCueOffsetMs', e.target.value)}
               className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-[var(--color-line-strong)] accent-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-50"
             />
-            <span
-              className={`w-16 shrink-0 text-right text-sm tabular-nums ${
-                local.traktorNmlPath ? 'text-fg-muted' : 'text-fg-dim'
-              }`}
-            >
+            <span className="w-16 shrink-0 text-right text-sm tabular-nums text-fg-muted">
               {stored === 0 ? '0 ms' : formatSigned(stored)}
             </span>
           </div>
@@ -292,17 +286,10 @@ export function DestinationTab({
               cue is to convert, listen and guess again — which is exactly what the
               reporter had to do before landing on the opposite sign to the one he
               expected. */}
-          <p
-            data-testid="settings-cue-offset-effect"
-            className={`mt-2 text-sm ${local.traktorNmlPath ? 'text-fg-muted' : 'text-fg-dim'}`}
-          >
+          <p data-testid="settings-cue-offset-effect" className="mt-2 text-sm text-fg-muted">
             {tr(cueEffectKey(stored), { ms: Math.abs(stored) })}
           </p>
-          <SettingsHint className="mt-2">
-            {local.traktorNmlPath
-              ? tr('settings.traktorCueOffsetHint')
-              : tr('settings.traktorCueOffsetIdle')}
-          </SettingsHint>
+          <SettingsHint className="mt-2">{tr('settings.traktorCueOffsetHint')}</SettingsHint>
         </div>
       </SettingsSection>
     </>
