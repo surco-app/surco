@@ -321,7 +321,10 @@ export function copyCuesToFlac(source: string, dest: string, shift?: CueShift): 
 // Best-effort, like every other cue path here: cues never fail an otherwise good conversion.
 export function copyCuesFromFlac(source: string, dest: string, shift?: CueShift): void {
   try {
-    const tree = readFlacCueTree(source)
+    // Not readFlacCueTree: some real FLAC libraries carry TRAKTOR4 in a leading ID3
+    // PRIV/GEOB block rather than the Xiph comment, and reading only the comment left
+    // those files copying their cues verbatim, with the shift applying to nothing.
+    const tree = readCueTree(source)
     if (!tree) return
     // Same bargain as the siblings: a trim moved the audio under the stored positions, and
     // a tree that cannot be re-anchored is dropped rather than left pointing at wrong beats.
