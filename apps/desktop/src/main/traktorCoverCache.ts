@@ -51,13 +51,43 @@ function idParts(id: string): { folder: string; name: string } | null {
 // Rasterises once per size. Returns null when the image cannot be read at all — an
 // unreadable cover must leave the cache untouched rather than blank out the thumbnails
 // Traktor is happily showing.
-function thumbnails(cover: Buffer): Map<string, Buffer> | null {
+interface RenderedThumbnail {
+  png: Buffer
+  // Null when this build cannot produce a bitmap. The PNG still applies, so a cache
+  // written in PNG keeps working rather than the whole refresh going dark.
+  native: Buffer | null
+}
+
+// Traktor commonly stores Coverart as 0x08 + little-endian width/height + BGRA pixels,
+// not as a PNG. Preserve the format of each existing cache file: replacing a native
+// thumbnail with PNG bytes succeeds on disk but Traktor ignores it and keeps showing the
+// old image. Electron's toBitmap() is BGRA on macOS, exactly the payload Traktor uses.
+//
+// Rendered in its own try: the two formats fail independently, and folding this into the
+// caller's catch let a missing toBitmap discard the PNG as well, silently disabling the
+// refresh for every cover instead of only the native ones.
+function nativeThumbnail(image: Electron.NativeImage, px: number): Buffer | null {
+  try {
+    const bitmap = image.toBitmap()
+    if (!bitmap?.length) return null
+    const header = Buffer.alloc(9)
+    header[0] = 0x08
+    header.writeUInt32LE(px, 1)
+    header.writeUInt32LE(px, 5)
+    return Buffer.concat([header, bitmap])
+  } catch {
+    return null
+  }
+}
+
+function thumbnails(cover: Buffer): Map<string, RenderedThumbnail> | null {
   try {
     const source = nativeImage.createFromBuffer(cover)
     if (source.isEmpty()) return null
-    const out = new Map<string, Buffer>()
+    const out = new Map<string, RenderedThumbnail>()
     for (const [suffix, px] of VARIANTS) {
-      out.set(suffix, source.resize({ width: px, height: px }).toPNG())
+      const resized = source.resize({ width: px, height: px })
+      out.set(suffix, { png: resized.toPNG(), native: nativeThumbnail(resized, px) })
     }
     return out
   } catch {
@@ -96,13 +126,18 @@ export function refreshCachedCoverArt(
       if (present.length === 0) continue
       for (const [suffix] of present) {
         const target = join(folder, parts.name + suffix)
-        const png = rendered.get(suffix)
-        if (!png) continue
+        const thumbnail = rendered.get(suffix)
+        if (!thumbnail) continue
         try {
+          const existing = readFileSync(target)
+          // A native thumbnail we could not render stays as it is: writing PNG into it
+          // would be a write Traktor ignores, costing the old picture for nothing.
+          const replacement = existing[0] === 0x08 ? thumbnail.native : thumbnail.png
+          if (!replacement) continue
           // Traktor is closed here (syncCollection checked twice), so a plain write is
           // safe and keeps the inode — no rename that could land on a different volume.
-          if (readFileSync(target).equals(png)) continue
-          writeFileSync(target, png)
+          if (existing.equals(replacement)) continue
+          writeFileSync(target, replacement)
           written++
         } catch {
           // A locked or read-only thumbnail costs the old picture, nothing more.
