@@ -5,6 +5,14 @@
     "title": "Prueba lo nuevo antes que nadie, si quieres",
     "items": [
       {
+        "text": "Los cue points caen ya donde los ves en Traktor al convertir desde o hacia MP3. Traktor dibujaba el marcador unos 51 ms desplazado en esos cruces, y ahora Surco lo compensa solo, sin que tengas que tocar nada. El ajuste manual sigue estando aparte y parte de cero, por si quieres afinarlo a tu gusto.",
+        "in": "0.95.5"
+      },
+      {
+        "text": "Cambiar de formato ya no se lleva por delante los cues que Surco no sabe leer. Si el árbol de marcas viene de otro programa o de una versión de Traktor más nueva, ahora viaja intacto a la pista convertida. Sólo se descartan cuando recortas la pista y el audio se mueve de verdad bajo ellos, que es cuando dejarían de apuntar al sitio.",
+        "in": "0.95.5"
+      },
+      {
         "text": "El ajuste de los cue points te pregunta ahora qué oyes en vez de pedirte un número con signo. Eliges si tus cues entran pronto, tarde o se quedan donde los dejaste, y Surco calcula la dirección. El número es siempre positivo, así que ya no hay que acordarse de qué hacía cada signo.",
         "in": "0.95.4"
       },
