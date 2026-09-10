@@ -209,6 +209,20 @@ function coexistingOutputs(entries: NmlEntry[], patches: NmlPatch[]): Map<string
   return out
 }
 
+// The converted files that lost the inherited identity, so the caller can make each one
+// newer than the collection it was just written into. Stripping AUDIO_ID/COVERARTID
+// leaves the output with no artwork Traktor knows about, and it only mints a fresh id
+// and cache entry when it sees the audio is newer than the NML — without that the
+// converted track shows no cover at all rather than the one embedded in it.
+export function detachedOutputPaths(nml: string, patches: NmlPatch[]): string[] {
+  const detached = coexistingOutputs(findEntries(nml), patches)
+  const out = new Set<string>()
+  for (const patch of detached.values()) {
+    if (patch.outputPath) out.add(patch.outputPath)
+  }
+  return [...out]
+}
+
 // CUE_V2 has no children in the schema Traktor itself writes (see cuesToXml),
 // so a serializer that self-closes empty elements — confirmed against the
 // user's own traktor_nml_cleaner.py, which runs his collection through
