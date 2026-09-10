@@ -188,6 +188,50 @@ describe('grid tempo already in the collection', () => {
 // track three times over. The cause is repointing: the FLAC's entry gets its FILE
 // rewritten to .mp3, and if the collection already holds an entry for that .mp3 there
 // are now two, the repointed one still carrying the FLAC's BITRATE and FILESIZE.
+// Reported 10/09/2026: a converted AIFF showed 2 stars in Traktor where the DJ had set
+// 5. The file's own POPM byte was correct — Traktor was reading the stars from the
+// collection, which Surco never updated, so the ENTRY kept whatever RANKING it had from
+// the last analysis. The collection wins over the file for a track already in the
+// library, which is the whole reason this NML sync exists.
+//
+// Traktor stores stars in INFO@RANKING on the same 0-255 scale as its POPM frame, 51 per
+// star (see shared/rating.ts, where that scale is already relied on for the file side).
+describe('star rating in the collection', () => {
+  const RATED = `<NML VERSION="20"><COLLECTION ENTRIES="1">
+<ENTRY TITLE="Scratch"><LOCATION DIR="/:M/:" FILE="uno.aiff" VOLUME="HD"></LOCATION><INFO RANKING="102" BITRATE="1411000"></INFO></ENTRY>
+</COLLECTION></NML>`
+
+  const at = { volume: 'HD', dir: '/:M/:', file: 'uno.aiff' }
+
+  it('writes the stars the DJ chose over the stale ranking', () => {
+    const out = applyPatches(RATED, [{ ...at, ranking: 255 }])
+
+    expect(out).toContain('RANKING="255"')
+    expect(out).not.toContain('RANKING="102"')
+  })
+
+  // An ENTRY that never carried a rating still has to receive one, or setting stars on a
+  // freshly imported track would silently do nothing.
+  it('adds the ranking to an entry that has none', () => {
+    const unrated = `<NML VERSION="20"><COLLECTION ENTRIES="1">
+<ENTRY TITLE="Scratch"><LOCATION DIR="/:M/:" FILE="uno.aiff" VOLUME="HD"></LOCATION><INFO BITRATE="1411000"></INFO></ENTRY>
+</COLLECTION></NML>`
+
+    const out = applyPatches(unrated, [{ ...at, ranking: 153 }])
+
+    expect(out).toContain('RANKING="153"')
+    expect(out).toContain('BITRATE="1411000"')
+  })
+
+  // Undefined is not zero: most patches carry no rating at all, and those must leave the
+  // DJ's existing stars exactly where they are rather than clearing them to unrated.
+  it('leaves the ranking alone when the patch carries none', () => {
+    const out = applyPatches(RATED, [at])
+
+    expect(out).toContain('RANKING="102"')
+  })
+})
+
 // Reported 10/09/2026, with the collection in hand: converting Scratch.flac to
 // Scratch.mp3 while keeping both left TWO ENTRY blocks carrying the same AUDIO_ID and
 // COVERARTID. That coupled their artwork — changing the FLAC's cover changed the MP3's —
