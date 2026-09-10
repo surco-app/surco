@@ -12,33 +12,42 @@ import { SettingsField, SettingsHint, SettingsLabel, SettingsSection } from './S
 // other platforms where a track simply finishes in the output folder.
 const isMac = isMacOS()
 
-// The row, signed and centred on zero. The sizes come from the scale the hint teaches
-// rather than from roundness: under 20 ms the shift is barely audible and from 50 ms it
-// is unmistakable, so ±25 and ±50 bracket the range where a DJ can hear what they
-// changed. Negative delays a cue, positive brings it forward — shiftTraktorCues
-// subtracts, so a cue heard EARLY has to move later, which is the negative one.
-const CUE_PRESETS_MS = [-50, -25, 0, 25, 50] as const
-
 // Half a beat at 128 BPM (234 ms) is where this stops being a cue adjustment: past it the
 // cue is nearer the next beat than its own. The slider reaches further than the presets
 // so a value like the reporter's 51 ms is not the edge of the range.
-const CUE_FINE_MAX_MS = 120
+const CUE_MAX_MS = 120
 
-// An explicit plus is what makes the row read as a direction rather than a list of sizes;
-// the minus is already there. Zero is labelled in words instead, so it never renders "+0".
-// The stored figure restated as what the DJ will hear. Measured end to end through a real
-// conversion: -51 takes a cue stored at 10000 ms to 9949, which is nearer the start of the
-// track, so it fires EARLIER; +51 takes it to 10051 and it fires later. The sign reads the
-// opposite way round to most people's first guess, which is the whole reason this line
-// exists. Zero has no effect to describe, and inventing one would read as though the
-// setting were doing something.
-function cueEffectKey(ms: number): string {
-  if (!Number.isFinite(ms) || ms === 0) return 'settings.traktorCueOffsetNone'
-  return ms < 0 ? 'settings.traktorCueOffsetEarlier' : 'settings.traktorCueOffsetLater'
-}
+// What the correction defaults to the moment a DJ says his cues are off. The reporter
+// arrived at 51 by ear over a long session (09/09/2026); starting anywhere else would
+// make the common case a hunt through the stepper.
+const CUE_DEFAULT_MS = 51
 
-function formatSigned(ms: number): string {
-  return `${ms > 0 ? '+' : ''}${ms} ms`
+// The three answers to "where do your cues land?", in the DJ's own words. The stored
+// setting is still one signed number: the sign is derived here and never typed, which is
+// the whole point. He got it backwards when the UI showed him a sign to reason about
+// ("you put it the other way round"), so nothing in this section names one.
+//
+// Measured end to end through a real conversion: a cue stored at 10000 ms comes out at
+// 9949 under -51 — nearer the start, so it fires EARLIER — and at 10051 under +51. So a
+// DJ reporting cues that come in EARLY needs them pushed LATER, which is the positive
+// sign. The mapping below reads the opposite way round to first instinct, and that
+// inversion is exactly what this control exists to hide.
+type CueDirection = 'none' | 'early' | 'late'
+
+// "Mis cues entran pronto" means they need moving later: positive.
+const CUE_SIGN: Record<Exclude<CueDirection, 'none'>, number> = { early: 1, late: -1 }
+
+const CUE_CHOICES: { id: CueDirection; labelKey: string; noteKey: string }[] = [
+  { id: 'none', labelKey: 'settings.traktorCueStay', noteKey: 'settings.traktorCueStayNote' },
+  { id: 'early', labelKey: 'settings.traktorCueEarly', noteKey: 'settings.traktorCueEarlyNote' },
+  { id: 'late', labelKey: 'settings.traktorCueLate', noteKey: 'settings.traktorCueLateNote' },
+]
+
+// A stored POSITIVE offset is the correction for cues that came in early (it pushes them
+// later), so it is the 'early' answer that reads as chosen. See CUE_SIGN above.
+function cueDirection(ms: number): CueDirection {
+  if (!Number.isFinite(ms) || ms === 0) return 'none'
+  return ms > 0 ? 'early' : 'late'
 }
 
 interface Props {
@@ -73,12 +82,15 @@ export function DestinationTab({
   onAcceptDetectedNmlPath,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  // One signed number drives both controls, clamped to what the slider can represent so a
-  // stored value from an older build cannot push its thumb off the track.
+  // One signed number still drives the whole section, clamped so a value from an older
+  // build cannot step out of range. The DJ never sees this sign: the choice below carries
+  // the direction and the stepper only ever shows its magnitude.
   const stored = Math.max(
-    -CUE_FINE_MAX_MS,
-    Math.min(CUE_FINE_MAX_MS, Math.round(Number(synced.traktorCueOffsetMs)) || 0),
+    -CUE_MAX_MS,
+    Math.min(CUE_MAX_MS, Math.round(Number(synced.traktorCueOffsetMs)) || 0),
   )
+  const direction = cueDirection(stored)
+  const magnitude = Math.abs(stored)
   // FLAC can't go to Apple Music, so the destination is pinned to the output folder
   // while it's the format. Otherwise the stored booleans map onto the single radio choice.
   const flacOnly = synced.outputFormat === 'flac'
@@ -239,56 +251,87 @@ export function DestinationTab({
             Without a collection it is disabled and the hint says what is missing. */}
         <div className="mt-6">
           <SettingsLabel>{tr('settings.traktorCueOffset')}</SettingsLabel>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {CUE_PRESETS_MS.map((preset) => {
-              const chosen = stored === preset
+          <p className="mt-1 text-sm text-fg-muted">{tr('settings.traktorCueQuestion')}</p>
+
+          {/* Radios, not a row of signed buttons: the DJ answers what he HEARS and Surco
+              derives the sign. The previous row asked him to know which way a negative
+              number moves a cue, and he guessed wrong. */}
+          <div className="mt-3 flex flex-col gap-0.5">
+            {CUE_CHOICES.map(({ id, labelKey, noteKey }) => {
+              const chosen = direction === id
               return (
-                <button
-                  key={preset}
-                  type="button"
-                  data-testid={`settings-cue-preset-${preset}`}
-                  aria-pressed={chosen}
-                  onClick={() => patch('traktorCueOffsetMs', String(preset))}
-                  className={`press rounded-lg border px-3 py-1.5 text-sm tabular-nums disabled:cursor-not-allowed disabled:opacity-50 ${
-                    chosen
-                      ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/20 text-fg'
-                      : 'border-[var(--color-line-strong)] text-fg-muted enabled:hover:bg-[var(--color-panel-2)]/40'
-                  }`}
+                // A real radio input rather than a button wearing the role: it brings
+                // arrow-key navigation and the group semantics for free, and the visible
+                // dot is drawn beside it with the input itself kept off-screen but
+                // focusable, so the ring still follows the keyboard.
+                <label
+                  key={id}
+                  className="press flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 hover:bg-[var(--color-panel-2)]/30 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--color-accent)]"
                 >
-                  {preset === 0 ? tr('settings.traktorCueNoAdjust') : formatSigned(preset)}
-                </button>
+                  <input
+                    type="radio"
+                    name="settings-cue-direction"
+                    data-testid={`settings-cue-dir-${id}`}
+                    checked={chosen}
+                    onChange={() =>
+                      patch(
+                        'traktorCueOffsetMs',
+                        id === 'none' ? '0' : String(CUE_SIGN[id] * (magnitude || CUE_DEFAULT_MS)),
+                      )
+                    }
+                    className="peer sr-only"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className={`size-[15px] shrink-0 rounded-full border ${
+                      chosen
+                        ? 'border-[5px] border-[var(--color-accent)]'
+                        : 'border-[1.5px] border-[var(--color-line-strong)]'
+                    }`}
+                  />
+                  <span className="text-sm text-fg">
+                    {tr(labelKey)}
+                    <span className="text-fg-muted"> · {tr(noteKey)}</span>
+                  </span>
+                </label>
               )
             })}
           </div>
 
-          {/* The presets are shortcuts, not the range: the reporter arrived at 51 ms by
-              ear and no row of round numbers contains it. Signed like the presets, so the
-              slider needs no direction of its own. */}
-          <div className="mt-3 flex items-center gap-3">
-            <input
-              id="settings-cue-fine"
-              data-testid="settings-cue-fine"
-              type="range"
-              min={-CUE_FINE_MAX_MS}
-              max={CUE_FINE_MAX_MS}
-              step={1}
-              value={stored}
-              aria-label={tr('settings.traktorCueFineLabel')}
-              onChange={(e) => patch('traktorCueOffsetMs', e.target.value)}
-              className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-[var(--color-line-strong)] accent-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-50"
-            />
-            <span className="w-16 shrink-0 text-right text-sm tabular-nums text-fg-muted">
-              {stored === 0 ? '0 ms' : formatSigned(stored)}
+          {/* Always the magnitude, never the stored sign: a "-51" beside a choice that
+              already says "early" is the double negative this redesign removes. Stepping
+              keeps the chosen direction, so the amount can never cross zero and flip it
+              under a DJ who was only making the correction smaller. */}
+          <div className="mt-3 flex items-center gap-2 border-t border-[var(--color-line)] pt-3">
+            <span className="flex-1 text-sm text-fg-muted">{tr('settings.traktorCueAmount')}</span>
+            <button
+              type="button"
+              data-testid="settings-cue-amount-down"
+              aria-label={tr('settings.traktorCueAmountDown')}
+              disabled={direction === 'none' || magnitude <= 1}
+              onClick={() => patch('traktorCueOffsetMs', String(stored - Math.sign(stored)))}
+              className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-panel-2)]/40 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              −
+            </button>
+            <span
+              data-testid="settings-cue-amount"
+              className="min-w-14 text-center text-sm tabular-nums text-fg"
+            >
+              {magnitude} ms
             </span>
+            <button
+              type="button"
+              data-testid="settings-cue-amount-up"
+              aria-label={tr('settings.traktorCueAmountUp')}
+              disabled={direction === 'none' || magnitude >= CUE_MAX_MS}
+              onClick={() => patch('traktorCueOffsetMs', String(stored + Math.sign(stored)))}
+              className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-panel-2)]/40 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              +
+            </button>
           </div>
-          {/* The number is arithmetic; this is the same value in the words the DJ will
-              use about it. Without it the only way to learn which way a sign moves the
-              cue is to convert, listen and guess again — which is exactly what the
-              reporter had to do before landing on the opposite sign to the one he
-              expected. */}
-          <p data-testid="settings-cue-offset-effect" className="mt-2 text-sm text-fg-muted">
-            {tr(cueEffectKey(stored), { ms: Math.abs(stored) })}
-          </p>
+
           <SettingsHint className="mt-2">{tr('settings.traktorCueOffsetHint')}</SettingsHint>
         </div>
       </SettingsSection>

@@ -358,7 +358,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
       />,
     )
-    expect(screen.getByTestId('settings-cue-preset--25')).toBeEnabled()
+    expect(screen.getByTestId('settings-cue-dir-early')).toBeEnabled()
     cleanup()
     render(
       <DestinationTab
@@ -373,7 +373,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
       />,
     )
-    expect(screen.getByTestId('settings-cue-preset--25')).toBeEnabled()
+    expect(screen.getByTestId('settings-cue-dir-early')).toBeEnabled()
   })
 
   // Reported from a screenshot: focusing the path box scrolls the text sideways to put
@@ -409,74 +409,116 @@ describe('DestinationTab Traktor collection', () => {
     expect(field).toHaveAttribute('title', expect.stringContaining('/Users/dj/Documents'))
   })
 
-  // One signed row instead of a question plus an unsigned row of sizes. Splitting the
-  // sign from the size needed a question to carry the direction, a second control to
-  // carry the magnitude, and a sentence to translate the result back into words — four
-  // controls for one number. A button that already says "-25 ms" is the whole decision.
-  it('sets the offset the chosen preset names', () => {
+  // The signed row asked the DJ to know, in advance, which way a sign moves a cue. He
+  // did not: "you put it the other way round" (09/09/2026), after a session of
+  // converting and listening. So the direction is a question in his own words and the
+  // amount is always positive — the sign becomes something Surco computes, never
+  // something he has to reason about. The stored value is still one signed number, so
+  // nothing downstream changes.
+  // Measured end to end (cueOffsetDirection.test.ts): a NEGATIVE offset takes a cue from
+  // 10000 ms to 9949, nearer the start, so it fires EARLIER. Cues that already come in
+  // early therefore need the POSITIVE sign to push them later. This inversion is the
+  // whole reason the DJ never sees a sign, and it is pinned here so nobody "fixes" the
+  // mapping to match first instinct.
+  it('pushes cues later when the DJ says they come in early', () => {
     const patch = vi.fn<PatchSynced>()
-    renderWithCollection(patch)
+    renderWithCollection(patch, '0')
 
-    fireEvent.click(screen.getByTestId('settings-cue-preset--25'))
+    fireEvent.click(screen.getByTestId('settings-cue-dir-early'))
 
-    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '-25')
+    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '51')
   })
 
-  it('sets a positive offset from the positive preset', () => {
+  it('pulls cues earlier when the DJ says they come in late', () => {
     const patch = vi.fn<PatchSynced>()
-    renderWithCollection(patch)
+    renderWithCollection(patch, '0')
 
-    fireEvent.click(screen.getByTestId('settings-cue-preset-25'))
+    fireEvent.click(screen.getByTestId('settings-cue-dir-late'))
 
-    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '25')
+    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '-51')
   })
 
-  // The way back to "leave them alone" is a preset like any other, not a separate answer:
-  // a DJ who tried an adjustment and found it wrong needs it in the same row they used.
-  it('clears the offset from the middle preset', () => {
+  // The way back to "leave them alone" is the first choice, where a DJ who tried an
+  // adjustment and found it wrong will look for it.
+  it('clears the offset from the first choice', () => {
     const patch = vi.fn<PatchSynced>()
     renderWithCollection(patch, '-51')
 
-    fireEvent.click(screen.getByTestId('settings-cue-preset-0'))
+    fireEvent.click(screen.getByTestId('settings-cue-dir-none'))
 
     expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '0')
   })
 
-  // Which preset reads as chosen follows the stored value, so reopening Settings shows the
-  // state the conversion will actually use rather than a reset default.
-  it('marks the preset that matches the stored offset', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '-25')
-
-    expect(screen.getByTestId('settings-cue-preset--25')).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByTestId('settings-cue-preset-0')).toHaveAttribute('aria-pressed', 'false')
-  })
-
-  // A hand-tuned figure between presets must not light one up: 51 is not 50, and marking
-  // the nearest would tell the user their value had been rounded.
-  it('marks no preset for a value between them', () => {
+  // Which choice reads as selected follows the stored value, so reopening Settings shows
+  // the state the conversion will actually use rather than a reset default.
+  it('selects the choice matching the stored sign', () => {
     renderWithCollection(vi.fn<PatchSynced>(), '-51')
 
-    expect(screen.getByTestId('settings-cue-preset--50')).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByTestId('settings-cue-dir-late')).toBeChecked()
+    expect(screen.getByTestId('settings-cue-dir-none')).not.toBeChecked()
+    expect(screen.getByTestId('settings-cue-dir-early')).not.toBeChecked()
   })
 
-  // The presets are shortcuts, not the range. The reporter arrived at 51 ms by ear over a
-  // long session and no row of round numbers contains it, so the slider is what keeps
-  // every value reachable — signed like the presets, so it needs no direction of its own.
-  it('tunes to a value no preset offers', () => {
+  it('selects the early choice for a positive value', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '25')
+
+    expect(screen.getByTestId('settings-cue-dir-early')).toBeChecked()
+  })
+
+  // Always the magnitude, never the stored sign: showing "-51" beside a choice that
+  // already says "early" is the double negative this redesign exists to remove.
+  it('shows the amount unsigned whichever direction is chosen', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '-51')
+
+    expect(screen.getByTestId('settings-cue-amount')).toHaveTextContent('51 ms')
+    expect(screen.getByTestId('settings-cue-amount')).not.toHaveTextContent('-')
+  })
+
+  // The reporter arrived at 51 by ear over a long session, so every value has to stay
+  // reachable. Stepping keeps the direction already chosen rather than re-deriving it.
+  it('steps the amount up while keeping the chosen direction', () => {
     const patch = vi.fn<PatchSynced>()
     renderWithCollection(patch, '-51')
 
-    const slider = screen.getByTestId('settings-cue-fine')
-    expect(slider).toHaveValue('-51')
-    fireEvent.change(slider, { target: { value: '-38' } })
+    fireEvent.click(screen.getByTestId('settings-cue-amount-up'))
 
-    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '-38')
+    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '-52')
+  })
+
+  it('steps the amount down while keeping the chosen direction', () => {
+    const patch = vi.fn<PatchSynced>()
+    renderWithCollection(patch, '51')
+
+    fireEvent.click(screen.getByTestId('settings-cue-amount-down'))
+
+    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '50')
+  })
+
+  // Stepping while nothing is being corrected has no direction to preserve, so the
+  // amount is inert until a direction is chosen rather than silently picking one.
+  it('does not step the amount while no correction is chosen', () => {
+    const patch = vi.fn<PatchSynced>()
+    renderWithCollection(patch, '0')
+
+    expect(screen.getByTestId('settings-cue-amount-up')).toBeDisabled()
+    expect(screen.getByTestId('settings-cue-amount-down')).toBeDisabled()
+  })
+
+  // The amount cannot cross zero by stepping: that would flip the direction under a DJ
+  // who was only trying to make the correction smaller, contradicting the choice above.
+  it('will not step below one millisecond', () => {
+    const patch = vi.fn<PatchSynced>()
+    renderWithCollection(patch, '-1')
+
+    fireEvent.click(screen.getByTestId('settings-cue-amount-down'))
+
+    expect(patch).not.toHaveBeenCalled()
   })
 
   // The collection path gates what Traktor is told about tracks it ALREADY holds — their
   // cues and their metadata. It does not gate the cues written into the converted file,
   // which is what this offset moves, so the controls stay usable without one.
-  it('keeps the presets usable while no collection is configured', () => {
+  it('keeps the choices usable while no collection is configured', () => {
     render(
       <DestinationTab
         synced={synced}
@@ -491,14 +533,13 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    expect(screen.getByTestId('settings-cue-preset--25')).toBeEnabled()
-    expect(screen.getByTestId('settings-cue-fine')).toBeEnabled()
+    expect(screen.getByTestId('settings-cue-dir-early')).toBeEnabled()
   })
 
   // The other half of the same correction: not merely enabled to look at, but actually
   // staging the value. The reporter's whole complaint was that he could not leave his
-  // +51 set without pointing Surco at a collection he did not need for converting.
-  it('stages a preset picked with no collection set', () => {
+  // 51 set without pointing Surco at a collection he did not need for converting.
+  it('stages a direction picked with no collection set', () => {
     const patch = vi.fn<PatchSynced>()
     render(
       <DestinationTab
@@ -514,9 +555,9 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    fireEvent.click(screen.getByTestId('settings-cue-preset--25'))
+    fireEvent.click(screen.getByTestId('settings-cue-dir-early'))
 
-    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '-25')
+    expect(patch).toHaveBeenCalledWith('traktorCueOffsetMs', '51')
   })
 
   // The hint is the only prose left, so it carries what the controls cannot: that the
@@ -530,49 +571,5 @@ describe('DestinationTab Traktor collection', () => {
     expect(hint.textContent).toMatch(/already corrects|no adjustment/i)
     expect(hint.textContent).toMatch(/listen|hear/i)
     expect(hint.textContent).toMatch(/loops/i)
-  })
-
-  // Reported 09/09/2026 by the DJ this setting exists for: "I had to apply mine at 51 —
-  // you put it the other way round". The controls show a signed number and nothing says
-  // which way each sign moves the cue, so the only way to find out is to convert, listen,
-  // and guess again. Naming both directions is what turns that into one reading.
-  it('says which way each sign moves the cue', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '-51')
-
-    const hint = screen.getByText(i18n.t('settings.traktorCueOffsetHint'))
-    expect(hint.textContent).toMatch(/negative/i)
-    expect(hint.textContent).toMatch(/positive/i)
-  })
-
-  // The sign in the box is arithmetic; this restates it as the thing the DJ will hear,
-  // and follows the value as it is typed. It went missing when the row of presets
-  // replaced the earlier question, which is how the direction stopped being stated
-  // anywhere at all.
-  // The direction comes from a measurement, not from reading the formula: a real
-  // conversion takes a cue stored at 10000 ms to 9949 under -51, which is nearer the
-  // start of the track and therefore EARLIER. Asserting it the other way round is how
-  // this got shipped stating the opposite.
-  it('restates the chosen value in plain words', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '-51')
-
-    expect(screen.getByTestId('settings-cue-offset-effect')).toHaveTextContent(
-      i18n.t('settings.traktorCueOffsetEarlier', { ms: 51 }),
-    )
-  })
-
-  it('flips that reading for a positive value', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '25')
-
-    expect(screen.getByTestId('settings-cue-offset-effect')).toHaveTextContent(
-      i18n.t('settings.traktorCueOffsetLater', { ms: 25 }),
-    )
-  })
-
-  it('says nothing moves at zero', () => {
-    renderWithCollection(vi.fn<PatchSynced>(), '0')
-
-    expect(screen.getByTestId('settings-cue-offset-effect')).toHaveTextContent(
-      i18n.t('settings.traktorCueOffsetNone'),
-    )
   })
 })
