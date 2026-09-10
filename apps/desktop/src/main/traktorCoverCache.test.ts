@@ -9,11 +9,19 @@ vi.mock('electron', () => ({
   nativeImage: { createFromBuffer: (buf: Buffer) => makeImage(buf.toString(), 0) },
 }))
 
+// Some builds/platforms give no usable bitmap. Flipped by the test below to pin that
+// this costs only the native format, never the PNG one.
+let bitmapsAvailable = true
+
 function makeImage(source: string, size: number) {
   return {
     isEmpty: () => source === '',
     resize: ({ width }: { width: number }) => makeImage(source, width),
     toPNG: () => Buffer.from(`png:${size}`),
+    toBitmap: () => {
+      if (!bitmapsAvailable) throw new Error('toBitmap unavailable')
+      return Buffer.alloc(size * size * 4, size & 0xff)
+    },
   }
 }
 
@@ -61,6 +69,67 @@ describe('refreshCachedCoverArt', () => {
     expect(readFileSync(join(cache, 'ABC000'), 'utf8')).toBe('png:125')
     expect(readFileSync(join(cache, 'ABC001'), 'utf8')).toBe('png:75')
     expect(readFileSync(join(cache, 'ABC002'), 'utf8')).toBe('png:56')
+  })
+
+  it('preserves Traktor native 0x08 BGRA cache format instead of writing PNG bytes', () => {
+    for (const variant of ['000', '001', '002']) {
+      writeFileSync(join(cache, `ABC${variant}`), Buffer.from([0x08, 1, 0, 0, 0, 1, 0, 0, 0, 0]))
+    }
+    expect(
+      refreshCachedCoverArt(nml, [{ coverId: '042/ABC', file: '/Music/uno.flac' }], readCover),
+    ).toBe(3)
+    const native125 = readFileSync(join(cache, 'ABC000'))
+    expect(native125[0]).toBe(0x08)
+    expect(native125.readUInt32LE(1)).toBe(125)
+    expect(native125.readUInt32LE(5)).toBe(125)
+    expect(native125.length).toBe(9 + 125 * 125 * 4)
+  })
+
+  // Rendering the two formats used to share one try/catch, so a build whose toBitmap
+  // throws discarded the PNG along with the bitmap and refreshed nothing at all — the
+  // native-format support silently disabling the case that already worked. The formats
+  // have to fail independently.
+  it('still refreshes a PNG cache when no bitmap can be rendered', () => {
+    bitmapsAvailable = false
+    try {
+      for (const variant of ['000', '001', '002']) {
+        writeFileSync(join(cache, `ABC${variant}`), 'stale thumbnail')
+      }
+
+      const written = refreshCachedCoverArt(
+        nml,
+        [{ coverId: '042/ABC', file: '/Music/uno.flac' }],
+        readCover,
+      )
+
+      expect(written).toBe(3)
+      expect(readFileSync(join(cache, 'ABC000'), 'utf8')).toBe('png:125')
+    } finally {
+      bitmapsAvailable = true
+    }
+  })
+
+  // The other half: a native thumbnail must not be overwritten with PNG bytes Traktor
+  // would ignore, which would cost the old picture and give nothing back.
+  it('leaves a native thumbnail alone when no bitmap can be rendered', () => {
+    bitmapsAvailable = false
+    try {
+      const native = Buffer.from([0x08, 1, 0, 0, 0, 1, 0, 0, 0, 0])
+      for (const variant of ['000', '001', '002']) {
+        writeFileSync(join(cache, `ABC${variant}`), native)
+      }
+
+      const written = refreshCachedCoverArt(
+        nml,
+        [{ coverId: '042/ABC', file: '/Music/uno.flac' }],
+        readCover,
+      )
+
+      expect(written).toBe(0)
+      expect(readFileSync(join(cache, 'ABC000'))).toEqual(native)
+    } finally {
+      bitmapsAvailable = true
+    }
   })
 
   // The point of the whole approach: the id stays linked to the ENTRY, so Traktor is
