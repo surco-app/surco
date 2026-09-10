@@ -5,6 +5,22 @@
     "title": "Prueba lo nuevo antes que nadie, si quieres",
     "items": [
       {
+        "text": "El ajuste de los cue points te pregunta ahora qué oyes en vez de pedirte un número con signo. Eliges si tus cues entran pronto, tarde o se quedan donde los dejaste, y Surco calcula la dirección. El número es siempre positivo, así que ya no hay que acordarse de qué hacía cada signo.",
+        "in": "0.95.4"
+      },
+      {
+        "text": "Convertir una pista y conservar el original ya no descuadra Traktor. Antes las dos copias compartían la misma identidad interna, así que se les acoplaba la carátula y en algunos casos Traktor no llegaba a abrir. Ahora la convertida es una pista independiente y conserva sus cues, su rejilla y sus loops.",
+        "in": "0.95.4"
+      },
+      {
+        "text": "Las estrellas que pones en Surco se ven ya en Traktor. Se guardaban en el fichero pero no en tu colección, y para una pista que Traktor ya tenía mandaba la colección, así que seguías viendo la puntuación antigua.",
+        "in": "0.95.4"
+      },
+      {
+        "text": "La carátula nueva aparece en Traktor después de convertir, también cuando conservas el original. Se actualizan las miniaturas en el formato que Traktor usa en tu equipo, y se le avisa de que el fichero ha cambiado para que vuelva a leerlo.",
+        "in": "0.95.4"
+      },
+      {
         "text": "El ajuste de los cue points se puede usar sin haber indicado tu collection.nml. El control estaba apagado hasta que dabas esa ruta, pero el desplazamiento se aplica a los cues que Surco escribe dentro del propio fichero, así que quien no sincroniza con Traktor tampoco podía tocarlo.",
         "in": "0.95.3"
       },
