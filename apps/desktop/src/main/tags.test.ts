@@ -30,6 +30,7 @@ import type { TrackMetadata } from '../shared/types'
 import { decodeBase91, encodeBase91 } from './base91'
 import {
   copyCueFrames,
+  copyCuesFromFlac,
   preservesCuesInPlace,
   readCueTree,
   readItunesGrouping,
@@ -1158,6 +1159,45 @@ describe('shiftFlacCues', () => {
     shiftFlacCues(file, { shiftMs: 1300, bpm: 138.3 })
 
     expect(readFlacTree(file)).toBeNull()
+  })
+
+  // Reported 10/09/2026: some real FLAC libraries carry the TRAKTOR4 tree in a leading
+  // ID3 PRIV block rather than the Xiph comment, and this path only ever read the
+  // comment. Those files reached the MP3 with their cues copied verbatim, so neither a
+  // trim's re-anchor nor the user's offset could move them: the shift silently applied to
+  // nothing. Reading both families is what makes the offset reach every FLAC.
+  it('re-anchors cues a FLAC stores in an ID3 block instead of the comment', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-flac-id3-'))
+    const source = join(dir, 'id3cued.flac')
+    execFileSync(FFMPEG, [
+      '-v',
+      'quiet',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=2',
+      '-y',
+      source,
+    ])
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)])
+    const tagged = TagFile.createFromPath(source)
+    try {
+      const id3 = tagged.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+      const priv = Id3v2PrivateFrame.fromOwner('TRAKTOR4')
+      priv.privateData = ByteVector.fromByteArray(tree)
+      id3.addFrame(priv)
+      tagged.save()
+    } finally {
+      tagged.dispose()
+    }
+
+    const dest = join(dir, 'out.mp3')
+    execFileSync(FFMPEG, ['-v', 'quiet', '-i', source, '-y', dest])
+    copyCuesFromFlac(source, dest, { shiftMs: 1300, bpm: 138.3 })
+
+    const copied = readCueTree(dest)
+    expect(copied).not.toBeNull()
+    expect(readTraktorCueStart(copied as Uint8Array, 0)).toBeCloseTo(78372.64)
   })
 
   it('does nothing to a FLAC that carries no cue comment', () => {
