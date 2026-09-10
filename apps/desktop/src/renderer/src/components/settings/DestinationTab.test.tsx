@@ -530,4 +530,48 @@ describe('DestinationTab Traktor collection', () => {
     expect(hint.textContent).toMatch(/listen|hear/i)
     expect(hint.textContent).toMatch(/loops/i)
   })
+
+  // Reported 09/09/2026 by the DJ this setting exists for: "I had to apply mine at 51 —
+  // you put it the other way round". The controls show a signed number and nothing says
+  // which way each sign moves the cue, so the only way to find out is to convert, listen,
+  // and guess again. Naming both directions is what turns that into one reading.
+  it('says which way each sign moves the cue', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '-51')
+
+    const hint = screen.getByText(i18n.t('settings.traktorCueOffsetHint'))
+    expect(hint.textContent).toMatch(/negative/i)
+    expect(hint.textContent).toMatch(/positive/i)
+  })
+
+  // The sign in the box is arithmetic; this restates it as the thing the DJ will hear,
+  // and follows the value as it is typed. It went missing when the row of presets
+  // replaced the earlier question, which is how the direction stopped being stated
+  // anywhere at all.
+  // The direction comes from a measurement, not from reading the formula: a real
+  // conversion takes a cue stored at 10000 ms to 9949 under -51, which is nearer the
+  // start of the track and therefore EARLIER. Asserting it the other way round is how
+  // this got shipped stating the opposite.
+  it('restates the chosen value in plain words', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '-51')
+
+    expect(screen.getByTestId('settings-cue-offset-effect')).toHaveTextContent(
+      i18n.t('settings.traktorCueOffsetEarlier', { ms: 51 }),
+    )
+  })
+
+  it('flips that reading for a positive value', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '25')
+
+    expect(screen.getByTestId('settings-cue-offset-effect')).toHaveTextContent(
+      i18n.t('settings.traktorCueOffsetLater', { ms: 25 }),
+    )
+  })
+
+  it('says nothing moves at zero', () => {
+    renderWithCollection(vi.fn<PatchSynced>(), '0')
+
+    expect(screen.getByTestId('settings-cue-offset-effect')).toHaveTextContent(
+      i18n.t('settings.traktorCueOffsetNone'),
+    )
+  })
 })

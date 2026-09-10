@@ -26,6 +26,17 @@ const CUE_FINE_MAX_MS = 120
 
 // An explicit plus is what makes the row read as a direction rather than a list of sizes;
 // the minus is already there. Zero is labelled in words instead, so it never renders "+0".
+// The stored figure restated as what the DJ will hear. Measured end to end through a real
+// conversion: -51 takes a cue stored at 10000 ms to 9949, which is nearer the start of the
+// track, so it fires EARLIER; +51 takes it to 10051 and it fires later. The sign reads the
+// opposite way round to most people's first guess, which is the whole reason this line
+// exists. Zero has no effect to describe, and inventing one would read as though the
+// setting were doing something.
+function cueEffectKey(ms: number): string {
+  if (!Number.isFinite(ms) || ms === 0) return 'settings.traktorCueOffsetNone'
+  return ms < 0 ? 'settings.traktorCueOffsetEarlier' : 'settings.traktorCueOffsetLater'
+}
+
 function formatSigned(ms: number): string {
   return `${ms > 0 ? '+' : ''}${ms} ms`
 }
@@ -276,6 +287,17 @@ export function DestinationTab({
               {stored === 0 ? '0 ms' : formatSigned(stored)}
             </span>
           </div>
+          {/* The number is arithmetic; this is the same value in the words the DJ will
+              use about it. Without it the only way to learn which way a sign moves the
+              cue is to convert, listen and guess again — which is exactly what the
+              reporter had to do before landing on the opposite sign to the one he
+              expected. */}
+          <p
+            data-testid="settings-cue-offset-effect"
+            className={`mt-2 text-sm ${local.traktorNmlPath ? 'text-fg-muted' : 'text-fg-dim'}`}
+          >
+            {tr(cueEffectKey(stored), { ms: Math.abs(stored) })}
+          </p>
           <SettingsHint className="mt-2">
             {local.traktorNmlPath
               ? tr('settings.traktorCueOffsetHint')
