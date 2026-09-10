@@ -5,6 +5,14 @@
     "title": "Try what is new before anyone else, if you want to",
     "items": [
       {
+        "text": "Cue points now land where you see them in Traktor when you convert from or to MP3. Traktor drew the marker around 51 ms out on those crossings, and Surco now compensates for it on its own, with nothing for you to set. The manual adjustment is still separate and still starts at zero, in case you want to fine-tune it.",
+        "in": "0.95.5"
+      },
+      {
+        "text": "Changing format no longer throws away cues Surco cannot read. When the marker tree comes from another program or from a newer Traktor, it now rides across to the converted track untouched. They are only discarded when you trim the track and the audio really does move under them, which is when they would stop pointing at the right place.",
+        "in": "0.95.5"
+      },
+      {
         "text": "The cue point adjustment now asks what you hear instead of asking for a signed number. You pick whether your cues come in early, late or stay where you left them, and Surco works out the direction. The number is always positive, so there is nothing to remember about what each sign did.",
         "in": "0.95.4"
       },
