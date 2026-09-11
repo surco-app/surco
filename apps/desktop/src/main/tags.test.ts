@@ -31,6 +31,7 @@ import { decodeBase91, encodeBase91 } from './base91'
 import {
   copyCueFrames,
   copyCuesFromFlac,
+  copyCuesToFlac,
   preservesCuesInPlace,
   readCueTree,
   readItunesGrouping,
@@ -1166,18 +1167,95 @@ describe('shiftFlacCues', () => {
     expect(readTraktorCueStart(readFlacTree(file) as Uint8Array, 0)).toBeCloseTo(79672.64)
   })
 
-  // The parser's existing stance: a blob it can't re-anchor is dropped, never
-  // carried pointing at the wrong beats. On FLAC that means clearing the comment
-  // so Traktor re-analyzes instead of trusting stale positions.
-  it('drops a comment it cannot re-anchor', () => {
+  // A trim really did move the audio, so positions this build cannot re-anchor now
+  // describe beats that are no longer there: clearing the comment makes Traktor
+  // re-analyze instead of trusting a ruler that is silently off.
+  it('drops a comment it cannot re-anchor when a trim moved the audio', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-flac-'))
     const tree = buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)])
     tree[tree.length - 6] ^= 0xff // break the checksum inside the summed span
     const file = flacWithCues(dir, tree)
 
-    shiftFlacCues(file, { shiftMs: 1300, bpm: 138.3 })
+    shiftFlacCues(file, { shiftMs: 1300, bpm: 138.3, movesAudio: true })
 
     expect(readFlacTree(file)).toBeNull()
+  })
+
+  // The other half of that bargain, and the v0.76 bug ("converting loses every cue")
+  // coming back through the FLAC door: the directional calibration puts a shift on
+  // every MP3 crossing, so without this a plain format change would discard any tree
+  // this build cannot parse — another tool's blob, a future Traktor's — even though
+  // nothing moved underneath it.
+  it('keeps a comment it cannot re-anchor when the audio did not move', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-flac-'))
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)])
+    tree[tree.length - 6] ^= 0xff
+    const file = flacWithCues(dir, tree)
+
+    shiftFlacCues(file, { shiftMs: 51, bpm: 138.3 })
+
+    expect(readFlacTree(file)).not.toBeNull()
+  })
+
+  // The MP3/AIFF -> FLAC crossing, where the calibration always supplies a shift: an
+  // unparseable tree must cross over verbatim rather than be dropped for a move that
+  // never happened.
+  it('copies an unparseable tree to FLAC when the audio did not move', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tofl-'))
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)])
+    tree[tree.length - 6] ^= 0xff
+    const source = join(dir, 'src.mp3')
+    execFileSync(FFMPEG, [
+      '-v',
+      'quiet',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=2',
+      '-y',
+      source,
+    ])
+    const tagged = TagFile.createFromPath(source)
+    try {
+      const id3 = tagged.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+      const priv = Id3v2PrivateFrame.fromOwner('TRAKTOR4')
+      priv.privateData = ByteVector.fromByteArray(tree)
+      id3.addFrame(priv)
+      tagged.save()
+    } finally {
+      tagged.dispose()
+    }
+    const dest = join(dir, 'out.flac')
+    execFileSync(FFMPEG, [
+      '-v',
+      'quiet',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=2',
+      '-y',
+      dest,
+    ])
+
+    copyCuesToFlac(source, dest, { shiftMs: 51, bpm: 138.3 })
+
+    expect(readFlacTree(dest)).not.toBeNull()
+  })
+
+  // The mirror crossing, FLAC -> MP3/AIFF. This one is the worst of the three: it
+  // strips the destination's own cue frames before deciding, so dropping the tree
+  // leaves the file with no cues at all rather than with the ones it arrived with.
+  it('copies an unparseable tree from FLAC when the audio did not move', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-fromfl-'))
+    const tree = buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)])
+    tree[tree.length - 6] ^= 0xff
+    const source = flacWithCues(dir, tree)
+    const dest = join(dir, 'out.mp3')
+    execFileSync(FFMPEG, ['-v', 'quiet', '-i', source, '-y', dest])
+
+    copyCuesFromFlac(source, dest, { shiftMs: -51, bpm: 138.3 })
+
+    expect(readCueTree(dest)).not.toBeNull()
   })
 
   // Reported 10/09/2026: some real FLAC libraries carry the TRAKTOR4 tree in a leading
