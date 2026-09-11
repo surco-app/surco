@@ -613,6 +613,10 @@ export interface AppleMusicPlaylist {
 // travels so the app can say why fewer rows arrived than the playlist claims.
 export interface AppleMusicPlaylistTracks {
   paths: string[]
+  // Each imported file keyed to the persistent ID of the Music entry it came from, so a
+  // later conversion updates THAT library copy instead of adding a second one. A track
+  // Music reported no ID for simply has no key.
+  persistentIds: Record<string, string>
   missing: number
 }
 

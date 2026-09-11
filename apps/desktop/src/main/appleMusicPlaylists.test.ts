@@ -94,3 +94,33 @@ describe('parsePlaylistTracks', () => {
     expect(out.missing).toBe(0)
   })
 })
+
+describe('carrying each track back to its library entry', () => {
+  it('pairs every path with the persistent ID of the Music entry it came from', () => {
+    // Without this, converting an imported track adds a SECOND entry to the library
+    // instead of updating the one it came from: the update path keys off the persistent
+    // ID, and a track imported without one looks to Surco like a file it has never seen.
+    const out = parsePlaylistTracks('/m/a.aiff\tA1B2C3D4E5F60718\n/m/b.flac\tFFEEDDCCBBAA9988')
+    expect(out.paths).toEqual(['/m/a.aiff', '/m/b.flac'])
+    expect(out.persistentIds).toEqual({
+      '/m/a.aiff': 'A1B2C3D4E5F60718',
+      '/m/b.flac': 'FFEEDDCCBBAA9988',
+    })
+  })
+
+  it('asks Music for the persistent ID alongside each location', () => {
+    expect(buildPlaylistTracksScript('A1B2C3D4E5F60718')).toContain('persistent ID of t')
+  })
+
+  it('keeps a path whose name contains a tab, peeling the ID off the end', () => {
+    const out = parsePlaylistTracks('/m/od\td.aiff\tA1B2C3D4E5F60718')
+    expect(out.paths).toEqual(['/m/od\td.aiff'])
+    expect(out.persistentIds['/m/od\td.aiff']).toBe('A1B2C3D4E5F60718')
+  })
+
+  it('still counts a track with no file, which carries no path to key an ID on', () => {
+    const out = parsePlaylistTracks('/m/a.aiff\tA1B2C3D4E5F60718\n\t0011223344556677')
+    expect(out.paths).toHaveLength(1)
+    expect(out.missing).toBe(1)
+  })
+})
