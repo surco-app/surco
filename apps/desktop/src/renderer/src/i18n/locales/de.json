@@ -1174,6 +1174,7 @@
     "imported_one": "{{count}} Titel aus „{{name}}“",
     "imported_other": "{{count}} Titel aus „{{name}}“",
     "missing_one": "{{count}} ohne Datei",
-    "missing_other": "{{count}} ohne Datei"
+    "missing_other": "{{count}} ohne Datei",
+    "reading": "Playlist wird gelesen…"
   }
 }

@@ -98,6 +98,24 @@ describe('ApplePlaylistModal', () => {
     expect(await screen.findByTestId('apple-playlist-error')).toBeTruthy()
   })
 
+  it('says it is working while the playlist is read, which takes seconds on a big one', async () => {
+    // Measured against Music on macOS 26: a 982-track playlist takes 14.5s to read. The
+    // dialog used to close on click and leave the window silent for all of it, which reads
+    // as the app having ignored the click.
+    loadAppleMusicPlaylists.mockResolvedValue(LISTS)
+    let release: () => void = () => {}
+    const onPick = vi.fn(() => new Promise<void>((r) => (release = r)))
+    render(<ApplePlaylistModal onPick={onPick} onClose={vi.fn()} />)
+
+    fireEvent.click(await screen.findByText('Remember 90s'))
+    fireEvent.click(screen.getByTestId('apple-playlist-import'))
+
+    expect(await screen.findByTestId('apple-playlist-reading')).toBeTruthy()
+    // And it cannot be fired twice while that read is in flight.
+    expect(screen.getByTestId<HTMLButtonElement>('apple-playlist-import').disabled).toBe(true)
+    release()
+  })
+
   it('closes without importing when the user cancels', async () => {
     loadAppleMusicPlaylists.mockResolvedValue(LISTS)
     const { onPick, onClose } = setup()

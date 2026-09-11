@@ -164,6 +164,17 @@ describe('carrying each track back to its library entry', () => {
     expect(out.persistentIds['/m/od\td.aiff']).toBe('A1B2C3D4E5F60718')
   })
 
+  it('keeps the first entry when two rows point at the same file, so the ID matches the row that is imported', () => {
+    // Measured on a real library: a 982-track playlist yielded 982 paths but only 981
+    // distinct ones — two entries in Music point at the same file. The import dedupes and
+    // keeps the FIRST row, so the map has to keep the first entry's ID; taking the last
+    // would stamp the surviving row with the identity of an entry that was dropped, and a
+    // later conversion would update the wrong library copy.
+    const out = parsePlaylistTracks('/m/a.aiff\tA1B2C3D4E5F60718\n/m/a.aiff\tFFEEDDCCBBAA9988')
+    expect(out.paths).toEqual(['/m/a.aiff'])
+    expect(out.persistentIds['/m/a.aiff']).toBe('A1B2C3D4E5F60718')
+  })
+
   it('still counts a track with no file, which carries no path to key an ID on', () => {
     const out = parsePlaylistTracks('/m/a.aiff\tA1B2C3D4E5F60718\n\t0011223344556677')
     expect(out.paths).toHaveLength(1)

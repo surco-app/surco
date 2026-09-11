@@ -110,6 +110,7 @@ const TRAILING_TRACK_PID = /\t([0-9A-F]{16})?$/
 export function parsePlaylistTracks(stdout: string): AppleMusicPlaylistTracks {
   const paths: string[] = []
   const persistentIds: Record<string, string> = {}
+  const seen = new Set<string>()
   let missing = 0
   // A trailing newline is the delimiter's, not a track's: trimming the end first keeps it
   // from counting as a track with no file.
@@ -122,6 +123,13 @@ export function parsePlaylistTracks(stdout: string): AppleMusicPlaylistTracks {
       missing += 1
       continue
     }
+    // Two entries in Music can point at the same file (measured: a 982-track playlist held
+    // 981 distinct paths). The import would dedupe them anyway and keep the first, so the
+    // first entry's identity is the one kept here — taking the last would stamp the
+    // surviving row with the ID of an entry that never made it into the list, and a later
+    // conversion would update the wrong library copy.
+    if (seen.has(path)) continue
+    seen.add(path)
     paths.push(path)
     if (pid?.[1]) persistentIds[path] = pid[1]
   }
