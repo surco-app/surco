@@ -67,6 +67,22 @@ describe('isTraktorRunning', () => {
     expect(running).toBe(false)
   })
 
+  // The Windows half of the same bug. `IMAGENAME eq Traktor*` is the widest filter
+  // tasklist accepts — it has no word boundary — so the helper tools come back in the
+  // listing too and the substring test on stdout answered "Traktor is running" for them.
+  it('does not mistake a Traktor helper tool for Traktor on Windows', async () => {
+    vi.resetModules()
+    execFile.mockReset()
+    respond(() => ({ stdout: 'TraktorCueGridInspector.exe  4321 Console  1  40,000 K\r\n' }))
+
+    const running = await withPlatform('win32', async () => {
+      const { isTraktorRunning } = await import('./traktorProcess')
+      return isTraktorRunning()
+    })
+
+    expect(running).toBe(false)
+  })
+
   // The dangerous direction. pgrep exiting non-zero because nothing matched is a real
   // "not running", but a command that could not run at all — tasklist missing from a
   // stripped PATH, a spawn refused, a timeout — tells us nothing, and answering "not
@@ -116,6 +132,28 @@ describe('isTraktorRunning', () => {
     })
 
     expect(running).toBe(false)
+  })
+
+  // The bug djotas hit: he runs TraktorCueGridInspector, a Traktor helper tool, and Surco
+  // refused to sync with Traktor closed. A bare `pgrep -i traktor` matches any substring,
+  // so every app carrying "Traktor" in its name answers for Traktor itself. The guard must
+  // key on the app, not on the letters: "Traktor", "Traktor Pro" and "Traktor Pro 4" all
+  // start the name and then end or continue with a space, where a helper's name runs on.
+  it('does not mistake a Traktor helper tool for Traktor itself', async () => {
+    vi.resetModules()
+    execFile.mockReset()
+    respond(() => Object.assign(new Error('Command failed: pgrep'), { code: 1 }))
+
+    await withPlatform('darwin', async () => {
+      const { isTraktorRunning } = await import('./traktorProcess')
+      await isTraktorRunning()
+    })
+
+    const pattern = new RegExp(execFile.mock.calls[0][1].at(-1), 'i')
+    expect(pattern.test('Traktor')).toBe(true)
+    expect(pattern.test('Traktor Pro')).toBe(true)
+    expect(pattern.test('Traktor Pro 4')).toBe(true)
+    expect(pattern.test('TraktorCueGridInspector')).toBe(false)
   })
 })
 
@@ -175,5 +213,27 @@ describe('quitTraktor', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  // Same root cause on the quit path. Asking System Events for every process whose name
+  // merely contains "Traktor" sent the quit to djotas's TraktorCueGridInspector, and macOS
+  // answered with a "Where is TraktorCueGridInspector?" locate dialog. The quit has to
+  // name the app the same way the running check recognises it.
+  it('does not ask a Traktor helper tool to quit', async () => {
+    vi.resetModules()
+    execFile.mockReset()
+    respond((cmd) =>
+      cmd === 'osascript'
+        ? { stdout: '' }
+        : Object.assign(new Error('Command failed: pgrep'), { code: 1 }),
+    )
+
+    await withPlatform('darwin', async () => {
+      const { quitTraktor } = await import('./traktorProcess')
+      return quitTraktor()
+    })
+
+    const script = execFile.mock.calls[0][1].join(' ')
+    expect(script).not.toContain('contains "Traktor"')
   })
 })
