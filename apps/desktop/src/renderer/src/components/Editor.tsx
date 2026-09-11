@@ -297,7 +297,7 @@ export const Editor = memo(function Editor({
   // against this track right away — everything downstream (onProcess, in-place
   // checks) works with a real OutputFormat, never the setting itself.
   const [format, setFormat] = useState(
-    resolveJobFormat(outputFormat, item.inputPath, 'aiff', keepMp3Sources),
+    resolveJobFormat(outputFormat, item.inputPath, 'aiff', keepMp3Sources, item.fromAppleMusic),
   )
   // The menu's raw pick, offered unresolved only in multi-select: 'source' means
   // nothing against the anchor track alone, so it must reach processAll as the
@@ -369,7 +369,7 @@ export const Editor = memo(function Editor({
       keepMp3Sources,
     }
     const seededFormat = formatSettingChanged
-      ? resolveJobFormat(outputFormat, item.inputPath, 'aiff', keepMp3Sources)
+      ? resolveJobFormat(outputFormat, item.inputPath, 'aiff', keepMp3Sources, item.fromAppleMusic)
       : format
     if (formatSettingChanged) {
       setFormat(seededFormat)

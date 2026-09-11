@@ -97,7 +97,8 @@
   "empty": {
     "title": "Añade pistas para empezar.",
     "subtitle": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp y Deezer, y las manda a Apple Music o Engine DJ.",
-    "subtitleNoMusic": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp y Deezer, y las manda a Engine DJ."
+    "subtitleNoMusic": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp y Deezer, y las manda a Engine DJ.",
+    "importApplePlaylist": "Importar de Apple Music"
   },
   "errors": {
     "unexpected": "Algo ha fallado: {{detail}}",
@@ -255,7 +256,8 @@
     "trimStartZoomIn": "Acercar la vista del corte de entrada",
     "trimStartZoomOut": "Alejar la vista del corte de entrada",
     "trimEndZoomIn": "Acercar la vista del corte de salida",
-    "trimEndZoomOut": "Alejar la vista del corte de salida"
+    "trimEndZoomOut": "Alejar la vista del corte de salida",
+    "importApplePlaylist": "Importar de Apple Music…"
   },
   "trackList": {
     "label": "Pistas",
@@ -818,27 +820,27 @@
     "keepMp3SourcesHint": "Convertir un MP3 a un formato sin pérdida no recupera calidad: el archivo solo ocupa más. Con esto activo, los MP3 no se convierten: las etiquetas se actualizan sobre el archivo original, allí donde está.",
     "mp3Quality": "Calidad MP3",
     "mp3Qualities": {
-      "320": "320",
-      "256": "256",
-      "192": "192",
-      "160": "160",
       "128": "128",
+      "160": "160",
+      "192": "192",
+      "256": "256",
+      "320": "320",
       "v0": "V0",
       "v2": "V2"
     },
     "mp3QualityHint": "Se aplica a todas las exportaciones MP3. Tasas CBR en kbps: 320 es el estándar de los pools de DJ; V0 y V2 son VBR (archivos más pequeños con calidad transparente). Un MP3 de origen nunca se recomprime.",
     "bitDepth": "Profundidad de bits",
     "bitDepths": {
-      "source": "Igual que el origen",
       "16": "16 bits",
-      "24": "24 bits"
+      "24": "24 bits",
+      "source": "Igual que el origen"
     },
     "bitDepthHint": "«Igual que el origen» conserva la profundidad exacta del archivo. Al reducir a 16 bits se aplica dither; un archivo ya en el formato de salida se copia sin reconvertir. Con “Igual que el origen”, un fichero con audio de 16 bits demostrado y rellenado a 24 se escribe como 16 bits reales, sin pérdidas.",
     "sampleRate": "Frecuencia de muestreo",
     "sampleRates": {
-      "source": "Igual que el origen",
       "44100": "44,1 kHz",
       "48000": "48 kHz",
+      "source": "Igual que el origen",
       "corrected": "Corregido"
     },
     "sampleRateHint": "«Igual que el origen» nunca remuestrea. Fija una frecuencia para unificar tu biblioteca. “Corregido” reescribe a 44.1 los ficheros medidos como upsampleados desde 44.1 kHz; los hi-res confirmados y los no verificados conservan su frecuencia (solo recodificaciones).",
@@ -1156,6 +1158,23 @@
     "traktorSyncBackupFailed": "Omitido: no se pudo hacer copia de seguridad de collection.nml",
     "traktorSyncNoMatches": "Omitido: ninguna de estas pistas está en la colección",
     "traktorSyncUnreadable": "Omitido: no se pudo leer collection.nml",
-    "traktorSyncWriteFailed": "Omitido: no se pudo escribir collection.nml"
+    "traktorSyncWriteFailed": "Omitido: no se pudo escribir collection.nml",
+    "appleMusicPlaylists": "Leyendo playlists de Apple Music",
+    "appleMusicPlaylistTracks": "Leyendo la playlist",
+    "playlistCount_one": "{{count}} playlist",
+    "playlistCount_other": "{{count}} playlists"
+  },
+  "applePlaylist": {
+    "title": "Importar de Apple Music",
+    "subtitle": "Surco carga los ficheros que la playlist tiene en tu disco.",
+    "search": "Buscar playlist",
+    "import": "Importar",
+    "none": "No hay playlists en tu biblioteca de Apple Music.",
+    "failed": "No se pudo leer tus playlists. Comprueba que Apple Music está abierto y que Surco tiene permiso para controlarlo.",
+    "imported_one": "{{count}} pista de «{{name}}»",
+    "imported_other": "{{count}} pistas de «{{name}}»",
+    "missing_one": "{{count}} sin fichero",
+    "missing_other": "{{count}} sin fichero",
+    "reading": "Leyendo la playlist…"
   }
 }

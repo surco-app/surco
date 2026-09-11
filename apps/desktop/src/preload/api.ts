@@ -6,6 +6,8 @@ import type {
   ActivityEvent,
   AppleMusicAddJob,
   AppleMusicLookupCandidate,
+  AppleMusicPlaylist,
+  AppleMusicPlaylistTracks,
   AppleMusicUpdateJob,
   BpmResult,
   CoverExportJob,
@@ -88,6 +90,11 @@ export interface Api {
   // osascript — to seed the membership index while the fresh dump runs. Null when
   // no snapshot exists yet (first run, or the file was unreadable).
   loadAppleMusicLibraryCached: () => Promise<AppleMusicLookupCandidate[] | null>
+  // The user's own Apple Music playlists, to pick one as a source of tracks. Empty off
+  // macOS, where the renderer never offers the import.
+  loadAppleMusicPlaylists: () => Promise<AppleMusicPlaylist[]>
+  // The files one playlist references, plus how many of its tracks have none.
+  loadAppleMusicPlaylistTracks: (persistentId: string) => Promise<AppleMusicPlaylistTracks>
   // The Engine DJ library's rows in the same candidate shape, for the same membership
   // check when Engine DJ is the conversion destination. Empty when no library exists.
   loadEngineLibrary: () => Promise<AppleMusicLookupCandidate[]>

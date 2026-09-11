@@ -3,6 +3,8 @@ import type { AudioAnalysisIpc } from '../shared/audioIpcContract'
 import type {
   ActivityEvent,
   AppleMusicLookupCandidate,
+  AppleMusicPlaylist,
+  AppleMusicPlaylistTracks,
   BpmResult,
   DockIconFrames,
   KeyResult,
@@ -94,6 +96,10 @@ const api: Api = {
     ipcRenderer.invoke('applemusic:library'),
   loadAppleMusicLibraryCached: (): Promise<AppleMusicLookupCandidate[] | null> =>
     ipcRenderer.invoke('applemusic:libraryCached'),
+  loadAppleMusicPlaylists: (): Promise<AppleMusicPlaylist[]> =>
+    ipcRenderer.invoke('applemusic:playlists'),
+  loadAppleMusicPlaylistTracks: (persistentId: string): Promise<AppleMusicPlaylistTracks> =>
+    ipcRenderer.invoke('applemusic:playlistTracks', persistentId),
   loadEngineLibrary: (): Promise<AppleMusicLookupCandidate[]> =>
     ipcRenderer.invoke('engine:library'),
   addToAppleMusic: (job) => ipcRenderer.invoke('applemusic:add', job),

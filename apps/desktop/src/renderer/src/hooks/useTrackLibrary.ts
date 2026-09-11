@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { SessionEdit, TrackMetadata } from '../../../shared/types'
+import type { AppleMusicTrackMeta, SessionEdit, TrackMetadata } from '../../../shared/types'
+import { fillFromAppleMusic } from '../lib/appleMusicFill'
 import { mapWithConcurrency } from '../lib/concurrency'
 import { trackSignature } from '../lib/dirty'
 import { parseFileName } from '../lib/filename'
@@ -77,6 +78,12 @@ interface Params {
   // to zero paths in expand.ts — leaving "there is nothing here" indistinguishable from
   // "I could not read it".
   onNoAudioFound: () => void
+  // What an Apple Music playlist import yielded: the playlist's name, how many rows it
+  // added, and how many of its tracks had no file on disk (streaming rows, undownloaded
+  // iCloud tracks). The missing count is reported rather than swallowed — a user who
+  // counts 128 in Music and sees 122 rows here has no way to tell which are absent or
+  // why, and that gap arrives later as a bug report nobody can reproduce.
+  onPlaylistImported?: (result: { name: string; imported: number; missing: number }) => void
   // How many files in a finished import batch failed their metadata read, so App can
   // say so — those rows silently showing only file-name data used to read as "this
   // file has no tags" when the real tags were just unreadable.
@@ -112,6 +119,9 @@ interface TrackLibrary {
   tracksRef: { readonly current: TrackItem[] }
   addPaths: (paths: string[], restore?: Record<string, SessionEdit>) => Promise<void>
   pickFiles: () => Promise<void>
+  // Loads the files one Apple Music playlist references. macOS only; the renderer does
+  // not offer it elsewhere.
+  importApplePlaylist: (persistentId: string, name: string) => Promise<void>
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   updateTracksMeta: (ids: string[], metaPatch: Partial<TrackMetadata>) => void
   patchTracks: (ids: string[], patch: Partial<TrackItem>) => void
@@ -137,6 +147,7 @@ export function useTrackLibrary({
   onMetaLoaded,
   onDuplicatesSkipped,
   onNoAudioFound,
+  onPlaylistImported,
   onMetaReadFailed,
   onPathsAdded,
 }: Params): TrackLibrary {
@@ -186,6 +197,17 @@ export function useTrackLibrary({
   // loaded. Buffering the appliers and flushing them in one prev.map keeps that work linear
   // in the file count. The applier still receives each row's live object, so a field the
   // user typed into mid-read keeps winning through mergeReadMeta exactly as before.
+  // What the Music database knows about each imported path, consumed by the read below.
+  // It rides here rather than on the row because the fill has to land ON the file's own
+  // tags — applied to the row instead, the async read would arrive later and overwrite it.
+  const appleMusicMeta = useRef(new Map<string, AppleMusicTrackMeta>())
+  // Fields to stamp on a row the moment it is created, keyed by path. A ref rather than an
+  // argument because the rows an import creates do not come from its own addPaths call:
+  // onExpandedBatch fires with the same paths first (see the streaming comment below), and
+  // the awaited call then dedupes against rows that already exist. A seed passed only to
+  // that late call reached no row at all — measured in the app, imported tracks arrived
+  // with no Apple Music identity and no format protection.
+  const pendingSeed = useRef(new Map<string, Partial<TrackItem>>())
   const metaPatchBuffer = useRef(new Map<string, (t: TrackItem) => TrackItem>())
   const metaFlushScheduled = useRef(false)
   const flushMetaPatches = useCallback((): void => {
@@ -263,7 +285,13 @@ export function useTrackLibrary({
     // tags, duration and cover as each file's read resolves. Reading metadata up front used
     // to block the whole drop behind the slowest file — on a cloud/network folder that's
     // seconds of an empty list that looks broken even though the import is running.
-    const bases = fresh.map((path) => ({ ...newTrack(path), loadingMeta: true }))
+    // Consumed here, so whichever call creates the row carries the stamp — and a path
+    // re-imported later starts clean rather than inheriting a stale mark.
+    const bases = fresh.map((path) => {
+      const seeded = pendingSeed.current.get(path)
+      pendingSeed.current.delete(path)
+      return { ...newTrack(path), loadingMeta: true, ...seeded }
+    })
     // Publish the new rows to the live view immediately rather than waiting for the render
     // that setTracks schedules. A folder walk pays out batches back-to-back, so two can land
     // in the same tick: React has not repainted between them, tracksRef still holds the crate
@@ -344,13 +372,20 @@ export function useTrackLibrary({
     try {
       const { tags, duration, cover, foreignTags } = await window.api.readMeta(path)
       const s = searchFromTags(parseFileName(path), tags)
-      const readMeta: TrackMetadata = {
-        ...base.meta,
-        ...tags,
-        title: s.title,
-        artist: s.artist,
-        albumArtist: tags.albumArtist || s.artist,
-      }
+      // Whatever Music knows that this file does not. Consumed once, like the restored
+      // edit above: a later start-over must rebuild from the file alone.
+      const fromMusic = appleMusicMeta.current.get(path)
+      appleMusicMeta.current.delete(path)
+      const readMeta: TrackMetadata = fillFromAppleMusic(
+        {
+          ...base.meta,
+          ...tags,
+          title: s.title,
+          artist: s.artist,
+          albumArtist: tags.albumArtist || s.artist,
+        },
+        fromMusic ?? {},
+      )
       const patch: Partial<TrackItem> = {
         query: s.query,
         duration: duration ?? undefined,
@@ -557,6 +592,28 @@ export function useTrackLibrary({
     addPaths(await window.api.expandPaths(await window.api.pickFiles()))
   }
 
+  // An Apple Music playlist is just another way to name a set of files: once read, the
+  // paths go through the very same expand-and-add path a drop or a picked folder takes,
+  // so every filter, dedupe and analysis behaves identically. Nothing downstream knows
+  // where the crate came from.
+  async function importApplePlaylist(persistentId: string, name: string): Promise<void> {
+    const { paths, persistentIds, meta, missing } =
+      await window.api.loadAppleMusicPlaylistTracks(persistentId)
+    for (const [path, entry] of Object.entries(meta ?? {})) {
+      appleMusicMeta.current.set(path, entry)
+    }
+    // Recorded BEFORE expanding: the expand stream can create the rows before the awaited
+    // call returns, and whichever gets there first must find the stamp waiting.
+    for (const path of paths) {
+      pendingSeed.current.set(path, {
+        fromAppleMusic: true,
+        ...(persistentIds?.[path] ? { musicPersistentId: persistentIds[path] } : {}),
+      })
+    }
+    await addPaths(await window.api.expandPaths(paths))
+    onPlaylistImported?.({ name, imported: paths.length, missing })
+  }
+
   const updateTrack = useCallback((id: string, patch: Partial<TrackItem>): void => {
     setTracks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
   }, [])
@@ -684,6 +741,7 @@ export function useTrackLibrary({
     tracksRef,
     addPaths,
     pickFiles,
+    importApplePlaylist,
     updateTrack,
     updateTracksMeta,
     patchTracks,
