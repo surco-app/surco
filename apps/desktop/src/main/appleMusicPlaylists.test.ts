@@ -24,6 +24,16 @@ describe('buildPlaylistDumpScript', () => {
   it('carries the persistent ID so the chosen playlist is re-found by identity, not by a name the user can rename mid-flow', () => {
     expect(buildPlaylistDumpScript()).toContain('persistent ID')
   })
+
+  it('counts each playlist one at a time, because the bulk form collapses to a single number', () => {
+    // Measured against Music on macOS 26: `count of tracks of every user playlist` does
+    // NOT return one count per playlist, it returns a single number (0 here). Indexing
+    // into that failed the whole dump with "Can't make item 1 of 0 into type Unicode
+    // text. (-1700)". Only a per-playlist read gives a count per row.
+    const script = buildPlaylistDumpScript()
+    expect(script).not.toContain('count of tracks of every user playlist')
+    expect(script).toContain('count of tracks of p')
+  })
 })
 
 describe('parsePlaylistDump', () => {
@@ -68,6 +78,37 @@ describe('buildPlaylistTracksScript', () => {
   it('returns empty for a playlist with no tracks rather than raising on the property of an empty list', () => {
     expect(buildPlaylistTracksScript('A1B2C3D4E5F60718')).toContain('is 0 then return ""')
   })
+
+  it('fetches the locations and IDs as whole lists, not one round trip per track', () => {
+    // Measured against Music on macOS 26 with a 400-track playlist: reading each track
+    // inside a repeat loop costs 14.34s, the same read as two bulk property fetches costs
+    // 1.39s for an identical result. Unlike `count of tracks`, these two DO return one
+    // item per track, so the bulk form is both correct and ten times cheaper.
+    const script = buildPlaylistTracksScript('A1B2C3D4E5F60718')
+    expect(script).toContain('location of every track')
+    expect(script).toContain('persistent ID of every track')
+  })
+
+  it('converts the alias to a POSIX path outside the Music tell block, where that coercion exists', () => {
+    // Measured against Music on macOS 26: `POSIX path of (location of t)` INSIDE a
+    // `tell application "Music"` block yields an empty string with no error — POSIX path
+    // is a system coercion, not one of Music's own. Every track then looked like it had
+    // no file, so a playlist of 400 real files imported nothing and reported all 400 as
+    // missing. The alias must leave the tell block before being coerced.
+    const lines = buildPlaylistTracksScript('A1B2C3D4E5F60718').split('\n')
+    // Walk the script tracking tell-block depth, and assert the POSIX coercion happens at
+    // depth zero. Counting `end tell` before it is not enough: a nested tell would also
+    // satisfy that while reintroducing the bug.
+    let depth = 0
+    let posixDepth: number | null = null
+    for (const line of lines) {
+      const t = line.trim()
+      if (t.startsWith('tell application')) depth += 1
+      if (t === 'end tell') depth -= 1
+      if (t.includes('POSIX path')) posixDepth = depth
+    }
+    expect(posixDepth).toBe(0)
+  })
 })
 
 describe('parsePlaylistTracks', () => {
@@ -108,8 +149,13 @@ describe('carrying each track back to its library entry', () => {
     })
   })
 
-  it('asks Music for the persistent ID alongside each location', () => {
-    expect(buildPlaylistTracksScript('A1B2C3D4E5F60718')).toContain('persistent ID of t')
+  it('pairs each ID with its own location by index, so a row never inherits a neighbour’s', () => {
+    // The two bulk fetches come back as parallel lists; the output line must join item i
+    // of one to item i of the other. Reading either with a fixed index would stamp every
+    // track with the first entry's identity.
+    const script = buildPlaylistTracksScript('A1B2C3D4E5F60718')
+    expect(script).toContain('item i of theLocs')
+    expect(script).toContain('item i of thePids')
   })
 
   it('keeps a path whose name contains a tab, peeling the ID off the end', () => {
