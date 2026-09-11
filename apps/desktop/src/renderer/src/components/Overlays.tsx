@@ -24,6 +24,9 @@ const WhatsNewModal = lazy(() =>
   import('./WhatsNewModal').then((m) => ({ default: m.WhatsNewModal })),
 )
 const HelpModal = lazy(() => import('./HelpModal').then((m) => ({ default: m.HelpModal })))
+const ApplePlaylistModal = lazy(() =>
+  import('./ApplePlaylistModal').then((m) => ({ default: m.ApplePlaylistModal })),
+)
 const LoudnessHelpModal = lazy(() =>
   import('./LoudnessHelpModal').then((m) => ({ default: m.LoudnessHelpModal })),
 )
@@ -66,6 +69,9 @@ interface Props {
   deriveTracksUndoable: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   revealSelection: (id: string) => void
+  // Loads an Apple Music playlist as a crate. macOS only; App passes it undefined
+  // elsewhere, and the overlay is never raised there.
+  importApplePlaylist?: (persistentId: string, name: string) => Promise<void>
 }
 
 // Every overlay the app can raise, and the one place that decides which is up. Split out of
@@ -89,6 +95,7 @@ export function Overlays({
   deriveTracksUndoable,
   updateTrack,
   revealSelection,
+  importApplePlaylist,
 }: Props): React.JSX.Element {
   // Each run bumps its command's counter, so the palette can float the user's habits up the
   // filtered list. It lived inline in the JSX prop below — a state write dressed as markup.
@@ -153,6 +160,17 @@ export function Overlays({
         />
       )}
       {activeModal?.type === 'export' && <ExportModal tracks={bulkTracks} onClose={close} />}
+      {activeModal?.type === 'applePlaylist' && importApplePlaylist && (
+        <ApplePlaylistModal
+          onPick={async (persistentId, name) => {
+            // Closed AFTER the read, not before: the dialog is what says it is working,
+            // and a big playlist takes seconds to answer.
+            await importApplePlaylist(persistentId, name)
+            close()
+          }}
+          onClose={close}
+        />
+      )}
       {activeModal?.type === 'confirm' && (
         <ConfirmDialog
           title={activeModal.confirm.title}

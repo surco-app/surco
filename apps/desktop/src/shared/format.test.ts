@@ -182,3 +182,35 @@ describe('batchKeepMp3', () => {
     expect(batchKeepMp3('aiff', 'aiff', false)).toBe(false)
   })
 })
+
+// Una pista importada de Apple Music no es un fichero suelto: es parte de una colección
+// que el usuario ya tiene ordenada, así que su formato se respeta como lo demás. Solo
+// cambia si el usuario elige un formato a mano.
+describe('resolveJobFormat con una pista importada de Apple Music', () => {
+  it('conserva el formato del origen mientras el ajuste sea el de por defecto', () => {
+    expect(resolveJobFormat('source', '/music/song.wav', 'aiff', false, true)).toBe('wav')
+    expect(resolveJobFormat('source', '/music/song.flac', 'aiff', false, true)).toBe('flac')
+    expect(resolveJobFormat('source', '/music/song.mp3', 'aiff', false, true)).toBe('mp3')
+  })
+
+  // El caso que lo motivó: un WAV importado ofrecía "Convertir a AIFF" sin que nadie lo
+  // hubiera pedido, reescribiendo un fichero que la biblioteca del usuario ya indexaba.
+  it('no convierte un WAV importado por el destino por defecto de la app', () => {
+    expect(resolveJobFormat('aiff', '/music/song.wav', 'aiff', false, true)).toBe('wav')
+  })
+
+  // Pero la elección del usuario manda sobre el respeto al original: si pide AIFF, es AIFF.
+  it('obedece un formato que el usuario eligió a mano', () => {
+    expect(resolveJobFormat('aiff', '/music/song.wav', 'aiff', false, true, true)).toBe('aiff')
+    expect(resolveJobFormat('flac', '/music/song.wav', 'aiff', false, true, true)).toBe('flac')
+  })
+
+  it('no toca las pistas que no vienen de Apple Music', () => {
+    expect(resolveJobFormat('aiff', '/music/song.wav', 'aiff', false, false)).toBe('aiff')
+  })
+
+  // keepMp3 sigue mandando sobre todo lo demás: un mp3 no se convierte a lossless nunca.
+  it('sigue conservando un mp3 cuando keepMp3 está activo', () => {
+    expect(resolveJobFormat('aiff', '/music/song.mp3', 'aiff', true, true, true)).toBe('mp3')
+  })
+})

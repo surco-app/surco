@@ -97,7 +97,8 @@
   "empty": {
     "title": "Füg Tracks hinzu, um loszulegen.",
     "subtitle": "Konvertiert deine Tracks in AIFF, WAV, FLAC, ALAC oder MP3, taggt sie mit Discogs, Bandcamp und Deezer und schickt sie an Apple Music oder Engine DJ.",
-    "subtitleNoMusic": "Konvertiert deine Tracks in AIFF, WAV, FLAC, ALAC oder MP3, taggt sie mit Discogs, Bandcamp und Deezer und schickt sie an Engine DJ."
+    "subtitleNoMusic": "Konvertiert deine Tracks in AIFF, WAV, FLAC, ALAC oder MP3, taggt sie mit Discogs, Bandcamp und Deezer und schickt sie an Engine DJ.",
+    "importApplePlaylist": "Aus Apple Music importieren"
   },
   "errors": {
     "unexpected": "Etwas ist schiefgelaufen: {{detail}}",
@@ -255,7 +256,8 @@
     "trimStartZoomIn": "Anfangsschnitt heranzoomen",
     "trimStartZoomOut": "Anfangsschnitt herauszoomen",
     "trimEndZoomIn": "Endschnitt heranzoomen",
-    "trimEndZoomOut": "Endschnitt herauszoomen"
+    "trimEndZoomOut": "Endschnitt herauszoomen",
+    "importApplePlaylist": "Aus Apple Music importieren…"
   },
   "trackList": {
     "label": "Tracks",
@@ -818,27 +820,27 @@
     "keepMp3SourcesHint": "Die Umwandlung einer MP3 in ein verlustfreies Format bringt keine Qualität zurück – die Datei wird nur größer. Ist dies aktiv, werden MP3s nicht konvertiert: Die Tags werden direkt in der Originaldatei aktualisiert.",
     "mp3Quality": "MP3-Qualität",
     "mp3Qualities": {
-      "320": "320",
-      "256": "256",
-      "192": "192",
-      "160": "160",
       "128": "128",
+      "160": "160",
+      "192": "192",
+      "256": "256",
+      "320": "320",
       "v0": "V0",
       "v2": "V2"
     },
     "mp3QualityHint": "Gilt für alle MP3-Exporte. CBR-Raten in kbit/s — 320 ist der Standard der DJ-Pools; V0 und V2 sind VBR (kleinere Dateien bei transparenter Qualität). Eine MP3-Quelle wird nie neu kodiert.",
     "bitDepth": "Bittiefe",
     "bitDepths": {
-      "source": "Wie die Quelle",
       "16": "16 Bit",
-      "24": "24 Bit"
+      "24": "24 Bit",
+      "source": "Wie die Quelle"
     },
     "bitDepthHint": "„Wie die Quelle“ behält die exakte Bittiefe der Datei. Beim Reduzieren auf 16 Bit wird Dithering angewendet; eine Datei im Zielformat wird ohne Neukodierung kopiert. Mit „Wie Quelle“ wird eine Datei mit nachweislich auf 24 Bit aufgefülltem 16-Bit-Audio verlustfrei als echte 16 Bit geschrieben.",
     "sampleRate": "Abtastrate",
     "sampleRates": {
-      "source": "Wie die Quelle",
       "44100": "44,1 kHz",
       "48000": "48 kHz",
+      "source": "Wie die Quelle",
       "corrected": "Korrigiert"
     },
     "sampleRateHint": "„Wie die Quelle“ resampelt nie. Lege eine Rate fest, um deine Bibliothek zu vereinheitlichen. „Korrigiert“ schreibt Dateien, die messbar von 44,1 kHz hochgerechnet wurden, wieder mit 44,1; bestätigtes Hi-Res und Unverifiziertes behält seine Rate (nur bei Neukodierung).",
@@ -1156,6 +1158,23 @@
     "traktorSyncBackupFailed": "Übersprungen: Sicherung von collection.nml fehlgeschlagen",
     "traktorSyncNoMatches": "Übersprungen: keiner dieser Tracks ist in der Sammlung",
     "traktorSyncUnreadable": "Übersprungen: collection.nml konnte nicht gelesen werden",
-    "traktorSyncWriteFailed": "Übersprungen: collection.nml konnte nicht geschrieben werden"
+    "traktorSyncWriteFailed": "Übersprungen: collection.nml konnte nicht geschrieben werden",
+    "appleMusicPlaylists": "Apple-Music-Playlists werden gelesen",
+    "appleMusicPlaylistTracks": "Playlist wird gelesen",
+    "playlistCount_one": "{{count}} Playlist",
+    "playlistCount_other": "{{count}} Playlists"
+  },
+  "applePlaylist": {
+    "title": "Aus Apple Music importieren",
+    "subtitle": "Surco lädt die Dateien, die die Playlist auf deiner Festplatte hat.",
+    "search": "Playlists suchen",
+    "import": "Importieren",
+    "none": "In deiner Apple-Music-Mediathek gibt es keine Playlists.",
+    "failed": "Deine Playlists konnten nicht gelesen werden. Prüfe, ob Apple Music geöffnet ist und Surco es steuern darf.",
+    "imported_one": "{{count}} Titel aus „{{name}}“",
+    "imported_other": "{{count}} Titel aus „{{name}}“",
+    "missing_one": "{{count}} ohne Datei",
+    "missing_other": "{{count}} ohne Datei",
+    "reading": "Playlist wird gelesen…"
   }
 }

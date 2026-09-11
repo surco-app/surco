@@ -148,6 +148,10 @@ export interface CommandDeps {
   // The sidebar's track-filter field — the `/` shortcut focuses this.
   trackSearchRef: { readonly current: HTMLInputElement | null }
   pickFiles: () => void
+  // Opens the Apple Music playlist picker. Undefined off macOS, where the command is
+  // not registered at all rather than shown disabled: nothing the user could configure
+  // would make it work there.
+  openApplePlaylist?: () => void
   selectAll: () => void
   askFillAll: () => void
   moveSelection: (delta: number) => void
@@ -284,6 +288,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     editorDeclickRef,
     trackSearchRef,
     pickFiles,
+    openApplePlaylist,
     selectAll,
     askFillAll,
     moveSelection,
@@ -340,6 +345,18 @@ export function buildCommands(deps: CommandDeps): Command[] {
       enabled: true,
       run: pickFiles,
     },
+    ...(openApplePlaylist
+      ? [
+          {
+            id: 'import-apple-playlist',
+            group: 'library' as const,
+            title: tr('commands.importApplePlaylist'),
+            hint: hintFor('import-apple-playlist'),
+            enabled: true,
+            run: openApplePlaylist,
+          },
+        ]
+      : []),
     {
       id: 'find-replace',
       group: 'tags',
@@ -729,6 +746,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
             selected.inputPath,
             'aiff',
             settings?.keepMp3Sources ?? false,
+            selected.fromAppleMusic,
           ),
         ),
       run: () => selected && addTrackToAppleMusic(selected.id),

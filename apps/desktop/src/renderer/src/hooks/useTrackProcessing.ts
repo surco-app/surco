@@ -194,7 +194,16 @@ export function useTrackProcessing({
       // received here is explicit and must travel untouched; only the branch that read
       // the setting applies keep. processAll pins the batch decision via the parameter.
       const keep = keepMp3 ?? (formatOverride === undefined && (settings?.keepMp3Sources ?? false))
-      const jobFormat = resolveJobFormat(pickedFormat, track.inputPath, 'aiff', keep)
+      // An imported track keeps its own format unless the user picked one by hand, which
+      // is exactly what formatOverride carries (see the comment above).
+      const jobFormat = resolveJobFormat(
+        pickedFormat,
+        track.inputPath,
+        'aiff',
+        keep,
+        track.fromAppleMusic,
+        formatOverride !== undefined,
+      )
       // Re-processing an edited (stale) track resets the Apple Music state too, since
       // the file it referred to is being rewritten — the user may want to add it again.
       // musicPersistentId deliberately survives the reset: it is what turns that next
