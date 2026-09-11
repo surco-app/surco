@@ -259,8 +259,9 @@ export function copyCueFrames(source: string, dest: string, shift?: CueShift): v
 // untouched. So nothing needs carrying over; the only case that needs work is a
 // trim, where the surviving comment now measures from a start the file no longer
 // has. Decode, re-anchor through the same parser MP3 uses, re-encode in place. A
-// tree that can't be re-anchored is cleared rather than left pointing at the
-// wrong beats, matching what the ID3 path does with a frame it must drop.
+// tree that can't be re-anchored is cleared only when the audio actually moved,
+// matching what the ID3 path does with a frame it must drop — see `movesAudio` in
+// applyCueShift for why a plain format change has to keep what it cannot parse.
 // Best-effort: cue handling never fails an otherwise good conversion.
 export function shiftFlacCues(file: string, shift?: CueShift): void {
   if (!shift) return
@@ -272,7 +273,8 @@ export function shiftFlacCues(file: string, shift?: CueShift): void {
       if (!xiph || !armored) return
       const patched = shiftTraktorCues(decodeBase91(armored), shift.shiftMs, shift.maxMs, shift.bpm)
       if (patched) xiph.setFieldAsStrings(FLAC_CUE_FIELD, encodeBase91(patched))
-      else xiph.removeField(FLAC_CUE_FIELD)
+      else if (shift.movesAudio) xiph.removeField(FLAC_CUE_FIELD)
+      else return
       f.save()
     } finally {
       f.dispose()
@@ -299,7 +301,10 @@ export function copyCuesToFlac(source: string, dest: string, shift?: CueShift): 
     // parses; without a trim it needs no re-anchoring, so it still crosses over verbatim,
     // but a trim has to drop it rather than ship cues pointing at the wrong beats — the
     // same bargain the ID3 path already strikes in applyCueShift.
-    const anchored = shift ? shiftTraktorCues(tree, shift.shiftMs, shift.maxMs, shift.bpm) : tree
+    // The calibration puts a shift on every MP3 crossing, so `movesAudio` is what keeps a
+    // plain format change from discarding a tree this build merely cannot parse.
+    const patched = shift ? shiftTraktorCues(tree, shift.shiftMs, shift.maxMs, shift.bpm) : tree
+    const anchored = patched ?? (shift?.movesAudio ? null : tree)
     if (!anchored) return
 
     const out = TagFile.createFromPath(dest)
@@ -333,7 +338,11 @@ export function copyCuesFromFlac(source: string, dest: string, shift?: CueShift)
     if (!tree) return
     // Same bargain as the siblings: a trim moved the audio under the stored positions, and
     // a tree that cannot be re-anchored is dropped rather than left pointing at wrong beats.
-    const anchored = shift ? shiftTraktorCues(tree, shift.shiftMs, shift.maxMs, shift.bpm) : tree
+    // Without a move there is nothing to invalidate, so an unparseable tree crosses over as
+    // it arrived — this path clears the destination's frames below, so dropping it here
+    // would leave the file with no cues at all.
+    const patched = shift ? shiftTraktorCues(tree, shift.shiftMs, shift.maxMs, shift.bpm) : tree
+    const anchored = patched ?? (shift?.movesAudio ? null : tree)
 
     const out = TagFile.createFromPath(dest)
     try {
