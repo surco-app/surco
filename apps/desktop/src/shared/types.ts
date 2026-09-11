@@ -611,12 +611,32 @@ export interface AppleMusicPlaylist {
 // What one playlist yields when imported: the files it references, and how many of its
 // tracks have none (Apple Music streaming rows, iCloud tracks not downloaded). The count
 // travels so the app can say why fewer rows arrived than the playlist claims.
+// What the Music database knows about a track that its file may not. Measured on a real
+// library: an untagged WAV carries title/artist/album/year/genre and nothing else, while
+// Music holds the grouping, the artwork and the stars the user set. Every field is
+// optional — absent means Music had nothing, and the file's own tag stands.
+export interface AppleMusicTrackMeta {
+  grouping?: string
+  year?: string
+  comment?: string
+  trackNumber?: string
+  discNumber?: string
+  bpm?: string
+  // 0-100 as Music scales it, and only when the user set it: Music also reports a rating
+  // it computed itself (`rating kind: computed`), which is not an opinion to write into
+  // anyone's files.
+  rating?: number
+}
+
 export interface AppleMusicPlaylistTracks {
   paths: string[]
   // Each imported file keyed to the persistent ID of the Music entry it came from, so a
   // later conversion updates THAT library copy instead of adding a second one. A track
   // Music reported no ID for simply has no key.
   persistentIds: Record<string, string>
+  // What Music knows, keyed by file path. Fills the gaps the file leaves; where both hold
+  // a value the file wins, because the file is what the user's other tools read.
+  meta: Record<string, AppleMusicTrackMeta>
   missing: number
 }
 

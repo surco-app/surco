@@ -1729,6 +1729,7 @@ export default function App(): React.JSX.Element {
                         selectedIds={selectedIds}
                         selectedPosition={selectedPosition}
                         onAdd={onAdd}
+                        onImportApplePlaylist={isMac ? overlays.openApplePlaylist : undefined}
                         onSelectAllTracks={onSelectAllTracks}
                         scrollToSelected={scrollToSelected}
                         onFillAll={onFillAll}

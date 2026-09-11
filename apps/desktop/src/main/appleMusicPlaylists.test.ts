@@ -6,6 +6,14 @@ import {
   parsePlaylistTracks,
 } from './appleMusicPlaylists'
 
+// Fields are unit-separated and rows record-separated, matching what the script emits:
+// grouping and comment are user-typed and can hold both a tab and a newline.
+const US = '\u001f'
+const RS = '\u001e'
+function trackRow(path: string, persistentId = ''): string {
+  return [path, persistentId, '', '0', '', '0', '0', '0', '0', 'computed'].join(US)
+}
+
 describe('buildPlaylistDumpScript', () => {
   it('reads the user playlists only, so the whole library and the smart folders Music ships with are not offered as crates', () => {
     const script = buildPlaylistDumpScript()
@@ -113,24 +121,33 @@ describe('buildPlaylistTracksScript', () => {
 
 describe('parsePlaylistTracks', () => {
   it('returns the POSIX paths of the tracks that have a file', () => {
-    const out = parsePlaylistTracks('/Users/dj/Music/a.aiff\n/Users/dj/Music/b.flac')
+    const out = parsePlaylistTracks(
+      [trackRow('/Users/dj/Music/a.aiff'), trackRow('/Users/dj/Music/b.flac')].join(RS),
+    )
     expect(out.paths).toEqual(['/Users/dj/Music/a.aiff', '/Users/dj/Music/b.flac'])
   })
 
   it('counts the tracks with no file instead of dropping them silently, so the status bar can say why fewer rows arrived', () => {
     // A user who counts 128 in Music and sees 122 in Surco has no way to tell which
     // six are missing or why. The count is what lets the app say it out loud.
-    const out = parsePlaylistTracks('/Users/dj/Music/a.aiff\n\n\n/Users/dj/Music/b.flac')
+    const out = parsePlaylistTracks(
+      [
+        trackRow('/Users/dj/Music/a.aiff'),
+        trackRow(''),
+        trackRow(''),
+        trackRow('/Users/dj/Music/b.flac'),
+      ].join(RS),
+    )
     expect(out.paths).toHaveLength(2)
     expect(out.missing).toBe(2)
   })
 
   it('reports zero missing when every track has a file', () => {
-    expect(parsePlaylistTracks('/Users/dj/a.aiff').missing).toBe(0)
+    expect(parsePlaylistTracks(trackRow('/Users/dj/a.aiff')).missing).toBe(0)
   })
 
   it('ignores a trailing newline rather than counting it as a track with no file', () => {
-    const out = parsePlaylistTracks('/Users/dj/a.aiff\n')
+    const out = parsePlaylistTracks(`${trackRow('/Users/dj/a.aiff')}${RS}`)
     expect(out.paths).toHaveLength(1)
     expect(out.missing).toBe(0)
   })
@@ -141,7 +158,11 @@ describe('carrying each track back to its library entry', () => {
     // Without this, converting an imported track adds a SECOND entry to the library
     // instead of updating the one it came from: the update path keys off the persistent
     // ID, and a track imported without one looks to Surco like a file it has never seen.
-    const out = parsePlaylistTracks('/m/a.aiff\tA1B2C3D4E5F60718\n/m/b.flac\tFFEEDDCCBBAA9988')
+    const out = parsePlaylistTracks(
+      [trackRow('/m/a.aiff', 'A1B2C3D4E5F60718'), trackRow('/m/b.flac', 'FFEEDDCCBBAA9988')].join(
+        RS,
+      ),
+    )
     expect(out.paths).toEqual(['/m/a.aiff', '/m/b.flac'])
     expect(out.persistentIds).toEqual({
       '/m/a.aiff': 'A1B2C3D4E5F60718',
@@ -158,8 +179,8 @@ describe('carrying each track back to its library entry', () => {
     expect(script).toContain('item i of thePids')
   })
 
-  it('keeps a path whose name contains a tab, peeling the ID off the end', () => {
-    const out = parsePlaylistTracks('/m/od\td.aiff\tA1B2C3D4E5F60718')
+  it('keeps a path whose name contains a tab, which the unit separator makes harmless', () => {
+    const out = parsePlaylistTracks(trackRow('/m/od\td.aiff', 'A1B2C3D4E5F60718'))
     expect(out.paths).toEqual(['/m/od\td.aiff'])
     expect(out.persistentIds['/m/od\td.aiff']).toBe('A1B2C3D4E5F60718')
   })
@@ -170,13 +191,19 @@ describe('carrying each track back to its library entry', () => {
     // keeps the FIRST row, so the map has to keep the first entry's ID; taking the last
     // would stamp the surviving row with the identity of an entry that was dropped, and a
     // later conversion would update the wrong library copy.
-    const out = parsePlaylistTracks('/m/a.aiff\tA1B2C3D4E5F60718\n/m/a.aiff\tFFEEDDCCBBAA9988')
+    const out = parsePlaylistTracks(
+      [trackRow('/m/a.aiff', 'A1B2C3D4E5F60718'), trackRow('/m/a.aiff', 'FFEEDDCCBBAA9988')].join(
+        RS,
+      ),
+    )
     expect(out.paths).toEqual(['/m/a.aiff'])
     expect(out.persistentIds['/m/a.aiff']).toBe('A1B2C3D4E5F60718')
   })
 
   it('still counts a track with no file, which carries no path to key an ID on', () => {
-    const out = parsePlaylistTracks('/m/a.aiff\tA1B2C3D4E5F60718\n\t0011223344556677')
+    const out = parsePlaylistTracks(
+      [trackRow('/m/a.aiff', 'A1B2C3D4E5F60718'), trackRow('', '0011223344556677')].join(RS),
+    )
     expect(out.paths).toHaveLength(1)
     expect(out.missing).toBe(1)
   })
