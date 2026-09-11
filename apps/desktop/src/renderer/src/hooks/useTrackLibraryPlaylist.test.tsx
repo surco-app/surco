@@ -128,6 +128,39 @@ describe('importing an Apple Music playlist', () => {
     expect(b.musicPersistentId).toBeUndefined()
   })
 
+  it('marks the rows even when the expand stream creates them first', async () => {
+    // Measured in the real app: the rows the import creates come from onExpandedBatch,
+    // which fires with the same paths BEFORE the awaited expandPaths resolves. The later
+    // call then dedupes against rows that already exist, so a seed passed only to it never
+    // reached a single row — the imported tracks arrived with no Apple Music identity and
+    // no format protection at all.
+    let fire: ((paths: string[]) => void) | undefined
+    const { result } = setup({
+      onExpandedBatch: vi.fn((cb: (paths: string[]) => void) => {
+        fire = cb
+        return () => {}
+      }),
+      expandPaths: vi.fn(async (paths: string[]) => {
+        fire?.(paths)
+        return paths
+      }),
+      loadAppleMusicPlaylistTracks: vi.fn().mockResolvedValue({
+        paths: ['/m/a.wav'],
+        persistentIds: { '/m/a.wav': 'A1B2C3D4E5F60718' },
+        meta: {},
+        missing: 0,
+      }),
+    })
+
+    await act(async () => {
+      await result.current.importApplePlaylist('DC2C573644EF7017', 'Chocolate')
+    })
+
+    expect(result.current.tracks).toHaveLength(1)
+    expect(result.current.tracks[0].fromAppleMusic).toBe(true)
+    expect(result.current.tracks[0].musicPersistentId).toBe('A1B2C3D4E5F60718')
+  })
+
   it('fills the editor with what Music knows and the file does not', async () => {
     // The user's WAVs carry no grouping; Music holds the one they filed the track under.
     // Reading only the file showed an empty field for something clearly filled in Music.

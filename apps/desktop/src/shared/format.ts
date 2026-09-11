@@ -65,8 +65,23 @@ export function resolveJobFormat(
   inputPath: string,
   fallback: OutputFormat,
   keepMp3 = false,
+  // True for a track loaded from an Apple Music playlist. Such a track is not a loose
+  // file: it belongs to a collection the user has already organised, so its format is
+  // respected the way its tags are. A WAV imported that way used to offer "Convert to
+  // AIFF" off the app's default destination, rewriting a file the user's library already
+  // indexed without anyone asking for it.
+  fromAppleMusic = false,
+  // True once the user picked a format by hand for this job. Their choice wins over the
+  // respect for the original: asking for AIFF means AIFF, imported or not.
+  formatChosen = false,
 ): OutputFormat {
   if (keepMp3 && formatMatchesInput('mp3', inputPath)) return 'mp3'
+  if (fromAppleMusic && !formatChosen) {
+    const own = (Object.keys(INPUT_EXT) as OutputFormat[]).find((f) =>
+      formatMatchesInput(f, inputPath),
+    )
+    if (own) return own
+  }
   if (setting !== 'source') return setting
   const match = (Object.keys(INPUT_EXT) as OutputFormat[]).find((f) =>
     formatMatchesInput(f, inputPath),

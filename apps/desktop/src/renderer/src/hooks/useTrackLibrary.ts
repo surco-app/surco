@@ -201,6 +201,13 @@ export function useTrackLibrary({
   // It rides here rather than on the row because the fill has to land ON the file's own
   // tags — applied to the row instead, the async read would arrive later and overwrite it.
   const appleMusicMeta = useRef(new Map<string, AppleMusicTrackMeta>())
+  // Fields to stamp on a row the moment it is created, keyed by path. A ref rather than an
+  // argument because the rows an import creates do not come from its own addPaths call:
+  // onExpandedBatch fires with the same paths first (see the streaming comment below), and
+  // the awaited call then dedupes against rows that already exist. A seed passed only to
+  // that late call reached no row at all — measured in the app, imported tracks arrived
+  // with no Apple Music identity and no format protection.
+  const pendingSeed = useRef(new Map<string, Partial<TrackItem>>())
   const metaPatchBuffer = useRef(new Map<string, (t: TrackItem) => TrackItem>())
   const metaFlushScheduled = useRef(false)
   const flushMetaPatches = useCallback((): void => {
@@ -232,10 +239,6 @@ export function useTrackLibrary({
     paths: string[],
     restore?: Record<string, SessionEdit>,
     streamed = false,
-    // Fields to stamp on a freshly created row, keyed by its path. Used by the Apple Music
-    // import to carry each track's library identity, so a later conversion updates the
-    // entry it came from instead of adding a second copy of the song.
-    seed?: Record<string, Partial<TrackItem>>,
   ): Promise<void> {
     // Read the live list, not the render snapshot: the native picker can sit open for
     // a long time, and a file that arrived through the OS meanwhile must still dedupe.
@@ -282,7 +285,13 @@ export function useTrackLibrary({
     // tags, duration and cover as each file's read resolves. Reading metadata up front used
     // to block the whole drop behind the slowest file — on a cloud/network folder that's
     // seconds of an empty list that looks broken even though the import is running.
-    const bases = fresh.map((path) => ({ ...newTrack(path), loadingMeta: true, ...seed?.[path] }))
+    // Consumed here, so whichever call creates the row carries the stamp — and a path
+    // re-imported later starts clean rather than inheriting a stale mark.
+    const bases = fresh.map((path) => {
+      const seeded = pendingSeed.current.get(path)
+      pendingSeed.current.delete(path)
+      return { ...newTrack(path), loadingMeta: true, ...seeded }
+    })
     // Publish the new rows to the live view immediately rather than waiting for the render
     // that setTracks schedules. A folder walk pays out batches back-to-back, so two can land
     // in the same tick: React has not repainted between them, tracksRef still holds the crate
@@ -593,11 +602,15 @@ export function useTrackLibrary({
     for (const [path, entry] of Object.entries(meta ?? {})) {
       appleMusicMeta.current.set(path, entry)
     }
-    const seed: Record<string, Partial<TrackItem>> = {}
-    for (const [path, id] of Object.entries(persistentIds ?? {})) {
-      seed[path] = { musicPersistentId: id }
+    // Recorded BEFORE expanding: the expand stream can create the rows before the awaited
+    // call returns, and whichever gets there first must find the stamp waiting.
+    for (const path of paths) {
+      pendingSeed.current.set(path, {
+        fromAppleMusic: true,
+        ...(persistentIds?.[path] ? { musicPersistentId: persistentIds[path] } : {}),
+      })
     }
-    await addPaths(await window.api.expandPaths(paths), undefined, false, seed)
+    await addPaths(await window.api.expandPaths(paths))
     onPlaylistImported?.({ name, imported: paths.length, missing })
   }
 

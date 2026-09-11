@@ -746,6 +746,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
             selected.inputPath,
             'aiff',
             settings?.keepMp3Sources ?? false,
+            selected.fromAppleMusic,
           ),
         ),
       run: () => selected && addTrackToAppleMusic(selected.id),

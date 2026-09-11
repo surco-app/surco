@@ -173,6 +173,12 @@ export interface TrackItem {
   // add. Later syncs update (and reveals select) that exact copy — without it a
   // re-add after editing would duplicate the song in the library.
   musicPersistentId?: string
+  // Loaded from an Apple Music playlist rather than dropped as a loose file. It marks a
+  // track that belongs to a collection the user has already organised, so Surco respects
+  // what is there: the format stays the source's unless the user picks another by hand
+  // (see resolveJobFormat), the same way the file's own tags win over what Music holds.
+  // Distinct from musicPersistentId, which a track also earns by being ADDED to Music.
+  fromAppleMusic?: boolean
   // Set when a conversion registered this track in the Engine DJ library — the Engine
   // counterpart of musicPersistentId's "Surco itself added it, owned by definition",
   // so the row reads in-library before the Engine snapshot refreshes.
