@@ -3,7 +3,11 @@ import { pushToast } from './toastQueue'
 
 // The two things an import reports after the fact. Separate keys so a drop that both
 // skips duplicates and fails a read still shows both cards.
-type ImportNotice = 'meta-read-failed' | 'duplicates-skipped' | 'no-audio-found'
+type ImportNotice =
+  | 'meta-read-failed'
+  | 'duplicates-skipped'
+  | 'no-audio-found'
+  | 'playlist-imported'
 
 // A folder walk streams one batch per DIRECTORY (see expand.ts), and every batch closes
 // its own counter cycle — so these fired once per folder, not once per import. On a crate
