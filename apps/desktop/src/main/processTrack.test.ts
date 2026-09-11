@@ -218,6 +218,39 @@ describe('runProcessTrack — output conflict', () => {
     expect(deps.recordConversion).not.toHaveBeenCalled()
   })
 
+  // Keeping both is a promise about the file already in the folder, and in overwrite
+  // mode it has to become a promise about the source too: the conversion no longer
+  // lands on the source's own path, so unlinking it would delete a third file the
+  // dialog never mentioned. besideOriginal already guards this with inPlace false.
+  it('keeps the source when overwrite mode steps aside for keep-both', async () => {
+    const deps = makeDeps({
+      settings: settings({ overwriteOriginal: true }),
+      existsSync: vi.fn((p) => p === '/in/Artist - Title.aiff'),
+      confirmConflict: vi.fn(async () => 'keepBoth' as const),
+    })
+
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result.outputPath).toBe('/in/Artist - Title (2).aiff')
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+  })
+
+  // The same step-aside, reached by the other door: overwrite was chosen but the path
+  // is only reserved by another job in this run, so this one moves to "(2)" as well.
+  it('keeps the source when overwrite steps aside for a reservation', async () => {
+    const deps = makeDeps({
+      settings: settings({ overwriteOriginal: true }),
+      existsSync: vi.fn(() => false),
+      isPathReserved: vi.fn((p) => p === '/in/Artist - Title.aiff'),
+      confirmConflict: vi.fn(async () => 'overwrite' as const),
+    })
+
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result.outputPath).toBe('/in/Artist - Title (2).aiff')
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+  })
+
   it('writes to a free "(2)" name when the user keeps both', async () => {
     const deps = conflicting()
     deps.confirmConflict = vi.fn(async () => 'keepBoth' as const)
