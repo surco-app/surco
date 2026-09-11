@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 2026-09-09** (v0.95.0). Levantado por primera vez el
+**Última revisión: 2026-09-11** (v0.96.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -659,7 +659,57 @@ entrada de «Rocket Man» fue el bug que motivó esta guarda (`assign.ts:44-48`)
 
 ---
 
-## 10. Destinos
+## 10. Orígenes
+
+Además de arrastrar ficheros o elegir una carpeta, en macOS se puede cargar una
+**lista de reproducción de Apple Music** (`appleMusicPlaylists.ts`). Fuera de macOS
+el botón no existe — no se enseña deshabilitado, porque no hay nada que el usuario
+pueda configurar para que funcione, igual que el destino de Apple Music.
+
+Se ofrecen solo las listas del usuario (`every user playlist`): la biblioteca entera
+no es una selección, y las listas inteligentes que Music trae de fábrica son consultas.
+
+**Qué se importa:** los ficheros que la lista referencia en disco. Las pistas en
+streaming y las de iCloud sin descargar no tienen fichero: se cuentan y se dicen en
+el aviso posterior, en vez de desaparecer en silencio.
+
+**La pista conserva su formato.** Una pista importada es parte de una colección que
+el usuario ya tiene ordenada, así que el botón dice «Actualizar» y reescribe el mismo
+formato en vez de convertir al destino por defecto. Solo convierte si el usuario elige
+un formato a mano (`format.ts:79`).
+
+**Se rellena lo que el fichero no trae.** Grouping, año, comentario, nº de pista y
+disco, BPM y rating se leen también de Music y llenan los campos vacíos
+(`appleMusicFill.ts:31`). **Manda siempre el fichero**: es lo que leen los demás
+programas del usuario. Medido sobre una biblioteca real: un WAV sin etiquetar lleva
+título, artista, álbum, año y género, mientras Music guarda además el grouping.
+
+**El rating solo viaja si lo puso el usuario.** Music calcula uno propio y lo reporta
+igual (`rating kind: computed`); en una lista real de 400 pistas, ninguna tenía rating
+propio. Importar los calculados estamparía estrellas que nadie dio.
+
+**Cada pista queda atada a su entrada de Music** por su persistent ID, así que
+convertirla actualiza esa entrada en vez de añadir una segunda copia de la canción.
+
+**Tres trampas de AppleScript, medidas contra Music en macOS 26:**
+
+- `count of tracks of every user playlist` **no devuelve una lista**, sino un único
+  número: indexarlo tumbaba el volcado entero con «Can't make item 1 of 0 into type
+  Unicode text. (-1700)». Se cuenta lista a lista (`appleMusicPlaylists.ts:12`).
+- `POSIX path` dentro del bloque `tell application "Music"` devuelve cadena vacía
+  **sin error**: es una coerción del sistema, no de Music. Cada pista parecía no tener
+  fichero, y una lista de 400 ficheros reales importaba 0 (`appleMusicPlaylists.ts:66`).
+- Leer pista a pista cuesta **10x**: 14,34 s contra 1,39 s en una lista de 400, con el
+  mismo resultado. Se piden las propiedades en bloque; aun así una de 982 tarda ~14 s,
+  así que el diálogo dice que está leyendo en vez de cerrarse mudo.
+
+Los campos viajan separados por los caracteres de control *unit separator* y *record
+separator*, no por tabulador y salto de línea: el grouping y el comentario los escribe
+el usuario y pueden contener ambos (`appleMusicPlaylists.ts:145`).
+
+---
+
+## 11. Destinos
 
 ### Apple Music (solo macOS)
 
@@ -819,7 +869,7 @@ El propio código lo califica: **es un indicio, no una garantía**
 
 ---
 
-## 11. La aplicación
+## 12. La aplicación
 
 ### Recuperación de sesión
 
@@ -895,7 +945,7 @@ comparación»* (`useDeclickAb.ts:60-67`).
 
 ---
 
-## 12. Lo que NO se puede afirmar
+## 13. Lo que NO se puede afirmar
 
 Recopilado de los cinco informes. Cada punto está verificado.
 

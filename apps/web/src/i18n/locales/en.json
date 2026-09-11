@@ -134,6 +134,10 @@
             "d": "It writes that into its own frame, invisible to almost every other tool."
           },
           {
+            "t": "Bring in an Apple Music playlist",
+            "d": "Load the playlist and work on its files. It keeps their format and fills in what only lives in Music, like the grouping. macOS only."
+          },
+          {
             "t": "Tags other programs left",
             "d": "Inspect them and remove them one by one, or wipe the whole sheet."
           },
