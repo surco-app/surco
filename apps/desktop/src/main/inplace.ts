@@ -93,13 +93,21 @@ export function resolveOutputTarget(
 // the target "existing" is the point, not a collision. An in-place RENAME gets no
 // such pass — its target can be an unrelated neighbour, and the clobber would chain
 // into removeRenamedOriginal deleting the source too.
+//
+// The previous-output pass yields to `claimedByAnotherJob`. A reservation on that
+// path can only belong to a sibling in this same run (the caller reserves after this
+// check), and an earlier overwrite can leave two rows sharing one previousOutputPath
+// — without this both would skip the prompt and rename over each other, the silent
+// loss outputReservations exists to prevent.
 export function isOutputConflict(
   outputPath: string,
   previousOutputPath: string | undefined,
   outputExists: boolean,
   outputIsInput: boolean,
+  claimedByAnotherJob = false,
 ): boolean {
-  return outputExists && !outputIsInput && outputPath !== previousOutputPath
+  if (outputIsInput) return false
+  return outputExists && (claimedByAnotherJob || outputPath !== previousOutputPath)
 }
 
 // Finds the first free "name (n).ext" beside a taken path, so "keep both" never

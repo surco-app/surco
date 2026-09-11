@@ -374,6 +374,32 @@ describe('runProcessTrack — output conflict', () => {
     expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
   })
 
+  // The re-export pass lets a track overwrite its own previous output without a
+  // prompt. That pass has to yield to a live claim: if an earlier run resolved two
+  // tracks to one name and the user overwrote, both rows carry the same
+  // previousOutputPath, and re-converting the pair let each one skip the check and
+  // rename over the other — "2 converted", one file on disk.
+  it('does not let the previous-output pass ride over another job\'s claim', async () => {
+    const reservations = createOutputReservations(false)
+    const deps = makeDeps({
+      isPathReserved: reservations.isReserved,
+      reservePath: reservations.reserve,
+      releasePath: reservations.release,
+      confirmConflict: vi.fn(async () => 'keepBoth' as const),
+    })
+
+    // The sibling job claimed the shared destination and has not written it yet.
+    reservations.reserve('/out/Artist - Title.aiff')
+
+    const result = await runProcessTrack(
+      job({ previousOutputPath: '/out/Artist - Title.aiff' }),
+      deps,
+    )
+
+    expect(deps.confirmConflict).toHaveBeenCalledWith('Artist - Title.aiff')
+    expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
+  })
+
   it('releases the reservation once the job settles, success or failure', async () => {
     const deps = makeDeps()
     await runProcessTrack(job(), deps)

@@ -194,6 +194,7 @@ export async function runProcessTrack(
         job.previousOutputPath,
         deps.existsSync(outputPath) || deps.isPathReserved(outputPath),
         inPlace && (await deps.isSameFile(job.inputPath, outputPath)),
+        deps.isPathReserved(outputPath),
       )
     ) {
       const choice = await deps.confirmConflict(basename(outputPath))
