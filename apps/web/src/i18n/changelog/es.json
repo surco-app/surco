@@ -5,6 +5,18 @@
     "title": "Prueba lo nuevo antes que nadie, si quieres",
     "items": [
       {
+        "text": "Convertir ya no puede dejarte sin una pista cuando el destino ya está ocupado. Si elegías sustituir el original y Surco tenía que apartar el fichero a un nombre con «(n)», borraba de todos modos el de partida: acababas con un tercer fichero que el aviso no mencionaba y sin la pista que querías conservar. También se avisa ahora cuando dos pistas del mismo lote iban a escribir sobre la misma ruta, que antes se pisaban en silencio y el resumen las daba las dos por convertidas.",
+        "in": "0.95.6"
+      },
+      {
+        "text": "Los cues que Surco no sabe leer sobreviven ya también en los FLAC. Esto se arregló para MP3 y AIFF en la versión anterior, pero las rutas del FLAC seguían descartándolos, así que un MP3 convertido a FLAC perdía el árbol de marcas de otro programa aunque el audio no se moviera.",
+        "in": "0.95.6"
+      },
+      {
+        "text": "Las estrellas de un FLAC dicen lo mismo en Surco que en el resto de programas. El fichero guarda la puntuación en dos campos y Surco sólo actualizaba uno, así que podías ver 2 estrellas aquí y 5 en otro sitio, y borrarlas dejaba las viejas puestas en el campo olvidado.",
+        "in": "0.95.6"
+      },
+      {
         "text": "Los cue points caen ya donde los ves en Traktor al convertir desde o hacia MP3. Traktor dibujaba el marcador unos 51 ms desplazado en esos cruces, y ahora Surco lo compensa solo, sin que tengas que tocar nada. El ajuste manual sigue estando aparte y parte de cero, por si quieres afinarlo a tu gusto.",
         "in": "0.95.5"
       },
