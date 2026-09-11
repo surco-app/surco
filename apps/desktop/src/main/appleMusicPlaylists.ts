@@ -13,14 +13,16 @@ export function buildPlaylistDumpScript(): string {
     // list, so asking for a property of every item of one raises -1728 and would fail
     // the whole dialog on a library with no playlists instead of opening it empty.
     '  if (count of userPlaylists) is 0 then return ""',
-    '  set theNames to name of every user playlist',
-    '  set theCounts to count of tracks of every user playlist',
-    '  set thePids to persistent ID of every user playlist',
+    '  set out to {}',
+    // Read one playlist at a time rather than three bulk property fetches. The names and
+    // IDs would come back as lists, but `count of tracks of every user playlist` collapses
+    // to a SINGLE number (measured against Music on macOS 26: it returns 0), so indexing
+    // into it failed the whole dump with "Can't make item 1 of 0 into type Unicode text.
+    // (-1700)". A per-playlist read is the only form that yields a count per row.
+    '  repeat with p in userPlaylists',
+    '    set end of out to (name of p) & tab & (count of tracks of p) & tab & (persistent ID of p)',
+    '  end repeat',
     'end tell',
-    'set out to {}',
-    'repeat with i from 1 to count of theNames',
-    '  set end of out to (item i of theNames) & tab & (item i of theCounts) & tab & (item i of thePids)',
-    'end repeat',
     "set AppleScript's text item delimiters to linefeed",
     'return out as text',
   ].join('\n')
@@ -62,27 +64,35 @@ export function buildPlaylistTracksScript(persistentId: string): string {
     'tell application "Music"',
     `  set theLists to (every user playlist whose persistent ID is ${JSON.stringify(persistentId)})`,
     '  if (count of theLists) is 0 then return ""',
-    '  set theTracks to every track of item 1 of theLists',
-    '  if (count of theTracks) is 0 then return ""',
-    'end tell',
-    'set out to {}',
-    'repeat with t in theTracks',
-    // A playlist mixes the user's own files with Apple Music streaming tracks, which
-    // carry no file: `location` raises on those, and an unguarded read would abort an
-    // import of a hundred real files over one streaming row. An empty line stands for
-    // "no file" so the caller can count them rather than never learn they existed.
-    '  set loc to ""',
-    '  set pid to ""',
-    '  try',
-    '    tell application "Music" to set loc to POSIX path of (location of t)',
-    '  end try',
+    '  set theList to item 1 of theLists',
+    '  if (count of every track of theList) is 0 then return ""',
+    // Two bulk property fetches rather than a round trip per track: measured against Music
+    // on macOS 26, a 400-track playlist costs 14.34s read one track at a time and 1.39s
+    // read this way, for an identical result. Unlike `count of tracks` (see the dump
+    // script), these two really do return one item per track.
+    //
+    // A playlist mixes the user's own files with Apple Music streaming rows, which carry
+    // no file at all: those come back as `missing value` here and become an empty path
+    // below, so the caller can count them rather than never learn they existed.
+    '  set theLocs to location of every track of theList',
     // The entry's identity travels with its file so a conversion can update THAT library
     // copy instead of adding a second one. Without it an imported track looks to Surco
     // like a file it has never seen, and converting it duplicates the song in Music.
-    '  try',
-    '    tell application "Music" to set pid to persistent ID of t',
-    '  end try',
-    '  set end of out to loc & tab & pid',
+    '  set thePids to persistent ID of every track of theList',
+    'end tell',
+    'set out to {}',
+    'repeat with i from 1 to count of thePids',
+    '  set loc to item i of theLocs',
+    '  set p to ""',
+    // POSIX path is a SYSTEM coercion, not one of Music's: performed inside the tell block
+    // above it yields an empty string with no error, so every track read as "no file" and
+    // a playlist of real files imported nothing. Measured against Music on macOS 26.
+    '  if loc is not missing value then',
+    '    try',
+    '      set p to POSIX path of loc',
+    '    end try',
+    '  end if',
+    '  set end of out to p & tab & (item i of thePids)',
     'end repeat',
     "set AppleScript's text item delimiters to linefeed",
     'return out as text',
