@@ -97,7 +97,8 @@
   "empty": {
     "title": "Adicione faixas para começar.",
     "subtitle": "Converte suas faixas para AIFF, WAV, FLAC, ALAC ou MP3, adiciona as tags do Discogs, Bandcamp e Deezer e envia para o Apple Music ou Engine DJ.",
-    "subtitleNoMusic": "Converte suas faixas para AIFF, WAV, FLAC, ALAC ou MP3, adiciona as tags do Discogs, Bandcamp e Deezer e envia para o Engine DJ."
+    "subtitleNoMusic": "Converte suas faixas para AIFF, WAV, FLAC, ALAC ou MP3, adiciona as tags do Discogs, Bandcamp e Deezer e envia para o Engine DJ.",
+    "importApplePlaylist": "Importar do Apple Music"
   },
   "errors": {
     "unexpected": "Algo deu errado: {{detail}}",
@@ -255,7 +256,8 @@
     "trimStartZoomIn": "Aproximar o corte inicial",
     "trimStartZoomOut": "Afastar o corte inicial",
     "trimEndZoomIn": "Aproximar o corte final",
-    "trimEndZoomOut": "Afastar o corte final"
+    "trimEndZoomOut": "Afastar o corte final",
+    "importApplePlaylist": "Importar do Apple Music…"
   },
   "trackList": {
     "label": "Faixas",
@@ -818,27 +820,27 @@
     "keepMp3SourcesHint": "Converter um MP3 para um formato sem perdas não recupera qualidade — o arquivo só fica maior. Com isso ativo, os MP3 não são convertidos: as tags são atualizadas no arquivo original, onde ele está.",
     "mp3Quality": "Qualidade do MP3",
     "mp3Qualities": {
-      "320": "320",
-      "256": "256",
-      "192": "192",
-      "160": "160",
       "128": "128",
+      "160": "160",
+      "192": "192",
+      "256": "256",
+      "320": "320",
       "v0": "V0",
       "v2": "V2"
     },
     "mp3QualityHint": "Aplica-se a todas as exportações MP3. Taxas CBR em kbps — 320 é o padrão dos pools de DJ; V0 e V2 são VBR (arquivos menores com qualidade transparente). Uma fonte já em MP3 nunca é recodificada.",
     "bitDepth": "Profundidade de bits",
     "bitDepths": {
-      "source": "Igual à origem",
       "16": "16 bits",
-      "24": "24 bits"
+      "24": "24 bits",
+      "source": "Igual à origem"
     },
     "bitDepthHint": "“Igual à origem” mantém a profundidade exata do arquivo. Reduzir para 16 bits aplica dither; um arquivo já no formato de saída é copiado sem recodificação. Com “Igual à origem”, um arquivo com áudio de 16 bits comprovadamente preenchido para 24 é gravado como 16 bits reais, sem perdas.",
     "sampleRate": "Taxa de amostragem",
     "sampleRates": {
-      "source": "Igual à origem",
       "44100": "44,1 kHz",
       "48000": "48 kHz",
+      "source": "Igual à origem",
       "corrected": "Corrigido"
     },
     "sampleRateHint": "“Igual à origem” nunca reamostra. Fixe uma taxa para unificar sua biblioteca. “Corrigido” regrava em 44.1 os arquivos medidos como upsampleados de 44.1 kHz; hi-res confirmado e não verificados mantêm sua taxa (só recodificações).",
@@ -1156,6 +1158,22 @@
     "traktorSyncBackupFailed": "Ignorado: não foi possível fazer backup do collection.nml",
     "traktorSyncNoMatches": "Ignorado: nenhuma dessas faixas está na coleção",
     "traktorSyncUnreadable": "Ignorado: não foi possível ler o collection.nml",
-    "traktorSyncWriteFailed": "Ignorado: não foi possível gravar o collection.nml"
+    "traktorSyncWriteFailed": "Ignorado: não foi possível gravar o collection.nml",
+    "appleMusicPlaylists": "Lendo playlists do Apple Music",
+    "appleMusicPlaylistTracks": "Lendo a playlist",
+    "playlistCount_one": "{{count}} playlist",
+    "playlistCount_other": "{{count}} playlists"
+  },
+  "applePlaylist": {
+    "title": "Importar do Apple Music",
+    "subtitle": "O Surco carrega os arquivos que a playlist tem no seu disco.",
+    "search": "Buscar playlist",
+    "import": "Importar",
+    "none": "Não há playlists na sua biblioteca do Apple Music.",
+    "failed": "Não foi possível ler suas playlists. Verifique se o Apple Music está aberto e se o Surco tem permissão para controlá-lo.",
+    "imported_one": "{{count}} faixa de “{{name}}”",
+    "imported_other": "{{count}} faixas de “{{name}}”",
+    "missing_one": "{{count}} sem arquivo",
+    "missing_other": "{{count}} sem arquivo"
   }
 }

@@ -97,7 +97,8 @@
   "empty": {
     "title": "Add tracks to get started.",
     "subtitle": "Converts your tracks to AIFF, WAV, FLAC, ALAC or MP3, tags them from Discogs, Bandcamp and Deezer, and sends them to Apple Music or Engine DJ.",
-    "subtitleNoMusic": "Converts your tracks to AIFF, WAV, FLAC, ALAC or MP3, tags them from Discogs, Bandcamp and Deezer, and sends them to Engine DJ."
+    "subtitleNoMusic": "Converts your tracks to AIFF, WAV, FLAC, ALAC or MP3, tags them from Discogs, Bandcamp and Deezer, and sends them to Engine DJ.",
+    "importApplePlaylist": "Import from Apple Music"
   },
   "errors": {
     "unexpected": "Something went wrong: {{detail}}",
@@ -255,7 +256,8 @@
     "trimStartZoomIn": "Zoom in on the head cut",
     "trimStartZoomOut": "Zoom out from the head cut",
     "trimEndZoomIn": "Zoom in on the tail cut",
-    "trimEndZoomOut": "Zoom out from the tail cut"
+    "trimEndZoomOut": "Zoom out from the tail cut",
+    "importApplePlaylist": "Import from Apple Music…"
   },
   "trackList": {
     "label": "Tracks",
@@ -818,27 +820,27 @@
     "keepMp3SourcesHint": "Converting an MP3 to a lossless format can't restore quality — the file only gets bigger. With this on, MP3s skip the conversion: tags are updated on the original file, right where it lives.",
     "mp3Quality": "MP3 quality",
     "mp3Qualities": {
-      "320": "320",
-      "256": "256",
-      "192": "192",
-      "160": "160",
       "128": "128",
+      "160": "160",
+      "192": "192",
+      "256": "256",
+      "320": "320",
       "v0": "V0",
       "v2": "V2"
     },
     "mp3QualityHint": "Applies to every MP3 export. CBR rates in kbps — 320 is the DJ-pool standard; V0 and V2 are VBR (smaller files, transparent quality). A source already in MP3 is never re-encoded.",
     "bitDepth": "Bit depth",
     "bitDepths": {
-      "source": "Same as source",
       "16": "16-bit",
-      "24": "24-bit"
+      "24": "24-bit",
+      "source": "Same as source"
     },
     "bitDepthHint": "“Same as source” keeps the file's exact depth. Reducing to 16-bit applies dither; a file already in the output format is copied without re-encoding. With “Same as source”, a file proven to carry 16-bit audio padded to 24 is written as true 16-bit, losslessly.",
     "sampleRate": "Sample rate",
     "sampleRates": {
-      "source": "Same as source",
       "44100": "44.1 kHz",
       "48000": "48 kHz",
+      "source": "Same as source",
       "corrected": "Corrected"
     },
     "sampleRateHint": "“Same as source” never resamples. Pin a rate to unify your library for gear that expects one. “Corrected” rewrites files measured as upsampled from 44.1 kHz back at 44.1; confirmed hi-res and unverified files keep their rate (re-encodes only).",
@@ -1156,6 +1158,22 @@
     "traktorSyncBackupFailed": "Skipped: couldn't back up collection.nml first",
     "traktorSyncNoMatches": "Skipped: none of these tracks are in the collection",
     "traktorSyncUnreadable": "Skipped: couldn't read collection.nml",
-    "traktorSyncWriteFailed": "Skipped: couldn't write collection.nml"
+    "traktorSyncWriteFailed": "Skipped: couldn't write collection.nml",
+    "appleMusicPlaylists": "Reading Apple Music playlists",
+    "appleMusicPlaylistTracks": "Reading the playlist",
+    "playlistCount_one": "{{count}} playlist",
+    "playlistCount_other": "{{count}} playlists"
+  },
+  "applePlaylist": {
+    "title": "Import from Apple Music",
+    "subtitle": "Surco loads the files the playlist has on your disk.",
+    "search": "Search playlists",
+    "import": "Import",
+    "none": "There are no playlists in your Apple Music library.",
+    "failed": "Couldn't read your playlists. Check that Apple Music is open and that Surco is allowed to control it.",
+    "imported_one": "{{count}} track from “{{name}}”",
+    "imported_other": "{{count}} tracks from “{{name}}”",
+    "missing_one": "{{count}} with no file",
+    "missing_other": "{{count}} with no file"
   }
 }

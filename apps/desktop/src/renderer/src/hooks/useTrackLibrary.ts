@@ -77,6 +77,12 @@ interface Params {
   // to zero paths in expand.ts — leaving "there is nothing here" indistinguishable from
   // "I could not read it".
   onNoAudioFound: () => void
+  // What an Apple Music playlist import yielded: the playlist's name, how many rows it
+  // added, and how many of its tracks had no file on disk (streaming rows, undownloaded
+  // iCloud tracks). The missing count is reported rather than swallowed — a user who
+  // counts 128 in Music and sees 122 rows here has no way to tell which are absent or
+  // why, and that gap arrives later as a bug report nobody can reproduce.
+  onPlaylistImported?: (result: { name: string; imported: number; missing: number }) => void
   // How many files in a finished import batch failed their metadata read, so App can
   // say so — those rows silently showing only file-name data used to read as "this
   // file has no tags" when the real tags were just unreadable.
@@ -112,6 +118,9 @@ interface TrackLibrary {
   tracksRef: { readonly current: TrackItem[] }
   addPaths: (paths: string[], restore?: Record<string, SessionEdit>) => Promise<void>
   pickFiles: () => Promise<void>
+  // Loads the files one Apple Music playlist references. macOS only; the renderer does
+  // not offer it elsewhere.
+  importApplePlaylist: (persistentId: string, name: string) => Promise<void>
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   updateTracksMeta: (ids: string[], metaPatch: Partial<TrackMetadata>) => void
   patchTracks: (ids: string[], patch: Partial<TrackItem>) => void
@@ -137,6 +146,7 @@ export function useTrackLibrary({
   onMetaLoaded,
   onDuplicatesSkipped,
   onNoAudioFound,
+  onPlaylistImported,
   onMetaReadFailed,
   onPathsAdded,
 }: Params): TrackLibrary {
@@ -557,6 +567,16 @@ export function useTrackLibrary({
     addPaths(await window.api.expandPaths(await window.api.pickFiles()))
   }
 
+  // An Apple Music playlist is just another way to name a set of files: once read, the
+  // paths go through the very same expand-and-add path a drop or a picked folder takes,
+  // so every filter, dedupe and analysis behaves identically. Nothing downstream knows
+  // where the crate came from.
+  async function importApplePlaylist(persistentId: string, name: string): Promise<void> {
+    const { paths, missing } = await window.api.loadAppleMusicPlaylistTracks(persistentId)
+    await addPaths(await window.api.expandPaths(paths))
+    onPlaylistImported?.({ name, imported: paths.length, missing })
+  }
+
   const updateTrack = useCallback((id: string, patch: Partial<TrackItem>): void => {
     setTracks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
   }, [])
@@ -684,6 +704,7 @@ export function useTrackLibrary({
     tracksRef,
     addPaths,
     pickFiles,
+    importApplePlaylist,
     updateTrack,
     updateTracksMeta,
     patchTracks,

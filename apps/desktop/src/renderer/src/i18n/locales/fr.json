@@ -97,7 +97,8 @@
   "empty": {
     "title": "Ajoute des morceaux pour commencer.",
     "subtitle": "Convertit tes morceaux en AIFF, WAV, FLAC, ALAC ou MP3, les tague depuis Discogs, Bandcamp et Deezer, et les envoie dans Apple Music ou Engine DJ.",
-    "subtitleNoMusic": "Convertit tes morceaux en AIFF, WAV, FLAC, ALAC ou MP3, les tague depuis Discogs, Bandcamp et Deezer, et les envoie dans Engine DJ."
+    "subtitleNoMusic": "Convertit tes morceaux en AIFF, WAV, FLAC, ALAC ou MP3, les tague depuis Discogs, Bandcamp et Deezer, et les envoie dans Engine DJ.",
+    "importApplePlaylist": "Importer depuis Apple Music"
   },
   "errors": {
     "unexpected": "Quelque chose a mal tourné : {{detail}}",
@@ -255,7 +256,8 @@
     "trimStartZoomIn": "Zoomer sur la coupe de début",
     "trimStartZoomOut": "Dézoomer de la coupe de début",
     "trimEndZoomIn": "Zoomer sur la coupe de fin",
-    "trimEndZoomOut": "Dézoomer de la coupe de fin"
+    "trimEndZoomOut": "Dézoomer de la coupe de fin",
+    "importApplePlaylist": "Importer depuis Apple Music…"
   },
   "trackList": {
     "label": "Morceaux",
@@ -818,27 +820,27 @@
     "keepMp3SourcesHint": "Convertir un MP3 vers un format sans perte ne restaure aucune qualité : le fichier devient seulement plus volumineux. Avec cette option, les MP3 ne sont pas convertis : les tags sont mis à jour sur le fichier d'origine, là où il se trouve.",
     "mp3Quality": "Qualité MP3",
     "mp3Qualities": {
-      "320": "320",
-      "256": "256",
-      "192": "192",
-      "160": "160",
       "128": "128",
+      "160": "160",
+      "192": "192",
+      "256": "256",
+      "320": "320",
       "v0": "V0",
       "v2": "V2"
     },
     "mp3QualityHint": "S'applique à tous les exports MP3. Débits CBR en kbit/s — 320 est le standard des pools DJ ; V0 et V2 sont en VBR (fichiers plus petits, qualité transparente). Une source déjà en MP3 n'est jamais réencodée.",
     "bitDepth": "Profondeur de bits",
     "bitDepths": {
-      "source": "Comme la source",
       "16": "16 bits",
-      "24": "24 bits"
+      "24": "24 bits",
+      "source": "Comme la source"
     },
     "bitDepthHint": "« Comme la source » conserve la profondeur exacte du fichier. La réduction à 16 bits applique un dither ; un fichier déjà au format de sortie est copié sans réencodage. Avec « Comme la source », un fichier dont l'audio 16 bits rembourré en 24 est prouvé est écrit en vrai 16 bits, sans perte.",
     "sampleRate": "Fréquence d'échantillonnage",
     "sampleRates": {
-      "source": "Comme la source",
       "44100": "44,1 kHz",
       "48000": "48 kHz",
+      "source": "Comme la source",
       "corrected": "Corrigé"
     },
     "sampleRateHint": "« Comme la source » ne rééchantillonne jamais. Fixez une fréquence pour unifier votre bibliothèque. « Corrigé » réécrit à 44,1 les fichiers mesurés comme suréchantillonnés depuis 44,1 kHz ; le hi-res confirmé et le non vérifié gardent leur fréquence (réencodages seulement).",
@@ -1156,6 +1158,22 @@
     "traktorSyncBackupFailed": "Ignoré : impossible de sauvegarder collection.nml",
     "traktorSyncNoMatches": "Ignoré : aucun de ces morceaux n'est dans la collection",
     "traktorSyncUnreadable": "Ignoré : impossible de lire collection.nml",
-    "traktorSyncWriteFailed": "Ignoré : impossible d'écrire collection.nml"
+    "traktorSyncWriteFailed": "Ignoré : impossible d'écrire collection.nml",
+    "appleMusicPlaylists": "Lecture des playlists Apple Music",
+    "appleMusicPlaylistTracks": "Lecture de la playlist",
+    "playlistCount_one": "{{count}} playlist",
+    "playlistCount_other": "{{count}} playlists"
+  },
+  "applePlaylist": {
+    "title": "Importer depuis Apple Music",
+    "subtitle": "Surco charge les fichiers que la playlist a sur ton disque.",
+    "search": "Rechercher une playlist",
+    "import": "Importer",
+    "none": "Il n'y a aucune playlist dans ta bibliothèque Apple Music.",
+    "failed": "Impossible de lire tes playlists. Vérifie qu'Apple Music est ouvert et que Surco a le droit de le contrôler.",
+    "imported_one": "{{count}} piste de « {{name}} »",
+    "imported_other": "{{count}} pistes de « {{name}} »",
+    "missing_one": "{{count}} sans fichier",
+    "missing_other": "{{count}} sans fichier"
   }
 }
