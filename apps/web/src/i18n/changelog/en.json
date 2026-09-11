@@ -5,6 +5,18 @@
     "title": "Try what is new before anyone else, if you want to",
     "items": [
       {
+        "text": "Converting can no longer leave you without a track when the destination is already taken. If you chose to replace the original and Surco had to move the file aside to a \"(n)\" name, it deleted the source anyway: you ended up with a third file the dialog never mentioned and without the track you meant to keep. It now also warns you when two tracks in the same batch were about to write to the same path, which used to overwrite each other in silence while the summary reported both as converted.",
+        "in": "0.95.6"
+      },
+      {
+        "text": "Cues Surco cannot read now survive on FLAC files too. This was fixed for MP3 and AIFF in the previous version, but the FLAC routes still discarded them, so an MP3 converted to FLAC lost another program's marker tree even when the audio never moved.",
+        "in": "0.95.6"
+      },
+      {
+        "text": "A FLAC's star rating now says the same thing in Surco as in every other program. The file keeps the rating in two fields and Surco only updated one, so you could see 2 stars here and 5 somewhere else, and clearing them left the old ones behind in the forgotten field.",
+        "in": "0.95.6"
+      },
+      {
         "text": "Cue points now land where you see them in Traktor when you convert from or to MP3. Traktor drew the marker around 51 ms out on those crossings, and Surco now compensates for it on its own, with nothing for you to set. The manual adjustment is still separate and still starts at zero, in case you want to fine-tune it.",
         "in": "0.95.5"
       },
