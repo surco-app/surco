@@ -101,7 +101,7 @@ interface Props {
   onApplyTitleFormat?: () => void
   // Snapshots the given tracks' tags into App's ⌘Z stack before the clear button
   // overwrites them (derive is already recorded inside onDeriveTags).
-  onRecordUndo?: (ids: string[]) => void
+  onRecordUndo?: (ids: string[], opts?: { cover?: boolean }) => void
   // Marks the given tracks as fully cleared (coverRemoved + metaCleared) so a convert
   // wipes their rating and cover too — the multi-select sibling of the flags the
   // single-track clear sets on its onChange patch.
@@ -652,7 +652,13 @@ export const Editor = memo(function Editor({
   // the file keeps none of the fields the app manages (Traktor cues aside).
   function clearAllMeta(): void {
     const blank = emptyMetadata()
-    onRecordUndo?.((isMulti ? (selectedTracks ?? []) : [item]).map((t) => t.id))
+    // The artwork is part of what this clears, so the snapshot has to carry it: the
+    // single-track branch below drops coverUrl, and App revokes that blob on the way
+    // out, which would hand a later undo a dead URL to restore.
+    onRecordUndo?.(
+      (isMulti ? (selectedTracks ?? []) : [item]).map((t) => t.id),
+      { cover: true },
+    )
     if (isMulti) {
       onChangeAllMeta?.(blank)
       onClearExtras?.((selectedTracks ?? []).map((t) => t.id))

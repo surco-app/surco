@@ -2270,6 +2270,56 @@ describe('App metadata undo', () => {
     expect(screen.getByText('Metadata restored on 1 track')).toBeInTheDocument()
   })
 
+  // Clearing wipes the artwork alongside the tags (coverRemoved plus coverUrl), so the
+  // snapshot has to carry the cover the way paste's does. Without it ⌘Z brought the text
+  // back and left the well empty — and App revokes the blob on the way out, so the URL
+  // the undo would have restored is already dead.
+  it('restores the artwork when a clear is undone', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+      prepareCoverDrag: vi.fn().mockResolvedValue(null),
+      readCover: vi
+        .fn()
+        .mockResolvedValue({ thumbUrl: 'data:image/jpeg;base64,AA', width: 600, height: 600 }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    await waitFor(() => expect(screen.getByTestId('cover-preview')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByTestId('clear-meta-btn'))
+    await waitFor(() => expect(screen.queryByTestId('cover-preview')).toBeNull())
+
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('cover-preview')).toBeInTheDocument())
+  })
+
+  // The ⌘K clear is the Eraser button's twin and has to clear the same things. It set
+  // coverRemoved without dropping coverUrl, so the artwork stayed on screen: the clear
+  // read as "it didn't touch the cover" while the conversion was already staged to wipe
+  // it, and the undo had no cover recorded to bring back either.
+  it('clears the artwork from the command as well as the button', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+      prepareCoverDrag: vi.fn().mockResolvedValue(null),
+      readCover: vi
+        .fn()
+        .mockResolvedValue({ thumbUrl: 'data:image/jpeg;base64,AA', width: 600, height: 600 }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    await waitFor(() => expect(screen.getByTestId('cover-preview')).toBeInTheDocument())
+
+    fireEvent.keyDown(window, { key: 'e', ctrlKey: true })
+
+    await waitFor(() => expect(screen.queryByTestId('cover-preview')).toBeNull())
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('cover-preview')).toBeInTheDocument())
+  })
+
   // The find & replace modal rewrites text fields across every visible track in one apply;
   // one ⌘Z afterwards must roll the whole sweep back, not just a single row.
   it('rolls back a find & replace sweep across tracks in one undo', async () => {

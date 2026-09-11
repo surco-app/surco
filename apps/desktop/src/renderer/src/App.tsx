@@ -1343,7 +1343,7 @@ export default function App(): React.JSX.Element {
   // un-matches and re-probes); deriveTags mirrors deriveFromNames over the selection.
   const clearMeta = useStableCallback(() => {
     if (!selected) return
-    recordMetaUndo(selectedTracks.length > 1 ? selectedIds : [selected.id])
+    recordMetaUndo(selectedTracks.length > 1 ? selectedIds : [selected.id], { cover: true })
     if (selectedTracks.length > 1) {
       updateTracksMeta(selectedIds, emptyMetadata())
       onClearExtras(selectedIds)
@@ -1356,6 +1356,10 @@ export default function App(): React.JSX.Element {
         matchProvider: undefined,
         inLibraryResolved: false,
         coverRemoved: true,
+        // Off the preview too, exactly as clearAllMeta does: coverRemoved promises the
+        // conversion drops the artwork, and leaving the image up read as "the clear
+        // missed the cover".
+        coverUrl: undefined,
         metaCleared: true,
       })
   })
