@@ -1174,6 +1174,7 @@
     "imported_one": "{{count}} track from “{{name}}”",
     "imported_other": "{{count}} tracks from “{{name}}”",
     "missing_one": "{{count}} with no file",
-    "missing_other": "{{count}} with no file"
+    "missing_other": "{{count}} with no file",
+    "reading": "Reading the playlist…"
   }
 }

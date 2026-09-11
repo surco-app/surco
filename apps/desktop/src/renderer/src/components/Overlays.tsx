@@ -71,7 +71,7 @@ interface Props {
   revealSelection: (id: string) => void
   // Loads an Apple Music playlist as a crate. macOS only; App passes it undefined
   // elsewhere, and the overlay is never raised there.
-  importApplePlaylist?: (persistentId: string, name: string) => void
+  importApplePlaylist?: (persistentId: string, name: string) => Promise<void>
 }
 
 // Every overlay the app can raise, and the one place that decides which is up. Split out of
@@ -162,9 +162,11 @@ export function Overlays({
       {activeModal?.type === 'export' && <ExportModal tracks={bulkTracks} onClose={close} />}
       {activeModal?.type === 'applePlaylist' && importApplePlaylist && (
         <ApplePlaylistModal
-          onPick={(persistentId, name) => {
+          onPick={async (persistentId, name) => {
+            // Closed AFTER the read, not before: the dialog is what says it is working,
+            // and a big playlist takes seconds to answer.
+            await importApplePlaylist(persistentId, name)
             close()
-            importApplePlaylist(persistentId, name)
           }}
           onClose={close}
         />

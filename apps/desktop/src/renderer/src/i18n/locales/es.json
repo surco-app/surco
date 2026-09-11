@@ -1174,6 +1174,7 @@
     "imported_one": "{{count}} pista de «{{name}}»",
     "imported_other": "{{count}} pistas de «{{name}}»",
     "missing_one": "{{count}} sin fichero",
-    "missing_other": "{{count}} sin fichero"
+    "missing_other": "{{count}} sin fichero",
+    "reading": "Leyendo la playlist…"
   }
 }
