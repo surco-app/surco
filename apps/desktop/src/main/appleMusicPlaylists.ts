@@ -72,10 +72,17 @@ export function buildPlaylistTracksScript(persistentId: string): string {
     // import of a hundred real files over one streaming row. An empty line stands for
     // "no file" so the caller can count them rather than never learn they existed.
     '  set loc to ""',
+    '  set pid to ""',
     '  try',
     '    tell application "Music" to set loc to POSIX path of (location of t)',
     '  end try',
-    '  set end of out to loc',
+    // The entry's identity travels with its file so a conversion can update THAT library
+    // copy instead of adding a second one. Without it an imported track looks to Surco
+    // like a file it has never seen, and converting it duplicates the song in Music.
+    '  try',
+    '    tell application "Music" to set pid to persistent ID of t',
+    '  end try',
+    '  set end of out to loc & tab & pid',
     'end repeat',
     "set AppleScript's text item delimiters to linefeed",
     'return out as text',
@@ -85,19 +92,30 @@ export function buildPlaylistTracksScript(persistentId: string): string {
 // The missing count is carried rather than dropped in silence: a user who counts 128 in
 // Music and sees 122 rows here cannot tell which six are missing or why, and that gap is
 // exactly what arrives later as a bug report with no way to reproduce it.
+// The persistent ID is peeled off the END of the line, never split left to right: a file
+// name can hold a tab, and splitting would truncate the path and read the rest of it as
+// an ID. Same reasoning as parseLibraryDump's trailing fields.
+const TRAILING_TRACK_PID = /\t([0-9A-F]{16})?$/
+
 export function parsePlaylistTracks(stdout: string): AppleMusicPlaylistTracks {
   const paths: string[] = []
+  const persistentIds: Record<string, string> = {}
   let missing = 0
   // A trailing newline is the delimiter's, not a track's: trimming the end first keeps it
   // from counting as a track with no file.
   const body = stdout.replace(/\n+$/, '')
-  if (!body) return { paths, missing }
+  if (!body) return { paths, persistentIds, missing }
   for (const line of body.split('\n')) {
-    const path = line.trim()
-    if (path) paths.push(path)
-    else missing += 1
+    const pid = line.match(TRAILING_TRACK_PID)
+    const path = (pid ? line.slice(0, pid.index) : line).trim()
+    if (!path) {
+      missing += 1
+      continue
+    }
+    paths.push(path)
+    if (pid?.[1]) persistentIds[path] = pid[1]
   }
-  return { paths, missing }
+  return { paths, persistentIds, missing }
 }
 
 export async function readAppleMusicPlaylist(

@@ -227,6 +227,10 @@ export function useTrackLibrary({
     paths: string[],
     restore?: Record<string, SessionEdit>,
     streamed = false,
+    // Fields to stamp on a freshly created row, keyed by its path. Used by the Apple Music
+    // import to carry each track's library identity, so a later conversion updates the
+    // entry it came from instead of adding a second copy of the song.
+    seed?: Record<string, Partial<TrackItem>>,
   ): Promise<void> {
     // Read the live list, not the render snapshot: the native picker can sit open for
     // a long time, and a file that arrived through the OS meanwhile must still dedupe.
@@ -273,7 +277,7 @@ export function useTrackLibrary({
     // tags, duration and cover as each file's read resolves. Reading metadata up front used
     // to block the whole drop behind the slowest file — on a cloud/network folder that's
     // seconds of an empty list that looks broken even though the import is running.
-    const bases = fresh.map((path) => ({ ...newTrack(path), loadingMeta: true }))
+    const bases = fresh.map((path) => ({ ...newTrack(path), loadingMeta: true, ...seed?.[path] }))
     // Publish the new rows to the live view immediately rather than waiting for the render
     // that setTracks schedules. A folder walk pays out batches back-to-back, so two can land
     // in the same tick: React has not repainted between them, tracksRef still holds the crate
@@ -572,8 +576,13 @@ export function useTrackLibrary({
   // so every filter, dedupe and analysis behaves identically. Nothing downstream knows
   // where the crate came from.
   async function importApplePlaylist(persistentId: string, name: string): Promise<void> {
-    const { paths, missing } = await window.api.loadAppleMusicPlaylistTracks(persistentId)
-    await addPaths(await window.api.expandPaths(paths))
+    const { paths, persistentIds, missing } =
+      await window.api.loadAppleMusicPlaylistTracks(persistentId)
+    const seed: Record<string, Partial<TrackItem>> = {}
+    for (const [path, id] of Object.entries(persistentIds ?? {})) {
+      seed[path] = { musicPersistentId: id }
+    }
+    await addPaths(await window.api.expandPaths(paths), undefined, false, seed)
     onPlaylistImported?.({ name, imported: paths.length, missing })
   }
 
