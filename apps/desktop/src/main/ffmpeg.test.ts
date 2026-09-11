@@ -277,6 +277,25 @@ describe('convertArgs', () => {
     expect(normal).not.toContain('-map_metadata')
   })
 
+  // Reported 11/09/2026: a FLAC showing 2 stars in Surco and 5 in another tool. The
+  // file carried both — RATING at 102 and "RATING WMP" at 255. Nothing wrote that on
+  // Windows: the ID3 pass writes BOTH POPM users on purpose (setRating), ffmpeg carries
+  // the WMP value across to the Vorbis side, and this path then rewrote only RATING. So
+  // every later rating change widened the gap between the two, and whichever field a
+  // program reads decided the stars it showed.
+  it('keeps the WMP rating in step with the Traktor one on FLAC', () => {
+    const rated = convertArgs('/in.flac', '/o.flac', { codec: 'copy' }, { ...meta, rating: '2' })
+    expect(rated).toContain('RATING=traktor@native-instruments.de|102|0')
+    // The non-linear WMP ramp (2 stars = 64), not the 51-step Traktor one.
+    expect(rated).toContain('RATING WMP=64')
+
+    // An erased rating clears both, or the stale WMP value would outlive the clear and
+    // keep showing stars the user just removed.
+    const cleared = convertArgs('/in.flac', '/o.flac', { codec: 'copy' }, { ...meta, rating: '' })
+    expect(cleared).toContain('RATING=')
+    expect(cleared).toContain('RATING WMP=')
+  })
+
   it('clears the FLAC RATING comment when the rating field is empty', () => {
     // FLAC is the one format whose rating round-trips through ffprobe, so an empty
     // field at convert time means the file had none or the user erased it — either

@@ -8,7 +8,7 @@ import log from 'electron-log/main'
 import { declickFilter } from '../shared/declick'
 import { errorWithKey } from '../shared/errorKeys'
 import { forcedInputArgs } from '../shared/inputFormat'
-import { formatRatingTag, starsToRating } from '../shared/rating'
+import { formatRatingTag, starsToRating, starsToWmpRating } from '../shared/rating'
 import { trimFilter } from '../shared/trim'
 import type {
   BpmResult,
@@ -821,8 +821,14 @@ export function convertArgs(
   // to the probe, so clearing would wipe ratings the user never saw.
   if (output.toLowerCase().endsWith('.flac')) {
     const rating = Number(meta.rating)
-    const value = meta.rating?.trim() && rating > 0 ? formatRatingTag(rating) : ''
-    args.push('-metadata', `RATING=${value}`)
+    const set = Boolean(meta.rating?.trim()) && rating > 0
+    args.push('-metadata', `RATING=${set ? formatRatingTag(rating) : ''}`)
+    // The ID3 pass writes the rating under BOTH POPM users (see setRating), and ffmpeg
+    // carries the WMP one over to Vorbis as a "RATING WMP" comment. Rewriting only
+    // RATING left that copy holding the previous stars, so the two disagreed and the
+    // number a program showed depended on which field it happened to read. Same
+    // non-linear ramp the ID3 side uses, so both spell the same rating.
+    args.push('-metadata', `RATING WMP=${set ? starsToWmpRating(rating) : ''}`)
   }
   // El usuario marcó estos tags de terceros para borrar en el inspector: un -metadata
   // NOMBRE= vacío los elimina del fichero exportado. Se aplica siempre — es una intención
