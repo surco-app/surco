@@ -32,6 +32,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import initSqlJs, { type Database } from 'sql.js'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { errorKeyOf } from '../shared/errorKeys'
 import type { TrackMetadata } from '../shared/types'
 import { buildEngineDatabase } from './engine'
 import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
@@ -332,7 +333,24 @@ describe('addToEngineLibrary', () => {
     const file = await makeFile(root, 'four.aiff')
     await addToEngineLibrary(lib, file, meta(), 'Surco')
     await writeFile(join(lib, 'Database2', 'm.db-wal'), 'pending frames')
-    await expect(addToEngineLibrary(lib, file, meta(), 'Surco')).rejects.toThrow(/Engine DJ/)
+    await expect(addToEngineLibrary(lib, file, meta(), 'Surco')).rejects.toThrow(
+      'SURCO_ERR:engineDjOpen',
+    )
+  })
+
+  // The renderer is the only side with an i18next catalogue, and the IPC hop keeps
+  // nothing but the message, so this guard has to stamp a key rather than phrase the
+  // failure itself. Asserting on /Engine DJ/ alone passed in all five languages while
+  // the sentence reached every user in Spanish.
+  it('names the failure with a key the renderer can translate', async () => {
+    const lib = join(root, 'keyed', 'Engine Library')
+    const file = await makeFile(root, 'keyed.aiff')
+    await addToEngineLibrary(lib, file, meta(), 'Surco')
+    await writeFile(join(lib, 'Database2', 'm.db-wal'), 'pending frames')
+
+    const error = await addToEngineLibrary(lib, file, meta(), 'Surco').catch((e: Error) => e)
+
+    expect(errorKeyOf((error as Error).message)).toBe('engineDjOpen')
   })
 
   // Engine DJ 4.x runs its database in rollback-journal mode (m.db-journal, not -wal),
@@ -342,7 +360,9 @@ describe('addToEngineLibrary', () => {
     const file = await makeFile(root, 'five.aiff')
     await addToEngineLibrary(lib, file, meta(), 'Surco')
     await writeFile(join(lib, 'Database2', 'm.db-journal'), 'hot journal pages')
-    await expect(addToEngineLibrary(lib, file, meta(), 'Surco')).rejects.toThrow(/Engine DJ/)
+    await expect(addToEngineLibrary(lib, file, meta(), 'Surco')).rejects.toThrow(
+      'SURCO_ERR:engineDjOpen',
+    )
   })
 
   // Journal files are only non-empty mid-transaction, so the reliable "Engine DJ is
@@ -352,7 +372,9 @@ describe('addToEngineLibrary', () => {
     const lib = join(root, 'process', 'Engine Library')
     const file = await makeFile(root, 'six.aiff')
     vi.mocked(isEngineDjRunning).mockResolvedValueOnce(true)
-    await expect(addToEngineLibrary(lib, file, meta(), 'Surco')).rejects.toThrow(/Engine DJ/)
+    await expect(addToEngineLibrary(lib, file, meta(), 'Surco')).rejects.toThrow(
+      'SURCO_ERR:engineDjOpen',
+    )
   })
 
   // Bulk conversions finish in parallel; every add must land even when they overlap,
