@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.96",
+    "date": "11 de septiembre de 2026",
+    "title": "Trae una lista de Apple Music y trabaja sobre ella",
+    "items": [
+      {
+        "text": "Puedes cargar una lista de reproducción de Apple Music sin salir de Surco. Eliges cuál, y las pistas que esa lista tiene en tu disco aparecen en la columna de siempre, listas para etiquetar, analizar y reparar. Las canciones en streaming no tienen fichero, así que se quedan fuera y Surco te dice cuántas eran.",
+        "in": "0.96.0"
+      },
+      {
+        "text": "Lo que solo vive en Apple Music llega también a la ficha. Un WAV sin etiquetar no guarda el grouping, la valoración ni el año, pero Apple Music sí los recuerda: al importar, Surco rellena con ellos los campos que el fichero deja vacíos. Lo que el fichero ya trae manda siempre, porque es lo que leen el resto de tus programas.",
+        "in": "0.96.0"
+      },
+      {
+        "text": "Una pista que viene de Apple Music conserva su formato. Antes el botón ofrecía convertir a AIFF por ser el destino por defecto, aunque estuvieras trabajando sobre una colección ya ordenada: ahora dice Actualizar y reescribe el mismo formato, y solo convierte si eres tú quien elige otro. La entrada de tu biblioteca se actualiza en su sitio, en vez de aparecer duplicada.",
+        "in": "0.96.0"
+      }
+    ]
+  },
+  {
     "version": "0.95",
     "date": "9 de septiembre de 2026",
     "title": "Prueba lo nuevo antes que nadie, si quieres",
