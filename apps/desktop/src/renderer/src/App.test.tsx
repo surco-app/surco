@@ -2782,3 +2782,34 @@ describe('drop target', () => {
     expect(ghosts.children.length).toBeGreaterThan(1)
   })
 })
+
+// Reported while testing the Apple Music import: the entry point lived only in the empty
+// state, so once a playlist was loaded there was no visible way to load another. The
+// command palette still had it, but a shortcut nobody can see is not a door.
+describe('App Apple Music import stays reachable', () => {
+  it('keeps it beside adding files once tracks are loaded, not only on the empty screen', async () => {
+    // isMac is read at module scope, so a cached copy of App carries whatever platform the
+    // previous test set. Both cases here reset for that reason.
+    vi.resetModules()
+    setApi({ platform: 'darwin' })
+    await renderApp()
+    await addTwoTracks()
+
+    const row = screen.getByTestId('add-files').parentElement
+    expect(row?.contains(screen.getByTestId('import-apple-playlist'))).toBe(true)
+  })
+
+  // Off macOS there is no Apple Music to read, and nothing the user could configure would
+  // change that — so the button is absent rather than shown permanently disabled, which is
+  // how the empty state already treats its Apple Music line.
+  it('is absent off macOS, where it could never work', async () => {
+    // isMac is read at module scope, so the copy of App cached by the previous test still
+    // holds darwin. Only a reset makes this test read its own platform.
+    vi.resetModules()
+    setApi({ platform: 'win32' })
+    await renderApp()
+    await addTwoTracks()
+
+    expect(screen.queryByTestId('import-apple-playlist')).toBeNull()
+  })
+})

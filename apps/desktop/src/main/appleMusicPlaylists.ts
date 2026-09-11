@@ -2,7 +2,11 @@
 // applemusic.ts. Only the user's own playlists are offered: the library itself is not a
 // crate anyone picks to work on, and the smart playlists Music ships with ("Recently
 // Added", "Top 25 Most Played") are queries, not selections.
-import type { AppleMusicPlaylist, AppleMusicPlaylistTracks } from '../shared/types'
+import type {
+  AppleMusicPlaylist,
+  AppleMusicPlaylistTracks,
+  AppleMusicTrackMeta,
+} from '../shared/types'
 import { runOsascript } from './applemusic'
 
 export function buildPlaylistDumpScript(): string {
@@ -79,6 +83,20 @@ export function buildPlaylistTracksScript(persistentId: string): string {
     // copy instead of adding a second one. Without it an imported track looks to Surco
     // like a file it has never seen, and converting it duplicates the song in Music.
     '  set thePids to persistent ID of every track of theList',
+    // What Music knows that an untagged file does not. Measured on a real library: the WAVs
+    // carry title/artist/album/year/genre and nothing else, while Music holds the grouping
+    // ("Bases, Chocolate") and the artwork for the very same track.
+    '  set theGroupings to grouping of every track of theList',
+    '  set theYears to year of every track of theList',
+    '  set theComments to comment of every track of theList',
+    '  set theTrackNos to track number of every track of theList',
+    '  set theDiscNos to disc number of every track of theList',
+    '  set theBpms to bpm of every track of theList',
+    '  set theRatings to rating of every track of theList',
+    // Music reports a rating it computed itself for tracks the user never rated (measured:
+    // all 400 of one playlist). Importing those would write stars nobody gave, so the kind
+    // travels too and only `user` survives the parse.
+    '  set theRatingKinds to rating kind of every track of theList',
     'end tell',
     'set out to {}',
     'repeat with i from 1 to count of thePids',
@@ -92,9 +110,13 @@ export function buildPlaylistTracksScript(persistentId: string): string {
     '      set p to POSIX path of loc',
     '    end try',
     '  end if',
-    '  set end of out to p & tab & (item i of thePids)',
+    // Unit separator between fields, record separator between rows. Grouping and comment
+    // are user-typed, so both a tab and a newline can really appear inside them, and with
+    // ten columns one stray tab would misread every field after it. These two control
+    // characters cannot be typed into a Music field.
+    '  set end of out to p & (ASCII character 31) & (item i of thePids) & (ASCII character 31) & (item i of theGroupings) & (ASCII character 31) & (item i of theYears) & (ASCII character 31) & (item i of theComments) & (ASCII character 31) & (item i of theTrackNos) & (ASCII character 31) & (item i of theDiscNos) & (ASCII character 31) & (item i of theBpms) & (ASCII character 31) & (item i of theRatings) & (ASCII character 31) & (item i of theRatingKinds)',
     'end repeat',
-    "set AppleScript's text item delimiters to linefeed",
+    "set AppleScript's text item delimiters to (ASCII character 30)",
     'return out as text',
   ].join('\n')
 }
@@ -102,38 +124,73 @@ export function buildPlaylistTracksScript(persistentId: string): string {
 // The missing count is carried rather than dropped in silence: a user who counts 128 in
 // Music and sees 122 rows here cannot tell which six are missing or why, and that gap is
 // exactly what arrives later as a bug report with no way to reproduce it.
-// The persistent ID is peeled off the END of the line, never split left to right: a file
-// name can hold a tab, and splitting would truncate the path and read the rest of it as
-// an ID. Same reasoning as parseLibraryDump's trailing fields.
-const TRAILING_TRACK_PID = /\t([0-9A-F]{16})?$/
+//
+// Fields are split on the unit separator and rows on the record separator, never on tab or
+// newline: grouping and comment are user-typed and can hold both.
+const US = '\u001f'
+const RS = '\u001e'
+
+// Music says "unset" with a zero for year, track number, disc number and bpm (measured on a
+// real library), so a zero must not travel as data the user never entered.
+function num(value: string | undefined): string | undefined {
+  const v = value?.trim()
+  return v && v !== '0' ? v : undefined
+}
+
+function text(value: string | undefined): string | undefined {
+  const v = value?.trim()
+  return v ? v : undefined
+}
 
 export function parsePlaylistTracks(stdout: string): AppleMusicPlaylistTracks {
   const paths: string[] = []
   const persistentIds: Record<string, string> = {}
+  const meta: Record<string, AppleMusicTrackMeta> = {}
   const seen = new Set<string>()
   let missing = 0
-  // A trailing newline is the delimiter's, not a track's: trimming the end first keeps it
-  // from counting as a track with no file.
-  const body = stdout.replace(/\n+$/, '')
-  if (!body) return { paths, persistentIds, missing }
-  for (const line of body.split('\n')) {
-    const pid = line.match(TRAILING_TRACK_PID)
-    const path = (pid ? line.slice(0, pid.index) : line).trim()
+  // A trailing record separator is the delimiter's, not a track's.
+  const body = stdout.replace(new RegExp(`${RS}+$`), '')
+  if (!body) return { paths, persistentIds, meta, missing }
+  for (const line of body.split(RS)) {
+    const f = line.split(US)
+    const path = f[0]?.trim() ?? ''
     if (!path) {
       missing += 1
       continue
     }
     // Two entries in Music can point at the same file (measured: a 982-track playlist held
-    // 981 distinct paths). The import would dedupe them anyway and keep the first, so the
-    // first entry's identity is the one kept here — taking the last would stamp the
-    // surviving row with the ID of an entry that never made it into the list, and a later
+    // 981 distinct paths). The import dedupes them and keeps the first, so the first
+    // entry's data is what is kept here — taking the last would stamp the surviving row
+    // with the identity of an entry that never made it into the list, and a later
     // conversion would update the wrong library copy.
     if (seen.has(path)) continue
     seen.add(path)
     paths.push(path)
-    if (pid?.[1]) persistentIds[path] = pid[1]
+    if (f[1]?.trim()) persistentIds[path] = f[1].trim()
+
+    const entry: AppleMusicTrackMeta = {}
+    const grouping = text(f[2])
+    if (grouping) entry.grouping = grouping
+    const year = num(f[3])
+    if (year) entry.year = year
+    const comment = text(f[4])
+    if (comment) entry.comment = comment
+    const trackNumber = num(f[5])
+    if (trackNumber) entry.trackNumber = trackNumber
+    const discNumber = num(f[6])
+    if (discNumber) entry.discNumber = discNumber
+    const bpm = num(f[7])
+    if (bpm) entry.bpm = bpm
+    // Only a rating the user actually gave: Music computes one of its own for everything
+    // else (measured: all 400 tracks of one playlist), and writing those into files would
+    // invent an opinion nobody expressed.
+    if (f[9]?.trim() === 'user') {
+      const rating = Number(f[8])
+      if (Number.isFinite(rating) && rating > 0) entry.rating = rating
+    }
+    meta[path] = entry
   }
-  return { paths, persistentIds, missing }
+  return { paths, persistentIds, meta, missing }
 }
 
 export async function readAppleMusicPlaylist(

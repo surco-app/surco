@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { SessionEdit, TrackMetadata } from '../../../shared/types'
+import type { AppleMusicTrackMeta, SessionEdit, TrackMetadata } from '../../../shared/types'
+import { fillFromAppleMusic } from '../lib/appleMusicFill'
 import { mapWithConcurrency } from '../lib/concurrency'
 import { trackSignature } from '../lib/dirty'
 import { parseFileName } from '../lib/filename'
@@ -196,6 +197,10 @@ export function useTrackLibrary({
   // loaded. Buffering the appliers and flushing them in one prev.map keeps that work linear
   // in the file count. The applier still receives each row's live object, so a field the
   // user typed into mid-read keeps winning through mergeReadMeta exactly as before.
+  // What the Music database knows about each imported path, consumed by the read below.
+  // It rides here rather than on the row because the fill has to land ON the file's own
+  // tags — applied to the row instead, the async read would arrive later and overwrite it.
+  const appleMusicMeta = useRef(new Map<string, AppleMusicTrackMeta>())
   const metaPatchBuffer = useRef(new Map<string, (t: TrackItem) => TrackItem>())
   const metaFlushScheduled = useRef(false)
   const flushMetaPatches = useCallback((): void => {
@@ -358,13 +363,20 @@ export function useTrackLibrary({
     try {
       const { tags, duration, cover, foreignTags } = await window.api.readMeta(path)
       const s = searchFromTags(parseFileName(path), tags)
-      const readMeta: TrackMetadata = {
-        ...base.meta,
-        ...tags,
-        title: s.title,
-        artist: s.artist,
-        albumArtist: tags.albumArtist || s.artist,
-      }
+      // Whatever Music knows that this file does not. Consumed once, like the restored
+      // edit above: a later start-over must rebuild from the file alone.
+      const fromMusic = appleMusicMeta.current.get(path)
+      appleMusicMeta.current.delete(path)
+      const readMeta: TrackMetadata = fillFromAppleMusic(
+        {
+          ...base.meta,
+          ...tags,
+          title: s.title,
+          artist: s.artist,
+          albumArtist: tags.albumArtist || s.artist,
+        },
+        fromMusic ?? {},
+      )
       const patch: Partial<TrackItem> = {
         query: s.query,
         duration: duration ?? undefined,
@@ -576,8 +588,11 @@ export function useTrackLibrary({
   // so every filter, dedupe and analysis behaves identically. Nothing downstream knows
   // where the crate came from.
   async function importApplePlaylist(persistentId: string, name: string): Promise<void> {
-    const { paths, persistentIds, missing } =
+    const { paths, persistentIds, meta, missing } =
       await window.api.loadAppleMusicPlaylistTracks(persistentId)
+    for (const [path, entry] of Object.entries(meta ?? {})) {
+      appleMusicMeta.current.set(path, entry)
+    }
     const seed: Record<string, Partial<TrackItem>> = {}
     for (const [path, id] of Object.entries(persistentIds ?? {})) {
       seed[path] = { musicPersistentId: id }

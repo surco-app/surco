@@ -1,7 +1,16 @@
 // @vitest-environment jsdom
-import { act, cleanup, renderHook } from '@testing-library/react'
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { emptyMetadata } from '../../../shared/metadata'
+import type { TrackMetadata } from '../../../shared/types'
+import { trackSignature } from '../lib/dirty'
 import { useTrackLibrary } from './useTrackLibrary'
+
+// readMeta resolves the whole tag shape in the real app; a partial object makes
+// searchFromTags throw and the row silently falls back to its file-name parse.
+function tags(over: Partial<TrackMetadata> = {}): TrackMetadata {
+  return { ...emptyMetadata(), ...over }
+}
 
 afterEach(() => {
   cleanup()
@@ -117,6 +126,84 @@ describe('importing an Apple Music playlist', () => {
     expect(a.musicPersistentId).toBe('A1B2C3D4E5F60718')
     // A track Music gave no ID for carries none, rather than inheriting a neighbour's.
     expect(b.musicPersistentId).toBeUndefined()
+  })
+
+  it('fills the editor with what Music knows and the file does not', async () => {
+    // The user's WAVs carry no grouping; Music holds the one they filed the track under.
+    // Reading only the file showed an empty field for something clearly filled in Music.
+    const { result } = setup({
+      loadAppleMusicPlaylistTracks: vi.fn().mockResolvedValue({
+        paths: ['/m/a.wav'],
+        persistentIds: {},
+        meta: { '/m/a.wav': { grouping: 'Bases, Chocolate', year: '2020' } },
+        missing: 0,
+      }),
+      readMeta: vi.fn().mockResolvedValue({
+        tags: tags({ title: 'Tahikiry', artist: 'Elastica' }),
+        duration: 376,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+
+    await act(async () => {
+      await result.current.importApplePlaylist('A1B2C3D4E5F60718', 'Chocolate')
+    })
+
+    await waitFor(() => expect(result.current.tracks[0].loadingMeta).toBe(false))
+    expect(result.current.tracks[0].meta.grouping).toBe('Bases, Chocolate')
+    expect(result.current.tracks[0].meta.year).toBe('2020')
+  })
+
+  it('lets the file win over Music, because the file is what other tools read', async () => {
+    const { result } = setup({
+      loadAppleMusicPlaylistTracks: vi.fn().mockResolvedValue({
+        paths: ['/m/a.wav'],
+        persistentIds: {},
+        meta: { '/m/a.wav': { year: '2020' } },
+        missing: 0,
+      }),
+      readMeta: vi.fn().mockResolvedValue({
+        tags: tags({ title: 'Tahikiry', year: '1995' }),
+        duration: 376,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+
+    await act(async () => {
+      await result.current.importApplePlaylist('A1B2C3D4E5F60718', 'Chocolate')
+    })
+
+    await waitFor(() => expect(result.current.tracks[0].loadingMeta).toBe(false))
+    expect(result.current.tracks[0].meta.year).toBe('1995')
+  })
+
+  it('counts what Music filled in as the file’s own state, not as a pending edit', async () => {
+    // The whole point of importing a collection: nothing is staged until the user changes
+    // something. If the fill counted as an edit, every imported track would arrive dirty.
+    const { result } = setup({
+      loadAppleMusicPlaylistTracks: vi.fn().mockResolvedValue({
+        paths: ['/m/a.wav'],
+        persistentIds: {},
+        meta: { '/m/a.wav': { grouping: 'Bases' } },
+        missing: 0,
+      }),
+      readMeta: vi.fn().mockResolvedValue({
+        tags: tags({ title: 'Tahikiry' }),
+        duration: 376,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+
+    await act(async () => {
+      await result.current.importApplePlaylist('A1B2C3D4E5F60718', 'Chocolate')
+    })
+
+    await waitFor(() => expect(result.current.tracks[0].loadingMeta).toBe(false))
+    const t = result.current.tracks[0]
+    expect(t.diskSignature).toBe(trackSignature({ meta: t.meta }))
   })
 
   it('still reports when the playlist held nothing importable at all', async () => {

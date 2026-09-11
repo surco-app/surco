@@ -127,7 +127,12 @@ export function stubApi(over: Partial<Api> = {}): Api {
     loadAppleMusicLibrary: async () => [],
     loadAppleMusicLibraryCached: async () => null,
     loadAppleMusicPlaylists: async () => [],
-    loadAppleMusicPlaylistTracks: async () => ({ paths: [], persistentIds: {}, missing: 0 }),
+    loadAppleMusicPlaylistTracks: async () => ({
+      paths: [],
+      persistentIds: {},
+      meta: {},
+      missing: 0,
+    }),
     loadEngineLibrary: async () => [],
     addToAppleMusic: async () => undefined,
     updateAppleMusic: async () => undefined,
