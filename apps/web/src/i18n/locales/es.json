@@ -134,6 +134,10 @@
             "d": "Lo escribe en su propio frame, invisible para casi todas las herramientas."
           },
           {
+            "t": "Traer una lista de Apple Music",
+            "d": "Cargas la lista y trabajas sobre sus ficheros. Conserva su formato y rellena lo que solo vive en Music, como el grouping. Solo en macOS."
+          },
+          {
             "t": "Tags de otros programas",
             "d": "Inspecciónalos y bórralos uno a uno, o vacía la ficha entera."
           },
