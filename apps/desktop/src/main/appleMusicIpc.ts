@@ -11,6 +11,7 @@ import {
   revealInAppleMusic,
   updateInAppleMusic,
 } from './applemusic'
+import { dumpAppleMusicPlaylists, readAppleMusicPlaylist } from './appleMusicPlaylists'
 import { hasCoverSource, prepareProcessedCover } from './cover'
 import { createMenuT } from './i18n'
 import { getSettings } from './settings'
@@ -55,6 +56,40 @@ export function registerAppleMusicIpc(): void {
   // activity row. Null (no cache yet) tells the renderer to just wait for the dump.
   ipcMain.handle('applemusic:libraryCached', () =>
     process.platform === 'darwin' ? loadLibraryCache() : null,
+  )
+
+  // The user's own playlists, to pick one as a source of tracks. Empty off macOS, where
+  // there is no Music to ask — the renderer never offers the import there, but a handler
+  // that shelled out anyway would turn a stray call into a spawn failure.
+  ipcMain.handle('applemusic:playlists', () =>
+    process.platform === 'darwin'
+      ? activity.track('applemusic', 'activity.appleMusicPlaylists', dumpAppleMusicPlaylists, {
+          summary: (rows) => ({
+            detailKey: 'activity.playlistCount',
+            detailParams: { count: rows.length },
+          }),
+        })
+      : [],
+  )
+
+  // The files one playlist holds, plus how many of its tracks have none — streaming rows
+  // and undownloaded iCloud tracks. The count travels back so the app can say why fewer
+  // rows arrived than the playlist claims, instead of leaving the user to discover the
+  // gap by counting.
+  ipcMain.handle('applemusic:playlistTracks', (_e, persistentId: string) =>
+    process.platform === 'darwin'
+      ? activity.track(
+          'applemusic',
+          'activity.appleMusicPlaylistTracks',
+          () => readAppleMusicPlaylist(persistentId),
+          {
+            summary: (out) => ({
+              detailKey: 'activity.trackCount',
+              detailParams: { count: out.paths.length },
+            }),
+          },
+        )
+      : { paths: [], missing: 0 },
   )
 
   // Adds an already-converted track to Apple Music on demand — the tail of

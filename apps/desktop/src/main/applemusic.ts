@@ -21,7 +21,10 @@ function osascriptError(err: unknown): Error {
   return err instanceof Error ? err : new Error(String(err))
 }
 
-async function runOsascript(script: string, options?: { maxBuffer?: number }): Promise<string> {
+export async function runOsascript(
+  script: string,
+  options?: { maxBuffer?: number },
+): Promise<string> {
   try {
     const { stdout } = await run('osascript', ['-e', script], { encoding: 'utf8', ...options })
     return stdout

@@ -599,6 +599,23 @@ export interface AppleMusicLookupCandidate {
   persistentId?: string
 }
 
+// One of the user's own Apple Music playlists, offered as a source of tracks to work on.
+export interface AppleMusicPlaylist {
+  name: string
+  // What Music reports the playlist holds, streaming rows included: it is the number the
+  // user sees in Music, and the only one they can check this list against.
+  count: number
+  persistentId: string
+}
+
+// What one playlist yields when imported: the files it references, and how many of its
+// tracks have none (Apple Music streaming rows, iCloud tracks not downloaded). The count
+// travels so the app can say why fewer rows arrived than the playlist claims.
+export interface AppleMusicPlaylistTracks {
+  paths: string[]
+  missing: number
+}
+
 export type ProcessStage = 'cover' | 'converting' | 'appleMusic' | 'engineDj'
 
 export interface ProcessProgress {
