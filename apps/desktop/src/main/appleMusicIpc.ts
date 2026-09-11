@@ -3,6 +3,7 @@ import log from 'electron-log/main'
 import type { AppleMusicAddJob, AppleMusicUpdateJob, TrackMetadata } from '../shared/types'
 import { activity } from './activity'
 import { loadLibraryCache, saveLibraryCache } from './appleMusicLibraryCache'
+import { dumpAppleMusicPlaylists, readAppleMusicPlaylist } from './appleMusicPlaylists'
 import {
   addToAppleMusic,
   appleMusicLimiter,
@@ -11,7 +12,6 @@ import {
   revealInAppleMusic,
   updateInAppleMusic,
 } from './applemusic'
-import { dumpAppleMusicPlaylists, readAppleMusicPlaylist } from './appleMusicPlaylists'
 import { hasCoverSource, prepareProcessedCover } from './cover'
 import { createMenuT } from './i18n'
 import { getSettings } from './settings'

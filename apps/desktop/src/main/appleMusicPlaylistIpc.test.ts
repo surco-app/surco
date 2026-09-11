@@ -34,7 +34,10 @@ vi.mock('./applemusic', () => ({
 vi.mock('./activity', () => ({
   activity: { track: (_k: string, _l: string, fn: () => unknown) => fn() },
 }))
-vi.mock('./appleMusicLibraryCache', () => ({ loadLibraryCache: vi.fn(), saveLibraryCache: vi.fn() }))
+vi.mock('./appleMusicLibraryCache', () => ({
+  loadLibraryCache: vi.fn(),
+  saveLibraryCache: vi.fn(),
+}))
 vi.mock('./cover', () => ({ hasCoverSource: () => false, prepareProcessedCover: vi.fn() }))
 vi.mock('./i18n', () => ({ createMenuT: () => (k: string) => k }))
 vi.mock('./settings', () => ({ getSettings: () => ({}) }))
