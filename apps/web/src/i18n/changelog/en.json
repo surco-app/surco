@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.96",
+    "date": "September 11, 2026",
+    "title": "Bring in an Apple Music playlist and work on it",
+    "items": [
+      {
+        "text": "You can load an Apple Music playlist without leaving Surco. Pick one, and the tracks it holds on your disk land in the usual column, ready to tag, analyse and repair. Streaming songs have no file, so they stay out and Surco tells you how many there were.",
+        "in": "0.96.0"
+      },
+      {
+        "text": "What only lives in Apple Music reaches the editor too. An untagged WAV keeps no grouping, rating or year, but Apple Music remembers them: on import, Surco fills the fields the file leaves empty with what Music holds. Whatever the file already carries wins, because that is what the rest of your programs read.",
+        "in": "0.96.0"
+      },
+      {
+        "text": "A track that came from Apple Music keeps its format. The button used to offer a conversion to AIFF just because that is the default destination, even though you were working on a collection you had already organised: now it says Update and rewrites the same format, and only converts when you pick another one yourself. Your library entry is updated in place instead of showing up twice.",
+        "in": "0.96.0"
+      }
+    ]
+  },
+  {
     "version": "0.95",
     "date": "September 9, 2026",
     "title": "Try what is new before anyone else, if you want to",
