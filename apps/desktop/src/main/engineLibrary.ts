@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { copyFile, mkdir, readFile, stat, unlink, writeFile } from 'node:fs/promises'
 import { basename, extname, join, relative } from 'node:path'
 import type { Database } from 'sql.js'
+import { errorWithKey } from '../shared/errorKeys'
 import { starsTagToEngineRating } from '../shared/rating'
 import type { AppleMusicLookupCandidate, TrackMetadata } from '../shared/types'
 import {
@@ -346,7 +347,9 @@ async function assertEngineClosed(dbPath: string): Promise<void> {
     (await fileSize(`${dbPath}-wal`)) > 0 ||
     (await fileSize(`${dbPath}-journal`)) > 0
   ) {
-    throw new Error('Cierra Engine DJ antes de convertir: tiene la biblioteca abierta.')
+    // Stamped, not phrased: this throw crosses the IPC hop, which keeps only the
+    // message, and the renderer is the side holding the catalogue (shared/errorKeys).
+    throw errorWithKey('engineDjOpen')
   }
 }
 

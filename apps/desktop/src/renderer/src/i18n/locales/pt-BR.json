@@ -116,7 +116,8 @@
     "settingsFileNotSurco": "Esse arquivo não contém uma configuração do Surco.",
     "appleMusicNoMediaCopy": "O Música não copiou o arquivo para a pasta de mídia, então “Somente Apple Music” o deixaria sem áudio. Ative “Copiar arquivos para a pasta Mídia ao adicionar” no Música, ou desative “Somente Apple Music”.",
     "convertedOutputUnreadable": "O arquivo convertido saiu ilegível, então foi descartado e o original ficou intacto. Tente de novo com outros ajustes de conversão.",
-    "convertedOutputTruncated": "O arquivo convertido saiu mais curto que o original, então foi descartado e o original ficou intacto. Tente de novo com outros ajustes de conversão."
+    "convertedOutputTruncated": "O arquivo convertido saiu mais curto que o original, então foi descartado e o original ficou intacto. Tente de novo com outros ajustes de conversão.",
+    "engineDjOpen": "Feche o Engine DJ antes de converter: ele está com a biblioteca aberta."
   },
   "notices": {
     "duplicatesSkipped": "Já estavam na lista, ignoradas: {{count}}",

@@ -10,17 +10,24 @@ const PREFIX = 'SURCO_ERR:'
 // The failures worth naming: each one has a cause the user can act on, and a string
 // under `errors.*` in every locale. Anything not listed here keeps its own text —
 // ffmpeg's stderr says more in a bug report than a generic "something failed".
-export type ErrorKey =
-  | 'fileMissing'
-  | 'coverUrlBlocked'
-  | 'deezerRateLimit'
-  | 'discogsRateLimit'
-  | 'discogsToken'
-  | 'outputPathEscapes'
-  | 'settingsFileNotSurco'
-  | 'appleMusicNoMediaCopy'
-  | 'convertedOutputUnreadable'
-  | 'convertedOutputTruncated'
+// A runtime list, with the type derived from it: the renderer's locale test walks these
+// to prove every stamped key has a string in all five catalogues, and a union alone
+// cannot be walked.
+export const ERROR_KEYS = [
+  'fileMissing',
+  'coverUrlBlocked',
+  'deezerRateLimit',
+  'discogsRateLimit',
+  'discogsToken',
+  'outputPathEscapes',
+  'settingsFileNotSurco',
+  'appleMusicNoMediaCopy',
+  'convertedOutputUnreadable',
+  'convertedOutputTruncated',
+  'engineDjOpen',
+] as const
+
+export type ErrorKey = (typeof ERROR_KEYS)[number]
 
 // Builds the message an ipcMain handler throws. Detail is appended for the log and any
 // bug report; the renderer shows the translated string and never this text.

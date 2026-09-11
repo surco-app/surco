@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { ERROR_KEYS } from '../../../shared/errorKeys'
 import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
@@ -42,6 +43,15 @@ const LOCALES: [string, unknown][] = [
 describe('locale parity', () => {
   it.each(LOCALES)('%s exposes the exact same keys as en', (_, locale) => {
     expect(keys(locale).sort()).toEqual(keys(en).sort())
+  })
+
+  // mainErrorMessage translates a stamped key as `errors.<key>`, so an ErrorKey with no
+  // catalogue entry shows the user the raw marker text. The union is the contract and
+  // nothing else checks it: engineDjOpen's sentence sat hardcoded in Spanish precisely
+  // because no test tied the two sides together.
+  it.each(LOCALES)('%s has a string for every stamped error key', (_, locale) => {
+    const catalogue = new Map(leaves(locale))
+    for (const key of ERROR_KEYS) expect(catalogue.has(`errors.${key}`)).toBe(true)
   })
 
   // A translation that drops or renames a {{placeholder}} renders the raw braces (or
