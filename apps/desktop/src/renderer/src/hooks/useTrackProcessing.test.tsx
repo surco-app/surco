@@ -354,7 +354,30 @@ describe('useTrackProcessing', () => {
       'a',
       expect.objectContaining({ status: 'error', error: clean }),
     )
-    expect(onProcessError).toHaveBeenCalledWith(clean)
+    expect(onProcessError).toHaveBeenCalledWith(clean, 'a.wav')
+  })
+
+  // The failure toast is keyed, so a batch where thirty tracks fail raises one card
+  // rather than thirty — which is why the message alone left the user with "one of
+  // them broke" and no way to tell which. The label rides along so the toast can name
+  // the track, exactly as the normalize/declick notices beside it already do.
+  it('passes the failing track label to the error callback', async () => {
+    setApi({ processTrack: vi.fn().mockRejectedValue(new Error('disk full')) })
+    const onProcessError = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', listLabel: 'Pray (W.I.P. In The Church Mix)' })],
+          settings: null,
+          updateTrack: vi.fn(),
+          onProcessError,
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(onProcessError).toHaveBeenCalledWith('disk full', 'Pray (W.I.P. In The Church Mix)')
   })
 
   // Convert-all runs every eligible track and reports the run's tally, which is what
