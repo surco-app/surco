@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { findTrackByPath, openRekordboxDb, REKORDBOX_KEY } from './rekordboxDb'
+import { findTrackByPath, isAmbiguous, openRekordboxDb, REKORDBOX_KEY } from './rekordboxDb'
 
 // A real master.db is 56 MB of the user's own collection and cannot live in the repo, so
 // every test here builds a miniature one with the same encryption and the same column
@@ -39,6 +39,32 @@ const TRACKS = [
     FileNameL: 'spotify:track:0OTO8ZF2YqFQVw9hnZylTd',
     FileType: 25,
     FileSize: 0,
+    OrgFolderPath: '',
+  },
+  {
+    // Imported through ~/Music/Music, which is a symlink to the same volume Surco scans.
+    ID: '400000001',
+    FolderPath: '/Users/vicent/Music/Music/Linked/Through Link.mp3',
+    FileNameL: 'Through Link.mp3',
+    FileType: 1,
+    FileSize: 9000000,
+    OrgFolderPath: '',
+  },
+  // One file, two rows, one per prefix — and different sizes, as in the real collection.
+  {
+    ID: '500000001',
+    FolderPath: '/Users/vicent/Music/Music/Twin/Both Ways.wav',
+    FileNameL: 'Both Ways.wav',
+    FileType: 11,
+    FileSize: 78581448,
+    OrgFolderPath: '',
+  },
+  {
+    ID: '500000002',
+    FolderPath: '/Volumes/Public/Music/Twin/Both Ways.wav',
+    FileNameL: 'Both Ways.wav',
+    FileType: 11,
+    FileSize: 116951070,
     OrgFolderPath: '',
   },
 ]
@@ -89,6 +115,14 @@ function open(): NonNullable<ReturnType<typeof openRekordboxDb>> {
   return db
 }
 
+// Narrows a lookup to the single-track case, so a test that means to assert on one match
+// fails loudly if the code returns an ambiguous verdict instead of quietly reading
+// undefined off it.
+function single(found: ReturnType<typeof findTrackByPath>) {
+  if (found === null || isAmbiguous(found)) throw new Error(`expected one track, got ${found}`)
+  return found
+}
+
 describe('openRekordboxDb', () => {
   it('opens an encrypted rekordbox database', () => {
     const db = openRekordboxDb(dbPath)
@@ -102,7 +136,7 @@ describe('openRekordboxDb', () => {
   it('reads rows through the cipher rather than failing to decrypt', () => {
     const db = open()
     const row = db.prepare('SELECT count(*) c FROM djmdContent').get() as { c: number }
-    expect(row.c).toBe(3)
+    expect(row.c).toBe(6)
     db?.close()
   })
 
@@ -155,7 +189,54 @@ describe('findTrackByPath', () => {
   it('matches a path that differs only in case', () => {
     const db = open()
     const found = findTrackByPath(db, '/volumes/public/music/acid tribute/02 everybody.MP3')
-    expect(found?.id).toBe('127110986')
-    db?.close()
+    expect(single(found).id).toBe('127110986')
+    db.close()
+  })
+
+  // The user's own library reaches one volume two ways: ~/Music/Music is a symlink to
+  // /Volumes/Public/Music, and rekordbox stored whichever path was used at import —
+  // 1513 tracks under the link against 413 under the target. Surco scans the resolved
+  // path, so comparing the strings alone misses every track imported through the link.
+  it('finds a track stored under a symlinked path', () => {
+    const db = open()
+    const found = findTrackByPath(db, '/Volumes/Public/Music/Linked/Through Link.mp3', {
+      realPath: (p) => p.replace('/Users/vicent/Music/Music/', '/Volumes/Public/Music/'),
+    })
+    expect(single(found).id).toBe('400000001')
+    db.close()
+  })
+
+  // 35 files in the real collection have two rows, one per prefix, and 67 of those rows
+  // sit in playlists — with differing FileSize, so they are not interchangeable copies.
+  // Repointing one would leave its twin aimed at the file the conversion replaced: the
+  // missing-file "!" this feature exists to remove, on half the playlists. Which row is
+  // the right one is the user's call, so an ambiguous match refuses rather than guesses.
+  it('refuses to choose when two rows point at one real file', () => {
+    const db = open()
+    const found = findTrackByPath(db, '/Volumes/Public/Music/Twin/Both Ways.wav', {
+      realPath: (p) => p.replace('/Users/vicent/Music/Music/', '/Volumes/Public/Music/'),
+    })
+    expect(found).toEqual({ ambiguous: ['500000001', '500000002'] })
+    db.close()
+  })
+
+  // Resolution fails for a file that is already gone — 11 of the user's tracks are in
+  // that state and show the "!" in rekordbox today. Falling back to the literal strings
+  // then makes the two prefixes look like different files, so the pair stops reading as
+  // ambiguous and one row gets picked: the exact silent choice the ambiguity check
+  // exists to prevent, reappearing precisely where the collection is already damaged.
+  it('still refuses when the file is gone and paths cannot be resolved', () => {
+    const db = open()
+    const found = findTrackByPath(db, '/Volumes/Public/Music/Twin/Both Ways.wav', {
+      // The link itself resolves — it is the tracks under it that no longer exist, which
+      // is the real shape: the folder is fine, the files were deleted or renamed.
+      realPath: (p) => {
+        if (p === '/Users/vicent/Music/Music') return '/Volumes/Public/Music'
+        throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
+      },
+      homeMusicDir: '/Users/vicent/Music/Music',
+    })
+    expect(found).toEqual({ ambiguous: ['500000001', '500000002'] })
+    db.close()
   })
 })
