@@ -49,7 +49,7 @@
     "clearAll": "Clear the list"
   },
   "sidebar": {
-    "dropHint": "Drag your files here, or press “Add files”.",
+    "dropHint": "Drag your files here.",
     "fitHint": "Double-click to fit the width to the track names",
     "filter": {
       "label": "Filter",
@@ -95,7 +95,8 @@
     "selectedCount_other": "{{count}} selected"
   },
   "empty": {
-    "title": "Add tracks to get started.",
+    "title": "Drop your tracks here",
+    "addTracks": "Add tracks",
     "subtitle": "Converts your tracks to AIFF, WAV, FLAC, ALAC or MP3, tags them from Discogs, Bandcamp and Deezer, and sends them to Apple Music or Engine DJ.",
     "subtitleNoMusic": "Converts your tracks to AIFF, WAV, FLAC, ALAC or MP3, tags them from Discogs, Bandcamp and Deezer, and sends them to Engine DJ.",
     "importApplePlaylist": "Import from Apple Music"

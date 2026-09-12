@@ -1692,19 +1692,12 @@ export default function App(): React.JSX.Element {
               >
                 <div ref={listScrollRef} className="min-h-0 flex-1 overflow-y-auto">
                   {tracks.length === 0 ? (
-                    // Empty list: the drop hint plus the Add files button, so the action that fills
-                    // this column is reachable here even before there's a header to host it.
-                    <div className="flex flex-col items-center gap-3 p-6 text-center">
-                      <p className="text-xs text-fg-faint">{tr('sidebar.dropHint')}</p>
-                      <button
-                        type="button"
-                        data-testid="add-files"
-                        onClick={onAdd}
-                        className="press flex h-8 items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
-                      >
-                        {tr('header.add')}
-                      </button>
-                    </div>
+                    // Deliberately empty. The way in lives in the centre panel now: a button here
+                    // as well meant two doors on one screen, and the smaller of the two sat in the
+                    // column that has nothing in it yet.
+                    <p className="p-6 text-center text-xs text-fg-faint">
+                      {tr('sidebar.dropHint')}
+                    </p>
                   ) : (
                     <>
                       <TrackListHeader
@@ -1879,13 +1872,21 @@ export default function App(): React.JSX.Element {
                     </Suspense>
                   </ErrorBoundary>
                 ) : (
-                  <div className="flex h-full items-center justify-center p-10 text-center">
-                    <div className="max-w-sm">
-                      <div className="mb-5 flex justify-center text-fg-faint">
+                  <div className="flex h-full items-center justify-center p-8 text-center">
+                    {/* The drag answers here as well as in the sidebar. The column stays the
+                        place the rows land, but on an empty screen this panel is the only thing
+                        on show, and inviting a drag while the wide panel beside the column
+                        refused the drop was this screen's oldest lie. */}
+                    <div
+                      data-testid="empty-dropzone"
+                      data-drop-over={dragging || undefined}
+                      className="empty-dropzone max-w-md rounded-2xl px-10 py-11"
+                    >
+                      <div className="mb-5 flex justify-center">
                         <EmptyDisc />
                       </div>
                       <p
-                        className="empty-copy-in text-[15px] font-medium text-balance text-fg-muted"
+                        className="empty-copy-in text-base font-semibold tracking-[-0.01em] text-balance text-fg"
                         style={{ animationDelay: '0.10s' }}
                       >
                         {tr('empty.title')}
@@ -1900,16 +1901,32 @@ export default function App(): React.JSX.Element {
                             : 'empty.subtitleNoMusic',
                         )}
                       </p>
+                      {/* The one primary action on the screen. On macOS this same dialog takes
+                          folders as well as files, so a single button covers both. */}
+                      <button
+                        type="button"
+                        data-testid="add-files"
+                        onClick={onAdd}
+                        className="press empty-copy-in mt-6 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent hover:bg-accent-hover"
+                        style={{ animationDelay: '0.22s' }}
+                      >
+                        {tr('empty.addTracks')}
+                      </button>
                       {isMac && (
-                        <button
-                          type="button"
-                          data-testid="empty-import-playlist"
-                          onClick={overlays.openApplePlaylist}
-                          className="empty-copy-in mt-4 rounded-md border border-line-strong px-3 py-1.5 text-sm text-fg-muted hover:bg-panel-2"
-                          style={{ animationDelay: '0.22s' }}
-                        >
-                          {tr('empty.importApplePlaylist')}
-                        </button>
+                        // A quieter sibling rather than a rival: as a second bordered button it
+                        // weighed the same as adding files, and the screen had no answer to
+                        // "where do I start".
+                        <div>
+                          <button
+                            type="button"
+                            data-testid="empty-import-playlist"
+                            onClick={overlays.openApplePlaylist}
+                            className="empty-copy-in mt-4 rounded-md px-2 py-1 text-sm text-fg-dim underline decoration-line-strong underline-offset-[3px] hover:text-fg-muted"
+                            style={{ animationDelay: '0.28s' }}
+                          >
+                            {tr('empty.importApplePlaylist')}
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
