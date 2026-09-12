@@ -5,6 +5,14 @@
     "title": "Trae una lista de Apple Music y trabaja sobre ella",
     "items": [
       {
+        "text": "La corrección de los cues al convertir desde o hacia MP3 se aplica ya a todas tus pistas. Un MP3 rippeado o editado, al que le falta la cabecera que escriben los programas al codificar, se quedaba fuera y recibía otro ajuste distinto: los marcadores acababan a unos 76 ms de donde Traktor los pinta, en vez de los 51 ms que se compensan ahora. Los MP3 normales no cambian.",
+        "in": "0.96.1"
+      },
+      {
+        "text": "La pantalla de inicio dice ahora una sola cosa. Antes ofrecía a la vez arrastrar y pulsar un botón, y el disco giraba sin parar; ahora te invita a soltar las pistas encima, con el botón debajo por si prefieres buscarlas, y el disco late despacio en lugar de dar vueltas.",
+        "in": "0.96.1"
+      },
+      {
         "text": "Puedes cargar una lista de reproducción de Apple Music sin salir de Surco. Eliges cuál, y las pistas que esa lista tiene en tu disco aparecen en la columna de siempre, listas para etiquetar, analizar y reparar. Las canciones en streaming no tienen fichero, así que se quedan fuera y Surco te dice cuántas eran.",
         "in": "0.96.0"
       },
