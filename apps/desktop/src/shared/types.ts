@@ -172,8 +172,8 @@ export interface Settings {
   // Traktor's collection.nml path. Machine-local — the folder doesn't exist on another Mac.
   // Empty by default: the feature is off until the user points Surco at their collection.
   traktorNmlPath: string
-  // Milliseconds every carried cue is nudged by, on top of the measured codec correction
-  // (see mp3EncoderDelay.ts). Zero by default and expected to stay there: the conversion
+  // Milliseconds every carried cue is nudged by, on top of the route calibration
+  // (see cueCalibration.ts). Zero by default and expected to stay there: the conversion
   // already lands cues where they were. It exists for the DJ whose cues consistently feel
   // early or late in Traktor, which is about their ears and their rig rather than the
   // file — so unlike traktorNmlPath it is NOT machine-local, it follows the person.
