@@ -49,7 +49,7 @@
     "clearAll": "Vider la liste"
   },
   "sidebar": {
-    "dropHint": "Glisse tes fichiers ici, ou clique sur « Ajouter des fichiers ».",
+    "dropHint": "Dépose tes fichiers ici.",
     "fitHint": "Double-clique pour ajuster la largeur aux noms des morceaux",
     "filter": {
       "label": "Filtre",
@@ -95,7 +95,8 @@
     "selectedCount_other": "{{count}} sélectionnés"
   },
   "empty": {
-    "title": "Ajoute des morceaux pour commencer.",
+    "title": "Dépose tes morceaux ici",
+    "addTracks": "Ajouter des morceaux",
     "subtitle": "Convertit tes morceaux en AIFF, WAV, FLAC, ALAC ou MP3, les tague depuis Discogs, Bandcamp et Deezer, et les envoie dans Apple Music ou Engine DJ.",
     "subtitleNoMusic": "Convertit tes morceaux en AIFF, WAV, FLAC, ALAC ou MP3, les tague depuis Discogs, Bandcamp et Deezer, et les envoie dans Engine DJ.",
     "importApplePlaylist": "Importer depuis Apple Music"

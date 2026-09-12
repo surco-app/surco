@@ -1,11 +1,22 @@
 import type React from 'react'
 
-// The app icon is a record — concentric grooves around a label carrying the waveform — so
-// the empty state turns it rather than showing it still: it's the same object the user just
-// clicked in the Dock, and a platter that turns reads as ready rather than frozen. Drawn in
-// outline at the muted greys the rest of the empty state uses, keeping the icon's blue for
-// the label alone, so it weighs what an empty state should weigh and never reads as a logo
-// dropped into the canvas.
+// The rings leave one after another rather than together: three at the same delay stack
+// into one thicker ring and the pulse reads as a blink. A third of the cycle apart is far
+// enough that the eye reads three separate departures.
+const RING_DELAYS = ['0s', '0.87s', '1.74s']
+
+// Every radius here is the icon's own, scaled by 1.233. The icon sits at r=300 in a 1024
+// viewBox because a Dock tile has to leave macOS its rounded-square margin; borrowed
+// unchanged that margin is dead space, and the disc rendered 75px wide inside a 128px box.
+// 370 is the ceiling: the outermost ring reaches r*1.34 + half its 10-wide stroke, which at
+// 370 lands on 501 and still clears the 512 edge, so the pulse never clips.
+
+// The app icon is a record, so the empty state shows the same object the user just clicked
+// in the Dock. It does NOT turn: a platter rotating forever reads as a progress indicator,
+// which is the one thing an idle screen must not claim. Instead the sound leaves the disc —
+// rings pulsing outward from the rim while the record itself sits still. The disc keeps the
+// icon's own materials (the rim, the groove rings, the blue label with the waveform) so it
+// reads as Surco's record rather than a generic vinyl glyph.
 export function EmptyDisc(): React.JSX.Element {
   return (
     <svg
@@ -15,6 +26,11 @@ export function EmptyDisc(): React.JSX.Element {
       className="empty-disc-in h-32 w-32"
     >
       <defs>
+        <radialGradient id="empty-disc-face" cx="0.42" cy="0.36" r="0.85">
+          <stop offset="0" stopColor="#23263A" />
+          <stop offset="0.55" stopColor="#131520" />
+          <stop offset="1" stopColor="#07080C" />
+        </radialGradient>
         <radialGradient id="empty-disc-label-fill" cx="0.4" cy="0.34" r="0.9">
           <stop offset="0" stopColor="#CFE4FF" />
           <stop offset="0.6" stopColor="#9ED7FF" />
@@ -22,36 +38,43 @@ export function EmptyDisc(): React.JSX.Element {
         </radialGradient>
       </defs>
 
-      <g data-testid="empty-disc-platter" className="empty-disc-spin">
-        <g fill="none" stroke="currentColor" strokeOpacity="0.32" strokeWidth="9">
-          <circle cx="512" cy="512" r="292" />
-          <circle cx="512" cy="512" r="252" />
-          <circle cx="512" cy="512" r="212" />
-        </g>
-        {/* Load-bearing, not decoration: the grooves are perfectly concentric, so without an
-            asymmetric mark the rotation is invisible — every frame looks the same. The
-            player's coverless vinyl solves the same problem with conic wedges (.player-vinyl
-            in index.css); an arc suits an outlined disc where a tonal sweep would not. */}
-        <path
-          data-testid="empty-disc-mark"
-          d="M 512 220 A 292 292 0 0 1 706 296"
+      {/* Behind the disc, so a ring is born at the rim and grows away from it rather than
+          crossing the face on its way out. */}
+      {RING_DELAYS.map((delay) => (
+        <circle
+          key={delay}
+          data-testid="empty-disc-ring"
+          className="empty-disc-ping"
+          style={{ animationDelay: delay }}
+          cx="512"
+          cy="512"
+          r="370"
           fill="none"
           stroke="var(--color-accent)"
-          strokeOpacity="0.9"
-          strokeWidth="9"
-          strokeLinecap="round"
+          strokeWidth="10"
         />
+      ))}
+
+      <g data-testid="empty-disc-platter">
+        <circle cx="512" cy="512" r="370" fill="#3A4060" />
+        <circle cx="512" cy="512" r="363" fill="url(#empty-disc-face)" />
+        {/* The icon draws these at 0.06 opacity and 3 wide, tuned for a 1024px Dock tile. At
+            the 128px this renders at they vanish, so both are lifted to survive the size. */}
+        <g fill="none" stroke="#FFFFFF" strokeOpacity="0.08" strokeWidth="5">
+          <circle cx="512" cy="512" r="331" />
+          <circle cx="512" cy="512" r="301" />
+          <circle cx="512" cy="512" r="271" />
+          <circle cx="512" cy="512" r="242" />
+        </g>
       </g>
 
-      {/* Outside the spinning group: the label holds the waveform, and turning that would
-          read as a loading spinner — exactly what an idle empty state must not claim. */}
       <g data-testid="empty-disc-label">
         <circle cx="512" cy="512" r="168" fill="url(#empty-disc-label-fill)" />
         <path
-          d="M431 512 C 455 447, 479 447, 503 512 S 551 577, 575 512 L 593 512"
+          d="M412 512 C 442 432, 471 432, 501 512 S 560 592, 590 512 L 612 512"
           fill="none"
           stroke="#0B1430"
-          strokeWidth="18"
+          strokeWidth="20"
           strokeLinecap="round"
           strokeLinejoin="round"
         />

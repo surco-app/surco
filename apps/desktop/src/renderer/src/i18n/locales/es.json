@@ -49,7 +49,7 @@
     "clearAll": "Vaciar la lista"
   },
   "sidebar": {
-    "dropHint": "Arrastra aquí tus archivos, o pulsa “Añadir archivos”.",
+    "dropHint": "Arrastra aquí tus archivos.",
     "fitHint": "Doble clic para ajustar el ancho a los nombres de las pistas",
     "filter": {
       "label": "Filtro",
@@ -95,7 +95,8 @@
     "selectedCount_other": "{{count}} seleccionadas"
   },
   "empty": {
-    "title": "Añade pistas para empezar.",
+    "title": "Suelta tus pistas aquí",
+    "addTracks": "Añadir pistas",
     "subtitle": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp y Deezer, y las manda a Apple Music o Engine DJ.",
     "subtitleNoMusic": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp y Deezer, y las manda a Engine DJ.",
     "importApplePlaylist": "Importar de Apple Music"
