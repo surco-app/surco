@@ -561,14 +561,14 @@ describe('DestinationTab Traktor collection', () => {
   })
 
   // The hint is the only prose left, so it carries what the controls cannot: that the
-  // normal state is no adjustment (this corrects something Surco already gets right), the
-  // loop nobody can shortcut, and what the adjustment does NOT touch — a DJ whose loops
+  // normal state is no adjustment because the codec correction is automatic, the loop
+  // nobody can shortcut, and what the adjustment does NOT touch — a DJ whose loops
   // changed length would never trust it again.
   it('says the normal case is no adjustment and what it leaves alone', () => {
     renderWithCollection(vi.fn<PatchSynced>(), '-51')
 
     const hint = screen.getByText(i18n.t('settings.traktorCueOffsetHint'))
-    expect(hint.textContent).toMatch(/already corrects|no adjustment/i)
+    expect(hint.textContent).toMatch(/automatically|already corrects|no adjustment/i)
     expect(hint.textContent).toMatch(/listen|hear/i)
     expect(hint.textContent).toMatch(/loops/i)
   })
