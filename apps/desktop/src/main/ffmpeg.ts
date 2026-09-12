@@ -60,7 +60,6 @@ import {
   BAND_WIDTH_HZ as SHELF_BAND_WIDTH_HZ,
 } from './hfShelf'
 import { isMissingInputError } from './missingInput'
-import { MP3_ENCODER_DELAY_MS, mp3DecoderPadsHead } from './mp3EncoderDelay'
 import { recordNmlPatch } from './nmlBatch'
 import {
   astatsArgs,
@@ -1245,13 +1244,9 @@ function assertNotTruncated(file: string, stderr: string, stdout: string): void 
 // cut too. The tempo rides along for the grid marker, whose phase can't be
 // recomputed without it; a non-numeric or absent bpm tag simply leaves it undefined.
 //
-// A second, independent source of drift rides on the same shift: an MP3 whose
-// Xing/LAME header was stripped decodes MP3_ENCODER_DELAY_MS late, because that
-// header is what tells the decoder to drop the encoder's priming samples (measured,
-// see mp3EncoderDelay.ts). The audio moves later, so the cues must move later too —
-// a negative shift, since shiftTraktorCues subtracts. An MP3 that still has its
-// header decodes sample-aligned and gets nothing: compensating there would drag a
-// correctly placed cue off the grid, which is exactly what a fixed offset does.
+// A second source rides on the same shift: the codec calibration in cueCalibration.ts,
+// which moves the marker on the crossings into and out of MP3.
+//
 // A third rides on top of both: the user's own offset. That one answers a question
 // measurement can't — whether this DJ's cues feel early when they play in Traktor, which
 // depends on their ears and their rig, not the file. It ADDS to the codec correction
@@ -1267,40 +1262,38 @@ function cueShiftFor(
   input: string,
   outputExt: string,
 ): CueShift | undefined {
-  // Two corrections for the same thing — "the codec moved where this lands" — so they
-  // REPLACE each other rather than stacking. The DJ reported (10/09/2026), converting and
-  // watching Traktor, that the marker sits 51 ms out going into MP3 and the other way
-  // coming out of it. That is where Traktor DRAWS the marker; the audio itself does not
-  // move, measured with a click on a known sample through every one of these routes. He
-  // has Traktor in front of him, so the figure is his.
+  // The DJ reported (10/09/2026), converting and watching Traktor, that the marker sits
+  // 51 ms out going into MP3 and the other way coming out of it. That is where Traktor
+  // DRAWS the marker; the audio itself does not move, measured with a click on a known
+  // sample through every one of these routes (mp3DelayIsNotReal.test.ts). He has Traktor
+  // in front of him, so the figure is his.
   //
-  // The encoder-delay fix is different in kind: it is measured here, it applies only to an
-  // MP3 whose Xing/LAME header was stripped, and for those files the audio really does
-  // arrive 25.06 ms late. Adding both would put a rip or an edit 76 ms out — and his own
-  // testing cannot catch it, because a normally encoded MP3 keeps its header and never
-  // takes that branch. Where both would apply, the measured one wins.
-  const decoderDelayMs = mp3DecoderPadsHead(input) ? MP3_ENCODER_DELAY_MS : 0
-  const codecCueOffsetMs =
-    decoderDelayMs === 0 ? automaticCueOffsetMs(extname(input), outputExt) : 0
+  // It used to stand aside for an "encoder delay" correction on an MP3 whose Xing/LAME
+  // header was stripped, which is why rips and edits came out 76 ms from where his build
+  // put them. That 1105-sample figure was measured between two encodes of one WAV, with
+  // and without the header — not across a conversion. It is 529 + 576: the encoder
+  // priming plus the MDCT half-overlap the comparison itself introduced. The real 529
+  // belongs to the file, sits there before any conversion and is unchanged by one, and
+  // Traktor placed its cues against that same decoded audio. Nothing to correct.
+  const codecCueOffsetMs = automaticCueOffsetMs(extname(input), outputExt)
   // Free-text in the UI, so a blank or garbage value has to read as "no adjustment"
   // rather than a NaN that would silently drop every cue at shiftTraktorCues.
   const configured = Number(getSettings().traktorCueOffsetMs)
   const userOffsetMs = Number.isFinite(configured) ? configured : 0
   const trimmed = active && trim !== undefined
-  if (!trimmed && decoderDelayMs === 0 && userOffsetMs === 0 && codecCueOffsetMs === 0)
-    return undefined
+  if (!trimmed && userOffsetMs === 0 && codecCueOffsetMs === 0) return undefined
   const startSec = trimmed ? (trim?.startSec ?? 0) : 0
   const tempo = Number(bpm)
   const endSec = trimmed ? trim?.endSec : undefined
   return {
     // Both corrections push the cue later, and shiftTraktorCues subtracts, so both
     // arrive negative: the head trim is the only term that moves a cue earlier.
-    shiftMs: Math.round(startSec * 1000) - decoderDelayMs - userOffsetMs - codecCueOffsetMs,
-    // A trim relocates the audio, and a stripped Xing header means it decodes late: in
-    // both the stored positions really do stop describing the file, so a cue tree that
-    // cannot be re-anchored is worthless and gets dropped. The calibration and the DJ's
-    // own slider only nudge markers over audio that never moved, so there they are kept.
-    movesAudio: trimmed || decoderDelayMs !== 0,
+    shiftMs: Math.round(startSec * 1000) - userOffsetMs - codecCueOffsetMs,
+    // A trim is the one correction that relocates the audio: the stored positions stop
+    // describing the file, so a cue tree that cannot be re-anchored is worthless and gets
+    // dropped. The calibration and the DJ's own slider only nudge markers over audio that
+    // never moved, so there they are kept.
+    movesAudio: trimmed,
     maxMs: endSec !== undefined ? Math.round((endSec - startSec) * 1000) : undefined,
     bpm: Number.isFinite(tempo) && tempo > 0 ? tempo : undefined,
   }

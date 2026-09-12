@@ -17,13 +17,13 @@ import { convertAudio } from './ffmpeg'
 import { readCueTree } from './tags'
 import { buildTraktorTree, readTraktorCueStart, traktorCue } from './traktor4Fixture'
 
-// The bug this file pins, measured on 2026-09-06 with an impulse train through the
-// bundled ffmpeg: converting an MP3 that has no Xing/LAME header shifts every sample
-// 1105 later (25.06 ms), because that header is what tells the decoder to drop the
-// encoder's priming samples. Cues carried onto the output keep their old timestamps
-// and so land 25 ms early relative to the audio — the "cues no longer match the grid"
-// the user reported. An MP3 that still has its header decodes sample-aligned and must
-// not be touched at all.
+// A missing Xing/LAME header does leave an MP3 decoding 529 samples later than a
+// re-headered copy of itself — but that offset is a property of the FILE, already
+// present before any conversion and unchanged by one (mp3DelayIsNotReal.test.ts
+// measures the click through every crossing and it never moves). Traktor placed its
+// cues against that same decoded audio, so there is nothing for a conversion to
+// correct. The only automatic correction is the DJ's directional calibration, and
+// it applies to a header-stripped MP3 exactly as it does to any other.
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-mp3delay-'))
 
@@ -106,15 +106,16 @@ describe('MP3 encoder delay compensation on conversion', () => {
     expect(readTraktorCueStart(tree as Uint8Array, 0)).toBeCloseTo(CUE_START_MS - 51, 0)
   })
 
-  // The reported case: without the header the audio arrives 25.06 ms late, so the cue
-  // has to move the same amount to stay on the same beat.
-  it('pushes cues by the encoder delay when the source MP3 has no Xing header', async () => {
+  // The population where a stripped header used to buy a 25.06 ms correction. The
+  // audio it describes never moves, so the calibration is the only thing that applies
+  // — the same -51 ms the header-carrying file above gets.
+  it('applies the directional calibration to a header-stripped MP3 as well', async () => {
     const out = join(dir, 'from-no-xing.flac')
     await convertAudio(withoutXing, out, 'flac', meta)
 
     const tree = readCueTree(out)
     expect(tree).toBeDefined()
-    expect(readTraktorCueStart(tree as Uint8Array, 0)).toBeCloseTo(CUE_START_MS + 25.06, 1)
+    expect(readTraktorCueStart(tree as Uint8Array, 0)).toBeCloseTo(CUE_START_MS - 51, 0)
   })
 })
 
@@ -124,25 +125,26 @@ describe('MP3 encoder delay compensation on conversion', () => {
 // confirm or deny — the click stays on its sample through every one of these conversions.
 // He has Traktor in front of him and we do not, so the calibration is his.
 //
-// What this file does own is that a file never receives two corrections for the same
-// drift. The Xing fix and the calibration are both "the codec moved things", so they
-// REPLACE each other rather than stacking: an MP3 whose header was stripped already
-// decodes 25.06 ms late and gets that exact figure, not that plus another 51.
+// What this file owns is that the calibration reaches every MP3, whatever header it
+// carries. It used to stand aside for a 25.06 ms "encoder delay" correction, which is
+// why his build behaved and ours did not on rips and edits: that correction was
+// measured between two encodes rather than across a conversion, and the drift it
+// describes does not exist on the conversion path.
 describe('the directional calibration against the codec fix', () => {
   afterAll(() => {
     traktorCueOffsetMs = 0
   })
 
-  // The case his own testing cannot reach: a stripped-header MP3 is a rip or an edit, not
-  // a file a normal encode produces. Stacking would put it 76 ms out, so the larger,
-  // measured correction wins and the calibration steps aside.
-  it('does not add the calibration on top of the encoder-delay fix', async () => {
+  // The case his own testing cannot reach: a stripped-header MP3 is a rip or an edit,
+  // not a file a normal encode produces, so every file he checked took the branch that
+  // already worked. This row is the one that used to come out 76 ms from where his did.
+  it('does not let a missing Xing header suppress the calibration', async () => {
     const out = join(dir, 'calibrated-no-xing.flac')
     await convertAudio(withoutXing, out, 'flac', meta)
 
     const tree = readCueTree(out)
     expect(tree).toBeDefined()
-    expect(readTraktorCueStart(tree as Uint8Array, 0)).toBeCloseTo(CUE_START_MS + 25.06, 1)
+    expect(readTraktorCueStart(tree as Uint8Array, 0)).toBeCloseTo(CUE_START_MS - 51, 0)
   })
 
   // An MP3 that still carries its header decodes sample-aligned, so there is no measured
@@ -158,12 +160,12 @@ describe('the directional calibration against the codec fix', () => {
   })
 })
 
-// The measured compensation above answers "did the conversion move the audio". It cannot
-// answer "do this DJ's cues feel early in Traktor", which is a property of their ears and
-// their rig, not of the file — one reporter runs AudioFinder's fixed -51 ms and finds it
-// right. So the offset is a setting they own, applied on top of the measured correction
-// rather than replacing it: the codec fix keeps working on the files that need it, and
-// the taste adjustment moves every cue by the same amount whatever the source.
+// The calibration above answers "where does Traktor draw this marker after the codec
+// change". It cannot answer "do this DJ's cues feel early in Traktor", which is a
+// property of their ears and their rig, not of the file. So the offset is a setting they
+// own, applied on top of the calibration rather than replacing it: the route correction
+// keeps working, and the taste adjustment moves every cue by the same amount whatever
+// the source.
 describe('the user cue offset setting', () => {
   afterAll(() => {
     traktorCueOffsetMs = 0
@@ -181,16 +183,16 @@ describe('the user cue offset setting', () => {
     expect(readTraktorCueStart(tree as Uint8Array, 0)).toBeCloseTo(CUE_START_MS - 102, 0)
   })
 
-  // The slider stacks on whatever the route already corrects — here the 25.06 ms the
-  // missing Xing header costs. Replacing one with the other is what makes a fixed offset
-  // wrong. (The directional calibration steps aside for this file: see the suite below.)
-  it('adds the offset to the encoder delay compensation, not instead of it', async () => {
+  // The slider stacks on whatever the route already corrects, on a header-stripped MP3
+  // exactly as on any other. Replacing one with the other is what makes a fixed offset
+  // wrong.
+  it('adds the offset to the route calibration, not instead of it', async () => {
     traktorCueOffsetMs = -51
     const out = join(dir, 'offset-no-xing.flac')
     await convertAudio(withoutXing, out, 'flac', meta)
 
     const tree = readCueTree(out)
-    expect(readTraktorCueStart(tree as Uint8Array, 0)).toBeCloseTo(CUE_START_MS + 25.06 - 51, 0)
+    expect(readTraktorCueStart(tree as Uint8Array, 0)).toBeCloseTo(CUE_START_MS - 102, 0)
   })
 
   // The default: the SLIDER contributes nothing of its own. The cue still moves by the
