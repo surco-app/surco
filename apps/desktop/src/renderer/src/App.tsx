@@ -1183,6 +1183,15 @@ export default function App(): React.JSX.Element {
     ),
   )
 
+  // The run summary's failure count, made into a way into the rows it counts. Starts from
+  // EMPTY_FILTER rather than the live selection so the failures can't come back empty
+  // behind a quality or format filter the user left on from earlier work — the click has
+  // to show what it promises. Search is cleared for the same reason.
+  const onShowFailed = useStableCallback(() => {
+    setFilterSelection({ ...EMPTY_FILTER, conversion: 'failed' })
+    setSearch('')
+  })
+
   // Stable like the other editor props so a search keystroke doesn't re-render the
   // memoized Editor: records which track's field has focus for the sweep's edit guard.
   const onFieldFocusChange = useStableCallback((id: string | null) => {
@@ -1686,6 +1695,7 @@ export default function App(): React.JSX.Element {
                 onConvertAll={onConvertAllTracks}
                 importing={importProgress}
                 batchSummary={batchSummary}
+                onShowFailed={onShowFailed}
                 batching={batching}
                 batchProgress={batchProgress}
                 analysis={analysis}
