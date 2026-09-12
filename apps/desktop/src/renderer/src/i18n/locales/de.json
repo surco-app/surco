@@ -883,7 +883,7 @@
     "traktorCueAmount": "Wie viel korrigieren",
     "traktorCueAmountUp": "Korrektur erhöhen",
     "traktorCueAmountDown": "Korrektur verringern",
-    "traktorCueOffsetHint": "Surco korrigiert den Versatz des Codecs bereits, der Normalfall ist also der erste. Ändere es nur, wenn deine Cues beim Hören in Traktor immer zu früh oder immer zu spät kommen. Es verschiebt den Startpunkt, nie die Länge deiner Loops.",
+    "traktorCueOffsetHint": "Surco korrigiert den Codec-Versatz bei jeder Konvertierung automatisch, bei der ersten Antwort musst du also nichts tun. Ändere es nur, wenn deine Cues beim Hören in Traktor immer zu früh oder immer zu spät kommen. Es verschiebt den Startpunkt, nie die Länge deiner Loops.",
     "appleMusicFlacNote": "Apple Music kann FLAC nicht abspielen, deshalb bleiben konvertierte Tracks im Ausgabeordner, solange FLAC dein Format ist.",
     "filenameFormat": "Dateinamen-Format",
     "titleFormatHint": "Baut den Titel aus anderen Feldern neu auf. Wird nur auf Wunsch angewendet — über das ⋯-Menü des Titelfelds oder die Befehlspalette — nie automatisch.",

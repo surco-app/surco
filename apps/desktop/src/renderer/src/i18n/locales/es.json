@@ -883,7 +883,7 @@
     "traktorCueAmount": "Cuánto corregir",
     "traktorCueAmountUp": "Aumentar la corrección",
     "traktorCueAmountDown": "Reducir la corrección",
-    "traktorCueOffsetHint": "Surco ya corrige el desfase del códec, así que lo normal es la primera. Cámbialo solo si, escuchando en Traktor, tus cues entran siempre pronto o siempre tarde. Mueve el punto de inicio, nunca la duración de los loops.",
+    "traktorCueOffsetHint": "Surco corrige el desfase del códec automáticamente en cada conversión, así que con la primera respuesta no tienes que hacer nada. Cámbialo solo si, escuchando en Traktor, tus cues entran siempre pronto o siempre tarde. Mueve el punto de inicio, nunca la duración de los loops.",
     "appleMusicFlacNote": "Apple Music no reproduce FLAC, así que las pistas convertidas se quedan en la carpeta de salida mientras tu formato sea FLAC.",
     "filenameFormat": "Formato del nombre",
     "titleFormatHint": "Reconstruye el título a partir de otros campos. Se aplica solo cuando tú lo pides — desde el menú ⋯ del campo título o la paleta de comandos — nunca automáticamente.",

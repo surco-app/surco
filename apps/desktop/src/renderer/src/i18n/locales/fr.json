@@ -883,7 +883,7 @@
     "traktorCueAmount": "Ampleur de la correction",
     "traktorCueAmountUp": "Augmenter la correction",
     "traktorCueAmountDown": "Réduire la correction",
-    "traktorCueOffsetHint": "Surco corrige déjà le décalage introduit par le codec, le cas normal est donc le premier. Ne le changez que si, à l’écoute dans Traktor, vos cues arrivent toujours trop tôt ou toujours trop tard. Cela déplace le point de départ, jamais la durée de vos boucles.",
+    "traktorCueOffsetHint": "Surco corrige automatiquement le décalage du codec à chaque conversion : avec la première réponse, vous n’avez rien à faire. Ne le changez que si, à l’écoute dans Traktor, vos cues arrivent toujours trop tôt ou toujours trop tard. Cela déplace le point de départ, jamais la durée de vos boucles.",
     "appleMusicFlacNote": "Apple Music ne lit pas le FLAC, donc les morceaux convertis restent dans le dossier de sortie tant que ton format est FLAC.",
     "filenameFormat": "Format du nom de fichier",
     "titleFormatHint": "Reconstruit le titre à partir des autres champs. Appliqué uniquement à la demande — via le menu ⋯ du champ titre ou la palette de commandes — jamais automatiquement.",
