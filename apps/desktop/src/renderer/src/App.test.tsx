@@ -2813,3 +2813,39 @@ describe('App Apple Music import stays reachable', () => {
     expect(screen.queryByTestId('import-apple-playlist')).toBeNull()
   })
 })
+
+// The empty screen used to offer two doors at once: an "Add files" button in the narrow
+// left column and an "Import from Apple Music" button in the centre. Neither of them led,
+// and the copy told the user to drag onto a column while the big empty panel beside it —
+// where anyone would aim — accepted nothing.
+describe('App empty screen offers a single way in', () => {
+  it('puts adding files in the centre panel, not in the track column', async () => {
+    vi.resetModules()
+    setApi({ platform: 'darwin' })
+    await renderApp()
+
+    const add = await screen.findByTestId('add-files')
+    expect(add.closest('[data-testid="sidebar"]')).toBeNull()
+  })
+
+  // The Apple Music route stays reachable, but as a quieter sibling: two buttons of equal
+  // weight is what left the old screen with no answer to "where do I start".
+  it('keeps the Apple Music route as the secondary option beside it', async () => {
+    vi.resetModules()
+    setApi({ platform: 'darwin' })
+    await renderApp()
+
+    expect(await screen.findByTestId('add-files')).toBeInTheDocument()
+    expect(screen.getByTestId('empty-import-playlist')).toBeInTheDocument()
+  })
+
+  // The panel is where the tracks visibly land, so it has to answer the drag the copy
+  // invites. Previously only the sidebar carried the drop state.
+  it('answers the drag in the panel the copy points at', async () => {
+    vi.resetModules()
+    setApi({ platform: 'darwin' })
+    await renderApp()
+
+    expect(await screen.findByTestId('empty-dropzone')).toBeInTheDocument()
+  })
+})

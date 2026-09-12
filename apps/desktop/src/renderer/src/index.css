@@ -767,26 +767,43 @@ textarea {
   }
 }
 
-/* The empty state's record turns slowly — 12s a revolution, about 5rpm. Fast enough that
-   the app never looks frozen, slow enough that the eye isn't dragged into following the
-   groove mark while reading the copy beside it. transform-origin is given in viewBox units
-   because the SVG's own centre, not the element box, is the spindle. */
-@keyframes empty-disc-spin {
-  to {
-    transform: rotate(360deg);
+/* Rings leaving the empty state's record — the sound coming off it, while the disc itself
+   stays still. A turning platter was the obvious choice and the wrong one: rotating forever
+   reads as a progress indicator, and an idle screen has nothing in progress. The ring fades
+   out well before it stops growing, so it dissolves into the panel instead of ending at a
+   visible edge. transform-origin is given in viewBox units because the SVG's own centre,
+   not the element box, is the spindle. */
+@keyframes empty-disc-ping {
+  0% {
+    transform: scale(0.62);
+    opacity: 0.55;
+  }
+  70% {
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.34);
+    opacity: 0;
   }
 }
 
-.empty-disc-spin {
+/* `backwards` is load-bearing: two of the three rings wait out a delay before their first
+   run, and without it they hold their UNANIMATED state through that wait — full size, full
+   opacity — so all three sit stacked on the rim as one thick blue ring until the stagger
+   finally clears. Measured in the running app, not guessed: the delayed rings reported
+   transform:none and opacity:1. `backwards` applies the 0% keyframe during the delay. */
+.empty-disc-ping {
   transform-origin: 512px 512px;
-  animation: empty-disc-spin 12s linear infinite;
+  animation: empty-disc-ping 2.6s cubic-bezier(0, 0, 0.2, 1) infinite backwards;
 }
 
-/* The disc reads the same standing still — the grooves, label and waveform are all there,
-   so nothing is lost but the turning. */
+/* Without the rings the record is simply itself — rim, grooves, label and waveform are all
+   drawn, so nothing is lost but the pulse. They are hidden rather than frozen mid-flight,
+   which would leave an inexplicable blue circle floating around the disc. */
 @media (prefers-reduced-motion: reduce) {
-  .empty-disc-spin {
+  .empty-disc-ping {
     animation: none;
+    opacity: 0;
   }
 }
 
@@ -842,6 +859,23 @@ textarea {
 .drop-column[data-drop-over] {
   background-color: color-mix(in srgb, var(--color-accent) 8%, var(--color-panel));
   box-shadow: inset 0 0 0 2px var(--color-accent);
+}
+
+/* The empty screen's own drop target. The rule above deliberately keeps the drag out of the
+   detail pane, and that still holds once a track is open — but while the list is empty this
+   panel shows no detail, and it is the wide open space anyone aims a dragged folder at.
+   Nothing is drawn until a drag actually starts: an outline sitting there permanently boxes
+   the copy in a frame it doesn't need, and the heading already says where to drop. */
+.empty-dropzone {
+  border: 1.5px solid transparent;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.empty-dropzone[data-drop-over] {
+  border-color: var(--color-accent);
+  background-color: color-mix(in srgb, var(--color-accent) 6%, transparent);
 }
 
 /* The placeholder rows breathe out of phase so the group reads as waiting for something
