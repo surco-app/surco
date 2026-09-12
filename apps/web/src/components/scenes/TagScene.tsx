@@ -105,7 +105,9 @@ export default function TagScene() {
               <div
                 key={r.src}
                 className={`min-w-0 rounded-lg border p-2 font-mono text-[11px] transition-all duration-300 ${
-                  shown ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-1 opacity-0'
+                  shown
+                    ? 'translate-y-0 opacity-100'
+                    : 'pointer-events-none translate-y-1 opacity-0'
                 } ${active ? 'border-blue/45 bg-blue/10' : 'border-line'}`}
               >
                 <span className="block truncate text-fg/90">{r.title}</span>
