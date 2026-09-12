@@ -181,18 +181,37 @@ playlist siguen ahí.
 
 ## Lo que queda
 
-**Paso 5. Cableado a la conversión.** El subsistema está completo y probado, pero NADIE
-lo llama todavía. Falta: un ajuste con la ruta de la colección, la llamada desde el flujo
-de conversión, y decidir qué se le enseña al usuario cuando el resultado es ambiguo o la
-guarda rechaza la escritura.
+**Paso 5. Cableado a la conversión. HECHO 12/09 (ab77d74e, 349f97ea).**
+Cuatro módulos: detección de la colección, acumulador del lote, orquestación del volcado
+y la regla de cuándo reapuntar. 23 tests más.
 
-**Paso 6. Ajuste de la restricción de carpeta.** La regla de misma carpeta
-(`ffmpeg.ts:1385`) existe por cómo Traktor parte la ruta. Para rekordbox no hace falta, y
-Vicent pidió que también reapunte al convertir a otra carpeta.
+Decisiones tomadas: la colección se detecta sola, con un ajuste que solo hace falta si la
+guardas en otro sitio, y la escritura ocurre al acabar el lote entero, no pista a pista.
 
-**Antes de publicar**: verificación a mano sobre una copia, abriendo rekordbox para
-comprobar playlists y cues a ojo. Y decidir si sale apagada por defecto, como la
-sincronización con Traktor.
+Verificado en la aplicación real: un MP3 con 5 playlists y 15 cues, convertido a AIFF
+desde el botón de procesar, dejó la entrada apuntando al nuevo fichero con su formato y
+tamaño corregidos, las 5 playlists y los 15 cues intactos y una copia de seguridad al
+lado. Sobre una copia; la colección real no se abrió.
+
+**Paso 6. Ajuste de la restricción de carpeta. HECHO 12/09.**
+rekordbox reapunta también cuando la conversión va a otra carpeta, porque su ruta es una
+columna entera. La regla de misma carpeta sigue aplicándose solo a Traktor.
+
+## Lo único que falta: la UI
+
+El volcado devuelve cuántas pistas se reapuntaron, cuáles se saltaron y si el lote entero
+se bloqueó. Hoy eso **solo se escribe en el log**.
+
+Falta decidir qué ve el usuario en tres situaciones:
+
+- **Rekordbox abierto.** El lote no escribe nada. Traktor, en el mismo caso, ofrece
+  cerrarlo y avisa si el usuario se niega.
+- **Una pista ambigua.** Hay dos entradas para el mismo fichero y hace falta que el
+  usuario elija cuál conservar.
+- **Todo bien.** Decidir si merece una línea en el panel de actividad o pasa en silencio.
+
+También queda decidir si la función sale apagada por defecto, como la sincronización con
+Traktor, y dónde vive el ajuste de la ruta en la pantalla de ajustes.
 
 ## Verificación, no negociable
 
