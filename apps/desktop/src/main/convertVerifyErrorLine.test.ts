@@ -53,6 +53,27 @@ describe('firstErrorLine', () => {
     expect(line).toMatch(/Header missing/)
   })
 
+  // A failed ENCODE puts its diagnosis on exactly the stream the byte-count rule above
+  // was written to ignore: when ffmpeg cannot write the output at all — a read-only
+  // folder, a permission the user lost, a full disk — the muxer that refused it says so
+  // as "[out#0/aiff ...] Could not open file : Permission denied". Skipping every
+  // out#-tagged line to dodge the summary also threw this away, leaving the generic
+  // "Conversion failed!" as the whole explanation. The summary is identified by what it
+  // IS (an accounting line, carrying "muxing overhead"), not by the stream it rides on.
+  it('reports the muxer failure that rides on the output stream', () => {
+    const stderr = [
+      'ffmpeg version 6.0 Copyright (c) 2000-2023 the FFmpeg developers',
+      "Input #0, flac, from 'in.flac':",
+      '  Duration: 00:00:01.00, bitrate: 1411 kb/s',
+      '[out#0/aiff @ 0x600001] Could not open file : Permission denied',
+      'Conversion failed!',
+    ].join('\n')
+
+    const line = firstErrorLine(stderr)
+    expect(line, 'fell back to the generic tail').not.toBe('Conversion failed!')
+    expect(line).toMatch(/Permission denied/)
+  })
+
   // The fallbacks still have to hold: a build that names no component at all must
   // report something rather than an empty string the user's report cannot act on.
   it('falls back to the last real line when nothing is tagged', () => {
