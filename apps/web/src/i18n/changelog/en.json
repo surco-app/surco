@@ -5,6 +5,14 @@
     "title": "Bring in an Apple Music playlist and work on it",
     "items": [
       {
+        "text": "The cue correction for converting from or to MP3 now reaches every one of your tracks. A ripped or edited MP3, missing the header that encoders normally write, used to be left out and given a different adjustment: its markers ended up around 76 ms from where Traktor draws them, instead of the 51 ms now compensated. Ordinary MP3s are unchanged.",
+        "in": "0.96.1"
+      },
+      {
+        "text": "The start screen now says one thing. It used to offer dragging and a button at the same time, with the record spinning without pause; now it invites you to drop your tracks on it, with the button underneath in case you would rather browse, and the record pulses slowly instead of turning.",
+        "in": "0.96.1"
+      },
+      {
         "text": "You can load an Apple Music playlist without leaving Surco. Pick one, and the tracks it holds on your disk land in the usual column, ready to tag, analyse and repair. Streaming songs have no file, so they stay out and Surco tells you how many there were.",
         "in": "0.96.0"
       },
