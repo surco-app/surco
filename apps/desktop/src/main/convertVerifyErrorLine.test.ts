@@ -30,9 +30,11 @@ describe('firstErrorLine', () => {
   ]
 
   it('reports the decoder failure on the build that stops at it', () => {
-    const stderr = [...banner, '[mp3float @ 0x15500bd00] Header missing', 'Conversion failed!'].join(
-      '\n',
-    )
+    const stderr = [
+      ...banner,
+      '[mp3float @ 0x15500bd00] Header missing',
+      'Conversion failed!',
+    ].join('\n')
     expect(firstErrorLine(stderr)).toMatch(/Header missing/)
   })
 

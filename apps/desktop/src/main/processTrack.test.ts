@@ -379,7 +379,7 @@ describe('runProcessTrack — output conflict', () => {
   // tracks to one name and the user overwrote, both rows carry the same
   // previousOutputPath, and re-converting the pair let each one skip the check and
   // rename over the other — "2 converted", one file on disk.
-  it('does not let the previous-output pass ride over another job\'s claim', async () => {
+  it("does not let the previous-output pass ride over another job's claim", async () => {
     const reservations = createOutputReservations(false)
     const deps = makeDeps({
       isPathReserved: reservations.isReserved,
