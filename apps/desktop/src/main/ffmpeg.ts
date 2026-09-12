@@ -1197,12 +1197,20 @@ export function firstErrorLine(stderr: string): string {
   // "[out#0/null @ 0x...] video:0KiB audio:83KiB ... muxing overhead: unknown" — so
   // taking the last tagged line reported a byte count as the diagnosis on the builds
   // most users run. Those output-stream accounting lines are not diagnoses of anything.
+  //
+  // But they are skipped for being ACCOUNTING, not for the stream they ride on, which is
+  // what the first fix here got wrong: an out#-tagged line is exactly where the muxer
+  // reports that it could not write the file at all — "[out#0/aiff ...] Could not open
+  // file : Permission denied" — so discarding the whole prefix threw away the entire
+  // explanation of a failed encode and left the user the generic "Conversion failed!".
+  // The summary is matched by what it carries (the byte tally, "muxing overhead"), which
+  // separates the two without guessing.
   const tagged = lines.filter(
     (l) =>
       /^\[[^\]]+]/.test(l) &&
       !/^\[.*] Press /.test(l) &&
-      !/^\[(out|in)#\d/.test(l) &&
-      !/muxing overhead/.test(l),
+      !/muxing overhead/.test(l) &&
+      !/^\[(out|in)#\d[^\]]*]\s*(video|audio|subtitle|other streams|global headers):/.test(l),
   )
   return tagged.at(-1) ?? lines.at(-1) ?? stderr.split('\n')[0] ?? ''
 }
@@ -1584,7 +1592,19 @@ export async function convertAudio(
           maxBuffer: 1024 * 1024 * 32,
           onChild,
         },
-      )
+      ).catch((e: unknown) => {
+        // execFile prefixes a failed run with "Command failed: " and the ENTIRE command
+        // line before any of ffmpeg's own output. That line carries every -metadata flag
+        // Surco writes — around forty of them — so the message the user was shown ran to
+        // thousands of characters with the one line that says WHY buried at the bottom.
+        // Distilled to the decoder's own diagnosis, the same way assertDecodable already
+        // treats its failures; the raw text still reaches the log through the throw site.
+        // Not stamped with an error key: the cause here is open-ended (permissions, a
+        // full disk, a codec refusing a parameter) and ffmpeg's own line names it better
+        // than any sentence Surco could pick in advance.
+        const text = String((e as { stderr?: unknown })?.stderr ?? '').trim()
+        throw text ? new Error(firstErrorLine(text) || text) : e
+      })
       if (declickAf) declickedSamples = parseDeclickedSamples(String(stderr)) ?? undefined
       if (ext === '.wav' || ext === '.m4a') {
         // RIFF rejects an attached-picture stream, so convertArgs can't embed the
