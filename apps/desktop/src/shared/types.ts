@@ -172,6 +172,8 @@ export interface Settings {
   // Traktor's collection.nml path. Machine-local — the folder doesn't exist on another Mac.
   // Empty by default: the feature is off until the user points Surco at their collection.
   traktorNmlPath: string
+  // Override for the rekordbox collection; empty means the standard location is used.
+  rekordboxDbPath: string
   // Milliseconds every carried cue is nudged by, on top of the route calibration
   // (see cueCalibration.ts). Zero by default and expected to stay there: the conversion
   // already lands cues where they were. It exists for the DJ whose cues consistently feel

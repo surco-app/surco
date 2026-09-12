@@ -76,6 +76,8 @@ import {
   volumedetectArgs,
   volumeFilter,
 } from './normalize'
+import { recordRekordboxRepoint } from './rekordboxBatch'
+import { rekordboxRepointFor } from './rekordboxRepointFor'
 import { renameWithRetry, rescuePath } from './renameRetry'
 import { getSettings } from './settings'
 import { createSharedScan } from './sharedScan'
@@ -1781,6 +1783,11 @@ export async function convertAudio(
     // it now exists at `output`, and the cue-writing branches above (copyCueFrames,
     // copyCuesToFlac, shiftFlacCues) only ever touched `tmp`.
     recordConversionPatch(input, output, meta, !removeCover, clearExtras ?? false)
+    // rekordbox indexes by path too, and unlike Traktor it stores the whole path in one
+    // column, so the entry can follow the file even into another folder. Recorded here
+    // for the same reason as the patch above: the file now exists at `output`.
+    const repoint = rekordboxRepointFor(input, output)
+    if (repoint) recordRekordboxRepoint(repoint)
   } catch (e) {
     // A rescued temp is no longer at `tmp` — the rescue renamed it away — so the unlink
     // below finds nothing and the finished conversion survives on its own. Returning
