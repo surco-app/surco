@@ -1367,6 +1367,34 @@ describe('App conversion failure notice', () => {
     expect(toast).toHaveTextContent('2')
   })
 
+  // The run summary counts the failures ("2 failed") and the list already has a bucket
+  // that isolates exactly those rows — but the count was inert text, so the user read
+  // the number and still had to scan for red rings. Clicking it filters the list down
+  // to the failures, which is the whole path from "something broke" to the rows.
+  it('filters the list to the failures when the run summary count is clicked', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi
+        .fn()
+        .mockResolvedValueOnce({ title: 'Pray', artist: 'A' })
+        .mockResolvedValueOnce({ title: 'Second', artist: 'B' })
+        .mockResolvedValueOnce({ title: 'Third', artist: 'C' }),
+      // Only the middle track fails, so the filtered list is a strict subset — a
+      // whole-run failure would pass even if the click did nothing at all.
+      processTrack: vi.fn(async ({ inputPath }: { inputPath: string }) => {
+        if (inputPath === '/music/b.wav') throw new Error('came out unreadable')
+        return { outputPath: '/out/x.aiff', inPlace: false }
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    fireEvent.click(await screen.findByTestId('convert-all'))
+    const failedCount = await screen.findByTestId('batch-failed-count')
+    fireEvent.click(failedCount)
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(screen.getByTestId('track-row')).toHaveTextContent('Second')
+  })
 })
 
 // The Default format x input-extension matrix from the user's own single-track convert
