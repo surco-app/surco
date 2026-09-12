@@ -10,7 +10,7 @@ const RING_DELAYS = ['0s', '0.87s', '1.74s']
 // unchanged that margin is dead space, and the disc rendered 75px wide inside a 128px box.
 // 370 is the ceiling: the outermost ring reaches r*1.34 + half its 10-wide stroke, which at
 // 370 lands on 501 and still clears the 512 edge, so the pulse never clips.
-
+//
 // The app icon is a record, so the empty state shows the same object the user just clicked
 // in the Dock. It does NOT turn: a platter rotating forever reads as a progress indicator,
 // which is the one thing an idle screen must not claim. Instead the sound leaves the disc —
