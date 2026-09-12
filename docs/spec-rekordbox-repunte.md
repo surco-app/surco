@@ -142,26 +142,57 @@ pragmas está arriba. La propuesta es viable.
 Tabla medida contra su colección, arriba. Apareció un caso que la documentación no
 recoge: una pista de Spotify sin fichero, que hay que excluir.
 
-**Paso 2. Lectura, con tests.**
-Localizar una pista por ruta dentro de la colección.
-Éxito: dada la ruta del MP3, devuelve su identificador y su formato.
+**Paso 2. Lectura, con tests. HECHO 12/09 (f6bb2e08).**
+Localiza una pista por ruta en la colección cifrada. 8 tests, 4 mutaciones verificadas.
 
-**Paso 3. La guarda de rekordbox abierto.**
-Detección en macOS y Windows, fallando cerrada, con límite de palabra.
-Éxito: tests de las dos plataformas y de los tres modos de fallo.
+**Paso 2b. Enlaces simbólicos y duplicados. HECHO 12/09 (06a12d65). NO PREVISTO.**
+Su `~/Music/Music` es un enlace a `/Volumes/Public/Music`, así que la misma música está
+guardada bajo dos prefijos: 1513 pistas por el enlace, 413 por el destino. Comparar
+cadenas no vale, hay que resolver.
 
-**Paso 4. Escritura, con copia de seguridad.**
-Reescribir los tres campos, con backup previo y la guarda comprobada dos veces.
-Éxito: sobre una COPIA de su colección, rekordbox abre la pista convertida sin `!`, y
-sigue en sus playlists con sus cues.
+Y lo que destapó: **35 ficheros suyos tienen DOS entradas, y 67 de esas entradas están
+en playlists**, con tamaños distintos. Reapuntar una dejaría a la gemela señalando el
+fichero sustituido, arreglando media colección y rompiendo la otra media. La búsqueda
+devuelve un veredicto de ambigüedad y no elige nunca.
 
-**Paso 5. Cableado a la conversión.**
-Enganchar al flujo, condicionado a que la pista esté en la colección.
-Éxito: convertir un MP3 a WAV deja rekordbox correcto sin intervención.
+Trampa dentro de la trampa: 11 de sus pistas ya no existen en disco, la resolución falla
+y la reserva a comparar cadenas volvía a esconder la ambigüedad justo donde la colección
+ya está rota. Resuelto normalizando el prefijo del enlace, sin tocar disco.
 
-**Paso 6. Ajuste de la restricción de carpeta.**
-Levantar `sameDir` para la ruta de rekordbox sin tocar la de Traktor.
-Éxito: convertir a otra carpeta reapunta en rekordbox y sigue sin tocar Traktor.
+**Paso 3. La guarda de rekordbox abierto. HECHO 12/09 (cefdd3db).**
+9 tests en macOS y Windows, 2 mutaciones verificadas. Falla CERRADA: si no se puede
+averiguar si corre, se asume que sí.
+El bundle trae `rekordboxAgent` y `Upmgr rekordbox`, que empiezan igual que el proceso
+principal, así que la coincidencia es por nombre completo. Es el mismo fallo que hizo que
+un quit destinado a Traktor cayera sobre una herramienta ajena.
+
+**Paso 4. Escritura, con copia de seguridad. HECHO 12/09 (d3a2c3df).**
+12 tests, mutaciones verificadas. Escribe los 4 campos, respeta `OrgFolderPath`, hace
+copia antes de tocar nada, comprueba la guarda dos veces y restaura desde la copia si la
+escritura falla a medias.
+
+Un test era falso y lo delató la mutación: el punto de fallo simulado estaba ANTES del
+UPDATE, así que el fichero no cambiaba y quitar la restauración no rompía nada. Movido
+después del UPDATE, la mutación muere.
+
+**Validado contra una COPIA de su colección real**: la pista cambió de ruta, formato y
+tamaño, y conservó sus 5 playlists y sus 15 cues. Las 1962 pistas y los 6839 enlaces de
+playlist siguen ahí.
+
+## Lo que queda
+
+**Paso 5. Cableado a la conversión.** El subsistema está completo y probado, pero NADIE
+lo llama todavía. Falta: un ajuste con la ruta de la colección, la llamada desde el flujo
+de conversión, y decidir qué se le enseña al usuario cuando el resultado es ambiguo o la
+guarda rechaza la escritura.
+
+**Paso 6. Ajuste de la restricción de carpeta.** La regla de misma carpeta
+(`ffmpeg.ts:1385`) existe por cómo Traktor parte la ruta. Para rekordbox no hace falta, y
+Vicent pidió que también reapunte al convertir a otra carpeta.
+
+**Antes de publicar**: verificación a mano sobre una copia, abriendo rekordbox para
+comprobar playlists y cues a ojo. Y decidir si sale apagada por defecto, como la
+sincronización con Traktor.
 
 ## Verificación, no negociable
 
