@@ -46,6 +46,11 @@ export const defaults: Settings = {
   // often kept outside the standard location), so no reliable default — empty means the feature
   // is off until the user points Surco at their collection.nml.
   traktorNmlPath: '',
+  // Empty means "look where rekordbox keeps it", which is one fixed place per platform —
+  // unlike Traktor's collection, whose folder varies by version and user preference and
+  // so has to be pointed at by hand. This is only an override for a collection kept
+  // somewhere else.
+  rekordboxDbPath: '',
   // Zero: the conversion already puts cues back where they were, so nobody who hasn't
   // gone looking for this should have theirs moved.
   traktorCueOffsetMs: 0,
@@ -123,6 +128,8 @@ const LOCAL_KEYS = [
   'engineLibraryDir',
   // Traktor collection path is machine-specific: the folder doesn't exist on another Mac.
   'traktorNmlPath',
+  // Same for the rekordbox collection override.
+  'rekordboxDbPath',
   'hasSeenOnboarding',
   'conversionCount',
   'stats',

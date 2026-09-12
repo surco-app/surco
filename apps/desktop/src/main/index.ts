@@ -3,6 +3,7 @@ import {
   existsSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   unlinkSync,
   writeFileSync,
 } from 'node:fs'
@@ -70,6 +71,10 @@ import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playb
 import { runProcessTrack } from './processTrack'
 import { getProvider } from './providers'
 import { createQuitGuard } from './quitGuard'
+import { beginRekordboxBatch, endRekordboxBatch } from './rekordboxBatch'
+import { flushRekordboxSync } from './rekordboxFlush'
+import { repointTrack } from './rekordboxLibrary'
+import { findRekordboxCollection } from './rekordboxPath'
 import { loadLastSession, saveLastSession } from './session'
 import {
   defaultConfigDir,
@@ -867,6 +872,7 @@ function registerIpc(): void {
     stickyConflict.reset()
     coverMemo = createCoverMemo(prepareProcessedCover)
     beginNmlBatch()
+    beginRekordboxBatch()
   })
 
   // A convert-all run ends (however it ended — finished, cancelled, or failed, the
@@ -889,6 +895,24 @@ function registerIpc(): void {
       syncCollection,
       track: activity.track.bind(activity),
     })
+    // rekordbox next, and independently: the two collections are separate libraries, so
+    // one being open or unwritable must not stop the other from being updated.
+    const result = await flushRekordboxSync({
+      collectionPath: findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
+      endBatch: endRekordboxBatch,
+      repointTrack: (collectionPath, repoint) =>
+        repointTrack(collectionPath, { ...repoint, realPath: (p) => realpathSync(p) }),
+    })
+    // Logged rather than shown: what the user should see for a blocked flush or an
+    // ambiguous track is still undecided, and inventing a dialog now would be the wrong
+    // place to decide it. The counts are here so the decision can be made from real runs.
+    if (result.written > 0 || result.blocked || result.skipped.length > 0) {
+      log.info(
+        `rekordbox repoint: ${result.written} written` +
+          `${result.blocked ? `, stopped by ${result.blocked}` : ''}` +
+          `${result.skipped.length > 0 ? `, ${result.skipped.length} skipped` : ''}`,
+      )
+    }
   })
 
   // Awaited by the renderer before it starts an in-place export: the surco:// stream
