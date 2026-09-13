@@ -1,6 +1,7 @@
 # Sustituir una pista que ya está en la biblioteca
 
-Estado: propuesta, sin implementar. Requiere aprobación antes de tocar código.
+Estado: los tres pasos de lógica están construidos y probados (13/09). **Nada de esto se
+ejecuta todavía**: falta cablearlo a la conversión y decidir la pantalla.
 
 Depende del reapuntado de rekordbox, que ya está construido y probado. Ver
 `spec-rekordbox-repunte.md`.
@@ -108,24 +109,42 @@ como el de borrar: es información, y la decisión sigue siendo suya.
 
 ## Plan por pasos
 
-Cada paso es verificable por separado y ninguno toca la biblioteca real hasta el último.
+**Paso 1. Leer la ruta vieja y emparejarla con rekordbox. HECHO 13/09 (6089691a).**
+`replaceTarget.ts`, 7 tests. Verificado contra su colección real en los cuatro casos: un
+MP3 con fila en rekordbox, una de las 34 duplicadas (sale ambigua y no elige), una de las
+117 que no están en rekordbox (da la ruta vieja, sin fila), y una entrada sin fichero.
 
-**Paso 1. Leer la ruta vieja y emparejarla con rekordbox.**
-Dado un fichero nuevo que ya está en la biblioteca, obtener la ruta del viejo y la entrada
-de rekordbox que le corresponde.
-Éxito: sobre una copia de su colección, un MP3 suyo de Apple Music devuelve su entrada.
+**Paso 2. El juicio de calidad. HECHO 13/09 (97efd7e2).**
+`replaceWarning.ts`, 11 tests. Avisa en tres casos y nunca bloquea, como pidió: sin
+pérdida que pasa a con pérdida, corte más bajo entre dos con pérdida, y lossless falso.
 
-**Paso 2. El juicio de calidad de la sustitución.**
-Comparar viejo y nuevo y decidir si hay que avisar y de qué.
-Éxito: tests con los tres casos de arriba, más el caso de una mejora real, que no avisa.
+El margen para decidir si un corte es peor son 2100 Hz, y no es inventado: sale del corpus
+de 39 codificaciones LAME medido el 29/08, cuya dispersión llega ahí. Con un margen menor,
+dos copias del mismo tema a 320 se acusarían entre sí. Hay test que fija los dos lados.
 
-**Paso 3. La cadena completa, sin UI.**
-Encadenar los seis pasos del orden, con el reapuntado ya construido.
-Éxito: sobre una COPIA de su colección y con una pista de prueba, la sustitución deja
-rekordbox apuntando al fichero nuevo y Apple Music con una sola entrada.
+**Paso 3. La cadena completa, sin UI. HECHO 13/09 (005ce22f, 5e9e01cc).**
+`replaceFlow.ts` (7 tests) ordena los pasos y `replaceInLibrary.ts` (5 tests) hace el
+intercambio en Apple Music.
 
-**Paso 4. La pantalla.**
-Sin diseñar. Se decide al ver el paso 3 funcionando, que es lo que él pidió.
+Dos órdenes que los tests protegen, y que se comprobaron rompiéndolos a propósito:
+
+- **La ruta vieja se lee antes de tocar Apple Music.** Leerla después devolvería el
+  fichero nuevo y el reapuntado apuntaría al sitio del que quería salir.
+- **En Apple Music se añade antes de borrar.** Al revés, un fallo del añadido dejaría la
+  pista fuera de la biblioteca. Así el peor caso son dos copias, visible y recuperable.
+
+Un reapuntado rechazado (rekordbox abierto, colección de solo lectura) no cancela la
+sustitución: el fichero ya está en disco y la copia de biblioteca sigue mereciendo
+actualizarse. El motivo viaja hacia arriba para poder contarlo.
+
+## Lo que queda
+
+**Cablear la cadena a la conversión.** Los módulos están construidos y probados, pero
+nada los llama todavía: `processTrack.ts` sigue con el flujo de hoy, que añade una copia
+nueva y ofrece borrar la vieja después. Falta sustituir ese tramo por la cadena.
+
+**La pantalla.** Las cinco preguntas de arriba siguen abiertas, y él pidió decidirlas al
+ver el paso 3 funcionando.
 
 ## Verificación, no negociable
 
