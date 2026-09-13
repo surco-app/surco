@@ -1377,7 +1377,10 @@ function recordConversionPatch(
   keptArtwork: boolean,
   clearedExtras: boolean,
 ): void {
-  if (!getSettings().traktorNmlPath) return
+  // Both have to hold: the toggle is the permission and the path is the address. Checking
+  // only the path would keep recording patches for a sync the user has switched off, and
+  // reading a cue tree per track is not free.
+  if (!getSettings().syncTraktor || !getSettings().traktorNmlPath) return
   try {
     const { volume, dir, file } = toNmlLocation(input)
     // Where Traktor would address the output. Compared against the source below, this is

@@ -71,6 +71,7 @@ const api: Api = {
   pickEngineLibraryDir: () => ipcRenderer.invoke('dialog:pickEngineLibraryDir'),
   pickTraktorNmlPath: () => ipcRenderer.invoke('dialog:pickTraktorNmlPath'),
   detectTraktorNmlPath: () => ipcRenderer.invoke('traktor:detectNmlPath'),
+  rekordboxCollection: () => ipcRenderer.invoke('rekordbox:collection'),
   exportRekordbox: (xml: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:exportRekordbox', xml),
   exportTraktor: (nml: string): Promise<string | null> =>

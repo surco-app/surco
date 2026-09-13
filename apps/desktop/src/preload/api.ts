@@ -72,6 +72,8 @@ export interface Api {
   // Proposes a collection.nml to offer in Settings; the caller must have the user
   // confirm it before saving — see traktorNmlPath.ts.
   detectTraktorNmlPath: () => Promise<string | null>
+  // The rekordbox collection on this machine, or '' when there is none.
+  rekordboxCollection: () => Promise<string>
   search: (
     query: string,
     provider?: SearchProviderId,

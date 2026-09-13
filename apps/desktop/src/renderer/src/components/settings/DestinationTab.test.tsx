@@ -24,6 +24,8 @@ const synced: SyncedDraft = {
   overwriteOriginal: false,
   convertBesideOriginal: false,
   addToEngineDj: false,
+  syncTraktor: false,
+  syncRekordbox: false,
   engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
   titleFormat: '',
@@ -82,6 +84,7 @@ function renderTab(over: Partial<SyncedDraft> = {}, localOver: Partial<LocalDraf
       onClearTraktorNmlPath={vi.fn()}
       detectedNmlPath={null}
       onAcceptDetectedNmlPath={vi.fn()}
+      rekordboxCollection=""
     />,
   )
   return patch
@@ -101,6 +104,7 @@ function renderWithCollection(patch: PatchSynced, offset = '0'): void {
       onClearTraktorNmlPath={vi.fn()}
       detectedNmlPath={null}
       onAcceptDetectedNmlPath={vi.fn()}
+      rekordboxCollection=""
     />,
   )
 }
@@ -230,6 +234,7 @@ describe('DestinationTab Traktor collection', () => {
         onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
       />,
     )
     fireEvent.click(screen.getByTestId('settings-traktor-nml-change'))
@@ -251,6 +256,7 @@ describe('DestinationTab Traktor collection', () => {
         onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath="/Users/dj/Documents/Native Instruments/Traktor 4.5.0/collection.nml"
         onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
       />,
     )
     expect(screen.getByTestId('settings-traktor-nml-detected')).toBeInTheDocument()
@@ -266,6 +272,7 @@ describe('DestinationTab Traktor collection', () => {
         onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath="/Users/dj/Documents/Native Instruments/Traktor 4.5.0/collection.nml"
         onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
       />,
     )
     expect(screen.queryByTestId('settings-traktor-nml-detected')).not.toBeInTheDocument()
@@ -286,6 +293,7 @@ describe('DestinationTab Traktor collection', () => {
         onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath="/Users/dj/Documents/Native Instruments/Traktor 4.5.0/collection.nml"
         onAcceptDetectedNmlPath={onAcceptDetectedNmlPath}
+        rekordboxCollection=""
       />,
     )
     fireEvent.click(screen.getByTestId('settings-traktor-nml-use-detected'))
@@ -310,11 +318,103 @@ describe('DestinationTab Traktor collection', () => {
         onClearTraktorNmlPath={onClearTraktorNmlPath}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
       />,
     )
 
     fireEvent.click(screen.getByTestId('settings-traktor-nml-clear'))
     expect(onClearTraktorNmlPath).toHaveBeenCalled()
+  })
+
+  // Reported 13/09/2026: "apuntas a nada is confusing for users". Emptying a text field
+  // was the only way to stop the sync — an invisible side effect nobody guesses, and
+  // against the rule this screen follows everywhere else (a control stays visible and
+  // says what it still needs). The toggle is now the switch and the path is only a path.
+  it('turns the Traktor sync on and off with its own toggle', () => {
+    const patch = vi.fn()
+    render(
+      <DestinationTab
+        synced={{ ...synced, syncTraktor: false }}
+        local={{ ...local, traktorNmlPath: '/dj/collection.nml' }}
+        patch={patch}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        onClearTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
+      />,
+    )
+
+    fireEvent.click(screen.getByTestId('settings-sync-traktor'))
+    expect(patch).toHaveBeenCalledWith('syncTraktor', true)
+  })
+
+  // Visible but disabled, never absent: a control that disappears leaves the user unsure
+  // the feature exists at all. Dimmed says both that it is there and that something is
+  // still missing, and the hint below names what.
+  it('shows the Traktor toggle disabled while no collection is set', () => {
+    render(
+      <DestinationTab
+        synced={{ ...synced, syncTraktor: false }}
+        local={{ ...local, traktorNmlPath: '' }}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        onClearTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
+      />,
+    )
+
+    expect(screen.getByTestId('settings-sync-traktor')).toBeDisabled()
+  })
+
+  // rekordbox keeps its collection in one place per platform, so unlike Traktor there is
+  // nothing to point at: the toggle is the whole setup.
+  it('turns the rekordbox sync on with its own toggle', () => {
+    const patch = vi.fn()
+    render(
+      <DestinationTab
+        synced={{ ...synced, syncRekordbox: false }}
+        local={local}
+        patch={patch}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        onClearTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection="/Users/dj/Library/Pioneer/rekordbox/master.db"
+      />,
+    )
+
+    fireEvent.click(screen.getByTestId('settings-sync-rekordbox'))
+    expect(patch).toHaveBeenCalledWith('syncRekordbox', true)
+  })
+
+  // Someone who does not run rekordbox still sees the setting, dimmed, with the hint
+  // saying no collection was found — rather than wondering whether Surco supports it.
+  it('shows the rekordbox toggle disabled when no collection was found', () => {
+    render(
+      <DestinationTab
+        synced={{ ...synced, syncRekordbox: false }}
+        local={local}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        onClearTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
+      />,
+    )
+
+    expect(screen.getByTestId('settings-sync-rekordbox')).toBeDisabled()
   })
 
   // Nothing configured means nothing to clear, and a live button that does nothing reads
@@ -331,6 +431,7 @@ describe('DestinationTab Traktor collection', () => {
         onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
       />,
     )
 
@@ -356,6 +457,7 @@ describe('DestinationTab Traktor collection', () => {
         onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
       />,
     )
     expect(screen.getByTestId('settings-cue-dir-early')).toBeEnabled()
@@ -371,6 +473,7 @@ describe('DestinationTab Traktor collection', () => {
         onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
       />,
     )
     expect(screen.getByTestId('settings-cue-dir-early')).toBeEnabled()
@@ -396,6 +499,7 @@ describe('DestinationTab Traktor collection', () => {
         onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
       />,
     )
     const field = screen.getByTestId('settings-traktor-nml')
@@ -530,6 +634,7 @@ describe('DestinationTab Traktor collection', () => {
         onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
       />,
     )
 
@@ -552,6 +657,7 @@ describe('DestinationTab Traktor collection', () => {
         onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
       />,
     )
 

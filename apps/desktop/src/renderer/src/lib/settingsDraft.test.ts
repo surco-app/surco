@@ -22,6 +22,8 @@ const settings: Settings = {
   engineLibraryDir: '/music/Engine Library',
   traktorNmlPath: '',
   rekordboxDbPath: '',
+  syncTraktor: false,
+  syncRekordbox: false,
   betaUpdates: false,
   traktorCueOffsetMs: 0,
   engineDjPlaylist: 'Surco',

@@ -870,7 +870,7 @@
     "engineDjPlaylistHint": "Les morceaux convertis sont ajoutés à cette playlist de ta bibliothèque, en plus de la collection.",
     "traktorSync": "Collection Traktor",
     "traktorNmlPath": "collection.nml",
-    "traktorNmlPathHint": "Une fois défini, les cue points et la grille des morceaux convertis sont écrits dans cette collection Traktor. Laisse vide pour désactiver.",
+    "traktorNmlPathHint": "La collection Traktor dans laquelle écrire. Tu peux la changer quand tu veux.",
     "traktorNmlPathDetectedHint": "Trouvé automatiquement — non appliqué tant que tu ne choisis pas de l'utiliser.",
     "traktorNmlPathUseDetected": "Utiliser celui-ci",
     "traktorCueOffset": "Ajustement des points de repère",
@@ -956,7 +956,16 @@
     "requiredHint": "Empêche la conversion d'une piste tant que ce champ est vide.",
     "autoOrganize": "Auto-organiser",
     "autoOrganizeHint": "Réordonne les champs affichés par groupe",
-    "autoOrganized": "Organisé"
+    "autoOrganized": "Organisé",
+    "syncTraktor": "Mettre à jour la collection Traktor à la conversion",
+    "syncTraktorHint": "Les cue points et la grille des morceaux convertis sont écrits dans ta collection Traktor. Surco en fait une sauvegarde avant et n'écrit jamais quand Traktor est ouvert.",
+    "syncTraktorIdle": "Indique ci-dessous où se trouve ta collection Traktor pour pouvoir l'activer.",
+    "syncRekordbox": "Mettre à jour la collection rekordbox à la conversion",
+    "syncRekordboxHint": "Quand tu convertis un morceau présent dans rekordbox, son entrée suit le nouveau fichier et conserve ses playlists et ses cue points. Surco sauvegarde la collection avant et n'écrit jamais quand rekordbox est ouvert.",
+    "syncRekordboxIdle": "Aucune collection rekordbox n'a été trouvée sur cette machine.",
+    "rekordboxSync": "Collection rekordbox",
+    "rekordboxDbPath": "Collection rekordbox",
+    "rekordboxDbPathHint": "La collection rekordbox dans laquelle écrire. Elle est détectée automatiquement ; ne la change que si la tienne est ailleurs."
   },
   "errorBoundary": {
     "title": "Quelque chose n'a pas pu s'afficher",

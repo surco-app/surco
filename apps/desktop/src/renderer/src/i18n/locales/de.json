@@ -870,7 +870,7 @@
     "engineDjPlaylistHint": "Konvertierte Tracks landen in dieser Playlist deiner Bibliothek, zusätzlich zur Sammlung.",
     "traktorSync": "Traktor-Sammlung",
     "traktorNmlPath": "collection.nml",
-    "traktorNmlPathHint": "Ist ein Pfad gesetzt, werden Cue-Punkte und Beatgrid konvertierter Tracks in diese Traktor-Sammlung geschrieben. Leer lassen, um das zu deaktivieren.",
+    "traktorNmlPathHint": "Die Traktor-Sammlung, in die geschrieben wird. Du kannst sie jederzeit ändern.",
     "traktorNmlPathDetectedHint": "Automatisch gefunden — wird erst übernommen, wenn du es auswählst.",
     "traktorNmlPathUseDetected": "Diesen verwenden",
     "traktorCueOffset": "Cue-Point-Korrektur",
@@ -956,7 +956,16 @@
     "requiredHint": "Verhindert das Konvertieren eines Tracks, solange dieses Feld leer ist.",
     "autoOrganize": "Auto-Sortieren",
     "autoOrganizeHint": "Ordnet die angezeigten Felder nach Gruppe",
-    "autoOrganized": "Sortiert"
+    "autoOrganized": "Sortiert",
+    "syncTraktor": "Traktor-Sammlung beim Konvertieren aktualisieren",
+    "syncTraktorHint": "Cue-Punkte und Beatgrid konvertierter Titel werden in deine Traktor-Sammlung geschrieben. Surco legt vorher eine Sicherung an und schreibt nie, während Traktor geöffnet ist.",
+    "syncTraktorIdle": "Gib unten deine Traktor-Sammlung an, um dies zu aktivieren.",
+    "syncRekordbox": "rekordbox-Sammlung beim Konvertieren aktualisieren",
+    "syncRekordboxHint": "Wenn du einen Titel konvertierst, der in rekordbox liegt, folgt sein Eintrag der neuen Datei und behält Playlists und Cue-Punkte. Surco legt vorher eine Sicherung an und schreibt nie, während rekordbox geöffnet ist.",
+    "syncRekordboxIdle": "Auf diesem Rechner wurde keine rekordbox-Sammlung gefunden.",
+    "rekordboxSync": "rekordbox-Sammlung",
+    "rekordboxDbPath": "rekordbox-Sammlung",
+    "rekordboxDbPathHint": "Die rekordbox-Sammlung, in die geschrieben wird. Sie wird automatisch gefunden; ändere sie nur, wenn deine woanders liegt."
   },
   "errorBoundary": {
     "title": "Etwas konnte nicht dargestellt werden",

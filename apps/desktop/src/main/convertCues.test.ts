@@ -17,7 +17,10 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
 let traktorNmlPath = ''
-vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath }) }))
+// The path says WHERE the collection is; the toggle says whether to touch it. Both have
+// to hold, so every case here that expects a patch sets both.
+let syncTraktor = true
+vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath, syncTraktor }) }))
 
 import type { TrackMetadata } from '../shared/types'
 import { decodeBase91, encodeBase91 } from './base91'
@@ -560,6 +563,19 @@ describe('convertAudio cue preservation', () => {
     await convertAudio(src, join(dir, 'out-off.flac'), 'flac', meta)
 
     expect(endNmlBatch()).toEqual([])
+  })
+
+  // Vaciar la ruta era lo único que apagaba la sincronización: un efecto invisible que
+  // nadie adivina. Ahora manda el interruptor, y con él apagado la ruta sigue ahí sin que
+  // se toque la colección — ni se acumulen patches que nadie va a volcar.
+  it('records nothing when the collection path is set but the toggle is off', async () => {
+    traktorNmlPath = '/Users/dj/collection.nml'
+    syncTraktor = false
+    beginNmlBatch()
+    await convertAudio(src, join(dir, 'out-toggle-off.flac'), 'flac', meta)
+
+    expect(endNmlBatch()).toEqual([])
+    syncTraktor = true
   })
 
   // Hallazgo crítico 1: el caso por defecto (overwriteOriginal: false) manda la

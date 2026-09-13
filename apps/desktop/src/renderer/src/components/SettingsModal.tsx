@@ -141,6 +141,14 @@ export function SettingsModal({
     if (detectedNmlPath) patchLocal('traktorNmlPath', detectedNmlPath)
   }
 
+  // rekordbox needs no proposal-and-accept dance: its collection is in one fixed place per
+  // platform, so Settings only asks whether one is there — to enable the toggle and show
+  // which file would be written to.
+  const [rekordboxCollection, setRekordboxCollection] = useState('')
+  useEffect(() => {
+    window.api.rekordboxCollection().then(setRekordboxCollection)
+  }, [])
+
   // Where settings.json lives — null is the app default. Loaded on open because it
   // isn't part of Settings (it's the pointer that says where Settings are read from).
   const [configDir, setConfigDir] = useState<string | null>(null)
@@ -312,6 +320,7 @@ export function SettingsModal({
                 onChangeEngineDir={changeEngineDir}
                 onChangeTraktorNmlPath={changeTraktorNmlPath}
                 onClearTraktorNmlPath={clearTraktorNmlPath}
+                rekordboxCollection={rekordboxCollection}
                 detectedNmlPath={detectedNmlPath}
                 onAcceptDetectedNmlPath={acceptDetectedNmlPath}
               />

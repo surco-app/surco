@@ -828,6 +828,13 @@ function registerIpc(): void {
     return candidates.find((path) => existsSync(path)) ?? null
   })
 
+  // The rekordbox counterpart, and deliberately simpler: its collection lives in one
+  // fixed place per platform, so there is nothing to propose and accept — Settings only
+  // needs to know whether one is there, to enable the toggle and show which file it is.
+  ipcMain.handle('rekordbox:collection', () =>
+    findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
+  )
+
   registerExportIpc()
 
   // The Engine-library counterpart of applemusic:library: the title/artist/duration
@@ -883,7 +890,10 @@ function registerIpc(): void {
   ipcMain.on('process:batch-end', async (e) => {
     const win = BrowserWindow.fromWebContents(e.sender)
     await flushTraktorSync({
-      traktorNmlPath: getSettings().traktorNmlPath,
+      // Same rule as rekordbox below: the toggle grants permission, the path only says
+      // where. Before these toggles a filled-in path meant both, which is why anyone
+      // already syncing is migrated to syncTraktor: true (see syncToggleMigration.ts).
+      traktorNmlPath: getSettings().syncTraktor ? getSettings().traktorNmlPath : '',
       endNmlBatch,
       ensureTraktorClosed: () => ensureTraktorClosed(win),
       showBlockedDialog: () => {
@@ -898,7 +908,11 @@ function registerIpc(): void {
     // rekordbox next, and independently: the two collections are separate libraries, so
     // one being open or unwritable must not stop the other from being updated.
     const result = await flushRekordboxSync({
-      collectionPath: findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
+      // The toggle decides, not the path: a collection sitting in its standard location is
+      // not permission to write to it. An empty path here skips the flush entirely.
+      collectionPath: getSettings().syncRekordbox
+        ? findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
+        : '',
       endBatch: endRekordboxBatch,
       repointTrack: (collectionPath, repoint) =>
         repointTrack(collectionPath, { ...repoint, realPath: (p) => realpathSync(p) }),
