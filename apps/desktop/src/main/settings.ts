@@ -13,6 +13,7 @@ import {
 import { DEFAULT_EDITOR_SECTIONS } from '../shared/editorSections'
 import { FORMAT_SETTINGS } from '../shared/outputFormats'
 import type { FormatSetting, NormalizeConfig, Settings } from '../shared/types'
+import { migratedSyncToggles } from './syncToggleMigration'
 
 export const defaults: Settings = {
   theme: 'system',
@@ -46,6 +47,12 @@ export const defaults: Settings = {
   // often kept outside the standard location), so no reliable default — empty means the feature
   // is off until the user points Surco at their collection.nml.
   traktorNmlPath: '',
+  // Off by default, both of them: writing into a collection the user cannot rebuild is a
+  // bigger step than converting a file, so it is opted into rather than out of. A user
+  // already syncing with Traktor before these toggles existed keeps syncing — see
+  // syncToggleMigration.ts.
+  syncTraktor: false,
+  syncRekordbox: false,
   // Empty means "look where rekordbox keeps it", which is one fixed place per platform —
   // unlike Traktor's collection, whose folder varies by version and user preference and
   // so has to be pointed at by hand. This is only an override for a collection kept
@@ -290,7 +297,7 @@ export function getSettings(): Settings {
 function readSettings(): Settings {
   const local = readJson(localFile()) as Partial<Settings>
   const sf = syncedFile()
-  if (!sf) return mergeSettings(defaults, local)
+  if (!sf) return mergeSettings(mergeSettings(defaults, local), migratedSyncToggles(local))
   // With a custom folder active, the local file only contributes its machine-bound
   // keys; everything else comes from the shared file so another Mac's edits win.
   const { local: localOnly } = split(mergeSettings(defaults, local))
@@ -304,9 +311,15 @@ function readSettings(): Settings {
   // local leftover.
   const recoveredToken =
     !('discogsToken' in synced) && local.discogsToken ? local.discogsToken : undefined
+  // The sync toggles live in the synced file while the collection paths are machine-bound,
+  // so the answer has to be read from both: the toggle from the synced file (has the user
+  // already decided?) and the path from the local one (were they syncing here before the
+  // toggle existed?).
+  const migrated = migratedSyncToggles({ ...synced, traktorNmlPath: localOnly.traktorNmlPath })
   return mergeSettings(mergeSettings(defaults, synced), {
     ...localOnly,
     ...(recoveredToken ? { discogsToken: recoveredToken } : {}),
+    ...migrated,
   })
 }
 

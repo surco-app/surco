@@ -24,6 +24,8 @@ export const testSettings: Settings = {
   engineLibraryDir: '/music/Engine Library',
   traktorNmlPath: '',
   rekordboxDbPath: '',
+  syncTraktor: false,
+  syncRekordbox: false,
   betaUpdates: false,
   traktorCueOffsetMs: 0,
   engineDjPlaylist: 'Surco',
@@ -121,6 +123,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     pickEngineLibraryDir: async () => null,
     pickTraktorNmlPath: async () => null,
     detectTraktorNmlPath: async () => null,
+    rekordboxCollection: async () => '',
     search: async () => [],
     getRelease: async () => {
       throw new Error('stubApi: this test needs its own getRelease')

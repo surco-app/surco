@@ -13,6 +13,7 @@ vi.hoisted(() => {
     cacheStats: async () => ({ files: 0, bytes: 0 }),
     clearCache: async () => {},
     detectTraktorNmlPath: async () => null,
+    rekordboxCollection: async () => '',
   }
 })
 
@@ -43,6 +44,8 @@ const settings: Settings = {
   engineLibraryDir: '/music/Engine Library',
   traktorNmlPath: '',
   rekordboxDbPath: '',
+  syncTraktor: false,
+  syncRekordbox: false,
   betaUpdates: false,
   traktorCueOffsetMs: 0,
   engineDjPlaylist: 'Surco',

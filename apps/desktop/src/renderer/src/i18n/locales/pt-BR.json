@@ -870,7 +870,7 @@
     "engineDjPlaylistHint": "As faixas convertidas são adicionadas a esta playlist da sua biblioteca, além da coleção.",
     "traktorSync": "Coleção do Traktor",
     "traktorNmlPath": "collection.nml",
-    "traktorNmlPathHint": "Quando definido, os cue points e o beatgrid das faixas convertidas são gravados nessa coleção do Traktor. Deixe em branco para desativar.",
+    "traktorNmlPathHint": "A coleção do Traktor em que gravar. Você pode trocar quando quiser.",
     "traktorNmlPathDetectedHint": "Encontrado automaticamente — não é aplicado até você escolher usá-lo.",
     "traktorNmlPathUseDetected": "Usar este",
     "traktorCueOffset": "Ajuste dos cue points",
@@ -956,7 +956,16 @@
     "requiredHint": "Impede converter uma faixa enquanto este campo estiver vazio.",
     "autoOrganize": "Auto-organizar",
     "autoOrganizeHint": "Reordena os campos visíveis por grupo",
-    "autoOrganized": "Organizado"
+    "autoOrganized": "Organizado",
+    "syncTraktor": "Atualizar a coleção do Traktor ao converter",
+    "syncTraktorHint": "Os cue points e a grade das faixas convertidas são gravados na sua coleção do Traktor. O Surco faz uma cópia de segurança antes e nunca grava com o Traktor aberto.",
+    "syncTraktorIdle": "Indique abaixo onde está a sua coleção do Traktor para poder ativar.",
+    "syncRekordbox": "Atualizar a coleção do rekordbox ao converter",
+    "syncRekordboxHint": "Ao converter uma faixa que está no rekordbox, a entrada dela passa a apontar para o arquivo novo e mantém as playlists e os cue points. O Surco faz uma cópia de segurança antes e nunca grava com o rekordbox aberto.",
+    "syncRekordboxIdle": "Nenhuma coleção do rekordbox foi encontrada neste computador.",
+    "rekordboxSync": "Coleção do rekordbox",
+    "rekordboxDbPath": "Coleção do rekordbox",
+    "rekordboxDbPathHint": "A coleção do rekordbox em que gravar. Ela é detectada sozinha; troque apenas se a sua estiver em outro lugar."
   },
   "errorBoundary": {
     "title": "Algo falhou ao renderizar",

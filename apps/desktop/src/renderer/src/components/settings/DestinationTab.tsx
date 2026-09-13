@@ -6,6 +6,7 @@ import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { DestinationPicker } from '../DestinationPicker'
 import { OutputFolderField } from '../OutputFolderField'
+import { CheckboxRow } from './CheckboxRow'
 import { SettingsField, SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
 
 // Apple Music automation only exists on macOS, so the destination is meaningless on
@@ -64,6 +65,9 @@ interface Props {
   // user accepts it explicitly via onAcceptDetectedNmlPath.
   detectedNmlPath: string | null
   onAcceptDetectedNmlPath: () => void
+  // Where rekordbox keeps its collection on this machine, or '' when none was found.
+  // Read-only: unlike Traktor's, this path is detected rather than chosen.
+  rekordboxCollection: string
 }
 
 // Where a conversion ends up: the output folder, the destination radio (folder /
@@ -80,6 +84,7 @@ export function DestinationTab({
   onClearTraktorNmlPath,
   detectedNmlPath,
   onAcceptDetectedNmlPath,
+  rekordboxCollection,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // One signed number still drives the whole section, clamped so a value from an older
@@ -176,6 +181,21 @@ export function DestinationTab({
           it isn't itself a place the converted file goes. Empty path means the feature
           is off (see settings.ts), so this is the only control that turns it on. */}
       <SettingsSection eyebrow={tr('settings.traktorSync')}>
+        {/* The switch, and the only one. Emptying the path used to be what turned the
+            sync off — an invisible side effect nobody guesses, and the opposite of how
+            the rest of this screen works. Disabled rather than hidden while no collection
+            is set, so the feature never looks like it does not exist; the hint below says
+            what is missing. */}
+        <CheckboxRow
+          testid="settings-sync-traktor"
+          checked={synced.syncTraktor}
+          disabled={!local.traktorNmlPath}
+          onChange={(v) => patch('syncTraktor', v)}
+          label={tr('settings.syncTraktor')}
+        />
+        <SettingsHint className="mt-2 mb-4">
+          {local.traktorNmlPath ? tr('settings.syncTraktorHint') : tr('settings.syncTraktorIdle')}
+        </SettingsHint>
         {/* No htmlFor: the value below is a read-only display, not a form control, so
             there is nothing for a label to focus. */}
         <SettingsLabel>{tr('settings.traktorNmlPath')}</SettingsLabel>
@@ -334,6 +354,36 @@ export function DestinationTab({
 
           <SettingsHint className="mt-2">{tr('settings.traktorCueOffsetHint')}</SettingsHint>
         </div>
+      </SettingsSection>
+      {/* rekordbox keeps its collection in one fixed place per platform, so there is
+          nothing to point at and the toggle is the whole setup — the path below is shown
+          only so the user can see which collection is being written to. */}
+      <SettingsSection eyebrow={tr('settings.rekordboxSync')}>
+        <CheckboxRow
+          testid="settings-sync-rekordbox"
+          checked={synced.syncRekordbox}
+          disabled={!rekordboxCollection}
+          onChange={(v) => patch('syncRekordbox', v)}
+          label={tr('settings.syncRekordbox')}
+        />
+        <SettingsHint className="mt-2">
+          {rekordboxCollection
+            ? tr('settings.syncRekordboxHint')
+            : tr('settings.syncRekordboxIdle')}
+        </SettingsHint>
+        {rekordboxCollection && (
+          <>
+            <SettingsLabel className="mt-4">{tr('settings.rekordboxDbPath')}</SettingsLabel>
+            <div
+              data-testid="settings-rekordbox-db"
+              title={rekordboxCollection}
+              className="mt-2 min-w-0 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
+            >
+              {rekordboxCollection}
+            </div>
+            <SettingsHint className="mt-2">{tr('settings.rekordboxDbPathHint')}</SettingsHint>
+          </>
+        )}
       </SettingsSection>
     </>
   )

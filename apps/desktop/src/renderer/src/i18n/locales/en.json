@@ -870,7 +870,7 @@
     "engineDjPlaylistHint": "Converted tracks are added to this playlist in your library, on top of the collection.",
     "traktorSync": "Traktor collection",
     "traktorNmlPath": "collection.nml",
-    "traktorNmlPathHint": "When set, converted tracks' cue points and beatgrid are written into this Traktor collection. Leave empty to turn this off.",
+    "traktorNmlPathHint": "The Traktor collection to write into. You can change it at any time.",
     "traktorNmlPathDetectedHint": "Found automatically — not applied until you choose to use it.",
     "traktorNmlPathUseDetected": "Use this",
     "traktorCueOffset": "Cue point adjustment",
@@ -956,7 +956,16 @@
     "requiredHint": "Blocks converting a track until this field has a value.",
     "autoOrganize": "Auto-organize",
     "autoOrganizeHint": "Reorder shown fields by group",
-    "autoOrganized": "Organized"
+    "autoOrganized": "Organized",
+    "syncTraktor": "Update the Traktor collection when converting",
+    "syncTraktorHint": "Converted tracks' cue points and beatgrid are written into your Traktor collection. Surco backs it up first and never writes while Traktor is open.",
+    "syncTraktorIdle": "Point Surco at your Traktor collection below to enable this.",
+    "syncRekordbox": "Update the rekordbox collection when converting",
+    "syncRekordboxHint": "When you convert a track that is in rekordbox, its entry follows the new file and keeps its playlists and cue points. Surco backs the collection up first and never writes while rekordbox is open.",
+    "syncRekordboxIdle": "No rekordbox collection was found on this machine.",
+    "rekordboxSync": "rekordbox collection",
+    "rekordboxDbPath": "rekordbox collection",
+    "rekordboxDbPathHint": "The rekordbox collection to write into. It is found automatically; change it only if yours lives elsewhere."
   },
   "errorBoundary": {
     "title": "Something failed to render",

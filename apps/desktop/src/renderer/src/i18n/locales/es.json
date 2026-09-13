@@ -870,7 +870,7 @@
     "engineDjPlaylistHint": "Las pistas convertidas se añaden a esta playlist de tu biblioteca, además de a la colección.",
     "traktorSync": "Colección de Traktor",
     "traktorNmlPath": "collection.nml",
-    "traktorNmlPathHint": "Si lo indicas, los cue points y la rejilla de las pistas convertidas se escriben en esta colección de Traktor. Déjalo vacío para desactivarlo.",
+    "traktorNmlPathHint": "La colección de Traktor en la que escribir. Puedes cambiarla cuando quieras.",
     "traktorNmlPathDetectedHint": "Encontrado automáticamente — no se aplica hasta que elijas usarlo.",
     "traktorNmlPathUseDetected": "Usar este",
     "traktorCueOffset": "Ajuste de los cue points",
@@ -956,7 +956,16 @@
     "requiredHint": "Impide convertir una pista hasta que este campo tenga valor.",
     "autoOrganize": "Auto-organizar",
     "autoOrganizeHint": "Reordena los campos mostrados por grupo",
-    "autoOrganized": "Organizado"
+    "autoOrganized": "Organizado",
+    "syncTraktor": "Actualizar la colección de Traktor al convertir",
+    "syncTraktorHint": "Los cue points y la rejilla de las pistas convertidas se escriben en tu colección de Traktor. Surco hace una copia de seguridad antes y no escribe con Traktor abierto.",
+    "syncTraktorIdle": "Indica abajo dónde está tu colección de Traktor para poder activarlo.",
+    "syncRekordbox": "Actualizar la colección de rekordbox al convertir",
+    "syncRekordboxHint": "Al convertir una pista que está en rekordbox, su entrada pasa a apuntar al fichero nuevo y conserva sus playlists y sus cue points. Surco hace una copia de seguridad antes y no escribe con rekordbox abierto.",
+    "syncRekordboxIdle": "No se ha encontrado ninguna colección de rekordbox en este equipo.",
+    "rekordboxSync": "Colección de rekordbox",
+    "rekordboxDbPath": "Colección de rekordbox",
+    "rekordboxDbPathHint": "La colección de rekordbox en la que escribir. Se detecta sola; cámbiala solo si la tienes en otro sitio."
   },
   "errorBoundary": {
     "title": "Algo ha fallado al renderizar",

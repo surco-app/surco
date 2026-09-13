@@ -16,6 +16,8 @@ export interface SyncedDraft {
   overwriteOriginal: boolean
   convertBesideOriginal: boolean
   addToEngineDj: boolean
+  syncTraktor: boolean
+  syncRekordbox: boolean
   engineDjPlaylist: string
   filenameFormat: string
   titleFormat: string
@@ -92,6 +94,8 @@ export function pickSynced(s: Settings): SyncedDraft {
     overwriteOriginal: s.overwriteOriginal,
     convertBesideOriginal: s.convertBesideOriginal,
     addToEngineDj: s.addToEngineDj,
+    syncTraktor: s.syncTraktor,
+    syncRekordbox: s.syncRekordbox,
     engineDjPlaylist: s.engineDjPlaylist,
     filenameFormat: s.filenameFormat,
     titleFormat: s.titleFormat,
