@@ -140,9 +140,9 @@ describe('OnboardingWizard destination', () => {
       vi.fn(async () => '/dj/converted')
     const onFinish = vi.fn()
     openFormatStep(onFinish)
-    expect(screen.getByTestId('onboarding-output')).toHaveValue('/out')
+    expect(screen.getByTestId('onboarding-output')).toHaveTextContent('/out')
     fireEvent.click(screen.getByTestId('onboarding-output-change'))
-    expect(await screen.findByTestId('onboarding-output')).toHaveValue('/dj/converted')
+    expect(await screen.findByTestId('onboarding-output')).toHaveTextContent('/dj/converted')
     for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
     expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ outputDir: '/dj/converted' }))
   })
@@ -212,7 +212,9 @@ describe('OnboardingWizard destination', () => {
     openFormatStep(onFinish)
     fireEvent.click(screen.getByTestId('onboarding-destination-engineDj'))
     fireEvent.click(screen.getByTestId('onboarding-engine-library-change'))
-    expect(await screen.findByTestId('onboarding-engine-library')).toHaveValue('/dj/Engine Library')
+    expect(await screen.findByTestId('onboarding-engine-library')).toHaveTextContent(
+      '/dj/Engine Library',
+    )
 
     for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
     expect(onFinish).toHaveBeenCalledWith(

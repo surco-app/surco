@@ -1,5 +1,6 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
+import { PathField } from './PathField'
 import { SettingsHint, SettingsLabel } from './settings/SettingsPrimitives'
 
 // The two fields Engine DJ needs before it can be a destination: where its library lives
@@ -32,23 +33,11 @@ export function EngineLibraryFields({
       <SettingsLabel htmlFor={`${testidPrefix}-library`} className="mb-2">
         {tr('settings.engineLibraryDir')}
       </SettingsLabel>
-      <div className="flex gap-2">
-        <input
-          id={`${testidPrefix}-library`}
-          data-testid={`${testidPrefix}-library`}
-          value={libraryDir}
-          readOnly
-          className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
-        />
-        <button
-          type="button"
-          data-testid={`${testidPrefix}-library-change`}
-          onClick={() => void change()}
-          className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
-        >
-          {tr('common.change')}
-        </button>
-      </div>
+      <PathField
+        value={libraryDir}
+        onChange={() => void change()}
+        testid={`${testidPrefix}-library`}
+      />
       <SettingsHint className="mt-2">{tr('settings.engineLibraryDirHint')}</SettingsHint>
       <SettingsLabel htmlFor={`${testidPrefix}-playlist`} className="mt-4 mb-2">
         {tr('settings.engineDjPlaylist')}

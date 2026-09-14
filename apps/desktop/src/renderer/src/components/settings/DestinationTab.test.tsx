@@ -171,7 +171,7 @@ describe('DestinationTab Engine DJ destination', () => {
   // under Apple Music or overwrite (no folder copy) it would just mislead.
   it('shows the output folder under its radio only while it is the destination', () => {
     renderTab()
-    expect(screen.getByTestId('settings-output')).toHaveValue('/out')
+    expect(screen.getByTestId('settings-output')).toHaveTextContent('/out')
     expect(screen.getByTestId('settings-output').closest('[inert]')).toBeNull()
     cleanup()
     // Kept mounted so the collapse can animate out; inert is what "hidden" means —
@@ -187,7 +187,7 @@ describe('DestinationTab Engine DJ destination', () => {
     expect(screen.getByTestId('settings-engine-library').closest('[inert]')).not.toBeNull()
     cleanup()
     renderTab({ addToEngineDj: true })
-    expect(screen.getByTestId('settings-engine-library')).toHaveValue('/music/Engine Library')
+    expect(screen.getByTestId('settings-engine-library')).toHaveTextContent('/music/Engine Library')
     expect(screen.getByTestId('settings-engine-library').closest('[inert]')).toBeNull()
   })
 

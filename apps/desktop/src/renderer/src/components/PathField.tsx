@@ -18,6 +18,7 @@ export function PathField({
   onChange,
   testid,
   emptyLabel,
+  ariaLabel,
 }: {
   value: string
   // Receives the path the picker returned; the dialog itself belongs to the caller, which
@@ -27,6 +28,9 @@ export function PathField({
   // Shown in place of a path when none is set, so the field says what it needs instead of
   // reading as an empty box.
   emptyLabel?: string
+  // For a field with no visible label of its own — the output folder hangs under a
+  // destination radio — so a screen reader still has a name to read.
+  ariaLabel?: string
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   return (
@@ -35,6 +39,10 @@ export function PathField({
         id={testid}
         data-testid={testid}
         title={value}
+        // A plain <div> takes no accessible name, so the one field with no visible label
+        // of its own (the output folder, which hangs under a destination radio) needs a
+        // role that does. group is honest here: it is a value, not a control.
+        {...(ariaLabel ? { role: 'group', 'aria-label': ariaLabel } : {})}
         className={`min-w-0 flex-1 truncate px-3 py-2 text-sm ${
           value ? 'text-fg-muted' : 'text-fg-faint'
         }`}
