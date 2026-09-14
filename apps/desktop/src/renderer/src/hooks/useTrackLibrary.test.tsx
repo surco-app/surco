@@ -681,6 +681,46 @@ describe('useTrackLibrary foreign tags', () => {
     expect(result.current.tracks[0]?.embeddedCover).toBe('data:image/jpeg;base64,FROMFILE')
   })
 
+  // Reported 14/09 with two screenshots: importing showed "Update + Apple Music", but
+  // after a reopen the same track said "Convert to AIFF + Apple Music" — an ADD, which
+  // would leave a second copy of the song in the library. The row had lost the persistent
+  // ID that says which copy it belongs to.
+  it('restores which library copy a track belongs to', async () => {
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '' },
+        duration: 180,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() =>
+      result.current.addPaths(['/m/a.wav'], {
+        '/m/a.wav': {
+          meta: { title: 'Restored' } as never,
+          musicPersistentId: 'PID1',
+          fromAppleMusic: true,
+        },
+      }),
+    )
+
+    expect(result.current.tracks[0]?.musicPersistentId).toBe('PID1')
+    // Not cosmetic: this is what keeps the conversion on the source's own format.
+    expect(result.current.tracks[0]?.fromAppleMusic).toBe(true)
+  })
+
   // A per-tag delete staged before a crash/reopen must come back on the restored row,
   // exactly like metaCleared — otherwise the reopened session silently forgets which
   // foreign tags the user had already marked for removal.

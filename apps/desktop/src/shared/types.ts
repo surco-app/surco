@@ -383,6 +383,11 @@ export interface SessionEdit {
   coverUrl?: string
   coverPath?: string
   coverRemoved?: boolean
+  // The library copy this track belongs to, and whether it arrived from a playlist
+  // import. Restored so a reopened row still offers to update that copy instead of adding
+  // a second one, and still keeps the source's own format.
+  musicPersistentId?: string
+  fromAppleMusic?: boolean
   // Rides along so a restored "cleared" track still wipes its rating on convert.
   metaCleared?: boolean
   // The per-tag inspector deletes, so a restored track still drops them on convert.

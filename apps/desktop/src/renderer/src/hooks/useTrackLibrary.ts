@@ -352,6 +352,11 @@ export function useTrackLibrary({
     if (saved.coverUrl || saved.coverRemoved) patch.coverUrl = saved.coverUrl
     if (saved.coverPath) patch.coverPath = saved.coverPath
 
+    // Without these two a reopened row forgets it belongs to a library copy: the convert
+    // button offers to ADD a track that is already there (a second copy of the same song),
+    // and the conversion stops honouring the source's own format.
+    if (saved.musicPersistentId) patch.musicPersistentId = saved.musicPersistentId
+    if (saved.fromAppleMusic) patch.fromAppleMusic = true
     if (saved.coverRemoved) patch.coverRemoved = true
     if (saved.metaCleared) patch.metaCleared = true
     if (saved.foreignRemoved) patch.foreignRemoved = saved.foreignRemoved
