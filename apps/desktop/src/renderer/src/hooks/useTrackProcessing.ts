@@ -34,6 +34,11 @@ const CONVERT_CONCURRENCY = Math.max(2, (navigator.hardwareConcurrency || 4) - 1
 
 interface Params {
   tracks: TrackItem[]
+  // The caller's live crate, when it keeps one. Deriving the ref below from the tracks
+  // prop makes it a render-time snapshot, which is blind to a patch applied earlier in
+  // the same tick — the replacement flow stamps the copy to supersede and converts
+  // immediately, and the stamp never reached the job.
+  tracksRef?: { readonly current: TrackItem[] }
   settings: Settings | null
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   // Called only after an in-place export, with the file's post-rename path: that is the
@@ -103,6 +108,7 @@ interface TrackProcessing {
 // updateTrack, exactly as the inline App functions did.
 export function useTrackProcessing({
   tracks,
+  tracksRef: liveTracksRef,
   settings,
   updateTrack,
   refreshTrackFromDisk,
@@ -128,8 +134,12 @@ export function useTrackProcessing({
   // The convert-all loop and the Apple Music sweep outlive the render that started
   // them, while the list stays editable — each track must be read at the moment it's
   // processed, not from the closure's snapshot, or mid-batch edits never reach disk.
-  const tracksRef = useRef(tracks)
-  tracksRef.current = tracks
+  // The caller's own crate when it has one: it is written as each patch is applied, so a
+  // track stamped moments before the job still reads back stamped. The local ref is the
+  // fallback for callers that pass only the array, and refreshes with the render.
+  const ownTracksRef = useRef(tracks)
+  ownTracksRef.current = tracks
+  const tracksRef = liveTracksRef ?? ownTracksRef
 
   // The batch summary is a transient confirmation, not a persistent banner — it clears
   // itself a few seconds after a run so it never lingers over later work. A run that had
@@ -277,6 +287,9 @@ export function useTrackProcessing({
           forceReencode,
           previousOutputPath: track.outputPath,
           musicPersistentId: track.musicPersistentId,
+          // Where the copy being replaced lives, so rekordbox repoints from the path it
+          // has indexed rather than from a download folder it has never seen.
+          replacesPath: track.replacesPath,
         })
         // The user declined to overwrite a conflicting file: nothing was written, so
         // leave the track convertible (idle) rather than marking it done or failed.

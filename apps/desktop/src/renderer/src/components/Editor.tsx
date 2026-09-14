@@ -47,6 +47,7 @@ import {
   joinArtists,
   type ReleaseMetaPatch,
 } from '../lib/release'
+import { replacePatch } from '../lib/replaceBeforeConvert'
 import { selectionStatus } from '../lib/selectionStatus'
 import { useAppSettings } from '../lib/settingsContext'
 import { matchStatKey } from '../lib/stats'
@@ -1354,7 +1355,30 @@ export const Editor = memo(function Editor({
           // Single-select's menu never offers 'source' (format stays a real OutputFormat
           // there), so onProcess only ever sees one at runtime — the cast just satisfies
           // the shared FormatSetting signature ConvertFooter needs for the multi branch.
-          onProcess={isMulti ? (f) => onProcessAll?.(f) : (f) => onProcess(f as OutputFormat)}
+          onProcess={
+            isMulti
+              ? (f) => onProcessAll?.(f)
+              : (f) => {
+                  // Stamped BEFORE the convert runs: musicPersistentId is what makes the
+                  // Apple Music step update that copy instead of importing a sibling, and
+                  // replacesPath is the file rekordbox has indexed — the one being
+                  // converted may sit in any download folder the collection never saw.
+                  // The button already offered a replacement; without this the action
+                  // stayed an add, leaving two library entries and two files on disk.
+                  const patch = replacePatch(replaceTarget)
+                  if (!patch) {
+                    onProcess(f as OutputFormat)
+                    return
+                  }
+                  void window.api
+                    .appleMusicEntryLocation(patch.musicPersistentId as string)
+                    .catch(() => '')
+                    .then((replacesPath) => {
+                      onChange(replacesPath ? { ...patch, replacesPath } : patch)
+                      onProcess(f as OutputFormat)
+                    })
+                }
+          }
           // Single-only: a running multi converts through the toolbar's batch pill, which
           // owns that cancel. Passing it in multi would cancel just the primary track.
           onCancel={isMulti ? undefined : onCancel}

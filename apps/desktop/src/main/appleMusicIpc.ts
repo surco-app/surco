@@ -8,6 +8,7 @@ import { attachMissingArtwork } from './appleMusicPlaylistArt'
 import { dumpAppleMusicPlaylists, readAppleMusicPlaylist } from './appleMusicPlaylists'
 import {
   addToAppleMusic,
+  appleMusicEntryLocation,
   appleMusicLimiter,
   deleteFromAppleMusic,
   dumpAppleMusicLibrary,
@@ -79,6 +80,13 @@ export function registerAppleMusicIpc(): void {
   // and undownloaded iCloud tracks. The count travels back so the app can say why fewer
   // rows arrived than the playlist claims, instead of leaving the user to discover the
   // gap by counting.
+  // Where a library copy's file lives. The renderer needs it to tell rekordbox which path
+  // a replacement supersedes: the collection indexes that file, not the one being
+  // converted, which may sit in any download folder.
+  ipcMain.handle('applemusic:entryLocation', (_e, persistentId: string) =>
+    process.platform === 'darwin' ? appleMusicEntryLocation(persistentId) : '',
+  )
+
   ipcMain.handle('applemusic:playlistTracks', (_e, persistentId: string) =>
     process.platform === 'darwin'
       ? activity.track(

@@ -652,7 +652,14 @@ export function useTrackLibrary({
     onPlaylistImported?.({ name, imported: paths.length, missing })
   }
 
+  // Publishes to the live crate as well as to state, for the same reason the import
+  // batches do above: a caller that patches a track and then acts on it in the same tick
+  // reads tracksRef, which the render-time assignment does not refresh until React
+  // repaints. The replacement flow does exactly that — it stamps the copy to supersede and
+  // converts immediately — and without this the conversion ran against the unstamped
+  // track, adding a second Apple Music entry and leaving rekordbox on the old file.
   const updateTrack = useCallback((id: string, patch: Partial<TrackItem>): void => {
+    tracksRef.current = tracksRef.current.map((t) => (t.id === id ? { ...t, ...patch } : t))
     setTracks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
   }, [])
 

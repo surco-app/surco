@@ -1477,6 +1477,9 @@ export async function convertAudio(
   // The specific third-party tags the inspector's user marked for deletion
   // (SERATO_MARKERS_V2, TRAKTOR4, …), independent of clearExtras. See writeTags.
   foreignRemoved?: string[],
+  // The file this conversion supersedes, when it replaces a copy already in the library.
+  // rekordbox indexes that path, not the one being converted.
+  replacesPath?: string,
 ): Promise<{ normalizeSkipped: boolean; declickedSamples?: number }> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
@@ -1812,7 +1815,7 @@ export async function convertAudio(
     // rekordbox indexes by path too, and unlike Traktor it stores the whole path in one
     // column, so the entry can follow the file even into another folder. Recorded here
     // for the same reason as the patch above: the file now exists at `output`.
-    const repoint = rekordboxRepointFor(input, output)
+    const repoint = rekordboxRepointFor(input, output, { replaces: replacesPath })
     if (repoint) recordRekordboxRepoint(repoint)
   } catch (e) {
     // A rescued temp is no longer at `tmp` — the rescue renamed it away — so the unlink

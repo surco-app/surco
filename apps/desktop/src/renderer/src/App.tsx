@@ -775,6 +775,7 @@ export default function App(): React.JSX.Element {
     cancelOne,
   } = useTrackProcessing({
     tracks,
+    tracksRef,
     settings,
     updateTrack,
     refreshTrackFromDisk,

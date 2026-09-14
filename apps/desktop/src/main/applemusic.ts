@@ -218,16 +218,23 @@ export function buildUpdateScript(
 // remove the temp conversion) or merely referenced the temp path ("Copy files to the
 // Media folder" turned off — removing the temp would strand the entry). Empty string
 // when the entry is gone or holds no reachable file.
+// The alias leaves the tell block before POSIX path touches it. Coercing inside the block
+// raises, the try swallows it, and the script returns empty for a track that is plainly
+// in the library — measured 14/09, and the reason a replacement never told rekordbox
+// which file it superseded.
 export function buildLocationScript(persistentId: string): string {
   return [
+    'set theLocation to missing value',
     'tell application "Music"',
     `  set theMatches to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(persistentId)})`,
-    '  if (count of theMatches) is 0 then return ""',
-    '  try',
-    '    return POSIX path of (location of item 1 of theMatches)',
-    '  end try',
-    '  return ""',
+    '  if (count of theMatches) is not 0 then',
+    '    try',
+    '      set theLocation to location of item 1 of theMatches',
+    '    end try',
+    '  end if',
     'end tell',
+    'if theLocation is missing value then return ""',
+    'return POSIX path of theLocation',
   ].join('\n')
 }
 

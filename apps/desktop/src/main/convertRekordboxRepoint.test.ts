@@ -36,4 +36,40 @@ describe('rekordboxRepointFor', () => {
   it('does not repoint when the file stayed where it was', () => {
     expect(rekordboxRepointFor('/m/a/one.wav', '/m/a/one.wav')).toBeNull()
   })
+
+  // Reported 14/09: converting a downloaded FLAC that supersedes an MP3 already in the
+  // library left rekordbox still pointing at the MP3. The repoint was reading the file
+  // being converted — the FLAC, which rekordbox has never seen — so it matched nothing.
+  // When the conversion replaces a known file, that file is what the collection knows.
+  it('repoints from the file being replaced, not the one being converted', () => {
+    expect(
+      rekordboxRepointFor(
+        '/downloads/Transfer - Possession.flac',
+        '/m/Transfer - Possession.aiff',
+        {
+          replaces: '/m/02 Possession (Dececio Remix).mp3',
+        },
+      ),
+    ).toEqual({
+      from: '/m/02 Possession (Dececio Remix).mp3',
+      to: '/m/Transfer - Possession.aiff',
+    })
+  })
+
+  // Without a replacement the input is still the right source: a plain conversion moves the
+  // very file rekordbox has indexed.
+  it('still repoints from the input when nothing is being replaced', () => {
+    expect(rekordboxRepointFor('/m/a.mp3', '/m/a.aiff', {})).toEqual({
+      from: '/m/a.mp3',
+      to: '/m/a.aiff',
+    })
+  })
+
+  // A replacement that somehow lands on the very file it replaces has nothing to tell the
+  // collection.
+  it('says nothing when the replaced file is the output', () => {
+    expect(
+      rekordboxRepointFor('/downloads/a.flac', '/m/a.mp3', { replaces: '/m/a.mp3' }),
+    ).toBeNull()
+  })
 })

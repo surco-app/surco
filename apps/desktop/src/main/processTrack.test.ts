@@ -91,6 +91,7 @@ describe('runProcessTrack — plain conversion', () => {
       undefined,
       undefined,
       undefined,
+      undefined,
     )
     expect(deps.mkdir).toHaveBeenCalledWith('/out', { recursive: true })
     expect(deps.recordConversion).toHaveBeenCalledOnce()
@@ -184,6 +185,7 @@ describe('runProcessTrack — cover handling', () => {
       undefined,
       undefined,
       undefined,
+      undefined,
     )
     const stages = (deps.sendProgress as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0])
     expect(stages).toEqual(['cover', 'converting'])
@@ -271,6 +273,7 @@ describe('runProcessTrack — output conflict', () => {
       undefined,
       undefined,
       undefined,
+      undefined,
     )
     expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
   })
@@ -292,6 +295,7 @@ describe('runProcessTrack — output conflict', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
       undefined,
       undefined,
@@ -588,6 +592,7 @@ describe('runProcessTrack — forced re-encode', () => {
       undefined,
       undefined,
       undefined,
+      undefined,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
   })
@@ -612,6 +617,7 @@ describe('runProcessTrack — beside the original', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
       undefined,
       undefined,
@@ -644,6 +650,7 @@ describe('runProcessTrack — beside the original', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
       undefined,
       undefined,
@@ -706,6 +713,7 @@ describe('runProcessTrack — in-place rewrite', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
       undefined,
       undefined,
@@ -803,6 +811,7 @@ describe('runProcessTrack — pinned overwrite', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
       undefined,
       undefined,
@@ -1022,6 +1031,7 @@ describe('runProcessTrack — Apple Music only', () => {
       expect.any(Function),
       expect.any(Function),
       'off',
+      undefined,
       undefined,
       undefined,
       undefined,
