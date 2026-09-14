@@ -122,6 +122,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     pickOutputDir: async () => null,
     pickEngineLibraryDir: async () => null,
     pickTraktorNmlPath: async () => null,
+    pickRekordboxDbPath: async () => null,
     detectTraktorNmlPath: async () => null,
     rekordboxCollection: async () => '',
     search: async () => [],

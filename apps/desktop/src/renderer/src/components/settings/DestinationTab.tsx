@@ -7,6 +7,7 @@ import type { PatchSynced } from '../../lib/settingsTabs'
 import { DestinationPicker } from '../DestinationPicker'
 import { EngineLibraryFields } from '../EngineLibraryFields'
 import { OutputFolderField } from '../OutputFolderField'
+import { PathField } from '../PathField'
 import { CheckboxRow } from './CheckboxRow'
 import { SettingsField, SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
 
@@ -61,16 +62,16 @@ interface Props {
   // neither surface reimplements the round-trip.
   onChangeEngineDir: (dir: string) => void
   onChangeTraktorNmlPath: () => void
-  // Empties the path, which is what turns the collection sync off (see settings.ts).
-  onClearTraktorNmlPath: () => void
   // A candidate collection.nml autodetection found — null while unresolved or once
   // traktorNmlPath is already set (see SettingsModal). Never applied on its own; the
   // user accepts it explicitly via onAcceptDetectedNmlPath.
   detectedNmlPath: string | null
   onAcceptDetectedNmlPath: () => void
   // Where rekordbox keeps its collection on this machine, or '' when none was found.
-  // Read-only: unlike Traktor's, this path is detected rather than chosen.
+  // Detected rather than chosen, but still changeable: a DJ whose collection lives
+  // somewhere else had no way to say so.
   rekordboxCollection: string
+  onChangeRekordboxDbPath: () => void
 }
 
 // Where a conversion ends up: the output folder, the destination radio (folder /
@@ -84,10 +85,10 @@ export function DestinationTab({
   onOutputDirChange,
   onChangeEngineDir,
   onChangeTraktorNmlPath,
-  onClearTraktorNmlPath,
   detectedNmlPath,
   onAcceptDetectedNmlPath,
   rekordboxCollection,
+  onChangeRekordboxDbPath,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // One signed number still drives the whole section, clamped so a value from an older
@@ -177,43 +178,13 @@ export function DestinationTab({
         {/* No htmlFor: the value below is a read-only display, not a form control, so
             there is nothing for a label to focus. */}
         <SettingsLabel>{tr('settings.traktorNmlPath')}</SettingsLabel>
-        <div className="mt-2 flex gap-2">
-          {/* Not an input: nothing can be typed here, the path only ever changes through
-              "Change". As an input it took a caret on click, and the browser then scrolled
-              the text sideways to reveal the end — hiding the start of the path on top of
-              the truncation already clipping the end (tabIndex={-1} did not help: it stops
-              tabbing, not clicking). A plain element can't be focused or scrolled, and
-              title still carries the full path for anyone who needs to read it whole. */}
-          <div
-            id="settings-traktor-nml"
-            data-testid="settings-traktor-nml"
-            title={local.traktorNmlPath}
-            className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
-          >
-            {local.traktorNmlPath}
-          </div>
-          <button
-            type="button"
-            data-testid="settings-traktor-nml-change"
-            onClick={onChangeTraktorNmlPath}
-            className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
-          >
-            {tr('common.change')}
-          </button>
-          {/* The hint promises "leave it empty to turn this off" and Change only ever
-              opens a file picker, so the sync could be started and never stopped: a DJ
-              wanting Surco to stop touching his collection had to point it at some other
-              path instead. Only shown with something to clear. */}
-          {local.traktorNmlPath && (
-            <button
-              type="button"
-              data-testid="settings-traktor-nml-clear"
-              onClick={onClearTraktorNmlPath}
-              className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
-            >
-              {tr('common.clear')}
-            </button>
-          )}
+        <div className="mt-2">
+          <PathField
+            value={local.traktorNmlPath}
+            onChange={onChangeTraktorNmlPath}
+            testid="settings-traktor-nml"
+            emptyLabel={tr('settings.traktorNmlPathEmpty')}
+          />
         </div>
         <SettingsHint className="mt-2">{tr('settings.traktorNmlPathHint')}</SettingsHint>
         {/* Never applied without this explicit click — autodetection only proposes,
@@ -352,12 +323,12 @@ export function DestinationTab({
         {rekordboxCollection && (
           <>
             <SettingsLabel className="mt-4">{tr('settings.rekordboxDbPath')}</SettingsLabel>
-            <div
-              data-testid="settings-rekordbox-db"
-              title={rekordboxCollection}
-              className="mt-2 min-w-0 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
-            >
-              {rekordboxCollection}
+            <div className="mt-2">
+              <PathField
+                value={rekordboxCollection}
+                onChange={onChangeRekordboxDbPath}
+                testid="settings-rekordbox-db"
+              />
             </div>
             <SettingsHint className="mt-2">{tr('settings.rekordboxDbPathHint')}</SettingsHint>
           </>

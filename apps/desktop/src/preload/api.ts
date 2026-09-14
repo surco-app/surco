@@ -69,6 +69,8 @@ export interface Api {
   pickOutputDir: () => Promise<string | null>
   pickEngineLibraryDir: () => Promise<string | null>
   pickTraktorNmlPath: () => Promise<string | null>
+  // The rekordbox collection, for a library kept outside the standard location.
+  pickRekordboxDbPath: () => Promise<string | null>
   // Proposes a collection.nml to offer in Settings; the caller must have the user
   // confirm it before saving — see traktorNmlPath.ts.
   detectTraktorNmlPath: () => Promise<string | null>

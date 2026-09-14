@@ -67,6 +67,7 @@ const local: LocalDraft = {
   outputDir: '/out',
   engineLibraryDir: '/music/Engine Library',
   traktorNmlPath: '',
+  rekordboxDbPath: '',
   betaUpdates: false,
   autoMatch: false,
 }
@@ -81,10 +82,10 @@ function renderTab(over: Partial<SyncedDraft> = {}, localOver: Partial<LocalDraf
       onOutputDirChange={vi.fn()}
       onChangeEngineDir={vi.fn()}
       onChangeTraktorNmlPath={vi.fn()}
-      onClearTraktorNmlPath={vi.fn()}
       detectedNmlPath={null}
       onAcceptDetectedNmlPath={vi.fn()}
       rekordboxCollection=""
+      onChangeRekordboxDbPath={vi.fn()}
     />,
   )
   return patch
@@ -101,10 +102,10 @@ function renderWithCollection(patch: PatchSynced, offset = '0'): void {
       onOutputDirChange={vi.fn()}
       onChangeEngineDir={vi.fn()}
       onChangeTraktorNmlPath={vi.fn()}
-      onClearTraktorNmlPath={vi.fn()}
       detectedNmlPath={null}
       onAcceptDetectedNmlPath={vi.fn()}
       rekordboxCollection=""
+      onChangeRekordboxDbPath={vi.fn()}
     />,
   )
 }
@@ -218,7 +219,11 @@ describe('DestinationTab Traktor collection', () => {
   it('always shows the collection.nml field regardless of the chosen destination', () => {
     renderTab()
     expect(screen.getByTestId('settings-traktor-nml').closest('[inert]')).toBeNull()
-    expect(screen.getByTestId('settings-traktor-nml')).toHaveTextContent('')
+    // An empty box says nothing about what it wants; with no collection set the field
+    // says so in words instead of sitting blank next to a floating button.
+    expect(screen.getByTestId('settings-traktor-nml')).toHaveTextContent(
+      i18n.t('settings.traktorNmlPathEmpty'),
+    )
   })
 
   it('opens the file picker when Change is clicked', () => {
@@ -231,10 +236,10 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={onChangeTraktorNmlPath}
-        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
       />,
     )
     fireEvent.click(screen.getByTestId('settings-traktor-nml-change'))
@@ -253,10 +258,10 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
-        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath="/Users/dj/Documents/Native Instruments/Traktor 4.5.0/collection.nml"
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
       />,
     )
     expect(screen.getByTestId('settings-traktor-nml-detected')).toBeInTheDocument()
@@ -269,10 +274,10 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
-        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath="/Users/dj/Documents/Native Instruments/Traktor 4.5.0/collection.nml"
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
       />,
     )
     expect(screen.queryByTestId('settings-traktor-nml-detected')).not.toBeInTheDocument()
@@ -290,10 +295,10 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
-        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath="/Users/dj/Documents/Native Instruments/Traktor 4.5.0/collection.nml"
         onAcceptDetectedNmlPath={onAcceptDetectedNmlPath}
         rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
       />,
     )
     fireEvent.click(screen.getByTestId('settings-traktor-nml-use-detected'))
@@ -304,32 +309,6 @@ describe('DestinationTab Traktor collection', () => {
   // there's no way to leave it empty — I have to point it at another path to test".
   // The hint says "leave it empty to turn this off" and the tab offered only Change,
   // which opens a file picker: the one promise the UI could not keep, and the only way
-  // to stop Surco touching a collection while something is being debugged.
-  it('clears the collection path so the sync can be turned off', () => {
-    const onClearTraktorNmlPath = vi.fn()
-    render(
-      <DestinationTab
-        synced={synced}
-        local={{ ...local, traktorNmlPath: '/dj/collection.nml' }}
-        patch={vi.fn()}
-        onOutputDirChange={vi.fn()}
-        onChangeEngineDir={vi.fn()}
-        onChangeTraktorNmlPath={vi.fn()}
-        onClearTraktorNmlPath={onClearTraktorNmlPath}
-        detectedNmlPath={null}
-        onAcceptDetectedNmlPath={vi.fn()}
-        rekordboxCollection=""
-      />,
-    )
-
-    fireEvent.click(screen.getByTestId('settings-traktor-nml-clear'))
-    expect(onClearTraktorNmlPath).toHaveBeenCalled()
-  })
-
-  // Reported 13/09/2026: "apuntas a nada is confusing for users". Emptying a text field
-  // was the only way to stop the sync — an invisible side effect nobody guesses, and
-  // against the rule this screen follows everywhere else (a control stays visible and
-  // says what it still needs). The toggle is now the switch and the path is only a path.
   it('turns the Traktor sync on and off with its own toggle', () => {
     const patch = vi.fn()
     render(
@@ -340,10 +319,10 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
-        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
       />,
     )
 
@@ -363,10 +342,10 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
-        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
       />,
     )
 
@@ -385,10 +364,10 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
-        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection="/Users/dj/Library/Pioneer/rekordbox/master.db"
+        onChangeRekordboxDbPath={vi.fn()}
       />,
     )
 
@@ -407,10 +386,10 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
-        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
       />,
     )
 
@@ -418,33 +397,6 @@ describe('DestinationTab Traktor collection', () => {
   })
 
   // Nothing configured means nothing to clear, and a live button that does nothing reads
-  // as broken.
-  it('offers nothing to clear while no collection is set', () => {
-    render(
-      <DestinationTab
-        synced={synced}
-        local={local}
-        patch={vi.fn()}
-        onOutputDirChange={vi.fn()}
-        onChangeEngineDir={vi.fn()}
-        onChangeTraktorNmlPath={vi.fn()}
-        onClearTraktorNmlPath={vi.fn()}
-        detectedNmlPath={null}
-        onAcceptDetectedNmlPath={vi.fn()}
-        rekordboxCollection=""
-      />,
-    )
-
-    expect(screen.queryByTestId('settings-traktor-nml-clear')).not.toBeInTheDocument()
-  })
-
-  // Reported 10/09/2026: "if I don't set the nml I can't leave that set", and "the nml
-  // isn't needed for converting". He is right, and the premise this was built on was
-  // wrong: the offset moves the cues written INTO THE CONVERTED FILE, which happens on
-  // every conversion whether or not Traktor's collection is involved. Measured with the
-  // collection unset — flac to mp3 at +51 moves a cue from 10000 to 10051 — so disabling
-  // the control was the UI refusing an adjustment the conversion was ready to apply.
-  // The collection path only decides whether the tracks ALREADY in Traktor get updated.
   it('keeps the cue offset usable with no collection configured', () => {
     render(
       <DestinationTab
@@ -454,10 +406,10 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
-        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
       />,
     )
     expect(screen.getByTestId('settings-cue-dir-early')).toBeEnabled()
@@ -470,10 +422,10 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
-        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
       />,
     )
     expect(screen.getByTestId('settings-cue-dir-early')).toBeEnabled()
@@ -496,10 +448,10 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
-        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
       />,
     )
     const field = screen.getByTestId('settings-traktor-nml')
@@ -631,10 +583,10 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
-        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
       />,
     )
 
@@ -654,10 +606,10 @@ describe('DestinationTab Traktor collection', () => {
         onOutputDirChange={vi.fn()}
         onChangeEngineDir={vi.fn()}
         onChangeTraktorNmlPath={vi.fn()}
-        onClearTraktorNmlPath={vi.fn()}
         detectedNmlPath={null}
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
       />,
     )
 

@@ -61,6 +61,7 @@ export interface LocalDraft {
   outputDir: string
   engineLibraryDir: string
   traktorNmlPath: string
+  rekordboxDbPath: string
   betaUpdates: boolean
   autoMatch: boolean
 }
@@ -74,6 +75,7 @@ export function pickLocal(s: Settings): LocalDraft {
     outputDir: s.outputDir,
     engineLibraryDir: s.engineLibraryDir,
     traktorNmlPath: s.traktorNmlPath,
+    rekordboxDbPath: s.rekordboxDbPath,
     betaUpdates: s.betaUpdates,
     autoMatch: s.autoMatch,
   }

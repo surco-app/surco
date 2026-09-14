@@ -114,12 +114,6 @@ export function SettingsModal({
     if (path) patchLocal('traktorNmlPath', path)
   }
 
-  // An empty path is what turns the sync off, and the picker can only ever return one:
-  // without this the feature could be started and never stopped.
-  function clearTraktorNmlPath(): void {
-    patchLocal('traktorNmlPath', '')
-  }
-
   // Autodetection only ever PROPOSES: the path varies by Traktor version and the
   // target user's real collection isn't even in the standard folder (his Documents
   // are in iCloud), so this never writes traktorNmlPath itself — only offers a
@@ -143,6 +137,16 @@ export function SettingsModal({
   useEffect(() => {
     window.api.rekordboxCollection().then(setRekordboxCollection)
   }, [])
+
+  // Detected is not the same as fixed: a DJ whose collection lives outside the standard
+  // location had no way to say so. The chosen path is staged like any other local setting
+  // and shown straight away, so the field does not keep displaying the detected one.
+  async function changeRekordboxDbPath(): Promise<void> {
+    const path = await window.api.pickRekordboxDbPath()
+    if (!path) return
+    patchLocal('rekordboxDbPath', path)
+    setRekordboxCollection(path)
+  }
 
   // Where settings.json lives — null is the app default. Loaded on open because it
   // isn't part of Settings (it's the pointer that says where Settings are read from).
@@ -314,8 +318,8 @@ export function SettingsModal({
                 onOutputDirChange={(dir) => patchLocal('outputDir', dir)}
                 onChangeEngineDir={(dir) => patchLocal('engineLibraryDir', dir)}
                 onChangeTraktorNmlPath={changeTraktorNmlPath}
-                onClearTraktorNmlPath={clearTraktorNmlPath}
                 rekordboxCollection={rekordboxCollection}
+                onChangeRekordboxDbPath={() => void changeRekordboxDbPath()}
                 detectedNmlPath={detectedNmlPath}
                 onAcceptDetectedNmlPath={acceptDetectedNmlPath}
               />

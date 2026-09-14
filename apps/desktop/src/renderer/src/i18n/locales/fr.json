@@ -3,7 +3,6 @@
     "cancel": "Annuler",
     "save": "Enregistrer",
     "change": "Changer",
-    "clear": "Effacer",
     "close": "Fermer",
     "copy": "Copier"
   },
@@ -967,7 +966,8 @@
     "syncRekordboxIdle": "Aucune collection rekordbox n'a été trouvée sur cette machine.",
     "rekordboxSync": "Collection rekordbox",
     "rekordboxDbPath": "Collection rekordbox",
-    "rekordboxDbPathHint": "La collection rekordbox dans laquelle écrire. Elle est détectée automatiquement ; ne la change que si la tienne est ailleurs."
+    "rekordboxDbPathHint": "La collection rekordbox dans laquelle écrire. Elle est détectée automatiquement ; ne la change que si la tienne est ailleurs.",
+    "traktorNmlPathEmpty": "Pas encore choisi"
   },
   "errorBoundary": {
     "title": "Quelque chose n'a pas pu s'afficher",
