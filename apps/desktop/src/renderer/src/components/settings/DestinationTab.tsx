@@ -5,6 +5,7 @@ import { isMacOS } from '../../lib/platform'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { DestinationPicker } from '../DestinationPicker'
+import { EngineLibraryFields } from '../EngineLibraryFields'
 import { OutputFolderField } from '../OutputFolderField'
 import { CheckboxRow } from './CheckboxRow'
 import { SettingsField, SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
@@ -56,7 +57,9 @@ interface Props {
   local: LocalDraft
   patch: PatchSynced
   onOutputDirChange: (dir: string) => void
-  onChangeEngineDir: () => void
+  // Takes the folder the shared field's own picker returned; the dialog lives there so
+  // neither surface reimplements the round-trip.
+  onChangeEngineDir: (dir: string) => void
   onChangeTraktorNmlPath: () => void
   // Empties the path, which is what turns the collection sync off (see settings.ts).
   onClearTraktorNmlPath: () => void
@@ -129,40 +132,15 @@ export function DestinationTab({
   // two destination details read as one pattern instead of one inline and one trailing
   // the whole group.
   const engineDetail = (
-    <div>
-      <SettingsLabel htmlFor="settings-engine-library" className="mb-2">
-        {tr('settings.engineLibraryDir')}
-      </SettingsLabel>
-      <div className="flex gap-2">
-        <input
-          id="settings-engine-library"
-          data-testid="settings-engine-library"
-          value={local.engineLibraryDir}
-          readOnly
-          className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
-        />
-        <button
-          type="button"
-          onClick={onChangeEngineDir}
-          className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
-        >
-          {tr('common.change')}
-        </button>
-      </div>
-      <SettingsHint className="mt-2">{tr('settings.engineLibraryDirHint')}</SettingsHint>
-      <SettingsLabel htmlFor="settings-engine-playlist" className="mt-4 mb-2">
-        {tr('settings.engineDjPlaylist')}
-      </SettingsLabel>
-      <input
-        id="settings-engine-playlist"
-        data-testid="settings-engine-playlist"
-        value={synced.engineDjPlaylist}
-        onChange={(e) => patch('engineDjPlaylist', e.target.value)}
-        className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm"
-      />
-      <SettingsHint className="mt-2">{tr('settings.engineDjPlaylistHint')}</SettingsHint>
-    </div>
+    <EngineLibraryFields
+      libraryDir={local.engineLibraryDir}
+      onLibraryDirChange={onChangeEngineDir}
+      playlist={synced.engineDjPlaylist}
+      onPlaylistChange={(name) => patch('engineDjPlaylist', name)}
+      testidPrefix="settings-engine"
+    />
   )
+
   return (
     <>
       <SettingsField label={tr('settings.destination')}>
