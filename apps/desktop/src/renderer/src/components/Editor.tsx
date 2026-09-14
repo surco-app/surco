@@ -25,6 +25,7 @@ import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { useTrackProperties } from '../hooks/useTrackProperties'
 import type { AppleMusicIndex, StaleLibraryCopy } from '../lib/appleMusicLibrary'
+import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
 import { BULK_FIELDS } from '../lib/bulkEdit'
 import { deriveTagPatches } from '../lib/deriveTags'
@@ -516,7 +517,7 @@ export const Editor = memo(function Editor({
   // Whether the destination library already owns this track, and whether an older copy of it
   // is still sitting there. The Discogs-proven verdict is pinned onto the track inside, so
   // the list and its filter agree with this badge.
-  const { inLibrary, staleMusicCopy } = useLibraryVerdict({
+  const { inLibrary, staleMusicCopy, replaceTarget } = useLibraryVerdict({
     item,
     libraryIndex,
     librarySource,
@@ -1315,6 +1316,7 @@ export const Editor = memo(function Editor({
           selectedCount={multiTracks.length}
           status={footerStatus}
           stale={stale}
+          replaces={!!replaceTarget && !isAmbiguousCandidate(replaceTarget)}
           done={done}
           incomplete={incomplete}
           incompleteReason={incompleteReason}

@@ -528,7 +528,8 @@
     "loudnessFixDc": "Corrigible : coche « Supprimer le décalage DC » sous Normalisation.",
     "loudnessRangeNoise": "Bon : -45 dB ou moins.",
     "loudnessFixNoise": "Non corrigible ici : Surco ne débruite pas. Cela vient de la source ou de la captation.",
-    "loudnessAfterHeader": "avant → après conversion"
+    "loudnessAfterHeader": "avant → après conversion",
+    "replaceMusic": "Remplacer par {{format}} + Apple Music"
   },
   "fields": {
     "groupFilled_one": "{{count}} rempli",

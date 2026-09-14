@@ -528,7 +528,8 @@
     "loudnessFixDc": "Korrigierbar: „DC-Offset entfernen“ unter Normalisierung aktivieren.",
     "loudnessRangeNoise": "Gut: -45 dB oder niedriger.",
     "loudnessFixNoise": "Hier nicht korrigierbar: Surco entrauscht nicht. Es stammt aus Quelle oder Aufnahme.",
-    "loudnessAfterHeader": "jetzt → nach dem Konvertieren"
+    "loudnessAfterHeader": "jetzt → nach dem Konvertieren",
+    "replaceMusic": "Durch {{format}} ersetzen + Apple Music"
   },
   "fields": {
     "groupFilled_one": "{{count}} ausgefüllt",

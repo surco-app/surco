@@ -15,6 +15,9 @@ export const FORMATS = OUTPUT_FORMATS
 interface ExportButtonProps {
   status: TrackItem['status']
   stale: boolean
+  // The file would supersede a copy already in the library, so the button offers a
+  // replacement instead of an add.
+  replaces?: boolean
   done: boolean
   outputFormat: FormatSetting
   exportedFormat: OutputFormat | null
@@ -63,6 +66,7 @@ interface ExportButtonProps {
 export function ExportButton({
   status,
   stale,
+  replaces,
   done,
   stage,
   outputFormat,
@@ -109,6 +113,7 @@ export function ExportButton({
     count,
     inPlace,
     stale,
+    replaces,
     done,
     withAppleMusic,
     withEngineDj,

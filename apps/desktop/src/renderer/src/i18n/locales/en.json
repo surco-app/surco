@@ -528,7 +528,8 @@
     "loudnessFixDc": "Fixable here: tick “Remove DC offset” under Normalization.",
     "loudnessRangeNoise": "Good: -45 dB or lower.",
     "loudnessFixNoise": "Not fixable here: Surco does not denoise. It comes from the source or the capture.",
-    "loudnessAfterHeader": "now → after converting"
+    "loudnessAfterHeader": "now → after converting",
+    "replaceMusic": "Replace with {{format}} + Apple Music"
   },
   "fields": {
     "groupFilled_one": "{{count}} filled",

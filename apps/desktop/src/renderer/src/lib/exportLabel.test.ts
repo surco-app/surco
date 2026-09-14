@@ -52,4 +52,55 @@ describe('exportButtonLabel', () => {
       exportButtonLabel({ ...base, quiet: true, format: 'WAV', exportedFormat: 'WAV' }).key,
     ).toBe('editor.reexport')
   })
+
+  // Reported 14/09: a FLAC loaded from a download folder, whose song is already in the
+  // library as an MP3, offered "Convert to AIFF + Apple Music" — an add, leaving the user
+  // holding both copies. When Surco knows which copy the file would supersede, the button
+  // says so instead, and names it so the swap can be checked before it happens.
+  it('offers to replace the library copy a loaded file supersedes', () => {
+    expect(
+      exportButtonLabel({
+        processing: false,
+        inPlace: false,
+        stale: false,
+        done: false,
+        withAppleMusic: true,
+        withEngineDj: false,
+        format: 'AIFF',
+        replaces: true,
+      }),
+    ).toEqual({ key: 'editor.replaceMusic', options: { format: 'AIFF' } })
+  })
+
+  // An in-place edit is already an update of the file itself; it must keep saying so
+  // rather than claiming to replace a library copy.
+  it('keeps the in-place update label over the replace offer', () => {
+    expect(
+      exportButtonLabel({
+        processing: false,
+        inPlace: true,
+        stale: false,
+        done: false,
+        withAppleMusic: true,
+        withEngineDj: false,
+        format: 'AIFF',
+        replaces: true,
+      }),
+    ).toEqual({ key: 'editor.updateMusic' })
+  })
+
+  // Nothing to supersede is the ordinary case, and the plain convert label stands.
+  it('falls back to the convert label when there is nothing to replace', () => {
+    expect(
+      exportButtonLabel({
+        processing: false,
+        inPlace: false,
+        stale: false,
+        done: false,
+        withAppleMusic: true,
+        withEngineDj: false,
+        format: 'AIFF',
+      }),
+    ).toEqual({ key: 'editor.convert', options: { format: 'AIFF' } })
+  })
 })

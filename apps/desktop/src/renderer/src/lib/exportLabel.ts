@@ -12,6 +12,10 @@ export interface ExportLabelState {
   // What the last export actually produced (uppercased), null before any export. Lets
   // the quiet re-export label name the pending format when the menu changed it.
   exportedFormat?: string | null
+  // True when the file would supersede a copy already in the library, so the button can
+  // offer a replacement instead of an add. Ranked below the in-place and stale updates:
+  // those already describe an update of the file itself.
+  replaces?: boolean
 }
 
 // Which label the convert split-button wears, as an i18n key plus its params. The
@@ -47,6 +51,7 @@ export function exportButtonLabel(state: ExportLabelState): {
   if (state.inPlace) return { key: state.withAppleMusic ? 'editor.updateMusic' : 'editor.update' }
   if (state.stale) return { key: 'editor.update' }
   if (state.done) return { key: 'editor.exportAgain' }
+  if (state.replaces) return { key: 'editor.replaceMusic', options: { format: state.format } }
   return {
     key: state.withAppleMusic
       ? 'editor.convert'

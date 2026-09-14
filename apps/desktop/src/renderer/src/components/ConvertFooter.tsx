@@ -20,6 +20,8 @@ interface ConvertFooterProps {
   // The footer's aggregate view of the selection (done block, reveal, Apple Music).
   status: SelectionStatus
   stale: boolean
+  // Whether this track would supersede a copy already in the library.
+  replaces?: boolean
   done: boolean
   incomplete: boolean
   // Why the convert is blocked (the empty required fields), surfaced as the button's
@@ -72,6 +74,7 @@ export function ConvertFooter({
   selectedCount,
   status,
   stale,
+  replaces,
   done,
   incomplete,
   incompleteReason,
@@ -298,6 +301,7 @@ export function ConvertFooter({
               status={isMulti ? 'idle' : item.status}
               stage={isMulti ? undefined : item.stage}
               stale={!isMulti && stale}
+              replaces={!isMulti && replaces}
               done={!isMulti && done}
               outputFormat={format}
               exportedFormat={isMulti ? null : exportedFormat}
