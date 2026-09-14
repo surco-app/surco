@@ -606,6 +606,81 @@ describe('useTrackLibrary foreign tags', () => {
     expect(result.current.tracks[0].coverRemoved).toBe(true)
   })
 
+  // Reported 14/09: reopening the session showed the placeholder again for tracks whose
+  // cover came from Apple Music. The path is saved and main mints a fresh preview from it,
+  // but the restore only ever wrote coverUrl — and the row paints from embeddedCover, so
+  // the editor had the art while the crate did not. Same bug the import had, in the
+  // sibling function that was not touched.
+  it('restores a session cover onto the row, not just the editor', async () => {
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '' },
+        duration: 180,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() =>
+      result.current.addPaths(['/m/a.wav'], {
+        '/m/a.wav': {
+          meta: { title: 'Restored' } as never,
+          coverUrl: 'data:image/jpeg;base64,RESTORED',
+          coverPath: '/art/PID1.jpg',
+        },
+      }),
+    )
+
+    expect(result.current.tracks[0]?.embeddedCover).toBe('data:image/jpeg;base64,RESTORED')
+  })
+
+  // A file that carries its own art must keep showing that, not a cover restored from a
+  // session: the row is a view of the file on disk.
+  it('keeps the file\u2019s own art over a restored session cover', async () => {
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '' },
+        duration: 180,
+        cover: { thumbUrl: 'data:image/jpeg;base64,FROMFILE', width: 500, height: 500 },
+        foreignTags: [],
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() =>
+      result.current.addPaths(['/m/a.wav'], {
+        '/m/a.wav': {
+          meta: { title: 'Restored' } as never,
+          coverUrl: 'data:image/jpeg;base64,RESTORED',
+          coverPath: '/art/PID1.jpg',
+        },
+      }),
+    )
+
+    expect(result.current.tracks[0]?.embeddedCover).toBe('data:image/jpeg;base64,FROMFILE')
+  })
+
   // A per-tag delete staged before a crash/reopen must come back on the restored row,
   // exactly like metaCleared — otherwise the reopened session silently forgets which
   // foreign tags the user had already marked for removal.
