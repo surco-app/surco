@@ -103,8 +103,15 @@ pública, la misma para todas las instalaciones, y no depende de máquina ni lic
 
 El molde existe y hay que seguirlo, no inventar otro:
 
-- **Copia de seguridad antes de escribir, o no se escribe.** Sufijo `.surco-backup`, una
-  sola, sobrescrita en cada escritura (`traktorNmlLibrary.ts:25`).
+- **Dos copias de seguridad, y sin ellas no se escribe.** Una por escritura
+  (`.surco-backup`), sobrescrita en cada pista, que deshace una escritura rota a medias. Y
+  una por tanda (`.surco-session`), tomada antes de la primera escritura del lote y no
+  tocada después, que devuelve la colección al estado previo a toda la tanda.
+
+  La segunda se añadió el 14/09 porque la primera no basta: al sobrescribirse en cada
+  pista, tras un lote de 300 conversiones describe la colección justo antes de la pista
+  300, no antes del lote. Medido sobre una copia de la colección real con un lote de tres
+  pistas: la copia por escritura ya llevaba 2 de los 3 cambios, la de sesión ninguno.
 - **Guarda de programa abierto, comprobada dos veces**, antes de leer y justo antes de
   escribir (`traktorNmlLibrary.ts:39` y `:68`). rbMigrate también exige rekordbox cerrado.
 - **La guarda falla CERRADA.** Si no se puede averiguar si rekordbox corre, se asume que
