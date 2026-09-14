@@ -334,6 +334,13 @@ export default function App(): React.JSX.Element {
   // Marks tracks whose Discogs caches are warmed (or warming) so a second hover
   // never re-runs the search; cleared on failure so a transient error can retry.
   const discogsPrefetched = useRef<Set<string>>(new Set())
+  // The failures behind the standing error card. The toast is keyed, so a batch that
+  // breaks on thirty tracks collapses onto one card — which is why the card has to carry
+  // the tally itself: it names the first track that failed and counts the others, instead
+  // of the old message that named the reason and left the user hunting for the row. Reset
+  // when the card goes (its onDismiss), so the next run counts from zero rather than
+  // adding onto a tally the user already read and closed.
+  const convertFailures = useRef<{ first: string; count: number } | null>(null)
   // The format picked in the editor's split-button menu, so the keyboard convert
   // shortcuts export in it too. The editor reports its pick on every change AND its
   // seed on mount (it remounts per track), so this mirror is right by construction;
@@ -780,9 +787,34 @@ export default function App(): React.JSX.Element {
     // single-track convert (the editor button, ⌘⏎) has no summary to show it in.
     onFormatSkipped: (name) => setNotice(tr('notices.formatSkipped', { name })),
     // Keyed so a bulk run failing on every track (e.g. Engine DJ open) raises one
-    // card, not thirty; persistent like every failure toast.
-    onProcessError: (message) =>
-      pushToast(store, { key: 'process-error', tone: 'danger', message, testid: 'process-error' }),
+    // card, not thirty; persistent like every failure toast. The card names the track
+    // because the key collapses the run: without a name the user reads why a conversion
+    // failed and still has to find which row it was in a crate of hundreds.
+    onProcessError: (message, name) => {
+      const prev = convertFailures.current
+      const tally = prev ? { first: prev.first, count: prev.count + 1 } : { first: name, count: 1 }
+      convertFailures.current = tally
+      pushToast(store, {
+        key: 'process-error',
+        tone: 'danger',
+        // Two independent keys rather than one key's plural forms: the count here is
+        // the number of OTHER failures, which is zero for a lone failure, and i18next
+        // routes an English 0 to the plural — so a single broken track was announced as
+        // "and 0 more". The singular text takes no count at all, so it cannot recur.
+        message:
+          tally.count > 1
+            ? tr('notices.convertFailedMany', {
+                name: tally.first,
+                count: tally.count - 1,
+                reason: message,
+              })
+            : tr('notices.convertFailed', { name: tally.first, reason: message }),
+        testid: 'process-error',
+        onDismiss: () => {
+          convertFailures.current = null
+        },
+      })
+    },
   })
 
   // Emptying every row starts over — clearTracks also drops the folder watcher. Emptying just
@@ -1150,6 +1182,15 @@ export default function App(): React.JSX.Element {
       editorDeclickRef.current ?? undefined,
     ),
   )
+
+  // The run summary's failure count, made into a way into the rows it counts. Starts from
+  // EMPTY_FILTER rather than the live selection so the failures can't come back empty
+  // behind a quality or format filter the user left on from earlier work — the click has
+  // to show what it promises. Search is cleared for the same reason.
+  const onShowFailed = useStableCallback(() => {
+    setFilterSelection({ ...EMPTY_FILTER, conversion: 'failed' })
+    setSearch('')
+  })
 
   // Stable like the other editor props so a search keystroke doesn't re-render the
   // memoized Editor: records which track's field has focus for the sweep's edit guard.
@@ -1654,6 +1695,7 @@ export default function App(): React.JSX.Element {
                 onConvertAll={onConvertAllTracks}
                 importing={importProgress}
                 batchSummary={batchSummary}
+                onShowFailed={onShowFailed}
                 batching={batching}
                 batchProgress={batchProgress}
                 analysis={analysis}

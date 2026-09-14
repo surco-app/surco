@@ -32,6 +32,9 @@ interface Props {
   // counter beside "Add files" so a big drop isn't an opaque wait.
   importing: { done: number; total: number } | null
   batchSummary: BatchSummary | null
+  // Filters the list down to the rows whose conversion failed, so the summary's failure
+  // count is a way into them instead of a number the user has to act on by eye.
+  onShowFailed: () => void
   batching: boolean
   // Progress of the running batch (convert-all / add-all), shown as a cancellable pill
   // while `batching` — the conversion's counterpart of the sweep buttons below.
@@ -81,6 +84,7 @@ export const Toolbar = memo(function Toolbar({
   onConvertAll,
   importing,
   batchSummary,
+  onShowFailed,
   batching,
   batchProgress,
   analysis,
@@ -186,10 +190,25 @@ export const Toolbar = memo(function Toolbar({
               tr('header.batchConverted', { count: batchSummary.converted }),
               batchSummary.skipped > 0 &&
                 tr('header.batchSkipped', { count: batchSummary.skipped }),
-              batchSummary.failed > 0 && tr('header.batchFailed', { count: batchSummary.failed }),
             ]
               .filter(Boolean)
               .join(' · ')}
+            {/* The failure count is the one segment worth acting on, so it's a button
+                rather than text: it filters the list down to the rows that failed. The
+                count used to point nowhere, leaving the user to find them by eye. */}
+            {batchSummary.failed > 0 && (
+              <>
+                {' · '}
+                <button
+                  type="button"
+                  data-testid="batch-failed-count"
+                  onClick={onShowFailed}
+                  className="text-danger underline-offset-2 hover:underline"
+                >
+                  {tr('header.batchFailed', { count: batchSummary.failed })}
+                </button>
+              </>
+            )}
           </span>
         )}
         {importing && (
