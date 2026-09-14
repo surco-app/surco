@@ -1071,6 +1071,33 @@ describe('coverArgs', () => {
 })
 
 describe('tagsFromProbe', () => {
+  // Reported 14/09/2026 with a screenshot: the Year box read
+  // "2020-12-01T00:00:00+01:00". The WAV really does carry that in its `date` tag (read
+  // straight off the file), and the year field showed it verbatim. Writing already took
+  // the leading four digits — only the read did not, so the editor displayed a timestamp
+  // where a year belongs and any save wrote it back.
+  it('keeps only the year when the file dates a track with a full timestamp', () => {
+    const m = tagsFromProbe({
+      format: { tags: { date: '2020-12-01T00:00:00+01:00' } },
+    })
+    expect(m.year).toBe('2020')
+  })
+
+  it('keeps only the year from a plain date', () => {
+    expect(tagsFromProbe({ format: { tags: { date: '2024-03-01' } } }).year).toBe('2024')
+  })
+
+  // A bare year is the common case and must pass through untouched.
+  it('leaves a four-digit year alone', () => {
+    expect(tagsFromProbe({ format: { tags: { date: '1999' } } }).year).toBe('1999')
+  })
+
+  // Anything that does not start with a year is left as it is rather than guessed at: an
+  // empty box would lose data the file really holds, and the user can still read it.
+  it('leaves a date it cannot read as a year alone', () => {
+    expect(tagsFromProbe({ format: { tags: { date: 'circa 1998' } } }).year).toBe('circa 1998')
+  })
+
   it('reads every metadata field from the container format tags', () => {
     const m = tagsFromProbe({
       format: {
