@@ -328,3 +328,40 @@ export function staleLibraryCopy(
   }
   return null
 }
+
+// Which library copy a file would supersede, worked out BEFORE it is converted.
+//
+// staleLibraryCopy above answers a different question: it runs AFTER an add, excluding the
+// copy that add just created. This one runs on a file the user has only loaded, so there is
+// no persistent ID yet to exclude — reported with a FLAC downloaded into a folder whose
+// song was already in the library as an MP3: the footer offered an add, which leaves the
+// user holding both.
+//
+// Replacing on a guess can delete the wrong song, so more than one equally good match is
+// reported as ambiguous rather than picked between — the library really does hold
+// near-identical entries.
+export type ReplaceCandidate = StaleLibraryCopy | { ambiguous: string[] }
+
+export function isAmbiguousCandidate(
+  candidate: ReplaceCandidate | null,
+): candidate is { ambiguous: string[] } {
+  return candidate !== null && 'ambiguous' in candidate
+}
+
+export function replaceCandidate(
+  index: AppleMusicIndex,
+  candidate: { title: string; artist: string; durationSec?: number },
+): ReplaceCandidate | null {
+  const gathered = candidateEntries(index, candidate)
+  if (!gathered) return null
+  const matches = [...gathered.entries].filter(
+    (entry) =>
+      entry.persistentId && libraryMatchScore(entry, gathered.cand) >= LIBRARY_MATCH_THRESHOLD,
+  )
+  if (matches.length === 0) return null
+  if (matches.length > 1) {
+    return { ambiguous: matches.map((entry) => entry.persistentId as string) }
+  }
+  const only = matches[0]
+  return { persistentId: only.persistentId as string, label: only.label }
+}
