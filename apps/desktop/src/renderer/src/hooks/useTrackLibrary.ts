@@ -390,7 +390,11 @@ export function useTrackLibrary({
         query: s.query,
         duration: duration ?? undefined,
         foreignTags,
-        coverUrl: cover?.thumbUrl,
+        // The file's own art wins; Music's copy fills the gap for the files that carry
+        // none — over half a real library, almost all WAVs, which imported with an empty
+        // cover slot even though Music held the picture.
+        coverUrl: cover?.thumbUrl ?? fromMusic?.coverUrl,
+        ...(cover?.thumbUrl ? {} : { coverPath: fromMusic?.coverPath }),
         embeddedCover: cover?.thumbUrl,
         embeddedCoverDims:
           cover && cover.width > 0 ? { w: cover.width, h: cover.height } : undefined,
