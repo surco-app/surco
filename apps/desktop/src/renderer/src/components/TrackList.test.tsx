@@ -279,6 +279,19 @@ describe('TrackList', () => {
     expect(screen.getByTestId('track-cover')).toHaveAttribute('src', 'file:///original.jpg')
   })
 
+  // Art fetched from Apple Music at import belongs on the row for the same reason the
+  // file's own does: it was captured once, at import, and describes the track rather than
+  // anything the user edited. Over half a real library carries no embedded picture (almost
+  // all WAVs) while Music holds the art, and those rows showed the placeholder while the
+  // editor showed the cover — reported with a screenshot of exactly that.
+  it('shows art captured from the library at import', () => {
+    renderList([track({ id: 'a', embeddedCover: 'data:image/jpeg;base64,FROMMUSIC' })])
+    expect(screen.getByTestId('track-cover')).toHaveAttribute(
+      'src',
+      'data:image/jpeg;base64,FROMMUSIC',
+    )
+  })
+
   // A file with no embedded art shows the placeholder even after the user drops a cover
   // in the form — the row must not borrow the edited coverUrl to fill the gap, or the
   // form would leak into the crate for exactly those tracks.
