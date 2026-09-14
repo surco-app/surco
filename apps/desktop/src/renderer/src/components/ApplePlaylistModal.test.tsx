@@ -126,4 +126,70 @@ describe('ApplePlaylistModal', () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled())
     expect(onPick).not.toHaveBeenCalled()
   })
+
+  // Reported 14/09 with a screenshot: four playlists named "95" in a row. Measured on the
+  // real library — 22 playlists, 7 repeated names, told apart only by the folder they live
+  // in, which the picker never showed.
+  it('groups playlists under the folder they live in', async () => {
+    loadAppleMusicPlaylists.mockResolvedValue([
+      { name: '95', count: 224, persistentId: 'A1', folder: 'Bases' },
+      { name: '95', count: 311, persistentId: 'B2', folder: 'Cantaditas' },
+      { name: 'Music', count: 1958, persistentId: 'C3' },
+    ])
+    setup()
+
+    await waitFor(() => expect(screen.getAllByTestId('apple-playlist-row')).toHaveLength(3))
+    const folders = screen.getAllByTestId('apple-playlist-folder').map((f) => f.textContent)
+    expect(folders.join(' ')).toContain('Bases')
+    expect(folders.join(' ')).toContain('Cantaditas')
+  })
+
+  // A playlist at the root belongs to no folder — three of the user's do — so it renders
+  // before any folder header instead of being filed under whichever comes first.
+  it('shows a root playlist outside every folder', async () => {
+    loadAppleMusicPlaylists.mockResolvedValue([
+      { name: '95', count: 224, persistentId: 'A1', folder: 'Bases' },
+      { name: 'Music', count: 1958, persistentId: 'C3' },
+    ])
+    setup()
+
+    await waitFor(() => expect(screen.getAllByTestId('apple-playlist-row')).toHaveLength(2))
+    const rows = screen.getAllByTestId('apple-playlist-row')
+    expect(rows[0].textContent).toContain('Music')
+    const header = screen.getByTestId('apple-playlist-folder')
+    expect(header.compareDocumentPosition(rows[0]) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
+  })
+
+  it('folds a folder away and brings it back', async () => {
+    loadAppleMusicPlaylists.mockResolvedValue([
+      { name: '95', count: 224, persistentId: 'A1', folder: 'Bases' },
+      { name: '2K', count: 399, persistentId: 'A2', folder: 'Bases' },
+    ])
+    setup()
+
+    await waitFor(() => expect(screen.getAllByTestId('apple-playlist-row')).toHaveLength(2))
+    fireEvent.click(screen.getByTestId('apple-playlist-folder'))
+    expect(screen.queryAllByTestId('apple-playlist-row')).toHaveLength(0)
+    fireEvent.click(screen.getByTestId('apple-playlist-folder'))
+    expect(screen.getAllByTestId('apple-playlist-row')).toHaveLength(2)
+  })
+
+  // Searching looks through every playlist, folded or not: a name typed in the box must
+  // find its playlist without the user guessing which folder to open first.
+  it('finds a playlist inside a folded folder', async () => {
+    loadAppleMusicPlaylists.mockResolvedValue([
+      { name: '95', count: 224, persistentId: 'A1', folder: 'Bases' },
+      { name: 'Chocolate', count: 5, persistentId: 'A2', folder: 'Bases' },
+    ])
+    setup()
+
+    await waitFor(() => expect(screen.getAllByTestId('apple-playlist-row')).toHaveLength(2))
+    fireEvent.click(screen.getByTestId('apple-playlist-folder'))
+    expect(screen.queryAllByTestId('apple-playlist-row')).toHaveLength(0)
+
+    fireEvent.change(screen.getByTestId('apple-playlist-search'), {
+      target: { value: 'Chocolate' },
+    })
+    expect(screen.getAllByTestId('apple-playlist-row')).toHaveLength(1)
+  })
 })

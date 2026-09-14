@@ -1,4 +1,4 @@
-import { ListMusic, Search } from 'lucide-react'
+import { ChevronRight, ListMusic, Search } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -50,10 +50,64 @@ export function ApplePlaylistModal({ onPick, onClose }: Props): React.JSX.Elemen
     return q ? lists.filter((p) => p.name.toLowerCase().includes(q)) : lists
   }, [lists, query])
 
+  // Grouped by the folder each playlist lives in. Reported with a screenshot of four rows
+  // all named "95": on the real library 7 of 22 names repeat, and the folder is the only
+  // thing telling them apart. Root playlists come first so none of them reads as belonging
+  // to whichever folder happens to be at the top.
+  const groups = useMemo(() => {
+    const root: AppleMusicPlaylist[] = []
+    const byFolder = new Map<string, AppleMusicPlaylist[]>()
+    for (const p of shown) {
+      if (!p.folder) {
+        root.push(p)
+        continue
+      }
+      const bucket = byFolder.get(p.folder)
+      if (bucket) bucket.push(p)
+      else byFolder.set(p.folder, [p])
+    }
+    return { root, folders: [...byFolder.entries()] }
+  }, [shown])
+
+  // Folded folders, by name. Empty means every folder is open: folding is for putting away
+  // what you are not using, never a gate you must open to find something. A search looks
+  // through every playlist regardless, so a folded folder can still produce a hit.
+  const [folded, setFolded] = useState<Set<string>>(new Set())
+  const searching = query.trim() !== ''
+  function toggleFolder(name: string): void {
+    setFolded((prev) => {
+      const next = new Set(prev)
+      if (next.has(name)) next.delete(name)
+      else next.add(name)
+      return next
+    })
+  }
+
   const chosen = lists?.find((p) => p.persistentId === picked)
   // An empty playlist stays visible — hiding it would read as Surco losing it — but
   // importing one adds nothing, which the user would read as a failure.
   const canImport = !!chosen && chosen.count > 0
+
+  // One row, drawn the same whether it sits at the root or inside a folder.
+  function playlistRow(p: AppleMusicPlaylist): React.JSX.Element {
+    return (
+      <button
+        type="button"
+        data-testid="apple-playlist-row"
+        onClick={() => setPicked(p.persistentId)}
+        aria-pressed={picked === p.persistentId}
+        className={`flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm ${
+          picked === p.persistentId
+            ? 'bg-[var(--color-row-selected)] text-[var(--color-on-row-selected)]'
+            : 'text-fg hover:bg-panel-2'
+        }`}
+      >
+        <ListMusic className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden="true" />
+        <span className="min-w-0 flex-1 truncate">{p.name}</span>
+        <span className="shrink-0 text-xs tabular-nums opacity-70">{p.count}</span>
+      </button>
+    )
+  }
 
   async function submit(): Promise<void> {
     if (!chosen || !canImport || reading) return
@@ -107,25 +161,41 @@ export function ApplePlaylistModal({ onPick, onClose }: Props): React.JSX.Elemen
           </div>
 
           <ul className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-            {shown.map((p) => (
-              <li key={p.persistentId}>
-                <button
-                  type="button"
-                  data-testid="apple-playlist-row"
-                  onClick={() => setPicked(p.persistentId)}
-                  aria-pressed={picked === p.persistentId}
-                  className={`flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm ${
-                    picked === p.persistentId
-                      ? 'bg-[var(--color-row-selected)] text-[var(--color-on-row-selected)]'
-                      : 'text-fg hover:bg-panel-2'
-                  }`}
-                >
-                  <ListMusic className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden="true" />
-                  <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                  <span className="shrink-0 text-xs tabular-nums opacity-70">{p.count}</span>
-                </button>
-              </li>
+            {groups.root.map((p) => (
+              <li key={p.persistentId}>{playlistRow(p)}</li>
             ))}
+            {groups.folders.map(([folder, items]) => {
+              // A search reaches inside every folder, so its hits show even when the
+              // folder is folded — otherwise the box would swallow a name the user typed.
+              const open = searching || !folded.has(folder)
+              return (
+                <li key={folder}>
+                  <button
+                    type="button"
+                    data-testid="apple-playlist-folder"
+                    onClick={() => toggleFolder(folder)}
+                    aria-expanded={open}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-fg-muted text-sm hover:bg-panel-2"
+                  >
+                    <ChevronRight
+                      className={`h-3.5 w-3.5 shrink-0 opacity-60 transition-transform ${
+                        open ? 'rotate-90' : ''
+                      }`}
+                      aria-hidden="true"
+                    />
+                    <span className="min-w-0 flex-1 truncate font-medium">{folder}</span>
+                    <span className="shrink-0 text-xs tabular-nums opacity-70">{items.length}</span>
+                  </button>
+                  {open && (
+                    <ul className="pl-4">
+                      {items.map((p) => (
+                        <li key={p.persistentId}>{playlistRow(p)}</li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              )
+            })}
           </ul>
         </div>
       )}
