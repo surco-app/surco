@@ -109,11 +109,6 @@ export function SettingsModal({
     setLocal((p) => ({ ...p, [key]: value }))
   }
 
-  async function changeEngineDir(): Promise<void> {
-    const dir = await window.api.pickEngineLibraryDir()
-    if (dir) patchLocal('engineLibraryDir', dir)
-  }
-
   async function changeTraktorNmlPath(): Promise<void> {
     const path = await window.api.pickTraktorNmlPath()
     if (path) patchLocal('traktorNmlPath', path)
@@ -317,7 +312,7 @@ export function SettingsModal({
                 local={local}
                 patch={patch}
                 onOutputDirChange={(dir) => patchLocal('outputDir', dir)}
-                onChangeEngineDir={changeEngineDir}
+                onChangeEngineDir={(dir) => patchLocal('engineLibraryDir', dir)}
                 onChangeTraktorNmlPath={changeTraktorNmlPath}
                 onClearTraktorNmlPath={clearTraktorNmlPath}
                 rekordboxCollection={rekordboxCollection}
