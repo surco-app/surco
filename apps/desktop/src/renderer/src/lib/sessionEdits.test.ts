@@ -118,6 +118,30 @@ describe('sessionEdits', () => {
     expect(edits['/music/a.wav'].foreignRemoved).toEqual(['SERATO_MARKERS_V2'])
   })
 
+  // Reported 14/09: after a reopen the button said "Add" instead of "Update" for a track
+  // that IS in the library, which risks a second copy of the same song. The persistent ID
+  // is what tells Surco to sync the existing copy rather than import a new one, and it was
+  // dropped on save — so the reopened row had no idea the track was already there.
+  it('remembers which library copy a track belongs to', () => {
+    const edits = sessionEdits([track({ musicPersistentId: 'PID1' })])
+    expect(edits['/music/a.wav'].musicPersistentId).toBe('PID1')
+  })
+
+  // Coming from a playlist is not a cosmetic flag: it makes the conversion keep the
+  // source's own format unless the user picks another (see resolveJobFormat). Losing it on
+  // reopen quietly turned the user's WAVs into their default output format.
+  it('remembers that a track came from a playlist import', () => {
+    const edits = sessionEdits([track({ fromAppleMusic: true })])
+    expect(edits['/music/a.wav'].fromAppleMusic).toBe(true)
+  })
+
+  // A loose file has neither, and storing absent flags would only bloat the file.
+  it('stores nothing about the library for a track that has no copy', () => {
+    const edits = sessionEdits([track({})])
+    expect(edits['/music/a.wav'].musicPersistentId).toBeUndefined()
+    expect(edits['/music/a.wav'].fromAppleMusic).toBeUndefined()
+  })
+
   // Transient per-session state (conversion status, analysis verdicts, review
   // suggestions) re-derives on import; persisting it would only bloat the file.
   it('stores only the editable fields', () => {

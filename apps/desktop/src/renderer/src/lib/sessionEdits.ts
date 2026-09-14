@@ -28,6 +28,12 @@ function sessionEdit(track: TrackItem): SessionEdit {
   if (track.outputName) edit.outputName = track.outputName
   if (track.coverUrl?.startsWith('http')) edit.coverUrl = track.coverUrl
   if (track.coverPath) edit.coverPath = track.coverPath
+  // What the track's library copy is, and that it came from a playlist. Both are read
+  // back at reopen: without the first the convert button offers to ADD a track that is
+  // already in the library (a second copy of the same song), and without the second the
+  // conversion stops honouring the source's own format.
+  if (track.musicPersistentId) edit.musicPersistentId = track.musicPersistentId
+  if (track.fromAppleMusic) edit.fromAppleMusic = true
   if (track.coverRemoved) edit.coverRemoved = true
   if (track.metaCleared) edit.metaCleared = true
   if (track.foreignRemoved?.length) edit.foreignRemoved = track.foreignRemoved
