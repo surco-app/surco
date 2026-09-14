@@ -351,6 +351,7 @@ export function useTrackLibrary({
     const patch: Partial<TrackItem> = {}
     if (saved.coverUrl || saved.coverRemoved) patch.coverUrl = saved.coverUrl
     if (saved.coverPath) patch.coverPath = saved.coverPath
+
     if (saved.coverRemoved) patch.coverRemoved = true
     if (saved.metaCleared) patch.metaCleared = true
     if (saved.foreignRemoved) patch.foreignRemoved = saved.foreignRemoved
@@ -410,6 +411,12 @@ export function useTrackLibrary({
         diskSignature: trackSignature({ meta: readMeta, coverUrl: cover?.thumbUrl }),
       }
       if (saved) Object.assign(patch, restoredPatch(saved))
+      // The row paints from embeddedCover, so a cover restored from the session has to
+      // land there too — otherwise reopening showed the placeholder in the crate while the
+      // editor showed the art, for every track whose cover came from the library rather
+      // than the file. The file's own art still wins: the row is a view of the file on
+      // disk, and this only fills the gap when the file carries none.
+      if (!cover?.thumbUrl && saved?.coverUrl) patch.embeddedCover = saved.coverUrl
       // A restored edit replaces the read wholesale (it was itself built on a read of
       // this same file, plus everything the user staged since); the matched flag rides
       // in the patch so the auto-match sweep skips the row instead of overwriting it.
