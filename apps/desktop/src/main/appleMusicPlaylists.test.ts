@@ -62,6 +62,42 @@ describe('parsePlaylistDump', () => {
     expect(parsePlaylistDump('Sesión\t12\tA1B2C3D4E5F60718\n\n')).toHaveLength(1)
   })
 
+  // Reported 14/09 with a screenshot: four playlists named "95" in a row, indistinguishable.
+  // Measured on the real library: 22 playlists, 7 names repeated, all of them separated
+  // only by the folder they live in — which the dump never carried.
+  it('reads the folder a playlist lives in', () => {
+    const rows = parsePlaylistDump('95\t224\tA1B2C3D4E5F60718\tBases')
+    expect(rows[0]).toEqual({
+      name: '95',
+      count: 224,
+      persistentId: 'A1B2C3D4E5F60718',
+      folder: 'Bases',
+    })
+  })
+
+  // Three of the user's playlists sit at the root. An empty folder field is how the script
+  // says so, and it must not become a folder named "".
+  it('leaves a root playlist with no folder', () => {
+    expect(parsePlaylistDump('Music\t1958\tA1B2C3D4E5F60718\t')[0].folder).toBeUndefined()
+  })
+
+  // A folder name is user-typed too, so it gets the same treatment as the playlist name:
+  // peeled from a known position rather than split on, or a tab inside it would shift
+  // every field.
+  it('keeps a folder whose name contains a tab', () => {
+    const rows = parsePlaylistDump('95\t224\tA1B2C3D4E5F60718\tBases\tviejas')
+    expect(rows[0].folder).toBe('Bases\tviejas')
+    expect(rows[0].name).toBe('95')
+  })
+
+  // A dump written before folders were read has only three fields; those rows still have
+  // to load, as root playlists.
+  it('still reads a row with no folder field at all', () => {
+    const rows = parsePlaylistDump('Sesión\t12\tA1B2C3D4E5F60718')
+    expect(rows[0].name).toBe('Sesión')
+    expect(rows[0].folder).toBeUndefined()
+  })
+
   it('keeps an empty playlist, which is a real thing to pick and must not look like a parse failure', () => {
     expect(parsePlaylistDump('Por clasificar\t0\tA1B2C3D4E5F60718')[0].count).toBe(0)
   })
