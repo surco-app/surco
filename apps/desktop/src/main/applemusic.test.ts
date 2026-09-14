@@ -257,8 +257,20 @@ describe('buildLocationScript', () => {
   it('returns the entry file path, empty when the entry holds no reachable file', () => {
     const script = buildLocationScript('ABCD1234ABCD1234')
     expect(script).toContain('whose persistent ID is "ABCD1234ABCD1234"')
-    expect(script).toContain('POSIX path of (location of')
     expect(script).toContain('return ""')
+  })
+
+  // Measured against a real library 14/09: inside the tell block the coercion raises, the
+  // try swallows it and the script returns empty for a track that is plainly there — which
+  // left replacesPath empty, so rekordbox was never told which file the conversion
+  // superseded and stayed pointing at the old MP3. The alias has to leave the tell block
+  // before POSIX path touches it.
+  it('coerces the location outside the Music tell block', () => {
+    const script = buildLocationScript('ABCD1234ABCD1234')
+    const tellBody = script.slice(script.indexOf('tell application'), script.indexOf('end tell'))
+
+    expect(tellBody).not.toContain('POSIX path')
+    expect(script).toContain('POSIX path')
   })
 })
 

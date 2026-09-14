@@ -1146,3 +1146,24 @@ describe('useTrackLibrary refresh after an in-place export', () => {
     expect(result.current.tracks[0].listLabel).toBe('On Disk')
   })
 })
+
+describe('useTrackLibrary updateTrack within one tick', () => {
+  // The replacement flow stamps musicPersistentId and replacesPath on the track and starts
+  // the conversion immediately, with no render in between. The convert reads the track from
+  // tracksRef, which the render-time assignment only refreshes on the next paint, so the job
+  // was built from the track as it stood BEFORE the stamp: Apple Music imported a sibling
+  // entry instead of updating the copy it was offering to replace, and rekordbox stayed on
+  // the old MP3. Reported 14/09 as two entries in Music and two files on disk.
+  it('publishes the patch to the live crate before the next render', async () => {
+    const { result } = setupWithTracks()
+    await act(() => result.current.addPaths(['/m/a.flac']))
+    const id = result.current.tracks[0].id
+
+    act(() => {
+      result.current.updateTrack(id, { musicPersistentId: 'PID1', replacesPath: '/m/old.mp3' })
+      const live = result.current.tracksRef.current.find((t) => t.id === id)
+      expect(live?.musicPersistentId).toBe('PID1')
+      expect(live?.replacesPath).toBe('/m/old.mp3')
+    })
+  })
+})

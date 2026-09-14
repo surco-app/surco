@@ -76,6 +76,9 @@ export interface Api {
   detectTraktorNmlPath: () => Promise<string | null>
   // The rekordbox collection on this machine, or '' when there is none.
   rekordboxCollection: () => Promise<string>
+  // Where a library copy's file lives, so a replacement can tell rekordbox which path it
+  // supersedes. Empty off macOS or when Music holds no reachable file.
+  appleMusicEntryLocation: (persistentId: string) => Promise<string>
   search: (
     query: string,
     provider?: SearchProviderId,

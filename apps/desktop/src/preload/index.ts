@@ -73,6 +73,8 @@ const api: Api = {
   pickRekordboxDbPath: () => ipcRenderer.invoke('dialog:pickRekordboxDbPath'),
   detectTraktorNmlPath: () => ipcRenderer.invoke('traktor:detectNmlPath'),
   rekordboxCollection: () => ipcRenderer.invoke('rekordbox:collection'),
+  appleMusicEntryLocation: (persistentId: string): Promise<string> =>
+    ipcRenderer.invoke('applemusic:entryLocation', persistentId),
   exportRekordbox: (xml: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:exportRekordbox', xml),
   exportTraktor: (nml: string): Promise<string | null> =>

@@ -52,6 +52,7 @@ export interface ProcessTrackDeps {
     trim?: TrimRange,
     clearExtras?: boolean,
     foreignRemoved?: string[],
+    replacesPath?: string,
   ) => Promise<{ normalizeSkipped: boolean; declickedSamples?: number }>
   // Lets a cancel reach the encode already in flight for this job, not just ones
   // not yet started. Registered around the convertAudio call and unregistered in
@@ -252,6 +253,7 @@ export async function runProcessTrack(
         job.trim,
         job.clearExtras,
         job.foreignRemoved,
+        job.replacesPath,
       ))
     } catch (e) {
       // convertAudio deletes the temp on failure and says so when it couldn't: that is

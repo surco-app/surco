@@ -1657,3 +1657,41 @@ describe('useTrackProcessing', () => {
     })
   })
 })
+
+describe('useTrackProcessing reading a track patched in the same tick', () => {
+  // The replacement flow stamps the copy to supersede onto the track and converts
+  // immediately, with no render in between. Deriving the hook's own ref from the tracks
+  // prop makes it a render-time snapshot, so the job was built from the track as it stood
+  // before the stamp: Apple Music imported a second entry instead of updating the copy the
+  // button had offered to replace, and rekordbox kept pointing at the old MP3. Measured
+  // 14/09 in the running app — the patch landed 0.3 ms BEFORE the job was built and still
+  // did not reach it. Reading the caller's live crate is what makes the stamp arrive.
+  it('sends the fields a caller stamped just before starting the job', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    setApi({ processTrack })
+    const live = { current: [track({ id: 'a' })] }
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: live.current,
+          tracksRef: live,
+          settings: null,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+
+    await act(async () => {
+      live.current = live.current.map((t) =>
+        t.id === 'a' ? { ...t, musicPersistentId: 'PID1', replacesPath: '/m/old.mp3' } : t,
+      )
+      await result.current.processOne('a')
+    })
+
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ musicPersistentId: 'PID1', replacesPath: '/m/old.mp3' }),
+    )
+  })
+})

@@ -558,6 +558,11 @@ export interface ProcessJob {
   // Apple Music step updates that library copy in place instead of importing the
   // file again — re-converting an edited track must not duplicate it in Music.
   musicPersistentId?: string
+  // The file this conversion supersedes, when it replaces a copy already in the library.
+  // rekordbox indexes THAT path, not the one being converted: a FLAC downloaded into some
+  // folder has never been in the collection, so without this the entry stayed on the old
+  // MP3 while the library got a second copy.
+  replacesPath?: string
 }
 
 export interface CoverExportJob {
