@@ -1323,6 +1323,84 @@ describe('App multi-select convert', () => {
   })
 })
 
+// A batch's failure card is keyed, so thirty broken conversions raise one toast instead
+// of thirty. That collapse is what made the card useless: it named the reason ("came out
+// unreadable") but never the track, so the user was told something failed in a crate of
+// hundreds and left to hunt for the red ring. The name is the whole point of the card.
+describe('App conversion failure notice', () => {
+  it('names the failing track in the error toast', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Pray', artist: 'W.I.P.' }),
+      processTrack: vi.fn().mockRejectedValue(new Error('came out unreadable')),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(await screen.findByTestId('process-btn'))
+    const toast = await screen.findByTestId('process-error')
+    expect(toast).toHaveTextContent('Pray')
+    expect(toast).toHaveTextContent('came out unreadable')
+    // A lone failure has no "others" to report, and i18next routes an English count of
+    // 0 to the plural form — so the card read "and 0 more" until the key was picked by
+    // hand. Pinned because the substring assertions above pass either way.
+    expect(toast.textContent).not.toMatch(/more/)
+  })
+
+  // Several failures in one run must still be one card, and it has to say how many —
+  // naming only the first would understate the damage, and naming all thirty would be
+  // the wall of cards the key exists to prevent.
+  it('names the first failure and counts the rest when a batch fails several tracks', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi
+        .fn()
+        .mockResolvedValueOnce({ title: 'Pray', artist: 'A' })
+        .mockResolvedValueOnce({ title: 'Second', artist: 'B' })
+        .mockResolvedValueOnce({ title: 'Third', artist: 'C' }),
+      processTrack: vi.fn().mockRejectedValue(new Error('came out unreadable')),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    fireEvent.click(await screen.findByTestId('convert-all'))
+    await waitFor(() => expect(screen.getAllByTestId('process-error')).toHaveLength(1))
+    const toast = screen.getByTestId('process-error')
+    expect(toast).toHaveTextContent('Pray')
+    expect(toast).toHaveTextContent('2')
+  })
+
+  // The run summary counts the failures ("2 failed") and the list already has a bucket
+  // that isolates exactly those rows — but the count was inert text, so the user read
+  // the number and still had to scan for red rings. Clicking it filters the list down
+  // to the failures, which is the whole path from "something broke" to the rows.
+  it('filters the list to the failures when the run summary count is clicked', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi
+        .fn()
+        .mockResolvedValueOnce({ title: 'Pray', artist: 'A' })
+        .mockResolvedValueOnce({ title: 'Second', artist: 'B' })
+        .mockResolvedValueOnce({ title: 'Third', artist: 'C' }),
+      // Only the middle track fails, so the filtered list is a strict subset — a
+      // whole-run failure would pass even if the click did nothing at all.
+      processTrack: vi.fn(async ({ inputPath }: { inputPath: string }) => {
+        if (inputPath === '/music/b.wav') throw new Error('came out unreadable')
+        return { outputPath: '/out/x.aiff', inPlace: false }
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    fireEvent.click(await screen.findByTestId('convert-all'))
+    const failedCount = await screen.findByTestId('batch-failed-count')
+    fireEvent.click(failedCount)
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(screen.getByTestId('track-row')).toHaveTextContent('Second')
+  })
+})
+
 // The Default format x input-extension matrix from the user's own single-track convert
 // click. The editor always resolves 'source' to a concrete OutputFormat before it ever
 // reaches onProcess (Editor.tsx's `format` state, seeded via resolveJobFormat) — only the

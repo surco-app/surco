@@ -126,6 +126,8 @@
     "noAudioFound": "Aucun audio trouvé dans ce que tu as déposé — vérifie que le dossier est lisible et contient des formats pris en charge.",
     "normalizeSkipped": "Impossible de mesurer le loudness de « {{name}} » — converti sans normalisation.",
     "formatSkipped": "« {{name}} » n'a pas de format de sortie équivalent pour Comme la source — ignoré.",
+    "convertFailed": "Impossible de convertir « {{name}} » : {{reason}}",
+    "convertFailedMany": "Impossible de convertir « {{name}} » et {{count}} autres : {{reason}}",
     "declicked": "Clics réparés dans {{count}} échantillons de « {{name}} ».",
     "qualityErrors": "Impossible d'analyser {{count}} fichier(s) — laissés sans mesure.",
     "copiedMeta": "Métadonnées copiées",

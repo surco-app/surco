@@ -126,6 +126,8 @@
     "noAudioFound": "Kein Audio im abgelegten Inhalt gefunden — prüfe, ob der Ordner lesbar ist und unterstützte Formate enthält.",
     "normalizeSkipped": "Die Loudness von „{{name}}“ konnte nicht gemessen werden — ohne Normalisierung konvertiert.",
     "formatSkipped": "„{{name}}“ hat kein passendes Ausgabeformat für Wie die Quelle — übersprungen.",
+    "convertFailed": "„{{name}}“ konnte nicht konvertiert werden: {{reason}}",
+    "convertFailedMany": "„{{name}}“ und {{count}} weitere konnten nicht konvertiert werden: {{reason}}",
     "declicked": "Klicks in {{count}} Samples von „{{name}}“ repariert.",
     "qualityErrors": "{{count}} Datei(en) konnten nicht analysiert werden — bleiben ungemessen.",
     "copiedMeta": "Metadaten kopiert",

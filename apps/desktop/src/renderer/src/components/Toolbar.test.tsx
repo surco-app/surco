@@ -20,6 +20,7 @@ function renderBar(over: Partial<Props> = {}): Props {
     onConvertAll: vi.fn(),
     importing: null,
     batchSummary: null,
+    onShowFailed: vi.fn(),
     batching: false,
     analysis: null,
     allAnalyzed: false,

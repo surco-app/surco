@@ -126,6 +126,8 @@
     "noAudioFound": "No se encontró audio en lo que soltaste: comprueba que la carpeta se puede leer y tiene formatos compatibles.",
     "normalizeSkipped": "No se pudo medir el loudness de «{{name}}» — convertida sin normalizar.",
     "formatSkipped": "«{{name}}» no tiene formato de salida equivalente para Igual que el origen — saltada.",
+    "convertFailed": "No se pudo convertir «{{name}}»: {{reason}}",
+    "convertFailedMany": "No se pudo convertir «{{name}}» y {{count}} más: {{reason}}",
     "declicked": "Reparados clicks en {{count}} muestras de «{{name}}».",
     "qualityErrors": "No se pudieron analizar {{count}} archivo(s) — sin medir.",
     "copiedMeta": "Metadatos copiados",

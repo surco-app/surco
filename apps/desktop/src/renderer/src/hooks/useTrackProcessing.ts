@@ -55,8 +55,11 @@ interface Params {
   // thirty-track batch triggers one evaluation, not thirty.
   onConversion?: () => void
   // Raised with the (IPC-prefix-free) message when a conversion fails, so the app can
-  // toast it — the footer's one-line error row truncates anything long.
-  onProcessError?: (message: string) => void
+  // toast it — the footer's one-line error row truncates anything long, and it only
+  // shows for the track the editor happens to have open. The label rides along because
+  // the toast is keyed: a batch raises one card for the whole run, so without a name the
+  // user is told a conversion failed and left to guess which of thirty rows it was.
+  onProcessError?: (message: string, name: string) => void
   // How many conversions overlap in a bulk run. Defaults to CONVERT_CONCURRENCY (all cores
   // but one); only overridden in tests, which pin it to make the concurrency deterministic.
   concurrency?: number
@@ -326,7 +329,7 @@ export function useTrackProcessing({
           error: message,
           stage: undefined,
         })
-        onProcessError?.(message)
+        onProcessError?.(message, track.listLabel)
         return 'failed'
       }
     },
