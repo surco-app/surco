@@ -2,6 +2,8 @@ import { useEffect, useMemo } from 'react'
 import {
   type AppleMusicIndex,
   isInLibrary,
+  type ReplaceCandidate,
+  replaceCandidate,
   type StaleLibraryCopy,
   staleLibraryCopy,
 } from '../lib/appleMusicLibrary'
@@ -29,6 +31,11 @@ interface LibraryVerdict {
   // The library entry this track's add superseded — the old rip, still in the library under a
   // different persistent ID. The footer offers deleting it.
   staleMusicCopy: StaleLibraryCopy | null
+  // The copy a track that has NOT been converted yet would supersede. staleMusicCopy can
+  // only answer after an add (it excludes the ID that add returned), so a file the user has
+  // merely loaded — a FLAC downloaded into a folder whose song is already in the library as
+  // an MP3 — had no way to offer a replacement and quietly offered an add instead.
+  replaceTarget: ReplaceCandidate | null
 }
 
 // Whether the destination library (Apple Music or Engine DJ) already owns this track, and
@@ -127,6 +134,25 @@ export function useLibraryVerdict({
   // one in Music" loop. Excluding the add's own ID is what keeps the offer from pointing
   // at the fresh copy once the snapshot refreshes and holds both. Memoized on the exact
   // tags it reads, same as the badge above.
+  // Only for a track with no library copy of its own yet: once it has one, staleMusicCopy
+  // below is the question that matters, and offering both would put two different
+  // "replace" answers on one footer.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: same read surface as the memos around it — the tags it actually looks at, not the whole track.
+  const replaceTarget = useMemo(
+    () =>
+      librarySource === 'appleMusic' && libraryIndex && !item.musicPersistentId
+        ? replaceCandidate(libraryIndex, ownTags)
+        : null,
+    [
+      librarySource,
+      libraryIndex,
+      item.musicPersistentId,
+      item.meta.title,
+      item.meta.artist,
+      item.duration,
+    ],
+  )
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: ownTags is a fresh literal each render; its read surface (item.meta.title/artist, item.duration) is listed instead so an unrelated keystroke doesn't re-scan the library index.
   const staleMusicCopy = useMemo(
     () =>
@@ -152,5 +178,5 @@ export function useLibraryVerdict({
     if (resolvedViaDiscogs && !item.inLibraryResolved) onChange({ inLibraryResolved: true })
   }, [resolvedViaDiscogs, item.inLibraryResolved])
 
-  return { inLibrary, staleMusicCopy }
+  return { inLibrary, staleMusicCopy, replaceTarget }
 }
