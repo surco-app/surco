@@ -3,7 +3,6 @@
     "cancel": "Abbrechen",
     "save": "Speichern",
     "change": "Ändern",
-    "clear": "Leeren",
     "close": "Schließen",
     "copy": "Kopieren"
   },
@@ -967,7 +966,8 @@
     "syncRekordboxIdle": "Auf diesem Rechner wurde keine rekordbox-Sammlung gefunden.",
     "rekordboxSync": "rekordbox-Sammlung",
     "rekordboxDbPath": "rekordbox-Sammlung",
-    "rekordboxDbPathHint": "Die rekordbox-Sammlung, in die geschrieben wird. Sie wird automatisch gefunden; ändere sie nur, wenn deine woanders liegt."
+    "rekordboxDbPathHint": "Die rekordbox-Sammlung, in die geschrieben wird. Sie wird automatisch gefunden; ändere sie nur, wenn deine woanders liegt.",
+    "traktorNmlPathEmpty": "Noch nicht gewählt"
   },
   "errorBoundary": {
     "title": "Etwas konnte nicht dargestellt werden",

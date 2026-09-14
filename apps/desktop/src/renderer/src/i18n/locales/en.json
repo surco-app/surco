@@ -3,7 +3,6 @@
     "cancel": "Cancel",
     "save": "Save",
     "change": "Change",
-    "clear": "Clear",
     "close": "Close",
     "copy": "Copy"
   },
@@ -967,7 +966,8 @@
     "syncRekordboxIdle": "No rekordbox collection was found on this machine.",
     "rekordboxSync": "rekordbox collection",
     "rekordboxDbPath": "rekordbox collection",
-    "rekordboxDbPathHint": "The rekordbox collection to write into. It is found automatically; change it only if yours lives elsewhere."
+    "rekordboxDbPathHint": "The rekordbox collection to write into. It is found automatically; change it only if yours lives elsewhere.",
+    "traktorNmlPathEmpty": "Not chosen yet"
   },
   "errorBoundary": {
     "title": "Something failed to render",

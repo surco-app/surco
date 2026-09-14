@@ -81,6 +81,7 @@ const local: LocalDraft = {
   outputDir: '/out',
   engineLibraryDir: '/music/Engine Library',
   traktorNmlPath: '',
+  rekordboxDbPath: '',
   betaUpdates: false,
   autoMatch: false,
 }

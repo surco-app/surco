@@ -3,7 +3,6 @@
     "cancel": "Cancelar",
     "save": "Guardar",
     "change": "Cambiar",
-    "clear": "Vaciar",
     "close": "Cerrar",
     "copy": "Copiar"
   },
@@ -967,7 +966,8 @@
     "syncRekordboxIdle": "No se ha encontrado ninguna colección de rekordbox en este equipo.",
     "rekordboxSync": "Colección de rekordbox",
     "rekordboxDbPath": "Colección de rekordbox",
-    "rekordboxDbPathHint": "La colección de rekordbox en la que escribir. Se detecta sola; cámbiala solo si la tienes en otro sitio."
+    "rekordboxDbPathHint": "La colección de rekordbox en la que escribir. Se detecta sola; cámbiala solo si la tienes en otro sitio.",
+    "traktorNmlPathEmpty": "Sin elegir"
   },
   "errorBoundary": {
     "title": "Algo ha fallado al renderizar",

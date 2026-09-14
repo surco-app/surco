@@ -818,6 +818,18 @@ function registerIpc(): void {
     return canceled ? null : filePaths[0]
   })
 
+  // The rekordbox counterpart. Its collection is always named master.db, so the filter
+  // names that rather than a generic .db — picking the wrong database would point Surco at
+  // something it would then refuse to open.
+  ipcMain.handle('dialog:pickRekordboxDbPath', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      title: 'Colección de rekordbox',
+      properties: ['openFile'],
+      filters: [{ name: 'rekordbox master.db', extensions: ['db'] }],
+    })
+    return canceled ? null : filePaths[0]
+  })
+
   // Proposes, never imposes (see traktorNmlPath.ts): only paths that actually exist
   // are worth offering, since the version folder itself is what changes on every
   // Traktor update — an ipcMain.handle can't take fs as a dependency, so existsSync

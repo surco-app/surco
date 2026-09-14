@@ -68,7 +68,7 @@ beforeAll(() => {
       '  *.tmp-*)',
       '    echo "ffmpeg version 6.0 Copyright (c) 2000-2023 the FFmpeg developers" >&2',
       '    echo "  libavutil      58.  2.100 / 58.  2.100" >&2',
-      "    echo \"Input #0, flac, from '$1':\" >&2",
+      '    echo "Input #0, flac, from \'$1\':" >&2',
       '    echo "  Duration: 00:00:01.00, bitrate: 1411 kb/s" >&2',
       '    echo "[out#0/aiff @ 0x600001] Could not open file : Permission denied" >&2',
       '    echo "Conversion failed!" >&2',
