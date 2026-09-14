@@ -28,6 +28,15 @@ export interface TagField {
 // A "3/12" track or disc tag would survive zero-padding as "312", so keep only the index.
 const dropTotal = (raw: string): string => raw.split('/')[0].trim()
 
+// A `date` tag often holds a full date rather than a year — a WAV re-saved by Apple Music
+// carries "2020-12-01T00:00:00+01:00" — and the editor showed the whole timestamp in a box
+// labelled Year, then wrote it back on save. The write side already took the leading four
+// digits; this is the same rule on the way in.
+//
+// A value that does not start with a year is kept as it is: blanking it would throw away
+// something the file really holds, and the user can still read and correct it.
+const yearFromDate = (raw: string): string => raw.trim().match(/^\d{4}\b/)?.[0] ?? raw
+
 export const TAG_FIELDS: TagField[] = [
   { key: 'title', aliases: ['title'], id3: 'title' },
   { key: 'artist', aliases: ['artist'], id3: 'artist' },
@@ -37,7 +46,7 @@ export const TAG_FIELDS: TagField[] = [
     aliases: ['album_artist', 'albumartist', 'album artist', 'albumartist2'],
     id3: 'album_artist',
   },
-  { key: 'year', aliases: ['date', 'year'], id3: 'date' },
+  { key: 'year', aliases: ['date', 'year'], id3: 'date', parse: yearFromDate },
   { key: 'genre', aliases: ['genre'], id3: 'genre' },
   { key: 'grouping', aliases: ['grouping', 'content_group', 'tit1', 'grp1'], id3: 'grouping' },
   { key: 'comment', aliases: ['comment'], id3: 'comment' },
