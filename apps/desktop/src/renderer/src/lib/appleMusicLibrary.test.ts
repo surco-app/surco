@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { buildLibraryIndex, isInLibrary, staleLibraryCopy } from './appleMusicLibrary'
+import type { AppleMusicIndex } from './appleMusicLibrary'
+import {
+  buildLibraryIndex,
+  isInLibrary,
+  replaceCandidate,
+  staleLibraryCopy,
+} from './appleMusicLibrary'
 
 describe('buildLibraryIndex / isInLibrary', () => {
   const index = buildLibraryIndex([
@@ -378,5 +384,72 @@ describe('staleLibraryCopy', () => {
     ])
     const candidate = { title: 'Strobe', artist: 'deadmau5', durationSec: 634 }
     expect(staleLibraryCopy(idx, candidate, 'NEWCOPY123456789')).toBe(null)
+  })
+})
+
+function indexOf(
+  rows: { title: string; artist: string; durationSec?: number; persistentId?: string }[],
+): AppleMusicIndex {
+  return buildLibraryIndex(rows)
+}
+
+describe('replaceCandidate', () => {
+  it('names the copy a loaded file would replace', () => {
+    const idx = indexOf([
+      {
+        title: 'Possession (Dececio Remix)',
+        artist: 'Transfer',
+        durationSec: 372,
+        persistentId: 'PID1',
+      },
+    ])
+
+    expect(
+      replaceCandidate(idx, {
+        title: 'Possession (Dececio Remix)',
+        artist: 'Transfer',
+        durationSec: 372,
+      }),
+    ).toEqual({ persistentId: 'PID1', label: expect.any(String) })
+  })
+
+  // Nothing matching is the ordinary case for a track the user does not own yet: it simply
+  // gets added, which is what happens today.
+  it('finds nothing when the library does not have the song', () => {
+    const idx = indexOf([
+      { title: 'Otra cosa', artist: 'Alguien', durationSec: 200, persistentId: 'PID1' },
+    ])
+
+    expect(
+      replaceCandidate(idx, {
+        title: 'Possession (Dececio Remix)',
+        artist: 'Transfer',
+        durationSec: 372,
+      }),
+    ).toBeNull()
+  })
+
+  // Replacing on a guess can delete the wrong song, and the library really does hold
+  // near-identical entries — the user has four playlists named "95", two of them the same
+  // name in the same folder. With more than one match the answer is "ask", never a pick.
+  it('refuses to choose between two equally good matches', () => {
+    const idx = indexOf([
+      { title: 'Possession', artist: 'Transfer', durationSec: 372, persistentId: 'PID1' },
+      { title: 'Possession', artist: 'Transfer', durationSec: 372, persistentId: 'PID2' },
+    ])
+
+    expect(
+      replaceCandidate(idx, { title: 'Possession', artist: 'Transfer', durationSec: 372 }),
+    ).toEqual({ ambiguous: ['PID1', 'PID2'] })
+  })
+
+  // An entry Music reported no persistent ID for cannot be replaced — there is nothing to
+  // address — so it is not offered as a candidate.
+  it('ignores an entry with no persistent ID', () => {
+    const idx = indexOf([{ title: 'Possession', artist: 'Transfer', durationSec: 372 } as never])
+
+    expect(
+      replaceCandidate(idx, { title: 'Possession', artist: 'Transfer', durationSec: 372 }),
+    ).toBeNull()
   })
 })
