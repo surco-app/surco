@@ -1007,7 +1007,16 @@
     "back": "Back",
     "next": "Next",
     "finish": "Finish",
-    "step": "Step {{current}} of {{total}}"
+    "step": "Step {{current}} of {{total}}",
+    "djLibrariesTitle": "Your DJ collections",
+    "djLibrariesBody": "When you convert a track, Surco can leave your collection pointing at the new file, with its playlists and cue points intact.",
+    "djLibrariesNote": "Surco backs the collection up before writing and never writes while the program is open. You can change this later in Settings.",
+    "djLibrary": {
+      "rekordbox": "rekordbox",
+      "rekordboxBody": "Keep the collection in step when converting.",
+      "traktor": "Traktor",
+      "traktorBody": "Write cue points and beatgrid into the collection."
+    }
   },
   "help": {
     "title": "Help & FAQ",

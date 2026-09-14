@@ -1,9 +1,10 @@
 import { AudioLines } from 'lucide-react'
 import type React from 'react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Settings } from '../../../shared/types'
 import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
+import { type DetectedDjLibrary, detectedDjLibraries } from '../lib/djLibraries'
 import { type AudioIntent, buildOnboardingPatch, seedAudioIntents } from '../lib/onboarding'
 import { isMacOS } from '../lib/platform'
 import { formatKHz } from '../lib/quality'
@@ -11,6 +12,7 @@ import { type LocalDraft, pickLocal, pickSynced, type SyncedDraft } from '../lib
 import { AutoMatchControl } from './AutoMatchControl'
 import { DestinationPicker } from './DestinationPicker'
 import { DiscogsTokenField } from './DiscogsTokenField'
+import { EngineLibraryFields } from './EngineLibraryFields'
 import { FormatSettingControl } from './FormatSettingControl'
 import { OutputFolderField } from './OutputFolderField'
 import { SearchProvidersControl } from './SearchProvidersControl'
@@ -23,7 +25,8 @@ const AUDIO_INTENTS: AudioIntent[] = ['restore', 'level', 'quality']
 // format + destination) plus the workflow question that tailors the editor to the DJ.
 // Naming, grouping/genre presets and the fields editor are power-user tuning that lives
 // in Settings — every extra question here delays the first drop of files.
-const STEPS = ['welcome', 'search', 'format', 'audio'] as const
+const BASE_STEPS = ['welcome', 'search', 'format', 'audio'] as const
+type Step = (typeof BASE_STEPS)[number] | 'djLibraries'
 
 interface Props {
   settings: Settings
@@ -47,6 +50,19 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const [audioIntents, setAudioIntents] = useState<AudioIntent[]>(seededIntents)
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(dialogRef)
+
+  // The collection step only exists for a DJ who actually runs one of these programs, so
+  // the wizard's length is decided by what was found rather than fixed — a user with no DJ
+  // software still finishes at step 4 of 4, with no empty step and no gap in the count.
+  const [djLibraries, setDjLibraries] = useState<DetectedDjLibrary[]>([])
+  useEffect(() => {
+    Promise.all([window.api.rekordboxCollection(), window.api.detectTraktorNmlPath()]).then(
+      ([rekordbox, traktor]) =>
+        setDjLibraries(detectedDjLibraries({ rekordbox, traktor: traktor ?? '' })),
+    )
+  }, [])
+  const STEPS: readonly Step[] =
+    djLibraries.length > 0 ? [...BASE_STEPS, 'djLibraries'] : BASE_STEPS
 
   const isLast = step === STEPS.length - 1
   const discogsOn = synced.searchProviders.includes('discogs')
@@ -188,6 +204,19 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                           testid="onboarding-output"
                         />
                       ),
+                      // Engine DJ was offered here with nothing under it, so a new user
+                      // could finish setup with the destination chosen and the library
+                      // pointing at a default folder that need not exist. Same two fields
+                      // Settings shows under the same radio.
+                      engineDj: (
+                        <EngineLibraryFields
+                          libraryDir={local.engineLibraryDir}
+                          onLibraryDirChange={(dir) => patchLocal('engineLibraryDir', dir)}
+                          playlist={synced.engineDjPlaylist}
+                          onPlaylistChange={(name) => patch('engineDjPlaylist', name)}
+                          testidPrefix="onboarding-engine"
+                        />
+                      ),
                     }}
                   />
                 </div>
@@ -242,6 +271,50 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                     <SpectrumPreview />
                   </div>
                 )}
+              </>
+            )}
+
+            {STEPS[step] === 'djLibraries' && (
+              <>
+                <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
+                  {tr('onboarding.djLibrariesTitle')}
+                </h2>
+                <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.djLibrariesBody')}</p>
+                <div className="flex flex-col gap-2">
+                  {djLibraries.map((library) => (
+                    <label
+                      key={library.id}
+                      className="flex cursor-pointer items-start gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2.5"
+                    >
+                      <input
+                        data-testid={`onboarding-sync-${library.id}`}
+                        type="checkbox"
+                        checked={
+                          library.id === 'rekordbox' ? synced.syncRekordbox : synced.syncTraktor
+                        }
+                        onChange={(e) =>
+                          patch(
+                            library.id === 'rekordbox' ? 'syncRekordbox' : 'syncTraktor',
+                            e.target.checked,
+                          )
+                        }
+                        className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+                      />
+                      <span className="min-w-0 text-sm font-medium">
+                        {tr(`onboarding.djLibrary.${library.id}`)}
+                        <span className="mt-0.5 block text-xs font-normal text-fg-dim">
+                          {tr(`onboarding.djLibrary.${library.id}Body`)}
+                        </span>
+                        {/* The path it found, so the DJ can see WHICH collection is about
+                            to be written to before switching it on. */}
+                        <span className="mt-1 block truncate text-xs text-fg-faint">
+                          {library.path}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <p className="mt-4 text-xs text-fg-dim">{tr('onboarding.djLibrariesNote')}</p>
               </>
             )}
           </div>

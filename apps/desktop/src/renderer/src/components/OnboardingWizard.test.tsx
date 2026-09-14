@@ -5,7 +5,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // OnboardingWizard's tree reads window.api.platform at module load, so stub it first.
 vi.hoisted(() => {
-  ;(globalThis.window as unknown as { api: unknown }).api = { platform: 'darwin' }
+  ;(globalThis.window as unknown as { api: unknown }).api = {
+    platform: 'darwin',
+    // The wizard asks both on mount to decide whether the collections step exists at all.
+    rekordboxCollection: async () => '',
+    detectTraktorNmlPath: async () => null,
+  }
 })
 
 import { SEARCH_PROVIDERS } from '../../../shared/defaults'
@@ -184,6 +189,74 @@ describe('OnboardingWizard destination', () => {
         keepOutputCopy: true,
       }),
     )
+  })
+
+  // The wizard offered Engine DJ as a destination and then asked nothing else, so a new
+  // user finished setup with the destination set and the library pointing at a default
+  // folder that need not exist — on the machine this was found on, it did not. Settings
+  // has always shown these two fields under the same radio; the wizard now does too.
+  it('asks where the Engine DJ library is once Engine DJ is the destination', () => {
+    openFormatStep()
+    expect(screen.getByTestId('onboarding-engine-library').closest('[inert]')).not.toBeNull()
+
+    fireEvent.click(screen.getByTestId('onboarding-destination-engineDj'))
+    expect(screen.getByTestId('onboarding-engine-library').closest('[inert]')).toBeNull()
+    expect(screen.getByTestId('onboarding-engine-playlist')).toHaveValue('Surco')
+  })
+
+  it('persists the library folder the user picks for Engine DJ', async () => {
+    ;(
+      window as unknown as { api: { pickEngineLibraryDir?: () => Promise<string> } }
+    ).api.pickEngineLibraryDir = async () => '/dj/Engine Library'
+    const onFinish = vi.fn()
+    openFormatStep(onFinish)
+    fireEvent.click(screen.getByTestId('onboarding-destination-engineDj'))
+    fireEvent.click(screen.getByTestId('onboarding-engine-library-change'))
+    expect(await screen.findByTestId('onboarding-engine-library')).toHaveValue('/dj/Engine Library')
+
+    for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    expect(onFinish).toHaveBeenCalledWith(
+      expect.objectContaining({ addToEngineDj: true, engineLibraryDir: '/dj/Engine Library' }),
+    )
+  })
+
+  // A DJ finished setup without ever hearing that Surco can keep their collection in step
+  // with what it converts — the thing that saves them rebuilding playlists by hand. The
+  // step only appears for a collection actually found, so it costs nothing to anyone else.
+  it('offers the collections it found, off by default', async () => {
+    ;(
+      window as unknown as { api: { rekordboxCollection?: () => Promise<string> } }
+    ).api.rekordboxCollection = async () => '/Users/dj/Library/Pioneer/rekordbox/master.db'
+    const onFinish = vi.fn()
+    render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+    // The detection resolves after mount, and it is what decides the wizard's length —
+    // clicking through before it lands would walk a four-step wizard off its end.
+    expect(
+      await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
+    ).toBeInTheDocument()
+
+    for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    const toggle = await screen.findByTestId('onboarding-sync-rekordbox')
+    expect(toggle).not.toBeChecked()
+
+    fireEvent.click(toggle)
+    fireEvent.click(screen.getByTestId('onboarding-next'))
+    expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ syncRekordbox: true }))
+  })
+
+  // Someone who runs no DJ software should not be shown a step with nothing in it, and the
+  // counter has to agree: five of five when the step is there, four of four when it is not.
+  it('leaves the step out entirely when no collection was found', async () => {
+    ;(
+      window as unknown as { api: { rekordboxCollection?: () => Promise<string> } }
+    ).api.rekordboxCollection = async () => ''
+    render(<OnboardingWizard settings={settings} onFinish={vi.fn()} />)
+
+    for (let i = 0; i < 3; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    expect(
+      await screen.findByText(i18n.t('onboarding.step', { current: 4, total: 4 })),
+    ).toBeInTheDocument()
+    expect(screen.queryByTestId('onboarding-sync-rekordbox')).not.toBeInTheDocument()
   })
 
   // The destination choice is no longer macOS-only: Engine DJ and overwrite exist on every

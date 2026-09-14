@@ -1007,7 +1007,16 @@
     "back": "Voltar",
     "next": "Avançar",
     "finish": "Começar",
-    "step": "Passo {{current}} de {{total}}"
+    "step": "Passo {{current}} de {{total}}",
+    "djLibrariesTitle": "Suas coleções de DJ",
+    "djLibrariesBody": "Ao converter uma faixa, o Surco pode deixar sua coleção apontando para o arquivo novo, com as playlists e os cue points intactos.",
+    "djLibrariesNote": "O Surco faz uma cópia de segurança antes de gravar e nunca grava com o programa aberto. Você pode mudar isso depois nas configurações.",
+    "djLibrary": {
+      "rekordbox": "rekordbox",
+      "rekordboxBody": "Manter a coleção em dia ao converter.",
+      "traktor": "Traktor",
+      "traktorBody": "Gravar cue points e grade na coleção."
+    }
   },
   "help": {
     "title": "Ajuda e FAQ",
