@@ -395,7 +395,10 @@ export function useTrackLibrary({
         // cover slot even though Music held the picture.
         coverUrl: cover?.thumbUrl ?? fromMusic?.coverUrl,
         ...(cover?.thumbUrl ? {} : { coverPath: fromMusic?.coverPath }),
-        embeddedCover: cover?.thumbUrl,
+        // The row reads embeddedCover, the art captured once at import — so Music's copy
+        // belongs here too for the files that carry none of their own, or the crate shows
+        // a placeholder while the editor shows the cover. The file's own art still wins.
+        embeddedCover: cover?.thumbUrl ?? fromMusic?.coverUrl,
         embeddedCoverDims:
           cover && cover.width > 0 ? { w: cover.width, h: cover.height } : undefined,
         listLabel: s.title || base.fileName,
