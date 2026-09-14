@@ -612,6 +612,10 @@ export interface AppleMusicLookupCandidate {
 
 // One of the user's own Apple Music playlists, offered as a source of tracks to work on.
 export interface AppleMusicPlaylist {
+  // The folder this playlist lives in, absent at the root. Seven of the user's 22 playlist
+  // names are repeated — four of them "95" — so the folder is the only thing telling two
+  // rows apart in the picker.
+  folder?: string
   name: string
   // What Music reports the playlist holds, streaming rows included: it is the number the
   // user sees in Music, and the only one they can check this list against.

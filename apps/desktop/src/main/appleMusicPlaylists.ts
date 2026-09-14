@@ -24,7 +24,14 @@ export function buildPlaylistDumpScript(): string {
     // into it failed the whole dump with "Can't make item 1 of 0 into type Unicode text.
     // (-1700)". A per-playlist read is the only form that yields a count per row.
     '  repeat with p in userPlaylists',
-    '    set end of out to (name of p) & tab & (count of tracks of p) & tab & (persistent ID of p)',
+    // The folder a playlist lives in, last so the parser can peel it from a known end —
+    // both names are user-typed and may hold tabs. A playlist at the root has no parent,
+    // and asking for one raises, so the try leaves it empty.
+    '    set folderName to ""',
+    '    try',
+    '      set folderName to name of (parent of p)',
+    '    end try',
+    '    set end of out to (name of p) & tab & (count of tracks of p) & tab & (persistent ID of p) & tab & folderName',
     '  end repeat',
     'end tell',
     "set AppleScript's text item delimiters to linefeed",
@@ -36,19 +43,26 @@ export function buildPlaylistDumpScript(): string {
 // user-typed and can hold a tab, and splitting would truncate the name and read the rest
 // of it as the count. Same reasoning as parseLibraryDump.
 const TRAILING_PID = /\t([0-9A-F]{16})$/
+// With the folder appended, the ID is no longer last. It has a fixed shape, so it is found
+// wherever it sits and everything after it is the folder — which lets a folder name hold a
+// tab without shifting any other field.
+const PID_THEN_FOLDER = /\t([0-9A-F]{16})\t([\s\S]*)$/
 const TRAILING_COUNT = /\t(\d+)$/
 
 export function parsePlaylistDump(stdout: string): AppleMusicPlaylist[] {
   const rows: AppleMusicPlaylist[] = []
   for (const line of stdout.split('\n')) {
-    const pid = line.match(TRAILING_PID)
+    // Rows written before folders were read end at the ID; both shapes have to load.
+    const withFolder = line.match(PID_THEN_FOLDER)
+    const pid = withFolder ?? line.match(TRAILING_PID)
     if (!pid) continue
+    const folder = withFolder?.[2]?.trim()
     const rest = line.slice(0, pid.index)
     const cnt = rest.match(TRAILING_COUNT)
     if (!cnt) continue
     const name = rest.slice(0, cnt.index).trim()
     if (!name) continue
-    rows.push({ name, count: Number(cnt[1]), persistentId: pid[1] })
+    rows.push({ name, count: Number(cnt[1]), persistentId: pid[1], ...(folder ? { folder } : {}) })
   }
   return rows
 }
