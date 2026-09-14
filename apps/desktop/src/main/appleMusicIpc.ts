@@ -2,7 +2,9 @@ import { app, ipcMain, shell } from 'electron'
 import log from 'electron-log/main'
 import type { AppleMusicAddJob, AppleMusicUpdateJob, TrackMetadata } from '../shared/types'
 import { activity } from './activity'
+import { artworkDir, fetchAppleMusicArtwork } from './appleMusicArtwork'
 import { loadLibraryCache, saveLibraryCache } from './appleMusicLibraryCache'
+import { attachMissingArtwork } from './appleMusicPlaylistArt'
 import { dumpAppleMusicPlaylists, readAppleMusicPlaylist } from './appleMusicPlaylists'
 import {
   addToAppleMusic,
@@ -13,6 +15,7 @@ import {
   updateInAppleMusic,
 } from './applemusic'
 import { hasCoverSource, prepareProcessedCover } from './cover'
+import { readMeta } from './ffmpeg'
 import { createMenuT } from './i18n'
 import { getSettings } from './settings'
 
@@ -81,7 +84,16 @@ export function registerAppleMusicIpc(): void {
       ? activity.track(
           'applemusic',
           'activity.appleMusicPlaylistTracks',
-          () => readAppleMusicPlaylist(persistentId),
+          async () => {
+            const tracks = await readAppleMusicPlaylist(persistentId)
+            // Music holds artwork for files that carry none — over half a real library,
+            // almost all WAVs — and those rows used to import with an empty cover slot.
+            return attachMissingArtwork(tracks, {
+              hasEmbedded: async (path) => Boolean((await readMeta(path)).cover),
+              fetchArtwork: fetchAppleMusicArtwork,
+              outDir: artworkDir,
+            })
+          },
           {
             summary: (out) => ({
               detailKey: 'activity.trackCount',

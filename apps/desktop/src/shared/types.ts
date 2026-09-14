@@ -632,6 +632,16 @@ export interface AppleMusicTrackMeta {
   // it computed itself (`rating kind: computed`), which is not an opinion to write into
   // anyone's files.
   rating?: number
+  // The cover Music holds for this track, for a file that carries none of its own.
+  // Measured on a real library: 53% of the tracks are in that state, almost all of them
+  // WAVs, and they imported with an empty cover slot even though Music had the picture.
+  // Absent when the file already carries its own art, which is what gets shown then.
+  //
+  // Both halves travel, like every other cover source in the app: the path is what a
+  // conversion embeds, and the data URL is what the sandboxed renderer can actually
+  // display — it cannot load a file:// image.
+  coverPath?: string
+  coverUrl?: string
 }
 
 export interface AppleMusicPlaylistTracks {

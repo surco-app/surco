@@ -1,3 +1,9 @@
+import { execFile } from 'node:child_process'
+import { mkdir, readFile, stat } from 'node:fs/promises'
+import { join } from 'node:path'
+import { promisify } from 'node:util'
+import { app } from 'electron'
+
 // Which imported tracks still need their cover, and fetching it from Apple Music.
 //
 // Music holds artwork for tracks whose files carry none — measured on a real library, 53%
@@ -16,6 +22,43 @@ export interface ImportedTrack {
 
 export interface MissingArtworkDeps {
   hasEmbedded: (path: string) => Promise<boolean>
+}
+
+// Where fetched covers live: the app's own data folder, never the user's music. They are
+// a cache of something Music already holds, so losing them costs one re-fetch.
+export async function artworkDir(): Promise<string> {
+  const dir = join(app.getPath('userData'), 'applemusic-artwork')
+  await mkdir(dir, { recursive: true })
+  return dir
+}
+
+// Runs the script and reports which files really landed. A track whose artwork vanished
+// between the listing and the fetch writes nothing, and the caller must not hand on a path
+// that was never created.
+export async function fetchAppleMusicArtwork(
+  jobs: { persistentId: string; outPath: string }[],
+): Promise<{ path: string; dataUrl: string }[]> {
+  // The raw data of a few hundred covers can outgrow execFile's 1 MB default; the pictures
+  // themselves land in files, but osascript's own output still has to fit.
+  await promisify(execFile)('osascript', ['-e', buildArtworkScript(jobs)], {
+    maxBuffer: 64 * 1024 * 1024,
+  })
+  const landed = await Promise.all(
+    jobs.map(async ({ outPath }) => {
+      try {
+        // A zero-byte file is a write that opened and never finished; treating it as a
+        // cover would show a broken image instead of the empty slot it replaced.
+        if ((await stat(outPath)).size === 0) return null
+        // The sandboxed renderer cannot load a file:// image, so the picture travels as a
+        // data URL too — the path is only what a later conversion embeds.
+        const bytes = await readFile(outPath)
+        return { path: outPath, dataUrl: `data:image/jpeg;base64,${bytes.toString('base64')}` }
+      } catch {
+        return null
+      }
+    }),
+  )
+  return landed.filter((cover): cover is { path: string; dataUrl: string } => cover !== null)
 }
 
 // Fetches each track's picture into its own file.
