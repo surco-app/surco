@@ -42,6 +42,9 @@ export interface RepointOptions extends FindOptions {
   // halfway. Both default to the real thing.
   backup?: (source: string, destination: string) => Promise<void>
   onWrite?: () => void
+  // Takes the run's single pre-run copy, on the first track that reaches the write. A
+  // failure here refuses the write like any other missing backup.
+  sessionBackup?: (collectionPath: string) => Promise<void>
 }
 
 // rekordbox stores the format as a number, so an entry left on the old code would
@@ -91,6 +94,10 @@ export async function repointTrack(
   if (isAmbiguous(match)) return { written: false, reason: 'ambiguous', ids: match.ambiguous }
 
   try {
+    // The run's own copy first, and only on the first track that gets this far: it has to
+    // describe the collection as it was BEFORE the run, which is exactly what the
+    // per-write copy below cannot do once a second track overwrites it.
+    await options.sessionBackup?.(collectionPath)
     await copy(collectionPath, `${collectionPath}${BACKUP_SUFFIX}`)
   } catch {
     // No backup, no write.

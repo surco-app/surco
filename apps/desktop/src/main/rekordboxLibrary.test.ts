@@ -133,6 +133,37 @@ describe('repointTrack', () => {
     expect(await readFile(`${dbPath}.surco-backup`)).toEqual(before)
   })
 
+  // The per-write backup below is overwritten before every track, so after a long run it
+  // holds the collection as it was before the LAST track. The session copy is what can
+  // still put things back the way they were before the run started, so it has to be taken
+  // before the first write — and, like the other backup, no copy means no write.
+  it('takes the session copy before writing', async () => {
+    const output = join(audioDir, '02 Everybody.wav')
+    await writeFile(output, Buffer.alloc(5000))
+    const sessionBackup = vi.fn(async () => {})
+
+    await repointTrack(dbPath, { from: MP3, to: output, sessionBackup })
+
+    expect(sessionBackup).toHaveBeenCalledWith(dbPath)
+    expect(readRow(dbPath).FolderPath).toBe(output)
+  })
+
+  it('refuses to write when the session copy cannot be made', async () => {
+    const output = join(audioDir, '02 Everybody.wav')
+    await writeFile(output, Buffer.alloc(5000))
+
+    const result = await repointTrack(dbPath, {
+      from: MP3,
+      to: output,
+      sessionBackup: async () => {
+        throw new Error('disk full')
+      },
+    })
+
+    expect(result).toEqual({ written: false, reason: 'backup-failed' })
+    expect(readRow(dbPath).FolderPath).toBe(MP3)
+  })
+
   // No backup, no write. A write without a recoverable copy beside it is the one outcome
   // this module exists to rule out — the collection cannot be rebuilt from anywhere else.
   it('refuses to write when the backup cannot be made', async () => {

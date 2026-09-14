@@ -75,6 +75,7 @@ import { beginRekordboxBatch, endRekordboxBatch } from './rekordboxBatch'
 import { flushRekordboxSync } from './rekordboxFlush'
 import { repointTrack } from './rekordboxLibrary'
 import { findRekordboxCollection } from './rekordboxPath'
+import { createSessionBackup } from './rekordboxSessionBackup'
 import { loadLastSession, saveLastSession } from './session'
 import {
   defaultConfigDir,
@@ -138,6 +139,10 @@ const activeConversions = createActiveConversions()
 // across the separate process:track IPC calls a batch fans out into, and cleared at the top
 // of each run (process:batch-begin) so it never leaks a stale choice into the next batch.
 const stickyConflict = createStickyConflict()
+// One copy of the rekordbox collection per conversion run, taken before the run's first
+// write. Module-scoped for the same reason as stickyConflict: a run fans out into separate
+// process:track calls, and they all have to agree that the copy is already taken.
+const rekordboxSessionBackup = createSessionBackup({})
 // A batch adding N tracks that share one album cover used to re-run the ffmpeg encode N
 // times. Shares one prepareProcessedCover per distinct (source, opts) across the
 // concurrent process:track calls a batch fans out into — same module-scoped-per-run
@@ -880,6 +885,9 @@ function registerIpc(): void {
     coverMemo = createCoverMemo(prepareProcessedCover)
     beginNmlBatch()
     beginRekordboxBatch()
+    // A new run gets a new pre-run copy; without this the stored one would describe the
+    // collection before the FIRST run since launch, not before the run in progress.
+    rekordboxSessionBackup.reset()
   })
 
   // A convert-all run ends (however it ended — finished, cancelled, or failed, the
@@ -915,7 +923,11 @@ function registerIpc(): void {
         : '',
       endBatch: endRekordboxBatch,
       repointTrack: (collectionPath, repoint) =>
-        repointTrack(collectionPath, { ...repoint, realPath: (p) => realpathSync(p) }),
+        repointTrack(collectionPath, {
+          ...repoint,
+          realPath: (p) => realpathSync(p),
+          sessionBackup: (path) => rekordboxSessionBackup.ensure(path),
+        }),
     })
     // Logged rather than shown: what the user should see for a blocked flush or an
     // ambiguous track is still undecided, and inventing a dialog now would be the wrong
