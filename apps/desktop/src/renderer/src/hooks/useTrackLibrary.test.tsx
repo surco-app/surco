@@ -681,6 +681,50 @@ describe('useTrackLibrary foreign tags', () => {
     expect(result.current.tracks[0]?.embeddedCover).toBe('data:image/jpeg;base64,FROMFILE')
   })
 
+  // Measured 14/09 in the app: a reopened session restored only ONE of four saved tracks.
+  // The walk streams its paths first (onExpandedBatch), so by the time the awaited call
+  // arrives carrying the saved edits those rows already exist and are no longer "fresh" —
+  // the edits were dropped for every one of them. The import path already had to solve
+  // this with a per-path ref; the restore was still passing them as an argument.
+  it('restores edits onto rows the streaming walk already created', async () => {
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '' },
+        duration: 180,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    // Exactly the real reopen: seed first, then let the walk stream the paths in before
+    // the awaited call arrives.
+    act(() =>
+      result.current.seedRestoredEdits({
+        '/m/a.wav': { meta: { title: 'Restored' } as never, musicPersistentId: 'PID1' },
+      }),
+    )
+    await act(() => result.current.addPaths(['/m/a.wav'], undefined, true))
+    await act(() =>
+      result.current.addPaths(['/m/a.wav'], {
+        '/m/a.wav': { meta: { title: 'Restored' } as never, musicPersistentId: 'PID1' },
+      }),
+    )
+
+    expect(result.current.tracks).toHaveLength(1)
+    expect(result.current.tracks[0]?.musicPersistentId).toBe('PID1')
+  })
+
   // Reported 14/09 with two screenshots: importing showed "Update + Apple Music", but
   // after a reopen the same track said "Convert to AIFF + Apple Music" — an ADD, which
   // would leave a second copy of the song in the library. The row had lost the persistent

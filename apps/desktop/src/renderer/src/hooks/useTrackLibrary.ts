@@ -117,7 +117,18 @@ interface TrackLibrary {
   // Live view for long-lived callbacks (sweeps, batch loops) that must read each
   // track at the moment of use rather than from a render snapshot.
   tracksRef: { readonly current: TrackItem[] }
-  addPaths: (paths: string[], restore?: Record<string, SessionEdit>) => Promise<void>
+  // `streamed` marks a batch the expand walk emitted, as opposed to the awaited call the
+  // user's action made — it changes what counts as a duplicate worth reporting.
+  addPaths: (
+    paths: string[],
+    restore?: Record<string, SessionEdit>,
+    streamed?: boolean,
+  ) => Promise<void>
+  // Stages a reopen's saved edits before its paths are expanded. Measured in the app: the
+  // walk streams the paths first, so by the time addPaths' own restore argument arrives
+  // every row already exists and none is "fresh" — a reopened session restored one of four
+  // saved tracks. Same fix the playlist import needed for its own seed.
+  seedRestoredEdits: (edits: Record<string, SessionEdit>) => void
   pickFiles: () => Promise<void>
   // Loads the files one Apple Music playlist references. macOS only; the renderer does
   // not offer it elsewhere.
@@ -235,6 +246,12 @@ export function useTrackLibrary({
 
   // `streamed` marks the call as one of the folder walk's own progress batches rather than a
   // user-initiated import, which is what tells the skip notice apart from a real re-drop.
+  // Staged before the expand so whichever path creates the row — the walk's stream or the
+  // awaited call — finds the edit already waiting. See the seedRestoredEdits doc above.
+  function seedRestoredEdits(edits: Record<string, SessionEdit>): void {
+    for (const [path, edit] of Object.entries(edits)) restoredEdits.current.set(path, edit)
+  }
+
   async function addPaths(
     paths: string[],
     restore?: Record<string, SessionEdit>,
@@ -252,7 +269,9 @@ export function useTrackLibrary({
     // them; firing both would report one drop twice.
     if (!streamed && paths.length > 0 && audio.length === 0) onNoAudioFound()
     // Only genuinely new rows restore: a path already in the list is a live track
-    // whose current state must not be clobbered by a stale saved edit.
+    // whose current state must not be clobbered by a stale saved edit. A reopen seeds
+    // its edits through seedRestoredEdits BEFORE expanding, so the streamed rows find
+    // them waiting — see the ref's own comment.
     if (restore) {
       for (const path of fresh) {
         const edit = restore[path]
@@ -759,6 +778,7 @@ export function useTrackLibrary({
     setTracks,
     tracksRef,
     addPaths,
+    seedRestoredEdits,
     pickFiles,
     importApplePlaylist,
     updateTrack,
