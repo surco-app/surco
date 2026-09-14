@@ -184,7 +184,6 @@ export function ApplePlaylistModal({ onPick, onClose }: Props): React.JSX.Elemen
                       aria-hidden="true"
                     />
                     <span className="min-w-0 flex-1 truncate font-medium">{folder}</span>
-                    <span className="shrink-0 text-xs tabular-nums opacity-70">{items.length}</span>
                   </button>
                   {open && (
                     <ul className="pl-4">
