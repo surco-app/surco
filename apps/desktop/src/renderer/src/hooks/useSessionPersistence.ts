@@ -15,6 +15,7 @@ interface Params {
   // The same pipeline a drop goes through, so a restored session gets identical media
   // access and metadata reads.
   addPaths: (paths: string[], restore?: Record<string, SessionEdit>) => Promise<void>
+  seedRestoredEdits: (edits: Record<string, SessionEdit>) => void
   store: AppStore
   tr: TFunction
 }
@@ -29,7 +30,14 @@ interface Params {
 //     stored session before the reopen offer could restore it.
 //   · A half-loaded import is never snapshotted, or a restore would overwrite the very edits
 //     it is restoring.
-export function useSessionPersistence({ tracks, tracksRef, addPaths, store, tr }: Params): void {
+export function useSessionPersistence({
+  tracks,
+  tracksRef,
+  addPaths,
+  seedRestoredEdits,
+  store,
+  tr,
+}: Params): void {
   // The launch-time "reopen last session" offer. Asked once, and only while the list is
   // still empty — restoring the old list on top of a fresh import would mix two sessions,
   // so the offer withdraws itself the moment rows exist (the effect below). Accepting
@@ -45,6 +53,11 @@ export function useSessionPersistence({ tracks, tracksRef, addPaths, store, tr }
     // null that effect can no longer find the toast — it would stay up forever.
     if (lastSessionToastId.current) dismissToast(store, lastSessionToastId.current)
     lastSessionToastId.current = null
+    // Seeded BEFORE the expand: the walk streams its paths first, so the rows exist by the
+    // time addPaths' own restore argument arrives and none of them counts as new any more.
+    // Measured in the app, that dropped the edits for every track but one — the covers,
+    // the Apple Music identity and the format protection with them.
+    seedRestoredEdits(session.edits)
     // The staged edits ride along so each track's read overlays what the user had
     // retagged but not yet applied when the last session ended.
     await addPaths(await window.api.expandPaths(session.paths), session.edits)
