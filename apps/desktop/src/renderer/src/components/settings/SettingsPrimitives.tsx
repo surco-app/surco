@@ -75,9 +75,34 @@ export function SettingsSection({
   first?: boolean
   children: React.ReactNode
 }): React.JSX.Element {
+  // A named section gets a surface of its own. Reported with a screenshot of the Output
+  // tab — "the Traktor and the rekordbox section are practically indistinguishable" —
+  // where the only separation was a 10px label in dim grey over a 1px rule at 9% opacity:
+  // the smallest type on the screen carrying the job of saying where one block ends. An
+  // edge that closes underneath is what makes two stacked blocks read as two things.
+  //
+  // Only when it is named: an unnamed section is a plain grouping of controls, and boxing
+  // it would draw a card around something that never asked to be one. Those keep the rule
+  // they had.
+  if (!eyebrow) {
+    return (
+      <section
+        data-testid="settings-section"
+        className={first ? '' : 'mt-6 border-t border-[var(--color-line)] pt-5'}
+      >
+        {children}
+      </section>
+    )
+  }
   return (
-    <section className={first ? '' : 'mt-6 border-t border-[var(--color-line)] pt-5'}>
-      {eyebrow && <SettingsEyebrow className="mb-3">{eyebrow}</SettingsEyebrow>}
+    <section
+      data-testid="settings-section"
+      className={`rounded-xl border border-[var(--color-line)] bg-[var(--color-field)] px-4 py-3.5 ${
+        first ? '' : 'mt-3'
+      }`}
+    >
+      {/* At reading size and full contrast: the block's name, not a caption above it. */}
+      <p className="mb-3 font-semibold text-[13px] text-fg">{eyebrow}</p>
       {children}
     </section>
   )
