@@ -1078,6 +1078,23 @@ describe('runProcessTrack — replacing a library copy', () => {
     replacesPath: '/m/old.mp3',
   }
 
+  // Measured from the user's log 15/09:
+  //   repoint attempt: from="/Users/…/Soulseek Downloads/…/Transfer - Possession.flac"
+  //   lookup miss: name="Transfer - Possession (Dececio Remix).flac" rows=0
+  // The repoint searched for the file being CONVERTED instead of the one it supersedes,
+  // because index.ts's convertAudio adapter declared its parameters only as far as
+  // foreignRemoved and silently dropped the one after it. Nothing covered that wiring, so
+  // a fully green suite said everything was fine while the collection was searched for a
+  // download-folder FLAC it had never indexed. The path has to reach the conversion.
+  it('hands the superseded path to the conversion', async () => {
+    const convertAudio = vi.fn(async () => ({ normalizeSkipped: false }))
+    const deps = replacing({ convertAudio })
+
+    await runProcessTrack(job(replaceJob), deps)
+
+    expect(convertAudio.mock.calls[0]?.at(-1)).toBe('/m/old.mp3')
+  })
+
   // The heart of it: the new file is imported rather than the old entry's tags rewritten.
   it('adds the converted file instead of only updating the old entry', async () => {
     const deps = replacing()
