@@ -1,5 +1,36 @@
 [
   {
+    "version": "0.97",
+    "date": "15 de septiembre de 2026",
+    "title": "Sube una pista de calidad sin perder rekordbox",
+    "items": [
+      {
+        "text": "Al convertir una pista que tienes en rekordbox, su ficha pasa a apuntar al archivo nuevo. Conserva sus playlists, sus cue points y su historial, porque rekordbox enlaza por pista y no por ruta. Antes de escribir, Surco guarda una copia de seguridad de la tanda entera y otra de cada escritura junto a tu colección, y nunca escribe con rekordbox abierto: se ofrece a cerrarlo y, si dices que no, te lo dice en vez de tocar nada. Viene desactivado: actívalo en Ajustes → Destino, o al configurar Surco por primera vez si ya tienes rekordbox en el equipo. Un aviso: rekordbox analiza el archivo nuevo y puede recolocar el beatgrid, así que conviene revisar la rejilla.",
+        "in": "0.97.0"
+      },
+      {
+        "text": "Puedes sustituir una pista que ya está en tu biblioteca, en vez de acabar con dos. Cargas un AIFF o un FLAC de un tema que tienes como MP3 y el botón pasa a decir «Sustituir»: la entrada de Apple Music deja de apuntar al archivo viejo y apunta al nuevo, y la ficha de rekordbox se reapunta con ella. Si el cambio pierde calidad (un máster sin pérdida que pasa a MP3, un corte de frecuencias peor, o un lossless hecho a partir de un MP3), Surco te lo dice y te deja seguir: la decisión es tuya.",
+        "in": "0.97.0"
+      },
+      {
+        "text": "Al terminar, Surco te ofrece mandar a la papelera el archivo al que acabas de sustituir, de una pista o de todo el lote a la vez. Antes de hacerlo le pregunta al disco si el borrado es recuperable: en un volumen de red, donde puede no haber papelera, te avisa de que puede ser definitivo en vez de prometerte una papelera que no existe.",
+        "in": "0.97.0"
+      },
+      {
+        "text": "El selector de listas de Apple Music se agrupa ahora por carpetas, plegables, en vez de dar una lista corrida. Si organizas tus listas en carpetas, las encuentras donde las guardaste.",
+        "in": "0.97.0"
+      },
+      {
+        "text": "Una pista sin carátula la toma de Apple Music, si tu biblioteca la tiene. El hueco vacío se rellena al importar y la portada se ve ya en la fila de la pista, no solo al abrir la ficha.",
+        "in": "0.97.0"
+      },
+      {
+        "text": "Cuando una conversión falla, el aviso dice qué pista fue, y desde el resumen de la tanda puedes dejar la lista solo con las que fallaron.",
+        "in": "0.97.0"
+      }
+    ]
+  },
+  {
     "version": "0.96",
     "date": "11 de septiembre de 2026",
     "title": "Trae una lista de Apple Music y trabaja sobre ella",
