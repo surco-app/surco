@@ -14,6 +14,7 @@ import type { Destination } from '../lib/destination'
 import { DEFAULT_REQUIRED_FIELDS } from '../lib/fields'
 import { declickFor, declickForJob, normalizeFor, normalizeForJob } from '../lib/reapply'
 import { hasStagedEdits } from '../lib/sessionEdits'
+import { trashIsRecoverable } from '../lib/trashGuarantee'
 import type { TrackItem } from '../types'
 import type { ConfirmModal } from './useOverlays'
 
@@ -218,11 +219,18 @@ export function useConfirmFlows({
   function askTrashSuperseded(track: TrackItem, path: string): void {
     const isWin = window.api.platform === 'win32'
     const name = path.slice(path.lastIndexOf('/') + 1)
+    // A network volume may have no Trash, and the OS then deletes outright. Measured 15/09
+    // on the user's NAS (smbfs, no .Trashes): a file was lost while this very dialog
+    // promised it was recoverable. The delete is unchanged; the wording stops claiming
+    // what the volume cannot honour.
+    const recoverable = trashIsRecoverable(path, window.api.platform)
     openConfirm({
       title: tr(isWin ? 'confirm.trashTitleWin' : 'confirm.trashTitle', { count: 1 }),
-      message: tr(isWin ? 'confirm.trashSupersededMessageWin' : 'confirm.trashSupersededMessage', {
-        name,
-      }),
+      message: recoverable
+        ? tr(isWin ? 'confirm.trashSupersededMessageWin' : 'confirm.trashSupersededMessage', {
+            name,
+          })
+        : tr('confirm.trashSupersededMessageRemote', { name }),
       confirmLabel: tr(isWin ? 'confirm.trashConfirmWin' : 'confirm.trashConfirm'),
       destructive: true,
       onConfirm: () => {
@@ -245,15 +253,24 @@ export function useConfirmFlows({
       (t) => t.status === 'done' && t.replacesPath && !t.supersededTrashed,
     )
     if (withFiles.length === 0) return
-    const isWin = window.api.platform === 'win32'
+    const platform = window.api.platform
+    const isWin = platform === 'win32'
     const count = withFiles.length
     const first = withFiles[0].replacesPath as string
     openConfirm({
       title: tr(isWin ? 'confirm.trashTitleWin' : 'confirm.trashTitle', { count }),
-      message: tr(isWin ? 'confirm.trashMessageWin' : 'confirm.trashMessage', {
-        count,
-        name: first.slice(first.lastIndexOf('/') + 1),
-      }),
+      // Same caution as the single-file flow: any file on a network volume makes the
+      // "recoverable" promise unsafe for the whole batch, so the warning is appended
+      // rather than the promise repeated.
+      message: withFiles.every((t) => trashIsRecoverable(t.replacesPath as string, platform))
+        ? tr(isWin ? 'confirm.trashMessageWin' : 'confirm.trashMessage', {
+            count,
+            name: first.slice(first.lastIndexOf('/') + 1),
+          })
+        : `${tr(isWin ? 'confirm.trashMessageWin' : 'confirm.trashMessage', {
+            count,
+            name: first.slice(first.lastIndexOf('/') + 1),
+          })} ${tr('confirm.trashRemoteWarning')}`,
       confirmLabel: tr(isWin ? 'confirm.trashConfirmWin' : 'confirm.trashConfirm'),
       destructive: true,
       onConfirm: () => {

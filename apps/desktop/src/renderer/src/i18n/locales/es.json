@@ -1120,6 +1120,8 @@
     "deleteOriginalMessage": "Esto mueve el original «{{name}}» a la papelera. El archivo convertido se mantiene. Puedes restaurar el original desde la papelera.",
     "deleteOriginalMessageWin": "Esto mueve el original «{{name}}» a la papelera de reciclaje. El archivo convertido se mantiene. Puedes restaurar el original desde ahí.",
     "trashSupersededMessage": "Esto mueve «{{name}}» a la papelera. Es el archivo al que sustituye esta pista: ya no está en Apple Music y rekordbox apunta al nuevo. Puedes restaurarlo desde la papelera.",
+    "trashSupersededMessageRemote": "Esto elimina «{{name}}». Es el archivo al que sustituye esta pista: ya no está en Apple Music y rekordbox apunta al nuevo. Está en un volumen de red, donde puede que no haya papelera: el borrado puede ser definitivo.",
+    "trashRemoteWarning": "Los archivos están en un volumen de red, donde puede que no haya papelera: el borrado puede ser definitivo.",
     "trashSupersededMessageWin": "Esto mueve «{{name}}» a la papelera de reciclaje. Es el archivo al que sustituye esta pista: ya no está en Apple Music y rekordbox apunta al nuevo. Puedes restaurarlo desde ahí.",
     "removeOldCopyTitle": "¿Eliminar la copia antigua de Apple Music?",
     "removeOldCopyMessage": "Tu biblioteca aún tiene otra copia de «{{name}}»: «{{copy}}». Esa entrada se eliminará de Apple Music y su archivo irá a la papelera, desde donde puedes restaurarlo.",
