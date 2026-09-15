@@ -1117,6 +1117,41 @@ describe('runProcessTrack — replacing a library copy', () => {
     expect(calls).toEqual(['add', 'delete'])
   })
 
+  // Measured from the user's own log 15/09, after three runs that reported only
+  // "1 skipped": the flush refused with output-missing on a /var/folders/…/surco-… path.
+  // With Apple Music as the destination the conversion writes to a private temp dir and
+  // Music copies the file into its Media folder, so the path recorded during the
+  // conversion is deleted before the flush runs. Only this step learns where the file
+  // really landed, so it has to correct the entry — otherwise the collection silently
+  // stays on the old MP3 while the app reports success.
+  it('points the collection at where Music put the file, not the temp copy', async () => {
+    const redirectRepoint = vi.fn()
+    const deps = replacing({
+      settings: settings({ keepOutputCopy: false }),
+      mkdtemp: vi.fn(async () => '/tmp/surco-abc'),
+      appleMusicEntryLocation: vi.fn(async () => '/Media/Transfer - Possession.aiff'),
+      redirectRepoint,
+    })
+
+    await runProcessTrack(job({ ...replaceJob, keepOutputCopy: false }), deps)
+
+    expect(redirectRepoint).toHaveBeenCalledWith(
+      '/tmp/surco-abc/Artist - Title.aiff',
+      '/Media/Transfer - Possession.aiff',
+    )
+  })
+
+  // A conversion that keeps its own copy wrote the file where it will stay, so the
+  // recorded path is already right and must not be rewritten.
+  it('leaves the recorded path alone when the file was not handed over from a temp copy', async () => {
+    const redirectRepoint = vi.fn()
+    const deps = replacing({ redirectRepoint })
+
+    await runProcessTrack(job(replaceJob), deps)
+
+    expect(redirectRepoint).not.toHaveBeenCalled()
+  })
+
   // Without replacesPath the id still means "my own earlier output": re-converting an
   // edited track syncs that copy and must never import a second one.
   it('still syncs in place when no file is being superseded', async () => {

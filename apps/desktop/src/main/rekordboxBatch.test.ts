@@ -4,6 +4,7 @@ import {
   beginRekordboxBatch,
   endRekordboxBatch,
   recordRekordboxRepoint,
+  redirectRekordboxRepoint,
 } from './rekordboxBatch'
 
 const a = { from: '/m/one.mp3', to: '/m/one.wav' }
@@ -76,5 +77,57 @@ describe('rekordbox batch', () => {
     recordRekordboxRepoint({ from: '/m/one.mp3', to: '/m/one.wav' })
     recordRekordboxRepoint({ from: '/m/one.mp3', to: '/m/one.aiff' })
     expect(endRekordboxBatch()).toEqual([{ from: '/m/one.mp3', to: '/m/one.aiff' }])
+  })
+})
+
+// Measured 15/09 from the user's own log, after three runs that reported only "1 skipped":
+//   rekordbox repoint: 0 written, skipped output-missing (/var/folders/…/surco-4AJwDM/….aiff)
+// With Apple Music as the destination the conversion writes to a private temp dir and
+// Music copies the file into its Media folder, so the path recorded at conversion time is
+// gone by the time the flush runs and the repoint is refused — correctly, since pointing
+// the collection at a dead path just trades one "!" for another. The collection has to be
+// told where the file actually ended up.
+describe('rekordbox batch redirecting to where the file really landed', () => {
+  it('rewrites the destination of a recorded repoint', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint({ from: '/m/one.mp3', to: '/tmp/surco-x/one.aiff' })
+
+    redirectRekordboxRepoint('/tmp/surco-x/one.aiff', '/Media/one.aiff')
+
+    expect(endRekordboxBatch()).toEqual([{ from: '/m/one.mp3', to: '/Media/one.aiff' }])
+  })
+
+  // The redirect is keyed by the path the entry currently points at, so a run converting
+  // several tracks moves only the one whose file was relocated.
+  it('leaves the other tracks in the batch alone', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint({ from: '/m/one.mp3', to: '/tmp/surco-x/one.aiff' })
+    recordRekordboxRepoint(b)
+
+    redirectRekordboxRepoint('/tmp/surco-x/one.aiff', '/Media/one.aiff')
+
+    expect(endRekordboxBatch()).toEqual([{ from: '/m/one.mp3', to: '/Media/one.aiff' }, b])
+  })
+
+  // A redirect naming a path the batch never recorded must not invent an entry: that
+  // would repoint a track on the strength of a stale or unrelated path.
+  it('records nothing when no entry points at that path', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint(b)
+
+    redirectRekordboxRepoint('/tmp/surco-x/one.aiff', '/Media/one.aiff')
+
+    expect(endRekordboxBatch()).toEqual([b])
+  })
+
+  // Landing back on the source is the "nothing moved" case recordRekordboxRepoint already
+  // refuses; a redirect must reach the same state rather than leave a self-pointing entry.
+  it('drops the entry when the file landed back on the path it came from', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint({ from: '/m/one.mp3', to: '/tmp/surco-x/one.aiff' })
+
+    redirectRekordboxRepoint('/tmp/surco-x/one.aiff', '/m/one.mp3')
+
+    expect(endRekordboxBatch()).toEqual([])
   })
 })

@@ -20,6 +20,39 @@ const PROCESS_NAME = 'rekordbox'
 // wrongly writes into a live collection, while answering "running" wrongly costs one
 // skipped sync the user is told about. The Traktor side of this project has had that
 // backwards twice.
+// Asks rekordbox to quit and waits until it is really gone, reporting whether it went.
+//
+// Always a polite quit, never a forced kill: rekordbox holds master.db open through
+// SQLCipher, and killing it mid-write can leave the collection — the one file the user
+// cannot rebuild — in a broken state. Asking the app to quit lets it close the database
+// itself, which is the whole reason this exists rather than a signal.
+//
+// Unconfirmed reads as "still running", the same asymmetry isRekordboxRunning uses: the
+// caller then declines to write, costing one skipped repoint the user is told about,
+// rather than writing underneath a live collection.
+export async function quitRekordbox(
+  options: { attempts?: number; waitMs?: number } = {},
+): Promise<boolean> {
+  try {
+    if (process.platform === 'win32') {
+      // No /F, so rekordbox saves and releases master.db on its way out.
+      await run('taskkill', ['/IM', `${PROCESS_NAME}.exe`])
+    } else {
+      await run('osascript', ['-e', `tell application "${PROCESS_NAME}" to quit`])
+    }
+  } catch {
+    // The quit request failing outright (already gone, tool missing) resolves by
+    // whatever the poll below observes.
+  }
+  const attempts = options.attempts ?? 30
+  const waitMs = options.waitMs ?? 500
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    if (!(await isRekordboxRunning())) return true
+    await new Promise((resolve) => setTimeout(resolve, waitMs))
+  }
+  return false
+}
+
 export async function isRekordboxRunning(): Promise<boolean> {
   try {
     if (process.platform === 'win32') {

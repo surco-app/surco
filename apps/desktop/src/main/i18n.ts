@@ -53,6 +53,10 @@ interface MenuStrings {
   traktorQuitConfirm: string
   traktorQuitCancel: string
   traktorSyncBlocked: string
+  rekordboxQuitMessage: string
+  rekordboxQuitDetail: string
+  rekordboxQuitConfirm: string
+  rekordboxQuitCancel: string
   rekordboxSyncBlocked: string
   quitBusyMessage: string
   quitBusyDetail: string
@@ -109,6 +113,11 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitConfirm: 'Cerrar Traktor',
     traktorQuitCancel: 'Cancelar',
     traktorSyncBlocked: 'La colección de Traktor no se ha actualizado: Traktor sigue abierto.',
+    rekordboxQuitMessage: 'rekordbox está abierto',
+    rekordboxQuitDetail:
+      'Surco necesita cerrarlo para actualizar tu colección y que apunte al archivo nuevo. rekordbox se cerrará de forma segura; puedes volver a abrirlo cuando termine la conversión.',
+    rekordboxQuitConfirm: 'Cerrar rekordbox',
+    rekordboxQuitCancel: 'Cancelar',
     rekordboxSyncBlocked:
       'La colección de rekordbox no se ha actualizado: rekordbox sigue abierto. Ciérralo y vuelve a convertir para que apunte al archivo nuevo.',
     quitBusyMessage: 'Hay conversiones en curso',
@@ -165,6 +174,11 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitConfirm: 'Close Traktor',
     traktorQuitCancel: 'Cancel',
     traktorSyncBlocked: "Traktor's collection was not updated: Traktor is still open.",
+    rekordboxQuitMessage: 'rekordbox is open',
+    rekordboxQuitDetail:
+      'Surco needs to close it to update your collection so it points at the new file. rekordbox will be closed safely; you can reopen it once the conversion finishes.',
+    rekordboxQuitConfirm: 'Close rekordbox',
+    rekordboxQuitCancel: 'Cancel',
     rekordboxSyncBlocked:
       "rekordbox's collection was not updated: rekordbox is still open. Close it and convert again so it points at the new file.",
     quitBusyMessage: 'Conversions are still running',
@@ -221,6 +235,11 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitConfirm: 'Traktor schließen',
     traktorQuitCancel: 'Abbrechen',
     traktorSyncBlocked: 'Die Traktor-Sammlung wurde nicht aktualisiert: Traktor ist noch geöffnet.',
+    rekordboxQuitMessage: 'rekordbox ist geöffnet',
+    rekordboxQuitDetail:
+      'Surco muss es schließen, um deine Sammlung zu aktualisieren, damit sie auf die neue Datei zeigt. rekordbox wird sicher geschlossen; du kannst es nach der Konvertierung wieder öffnen.',
+    rekordboxQuitConfirm: 'rekordbox schließen',
+    rekordboxQuitCancel: 'Abbrechen',
     rekordboxSyncBlocked:
       'Die rekordbox-Sammlung wurde nicht aktualisiert: rekordbox ist noch geöffnet. Schließe es und konvertiere erneut, damit es auf die neue Datei zeigt.',
     quitBusyMessage: 'Es laufen noch Konvertierungen',
@@ -278,6 +297,11 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitCancel: 'Annuler',
     traktorSyncBlocked:
       "La collection Traktor n'a pas été mise à jour : Traktor est encore ouvert.",
+    rekordboxQuitMessage: 'rekordbox est ouvert',
+    rekordboxQuitDetail:
+      'Surco doit le fermer pour mettre à jour ta collection et la faire pointer vers le nouveau fichier. rekordbox sera fermé proprement ; tu pourras le rouvrir une fois la conversion terminée.',
+    rekordboxQuitConfirm: 'Fermer rekordbox',
+    rekordboxQuitCancel: 'Annuler',
     rekordboxSyncBlocked:
       "La collection rekordbox n'a pas été mise à jour : rekordbox est encore ouvert. Ferme-le et relance la conversion pour qu'il pointe vers le nouveau fichier.",
     quitBusyMessage: 'Des conversions sont en cours',
@@ -334,6 +358,11 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitConfirm: 'Fechar o Traktor',
     traktorQuitCancel: 'Cancelar',
     traktorSyncBlocked: 'A coleção do Traktor não foi atualizada: o Traktor ainda está aberto.',
+    rekordboxQuitMessage: 'O rekordbox está aberto',
+    rekordboxQuitDetail:
+      'O Surco precisa fechá-lo para atualizar a sua coleção e apontar para o arquivo novo. O rekordbox será fechado com segurança; você pode reabri-lo quando a conversão terminar.',
+    rekordboxQuitConfirm: 'Fechar o rekordbox',
+    rekordboxQuitCancel: 'Cancelar',
     rekordboxSyncBlocked:
       'A coleção do rekordbox não foi atualizada: o rekordbox ainda está aberto. Feche-o e converta de novo para que aponte para o arquivo novo.',
     quitBusyMessage: 'Ainda há conversões em andamento',
