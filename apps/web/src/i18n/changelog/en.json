@@ -5,7 +5,7 @@
     "title": "Upgrade a track without losing rekordbox",
     "items": [
       {
-        "text": "Convert a track you keep in rekordbox and it stays the same track: it keeps its playlists, its cue points and its play history. It does not show up twice, and you do not have to add it again. Before touching anything, Surco saves a backup of your collection, and it never works while rekordbox is open: it offers to close it, and if you say no it would rather do nothing. It ships off: turn it on in Settings → Destination, or while setting Surco up for the first time if rekordbox is already on the machine. One heads-up: rekordbox will analyse the track again and may move the beatgrid, so it is worth checking.",
+        "text": "Convert a track you keep in rekordbox and it stays the same track: it keeps its playlists, its cue points and its play history. It does not show up twice, and you do not have to add it again. Before touching anything, Surco saves two backups of your collection: one of how it was when the run started, and one of every change, so you can go back one track or the whole run. And it never works while rekordbox is open: it offers to close it, and if you say no it would rather do nothing. It ships off: turn it on in Settings → Destination, or while setting Surco up for the first time if rekordbox is already on the machine. One heads-up: rekordbox will analyse the track again and may move the beatgrid, so it is worth checking.",
         "in": "0.97.0"
       },
       {
