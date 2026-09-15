@@ -1120,6 +1120,8 @@
     "deleteOriginalMessage": "Déplace l'original « {{name}} » vers la corbeille. Ton fichier converti reste en place. Tu peux restaurer l'original depuis la corbeille.",
     "deleteOriginalMessageWin": "Déplace l'original « {{name}} » vers la corbeille. Ton fichier converti reste en place. Tu peux restaurer l'original depuis là.",
     "trashSupersededMessage": "Cela déplace « {{name}} » vers la corbeille. C'est le fichier que cette piste remplace : il n'est plus dans Apple Music et rekordbox pointe vers le nouveau. Tu peux le restaurer depuis la corbeille.",
+    "trashSupersededMessageRemote": "Cela supprime « {{name}} ». C'est le fichier que cette piste remplace : il n'est plus dans Apple Music et rekordbox pointe vers le nouveau. Il se trouve sur un volume réseau, qui peut ne pas avoir de corbeille : la suppression peut être définitive.",
+    "trashRemoteWarning": "Les fichiers se trouvent sur un volume réseau, qui peut ne pas avoir de corbeille : la suppression peut être définitive.",
     "trashSupersededMessageWin": "Cela déplace « {{name}} » vers la corbeille. C'est le fichier que cette piste remplace : il n'est plus dans Apple Music et rekordbox pointe vers le nouveau. Tu peux le restaurer depuis là.",
     "removeOldCopyTitle": "Supprimer l'ancienne copie d'Apple Music ?",
     "removeOldCopyMessage": "Ta bibliothèque contient encore une autre copie de « {{name}} » : « {{copy}} ». Cette entrée sera supprimée d'Apple Music et son fichier ira à la corbeille, d'où tu peux le restaurer.",

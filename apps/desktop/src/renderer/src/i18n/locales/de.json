@@ -1120,6 +1120,8 @@
     "deleteOriginalMessage": "Legt das Original „{{name}}“ in den Papierkorb. Deine konvertierte Datei bleibt bestehen. Du kannst das Original aus dem Papierkorb wiederherstellen.",
     "deleteOriginalMessageWin": "Verschiebt das Original „{{name}}“ in den Papierkorb. Deine konvertierte Datei bleibt bestehen. Du kannst das Original von dort wiederherstellen.",
     "trashSupersededMessage": "Damit wird „{{name}}“ in den Papierkorb verschoben. Es ist die Datei, die dieser Titel ersetzt hat: Sie ist nicht mehr in Apple Music und rekordbox zeigt auf die neue. Du kannst sie aus dem Papierkorb wiederherstellen.",
+    "trashSupersededMessageRemote": "Damit wird „{{name}}“ gelöscht. Es ist die Datei, die dieser Titel ersetzt hat: Sie ist nicht mehr in Apple Music und rekordbox zeigt auf die neue. Sie liegt auf einem Netzlaufwerk, das möglicherweise keinen Papierkorb hat: Das Löschen kann endgültig sein.",
+    "trashRemoteWarning": "Die Dateien liegen auf einem Netzlaufwerk, das möglicherweise keinen Papierkorb hat: Das Löschen kann endgültig sein.",
     "trashSupersededMessageWin": "Damit wird „{{name}}“ in den Papierkorb verschoben. Es ist die Datei, die dieser Titel ersetzt hat: Sie ist nicht mehr in Apple Music und rekordbox zeigt auf die neue. Du kannst sie von dort wiederherstellen.",
     "removeOldCopyTitle": "Alte Kopie aus Apple Music entfernen?",
     "removeOldCopyMessage": "Deine Bibliothek enthält noch eine weitere Kopie von „{{name}}“: „{{copy}}“. Dieser Eintrag wird aus Apple Music entfernt und seine Datei wandert in den Papierkorb, wo du sie wiederherstellen kannst.",
