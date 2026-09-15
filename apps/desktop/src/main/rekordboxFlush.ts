@@ -37,6 +37,10 @@ export interface FlushRekordboxDeps {
   // end was nested inside a still-open outer batch, which flushes later.
   endBatch: () => RekordboxRepoint[]
   repointTrack: (collectionPath: string, repoint: RekordboxRepoint) => Promise<RepointResult>
+  // Resolves true once rekordbox is confirmed closed (possibly because the user accepted
+  // closing it here); false when it is running and the user declined. Absent means the
+  // caller does not offer to close it, and the per-track guard is the only protection.
+  ensureClosed?: () => Promise<boolean>
   // Shown only when rekordbox being open is what stopped the run — the one blocked reason
   // the user can act on. Reported 15/09: a replacement left the collection on the old MP3
   // with no indication why, because the refusal went to the log alone and a refusal nobody
@@ -49,6 +53,14 @@ export interface FlushRekordboxDeps {
 export async function flushRekordboxSync(deps: FlushRekordboxDeps): Promise<FlushResult> {
   const repoints = deps.endBatch()
   if (!deps.collectionPath || repoints.length === 0) return { written: 0, skipped: [] }
+
+  // Asked once, before anything is written, and only when there is actually something to
+  // repoint. Warning afterwards is too late: the conversion has finished by then and the
+  // repoint is lost, so the user has to convert the track all over again. No warning on
+  // decline — they just answered that question in the prompt.
+  if (deps.ensureClosed && !(await deps.ensureClosed())) {
+    return { written: 0, blocked: 'rekordbox-running', skipped: [] }
+  }
 
   let written = 0
   const skipped: SkippedRepoint[] = []

@@ -71,10 +71,11 @@ import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playb
 import { runProcessTrack } from './processTrack'
 import { getProvider } from './providers'
 import { createQuitGuard } from './quitGuard'
-import { beginRekordboxBatch, endRekordboxBatch } from './rekordboxBatch'
+import { beginRekordboxBatch, endRekordboxBatch, redirectRekordboxRepoint } from './rekordboxBatch'
 import { flushRekordboxSync } from './rekordboxFlush'
 import { repointTrack } from './rekordboxLibrary'
 import { findRekordboxCollection } from './rekordboxPath'
+import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { loadLastSession, saveLastSession } from './session'
 import {
@@ -244,6 +245,40 @@ async function ensureTraktorClosed(win: BrowserWindow | null): Promise<boolean> 
     traktorQuitPrompt = null
   })
   return traktorQuitPrompt
+}
+
+// Twin of traktorQuitPrompt above, for the same reason: one flush must raise at most one
+// dialog, never one per repointed track.
+let rekordboxQuitPrompt: Promise<boolean> | null = null
+
+// True when rekordbox is not running (possibly because the user just accepted closing it
+// here); false when it is running and the user declined — the caller then refuses to touch
+// master.db, which rekordbox holds open through SQLCipher.
+//
+// Asked before the collection is written rather than reported afterwards: by the time a
+// flush fails, the conversion has finished and the repoint is lost, so the user has to
+// convert the whole track again to get another attempt.
+async function ensureRekordboxClosed(win: BrowserWindow | null): Promise<boolean> {
+  if (!(await isRekordboxRunning())) return true
+  rekordboxQuitPrompt ??= (async () => {
+    const t = createMenuT(menuLocale())
+    const opts = {
+      type: 'warning' as const,
+      message: t('rekordboxQuitMessage'),
+      detail: t('rekordboxQuitDetail'),
+      buttons: [t('rekordboxQuitConfirm'), t('rekordboxQuitCancel')],
+      defaultId: 0,
+      cancelId: 1,
+    }
+    const { response } = win
+      ? await dialog.showMessageBox(win, opts)
+      : await dialog.showMessageBox(opts)
+    if (response !== 0) return false
+    return quitRekordbox()
+  })().finally(() => {
+    rekordboxQuitPrompt = null
+  })
+  return rekordboxQuitPrompt
 }
 
 // Set while a user-triggered update check is in flight so the updater's result
@@ -934,6 +969,7 @@ function registerIpc(): void {
         ? findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
         : '',
       endBatch: endRekordboxBatch,
+      ensureClosed: () => ensureRekordboxClosed(win),
       repointTrack: (collectionPath, repoint) =>
         repointTrack(collectionPath, {
           ...repoint,
@@ -956,7 +992,10 @@ function registerIpc(): void {
       log.info(
         `rekordbox repoint: ${result.written} written` +
           `${result.blocked ? `, stopped by ${result.blocked}` : ''}` +
-          `${result.skipped.length > 0 ? `, ${result.skipped.length} skipped` : ''}`,
+          // Named, not counted: three runs of "1 skipped" said nothing about WHY, and the
+          // reason is the whole diagnosis — an ambiguous match, a missing output and a
+          // track the collection never had are different problems with different fixes.
+          `${result.skipped.length > 0 ? `, skipped ${result.skipped.map((s) => `${s.reason} (${s.track})`).join('; ')}` : ''}`,
       )
     }
   })
@@ -1148,6 +1187,7 @@ function registerIpc(): void {
       // live entry that no longer carries it is not the copy the user was offered.
       deleteAppleMusic: (persistentId) =>
         deleteFromAppleMusic(persistentId, `${job.meta.artist} - ${job.meta.title}`),
+      redirectRepoint: redirectRekordboxRepoint,
     }),
   )
 

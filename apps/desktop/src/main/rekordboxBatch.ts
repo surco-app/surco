@@ -29,6 +29,29 @@ export function recordRekordboxRepoint(repoint: RekordboxRepoint): void {
   else repoints.push(repoint)
 }
 
+// Moves a recorded repoint onto the path the file really ended up at, keyed by the path
+// the entry currently names.
+//
+// The Apple Music destination writes the conversion to a private temp dir and lets Music
+// copy it into its Media folder, so the path known at conversion time is gone by the time
+// the flush runs. Measured from the user's log 15/09: the flush refused with
+// output-missing on a /var/folders/…/surco-… path, leaving the collection on the old MP3
+// while the app reported success. Only the caller that hands the file to Music learns
+// where it landed, so it corrects the entry here rather than the conversion guessing.
+//
+// A path the batch never recorded changes nothing: inventing an entry would repoint a
+// track on the strength of an unrelated path. Landing back on the source drops the entry,
+// the same "nothing moved" rule recordRekordboxRepoint applies.
+export function redirectRekordboxRepoint(currentTo: string, landedAt: string): void {
+  const index = repoints.findIndex((r) => r.to === currentTo)
+  if (index === -1) return
+  if (repoints[index].from === landedAt) {
+    repoints.splice(index, 1)
+    return
+  }
+  repoints[index] = { ...repoints[index], to: landedAt }
+}
+
 // The renderer can vanish between a begin and its end (a reload, or the crash-and-reload
 // this app has seen in the wild). Without a way back, depth would stay above zero and no
 // later batch would ever flush: the collection would quietly stop being updated until the

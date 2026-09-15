@@ -191,3 +191,51 @@ describe('flushRekordboxSync telling the user it was blocked', () => {
     expect(showBlockedDialog).not.toHaveBeenCalled()
   })
 })
+
+// Warning after the fact is too late: by then the conversion has finished and the repoint
+// is lost, so the user has to convert the whole track again. Offering to close rekordbox
+// BEFORE the write is what actually saves the run — the same bargain flushTraktorSync
+// already strikes through ensureTraktorClosed.
+describe('flushRekordboxSync closing rekordbox first', () => {
+  it('asks once, before touching the collection', async () => {
+    const ensureClosed = vi.fn(async () => true)
+    const d = deps({ endBatch: () => [ONE, TWO], ensureClosed })
+
+    await flushRekordboxSync(d)
+
+    expect(ensureClosed).toHaveBeenCalledOnce()
+    expect(d.repointTrack).toHaveBeenCalledTimes(2)
+  })
+
+  // Declining must leave the collection alone: rekordbox holds master.db open, and
+  // writing underneath it is what risks the file the user cannot rebuild.
+  it('writes nothing when rekordbox stays open', async () => {
+    const d = deps({ ensureClosed: vi.fn(async () => false), showBlockedDialog: vi.fn() })
+
+    const result = await flushRekordboxSync(d)
+
+    expect(d.repointTrack).not.toHaveBeenCalled()
+    expect(result).toEqual({ written: 0, blocked: 'rekordbox-running', skipped: [] })
+  })
+
+  // The user already said no in the prompt; repeating it as a warning is nagging.
+  it('does not warn again after the user declined the prompt', async () => {
+    const showBlockedDialog = vi.fn()
+    const d = deps({ ensureClosed: vi.fn(async () => false), showBlockedDialog })
+
+    await flushRekordboxSync(d)
+
+    expect(showBlockedDialog).not.toHaveBeenCalled()
+  })
+
+  // Nothing to repoint must never pop a prompt — the common end of a run where no
+  // converted track was in the collection.
+  it('never asks when the batch recorded nothing', async () => {
+    const ensureClosed = vi.fn(async () => true)
+    const d = deps({ endBatch: () => [], ensureClosed })
+
+    await flushRekordboxSync(d)
+
+    expect(ensureClosed).not.toHaveBeenCalled()
+  })
+})

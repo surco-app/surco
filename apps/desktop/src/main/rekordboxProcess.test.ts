@@ -140,3 +140,60 @@ describe('isRekordboxRunning', () => {
     })
   })
 })
+
+// Reported 15/09: a replacement left the collection pointing at the old MP3 because
+// rekordbox was open. Telling the user afterwards is too late — the conversion is done and
+// the repoint is lost — so the app offers to close rekordbox first, the way it already
+// does for Traktor.
+describe('quitRekordbox', () => {
+  // Politeness is the whole point here: rekordbox holds master.db open through SQLCipher,
+  // and a forced kill can leave the collection mid-write. Asking the app to quit lets it
+  // close the database itself.
+  it('asks rekordbox to quit rather than killing it, on macOS', async () => {
+    execFile.mockReset()
+    respond((cmd) => (cmd === 'osascript' ? { stdout: '' } : noMatch()))
+
+    const gone = await withPlatform('darwin', async () => {
+      const { quitRekordbox } = await load()
+      return quitRekordbox()
+    })
+
+    expect(gone).toBe(true)
+    const [cmd, args] = execFile.mock.calls[0]
+    expect(cmd).toBe('osascript')
+    expect(args.join(' ')).toContain('quit')
+  })
+
+  // Same reason on Windows: no /F, so rekordbox saves and releases the collection.
+  it('never forces the quit on Windows', async () => {
+    execFile.mockReset()
+    respond((cmd) =>
+      cmd === 'taskkill'
+        ? { stdout: 'SUCCESS' }
+        : { stdout: 'INFO: No tasks are running which match the specified criteria.\r\n' },
+    )
+
+    const gone = await withPlatform('win32', async () => {
+      const { quitRekordbox } = await load()
+      return quitRekordbox()
+    })
+
+    expect(gone).toBe(true)
+    expect(execFile.mock.calls[0][1]).not.toContain('/F')
+  })
+
+  // Follows from isRekordboxRunning failing closed: if we cannot confirm rekordbox is
+  // gone, the quit is reported unconfirmed and the caller declines to write. Saying "it
+  // closed" when we do not know is what would write under a live collection.
+  it('reports the quit unconfirmed when rekordbox is still there', async () => {
+    execFile.mockReset()
+    respond((cmd) => (cmd === 'osascript' ? { stdout: '' } : { stdout: '4321\n' }))
+
+    const gone = await withPlatform('darwin', async () => {
+      const { quitRekordbox } = await load()
+      return quitRekordbox({ attempts: 2, waitMs: 0 })
+    })
+
+    expect(gone).toBe(false)
+  })
+})

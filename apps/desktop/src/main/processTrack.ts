@@ -104,6 +104,10 @@ export interface ProcessTrackDeps {
   // not stand — both only exercised by the "Apple Music only" copy verification below.
   appleMusicEntryLocation: (persistentId: string) => Promise<string>
   deleteAppleMusic: (persistentId: string) => Promise<unknown>
+  // Corrects the recorded repoint once Music has copied the file into its Media folder.
+  // The conversion only knows the temp path it wrote, which no longer exists when the
+  // flush runs — the collection would be told to follow a file that is already gone.
+  redirectRepoint?: (currentTo: string, landedAt: string) => void
 }
 
 // Imports the converted file and retires the copy it supersedes, returning the new
@@ -332,6 +336,11 @@ export async function runProcessTrack(
           await deps.deleteAppleMusic(musicPersistentId)
           throw errorWithKey('appleMusicNoMediaCopy', entryPath)
         }
+        // Music copied the file out of the temp dir, so this is where it actually lives.
+        // The repoint recorded during the conversion still names the temp path, which the
+        // cleanup below deletes — the flush would then refuse it as output-missing and
+        // leave the collection on the old file, which is what the user hit.
+        if (entryPath) deps.redirectRepoint?.(target, entryPath)
       }
     }
 
