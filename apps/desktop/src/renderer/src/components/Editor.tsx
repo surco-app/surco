@@ -1032,6 +1032,22 @@ export const Editor = memo(function Editor({
                     {tr('editor.checkingLibrary')}
                   </SectionPill>
                 )}
+                {/* Why the button below offers an add on a track the badge just called owned.
+                    Two near-identical entries make replacing a guess that can delete the wrong
+                    song, so Surco adds — correct, but it reads as a contradiction the user
+                    cannot resolve until someone names the duplicates sitting in their library.
+                    warn, not danger: nothing is broken and nothing is blocked. */}
+                {!isMulti && isAmbiguousCandidate(replaceTarget) && (
+                  <SectionPill
+                    tone="warn"
+                    testid="ambiguous-library-copies"
+                    icon={<Disc3 className="h-3.5 w-3.5" aria-hidden="true" />}
+                  >
+                    {tr('editor.ambiguousLibraryCopies', {
+                      count: replaceTarget.ambiguous.length,
+                    })}
+                  </SectionPill>
+                )}
                 {formOpen && !isMulti && (
                   <div className="flex items-center gap-1.5">
                     {copyFilenameButton}

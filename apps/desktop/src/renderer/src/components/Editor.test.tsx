@@ -2022,6 +2022,63 @@ describe('Editor replace old Apple Music copy', () => {
     )
     expect(screen.queryByTestId('remove-old-copy')).not.toBeInTheDocument()
   })
+
+  // Two near-identical entries mean Surco adds instead of replacing, because replacing on a
+  // guess can delete the wrong song. Silently, that reads as a contradiction the user cannot
+  // resolve: the badge says the song IS in their library while the button offers to add a
+  // second copy of it. Naming the duplicates is what turns a button that looks broken into a
+  // consequence of something in their own library that they can go and fix.
+  it('says why an ambiguous match is being added instead of replaced', () => {
+    ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
+    const libraryIndex = buildLibraryIndex([
+      {
+        title: 'Save My Love (Original Mix)',
+        artist: 'DJ Mofly',
+        durationSec: 365,
+        persistentId: 'COPYONE123456789',
+      },
+      {
+        title: 'Save My Love (Original Mix)',
+        artist: 'DJ Mofly',
+        durationSec: 365,
+        persistentId: 'COPYTWO123456789',
+      },
+    ])
+    renderEditor(
+      {
+        id: 'a',
+        duration: 365,
+        meta: { title: 'Save My Love (Original Mix)', artist: 'DJ Mofly' },
+      },
+      'aiff',
+      { libraryIndex },
+    )
+    expect(screen.getByTestId('ambiguous-library-copies')).toHaveTextContent('2')
+  })
+
+  // The notice is for the ambiguous case only. One clean match replaces, and saying
+  // anything there would contradict the button that is about to do exactly what it says.
+  it('stays quiet when a single library copy matches', () => {
+    ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
+    const libraryIndex = buildLibraryIndex([
+      {
+        title: 'Save My Love (Original Mix)',
+        artist: 'DJ Mofly',
+        durationSec: 365,
+        persistentId: 'COPYONE123456789',
+      },
+    ])
+    renderEditor(
+      {
+        id: 'a',
+        duration: 365,
+        meta: { title: 'Save My Love (Original Mix)', artist: 'DJ Mofly' },
+      },
+      'aiff',
+      { libraryIndex },
+    )
+    expect(screen.queryByTestId('ambiguous-library-copies')).not.toBeInTheDocument()
+  })
 })
 
 describe('Editor output file name', () => {
