@@ -398,6 +398,10 @@
         "a": "Surco los detecta y los interpola al convertir, con cuatro niveles de intensidad. Marca cada clic que encuentra sobre la onda para que saltes de uno a otro, y renderiza la pista reparada para que la compares con la original mientras suena, sin ningún corte en el audio: así oyes si la reparación se ha llevado los clics, y si se ha llevado también algo de la música. Viene desactivado."
       },
       {
+        "q": "Tengo MP3 en mi biblioteca. ¿Puedo pasarlos a lossless sin perder las playlists?",
+        "a": "Sí, eso es sustituir. Carga el AIFF o el FLAC del mismo tema y, si Surco lo encuentra en tu biblioteca, el botón dice «Sustituir» en vez de «Añadir». Al convertir, la entrada de Apple Music deja de apuntar al MP3 y apunta al archivo nuevo, y en rekordbox se reapunta la misma ficha: conserva sus playlists y sus cue points, porque rekordbox enlaza por pista y no por ruta. Un aviso: rekordbox analiza el archivo nuevo y puede recolocar el beatgrid, así que conviene revisar la rejilla. rekordbox tiene que estar cerrado para escribir en su base de datos; Surco se ofrece a cerrarlo y hace copia de seguridad antes. Al acabar te ofrece mandar el archivo viejo a la papelera, y te avisa si está en un disco de red, donde puede no haber papelera."
+      },
+      {
         "q": "¿Funciona con equipos Denon (Engine DJ)?",
         "a": "Sí. Elige Engine DJ como destino y cada pista convertida se registra directamente en tu biblioteca de Engine DJ (con carátula, rating y una playlist configurable), lista para sincronizar a tus players. También exporta colecciones a rekordbox, Traktor y Serato."
       },
@@ -738,6 +742,7 @@
           "Engine DJ y Traktor tienen que estar cerrados para escribir en su biblioteca; Surco se ofrece a cerrarlos y hace copia de seguridad antes de tocar nada.",
           "Surco te avisa si una pista ya está en tu biblioteca, mirando la que corresponda a tu destino. Es un indicio muy afinado, no una garantía.",
           "Si editas una pista después, Surco actualiza su copia de Apple Music en vez de duplicarla, y si ya había una copia antigua te ofrece eliminarla.",
+          "Puedes sustituir una pista que ya tengas: carga un AIFF o un FLAC de un tema que esté en tu biblioteca como MP3 y el botón pasa a decir «Sustituir». La entrada de Apple Music y la ficha de rekordbox pasan a apuntar al archivo nuevo, con sus playlists y sus cue points. rekordbox puede recalcular el beatgrid al ver un archivo distinto, así que revisa la rejilla. Al terminar, Surco te ofrece mandar el archivo viejo a la papelera.",
           "A Apple Music no llegan la tonalidad, el sello, el catálogo ni el remixer (solo viven en el tag del archivo) y los FLAC no se envían nunca, porque Music no puede con ellos."
         ],
         "shot": "exportar-es.webp",

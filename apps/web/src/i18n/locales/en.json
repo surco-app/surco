@@ -398,6 +398,10 @@
         "a": "Surco detects them and interpolates them away as it converts, with four strengths. It marks every click it finds on the waveform so you can jump from one to the next, and it renders the repaired track so you can A/B it against the original while it plays, with no gap in the audio. So you hear whether the repair took the clicks out, and whether it took some of the music with them. It ships off."
       },
       {
+        "q": "My library is full of MP3s. Can I move them to lossless without losing my playlists?",
+        "a": "Yes, that's what replacing does. Load the AIFF or FLAC of the same track and, if Surco finds it in your library, the button reads “Replace” instead of “Add”. On convert, the Apple Music entry stops pointing at the MP3 and points at the new file, and in rekordbox the same row is repointed: it keeps its playlists and its cue points, because rekordbox links by track rather than by path. One caveat: rekordbox analyzes the new file and may move the beatgrid, so check the grid afterwards. rekordbox has to be closed to write to its database; Surco offers to close it and backs up first. When it's done it offers to send the old file to the Trash, and warns you if it sits on a network drive, where there may be no Trash."
+      },
+      {
         "q": "Does it work with Denon gear (Engine DJ)?",
         "a": "Yes. Pick Engine DJ as the destination and every converted track is registered straight into your Engine DJ library (with its cover, rating and a configurable playlist), ready to sync to your players. It also exports collections to rekordbox, Traktor and Serato."
       },
@@ -738,6 +742,7 @@
           "Engine DJ and Traktor have to be closed to write to their library; Surco offers to close them and backs up before touching anything.",
           "Surco tells you when a track is already in your library, checking whichever one matches your destination. It's a well-tuned hint, not a guarantee.",
           "Edit a track later and Surco updates its Apple Music copy instead of duplicating it, and if an older copy was already there it offers to remove it.",
+          "You can replace a track you already own: load an AIFF or FLAC of something your library holds as an MP3 and the button turns into “Replace”. The Apple Music entry and the rekordbox row both follow the new file, keeping their playlists and cue points. rekordbox may recalculate the beatgrid when it sees a different file, so check the grid. When it finishes, Surco offers to send the old file to the Trash.",
           "Key, label, catalog number and remixer don't reach Apple Music (they only live in the file's tags) and FLAC is never sent, because Music can't handle it."
         ],
         "shot": "exportar-en.webp",
