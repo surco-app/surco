@@ -492,6 +492,8 @@
     "notInLibrary": "No en biblioteca",
     "notInLibraryEngine": "No en biblioteca",
     "checkingLibrary": "Comprobando…",
+    "ambiguousLibraryCopies_one": "{{count}} copia casi idéntica: se añadirá una nueva",
+    "ambiguousLibraryCopies_other": "{{count}} copias casi idénticas: se añadirá una nueva",
     "convertAll": "Convertir ({{count}}) · {{format}}",
     "editingMultiple": "Editando {{count}} pistas",
     "multipleValues": "Varios valores",
