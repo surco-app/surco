@@ -1,5 +1,36 @@
 [
   {
+    "version": "0.97",
+    "date": "September 15, 2026",
+    "title": "Upgrade a track without losing rekordbox",
+    "items": [
+      {
+        "text": "Converting a track you keep in rekordbox now points its entry at the new file. It keeps its playlists, its cue points and its play history, because rekordbox links by track rather than by path. Before writing, Surco saves a backup of the whole run and another of every single write next to your collection, and it never writes while rekordbox is open: it offers to close it, and if you say no it tells you instead of touching anything. It ships off: turn it on in Settings → Destination, or while setting Surco up for the first time if rekordbox is already on the machine. One heads-up: rekordbox analyses the new file and may move the beatgrid, so it is worth checking the grid.",
+        "in": "0.97.0"
+      },
+      {
+        "text": "You can replace a track already in your library instead of ending up with two. Load an AIFF or a FLAC of a song you hold as an MP3 and the button turns into \"Replace\": your Apple Music entry stops pointing at the old file and points at the new one, and the rekordbox entry is repointed along with it. If the swap gives up quality (a lossless master traded for an MP3, a worse frequency cutoff, or a lossless built out of an MP3), Surco says so and lets you carry on: the call is yours.",
+        "in": "0.97.0"
+      },
+      {
+        "text": "When it is done, Surco offers to send the file you just superseded to the Trash, one track at a time or the whole batch at once. It asks the disk first whether the delete is recoverable: on a network volume, which may have no Trash at all, it warns you the delete may be permanent instead of promising a Trash that is not there.",
+        "in": "0.97.0"
+      },
+      {
+        "text": "The Apple Music playlist picker is now grouped by folder, foldable, instead of one long list. If you keep your playlists in folders, you find them where you filed them.",
+        "in": "0.97.0"
+      },
+      {
+        "text": "A track with no cover art now takes one from Apple Music, when your library has it. The empty slot is filled on import and the artwork shows on the track row, not just inside the editor.",
+        "in": "0.97.0"
+      },
+      {
+        "text": "When a conversion fails, the message names the track, and from the run summary you can narrow the list down to just the ones that failed.",
+        "in": "0.97.0"
+      }
+    ]
+  },
+  {
     "version": "0.96",
     "date": "September 11, 2026",
     "title": "Bring in an Apple Music playlist and work on it",
