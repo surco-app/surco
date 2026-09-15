@@ -5,7 +5,7 @@
     "title": "Sube una pista de calidad sin perder rekordbox",
     "items": [
       {
-        "text": "Conviertes una pista que tienes en rekordbox y sigue siendo la misma pista: se queda en sus playlists, con sus cue points y su historial. No aparece duplicada ni tienes que volver a añadirla. Antes de tocar nada, Surco guarda una copia de seguridad de tu colección, y nunca trabaja con rekordbox abierto: se ofrece a cerrarlo y, si dices que no, prefiere no hacer nada. Viene desactivado: actívalo en Ajustes → Destino, o al configurar Surco por primera vez si ya tienes rekordbox en el equipo. Un aviso: rekordbox volverá a analizar la pista y puede recolocar el beatgrid, así que conviene revisarlo.",
+        "text": "Conviertes una pista que tienes en rekordbox y sigue siendo la misma pista: se queda en sus playlists, con sus cue points y su historial. No aparece duplicada ni tienes que volver a añadirla. Antes de tocar nada, Surco guarda dos copias de seguridad de tu colección: una de cómo estaba al empezar la tanda y otra de cada cambio, así que puedes volver atrás una pista o el lote entero. Y nunca trabaja con rekordbox abierto: se ofrece a cerrarlo y, si dices que no, prefiere no hacer nada. Viene desactivado: actívalo en Ajustes → Destino, o al configurar Surco por primera vez si ya tienes rekordbox en el equipo. Un aviso: rekordbox volverá a analizar la pista y puede recolocar el beatgrid, así que conviene revisarlo.",
         "in": "0.97.0"
       },
       {
