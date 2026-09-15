@@ -39,6 +39,12 @@ vi.mock('./appleMusicLibraryCache', () => ({
   saveLibraryCache: vi.fn(),
 }))
 vi.mock('./cover', () => ({ hasCoverSource: () => false, prepareProcessedCover: vi.fn() }))
+
+// ./ffmpeg pulls in ./binaries, which resolves the bundled ffprobe at import
+// time from the @ffprobe-installer package for the host platform. On a Linux CI
+// runner that package is absent and the whole file dies before any test runs.
+// Nothing here reaches readMeta: hasCoverSource is stubbed false above.
+vi.mock('./ffmpeg', () => ({ readMeta: vi.fn() }))
 vi.mock('./i18n', () => ({ createMenuT: () => (k: string) => k }))
 vi.mock('./settings', () => ({ getSettings: () => ({}) }))
 
