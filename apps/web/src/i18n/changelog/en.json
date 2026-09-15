@@ -5,11 +5,11 @@
     "title": "Upgrade a track without losing rekordbox",
     "items": [
       {
-        "text": "Converting a track you keep in rekordbox now points its entry at the new file. It keeps its playlists, its cue points and its play history, because rekordbox links by track rather than by path. Before writing, Surco saves a backup of the whole run and another of every single write next to your collection, and it never writes while rekordbox is open: it offers to close it, and if you say no it tells you instead of touching anything. It ships off: turn it on in Settings → Destination, or while setting Surco up for the first time if rekordbox is already on the machine. One heads-up: rekordbox analyses the new file and may move the beatgrid, so it is worth checking the grid.",
+        "text": "Convert a track you keep in rekordbox and it stays the same track: it keeps its playlists, its cue points and its play history. It does not show up twice, and you do not have to add it again. Before touching anything, Surco saves a backup of your collection, and it never works while rekordbox is open: it offers to close it, and if you say no it would rather do nothing. It ships off: turn it on in Settings → Destination, or while setting Surco up for the first time if rekordbox is already on the machine. One heads-up: rekordbox will analyse the track again and may move the beatgrid, so it is worth checking.",
         "in": "0.97.0"
       },
       {
-        "text": "You can replace a track already in your library instead of ending up with two. Load an AIFF or a FLAC of a song you hold as an MP3 and the button turns into \"Replace\": your Apple Music entry stops pointing at the old file and points at the new one, and the rekordbox entry is repointed along with it. If the swap gives up quality (a lossless master traded for an MP3, a worse frequency cutoff, or a lossless built out of an MP3), Surco says so and lets you carry on: the call is yours.",
+        "text": "You can replace a track already in your library instead of ending up with two. Load an AIFF or a FLAC of a song you hold as an MP3 and the button turns into \"Replace\": the better copy takes the old one's place in Apple Music and in rekordbox, and keeps its playlists and its cue points. If the swap sounds worse (a lossless master traded for an MP3, a copy with less treble, or a lossless built out of an MP3), Surco says so and lets you carry on: the call is yours.",
         "in": "0.97.0"
       },
       {
@@ -21,7 +21,7 @@
         "in": "0.97.0"
       },
       {
-        "text": "A track with no cover art now takes one from Apple Music, when your library has it. The empty slot is filled on import and the artwork shows on the track row, not just inside the editor.",
+        "text": "A track with no cover art now takes one from Apple Music, when your library has it. It is filled in on import and the artwork shows on the track row, without having to open it.",
         "in": "0.97.0"
       },
       {
@@ -36,7 +36,7 @@
     "title": "Bring in an Apple Music playlist and work on it",
     "items": [
       {
-        "text": "The cue correction for converting from or to MP3 now reaches every one of your tracks. A ripped or edited MP3, missing the header that encoders normally write, used to be left out and given a different adjustment: its markers ended up around 76 ms from where Traktor draws them, instead of the 51 ms now compensated. Ordinary MP3s are unchanged.",
+        "text": "The cue correction for converting from or to MP3 now reaches every one of your tracks. A ripped or hand-edited MP3, the kind that does not always carry the mark encoders leave when they create it, used to be left out: its cues ended up a little further from where Traktor draws them. It now gets the same correction as the rest. Ordinary MP3s are unchanged.",
         "in": "0.96.1"
       },
       {
@@ -48,11 +48,11 @@
         "in": "0.96.0"
       },
       {
-        "text": "What only lives in Apple Music reaches the editor too. An untagged WAV keeps no grouping, rating or year, but Apple Music remembers them: on import, Surco fills the fields the file leaves empty with what Music holds. Whatever the file already carries wins, because that is what the rest of your programs read.",
+        "text": "What only lives in Apple Music reaches the track too. An untagged WAV keeps no grouping, rating or year, but Apple Music remembers them: on import, Surco fills the gaps the track leaves empty with what Music holds. Whatever the track already carries wins, because that is what the rest of your programs read.",
         "in": "0.96.0"
       },
       {
-        "text": "A track that came from Apple Music keeps its format. The button used to offer a conversion to AIFF just because that is the default destination, even though you were working on a collection you had already organised: now it says Update and rewrites the same format, and only converts when you pick another one yourself. Your library entry is updated in place instead of showing up twice.",
+        "text": "A track that came from Apple Music keeps its format. The button used to offer a conversion to AIFF just because that is the default destination, even though you were working on a collection you had already organised: now it says Update and saves in the same format, and only converts when you pick another one yourself. Your library updates the track you already had, instead of showing a second one.",
         "in": "0.96.0"
       }
     ]
@@ -63,15 +63,15 @@
     "title": "Try what is new before anyone else, if you want to",
     "items": [
       {
-        "text": "Converting can no longer leave you without a track when the destination is already taken. If you chose to replace the original and Surco had to move the file aside to a \"(n)\" name, it deleted the source anyway: you ended up with a third file the dialog never mentioned and without the track you meant to keep. It now also warns you when two tracks in the same batch were about to write to the same path, which used to overwrite each other in silence while the summary reported both as converted.",
+        "text": "Converting can no longer leave you without a track when the destination is already taken. If you chose to replace the original and Surco had to move the file aside to a \"(n)\" name, it deleted the source anyway: you ended up with a third file the dialog never mentioned and without the track you meant to keep. It now also warns you when two tracks in the same batch were about to be saved under the same name, which used to overwrite each other in silence while the summary reported both as converted.",
         "in": "0.95.6"
       },
       {
-        "text": "Cues Surco cannot read now survive on FLAC files too. This was fixed for MP3 and AIFF in the previous version, but the FLAC routes still discarded them, so an MP3 converted to FLAC lost another program's marker tree even when the audio never moved.",
+        "text": "Cues Surco cannot read now survive on FLAC files too. This was fixed for MP3 and AIFF in the previous version, but they were still dropped on the way to FLAC, so an MP3 converted to FLAC lost the cues set with another program even when the audio never moved.",
         "in": "0.95.6"
       },
       {
-        "text": "A FLAC's star rating now says the same thing in Surco as in every other program. The file keeps the rating in two fields and Surco only updated one, so you could see 2 stars here and 5 somewhere else, and clearing them left the old ones behind in the forgotten field.",
+        "text": "A FLAC's star rating now says the same thing in Surco as in every other program. You could see 2 stars here and 5 somewhere else, and clearing them here left them showing outside Surco. There is now one rating, wherever you look at it.",
         "in": "0.95.6"
       },
       {
@@ -79,7 +79,7 @@
         "in": "0.95.5"
       },
       {
-        "text": "Changing format no longer throws away cues Surco cannot read. When the marker tree comes from another program or from a newer Traktor, it now rides across to the converted track untouched. They are only discarded when you trim the track and the audio really does move under them, which is when they would stop pointing at the right place.",
+        "text": "Changing format no longer throws away cues Surco cannot read. When you set them with another program or with a newer Traktor, they now ride across to the converted track untouched. They are only discarded when you trim the track and the audio really does move under them, which is when they would stop landing where they should.",
         "in": "0.95.5"
       },
       {
@@ -87,19 +87,19 @@
         "in": "0.95.4"
       },
       {
-        "text": "Converting a track and keeping the original no longer confuses Traktor. Both copies used to share the same internal identity, so their artwork became linked and in some cases Traktor would not open at all. The converted track is now independent and keeps its cues, its grid and its loops.",
+        "text": "Converting a track and keeping the original no longer confuses Traktor. Traktor could not tell the two copies apart: their artwork got mixed up and in some cases it would not open at all. The converted track is now independent and keeps its cues, its grid and its loops.",
         "in": "0.95.4"
       },
       {
-        "text": "The stars you set in Surco now show up in Traktor. They were written to the file but not to your collection, and for a track Traktor already held the collection won, so you kept seeing the old rating.",
+        "text": "The stars you set in Surco now show up in Traktor. For a track Traktor already held you kept seeing the old rating, however often you changed it here.",
         "in": "0.95.4"
       },
       {
-        "text": "New artwork shows up in Traktor after converting, including when you keep the original. The thumbnails are rewritten in the format Traktor uses on your machine, and it is told the file changed so it reads it again.",
+        "text": "New artwork shows up in Traktor after converting, including when you keep the original. The old cover used to stay on screen until Traktor got around to reading the track again.",
         "in": "0.95.4"
       },
       {
-        "text": "The cue point adjustment can be used without pointing Surco at your collection.nml. The control stayed switched off until you gave that path, but the offset applies to the cues Surco writes inside the file itself, so anyone not syncing with Traktor could not touch it either.",
+        "text": "The cue point adjustment can be used without pointing Surco at your collection.nml. The control stayed switched off until you gave that path, but the adjustment works just as well for anyone not syncing with Traktor, so it is no longer required.",
         "in": "0.95.3"
       },
       {
@@ -118,7 +118,7 @@
     "title": "Every track converts with the dials you gave it",
     "items": [
       {
-        "text": "The cue point adjustment now applies when converting to the same format too. An MP3 coming out as an MP3 carried its cues across untouched, so the offset you set never reached those conversions.",
+        "text": "The cue point adjustment now applies when converting a track to the same format too. An MP3 coming out as an MP3 carried its cues across untouched, so your cues stayed out of place on those conversions.",
         "in": "0.94.3"
       },
       {
@@ -126,7 +126,7 @@
         "in": "0.94.3"
       },
       {
-        "text": "Converting a track no longer leaves two entries for the same file in your Traktor collection. When the collection already held the track in the new format, Surco repointed the old one onto it and both remained, one still claiming the original's size and bitrate; now it leaves that entry alone.",
+        "text": "Converting a track no longer leaves the same track twice in your Traktor collection. When Traktor already held it in the new format, you ended up with two, one of them still claiming the original's size and bitrate.",
         "in": "0.94.2"
       },
       {
@@ -134,7 +134,7 @@
         "in": "0.94.0"
       },
       {
-        "text": "Surco checks that the converted file reaches the end before publishing it. A half-written MP3 declares the same duration as the whole one, so neither the header nor a decode error gave it away: now what the file promises is compared against what actually plays, and the truncated copy gets caught instead of quietly replacing the original.",
+        "text": "Surco checks that the converted track reaches the end before calling it good. A half-written MP3 claims to last as long as the whole one, so nothing gave it away: now what it promises is compared against what actually plays, and the truncated copy gets caught instead of quietly replacing the original.",
         "in": "0.94.0"
       },
       {
@@ -142,35 +142,35 @@
         "in": "0.94.0"
       },
       {
-        "text": "An AIFF saved as .aif no longer loses its cues converting to FLAC. Surco only recognised the long .aiff spelling, so the short one went looking for the cues where an AIFF has never kept them: every hot cue and the beat grid were dropped, on a conversion that reported success.",
+        "text": "An AIFF saved as .aif no longer loses its cues converting to FLAC. Surco only recognised the long .aiff spelling, and with the short one every hot cue and the beat grid were dropped, on a conversion that reported success.",
         "in": "0.94.0"
       },
       {
-        "text": "New artwork shows up in Traktor without tricks. Instead of clearing the reference to the image, Surco rewrites the thumbnails Traktor has cached, which is the only thing that makes it redraw the cover.",
+        "text": "New artwork shows up in Traktor without tricks: after converting, Traktor redraws the cover on its own instead of staying on the old one.",
         "in": "0.94.0"
       },
       {
-        "text": "When it touches your Traktor collection, Surco touches as little as possible: cues go back exactly where they sat inside the entry rather than jumping ahead of the tempo and everything else Traktor wrote. And if it cannot rule out that Traktor is running, it does not write at all: it used to write anyway when in doubt.",
+        "text": "When it syncs with your Traktor collection, Surco touches as little as possible: cues go back where they belong, and the tempo and everything else Traktor had saved stay as they were. And if it cannot rule out that Traktor is running, it does not write at all: it used to write anyway when in doubt.",
         "in": "0.94.0"
       },
       {
-        "text": "The clipping filter no longer comes back empty when you reopen an already analysed library. The clipping fact was read from the waveform, which is not always loaded, when it actually rides along with the scan: you had to touch each track again for it to show up.",
+        "text": "The clipping filter no longer comes back empty when you reopen an already analysed library. You had to touch each track again for the marks to reappear, even though the analysis was already done.",
         "in": "0.94.0"
       },
       {
-        "text": "The click counter stops swallowing half a burst. The window that merges clicks together re-armed on every crossing, chaining on for tenths of a second: a dirty record's whole run of crackle counted as \"1 click\", with a single mark to jump to. Measured across 25 real tracks, the count can only go up.",
+        "text": "The click counter stops swallowing half a burst. A dirty record's whole run of crackle counted as \"1 click\", with a single mark to jump to, when there were many in a row. Measured across 25 real tracks, the count can only go up.",
         "in": "0.94.0"
       },
       {
-        "text": "A metadata search that comes back empty no longer sticks. A rate limit and a genuine \"not here\" arrive the same way, so caching it left the track unmatchable forever, not even fixed by relaunching Surco. It now asks again next time.",
+        "text": "A metadata search that comes back empty no longer sticks. If the service did not answer, the track was left with no results forever, not even fixed by relaunching Surco. It now asks again next time.",
         "in": "0.94.0"
       },
       {
-        "text": "With per-channel gain and DC removal both ticked, the gain is now sized on the centred audio: it was measured on the biased signal and the track landed well under the ceiling it was promised.",
+        "text": "With per-channel gain and DC removal both ticked, the track now comes out at the volume it was promised. It used to land well under the ceiling you asked for.",
         "in": "0.94.0"
       },
       {
-        "text": "An MP3 with no Xing header no longer shifts its cues on conversion: the delay the encoder adds is compensated instead of assumed to be zero.",
+        "text": "An MP3 missing the mark encoders leave when they create it no longer shifts its cues on conversion: the offset the encoder adds is compensated instead of assumed to be zero.",
         "in": "0.94.0"
       },
       {
@@ -193,23 +193,23 @@
     "title": "Declared bits get verified too",
     "items": [
       {
-        "text": "The bits check no longer goes quiet when it cannot make a call: a 24-bit file whose scan gives no clean reading (a mostly silent minute, for example) says so out loud, so it never looks like a file the check skipped.",
+        "text": "The bits check no longer goes quiet when it cannot make a call: a 24-bit file the analysis cannot read clearly (a mostly silent minute, for example) says so out loud, so it never looks like a track that was never checked.",
         "in": "0.93.1"
       },
       {
-        "text": "A file declaring 24 bits is no longer taken at its container's word: Surco decodes the track and checks which bytes actually carry signal. 16-bit audio padded into a 24-bit shell gives itself away (the low 8 bits are zero in every sample, arithmetic proof rather than statistics) and gets its own badge; a real 24-bit file earns its line with the measurement in front.",
+        "text": "A track claiming to be 24-bit is no longer taken at its label's word: Surco listens to the audio and checks whether it really is. 16-bit audio inflated to 24 gives itself away and gets flagged; a real 24-bit file earns its line with the measurement in front.",
         "in": "0.93.0"
       },
       {
-        "text": "With the output bit depth on \"same as source\", a file with proven padding is written as true 16-bit. The spare bits are zeros, so dropping them loses nothing and needs no dither.",
+        "text": "With the output bit depth on \"same as source\", a track that only looks like 24-bit is saved as the 16-bit it really is. Nothing is lost on the way: what was dropped was empty.",
         "in": "0.93.0"
       },
       {
-        "text": "The output sample rate gains a \"Corrected\" mode: only tracks Surco has measured as upsampled from 44.1 kHz are rewritten at 44.1; genuine and unverifiable files come out untouched. The \"On convert\" card announces on the track itself what will happen and why, before anything is touched.",
+        "text": "The output sample rate gains a \"Corrected\" mode: only tracks Surco has measured as inflated from 44.1 kHz go back to 44.1; genuine files and those it could not verify come out untouched. The \"On convert\" card announces on the track itself what will happen and why, before anything is touched.",
         "in": "0.93.0"
       },
       {
-        "text": "The same song can no longer grade \"Lossy source\" in its 44.1 kHz copy and \"Good quality\" in the 48 kHz one: the second knee detector read the cut one band below where the music ends, and it only runs on 44.1 files. Found thanks to a user with twin copies of one track.",
+        "text": "The same song can no longer grade \"Lossy source\" in its 44.1 kHz copy and \"Good quality\" in the 48 kHz one. Found thanks to a user with twin copies of one track.",
         "in": "0.93.0"
       }
     ]
@@ -220,11 +220,11 @@
     "title": "The sample rate always gets an answer",
     "items": [
       {
-        "text": "A file that declares more than 44.1 kHz now always gets an answer about its sample rate: confirmed as genuine hi-res, flagged as upsampled from 44.1 kHz, or an honest \"could not be verified\" when the probe was unreadable. Saying nothing used to leave a real hi-res file looking exactly like one nobody had analysed. A plain 44.1 kHz file makes no claim to check, so it stays silent rather than gaining a line that says nothing.",
+        "text": "A track claiming more than 44.1 kHz now always gets an answer: confirmed as genuine hi-res, flagged as inflated from 44.1 kHz, or an honest \"could not be verified\". Saying nothing used to leave a real hi-res file looking exactly like one nobody had analysed. A plain 44.1 kHz file makes no claim to check, so it stays silent rather than gaining a line that says nothing.",
         "in": "0.92.0"
       },
       {
-        "text": "The upsampling detector stopped passing a fake hi-res as the real thing. It compared two high probes against each other, and when the content died at 20 kHz both landed in the noise floor: their similarity read as a gentle taper, that is, as genuine hi-res. Those bands must now also rise above the noise floor, measured against the track's own level so the same master mixed quieter is still the same record. Calibrated on real and fake hi-res files from an actual library, with wide margin on both sides.",
+        "text": "Surco stopped passing a fake hi-res as the real thing. When the music stopped early, an inflated track could pass for genuine. It now has to find real music up there, not just silence, and it makes no difference if the same master is mixed quieter: it is still the same record. Calibrated on real and fake hi-res files from an actual library, with wide margin on both sides.",
         "in": "0.92.0"
       },
       {
@@ -266,15 +266,15 @@
     "title": "Normalization tells you what it will do",
     "items": [
       {
-        "text": "The \"lossy source\" detector now recognises a codec wall by its shape, not its depth: a cliff of tens of decibels inside one kilohertz, instead of summing the whole descent of the top end. A sweep of 6000 real lossless tracks showed the difference: digital productions ease down 2-7 dB per band into silence and summed more than enough to be accused of being MP3s, while a real codec cuts like a cliff. Under the new rule the false alarms in that sweep dropped from 161 to 19, without losing any of the 40 reference encodes, CD-burned ones included. Already-analysed tracks re-measure themselves.",
+        "text": "The \"lossy source\" detector now recognises a codec's cut by its shape: a cliff, not a gentle slope. A sweep of 6000 real lossless tracks showed the difference: digital productions fade out little by little and ended up accused of being MP3s, while a real codec cuts like a cliff. Under the new rule the false alarms in that sweep dropped from 161 to 19, without losing any of the 40 reference encodes, CD-burned ones included. Already-analysed tracks re-measure themselves.",
         "in": "0.90.3"
       },
       {
-        "text": "A 256 or 320 kbps MP3 burned to CD or written to 16-bit FLAC/WAV/AIFF no longer passes as \"Good quality\". The lossy-source detector was calibrated on MP3s decoded in floating point, where the codec wall falls 65 dB; with the 16-bit dither any real transfer leaves behind, the same wall falls only 43 dB and landed just under the bar. It was found by a new battery of tests that demand the same verdict when a spectrum is raised, lowered or given a noise floor, and confirmed on real files before anything was touched. The threshold drops to 38 dB with margin on both sides, and already-analysed tracks re-measure themselves.",
+        "text": "A 256 or 320 kbps MP3 burned to CD or written to 16-bit FLAC/WAV/AIFF no longer passes as \"Good quality\". Going through 16 bits disguises the trace an MP3 leaves behind, and it landed just under the bar. It was found by a new battery of tests that demand the same verdict whether a track's level is raised or lowered, and confirmed on real files before anything was touched. Already-analysed tracks re-measure themselves.",
         "in": "0.90.2"
       },
       {
-        "text": "A loud master no longer reads as \"Reprocessed\" because of its own harmonics. Two versions of the same song, the quiet reissue and the remaster 8 dB louder, share one spectrum and got different verdicts: the same two high harmonics that sat under the noise floor in one counted as the saw-tooth of a spectral \"enhancer\" in the other. Three teeth in a row are now required, which is what a real enhancer leaves, and the verdict no longer changes with the level of the master. Already-analysed tracks re-measure themselves.",
+        "text": "A loud master no longer reads as \"Reprocessed\" because of its own harmonics. Two versions of the same song, the quiet reissue and the remaster 8 dB louder, sounded the same and got different verdicts. The verdict no longer changes with the level of the master. Already-analysed tracks re-measure themselves.",
         "in": "0.90.1"
       },
       {
