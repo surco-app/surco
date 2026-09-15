@@ -492,6 +492,8 @@
     "notInLibrary": "Nicht in Mediathek",
     "notInLibraryEngine": "Nicht in Mediathek",
     "checkingLibrary": "Wird geprüft…",
+    "ambiguousLibraryCopies_one": "{{count}} fast identische Kopie: eine neue wird hinzugefügt",
+    "ambiguousLibraryCopies_other": "{{count}} fast identische Kopien: eine neue wird hinzugefügt",
     "convertAll": "Konvertieren ({{count}}) · {{format}}",
     "editingMultiple": "{{count}} Tracks werden bearbeitet",
     "multipleValues": "Mehrere Werte",

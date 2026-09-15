@@ -492,6 +492,8 @@
     "notInLibrary": "Absent de la bibliothèque",
     "notInLibraryEngine": "Absent de la bibliothèque",
     "checkingLibrary": "Vérification…",
+    "ambiguousLibraryCopies_one": "{{count}} copie quasi identique : une nouvelle sera ajoutée",
+    "ambiguousLibraryCopies_other": "{{count}} copies quasi identiques : une nouvelle sera ajoutée",
     "convertAll": "Convertir ({{count}}) · {{format}}",
     "editingMultiple": "Édition de {{count}} morceaux",
     "multipleValues": "Valeurs multiples",
