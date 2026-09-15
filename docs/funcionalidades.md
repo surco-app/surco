@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 2026-09-11** (v0.96.0). Levantado por primera vez el
+**Última revisión: 2026-09-15** (v0.97.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -669,6 +669,12 @@ pueda configurar para que funcione, igual que el destino de Apple Music.
 Se ofrecen solo las listas del usuario (`every user playlist`): la biblioteca entera
 no es una selección, y las listas inteligentes que Music trae de fábrica son consultas.
 
+**El selector se agrupa por carpetas, plegables.** Se lee la carpeta padre de cada
+lista (`appleMusicPlaylists.ts:27-34`). La carpeta va al final de la fila y el
+identificador persistente, que tiene forma fija, se localiza esté donde esté: así un
+nombre de carpeta con un tabulador dentro no parte la fila. Las filas escritas antes de
+que se leyeran las carpetas siguen cargando (`appleMusicPlaylists.ts:55-59`).
+
 **Qué se importa:** los ficheros que la lista referencia en disco. Las pistas en
 streaming y las de iCloud sin descargar no tienen fichero: se cuentan y se dicen en
 el aviso posterior, en vez de desaparecer en silencio.
@@ -690,6 +696,12 @@ propio. Importar los calculados estamparía estrellas que nadie dio.
 
 **Cada pista queda atada a su entrada de Music** por su persistent ID, así que
 convertirla actualiza esa entrada en vez de añadir una segunda copia de la canción.
+La atadura sobrevive a cerrar y reabrir la aplicación (`sessionEdits.ts`).
+
+**La carátula que falta se toma de Music.** Un fichero sin arte incrustado hereda el de
+la biblioteca al importar (`appleMusicArtwork.ts`, `appleMusicPlaylistArt.ts`), y la
+portada se pinta ya en la fila de la pista, no solo en la ficha
+(`useTrackLibrary.ts`).
 
 **Tres trampas de AppleScript, medidas contra Music en macOS 26:**
 
@@ -845,6 +857,80 @@ existentes; una rejilla existente se rescata cuando no hay BPM; y un lote de 300
 pistas produce **una** escritura, no 300 (`nmlBatch.ts:3-6`). Un backup único,
 sobrescrito, porque copias fechadas dejaban basura en la carpeta del usuario.
 
+### Repunte de la colección de rekordbox
+
+Distinto de la exportación XML de más abajo: aquí se escribe **en la colección real**
+(`master.db`), reapuntando entradas que ya existen en vez de crear pistas nuevas.
+
+**Apagado por defecto** (`syncRekordbox: false`, `settings.ts:55`). El asistente de
+primer arranque lo ofrece solo si encuentra rekordbox en el equipo; a quien no lo use, el
+paso no le aparece (`djLibraries.ts`). La ruta se detecta sola y el ajuste solo hace falta
+si la colección vive en otro sitio (`rekordboxDbPath`).
+
+**Qué conserva:** la entrada mantiene su identificador, así que **playlists, cue points e
+historial siguen en su sitio** — rekordbox enlaza por pista, no por ruta
+(`rekordboxLibrary.ts:14`). Se escriben cuatro campos: ruta, nombre de fichero, código de
+formato y tamaño. `OrgFolderPath` **no se toca**: es el registro de dónde vino la pista,
+no una ruta viva.
+
+**Dos copias de seguridad, y sin ellas no se escribe** (`rekordboxLibrary.ts:106-110`):
+una por escritura (`.surco-backup`), sobrescrita en cada pista, y otra por tanda
+(`.surco-session`), tomada antes de la primera escritura del lote. La segunda existe
+porque la primera, al sobrescribirse, tras un lote de 300 describe la colección justo
+antes de la pista 300, no antes del lote.
+
+**Exige rekordbox cerrado**, comprobado dos veces: antes de leer y otra vez tras la copia,
+para estrechar la ventana (`rekordboxLibrary.ts:113`). **La guarda falla cerrada**: si no
+se puede averiguar si corre, se asume que sí (`rekordboxProcess.ts`). La coincidencia es
+por nombre completo, nunca por subcadena, porque el bundle trae `rekordboxAgent` y
+`Upmgr rekordbox`. El cierre es siempre un quit educado, nunca un kill: rekordbox tiene
+`master.db` abierto por SQLCipher.
+
+**Nunca lanza:** la conversión ya terminó en disco cuando esto corre, así que cada fallo
+devuelve un motivo que el panel de actividad cuenta — omitido por rekordbox abierto, por
+copia fallida, por colección de solo lectura, ilegible o no escribible.
+
+**Ambigüedad resuelta a la contra:** un mismo fichero con dos entradas (el caso de un
+`~/Music/Music` que es enlace simbólico) devuelve un veredicto de ambigüedad y **no elige
+nunca** (`rekordboxDb.ts`). Medido sobre una colección real de 1962 pistas: 1808
+reapuntables sin ambigüedad, 34 ambiguas, 117 que no están en rekordbox.
+
+**A diferencia de Traktor, reapunta también si la conversión va a otra carpeta**, porque
+en rekordbox la ruta es una columna entera. La regla de misma carpeta sigue aplicándose
+solo a Traktor.
+
+**Riesgo asumido:** los contadores de sincronización con rekordbox cloud (`usn`,
+`rb_local_usn`, `rb_local_synced`) no se mantienen. Está pensado para bibliotecas locales.
+
+### Sustituir la copia de la biblioteca
+
+Cuando la pista cargada ya está en la biblioteca, el botón ofrece **sustituir** en vez de
+añadir una segunda copia (`exportLabel.ts`, `useLibraryVerdict.ts`). En Apple Music, por
+debajo, es añadir y luego borrar — Music deja leer la ubicación de una pista, nunca
+escribirla — pero en un solo paso (`processTrack.ts:322`).
+
+**El orden es lo que no se puede equivocar:** la ruta vieja se lee **antes** de tocar
+Apple Music, o el repunte apuntaría al fichero del que se quería salir; y en Music se
+**añade antes de borrar**, para que el peor caso sean dos copias visibles y no una pista
+fuera de la biblioteca.
+
+**Avisa de la pérdida de calidad, nunca bloquea** (`replaceWarning.ts`): sin pérdida que
+pasa a con pérdida, corte de frecuencias peor entre dos con pérdida, o lossless falso. El
+margen para llamar «peor» a un corte son 2100 Hz, la dispersión medida sobre 39
+codificaciones LAME; por debajo, dos copias del mismo tema a 320 se acusarían entre sí.
+
+**Un lote no puede mezclar** pistas que sustituyen con pistas que se añaden: se pide
+separarlas (`replaceSelection.ts`).
+
+**El fichero sustituido se ofrece a la papelera** al acabar, por pista o el lote entero
+(`supersededFile.ts`, `selectionStatus.ts`). Antes de prometer nada se le pregunta al
+sistema de ficheros si el borrado es recuperable (`trashSupport.ts`): APFS, HFS y exFAT
+guardan papelera; un SMB no, y ahí el aviso dice que puede ser definitivo. Es una lista
+blanca, así que un sistema de ficheros imprevisto lee como «sin promesa».
+
+**Un repunte rechazado no cancela la sustitución:** el fichero ya está en disco y la copia
+de biblioteca sigue mereciendo actualizarse. El motivo viaja hacia arriba para contarlo.
+
 ### Exportación a rekordbox, Serato, Traktor y M3U8
 
 Cuatro ficheros puente. **Ninguno lleva cue points, rating ni carátula.**
@@ -955,28 +1041,38 @@ Recopilado de los cinco informes. Cada punto está verificado.
 2. **Apple Music:** solo macOS, nunca FLAC. Clave, sello, catálogo y remixer no
    llegan a la biblioteca. No se transfiere rating ni se crean playlists.
 3. **Engine DJ:** no lleva cue points ni beatgrid. Exige Engine cerrado.
-4. **rekordbox/Serato/Traktor/M3U8:** ninguno lleva cues, rating ni carátula.
-5. **No hay detección de estéreo falso.**
-6. **El hi-res falso** solo se detecta en el muro de 22.05 kHz, no en 48→96.
-7. **«Ya está en tu biblioteca»** es un indicio puntuado, no una garantía.
-8. **BPM y tonalidad** son sugerencias; nunca se escriben sin confirmar.
-9. **Los clics enterrados** bajo pasajes densos se pierden parcialmente. El
+4. **Exportar a rekordbox/Serato/Traktor/M3U8:** ninguno de los cuatro ficheros
+    puente lleva cues, rating ni carátula. Esto es la **exportación**, y no debe
+    confundirse con el repunte de la colección real de rekordbox (§11), donde los
+    cues y las playlists sí sobreviven precisamente porque no se tocan: se cambia
+    la ruta de una entrada que ya existe.
+5. **El repunte de rekordbox sale apagado** (`syncRekordbox: false`) y exige
+    rekordbox cerrado. No resuelve las pistas con dos entradas: las declara
+    ambiguas y no elige. No mantiene los contadores de rekordbox cloud.
+6. **Sustituir no mueve el fichero en Apple Music:** Music no deja escribir la
+    ubicación de una pista, así que por debajo es añadir y borrar. El aviso de
+    pérdida de calidad informa, nunca bloquea.
+7. **No hay detección de estéreo falso.**
+8. **El hi-res falso** solo se detecta en el muro de 22.05 kHz, no en 48→96.
+9. **«Ya está en tu biblioteca»** es un indicio puntuado, no una garantía.
+10. **BPM y tonalidad** son sugerencias; nunca se escriben sin confirmar.
+11. **Los clics enterrados** bajo pasajes densos se pierden parcialmente. El
     recuento sí dejó de tragarse las ráfagas: la ventana que junta clics pegados
     se mide desde el último clic contado, no desde el último cruce, que se
     encadenaba hasta décimas de segundo (`clickDetect.ts`).
-10. **Exportar una biblioteca Engine nueva a una carpeta no está expuesto**:
+12. **Exportar una biblioteca Engine nueva a una carpeta no está expuesto**:
     `buildEngineDatabase` existe y está probado, pero solo lo llaman los tests.
-11. **El beatgrid fue eliminado** de la app y se descarta activamente al leer
+13. **El beatgrid fue eliminado** de la app y se descarta activamente al leer
     sesiones antiguas.
-12. **Los ajustes de calidad no se aplican** cuando el fichero ya está en el
+14. **Los ajustes de calidad no se aplican** cuando el fichero ya está en el
     formato de destino.
-13. **El limitador no es transparente por encima de 3 dB de overshoot.** Por
+15. **El limitador no es transparente por encima de 3 dB de overshoot.** Por
     debajo no se oye; por encima la pérdida de pegada es real y la app lo dice.
-14. **El muro poco profundo sobre un suelo ruidoso no se acusa**: se reporta el
+16. **El muro poco profundo sobre un suelo ruidoso no se acusa**: se reporta el
     corte, sin veredicto de fuente con pérdidas.
-15. **Un MP3 nunca se califica como defectuoso.** Su corte es el formato.
-16. **«Los 24 bits son reales» no afirma procedencia**: dice que el byte bajo
+17. **Un MP3 nunca se califica como defectuoso.** Su corte es el formato.
+18. **«Los 24 bits son reales» no afirma procedencia**: dice que el byte bajo
     lleva señal, no que la captura fuera de 24 bits — un resampleo de un origen
     de 16 también lo llena.
-17. **«Corregido» no recupera calidad**: solo quita el relleno probado de un
+19. **«Corregido» no recupera calidad**: solo quita el relleno probado de un
     upsample; nunca toca lo genuino ni lo dudoso, y solo actúa al recodificar.
