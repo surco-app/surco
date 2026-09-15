@@ -48,7 +48,7 @@
     "clearAll": "Vaciar la lista"
   },
   "sidebar": {
-    "dropHint": "Arrastra aquí tus archivos.",
+    "dropHint": "Arrastra aquí tus pistas.",
     "fitHint": "Doble clic para ajustar el ancho a los nombres de las pistas",
     "filter": {
       "label": "Filtro",
