@@ -7,6 +7,7 @@ import BatchScene from './scenes/BatchScene'
 import DeclickScene from './scenes/DeclickScene'
 import DropScene from './scenes/DropScene'
 import NormalizeScene from './scenes/NormalizeScene'
+import ReplaceScene from './scenes/ReplaceScene'
 import SceneLayout from './scenes/SceneLayout'
 import SpectrumPair from './scenes/SpectrumPair'
 import TagScene from './scenes/TagScene'
@@ -123,6 +124,23 @@ export default function Walkthrough() {
         app={<BatchScene />}
       >
         {t('home.batch.lede')}
+      </SceneLayout>
+
+      {/* Not an eighth step: the walkthrough follows one file from drop to library, and
+          this is the other direction — a track already in the library, upgraded in place.
+          It sits after the flow rather than inside it, flipped so the eye breaks from the
+          run of scenes above. */}
+      <SceneLayout
+        flip
+        step={t('home.replace.step')}
+        title={t('home.replace.title')}
+        app={
+          <AppFrame pill={t('home.replace.pill')}>
+            <ReplaceScene />
+          </AppFrame>
+        }
+      >
+        {t('home.replace.lede')}
       </SceneLayout>
 
       <Reveal>

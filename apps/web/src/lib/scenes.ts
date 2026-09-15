@@ -342,3 +342,36 @@ export function batchFrame(t: number): BatchFrame {
     finished: p >= 1,
   }
 }
+
+/* --------------------------------------------------------------- 08 · replace */
+
+// The row's crates and its cues, held constant through the whole swap. These are the
+// two numbers a DJ is afraid of losing when a track changes format, so the scene shows
+// them not moving while the path underneath them does.
+export const REPLACE_PLAYLISTS = 2
+export const REPLACE_CUES = 13
+
+export interface ReplaceFrame {
+  swapped: boolean
+  oldOpacity: number
+  newOpacity: number
+  playlists: number
+  cues: number
+}
+
+// The old path fades out as the new one fades in, overlapping in the middle. A hard
+// cut would read as a row that was always an AIFF, which states the outcome instead of
+// showing the change — and the change is the whole point: same row, new file.
+export function replaceFrame(t: number): ReplaceFrame {
+  const p = clamp(t)
+  // The crossover sits in the middle third, so the row reads as settled MP3 before it
+  // and as settled AIFF after it.
+  const cross = clamp((p - 0.35) / 0.3)
+  return {
+    swapped: cross >= 1,
+    oldOpacity: 1 - cross,
+    newOpacity: cross,
+    playlists: REPLACE_PLAYLISTS,
+    cues: REPLACE_CUES,
+  }
+}
