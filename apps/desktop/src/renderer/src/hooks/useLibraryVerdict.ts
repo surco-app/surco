@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   type AppleMusicIndex,
   isInLibrary,
@@ -178,5 +178,36 @@ export function useLibraryVerdict({
     if (resolvedViaDiscogs && !item.inLibraryResolved) onChange({ inLibraryResolved: true })
   }, [resolvedViaDiscogs, item.inLibraryResolved])
 
-  return { inLibrary, staleMusicCopy, replaceTarget }
+  // Where the offered copy's file lives, read ONCE when the copy is offered rather than
+  // when the user presses convert. Reported 15/09: resolving it at click time asked Music
+  // where the track was after an earlier replacement had already repointed that entry at
+  // the new AIFF, so rekordbox was searched for a path it had never indexed and reported
+  // the song missing from a collection it was plainly in. Keyed by persistent ID so a
+  // stale path can never outlive the copy it described.
+  const offeredId =
+    replaceTarget && !('ambiguous' in replaceTarget) ? replaceTarget.persistentId : null
+  const [offeredPath, setOfferedPath] = useState<{ id: string; path: string } | null>(null)
+  useEffect(() => {
+    if (!offeredId) return
+    let cancelled = false
+    void window.api
+      .appleMusicEntryLocation(offeredId)
+      .catch(() => '')
+      .then((path) => {
+        if (!cancelled && path) setOfferedPath({ id: offeredId, path })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [offeredId])
+
+  const replaceTargetWithPath = useMemo(
+    () =>
+      replaceTarget && offeredId && offeredPath?.id === offeredId
+        ? { ...replaceTarget, path: offeredPath.path }
+        : replaceTarget,
+    [replaceTarget, offeredId, offeredPath],
+  )
+
+  return { inLibrary, staleMusicCopy, replaceTarget: replaceTargetWithPath }
 }

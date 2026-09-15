@@ -1366,17 +1366,8 @@ export const Editor = memo(function Editor({
                   // The button already offered a replacement; without this the action
                   // stayed an add, leaving two library entries and two files on disk.
                   const patch = replacePatch(replaceTarget)
-                  if (!patch) {
-                    onProcess(f as OutputFormat)
-                    return
-                  }
-                  void window.api
-                    .appleMusicEntryLocation(patch.musicPersistentId as string)
-                    .catch(() => '')
-                    .then((replacesPath) => {
-                      onChange(replacesPath ? { ...patch, replacesPath } : patch)
-                      onProcess(f as OutputFormat)
-                    })
+                  if (patch) onChange(patch)
+                  onProcess(f as OutputFormat)
                 }
           }
           // Single-only: a running multi converts through the toolbar's batch pill, which

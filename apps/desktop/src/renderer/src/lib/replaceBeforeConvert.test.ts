@@ -28,4 +28,23 @@ describe('replacePatch', () => {
   it('stamps nothing when the match is ambiguous', () => {
     expect(replacePatch({ ambiguous: ['PID1', 'PID2'] })).toBeNull()
   })
+
+  // Reported 15/09 with rekordbox open on the track: the repoint said "none of these
+  // tracks are in the collection" for a song plainly in it. The path was being resolved by
+  // asking Music at click time, and by then Music already held the AIFF from an earlier
+  // replacement — so the lookup returned the NEW file and rekordbox was searched for a path
+  // it had never indexed. The path has to be the one captured when the copy was offered.
+  it('stamps the path of the copy that was offered', () => {
+    expect(
+      replacePatch({ persistentId: 'PID1', label: 'Transfer - Possession', path: '/m/old.mp3' }),
+    ).toEqual({ musicPersistentId: 'PID1', replacesPath: '/m/old.mp3' })
+  })
+
+  // A copy whose file Music could not report (a dead reference, an unmounted volume) still
+  // replaces in the library; only the rekordbox repoint has nothing to follow.
+  it('stamps just the id when the offered copy had no reachable file', () => {
+    expect(replacePatch({ persistentId: 'PID1', label: 'Transfer - Possession' })).toEqual({
+      musicPersistentId: 'PID1',
+    })
+  })
 })

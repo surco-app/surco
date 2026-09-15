@@ -86,6 +86,9 @@ beforeEach(() => {
     cancelDeclickPreview: vi.fn().mockResolvedValue(undefined),
     reveal: vi.fn(),
     recordStat: vi.fn(),
+    // The library verdict reads where an offered replacement's file lives the moment the
+    // copy is offered, so this effect mounts wherever a library index is handed in.
+    appleMusicEntryLocation: vi.fn().mockResolvedValue(''),
     // CoverPicker preloads a draggable file whenever the track has artwork, so any test
     // that gives one a cover mounts this effect.
     prepareCoverDrag: vi.fn().mockResolvedValue(null),

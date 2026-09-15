@@ -13,5 +13,10 @@ import { isAmbiguousCandidate, type ReplaceCandidate } from './appleMusicLibrary
 // wrong song, and the add is the safe outcome.
 export function replacePatch(target: ReplaceCandidate | null): Partial<TrackItem> | null {
   if (!target || isAmbiguousCandidate(target)) return null
-  return { musicPersistentId: target.persistentId }
+  // replacesPath comes from the candidate, never from a fresh lookup: it must name the file
+  // the user was shown, and Music's answer changes the moment an earlier replacement
+  // repoints that entry (see StaleLibraryCopy.path).
+  return target.path
+    ? { musicPersistentId: target.persistentId, replacesPath: target.path }
+    : { musicPersistentId: target.persistentId }
 }

@@ -303,6 +303,14 @@ export function isInLibrary(
 export interface StaleLibraryCopy {
   persistentId: string
   label: string
+  // Where this copy's file lives, captured when the copy was offered rather than looked up
+  // when the user acts. Reported 15/09: resolving it at click time asked Music where the
+  // track was AFTER an earlier replacement had already pointed that entry at the new AIFF,
+  // so rekordbox was searched for a path it had never indexed and reported the song
+  // missing from a collection it was plainly in. Absent when Music holds no reachable file
+  // for the copy, which still replaces in the library but gives rekordbox nothing to
+  // follow.
+  path?: string
 }
 
 // The library copy the candidate supersedes: an entry that matches the same way
