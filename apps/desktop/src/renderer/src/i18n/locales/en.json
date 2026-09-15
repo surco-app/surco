@@ -48,7 +48,7 @@
     "clearAll": "Clear the list"
   },
   "sidebar": {
-    "dropHint": "Drag your files here.",
+    "dropHint": "Drag your tracks here.",
     "fitHint": "Double-click to fit the width to the track names",
     "filter": {
       "label": "Filter",

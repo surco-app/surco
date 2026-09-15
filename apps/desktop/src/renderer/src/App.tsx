@@ -1983,7 +1983,7 @@ export default function App(): React.JSX.Element {
                               type="button"
                               data-testid="empty-import-playlist"
                               onClick={overlays.openApplePlaylist}
-                              className="empty-copy-in rounded-md px-2 py-1 text-sm text-fg-dim underline decoration-line-strong underline-offset-[3px] hover:text-fg-muted"
+                              className="empty-copy-in -ml-2 rounded-md px-2 py-1 text-sm text-fg-dim underline decoration-line-strong underline-offset-[3px] hover:text-fg-muted"
                               style={{ animationDelay: '0.28s' }}
                             >
                               {tr('empty.importApplePlaylist')}

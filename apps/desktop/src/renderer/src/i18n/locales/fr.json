@@ -48,7 +48,7 @@
     "clearAll": "Vider la liste"
   },
   "sidebar": {
-    "dropHint": "Dépose tes fichiers ici.",
+    "dropHint": "Dépose tes morceaux ici.",
     "fitHint": "Double-clique pour ajuster la largeur aux noms des morceaux",
     "filter": {
       "label": "Filtre",
