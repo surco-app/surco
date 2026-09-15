@@ -142,3 +142,52 @@ describe('flushRekordboxSync', () => {
     expect(result).toEqual({ written: 0, blocked: 'backup-failed', skipped: [] })
   })
 })
+
+// Reported 15/09: the user replaced an MP3 with an AIFF, Apple Music showed the new file
+// and rekordbox still pointed at the MP3 — with no indication why. The flush had refused
+// to write because rekordbox was open, which is correct, but it said so only in the log.
+// A refusal nobody sees reads as the feature being broken, so the one case the user can
+// actually act on has to reach them. The Traktor side of this already warns on exactly
+// the same condition (flushTraktorSync's showBlockedDialog).
+describe('flushRekordboxSync telling the user it was blocked', () => {
+  it('warns when rekordbox being open stopped the whole flush', async () => {
+    const showBlockedDialog = vi.fn()
+    const d = deps({
+      repointTrack: vi.fn(
+        async (): Promise<RepointResult> => ({ written: false, reason: 'rekordbox-running' }),
+      ),
+      showBlockedDialog,
+    })
+
+    await flushRekordboxSync(d)
+
+    expect(showBlockedDialog).toHaveBeenCalledOnce()
+  })
+
+  // Every collection-wide reason stops the run, but only this one names something the
+  // user can fix. Popping a dialog for an unreadable or read-only file would put a
+  // failure they cannot act on in front of them on every single convert.
+  it('stays silent for a blocked reason the user cannot act on', async () => {
+    const showBlockedDialog = vi.fn()
+    const d = deps({
+      repointTrack: vi.fn(
+        async (): Promise<RepointResult> => ({ written: false, reason: 'read-only' }),
+      ),
+      showBlockedDialog,
+    })
+
+    await flushRekordboxSync(d)
+
+    expect(showBlockedDialog).not.toHaveBeenCalled()
+  })
+
+  // The ordinary run must never warn.
+  it('stays silent when every repoint lands', async () => {
+    const showBlockedDialog = vi.fn()
+    const d = deps({ showBlockedDialog })
+
+    await flushRekordboxSync(d)
+
+    expect(showBlockedDialog).not.toHaveBeenCalled()
+  })
+})

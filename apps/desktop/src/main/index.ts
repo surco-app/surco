@@ -940,10 +940,18 @@ function registerIpc(): void {
           realPath: (p) => realpathSync(p),
           sessionBackup: (path) => rekordboxSessionBackup.ensure(path),
         }),
+      showBlockedDialog: () => {
+        const t = createMenuT(menuLocale())
+        const opts = { type: 'warning' as const, message: t('rekordboxSyncBlocked') }
+        if (win) dialog.showMessageBox(win, opts)
+        else dialog.showMessageBox(opts)
+      },
     })
-    // Logged rather than shown: what the user should see for a blocked flush or an
-    // ambiguous track is still undecided, and inventing a dialog now would be the wrong
-    // place to decide it. The counts are here so the decision can be made from real runs.
+    // Logged in every case, and additionally shown for the one blocked reason the user can
+    // act on (see showBlockedDialog above). What to surface for an ambiguous track, or for
+    // a collection that is unreadable or read-only, is still undecided: those name nothing
+    // the user can fix mid-convert, so the counts stay here for that decision to be made
+    // from real runs.
     if (result.written > 0 || result.blocked || result.skipped.length > 0) {
       log.info(
         `rekordbox repoint: ${result.written} written` +

@@ -53,6 +53,7 @@ interface MenuStrings {
   traktorQuitConfirm: string
   traktorQuitCancel: string
   traktorSyncBlocked: string
+  rekordboxSyncBlocked: string
   quitBusyMessage: string
   quitBusyDetail: string
   quitBusyConfirm: string
@@ -108,6 +109,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitConfirm: 'Cerrar Traktor',
     traktorQuitCancel: 'Cancelar',
     traktorSyncBlocked: 'La colección de Traktor no se ha actualizado: Traktor sigue abierto.',
+    rekordboxSyncBlocked:
+      'La colección de rekordbox no se ha actualizado: rekordbox sigue abierto. Ciérralo y vuelve a convertir para que apunte al archivo nuevo.',
     quitBusyMessage: 'Hay conversiones en curso',
     quitBusyDetail:
       'Si sales ahora se detendrán {n} conversiones y las pistas que faltan se quedarán sin convertir.',
@@ -162,6 +165,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitConfirm: 'Close Traktor',
     traktorQuitCancel: 'Cancel',
     traktorSyncBlocked: "Traktor's collection was not updated: Traktor is still open.",
+    rekordboxSyncBlocked:
+      "rekordbox's collection was not updated: rekordbox is still open. Close it and convert again so it points at the new file.",
     quitBusyMessage: 'Conversions are still running',
     quitBusyDetail:
       'Quitting now stops {n} conversions, and the tracks still queued will be left unconverted.',
@@ -216,6 +221,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitConfirm: 'Traktor schließen',
     traktorQuitCancel: 'Abbrechen',
     traktorSyncBlocked: 'Die Traktor-Sammlung wurde nicht aktualisiert: Traktor ist noch geöffnet.',
+    rekordboxSyncBlocked:
+      'Die rekordbox-Sammlung wurde nicht aktualisiert: rekordbox ist noch geöffnet. Schließe es und konvertiere erneut, damit es auf die neue Datei zeigt.',
     quitBusyMessage: 'Es laufen noch Konvertierungen',
     quitBusyDetail:
       'Beim Beenden werden {n} Konvertierungen gestoppt, und die noch wartenden Titel bleiben unkonvertiert.',
@@ -271,6 +278,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitCancel: 'Annuler',
     traktorSyncBlocked:
       "La collection Traktor n'a pas été mise à jour : Traktor est encore ouvert.",
+    rekordboxSyncBlocked:
+      "La collection rekordbox n'a pas été mise à jour : rekordbox est encore ouvert. Ferme-le et relance la conversion pour qu'il pointe vers le nouveau fichier.",
     quitBusyMessage: 'Des conversions sont en cours',
     quitBusyDetail:
       'Quitter maintenant arrête {n} conversions, et les morceaux en attente resteront non convertis.',
@@ -325,6 +334,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitConfirm: 'Fechar o Traktor',
     traktorQuitCancel: 'Cancelar',
     traktorSyncBlocked: 'A coleção do Traktor não foi atualizada: o Traktor ainda está aberto.',
+    rekordboxSyncBlocked:
+      'A coleção do rekordbox não foi atualizada: o rekordbox ainda está aberto. Feche-o e converta de novo para que aponte para o arquivo novo.',
     quitBusyMessage: 'Ainda há conversões em andamento',
     quitBusyDetail:
       'Sair agora interrompe {n} conversões, e as faixas na fila ficarão sem converter.',
