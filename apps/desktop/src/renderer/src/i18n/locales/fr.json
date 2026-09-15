@@ -481,6 +481,7 @@
     "processError": "Échec du traitement",
     "fileInUseError": "Un autre programme utilise ce fichier (antivirus, lecteur…). Votre conversion n'est pas perdue : elle est enregistrée à côté, avec ~ à la fin du nom.",
     "missingRequired": "Champs obligatoires manquants : {{fields}}",
+    "mixedReplaceSelection": "La sélection mélange des pistes qui remplacent une copie de ta bibliothèque et des pistes qui sont ajoutées. Sépare-les pour convertir.",
     "reportError": "Signaler",
     "inLibrary": "Dans la bibliothèque",
     "inLibraryEngine": "Dans la bibliothèque",

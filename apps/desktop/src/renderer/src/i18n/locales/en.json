@@ -481,6 +481,7 @@
     "processError": "Processing failed",
     "fileInUseError": "Another program is using this file (antivirus, player…). Your conversion is safe: it was saved next to it, with ~ at the end of the name.",
     "missingRequired": "Missing required fields: {{fields}}",
+    "mixedReplaceSelection": "The selection mixes tracks that replace a copy in your library with tracks that are added. Separate them to convert.",
     "reportError": "Report",
     "inLibrary": "In library",
     "inLibraryEngine": "In library",
