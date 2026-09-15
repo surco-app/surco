@@ -170,6 +170,9 @@ export function stubApi(over: Partial<Api> = {}): Api {
     reveal: async () => {},
     openFile: async () => '',
     trashFile: async () => {},
+    // Local by default in tests: the cautious "may be permanent" wording is the exception,
+    // and a test that wants it says so.
+    keepsTrash: async () => true,
     copyText: async () => {},
     logError: noop,
     revealLog: async () => {},

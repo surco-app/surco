@@ -167,6 +167,10 @@ export interface Api {
   reveal: (path: string) => Promise<void>
   openFile: (path: string) => Promise<string>
   trashFile: (path: string) => Promise<void>
+  // Whether deleting this file can be described to the user as recoverable. Asked of the
+  // volume rather than guessed from the path: a NAS often has no Trash, and macOS then
+  // deletes outright — which a dialog promising recovery once turned into a lost file.
+  keepsTrash: (path: string) => Promise<boolean>
   copyText: (text: string) => Promise<void>
   // Fire-and-forget: renderer crashes land in main's log file, the only forensic
   // artifact in an app with no telemetry.

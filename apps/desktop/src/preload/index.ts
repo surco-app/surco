@@ -128,6 +128,7 @@ const api: Api = {
   reveal: (path: string) => ipcRenderer.invoke('shell:reveal', path),
   openFile: (path: string): Promise<string> => ipcRenderer.invoke('shell:open', path),
   trashFile: (path: string): Promise<void> => ipcRenderer.invoke('shell:trash', path),
+  keepsTrash: (path: string): Promise<boolean> => ipcRenderer.invoke('shell:keepsTrash', path),
   copyText: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text),
   logError: (message: string, stack?: string): void =>
     ipcRenderer.send('log:renderer', message, stack),
