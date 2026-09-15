@@ -491,6 +491,8 @@
     "notInLibrary": "Not in library",
     "notInLibraryEngine": "Not in library",
     "checkingLibrary": "Checking…",
+    "ambiguousLibraryCopies_one": "{{count}} near-identical copy: a new one will be added",
+    "ambiguousLibraryCopies_other": "{{count}} near-identical copies: a new one will be added",
     "convertAll": "Convert ({{count}}) · {{format}}",
     "editingMultiple": "Editing {{count}} tracks",
     "multipleValues": "Multiple values",
