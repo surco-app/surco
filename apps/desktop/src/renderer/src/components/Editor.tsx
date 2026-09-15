@@ -143,6 +143,8 @@ interface Props {
   // rather than automatic: a replacement that looked right and was not would otherwise
   // destroy the user's only copy.
   onTrashSuperseded?: (path: string) => void
+  // The batch counterpart, for a multi-select whose tracks each superseded a file.
+  onTrashSupersededAll?: (paths: string[]) => void
   // Removes the superseded Apple Music copy (the library entry the fresh add replaced).
   // Confirmation lives in App, so the link just signals intent; the copy's label rides
   // along so the dialog can name the entry it is about to delete.
@@ -205,6 +207,7 @@ export const Editor = memo(function Editor({
   onAddToAppleMusic,
   onTrashOriginal,
   onTrashSuperseded,
+  onTrashSupersededAll,
   onRemoveOldMusicCopy,
   onResultsWidthChange,
   onShowLoudnessHelp,
@@ -1397,6 +1400,7 @@ export const Editor = memo(function Editor({
           // now follows the new one, so nothing references it any more.
           supersededPath={isMulti ? null : supersededFile(item)}
           onTrashSuperseded={onTrashSuperseded}
+          onTrashSupersededAll={onTrashSupersededAll}
         />
       </div>
     </div>

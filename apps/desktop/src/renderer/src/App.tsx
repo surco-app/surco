@@ -853,6 +853,7 @@ export default function App(): React.JSX.Element {
     askTrash,
     askDeleteOriginal,
     askTrashSuperseded,
+    askTrashSupersededAll,
     askRemoveOldMusicCopy,
     askFillAll,
     askClearAll,
@@ -1296,6 +1297,10 @@ export default function App(): React.JSX.Element {
   const onTrashSuperseded = useStableCallback((path: string) => {
     if (selected) askTrashSuperseded(selected, path)
   })
+  // The batch offer works off the selected rows rather than the paths the footer showed:
+  // the flow marks each row as its own file goes, so a partial failure leaves the rest of
+  // the offer standing.
+  const onTrashSupersededAll = useStableCallback(() => askTrashSupersededAll(selectedTracks))
   const onShowLoudnessHelp = useStableCallback(overlays.openLoudnessHelp)
   // The X on the plan card: the same synced flag the Settings checkbox writes, so one
   // click quiets every inline explanation and Settings > Editor brings them back.
@@ -1907,6 +1912,7 @@ export default function App(): React.JSX.Element {
                         onAddToAppleMusic={onAddSelectedToAppleMusic}
                         onTrashOriginal={onTrashOriginal}
                         onTrashSuperseded={onTrashSuperseded}
+                        onTrashSupersededAll={onTrashSupersededAll}
                         onRemoveOldMusicCopy={onRemoveOldMusicCopy}
                         onResultsWidthChange={onResultsWidthChange}
                         onShowLoudnessHelp={onShowLoudnessHelp}

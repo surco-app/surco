@@ -12,6 +12,10 @@ export interface SelectionStatus {
   musicAdding: boolean
   musicAdded: boolean
   musicError: string | undefined
+  // The files a multi-select batch of replacements left stranded: out of Apple Music,
+  // with rekordbox following their successors. Empty in single-select, where the footer
+  // offers the one file through supersededFile instead.
+  supersededPaths: string[]
 }
 
 export function selectionStatus(
@@ -44,6 +48,16 @@ export function selectionStatus(
   const musicError = isMulti
     ? multiTracks.find((t) => t.musicStatus === 'error')?.musicError
     : item.musicError
+  // The files a batch of replacements stranded: each one left Apple Music and rekordbox
+  // now follows its successor, so nothing references them. Single-select has its own
+  // per-track link (supersededFile), so this stays empty there and the two offers can
+  // never both appear. Unfinished and already-trashed tracks drop out for the same reasons
+  // supersededFile applies per track.
+  const supersededPaths = isMulti
+    ? multiTracks
+        .filter((t) => t.status === 'done' && t.replacesPath && !t.supersededTrashed)
+        .map((t) => t.replacesPath as string)
+    : []
   return {
     showDone,
     revealPath,
@@ -52,5 +66,6 @@ export function selectionStatus(
     musicAdding,
     musicAdded,
     musicError,
+    supersededPaths,
   }
 }
