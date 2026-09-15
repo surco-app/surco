@@ -473,6 +473,8 @@
     "appleMusicError": "Não foi possível adicionar ao Apple Music",
     "removeOldCopy": "Remover a cópia antiga",
     "trashSuperseded": "Excluir o arquivo substituído",
+    "trashSupersededCount_one": "Excluir {{count}} arquivo substituído",
+    "trashSupersededCount_other": "Excluir {{count}} arquivos substituídos",
     "oldCopyRemoved": "Cópia antiga removida do Apple Music; o arquivo dela está na Lixeira",
     "removeOldCopyError": "Não foi possível remover a cópia antiga do Apple Music",
     "removeOldCopyMismatch": "A cópia no Apple Music já não corresponde à esperada — nada foi removido",

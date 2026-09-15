@@ -65,6 +65,10 @@ interface ConvertFooterProps {
   // Null when the conversion replaced nothing, or the file is already trashed.
   supersededPath?: string | null
   onTrashSuperseded?: (path: string) => void
+  // The batch counterpart: one offer for every file a multi-select replacement stranded,
+  // rather than a link per track. The paths come from selectionStatus, which already
+  // filters out the unfinished and the already-trashed.
+  onTrashSupersededAll?: (paths: string[]) => void
   // Opens the DJ-app collection export — offered once the export landed, since the
   // collection file references the converted copies.
   onExportCollection: () => void
@@ -105,6 +109,7 @@ export function ConvertFooter({
   onRemoveOldMusicCopy,
   supersededPath,
   onTrashSuperseded,
+  onTrashSupersededAll,
   onExportCollection,
 }: ConvertFooterProps): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -207,6 +212,16 @@ export function ConvertFooter({
                   className="press text-xs text-fg-dim hover:text-danger"
                 >
                   {tr('editor.deleteOriginal')}
+                </button>
+              )}
+              {isMulti && status.supersededPaths.length > 0 && (
+                <button
+                  type="button"
+                  data-testid="trash-superseded-all"
+                  onClick={() => onTrashSupersededAll?.(status.supersededPaths)}
+                  className="press text-xs text-fg-dim hover:text-danger"
+                >
+                  {tr('editor.trashSupersededCount', { count: status.supersededPaths.length })}
                 </button>
               )}
               {!isMulti && supersededPath && (

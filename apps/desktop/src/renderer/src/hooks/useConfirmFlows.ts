@@ -107,6 +107,8 @@ interface ConfirmFlows {
   askDeleteOriginal: (track: TrackItem) => void
   // Sends the file a replacement superseded to the OS Trash, once the user confirms.
   askTrashSuperseded: (track: TrackItem, path: string) => void
+  // The batch counterpart: every file a multi-select replacement stranded, in one offer.
+  askTrashSupersededAll: (targets: TrackItem[]) => void
   askRemoveOldMusicCopy: (track: TrackItem, stale: StaleLibraryCopy) => void
   askFillAll: (targets: TrackItem[], opts?: { fromSelection?: boolean }) => void
   askClearAll: (targets: TrackItem[]) => void
@@ -230,6 +232,38 @@ export function useConfirmFlows({
           // The user confirmed a destructive dialog, so a failure is said out loud rather
           // than swallowed — the same contract askDeleteOriginal keeps.
           .catch(() => reportTrashFailure(name))
+      },
+    })
+  }
+
+  // The batch counterpart of askTrashSuperseded: a multi-select replacement strands one
+  // file per track, so they are offered together. Each row is marked only once its own
+  // file is gone, so a partial failure leaves the rest of the offer standing rather than
+  // claiming files were removed that are still there.
+  function askTrashSupersededAll(targets: TrackItem[]): void {
+    const withFiles = targets.filter(
+      (t) => t.status === 'done' && t.replacesPath && !t.supersededTrashed,
+    )
+    if (withFiles.length === 0) return
+    const isWin = window.api.platform === 'win32'
+    const count = withFiles.length
+    const first = withFiles[0].replacesPath as string
+    openConfirm({
+      title: tr(isWin ? 'confirm.trashTitleWin' : 'confirm.trashTitle', { count }),
+      message: tr(isWin ? 'confirm.trashMessageWin' : 'confirm.trashMessage', {
+        count,
+        name: first.slice(first.lastIndexOf('/') + 1),
+      }),
+      confirmLabel: tr(isWin ? 'confirm.trashConfirmWin' : 'confirm.trashConfirm'),
+      destructive: true,
+      onConfirm: () => {
+        for (const track of withFiles) {
+          const path = track.replacesPath as string
+          window.api
+            .trashFile(path)
+            .then(() => updateTrack(track.id, { supersededTrashed: true }))
+            .catch(() => reportTrashFailure(path.slice(path.lastIndexOf('/') + 1)))
+        }
       },
     })
   }
@@ -477,6 +511,7 @@ export function useConfirmFlows({
     askTrash,
     askDeleteOriginal,
     askTrashSuperseded,
+    askTrashSupersededAll,
     askRemoveOldMusicCopy,
     askFillAll,
     askClearAll,

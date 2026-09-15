@@ -63,3 +63,62 @@ describe('selectionStatus', () => {
     expect(selectionStatus(added, [added, failed], true).musicError).toBe('denied')
   })
 })
+
+// A batch of replacements leaves one orphan per track: each superseded file is out of
+// Apple Music and rekordbox now follows the new one, so nothing references them. Asked
+// 15/09 — "vamos a tener ficheros en disco, pero no en apple music; eso al final es un
+// problema" — and with the batch rule in place a single convert can strand ten of them at
+// once, so the footer offers them together rather than one link per track.
+describe('selectionStatus superseded files', () => {
+  const replaced = (id: string) =>
+    track({
+      id,
+      status: 'done',
+      outputPath: `/m/${id}.aiff`,
+      replacesPath: `/m/${id}-old.mp3`,
+    })
+
+  it('collects every superseded file across the selection', () => {
+    const a = replaced('a')
+    const b = replaced('b')
+
+    expect(selectionStatus(a, [a, b], true).supersededPaths).toEqual([
+      '/m/a-old.mp3',
+      '/m/b-old.mp3',
+    ])
+  })
+
+  // A track still converting has not superseded anything yet, and one that failed must
+  // leave every file where it was — offering those would invite deleting an original
+  // whose replacement never happened.
+  it('leaves out tracks whose conversion has not finished', () => {
+    const done = replaced('a')
+    const running = track({ id: 'b', status: 'processing', replacesPath: '/m/b-old.mp3' })
+
+    expect(selectionStatus(done, [done, running], true).supersededPaths).toEqual(['/m/a-old.mp3'])
+  })
+
+  // Already trashed drops out, so the offer shrinks as files go and retires when none are
+  // left rather than asking again about something that is gone.
+  it('leaves out files already trashed', () => {
+    const a = replaced('a')
+    const gone = { ...replaced('b'), supersededTrashed: true }
+
+    expect(selectionStatus(a, [a, gone], true).supersededPaths).toEqual(['/m/a-old.mp3'])
+  })
+
+  // An ordinary batch supersedes nothing, so there is no offer at all.
+  it('collects nothing when the batch replaced no copies', () => {
+    const a = track({ id: 'a', status: 'done', outputPath: '/m/a.aiff' })
+
+    expect(selectionStatus(a, [a], true).supersededPaths).toEqual([])
+  })
+
+  // Single-select keeps its own per-track link (supersededFile), so the aggregate stays
+  // empty there and the two offers can never both appear.
+  it('stays empty in single-select', () => {
+    const a = replaced('a')
+
+    expect(selectionStatus(a, undefined, true).supersededPaths).toEqual([])
+  })
+})
