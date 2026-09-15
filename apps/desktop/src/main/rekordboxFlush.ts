@@ -37,6 +37,13 @@ export interface FlushRekordboxDeps {
   // end was nested inside a still-open outer batch, which flushes later.
   endBatch: () => RekordboxRepoint[]
   repointTrack: (collectionPath: string, repoint: RekordboxRepoint) => Promise<RepointResult>
+  // Shown only when rekordbox being open is what stopped the run — the one blocked reason
+  // the user can act on. Reported 15/09: a replacement left the collection on the old MP3
+  // with no indication why, because the refusal went to the log alone and a refusal nobody
+  // sees reads as the feature being broken. The other collection-wide reasons stay silent:
+  // a dialog about an unreadable or read-only file, on every convert, names nothing the
+  // user can fix.
+  showBlockedDialog?: () => void
 }
 
 export async function flushRekordboxSync(deps: FlushRekordboxDeps): Promise<FlushResult> {
@@ -53,6 +60,7 @@ export async function flushRekordboxSync(deps: FlushRekordboxDeps): Promise<Flus
       continue
     }
     if (COLLECTION_WIDE.has(result.reason)) {
+      if (result.reason === 'rekordbox-running') deps.showBlockedDialog?.()
       return { written, blocked: result.reason, skipped }
     }
     // A track the collection never had is the common case for a partly-imported library,
