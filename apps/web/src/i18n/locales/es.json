@@ -944,6 +944,20 @@
         "lead": "Y aparecen en tu programa.",
         "rest": "Apple Music, Engine DJ, rekordbox."
       }
+    },
+    "replace": {
+      "step": "y además · se mejora",
+      "title": "Sube un MP3 a lossless sin perder rekordbox.",
+      "lede": "Tienes el tema en MP3, con sus cue points puestos y en tus playlists. Consigues el AIFF o el FLAC y, hasta ahora, meterlo significaba empezar de cero: ficha nueva, cues a mano, playlists otra vez. Surco reapunta la ficha que ya tienes al archivo nuevo, y se queda donde estaba.",
+      "pill": "Sustituyendo",
+      "rowTitle": "Transfer - Possession (Dececio Remix)",
+      "fileLabel": "Archivo",
+      "oldFile": "02 Possession (Dececio Remix).mp3",
+      "newFile": "Transfer - Possession (Dececio Remix).aiff",
+      "playlistsLabel": "Playlists",
+      "cuesLabel": "Cue points",
+      "intact": "sin tocar",
+      "note": "rekordbox enlaza por pista, no por ruta: por eso las playlists y los cues siguen en su sitio. Revisa el beatgrid, que rekordbox recalcula al analizar el archivo nuevo."
     }
   }
 }

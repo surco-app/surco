@@ -8,6 +8,9 @@ import {
   NORMALIZE_TARGET,
   NORMALIZE_TRACKS,
   normalizeFrame,
+  REPLACE_CUES,
+  REPLACE_PLAYLISTS,
+  replaceFrame,
   spectrumFrame,
   TAG_ARTIST,
   TAG_FIELDS,
@@ -371,5 +374,38 @@ describe('normalizeFrame', () => {
         expect(bar.level).toBeLessThanOrEqual(1)
       }
     }
+  })
+})
+
+// The rekordbox row following the new file. What a DJ fears losing is the work that
+// isn't in the audio — the crates a track sits in and the cues placed on it — so the
+// scene has to show the path change while those two numbers never move. A version
+// that animated the counts would show exactly the loss the feature prevents.
+describe('replaceFrame', () => {
+  it('starts on the MP3 and ends on the new file', () => {
+    expect(replaceFrame(0).swapped).toBe(false)
+    expect(replaceFrame(1).swapped).toBe(true)
+  })
+
+  it('never moves the playlists or the cues', () => {
+    for (let i = 0; i <= 20; i++) {
+      const frame = replaceFrame(i / 20)
+      expect(frame.playlists).toBe(REPLACE_PLAYLISTS)
+      expect(frame.cues).toBe(REPLACE_CUES)
+    }
+  })
+
+  // The old path has to still be readable while the new one arrives, or the swap reads
+  // as a row that was always an AIFF — which states the outcome instead of showing the
+  // change.
+  it('crosses the two paths over rather than cutting', () => {
+    const midway = replaceFrame(0.5)
+    expect(midway.oldOpacity).toBeGreaterThan(0)
+    expect(midway.newOpacity).toBeGreaterThan(0)
+  })
+
+  it('ends with only the new path showing', () => {
+    expect(replaceFrame(1).oldOpacity).toBe(0)
+    expect(replaceFrame(1).newOpacity).toBe(1)
   })
 })
