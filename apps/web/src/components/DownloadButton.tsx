@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { type DownloadLocation, trackDownload } from '../lib/analytics'
 import { pickInstallerRelease } from '../lib/downloads'
+import { downloadState } from '../lib/downloadState'
 import { detectOS, installerSuffix, type OS } from '../lib/os'
 import { btnPrimary } from '../lib/ui'
 import { formatVersion } from '../lib/version'
@@ -23,7 +24,7 @@ const primary = `inline-flex ${btnPrimary} px-7 py-3 text-sm`
 // Resolves the installer for the visitor's OS from the newest published release that
 // actually carries it. A brand-new release shows up before CI finishes uploading its 12
 // assets, so picking from the releases list (not just /releases/latest) keeps the previous
-// build's working download instead of flashing "unavailable" during a release.
+// build's working download instead of flashing an apology during a release.
 //
 // macOS ships two builds. The browser can't tell Apple Silicon from Intel (Safari
 // reports both as "Intel Mac"), so the big button defaults to arm64 — the vast
@@ -58,6 +59,10 @@ export default function DownloadButton({
   // and the number rides in the release payload already fetched for the URL.
   const [size, setSize] = useState<number | null>(null)
   const [settled, setSettled] = useState(false)
+  // Whether the releases request itself broke, as opposed to answering with no build
+  // for this OS. Swallowing it (the old bare `.catch`) left the page unable to tell a
+  // GitHub outage from an unshipped product, so both got the same apology.
+  const [failed, setFailed] = useState(false)
 
   useEffect(() => {
     if (os === 'other' || os === 'unknown') return
@@ -65,7 +70,11 @@ export default function DownloadButton({
     fetch(`https://api.github.com/repos/${REPO}/releases?per_page=20`)
       .then((r) => (r.ok ? r.json() : null))
       .then((releases) => {
-        if (cancelled || !Array.isArray(releases)) return
+        if (cancelled) return
+        if (!Array.isArray(releases)) {
+          setFailed(true)
+          return
+        }
         const suffix = installerSuffix(os)
         const rel = pickInstallerRelease(releases, suffix)
         if (!rel) return
@@ -76,7 +85,9 @@ export default function DownloadButton({
         setSize(rel.assets?.find((a) => a.name.endsWith(suffix))?.size ?? null)
         if (os === 'mac') setIntelHref(url('x64.dmg'))
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!cancelled) setFailed(true)
+      })
       .finally(() => {
         if (!cancelled) setSettled(true)
       })
@@ -85,7 +96,9 @@ export default function DownloadButton({
     }
   }, [os])
 
-  const ready = href !== null || os === 'other'
+  // 'other' has no installer to resolve — its CTA is the generic releases link, which
+  // is already a working answer — so it counts as settled rather than as a failure.
+  const state = os === 'other' ? 'ready' : downloadState({ href, failed, settled })
   // Before detection runs (the prerender) the CTA can't name a platform, so it shows the
   // same pending spinner as an in-flight fetch rather than the 'other' fallback link.
   const pending = os === 'unknown'
@@ -206,16 +219,32 @@ export default function DownloadButton({
         // min-h reserves one line so the row doesn't grow from empty (prerender) to
         // count+version once the releases fetch lands, which would shift the hero.
         <div className="mt-4 min-h-5 font-mono text-xs text-faint">
-          {!ready && !settled ? (
-            // The fetch is still in flight — a pulse placeholder, not the
-            // "unavailable" copy, which is reserved for a fetch that came back empty.
+          {state === 'pending' ? (
+            // The fetch is still in flight — a pulse placeholder rather than any
+            // verdict, which has to wait until we know which way it went.
             <span
               data-testid="download-meta-loading"
               aria-hidden="true"
               className="inline-block h-3 w-44 max-w-full animate-pulse rounded bg-line align-middle"
             />
-          ) : !ready ? (
-            <p>{t('download.unavailable')}</p>
+          ) : state === 'unreachable' ? (
+            // The releases lookup broke — GitHub's REST listing has answered 504 for
+            // every repo at once before now, while /releases/latest stayed up. Saying
+            // "not available yet" here would blame the product for someone else's
+            // outage and leave the visitor stuck, so name it and hand over the link
+            // that still works.
+            <p data-testid="download-unreachable">
+              {t('download.unreachable')}{' '}
+              <a
+                href={RELEASES}
+                className="text-muted underline underline-offset-2 transition-colors hover:text-blue"
+                onClick={() => trackDownload({ href: RELEASES, os, location })}
+              >
+                {t('download.unreachableLink')}
+              </a>
+            </p>
+          ) : state === 'unsupported' ? (
+            <p data-testid="download-unsupported">{t('download.unsupported')}</p>
           ) : (
             <p className="flex flex-wrap items-center gap-x-2">
               <DownloadCount />
