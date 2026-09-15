@@ -1,6 +1,9 @@
 # Reapuntar pistas en rekordbox al sustituir el fichero
 
-Estado: propuesta, sin implementar. Requiere aprobación antes de tocar código.
+Estado: **publicado en v0.97.0** (15/09), apagado por defecto. Todos los pasos del plan
+están hechos y la UI que faltaba quedó decidida y construida. Sigue abierto un solo punto,
+a propósito: qué enseñar ante una pista ambigua o una colección ilegible (ver «Lo que
+sigue abierto»).
 
 ## El problema
 
@@ -36,8 +39,8 @@ esquema.
 2. **Actuar solo si la pista está en la colección.** Si no está, no hacer nada.
 3. **Reapuntar también cuando la conversión va a otra carpeta.** En rekordbox la ruta es
    un campo completo, así que mover de carpeta cuesta lo mismo que cambiar de extensión.
-   Esto levanta, solo para rekordbox, la restricción de `ffmpeg.ts:1385` (`sameDir`), que
-   existe por cómo Traktor parte la ruta en VOLUME/DIR/FILE.
+   Esto levanta, solo para rekordbox, la restricción de `sameDir` (hoy en
+   `ffmpeg.ts:1401`), que existe por cómo Traktor parte la ruta en VOLUME/DIR/FILE.
 4. **Biblioteca local, sin rekordbox cloud.** Ver "Riesgo asumido" abajo.
 
 ## Qué hay que escribir en la base de datos
@@ -186,8 +189,6 @@ después del UPDATE, la mutación muere.
 tamaño, y conservó sus 5 playlists y sus 15 cues. Las 1962 pistas y los 6839 enlaces de
 playlist siguen ahí.
 
-## Lo que queda
-
 **Paso 5. Cableado a la conversión. HECHO 12/09 (ab77d74e, 349f97ea).**
 Cuatro módulos: detección de la colección, acumulador del lote, orquestación del volcado
 y la regla de cuándo reapuntar. 23 tests más.
@@ -204,26 +205,65 @@ lado. Sobre una copia; la colección real no se abrió.
 rekordbox reapunta también cuando la conversión va a otra carpeta, porque su ruta es una
 columna entera. La regla de misma carpeta sigue aplicándose solo a Traktor.
 
-## Lo único que falta: la UI
+## La UI. HECHO 14-15/09.
 
-El volcado devuelve cuántas pistas se reapuntaron, cuáles se saltaron y si el lote entero
-se bloqueó. Hoy eso **solo se escribe en el log**.
+**Paso 7. El panel de actividad. HECHO (c9bfad74).**
+El volcado ya no se queda en el log: cada tanda deja su línea —«N pistas reapuntadas al
+archivo nuevo», «Ninguna de estas pistas está en la colección», u «Omitido:» con el motivo
+(rekordbox abierto, copia fallida, colección de solo lectura, ilegible o no escribible)—
+en el panel de actividad (`rekordboxFlush.ts:22-25`). El log sigue recibiendo el detalle,
+con los motivos **nombrados y no contados**: tres tandas diciendo «1 omitida» no explicaban
+nada, y el motivo es el diagnóstico entero (`index.ts:992-996`).
 
-Falta decidir qué ve el usuario en tres situaciones:
+**Paso 8. Rekordbox abierto. HECHO (ae7d98dd, 71b79041).**
+Se resolvió igual que Traktor y por la misma razón: se pregunta **antes** de escribir, no
+se reporta después, porque cuando el volcado falla la conversión ya terminó y el repunte se
+ha perdido — habría que reconvertir la pista entera para tener otra oportunidad
+(`index.ts:258-261`). El diálogo dice «rekordbox está abierto» y ofrece cerrarlo de forma
+segura; si el usuario declina, un segundo aviso explica que la colección no se actualizó y
+que puede cerrarlo y volver a convertir (`rekordboxSyncBlocked`). El quit es siempre
+educado, nunca un kill.
 
-- **Rekordbox abierto.** El lote no escribe nada. Traktor, en el mismo caso, ofrece
-  cerrarlo y avisa si el usuario se niega.
-- **Una pista ambigua.** Hay dos entradas para el mismo fichero y hace falta que el
-  usuario elija cuál conservar.
-- **Todo bien.** Decidir si merece una línea en el panel de actividad o pasa en silencio.
+Las dos colecciones se vuelcan **de forma independiente**: que Traktor esté abierto o su
+`.nml` no se pueda escribir no impide actualizar rekordbox, ni al revés (`index.ts:962`).
 
-También queda decidir si la función sale apagada por defecto, como la sincronización con
-Traktor, y dónde vive el ajuste de la ruta en la pantalla de ajustes.
+**Paso 9. El ajuste. HECHO (d4602e42, d84c09d5, c7f59c17).**
+Sale **apagado por defecto** (`syncRekordbox: false`, `settings.ts:55`), como se barajaba.
+Vive en Ajustes → Destino, con su interruptor propio y la ruta debajo como campo normal
+(`DestinationTab.tsx:313-333`). Sin colección detectada el interruptor **se enseña
+deshabilitado**, nunca se esconde (`:314`), y el texto de apoyo pasa a decir que no se ha
+encontrado ninguna: la pantalla de ajustes no hace aparecer y desaparecer controles.
+**Manda el interruptor, no la ruta**: una colección en su
+sitio de siempre no es permiso para escribir en ella (`index.ts:966-968`). Ese fue el
+cambio de modelo — antes un campo de texto vacío hacía de interruptor, que nadie adivina;
+quien ya sincronizaba con Traktor se migra a `syncTraktor: true` para no quedarse sin sync
+en silencio (`syncToggleMigration.ts`).
+
+El asistente de primer arranque añade un paso que pregunta por las colecciones que
+encuentra en el equipo, y **solo aparece si encuentra alguna**: ofrecer una fila
+deshabilitada a quien no usa ninguno de los dos programas sería ruido en un asistente que
+promete durar menos de un minuto (`djLibraries.ts`).
+
+**Paso 10. La regla de qué se reapunta. HECHO (`rekordboxRepointFor.ts`).**
+El origen del repunte es **el fichero al que se sustituye**, no el que se convierte: un
+FLAC descargado en una carpeta cualquiera nunca estuvo en rekordbox, así que reapuntar
+desde él no encontraba nada y dejaba la entrada en el MP3 viejo. Si origen y destino
+coinciden, no hay nada que hacer.
+
+## Lo que sigue abierto, a propósito
+
+**Qué enseñar ante una pista ambigua, o una colección ilegible o de solo lectura.** Se
+cuentan en el panel y se nombran en el log, pero no levantan diálogo: ninguna de las dos
+nombra algo que el usuario pueda arreglar a mitad de una conversión, al contrario que
+«rekordbox está abierto». La decisión se deja para tomarla sobre tandas reales
+(`index.ts:986-989`).
 
 ## Verificación, no negociable
 
 **Nunca contra la colección real de Vicent.** Siempre sobre una copia, con rekordbox
 cerrado, y abriéndola después para comprobar a ojo que las playlists y los cues siguen.
+Esto se mantuvo durante todo el desarrollo: la validación del paso 4 y la del paso 5 se
+hicieron sobre copias, y la colección real nunca se abrió.
 
 Esta es la misma cautela que la función de sincronización con Traktor sigue mereciendo:
 está publicada desde la v0.76.0, apagada por defecto, y nunca se ha validado sobre una

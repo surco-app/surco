@@ -1,10 +1,11 @@
 # Sustituir una pista que ya está en la biblioteca
 
-Estado: los tres pasos de lógica están construidos y probados (13/09). **Nada de esto se
-ejecuta todavía**: falta cablearlo a la conversión y decidir la pantalla.
+Estado: **publicado en v0.97.0** (15/09). La cadena está cableada a la conversión y las
+cinco preguntas de pantalla quedaron decididas y construidas. Ver «Cómo se decidió cada
+pregunta».
 
-Depende del reapuntado de rekordbox, que ya está construido y probado. Ver
-`spec-rekordbox-repunte.md`.
+Depende del reapuntado de rekordbox, publicado en la misma versión y apagado por defecto.
+Ver `spec-rekordbox-repunte.md`.
 
 ## El caso
 
@@ -21,8 +22,15 @@ el fichero viejo se reemplaza por el nuevo, y rekordbox se entera.
 ## La pieza que lo hace posible
 
 **Durante la actualización todavía se sabe cuál era el fichero viejo.** Apple Music
-responde a la pregunta de dónde vive el fichero de una pista sin tocarla ni borrarla, y
-Surco ya usa esa función en el flujo de conversión (`processTrack.ts:293`).
+responde a la pregunta de dónde vive el fichero de una pista sin tocarla ni borrarla.
+
+En la versión publicada la ruta vieja no se lee al convertir, sino que **viaja con la
+pista**: se estampa como `replacesPath` cuando el usuario ve el botón de sustituir
+(`replaceBeforeConvert.ts`) y llega al proceso principal dentro del trabajo
+(`processTrack.ts:286`, `:322`). El matiz importa y está fijado en un comentario del
+código: la ruta sale del candidato que se le enseñó al usuario, **nunca de una consulta
+fresca**, porque la respuesta de Music cambia en cuanto una sustitución anterior reapunta
+esa entrada.
 
 Ese era el obstáculo que yo creía insalvable: pensaba que la ruta vieja se perdía al
 sustituir. No se pierde, basta con leerla antes. El planteamiento de Vicent era correcto.
@@ -85,27 +93,47 @@ Cuándo avisa:
 El aviso dice qué se pierde y deja continuar. No es un diálogo de confirmación destructiva
 como el de borrar: es información, y la decisión sigue siendo suya.
 
-## Preguntas abiertas, para decidir al ver la pantalla
+## Cómo se decidió cada pregunta (15/09)
 
-1. **El botón.** Vicent propone que diga actualizar cuando la pista ya existe. Hay que
-   decidir si sustituye al de convertir o convive con él, y qué pasa cuando hay varias
-   pistas seleccionadas y solo algunas están en la biblioteca.
+1. **El botón.** Dice «Sustituir» en lugar de convertir, no además (`exportLabel.ts`,
+   `useLibraryVerdict.ts`). Con varias pistas seleccionadas la decisión se toma **sobre la
+   selección entera**, no pista a pista: si todas sustituyen es una sustitución, si ninguna
+   lo hace es un añadido, y **una selección mixta se rechaza** con el botón deshabilitado
+   diciendo por qué (`replaceSelection.ts`, `85fec2aa`). La razón está escrita en el
+   código: un solo clic haciendo dos cosas distintas a pistas distintas es justo la forma
+   de fallo que ya costó un día aquí, un botón cuya etiqueta prometía una acción mientras
+   el clic ejecutaba otra.
 
-2. **Qué significa sustituir en Apple Music.** No hay forma de cambiar el fichero de una
-   pista: Music deja leer su ubicación, nunca escribirla. Así que sustituir es, por debajo,
-   añadir el nuevo y borrar el viejo. La diferencia con hoy es que sería un solo paso y no
-   dos, pero la mecánica es la misma y hay un instante con dos entradas. Hay que decidir si
-   eso se le cuenta al usuario o se le presenta como una sustitución sin más.
+2. **Qué significa sustituir en Apple Music.** Sigue siendo añadir y borrar por debajo, en
+   un solo paso (`replaceAppleMusicCopy`, `processTrack.ts:127`). No se le cuenta al
+   usuario el instante de dos entradas: se le presenta como una sustitución. Lo que sí se
+   fija es el orden — **se añade antes de borrar**, para que el peor caso sean dos copias
+   visibles y recuperables en vez de una pista fuera de la biblioteca.
 
-3. **El fichero viejo en disco.** Al sustituir, el MP3 original se queda ahí. Hoy el
-   borrado de la copia vieja envía su fichero a la papelera. Hay que decidir si la
-   sustitución hace lo mismo, lo deja, o lo pregunta.
+3. **El fichero viejo en disco.** Se pregunta, no se decide por él. La sustitución **deja
+   el fichero** («the superseded MP3 stays on disk for the user's own trash original to
+   decide», `processTrack.ts:125`) y al terminar se ofrece mandarlo a la papelera, de una
+   pista o del lote entero en una sola acción (`supersededFile.ts` 29409b1c,
+   `selectionStatus.ts` 72c573e9).
 
-4. **Qué pasa si falla a mitad.** Si rekordbox queda reapuntado y luego falla la
-   sustitución en Apple Music, quedan descolocados. Hay que decidir el orden de deshacer,
-   o aceptar que un fallo deja aviso y el usuario lo remata.
+   Con una vuelta de tuerca que no estaba prevista: antes de prometer papelera se le
+   pregunta **al sistema de ficheros** si el borrado es recuperable (`trashSupport.ts`,
+   983b01a1). APFS, HFS y exFAT la guardan; un SMB no, y ahí el aviso dice que el borrado
+   puede ser definitivo. Es lista blanca, así que un sistema de ficheros imprevisto lee
+   como «sin promesa» — la dirección segura, y la que ya costó un fichero cuando un diálogo
+   prometió una papelera que el NAS no tenía.
 
-5. **Las 34 ambiguas.** Ya se sabe que hay que preguntar cuál conservar, pero no cómo.
+4. **Qué pasa si falla a mitad.** Se aceptó la segunda opción: no hay deshacer. Un repunte
+   rechazado **no cancela** la sustitución, porque el fichero ya está en disco y la copia de
+   biblioteca sigue mereciendo actualizarse; el motivo viaja hacia arriba y se cuenta en el
+   panel de actividad.
+
+5. **Las 34 ambiguas.** No se pregunta cuál conservar: **no se sustituye**. Una coincidencia
+   ambigua no estampa nada y la conversión añade en vez de sustituir, porque sobrescribir a
+   ojo puede destruir la canción equivocada y el añadido es el resultado seguro
+   (`replaceBeforeConvert.ts`). El botón tampoco ofrece sustituir (`Editor.tsx:1339`), y en
+   un lote una ambigua basta para declararlo mixto. Qué enseñarle al usuario en ese caso
+   sigue sin decidir, igual que en la spec de rekordbox.
 
 ## Plan por pasos
 
@@ -122,7 +150,7 @@ El margen para decidir si un corte es peor son 2100 Hz, y no es inventado: sale 
 de 39 codificaciones LAME medido el 29/08, cuya dispersión llega ahí. Con un margen menor,
 dos copias del mismo tema a 320 se acusarían entre sí. Hay test que fija los dos lados.
 
-**Paso 3. La cadena completa, sin UI. HECHO 13/09 (005ce22f, 5e9e01cc).**
+**Paso 3. La cadena completa, todavía sin pantalla. HECHO 13/09 (005ce22f, 5e9e01cc).**
 `replaceFlow.ts` (7 tests) ordena los pasos y `replaceInLibrary.ts` (5 tests) hace el
 intercambio en Apple Music.
 
@@ -137,14 +165,21 @@ Un reapuntado rechazado (rekordbox abierto, colección de solo lectura) no cance
 sustitución: el fichero ya está en disco y la copia de biblioteca sigue mereciendo
 actualizarse. El motivo viaja hacia arriba para poder contarlo.
 
-## Lo que queda
+**Paso 4. Cableado a la conversión. HECHO 15/09 (447bc2e5, 01786d49, 53d18fe3).**
+`processTrack.ts` ya no añade una copia nueva y ofrece borrar la vieja: cuando el trabajo
+trae `replacesPath`, sustituye la copia de la biblioteca (`:322`) y deja el fichero
+superado accesible para que el renderer pueda ofrecer la papelera (`:397`).
 
-**Cablear la cadena a la conversión.** Los módulos están construidos y probados, pero
-nada los llama todavía: `processTrack.ts` sigue con el flujo de hoy, que añade una copia
-nueva y ofrece borrar la vieja después. Falta sustituir ese tramo por la cadena.
+**Paso 5. El aviso de pérdida de calidad, en pantalla. HECHO 15/09.**
+`replaceWarning.ts` ya estaba construido en el paso 2; aquí se conectó a la ficha. Informa
+y deja seguir, nunca bloquea, como se decidió el 12/09.
 
-**La pantalla.** Las cinco preguntas de arriba siguen abiertas, y él pidió decidirlas al
-ver el paso 3 funcionando.
+## Lo que sigue abierto
+
+**Qué enseñar ante una pista ambigua.** Hoy el efecto es correcto y conservador — no se
+sustituye, se añade — pero el usuario no recibe explicación de por qué el botón no le
+ofrece sustituir una pista que sí está en su biblioteca. Es la misma decisión pendiente
+que la spec de rekordbox deja abierta para tomarla sobre tandas reales.
 
 ## Verificación, no negociable
 
