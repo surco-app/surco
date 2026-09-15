@@ -8,6 +8,7 @@ const TWO: RekordboxRepoint = { from: '/m/two.mp3', to: '/m/two.wav' }
 
 function deps(over: Partial<Parameters<typeof flushRekordboxSync>[0]> = {}) {
   return {
+    track: vi.fn((_kind, _labelKey, task) => task()),
     collectionPath: '/coll/master.db',
     endBatch: () => [ONE],
     repointTrack: vi.fn(async (): Promise<RepointResult> => ({ written: true, id: '1' })),
@@ -237,5 +238,87 @@ describe('flushRekordboxSync closing rekordbox first', () => {
     await flushRekordboxSync(d)
 
     expect(ensureClosed).not.toHaveBeenCalled()
+  })
+})
+
+// Reported 15/09 with a screenshot of the Activity panel: it lists the conversion and the
+// Apple Music step, and says nothing about rekordbox — whether the collection was updated,
+// skipped or never touched. The user could not tell a working repoint from a silent
+// refusal, which is what made three failed runs look identical. The Traktor side already
+// reports itself this way (flushTraktorSync's activity.traktorSync).
+describe('flushRekordboxSync reporting itself in Activity', () => {
+  it('reports the repoint as its own step', async () => {
+    const track = vi.fn((_kind, _labelKey, task) => task())
+    const d = deps({ track })
+
+    await flushRekordboxSync(d)
+
+    expect(track).toHaveBeenCalledWith('export', 'activity.rekordboxSync', expect.any(Function), {
+      summary: expect.any(Function),
+    })
+  })
+
+  // How many tracks now follow their new file is the whole point of the step: a run that
+  // says only "done" leaves the user checking rekordbox by hand, which is what they did.
+  it('says how many tracks were repointed', async () => {
+    let summary: ((r: unknown) => unknown) | undefined
+    const track = vi.fn((_kind, _labelKey, task, opts) => {
+      summary = opts?.summary as (r: unknown) => unknown
+      return task()
+    })
+    const d = deps({ endBatch: () => [ONE, TWO], track })
+
+    const result = await flushRekordboxSync(d)
+
+    expect(summary?.(result)).toEqual({
+      detailKey: 'activity.rekordboxSyncWritten',
+      detailParams: { count: 2 },
+    })
+  })
+
+  // The refusal the user actually hit. Naming it in the panel is what turns "nothing
+  // happened" into "rekordbox was open", which they can act on.
+  it('names rekordbox being open as the reason nothing was written', async () => {
+    let summary: ((r: unknown) => unknown) | undefined
+    const track = vi.fn((_kind, _labelKey, task, opts) => {
+      summary = opts?.summary as (r: unknown) => unknown
+      return task()
+    })
+    const d = deps({ ensureClosed: vi.fn(async () => false), track })
+
+    const result = await flushRekordboxSync(d)
+
+    expect(summary?.(result)).toEqual({ detailKey: 'activity.rekordboxSyncRunning' })
+  })
+
+  // A conversion of tracks the collection never had is the ordinary case for a partly
+  // imported library, and saying so beats an empty "done" with no number.
+  it('says so when none of the tracks were in the collection', async () => {
+    let summary: ((r: unknown) => unknown) | undefined
+    const track = vi.fn((_kind, _labelKey, task, opts) => {
+      summary = opts?.summary as (r: unknown) => unknown
+      return task()
+    })
+    const d = deps({
+      repointTrack: vi.fn(
+        async (): Promise<RepointResult> => ({ written: false, reason: 'no-match' }),
+      ),
+      track,
+    })
+
+    const result = await flushRekordboxSync(d)
+
+    expect(summary?.(result)).toEqual({ detailKey: 'activity.rekordboxSyncNothing' })
+  })
+
+  // A run with nothing recorded must not put an empty step in the panel at all: the user
+  // converted a track that was never in rekordbox, and a "0 tracks" row is noise.
+  it('stays out of the panel when the batch recorded nothing', async () => {
+    const track = vi.fn((_kind, _labelKey, task) => task())
+    const d = deps({ endBatch: () => [], track })
+
+    await flushRekordboxSync(d)
+
+    expect(track).not.toHaveBeenCalled()
   })
 })
