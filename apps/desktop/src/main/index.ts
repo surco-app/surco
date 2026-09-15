@@ -970,6 +970,7 @@ function registerIpc(): void {
         : '',
       endBatch: endRekordboxBatch,
       ensureClosed: () => ensureRekordboxClosed(win),
+      track: activity.track.bind(activity),
       repointTrack: (collectionPath, repoint) =>
         repointTrack(collectionPath, {
           ...repoint,
