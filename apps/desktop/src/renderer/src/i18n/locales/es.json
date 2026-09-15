@@ -98,6 +98,7 @@
     "addTracks": "Añadir pistas",
     "subtitle": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp y Deezer, y las manda a Apple Music o Engine DJ.",
     "subtitleNoMusic": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp y Deezer, y las manda a Engine DJ.",
+    "or": "o",
     "importApplePlaylist": "Importar de Apple Music"
   },
   "errors": {

@@ -1956,33 +1956,41 @@ export default function App(): React.JSX.Element {
                             : 'empty.subtitleNoMusic',
                         )}
                       </p>
-                      {/* The one primary action on the screen. On macOS this same dialog takes
-                          folders as well as files, so a single button covers both. */}
-                      <button
-                        type="button"
-                        data-testid="add-files"
-                        onClick={onAdd}
-                        className="press empty-copy-in mt-6 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent hover:bg-accent-hover"
-                        style={{ animationDelay: '0.22s' }}
-                      >
-                        {tr('empty.addTracks')}
-                      </button>
-                      {isMac && (
-                        // A quieter sibling rather than a rival: as a second bordered button it
-                        // weighed the same as adding files, and the screen had no answer to
-                        // "where do I start".
-                        <div>
-                          <button
-                            type="button"
-                            data-testid="empty-import-playlist"
-                            onClick={overlays.openApplePlaylist}
-                            className="empty-copy-in mt-4 rounded-md px-2 py-1 text-sm text-fg-dim underline decoration-line-strong underline-offset-[3px] hover:text-fg-muted"
-                            style={{ animationDelay: '0.28s' }}
-                          >
-                            {tr('empty.importApplePlaylist')}
-                          </button>
-                        </div>
-                      )}
+                      <div className="mt-6 flex items-center justify-center gap-3">
+                        {/* The one primary action on the screen. On macOS this same dialog takes
+                            folders as well as files, so a single button covers both. */}
+                        <button
+                          type="button"
+                          data-testid="add-files"
+                          onClick={onAdd}
+                          className="press empty-copy-in rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent hover:bg-accent-hover"
+                          style={{ animationDelay: '0.22s' }}
+                        >
+                          {tr('empty.addTracks')}
+                        </button>
+                        {isMac && (
+                          // A quieter sibling rather than a rival: as a second bordered button it
+                          // weighed the same as adding files, and the screen had no answer to
+                          // "where do I start".
+                          <>
+                            <span
+                              className="empty-copy-in text-sm text-fg-dim"
+                              style={{ animationDelay: '0.28s' }}
+                            >
+                              {tr('empty.or')}
+                            </span>
+                            <button
+                              type="button"
+                              data-testid="empty-import-playlist"
+                              onClick={overlays.openApplePlaylist}
+                              className="empty-copy-in rounded-md px-2 py-1 text-sm text-fg-dim underline decoration-line-strong underline-offset-[3px] hover:text-fg-muted"
+                              style={{ animationDelay: '0.28s' }}
+                            >
+                              {tr('empty.importApplePlaylist')}
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
