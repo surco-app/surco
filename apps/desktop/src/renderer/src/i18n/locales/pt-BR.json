@@ -48,7 +48,7 @@
     "clearAll": "Limpar a lista"
   },
   "sidebar": {
-    "dropHint": "Arraste seus arquivos para cá.",
+    "dropHint": "Arraste suas faixas para cá.",
     "fitHint": "Clique duas vezes para ajustar a largura aos nomes das faixas",
     "filter": {
       "label": "Filtro",
