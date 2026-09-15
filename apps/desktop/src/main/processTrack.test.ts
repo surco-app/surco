@@ -1062,3 +1062,69 @@ describe('runProcessTrack — Apple Music only', () => {
     expect(deps.rm).toHaveBeenCalledWith('/tmp/surco-abc', { recursive: true, force: true })
   })
 })
+
+// Upgrading a library copy to a better format. Reported 14/09 after two failed attempts:
+// the button offered "Sustituir por AIFF" and the library kept the MP3, because updating
+// an entry only writes tags and can never repoint it at another file. A real replacement
+// has to add the new file, carry the crates over and retire the old entry.
+describe('runProcessTrack — replacing a library copy', () => {
+  function replacing(overrides: Partial<ProcessTrackDeps> = {}): ProcessTrackDeps {
+    return makeDeps({ platform: 'darwin', ...overrides })
+  }
+
+  const replaceJob = {
+    addToAppleMusic: true,
+    musicPersistentId: 'old-id',
+    replacesPath: '/m/old.mp3',
+  }
+
+  // The heart of it: the new file is imported rather than the old entry's tags rewritten.
+  it('adds the converted file instead of only updating the old entry', async () => {
+    const deps = replacing()
+
+    await runProcessTrack(job(replaceJob), deps)
+
+    expect(deps.addToAppleMusic).toHaveBeenCalled()
+    expect(deps.updateInAppleMusic).not.toHaveBeenCalled()
+  })
+
+  // Retiring the old entry is what leaves ONE copy in the library — the duplicate the
+  // user reported. It happens last, so an add that fails destroys nothing.
+  it('deletes the old entry once the new one carries its playlists', async () => {
+    const deps = replacing()
+
+    await runProcessTrack(job(replaceJob), deps)
+
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('old-id')
+  })
+
+  // Order is the safety property: if the delete ran first, a failing add would lose the
+  // track from the library entirely, with the playlists already gone.
+  it('adds before it deletes', async () => {
+    const calls: string[] = []
+    const deps = replacing({
+      addToAppleMusic: vi.fn(async () => {
+        calls.push('add')
+        return 'added-id'
+      }),
+      deleteAppleMusic: vi.fn(async () => {
+        calls.push('delete')
+      }),
+    })
+
+    await runProcessTrack(job(replaceJob), deps)
+
+    expect(calls).toEqual(['add', 'delete'])
+  })
+
+  // Without replacesPath the id still means "my own earlier output": re-converting an
+  // edited track syncs that copy and must never import a second one.
+  it('still syncs in place when no file is being superseded', async () => {
+    const deps = replacing()
+
+    await runProcessTrack(job({ addToAppleMusic: true, musicPersistentId: 'old-id' }), deps)
+
+    expect(deps.updateInAppleMusic).toHaveBeenCalled()
+    expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
+  })
+})

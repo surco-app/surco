@@ -1135,6 +1135,9 @@ function registerIpc(): void {
       // The rollback for an "Apple Music only" add that must not stand. The label is
       // what the delete script verifies the live entry against — the tags the add
       // itself just wrote, so the match is by construction.
+      // Also retires the copy a replacement supersedes. The guard holds for that entry
+      // too: the replacement candidate was matched BY this same "artist - title", so a
+      // live entry that no longer carries it is not the copy the user was offered.
       deleteAppleMusic: (persistentId) =>
         deleteFromAppleMusic(persistentId, `${job.meta.artist} - ${job.meta.title}`),
     }),

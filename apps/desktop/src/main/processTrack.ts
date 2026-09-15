@@ -106,6 +106,32 @@ export interface ProcessTrackDeps {
   deleteAppleMusic: (persistentId: string) => Promise<unknown>
 }
 
+// Imports the converted file and retires the copy it supersedes, returning the new
+// entry's id so the rest of the job (and rekordbox) follows the file that now exists.
+//
+// Nothing is done about playlists, and that is deliberate rather than an omission.
+// Measured over a real library 14/09: every one of the user's playlists is a SMART
+// playlist, which rebuilds itself from its own rules — Music answers -54 to any attempt
+// to put a track in one. The successor carries the same grouping, genre and year, so the
+// rules pick it up on their own. rekordbox needs no help either: its playlists link by
+// track ID and the repoint rewrites the existing row's path, so the ID, its crates and
+// its cues all survive untouched.
+//
+// Add first and delete last, so an add that fails destroys nothing. Deleting removes the
+// library row only, never the file: the superseded MP3 stays on disk for the user's own
+// "trash original" to decide.
+async function replaceAppleMusicCopy(
+  oldPersistentId: string | undefined,
+  target: string,
+  meta: ProcessJob['meta'],
+  coverPath: string | undefined,
+  deps: ProcessTrackDeps,
+): Promise<string> {
+  const added = await deps.addToAppleMusic(target, meta, coverPath)
+  if (oldPersistentId) await deps.deleteAppleMusic(oldPersistentId)
+  return added
+}
+
 export async function runProcessTrack(
   job: ProcessJob,
   deps: ProcessTrackDeps,
@@ -282,10 +308,19 @@ export async function runProcessTrack(
     let musicPersistentId: string | undefined
     if (shouldAddToAppleMusic(addToAppleMusic, deps.platform, format)) {
       stage('appleMusic')
-      musicPersistentId = job.musicPersistentId
-        ? ((await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)) ??
-          (await deps.addToAppleMusic(target, job.meta, coverPath)))
-        : await deps.addToAppleMusic(target, job.meta, coverPath)
+      // Replacing a DIFFERENT file, not re-converting our own earlier output. Updating an
+      // entry only rewrites its tags — Music offers no way to repoint one at another file
+      // — so the upgrade reported 14/09 left the library on the MP3 while claiming
+      // success. The new file therefore has to be imported and the old entry retired.
+      //
+      // Add first and delete last: a failing add then destroys nothing, and the crates are
+      // replayed in between so the successor is equivalent before anything is retired.
+      musicPersistentId = job.replacesPath
+        ? await replaceAppleMusicCopy(job.musicPersistentId, target, job.meta, coverPath, deps)
+        : job.musicPersistentId
+          ? ((await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)) ??
+            (await deps.addToAppleMusic(target, job.meta, coverPath)))
+          : await deps.addToAppleMusic(target, job.meta, coverPath)
       // "Apple Music only" removes the temp conversion in the finally below — safe only
       // when Music COPIED the file into its Media folder. With "Copy files to the Media
       // folder when adding" off, the fresh entry still references the temp path, and
