@@ -5,11 +5,11 @@
     "title": "Sube una pista de calidad sin perder rekordbox",
     "items": [
       {
-        "text": "Al convertir una pista que tienes en rekordbox, su ficha pasa a apuntar al archivo nuevo. Conserva sus playlists, sus cue points y su historial, porque rekordbox enlaza por pista y no por ruta. Antes de escribir, Surco guarda una copia de seguridad de la tanda entera y otra de cada escritura junto a tu colección, y nunca escribe con rekordbox abierto: se ofrece a cerrarlo y, si dices que no, te lo dice en vez de tocar nada. Viene desactivado: actívalo en Ajustes → Destino, o al configurar Surco por primera vez si ya tienes rekordbox en el equipo. Un aviso: rekordbox analiza el archivo nuevo y puede recolocar el beatgrid, así que conviene revisar la rejilla.",
+        "text": "Conviertes una pista que tienes en rekordbox y sigue siendo la misma pista: se queda en sus playlists, con sus cue points y su historial. No aparece duplicada ni tienes que volver a añadirla. Antes de tocar nada, Surco guarda una copia de seguridad de tu colección, y nunca trabaja con rekordbox abierto: se ofrece a cerrarlo y, si dices que no, prefiere no hacer nada. Viene desactivado: actívalo en Ajustes → Destino, o al configurar Surco por primera vez si ya tienes rekordbox en el equipo. Un aviso: rekordbox volverá a analizar la pista y puede recolocar el beatgrid, así que conviene revisarlo.",
         "in": "0.97.0"
       },
       {
-        "text": "Puedes sustituir una pista que ya está en tu biblioteca, en vez de acabar con dos. Cargas un AIFF o un FLAC de un tema que tienes como MP3 y el botón pasa a decir «Sustituir»: la entrada de Apple Music deja de apuntar al archivo viejo y apunta al nuevo, y la ficha de rekordbox se reapunta con ella. Si el cambio pierde calidad (un máster sin pérdida que pasa a MP3, un corte de frecuencias peor, o un lossless hecho a partir de un MP3), Surco te lo dice y te deja seguir: la decisión es tuya.",
+        "text": "Puedes sustituir una pista que ya está en tu biblioteca, en vez de acabar con dos. Cargas un AIFF o un FLAC de un tema que tienes como MP3 y el botón pasa a decir «Sustituir»: la copia buena ocupa el lugar de la vieja en Apple Music y en rekordbox, y se queda con sus playlists y sus cue points. Si el cambio suena a peor (un máster sin pérdida que pasa a MP3, una copia con menos agudos, o un lossless hecho a partir de un MP3), Surco te lo dice y te deja seguir: la decisión es tuya.",
         "in": "0.97.0"
       },
       {
@@ -21,7 +21,7 @@
         "in": "0.97.0"
       },
       {
-        "text": "Una pista sin carátula la toma de Apple Music, si tu biblioteca la tiene. El hueco vacío se rellena al importar y la portada se ve ya en la fila de la pista, no solo al abrir la ficha.",
+        "text": "Una pista sin carátula la toma de Apple Music, si tu biblioteca la tiene. Se rellena al importar y la portada se ve ya en la fila de la pista, sin tener que abrirla.",
         "in": "0.97.0"
       },
       {
@@ -36,7 +36,7 @@
     "title": "Trae una lista de Apple Music y trabaja sobre ella",
     "items": [
       {
-        "text": "La corrección de los cues al convertir desde o hacia MP3 se aplica ya a todas tus pistas. Un MP3 rippeado o editado, al que le falta la cabecera que escriben los programas al codificar, se quedaba fuera y recibía otro ajuste distinto: los marcadores acababan a unos 76 ms de donde Traktor los pinta, en vez de los 51 ms que se compensan ahora. Los MP3 normales no cambian.",
+        "text": "La corrección de los cues al convertir desde o hacia MP3 se aplica ya a todas tus pistas. Un MP3 rippeado o editado a mano, de los que no siempre llevan la marca que ponen los programas al crearlos, se quedaba fuera: sus cues acababan algo más desplazados de donde Traktor los pinta. Ahora recibe la misma corrección que los demás. Los MP3 normales no cambian.",
         "in": "0.96.1"
       },
       {
@@ -48,11 +48,11 @@
         "in": "0.96.0"
       },
       {
-        "text": "Lo que solo vive en Apple Music llega también a la ficha. Un WAV sin etiquetar no guarda el grouping, la valoración ni el año, pero Apple Music sí los recuerda: al importar, Surco rellena con ellos los campos que el fichero deja vacíos. Lo que el fichero ya trae manda siempre, porque es lo que leen el resto de tus programas.",
+        "text": "Lo que solo vive en Apple Music llega también a la pista. Un WAV sin etiquetar no guarda el grouping, la valoración ni el año, pero Apple Music sí los recuerda: al importar, Surco rellena con ellos los huecos que la pista deja vacíos. Lo que la pista ya trae manda siempre, porque es lo que leen el resto de tus programas.",
         "in": "0.96.0"
       },
       {
-        "text": "Una pista que viene de Apple Music conserva su formato. Antes el botón ofrecía convertir a AIFF por ser el destino por defecto, aunque estuvieras trabajando sobre una colección ya ordenada: ahora dice Actualizar y reescribe el mismo formato, y solo convierte si eres tú quien elige otro. La entrada de tu biblioteca se actualiza en su sitio, en vez de aparecer duplicada.",
+        "text": "Una pista que viene de Apple Music conserva su formato. Antes el botón ofrecía convertir a AIFF por ser el destino por defecto, aunque estuvieras trabajando sobre una colección ya ordenada: ahora dice Actualizar y guarda en el mismo formato, y solo convierte si eres tú quien elige otro. En tu biblioteca se actualiza la pista que ya tenías, en vez de aparecer una segunda.",
         "in": "0.96.0"
       }
     ]
@@ -63,15 +63,15 @@
     "title": "Prueba lo nuevo antes que nadie, si quieres",
     "items": [
       {
-        "text": "Convertir ya no puede dejarte sin una pista cuando el destino ya está ocupado. Si elegías sustituir el original y Surco tenía que apartar el fichero a un nombre con «(n)», borraba de todos modos el de partida: acababas con un tercer fichero que el aviso no mencionaba y sin la pista que querías conservar. También se avisa ahora cuando dos pistas del mismo lote iban a escribir sobre la misma ruta, que antes se pisaban en silencio y el resumen las daba las dos por convertidas.",
+        "text": "Convertir ya no puede dejarte sin una pista cuando el destino ya está ocupado. Si elegías sustituir el original y Surco tenía que apartar el archivo a un nombre con «(n)», borraba de todos modos el de partida: acababas con un tercer archivo que el aviso no mencionaba y sin la pista que querías conservar. También se avisa ahora cuando dos pistas del mismo lote iban a guardarse con el mismo nombre, que antes se pisaban en silencio y el resumen las daba las dos por convertidas.",
         "in": "0.95.6"
       },
       {
-        "text": "Los cues que Surco no sabe leer sobreviven ya también en los FLAC. Esto se arregló para MP3 y AIFF en la versión anterior, pero las rutas del FLAC seguían descartándolos, así que un MP3 convertido a FLAC perdía el árbol de marcas de otro programa aunque el audio no se moviera.",
+        "text": "Los cues que Surco no sabe leer sobreviven ya también en los FLAC. Esto se arregló para MP3 y AIFF en la versión anterior, pero al pasar a FLAC seguían descartándose, así que un MP3 convertido a FLAC perdía los cues puestos con otro programa aunque el audio no se moviera.",
         "in": "0.95.6"
       },
       {
-        "text": "Las estrellas de un FLAC dicen lo mismo en Surco que en el resto de programas. El fichero guarda la puntuación en dos campos y Surco sólo actualizaba uno, así que podías ver 2 estrellas aquí y 5 en otro sitio, y borrarlas dejaba las viejas puestas en el campo olvidado.",
+        "text": "Las estrellas de un FLAC dicen lo mismo en Surco que en el resto de programas. Podías ver 2 estrellas aquí y 5 en otro sitio, y al borrarlas seguían apareciendo puestas fuera de Surco. Ahora la puntuación es una sola, la veas donde la veas.",
         "in": "0.95.6"
       },
       {
@@ -79,7 +79,7 @@
         "in": "0.95.5"
       },
       {
-        "text": "Cambiar de formato ya no se lleva por delante los cues que Surco no sabe leer. Si el árbol de marcas viene de otro programa o de una versión de Traktor más nueva, ahora viaja intacto a la pista convertida. Sólo se descartan cuando recortas la pista y el audio se mueve de verdad bajo ellos, que es cuando dejarían de apuntar al sitio.",
+        "text": "Cambiar de formato ya no se lleva por delante los cues que Surco no sabe leer. Si los pusiste con otro programa o con una versión de Traktor más nueva, ahora viajan intactos a la pista convertida. Solo se descartan cuando recortas la pista y el audio se mueve de verdad bajo ellos, que es cuando dejarían de caer donde deben.",
         "in": "0.95.5"
       },
       {
@@ -87,19 +87,19 @@
         "in": "0.95.4"
       },
       {
-        "text": "Convertir una pista y conservar el original ya no descuadra Traktor. Antes las dos copias compartían la misma identidad interna, así que se les acoplaba la carátula y en algunos casos Traktor no llegaba a abrir. Ahora la convertida es una pista independiente y conserva sus cues, su rejilla y sus loops.",
+        "text": "Convertir una pista y conservar el original ya no descuadra Traktor. Antes Traktor no distinguía las dos copias: se les mezclaba la carátula y en algunos casos no llegaba a abrir. Ahora la convertida es una pista independiente y conserva sus cues, su rejilla y sus loops.",
         "in": "0.95.4"
       },
       {
-        "text": "Las estrellas que pones en Surco se ven ya en Traktor. Se guardaban en el fichero pero no en tu colección, y para una pista que Traktor ya tenía mandaba la colección, así que seguías viendo la puntuación antigua.",
+        "text": "Las estrellas que pones en Surco se ven ya en Traktor. Para una pista que Traktor ya tenía seguías viendo la puntuación antigua, por mucho que la cambiaras aquí.",
         "in": "0.95.4"
       },
       {
-        "text": "La carátula nueva aparece en Traktor después de convertir, también cuando conservas el original. Se actualizan las miniaturas en el formato que Traktor usa en tu equipo, y se le avisa de que el fichero ha cambiado para que vuelva a leerlo.",
+        "text": "La carátula nueva aparece en Traktor después de convertir, también cuando conservas el original. Antes seguía viéndose la portada vieja hasta que Traktor se decidía a releer la pista.",
         "in": "0.95.4"
       },
       {
-        "text": "El ajuste de los cue points se puede usar sin haber indicado tu collection.nml. El control estaba apagado hasta que dabas esa ruta, pero el desplazamiento se aplica a los cues que Surco escribe dentro del propio fichero, así que quien no sincroniza con Traktor tampoco podía tocarlo.",
+        "text": "El ajuste de los cue points se puede usar sin haber indicado tu collection.nml. El control estaba apagado hasta que dabas esa ruta, pero el ajuste vale igual para quien no sincroniza con Traktor, así que ya no hace falta.",
         "in": "0.95.3"
       },
       {
@@ -118,7 +118,7 @@
     "title": "Cada pista se convierte con lo que tú le pusiste",
     "items": [
       {
-        "text": "El ajuste de los cue points ya se aplica también al convertir a su mismo formato. Un MP3 que salía como MP3 se llevaba los cues sin tocar, así que el desplazamiento configurado no llegaba a esas conversiones.",
+        "text": "El ajuste de los cue points ya se aplica también al convertir una pista a su mismo formato. Un MP3 que salía como MP3 se llevaba los cues sin tocar, así que en esas conversiones tus cues seguían descolocados.",
         "in": "0.94.3"
       },
       {
@@ -126,7 +126,7 @@
         "in": "0.94.3"
       },
       {
-        "text": "Convertir una pista ya no deja dos entradas para el mismo fichero en la colección de Traktor. Cuando la colección ya tenía la pista con el formato nuevo, Surco reapuntaba la vieja encima y quedaban dos, una de ellas con el tamaño y el bitrate del original; ahora deja esa entrada como está.",
+        "text": "Convertir una pista ya no deja la misma pista dos veces en la colección de Traktor. Cuando Traktor ya la tenía con el formato nuevo, acababas con dos, una de ellas con el tamaño y el bitrate del original.",
         "in": "0.94.2"
       },
       {
@@ -134,7 +134,7 @@
         "in": "0.94.0"
       },
       {
-        "text": "Surco comprueba que el fichero convertido llega hasta el final antes de darlo por bueno. Un MP3 cortado a medias declara la misma duración que el entero, así que ni la cabecera ni un error de decodificación lo delataban: ahora se compara lo que promete con lo que de verdad suena, y la copia truncada se caza en lugar de sustituir al original como si nada.",
+        "text": "Surco comprueba que la pista convertida llega hasta el final antes de darla por buena. Un MP3 cortado a medias dice durar lo mismo que el entero, así que nada lo delataba: ahora se compara lo que promete con lo que de verdad suena, y la copia truncada se caza en lugar de sustituir al original como si nada.",
         "in": "0.94.0"
       },
       {
@@ -142,35 +142,35 @@
         "in": "0.94.0"
       },
       {
-        "text": "Un AIFF guardado como .aif ya no pierde los cues al convertir a FLAC. Surco solo reconocía la grafía larga .aiff, y con la corta se iba a buscar los puntos donde un AIFF nunca los ha tenido: se perdían todos los hot cues y la rejilla, en una conversión que además decía haber ido bien.",
+        "text": "Un AIFF guardado como .aif ya no pierde los cues al convertir a FLAC. Surco solo reconocía la grafía larga .aiff, y con la corta se perdían todos los hot cues y la rejilla, en una conversión que además decía haber ido bien.",
         "in": "0.94.0"
       },
       {
-        "text": "La carátula nueva se ve en Traktor sin trucos. En vez de borrar la referencia a la imagen, Surco reescribe las miniaturas que Traktor tiene cacheadas, que es lo único que le hace redibujar la portada.",
+        "text": "La carátula nueva se ve en Traktor sin trucos: al convertir, Traktor la redibuja sola, en vez de quedarse enseñando la portada vieja.",
         "in": "0.94.0"
       },
       {
-        "text": "Al tocar la colección de Traktor, Surco toca lo mínimo: los cues vuelven al sitio exacto que ocupaban dentro de la entrada, en vez de subir por delante del tempo y del resto de lo que Traktor había escrito. Y si no puede descartar que Traktor esté abierto, no escribe: antes, ante la duda, escribía igual.",
+        "text": "Al sincronizar con Traktor, Surco toca lo mínimo: los cues vuelven a su sitio y el tempo y todo lo demás que Traktor había guardado se quedan como estaban. Y si no puede descartar que Traktor esté abierto, no escribe: antes, ante la duda, escribía igual.",
         "in": "0.94.0"
       },
       {
-        "text": "El filtro de clipping ya no aparece vacío al reabrir una biblioteca ya analizada. La marca de clipping se leía del análisis de onda, que no siempre está cargado, cuando en realidad viaja en el escaneo: había que volver a tocar pista por pista para que apareciera.",
+        "text": "El filtro de clipping ya no aparece vacío al reabrir una biblioteca ya analizada. Había que volver a tocar pista por pista para que las marcas reaparecieran, aunque el análisis ya estaba hecho.",
         "in": "0.94.0"
       },
       {
-        "text": "El contador de clicks deja de tragarse la mitad de una ráfaga. La ventana que junta clicks pegados se re-armaba con cada cruce, encadenándose hasta décimas de segundo: una tanda de crujidos de un vinilo sucio se contaba como \"1 click\", con una sola marca a la que saltar. Medido sobre 25 pistas reales, el recuento solo puede subir.",
+        "text": "El contador de clicks deja de tragarse la mitad de una ráfaga. Una tanda de crujidos de un vinilo sucio se contaba como «1 click», con una sola marca a la que saltar, cuando eran muchos seguidos. Medido sobre 25 pistas reales, el recuento solo puede subir.",
         "in": "0.94.0"
       },
       {
-        "text": "Una búsqueda de metadatos que vuelve vacía ya no se queda pegada. Un límite de peticiones y un \"no lo tengo\" llegan igual, así que guardarlo dejaba la pista sin match para siempre, ni relanzando Surco. Ahora se vuelve a preguntar la próxima vez.",
+        "text": "Una búsqueda de metadatos que vuelve vacía ya no se queda pegada. Si el servicio no contestaba, la pista se quedaba sin resultados para siempre, ni relanzando Surco. Ahora se vuelve a preguntar la próxima vez.",
         "in": "0.94.0"
       },
       {
-        "text": "Con la ganancia por canal y el quitado de DC marcados a la vez, la ganancia se calcula ya sobre el audio centrado: se medía sobre la señal desviada y la pista acababa muy por debajo del techo prometido.",
+        "text": "Con la ganancia por canal y el quitado de DC marcados a la vez, la pista sale ya al volumen prometido. Antes acababa muy por debajo del techo que habías pedido.",
         "in": "0.94.0"
       },
       {
-        "text": "Un MP3 sin cabecera Xing ya no descoloca los cues al convertir: se compensa el retardo que mete el codificador en vez de darlo por cero.",
+        "text": "Un MP3 al que le falta la marca que ponen los programas al crearlo ya no descoloca los cues al convertir: se compensa el desfase que mete el codificador en vez de darlo por cero.",
         "in": "0.94.0"
       },
       {
@@ -193,23 +193,23 @@
     "title": "Los bits declarados también se verifican",
     "items": [
       {
-        "text": "El check de bits ya no se calla cuando no puede afirmar: un 24 bits al que el escaneo no le da una lectura clara (un minuto casi todo silencio, por ejemplo) lo dice en voz alta, para que no se confunda con un fichero al que la comprobación ni aplica.",
+        "text": "El check de bits ya no se calla cuando no puede afirmar: un 24 bits al que el análisis no le saca una lectura clara (un minuto casi todo silencio, por ejemplo) lo dice en voz alta, para que no se confunda con una pista que no se ha comprobado.",
         "in": "0.93.1"
       },
       {
-        "text": "Un fichero que declara 24 bits ya no se cree por su envase: Surco decodifica la pista y comprueba qué bytes llevan señal. El audio de 16 bits rellenado en un contenedor de 24 se delata solo (los 8 bits bajos a cero en todas las muestras, prueba aritmética, no estadística) y sale señalado con su propia etiqueta; un 24 bits real se gana su frase con la medida delante.",
+        "text": "Una pista que dice ser de 24 bits ya no se cree por su etiqueta: Surco escucha el audio y comprueba si de verdad los lleva. Un 16 bits hinchado a 24 se delata solo y sale señalado; un 24 bits real se gana su frase con la medida delante.",
         "in": "0.93.0"
       },
       {
-        "text": "Con la profundidad de salida en \"igual que el origen\", un fichero con relleno probado se escribe como 16 bits reales. Los bits que sobran son ceros, así que quitarlos no pierde nada y ni siquiera hace falta dither.",
+        "text": "Con la profundidad de salida en «igual que el origen», una pista que solo aparenta ser de 24 bits se guarda como el 16 bits que en realidad es. No se pierde nada por el camino: lo que sobraba estaba vacío.",
         "in": "0.93.0"
       },
       {
-        "text": "La frecuencia de salida gana el modo \"Corregido\": solo las pistas que Surco ha medido como upsampleadas desde 44.1 kHz se reescriben a 44.1; lo genuino y lo no verificable sale intacto. La tarjeta \"Al convertir\" avisa en la propia pista de lo que va a pasar y por qué, antes de tocar nada.",
+        "text": "La frecuencia de salida gana el modo «Corregido»: solo las pistas que Surco ha medido como hinchadas desde 44.1 kHz vuelven a 44.1; lo genuino y lo que no se ha podido verificar sale intacto. La tarjeta «Al convertir» avisa en la propia pista de lo que va a pasar y por qué, antes de tocar nada.",
         "in": "0.93.0"
       },
       {
-        "text": "La misma canción ya no puede salir \"Fuente con pérdidas\" en su copia de 44.1 kHz y \"Good quality\" en la de 48: el segundo detector de rodilla leía el corte una banda por debajo de donde acaba la música, y solo corre en ficheros de 44.1. Encontrado gracias a un usuario con dos copias gemelas de la misma pista.",
+        "text": "La misma canción ya no puede salir «Fuente con pérdidas» en su copia de 44.1 kHz y «Good quality» en la de 48. Encontrado gracias a un usuario con dos copias gemelas de la misma pista.",
         "in": "0.93.0"
       }
     ]
@@ -220,11 +220,11 @@
     "title": "La frecuencia de muestreo, respondida siempre",
     "items": [
       {
-        "text": "Un fichero que declara más de 44.1 kHz recibe siempre una respuesta sobre su frecuencia de muestreo: confirmado como hi-res de verdad, señalado como reescalado desde 44.1 kHz, o un honesto \"no se ha podido verificar\" cuando la sonda no se pudo leer. Antes, callar dejaba a un hi-res auténtico con exactamente el mismo aspecto que un fichero que nadie había analizado. Un 44.1 kHz normal no afirma nada que comprobar, así que sigue en silencio en vez de ganar una línea que no dice nada.",
+        "text": "Una pista que dice ser de más de 44.1 kHz recibe siempre una respuesta: confirmada como hi-res de verdad, señalada como hinchada desde 44.1 kHz, o un honesto «no se ha podido verificar». Antes, callar dejaba a un hi-res auténtico con exactamente el mismo aspecto que una pista que nadie había analizado. Un 44.1 kHz normal no afirma nada que comprobar, así que sigue en silencio en vez de ganar una línea que no dice nada.",
         "in": "0.92.0"
       },
       {
-        "text": "El detector de reescalado dejó de dar por bueno un hi-res falso. Comparaba dos sondas agudas entre sí, y cuando el contenido moría a 20 kHz las dos caían en el ruido de fondo: su parecido se leía como una caída suave, o sea, como hi-res genuino. Ahora se exige además que esas bandas asomen sobre el suelo de ruido, medido contra el propio nivel de la pista para que el mismo máster mezclado más bajo siga siendo el mismo disco. Calibrado sobre hi-res reales y falsos de una biblioteca de verdad, con margen amplio a cada lado.",
+        "text": "Surco dejó de dar por bueno un hi-res falso. Cuando la música se acababa pronto, una pista hinchada podía pasar por genuina. Ahora se exige ver música de verdad ahí arriba, no solo silencio, y da igual que el mismo máster esté mezclado más bajo: sigue siendo el mismo disco. Calibrado sobre hi-res reales y falsos de una biblioteca de verdad, con margen amplio a cada lado.",
         "in": "0.92.0"
       },
       {
@@ -266,15 +266,15 @@
     "title": "La normalización te dice qué va a hacer",
     "items": [
       {
-        "text": "El detector de \"fuente con pérdidas\" ahora reconoce el muro de un códec por su forma, no por su profundidad: un acantilado de decenas de decibelios dentro de un kilohercio, en vez de sumar toda la caída del agudo. Un barrido de 6000 pistas lossless reales enseñó la diferencia: las producciones digitales bajan suavemente 2-7 dB por banda hasta el silencio y sumaban de sobra para ser acusadas de MP3, mientras que un códec de verdad corta a pico. Con el criterio nuevo, los avisos falsos de ese barrido pasaron de 161 a 19, sin perder ninguno de los 40 encodes de referencia, incluidos los pasados a CD. Las pistas ya analizadas se vuelven a medir solas.",
+        "text": "El detector de «fuente con pérdidas» reconoce ahora el corte de un códec por su forma: un acantilado, no una bajada suave. Un barrido de 6000 pistas lossless reales enseñó la diferencia: las producciones digitales se apagan poco a poco y acababan acusadas de ser MP3, mientras que un códec de verdad corta a pico. Con el criterio nuevo, los avisos falsos de ese barrido pasaron de 161 a 19, sin perder ninguno de los 40 encodes de referencia, incluidos los pasados a CD. Las pistas ya analizadas se vuelven a medir solas.",
         "in": "0.90.3"
       },
       {
-        "text": "Un MP3 de 256 o 320 kbps pasado a CD o a FLAC/WAV/AIFF de 16 bits ya no cuela como \"Good quality\". El detector de fuente con pérdidas se calibró con MP3 decodificados en coma flotante, donde el muro del códec cae 65 dB; con el dither de 16 bits que deja cualquier grabación real, el mismo muro solo cae 43 dB y quedaba justo por debajo del listón. Se encontró con una batería nueva de pruebas que exige el mismo veredicto a un espectro suba o baje de nivel o se le sume un suelo de ruido, y se confirmó con ficheros reales antes de tocar nada. El umbral baja a 38 dB, con margen a ambos lados, y las pistas ya analizadas se vuelven a medir solas.",
+        "text": "Un MP3 de 256 o 320 kbps pasado a CD o a FLAC/WAV/AIFF de 16 bits ya no cuela como «Good quality». Al pasar por 16 bits, el rastro que deja el MP3 se disimula y quedaba justo por debajo del listón. Se encontró con una batería nueva de pruebas que exige el mismo veredicto suba o baje el nivel de la pista, y se confirmó con archivos reales antes de tocar nada. Las pistas ya analizadas se vuelven a medir solas.",
         "in": "0.90.2"
       },
       {
-        "text": "Un máster alto ya no sale como \"Reprocessed\" por sus propios armónicos. Dos versiones de la misma canción, la reedición tranquila y la remasterización 8 dB más alta, tienen el mismo espectro y recibían veredictos distintos: los mismos dos armónicos agudos que en una quedaban bajo el suelo de ruido, en la otra contaban como dientes de sierra de un \"enhancer\". Ahora hacen falta tres dientes seguidos, que es lo que deja un enhancer de verdad, y el veredicto ya no cambia con el volumen del máster. Las pistas ya analizadas se vuelven a medir solas.",
+        "text": "Un máster alto ya no sale como «Reprocessed» por sus propios armónicos. Dos versiones de la misma canción, la reedición tranquila y la remasterización 8 dB más alta, sonaban igual y recibían veredictos distintos. Ahora el veredicto ya no cambia con el volumen del máster. Las pistas ya analizadas se vuelven a medir solas.",
         "in": "0.90.1"
       },
       {
