@@ -48,6 +48,7 @@ import {
   type ReleaseMetaPatch,
 } from '../lib/release'
 import { replacePatch } from '../lib/replaceBeforeConvert'
+import { selectionReplaceMode } from '../lib/replaceSelection'
 import { selectionStatus } from '../lib/selectionStatus'
 import { useAppSettings } from '../lib/settingsContext'
 import { matchStatKey } from '../lib/stats'
@@ -718,12 +719,21 @@ export const Editor = memo(function Editor({
   const missing = isMulti
     ? [...new Set(multiTracks.flatMap((t) => missingRequired(t.meta, requiredFields)))]
     : missingRequired(item.meta, requiredFields)
-  const incomplete = missing.length > 0
-  const incompleteReason = incomplete
+  // A multi-select whose tracks disagree about what the convert MEANS: some supersede a
+  // copy in the library, others are plain adds. One click cannot honestly do both, so the
+  // batch is refused and the button says why rather than silently picking one for all of
+  // them (the label-promises-one-thing, click-does-another failure this feature already
+  // hit once). Single-select never mixes, so it is never gated here.
+  const replaceMode = isMulti ? selectionReplaceMode(libraryIndex, multiTracks) : 'replace'
+  const mixedReplace = replaceMode === 'mixed'
+  const incomplete = missing.length > 0 || mixedReplace
+  const incompleteReason = missing.length
     ? tr('editor.missingRequired', {
         fields: missing.map((key) => tr(`fields.${key}`)).join(', '),
       })
-    : undefined
+    : mixedReplace
+      ? tr('editor.mixedReplaceSelection')
+      : undefined
   // The user's default genres come first so they're always one click away even when a
   // release isn't matched; the release's own genres/styles follow, deduped case-insensitively
   // so a shared name (the user's "Electronic" vs a provider's "electronic") shows a single

@@ -481,6 +481,7 @@
     "processError": "Falha ao processar",
     "fileInUseError": "Outro programa está usando este arquivo (antivírus, player…). Sua conversão não foi perdida: ela foi salva ao lado, com ~ no final do nome.",
     "missingRequired": "Faltam campos obrigatórios: {{fields}}",
+    "mixedReplaceSelection": "A seleção mistura faixas que substituem uma cópia da sua biblioteca com faixas que são adicionadas. Separe-as para converter.",
     "reportError": "Reportar",
     "inLibrary": "Na biblioteca",
     "inLibraryEngine": "Na biblioteca",

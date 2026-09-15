@@ -481,6 +481,7 @@
     "processError": "Error al procesar",
     "fileInUseError": "Otro programa está usando este archivo (antivirus, reproductor…). La conversión no se ha perdido: está guardada al lado, con ~ al final del nombre.",
     "missingRequired": "Faltan campos obligatorios: {{fields}}",
+    "mixedReplaceSelection": "La selección mezcla pistas que sustituyen a una copia de tu biblioteca y pistas que se añaden. Sepáralas para convertirlas.",
     "reportError": "Reportar",
     "inLibrary": "En biblioteca",
     "inLibraryEngine": "En biblioteca",
