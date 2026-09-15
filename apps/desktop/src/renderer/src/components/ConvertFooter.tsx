@@ -226,7 +226,7 @@ export function ConvertFooter({
                       else onAddToAppleMusic?.()
                     }}
                     disabled={musicAdding || (musicAdded && !showInMusic)}
-                    className="press flex-1 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-60 disabled:hover:bg-[var(--color-panel-2)]"
+                    className="press min-w-0 flex-1 truncate whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2 py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-60 disabled:hover:bg-[var(--color-panel-2)]"
                   >
                     {musicAdding
                       ? hasMusicCopy
@@ -245,7 +245,8 @@ export function ConvertFooter({
                 type="button"
                 data-testid="export-collection"
                 onClick={onExportCollection}
-                className="press flex-1 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)]"
+                className="press min-w-0 flex-1 truncate whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2 py-2 text-xs font-medium hover:bg-[var(--color-line-strong)]"
+                title={tr('editor.exportCollection')}
               >
                 {tr('editor.exportCollection')}
               </button>

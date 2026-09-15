@@ -67,3 +67,21 @@ describe('ConvertFooter state swap', () => {
     expect(screen.getByTestId('footer-state').className).toContain('animate-footer-swap')
   })
 })
+
+// Reported 14/09 with a screenshot in French: the row of footer buttons shares its width
+// evenly (flex-1), so a label longer than its share wrapped and the button grew to two
+// lines while its neighbours stayed at one — a ragged row. The labels are translated, so
+// no length is safe; the row has to hold one line whatever the language puts in it.
+describe('ConvertFooter buttons stay on one line', () => {
+  it('never wraps the export label', () => {
+    render(footer(true))
+    expect(screen.getByTestId('export-collection').className).toContain('whitespace-nowrap')
+  })
+
+  // Not wrapping alone would push the button wider than its share and squeeze the others;
+  // the overflow has to resolve as an ellipsis inside the button.
+  it('truncates the export label rather than widening the row', () => {
+    render(footer(true))
+    expect(screen.getByTestId('export-collection').className).toContain('truncate')
+  })
+})
