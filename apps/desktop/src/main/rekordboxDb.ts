@@ -1,5 +1,6 @@
 import { homedir } from 'node:os'
 import Database from 'better-sqlite3-multiple-ciphers'
+import log from 'electron-log/main'
 
 // Reads the user's real rekordbox collection (master.db). rekordbox 6 and 7 keep it as
 // SQLite encrypted with SQLCipher, so nothing here works without the three pragmas
@@ -179,8 +180,20 @@ export function findTrackByPath(
   }
   const target = safeResolve(path)
   const fileName = path.slice(path.lastIndexOf('/') + 1)
-  const matches = candidateRows(db, fileName).filter((r) => safeResolve(r.FolderPath) === target)
-  if (matches.length === 0) return null
+  const rows = candidateRows(db, fileName)
+  const matches = rows.filter((r) => safeResolve(r.FolderPath) === target)
+  // Logged on every miss, because a miss is indistinguishable from "the collection never
+  // had this track" without it: the user hit "none of these tracks are in the collection"
+  // for a song plainly in rekordbox, and three rounds of guessing followed. The name it
+  // searched by, the resolved target and what each same-named row resolves to are the
+  // three facts that separate a wrong filename from a wrong prefix from a real absence.
+  if (matches.length === 0) {
+    log.info(
+      `rekordbox lookup miss: name=${JSON.stringify(fileName)} target=${JSON.stringify(target)} rows=${rows.length}` +
+        rows.map((r) => ` | row ${r.ID} -> ${JSON.stringify(safeResolve(r.FolderPath))}`).join(''),
+    )
+    return null
+  }
   if (matches.length > 1) return { ambiguous: matches.map((r) => String(r.ID)) }
   const row = matches[0]
   return {

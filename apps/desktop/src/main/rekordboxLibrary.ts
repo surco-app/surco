@@ -1,5 +1,6 @@
 import { copyFile, stat } from 'node:fs/promises'
 import { basename, extname } from 'node:path'
+import log from 'electron-log/main'
 import {
   FILE_TYPES,
   type FindOptions,
@@ -60,6 +61,11 @@ export async function repointTrack(
 ): Promise<RepointResult> {
   const { from, to } = options
   const copy = options.backup ?? copyFile
+  // The pair the renderer handed over, logged before any guard runs. A lookup miss can
+  // come from the wrong `from` (the renderer named a file rekordbox never had) or from the
+  // matching itself, and only seeing both ends tells them apart — three rounds of guessing
+  // followed from having neither in the log.
+  log.info(`rekordbox repoint attempt: from=${JSON.stringify(from)} to=${JSON.stringify(to)}`)
 
   // The converted file has to exist before the collection is told to point at it, or the
   // repoint just trades one missing-file "!" for another.
