@@ -852,6 +852,7 @@ export default function App(): React.JSX.Element {
   const {
     askTrash,
     askDeleteOriginal,
+    askTrashSuperseded,
     askRemoveOldMusicCopy,
     askFillAll,
     askClearAll,
@@ -1291,6 +1292,9 @@ export default function App(): React.JSX.Element {
   })
   const onRemoveOldMusicCopy = useStableCallback((stale: StaleLibraryCopy) => {
     if (selected) askRemoveOldMusicCopy(selected, stale)
+  })
+  const onTrashSuperseded = useStableCallback((path: string) => {
+    if (selected) askTrashSuperseded(selected, path)
   })
   const onShowLoudnessHelp = useStableCallback(overlays.openLoudnessHelp)
   // The X on the plan card: the same synced flag the Settings checkbox writes, so one
@@ -1902,6 +1906,7 @@ export default function App(): React.JSX.Element {
                         onDeclickChange={onDeclickChange}
                         onAddToAppleMusic={onAddSelectedToAppleMusic}
                         onTrashOriginal={onTrashOriginal}
+                        onTrashSuperseded={onTrashSuperseded}
                         onRemoveOldMusicCopy={onRemoveOldMusicCopy}
                         onResultsWidthChange={onResultsWidthChange}
                         onShowLoudnessHelp={onShowLoudnessHelp}

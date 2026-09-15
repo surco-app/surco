@@ -105,6 +105,8 @@ interface Params {
 interface ConfirmFlows {
   askTrash: (targets: TrackItem[]) => void
   askDeleteOriginal: (track: TrackItem) => void
+  // Sends the file a replacement superseded to the OS Trash, once the user confirms.
+  askTrashSuperseded: (track: TrackItem, path: string) => void
   askRemoveOldMusicCopy: (track: TrackItem, stale: StaleLibraryCopy) => void
   askFillAll: (targets: TrackItem[], opts?: { fromSelection?: boolean }) => void
   askClearAll: (targets: TrackItem[]) => void
@@ -200,6 +202,34 @@ export function useConfirmFlows({
           // Same as askTrash: the user confirmed a destructive dialog, so a
           // failure must be said out loud, not swallowed.
           .catch(() => reportTrashFailure(track.fileName))
+      },
+    })
+  }
+
+  // Post-replace "Delete the replaced file": the superseded copy left Apple Music and
+  // rekordbox now follows the new file, so this one is referenced by nothing and is the
+  // orphan the user described on 15/09. Confirmed rather than automatic, and to the OS
+  // Trash rather than a hard delete: three runs that day looked like a correct replacement
+  // and were not, and an automatic delete in any of them would have destroyed the only
+  // copy. The row stays — its converted output is still there — with a flag so the offer
+  // retires instead of asking twice about a file that is already gone.
+  function askTrashSuperseded(track: TrackItem, path: string): void {
+    const isWin = window.api.platform === 'win32'
+    const name = path.slice(path.lastIndexOf('/') + 1)
+    openConfirm({
+      title: tr(isWin ? 'confirm.trashTitleWin' : 'confirm.trashTitle', { count: 1 }),
+      message: tr(isWin ? 'confirm.trashSupersededMessageWin' : 'confirm.trashSupersededMessage', {
+        name,
+      }),
+      confirmLabel: tr(isWin ? 'confirm.trashConfirmWin' : 'confirm.trashConfirm'),
+      destructive: true,
+      onConfirm: () => {
+        window.api
+          .trashFile(path)
+          .then(() => updateTrack(track.id, { supersededTrashed: true }))
+          // The user confirmed a destructive dialog, so a failure is said out loud rather
+          // than swallowed — the same contract askDeleteOriginal keeps.
+          .catch(() => reportTrashFailure(name))
       },
     })
   }
@@ -446,6 +476,7 @@ export function useConfirmFlows({
   return {
     askTrash,
     askDeleteOriginal,
+    askTrashSuperseded,
     askRemoveOldMusicCopy,
     askFillAll,
     askClearAll,

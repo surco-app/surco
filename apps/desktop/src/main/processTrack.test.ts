@@ -1095,6 +1095,28 @@ describe('runProcessTrack — replacing a library copy', () => {
     expect(convertAudio.mock.calls[0]?.at(-1)).toBe('/m/old.mp3')
   })
 
+  // The superseded copy lives in the user's library folder, which a conversion has no
+  // other reason to authorise, and the shell guard rejects any path it was never handed.
+  // Without this the offer to trash it would fail with "Ruta no permitida" — the kind of
+  // silent refusal that already cost a day here.
+  it('authorises the superseded file so it can be trashed', async () => {
+    const deps = replacing()
+
+    await runProcessTrack(job(replaceJob), deps)
+
+    expect(deps.allowMedia).toHaveBeenCalledWith('/m/old.mp3')
+  })
+
+  // An ordinary conversion supersedes nothing, so it must not widen what the shell guard
+  // will act on.
+  it('authorises nothing extra when no copy was superseded', async () => {
+    const deps = replacing()
+
+    await runProcessTrack(job({ addToAppleMusic: true }), deps)
+
+    expect(deps.allowMedia).toHaveBeenCalledTimes(1)
+  })
+
   // The heart of it: the new file is imported rather than the old entry's tags rewritten.
   it('adds the converted file instead of only updating the old entry', async () => {
     const deps = replacing()

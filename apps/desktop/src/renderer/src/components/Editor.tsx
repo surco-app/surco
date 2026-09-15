@@ -52,6 +52,7 @@ import { selectionReplaceMode } from '../lib/replaceSelection'
 import { selectionStatus } from '../lib/selectionStatus'
 import { useAppSettings } from '../lib/settingsContext'
 import { matchStatKey } from '../lib/stats'
+import { supersededFile } from '../lib/supersededFile'
 import { stripParentheticals } from '../lib/textClean'
 import type { TrackItem } from '../types'
 import { ConvertFooter } from './ConvertFooter'
@@ -138,6 +139,10 @@ interface Props {
   // Trashes the source file after a real conversion; the converted output and the
   // track's row stay. Confirmation lives in App, so the button just signals intent.
   onTrashOriginal?: () => void
+  // Sends the file this conversion superseded to the OS Trash. Recoverable, and offered
+  // rather than automatic: a replacement that looked right and was not would otherwise
+  // destroy the user's only copy.
+  onTrashSuperseded?: (path: string) => void
   // Removes the superseded Apple Music copy (the library entry the fresh add replaced).
   // Confirmation lives in App, so the link just signals intent; the copy's label rides
   // along so the dialog can name the entry it is about to delete.
@@ -199,6 +204,7 @@ export const Editor = memo(function Editor({
   onDeclickChange,
   onAddToAppleMusic,
   onTrashOriginal,
+  onTrashSuperseded,
   onRemoveOldMusicCopy,
   onResultsWidthChange,
   onShowLoudnessHelp,
@@ -1387,6 +1393,10 @@ export const Editor = memo(function Editor({
           onTrashOriginal={onTrashOriginal}
           staleMusicCopy={staleMusicCopy}
           onRemoveOldMusicCopy={onRemoveOldMusicCopy}
+          // The file this track's replacement retired: gone from Apple Music, and rekordbox
+          // now follows the new one, so nothing references it any more.
+          supersededPath={isMulti ? null : supersededFile(item)}
+          onTrashSuperseded={onTrashSuperseded}
         />
       </div>
     </div>
