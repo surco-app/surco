@@ -391,6 +391,10 @@ export async function runProcessTrack(
     // The conversion wrote a real file the renderer may play next — directly, or
     // as the track's new source after an in-place rename — so let surco:// serve it.
     deps.allowMedia(target)
+    // The copy this replacement superseded, so the renderer can offer to trash it: the
+    // shell guard rejects any path it was never handed, and this one lives in the user's
+    // library folder, which a convert has no other reason to authorise.
+    if (job.replacesPath) deps.allowMedia(job.replacesPath)
     return {
       outputPath: target,
       inPlace,

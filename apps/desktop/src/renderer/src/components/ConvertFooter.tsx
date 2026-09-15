@@ -60,6 +60,11 @@ interface ConvertFooterProps {
   // label the confirm dialog names it by. Null when there is nothing to replace.
   staleMusicCopy?: StaleLibraryCopy | null
   onRemoveOldMusicCopy?: (stale: StaleLibraryCopy) => void
+  // The file this conversion SUPERSEDED, once the replacement finished: it left Apple
+  // Music and rekordbox now follows the new file, so nothing references it any more.
+  // Null when the conversion replaced nothing, or the file is already trashed.
+  supersededPath?: string | null
+  onTrashSuperseded?: (path: string) => void
   // Opens the DJ-app collection export — offered once the export landed, since the
   // collection file references the converted copies.
   onExportCollection: () => void
@@ -98,6 +103,8 @@ export function ConvertFooter({
   onTrashOriginal,
   staleMusicCopy,
   onRemoveOldMusicCopy,
+  supersededPath,
+  onTrashSuperseded,
   onExportCollection,
 }: ConvertFooterProps): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -200,6 +207,16 @@ export function ConvertFooter({
                   className="press text-xs text-fg-dim hover:text-danger"
                 >
                   {tr('editor.deleteOriginal')}
+                </button>
+              )}
+              {!isMulti && supersededPath && (
+                <button
+                  type="button"
+                  data-testid="trash-superseded"
+                  onClick={() => onTrashSuperseded?.(supersededPath)}
+                  className="press text-xs text-fg-dim hover:text-danger"
+                >
+                  {tr('editor.trashSuperseded')}
                 </button>
               )}
               {!isMulti && musicAdded && staleMusicCopy && (

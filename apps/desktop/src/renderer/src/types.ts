@@ -190,4 +190,9 @@ export interface TrackItem {
   // Set once the user trashes the source file after a real conversion, so the
   // "delete original" action disappears — the converted output and this row stay.
   originalTrashed?: boolean
+  // Set once the user trashes the copy this conversion SUPERSEDED (replacesPath), so the
+  // offer retires rather than asking twice about a file that is already gone. Distinct
+  // from originalTrashed: that one is the track's own source, this one is the old library
+  // copy the replacement retired.
+  supersededTrashed?: boolean
 }
