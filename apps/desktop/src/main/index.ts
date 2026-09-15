@@ -1039,6 +1039,12 @@ function registerIpc(): void {
         trim,
         clearExtras,
         foreignRemoved,
+        // Forwarded, not dropped: this adapter used to stop at foreignRemoved, so the path
+        // the conversion supersedes never reached ffmpeg and the repoint fell back to the
+        // file being converted — a FLAC in a download folder rekordbox has never indexed.
+        // Measured from the user's log 15/09: from= named the FLAC and the lookup found
+        // zero rows.
+        replacesPath,
       ) => {
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
         // The quality knobs are global preferences, so they're read here (at job time)
@@ -1073,6 +1079,7 @@ function registerIpc(): void {
               trim,
               clearExtras,
               foreignRemoved,
+              replacesPath,
             ),
           { labelParams: { track } },
         )
