@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.98",
+    "date": "September 16, 2026",
+    "title": "Tag grouping track by track without overwriting the rest",
+    "items": [
+      {
+        "text": "With several tracks selected, grouping no longer gets overwritten. Each tag shows as a chip that says whether it is on all of them, some or none, and one click adds or removes it across the selection without touching the other tags on each track. Below, a “Per track” fold lists the tracks one by one to fine-tune the ones that differ. Active tags always come first, so they never hide behind the “+N”.",
+        "in": "0.98.0"
+      },
+      {
+        "text": "The spectrum verdict no longer wobbles. A genuine hi-res master would sometimes come out as “upsampled from 44.1” and sometimes as “could not be verified” depending on where the readings landed, and a clean CD rip took turns between “good quality” and “reprocessed” after trimming a few tenths of a second off its tail. Each reading now listens to a longer stretch, and the same file always gets the same answer. And regenerated highs stay flagged even when the track is turned down: Surco’s own normalised copy came out clean while the original was flagged.",
+        "in": "0.98.0"
+      }
+    ]
+  },
+  {
     "version": "0.97",
     "date": "September 15, 2026",
     "title": "Upgrade a track without losing rekordbox",

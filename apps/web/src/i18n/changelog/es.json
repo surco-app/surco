@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.98",
+    "date": "16 de septiembre de 2026",
+    "title": "Etiqueta el grouping pista a pista sin pisar el resto",
+    "items": [
+      {
+        "text": "Con varias pistas seleccionadas, el grouping ya no se pisa. Cada etiqueta aparece como una pastilla que dice si está en todas, en algunas o en ninguna, y un clic la pone o la quita en toda la selección sin tocar las demás etiquetas de cada pista. Debajo, un desplegable «Por pista» enseña las pistas una a una para afinar las que se salen del resto. Las etiquetas activas van siempre delante, así que no se esconden tras el «+N».",
+        "in": "0.98.0"
+      },
+      {
+        "text": "El veredicto del espectro ya no baila. Un máster hi-res auténtico salía unas veces como «reescalado desde 44,1» y otras como «no se ha podido verificar» según dónde cayeran las lecturas, y un rip de CD limpio se turnaba entre «buena calidad» y «reprocesado» con solo recortarle unas décimas de cola. Ahora cada lectura escucha un tramo más largo y el mismo archivo da siempre la misma respuesta. Además, unos agudos regenerados se siguen acusando aunque la pista esté más baja de volumen: la copia normalizada por Surco salía limpia mientras el original salía acusado.",
+        "in": "0.98.0"
+      }
+    ]
+  },
+  {
     "version": "0.97",
     "date": "15 de septiembre de 2026",
     "title": "Sube una pista de calidad sin perder rekordbox",
