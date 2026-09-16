@@ -326,6 +326,25 @@ describe('detectCutoff fine-band roughness', () => {
     expect(detectCutoff(coarse, NYQUIST, oneBump).processed).toBe(false)
   })
 
+  it('does not read a dip that climbs back over several bands as a run of teeth', () => {
+    // A lossless master measured off the real file: full-level highs to 20.5 kHz with
+    // a 4 dB dip at 18 kHz that recovers over the next three bands (+1.9, +1.4, +1.1).
+    // Counting each of those steps as its own rise made three teeth out of one slope,
+    // and with the last step sitting on the 1 dB bar the verdict flipped with the
+    // probe grid: the same track graded clean untrimmed and Reprocessed once a
+    // trailing 5 s of silence was cut. An enhancer's teeth are separated by drops
+    // (every rise in the SBR fixture is); a climb over adjacent bands is one feature.
+    const coarse = fftBand([
+      -52.65, -52.95, -51.71, -51.42, -50.2, -50.16, -51.96, -51.95, -53.95, -56.05, -53.06,
+      -52.94, -58.23,
+    ])
+    const dipRecovery = fine([
+      -49.6, -50.31, -50.04, -51.28, -52.52, -51.0, -52.13, -53.49, -53.93, -54.29, -56.75, -54.84,
+      -53.43, -52.29, -53.05, -54.01, -58.36,
+    ])
+    expect(detectCutoff(coarse, NYQUIST, dipRecovery).processed).toBe(false)
+  })
+
   it('behaves exactly as before when no fine bands are supplied', () => {
     expect(detectCutoff(SBR_COARSE, NYQUIST)).toEqual({
       cutoffHz: NYQUIST,

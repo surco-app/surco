@@ -255,28 +255,32 @@ function roughnessCeiling(
 ): { band: Band; teeth: number; fromHz: number; toHz: number } | null {
   const floor = plateau - ROUGHNESS_FLOOR_BELOW_PLATEAU_DB
   const finite = fineBands.filter((b) => Number.isFinite(b.rmsDb) && b.rmsDb >= floor)
-  let totalRise = 0
-  let rises = 0
-  let fromHz = 0
-  let toHz = 0
+  // A tooth is one climb between two drops, however many bands it spans: a dip
+  // that recovers over three bands is one feature, not three teeth, and counting
+  // each step put a clean master's verdict on the 1 dB bar (it flipped with the
+  // probe grid). An enhancer's teeth are each separated by a drop.
+  const climbs: { fromHz: number; toHz: number; db: number }[] = []
   for (let i = 0; i < finite.length - 1; i++) {
     if (finite[i + 1].freqHz <= ROUGHNESS_START_HZ) continue
     const rise = finite[i + 1].rmsDb - finite[i].rmsDb
-    if (rise > ROUGHNESS_RISE_MIN_DB) {
-      // The caption cites the span of the saw-tooth: from the foot of the first
-      // rise to the top of the last one.
-      if (rises === 0) fromHz = finite[i].freqHz
-      toHz = finite[i + 1].freqHz
-      totalRise += rise
-      rises++
-    }
+    if (rise <= 0) continue
+    const last = climbs[climbs.length - 1]
+    if (last && last.toHz === finite[i].freqHz) {
+      last.toHz = finite[i + 1].freqHz
+      last.db += rise
+    } else climbs.push({ fromHz: finite[i].freqHz, toHz: finite[i + 1].freqHz, db: rise })
   }
-  if (totalRise < ROUGHNESS_TOTAL_DB || rises < ROUGHNESS_MIN_RISES) return null
+  const teeth = climbs.filter((c) => c.db > ROUGHNESS_RISE_MIN_DB)
+  const totalRise = teeth.reduce((sum, c) => sum + c.db, 0)
+  if (totalRise < ROUGHNESS_TOTAL_DB || teeth.length < ROUGHNESS_MIN_RISES) return null
+  // The caption cites the span of the saw-tooth: from the foot of the first
+  // tooth to the top of the last one.
+  const span = { teeth: teeth.length, fromHz: teeth[0].fromHz, toHz: teeth[teeth.length - 1].toHz }
   for (let i = 0; i < finite.length - 1; i++) {
     if (finite[i].rmsDb - finite[i + 1].rmsDb >= ROUGHNESS_EDGE_DROP_DB)
-      return { band: finite[i], teeth: rises, fromHz, toHz }
+      return { band: finite[i], ...span }
   }
-  return finite[0] ? { band: finite[0], teeth: rises, fromHz, toHz } : null
+  return finite[0] ? { band: finite[0], ...span } : null
 }
 
 // Returns where the audio's real bandwidth ends. A sustained knee, confirmed by a
