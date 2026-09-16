@@ -29,7 +29,7 @@ Drop your tracks in. Surco finds the right metadata on Discogs and Bandcamp, che
 - **Plays well with your gear** — export to rekordbox, Traktor, Serato and Engine DJ; add straight to Apple Music; M3U8 playlists.
 - **Built for batches** — duplicate detection, watched folders, multi-track editing, undo, keyboard-first navigation.
 
-Everything runs on your machine: no account, no telemetry, free forever.
+Everything runs on your machine: no account, no telemetry.
 
 ## Install
 
