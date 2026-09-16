@@ -42,7 +42,7 @@ describe('countDownloads', () => {
 
 describe('pickInstallerRelease', () => {
   // The reported bug: while a new release is building, its installer isn't uploaded yet, so
-  // the button must fall back to the previous build instead of showing "unavailable".
+  // the button must fall back to the previous build instead of reporting no installer.
   it('skips a release whose installer is not uploaded yet and uses the previous one', () => {
     const releases = [
       { tag_name: 'v0.18.0', assets: [{ name: 'latest-mac.yml', browser_download_url: 'yml' }] },

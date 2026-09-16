@@ -436,7 +436,9 @@
     "cta": "Descargar para {{os}}",
     "intel": "¿Mac con Intel (2020 o anterior)? Descárgalo aquí",
     "smartscreen": "Al abrir el instalador, Windows mostrará «Windows protegió tu PC»: pulsa «Más información» y luego «Ejecutar de todas formas». Es SmartScreen avisando de que no reconoce al editor, no de que el archivo tenga nada malo.",
-    "unavailable": "La descarga aún no está disponible, estamos puliendo la primera versión.",
+    "unsupported": "Todavía no hay instalador para tu sistema.",
+    "unreachable": "No hemos podido consultar las descargas ahora mismo.",
+    "unreachableLink": "Descárgalo desde GitHub",
     "countSuffix": "descargas y subiendo"
   },
   "guide": {
