@@ -32,7 +32,7 @@ const b1 = track('b1', { title: '', grouping: 'Bases' }, 'jungle.flac')
 
 function renderField(tracks: TrackItem[] = [a1, a2, b1]) {
   const onChangeTracks = vi.fn()
-  render(
+  const { rerender } = render(
     <GroupingBulkField
       label="Grouping"
       presets={['Bases', 'Cantaditas']}
@@ -40,7 +40,30 @@ function renderField(tracks: TrackItem[] = [a1, a2, b1]) {
       onChangeTracks={onChangeTracks}
     />,
   )
-  return { onChangeTracks }
+  return {
+    onChangeTracks,
+    rerender: (next: TrackItem[]) =>
+      rerender(
+        <GroupingBulkField
+          label="Grouping"
+          presets={['Bases', 'Cantaditas']}
+          tracks={next}
+          onChangeTracks={onChangeTracks}
+        />,
+      ),
+  }
+}
+
+function summaryOrder(): string[] {
+  return screen
+    .getAllByTestId(/^chip-(Bases|Cantaditas|Discazos)$/)
+    .map((c) => c.getAttribute('data-testid')?.replace('chip-', '') ?? '')
+}
+
+function rowOrder(id: string): string[] {
+  return screen
+    .getAllByTestId(new RegExp(`^chip-${id}-`))
+    .map((c) => c.getAttribute('data-testid')?.replace(`chip-${id}-`, '') ?? '')
 }
 
 function openRows(): void {
@@ -149,5 +172,24 @@ describe('GroupingBulkField', () => {
       .getAllByTestId(/^chip-(Bases|Cantaditas|Discazos)$/)
       .map((c) => c.getAttribute('data-testid')?.replace('chip-', ''))
     expect(summary).toEqual(['Cantaditas', 'Discazos', 'Bases'])
+  })
+
+  it('keeps the pills where they are while the same selection is being edited', () => {
+    const { rerender } = renderField([a1, a2])
+    openRows()
+    expect(summaryOrder()).toEqual(['Cantaditas', 'Discazos', 'Bases'])
+    rerender([
+      track('a1', { ...a1.meta, grouping: 'Cantaditas, Discazos, Bases' }),
+      track('a2', { ...a2.meta, grouping: 'Cantaditas, Bases' }),
+    ])
+    expect(summaryOrder()).toEqual(['Cantaditas', 'Discazos', 'Bases'])
+    expect(rowOrder('a1')).toEqual(['Cantaditas', 'Discazos', 'Bases'])
+  })
+
+  it('re-sorts the pills when a different selection comes in', () => {
+    const { rerender } = renderField([a1, a2])
+    expect(summaryOrder()).toEqual(['Cantaditas', 'Discazos', 'Bases'])
+    rerender([b1])
+    expect(summaryOrder()).toEqual(['Bases', 'Cantaditas'])
   })
 })
