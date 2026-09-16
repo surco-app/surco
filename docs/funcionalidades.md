@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 2026-09-15** (v0.97.0). Levantado por primera vez el
+**Última revisión: 2026-09-16** (v0.98.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -203,6 +203,18 @@ Mide bandas de 1 kHz de 9 a 22 kHz y busca una caída de la que el espectro
 **nunca se recupera** (`cutoff.ts:29-58`). Todas las bandas se miden **por FFT**,
 no con un banco de filtros (`fftBands.ts:1-15`).
 
+**El FFT no recorre la pista entera:** doce ventanas de 3 s repartidas por el
+cuerpo (`PROBE_SECONDS`, `fftBands.ts:12-39`). Eran de 0,75 s, que bastan para un
+muro de códec porque está en todas las tramas, pero dos lecturas que van sobre las
+mismas bandas no lo están: el contenido por encima de 22,05 kHz que decide el
+hi-res llega a ráfagas (en un máster de 48 kHz real la banda de 23,5 kHz oscilaba
+60 dB a lo largo de la pista) y las subidas de 1 dB que cuenta la sierra son del
+tamaño del propio ruido de muestreo. Dónde cayera la rejilla decidía el veredicto:
+deslizarla menos de un segundo movía la lectura del muro de 3,7 a 17,5 dB a través
+de su umbral de 12, y un rip de CD alternaba limpio y «reprocesado» cada 0,2 s de
+cola recortada. Con 36 s de audio la lectura se asienta en ~1 dB; ventanas de 6 s
+o 96 cortas no compran nada más.
+
 | Umbral | Valor | Calibración |
 |---|---|---|
 | Caída de rodilla | 7 dB en un paso (`cutoff.ts:45`) | El viejo 6 dB venía de lecturas bandpass, que achatan la rodilla: el mismo encode lee 6.7 dB por bandpass y 33.6 por FFT |
@@ -253,19 +265,27 @@ estante plano. Esta última es el umbral más ajustado de todo el sistema: 1.3 d
 de rango, con ~0.5 dB de margen a cada lado (`hfShelf.ts:30`).
 
 **La sierra exige tres dientes seguidos** por encima de 16,5 kHz, sumando 3 dB o
-más, con cada banda por encima de −80 dB (`cutoff.ts:121`, `:242`). El veredicto
-no puede depender del nivel al que se reproduce el espectro: un remaster de 2010
+más, con cada banda a no más de 55 dB bajo el plateau de 9–11 kHz
+(`ROUGHNESS_FLOOR_BELOW_PLATEAU_DB`, `cutoff.ts:146`, `:256`). El veredicto no
+puede depender del nivel al que se reproduce el espectro: un remaster de 2010
 llevaba los mismos dos armónicos que su reedición de 2008, y solo el remaster
 salía acusado porque estar 8 dB más alto subía ambos bultos por encima del suelo
-(`cutoff.ts:113-120`).
+(`cutoff.ts:118-128`). Ese suelo era un −80 dBFS absoluto, y fallaba en el otro
+sentido: una sierra real de cuatro dientes salía «reprocesado» en el original y
+«buena calidad» en la copia normalizada por Surco, 6,3 dB más baja, porque los
+valles caían bajo la línea y sin valles no hay subidas. Medido contra todos los
+fixtures a la vez: los dientes del enhancer bajan hasta 26 dB bajo su plateau y el
+dither de un 128k, lo único que el suelo debe excluir, empieza 83 dB abajo; 55
+queda en medio con 27 dB de margen a cada lado, en la misma línea que la guarda
+de hi-res (§4.3).
 
 ### 4.3 Frecuencia de muestreo (hi-res, upsample)
 
 Compara dos bandas a 21.5 y 23.5 kHz: un máster genuino cae ~8 dB, un upsample
-colapsa 15–20 (`cutoff.ts:140-149`).
+colapsa 15–20 (`cutoff.ts:150-158`).
 
 **El veredicto tiene cuatro salidas, no una** (`detectResolution`,
-`cutoff.ts:367-385`), porque un booleano solo sabía decir «upsampled o nada» y un
+`cutoff.ts:380-398`), porque un booleano solo sabía decir «upsampled o nada» y un
 hi-res auténtico quedaba en silencio, indistinguible desde fuera de un fichero
 que nadie había analizado:
 
@@ -284,7 +304,7 @@ claves `qualityUpsampled`, `qualityHiRes`, `qualityResolutionUnknown`); un fiche
 que hay algo arriba que comparar: en un 192 kHz cuyo contenido muere a 20 kHz las
 dos caen en el dither y su parecido se leía como caída suave, o sea, como hi-res
 genuino. Se exige además que la sonda de arriba no esté más de 55 dB por debajo
-del plateau de 9–11 kHz (`HIRES_FLOOR_BELOW_PLATEAU_DB`, `cutoff.ts:349`).
+del plateau de 9–11 kHz (`HIRES_FLOOR_BELOW_PLATEAU_DB`, `cutoff.ts:362`).
 Relativa al plateau, nunca absoluta, porque el mismo máster mezclado más bajo es
 el mismo disco. Medido: diez másters 96/24 reales llevan sus ultrasonidos a −16,5
 a −34,8 dB bajo plateau; un hi-res falso real está a −75,5 y un upsample 44.1→48 a
@@ -489,6 +509,16 @@ que es exactamente por qué el resultado solo se ofrece como sugerencia»*
 28 campos, con una única definición por campo que declara de dónde se lee y con
 qué nombre se escribe en cada contenedor (`tagFields.ts:31-163`). Un test impide
 que un campo nuevo quede ilegible o inescribible.
+
+**El grouping se edita por etiqueta y por pista cuando hay varias seleccionadas.**
+En el editor de varias pistas el resto de campos escriben un valor sobre toda la
+selección, pero el grouping es una lista de etiquetas separadas por comas y
+estamparlo borraba las de cada pista. Cada etiqueta (las guardadas en Ajustes más
+las que ya lleva alguna pista) es una pastilla con tres estados, en todas / en
+algunas / en ninguna; un clic la añade a las que no la tienen o la quita de todas
+sin tocar las demás (`lib/bulkEdit.ts`, `GroupingBulkField.tsx`). Un plegado «Por
+pista · N» lista cada pista con sus propias pastillas, y las activas se ordenan
+delante para que el recorte «+N» no las esconda.
 
 **Los campos de coleccionista llegan a todos los contenedores.** Ocho pares que
 ninguna familia de etiquetas tiene en una caja propia —número de catálogo, ID de
