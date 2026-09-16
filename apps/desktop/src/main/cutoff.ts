@@ -122,18 +122,28 @@ const ROUGHNESS_TOTAL_DB = 3
 // a seam between patches. Nor are two: a 2010 remaster of a Gowan song carries the
 // same two high harmonics (17 and 19 kHz, 2 kHz apart) as its 2008 reissue, and
 // only the remaster was accused, because sitting 8 dB louder lifted both bumps
-// over ROUGHNESS_FLOOR_DB while the reissue kept one of them under it. The verdict
-// must not depend on the level a spectrum is played back at; the enhancer's teeth
-// come in threes, so three is where a run of teeth starts.
+// over the roughness floor (an absolute -80 dBFS at the time) while the reissue
+// kept one of them under it. The verdict must not depend on the level a spectrum
+// is played back at; the enhancer's teeth come in threes, so three is where a run
+// of teeth starts.
 const ROUGHNESS_MIN_RISES = 3
 // With the saw-tooth established, the source's real ceiling is where the first
 // sharp fine-band drop appears — the edge the patches were grafted onto.
 const ROUGHNESS_EDGE_DROP_DB = 4
-// Below this a fine band is dither and CD noise, not content, and its wander
-// between neighbours is not structure. The calibration enhancer's patches sit at
-// -50 to -57 dB where they rise; the hiss that faked a saw-tooth on two clean rips
-// sat at -103 dB and below. Halfway between, with over 20 dB to either side.
-const ROUGHNESS_FLOOR_DB = -80
+// How far below the 9-11 kHz plateau a fine band may sit and still count as
+// content; further down it is dither and CD noise, and its wander between
+// neighbours is not structure. Relative to the music, never an absolute dBFS line:
+// the line used to sit at -80 dBFS, and a real saw-tooth (four teeth of 4-7 dB)
+// graded "reprocessed" in the original and "good" in Surco's own copy of it 6.3 dB
+// quieter, because the copy's valleys dropped under the line and without valleys
+// there are no rises. Measured against every fixture at once (the corpus, the
+// calibration enhancer, both Gowan masters and the user's pair): the enhancer's
+// teeth reach down to 26 dB below its plateau, and the stopband dither of a 128k
+// encode, the one thing the floor must exclude, starts 83 dB below. Anything from
+// 28 to 80 grades all of them right; 55 sits in the middle with 27 dB of margin
+// each way, and is where the hi-res guard, calibrated on its own data, put the
+// same line.
+const ROUGHNESS_FLOOR_BELOW_PLATEAU_DB = 55
 
 // A 44.1→48/96 kHz upsample ("fake hi-res") walls off at 22.05 kHz — the source's
 // original Nyquist — even though the container claims headroom to 24/48 kHz. We
@@ -233,16 +243,18 @@ export function fineBandsShowWall(fineBands: Band[]): boolean {
 // The ceiling the synthetic patches were grafted onto, or null when the fine
 // bands fall monotonically (genuine audio). Non-finite readings are dropped
 // rather than compared: one unparsed band against a real one would read as an
-// infinite rise and flag every track the moment parsing hiccups. Bands quieter
-// than ROUGHNESS_FLOOR_DB are dropped too: down at the dither floor the level
-// wanders several dB between neighbours, which sums into a saw-tooth out of
-// nothing — two CD rips were accused of patched highs on rises measured at
-// -100 dB, where an enhancer's patches (-38 to -65 dB on the calibration file)
-// never live.
+// infinite rise and flag every track the moment parsing hiccups. Bands more than
+// ROUGHNESS_FLOOR_BELOW_PLATEAU_DB under the plateau are dropped too: down at the
+// dither floor the level wanders several dB between neighbours, which sums into a
+// saw-tooth out of nothing — two CD rips were accused of patched highs on rises
+// measured at -100 dB, where an enhancer's patches (-38 to -65 dB on the
+// calibration file) never live.
 function roughnessCeiling(
   fineBands: Band[],
+  plateau: number,
 ): { band: Band; teeth: number; fromHz: number; toHz: number } | null {
-  const finite = fineBands.filter((b) => Number.isFinite(b.rmsDb) && b.rmsDb >= ROUGHNESS_FLOOR_DB)
+  const floor = plateau - ROUGHNESS_FLOOR_BELOW_PLATEAU_DB
+  const finite = fineBands.filter((b) => Number.isFinite(b.rmsDb) && b.rmsDb >= floor)
   let totalRise = 0
   let rises = 0
   let fromHz = 0
@@ -295,7 +307,7 @@ export function detectCutoff(
   if (kneeIndex !== -1 && wall)
     return { cutoffHz: bands[kneeIndex].freqHz, processed: false, hasKnee: true }
 
-  const ceiling = roughnessCeiling(fineBands)
+  const ceiling = roughnessCeiling(fineBands, plateau)
   if (ceiling)
     return {
       cutoffHz: ceiling.band.freqHz,
@@ -345,7 +357,8 @@ export type Resolution = 'native' | 'hires' | 'upsampled' | 'unknown'
 // upsample at -79.9. 55 splits a 40 dB no-man's-land with ~20 dB of margin either side.
 // Relative to the plateau rather than an absolute dBFS line, because the same master mixed
 // quieter is the same recording: an absolute floor is what made a loud remaster and its quiet
-// reissue disagree in the roughness pass (see ROUGHNESS_FLOOR_DB above).
+// reissue disagree in the roughness pass, whose floor is now relative for the same reason
+// (see ROUGHNESS_FLOOR_BELOW_PLATEAU_DB above).
 const HIRES_FLOOR_BELOW_PLATEAU_DB = 55
 
 // What the file's sample rate is actually worth, from the same two probe bands detectUpsample
