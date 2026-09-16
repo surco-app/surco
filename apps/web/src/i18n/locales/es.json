@@ -375,7 +375,7 @@
     "items": [
       {
         "q": "¿Es gratis de verdad?",
-        "a": "Sí. Surco es gratis y completo, para siempre: sin cuenta, sin suscripción y sin límites. Si te ahorra horas, puedes apoyar su desarrollo con una donación."
+        "a": "Sí. Surco es gratis y completo: sin cuenta, sin suscripción y sin límites. Si te ahorra horas, puedes apoyar su desarrollo con una donación."
       },
       {
         "q": "¿Es un editor de etiquetas y metadatos?",
@@ -918,7 +918,7 @@
       "pillRunning": "Convirtiendo {{done}}/{{total}}",
       "pillDone": "{{total}}/{{total}} listas"
     },
-    "heroFree": "Gratis, para siempre. macOS, Windows y Linux. Sin cuenta.",
+    "heroFree": "Gratis. macOS, Windows y Linux. Sin cuenta.",
     "closeTitle": "Todo esto, en una ventana.",
     "closeNote": "Sin nube, sin límites y sin nada que registrar. Se actualiza solo.",
     "closeSafety": "Tus originales no se tocan: al cambiar de formato, la copia va a una carpeta aparte. Solo reescribe el fichero si reexportas al mismo formato, que es como actualiza las etiquetas sin recodificar. Notarizado por Apple.",

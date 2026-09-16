@@ -602,7 +602,7 @@ describe('SettingsModal stats', () => {
     expect(screen.queryByTestId('stats-count')).not.toBeInTheDocument()
   })
 
-  // Surco is free forever, so the stats tab — the place that shows the hours the
+  // Surco is free, so the stats tab — the place that shows the hours the
   // app saved you — is where we ask for support. The link must open in the
   // system browser (target=_blank routes through the window-open handler) and
   // exist even before the first conversion.
