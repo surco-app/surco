@@ -9,7 +9,9 @@ import { GroupingBulkField } from './GroupingBulkField'
 afterEach(cleanup)
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (k: string) => k }),
+  useTranslation: () => ({
+    t: (k: string, o?: { count?: number }) => (o?.count != null ? `${k}:${o.count}` : k),
+  }),
 }))
 
 function track(id: string, meta: Partial<TrackMetadata>, listLabel = id): TrackItem {
@@ -39,6 +41,10 @@ function renderField(tracks: TrackItem[] = [a1, a2, b1]) {
     />,
   )
   return { onChangeTracks }
+}
+
+function openRows(): void {
+  fireEvent.click(screen.getByTestId('grouping-per-track-toggle'))
 }
 
 describe('GroupingBulkField', () => {
@@ -72,6 +78,7 @@ describe('GroupingBulkField', () => {
 
   it('toggles a tag on one track from its own row and leaves the others alone', () => {
     const { onChangeTracks } = renderField()
+    openRows()
     expect(screen.getByTestId('chip-a2-Cantaditas')).toHaveAttribute('data-state', 'on')
     fireEvent.click(screen.getByTestId('chip-a2-Bases'))
     expect(onChangeTracks).toHaveBeenCalledWith([
@@ -81,6 +88,7 @@ describe('GroupingBulkField', () => {
 
   it('names each row by track number and title, falling back to the list label', () => {
     renderField()
+    openRows()
     expect(screen.getByTestId('grouping-track-a1')).toHaveTextContent('A1')
     expect(screen.getByTestId('grouping-track-a1')).toHaveTextContent('All I Want')
     expect(screen.getByTestId('grouping-track-b1')).toHaveTextContent('jungle.flac')
@@ -90,7 +98,56 @@ describe('GroupingBulkField', () => {
   // bulk view would hide it and offer no way to take it off.
   it('offers tags the selection already carries even when they are not presets', () => {
     renderField()
+    openRows()
     expect(screen.getByTestId('chip-a1-Discazos')).toHaveAttribute('data-state', 'on')
     expect(screen.getByTestId('chip-b1-Discazos')).toHaveAttribute('data-state', 'off')
+  })
+
+  // WHY: four tracks already cost a third of the column in chips; a twelve-cut release
+  // would push every field below out of sight. The summary row stays put and says how
+  // many tags differ, and the per-track rows open only when the user asks.
+  it('starts folded, with the summary row visible and a count of the tags that vary', () => {
+    renderField()
+    expect(screen.getByTestId('chip-Cantaditas')).toBeInTheDocument()
+    expect(screen.queryByTestId('grouping-track-a1')).toBeNull()
+    expect(screen.getByTestId('grouping-per-track-toggle')).toHaveTextContent(
+      'editor.groupingPerTrack:3',
+    )
+    expect(screen.getByTestId('grouping-per-track-toggle')).toHaveTextContent(
+      'editor.groupingVarying:3',
+    )
+  })
+
+  it('says there are no differences instead of "0 vary" when every track matches', () => {
+    renderField([a2, track('a3', { grouping: 'Cantaditas' })])
+    expect(screen.getByTestId('grouping-per-track-toggle')).toHaveTextContent('editor.groupingSame')
+    expect(screen.getByTestId('grouping-per-track-toggle')).not.toHaveTextContent(
+      'editor.groupingVarying',
+    )
+  })
+
+  it('opens the per-track rows on demand and keeps them open', () => {
+    renderField()
+    openRows()
+    expect(screen.getByTestId('grouping-track-a1')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('chip-a1-Bases'))
+    expect(screen.getByTestId('grouping-track-b1')).toBeInTheDocument()
+  })
+
+  // WHY: the rows collapse to one line with a measured "+N", and the indent makes them
+  // narrower than the summary row. A tag the track carries must never fall behind that
+  // "+N", or the row would read as untagged. Active tags go first, then the rest in
+  // preset order.
+  it('orders each row with its active tags first, and the summary with all before some before none', () => {
+    renderField([a1, a2])
+    openRows()
+    const row = screen
+      .getAllByTestId(/^chip-a1-/)
+      .map((c) => c.getAttribute('data-testid')?.replace('chip-a1-', ''))
+    expect(row).toEqual(['Cantaditas', 'Discazos', 'Bases'])
+    const summary = screen
+      .getAllByTestId(/^chip-(Bases|Cantaditas|Discazos)$/)
+      .map((c) => c.getAttribute('data-testid')?.replace('chip-', ''))
+    expect(summary).toEqual(['Cantaditas', 'Discazos', 'Bases'])
   })
 })
