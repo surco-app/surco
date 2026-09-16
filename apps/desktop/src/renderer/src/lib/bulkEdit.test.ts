@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { commonValue } from './bulkEdit'
+import { commonValue, groupingTagState, groupingTags, toggleGroupingAll } from './bulkEdit'
 
 const emptyMeta: TrackMetadata = {
   title: '',
@@ -66,5 +66,52 @@ describe('commonValue', () => {
 
   it('returns undefined for an empty selection', () => {
     expect(commonValue([], 'album')).toBeUndefined()
+  })
+})
+
+describe('groupingTagState', () => {
+  it('reports all, some or none for a tag across the selection', () => {
+    const tracks = [
+      track({ grouping: 'Bases, Discazos' }),
+      track({ grouping: 'Cantaditas, Discazos' }),
+    ]
+    expect(groupingTagState(tracks, 'Discazos')).toBe('all')
+    expect(groupingTagState(tracks, 'Bases')).toBe('some')
+    expect(groupingTagState(tracks, 'Cierre')).toBe('none')
+  })
+
+  it('matches whole tags, not substrings', () => {
+    expect(groupingTagState([track({ grouping: 'Bases' })], 'Base')).toBe('none')
+  })
+})
+
+describe('toggleGroupingAll', () => {
+  it('adds the tag only to the tracks missing it, keeping what each one had', () => {
+    const a = track({ grouping: 'Bases' })
+    const b = track({ grouping: 'Cantaditas, Discazos' })
+    expect(toggleGroupingAll([a, b], 'Discazos')).toEqual([
+      { id: a.id, meta: { grouping: 'Bases, Discazos' } },
+    ])
+  })
+
+  it('removes the tag from every track once all of them carry it', () => {
+    const a = track({ grouping: 'Bases, Discazos' })
+    const b = track({ grouping: 'Discazos' })
+    expect(toggleGroupingAll([a, b], 'Discazos')).toEqual([
+      { id: a.id, meta: { grouping: 'Bases' } },
+      { id: b.id, meta: { grouping: '' } },
+    ])
+  })
+})
+
+describe('groupingTags', () => {
+  it('lists the presets first, then tags the selection already carries that are not presets', () => {
+    const tracks = [track({ grouping: 'Discazos, Bases' }), track({ grouping: 'Cierre' })]
+    expect(groupingTags(['Bases', 'Cantaditas'], tracks)).toEqual([
+      'Bases',
+      'Cantaditas',
+      'Discazos',
+      'Cierre',
+    ])
   })
 })

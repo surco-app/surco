@@ -99,6 +99,7 @@ interface Props {
   // Fills each track's tags from its own file name; applies to the primary in single view
   // and to the whole selection in multi.
   onDeriveTags?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
+  onChangeTracksMeta?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   // Rewrites the selection's titles from the settings' title format — App owns it so
   // the pass shares the ⌘K command's undo channel and its "changed n / changed
   // nothing" notices; the editor's T button is just a second trigger for it.
@@ -192,6 +193,7 @@ export const Editor = memo(function Editor({
   onChangeAllMeta,
   onApplyCoverAll,
   onDeriveTags,
+  onChangeTracksMeta,
   onApplyTitleFormat,
   onRecordUndo,
   onClearExtras,
@@ -850,6 +852,7 @@ export const Editor = memo(function Editor({
         tr,
         singleOnChange,
         bulkOnChange,
+        onChangeTracksMeta,
       }),
     [
       isMulti,
@@ -868,6 +871,7 @@ export const Editor = memo(function Editor({
       tr,
       singleOnChange,
       bulkOnChange,
+      onChangeTracksMeta,
     ],
   )
 

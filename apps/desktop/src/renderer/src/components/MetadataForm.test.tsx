@@ -23,6 +23,11 @@ vi.mock('./Field', () => ({
 }))
 vi.mock('./CoverPicker', () => ({ CoverPicker: () => <div data-testid="cover" /> }))
 vi.mock('./StarRating', () => ({ StarRating: () => <div data-testid="stars" /> }))
+vi.mock('./GroupingBulkField', () => ({
+  GroupingBulkField: ({ presets }: { presets: string[] }) => (
+    <div data-testid="grouping-bulk">{presets.join(',')}</div>
+  ),
+}))
 
 const spec = (key: string, value = ''): FieldSpec =>
   ({ key, label: key, value, placeholder: '', onChange: vi.fn() }) as unknown as FieldSpec
@@ -72,5 +77,19 @@ describe('MetadataForm', () => {
       'field-catalogNumber',
       'field-artist',
     ])
+  })
+
+  it('renders a per-track spec as the bulk grouping field, full width, instead of a text field', () => {
+    renderForm([
+      spec('genre', 'Techno'),
+      {
+        ...spec('grouping'),
+        suggestions: ['Bases', 'Vocals'],
+        perTrack: { tracks: [], onChangeTracks: vi.fn() },
+      },
+    ])
+    expect(screen.getByTestId('grouping-bulk')).toHaveTextContent('Bases,Vocals')
+    expect(screen.queryByTestId('field-grouping')).toBeNull()
+    expect(screen.getByTestId('grouping-bulk').parentElement?.className).toContain('col-span-2')
   })
 })

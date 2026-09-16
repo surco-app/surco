@@ -5,6 +5,7 @@ import { buildFieldSpecs, type FieldSpec } from '../lib/fieldSpecs'
 import type { TrackItem } from '../types'
 import { CoverPicker } from './CoverPicker'
 import { Field } from './Field'
+import { GroupingBulkField } from './GroupingBulkField'
 import { StarRating } from './StarRating'
 
 // Re-exported from lib so the form and its callers keep a single import site for the
@@ -17,6 +18,16 @@ export { buildFieldSpecs }
 // stamps '1' on every track); every other field is a text Field. Pulled out so both the
 // group render and any future caller draw a field the same way.
 function renderField(f: FieldSpec): React.JSX.Element {
+  if (f.perTrack) {
+    return (
+      <GroupingBulkField
+        label={f.label}
+        presets={f.suggestions ?? []}
+        tracks={f.perTrack.tracks}
+        onChangeTracks={f.perTrack.onChangeTracks}
+      />
+    )
+  }
   if (f.key === 'compilation') {
     return (
       <label className="flex items-center gap-2 self-end pb-2">
@@ -104,7 +115,9 @@ export function MetadataForm({
           {fields.map((f) => (
             <div
               key={f.key}
-              className={f.wide || f.key === 'compilation' ? '@[26rem]:col-span-2' : ''}
+              className={
+                f.wide || f.perTrack || f.key === 'compilation' ? '@[26rem]:col-span-2' : ''
+              }
             >
               {renderField(f)}
             </div>

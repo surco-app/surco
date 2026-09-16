@@ -31,6 +31,10 @@ export interface FieldSpec {
   insertSources?: InsertSource[]
   cleanResult?: string
   formatResult?: string
+  perTrack?: {
+    tracks: TrackItem[]
+    onChangeTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
+  }
 }
 
 // The free-text fields that host the { } insert menu — the ones where composing a
@@ -77,6 +81,7 @@ export interface BuildFieldSpecsParams {
   // reused across renders since setField/onChangeAllMeta are themselves stable.
   singleOnChange: ReadonlyMap<keyof TrackMetadata, (v: string) => void>
   bulkOnChange: ReadonlyMap<keyof TrackMetadata, (v: string) => void>
+  onChangeTracksMeta?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
 }
 
 // The bulk and single forms render the same tree; only where a field's value comes
@@ -102,19 +107,25 @@ export function buildFieldSpecs({
   tr,
   singleOnChange,
   bulkOnChange,
+  onChangeTracksMeta,
 }: BuildFieldSpecsParams): FieldSpec[] {
   return isMulti && selectedTracks
     ? BULK_FIELDS.filter((key) => visibleFields.includes(key)).map((key) => {
         const shared = commonValue(selectedTracks, key)
+        const perTrack =
+          key === 'grouping' && onChangeTracksMeta
+            ? { tracks: selectedTracks, onChangeTracks: onChangeTracksMeta }
+            : undefined
         return {
           key,
           label: tr(`fields.${key}`),
           value: shared ?? '',
-          placeholder: shared === undefined ? tr('editor.multipleValues') : undefined,
+          placeholder: shared === undefined && !perTrack ? tr('editor.multipleValues') : undefined,
           onChange: bulkOnChange.get(key) ?? (() => {}),
           suggestions:
             key === 'genre' ? genreChips : key === 'grouping' ? groupingPresets : undefined,
           multiSuggestions: key === 'grouping',
+          perTrack,
         }
       })
     : visibleFields.flatMap((key) => {
