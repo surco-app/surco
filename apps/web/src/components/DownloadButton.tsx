@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { type DownloadLocation, trackDownload } from '../lib/analytics'
-import { pickInstallerRelease } from '../lib/downloads'
+import { fetchInstallerReleasesCached, pickInstallerRelease } from '../lib/downloads'
 import { downloadState } from '../lib/downloadState'
 import { detectOS, installerSuffix, type OS } from '../lib/os'
 import { btnPrimary } from '../lib/ui'
@@ -67,14 +67,9 @@ export default function DownloadButton({
   useEffect(() => {
     if (os === 'other' || os === 'unknown') return
     let cancelled = false
-    fetch(`https://api.github.com/repos/${REPO}/releases?per_page=20`)
-      .then((r) => (r.ok ? r.json() : null))
+    fetchInstallerReleasesCached(REPO)
       .then((releases) => {
         if (cancelled) return
-        if (!Array.isArray(releases)) {
-          setFailed(true)
-          return
-        }
         const suffix = installerSuffix(os)
         const rel = pickInstallerRelease(releases, suffix)
         if (!rel) return

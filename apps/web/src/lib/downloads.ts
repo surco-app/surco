@@ -70,12 +70,66 @@ export async function fetchReleasesCached(repo: string): Promise<Release[]> {
   return releases
 }
 
-interface InstallerRelease {
+export interface InstallerRelease {
   tag_name: string
   draft?: boolean
   // size rides in the same payload the download URL comes from, so showing the
   // installer weight costs no extra request against the 60/hour rate limit.
   assets?: { name: string; browser_download_url: string; size?: number }[]
+}
+
+// The button asking for the installer is mounted on every page — three times on the home
+// page alone (hero, closing CTA, install section) — and each mount used to spend its own
+// request against the same 60/hour-per-IP budget the count walks. A visit through home →
+// features → guide → changelog cost a dozen, which is how a shared office or CGNAT address
+// reaches the 403 that drops visitors onto a raw asset list. The installer URL only changes
+// when a release ships, so one request per session is enough.
+//
+// Kept separate from the count's cache on purpose: that one walks every page of 100 to sum
+// download counts, while this asks for a single page of 20 and needs the asset URL and size
+// the count's payload doesn't carry.
+
+// Requests still in flight, so the mounts that render together share one. The stored copy
+// only helps the NEXT page: all three of the home page's buttons run their effect in the
+// same tick, before any response has landed, which measured 2 requests with the cache alone.
+const inFlight = new Map<string, Promise<InstallerRelease[]>>()
+
+export async function fetchInstallerReleasesCached(repo: string): Promise<InstallerRelease[]> {
+  const key = `surco:installers:${repo}`
+  try {
+    const raw = globalThis.sessionStorage?.getItem(key)
+    if (raw) return JSON.parse(raw) as InstallerRelease[]
+  } catch {
+    // A corrupt entry throws on parse; falling through to the request is the answer.
+  }
+  const pending = inFlight.get(key)
+  if (pending) return pending
+
+  const request = (async () => {
+    const res = await fetch(`https://api.github.com/repos/${repo}/releases?per_page=20`)
+    if (!res.ok) throw new Error(`GitHub returned ${res.status}`)
+    const releases = (await res.json()) as InstallerRelease[]
+    try {
+      // Only a successful response is stored. Caching a failure would pin the outage to the
+      // rest of the session, still claiming the download is unreachable after GitHub recovers.
+      globalThis.sessionStorage?.setItem(key, JSON.stringify(releases))
+    } catch {
+      // Storage blocked or full: the button still works, it just costs a request per page.
+    }
+    return releases
+  })()
+
+  // The shared promise is the one handed back, not a `.finally` branch off it: that branch
+  // would be a second, unobserved chain, and a rejected request would surface as an
+  // unhandled rejection in the visitor's browser. The eviction rides on a swallowed copy
+  // instead. Dropped either way once it settles, so a failure stays retryable — the same
+  // reason a failure is never written to storage.
+  inFlight.set(key, request)
+  void request.then(
+    () => inFlight.delete(key),
+    () => inFlight.delete(key),
+  )
+  return request
 }
 
 // The newest release whose installer for `suffix` (e.g. "arm64.dmg", ".exe") is actually
