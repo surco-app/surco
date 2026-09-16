@@ -15,6 +15,40 @@ interface GroupingBulkFieldProps {
   onChangeTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
 }
 
+interface TagOrder {
+  selection: string
+  summary: string[]
+  rows: Record<string, string[]>
+}
+
+function tagOrder(selection: string, tags: string[], tracks: TrackItem[]): TagOrder {
+  const rank = { all: 0, some: 1, none: 2 }
+  return {
+    selection,
+    summary: [...tags].sort(
+      (a, b) => rank[groupingTagState(tracks, a)] - rank[groupingTagState(tracks, b)],
+    ),
+    rows: Object.fromEntries(
+      tracks.map((t) => [
+        t.id,
+        [...tags].sort(
+          (a, b) =>
+            Number(csvHas(t.meta.grouping ?? '', b)) - Number(csvHas(t.meta.grouping ?? '', a)),
+        ),
+      ]),
+    ),
+  }
+}
+
+function sortedAs(tags: string[], order: string[] | undefined): string[] {
+  if (!order) return tags
+  const at = (tag: string) => {
+    const i = order.indexOf(tag)
+    return i === -1 ? order.length : i
+  }
+  return [...tags].sort((a, b) => at(a) - at(b))
+}
+
 export function GroupingBulkField({
   label,
   presets,
@@ -24,10 +58,10 @@ export function GroupingBulkField({
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
   const tags = groupingTags(presets, tracks)
-  const rank = { all: 0, some: 1, none: 2 }
-  const summaryTags = [...tags].sort(
-    (a, b) => rank[groupingTagState(tracks, a)] - rank[groupingTagState(tracks, b)],
-  )
+  const selection = tracks.map((t) => t.id).join('\n')
+  const [order, setOrder] = useState(() => tagOrder(selection, tags, tracks))
+  if (order.selection !== selection) setOrder(tagOrder(selection, tags, tracks))
+  const summaryTags = sortedAs(tags, order.summary)
   const varying = tags.filter((tag) => groupingTagState(tracks, tag) === 'some').length
   return (
     <div className="block" data-testid="grouping-bulk">
@@ -78,11 +112,7 @@ export function GroupingBulkField({
                 <SuggestionChips
                   scope={t.id}
                   dim
-                  suggestions={[...tags].sort(
-                    (a, b) =>
-                      Number(csvHas(t.meta.grouping ?? '', b)) -
-                      Number(csvHas(t.meta.grouping ?? '', a)),
-                  )}
+                  suggestions={sortedAs(tags, order.rows[t.id])}
                   isOn={(tag) => csvHas(t.meta.grouping ?? '', tag)}
                   onPick={(tag) =>
                     onChangeTracks([
