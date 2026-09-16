@@ -195,7 +195,7 @@ describe('audio:cached-batch', () => {
 
   it('returns the cached spectrogram for a warm entry, keyed by path', async () => {
     const file = await makeFile()
-    await cachedAnalysis('spectrogram-mono-v24', file, async () => ({
+    await cachedAnalysis('spectrogram-mono-v25', file, async () => ({
       image: 'data:image/png;base64,x',
       cutoffHz: 20000,
       sampleRateHz: 44100,
@@ -263,7 +263,7 @@ describe('audio:cached-batch', () => {
   it('serves multiple paths in one call, each independently', async () => {
     const warm = await makeFile()
     const cold = await makeFile()
-    await cachedAnalysis('spectrogram-mono-v24', warm, async () => ({
+    await cachedAnalysis('spectrogram-mono-v25', warm, async () => ({
       image: 'x',
       cutoffHz: 1,
       sampleRateHz: 44100,
