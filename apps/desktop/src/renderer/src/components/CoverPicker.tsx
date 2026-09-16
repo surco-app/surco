@@ -288,14 +288,15 @@ export function CoverPicker({
 
   // The covers the picker steps through: the file's own artwork first, then the
   // release's images (deduped), so the original sits at index 0 and Discogs'
-  // alternatives are one step away — and reachable again after stepping off.
+  // alternatives are one step away — and reachable again after stepping off. In
+  // multi-select every file has its own art, so only the release's images are offered.
   const coverChoices = useMemo(() => {
     const choices: { uri: string; path?: string }[] = []
     // Track every uri already added so a release image that repeats (Discogs returns the
     // same art under a primary and its secondaries) — or that matches the file's own cover —
     // becomes one slot, not a run of identical-looking ones the stepper cycles through.
     const seen = new Set<string>()
-    if (originalCover.url) {
+    if (!isMulti && originalCover.url) {
       choices.push({ uri: originalCover.url, path: originalCover.path })
       seen.add(originalCover.url)
     }
@@ -305,13 +306,15 @@ export function CoverPicker({
         seen.add(im.uri)
       }
     return choices
-  }, [release, originalCover])
+  }, [release, originalCover, isMulti])
 
   // Switches the cover among the picker's choices (the original plus the release's
   // images). It only swaps the artwork, leaving the rest of the metadata untouched.
   function pickCoverImage(delta: number): void {
-    const i = stepImageIndex(coverChoices, item.coverUrl, delta)
-    if (i >= 0)
+    const i = stepImageIndex(coverChoices, displayCover, delta)
+    if (i < 0) return
+    if (isMulti) onApplyCoverAll?.(coverChoices[i].uri, coverChoices[i].path)
+    else
       onChange({
         coverUrl: coverChoices[i].uri,
         coverPath: coverChoices[i].path,
@@ -413,7 +416,7 @@ export function CoverPicker({
           {coverActions}
         </div>
       )}
-      {!isMulti && coverChoices.length > 1 && (
+      {coverChoices.length > 1 && (
         <div
           data-testid="cover-image-picker"
           className="mt-1.5 flex items-center justify-center gap-2"
@@ -429,7 +432,7 @@ export function CoverPicker({
           </button>
           <span data-testid="cover-image-count" className="text-[11px] tabular-nums text-fg-dim">
             {(() => {
-              const pos = coverChoices.findIndex((c) => c.uri === item.coverUrl) + 1
+              const pos = coverChoices.findIndex((c) => c.uri === displayCover) + 1
               // 0 (not '–') when no cover is selected, e.g. just after deleting one: the
               // arrows still step into the choices, so "0/4" reads as "none of 4 picked".
               return `${pos}/${coverChoices.length}`
@@ -455,9 +458,9 @@ export function CoverPicker({
           // Same gate and stepper as the well's inline arrows, so the lightbox can
           // browse the file's art and the release's images and close on whichever.
           nav={
-            !isMulti && coverChoices.length > 1
+            coverChoices.length > 1
               ? {
-                  position: coverChoices.findIndex((c) => c.uri === item.coverUrl) + 1,
+                  position: coverChoices.findIndex((c) => c.uri === displayCover) + 1,
                   count: coverChoices.length,
                   onStep: pickCoverImage,
                 }
