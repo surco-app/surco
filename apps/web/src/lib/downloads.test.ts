@@ -159,6 +159,28 @@ describe('fetchAllReleases', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(second).toEqual(first)
   })
+
+  // Same race the installer lookup had: the home page renders two counts (the install
+  // section opts out of the meta row), both effects run in the same tick, and neither has
+  // written to storage yet. Measured at 2 requests with the stored copy alone — and each
+  // one is a whole pagination walk, the most expensive call the page makes.
+  it('shares one in-flight walk between counts that start together', async () => {
+    const store = new Map<string, string>()
+    vi.stubGlobal('sessionStorage', {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => void store.set(k, v),
+    })
+    const fetchMock = vi.fn().mockResolvedValue(page([release('v1.0.0')]))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const [a, b] = await Promise.all([
+      fetchReleasesCached('surco-app/surco-releases'),
+      fetchReleasesCached('surco-app/surco-releases'),
+    ])
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(b).toEqual(a)
+  })
 })
 
 describe('fetchInstallerReleasesCached', () => {
