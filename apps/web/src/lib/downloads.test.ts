@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   countDownloads,
   fetchAllReleases,
+  fetchInstallerReleasesCached,
   fetchReleasesCached,
   pickInstallerRelease,
 } from './downloads'
@@ -157,5 +158,97 @@ describe('fetchAllReleases', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(second).toEqual(first)
+  })
+})
+
+describe('fetchInstallerReleasesCached', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  const installer = {
+    tag_name: 'v0.97.0',
+    assets: [
+      { name: 'Surco-0.97.0-arm64.dmg', browser_download_url: 'https://dl.test/a.dmg', size: 183 },
+    ],
+  }
+  const ok = (body: unknown) => ({ ok: true, json: () => Promise.resolve(body) }) as Response
+
+  const stubStorage = () => {
+    const store = new Map<string, string>()
+    vi.stubGlobal('sessionStorage', {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => void store.set(k, v),
+    })
+  }
+
+  // The button mounts on every page, and the home page mounts it three times (hero,
+  // closing CTA, install section). Each mount used to spend its own request against
+  // the 60/hour-per-IP limit, so a single visit through home → features → guide →
+  // changelog cost a dozen — enough for an office or CGNAT address to hit the 403 that
+  // drops visitors onto a raw asset list. The installer URL changes only when a release
+  // ships, so one request per session is enough.
+  it('serves every extra mount from the session cache', async () => {
+    stubStorage()
+    const fetchMock = vi.fn().mockResolvedValue(ok([installer]))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const first = await fetchInstallerReleasesCached('surco-app/surco-releases')
+    const second = await fetchInstallerReleasesCached('surco-app/surco-releases')
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(second).toEqual(first)
+  })
+
+  // The cached payload is what the CTA's href, version and size are read from, so a
+  // round trip through storage has to preserve the asset fields, not just the tag.
+  it('keeps the asset URL and size across the cache round trip', async () => {
+    stubStorage()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok([installer])))
+
+    await fetchInstallerReleasesCached('surco-app/surco-releases')
+    const cached = await fetchInstallerReleasesCached('surco-app/surco-releases')
+
+    expect(cached[0].assets?.[0]).toEqual({
+      name: 'Surco-0.97.0-arm64.dmg',
+      browser_download_url: 'https://dl.test/a.dmg',
+      size: 183,
+    })
+  })
+
+  // The home page mounts the button three times, and all three effects run in the same
+  // tick — before any of them has written to sessionStorage. The stored copy only helps
+  // the NEXT page, so without sharing the in-flight promise the first render still spends
+  // one request per mount. Measured: the cache alone left the home page at 2.
+  it('shares one in-flight request between mounts that start together', async () => {
+    stubStorage()
+    const fetchMock = vi.fn().mockResolvedValue(ok([installer]))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const [a, b, c] = await Promise.all([
+      fetchInstallerReleasesCached('surco-app/surco-releases'),
+      fetchInstallerReleasesCached('surco-app/surco-releases'),
+      fetchInstallerReleasesCached('surco-app/surco-releases'),
+    ])
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(b).toEqual(a)
+    expect(c).toEqual(a)
+  })
+
+  // A failed request must not be cached: the visitor would then be stuck with the
+  // outage for the rest of the session even after GitHub recovered, and the button
+  // would keep claiming the download is unreachable on every page they open.
+  it('does not cache a failed request', async () => {
+    stubStorage()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 504 } as Response)
+      .mockResolvedValueOnce(ok([installer]))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchInstallerReleasesCached('surco-app/surco-releases')).rejects.toThrow()
+    expect(await fetchInstallerReleasesCached('surco-app/surco-releases')).toEqual([installer])
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })
