@@ -3,7 +3,6 @@ import { memo, useEffect, useRef, useState } from 'react'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
 import { SuggestionChips } from './SuggestionChips'
-import { Tooltip } from './Tooltip'
 
 // How long typing pauses before the edit is committed to the global track array. Each
 // keystroke that reaches that array re-runs an O(number of tracks) derived pipeline
@@ -49,7 +48,6 @@ export const Field = memo(function Field({
   formatResult,
 }: FieldProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
-  const [menuOpen, setMenuOpen] = useState(false)
   // The text the input shows while the user types, kept local so a keystroke doesn't
   // touch the global track array (and its O(n) pipeline) until they pause or leave.
   const [draft, setDraft] = useState(value)
@@ -148,13 +146,6 @@ export const Field = memo(function Field({
             hasMenu ? 'pr-8' : ''
           }`}
         />
-        {/* The input can't host the themed Tooltip as a child, so it lives on this wrapper
-            (the Tooltip anchors to its parentElement): hovering the field still reveals the
-            full value when it's clipped, now in the app's own tooltip rather than the
-            OS-native one. An empty field gets none — there's nothing to reveal, and an
-            open ⋯ menu suppresses it: the menu sits inside this same wrapper, so the
-            value tooltip would float over its rows. */}
-        {draft && !menuOpen && <Tooltip label={draft} hoverOnly />}
         {hasMenu && (
           <FieldInsertMenu
             fieldName={name}
@@ -164,7 +155,6 @@ export const Field = memo(function Field({
             formatResult={formatResult}
             inputRef={inputRef}
             onChange={commit}
-            onOpenChange={setMenuOpen}
           />
         )}
       </span>
