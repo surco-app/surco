@@ -12,7 +12,8 @@
 // The transform runs over a sample of the track rather than all of it. A codec
 // wall is present in every frame, so ~12 windows spread across the body measure
 // it as well as a full pass (verified: identical verdicts, same error), and the
-// cost stops scaling with duration.
+// cost stops scaling with duration. The window length is set by what is NOT in
+// every frame; see PROBE_SECONDS.
 
 import { spawn } from 'node:child_process'
 import { ffmpegPath } from './binaries'
@@ -24,7 +25,18 @@ const HOP = FFT_SIZE / 2
 // Windows spread across the track. More stops changing the reading; fewer starts
 // letting one quiet passage dominate.
 const PROBE_POINTS = 12
-const PROBE_SECONDS = 0.75
+// How long each window is. 0.75 s was enough for a codec wall, but two of the
+// readings that ride on the same bands are not in every frame: the content above
+// 22.05 kHz that decides the hi-res verdict comes in bursts (on a real 48 kHz
+// master it swung the 23.5 kHz band 60 dB across the track), and the 1 dB rises
+// the saw-tooth pass counts are the size of the sampling noise itself. So where
+// the twelve windows landed decided the verdict: sliding the grid under one
+// second moved the wall reading 3.7 to 17.5 dB across its 12 dB threshold, and a
+// CD rip flipped between clean and "reprocessed" every 0.2 s of trimmed tail.
+// Measured on those files, the readings settle to about 1 dB once 36 s of audio
+// go in, and twelve windows of 3 s get there at the same concurrency; 6 s windows
+// or 96 short ones buy nothing further.
+const PROBE_SECONDS = 3
 // Skip the intro and outro, where fades and silence carry no spectrum worth
 // measuring. Proportional so it holds for a 30 s edit and a 10 min mix alike.
 const BODY_START = 0.05
@@ -32,7 +44,7 @@ const BODY_END = 0.95
 // Below this a window is silence or near it; its spectrum is the noise floor and
 // would drag the average down for every band equally.
 const SILENCE_RMS = 1e-4
-// Matches ANALYSIS_TIMEOUT_MS in ffmpeg.ts. Each probe decodes under a second of
+// Matches ANALYSIS_TIMEOUT_MS in ffmpeg.ts. Each probe decodes a few seconds of
 // audio, so reaching this means the read is stuck rather than slow.
 const PROBE_TIMEOUT_MS = 120_000
 

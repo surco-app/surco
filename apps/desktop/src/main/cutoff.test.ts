@@ -676,6 +676,35 @@ describe('detectCutoff roughness is level-invariant', () => {
     const lift = (bands: Band[]): Band[] => bands.map((b) => ({ ...b, rmsDb: b.rmsDb + 20 }))
     expect(detectCutoff(lift(REISSUE_COARSE), NYQUIST, lift(REISSUE_FINE)).processed).toBe(false)
   })
+
+  // The other direction, from a user's real pair: a track whose fine bands carry a
+  // genuine saw-tooth (four teeth of 4 to 7 dB, patch seams every kilohertz, no tonal
+  // lines when looked at with a 1 Hz FFT) and Surco's own normalised copy of it, 6.3 dB
+  // quieter. The original graded "reprocessed" and the copy "good", because the floor
+  // that keeps dither out of the count sat at an absolute -80 dBFS and the copy's
+  // valleys (17.5 and 18.5 kHz, -81 and -83) fell under it; without valleys there
+  // are no rises. A finding this clear cannot hinge on the master's level: the floor
+  // has to move with the music, as the hi-res guard's already does.
+  it('keeps flagging a real saw-tooth after the track is turned down', () => {
+    const FUSE_COARSE = fftBand([
+      -59.69, -59.82, -61.14, -62.02, -63.35, -65.99, -67.74, -68.0, -68.92, -70.22, -72.8, -76.36,
+      -85.27,
+    ])
+    const FUSE_FINE = fine([
+      -63.9, -64.38, -65.24, -68.41, -66.53, -69.29, -66.82, -70.26, -67.49, -74.02, -67.96, -76.45,
+      -70.68, -79.84, -74.54, -81.15, -84.23,
+    ])
+    const FUSE_QUIET_COARSE = fftBand([
+      -65.73, -66.09, -67.55, -68.46, -69.57, -72.1, -73.88, -74.23, -75.1, -76.24, -78.95, -82.46,
+      -91.34,
+    ])
+    const FUSE_QUIET_FINE = fine([
+      -70.16, -70.66, -71.31, -74.55, -72.6, -75.58, -72.98, -76.4, -73.71, -80.36, -73.92, -82.72,
+      -76.82, -86.22, -80.67, -87.04, -90.18,
+    ])
+    expect(detectCutoff(FUSE_COARSE, NYQUIST, FUSE_FINE).processed).toBe(true)
+    expect(detectCutoff(FUSE_QUIET_COARSE, NYQUIST, FUSE_QUIET_FINE).processed).toBe(true)
+  })
 })
 
 // Two files out of a 6000-track lossless library swept through the verdict,
