@@ -50,24 +50,53 @@ export async function fetchAllReleases(repo: string): Promise<Release[]> {
 // home → features → guide → changelog spent it four times over; exhausting the limit
 // answers 403, which drops the visitor onto a raw asset list instead of an installer.
 // Caching is safe here because this is a vanity count, not live data: minutes out of
-// date is invisible. sessionStorage is read through globalThis because it is absent in
-// the SSG prerender and throws in private-mode Safari.
-export async function fetchReleasesCached(repo: string): Promise<Release[]> {
-  const key = `surco:releases:${repo}`
+// date is invisible.
+
+// Requests still in flight, keyed like their stored counterparts. The stored copy only
+// helps the NEXT page: the buttons and counts sharing a page all run their effects in the
+// same tick, before any response has landed, so without this the first render still spends
+// one request per mount. Measured on the home page: 2 counts and 3 installer lookups.
+const inFlight = new Map<string, Promise<unknown>>()
+
+// Reads `key` from sessionStorage, and otherwise runs `request` — joining an identical one
+// already in flight rather than starting a second. Only a success is stored: caching a
+// failure would pin an outage to the rest of the session, long after GitHub recovered.
+// sessionStorage is reached through globalThis because it is absent in the SSG prerender
+// and throws in private-mode Safari.
+async function cachedBySession<T>(key: string, request: () => Promise<T>): Promise<T> {
   try {
     const raw = globalThis.sessionStorage?.getItem(key)
-    if (raw) return JSON.parse(raw) as Release[]
+    if (raw) return JSON.parse(raw) as T
   } catch {
-    // A corrupt entry throws on parse; falling through to the walk is the answer.
+    // A corrupt entry throws on parse; falling through to the request is the answer.
   }
-  const releases = await fetchAllReleases(repo)
-  try {
-    globalThis.sessionStorage?.setItem(key, JSON.stringify(releases))
-  } catch {
-    // Storage blocked or full: the count still renders, it just costs the walk again
-    // on the next page. Caching must never break the thing it exists to speed up.
-  }
-  return releases
+  const pending = inFlight.get(key)
+  if (pending) return pending as Promise<T>
+
+  const started = request().then((value) => {
+    try {
+      globalThis.sessionStorage?.setItem(key, JSON.stringify(value))
+    } catch {
+      // Storage blocked or full: the page still works, it just costs a request again on
+      // the next one. Caching must never break the thing it exists to speed up.
+    }
+    return value
+  })
+
+  // The shared promise is the one handed back, not a `.finally` branch off it: that branch
+  // would be a second, unobserved chain, and a rejected request would surface as an
+  // unhandled rejection in the visitor's browser. The eviction rides on a swallowed copy
+  // instead, and drops the entry either way so a failure stays retryable.
+  inFlight.set(key, started)
+  void started.then(
+    () => inFlight.delete(key),
+    () => inFlight.delete(key),
+  )
+  return started
+}
+
+export function fetchReleasesCached(repo: string): Promise<Release[]> {
+  return cachedBySession(`surco:releases:${repo}`, () => fetchAllReleases(repo))
 }
 
 export interface InstallerRelease {
@@ -88,48 +117,12 @@ export interface InstallerRelease {
 // Kept separate from the count's cache on purpose: that one walks every page of 100 to sum
 // download counts, while this asks for a single page of 20 and needs the asset URL and size
 // the count's payload doesn't carry.
-
-// Requests still in flight, so the mounts that render together share one. The stored copy
-// only helps the NEXT page: all three of the home page's buttons run their effect in the
-// same tick, before any response has landed, which measured 2 requests with the cache alone.
-const inFlight = new Map<string, Promise<InstallerRelease[]>>()
-
-export async function fetchInstallerReleasesCached(repo: string): Promise<InstallerRelease[]> {
-  const key = `surco:installers:${repo}`
-  try {
-    const raw = globalThis.sessionStorage?.getItem(key)
-    if (raw) return JSON.parse(raw) as InstallerRelease[]
-  } catch {
-    // A corrupt entry throws on parse; falling through to the request is the answer.
-  }
-  const pending = inFlight.get(key)
-  if (pending) return pending
-
-  const request = (async () => {
+export function fetchInstallerReleasesCached(repo: string): Promise<InstallerRelease[]> {
+  return cachedBySession(`surco:installers:${repo}`, async () => {
     const res = await fetch(`https://api.github.com/repos/${repo}/releases?per_page=20`)
     if (!res.ok) throw new Error(`GitHub returned ${res.status}`)
-    const releases = (await res.json()) as InstallerRelease[]
-    try {
-      // Only a successful response is stored. Caching a failure would pin the outage to the
-      // rest of the session, still claiming the download is unreachable after GitHub recovers.
-      globalThis.sessionStorage?.setItem(key, JSON.stringify(releases))
-    } catch {
-      // Storage blocked or full: the button still works, it just costs a request per page.
-    }
-    return releases
-  })()
-
-  // The shared promise is the one handed back, not a `.finally` branch off it: that branch
-  // would be a second, unobserved chain, and a rejected request would surface as an
-  // unhandled rejection in the visitor's browser. The eviction rides on a swallowed copy
-  // instead. Dropped either way once it settles, so a failure stays retryable — the same
-  // reason a failure is never written to storage.
-  inFlight.set(key, request)
-  void request.then(
-    () => inFlight.delete(key),
-    () => inFlight.delete(key),
-  )
-  return request
+    return (await res.json()) as InstallerRelease[]
+  })
 }
 
 // The newest release whose installer for `suffix` (e.g. "arm64.dmg", ".exe") is actually
