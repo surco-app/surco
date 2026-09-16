@@ -1194,6 +1194,7 @@ describe('Editor multi-select', () => {
       requiredFields?: string[]
       metaA?: Partial<TrackMetadata>
       metaB?: Partial<TrackMetadata>
+      groupingPresets?: string[]
     } = {},
   ) {
     if (opts.platform)
@@ -1202,6 +1203,7 @@ describe('Editor multi-select', () => {
     const onProcessAll = vi.fn()
     const onAddAllToAppleMusic = vi.fn()
     const onDeriveTags = vi.fn()
+    const onChangeTracksMeta = vi.fn()
     const status = opts.done ? ('done' as const) : ('idle' as const)
     const a = item({
       id: 'a',
@@ -1232,6 +1234,7 @@ describe('Editor multi-select', () => {
         onChangeAllMeta={onChangeAllMeta}
         onApplyCoverAll={vi.fn()}
         onDeriveTags={onDeriveTags}
+        onChangeTracksMeta={onChangeTracksMeta}
         onChange={vi.fn()}
         onProcess={vi.fn()}
         onAddToAppleMusic={vi.fn()}
@@ -1245,14 +1248,30 @@ describe('Editor multi-select', () => {
       />,
       {
         addToAppleMusic: opts.music ?? false,
+        groupingPresets: opts.groupingPresets ?? [],
         visibleFields: opts.visibleFields ?? ['title', 'album'],
         requiredFields: opts.requiredFields ?? ['title'],
         showSpectrum: true,
         showLoudness: opts.loudness ?? false,
       },
     )
-    return { onChangeAllMeta, onProcessAll, onAddAllToAppleMusic, onDeriveTags }
+    return { onChangeAllMeta, onProcessAll, onAddAllToAppleMusic, onDeriveTags, onChangeTracksMeta }
   }
+
+  // WHY: with two tracks selected, a grouping chip used to write the same value to
+  // both through onChangeAllMeta, erasing each one's own tags. A vocal cut and a beat
+  // on the same release need different grouping, so the per-track row writes only its
+  // own track.
+  it('writes a grouping chip picked on one track row to that track alone', () => {
+    const { onChangeTracksMeta, onChangeAllMeta } = renderMulti({
+      visibleFields: ['grouping'],
+      groupingPresets: ['Bases', 'Vocals'],
+      metaA: { grouping: 'Bases' },
+    })
+    fireEvent.click(screen.getByTestId('chip-b-Vocals'))
+    expect(onChangeTracksMeta).toHaveBeenCalledWith([{ id: 'b', meta: { grouping: 'Vocals' } }])
+    expect(onChangeAllMeta).not.toHaveBeenCalled()
+  })
 
   // The spectrum and output filename describe a single file; over a multi-selection they
   // are meaningless, so they must drop out rather than show the primary track's by accident.
