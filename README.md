@@ -70,4 +70,6 @@ Issues and pull requests are welcome. Surco is GPL-3.0: improvements stay open f
 
 ## License
 
-[GPL-3.0](LICENSE)
+Copyright (C) 2026 Vicent Gozalbes.
+
+Surco is free software under the [GPL-3.0-or-later](LICENSE): you can redistribute it and modify it, but any derivative work must be published under the same license, with its source code and this copyright notice.
