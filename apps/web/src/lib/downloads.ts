@@ -82,7 +82,7 @@ interface InstallerRelease {
 // uploaded. During a release CI creates the new release before it finishes uploading its
 // assets, so /releases/latest would point at a build with no installer yet; walking the
 // list and skipping it falls back to the previous build that still downloads, instead of
-// showing "unavailable". GitHub returns releases newest-first, so the first match wins.
+// reporting no installer. GitHub returns releases newest-first, so the first match wins.
 export function pickInstallerRelease(
   releases: InstallerRelease[],
   suffix: string,

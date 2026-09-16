@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { countDownloads, fetchAllReleases } from '../lib/downloads'
+import { countDownloads, fetchReleasesCached } from '../lib/downloads'
 
 const REPO = 'surco-app/surco-releases'
 
@@ -47,7 +47,7 @@ export default function DownloadCount() {
 
   useEffect(() => {
     let cancelled = false
-    fetchAllReleases(REPO)
+    fetchReleasesCached(REPO)
       .then((releases) => {
         if (cancelled) return
         setCount(countDownloads(releases))
