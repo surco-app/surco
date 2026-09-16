@@ -497,6 +497,7 @@
     "convertAll": "Convertir ({{count}}) · {{format}}",
     "editingMultiple": "Édition de {{count}} morceaux",
     "multipleValues": "Valeurs multiples",
+    "groupingAllTracks": "tous les morceaux",
     "convertAllMusic": "Convertir ({{count}}) · {{format}} + Apple Music",
     "convertAllEngine": "Convertir ({{count}}) · {{format}} + Engine DJ",
     "fieldActions": "Actions du champ",

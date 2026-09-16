@@ -234,6 +234,28 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(genre?.placeholder).toBe('editor.multipleValues')
   })
 
+  // WHY: grouping is the one release-level field that legitimately differs inside a
+  // release (vocal cuts vs. beats), so the bulk form hands it the tracks themselves
+  // instead of a shared blank that a chip click would stamp on every one.
+  it('hands grouping the selected tracks and a per-track writer in bulk mode', () => {
+    const onChangeTracksMeta = vi.fn()
+    const a = track('a', { grouping: 'Bases' })
+    const b = track('b', { grouping: 'Vocals' })
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [a, b],
+        visibleFields: ['grouping', 'genre'],
+        onChangeTracksMeta,
+      }),
+    )
+    const grouping = specs.find((s) => s.key === 'grouping')
+    expect(grouping?.perTrack?.tracks).toEqual([a, b])
+    expect(grouping?.perTrack?.onChangeTracks).toBe(onChangeTracksMeta)
+    expect(grouping?.placeholder).toBeUndefined()
+    expect(specs.find((s) => s.key === 'genre')?.perTrack).toBeUndefined()
+  })
+
   it('honours the visible-fields setting and drops non-bulk fields', () => {
     const specs = buildFieldSpecs(
       params({
