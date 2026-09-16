@@ -9,6 +9,7 @@ interface SuggestionChipsProps {
   isPartial?: (s: string) => boolean
   onPick: (s: string) => void
   scope?: string
+  dim?: boolean
 }
 
 // Suggestion chips collapse to the first few + a "+N" chip so a long list (a genre with
@@ -19,6 +20,7 @@ export function SuggestionChips({
   isPartial,
   onPick,
   scope,
+  dim,
 }: SuggestionChipsProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [chipsExpanded, setChipsExpanded] = useState(false)
@@ -34,7 +36,7 @@ export function SuggestionChips({
       // corte medido (useChipOverflow) decide cuántos chips entran dejando hueco al "+N" —
       // el corte fijo de antes saltaba a una segunda línea en columnas estrechas y
       // desperdiciaba hueco en las anchas. Expandida vuelve al wrap multilínea.
-      className={`relative mt-1.5 flex items-center gap-1.5 ${
+      className={`relative flex items-center gap-1.5 ${dim ? 'mt-1' : 'mt-1.5'} ${
         chipsExpanded ? 'flex-wrap' : 'flex-nowrap overflow-hidden'
       }`}
     >
@@ -56,7 +58,9 @@ export function SuggestionChips({
                 ? 'border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)]'
                 : state === 'some'
                   ? 'border-[color-mix(in_srgb,var(--color-accent)_45%,transparent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
-                  : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-panel-2)]'
+                  : dim
+                    ? 'border-[var(--color-line)] text-fg-faint hover:bg-[var(--color-panel-2)]'
+                    : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-panel-2)]'
             }`}
           >
             {s}

@@ -1268,6 +1268,7 @@ describe('Editor multi-select', () => {
       groupingPresets: ['Bases', 'Vocals'],
       metaA: { grouping: 'Bases' },
     })
+    fireEvent.click(screen.getByTestId('grouping-per-track-toggle'))
     fireEvent.click(screen.getByTestId('chip-b-Vocals'))
     expect(onChangeTracksMeta).toHaveBeenCalledWith([{ id: 'b', meta: { grouping: 'Vocals' } }])
     expect(onChangeAllMeta).not.toHaveBeenCalled()
