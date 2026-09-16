@@ -401,3 +401,50 @@ describe('CoverPicker drag and counter', () => {
     })
   })
 })
+
+describe('CoverPicker multi-select', () => {
+  const release = {
+    id: 1,
+    title: 'Album',
+    images: [{ uri: 'http://a/1.jpg' }, { uri: 'http://a/2.jpg' }],
+  } as unknown as React.ComponentProps<typeof CoverPicker>['release']
+
+  function renderMulti(tracks: TrackItem[]) {
+    const onChange = vi.fn()
+    const onApplyCoverAll = vi.fn()
+    render(
+      <CoverPicker
+        item={tracks[0]}
+        isMulti
+        selectedTracks={tracks}
+        release={release}
+        coverDims={null}
+        setCoverDims={vi.fn()}
+        onChange={onChange}
+        onApplyCoverAll={onApplyCoverAll}
+      />,
+    )
+    return { onChange, onApplyCoverAll }
+  }
+
+  it('steps through the release images and stamps the pick on every selected track', () => {
+    const { onChange, onApplyCoverAll } = renderMulti([
+      item({ coverUrl: 'blob:one', embeddedCover: 'blob:one' }),
+      item({ inputPath: '/music/b.flac', coverUrl: 'blob:two', embeddedCover: 'blob:two' }),
+    ])
+    expect(screen.getByTestId('cover-image-count')).toHaveTextContent('0/2')
+    fireEvent.click(screen.getByTestId('cover-next'))
+    expect(onApplyCoverAll).toHaveBeenLastCalledWith('http://a/1.jpg', undefined)
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('counts from the cover the selection already shares', () => {
+    const { onApplyCoverAll } = renderMulti([
+      item({ coverUrl: 'http://a/1.jpg' }),
+      item({ inputPath: '/music/b.flac', coverUrl: 'http://a/1.jpg' }),
+    ])
+    expect(screen.getByTestId('cover-image-count')).toHaveTextContent('1/2')
+    fireEvent.click(screen.getByTestId('cover-next'))
+    expect(onApplyCoverAll).toHaveBeenLastCalledWith('http://a/2.jpg', undefined)
+  })
+})
