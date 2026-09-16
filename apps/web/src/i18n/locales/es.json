@@ -651,6 +651,7 @@
         ],
         "points": [
           "Cabecera «Editando N pistas»: edita título, artista, álbum o género una vez para todas.",
+          "El grouping va aparte: cada etiqueta es una pastilla que dice si está en todas, en algunas o en ninguna, y un desplegable «Por pista» deja afinar cada pista sin pisar las demás.",
           "La rejilla empareja cada archivo con una canción del tracklist; cambia cualquier asignación desde su desplegable.",
           "Un archivo que no encaje en ninguna se queda sin asignar en vez de colocarse a la fuerza en la canción equivocada.",
           "Se permiten duplicados: dos archivos pueden apuntar a la misma canción si hace falta.",

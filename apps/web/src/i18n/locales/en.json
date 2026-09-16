@@ -651,6 +651,7 @@
         ],
         "points": [
           "“Editing N tracks” header: edit title, artist, album or genre once for all of them.",
+          "Grouping is the exception: each tag is a chip that says whether it is on all, some or none of them, and a “Per track” fold lets you fine-tune each track without overwriting the rest.",
           "The grid pairs each file with a song from the tracklist; change any assignment from its dropdown.",
           "A file that fits nowhere is left unassigned rather than forced onto the wrong song.",
           "Duplicates are allowed: two files can point at the same song if that's what you need.",
