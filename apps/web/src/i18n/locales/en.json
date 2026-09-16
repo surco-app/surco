@@ -375,7 +375,7 @@
     "items": [
       {
         "q": "Is it really free?",
-        "a": "Yes. Surco is free and complete, forever: no account, no subscription, no limits. If it saves you hours, you can support its development with a donation."
+        "a": "Yes. Surco is free and complete: no account, no subscription, no limits. If it saves you hours, you can support its development with a donation."
       },
       {
         "q": "Is it a tag and metadata editor?",
@@ -918,7 +918,7 @@
       "pillRunning": "Converting {{done}}/{{total}}",
       "pillDone": "{{total}}/{{total}} done"
     },
-    "heroFree": "Free, forever. macOS, Windows and Linux. No account.",
+    "heroFree": "Free. macOS, Windows and Linux. No account.",
     "closeTitle": "All of it, in one window.",
     "closeNote": "No cloud, no limits, nothing to sign up for. It updates itself.",
     "closeSafety": "Your originals stay untouched: change format and the copy goes to a folder of its own. It only rewrites the file itself if you re-export to the same format, which is how it updates tags without re-encoding. Notarized by Apple.",

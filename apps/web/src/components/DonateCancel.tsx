@@ -8,13 +8,13 @@ import { trackDonate } from '../lib/analytics'
 const COPY = {
   es: {
     title: 'No se ha completado la donación',
-    body: 'No pasa nada — gracias por habértelo planteado. Surco es gratis y lo seguirá siendo; son las donaciones las que mantienen su desarrollo activo. Si algún día te ahorra unas horas, el botón seguirá aquí.',
+    body: 'No pasa nada — gracias por habértelo planteado. Surco es gratis; son las donaciones las que mantienen su desarrollo activo. Si algún día te ahorra unas horas, el botón seguirá aquí.',
     retry: 'Donar con PayPal',
     home: 'Volver al inicio',
   },
   en: {
     title: 'Your donation was cancelled',
-    body: 'No worries — thanks for even considering it. Surco is free and will stay free; donations are what keep its development going. If it ever saves you a few hours, the button will still be here.',
+    body: 'No worries — thanks for even considering it. Surco is free; donations are what keep its development going. If it ever saves you a few hours, the button will still be here.',
     retry: 'Donate with PayPal',
     home: 'Back to home',
   },
