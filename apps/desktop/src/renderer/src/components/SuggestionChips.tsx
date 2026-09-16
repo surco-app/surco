@@ -6,7 +6,9 @@ import { useChipOverflow } from '../hooks/useChipOverflow'
 interface SuggestionChipsProps {
   suggestions: string[]
   isOn: (s: string) => boolean
+  isPartial?: (s: string) => boolean
   onPick: (s: string) => void
+  scope?: string
 }
 
 // Suggestion chips collapse to the first few + a "+N" chip so a long list (a genre with
@@ -14,7 +16,9 @@ interface SuggestionChipsProps {
 export function SuggestionChips({
   suggestions,
   isOn,
+  isPartial,
   onPick,
+  scope,
 }: SuggestionChipsProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [chipsExpanded, setChipsExpanded] = useState(false)
@@ -25,7 +29,7 @@ export function SuggestionChips({
   return (
     <span
       ref={containerRef}
-      data-testid="field-suggestions"
+      data-testid={scope ? `field-suggestions-${scope}` : 'field-suggestions'}
       // Colapsada, la fila es UNA línea pase lo que pase: nowrap + overflow-hidden, y el
       // corte medido (useChipOverflow) decide cuántos chips entran dejando hueco al "+N" —
       // el corte fijo de antes saltaba a una segunda línea en columnas estrechas y
@@ -35,21 +39,24 @@ export function SuggestionChips({
       }`}
     >
       {(chipsExpanded ? suggestions : suggestions.slice(0, visibleCount)).map((s) => {
-        const on = isOn(s)
+        const state = isOn(s) ? 'on' : isPartial?.(s) ? 'some' : 'off'
         return (
           <button
             key={s}
             type="button"
-            data-testid={`chip-${s}`}
+            data-testid={scope ? `chip-${scope}-${s}` : `chip-${s}`}
+            data-state={state}
             onClick={() => onPick(s)}
             // Colapsado, el chip puede encoger y truncar con elipsis — solo pasa en el caso
             // mínimo-1 (ni un chip cabe entero); si el corte dice que cabe, no encoge nada.
             className={`press rounded-full border px-2 py-0.5 text-[10px] transition-colors ${
               chipsExpanded ? 'shrink-0' : 'min-w-0 truncate'
             } ${
-              on
+              state === 'on'
                 ? 'border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)]'
-                : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-panel-2)]'
+                : state === 'some'
+                  ? 'border-[color-mix(in_srgb,var(--color-accent)_45%,transparent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
+                  : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-panel-2)]'
             }`}
           >
             {s}

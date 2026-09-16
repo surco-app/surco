@@ -1,5 +1,6 @@
 import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
+import { csvHas, splitCsv, toggleCsv } from './csv'
 
 // The release-level fields, the ones every track on an album shares, so setting one
 // across a multi-selection is meaningful. Per-track fields (title, trackNumber, bpm,
@@ -29,4 +30,30 @@ export function commonValue(tracks: TrackItem[], key: keyof TrackMetadata): stri
   if (tracks.length === 0) return undefined
   const first = tracks[0].meta[key] ?? ''
   return tracks.every((t) => (t.meta[key] ?? '') === first) ? first : undefined
+}
+
+export type GroupingTagState = 'all' | 'some' | 'none'
+
+export function groupingTagState(tracks: TrackItem[], tag: string): GroupingTagState {
+  const count = tracks.filter((t) => csvHas(t.meta.grouping ?? '', tag)).length
+  if (count === 0) return 'none'
+  return count === tracks.length ? 'all' : 'some'
+}
+
+export function toggleGroupingAll(
+  tracks: TrackItem[],
+  tag: string,
+): { id: string; meta: { grouping: string } }[] {
+  const removing = groupingTagState(tracks, tag) === 'all'
+  return tracks
+    .filter((t) => csvHas(t.meta.grouping ?? '', tag) === removing)
+    .map((t) => ({ id: t.id, meta: { grouping: toggleCsv(t.meta.grouping ?? '', tag) } }))
+}
+
+export function groupingTags(presets: string[], tracks: TrackItem[]): string[] {
+  const seen = new Set(presets)
+  const extra = tracks
+    .flatMap((t) => splitCsv(t.meta.grouping ?? ''))
+    .filter((tag) => (seen.has(tag) ? false : seen.add(tag)))
+  return [...presets, ...extra]
 }
