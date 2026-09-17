@@ -438,6 +438,36 @@ describe('CoverPicker multi-select', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
+  it('offers the shared cover as the first choice so one release image is still a step away', () => {
+    const shared = [
+      item({ coverUrl: 'http://shared/x.jpg' }),
+      item({ inputPath: '/music/b.flac', coverUrl: 'http://shared/x.jpg' }),
+    ]
+    const oneImage = {
+      id: 5,
+      title: 'Album',
+      images: [{ uri: 'http://a/1.jpg' }],
+    } as unknown as React.ComponentProps<typeof CoverPicker>['release']
+    const onApplyCoverAll = vi.fn()
+    const props = {
+      isMulti: true,
+      release: oneImage,
+      coverDims: null,
+      setCoverDims: vi.fn(),
+      onChange: vi.fn(),
+      onApplyCoverAll,
+    }
+    const { rerender } = render(<CoverPicker item={shared[0]} selectedTracks={shared} {...props} />)
+    expect(screen.getByTestId('cover-image-count')).toHaveTextContent('1/2')
+    fireEvent.click(screen.getByTestId('cover-next'))
+    expect(onApplyCoverAll).toHaveBeenLastCalledWith('http://a/1.jpg', undefined)
+    const stamped = shared.map((t) => ({ ...t, coverUrl: 'http://a/1.jpg' }))
+    rerender(<CoverPicker item={stamped[0]} selectedTracks={stamped} {...props} />)
+    expect(screen.getByTestId('cover-image-count')).toHaveTextContent('2/2')
+    fireEvent.click(screen.getByTestId('cover-prev'))
+    expect(onApplyCoverAll).toHaveBeenLastCalledWith('http://shared/x.jpg', undefined)
+  })
+
   it('counts from the cover the selection already shares', () => {
     const { onApplyCoverAll } = renderMulti([
       item({ coverUrl: 'http://a/1.jpg' }),
