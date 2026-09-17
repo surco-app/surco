@@ -11,6 +11,14 @@
       {
         "text": "The spectrum verdict no longer wobbles. A genuine hi-res master would sometimes come out as “upsampled from 44.1” and sometimes as “could not be verified” depending on where the readings landed, and a clean CD rip took turns between “good quality” and “reprocessed” after trimming a few tenths of a second off its tail. Each reading now listens to a longer stretch, and the same file always gets the same answer. And regenerated highs stay flagged even when the track is turned down: Surco’s own normalised copy came out clean while the original was flagged.",
         "in": "0.98.0"
+      },
+      {
+        "text": "With several tracks selected you can now step through the release’s cover images with the arrows, and the one you pick lands on every track in the selection at once.",
+        "in": "0.98.1"
+      },
+      {
+        "text": "A lossless master with a dip in the highs that recovers no longer gets flagged as “reprocessed”, and its verdict no longer changes after trimming a few seconds of silence off the tail.",
+        "in": "0.98.1"
       }
     ]
   },
