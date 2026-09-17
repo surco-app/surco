@@ -96,6 +96,16 @@ describe('convertArgs', () => {
     expect(args[i + 1]).toBe('copy')
   })
 
+  it('writes each field trimmed, so a stray space in the editor never lands in the file', () => {
+    const args = convertArgs(
+      '/in.wav',
+      '/o.aiff',
+      { codec: 'pcm_s16be' },
+      { ...meta, title: '  Padded  ' },
+    )
+    expect(args).toContain('title=Padded')
+  })
+
   it('inserts the normalization audio filter before the codec, ahead of -c:a', () => {
     const args = convertArgs(
       '/in.wav',
