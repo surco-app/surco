@@ -782,7 +782,22 @@ export function convertArgs(
   if (embedCover) args.push('-i', embedCover)
 
   args.push('-map', '0:a')
-  if (embedCover) args.push('-map', '1:v', '-c:v', 'copy', '-disposition:v:0', 'attached_pic')
+  // The picture's role rides the stream's own "comment" metadata: ffmpeg's flac and id3v2
+  // writers look the text up in their picture-type table and write "Other" (type 0) when
+  // it is absent, which is how every cover Surco embedded came out. An update meant only
+  // to refresh the Finder thumbnail turned a "Front Cover" into "Other" in mp3tag, and
+  // the DJ software picks the front cover by that type when a file carries several.
+  if (embedCover)
+    args.push(
+      '-map',
+      '1:v',
+      '-c:v',
+      'copy',
+      '-disposition:v:0',
+      'attached_pic',
+      '-metadata:s:v:0',
+      'comment=Cover (front)',
+    )
   // No new cover and no removal asked for: carry the source's own picture across, or a
   // conversion whose only job was fixing a title would strip artwork the file already
   // had — "Surco deleted my cover" on an operation that never mentioned covers. The `?`
