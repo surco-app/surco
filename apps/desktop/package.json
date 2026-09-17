@@ -17,7 +17,8 @@
     "lint": "biome lint src",
     "format": "biome format --write src",
     "check": "biome check --write src",
-    "sweep": "vitest run src/main/spectrumSweep.test.ts"
+    "sweep": "vitest run src/main/spectrumSweep.test.ts",
+    "corpus": "vitest run src/main/tagCorpus.test.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.7",
