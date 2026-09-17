@@ -27,6 +27,7 @@ const dir = mkdtempSync(join(tmpdir(), 'surco-verify-'))
 const src = join(dir, 'in.flac')
 const garbage = join(dir, 'garbage.mp3')
 const midCorrupt = join(dir, 'midcorrupt.mp3')
+const lyrics3Tail = join(dir, 'lyrics3.mp3')
 
 const meta: TrackMetadata = {
   title: 'T',
@@ -86,6 +87,15 @@ beforeAll(() => {
       bytes.subarray(bytes.length - 40000),
     ]),
   )
+  // A Lyrics3v2 block between the last MPEG frame and the ID3v1 tag, exactly as three
+  // of a user's MP3s carried it (17/09/2026): "LYRICSBEGIN", one ETT field, the six-digit
+  // size, "LYRICS200", then "TAG". Winamp and MusicMatch wrote these; ffmpeg's mp3
+  // demuxer does not know the format and hands the bytes to the decoder as a packet.
+  const ett = 'ETT000010Some title'
+  const lyrics3 = `LYRICSBEGIN${ett}${String(ett.length).padStart(6, '0')}LYRICS200`
+  const id3v1 = Buffer.alloc(128)
+  id3v1.write('TAG', 0, 'latin1')
+  writeFileSync(lyrics3Tail, Buffer.concat([bytes, Buffer.from(lyrics3, 'latin1'), id3v1]))
   writeFileSync(
     fakeFfmpeg,
     [
@@ -146,6 +156,39 @@ describe('assertDecodable', () => {
     expect(detail, 'reported the byte-count summary instead of the cause').not.toMatch(
       /muxing overhead/,
     )
+  })
+})
+
+// Does a plain -xerror decode reject this file? The fixture only means something if it
+// does: a tail ffmpeg happened to swallow would make the acceptance below trivially true.
+function xerrorRejects(file: string): boolean {
+  try {
+    execFileSync(
+      FF,
+      ['-hide_banner', '-v', 'error', '-xerror', '-f', 'mp3', '-i', file, '-f', 'null', '-'],
+      {
+        stdio: 'ignore',
+      },
+    )
+    return false
+  } catch {
+    return true
+  }
+}
+
+describe('a complete file with junk after its last frame', () => {
+  // Measured on the user's three files: the decoder delivered 374.47 s of a 374.54 s
+  // header and then reported "Header missing" on the Lyrics3 bytes — one error, after
+  // all the audio. -xerror turned that into "the converted file came out unreadable" on
+  // every update of those MP3s, and the same-format copy carries the tail verbatim, so
+  // the refusal was permanent. A file whose every frame decodes is not unreadable.
+  it('is accepted even though -xerror alone would refuse it', async () => {
+    expect(xerrorRejects(lyrics3Tail), 'the fixture no longer trips -xerror').toBe(true)
+    await expect(assertDecodable(lyrics3Tail)).resolves.toBeUndefined()
+  })
+
+  it('still fails when the junk sits in the middle of the audio', async () => {
+    await expect(assertDecodable(midCorrupt)).rejects.toThrow()
   })
 })
 
