@@ -1158,6 +1158,8 @@
     "loadDeezerRelease": "Chargement de la release Deezer",
     "downloadCover": "Téléchargement de la pochette",
     "convert": "Conversion de {{track}}",
+    "convertTagsChanged": "Tags : {{changed}} champs modifiés, {{kept}} intacts · {{fields}}",
+    "convertTagsUnchanged": "Tags intacts ({{kept}} champs)",
     "probeSpectrogram": "Spectrogramme",
     "probeLoudness": "Loudness",
     "probeProperties": "Propriétés",
