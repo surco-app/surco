@@ -70,7 +70,7 @@ export const TAG_FIELDS: TagField[] = [
   // old v2.2 rip would otherwise read back with no key and no BPM. They go last: a file
   // retagged by a modern tool can keep the three-letter frame beside the current one, and the
   // frame the user's tagger just wrote is the one that must win.
-  { key: 'bpm', aliases: ['tbpm', 'bpm', 'tbp'], id3: 'TBPM', vorbis: 'BPM' },
+  { key: 'bpm', aliases: ['tbpm', 'bpm', 'tbp', 'tempo'], id3: 'TBPM', vorbis: 'BPM' },
   // Both Vorbis spellings, for the same reason the record label carries LABEL and
   // PUBLISHER: djotas reads the key from KEY, and dropping INITIALKEY would blind
   // whatever reads that one instead. His own converted file carries both already.
