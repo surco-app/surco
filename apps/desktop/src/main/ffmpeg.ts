@@ -1,6 +1,6 @@
 import { execFile, spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { copyFile, constants as fsConstants, readFile, stat, unlink } from 'node:fs/promises'
+import { copyFile, constants as fsConstants, open, readFile, stat, unlink } from 'node:fs/promises'
 import { constants as osConstants, setPriority, tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import { promisify } from 'node:util'
@@ -348,7 +348,14 @@ function withWavId3Extras(input: string, tags: TrackMetadata): TrackMetadata {
 // .jpg target drive the encoder so PNG art is transcoded too. ffmpeg exits
 // non-zero when the file carries no attached picture. maxPx caps the longer side
 // (keeping aspect ratio, never upscaling) for the renderer's display thumbnail.
-export function coverArgs(input: string, output: string, maxPx?: number): string[] {
+// `verbatim` copies the picture's own bytes instead of decoding and re-encoding them,
+// whatever format they are in; it cannot combine with a cap, which needs the decode.
+export function coverArgs(
+  input: string,
+  output: string,
+  maxPx?: number,
+  verbatim = false,
+): string[] {
   return [
     '-hide_banner',
     '-loglevel',
@@ -365,8 +372,22 @@ export function coverArgs(input: string, output: string, maxPx?: number): string
     ...(maxPx
       ? ['-vf', `scale='min(${maxPx},iw)':'min(${maxPx},ih)':force_original_aspect_ratio=decrease`]
       : []),
+    ...(verbatim && !maxPx ? ['-c:v', 'copy'] : []),
     output,
   ]
+}
+
+const JPEG_MAGIC = Buffer.from([0xff, 0xd8, 0xff])
+
+async function isJpeg(file: string): Promise<boolean> {
+  const head = Buffer.alloc(JPEG_MAGIC.length)
+  const fh = await open(file, 'r')
+  try {
+    const { bytesRead } = await fh.read(head, 0, head.length, 0)
+    return bytesRead === head.length && head.equals(JPEG_MAGIC)
+  } finally {
+    await fh.close()
+  }
 }
 
 // Display-thumbnail cap. The editor's artwork renders at w-40 (160 CSS px → 320 px on a
@@ -406,10 +427,17 @@ async function probeCoverDims(input: string): Promise<{ width: number; height: n
 // time, exporting, dragging out). The renderer's session-long copy is a thumbnail,
 // so anything that writes art pulls it fresh from the source. The caller owns the
 // returned file's cleanup.
+//
+// A JPEG is copied out byte for byte. Decoding and re-encoding it, which is what the
+// extract did on every pass, cost a user's 85 KB front cover a third of its bytes on an
+// update that only meant to refresh the Finder thumbnail (17/09/2026), and each further
+// update would have degraded it again. Every consumer is handed a JPEG at a .jpg path,
+// so art in any other format still takes the transcode rather than a name that lies.
 export async function extractCoverFile(input: string): Promise<string | null> {
   const out = join(tmpdir(), tmpName('cover-full', 'jpg'))
   try {
-    await run(ffmpegPath, coverArgs(input, out))
+    await run(ffmpegPath, coverArgs(input, out, undefined, true))
+    if (!(await isJpeg(out))) await run(ffmpegPath, coverArgs(input, out))
     return out
   } catch {
     await unlink(out).catch(() => {})
