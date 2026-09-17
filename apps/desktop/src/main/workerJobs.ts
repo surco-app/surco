@@ -9,6 +9,7 @@ import {
   copyCueFrames,
   copyCuesFromFlac,
   copyCuesToFlac,
+  setFlacComment,
   shiftFlacCues,
   writeTags,
 } from './tags'
@@ -52,6 +53,9 @@ export type WorkerJob =
   // FLAC's armored cue comment survives the re-encode on its own; only a trim
   // needs it re-anchored, and the decode/shift/encode is another TagLib rewrite.
   | { type: 'shiftFlacCues'; file: string; shift?: CueShift }
+  // ffmpeg's flac muxer writes the comment as DESCRIPTION; moving it to COMMENT is another
+  // TagLib save on the whole file (see setFlacComment).
+  | { type: 'setFlacComment'; file: string; comment: string }
   // An ID3 source encoded to FLAC: the cues have to be re-armored across tag families,
   // which is another TagLib rewrite and so belongs off the main process too.
   | { type: 'copyCuesToFlac'; source: string; dest: string; shift?: CueShift }
@@ -112,6 +116,9 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return null
     case 'shiftFlacCues':
       shiftFlacCues(job.file, job.shift)
+      return null
+    case 'setFlacComment':
+      setFlacComment(job.file, job.comment)
       return null
     case 'copyCuesToFlac':
       copyCuesToFlac(job.source, job.dest, job.shift)
