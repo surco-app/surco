@@ -37,7 +37,7 @@ function newTrack(path: string): TrackItem {
       title,
       artist,
       album: '',
-      albumArtist: artist,
+      albumArtist: '',
       year: '',
       genre: '',
       grouping: '',
@@ -407,7 +407,6 @@ export function useTrackLibrary({
           ...tags,
           title: s.title,
           artist: s.artist,
-          albumArtist: tags.albumArtist || s.artist,
         },
         fromMusic ?? {},
       )
