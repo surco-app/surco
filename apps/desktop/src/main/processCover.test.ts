@@ -17,6 +17,9 @@ const jpeg600 = join(dir, '600.jpg')
 const jpeg2000 = join(dir, '2000.jpg')
 const jpegWide = join(dir, 'wide.jpg')
 const png = join(dir, 'art.png')
+const jpeg1200 = join(dir, '1200.jpg')
+const jpegBanner = join(dir, 'banner.jpg')
+const jpegHalf = join(dir, 'half.jpg')
 
 function makeImage(path: string, size: string): void {
   execFileSync(FF, [
@@ -60,6 +63,9 @@ beforeAll(() => {
   makeImage(jpeg2000, '2000x2000')
   makeImage(jpegWide, '800x600')
   makeImage(png, '64x64')
+  makeImage(jpeg1200, '1200x1200')
+  makeImage(jpegBanner, '2000x600')
+  makeImage(jpegHalf, '1200x600')
 })
 
 // Every cover a conversion embeds goes through here, including the file's own art on a
@@ -104,6 +110,44 @@ describe('processCover', () => {
     } finally {
       unlinkSync(out)
     }
+  })
+
+  function passesThrough(input: string, o: typeof opts): Promise<boolean> {
+    return processCover(input, o).then((out) => {
+      try {
+        return readFileSync(out).equals(readFileSync(input))
+      } finally {
+        unlinkSync(out)
+      }
+    })
+  }
+
+  // The edges of "already fits", each one a boundary a mutation of the check moved.
+  it('passes a JPEG exactly at the cap through', async () => {
+    await expect(passesThrough(jpeg1200, opts)).resolves.toBe(true)
+  })
+
+  it('shrinks a JPEG when only one side exceeds the cap', async () => {
+    const out = await processCover(jpegBanner, opts)
+    try {
+      expect(dims(out)).toEqual({ width: 1200, height: 360 })
+    } finally {
+      unlinkSync(out)
+    }
+  })
+
+  it('passes a square JPEG through when a square is asked for', async () => {
+    await expect(passesThrough(jpeg600, { ...opts, square: true })).resolves.toBe(true)
+  })
+
+  it('passes a JPEG through when upscaling is on but there is no cap to reach', async () => {
+    await expect(
+      passesThrough(jpeg600, { maxSize: 0, square: false, upscale: true }),
+    ).resolves.toBe(true)
+  })
+
+  it('passes a JPEG whose longer side already meets the target through when upscaling', async () => {
+    await expect(passesThrough(jpegHalf, { ...opts, upscale: true })).resolves.toBe(true)
   })
 
   it('still transcodes a PNG to JPEG', async () => {
