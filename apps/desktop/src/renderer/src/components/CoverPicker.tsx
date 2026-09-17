@@ -108,9 +108,12 @@ export function CoverPicker({
   // not captured at mount: the metadata read fills embeddedCover asynchronously, and a
   // picker opened before it lands would otherwise never grow the original's slot.
   // Matches only ever touch coverUrl, so embeddedCover always is the file's own art.
+  const selection = (selectedTracks ?? []).map((t) => t.id).join('\n')
+  const [sharedAtStart, setSharedAtStart] = useState({ selection, url: sharedCover })
+  if (sharedAtStart.selection !== selection) setSharedAtStart({ selection, url: sharedCover })
   const originalCover = useMemo<{ url?: string; path?: string }>(
-    () => ({ url: item.embeddedCover }),
-    [item.embeddedCover],
+    () => ({ url: isMulti ? sharedAtStart.url : item.embeddedCover }),
+    [isMulti, sharedAtStart.url, item.embeddedCover],
   )
   const coverDragPath = useRef<string | null>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
@@ -289,14 +292,14 @@ export function CoverPicker({
   // The covers the picker steps through: the file's own artwork first, then the
   // release's images (deduped), so the original sits at index 0 and Discogs'
   // alternatives are one step away — and reachable again after stepping off. In
-  // multi-select every file has its own art, so only the release's images are offered.
+  // multi-select the "original" is the cover the selection shared when it was made.
   const coverChoices = useMemo(() => {
     const choices: { uri: string; path?: string }[] = []
     // Track every uri already added so a release image that repeats (Discogs returns the
     // same art under a primary and its secondaries) — or that matches the file's own cover —
     // becomes one slot, not a run of identical-looking ones the stepper cycles through.
     const seen = new Set<string>()
-    if (!isMulti && originalCover.url) {
+    if (originalCover.url) {
       choices.push({ uri: originalCover.url, path: originalCover.path })
       seen.add(originalCover.url)
     }
@@ -306,7 +309,7 @@ export function CoverPicker({
         seen.add(im.uri)
       }
     return choices
-  }, [release, originalCover, isMulti])
+  }, [release, originalCover])
 
   // Switches the cover among the picker's choices (the original plus the release's
   // images). It only swaps the artwork, leaving the rest of the metadata untouched.
