@@ -253,6 +253,27 @@ export function copyCueFrames(source: string, dest: string, shift?: CueShift): v
   }
 }
 
+// ffmpeg's flac muxer renames the comment on write whatever spelling it is handed
+// (measured: `-metadata COMMENT=` and `-metadata comment=` both land as DESCRIPTION),
+// so a FLAC target came out with the one field Traktor, Engine and mp3tag read for the
+// comment gone and a DESCRIPTION in its place. A user saw exactly that comparing a file
+// before and after an update (17/09/2026). Rewritten after the encode by TagLib, which
+// writes the field under its own name: the value goes to COMMENT and DESCRIPTION is
+// cleared, so a file an earlier Surco wrote does not keep the old text under the alias
+// the reader falls back to.
+export function setFlacComment(file: string, comment: string): void {
+  const f = TagFile.createFromPath(file)
+  try {
+    const xiph = f.getTag(TagTypes.Xiph, true) as XiphComment
+    xiph.removeField('DESCRIPTION')
+    if (comment.trim()) xiph.setFieldAsStrings('COMMENT', comment)
+    else xiph.removeField('COMMENT')
+    f.save()
+  } finally {
+    f.dispose()
+  }
+}
+
 // The FLAC counterpart of copyCueFrames. Traktor stores the same cue/beatgrid
 // tree there, armored into a TRAKTOR4 Vorbis comment because comments are UTF-8
 // text — and unlike ID3, ffmpeg copies that comment through a re-encode
