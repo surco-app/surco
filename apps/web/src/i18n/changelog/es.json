@@ -11,6 +11,14 @@
       {
         "text": "El veredicto del espectro ya no baila. Un máster hi-res auténtico salía unas veces como «reescalado desde 44,1» y otras como «no se ha podido verificar» según dónde cayeran las lecturas, y un rip de CD limpio se turnaba entre «buena calidad» y «reprocesado» con solo recortarle unas décimas de cola. Ahora cada lectura escucha un tramo más largo y el mismo archivo da siempre la misma respuesta. Además, unos agudos regenerados se siguen acusando aunque la pista esté más baja de volumen: la copia normalizada por Surco salía limpia mientras el original salía acusado.",
         "in": "0.98.0"
+      },
+      {
+        "text": "Con varias pistas seleccionadas ya puedes pasar por las carátulas del lanzamiento con las flechas, y la que elijas se pone en todas las pistas de la selección de una vez.",
+        "in": "0.98.1"
+      },
+      {
+        "text": "Un máster sin pérdidas con un bache en los agudos que se recupera ya no sale acusado de «reprocesado», y su veredicto tampoco cambia al recortarle unos segundos de silencio de la cola.",
+        "in": "0.98.1"
       }
     ]
   },
