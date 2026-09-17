@@ -1150,10 +1150,32 @@ const MIN_VERIFIABLE_SEC = 3
 // -v error is deliberately not passed: ffmpeg reports the decoded length on the
 // progress line, so one decode answers both questions instead of paying for two.
 export async function assertDecodable(file: string): Promise<void> {
-  let stderr: string
-  let stdout: string
+  const whole = await decodeForCheck(file)
+  if (whole.ok) return assertNotTruncated(file, whole.stderr, whole.stdout)
+  // -xerror fails on the first packet the decoder rejects wherever it sits, and a
+  // complete file can carry one after its last frame: three of a user's MP3s (17/09/2026)
+  // ended in a Lyrics3v2 block, which ffmpeg's mp3 demuxer does not know and hands to the
+  // decoder as audio. Measured: 374.47 s delivered of a 374.54 s header, then "Header
+  // missing" on those bytes — one error, after everything. The same-format copy carries
+  // the tail verbatim, so every update of those files was refused for good. A second pass
+  // bounded by -t stops just short of the header's duration, before any tail: a file that
+  // decodes cleanly up to there has delivered its audio, while junk in the middle still
+  // trips -xerror and a truncation still falls short of the header (the margin is half
+  // the shortfall the truncation check tolerates, so a good file lands above it).
+  const header = headerDurationSec(whole.stderr)
+  if (header === null || header < MIN_VERIFIABLE_SEC) throw whole.error
+  const bounded = await decodeForCheck(file, header * (1 - MAX_DECODE_SHORTFALL / 2))
+  if (!bounded.ok) throw bounded.error
+  assertNotTruncated(file, bounded.stderr, bounded.stdout)
+}
+
+type DecodeForCheck =
+  | { ok: true; stderr: string; stdout: string }
+  | { ok: false; stderr: string; error: Error }
+
+async function decodeForCheck(file: string, untilSec?: number): Promise<DecodeForCheck> {
   try {
-    ;({ stderr, stdout } = await run(
+    const { stderr, stdout } = await run(
       ffmpegPath,
       [
         '-hide_banner',
@@ -1164,6 +1186,7 @@ export async function assertDecodable(file: string): Promise<void> {
         file,
         '-map',
         '0:a',
+        ...(untilSec === undefined ? [] : ['-t', untilSec.toFixed(3)]),
         '-progress',
         '-',
         '-f',
@@ -1171,14 +1194,18 @@ export async function assertDecodable(file: string): Promise<void> {
         '-',
       ],
       { maxBuffer: 1024 * 1024 * 16 },
-    ))
+    )
+    // The two figures arrive on different streams: the input banner (with Duration) on
+    // stderr, and -progress's own report on stdout, which is what `-progress -` means.
+    return { ok: true, stderr: String(stderr), stdout: String(stdout) }
   } catch (e) {
     const text = String((e as { stderr?: unknown })?.stderr ?? '').trim()
-    throw errorWithKey('convertedOutputUnreadable', firstErrorLine(text) || String(e))
+    return {
+      ok: false,
+      stderr: text,
+      error: errorWithKey('convertedOutputUnreadable', firstErrorLine(text) || String(e)),
+    }
   }
-  // The two figures arrive on different streams: the input banner (with Duration) on
-  // stderr, and -progress's own report on stdout, which is what `-progress -` means.
-  assertNotTruncated(file, String(stderr), String(stdout))
 }
 
 // The banner rides on stderr now that -v error is gone (the progress figures need it),
