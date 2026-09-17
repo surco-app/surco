@@ -129,19 +129,42 @@ export function readItunesGrouping(file: string): string {
   }
 }
 
-// The tag fields a WAV can only keep in its ID3 chunk, because RIFF INFO has no field for
-// them. A WAV carries both tags at once and ffmpeg's demuxer reads INFO, ignoring ID3 —
-// so these come back empty from the probe even though they are on the file. Read straight
-// from ID3 through TagLib instead, as a fallback the probe's own values still win over.
-// Keeping INFO is what lets Traktor see the track at all (it reads INFO too, and with the
-// chunk gone showed the file name as the title); this is the other half of that bargain.
-// Best-effort: '' for anything missing, unopenable, or not an ID3 container.
-export function readWavId3Extras(file: string): Partial<TrackMetadata> {
+// What the probe cannot see, read through TagLib's own view of the file. ffmpeg's WAV
+// demuxer reads the RIFF INFO chunk and ignores the ID3 one beside it, and INFO has no
+// room for label, grouping, key or BPM; it also spells album and artist IPRD/IART, while
+// TagLib's INFO writer (mp3tag, Surco's own writeTags) spells them DIRC/ISTR, so a WAV
+// tagged that way probed back with no artist and no album at all. AIFF's ID3 comes back
+// without TIT1 or TPUB, and an M4A's tmpo atom never surfaces. Every one of those is a
+// field the editor then shows empty and the next conversion writes empty — measured on
+// the matrix behind convertUpdateContract (17/09/2026): an update erased an AIFF's
+// grouping and label, a WAV's artist and album, an M4A's BPM. The generic tag covers the
+// core fields on every container; the TXXX extras are ID3's alone.
+export function readTagLibExtras(file: string): Partial<TrackMetadata> {
   try {
     const f = TagFile.createFromPath(file)
     try {
+      const tag = f.tag
+      const extras: Partial<TrackMetadata> = {
+        title: tag.title?.trim() || '',
+        artist: tag.performers?.join(', ').trim() || '',
+        album: tag.album?.trim() || '',
+        albumArtist: tag.albumArtists?.join(', ').trim() || '',
+        year: tag.year ? String(tag.year) : '',
+        genre: tag.genres?.join(', ').trim() || '',
+        grouping: tag.grouping?.trim() || '',
+        comment: tag.comment?.trim() || '',
+        trackNumber: tag.track ? String(tag.track) : '',
+        discNumber: tag.disc ? String(tag.disc) : '',
+        bpm: tag.beatsPerMinute ? String(tag.beatsPerMinute) : '',
+        key: tag.initialKey?.trim() || '',
+        publisher: tag.publisher?.trim() || '',
+        remixArtist: tag.remixedBy?.trim() || '',
+        mixName: tag.subtitle?.trim() || '',
+        composer: tag.composers?.join(', ').trim() || '',
+        isrc: tag.isrc?.trim() || '',
+      }
       const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
-      if (!id3) return {}
+      if (!id3) return extras
       const text = (id: string): string => {
         const frame = id3.frames.find((fr) => fr.frameId.toString() === id)
         return frame ? (frame as Id3v2TextInformationFrame).text?.[0]?.trim() || '' : ''
@@ -155,13 +178,8 @@ export function readWavId3Extras(file: string): Partial<TrackMetadata> {
         Id3v2UserTextInformationFrame.findUserTextInformationFrame(txxx, desc)?.text?.[0]?.trim() ||
         ''
       return {
-        publisher: id3.publisher?.trim() || '',
-        grouping: id3.grouping?.trim() || '',
-        key: id3.initialKey?.trim() || '',
-        bpm: id3.beatsPerMinute ? String(id3.beatsPerMinute) : '',
-        remixArtist: id3.remixedBy?.trim() || '',
-        mixName: id3.subtitle?.trim() || '',
-        isrc: text('TSRC'),
+        ...extras,
+        isrc: extras.isrc || text('TSRC'),
         catalogNumber: userText('CATALOGNUMBER'),
         discogsReleaseId: userText('DISCOGS_RELEASE_ID'),
         energy: userText('ENERGYLEVEL') || userText('ENERGY'),
