@@ -9,88 +9,27 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
-import type { OutputFormat } from '../shared/types'
-import { prepareProcessedCover } from './cover'
-import { convertAudio, readTags } from './ffmpeg'
 import { diffSnapshots, snapshotTags } from './tagSnapshot'
+import {
+  ALLOWED_UPDATE_CHANGES,
+  type UpdateExt,
+  unexplainedChanges,
+  updateLikeTheApp,
+} from './updateContract'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-update-contract-'))
 const jpegCover = join(dir, 'cover.jpg')
 const pngCover = join(dir, 'cover.png')
 
-type Ext = 'flac' | 'mp3' | 'aiff' | 'wav' | 'm4a'
-
-const FORMATS: { ext: Ext; format: OutputFormat; codec: string[] }[] = [
-  { ext: 'flac', format: 'flac', codec: ['-c:a', 'flac'] },
-  { ext: 'mp3', format: 'mp3', codec: ['-c:a', 'libmp3lame', '-b:a', '320k'] },
-  { ext: 'aiff', format: 'aiff', codec: ['-c:a', 'pcm_s16be'] },
-  { ext: 'wav', format: 'wav', codec: ['-c:a', 'pcm_s16le'] },
-  { ext: 'm4a', format: 'alac', codec: ['-c:a', 'alac'] },
+const FORMATS: { ext: UpdateExt; codec: string[] }[] = [
+  { ext: 'flac', codec: ['-c:a', 'flac'] },
+  { ext: 'mp3', codec: ['-c:a', 'libmp3lame', '-b:a', '320k'] },
+  { ext: 'aiff', codec: ['-c:a', 'pcm_s16be'] },
+  { ext: 'wav', codec: ['-c:a', 'pcm_s16le'] },
+  { ext: 'm4a', codec: ['-c:a', 'alac'] },
 ]
 const COVERS = ['jpg', 'png', 'none'] as const
-
-// The changes a first pass is allowed to make to a file another tagger left, each one a
-// decision taken elsewhere on purpose. Anything outside these lists is a field the
-// update invented, renamed, duplicated or lost — the four kinds a user found comparing
-// a FLAC before and after in mp3tag (17/09/2026). Every entry names its reason so the
-// list reads as a contract, not as a way to make the test pass.
-const ALLOWED: Record<Ext, { added: RegExp[]; removed: RegExp[] }> = {
-  flac: {
-    added: [
-      // The label under both names Traktor and the shops read (tagFields: vorbisAlso).
-      /^xiph (LABEL|PUBLISHER)=/,
-      // The key under the second name rekordbox reads (tagFields: vorbisAlso).
-      /^xiph KEY=/,
-      // TagLib spells the BPM TEMPO; Surco writes the BPM name DJ software reads.
-      /^xiph BPM=/,
-      // Art in any other format is transcoded to JPEG, the one format every consumer takes.
-      /^picture type=3 mime=image\/jpeg /,
-    ],
-    removed: [
-      // The label's third spelling, cleared so it cannot resurface beside the two written.
-      /^xiph ORGANIZATION=/,
-      /^xiph TEMPO=/,
-      // The encoder's own stamp.
-      /^xiph ENCODER=/,
-      /^picture type=3 mime=image\/png /,
-    ],
-  },
-  mp3: {
-    added: [
-      // Surco writes ID3v2.3 (TYER) for the readers that never learned 2.4's TDRC.
-      /^id3 TYER=/,
-      // The picture is re-described as "<album>.jpg", which mp3tag and DJ software show.
-      /^id3 APIC\[type=3,mime=image\/jpeg,desc=/,
-    ],
-    removed: [/^id3 TDRC=/, /^id3 APIC\[type=3,/],
-  },
-  aiff: {
-    added: [/^id3 TYER=/, /^id3 APIC\[type=3,mime=image\/jpeg,desc=/],
-    removed: [/^id3 TDRC=/, /^id3 APIC\[type=3,/],
-  },
-  wav: {
-    added: [
-      /^id3 TYER=/,
-      /^id3 APIC\[type=3,mime=image\/jpeg,desc=/,
-      /^picture type=3 mime=image\/jpeg /,
-      // ffmpeg's INFO spelling of the album, written beside TagLib's DIRC.
-      /^riff IPRD=/,
-      /^riff IART=/,
-    ],
-    removed: [
-      /^id3 TDRC=/,
-      /^id3 APIC\[type=3,/,
-      /^picture type=3 mime=image\/png /,
-      // The encoder's own stamp.
-      /^riff ISFT=/,
-    ],
-  },
-  m4a: {
-    added: [/^mp4 covr=/, /^picture type=3 mime=image\/jpeg /],
-    removed: [/^mp4 ©too=/, /^mp4 covr=/, /^picture type=3 mime=image\/png /],
-  },
-}
 
 function makeImage(path: string, size: string): void {
   execFileSync(FF, [
@@ -132,25 +71,6 @@ function tagLikeMp3tag(file: string, cover?: string): void {
   }
 }
 
-// What "update" does with a track whose cover is the file's own: the job names the file
-// as the art source, main pulls the picture out and runs it through the cover settings,
-// and the editor's values (readMeta's tags) are what the conversion writes back.
-async function update(input: string, output: string, format: OutputFormat): Promise<void> {
-  const prepared = await prepareProcessedCover(
-    { coverFromFile: input },
-    { maxSize: 1200, square: false, upscale: false },
-  )
-  try {
-    await convertAudio(input, output, format, await readTags(input), prepared?.path)
-  } finally {
-    await prepared?.cleanup()
-  }
-}
-
-function unexplained(lines: string[], rules: RegExp[]): string[] {
-  return lines.filter((l) => !rules.some((r) => r.test(l)))
-}
-
 beforeAll(() => {
   makeImage(jpegCover, '600x600')
   makeImage(pngCover, '64x64')
@@ -161,7 +81,7 @@ beforeAll(() => {
 // renamed, one lost, and a smaller cover of another type. So, for every container and
 // every kind of art: a first pass changes only what the lists above say, and a second
 // pass changes nothing at all — otherwise every update keeps eroding the file.
-describe.each(FORMATS)('updating a $ext in its own format', ({ ext, format, codec }) => {
+describe.each(FORMATS)('updating a $ext in its own format', ({ ext, codec }) => {
   describe.each(COVERS)('with %s art', (cover) => {
     const src = join(dir, `${ext}-${cover}-src.${ext}`)
     const pass1 = join(dir, `${ext}-${cover}-pass1.${ext}`)
@@ -183,8 +103,8 @@ describe.each(FORMATS)('updating a $ext in its own format', ({ ext, format, code
         src,
       ])
       tagLikeMp3tag(src, cover === 'none' ? undefined : join(dir, `cover.${cover}`))
-      await update(src, pass1, format)
-      await update(pass1, pass2, format)
+      await updateLikeTheApp(src, pass1, ext)
+      await updateLikeTheApp(pass1, pass2, ext)
       before = snapshotTags(src)
       after1 = snapshotTags(pass1)
       after2 = snapshotTags(pass2)
@@ -192,8 +112,14 @@ describe.each(FORMATS)('updating a $ext in its own format', ({ ext, format, code
 
     it('changes nothing it was not meant to on the first pass', () => {
       const { added, removed } = diffSnapshots(before, after1)
-      expect(unexplained(added, ALLOWED[ext].added), 'fields the update invented').toEqual([])
-      expect(unexplained(removed, ALLOWED[ext].removed), 'fields the update lost').toEqual([])
+      expect(
+        unexplainedChanges(added, ALLOWED_UPDATE_CHANGES[ext].added),
+        'fields the update invented',
+      ).toEqual([])
+      expect(
+        unexplainedChanges(removed, ALLOWED_UPDATE_CHANGES[ext].removed),
+        'fields the update lost',
+      ).toEqual([])
     })
 
     it('lands on the same tags and picture when run a second time', () => {
