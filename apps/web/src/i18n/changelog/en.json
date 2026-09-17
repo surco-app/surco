@@ -19,6 +19,18 @@
       {
         "text": "A lossless master with a dip in the highs that recovers no longer gets flagged as “reprocessed”, and its verdict no longer changes after trimming a few seconds of silence off the tail.",
         "in": "0.98.1"
+      },
+      {
+        "text": "Updating a FLAC in its own format no longer touches its tags: the comment stays a comment, the cover is kept as is without recompressing it and is marked as the front cover, and the album artist is no longer filled in with the track artist on its own.",
+        "in": "0.98.2"
+      },
+      {
+        "text": "An MP3 with lyrics tacked onto the end of the file is no longer reported as a bad conversion when the audio came out whole.",
+        "in": "0.98.2"
+      },
+      {
+        "text": "With several tracks selected, the cover they already share is the first choice in the picker, so leaving the release with a single image is one step away.",
+        "in": "0.98.2"
       }
     ]
   },

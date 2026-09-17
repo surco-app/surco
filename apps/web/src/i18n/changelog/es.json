@@ -19,6 +19,18 @@
       {
         "text": "Un máster sin pérdidas con un bache en los agudos que se recupera ya no sale acusado de «reprocesado», y su veredicto tampoco cambia al recortarle unos segundos de silencio de la cola.",
         "in": "0.98.1"
+      },
+      {
+        "text": "Actualizar un FLAC en su mismo formato ya no le toca las etiquetas: el comentario sigue siendo comentario, la carátula se conserva tal cual sin recomprimirla y queda marcada como portada, y el artista del álbum ya no se rellena solo con el artista de la pista.",
+        "in": "0.98.2"
+      },
+      {
+        "text": "Un MP3 con letras pegadas al final del archivo ya no se da por mal convertido cuando el audio ha salido entero.",
+        "in": "0.98.2"
+      },
+      {
+        "text": "Con varias pistas seleccionadas, la carátula que ya comparten es la primera opción del selector, así que dejar el lanzamiento con una sola imagen está a un paso.",
+        "in": "0.98.2"
       }
     ]
   },
