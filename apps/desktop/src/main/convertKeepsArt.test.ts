@@ -3,7 +3,7 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
-import { File as TagFile } from 'node-taglib-sharp'
+import { File as TagFile, PictureType } from 'node-taglib-sharp'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
@@ -207,4 +207,26 @@ describe('a conversion to WAV or M4A keeps the artwork it was given', () => {
       expect(hasArtTagLib(out)).toBe(true)
     })
   }
+})
+
+// The picture's declared role travels with it: ffmpeg's muxers take it from the picture
+// stream's own "comment" metadata and write "Other" (type 0) when there is none, which is
+// what every cover Surco embedded came out as. mp3tag showed a "Front Cover" turning into
+// "Other" on an update that only meant to refresh the thumbnail, and Traktor and rekordbox
+// pick the front cover by that type when a file carries more than one picture.
+describe('the cover a conversion embeds', () => {
+  it.each([
+    ['flac', 'front-type.flac'],
+    ['mp3', 'front-type.mp3'],
+    ['aiff', 'front-type.aiff'],
+  ])('is declared the front cover on %s', async (format, name) => {
+    const out = join(dir, name)
+    await convertAudio(flacWithArt, out, format as 'flac' | 'mp3' | 'aiff', meta, cover)
+    const f = TagFile.createFromPath(out)
+    try {
+      expect(f.tag.pictures.map((p) => p.type)).toEqual([PictureType.FrontCover])
+    } finally {
+      f.dispose()
+    }
+  })
 })

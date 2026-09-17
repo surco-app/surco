@@ -1,6 +1,6 @@
 import { execFile, spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { copyFile, constants as fsConstants, readFile, stat, unlink } from 'node:fs/promises'
+import { copyFile, constants as fsConstants, open, readFile, stat, unlink } from 'node:fs/promises'
 import { constants as osConstants, setPriority, tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import { promisify } from 'node:util'
@@ -348,7 +348,14 @@ function withWavId3Extras(input: string, tags: TrackMetadata): TrackMetadata {
 // .jpg target drive the encoder so PNG art is transcoded too. ffmpeg exits
 // non-zero when the file carries no attached picture. maxPx caps the longer side
 // (keeping aspect ratio, never upscaling) for the renderer's display thumbnail.
-export function coverArgs(input: string, output: string, maxPx?: number): string[] {
+// `verbatim` copies the picture's own bytes instead of decoding and re-encoding them,
+// whatever format they are in; it cannot combine with a cap, which needs the decode.
+export function coverArgs(
+  input: string,
+  output: string,
+  maxPx?: number,
+  verbatim = false,
+): string[] {
   return [
     '-hide_banner',
     '-loglevel',
@@ -365,8 +372,22 @@ export function coverArgs(input: string, output: string, maxPx?: number): string
     ...(maxPx
       ? ['-vf', `scale='min(${maxPx},iw)':'min(${maxPx},ih)':force_original_aspect_ratio=decrease`]
       : []),
+    ...(verbatim && !maxPx ? ['-c:v', 'copy'] : []),
     output,
   ]
+}
+
+const JPEG_MAGIC = Buffer.from([0xff, 0xd8, 0xff])
+
+async function isJpeg(file: string): Promise<boolean> {
+  const head = Buffer.alloc(JPEG_MAGIC.length)
+  const fh = await open(file, 'r')
+  try {
+    const { bytesRead } = await fh.read(head, 0, head.length, 0)
+    return bytesRead === head.length && head.equals(JPEG_MAGIC)
+  } finally {
+    await fh.close()
+  }
 }
 
 // Display-thumbnail cap. The editor's artwork renders at w-40 (160 CSS px → 320 px on a
@@ -406,10 +427,17 @@ async function probeCoverDims(input: string): Promise<{ width: number; height: n
 // time, exporting, dragging out). The renderer's session-long copy is a thumbnail,
 // so anything that writes art pulls it fresh from the source. The caller owns the
 // returned file's cleanup.
+//
+// A JPEG is copied out byte for byte. Decoding and re-encoding it, which is what the
+// extract did on every pass, cost a user's 85 KB front cover a third of its bytes on an
+// update that only meant to refresh the Finder thumbnail (17/09/2026), and each further
+// update would have degraded it again. Every consumer is handed a JPEG at a .jpg path,
+// so art in any other format still takes the transcode rather than a name that lies.
 export async function extractCoverFile(input: string): Promise<string | null> {
   const out = join(tmpdir(), tmpName('cover-full', 'jpg'))
   try {
-    await run(ffmpegPath, coverArgs(input, out))
+    await run(ffmpegPath, coverArgs(input, out, undefined, true))
+    if (!(await isJpeg(out))) await run(ffmpegPath, coverArgs(input, out))
     return out
   } catch {
     await unlink(out).catch(() => {})
@@ -782,7 +810,22 @@ export function convertArgs(
   if (embedCover) args.push('-i', embedCover)
 
   args.push('-map', '0:a')
-  if (embedCover) args.push('-map', '1:v', '-c:v', 'copy', '-disposition:v:0', 'attached_pic')
+  // The picture's role rides the stream's own "comment" metadata: ffmpeg's flac and id3v2
+  // writers look the text up in their picture-type table and write "Other" (type 0) when
+  // it is absent, which is how every cover Surco embedded came out. An update meant only
+  // to refresh the Finder thumbnail turned a "Front Cover" into "Other" in mp3tag, and
+  // the DJ software picks the front cover by that type when a file carries several.
+  if (embedCover)
+    args.push(
+      '-map',
+      '1:v',
+      '-c:v',
+      'copy',
+      '-disposition:v:0',
+      'attached_pic',
+      '-metadata:s:v:0',
+      'comment=Cover (front)',
+    )
   // No new cover and no removal asked for: carry the source's own picture across, or a
   // conversion whose only job was fixing a title would strip artwork the file already
   // had — "Surco deleted my cover" on an operation that never mentioned covers. The `?`
@@ -1150,10 +1193,32 @@ const MIN_VERIFIABLE_SEC = 3
 // -v error is deliberately not passed: ffmpeg reports the decoded length on the
 // progress line, so one decode answers both questions instead of paying for two.
 export async function assertDecodable(file: string): Promise<void> {
-  let stderr: string
-  let stdout: string
+  const whole = await decodeForCheck(file)
+  if (whole.ok) return assertNotTruncated(file, whole.stderr, whole.stdout)
+  // -xerror fails on the first packet the decoder rejects wherever it sits, and a
+  // complete file can carry one after its last frame: three of a user's MP3s (17/09/2026)
+  // ended in a Lyrics3v2 block, which ffmpeg's mp3 demuxer does not know and hands to the
+  // decoder as audio. Measured: 374.47 s delivered of a 374.54 s header, then "Header
+  // missing" on those bytes — one error, after everything. The same-format copy carries
+  // the tail verbatim, so every update of those files was refused for good. A second pass
+  // bounded by -t stops just short of the header's duration, before any tail: a file that
+  // decodes cleanly up to there has delivered its audio, while junk in the middle still
+  // trips -xerror and a truncation still falls short of the header (the margin is half
+  // the shortfall the truncation check tolerates, so a good file lands above it).
+  const header = headerDurationSec(whole.stderr)
+  if (header === null || header < MIN_VERIFIABLE_SEC) throw whole.error
+  const bounded = await decodeForCheck(file, header * (1 - MAX_DECODE_SHORTFALL / 2))
+  if (!bounded.ok) throw bounded.error
+  assertNotTruncated(file, bounded.stderr, bounded.stdout)
+}
+
+type DecodeForCheck =
+  | { ok: true; stderr: string; stdout: string }
+  | { ok: false; stderr: string; error: Error }
+
+async function decodeForCheck(file: string, untilSec?: number): Promise<DecodeForCheck> {
   try {
-    ;({ stderr, stdout } = await run(
+    const { stderr, stdout } = await run(
       ffmpegPath,
       [
         '-hide_banner',
@@ -1164,6 +1229,7 @@ export async function assertDecodable(file: string): Promise<void> {
         file,
         '-map',
         '0:a',
+        ...(untilSec === undefined ? [] : ['-t', untilSec.toFixed(3)]),
         '-progress',
         '-',
         '-f',
@@ -1171,14 +1237,18 @@ export async function assertDecodable(file: string): Promise<void> {
         '-',
       ],
       { maxBuffer: 1024 * 1024 * 16 },
-    ))
+    )
+    // The two figures arrive on different streams: the input banner (with Duration) on
+    // stderr, and -progress's own report on stdout, which is what `-progress -` means.
+    return { ok: true, stderr: String(stderr), stdout: String(stdout) }
   } catch (e) {
     const text = String((e as { stderr?: unknown })?.stderr ?? '').trim()
-    throw errorWithKey('convertedOutputUnreadable', firstErrorLine(text) || String(e))
+    return {
+      ok: false,
+      stderr: text,
+      error: errorWithKey('convertedOutputUnreadable', firstErrorLine(text) || String(e)),
+    }
   }
-  // The two figures arrive on different streams: the input banner (with Duration) on
-  // stderr, and -progress's own report on stdout, which is what `-progress -` means.
-  assertNotTruncated(file, String(stderr), String(stdout))
 }
 
 // The banner rides on stderr now that -v error is gone (the progress figures need it),
@@ -1617,6 +1687,10 @@ export async function convertAudio(
         throw text ? new Error(firstErrorLine(text) || text) : e
       })
       if (declickAf) declickedSamples = parseDeclickedSamples(String(stderr)) ?? undefined
+      // The flac muxer just wrote the comment as DESCRIPTION whatever metadataArgs called
+      // it; put it under the name the DJ software reads (see setFlacComment).
+      if (ext === '.flac')
+        await runInWorker({ type: 'setFlacComment', file: tmp, comment: meta.comment })
       if (ext === '.wav' || ext === '.m4a') {
         // RIFF rejects an attached-picture stream, so convertArgs can't embed the
         // cover and drops tags with no RIFF-INFO field (grouping). TagLib writes a

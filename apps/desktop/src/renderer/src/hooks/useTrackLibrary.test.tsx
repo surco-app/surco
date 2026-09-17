@@ -1167,3 +1167,42 @@ describe('useTrackLibrary updateTrack within one tick', () => {
     })
   })
 })
+
+// A user compared a FLAC before and after an update in mp3tag (17/09/2026): an
+// ALBUMARTIST had appeared, copied from the artist. The import filled the field whenever
+// the file left it empty, and every write path then put that guess on disk. For a duo or
+// a collaboration the album artist is not the track artist, and a field the file never
+// had is not Surco's to invent: an update that changes nothing must write nothing new.
+describe('album artist on import', () => {
+  it('stays empty when the file carries none', async () => {
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: 'Rave Till My Grave', artist: 'Ashbreaker' },
+        duration: 383,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+
+    await act(async () => {
+      await result.current.addPaths(['/m/Ashbreaker - Rave Till My Grave.flac'])
+      await new Promise((r) => setTimeout(r, 50))
+    })
+
+    expect(result.current.tracks).toHaveLength(1)
+    expect(result.current.tracks[0].meta.artist).toBe('Ashbreaker')
+    expect(result.current.tracks[0].meta.albumArtist).toBe('')
+  })
+})
