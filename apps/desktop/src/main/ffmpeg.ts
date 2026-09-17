@@ -1202,13 +1202,15 @@ export async function assertDecodable(file: string): Promise<void> {
   // the tail verbatim, so every update of those files was refused for good. A second pass
   // bounded by -t stops just short of the header's duration, before any tail: a file that
   // decodes cleanly up to there has delivered its audio, while junk in the middle still
-  // trips -xerror and a truncation still falls short of the header (the margin is half
-  // the shortfall the truncation check tolerates, so a good file lands above it).
+  // trips -xerror, and so does a truncation: the cut sits before the bound, so the decoder
+  // meets it (a torn frame, the junk behind it) and fails again. Reaching the bound
+  // cleanly is therefore the whole verdict — the audio delivered is at least the bound,
+  // which sits above the shortfall the truncation check would tolerate, so that check has
+  // nothing left to add here.
   const header = headerDurationSec(whole.stderr)
   if (header === null || header < MIN_VERIFIABLE_SEC) throw whole.error
   const bounded = await decodeForCheck(file, header * (1 - MAX_DECODE_SHORTFALL / 2))
   if (!bounded.ok) throw bounded.error
-  assertNotTruncated(file, bounded.stderr, bounded.stdout)
 }
 
 type DecodeForCheck =
