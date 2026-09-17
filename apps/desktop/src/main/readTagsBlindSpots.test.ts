@@ -3,13 +3,19 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
-import { File as TagFile } from 'node-taglib-sharp'
+import {
+  type Id3v2Tag,
+  Id3v2UserTextInformationFrame,
+  File as TagFile,
+  TagTypes,
+} from 'node-taglib-sharp'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 import { readTags } from './ffmpeg'
+import { readTagLibExtras } from './tags'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-readtags-blind-'))
@@ -87,5 +93,109 @@ describe('readTags on what ffprobe does not surface', () => {
   it('reads the BPM a FLAC keeps under TEMPO', async () => {
     const tags = await readTags(flac)
     expect(tags.bpm).toBe('150')
+  })
+})
+
+// The whole mapping, field by field, on the container where ffprobe sees least. Mutation
+// testing (17/09/2026) showed every line of it could be broken without a test noticing:
+// the four-field check above only pinned the fields a user had reported losing.
+describe('readTagLibExtras', () => {
+  it('reads every core field and every TXXX extra a WAV keeps in its id3 chunk', () => {
+    const file = join(dir, 'full.wav')
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=1',
+      '-c:a',
+      'pcm_s16le',
+      file,
+    ])
+    const f = TagFile.createFromPath(file)
+    try {
+      f.tag.title = 'Rave Till My Grave'
+      f.tag.performers = ['Ashbreaker', 'Guest']
+      f.tag.album = 'MQDRFREE015'
+      f.tag.albumArtists = ['Various']
+      f.tag.year = 2026
+      f.tag.genres = ['Hardstyle', 'Rawstyle']
+      f.tag.grouping = 'Peak'
+      f.tag.comment = 'A2S B1S'
+      f.tag.track = 3
+      f.tag.disc = 2
+      f.tag.beatsPerMinute = 150
+      f.tag.initialKey = '11A'
+      f.tag.publisher = 'MQD Records'
+      f.tag.remixedBy = 'Ashbreaker'
+      f.tag.subtitle = 'Unofficial Edit'
+      f.tag.composers = ['A. Writer', 'B. Writer']
+      f.tag.isrc = 'ESA012600001'
+      const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+      for (const [desc, value] of [
+        ['CATALOGNUMBER', 'MQDRFREE015'],
+        ['DISCOGS_RELEASE_ID', '12345'],
+        ['ENERGYLEVEL', '8'],
+        ['STYLE', 'Rawstyle'],
+        ['COUNTRY', 'Spain'],
+        ['MEDIATYPE', 'File'],
+        ['MOOD', 'Dark'],
+      ]) {
+        const frame = Id3v2UserTextInformationFrame.fromDescription(desc)
+        frame.text = [value]
+        id3.addFrame(frame)
+      }
+      f.save()
+    } finally {
+      f.dispose()
+    }
+
+    expect(readTagLibExtras(file)).toEqual({
+      title: 'Rave Till My Grave',
+      artist: 'Ashbreaker, Guest',
+      album: 'MQDRFREE015',
+      albumArtist: 'Various',
+      year: '2026',
+      genre: 'Hardstyle, Rawstyle',
+      grouping: 'Peak',
+      comment: 'A2S B1S',
+      trackNumber: '3',
+      discNumber: '2',
+      bpm: '150',
+      key: '11A',
+      publisher: 'MQD Records',
+      remixArtist: 'Ashbreaker',
+      mixName: 'Unofficial Edit',
+      composer: 'A. Writer, B. Writer',
+      isrc: 'ESA012600001',
+      catalogNumber: 'MQDRFREE015',
+      discogsReleaseId: '12345',
+      energy: '8',
+      style: 'Rawstyle',
+      country: 'Spain',
+      mediaType: 'File',
+      mood: 'Dark',
+    })
+  })
+
+  it('reads nothing but empty strings from a file with no tag, never throwing', () => {
+    const file = join(dir, 'bare.flac')
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=1',
+      '-c:a',
+      'flac',
+      file,
+    ])
+    const extras = readTagLibExtras(file)
+    expect(Object.values(extras).every((v) => v === '')).toBe(true)
+    expect(extras.catalogNumber).toBeUndefined()
   })
 })
