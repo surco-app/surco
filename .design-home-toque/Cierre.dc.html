@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: #1a1b26; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    a { color: #7aa2f7; text-decoration: none; } a:hover { color: #7dcfff; }
+    .mono { font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace; }
+  </style>
+</helmet>
+
+<div style="background: #1a1b26; color: #c0caf5; min-height: 100%; position: relative; overflow: hidden">
+
+  <div style="position: absolute; top: 40px; left: 50%; width: 1000px; height: 460px; margin-left: -500px; background: radial-gradient(ellipse at center, rgba(122,162,247,0.10), rgba(26,27,38,0) 70%); pointer-events: none"></div>
+
+  <div style="position: relative; max-width: 1440px; margin: 0 auto; padding: 60px 48px 0">
+
+    <div style="text-align: center">
+      <div style="font-size: 46px; font-weight: 600; letter-spacing: -0.032em; line-height: 1.08">Todo esto, en una ventana.</div>
+      <div style="margin: 14px auto 0; max-width: 560px; font-size: 16px; line-height: 1.6; color: #9aa6cf">
+        Sin nube, sin límites y sin nada que registrar. Se actualiza solo.
+      </div>
+    </div>
+
+    <div style="margin-top: 32px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; max-width: 880px; margin-left: auto; margin-right: auto">
+
+      <div style="border: 1px solid rgba(122,162,247,0.35); border-radius: 14px; background: linear-gradient(180deg, rgba(122,162,247,0.07), rgba(26,27,38,0)), #1f2335; padding: 24px; display: flex; flex-direction: column; align-items: center; text-align: center">
+        <div style="font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #828bb8" class="mono">Descarga directa</div>
+        <div style="margin-top: 16px; display: inline-flex; align-items: center; gap: 10px; border-radius: 999px; background: linear-gradient(135deg, #7aa2f7, #7dcfff); color: #1a1b26; font-weight: 600; font-size: 15.5px; padding: 15px 30px; box-shadow: 0 14px 32px rgba(122,162,247,0.26)">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1a1b26" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M7 11l5 5 5-5"></path><path d="M4 20h16"></path></svg>
+          Descargar para macOS
+        </div>
+        <div style="margin-top: 14px; font-size: 12px; color: #828bb8" class="mono">
+          <span style="color: #9ece6a">385</span> descargas · v0.92.0 · 159 MB
+        </div>
+        <div style="margin-top: 8px; font-size: 12.5px; color: #828bb8">
+          ¿Mac con Intel (2020 o anterior)? <span style="color: #7aa2f7">Descárgalo aquí</span>
+        </div>
+      </div>
+
+      <div style="border: 1px solid #2f3449; border-radius: 14px; background: #1f2335; padding: 24px; display: flex; flex-direction: column">
+        <div style="font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #828bb8" class="mono">O con Homebrew</div>
+        <div style="margin-top: 16px; display: flex; align-items: center; gap: 10px; border: 1px solid #2f3449; border-radius: 9px; background: #16161e; padding: 13px 14px">
+          <span style="font-size: 12.5px; color: #828bb8" class="mono">$</span>
+          <span style="flex: 1; font-size: 12.5px; color: #c0caf5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap" class="mono">brew install --cask surco-app/surco/surco</span>
+          <span style="font-size: 11.5px; color: #9aa6cf; border: 1px solid #2f3449; border-radius: 999px; padding: 5px 12px; flex: none">Copiar</span>
+        </div>
+        <div style="margin-top: 12px; font-size: 12px; line-height: 1.6; color: #828bb8" class="mono">Solo macOS. Windows y Linux, desde el botón.</div>
+        <div style="margin-top: auto; padding-top: 16px; display: flex; flex-wrap: wrap; gap: 8px">
+          <span style="font-size: 11px; color: #9aa6cf; border: 1px solid #2f3449; border-radius: 999px; padding: 5px 11px" class="mono">macOS</span>
+          <span style="font-size: 11px; color: #9aa6cf; border: 1px solid #2f3449; border-radius: 999px; padding: 5px 11px" class="mono">Windows</span>
+          <span style="font-size: 11px; color: #9aa6cf; border: 1px solid #2f3449; border-radius: 999px; padding: 5px 11px" class="mono">Linux</span>
+          <span style="font-size: 11px; color: #9ece6a; border: 1px solid rgba(158,206,106,0.35); border-radius: 999px; padding: 5px 11px" class="mono">Notarizado por Apple</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin: 26px auto 0; max-width: 880px; display: flex; align-items: flex-start; gap: 11px; border: 1px solid #2f3449; border-radius: 11px; background: rgba(36,40,59,0.35); padding: 14px 16px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ece6a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: none; margin-top: 1px"><path d="M12 3l7 3v6c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6l7-3z"></path><path d="M9 12.5l2 2 4-4"></path></svg>
+      <div style="font-size: 12.5px; line-height: 1.6; color: #828bb8">
+        <b style="color: #9aa6cf; font-weight: 600">Tus originales no se tocan.</b> Al cambiar de formato, la copia va a una carpeta aparte. Solo reescribe el fichero si reexportas al mismo formato, que es como actualiza las etiquetas sin recodificar.
+      </div>
+    </div>
+
+    <div style="margin-top: 30px; text-align: center; padding-bottom: 44px">
+      <span style="font-size: 14.5px; font-weight: 500; color: #9aa6cf">Ver todo lo que hace →</span>
+    </div>
+
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
