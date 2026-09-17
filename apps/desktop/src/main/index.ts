@@ -91,6 +91,7 @@ import {
 } from './settings'
 import { registerShellIpc } from './shellIpc'
 import { createStickyConflict } from './stickyConflict'
+import { snapshotTagsOrNull, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
 import { syncCollection } from './traktorNmlLibrary'
 import { detectTraktorNmlPaths } from './traktorNmlPath'
@@ -1050,6 +1051,9 @@ function registerIpc(): void {
         // The quality knobs are global preferences, so they're read here (at job time)
         // rather than threaded through every renderer job.
         const s = getSettings()
+        // Read before the conversion: with "replace the original" the input is gone once
+        // the job lands, and the comparison the panel shows is against what the file was.
+        const tagsBefore = snapshotTagsOrNull(input)
         return activity.track(
           'convert',
           'activity.convert',
@@ -1081,7 +1085,13 @@ function registerIpc(): void {
               foreignRemoved,
               replacesPath,
             ),
-          { labelParams: { track } },
+          {
+            labelParams: { track },
+            // The before/after the user did by hand in mp3tag, on every conversion: which
+            // fields changed and how many stayed, so a field renamed, invented or lost
+            // shows in the panel the moment it happens rather than in a bug report.
+            summary: () => tagChangeDetail(tagsBefore, snapshotTagsOrNull(output)) ?? {},
+          },
         )
       },
       recordConversion,

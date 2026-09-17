@@ -76,6 +76,24 @@ describe('the comment on a FLAC target', () => {
     expect(fields.DESCRIPTION).toBeUndefined()
   })
 
+  // Emptying the comment on a file that has one under the right spelling has to remove
+  // that field too, not only the legacy DESCRIPTION.
+  it('removes an existing COMMENT when the comment is emptied', async () => {
+    const tagged = join(dir, 'tagged.flac')
+    execFileSync(FF, ['-y', '-loglevel', 'error', '-i', src, '-c:a', 'copy', tagged])
+    const f = TagFile.createFromPath(tagged)
+    try {
+      f.tag.comment = 'old'
+      f.save()
+    } finally {
+      f.dispose()
+    }
+    expect(xiphFields(tagged).COMMENT, 'the fixture has to carry COMMENT').toEqual(['old'])
+    const out = join(dir, 'cleared-comment.flac')
+    await convertAudio(tagged, out, 'flac', { ...meta, comment: '' })
+    expect(xiphFields(out).COMMENT).toBeUndefined()
+  })
+
   // Files an earlier Surco converted carry the DESCRIPTION spelling. Re-tagging one has
   // to move the comment over, and emptying it has to clear both spellings, or the old
   // text resurfaces in the editor from the alias the reader falls back to.

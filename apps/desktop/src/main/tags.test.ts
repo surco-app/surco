@@ -10,7 +10,7 @@ import {
   Id3v2PopularimeterFrame,
   Id3v2PrivateFrame,
   type Id3v2Tag,
-  type Id3v2TextInformationFrame,
+  Id3v2TextInformationFrame,
   Id3v2UserTextInformationFrame,
   type Mpeg4AppleTag,
   PictureType,
@@ -861,6 +861,31 @@ describe('writeTags', () => {
   })
 })
 
+describe('foreignRemoved on an ID3 frame that is not a TXXX', () => {
+  // The inspector lists foreign frames by their id (TENC, TSSE, a URL frame…), not
+  // only TXXX descriptions, and removal has to reach them by that id: the TXXX route
+  // alone would leave an encoder stamp the user asked to drop.
+  it('removes a text frame named by its id', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+    const seeded = TagFile.createFromPath(file)
+    const id3 = seeded.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+    const tenc = Id3v2TextInformationFrame.fromIdentifier(Id3v2FrameIdentifiers.TENC)
+    tenc.text = ['Some Encoder']
+    id3.addFrame(tenc)
+    seeded.save()
+    seeded.dispose()
+
+    writeTags(file, meta, undefined, false, undefined, undefined, false, ['tenc'])
+
+    const f = TagFile.createFromPath(file)
+    const after = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
+    expect(after.frames.some((fr) => fr.frameId.toString() === 'TENC')).toBe(false)
+    expect(f.tag.title).toBe('Till I Come')
+    f.dispose()
+  })
+})
+
 describe('readPopmRating', () => {
   // Traktor's stars live in a POPM frame, and the bundled ffprobe does not surface POPM at
   // all — so on MP3/AIFF every rated track read back unrated, and the editor showed no
@@ -877,6 +902,39 @@ describe('readPopmRating', () => {
   // Traktor's byte is the authority: a file rated in both Traktor and WMP carries two POPM
   // frames whose bytes disagree by design (204 vs 196 for four stars), and picking whichever
   // came first would make the star count depend on frame order.
+  // A POPM with a zero byte is "unrated", which the editor shows as no stars — not as
+  // "0", which would then be written back as a rating.
+  it('reads a zero-byte POPM as no rating', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-popm-zero-'))
+    const file = buildSeed(dir)
+    const seeded = TagFile.createFromPath(file)
+    const id3 = seeded.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+    const zero = Id3v2PopularimeterFrame.fromUser(TRAKTOR_RATING_USER)
+    zero.rating = 0
+    id3.addFrame(zero)
+    seeded.save()
+    seeded.dispose()
+    expect(readPopmRating(file)).toBe('')
+  })
+
+  it('reads no rating from a file with no ID3 tag at all', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-popm-flac-'))
+    const file = join(dir, 'plain.flac')
+    execFileSync(FFMPEG, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=1',
+      '-c:a',
+      'flac',
+      file,
+    ])
+    expect(readPopmRating(file)).toBe('')
+  })
+
   it('prefers the Traktor frame over a WMP frame that lands first', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-popm-user-'))
     const file = buildSeed(dir)

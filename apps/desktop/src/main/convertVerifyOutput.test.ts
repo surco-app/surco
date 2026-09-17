@@ -28,6 +28,9 @@ const src = join(dir, 'in.flac')
 const garbage = join(dir, 'garbage.mp3')
 const midCorrupt = join(dir, 'midcorrupt.mp3')
 const lyrics3Tail = join(dir, 'lyrics3.mp3')
+const shortLyrics3 = join(dir, 'short-lyrics3.mp3')
+const cutLyrics3 = join(dir, 'cut-lyrics3.mp3')
+const longCut = join(dir, 'long-cut.mp3')
 
 const meta: TrackMetadata = {
   title: 'T',
@@ -96,6 +99,52 @@ beforeAll(() => {
   const id3v1 = Buffer.alloc(128)
   id3v1.write('TAG', 0, 'latin1')
   writeFileSync(lyrics3Tail, Buffer.concat([bytes, Buffer.from(lyrics3, 'latin1'), id3v1]))
+  // The same tail on a two-second jingle, and on the eight-second file cut to a quarter.
+  const short = join(dir, 'short.mp3')
+  execFileSync(FF, [
+    '-v',
+    'error',
+    '-y',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=440:duration=2',
+    '-c:a',
+    'libmp3lame',
+    short,
+  ])
+  writeFileSync(
+    shortLyrics3,
+    Buffer.concat([readFileSync(short), Buffer.from(lyrics3, 'latin1'), id3v1]),
+  )
+  // Cut on a frame boundary (the next sync word past the quarter mark), so every frame
+  // before the tail decodes cleanly and the only error is the tail itself — the shape of
+  // a real file that lost its second half and then got a Lyrics3 block appended.
+  let cut = Math.floor(bytes.length / 4)
+  while (!(bytes[cut] === 0xff && (bytes[cut + 1] & 0xe0) === 0xe0)) cut++
+  writeFileSync(
+    cutLyrics3,
+    Buffer.concat([bytes.subarray(0, cut), Buffer.from(lyrics3, 'latin1'), id3v1]),
+  )
+  // A file whose header reads past the minute mark, cut to a quarter: the header parser
+  // has to weigh the minutes, not only the seconds every other fixture stays under.
+  const long = join(dir, 'long.mp3')
+  execFileSync(FF, [
+    '-v',
+    'error',
+    '-y',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=440:duration=65',
+    '-c:a',
+    'libmp3lame',
+    '-b:a',
+    '32k',
+    long,
+  ])
+  const longBytes = readFileSync(long)
+  writeFileSync(longCut, longBytes.subarray(0, Math.floor(longBytes.length / 4)))
   writeFileSync(
     fakeFfmpeg,
     [
@@ -185,6 +234,29 @@ describe('a complete file with junk after its last frame', () => {
   it('is accepted even though -xerror alone would refuse it', async () => {
     expect(xerrorRejects(lyrics3Tail), 'the fixture no longer trips -xerror').toBe(true)
     await expect(assertDecodable(lyrics3Tail)).resolves.toBeUndefined()
+  })
+
+  // Under three seconds no ratio of decoded to declared length can be trusted, so the
+  // bounded second pass is not attempted and the first verdict stands.
+  it('is still refused when the file is too short for the second pass to mean anything', async () => {
+    const err = await assertDecodable(shortLyrics3).catch((e: unknown) => e)
+    expect(errorKeyOf((err as Error).message)).toBe('convertedOutputUnreadable')
+  })
+
+  // The second pass is bounded, not blind: on a file cut short the junk sits before the
+  // bound, so the decoder meets it on the second pass too and the file is refused. It is
+  // refused as unreadable rather than truncated — the decoder never got past the cut to
+  // measure anything — and either way it is not delivered.
+  it('still refuses a truncated file whose junk tail also trips -xerror', async () => {
+    const err = await assertDecodable(cutLyrics3).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(Error)
+    expect(errorKeyOf((err as Error).message)).toBe('convertedOutputUnreadable')
+  })
+
+  it('weighs the minutes of the declared length when a long file is cut short', async () => {
+    const err = await assertDecodable(longCut).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(Error)
+    expect(errorKeyOf((err as Error).message)).toBe('convertedOutputTruncated')
   })
 
   it('still fails when the junk sits in the middle of the audio', async () => {

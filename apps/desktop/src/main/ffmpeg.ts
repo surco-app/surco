@@ -90,7 +90,7 @@ import {
   readCueTree,
   readItunesGrouping,
   readPopmRating,
-  readWavId3Extras,
+  readTagLibExtras,
 } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
@@ -327,17 +327,16 @@ export async function readTags(input: string): Promise<TrackMetadata> {
     ],
     { timeout: ANALYSIS_TIMEOUT_MS },
   )
-  return withWavId3Extras(input, tagsFromProbe(JSON.parse(stdout)))
+  return withTagLibExtras(input, tagsFromProbe(JSON.parse(stdout)))
 }
 
-// A WAV carries a RIFF INFO chunk and an ID3 one at the same time, and ffmpeg's demuxer
-// reads INFO and ignores ID3 — so every field INFO has no room for (label, grouping, key,
-// BPM…) probes back empty even though it is on the file. Fills those from ID3, leaving
-// whatever the probe already found untouched. A no-op for every other container, and for
-// the fields INFO does carry. See readWavId3Extras for why the INFO chunk is kept at all.
-function withWavId3Extras(input: string, tags: TrackMetadata): TrackMetadata {
-  if (!WAV_INPUT.test(input)) return tags
-  for (const [field, value] of Object.entries(readWavId3Extras(input))) {
+// The containers ffprobe reads only partly (see readTagLibExtras): whatever the probe
+// left empty is filled from TagLib's view, and whatever it found stays as found.
+const TAGLIB_FILLED_INPUT = /\.(wav|aiff?|m4a)$/i
+
+function withTagLibExtras(input: string, tags: TrackMetadata): TrackMetadata {
+  if (!TAGLIB_FILLED_INPUT.test(input)) return tags
+  for (const [field, value] of Object.entries(readTagLibExtras(input))) {
     const key = field as keyof TrackMetadata
     if (value && !tags[key]?.trim()) tags[key] = value
   }
@@ -532,7 +531,7 @@ async function readMetaUncached(input: string): Promise<MetaRead | null> {
       const itunesGrouping = readItunesGrouping(input)
       if (itunesGrouping) tags.grouping = itunesGrouping
     }
-    withWavId3Extras(input, tags)
+    withTagLibExtras(input, tags)
     // Same gap for the star rating: ffprobe surfaces FLAC's Vorbis RATING comment but never
     // the ID3 POPM frame, so a track rated in Traktor read back unrated on MP3/AIFF and the
     // editor showed no stars at all. Fall back to reading POPM through TagLib when the probe
@@ -1203,13 +1202,15 @@ export async function assertDecodable(file: string): Promise<void> {
   // the tail verbatim, so every update of those files was refused for good. A second pass
   // bounded by -t stops just short of the header's duration, before any tail: a file that
   // decodes cleanly up to there has delivered its audio, while junk in the middle still
-  // trips -xerror and a truncation still falls short of the header (the margin is half
-  // the shortfall the truncation check tolerates, so a good file lands above it).
+  // trips -xerror, and so does a truncation: the cut sits before the bound, so the decoder
+  // meets it (a torn frame, the junk behind it) and fails again. Reaching the bound
+  // cleanly is therefore the whole verdict — the audio delivered is at least the bound,
+  // which sits above the shortfall the truncation check would tolerate, so that check has
+  // nothing left to add here.
   const header = headerDurationSec(whole.stderr)
   if (header === null || header < MIN_VERIFIABLE_SEC) throw whole.error
   const bounded = await decodeForCheck(file, header * (1 - MAX_DECODE_SHORTFALL / 2))
   if (!bounded.ok) throw bounded.error
-  assertNotTruncated(file, bounded.stderr, bounded.stdout)
 }
 
 type DecodeForCheck =
@@ -2126,9 +2127,19 @@ export function coverFilter(opts: CoverProcessOpts): string {
   return opts.square ? `crop='min(iw,ih)':'min(iw,ih)',${scale}` : scale
 }
 
+// Art that already satisfies the settings is copied, not re-encoded. Every embed came
+// through here, including a file's own cover on a same-format update, and each pass
+// decoded and re-encoded it: a user's 85 KB front cover came back 53 KB after an update
+// meant only to refresh the thumbnail (17/09/2026), and the next update would have
+// degraded it again. A copy rather than the input path itself: the caller unlinks what
+// it is handed, and the input may be the user's own dropped file.
 export async function processCover(input: string, opts: CoverProcessOpts): Promise<string> {
   const vf = coverFilter(opts)
   const out = join(tmpdir(), tmpName('cover-proc', 'jpg'))
+  if (await coverFitsAsIs(input, opts)) {
+    await copyFile(input, out)
+    return out
+  }
   await run(ffmpegPath, [
     '-hide_banner',
     '-loglevel',
@@ -2143,6 +2154,20 @@ export async function processCover(input: string, opts: CoverProcessOpts): Promi
     out,
   ])
   return out
+}
+
+// Mirrors coverFilter: no shrink needed under the cap, no crop needed when already
+// square, no enlargement needed at the target. Anything but a JPEG is transcoded, since
+// every consumer expects one at the .jpg path.
+async function coverFitsAsIs(input: string, opts: CoverProcessOpts): Promise<boolean> {
+  if (!(await isJpeg(input))) return false
+  const { width, height } = await probeCoverDims(input)
+  if (!width || !height) return false
+  const max = opts.maxSize > 0 ? opts.maxSize : 4000
+  if (width > max || height > max) return false
+  if (opts.square && width !== height) return false
+  if (opts.upscale && opts.maxSize > 0 && Math.max(width, height) < max) return false
+  return true
 }
 
 export interface BandSpec {
