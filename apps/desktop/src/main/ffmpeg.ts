@@ -2125,9 +2125,19 @@ export function coverFilter(opts: CoverProcessOpts): string {
   return opts.square ? `crop='min(iw,ih)':'min(iw,ih)',${scale}` : scale
 }
 
+// Art that already satisfies the settings is copied, not re-encoded. Every embed came
+// through here, including a file's own cover on a same-format update, and each pass
+// decoded and re-encoded it: a user's 85 KB front cover came back 53 KB after an update
+// meant only to refresh the thumbnail (17/09/2026), and the next update would have
+// degraded it again. A copy rather than the input path itself: the caller unlinks what
+// it is handed, and the input may be the user's own dropped file.
 export async function processCover(input: string, opts: CoverProcessOpts): Promise<string> {
   const vf = coverFilter(opts)
   const out = join(tmpdir(), tmpName('cover-proc', 'jpg'))
+  if (await coverFitsAsIs(input, opts)) {
+    await copyFile(input, out)
+    return out
+  }
   await run(ffmpegPath, [
     '-hide_banner',
     '-loglevel',
@@ -2142,6 +2152,20 @@ export async function processCover(input: string, opts: CoverProcessOpts): Promi
     out,
   ])
   return out
+}
+
+// Mirrors coverFilter: no shrink needed under the cap, no crop needed when already
+// square, no enlargement needed at the target. Anything but a JPEG is transcoded, since
+// every consumer expects one at the .jpg path.
+async function coverFitsAsIs(input: string, opts: CoverProcessOpts): Promise<boolean> {
+  if (!(await isJpeg(input))) return false
+  const { width, height } = await probeCoverDims(input)
+  if (!width || !height) return false
+  const max = opts.maxSize > 0 ? opts.maxSize : 4000
+  if (width > max || height > max) return false
+  if (opts.square && width !== height) return false
+  if (opts.upscale && opts.maxSize > 0 && Math.max(width, height) < max) return false
+  return true
 }
 
 export interface BandSpec {
