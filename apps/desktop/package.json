@@ -17,10 +17,14 @@
     "lint": "biome lint src",
     "format": "biome format --write src",
     "check": "biome check --write src",
-    "sweep": "vitest run src/main/spectrumSweep.test.ts"
+    "sweep": "vitest run src/main/spectrumSweep.test.ts",
+    "corpus": "vitest run src/main/tagCorpus.test.ts",
+    "mutate": "stryker run"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.7",
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/vitest-runner": "^10.0.0",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
