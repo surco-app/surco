@@ -31,6 +31,7 @@
     "settings": "Einstellungen",
     "stats": "Statistiken",
     "activity": "Aktivität",
+    "trash": "Surco-Papierkorb",
     "selectAll": "Alles auswählen",
     "revealSelected": "Zum ausgewählten Track scrollen",
     "fillFromName": "Alle Tags aus dem Dateinamen füllen",
@@ -122,6 +123,30 @@
     "convertedOutputTruncated": "Die konvertierte Datei war kürzer als das Original, daher wurde sie verworfen und das Original unverändert gelassen. Versuche es mit anderen Konvertierungseinstellungen.",
     "engineDjOpen": "Schließ Engine DJ vor dem Konvertieren: Es hat die Bibliothek geöffnet.",
     "sourceTagsUnread": "Die Tags dieser Datei konnten nicht gelesen werden, daher wurde sie nicht angerührt: eine Konvertierung hätte die vorhandenen gelöscht. Lade sie erneut und versuche es noch einmal."
+  },
+  "trash": {
+    "title": "Surco-Papierkorb",
+    "summary_one": "{{count}} Datei · {{size}}",
+    "summary_other": "{{count}} Dateien · {{size}}",
+    "emptyHint": "Bewahrt die Originale, die eine Konvertierung ersetzt, {{days}} Tage lang auf, bis zu {{size}}.",
+    "emptyTitle": "Nichts wiederherzustellen",
+    "emptyBody": "Wenn eine Konvertierung ein Original ersetzt oder umbenennt, oder du einen Titel auf einem Laufwerk ohne Papierkorb löschst, erscheint er hier.",
+    "reason": {
+      "replaced": "durch eine Konvertierung ersetzt",
+      "renamed": "durch eine Konvertierung umbenannt",
+      "deleted": "aus Surco gelöscht",
+      "restored-over": "beim Wiederherstellen eines anderen beiseitegelegt"
+    },
+    "restore": "Wiederherstellen",
+    "remove": "Endgültig löschen",
+    "empty": "Papierkorb leeren",
+    "emptyConfirm_one": "{{count}} Datei endgültig löschen?",
+    "emptyConfirm_other": "{{count}} Dateien endgültig löschen?",
+    "reveal": "Ordner öffnen",
+    "close": "Schließen",
+    "retention": "Leert sich nach {{days}} Tagen oder ab {{size}} von selbst, das Älteste zuerst.",
+    "restored": "„{{name}}“ in seinem Ordner wiederhergestellt",
+    "restoreFailed": "„{{name}}“ konnte nicht wiederhergestellt werden: {{reason}}"
   },
   "notices": {
     "duplicatesSkipped": "Schon in der Liste, übersprungen: {{count}}",

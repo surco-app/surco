@@ -314,6 +314,23 @@ export interface LifetimeStats {
   deezerMatches: number
 }
 
+// An entry in Surco's own trash (main/surcoTrash.ts): a file a conversion replaced or
+// renamed away, or one the user deleted on a volume with no OS Trash, kept for a while
+// so a bad write is a restore rather than a loss.
+export type TrashReason = 'replaced' | 'renamed' | 'deleted' | 'restored-over'
+
+export interface TrashEntry {
+  id: string
+  name: string
+  originalPath: string
+  storedPath: string
+  bytes: number
+  trashedAt: number
+  reason: TrashReason
+  // The file that took the original's place, when a conversion caused the stash.
+  outputPath?: string
+}
+
 export interface TrackMetadata {
   title: string
   artist: string

@@ -40,6 +40,8 @@ function renderBar(over: Partial<Props> = {}): Props {
     onStats: vi.fn(),
     onActivity: vi.fn(),
     activityRunning: false,
+    onTrash: vi.fn(),
+    trashCount: 0,
     onSettings: vi.fn(),
     ...over,
   }

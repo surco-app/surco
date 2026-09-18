@@ -28,7 +28,7 @@ import type {
   WaveformResult,
   WaveformScan,
 } from '../shared/types'
-import { LOUDNESS_NAMESPACE, cachedAnalysis } from './analysisCache'
+import { cachedAnalysis, LOUDNESS_NAMESPACE } from './analysisCache'
 import { isAbortError } from './analysisCancel'
 import { ffmpegPath, ffprobePath } from './binaries'
 import type { FullScan } from './channelScan'
@@ -59,6 +59,7 @@ import {
   BAND_START_HZ as SHELF_BAND_START_HZ,
   BAND_WIDTH_HZ as SHELF_BAND_WIDTH_HZ,
 } from './hfShelf'
+import { isSameFile } from './inplace'
 import { isMissingInputError } from './missingInput'
 import { recordNmlPatch } from './nmlBatch'
 import {
@@ -77,6 +78,7 @@ import {
   volumedetectArgs,
   volumeFilter,
 } from './normalize'
+import { keepOriginal } from './originalKeeper'
 import { recordRekordboxRepoint } from './rekordboxBatch'
 import { rekordboxRepointFor } from './rekordboxRepointFor'
 import { renameWithRetry, rescuePath } from './renameRetry'
@@ -1912,6 +1914,11 @@ export async function convertAudio(
     // both branches share and nothing further writes to the temp, which is exactly what
     // the rename's own comment below already claims to be true of it.
     await assertDecodable(tmp)
+    // A rewrite lands on the source's own path, so the rename below would replace the
+    // user's file with no way back. The original goes to Surco's trash first (see
+    // surcoTrash.ts); unconfigured — the unit tests — keepOriginal keeps nothing and
+    // the rename overwrites as it always did.
+    if (await isSameFile(input, output)) await keepOriginal(input, 'replaced', output)
     // Logged because this failure only reproduces on Windows machines we cannot
     // attach a debugger to: when a user reports "another program is using the file",
     // these lines are the whole evidence — whether the destination was still held,
