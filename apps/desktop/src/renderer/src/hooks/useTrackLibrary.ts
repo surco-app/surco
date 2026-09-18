@@ -139,6 +139,11 @@ interface TrackLibrary {
   clearExtrasTracks: (ids: string[]) => void
   deriveTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   startOverTrack: (track: TrackItem) => void
+  // Reads the file again for a row whose import-time read failed, keeping whatever the
+  // user typed on the row meanwhile (the read fills only the fields still at their
+  // name-parsed value) and clearing the failed mark. Resolves true once the row holds the
+  // file's tags; false leaves the mark in place, and the conversion refuses the row.
+  rereadTrackMeta: (id: string) => Promise<boolean>
   // Re-reads the file after an in-place export rewrote it, so the row stops describing
   // bytes that no longer exist. Only the fields the row renders — everything the user
   // staged in the editor is left alone.
@@ -226,6 +231,17 @@ export function useTrackLibrary({
     const appliers = metaPatchBuffer.current
     if (appliers.size === 0) return
     metaPatchBuffer.current = new Map()
+    // The ref first, eagerly: a caller that awaited the read (rereadTrackMeta before a
+    // conversion) re-resolves its row from the ref in the very next microtask, before
+    // React has rendered the state below. A copy patched in place rather than a second
+    // map: the appliers are pure, so the row is the same either way, and the array work
+    // per flush stays one pass (the linear-work test counts map visits).
+    const patched = tracksRef.current.slice()
+    for (let i = 0; i < patched.length; i++) {
+      const applier = appliers.get(patched[i].id)
+      if (applier) patched[i] = applier(patched[i])
+    }
+    tracksRef.current = patched
     setTracks((prev) => prev.map((t) => appliers.get(t.id)?.(t) ?? t))
   }, [])
   const enqueueMetaPatch = useCallback(
@@ -451,6 +467,9 @@ export function useTrackLibrary({
       enqueueMetaPatch(base.id, (t) => ({
         ...t,
         ...patch,
+        // A read that succeeded clears the mark a failed one left (rereadTrackMeta); a row
+        // never marked stays exactly as it was.
+        ...(t.metaReadFailed ? { metaReadFailed: false } : {}),
         meta: mergeReadMeta(base.meta, t.meta, finalMeta),
       }))
       onMetaLoaded({ ...base, ...patch, meta: finalMeta })
@@ -495,6 +514,16 @@ export function useTrackLibrary({
       anchor: s.anchor === track.id ? base.id : s.anchor,
     }))
     void loadTrackMeta(base)
+  })
+
+  // The base is a fresh name parse of the same path under the row's own id, not the row
+  // itself: loadTrackMeta merges the read against that base, so a field the user typed on
+  // the flagged row (anything differing from the name parse) keeps the user's value and
+  // the read fills the rest.
+  const rereadTrackMeta = useStableCallback(async (id: string): Promise<boolean> => {
+    const current = tracksRef.current.find((t) => t.id === id)
+    if (!current) return false
+    return loadTrackMeta({ ...newTrack(current.inputPath), id: current.id })
   })
 
   // An in-place export rewrote the file this row describes (possibly under a new name),
@@ -793,6 +822,7 @@ export function useTrackLibrary({
     clearExtrasTracks,
     deriveTracks,
     startOverTrack,
+    rereadTrackMeta,
     refreshTrackFromDisk,
     removeTrack,
     removeTracks,

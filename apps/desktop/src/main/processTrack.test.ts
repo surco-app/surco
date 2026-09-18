@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { errorKeyOf } from '../shared/errorKeys'
 import type { ProcessJob, Settings, TrackMetadata } from '../shared/types'
 import { createOutputReservations } from './outputReservations'
 import { type ProcessTrackDeps, runProcessTrack } from './processTrack'
@@ -154,6 +155,21 @@ describe('runProcessTrack — plain conversion', () => {
     const deps = makeDeps({ convertAudio: vi.fn(async () => ({ normalizeSkipped: true })) })
     const result = await runProcessTrack(job(), deps)
     expect(result.normalizeSkipped).toBe(true)
+  })
+})
+
+// A row whose tag read failed carries a name-parsed title and artist and nothing else. It
+// used to be convertible like any other: with "replace the original" or an update, every
+// managed field was written empty over a file that, for a transient failure (a NAS hiccup,
+// a timed-out probe), still had all of them. A read that failed must never become a write.
+describe('runProcessTrack — metadata that never came from the file', () => {
+  it('refuses the job with a translatable error before touching anything', async () => {
+    const deps = makeDeps()
+    const err = await runProcessTrack(job({ metaUnread: true }), deps).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(Error)
+    expect(errorKeyOf((err as Error).message)).toBe('sourceTagsUnread')
+    expect(deps.convertAudio).not.toHaveBeenCalled()
+    expect(deps.prepareProcessedCover).not.toHaveBeenCalled()
   })
 })
 

@@ -55,6 +55,12 @@ interface Params {
   // skipped" count, but a single-track convert has no summary to show it in — without
   // this the row just falls back to idle and the convert reads as if it did nothing.
   onFormatSkipped?: (name: string) => void
+  // Re-reads a row whose import-time tag read failed (metaReadFailed), resolving true once
+  // the row holds the file's own tags. A flagged row carries a name-parsed title and artist
+  // and nothing else, so converting it as it stands would write every other managed field
+  // empty over the file; the read has to succeed first. Without this wired up the job
+  // still tells main the metadata never came from the file, and main refuses it.
+  rereadTrackMeta?: (id: string) => Promise<boolean>
   // Fired once after a convert-all run that produced at least one conversion — the
   // moment of value the donate nudge rides. Fires per run, never per track, so a
   // thirty-track batch triggers one evaluation, not thirty.
@@ -115,6 +121,7 @@ export function useTrackProcessing({
   onNormalizeSkipped,
   onDeclicked,
   onFormatSkipped,
+  rereadTrackMeta,
   onConversion,
   onProcessError,
   concurrency = CONVERT_CONCURRENCY,
@@ -165,7 +172,7 @@ export function useTrackProcessing({
       declickOverride?: DeclickMode,
       keepMp3?: boolean,
     ): Promise<BatchOutcome> => {
-      const track = tracksRef.current.find((t) => t.id === id)
+      let track = tracksRef.current.find((t) => t.id === id)
       // A track removed after being queued was a user decision, not a failure — count
       // it as skipped so the summary never reports an error with no visible row.
       if (!track) return 'skipped'
@@ -173,6 +180,22 @@ export function useTrackProcessing({
       // running batch had queued, or vice versa. A second job would write the same
       // output path at the same time — whoever started first owns the conversion.
       if (track.status === 'processing') return 'skipped'
+      // A read that failed must never become a write (see Params.rereadTrackMeta). The row
+      // is re-resolved after the read because the library patches it in place; a row still
+      // flagged afterwards, or with no re-read available, is refused rather than written.
+      if (track.metaReadFailed && rereadTrackMeta) {
+        const ok = await rereadTrackMeta(id)
+        const fresh = ok ? tracksRef.current.find((t) => t.id === id) : undefined
+        if (!fresh || fresh.metaReadFailed) {
+          updateTrack(id, {
+            status: 'error',
+            error: tr('errors.sourceTagsUnread'),
+            stage: undefined,
+          })
+          return 'failed'
+        }
+        track = fresh
+      }
       const missing = missingRequired(
         track.meta,
         settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
@@ -275,6 +298,7 @@ export function useTrackProcessing({
           removeCover: track.coverRemoved,
           clearExtras: track.metaCleared,
           foreignRemoved: track.foreignRemoved,
+          metaUnread: track.metaReadFailed || undefined,
           format: jobFormat,
           normalize: normalizeForJob(track, normalizeFor(track, normalizeOverride)),
           declick: declickForJob(track, declickFor(track, declickOverride)),

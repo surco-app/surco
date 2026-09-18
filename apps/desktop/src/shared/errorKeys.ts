@@ -25,6 +25,7 @@ export const ERROR_KEYS = [
   'convertedOutputUnreadable',
   'convertedOutputTruncated',
   'engineDjOpen',
+  'sourceTagsUnread',
 ] as const
 
 export type ErrorKey = (typeof ERROR_KEYS)[number]
