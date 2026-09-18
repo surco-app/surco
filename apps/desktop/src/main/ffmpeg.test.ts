@@ -953,6 +953,9 @@ describe('parseLoudness', () => {
       integratedLufs: -14.7,
       truePeakDb: -0.5,
       lra: 7.6,
+      // The integrated gate (-25), not the loudness-range one (-35): loudnorm's linear
+      // pass takes it as measured_thresh.
+      threshold: -25,
     })
   })
 
@@ -964,6 +967,7 @@ describe('parseLoudness', () => {
       integratedLufs: -Infinity,
       truePeakDb: -Infinity,
       lra: 7.6,
+      threshold: -25,
     })
   })
 
@@ -986,6 +990,7 @@ describe('parseLoudness', () => {
       integratedLufs: -6.2,
       truePeakDb: 2.5,
       lra: 5.2,
+      threshold: -25,
     })
   })
 })
