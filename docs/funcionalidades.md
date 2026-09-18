@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 2026-09-16** (v0.98.0). Levantado por primera vez el
+**Última revisión: 2026-09-18** (v0.99.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -124,24 +124,35 @@ da 76 %. Cuesta de 0,06 s (flac) a 0,15 s (mp3) en una pista de seis minutos.
 Tres modos: ninguno (por defecto), loudness (EBU R128) y pico.
 
 **Loudness:** dos pasadas, ganancia lineal constante — la dinámica queda intacta,
-no «bombea» (`normalize.ts:37-110`).
+no «bombea» (`normalize.ts:111-140`).
+
+**La medición es la misma que la de la sección de loudness del editor.** La
+primera pasada mide con `ebur128`, no con la pasada de medida de `loudnorm`: las
+mismas cuatro cifras (integrado, true peak, rango, umbral) a una cuarta parte del
+coste, 1,3 s frente a 5,9 en un FLAC de 6:23, con la salida normalizada a 0,1 LU
+del objetivo por cualquiera de las dos vías (`normalize.ts:41-57`). Sin prefiltro
+la lectura comparte entrada de caché con el editor (`ffmpeg.ts:1178-1194`,
+`analysisCache.ts:154`): quien mide primero se la deja a la otra parte, así que
+normalizar un lote deja medida la sección de cada pista, y abrir una pista ya
+medida no vuelve a medirla. Un prefiltro (declick, centrado de DC) cambia el
+audio medido y guarda su propia clave.
 
 Tres problemas resueltos que no son evidentes:
 
 1. `loudnorm` sobremuestrea a 192 kHz para limitar true-peak y emite su salida a
    ese rate. Sin corregirlo, cada fichero normalizado saldría a 192 kHz
-   (`normalize.ts:82-84`).
+   (`normalize.ts:113-115`).
 2. `linear=true` se cae en silencio a modo dinámico si el LRA medido supera el
    objetivo, y además falla el objetivo integrado (verificado: una petición de
-   −14 sobre material de 14 LU salía a −11) (`normalize.ts:90-96`).
+   −14 sobre material de 14 LU salía a −11) (`normalize.ts:121-128`).
 3. Objetivos fuera de rango rompían toda la conversión — un usuario escribió el
-   techo como +2.6 pensando en headroom. Ahora se acotan (`normalize.ts:8-13`).
+   techo como +2.6 pensando en headroom. Ahora se acotan (`normalize.ts:15`).
 
 **Limitador con oversampling 4×** cuando el objetivo es inalcanzable linealmente:
 en vez de quedarse corto, aplica la ganancia completa y limita solo los picos.
 `alimiter` limita picos de muestra, así que va rodeado de un oversampling a 4× —
 el factor true-peak de la ITU-R BS.1770 — para cazar los picos inter-muestra
-(`normalize.ts:118-142`).
+(`normalize.ts:161-174`).
 
 **Lo que se puede prometer del limitador tiene un límite.** Por debajo de 3 dB de
 overshoot solo rebaja las puntas de los transitorios más afilados y no se oye; por
@@ -151,17 +162,17 @@ limita los picos, transparente» a secas.
 
 **Modo pico avanzado** (estilo Audacity): ganancia independiente por canal, que
 **cambia la imagen estéreo** y por eso no es el comportamiento por defecto
-(`normalize.ts:173-247`).
+(`normalize.ts:287-302`).
 
 **Quitar el offset de DC es ortogonal al modo.** Vivía solo dentro del modo pico,
 así que quien elegía loudness lo perdía en silencio — mismo fichero, misma casilla,
 DC intacto en loudness y limpio en pico. Hoy es un filtro que se antepone a
-cualquiera de las dos rutas (`normalize.ts:238-257`), y el umbral es el mínimo que
-la `aeval` de seis decimales puede expresar, 0,0000005 (`normalize.ts:236`), no el
+cualquiera de las dos rutas (`normalize.ts:268-284`), y el umbral es el mínimo que
+la `aeval` de seis decimales puede expresar, 0,0000005 (`normalize.ts:265`), no el
 0,2 % de la nota de calidad, que era una decisión que este código nunca toma.
 
 Si la medición falla, la conversión sigue sin normalizar y avisa, en vez de
-fallar (`normalize.ts:57-59`).
+fallar (`ffmpeg.ts:1195`).
 
 ### El plan por pista, antes de convertir
 
@@ -214,6 +225,16 @@ deslizarla menos de un segundo movía la lectura del muro de 3,7 a 17,5 dB a tra
 de su umbral de 12, y un rip de CD alternaba limpio y «reprocesado» cada 0,2 s de
 cola recortada. Con 36 s de audio la lectura se asienta en ~1 dB; ventanas de 6 s
 o 96 cortas no compran nada más.
+
+**Las ventanas se colocan por duración, y un fichero sin duración en la cabecera
+se mide decodificando.** Un FLAC codificado a una tubería (rippers de streaming,
+algunos servicios de descarga) no lleva el recuento de muestras, y sin duración
+las doce ventanas caían todas sobre los tres primeros segundos de la intro: la
+misma pista daba 20 kHz limpia con cabecera y 16 kHz «reprocesado» sin ella, y
+los originales de un usuario leían 10-13 kHz mientras las copias recodificadas
+por Surco, ya con cabecera, leían 22. Decodificar el fichero entero es el precio
+de una longitud honesta, y solo lo pagan los que la cabecera no puede decir
+(`ffmpeg.ts:310-326`).
 
 | Umbral | Valor | Calibración |
 |---|---|---|
@@ -533,6 +554,30 @@ los cuatro de coleccionista estaban en `TAG_FIELDS` pero en ninguna rama de
 También se borran los espejos TXXX que ffmpeg deja junto a COMM y POPM, que hacían
 que mp3tag listara un segundo «COMMENT» y un segundo «RATING WMP»
 (`tags.ts:759-765`).
+
+**Actualizar no borra lo que ffprobe no ve.** El demuxer WAV de ffmpeg lee el
+chunk INFO e ignora el ID3 de al lado, y además espera IPRD/IART donde el escritor
+INFO de TagLib (mp3tag, el propio Surco) pone DIRC/ISTR: un WAV etiquetado así
+volvía sin artista ni álbum. El ID3 de un AIFF vuelve sin TIT1 ni TPUB, y el átomo
+`tmpo` de un M4A nunca aflora. Cada uno era un campo que el editor mostraba vacío
+y que la siguiente conversión escribía vacío. Lo que la sonda deja en blanco se
+rellena desde la vista de TagLib y lo que encontró se respeta
+(`ffmpeg.ts:376-379`, lector en `tags.ts:142`).
+
+**La carátula que ya cumple los ajustes se copia, no se recodifica.** Todo
+embebido pasaba por decodificar y volver a comprimir, también la carátula propia
+del fichero en una actualización al mismo formato: una portada de 85 KB volvía de
+53 KB tras un «Actualizar» que solo quería refrescar la miniatura, y la siguiente
+pasada la degradaba otra vez (`ffmpeg.ts:2176-2189`, `coverFitsAsIs` en `:2208`).
+
+**El panel de actividad cuenta qué hizo la conversión con las etiquetas**: cuántos
+campos cambió, cuántos quedaron intactos y cuáles cambiaron, con el nombre por el
+que el usuario los conoce (`tagChanges.ts`, `index.ts:94`).
+
+**Una lectura fallida nunca escribe.** Una pista cuya lectura de etiquetas falló al
+importar se relee antes de convertir; si sigue sin poder leerse, se rechaza con
+`sourceTagsUnread` en vez de escribir en blanco sobre lo que el fichero conserva
+(`useTrackProcessing.ts:186-196`, `processTrack.ts:145`).
 
 ### 8.1 ID3v2.3, nunca v2.4
 
