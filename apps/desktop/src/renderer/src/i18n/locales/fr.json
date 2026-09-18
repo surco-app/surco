@@ -31,6 +31,7 @@
     "settings": "Réglages",
     "stats": "Statistiques",
     "activity": "Activité",
+    "trash": "Corbeille de Surco",
     "selectAll": "Tout sélectionner",
     "revealSelected": "Aller au morceau sélectionné",
     "fillFromName": "Remplir tous les tags depuis le nom du fichier",
@@ -122,6 +123,30 @@
     "convertedOutputTruncated": "Le fichier converti est sorti plus court que l'original, il a donc été écarté et l'original laissé intact. Réessayez avec d'autres réglages de conversion.",
     "engineDjOpen": "Ferme Engine DJ avant de convertir : sa bibliothèque est ouverte.",
     "sourceTagsUnread": "Les tags de ce fichier n'ont pas pu être lus, il n'a donc pas été touché : le convertir aurait effacé ceux qu'il a. Rechargez-le et réessayez."
+  },
+  "trash": {
+    "title": "Corbeille de Surco",
+    "summary_one": "{{count}} fichier · {{size}}",
+    "summary_other": "{{count}} fichiers · {{size}}",
+    "emptyHint": "Conserve les originaux qu'une conversion remplace pendant {{days}} jours, jusqu'à {{size}}.",
+    "emptyTitle": "Rien à restaurer",
+    "emptyBody": "Quand une conversion remplace ou renomme un original, ou que vous supprimez une piste sur un disque sans corbeille, il apparaît ici.",
+    "reason": {
+      "replaced": "remplacé par une conversion",
+      "renamed": "renommé par une conversion",
+      "deleted": "supprimé depuis Surco",
+      "restored-over": "mis de côté en restaurant un autre"
+    },
+    "restore": "Restaurer",
+    "remove": "Supprimer définitivement",
+    "empty": "Vider la corbeille",
+    "emptyConfirm_one": "Supprimer {{count}} fichier pour de bon ?",
+    "emptyConfirm_other": "Supprimer {{count}} fichiers pour de bon ?",
+    "reveal": "Ouvrir le dossier",
+    "close": "Fermer",
+    "retention": "Se vide seule après {{days}} jours ou au-delà de {{size}}, le plus ancien d'abord.",
+    "restored": "« {{name}} » restauré dans son dossier",
+    "restoreFailed": "Impossible de restaurer « {{name}} » : {{reason}}"
   },
   "notices": {
     "duplicatesSkipped": "Déjà dans la liste, ignorés : {{count}}",

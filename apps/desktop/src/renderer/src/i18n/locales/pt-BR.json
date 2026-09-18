@@ -31,6 +31,7 @@
     "settings": "Ajustes",
     "stats": "Estatísticas",
     "activity": "Atividade",
+    "trash": "Lixeira do Surco",
     "selectAll": "Selecionar tudo",
     "revealSelected": "Ir para a faixa selecionada",
     "fillFromName": "Preencher tudo a partir do nome",
@@ -122,6 +123,30 @@
     "convertedOutputTruncated": "O arquivo convertido saiu mais curto que o original, então foi descartado e o original ficou intacto. Tente de novo com outros ajustes de conversão.",
     "engineDjOpen": "Feche o Engine DJ antes de converter: ele está com a biblioteca aberta.",
     "sourceTagsUnread": "As tags deste arquivo não puderam ser lidas, então ele não foi tocado: convertê-lo apagaria as que ele tem. Carregue-o de novo e tente outra vez."
+  },
+  "trash": {
+    "title": "Lixeira do Surco",
+    "summary_one": "{{count}} arquivo · {{size}}",
+    "summary_other": "{{count}} arquivos · {{size}}",
+    "emptyHint": "Guarda os originais que uma conversão substitui por {{days}} dias, até {{size}}.",
+    "emptyTitle": "Nada para restaurar",
+    "emptyBody": "Quando uma conversão substituir ou renomear um original, ou você apagar uma faixa num disco sem lixeira, ela aparece aqui.",
+    "reason": {
+      "replaced": "substituído por uma conversão",
+      "renamed": "renomeado por uma conversão",
+      "deleted": "apagado pelo Surco",
+      "restored-over": "posto de lado ao restaurar outro"
+    },
+    "restore": "Restaurar",
+    "remove": "Apagar definitivamente",
+    "empty": "Esvaziar lixeira",
+    "emptyConfirm_one": "Apagar {{count}} arquivo para sempre?",
+    "emptyConfirm_other": "Apagar {{count}} arquivos para sempre?",
+    "reveal": "Abrir pasta",
+    "close": "Fechar",
+    "retention": "Esvazia-se sozinha após {{days}} dias ou ao passar de {{size}}, o mais antigo primeiro.",
+    "restored": "“{{name}}” restaurado na sua pasta",
+    "restoreFailed": "Não foi possível restaurar “{{name}}”: {{reason}}"
   },
   "notices": {
     "duplicatesSkipped": "Já estavam na lista, ignoradas: {{count}}",

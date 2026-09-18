@@ -32,6 +32,7 @@ import type {
   SpectrumResult,
   TrackMetadata,
   TrackProperties,
+  TrashEntry,
   WaveformResult,
   WaveformScan,
 } from '../shared/types'
@@ -171,6 +172,13 @@ export interface Api {
   // volume rather than guessed from the path: a NAS often has no Trash, and macOS then
   // deletes outright — which a dialog promising recovery once turned into a lost file.
   keepsTrash: (path: string) => Promise<boolean>
+  // Surco's own trash (main/surcoTrash.ts): the originals conversions replaced, kept
+  // for a while. restore puts one back where it was and returns where it landed.
+  trashList: () => Promise<TrashEntry[]>
+  trashRestore: (id: string) => Promise<{ restoredTo: string }>
+  trashRemove: (id: string) => Promise<void>
+  trashEmpty: () => Promise<void>
+  trashReveal: () => Promise<void>
   copyText: (text: string) => Promise<void>
   // Fire-and-forget: renderer crashes land in main's log file, the only forensic
   // artifact in an app with no telemetry.
