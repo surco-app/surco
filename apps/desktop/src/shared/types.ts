@@ -525,6 +525,11 @@ export interface ProcessJob {
   // Los tags de terceros que el usuario marcó para borrar en el inspector. Se aplican al
   // exportar tanto en la ruta ffmpeg (convertArgs) como en la TagLib (writeTags).
   foreignRemoved?: string[]
+  // True when `meta` never came from the file: the import's tag read failed and the row
+  // holds a name-parsed title and artist and nothing else. Main refuses such a job — a
+  // read that failed must never become a write, or every managed field lands empty over
+  // a file that still has them. The renderer re-reads a flagged row before sending it.
+  metaUnread?: boolean
   format?: OutputFormat
   // Per-track normalization override; falls back to the Settings default when
   // undefined. Captured when the conversion starts, like format.
