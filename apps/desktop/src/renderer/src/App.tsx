@@ -15,6 +15,7 @@ import { autoMatchAvailable } from '../../shared/autoMatch'
 import { normalizeImportFields } from '../../shared/defaults'
 import { emptyMetadata } from '../../shared/metadata'
 import { resolveBindings } from '../../shared/shortcutDefaults'
+import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
   DeclickMode,
   FormatSetting,
@@ -23,6 +24,7 @@ import type {
   SearchProviderId,
   ThemePref,
   TrackMetadata,
+  TrashEntry,
 } from '../../shared/types'
 import { ActivityPanel } from './components/ActivityPanel'
 import { Confetti } from './components/Confetti'
@@ -37,6 +39,7 @@ import { TopProgressBar } from './components/TopProgressBar'
 import { TrackContextMenu } from './components/TrackContextMenu'
 import { TrackList, type MenuState as TrackMenuState } from './components/TrackList'
 import { TrackListHeader } from './components/TrackListHeader'
+import { TrashPanel } from './components/TrashPanel'
 import { useActivityLog } from './hooks/useActivityLog'
 import { useAutoMatch } from './hooks/useAutoMatch'
 import { useConfirmFlows } from './hooks/useConfirmFlows'
@@ -73,6 +76,7 @@ import type { Destination } from './lib/destination'
 import { createDragDepth } from './lib/dragDepth'
 import { DEFAULT_REQUIRED_FIELDS } from './lib/fields'
 import { pushImportNotice } from './lib/importNotices'
+import { mainErrorMessage } from './lib/ipcError'
 import { columnOf, isTypingTarget, nextColumn } from './lib/keymap'
 import { librarySourceOf } from './lib/librarySource'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
@@ -209,6 +213,21 @@ export default function App(): React.JSX.Element {
   // movable floating panel the user toggles.
   const { rows: activityRows, clear: clearActivity, report: reportActivity } = useActivityLog()
   const [activityOpen, setActivityOpen] = useState(false)
+  // Surco's own trash (main/surcoTrash.ts): the list is read when the panel opens and
+  // after every run that could have added to it; the count feeds the toolbar badge.
+  const [trashOpen, setTrashOpen] = useState(false)
+  const [trashEntries, setTrashEntries] = useState<TrashEntry[]>([])
+  const refreshTrash = useStableCallback(async (): Promise<void> => {
+    try {
+      setTrashEntries(await window.api.trashList())
+    } catch {
+      // A missing preload method (an older main during an update) leaves the badge at
+      // zero rather than failing the render.
+    }
+  })
+  useEffect(() => {
+    void refreshTrash()
+  }, [refreshTrash])
   // Persisted settings (initial load, modal-open refresh, theme application,
   // optimistic save) live in the hook; App only decides the launch modal.
   const settingsOpen = activeModal?.type === 'settings'
@@ -781,7 +800,10 @@ export default function App(): React.JSX.Element {
     updateTrack,
     refreshTrackFromDisk,
     releaseFile: (path) => releaseFileRef.current(path),
-    onConversion: maybeShowDonateNudge,
+    onConversion: () => {
+      maybeShowDonateNudge()
+      void refreshTrash()
+    },
     onNormalizeSkipped: (name) => setNotice(tr('notices.normalizeSkipped', { name })),
     // Only when the repair actually touched samples: a clean track reporting "0
     // clicks" on every convert would train the user to ignore the notice.
@@ -1130,6 +1152,35 @@ export default function App(): React.JSX.Element {
   // an inline arrow here would give onActivity a fresh identity every render and
   // defeat that memo just like the other Toolbar handlers above.
   const onToggleActivity = useStableCallback(() => setActivityOpen((v) => !v))
+  const onOpenTrash = useStableCallback(() => {
+    void refreshTrash()
+    setTrashOpen(true)
+  })
+  const onRestoreFromTrash = useStableCallback(async (entry: TrashEntry): Promise<void> => {
+    try {
+      const { restoredTo } = await window.api.trashRestore(entry.id)
+      // A row that still points at the restored path describes the file again.
+      const row = tracksRef.current.find((tr) => tr.inputPath === restoredTo)
+      if (row) await refreshTrackFromDisk(row.id, restoredTo)
+      setNotice(tr('trash.restored', { name: entry.name }))
+    } catch (e) {
+      setNotice(
+        tr('trash.restoreFailed', {
+          name: entry.name,
+          reason: mainErrorMessage(e, tr, tr('errors.unexpected', { detail: '' })),
+        }),
+      )
+    }
+    await refreshTrash()
+  })
+  const onRemoveFromTrash = useStableCallback(async (entry: TrashEntry): Promise<void> => {
+    await window.api.trashRemove(entry.id).catch(() => undefined)
+    await refreshTrash()
+  })
+  const onEmptyTrash = useStableCallback(async (): Promise<void> => {
+    await window.api.trashEmpty().catch(() => undefined)
+    await refreshTrash()
+  })
   // Applying a release rewrites title/artist/track number across every matched row at
   // once — the widest tag overwrite in the app — so it snapshots first, like the other
   // batch overwrites do. A wrong release (a reissue with a different tracklist, a
@@ -1727,6 +1778,8 @@ export default function App(): React.JSX.Element {
                 onPalette={onOpenPalette}
                 onStats={onOpenStats}
                 onActivity={onToggleActivity}
+                onTrash={onOpenTrash}
+                trashCount={trashEntries.length}
                 activityRunning={activityRows.some((r) => r.status === 'running')}
                 onSettings={onOpenSettings}
               />
@@ -2024,6 +2077,18 @@ export default function App(): React.JSX.Element {
             />
 
             <ToastStack toasts={toasts} onExpire={expireToast} onClose={closeToast} />
+            {trashOpen && (
+              <TrashPanel
+                entries={trashEntries}
+                retentionDays={TRASH_RETENTION_DAYS}
+                maxBytes={TRASH_MAX_BYTES}
+                onRestore={(entry) => void onRestoreFromTrash(entry)}
+                onRemove={(entry) => void onRemoveFromTrash(entry)}
+                onEmpty={() => void onEmptyTrash()}
+                onReveal={() => void window.api.trashReveal()}
+                onClose={() => setTrashOpen(false)}
+              />
+            )}
             {activityOpen && (
               <ActivityPanel
                 rows={activityRows}

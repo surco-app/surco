@@ -1,6 +1,7 @@
 import { clipboard, ipcMain, shell } from 'electron'
 import log from 'electron-log/main'
 import type { MediaAccess } from './mediaAccess'
+import { keepOriginal } from './originalKeeper'
 import { volumeKeepsTrash } from './trashSupport'
 
 // The OS pass-throughs (reveal/open/trash + plain clipboard text), split out of
@@ -22,6 +23,9 @@ export function registerShellIpc(mediaAccess: MediaAccess): void {
   // trashItem sends to the OS Trash / Recycle Bin (recoverable), never a hard delete.
   ipcMain.handle('shell:trash', async (_e, path: string) => {
     if (!mediaAccess.isAllowed(path)) throw new Error('Ruta no permitida')
+    // A volume with no Trash of its own (a NAS: macOS deletes outright there) sends
+    // the file to Surco's trash instead, so the delete stays recoverable everywhere.
+    if (!volumeKeepsTrash(path) && (await keepOriginal(path, 'deleted'))) return
     return shell.trashItem(path)
   })
   // Whether a delete of this file can be described as recoverable. Asked of the

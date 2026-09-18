@@ -3,6 +3,7 @@ import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 
 import { errorWithKey } from '../shared/errorKeys'
 import { editsInPlace, formatExtension } from '../shared/format'
 import type { OutputFormat } from '../shared/types'
+import { keepOriginal } from './originalKeeper'
 
 // Cleans a generated output name that may carry "/" separators (subfolders the file-name
 // template asks for). Each segment is sanitized of filesystem-illegal characters on its
@@ -142,6 +143,8 @@ export async function removeRenamedOriginal(input: string, output: string): Prom
   if (input === output) return
   const [inStat, outStat] = await Promise.all([stat(input).catch(() => null), stat(output)])
   if (inStat && (inStat.ino !== outStat.ino || inStat.dev !== outStat.dev)) {
-    await unlink(input)
+    // Into Surco's trash when one is configured (see originalKeeper.ts), so the user can
+    // get the old file back; a plain unlink only where no trash exists (unit tests).
+    if (!(await keepOriginal(input, 'renamed', output))) await unlink(input)
   }
 }

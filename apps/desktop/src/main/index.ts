@@ -66,6 +66,7 @@ import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { keymapMenuClick } from './menuCommand'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { abandonNmlBatch, beginNmlBatch, endNmlBatch } from './nmlBatch'
+import { configureOriginalKeeper } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
 import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
 import { runProcessTrack } from './processTrack'
@@ -91,12 +92,14 @@ import {
 } from './settings'
 import { registerShellIpc } from './shellIpc'
 import { createStickyConflict } from './stickyConflict'
+import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsOrNull, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
 import { syncCollection } from './traktorNmlLibrary'
 import { detectTraktorNmlPaths } from './traktorNmlPath'
 import { isTraktorRunning, quitTraktor } from './traktorProcess'
 import { flushTraktorSync } from './traktorSyncFlush'
+import { registerTrashIpc } from './trashIpc'
 import { wireUpdateDelivery } from './updateDelivery'
 import { classifyUpdateError, summarizeUpdateError } from './updateErrors'
 import { armUpdateRecheck } from './updateRecheck'
@@ -160,6 +163,11 @@ const tmpManifest = createTmpManifest(join(app.getPath('userData'), 'pending-tmp
   existsSync,
   unlinkSync,
 })
+// Surco's own trash: every original a conversion replaces or renames away, and every
+// delete on a volume with no OS Trash, kept for a while (see surcoTrash.ts). Local disk
+// on purpose, like the manifest above: the one place a bad write can be undone from.
+const surcoTrash = createSurcoTrash(join(app.getPath('userData'), 'trash'))
+configureOriginalKeeper((path, reason, outputPath) => surcoTrash.stash(path, reason, outputPath))
 app.on('open-file', (event, path) => {
   event.preventDefault()
   mediaAccess.allow(path)
@@ -1344,6 +1352,7 @@ function registerIpc(): void {
   ipcMain.handle('clipboard:hasImage', () => !clipboard.readImage().isEmpty())
 
   registerShellIpc(mediaAccess)
+  registerTrashIpc(surcoTrash, mediaAccess)
   registerFeedbackIpc()
 
   // Restarts into the already-downloaded update. Paired with the update:downloaded
@@ -1418,6 +1427,8 @@ app.whenReady().then(() => {
   // Deletes any .tmp-* conversions left behind by a crash or force-quit in the
   // previous run, before any new conversion can add to the manifest.
   tmpManifest.sweepOrphans()
+  // Drops what the trash no longer keeps (older than the retention, past the size cap).
+  void surcoTrash.sweep().catch((err) => log.warn('trash sweep failed', String(err)))
   // Serve the local audio file ourselves with real HTTP range support: the
   // <audio> element seeks by re-requesting a byte range, and it only honours the
   // jump when the server answers 206 with Content-Range. Streaming the exact

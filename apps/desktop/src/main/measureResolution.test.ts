@@ -45,7 +45,20 @@ beforeAll(() => {
   ])
   // The same audio with half a second of tail cut off, as trimming trailing silence
   // does. Nothing the probes read has changed; only where they land.
-  execFileSync(FF, ['-y', '-v', 'error', '-i', whole, '-t', '39.5', '-c:a', 'flac', '-sample_fmt', 's32', trimmed])
+  execFileSync(FF, [
+    '-y',
+    '-v',
+    'error',
+    '-i',
+    whole,
+    '-t',
+    '39.5',
+    '-c:a',
+    'flac',
+    '-sample_fmt',
+    's32',
+    trimmed,
+  ])
 }, 60000)
 
 // A user's 48 kHz file graded "upsampled" and its own copy, trimmed and normalised by
@@ -59,7 +72,10 @@ beforeAll(() => {
 // measure content that is only there some of the time.
 describe('measureResolution', () => {
   it('gives a track and its trimmed copy the same verdict', async () => {
-    const [a, b] = await Promise.all([measureResolution(whole, 48000), measureResolution(trimmed, 48000)])
+    const [a, b] = await Promise.all([
+      measureResolution(whole, 48000),
+      measureResolution(trimmed, 48000),
+    ])
     expect(a).not.toBe('unknown')
     expect(b).toBe(a)
   }, 60000)
