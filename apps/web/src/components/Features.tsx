@@ -11,6 +11,7 @@ import InstallSection from './InstallSection'
 import Kicker from './Kicker'
 import Reveal from './Reveal'
 import Speed from './Speed'
+import Stopwatch from './Stopwatch'
 
 const FEATURE_ICONS: GlyphName[] = ['convert', 'tag', 'spectrum', 'upload']
 
@@ -101,6 +102,8 @@ export default function Features() {
         </section>
 
         <Speed />
+
+        <Stopwatch />
 
         <section id="atajos" className="scroll-mt-24 py-16">
           <Reveal>
