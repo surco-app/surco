@@ -860,6 +860,10 @@ export interface LoudnessResult {
   integratedLufs: number
   truePeakDb: number
   lra: number
+  // The integrated-loudness gate ebur128 reports, which loudnorm's linear pass takes as
+  // measured_thresh: it lets the conversion normalize from this same reading instead of
+  // measuring again. Optional because entries cached before it existed lack it.
+  threshold?: number
   // The astats-derived checks are each null when not measurable (mono, a silent
   // channel reading -inf, or ffmpeg printing nan) so the UI hides that pill rather
   // than showing "−∞ dB" / "NaN%".

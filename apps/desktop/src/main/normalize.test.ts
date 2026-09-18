@@ -4,11 +4,12 @@ import type { ChannelStats } from './normalize'
 import {
   astatsArgs,
   dcRemovalFilter,
+  ebur128MeasureArgs,
   limitedLoudnormFilter,
-  loudnormArgs,
   loudnormFilter,
+  loudnormMeasuredFrom,
   parseAstatsChannels,
-  parseLoudnorm,
+  parseEbur128Measured,
   parseMaxVolume,
   peakChannelFilter,
   peakGainDb,
@@ -19,29 +20,57 @@ import {
 
 const loudness: NormalizeConfig = { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
 
-describe('parseLoudnorm', () => {
-  // loudnorm's first pass prints a JSON block to stderr, prefixed by the filter
-  // tag. We need the measured input_* values and the target_offset to feed the
-  // accurate (linear) second pass.
-  const out = `[Parsed_loudnorm_0 @ 0x1]\n{\n\t"input_i" : "-14.58",\n\t"input_tp" : "-0.16",\n\t"input_lra" : "6.60",\n\t"input_thresh" : "-24.79",\n\t"output_i" : "-13.93",\n\t"target_offset" : "-0.07"\n}`
+describe('parseEbur128Measured', () => {
+  // ebur128's end-of-run Summary block, as the bundled ffmpeg prints it. The gate loudnorm
+  // wants is the Threshold under "Integrated loudness", not the one under "Loudness range".
+  const out = `[Parsed_ebur128_0 @ 0x1] Summary:
 
-  it('reads the measured input figures and target offset from the JSON block', () => {
-    expect(parseLoudnorm(out)).toEqual({
-      inputI: -14.58,
-      inputTp: -0.16,
-      inputLra: 6.6,
-      inputThresh: -24.79,
-      targetOffset: -0.07,
+  Integrated loudness:
+    I:          -5.8 LUFS
+    Threshold: -15.9 LUFS
+
+  Loudness range:
+    LRA:         7.8 LU
+    Threshold:  -25.9 LUFS
+    LRA low:   -10.6 LUFS
+    LRA high:   -2.8 LUFS
+
+  True peak:
+    Peak:        2.2 dBFS`
+
+  it('reads the four figures the linear pass needs, with no target offset', () => {
+    expect(parseEbur128Measured(out)).toEqual({
+      inputI: -5.8,
+      inputTp: 2.2,
+      inputLra: 7.8,
+      inputThresh: -15.9,
+      targetOffset: 0,
     })
   })
 
-  it('returns null when no JSON is present (the measurement pass failed)', () => {
-    expect(parseLoudnorm('ffmpeg error, no json here')).toBeNull()
+  it('returns null when no summary is present (the measurement pass failed)', () => {
+    expect(parseEbur128Measured('ffmpeg error, no summary here')).toBeNull()
   })
 
   it('returns null when a figure is non-finite (e.g. -inf on silence) so we skip rather than feed garbage', () => {
-    const silent = out.replace('"input_i" : "-14.58"', '"input_i" : "-inf"')
-    expect(parseLoudnorm(silent)).toBeNull()
+    expect(
+      parseEbur128Measured(out.replace('I:          -5.8 LUFS', 'I:          -inf LUFS')),
+    ).toBeNull()
+  })
+})
+
+describe('loudnormMeasuredFrom', () => {
+  it("turns the editor's loudness reading into the measurement the second pass needs", () => {
+    expect(
+      loudnormMeasuredFrom({ integratedLufs: -9.3, truePeakDb: -0.8, lra: 7.8, threshold: -19.5 }),
+    ).toEqual({ inputI: -9.3, inputTp: -0.8, inputLra: 7.8, inputThresh: -19.5, targetOffset: 0 })
+  })
+
+  // A reading cached before the threshold existed cannot feed the pass; the caller
+  // measures for itself rather than guessing a gate.
+  it('declines a reading without a threshold, or without a reading at all', () => {
+    expect(loudnormMeasuredFrom({ integratedLufs: -9.3, truePeakDb: -0.8, lra: 7.8 })).toBeNull()
+    expect(loudnormMeasuredFrom(null)).toBeNull()
   })
 })
 
@@ -118,19 +147,13 @@ describe('loudnorm target clamping', () => {
     targetOffset: -0.07,
   }
 
-  it('clamps a positive true-peak ceiling to 0 in the measurement pass', () => {
-    const filter = loudnormArgs('in.wav', outOfRange)[5]
-    expect(filter).toContain('TP=0')
-    expect(filter).toContain('I=-10.5')
-  })
-
   it('clamps a positive true-peak ceiling to 0 in the second pass', () => {
     expect(loudnormFilter(outOfRange, m)).toContain('TP=0')
   })
 
   it('clamps the integrated target into loudnorm range', () => {
     const hot: NormalizeConfig = { mode: 'loudness', targetLufs: -3, truePeakDb: -12, peakDb: -1 }
-    const filter = loudnormArgs('in.wav', hot)[5]
+    const filter = loudnormFilter(hot, m)
     expect(filter).toContain('I=-5')
     expect(filter).toContain('TP=-9')
   })
@@ -206,18 +229,17 @@ describe('limitedLoudnormFilter', () => {
   })
 })
 
-describe('loudnormArgs', () => {
-  it('runs a measurement-only pass: the chosen target with json output to a null sink', () => {
-    const args = loudnormArgs('/in.aiff', loudness)
+describe('ebur128MeasureArgs', () => {
+  it('runs a measurement-only pass with true peak, to a null sink', () => {
+    const args = ebur128MeasureArgs('/in.aiff')
     expect(args).toContain('/in.aiff')
-    expect(args.join(' ')).toContain('loudnorm=I=-14:TP=-1:LRA=11:print_format=json')
-    // measurement only: decode to a null muxer, no file written
+    expect(args.join(' ')).toContain('-af ebur128=peak=true')
     expect(args.slice(-3)).toEqual(['-f', 'null', '-'])
   })
 
   it('measures through the prefilter, so the gain is sized on the repaired audio', () => {
-    const args = loudnormArgs('/in.aiff', loudness, 'adeclick')
-    expect(args.join(' ')).toContain('-af adeclick,loudnorm=I=-14')
+    const args = ebur128MeasureArgs('/in.aiff', 'adeclick')
+    expect(args.join(' ')).toContain('-af adeclick,ebur128=peak=true')
   })
 })
 
