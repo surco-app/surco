@@ -5,7 +5,7 @@ import log from 'electron-log/main'
 import type { AudioAnalysisIpc } from '../shared/audioIpcContract'
 import type { DeclickMode, SpectrumResult, WaveformScan } from '../shared/types'
 import { activity } from './activity'
-import { cachedAnalysis, peekAnalysis } from './analysisCache'
+import { cachedAnalysis, LOUDNESS_NAMESPACE, peekAnalysis } from './analysisCache'
 import { analysisCancels, isAbortError } from './analysisCancel'
 import { analysisLimiter } from './analysisLimiter'
 import {
@@ -67,7 +67,6 @@ function cancellable<T>(
 // the same family — a batch peek under a stale namespace would silently show as a
 // permanent miss instead of the warm hit the live handler already wrote.
 const SPECTROGRAM_NAMESPACE = 'spectrogram-mono-v25'
-const LOUDNESS_NAMESPACE = 'loudness'
 const CLICKS_NAMESPACE = 'clickcount-v2'
 const PROPERTIES_NAMESPACE = 'properties'
 const BPM_NAMESPACE = 'bpm'
