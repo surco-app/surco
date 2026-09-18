@@ -4,6 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { Settings } from '../../../../shared/types'
 import '../../i18n'
+import { PAYPAL_ME_URL } from '../../lib/donate'
 import { StatsTab } from './StatsTab'
 
 afterEach(cleanup)
@@ -29,6 +30,17 @@ describe('StatsTab', () => {
     expect(screen.getByTestId('stats-count')).toHaveTextContent('3')
     expect(screen.getByTestId('stats-time-saved')).toBeInTheDocument()
     expect(screen.getByTestId('stats-donate')).toBeInTheDocument()
+  })
+
+  // The hosted donate button takes a PayPal fee; some users asked to send the money
+  // friend-to-friend instead so all of it arrives. That route must sit right next to
+  // the button, in an external tab like it.
+  it('offers the fee-free paypal.me route next to the donate button', () => {
+    render(<StatsTab settings={withStats({ conversionCount: 3 })} />)
+    const link = screen.getByTestId('stats-paypal-me')
+    expect(link).toHaveAttribute('href', PAYPAL_ME_URL)
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveTextContent('paypal.me/vicentgozalbes')
   })
 
   // The activity grid answers "what has Surco done for me" beyond conversions —

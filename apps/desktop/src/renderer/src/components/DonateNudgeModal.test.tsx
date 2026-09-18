@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
-import { DONATE_URL } from '../lib/donate'
+import { DONATE_URL, PAYPAL_ME_URL } from '../lib/donate'
 import { DonateNudgeModal } from './DonateNudgeModal'
 
 // The nudge now mounts a confetti canvas; stub matchMedia so these tests stay about the
@@ -33,6 +33,16 @@ describe('DonateNudgeModal', () => {
     const cta = screen.getByTestId('donate-nudge-cta')
     expect(cta).toHaveAttribute('href', DONATE_URL)
     expect(cta).toHaveAttribute('target', '_blank')
+  })
+
+  // Same fee-free alternative as the Stats tab: users who want every euro to arrive
+  // send it friend-to-friend, so the nudge must show that route too.
+  it('offers the fee-free paypal.me route under the donate button', () => {
+    render(<DonateNudgeModal conversionCount={10} onClose={vi.fn()} />)
+    const link = screen.getByTestId('donate-nudge-paypal-me')
+    expect(link).toHaveAttribute('href', PAYPAL_ME_URL)
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveTextContent('paypal.me/vicentgozalbes')
   })
 
   // Closing normally must stay cheap and repeatable; only the explicit checkbox
