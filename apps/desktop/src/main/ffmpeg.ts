@@ -306,7 +306,47 @@ export async function probeDuration(input: string, signal?: AbortSignal): Promis
       { timeout: ANALYSIS_TIMEOUT_MS, signal },
     )
     const seconds = Number(JSON.parse(stdout).format?.duration)
-    return Number.isFinite(seconds) ? seconds : null
+    return Number.isFinite(seconds) ? seconds : await measureDurationByDecoding(input, signal)
+  } catch {
+    return null
+  }
+}
+
+// A container with no duration in its header: a FLAC encoded to a pipe (the encoder
+// cannot seek back to write the sample count into STREAMINFO), the shape streaming
+// rippers and some download services leave. The spectrum probes are placed by duration,
+// twelve 3 s windows over the body of the track, and with none they all collapsed onto
+// one window at the very start. Measured on a real track (Pray, 7:08): the same audio
+// graded 20 kHz clean with its header and 16 kHz "Reprocessed" without it — a verdict
+// meant to come from 36 s of music taken from the first three seconds of the intro. A
+// user's originals read 10–13 kHz while the copies Surco re-encoded (and so re-headered)
+// read a full 22 kHz (17/09/2026). Decoding the whole file once is the price of an
+// honest length; it is only paid by files whose header could not say.
+async function measureDurationByDecoding(
+  input: string,
+  signal?: AbortSignal,
+): Promise<number | null> {
+  try {
+    const { stdout } = await run(
+      ffmpegPath,
+      [
+        '-hide_banner',
+        '-nostats',
+        ...forcedInputArgs(input),
+        '-i',
+        input,
+        '-map',
+        '0:a:0',
+        '-progress',
+        '-',
+        '-f',
+        'null',
+        '-',
+      ],
+      { timeout: ANALYSIS_TIMEOUT_MS, signal, maxBuffer: 1024 * 1024 * 16 },
+    )
+    const seconds = decodedDurationSec(String(stdout))
+    return seconds !== null && seconds > 0 ? seconds : null
   } catch {
     return null
   }
@@ -542,7 +582,7 @@ async function readMetaUncached(input: string): Promise<MetaRead | null> {
     }
     return {
       tags,
-      duration: Number.isFinite(seconds) ? seconds : null,
+      duration: Number.isFinite(seconds) ? seconds : await measureDurationByDecoding(input),
       cover: await extractCover(input, dims),
       // Read through ffmpeg, not the ffprobe JSON above: the bundled ffprobe (4.4.1) hides a
       // WAV's ID3 TXXX frames, so foreignTagsFromProbe(data) would miss them. readForeignTags
