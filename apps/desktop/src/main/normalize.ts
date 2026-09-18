@@ -1,5 +1,5 @@
 import { forcedInputArgs } from '../shared/inputFormat'
-import type { NormalizeConfig } from '../shared/types'
+import type { LoudnessResult, NormalizeConfig } from '../shared/types'
 
 // loudnorm's loudness range target. Kept fixed (the EBU R128 default) rather than
 // exposed as a knob — the user-facing choices are the integrated target and the
@@ -37,8 +37,16 @@ function measured(filter: string, prefilter?: string): string {
 
 // First pass: measure the source so the second pass can normalize accurately
 // (linear) instead of the default dynamic mode that pumps frame-by-frame.
-export function loudnormArgs(input: string, cfg: NormalizeConfig, prefilter?: string): string[] {
-  const { targetLufs, truePeakDb } = clampTargets(cfg)
+//
+// Measured with ebur128, not loudnorm's own print_format=json pass. Both implement
+// EBU R128 and report the same four figures (integrated loudness, true peak, loudness
+// range, gating threshold), but loudnorm's measurement pass costs 5.9 s on a 6:23 FLAC
+// where ebur128 costs 1.3 s — measured on three real tracks, with the figures agreeing
+// to the 0.1 ebur128 prints and the normalized output landing within 0.1 LU of the
+// target either way. loudnorm's target_offset is not needed in linear mode: offset 0
+// reached −14.0 for a −14 target on all three. The same pass is what the editor's
+// loudness section runs, so without a prefilter the two share one cache entry.
+export function ebur128MeasureArgs(input: string, prefilter?: string): string[] {
   return [
     '-hide_banner',
     '-nostats',
@@ -46,37 +54,58 @@ export function loudnormArgs(input: string, cfg: NormalizeConfig, prefilter?: st
     '-i',
     input,
     '-af',
-    measured(
-      `loudnorm=I=${targetLufs}:TP=${truePeakDb}:LRA=${LOUDNORM_LRA}:print_format=json`,
-      prefilter,
-    ),
+    measured('ebur128=peak=true', prefilter),
     '-f',
     'null',
     '-',
   ]
 }
 
-// Pulls the measured figures out of the JSON block loudnorm prints to stderr. Any
-// non-finite reading (e.g. "-inf" on near-silence) means we cannot build an
-// accurate pass, so we bail and skip normalization rather than feed garbage.
-export function parseLoudnorm(output: string): LoudnormMeasured | null {
-  const start = output.indexOf('{')
-  const end = output.lastIndexOf('}')
-  if (start === -1 || end <= start) return null
-  try {
-    const j = JSON.parse(output.slice(start, end + 1))
-    const m = {
-      inputI: Number(j.input_i),
-      inputTp: Number(j.input_tp),
-      inputLra: Number(j.input_lra),
-      inputThresh: Number(j.input_thresh),
-      targetOffset: Number(j.target_offset),
-    }
-    if (Object.values(m).some((v) => !Number.isFinite(v))) return null
-    return m
-  } catch {
-    return null
+// Pulls the measured figures out of ebur128's end-of-run Summary block (the last one:
+// the per-frame log lines above it carry their own "I:" and "LRA:"). Any non-finite
+// reading (e.g. "-inf" on near-silence) means we cannot build an accurate pass, so we
+// bail and skip normalization rather than feed garbage.
+export function parseEbur128Measured(output: string): LoudnormMeasured | null {
+  const start = output.lastIndexOf('Summary:')
+  if (start === -1) return null
+  const summary = output.slice(start)
+  const num = (m: RegExpMatchArray | null): number =>
+    m ? (m[1] === '-inf' ? Number.NEGATIVE_INFINITY : Number(m[1])) : Number.NaN
+  const m = {
+    inputI: num(summary.match(/\bI:\s*(-inf|-?[\d.]+)\s*LUFS/)),
+    inputTp: num(summary.match(/\bPeak:\s*(-inf|-?[\d.]+)\s*dBFS/)),
+    inputLra: num(summary.match(/\bLRA:\s*(-inf|-?[\d.]+)\s*LU\b/)),
+    // The first Threshold under "Integrated loudness" is the gate loudnorm wants; the
+    // one under "Loudness range" is a different gate.
+    inputThresh: num(
+      summary.match(/Integrated loudness:[\s\S]*?Threshold:\s*(-inf|-?[\d.]+)\s*LUFS/),
+    ),
+    targetOffset: 0,
   }
+  if (Object.values(m).some((v) => !Number.isFinite(v))) return null
+  return m
+}
+
+// The editor's own loudness reading as the measurement the second pass needs. Null when
+// the reading is missing or predates the threshold field (an older cache entry), in
+// which case the caller measures for itself.
+export function loudnormMeasuredFrom(
+  loudness:
+    | (Pick<LoudnessResult, 'integratedLufs' | 'truePeakDb' | 'lra'> & {
+        threshold?: number
+      })
+    | null,
+): LoudnormMeasured | null {
+  if (!loudness || typeof loudness.threshold !== 'number') return null
+  const m = {
+    inputI: loudness.integratedLufs,
+    inputTp: loudness.truePeakDb,
+    inputLra: loudness.lra,
+    inputThresh: loudness.threshold,
+    targetOffset: 0,
+  }
+  if (Object.values(m).some((v) => !Number.isFinite(v))) return null
+  return m
 }
 
 // Second pass: the chosen target plus the first pass's measurements, in linear

@@ -28,7 +28,7 @@ import type {
   WaveformResult,
   WaveformScan,
 } from '../shared/types'
-import { cachedAnalysis } from './analysisCache'
+import { LOUDNESS_NAMESPACE, cachedAnalysis } from './analysisCache'
 import { isAbortError } from './analysisCancel'
 import { ffmpegPath, ffprobePath } from './binaries'
 import type { FullScan } from './channelScan'
@@ -64,11 +64,12 @@ import { recordNmlPatch } from './nmlBatch'
 import {
   astatsArgs,
   dcRemovalFilter,
+  ebur128MeasureArgs,
   limitedLoudnormFilter,
-  loudnormArgs,
   loudnormFilter,
+  loudnormMeasuredFrom,
   parseAstatsChannels,
-  parseLoudnorm,
+  parseEbur128Measured,
   parseMaxVolume,
   peakChannelFilter,
   peakGainDb,
@@ -1174,19 +1175,24 @@ export async function normalizeFilter(
     })
     return max === null ? null : withDc(volumeFilter(peakGainDb(cfg.peakDb, max)))
   }
-  // The requested I/TP ride in the measurement filter and target_offset depends on
-  // them, so the key carries both — same file, different target re-measures. The
-  // fixed LRA is baked into the version suffix: bump it if LOUDNORM_LRA changes.
-  const measured = await cachedAnalysis(
-    ns(`loudnorm-measure-v1-I${cfg.targetLufs}-TP${cfg.truePeakDb}${dcAf ? '-dc' : ''}`),
-    input,
-    async () => {
-      const { stderr } = await run(ffmpegPath, loudnormArgs(input, cfg, measurePrefilter), {
+  // The figures are a fact about the file alone (see ebur128MeasureArgs), so without a
+  // prefilter they are the editor's own loudness reading: whichever side runs first, the
+  // other finds it cached, and a bulk normalize warms the section for every track. A
+  // prefilter (click repair, DC centring) changes the audio being measured and keeps a key
+  // of its own; so does a reading that predates the threshold field.
+  const shared = measurePrefilter
+    ? null
+    : loudnormMeasuredFrom(
+        await cachedAnalysis(LOUDNESS_NAMESPACE, input, () => measureLoudness(input)),
+      )
+  const measured =
+    shared ??
+    (await cachedAnalysis(ns(`ebur128-measure-v1${dcAf ? '-dc' : ''}`), input, async () => {
+      const { stderr } = await run(ffmpegPath, ebur128MeasureArgs(input, measurePrefilter), {
         maxBuffer: 1024 * 1024 * 16,
       })
-      return parseLoudnorm(stderr)
-    },
-  )
+      return parseEbur128Measured(stderr)
+    }))
   if (!measured) return null
   // A reachable target normalizes linearly (dynamics intact); a target too loud for a
   // constant gain (the club preset on most material) would otherwise land short, so
@@ -2397,7 +2403,7 @@ export async function analyzeBitsUsage(
 
 export function parseLoudness(
   stderr: string,
-): Pick<LoudnessResult, 'integratedLufs' | 'truePeakDb' | 'lra'> | null {
+): Pick<LoudnessResult, 'integratedLufs' | 'truePeakDb' | 'lra' | 'threshold'> | null {
   const start = stderr.lastIndexOf('Summary:')
   if (start === -1) return null
   const summary = stderr.slice(start)
@@ -2406,8 +2412,13 @@ export function parseLoudness(
   const integratedLufs = num(summary.match(/\bI:\s*(-inf|-?[\d.]+)\s*LUFS/))
   const truePeakDb = num(summary.match(/\bPeak:\s*(-inf|-?[\d.]+)\s*dBFS/))
   const lra = num(summary.match(/\bLRA:\s*(-inf|-?[\d.]+)\s*LU\b/))
+  // The integrated-loudness gate, which the conversion's loudnorm pass needs as
+  // measured_thresh; the one under "Loudness range" is a different gate.
+  const threshold = num(
+    summary.match(/Integrated loudness:[\s\S]*?Threshold:\s*(-inf|-?[\d.]+)\s*LUFS/),
+  )
   if (integratedLufs === null || truePeakDb === null || lra === null) return null
-  return { integratedLufs, truePeakDb, lra }
+  return { integratedLufs, truePeakDb, lra, ...(threshold === null ? {} : { threshold }) }
 }
 
 export interface AstatsResult {
