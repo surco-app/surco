@@ -417,6 +417,7 @@ export default function App(): React.JSX.Element {
     clearExtrasTracks,
     deriveTracks,
     startOverTrack,
+    rereadTrackMeta,
     refreshTrackFromDisk,
     removeTrack,
     removeTracks,
@@ -788,6 +789,7 @@ export default function App(): React.JSX.Element {
     // A batch run shows this skip through batchSummary's "N skipped" count, but a
     // single-track convert (the editor button, ⌘⏎) has no summary to show it in.
     onFormatSkipped: (name) => setNotice(tr('notices.formatSkipped', { name })),
+    rereadTrackMeta,
     // Keyed so a bulk run failing on every track (e.g. Engine DJ open) raises one
     // card, not thirty; persistent like every failure toast. The card names the track
     // because the key collapses the run: without a name the user reads why a conversion

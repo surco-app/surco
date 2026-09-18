@@ -1206,3 +1206,76 @@ describe('album artist on import', () => {
     expect(result.current.tracks[0].meta.albumArtist).toBe('')
   })
 })
+
+// The flag the import leaves on an unreadable row has to be clearable by a read that
+// succeeds later: a NAS hiccup at drop time is not a verdict on the file.
+describe('rereadTrackMeta', () => {
+  it('fills the row from the file and clears the failed mark once the read succeeds', async () => {
+    const readMeta = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('probe timed out'))
+      .mockResolvedValue({
+        tags: { title: 'Rave Till My Grave', artist: 'Ashbreaker', album: 'MQDRFREE015' },
+        duration: 383,
+        cover: null,
+        foreignTags: [],
+      })
+    setApi({ readMeta })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(async () => {
+      await result.current.addPaths(['/m/Ashbreaker - Rave Till My Grave.flac'])
+      await new Promise((r) => setTimeout(r, 50))
+    })
+    const flagged = result.current.tracks[0]
+    expect(flagged.metaReadFailed).toBe(true)
+    expect(flagged.meta.album).toBe('')
+
+    let ok: boolean | undefined
+    await act(async () => {
+      ok = await result.current.rereadTrackMeta(flagged.id)
+      await new Promise((r) => setTimeout(r, 50))
+    })
+    expect(ok).toBe(true)
+    const reread = result.current.tracks[0]
+    expect(reread.metaReadFailed).toBe(false)
+    expect(reread.meta.album).toBe('MQDRFREE015')
+  })
+
+  it('reports false and keeps the mark when the read fails again', async () => {
+    setApi({ readMeta: vi.fn().mockRejectedValue(new Error('probe timed out')) })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(async () => {
+      await result.current.addPaths(['/m/a.flac'])
+      await new Promise((r) => setTimeout(r, 50))
+    })
+    let ok: boolean | undefined
+    await act(async () => {
+      ok = await result.current.rereadTrackMeta(result.current.tracks[0].id)
+      await new Promise((r) => setTimeout(r, 50))
+    })
+    expect(ok).toBe(false)
+    expect(result.current.tracks[0].metaReadFailed).toBe(true)
+  })
+})
