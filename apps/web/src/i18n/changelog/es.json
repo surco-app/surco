@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.99",
+    "date": "18 de septiembre de 2026",
+    "title": "Normaliza más rápido y actualiza sin perder etiquetas",
+    "items": [
+      {
+        "text": "Normalizar va más rápido: medir la sonoridad de una pista cuesta una cuarta parte de lo que costaba, y Surco mide una sola vez. La lectura de la sección de loudness del editor es la misma que usa la conversión, así que normalizar un lote deja medidas todas sus pistas y abrir una pista ya medida no vuelve a medirla.",
+        "in": "0.99.0"
+      },
+      {
+        "text": "Al terminar una conversión, el panel de actividad dice qué campos de las etiquetas han cambiado y cuántos han quedado intactos, para que veas si ha tocado algo que no esperabas.",
+        "in": "0.99.0"
+      },
+      {
+        "text": "Actualizar un WAV, un AIFF o un M4A en su mismo formato ya no le borra etiquetas: un WAV etiquetado con mp3tag salía sin artista ni álbum, a un AIFF se le iban el grouping y el sello, y un M4A perdía el BPM. Y la carátula que ya cumple tus ajustes se copia tal cual en vez de recomprimirse en cada pasada, así que actualizar dos veces ya no la degrada dos veces.",
+        "in": "0.99.0"
+      },
+      {
+        "text": "Un FLAC sin duración en su cabecera, como los que dejan algunos servicios de descarga y rippers de streaming, ya no sale acusado de «reprocesado» con un corte a 10 kHz cuando el audio llega limpio hasta arriba: las lecturas del espectro se reparten por toda la pista en vez de amontonarse en los primeros segundos de la intro.",
+        "in": "0.99.0"
+      },
+      {
+        "text": "Si una pista no se pudo leer al importarla, Surco la vuelve a leer antes de convertirla. Si sigue sin poder, la deja intacta y te lo dice, en vez de convertirla con las etiquetas en blanco.",
+        "in": "0.99.0"
+      }
+    ]
+  },
+  {
     "version": "0.98",
     "date": "16 de septiembre de 2026",
     "title": "Etiqueta el grouping pista a pista sin pisar el resto",

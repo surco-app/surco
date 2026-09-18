@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.99",
+    "date": "September 18, 2026",
+    "title": "Normalize faster and update without losing tags",
+    "items": [
+      {
+        "text": "Normalizing is faster: measuring a track’s loudness costs a quarter of what it did, and Surco measures only once. The reading in the editor’s loudness section is the same one the conversion uses, so normalizing a batch leaves every track measured, and opening a track already measured does not measure it again.",
+        "in": "0.99.0"
+      },
+      {
+        "text": "When a conversion finishes, the activity panel says which tag fields changed and how many stayed as they were, so you can see whether it touched anything you did not expect.",
+        "in": "0.99.0"
+      },
+      {
+        "text": "Updating a WAV, AIFF or M4A in its own format no longer erases tags: a WAV tagged with mp3tag came out with no artist or album, an AIFF lost its grouping and label, and an M4A lost its BPM. And a cover that already meets your settings is copied as it is instead of being recompressed on every pass, so updating twice no longer degrades it twice.",
+        "in": "0.99.0"
+      },
+      {
+        "text": "A FLAC with no length in its header, the kind some download services and streaming rippers leave, no longer gets flagged as “reprocessed” with a 10 kHz cutoff when the audio runs clean all the way up: the spectrum readings spread over the whole track instead of piling up on the first seconds of the intro.",
+        "in": "0.99.0"
+      },
+      {
+        "text": "If a track could not be read when you imported it, Surco reads it again before converting. If it still cannot, it leaves the file untouched and tells you, instead of converting it with blank tags.",
+        "in": "0.99.0"
+      }
+    ]
+  },
+  {
     "version": "0.98",
     "date": "September 16, 2026",
     "title": "Tag grouping track by track without overwriting the rest",
