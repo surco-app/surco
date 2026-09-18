@@ -2,7 +2,7 @@ import { Heart } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DONATE_URL } from '../lib/donate'
+import { DONATE_URL, PAYPAL_ME_LABEL, PAYPAL_ME_URL } from '../lib/donate'
 import { formatTimeSaved, timeSavedSeconds } from '../lib/stats'
 import { Confetti } from './Confetti'
 import { ModalShell } from './ModalShell'
@@ -62,6 +62,18 @@ export function DonateNudgeModal({ conversionCount, onClose }: Props): React.JSX
             {tr('settings.stats.donateCta')}
           </a>
         </div>
+        <p className="mt-3 text-center text-xs text-fg-muted">
+          {tr('settings.stats.paypalMe')}{' '}
+          <a
+            data-testid="donate-nudge-paypal-me"
+            href={PAYPAL_ME_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-fg underline underline-offset-2 hover:text-[var(--color-accent)]"
+          >
+            {PAYPAL_ME_LABEL}
+          </a>
+        </p>
 
         <div className="mt-6 flex items-center justify-between border-t border-[var(--color-line)] pt-4">
           <label className="flex cursor-pointer items-center gap-2 text-xs text-fg-dim">

@@ -3,7 +3,7 @@ import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LifetimeStats, Settings } from '../../../../shared/types'
-import { DONATE_URL } from '../../lib/donate'
+import { DONATE_URL, PAYPAL_ME_LABEL, PAYPAL_ME_URL } from '../../lib/donate'
 import {
   formatTimeSaved,
   MANUAL_SECONDS_PER_CONVERSION,
@@ -246,6 +246,18 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
           </button>
         )}
       </div>
+      <p className="mt-2 text-xs text-fg-muted">
+        {tr('settings.stats.paypalMe')}{' '}
+        <a
+          data-testid="stats-paypal-me"
+          href={PAYPAL_ME_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-fg underline underline-offset-2 hover:text-[var(--color-accent)]"
+        >
+          {PAYPAL_ME_LABEL}
+        </a>
+      </p>
     </div>
   )
 }

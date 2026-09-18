@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { DONATE_URL } from '../config'
+import { DONATE_URL, PAYPAL_ME_LABEL, PAYPAL_ME_URL } from '../config'
 import { trackDonate } from '../lib/analytics'
 
 // PayPal sends donors here when they back out of the donate flow. Thank them for
@@ -10,12 +10,14 @@ const COPY = {
     title: 'No se ha completado la donación',
     body: 'No pasa nada — gracias por habértelo planteado. Surco es gratis; son las donaciones las que mantienen su desarrollo activo. Si algún día te ahorra unas horas, el botón seguirá aquí.',
     retry: 'Donar con PayPal',
+    paypalMe: 'O sin comisión, entre amigos:',
     home: 'Volver al inicio',
   },
   en: {
     title: 'Your donation was cancelled',
     body: 'No worries — thanks for even considering it. Surco is free; donations are what keep its development going. If it ever saves you a few hours, the button will still be here.',
     retry: 'Donate with PayPal',
+    paypalMe: 'Or fee-free, as a friend:',
     home: 'Back to home',
   },
 }
@@ -47,6 +49,17 @@ export default function DonateCancel() {
       >
         {t.retry} →
       </a>
+      <p className="mt-3 text-xs text-faint">
+        {t.paypalMe}{' '}
+        <a
+          href={PAYPAL_ME_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-muted underline underline-offset-2 transition-colors hover:text-blue"
+        >
+          {PAYPAL_ME_LABEL}
+        </a>
+      </p>
       <a href="/" className="mt-10 text-sm text-faint transition-colors hover:text-blue">
         ← {t.home}
       </a>
