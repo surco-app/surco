@@ -245,6 +245,61 @@
     "metaTitle": "Todo lo que hace Surco · Funciones",
     "metaDescription": "Convertir, etiquetar desde Discogs, analizar la calidad, reparar clics, recortar silencios y exportar a rekordbox, Engine DJ, Traktor o Serato. Gratis."
   },
+  "stopwatch": {
+    "kicker": "Medido, no prometido",
+    "title": "Lo que Surco tarda de verdad, a cronómetro",
+    "lede": "Cada barra llena su carril en el tiempo real que tarda la operación sobre una pista de seis minutos. Sin truco de cámara: lo que ves durar 0,2 s dura 0,2 s en tu Mac.",
+    "board": "Una pista, de principio a fin",
+    "boardSpec": "FLAC · 6:23 · 51 MB",
+    "ops": {
+      "import": {
+        "label": "Importar y leer las etiquetas",
+        "detail": "sonda, carátula y tags de terceros"
+      },
+      "update": {
+        "label": "Actualizar etiquetas y carátula",
+        "detail": "copia, TagLib y comprobación de que se puede leer"
+      },
+      "convert": {
+        "label": "Convertir a AIFF",
+        "detail": "codificar, etiquetar, cues de Traktor, verificar"
+      },
+      "verdict": {
+        "label": "Veredicto de calidad",
+        "detail": "12 sondas del espectro, shelf y espectrograma"
+      },
+      "normalize": {
+        "label": "Normalizar loudness y convertir",
+        "detail": "medición EBU R128 con pico real y codificación"
+      }
+    },
+    "ms": "ms",
+    "s": "s",
+    "replay": "↻ repetir a tiempo real",
+    "foot": "Cinco operaciones en poco más de tres segundos. Con la sección de loudness ya abierta, normalizar baja a {{warm}} s.",
+    "tiles": [
+      {
+        "big": "600 pistas",
+        "label": "importadas en unos 15 s desde disco local",
+        "how": "25 ms por pista · lectura fría, 3 procesos por fichero · proyección lineal"
+      },
+      {
+        "big": "0,76 s",
+        "label": "normalizar una pista que el editor ya midió",
+        "how": "la medición se comparte entre la sección y la conversión"
+      },
+      {
+        "big": "3×",
+        "label": "más rápido normalizando que en la versión anterior",
+        "how": "6,45 s → 2,06 s · misma pista, misma salida a −14 LUFS"
+      }
+    ],
+    "before": "Normalizar, antes",
+    "beforeHow": "medición con loudnorm (5,7 s) + codificación",
+    "after": "Normalizar, ahora",
+    "afterHow": "medición con ebur128 (1,3 s) + codificación · {{warm}} s si ya estaba medida",
+    "footnote": "* Medido el 18/09/2026 en un Mac con chip M y disco local, a través del propio código de Surco: un FLAC de 6:23 (51 MB) con carátula de 700×700. Varía con la máquina, el formato, la duración y si la biblioteca está en red."
+  },
   "shortcuts": {
     "kicker": "Teclado primero",
     "title": "Vuela sin tocar el ratón",
