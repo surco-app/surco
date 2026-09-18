@@ -119,7 +119,8 @@
     "appleMusicNoMediaCopy": "Música no ha copiado el archivo a su carpeta multimedia, así que “Solo Apple Music” lo dejaría sin audio. Activa “Copiar archivos a la carpeta multimedia” en Música, o desactiva “Solo Apple Music”.",
     "convertedOutputUnreadable": "El archivo convertido salió ilegible, así que se descartó y el original quedó intacto. Prueba con otros ajustes de conversión.",
     "convertedOutputTruncated": "El archivo convertido salió más corto que el original, así que se descartó y el original quedó intacto. Prueba con otros ajustes de conversión.",
-    "engineDjOpen": "Cierra Engine DJ antes de convertir: tiene la biblioteca abierta."
+    "engineDjOpen": "Cierra Engine DJ antes de convertir: tiene la biblioteca abierta.",
+    "sourceTagsUnread": "No se han podido leer las etiquetas de este archivo, así que no se ha tocado: convertirlo habría borrado las que tiene. Vuelve a cargarlo e inténtalo de nuevo."
   },
   "notices": {
     "duplicatesSkipped": "Ya en la lista, omitidas: {{count}}",

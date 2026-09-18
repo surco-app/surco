@@ -140,6 +140,9 @@ export async function runProcessTrack(
   job: ProcessJob,
   deps: ProcessTrackDeps,
 ): Promise<ProcessResult> {
+  // Before any side effect: metadata that never came from the file (see ProcessJob.metaUnread)
+  // would be written empty over whatever the file still carries.
+  if (job.metaUnread) throw errorWithKey('sourceTagsUnread', job.inputPath)
   const { settings } = deps
   const stage = (s: ProcessStage): void => deps.sendProgress(s)
 

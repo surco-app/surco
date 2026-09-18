@@ -270,6 +270,90 @@ describe('useTrackProcessing', () => {
     expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ status: 'error' }))
   })
 
+  // The import marks a row whose tags could not be read (metaReadFailed) and leaves it
+  // with a name-parsed title and artist. Converting that row as it stands writes every
+  // other managed field empty over the file. So a flagged row is read again first, and
+  // converts only from a read that succeeded.
+  describe('a track whose tags could not be read at import', () => {
+    it('is read again and converts from the fresh read', async () => {
+      const processTrack = vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+      setApi({ processTrack })
+      const flagged = track({ id: 'a', metaReadFailed: true })
+      // The library patches the row in place; the mock does the same.
+      const rereadTrackMeta = vi.fn(async () => {
+        flagged.metaReadFailed = false
+        return true
+      })
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: [flagged],
+            settings: null,
+            updateTrack: vi.fn(),
+            rereadTrackMeta,
+          }),
+        { wrapper: withClient() },
+      )
+      let outcome: string | undefined
+      await act(async () => {
+        outcome = await result.current.processOne('a')
+      })
+      expect(rereadTrackMeta).toHaveBeenCalledWith('a')
+      expect(outcome).toBe('converted')
+      expect(processTrack).toHaveBeenCalledTimes(1)
+      expect(processTrack.mock.calls[0][0].metaUnread).toBeFalsy()
+    })
+
+    it('fails without converting when the file still cannot be read', async () => {
+      const processTrack = vi.fn()
+      setApi({ processTrack })
+      const updateTrack = vi.fn()
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: [track({ id: 'a', metaReadFailed: true })],
+            settings: null,
+            updateTrack,
+            rereadTrackMeta: vi.fn(async () => false),
+          }),
+        { wrapper: withClient() },
+      )
+      let outcome: string | undefined
+      await act(async () => {
+        outcome = await result.current.processOne('a')
+      })
+      expect(outcome).toBe('failed')
+      expect(processTrack).not.toHaveBeenCalled()
+      expect(updateTrack).toHaveBeenCalledWith(
+        'a',
+        expect.objectContaining({ status: 'error', error: expect.stringMatching(/./) }),
+      )
+    })
+
+    // With no re-read wired up (another caller of the hook), the job still tells main the
+    // metadata never came from the file, and main refuses it.
+    it('marks the job so main refuses it when no re-read is available', async () => {
+      const processTrack = vi.fn<Api['processTrack']>().mockRejectedValue(new Error('refused'))
+      setApi({ processTrack })
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: [track({ id: 'a', metaReadFailed: true })],
+            settings: null,
+            updateTrack: vi.fn(),
+          }),
+        { wrapper: withClient() },
+      )
+      await act(async () => {
+        await result.current.processOne('a')
+      })
+      expect(processTrack).toHaveBeenCalledTimes(1)
+      expect(processTrack.mock.calls[0][0].metaUnread).toBe(true)
+    })
+  })
+
   // A track already mid-conversion must never convert twice at once: the user can
   // hand-convert (or ⌘⏎) a still-idle track while a running batch has it queued, and
   // when the batch later reaches it both jobs would write the same output path.
