@@ -17,6 +17,7 @@ import type {
   SessionEdit,
   SpectrumResult,
   TrackProperties,
+  TrashEntry,
   WaveformResult,
   WaveformScan,
 } from '../shared/types'
@@ -129,6 +130,12 @@ const api: Api = {
   openFile: (path: string): Promise<string> => ipcRenderer.invoke('shell:open', path),
   trashFile: (path: string): Promise<void> => ipcRenderer.invoke('shell:trash', path),
   keepsTrash: (path: string): Promise<boolean> => ipcRenderer.invoke('shell:keepsTrash', path),
+  trashList: (): Promise<TrashEntry[]> => ipcRenderer.invoke('trash:list'),
+  trashRestore: (id: string): Promise<{ restoredTo: string }> =>
+    ipcRenderer.invoke('trash:restore', id),
+  trashRemove: (id: string): Promise<void> => ipcRenderer.invoke('trash:remove', id),
+  trashEmpty: (): Promise<void> => ipcRenderer.invoke('trash:empty'),
+  trashReveal: (): Promise<void> => ipcRenderer.invoke('trash:reveal'),
   copyText: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text),
   logError: (message: string, stack?: string): void =>
     ipcRenderer.send('log:renderer', message, stack),

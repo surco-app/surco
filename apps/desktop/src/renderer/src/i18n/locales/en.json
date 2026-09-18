@@ -31,6 +31,7 @@
     "settings": "Settings",
     "stats": "Stats",
     "activity": "Activity",
+    "trash": "Surco trash",
     "selectAll": "Select all",
     "revealSelected": "Scroll to the selected track",
     "fillFromName": "Fill all tags from file name",
@@ -122,6 +123,30 @@
     "convertedOutputTruncated": "The converted file came out shorter than the original, so it was discarded and the original left untouched. Try again with different conversion settings.",
     "engineDjOpen": "Close Engine DJ before converting: it has the library open.",
     "sourceTagsUnread": "This file's tags could not be read, so it was left alone: converting it would have wiped the ones it has. Load it again and retry."
+  },
+  "trash": {
+    "title": "Surco trash",
+    "summary_one": "{{count}} file · {{size}}",
+    "summary_other": "{{count}} files · {{size}}",
+    "emptyHint": "Keeps the originals a conversion replaces for {{days}} days, up to {{size}}.",
+    "emptyTitle": "Nothing to restore",
+    "emptyBody": "When a conversion replaces or renames an original, or you delete a track on a disk with no Trash, it shows up here.",
+    "reason": {
+      "replaced": "replaced by a conversion",
+      "renamed": "renamed by a conversion",
+      "deleted": "deleted from Surco",
+      "restored-over": "set aside while restoring another"
+    },
+    "restore": "Restore",
+    "remove": "Delete permanently",
+    "empty": "Empty trash",
+    "emptyConfirm_one": "Delete {{count}} file for good?",
+    "emptyConfirm_other": "Delete {{count}} files for good?",
+    "reveal": "Open folder",
+    "close": "Close",
+    "retention": "Empties itself after {{days}} days or past {{size}}, oldest first.",
+    "restored": "Restored “{{name}}” to its folder",
+    "restoreFailed": "Could not restore “{{name}}”: {{reason}}"
   },
   "notices": {
     "duplicatesSkipped": "Already in the list, skipped: {{count}}",

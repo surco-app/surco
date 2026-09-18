@@ -31,6 +31,7 @@
     "settings": "Ajustes",
     "stats": "Estadísticas",
     "activity": "Actividad",
+    "trash": "Papelera de Surco",
     "selectAll": "Seleccionar todo",
     "revealSelected": "Ir a la pista seleccionada",
     "fillFromName": "Rellenar todo desde el nombre",
@@ -122,6 +123,30 @@
     "convertedOutputTruncated": "El archivo convertido salió más corto que el original, así que se descartó y el original quedó intacto. Prueba con otros ajustes de conversión.",
     "engineDjOpen": "Cierra Engine DJ antes de convertir: tiene la biblioteca abierta.",
     "sourceTagsUnread": "No se han podido leer las etiquetas de este archivo, así que no se ha tocado: convertirlo habría borrado las que tiene. Vuelve a cargarlo e inténtalo de nuevo."
+  },
+  "trash": {
+    "title": "Papelera de Surco",
+    "summary_one": "{{count}} archivo · {{size}}",
+    "summary_other": "{{count}} archivos · {{size}}",
+    "emptyHint": "Guarda los originales que una conversión sustituye durante {{days}} días, hasta {{size}}.",
+    "emptyTitle": "No hay nada que restaurar",
+    "emptyBody": "Cuando una conversión sustituya o renombre un original, o borres una pista en un disco sin papelera, aparecerá aquí.",
+    "reason": {
+      "replaced": "sustituido por una conversión",
+      "renamed": "renombrado por una conversión",
+      "deleted": "borrado desde Surco",
+      "restored-over": "apartado al restaurar otro"
+    },
+    "restore": "Restaurar",
+    "remove": "Eliminar definitivamente",
+    "empty": "Vaciar papelera",
+    "emptyConfirm_one": "¿Eliminar {{count}} archivo para siempre?",
+    "emptyConfirm_other": "¿Eliminar {{count}} archivos para siempre?",
+    "reveal": "Abrir carpeta",
+    "close": "Cerrar",
+    "retention": "Se vacía sola a los {{days}} días o al pasar de {{size}}, lo más antiguo primero.",
+    "restored": "Restaurado «{{name}}» en su carpeta",
+    "restoreFailed": "No se pudo restaurar «{{name}}»: {{reason}}"
   },
   "notices": {
     "duplicatesSkipped": "Ya en la lista, omitidas: {{count}}",

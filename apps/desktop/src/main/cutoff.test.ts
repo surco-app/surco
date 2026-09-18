@@ -335,8 +335,8 @@ describe('detectCutoff fine-band roughness', () => {
     // trailing 5 s of silence was cut. An enhancer's teeth are separated by drops
     // (every rise in the SBR fixture is); a climb over adjacent bands is one feature.
     const coarse = fftBand([
-      -52.65, -52.95, -51.71, -51.42, -50.2, -50.16, -51.96, -51.95, -53.95, -56.05, -53.06,
-      -52.94, -58.23,
+      -52.65, -52.95, -51.71, -51.42, -50.2, -50.16, -51.96, -51.95, -53.95, -56.05, -53.06, -52.94,
+      -58.23,
     ])
     const dipRecovery = fine([
       -49.6, -50.31, -50.04, -51.28, -52.52, -51.0, -52.13, -53.49, -53.93, -54.29, -56.75, -54.84,
