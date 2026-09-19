@@ -191,6 +191,28 @@ describe('detectCutoff', () => {
     })
   })
 
+  it('does not read a wobble inside the reference bands as a hump', () => {
+    // A lossless master measured off the real file: the 10 kHz band sits 3 dB
+    // under 9 kHz and 11 kHz climbs 5.15 dB back over it. Those three bands are
+    // the reference the plateau is averaged from, so a rise between them is the
+    // plateau's own shape, not synthetic highs pushed back up to it. Taking 10 kHz
+    // as the valley put the verdict on the 5 dB bar, where the probe grid decided
+    // it: clean untrimmed, Reprocessed at 10 kHz with 1.5 s cut off the end.
+    const coarse = fftBand([
+      -53.4, -56.65, -51.5, -62.63, -66.75, -68.89, -68.84, -70.17, -59.39, -69.11, -69.73,
+      -70.54, -75.15,
+    ])
+    const wobble = fine([
+      -66.79, -67.63, -68.86, -70.15, -70.31, -67.4, -70.68, -68.68, -58.25, -60.74, -70.18,
+      -72.34, -71.26, -67.38, -71.05, -73.62, -75.08,
+    ])
+    expect(detectCutoff(coarse, NYQUIST, wobble)).toEqual({
+      cutoffHz: NYQUIST,
+      processed: false,
+      hasKnee: false,
+    })
+  })
+
   it('finds the encoder lowpass on a 48 kHz file, not the taper below it', () => {
     expect(detectCutoff(VBR_48K, 24000)).toEqual({
       cutoffHz: 18000,
