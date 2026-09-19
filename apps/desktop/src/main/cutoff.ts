@@ -184,10 +184,14 @@ export function plateauDb(bands: Band[]): number {
 // The valley a synthetic hump rises from, or null for a naturally falling
 // spectrum. Tracks the running minimum and looks for a later band that climbs
 // HUMP_RISE_DB back above it AND reaches the reference plateau — both
-// conditions, so a notch recovering to the falling trend stays clean.
+// conditions, so a notch recovering to the falling trend stays clean. The search
+// starts at the last reference band: a dip and recovery among the bands the
+// plateau is averaged from is the plateau's own shape, and reading one as a
+// valley put a clean master on the 5 dB bar, where the probe grid decided it.
 function findHumpValley(bands: Band[], plateau: number): { valley: Band; peak: Band } | null {
-  let valley = bands[0]
-  for (const b of bands) {
+  const from = Math.min(REFERENCE_BANDS, bands.length) - 1
+  let valley = bands[from]
+  for (const b of bands.slice(from)) {
     if (b.rmsDb < valley.rmsDb) valley = b
     const rise = b.rmsDb - valley.rmsDb
     if (rise >= HUMP_RISE_DB && b.rmsDb >= plateau - HUMP_PLATEAU_MARGIN_DB) {
