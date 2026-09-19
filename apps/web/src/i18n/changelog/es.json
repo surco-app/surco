@@ -23,6 +23,14 @@
       {
         "text": "Si una pista no se pudo leer al importarla, Surco la vuelve a leer antes de convertirla. Si sigue sin poder, la deja intacta y te lo dice, en vez de convertirla con las etiquetas en blanco.",
         "in": "0.99.0"
+      },
+      {
+        "text": "Cuando una conversión sustituye al original, el archivo de partida ya no desaparece: se guarda en la papelera de Surco, con un panel para escucharlo, devolverlo a su sitio o tirarlo cuando ya no lo quieras.",
+        "in": "0.99.1"
+      },
+      {
+        "text": "Una pista con un pequeño vaivén en la zona media de sus agudos ya no sale acusada de tener los agudos regenerados. Antes bastaba con que el nivel subiera y bajara dentro del tramo normal para que Surco lo leyera como un parche artificial.",
+        "in": "0.99.1"
       }
     ]
   },

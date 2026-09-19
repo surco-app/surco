@@ -23,6 +23,14 @@
       {
         "text": "If a track could not be read when you imported it, Surco reads it again before converting. If it still cannot, it leaves the file untouched and tells you, instead of converting it with blank tags.",
         "in": "0.99.0"
+      },
+      {
+        "text": "When a conversion replaces the original, the file you started from no longer disappears: it goes to Surco’s own trash, with a panel to play it, put it back where it was or drop it when you no longer want it.",
+        "in": "0.99.1"
+      },
+      {
+        "text": "A track whose highs dip and rise a little in the middle no longer gets flagged for regenerated highs. Until now, a wobble well inside the normal range was enough for Surco to read it as an artificial patch.",
+        "in": "0.99.1"
       }
     ]
   },
