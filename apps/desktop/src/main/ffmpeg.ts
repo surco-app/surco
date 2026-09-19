@@ -2235,6 +2235,7 @@ export async function analyzeCutoff(
   input: string,
   sampleRateHz: number,
   signal?: AbortSignal,
+  durationSec?: number,
 ): Promise<
   CutoffResult & {
     upsampled: boolean
@@ -2269,10 +2270,11 @@ export async function analyzeCutoff(
         }))
       : []),
   ]
-  // Duration only positions the probes; without it they all fall at the start,
-  // which still measures the track, just less representatively.
-  const durationSec = (await probeDuration(input, signal)) ?? 0
-  const rms = await measureBands(input, specs, sampleRateHz, durationSec, signal)
+  // Duration only positions the probes, so the library sweep can hand one in to grade
+  // a file as if trimmed; without it they all fall at the start, which still measures
+  // the track, just less representatively.
+  const spreadSec = durationSec ?? (await probeDuration(input, signal)) ?? 0
+  const rms = await measureBands(input, specs, sampleRateHz, spreadSec, signal)
   const bands = freqs.map((freqHz) => ({
     freqHz,
     rmsDb: rms.get(`${freqHz}x${BAND_WIDTH_HZ}`) ?? -Infinity,

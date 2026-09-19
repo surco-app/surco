@@ -7,7 +7,7 @@ import { it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false, getPath: () => '/tmp' } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
-import { analyzeCutoff, analyzeShelf, buildSpectrum, probeAudio } from './ffmpeg'
+import { analyzeCutoff, analyzeShelf, buildSpectrum, probeAudio, probeDuration } from './ffmpeg'
 
 // Not a test of the code: a sweep of a library through the real verdict, the
 // ground-truth check the corpus is too small to give. Point it at a folder that is
@@ -23,9 +23,20 @@ import { analyzeCutoff, analyzeShelf, buildSpectrum, probeAudio } from './ffmpeg
 // lands, and a rerun skips what is already graded (errors are retried), so a stopped
 // sweep resumes and a changed detector can be re-swept file by file. A summary of the flagged files is
 // written beside it. SURCO_SWEEP_CONCURRENCY (default 4) bounds the decodes in flight.
+//
+// The second pass reads the flagged rows of a finished sweep and grades each file
+// again as if a second had been trimmed off its end, which moves every probe a
+// fraction of a second. A verdict that changes was sitting on a threshold and would
+// flip for a user who trims or normalises the file: three reports in four days were
+// exactly that, and each was visible here first. Disagreements go to
+// SURCO_SWEEP_OUT.stability.txt.
+//
+//   SURCO_SWEEP_STABILITY=1 SURCO_SWEEP_OUT=~/surco-sweep.jsonl npm run sweep
 const root = process.env.SURCO_SWEEP_DIR
+const stability = process.env.SURCO_SWEEP_STABILITY
 const out = process.env.SURCO_SWEEP_OUT ?? join(homedir(), 'surco-sweep.jsonl')
 const concurrency = Number(process.env.SURCO_SWEEP_CONCURRENCY ?? 4)
+const SHIFT_SEC = 1
 const EXTENSIONS = new Set(['.flac', '.aiff', '.aif', '.wav'])
 
 interface Row {
@@ -66,13 +77,13 @@ function readRows(): Row[] {
 
 const flagged = (r: Row): boolean => !!(r.hasKnee || r.processed || r.upsampled)
 
-async function grade(path: string): Promise<Row> {
+async function grade(path: string, durationSec?: number): Promise<Row> {
   const t0 = Date.now()
   try {
     const built = await buildSpectrum(path, {
       probe: probeAudio,
       spectrogram: async () => '',
-      cutoff: (i, s) => analyzeCutoff(i, s),
+      cutoff: (i, s) => analyzeCutoff(i, s, undefined, durationSec),
       shelf: (i, s) => analyzeShelf(i, s),
       bits: async () => null,
     })
@@ -126,6 +137,55 @@ it.skipIf(!root)(
       ...errors.map((r) => `error  ${r.path}  ${r.error}`),
     ]
     writeFileSync(`${out}.summary.txt`, `${summary.join('\n')}\n`)
+  },
+  24 * 60 * 60 * 1000,
+)
+
+const verdict = (r: Row): string =>
+  `${r.hasKnee ? 'knee' : r.processed ? 'processed' : r.upsampled ? 'upsampled' : 'clean'} @ ${r.cutoffHz} Hz`
+
+it.skipIf(!stability)(
+  'grades every flagged file again with the probes shifted by a trimmed second',
+  async () => {
+    const files = readRows().filter(flagged).map((r) => r.path)
+    const unstable: string[] = []
+    const errors: string[] = []
+    let graded = 0
+    let next = 0
+    const worker = async (): Promise<void> => {
+      for (;;) {
+        const file = files[next++]
+        if (!file) return
+        const durationSec = await probeDuration(file)
+        if (durationSec === null) {
+          errors.push(`error  ${file}  no duration`)
+          continue
+        }
+        const [whole, shifted] = await Promise.all([
+          grade(file, durationSec),
+          grade(file, durationSec - SHIFT_SEC),
+        ])
+        if (whole.error || shifted.error) {
+          errors.push(`error  ${file}  ${whole.error ?? shifted.error}`)
+          continue
+        }
+        graded++
+        if (verdict(whole) !== verdict(shifted))
+          unstable.push(`${verdict(whole)} -> ${verdict(shifted)}  ${file}`)
+      }
+    }
+    await Promise.all(Array.from({ length: concurrency }, worker))
+
+    const summary = [
+      `${out}`,
+      `${graded} flagged files graded twice, ${errors.length} errors`,
+      `${unstable.length} unstable (${((100 * unstable.length) / Math.max(1, graded)).toFixed(2)}%)`,
+      '',
+      ...unstable,
+      '',
+      ...errors,
+    ]
+    writeFileSync(`${out}.stability.txt`, `${summary.join('\n')}\n`)
   },
   24 * 60 * 60 * 1000,
 )
