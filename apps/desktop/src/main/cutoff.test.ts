@@ -391,6 +391,25 @@ describe('detectCutoff fine-band roughness', () => {
     expect(detectCutoff(coarse, NYQUIST, dipRecovery).processed).toBe(false)
   })
 
+  it('does not count a climb into the top fine band, against Nyquist, as a tooth', () => {
+    // A lossless master measured off the real file: a gentle taper with 1-2 dB
+    // ripple, two small climbs at 17 and 19.5 kHz, and a third only because the
+    // 21 kHz band sits 2.8 dB over 20.5 kHz. That band leans on the anti-alias
+    // filter, where the level moved 6 dB between two probe grids of the same
+    // audio, so it can make or unmake a tooth on its own: the track graded
+    // Reprocessed in 24 of 41 grid positions and clean in the rest. The
+    // enhancer fixtures keep every tooth below it.
+    const coarse = fftBand([
+      -52.85, -53.25, -53.94, -54.89, -56.3, -58.96, -59.18, -61.13, -65.83, -67.9, -68.8,
+      -72.03, -75.91,
+    ])
+    const ripple = fine([
+      -55.89, -60.79, -57.37, -59.66, -58.35, -62.19, -59.98, -63.61, -68.0, -67.18, -66.39,
+      -68.15, -71.71, -70.9, -69.86, -76.48, -73.71,
+    ])
+    expect(detectCutoff(coarse, NYQUIST, ripple).processed).toBe(false)
+  })
+
   it('does not read one tonal spike among low wander as a run of patches', () => {
     // A lossless rip measured off the real file a user sent, graded Reprocessed with
     // "the fine bands rise 3 times between 17.0 kHz and 20.5 kHz". They do, but not
