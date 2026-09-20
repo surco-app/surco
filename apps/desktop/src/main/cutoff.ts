@@ -270,6 +270,7 @@ export function fineBandsShowWall(fineBands: Band[]): boolean {
 function roughnessCeiling(
   fineBands: Band[],
   plateau: number,
+  nyquistHz: number,
 ): { band: Band; teeth: number; fromHz: number; toHz: number } | null {
   const floor = plateau - ROUGHNESS_FLOOR_BELOW_PLATEAU_DB
   const finite = fineBands.filter((b) => Number.isFinite(b.rmsDb) && b.rmsDb >= floor)
@@ -290,7 +291,12 @@ function roughnessCeiling(
       last.db += rise
     } else climbs.push({ fromHz: finite[i].freqHz, toHz: finite[i + 1].freqHz, db: rise })
   }
-  const teeth = climbs.filter((c) => c.db > ROUGHNESS_RISE_MIN_DB)
+  // A climb into the band leaning on the anti-alias filter is not a tooth either:
+  // that band moved 6 dB between two probe grids of the same audio and made or
+  // unmade the third tooth on its own. An enhancer's teeth all sit below it.
+  const againstNyquist = (c: { toHz: number }): boolean =>
+    c.toHz + FINE_BAND_WIDTH_HZ / 2 > nyquistHz - BAND_WIDTH_HZ
+  const teeth = climbs.filter((c) => c.db > ROUGHNESS_RISE_MIN_DB && !againstNyquist(c))
   const totalRise = teeth.reduce((sum, c) => sum + c.db, 0)
   if (totalRise < ROUGHNESS_TOTAL_DB || teeth.length < ROUGHNESS_MIN_RISES) return null
   const sizes = teeth.map((c) => c.db)
@@ -333,7 +339,7 @@ export function detectCutoff(
   if (kneeIndex !== -1 && wall)
     return { cutoffHz: bands[kneeIndex].freqHz, processed: false, hasKnee: true }
 
-  const ceiling = roughnessCeiling(fineBands, plateau)
+  const ceiling = roughnessCeiling(fineBands, plateau, nyquistHz)
   if (ceiling)
     return {
       cutoffHz: ceiling.band.freqHz,
