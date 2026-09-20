@@ -199,12 +199,12 @@ describe('detectCutoff', () => {
     // as the valley put the verdict on the 5 dB bar, where the probe grid decided
     // it: clean untrimmed, Reprocessed at 10 kHz with 1.5 s cut off the end.
     const coarse = fftBand([
-      -53.4, -56.65, -51.5, -62.63, -66.75, -68.89, -68.84, -70.17, -59.39, -69.11, -69.73,
-      -70.54, -75.15,
+      -53.4, -56.65, -51.5, -62.63, -66.75, -68.89, -68.84, -70.17, -59.39, -69.11, -69.73, -70.54,
+      -75.15,
     ])
     const wobble = fine([
-      -66.79, -67.63, -68.86, -70.15, -70.31, -67.4, -70.68, -68.68, -58.25, -60.74, -70.18,
-      -72.34, -71.26, -67.38, -71.05, -73.62, -75.08,
+      -66.79, -67.63, -68.86, -70.15, -70.31, -67.4, -70.68, -68.68, -58.25, -60.74, -70.18, -72.34,
+      -71.26, -67.38, -71.05, -73.62, -75.08,
     ])
     expect(detectCutoff(coarse, NYQUIST, wobble)).toEqual({
       cutoffHz: NYQUIST,
@@ -223,12 +223,12 @@ describe('detectCutoff', () => {
     // to a trimmed MP3, and clean or Reprocessed on the FLAC itself depending on
     // where the probes fell.
     const coarse = fftBand([
-      -55.08, -54.76, -56.39, -58.69, -52.5, -61.87, -65.6, -68.28, -71.19, -72.79, -75.45,
-      -76.47, -81.89,
+      -55.08, -54.76, -56.39, -58.69, -52.5, -61.87, -65.6, -68.28, -71.19, -72.79, -75.45, -76.47,
+      -81.89,
     ])
     const tone = fine([
-      -51.07, -59.36, -61.66, -64.43, -65.69, -66.98, -68.33, -69.55, -71.19, -73.3, -72.94,
-      -72.98, -75.7, -76.49, -76.28, -77.73, -82.36,
+      -51.07, -59.36, -61.66, -64.43, -65.69, -66.98, -68.33, -69.55, -71.19, -73.3, -72.94, -72.98,
+      -75.7, -76.49, -76.28, -77.73, -82.36,
     ])
     expect(detectCutoff(coarse, NYQUIST, tone)).toEqual({
       cutoffHz: 20000,
@@ -389,6 +389,26 @@ describe('detectCutoff fine-band roughness', () => {
       -53.43, -52.29, -53.05, -54.01, -58.36,
     ])
     expect(detectCutoff(coarse, NYQUIST, dipRecovery).processed).toBe(false)
+  })
+
+  it('does not read one tonal spike among low wander as a run of patches', () => {
+    // A lossless rip measured off the real file a user sent, graded Reprocessed with
+    // "the fine bands rise 3 times between 17.0 kHz and 20.5 kHz". They do, but not
+    // as patches do: a 6.8 dB harmonic at 17.5 kHz and two 1.1-1.4 dB wobbles, while
+    // the top end falls 26 dB from 16.5 to 21 kHz. An enhancer grafts patches of one
+    // size at one spacing — the SBR fixture's teeth are 1.7, 2.3 and 1.1 dB, within
+    // 2.1x of each other — so a run whose largest tooth dwarfs its smallest is one
+    // tonal feature plus noise, not a seam. Net slope cannot tell them apart: the
+    // SBR fixture falls 5.6 dB across its own teeth and this one 6.4 dB.
+    const coarse = fftBand([
+      -51.41, -51.44, -49.98, -51.61, -52.5, -51.7, -55.24, -54.84, -60.15, -57.71, -63.98, -64.28,
+      -76.69,
+    ])
+    const oneSpike = fine([
+      -53.09, -52.21, -50.72, -53.31, -55.38, -56.89, -54.84, -55.46, -61.91, -55.09, -63.23, -63.5,
+      -63.43, -62.07, -69.42, -68.29, -81.43,
+    ])
+    expect(detectCutoff(coarse, NYQUIST, oneSpike).processed).toBe(false)
   })
 
   it('behaves exactly as before when no fine bands are supplied', () => {

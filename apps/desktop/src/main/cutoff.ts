@@ -127,6 +127,15 @@ const ROUGHNESS_TOTAL_DB = 3
 // is played back at; the enhancer's teeth come in threes, so three is where a run
 // of teeth starts.
 const ROUGHNESS_MIN_RISES = 3
+// ...and of a comparable size. An enhancer grafts patches of one kind at one
+// spacing, so its teeth come out even: the calibration enhancer's are 1.7, 2.3 and
+// 1.1 dB, the largest 2.1x the smallest. A lossless rip a user sent was accused on
+// teeth of 6.8, 1.4 and 1.1 dB — one harmonic at 17.5 kHz plus two wobbles the size
+// of the jitter bar, 6.0x apart — while its top end fell 26 dB. The net slope over
+// the teeth cannot separate the two (the enhancer falls 5.6 dB across its own run,
+// the rip 6.4), but the evenness can, and 3.5 sits between them with 1.7x of margin
+// either way.
+const ROUGHNESS_MAX_TOOTH_SPREAD = 3.5
 // With the saw-tooth established, the source's real ceiling is where the first
 // sharp fine-band drop appears — the edge the patches were grafted onto.
 const ROUGHNESS_EDGE_DROP_DB = 4
@@ -267,7 +276,9 @@ function roughnessCeiling(
   // A tooth is one climb between two drops, however many bands it spans: a dip
   // that recovers over three bands is one feature, not three teeth, and counting
   // each step put a clean master's verdict on the 1 dB bar (it flipped with the
-  // probe grid). An enhancer's teeth are each separated by a drop.
+  // probe grid). An enhancer's teeth are each separated by a drop, and they come
+  // out much the same size — a run where one tooth dwarfs the rest is a tonal
+  // spike with wander around it, not a seam between patches.
   const climbs: { fromHz: number; toHz: number; db: number }[] = []
   for (let i = 0; i < finite.length - 1; i++) {
     if (finite[i + 1].freqHz <= ROUGHNESS_START_HZ) continue
@@ -282,6 +293,8 @@ function roughnessCeiling(
   const teeth = climbs.filter((c) => c.db > ROUGHNESS_RISE_MIN_DB)
   const totalRise = teeth.reduce((sum, c) => sum + c.db, 0)
   if (totalRise < ROUGHNESS_TOTAL_DB || teeth.length < ROUGHNESS_MIN_RISES) return null
+  const sizes = teeth.map((c) => c.db)
+  if (Math.max(...sizes) / Math.min(...sizes) > ROUGHNESS_MAX_TOOTH_SPREAD) return null
   // The caption cites the span of the saw-tooth: from the foot of the first
   // tooth to the top of the last one.
   const span = { teeth: teeth.length, fromHz: teeth[0].fromHz, toHz: teeth[teeth.length - 1].toHz }
