@@ -35,6 +35,10 @@
       {
         "text": "Un tono aislado en los agudos, como un sintetizador o una voz sostenida, ya no hace que una pista salga acusada de tener los agudos regenerados. Ahora Surco pide que la subida se mantenga en una zona ancha, y no en un único punto, y que los dientes de sierra que delatan un parche sean de tamaño parecido entre sí.",
         "in": "0.99.2"
+      },
+      {
+        "text": "Una pista con un repunte justo en el último tramo de los agudos, donde casi ningún archivo llega, ya no sale acusada de tener los agudos regenerados. Ese tramo es el más inestable de todos: bastaba con que se moviera un poco entre lecturas para que el mismo archivo saliera unas veces limpio y otras acusado. Surco ya no lo cuenta.",
+        "in": "0.99.3"
       }
     ]
   },
