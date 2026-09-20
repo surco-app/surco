@@ -128,7 +128,6 @@
     "title": "Papelera de Surco",
     "summary_one": "{{count}} archivo · {{size}}",
     "summary_other": "{{count}} archivos · {{size}}",
-    "emptyHint": "Guarda los originales que una conversión sustituye durante {{days}} días, hasta {{size}}.",
     "emptyTitle": "No hay nada que restaurar",
     "emptyBody": "Cuando una conversión sustituya o renombre un original, o borres una pista en un disco sin papelera, aparecerá aquí.",
     "reason": {
@@ -144,9 +143,25 @@
     "emptyConfirm_other": "¿Eliminar {{count}} archivos para siempre?",
     "reveal": "Abrir carpeta",
     "close": "Cerrar",
-    "retention": "Se vacía sola a los {{days}} días o al pasar de {{size}}, lo más antiguo primero.",
     "restored": "Restaurado «{{name}}» en su carpeta",
-    "restoreFailed": "No se pudo restaurar «{{name}}»: {{reason}}"
+    "restoreFailed": "No se pudo restaurar «{{name}}»: {{reason}}",
+    "filters": {
+      "all": "Todo",
+      "replaced": "Sustituidos",
+      "renamed": "Renombrados",
+      "deleted": "Borrados",
+      "restored-over": "Apartados"
+    },
+    "filtersLabel": "Papelera",
+    "search": "Buscar por título o carpeta",
+    "replacedBy": "sustituido por",
+    "renamedTo": "renombrado a",
+    "usage": "{{used}} de {{size}}",
+    "selfEmpties": "Se vacía sola a los {{days}} días.",
+    "expiring_one": "queda {{count}} día",
+    "expiring_other": "quedan {{count}} días",
+    "summaryEmpty": "vacía",
+    "noMatches": "Nada coincide con la búsqueda"
   },
   "notices": {
     "duplicatesSkipped": "Ya en la lista, omitidas: {{count}}",

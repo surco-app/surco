@@ -128,7 +128,6 @@
     "title": "Corbeille de Surco",
     "summary_one": "{{count}} fichier · {{size}}",
     "summary_other": "{{count}} fichiers · {{size}}",
-    "emptyHint": "Conserve les originaux qu'une conversion remplace pendant {{days}} jours, jusqu'à {{size}}.",
     "emptyTitle": "Rien à restaurer",
     "emptyBody": "Quand une conversion remplace ou renomme un original, ou que vous supprimez une piste sur un disque sans corbeille, il apparaît ici.",
     "reason": {
@@ -144,9 +143,25 @@
     "emptyConfirm_other": "Supprimer {{count}} fichiers pour de bon ?",
     "reveal": "Ouvrir le dossier",
     "close": "Fermer",
-    "retention": "Se vide seule après {{days}} jours ou au-delà de {{size}}, le plus ancien d'abord.",
     "restored": "« {{name}} » restauré dans son dossier",
-    "restoreFailed": "Impossible de restaurer « {{name}} » : {{reason}}"
+    "restoreFailed": "Impossible de restaurer « {{name}} » : {{reason}}",
+    "filters": {
+      "all": "Tout",
+      "replaced": "Remplacés",
+      "renamed": "Renommés",
+      "deleted": "Supprimés",
+      "restored-over": "Mis de côté"
+    },
+    "filtersLabel": "Corbeille",
+    "search": "Rechercher par titre ou dossier",
+    "replacedBy": "remplacé par",
+    "renamedTo": "renommé en",
+    "usage": "{{used}} sur {{size}}",
+    "selfEmpties": "Se vide seule après {{days}} jours.",
+    "expiring_one": "{{count}} jour restant",
+    "expiring_other": "{{count}} jours restants",
+    "summaryEmpty": "vide",
+    "noMatches": "Aucun résultat pour cette recherche"
   },
   "notices": {
     "duplicatesSkipped": "Déjà dans la liste, ignorés : {{count}}",

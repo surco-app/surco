@@ -128,7 +128,6 @@
     "title": "Surco-Papierkorb",
     "summary_one": "{{count}} Datei · {{size}}",
     "summary_other": "{{count}} Dateien · {{size}}",
-    "emptyHint": "Bewahrt die Originale, die eine Konvertierung ersetzt, {{days}} Tage lang auf, bis zu {{size}}.",
     "emptyTitle": "Nichts wiederherzustellen",
     "emptyBody": "Wenn eine Konvertierung ein Original ersetzt oder umbenennt, oder du einen Titel auf einem Laufwerk ohne Papierkorb löschst, erscheint er hier.",
     "reason": {
@@ -144,9 +143,25 @@
     "emptyConfirm_other": "{{count}} Dateien endgültig löschen?",
     "reveal": "Ordner öffnen",
     "close": "Schließen",
-    "retention": "Leert sich nach {{days}} Tagen oder ab {{size}} von selbst, das Älteste zuerst.",
     "restored": "„{{name}}“ in seinem Ordner wiederhergestellt",
-    "restoreFailed": "„{{name}}“ konnte nicht wiederhergestellt werden: {{reason}}"
+    "restoreFailed": "„{{name}}“ konnte nicht wiederhergestellt werden: {{reason}}",
+    "filters": {
+      "all": "Alle",
+      "replaced": "Ersetzt",
+      "renamed": "Umbenannt",
+      "deleted": "Gelöscht",
+      "restored-over": "Beiseitegelegt"
+    },
+    "filtersLabel": "Papierkorb",
+    "search": "Nach Titel oder Ordner suchen",
+    "replacedBy": "ersetzt durch",
+    "renamedTo": "umbenannt in",
+    "usage": "{{used}} von {{size}}",
+    "selfEmpties": "Leert sich nach {{days}} Tagen von selbst.",
+    "expiring_one": "noch {{count}} Tag",
+    "expiring_other": "noch {{count}} Tage",
+    "summaryEmpty": "leer",
+    "noMatches": "Nichts passt zur Suche"
   },
   "notices": {
     "duplicatesSkipped": "Schon in der Liste, übersprungen: {{count}}",

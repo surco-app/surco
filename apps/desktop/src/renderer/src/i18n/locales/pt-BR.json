@@ -128,7 +128,6 @@
     "title": "Lixeira do Surco",
     "summary_one": "{{count}} arquivo · {{size}}",
     "summary_other": "{{count}} arquivos · {{size}}",
-    "emptyHint": "Guarda os originais que uma conversão substitui por {{days}} dias, até {{size}}.",
     "emptyTitle": "Nada para restaurar",
     "emptyBody": "Quando uma conversão substituir ou renomear um original, ou você apagar uma faixa num disco sem lixeira, ela aparece aqui.",
     "reason": {
@@ -144,9 +143,25 @@
     "emptyConfirm_other": "Apagar {{count}} arquivos para sempre?",
     "reveal": "Abrir pasta",
     "close": "Fechar",
-    "retention": "Esvazia-se sozinha após {{days}} dias ou ao passar de {{size}}, o mais antigo primeiro.",
     "restored": "“{{name}}” restaurado na sua pasta",
-    "restoreFailed": "Não foi possível restaurar “{{name}}”: {{reason}}"
+    "restoreFailed": "Não foi possível restaurar “{{name}}”: {{reason}}",
+    "filters": {
+      "all": "Tudo",
+      "replaced": "Substituídos",
+      "renamed": "Renomeados",
+      "deleted": "Apagados",
+      "restored-over": "Postos de lado"
+    },
+    "filtersLabel": "Lixeira",
+    "search": "Buscar por título ou pasta",
+    "replacedBy": "substituído por",
+    "renamedTo": "renomeado para",
+    "usage": "{{used}} de {{size}}",
+    "selfEmpties": "Esvazia-se sozinha após {{days}} dias.",
+    "expiring_one": "resta {{count}} dia",
+    "expiring_other": "restam {{count}} dias",
+    "summaryEmpty": "vazia",
+    "noMatches": "Nada corresponde à busca"
   },
   "notices": {
     "duplicatesSkipped": "Já estavam na lista, ignoradas: {{count}}",
