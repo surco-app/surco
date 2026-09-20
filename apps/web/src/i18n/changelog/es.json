@@ -31,6 +31,10 @@
       {
         "text": "Una pista con un pequeño vaivén en la zona media de sus agudos ya no sale acusada de tener los agudos regenerados. Antes bastaba con que el nivel subiera y bajara dentro del tramo normal para que Surco lo leyera como un parche artificial.",
         "in": "0.99.1"
+      },
+      {
+        "text": "Un tono aislado en los agudos, como un sintetizador o una voz sostenida, ya no hace que una pista salga acusada de tener los agudos regenerados. Ahora Surco pide que la subida se mantenga en una zona ancha, y no en un único punto, y que los dientes de sierra que delatan un parche sean de tamaño parecido entre sí.",
+        "in": "0.99.2"
       }
     ]
   },

@@ -31,6 +31,10 @@
       {
         "text": "A track whose highs dip and rise a little in the middle no longer gets flagged for regenerated highs. Until now, a wobble well inside the normal range was enough for Surco to read it as an artificial patch.",
         "in": "0.99.1"
+      },
+      {
+        "text": "A single tone up in the highs, a synth or a held vocal, no longer gets a track flagged for regenerated highs. Surco now asks that the rise hold across a wide band rather than one spot, and that the saw-tooth pattern that gives away a patch have teeth of a similar size.",
+        "in": "0.99.2"
       }
     ]
   },
