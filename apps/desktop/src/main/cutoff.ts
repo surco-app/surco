@@ -187,14 +187,19 @@ export function plateauDb(bands: Band[]): number {
 // conditions, so a notch recovering to the falling trend stays clean. The search
 // starts at the last reference band: a dip and recovery among the bands the
 // plateau is averaged from is the plateau's own shape, and reading one as a
-// valley put a clean master on the 5 dB bar, where the probe grid decided it.
+// valley put a clean master on the 5 dB bar, where the probe grid decided it. The
+// rise must hold over two consecutive bands: regenerated highs are a band of content
+// several bands wide, while a peak one band wide is a tone, and one tone at 13 kHz
+// put another clean master on the same bar.
 function findHumpValley(bands: Band[], plateau: number): { valley: Band; peak: Band } | null {
   const from = Math.min(REFERENCE_BANDS, bands.length) - 1
   let valley = bands[from]
-  for (const b of bands.slice(from)) {
+  for (let i = from; i < bands.length - 1; i++) {
+    const b = bands[i]
     if (b.rmsDb < valley.rmsDb) valley = b
     const rise = b.rmsDb - valley.rmsDb
-    if (rise >= HUMP_RISE_DB && b.rmsDb >= plateau - HUMP_PLATEAU_MARGIN_DB) {
+    const held = bands[i + 1].rmsDb - valley.rmsDb >= HUMP_RISE_DB
+    if (rise >= HUMP_RISE_DB && held && b.rmsDb >= plateau - HUMP_PLATEAU_MARGIN_DB) {
       // The caption cites where the hump actually crests, not the band that
       // happened to trip the rise rule, so scan past the valley for the loudest.
       let peak = b

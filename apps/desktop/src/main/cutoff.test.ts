@@ -213,6 +213,30 @@ describe('detectCutoff', () => {
     })
   })
 
+  it('does not read a single-band tone as a hump of regenerated highs', () => {
+    // A lossless master measured off the real file: one tone lifts the 13 kHz band
+    // 6 dB over 12 kHz and back to the plateau, and 14 kHz already sits under the
+    // 12 kHz valley. Regenerated highs are a band of content, several bands wide
+    // (the synthetic fixture climbs through 18, 19 and 20 kHz); a peak one band
+    // wide is a tone. With that tone deciding it, the verdict sat on the 5 dB bar
+    // and flipped with the probe grid: clean as a FLAC, Reprocessed once converted
+    // to a trimmed MP3, and clean or Reprocessed on the FLAC itself depending on
+    // where the probes fell.
+    const coarse = fftBand([
+      -55.08, -54.76, -56.39, -58.69, -52.5, -61.87, -65.6, -68.28, -71.19, -72.79, -75.45,
+      -76.47, -81.89,
+    ])
+    const tone = fine([
+      -51.07, -59.36, -61.66, -64.43, -65.69, -66.98, -68.33, -69.55, -71.19, -73.3, -72.94,
+      -72.98, -75.7, -76.49, -76.28, -77.73, -82.36,
+    ])
+    expect(detectCutoff(coarse, NYQUIST, tone)).toEqual({
+      cutoffHz: 20000,
+      processed: false,
+      hasKnee: false,
+    })
+  })
+
   it('finds the encoder lowpass on a 48 kHz file, not the taper below it', () => {
     expect(detectCutoff(VBR_48K, 24000)).toEqual({
       cutoffHz: 18000,
