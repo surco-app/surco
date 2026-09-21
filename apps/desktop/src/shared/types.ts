@@ -167,6 +167,10 @@ export interface Settings {
   // Only the overwrite destination reaches it: every other destination writes a new
   // file and leaves the source alone. See backupPolicy.ts for what the levels mean.
   backupPolicy: BackupPolicy
+  // How long an original is kept before the sweep drops it, and how much room the whole
+  // store may take. Sanitized on save (see backupPolicy.ts): they come from text fields.
+  backupRetentionDays: number
+  backupMaxGb: number
   // When true, a successful conversion is also registered in the Engine DJ library
   // database at engineLibraryDir. Engine references the file where it lives (it never
   // imports a copy), so the output-folder copy is always kept in this mode.
