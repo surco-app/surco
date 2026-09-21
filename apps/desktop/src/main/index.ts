@@ -1092,9 +1092,6 @@ function registerIpc(): void {
               clearExtras,
               foreignRemoved,
               replacesPath,
-              // Resolved here like the quality knobs and the Finder header: the write
-              // path is told what to keep, it does not read Settings itself.
-              { backupPolicy: s.backupPolicy },
             ),
           {
             labelParams: { track },
