@@ -30,6 +30,15 @@ const TRANSIENT_CODES = [
   'ERR_TIMED_OUT',
 ]
 
+// The release exists before all its assets do: the workflow creates it up front so
+// the four matrix jobs have one release to upload to, and the merged latest-mac.yml
+// only lands once the slowest arch finishes signing and notarizing. A machine with
+// betaUpdates on (allowPrerelease) sees the prerelease during that window and gets a
+// 404 for the feed. electron-updater rewraps that 404 with this code and WITHOUT the
+// statusCode, so it has to be matched by code — and it is transient by construction:
+// the file appears minutes later on its own.
+const CHANNEL_FILE_MISSING = 'ERR_UPDATER_CHANNEL_FILE_NOT_FOUND'
+
 // Sorts an updater failure into the retry loop (transient/offline) or the
 // tell-the-user-now path (fatal). electron-updater's HttpError exposes the response
 // as `statusCode`; Node and Chromium network failures only leave a code, either in
@@ -42,6 +51,7 @@ export function classifyUpdateError(err: unknown): UpdateErrorInfo {
   }
   const code = (err as { code?: unknown } | null)?.code
   const text = `${typeof code === 'string' ? code : ''} ${err instanceof Error ? err.message : String(err)}`
+  if (text.includes(CHANNEL_FILE_MISSING)) return { kind: 'transient', status: null }
   if (OFFLINE_CODES.some((c) => text.includes(c))) return { kind: 'offline', status: null }
   if (TRANSIENT_CODES.some((c) => text.includes(c))) return { kind: 'transient', status: null }
   return { kind: 'fatal', status: null }

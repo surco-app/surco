@@ -40,6 +40,20 @@ describe('classifyUpdateError', () => {
     expect(classifyUpdateError(new Error('net::ERR_CONNECTION_TIMED_OUT')).kind).toBe('transient')
   })
 
+  // The release is published before its assets finish uploading: `prepare` creates it
+  // and the mac feed only lands when the slowest arch (Intel, ~10 min of signing and
+  // notarization) is merged in. A machine with betaUpdates on sees that prerelease in
+  // between and gets a 404 for latest-mac.yml — electron-updater rewraps it, dropping
+  // the statusCode and leaving only this code, so it used to fall through to fatal and
+  // toast a red error at the user. It fixes itself minutes later: retry, don't shout.
+  it('classifies a not-yet-uploaded channel file as transient', () => {
+    const err = Object.assign(
+      new Error('Cannot find latest-mac.yml in the latest release artifacts (https://…): HttpError: 404'),
+      { code: 'ERR_UPDATER_CHANNEL_FILE_NOT_FOUND' },
+    )
+    expect(classifyUpdateError(err)).toEqual({ kind: 'transient', status: null })
+  })
+
   // Anything unrecognized (signature mismatch, corrupt download…) must surface
   // immediately rather than being retried forever in silence.
   it('classifies unknown errors as fatal', () => {
