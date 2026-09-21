@@ -39,6 +39,14 @@
       {
         "text": "Una pista con un repunte justo en el último tramo de los agudos, donde casi ningún archivo llega, ya no sale acusada de tener los agudos regenerados. Ese tramo es el más inestable de todos: bastaba con que se moviera un poco entre lecturas para que el mismo archivo saliera unas veces limpio y otras acusado. Surco ya no lo cuenta.",
         "in": "0.99.3"
+      },
+      {
+        "text": "La papelera de Surco ahora se filtra por lo que pasó con cada archivo (sustituido, renombrado, borrado), se busca por título o carpeta, y cada original dice cuántos días le quedan antes de vaciarse solo.",
+        "in": "0.99.4"
+      },
+      {
+        "text": "Convertir una pista con BPM decimal, como los 150.55 que escriben Traktor o Mixed In Key, a AIFF o WAV fallaba con un error de rango y no salía ningún archivo. Ahora sale, y con el BPM tal cual.",
+        "in": "0.99.4"
       }
     ]
   },
