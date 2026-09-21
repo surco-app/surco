@@ -1400,6 +1400,12 @@ function decodedDurationSec(stdout: string): number | null {
   return last ? Number(last[1]) / 1_000_000 : null
 }
 
+// ffmpeg says so itself when a container carries no reliable length (a VBR MP3 with
+// no Xing header): it extrapolates one from the opening frames' bitrate and warns that
+// the result may be inaccurate. Measured over the 837 MP3s on a user's machine, 432
+// declare such a duration.
+const ESTIMATED_DURATION = /Estimating duration from bitrate/
+
 function assertNotTruncated(file: string, stderr: string, stdout: string): void {
   const header = headerDurationSec(stderr)
   const decoded = decodedDurationSec(stdout)
@@ -1407,6 +1413,12 @@ function assertNotTruncated(file: string, stderr: string, stdout: string): void 
   // unparseable banner must never turn a good conversion into a failed one. The
   // decode already passed -xerror, which is the guarantee this function had before.
   if (header === null || decoded === null) return
+  // A banner can also be parseable and wrong. When ffmpeg flags the duration as
+  // estimated, the shortfall measures that estimate's error, not the audio: a user's
+  // VBR MP3 (21/09/2026) declared 528.91 s against 471.38 s of cleanly decoded audio
+  // and every conversion of it was discarded as "shorter than the original". There is
+  // nothing to compare against here, so the -xerror pass stands as the verdict.
+  if (ESTIMATED_DURATION.test(stderr)) return
   if (header < MIN_VERIFIABLE_SEC) return
   if (decoded >= header * (1 - MAX_DECODE_SHORTFALL)) return
   throw errorWithKey(
