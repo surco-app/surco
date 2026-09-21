@@ -67,6 +67,15 @@ export async function expandPaths(paths: string[], onBatch?: OnBatch): Promise<s
       if (info.isDirectory()) return collectAudio(p, onBatch)
       const name = basename(p)
       if (isHidden(name) || isConversionTemp(name)) return []
+      // A 0-byte file has no header, no frames and no tags: every probe fails and the
+      // row would sit in the list with no title, no duration and nothing saying why
+      // (a user sent one among two MP3s that "keep failing", 21/09/2026). The stat is
+      // already in hand here, so dropping it costs nothing. Files found inside a folder
+      // are NOT checked: readdir carries no size, so the same filter there would cost a
+      // network stat per file — measured on an SMB share at ~340 ms per 100 files even
+      // warm, the very round-trip cost collectAudio's streaming exists to avoid. Those
+      // surface through the metadata read instead.
+      if (info.size === 0) return []
       // Announced like any walked file: a plain-file drop must reach the consumer
       // through the same channel, or a streaming caller would never see it.
       onBatch?.([p])
