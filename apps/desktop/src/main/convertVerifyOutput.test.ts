@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { chmodSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { platform, tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -31,6 +31,7 @@ const lyrics3Tail = join(dir, 'lyrics3.mp3')
 const shortLyrics3 = join(dir, 'short-lyrics3.mp3')
 const cutLyrics3 = join(dir, 'cut-lyrics3.mp3')
 const longCut = join(dir, 'long-cut.mp3')
+const estimatedDuration = join(dir, 'estimated-duration.mp3')
 
 const meta: TrackMetadata = {
   title: 'T',
@@ -48,6 +49,25 @@ const meta: TrackMetadata = {
   publisher: '',
   catalogNumber: '',
   remixArtist: '',
+}
+
+// Strips the Xing/Info frame LAME writes at the head of a VBR file. That frame is
+// what tells a decoder the real length; without it ffmpeg falls back to extrapolating
+// from the bitrate it sees, which is the whole point of the fixture below. The frame
+// is the first MPEG frame after any ID3v2 tag, and its length comes from its own
+// header (the bitrate/sample-rate table in the MPEG spec).
+const MPEG1_BITRATES_KBPS = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320]
+const MPEG1_SAMPLE_RATES = [44100, 48000, 32000]
+
+function withoutXingHeader(bytes: Buffer): Buffer {
+  let at = 0
+  if (bytes.subarray(0, 3).toString('latin1') === 'ID3')
+    at = 10 + ((bytes[6] << 21) | (bytes[7] << 14) | (bytes[8] << 7) | bytes[9])
+  const bitrate = MPEG1_BITRATES_KBPS[bytes[at + 2] >> 4] * 1000
+  const sampleRate = MPEG1_SAMPLE_RATES[(bytes[at + 2] >> 2) & 3]
+  const padding = (bytes[at + 2] >> 1) & 1
+  const length = Math.floor((144 * bitrate) / sampleRate) + padding
+  return Buffer.concat([bytes.subarray(0, at), bytes.subarray(at + length)])
 }
 
 beforeAll(() => {
@@ -145,6 +165,40 @@ beforeAll(() => {
   ])
   const longBytes = readFileSync(long)
   writeFileSync(longCut, longBytes.subarray(0, Math.floor(longBytes.length / 4)))
+  // A VBR MP3 with no Xing header: ffmpeg cannot know its real length, so it
+  // extrapolates one from the opening frames' bitrate and prints "Estimating duration
+  // from bitrate, this may be inaccurate". The opening is a dense 60 Hz tone and the
+  // rest is quiet noise, so that extrapolation reads far longer than the audio really
+  // is — while every frame decodes cleanly. A user's file (21/09/2026) had this shape
+  // and declared 528.91 s against 471.38 s of audio: 10.88% short, just past the 10%
+  // the truncation check tolerates, so a faithful conversion was thrown away as
+  // "shorter than the original". 432 of the 837 MP3s on that machine declare an
+  // estimated duration, so this is the common case, not an exotic one.
+  const vbr = join(dir, 'vbr.mp3')
+  execFileSync(FF, [
+    '-v',
+    'error',
+    '-y',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=60:duration=4,volume=0.9',
+    '-f',
+    'lavfi',
+    '-i',
+    'anoisesrc=duration=20:amplitude=0.02',
+    '-filter_complex',
+    '[0:a][1:a]concat=n=2:v=0:a=1[a]',
+    '-map',
+    '[a]',
+    '-c:a',
+    'libmp3lame',
+    '-q:a',
+    '0',
+    vbr,
+  ])
+  writeFileSync(estimatedDuration, withoutXingHeader(readFileSync(vbr)))
+
   writeFileSync(
     fakeFfmpeg,
     [
@@ -171,6 +225,37 @@ describe('assertDecodable', () => {
 
   it('accepts a file ffmpeg decodes cleanly', async () => {
     await expect(assertDecodable(src)).resolves.toBeUndefined()
+  })
+
+  // A declared length ffmpeg itself flagged as estimated is not evidence of anything:
+  // comparing the decode against it turned faithful conversions of ordinary VBR MP3s
+  // into "the converted file came out shorter than the original" and threw them away.
+  // Every frame here decodes — -xerror, the real guarantee, passes — so the file must
+  // be accepted. The fixture only means something if ffmpeg really does estimate its
+  // length and really does overshoot, which the guards assert before the claim.
+  it('accepts a file whose declared length ffmpeg only estimated', async () => {
+    const banner = spawnSync(FF, ['-hide_banner', '-i', estimatedDuration, '-f', 'null', '-'], {
+      encoding: 'utf8',
+    }).stderr
+    expect(banner, 'the fixture no longer has an estimated duration').toMatch(
+      /Estimating duration from bitrate/,
+    )
+    const declared = /Duration:\s*(\d+):(\d\d):(\d\d(?:\.\d+)?)/.exec(banner)
+    expect(declared, 'no declared duration in the banner').not.toBeNull()
+    const header =
+      Number(declared?.[1]) * 3600 + Number(declared?.[2]) * 60 + Number(declared?.[3])
+    const delivered = Number(
+      /time=(\d+):(\d\d):(\d\d(?:\.\d+)?)/
+        .exec(banner)
+        ?.slice(1)
+        .reduce((acc, part, i) => acc + Number(part) * [3600, 60, 1][i], 0) ?? 0,
+    )
+    expect(
+      delivered,
+      'the fixture no longer overshoots the 10% the check tolerates',
+    ).toBeLessThan(header * 0.9)
+
+    await expect(assertDecodable(estimatedDuration)).resolves.toBeUndefined()
   })
 
   // The detail appended to the key is the only description of WHY a conversion was
