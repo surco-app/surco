@@ -17,6 +17,8 @@ export interface SyncedDraft {
   overwriteOriginal: boolean
   convertBesideOriginal: boolean
   backupPolicy: BackupPolicy
+  backupRetentionDays: number
+  backupMaxGb: number
   addToEngineDj: boolean
   syncTraktor: boolean
   syncRekordbox: boolean
@@ -98,6 +100,8 @@ export function pickSynced(s: Settings): SyncedDraft {
     overwriteOriginal: s.overwriteOriginal,
     convertBesideOriginal: s.convertBesideOriginal,
     backupPolicy: s.backupPolicy,
+    backupRetentionDays: s.backupRetentionDays,
+    backupMaxGb: s.backupMaxGb,
     addToEngineDj: s.addToEngineDj,
     syncTraktor: s.syncTraktor,
     syncRekordbox: s.syncRekordbox,

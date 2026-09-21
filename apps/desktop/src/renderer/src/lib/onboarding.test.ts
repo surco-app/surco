@@ -34,6 +34,8 @@ const settings: Settings = {
   overwriteOriginal: false,
   convertBesideOriginal: false,
   backupPolicy: 'always',
+  backupRetentionDays: 30,
+  backupMaxGb: 10,
   addToEngineDj: false,
   engineLibraryDir: '/music/Engine Library',
   traktorNmlPath: '',

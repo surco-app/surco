@@ -2,6 +2,7 @@ import { existsSync, readFileSync, renameSync, rmSync, statSync, writeFileSync }
 import { join } from 'node:path'
 import { app } from 'electron'
 import { autoMatchAvailable } from '../shared/autoMatch'
+import { sanitizeMaxGb, sanitizeRetentionDays } from '../shared/backupPolicy'
 import { DEFAULT_DECLICK, normalizeDeclick } from '../shared/declick'
 import {
   DEFAULT_DISCOGS_MAX_RESULTS,
@@ -12,6 +13,7 @@ import {
 } from '../shared/defaults'
 import { DEFAULT_EDITOR_SECTIONS } from '../shared/editorSections'
 import { FORMAT_SETTINGS } from '../shared/outputFormats'
+import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../shared/trash'
 import type { FormatSetting, NormalizeConfig, Settings } from '../shared/types'
 import { migratedSyncToggles } from './syncToggleMigration'
 
@@ -44,6 +46,9 @@ export const defaults: Settings = {
   // in one week (17/09/2026) cost users the file instead of a redo, and a default that
   // quietly drops the net would bring that back.
   backupPolicy: 'always',
+  // The values the app shipped with as constants, now the starting point of a setting.
+  backupRetentionDays: TRASH_RETENTION_DAYS,
+  backupMaxGb: TRASH_MAX_BYTES / 1024 ** 3,
   addToEngineDj: false,
   // Engine DJ's default library location on both macOS and Windows.
   engineLibraryDir: join(app.getPath('music'), 'Engine Library'),
@@ -248,6 +253,13 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
     // bare mode string, which normalizeDeclick upgrades (and repairs) instead.
     declick: normalizeDeclick(patch.declick ?? base.declick),
     outputFormat: normalizeOutputFormat(patch.outputFormat ?? base.outputFormat),
+    // Sanitized here rather than at the field: this is the one place every settings file
+    // passes through, including an old one written before these existed and one arriving
+    // from a synced folder another machine wrote.
+    backupRetentionDays: sanitizeRetentionDays(
+      patch.backupRetentionDays ?? base.backupRetentionDays,
+    ),
+    backupMaxGb: sanitizeMaxGb(patch.backupMaxGb ?? base.backupMaxGb),
   }
 }
 

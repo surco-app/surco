@@ -166,7 +166,10 @@ const tmpManifest = createTmpManifest(join(app.getPath('userData'), 'pending-tmp
 // Surco's own trash: every original a conversion replaces or renames away, and every
 // delete on a volume with no OS Trash, kept for a while (see surcoTrash.ts). Local disk
 // on purpose, like the manifest above: the one place a bad write can be undone from.
-const surcoTrash = createSurcoTrash(join(app.getPath('userData'), 'trash'))
+const surcoTrash = createSurcoTrash(join(app.getPath('userData'), 'trash'), () => {
+  const s = getSettings()
+  return { retentionDays: s.backupRetentionDays, maxBytes: s.backupMaxGb * 1024 ** 3 }
+})
 configureOriginalKeeper((path, reason, outputPath) => surcoTrash.stash(path, reason, outputPath))
 app.on('open-file', (event, path) => {
   event.preventDefault()
@@ -1092,9 +1095,6 @@ function registerIpc(): void {
               clearExtras,
               foreignRemoved,
               replacesPath,
-              // Resolved here like the quality knobs and the Finder header: the write
-              // path is told what to keep, it does not read Settings itself.
-              { backupPolicy: s.backupPolicy },
             ),
           {
             labelParams: { track },

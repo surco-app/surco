@@ -11,7 +11,7 @@ vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 import type { BackupPolicy } from '../shared/backupPolicy'
 import type { NormalizeConfig, TrackMetadata } from '../shared/types'
 import { convertAudio } from './ffmpeg'
-import { configureOriginalKeeper } from './originalKeeper'
+import { configureOriginalKeeper, policyKeeper } from './originalKeeper'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-backup-'))
@@ -52,40 +52,25 @@ function sourceAiff(): string {
   return path
 }
 
-// Rewrites the file onto itself — the overwrite destination — and reports which paths
-// the write path handed to the trash, with a keeper standing in for the real one the
-// way index.ts wires it at launch. Only the two arguments this behaviour turns on are
-// named; everything else convertAudio takes stays at its default.
+// Rewrites the file onto itself — the overwrite destination — through the real keeper
+// the app installs, so this exercises the whole chain: convertAudio reports what the
+// encode did, and the policy decides. Returns which paths reached the store.
 async function rewriteInPlace(opts: {
-  backupPolicy?: BackupPolicy
+  backupPolicy: BackupPolicy
   normalize?: NormalizeConfig
 }): Promise<string[]> {
   const src = sourceAiff()
   const kept: string[] = []
-  configureOriginalKeeper(async (path) => {
-    kept.push(path)
-    return null
-  })
-  await convertAudio(
-    src,
-    src,
-    'aiff',
-    meta,
-    undefined,
-    opts.normalize,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    { backupPolicy: opts.backupPolicy },
+  configureOriginalKeeper(
+    policyKeeper(
+      () => opts.backupPolicy,
+      async (path) => {
+        kept.push(path)
+        return null
+      },
+    ),
   )
+  await convertAudio(src, src, 'aiff', meta, undefined, opts.normalize)
   // The path is generated per case, so assert on it rather than on a bare count.
   return kept.map((p) => (p === src ? 'the original' : p))
 }
@@ -103,7 +88,9 @@ describe('backup policy on an in-place rewrite', () => {
   })
 
   // Normalizing re-renders the samples, so the original cannot be reconstructed from the
-  // result: this is the case the backup exists for, and the middle level keeps it.
+  // result: this is the case the backup exists for, and the middle level keeps it. It is
+  // also what proves convertAudio reports the encode honestly — the policy alone cannot
+  // tell a stream copy from a re-encode.
   it('keeps the original when the audio is re-encoded and the policy is audioChanges', async () => {
     expect(await rewriteInPlace({ backupPolicy: 'audioChanges', normalize: PEAK })).toEqual([
       'the original',
@@ -114,13 +101,6 @@ describe('backup policy on an in-place rewrite', () => {
   // stays undoable, tags-only ones included.
   it('keeps the original for a tags-only rewrite when the policy is always', async () => {
     expect(await rewriteInPlace({ backupPolicy: 'always' })).toEqual(['the original'])
-  })
-
-  // An absent policy is the pre-setting behaviour, so an old settings file, or any caller
-  // not yet taught the argument, keeps protecting the user rather than silently dropping
-  // the net.
-  it('keeps the original when no policy is passed at all', async () => {
-    expect(await rewriteInPlace({})).toEqual(['the original'])
   })
 
   // 'never' is the only level that removes the net, and it has to do it even where the

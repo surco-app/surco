@@ -161,3 +161,34 @@ describe('the manifest', () => {
     expect(statSync(join(root, 'trash')).isDirectory()).toBe(true)
   })
 })
+
+// Days and size used to be constants compiled into the app, so the sweep read them once
+// when the trash was built. Now they are the user's, and Settings is saved while the app
+// runs: a limit captured at launch would leave a tightened cap doing nothing until the
+// next restart — the setting would look broken rather than delayed.
+describe('limits the user can change while the app runs', () => {
+  it('sweeps against the limits in force at that moment, not the ones it was built with', async () => {
+    let limits = { retentionDays: 30, maxBytes: 1000 }
+    const live = createSurcoTrash(join(root, 'live'), () => limits)
+    await live.stash(song('a.aiff', 400), 'replaced')
+    await live.stash(song('b.aiff', 400), 'replaced')
+    expect((await live.sweep()).length).toBe(0)
+
+    // The user drops the cap below what is already stored: the next sweep has to act on
+    // the new value, dropping the oldest until the rest fits.
+    limits = { retentionDays: 30, maxBytes: 500 }
+    expect((await live.sweep()).length).toBe(1)
+    expect((await live.list()).length).toBe(1)
+  })
+
+  it('applies a shortened retention to entries stashed under the old one', async () => {
+    let limits = { retentionDays: 30, maxBytes: 100000 }
+    const live = createSurcoTrash(join(root, 'live2'), () => limits)
+    const old = Date.now() - 10 * DAY
+    await live.stash(song('c.aiff'), 'replaced', undefined, old)
+    expect((await live.sweep()).length).toBe(0)
+
+    limits = { retentionDays: 7, maxBytes: 100000 }
+    expect((await live.sweep()).length).toBe(1)
+  })
+})

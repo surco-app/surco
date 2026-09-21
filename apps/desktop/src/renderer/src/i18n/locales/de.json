@@ -1024,8 +1024,7 @@
     "rekordboxDbPath": "rekordbox-Sammlung",
     "rekordboxDbPathHint": "Die rekordbox-Sammlung, in die geschrieben wird. Sie wird automatisch gefunden; ändere sie nur, wenn deine woanders liegt.",
     "traktorNmlPathEmpty": "Noch nicht gewählt",
-    "originalBackup": "Sicherung des Originals",
-    "originalBackupHint": "Bevor Surco eine Datei überschreibt, bewahrt es die vorherige auf, damit sich das rückgängig machen lässt.",
+    "originalBackup": "Was aufbewahrt wird",
     "originalBackupPolicies": {
       "always": "Immer",
       "audioChanges": "Nur wenn sich das Audio ändert",
@@ -1033,8 +1032,15 @@
     },
     "originalBackupAlwaysHint": "Auch das reine Bearbeiten der Tags bewahrt eine vollständige Kopie auf.",
     "originalBackupAudioChangesHint": "Konvertieren oder Normalisieren bewahrt eine Kopie auf, das reine Bearbeiten der Tags nicht.",
-    "originalBackupNeverHint": "Schlägt eine Konvertierung fehl, ist die Originaldatei verloren. Sie lässt sich nicht zurückholen.",
-    "originalBackupNeverLine": "Es wird keine Kopie aufbewahrt, weder beim Konvertieren noch beim Normalisieren."
+    "originalBackupNeverHint": "Schlägt eine Konvertierung fehl, ist die Originaldatei verloren. Auch das Löschen eines Titels auf einem Laufwerk ohne Papierkorb ist dann endgültig.",
+    "originalBackupNeverLine": "Es wird keine Kopie aufbewahrt, weder beim Konvertieren noch beim Normalisieren.",
+    "originals": "Originale",
+    "originalsHint": "Wenn Surco eine Datei von dir überschreibt, umbenennt oder löscht, bewahrt es die vorherige hier auf, damit du es rückgängig machen kannst.",
+    "originalBackupDays": "Für",
+    "originalBackupDaysUnit": "Tage",
+    "originalBackupSize": "Bis zu",
+    "originalBackupLimitsHint": "Wird eines von beiden überschritten, werden die ältesten gelöscht.",
+    "originalBackupLimitsKept": "Die Grenzen gelten weiterhin für das bereits Aufbewahrte."
   },
   "errorBoundary": {
     "title": "Etwas konnte nicht dargestellt werden",
