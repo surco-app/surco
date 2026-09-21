@@ -40,6 +40,10 @@ export const defaults: Settings = {
   // opts into overwriting it.
   overwriteOriginal: false,
   convertBesideOriginal: false,
+  // Every in-place rewrite stays undoable unless the user says otherwise: four defects
+  // in one week (17/09/2026) cost users the file instead of a redo, and a default that
+  // quietly drops the net would bring that back.
+  backupPolicy: 'always',
   addToEngineDj: false,
   // Engine DJ's default library location on both macOS and Windows.
   engineLibraryDir: join(app.getPath('music'), 'Engine Library'),

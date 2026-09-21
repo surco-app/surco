@@ -1,4 +1,5 @@
 import { autoMatchAvailable } from '../../../shared/autoMatch'
+import type { BackupPolicy } from '../../../shared/backupPolicy'
 import { normalizeImportFields } from '../../../shared/defaults'
 import { normalizeEditorSections } from '../../../shared/editorSections'
 import type { Settings } from '../../../shared/types'
@@ -15,6 +16,7 @@ export interface SyncedDraft {
   keepOutputCopy: boolean
   overwriteOriginal: boolean
   convertBesideOriginal: boolean
+  backupPolicy: BackupPolicy
   addToEngineDj: boolean
   syncTraktor: boolean
   syncRekordbox: boolean
@@ -95,6 +97,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     keepOutputCopy: s.keepOutputCopy,
     overwriteOriginal: s.overwriteOriginal,
     convertBesideOriginal: s.convertBesideOriginal,
+    backupPolicy: s.backupPolicy,
     addToEngineDj: s.addToEngineDj,
     syncTraktor: s.syncTraktor,
     syncRekordbox: s.syncRekordbox,

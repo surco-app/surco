@@ -23,6 +23,7 @@ const synced: SyncedDraft = {
   keepOutputCopy: true,
   overwriteOriginal: false,
   convertBesideOriginal: false,
+  backupPolicy: 'always',
   addToEngineDj: false,
   syncTraktor: false,
   syncRekordbox: false,
@@ -629,5 +630,64 @@ describe('DestinationTab Traktor collection', () => {
     expect(hint.textContent).toMatch(/automatically|already corrects|no adjustment/i)
     expect(hint.textContent).toMatch(/listen|hear/i)
     expect(hint.textContent).toMatch(/loops/i)
+  })
+})
+
+describe('DestinationTab original backup', () => {
+  // The control only means anything where Surco rewrites the user's own file: every
+  // other destination writes a new file and never touches the source, so offering the
+  // choice there would describe a risk that does not exist. The picker keeps every
+  // detail mounted so it can animate the reveal, so "not offered" means inert and
+  // collapsed — out of the tab order and the accessibility tree — not absent.
+  it('offers the backup choice only under the overwrite destination', () => {
+    renderTab({ overwriteOriginal: true })
+    expect(screen.getByTestId('settings-backup').closest('[inert]')).toBeNull()
+    cleanup()
+    renderTab({ overwriteOriginal: false, convertBesideOriginal: true })
+    expect(screen.getByTestId('settings-backup').closest('[inert]')).not.toBeNull()
+  })
+
+  it('stages the chosen level', () => {
+    const patch = renderTab({ overwriteOriginal: true })
+    fireEvent.click(screen.getByTestId('settings-backup-audioChanges'))
+    expect(patch).toHaveBeenCalledWith('backupPolicy', 'audioChanges')
+  })
+
+  // Turning the net off is the one choice here that can cost a file, so it has to say
+  // so at the moment it is chosen rather than leaving the user to infer it from the
+  // word "never".
+  it('warns about losing the file only while the backup is off', () => {
+    renderTab({ overwriteOriginal: true, backupPolicy: 'never' })
+    expect(screen.getByTestId('settings-backup-warning')).toBeInTheDocument()
+    cleanup()
+    renderTab({ overwriteOriginal: true, backupPolicy: 'audioChanges' })
+    expect(screen.queryByTestId('settings-backup-warning')).not.toBeInTheDocument()
+  })
+
+
+  // The amber box carries the warning, so the grey line under the control must not
+  // repeat it word for word: the first build said "if a conversion fails the original is
+  // lost" twice, stacked, which reads as a rendering bug rather than emphasis.
+  it('does not say the same sentence twice under never', () => {
+    renderTab({ overwriteOriginal: true, backupPolicy: 'never' })
+    const hint = screen.getByTestId('settings-backup-hint').textContent ?? ''
+    const warning = screen.getByTestId('settings-backup-warning').textContent ?? ''
+    expect(hint).toBe(i18n.t('settings.originalBackupNeverLine'))
+    expect(warning).toContain(i18n.t('settings.originalBackupNeverHint'))
+    expect(hint).not.toBe(warning)
+  })
+
+  // The cost of each level is what the user is actually choosing between, so the hint
+  // tracks the selection instead of stating one policy's consequence for all three.
+  it('explains the level in force', () => {
+    renderTab({ overwriteOriginal: true, backupPolicy: 'always' })
+    expect(screen.getByTestId('settings-backup-hint')).toHaveTextContent(
+      i18n.t('settings.originalBackupAlwaysHint'),
+    )
+    cleanup()
+    renderTab({ overwriteOriginal: true, backupPolicy: 'audioChanges' })
+    expect(screen.getByTestId('settings-backup-hint')).toHaveTextContent(
+      i18n.t('settings.originalBackupAudioChangesHint'),
+    )
   })
 })

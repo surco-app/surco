@@ -90,6 +90,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     keepOutputCopy: true,
     overwriteOriginal: false,
     convertBesideOriginal: false,
+    backupPolicy: 'always',
     addToEngineDj: false,
     engineLibraryDir: '/music/Engine Library',
     traktorNmlPath: '',
