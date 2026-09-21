@@ -411,7 +411,7 @@ export function useTrackLibrary({
     const saved = restoredEdits.current.get(path)
     restoredEdits.current.delete(path)
     try {
-      const { tags, duration, cover, foreignTags } = await window.api.readMeta(path)
+      const { tags, duration, cover, foreignTags, failed } = await window.api.readMeta(path)
       const s = searchFromTags(parseFileName(path), tags)
       // Whatever Music knows that this file does not. Consumed once, like the restored
       // edit above: a later start-over must rebuild from the file alone.
@@ -467,13 +467,15 @@ export function useTrackLibrary({
       enqueueMetaPatch(base.id, (t) => ({
         ...t,
         ...patch,
-        // A read that succeeded clears the mark a failed one left (rereadTrackMeta); a row
-        // never marked stays exactly as it was.
-        ...(t.metaReadFailed ? { metaReadFailed: false } : {}),
+        // A read that succeeded clears the mark a failed one left; a degraded read sets
+        // it, so the row says so instead of looking like a file with no tags.
+        ...(failed ? { metaReadFailed: true } : t.metaReadFailed ? { metaReadFailed: false } : {}),
         meta: mergeReadMeta(base.meta, t.meta, finalMeta),
       }))
       onMetaLoaded({ ...base, ...patch, meta: finalMeta })
-      return true
+      // Reported like a thrown failure so the batch's aggregate notice counts it: the
+      // read degraded, whether or not it raised on the way.
+      return !failed
     } catch {
       // The row survives on its file-name parse, but flagged: without the mark, an
       // unreadable file is indistinguishable from a file that simply carries no tags.

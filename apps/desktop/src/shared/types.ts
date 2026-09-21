@@ -524,6 +524,11 @@ export interface MetaRead {
   duration: number | null
   cover: CoverRead | null
   foreignTags: ForeignTag[]
+  // The probe failed and these fields are a fallback, not the file's contents. readMeta
+  // degrades rather than rejecting (a transient failure must not cost the row), which
+  // left a degraded read indistinguishable from a file that simply carries no tags —
+  // so an unreadable one sat in the list saying nothing. Absent on a successful read.
+  failed?: true
 }
 
 export interface ProcessJob {

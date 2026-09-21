@@ -535,7 +535,17 @@ export async function readMeta(input: string): Promise<MetaRead> {
   // is part of the cache key, so without this bump every library already probed would keep
   // serving the timestamp that was cached before the fix.
   const result = await cachedAnalysis('readmeta-v2', input, () => readMetaUncached(input))
-  return result ?? { tags: {} as TrackMetadata, duration: null, cover: null, foreignTags: [] }
+  // Flagged, not just empty: the caller cannot otherwise tell this fallback from a file
+  // that carries no tags, and the row would show a bare file name with no explanation.
+  return (
+    result ?? {
+      tags: {} as TrackMetadata,
+      duration: null,
+      cover: null,
+      foreignTags: [],
+      failed: true,
+    }
+  )
 }
 
 // The actual probe/decode work behind readMeta, split out so cachedAnalysis can tell a

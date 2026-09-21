@@ -108,8 +108,31 @@ describe('readMeta caching', () => {
     const callsAfterFirst = calls.length
     const second = await readMeta(broken)
 
-    expect(first).toEqual({ tags: {}, duration: null, cover: null, foreignTags: [] })
+    expect(first).toEqual({
+      tags: {},
+      duration: null,
+      cover: null,
+      foreignTags: [],
+      failed: true,
+    })
     expect(second).toEqual(first)
     expect(calls.length).toBeGreaterThan(callsAfterFirst)
+  })
+
+  // A degraded read and a file that genuinely carries no tags produce the same empty
+  // fields, and the row has no way to tell them apart: the renderer's own catch never
+  // fires, because readMeta resolves rather than rejecting. Without this flag a 0-byte
+  // or unreadable file imported from inside a folder sits in the list with no title, no
+  // duration and nothing saying why — the exact complaint behind a user's two "MP3s that
+  // keep failing" (21/09/2026). The mark the UI already draws (TrackList's warning
+  // triangle) just needs to be told.
+  it('says a read succeeded, so an empty file is not mistaken for an untagged one', async () => {
+    const fine = join(work, 'fine.flac')
+    writeFileSync(fine, 'audio')
+
+    const read = await readMeta(fine)
+
+    expect(read.failed, 'a good read must not be flagged').toBeUndefined()
+    expect(read.tags.title, 'the fixture no longer returns tags').toBe('Test Track')
   })
 })
