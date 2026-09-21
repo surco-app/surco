@@ -490,10 +490,9 @@ export default function App(): React.JSX.Element {
       }
     },
     onMetaLoaded: (t) => {
-      // Enqueue visible-only: with auto-match on, an imported track is probed once its row
-      // is actually on screen, so an active filter holds back the rows it hides. Change the
-      // filter and the newly-shown rows get matched; already-matched ones are never re-probed.
-      if (settings?.autoMatch && autoMatchAvailable(settings)) enqueueAutoMatch([t], true)
+      // With auto-match on, every imported track is probed whether or not its row is on
+      // screen; already-matched ones are never re-probed.
+      if (settings?.autoMatch && autoMatchAvailable(settings)) enqueueAutoMatch([t])
       // Auto-analyze runs the full background sweep so a reopened crate has every heavy
       // analysis already on disk — the sweep reads bulkTracksRef (the visible rows) and
       // skips any already measured, so this stays a cheap re-trigger per import. Passing t
@@ -716,7 +715,7 @@ export default function App(): React.JSX.Element {
     if (!selectedId || !settings?.autoMatch || !autoMatchAvailable(settings)) return
     const id = setTimeout(() => {
       const track = tracksRef.current.find((t) => t.id === selectedId)
-      if (track) enqueueAutoMatch([track], false)
+      if (track) enqueueAutoMatch([track])
     }, 500)
     return () => clearTimeout(id)
   }, [
@@ -1129,7 +1128,7 @@ export default function App(): React.JSX.Element {
   )
   const onFindReplace = useStableCallback(overlays.openFindReplace)
   const onAnalyzeAll = useStableCallback(() => analyzeAllQuality())
-  const onAutoMatchAll = useStableCallback(() => enqueueAutoMatch(bulkTracks, false))
+  const onAutoMatchAll = useStableCallback(() => enqueueAutoMatch(bulkTracks))
   const onOpenExport = useStableCallback(overlays.openExport)
   const onClearAll = useStableCallback(() => askClearAll(visibleTracksRef.current))
   // The one-click "trash the fakes": collect the flagged rips out of the visible rows and route

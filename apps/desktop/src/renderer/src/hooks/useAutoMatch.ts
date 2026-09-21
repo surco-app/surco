@@ -67,7 +67,7 @@ interface Params {
 interface AutoMatchSweep {
   // Progress of the sweep (null when idle), for the toolbar pill and the top bar.
   matching: { done: number; total: number } | null
-  enqueueAutoMatch: (candidates: TrackItem[], visibleOnly: boolean) => void
+  enqueueAutoMatch: (candidates: TrackItem[]) => void
   onTrackVisible: (id: string, visible: boolean) => void
   cancelAutoMatch: () => void
   // Drops a removed (or rebuilt) track from the queue/visibility registries.
@@ -78,11 +78,12 @@ interface AutoMatchSweep {
   focusTrack: (id: string | null) => void
 }
 
-// The visibility-gated Discogs auto-match sweep. An import enqueues its files
-// visible-only so a 100-track drop probes Discogs for the handful in view rather than
-// the whole crate at once; the toolbar sweep enqueues everything. A single drain loops
-// until nothing is ready, then idles; a fresh drop or a row scrolling into view pumps
-// it again.
+// The Discogs auto-match sweep. An import and the toolbar sweep both enqueue every
+// track: a folder of a thousand files is dropped and left to run unattended, and a sweep
+// that only probed the rows on screen read as "auto-match stops at 20". The rows in view
+// still go first, and the main process paces every Discogs call through one shared
+// per-minute bucket. A single drain loops until nothing is ready, then idles; a fresh
+// drop or a row scrolling into view pumps it again.
 export function useAutoMatch({
   tracksRef,
   updateTrack,
@@ -104,9 +105,9 @@ export function useAutoMatch({
   // size of the current concurrent slice.
   const sweepDone = useRef(0)
   const sweepTotal = useRef(0)
-  // Track ids waiting for an auto-match, mapped to whether the row must be on screen
-  // before it runs. The drain reads this together with which rows are currently visible.
-  const matchQueue = useRef<Map<string, boolean>>(new Map())
+  // Track ids waiting for an auto-match. The drain reads this together with which rows
+  // are currently visible, which decides the order and nothing else.
+  const matchQueue = useRef<Set<string>>(new Set())
   const visibleIds = useRef<Set<string>>(new Set())
   // The track the user has selected. It probes ahead of the rest of the crate (drained
   // first) and at high priority, so the row in front of you resolves now instead of
@@ -219,15 +220,11 @@ export function useAutoMatch({
     ],
   )
 
-  // The queued tracks ready to probe right now: a toolbar-enqueued track always, an
-  // import-enqueued one only once its row is on screen. tracksToAutoMatch then drops any
-  // already matched so a re-run only fills gaps.
+  // The queued tracks ready to probe right now. tracksToAutoMatch drops any already
+  // matched so a re-run only fills gaps.
   const readyMatchTargets = useCallback((): TrackItem[] => {
     const visible = visibleIds.current
-    const ready = tracksRef.current.filter((t) => {
-      const visibleOnly = matchQueue.current.get(t.id)
-      return visibleOnly !== undefined && (!visibleOnly || visible.has(t.id))
-    })
+    const ready = tracksRef.current.filter((t) => matchQueue.current.has(t.id))
     const targets = tracksToAutoMatch(ready)
     // Probe the rows on screen before the rest of the crate so the slice of the list the
     // user is looking at resolves first; V8's sort is stable, so list order holds within
@@ -248,8 +245,7 @@ export function useAutoMatch({
   }, [])
 
   // Drains the auto-match queue against Discogs, capped and cancellable. Each pass takes the
-  // tracks ready right now and probes them, so scrolling a big crate feeds the sweep the rows
-  // the user is actually looking at instead of firing all hundred at import. Loops until
+  // tracks ready right now and probes them, the rows the user is looking at first. Loops until
   // nothing's ready, then idles; a fresh drop or a row scrolling into view pumps it again. The
   // ref guard keeps a single drain running so rival pumps share one budget rather than racing.
   const pumpAutoMatch = useCallback(async (): Promise<void> => {
@@ -300,19 +296,18 @@ export function useAutoMatch({
         // Queue fully drained: the sweep is done.
         resetProgress()
       }
-      // Otherwise rows remain queued but gated on visibility — keep the progress shown and
-      // let onTrackVisible/focusTrack pump again when one appears.
+      // Otherwise rows remain queued whose tracks the list has not committed yet — keep the
+      // progress shown and let the next enqueue, onTrackVisible or focusTrack pump again.
     }
   }, [applyAutoMatch, readyMatchTargets, resetProgress])
 
-  // Queues tracks for auto-match and kicks the drain. visibleOnly holds an import's files back
-  // until their rows are seen; the toolbar sweep passes false to match the whole view now.
+  // Queues tracks for auto-match and kicks the drain.
   const enqueueAutoMatch = useCallback(
-    (candidates: TrackItem[], visibleOnly: boolean): void => {
+    (candidates: TrackItem[]): void => {
       let added = 0
       for (const t of tracksToAutoMatch(candidates)) {
         if (!matchQueue.current.has(t.id)) added += 1
-        matchQueue.current.set(t.id, visibleOnly)
+        matchQueue.current.add(t.id)
       }
       if (added > 0) {
         sweepTotal.current += added
@@ -324,7 +319,7 @@ export function useAutoMatch({
   )
 
   // Records which rows are on screen (the list reports it via an IntersectionObserver) and
-  // pumps the drain when one appears, so an import's auto-match follows the user's scroll.
+  // pumps the drain when one appears, so the rows the user scrolls to jump ahead of the rest.
   // The pump is coalesced behind a short timer: a scroll flick crosses dozens of rows in a
   // burst, and pumping (filter + sort + Discogs probes whose results setTracks and rebuild
   // the list) on every crossing competes with the scroll itself for the main thread. One

@@ -649,7 +649,7 @@ describe('buildCommands bulk scope', () => {
       }),
       'auto-match',
     ).run()
-    expect(enqueueAutoMatch).toHaveBeenCalledWith(bulk, false)
+    expect(enqueueAutoMatch).toHaveBeenCalledWith(bulk)
   })
 })
 
