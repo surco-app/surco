@@ -39,6 +39,14 @@
       {
         "text": "A track that picks up right at the very top of the highs, where almost no file reaches, no longer gets flagged for regenerated highs. That last stretch is the least steady of all: a small shift between readings was enough for the same file to come out clean one time and flagged the next. Surco no longer counts it.",
         "in": "0.99.3"
+      },
+      {
+        "text": "Surco’s trash now filters by what happened to each file (replaced, renamed, deleted), searches by title or folder, and each original says how many days it has left before it empties itself.",
+        "in": "0.99.4"
+      },
+      {
+        "text": "Converting a track with a decimal BPM, like the 150.55 Traktor or Mixed In Key write, to AIFF or WAV failed with an out-of-range error and produced no file at all. It now comes out, with the BPM kept as it was.",
+        "in": "0.99.4"
       }
     ]
   },
