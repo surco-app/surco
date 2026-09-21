@@ -1,5 +1,7 @@
+import { AlertTriangle } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
+import { BACKUP_POLICIES, type BackupPolicy } from '../../../../shared/backupPolicy'
 import { DESTINATIONS, fromDestination, toDestination } from '../../lib/destination'
 import { isMacOS } from '../../lib/platform'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
@@ -8,12 +10,25 @@ import { DestinationPicker } from '../DestinationPicker'
 import { EngineLibraryFields } from '../EngineLibraryFields'
 import { OutputFolderField } from '../OutputFolderField'
 import { PathField } from '../PathField'
+import { SegmentedControl } from '../SegmentedControl'
 import { CheckboxRow } from './CheckboxRow'
 import { SettingsField, SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
 
 // Apple Music automation only exists on macOS, so the destination is meaningless on
 // other platforms where a track simply finishes in the output folder.
 const isMac = isMacOS()
+
+// The hint key's suffix per level. A map rather than string arithmetic on the policy
+// value, so a renamed level breaks the build instead of silently asking i18n for a key
+// that does not exist.
+// The grey line states what each level DOES, in one register. 'never' gets a line of
+// its own rather than reusing its warning text: the amber box below already carries the
+// risk, and printing the same sentence twice, stacked, read as a rendering fault.
+const POLICY_HINT: Record<BackupPolicy, string> = {
+  always: 'settings.originalBackupAlwaysHint',
+  audioChanges: 'settings.originalBackupAudioChangesHint',
+  never: 'settings.originalBackupNeverLine',
+}
 
 // Half a beat at 128 BPM (234 ms) is where this stops being a cue adjustment: past it the
 // cue is nearer the next beat than its own. The slider reaches further than the presets
@@ -129,6 +144,48 @@ export function DestinationTab({
       testid="settings-output"
     />
   )
+  // Overwrite is the only destination that replaces a file the user already has, so the
+  // question of what to keep a copy of belongs under it and nowhere else. It nests like
+  // the output folder and the Engine fields, which is also what keeps it from reading as
+  // a global policy: under the other three destinations there is no original at risk.
+  const overwriteDetail = (
+    <div
+      data-testid="settings-backup"
+      className="rounded-xl border border-[var(--color-line)] bg-[var(--color-field)] px-3.5 py-3"
+    >
+      <p className="font-semibold text-[13px] text-fg">{tr('settings.originalBackup')}</p>
+      <SettingsHint className="mt-1 mb-2.5">{tr('settings.originalBackupHint')}</SettingsHint>
+      <SegmentedControl
+        options={BACKUP_POLICIES}
+        value={synced.backupPolicy}
+        onChange={(id) => patch('backupPolicy', id)}
+        testidPrefix="settings-backup"
+        labelFor={(id) => tr(`settings.originalBackupPolicies.${id}`)}
+      />
+      {/* What this level costs, rather than one sentence covering all three: the choice
+          IS the trade-off, so the line has to move with it. */}
+      <SettingsHint className="mt-2.5" data-testid="settings-backup-hint">
+        {tr(POLICY_HINT[synced.backupPolicy])}
+      </SettingsHint>
+      {/* Only 'never' can cost a file, and the word alone doesn't say so. Amber, not
+          danger red: switching it off is a legitimate choice, not a mistake. */}
+      {synced.backupPolicy === 'never' && (
+        <div
+          data-testid="settings-backup-warning"
+          className="mt-2.5 flex items-start gap-2 rounded-lg border border-[color-mix(in_srgb,var(--color-warn)_22%,transparent)] bg-[color-mix(in_srgb,var(--color-warn)_10%,transparent)] px-2.5 py-2"
+        >
+          <AlertTriangle
+            className="mt-px h-3.5 w-3.5 shrink-0 text-warn"
+            strokeWidth={1.8}
+            aria-hidden="true"
+          />
+          <p className="text-xs leading-relaxed text-warn">
+            {tr('settings.originalBackupNeverHint')}
+          </p>
+        </div>
+      )}
+    </div>
+  )
   // Engine DJ's fields nest under its radio exactly like the output folder does — the
   // two destination details read as one pattern instead of one inline and one trailing
   // the whole group.
@@ -152,7 +209,11 @@ export function DestinationTab({
           flacOnly={flacOnly}
           testidPrefix="settings-destination"
           radioName="destination"
-          details={{ folder: folderDetail, engineDj: engineDetail }}
+          details={{
+            folder: folderDetail,
+            engineDj: engineDetail,
+            overwrite: overwriteDetail,
+          }}
         />
       </SettingsField>
       {/* Independent of the destination radio above: Traktor sync patches cue points

@@ -1,3 +1,4 @@
+import type { BackupPolicy } from './backupPolicy'
 import type { EditorSectionPref } from './editorSections'
 import type { Chord } from './shortcuts'
 
@@ -162,6 +163,10 @@ export interface Settings {
   // same-format export takes a "(n)" name (like keep-both) instead of prompting or
   // rewriting the source. Mutually exclusive with the other destinations (one radio).
   convertBesideOriginal: boolean
+  // How much of an in-place rewrite Surco keeps a copy of before replacing the file.
+  // Only the overwrite destination reaches it: every other destination writes a new
+  // file and leaves the source alone. See backupPolicy.ts for what the levels mean.
+  backupPolicy: BackupPolicy
   // When true, a successful conversion is also registered in the Engine DJ library
   // database at engineLibraryDir. Engine references the file where it lives (it never
   // imports a copy), so the output-folder copy is always kept in this mode.

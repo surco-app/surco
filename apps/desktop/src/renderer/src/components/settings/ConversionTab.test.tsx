@@ -21,6 +21,7 @@ const synced: SyncedDraft = {
   keepOutputCopy: true,
   overwriteOriginal: false,
   convertBesideOriginal: false,
+  backupPolicy: 'always',
   addToEngineDj: false,
   syncTraktor: false,
   syncRekordbox: false,
