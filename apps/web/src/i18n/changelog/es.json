@@ -59,6 +59,10 @@
       {
         "text": "La papelera de Surco pasa a llamarse «Originales de Surco»: lo que guarda son los archivos de partida que una conversión sustituyó, nunca algo que hayas borrado tú. Y en Ajustes → Destino eliges cuándo guardar esa copia: siempre, solo cuando cambia el audio (convertir, normalizar, recortar) o nunca. Retocar las etiquetas de una crate entera llenaba el límite de la papelera con copias idénticas al archivo nuevo salvo por las etiquetas.",
         "in": "0.99.5"
+      },
+      {
+        "text": "Limpiar las etiquetas de un MP3 ya no hay que hacerlo dos veces: Surco dejaba detrás una capa antigua de etiquetas, la que mp3tag llama ID3v1, con un título recortado a 30 letras y el año puesto a cero, y esa capa era la que volvías a ver. Ahora se va a la primera, y al borrarlo todo se va también la capa que dejan los medidores de volumen.",
+        "in": "0.99.6"
       }
     ]
   },

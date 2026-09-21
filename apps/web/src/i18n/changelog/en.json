@@ -59,6 +59,10 @@
       {
         "text": "Surco’s trash is now called “Surco’s originals”: what it keeps are the files a conversion replaced, never anything you deleted yourself. And in Settings → Output you choose when to keep that copy: always, only when the audio changes (converting, normalizing, trimming) or never. Retouching the tags of a whole crate used to fill the trash’s limit with copies identical to the new file except for the tags.",
         "in": "0.99.5"
+      },
+      {
+        "text": "Clearing an MP3’s tags no longer takes two passes: Surco left behind an old layer of tags, the one mp3tag calls ID3v1, with the title cut to 30 letters and the year set to zero, and that layer was what you saw come back. Now it goes on the first try, and clearing everything also removes the layer that volume-scanning tools leave behind.",
+        "in": "0.99.6"
       }
     ]
   },
