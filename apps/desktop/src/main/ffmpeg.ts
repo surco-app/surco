@@ -62,6 +62,7 @@ import {
 } from './hfShelf'
 import { isSameFile } from './inplace'
 import { isMissingInputError } from './missingInput'
+import { absorbMp3HeadJunk } from './mp3Head'
 import { recordNmlPatch } from './nmlBatch'
 import {
   astatsArgs,
@@ -1693,6 +1694,7 @@ export async function convertAudio(
       // size) and silently falls back to a byte copy otherwise (other
       // filesystems, or an output folder on a different volume).
       await copyFile(input, tmp, fsConstants.COPYFILE_FICLONE)
+      if (ext === '.mp3') await absorbMp3HeadJunk(tmp)
       await runInWorker({
         type: 'writeTags',
         file: tmp,
