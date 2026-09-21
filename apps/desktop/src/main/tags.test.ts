@@ -175,6 +175,42 @@ function buildSeed(dir: string): string {
   return path
 }
 
+// Builds an MP3 carrying a malformed UFID — the frame that made every MP3→MP3 save die
+// with "Argument null: text was not provided". node-taglib-sharp's parseFields splits the
+// payload on the null delimiter and demands EXACTLY two fields; anything else leaves the
+// frame half-parsed, and renderFields then hands ByteVector.fromString an undefined and
+// throws, taking the WHOLE tag write down with it — not just this frame.
+//
+// Two shapes, both measured on users' files (21/09/2026): `empty-id` is Beatport's
+// (payload ends on the delimiter, so the identifier is empty — 6 files), and `extra-nulls`
+// is jhutveckling.se's (nulls inside the identifier, so the split yields 21 fields — 4
+// files). Over a 847-MP3 library, 12 of the 14 files carrying a UFID at all were broken.
+function buildSeedWithUfid(dir: string, shape: 'empty-id' | 'extra-nulls' | 'valid'): string {
+  const syncsafe = (n: number) =>
+    Buffer.from([(n >> 21) & 0x7f, (n >> 14) & 0x7f, (n >> 7) & 0x7f, n & 0x7f])
+  const frame = (id: string, data: Buffer) => {
+    const head = Buffer.alloc(10)
+    head.write(id, 0, 'latin1')
+    head.writeUInt32BE(data.length, 4)
+    return Buffer.concat([head, data])
+  }
+  const owner = Buffer.from('http://www.jhutveckling.se', 'latin1')
+  const payload =
+    shape === 'empty-id'
+      ? Buffer.concat([owner, Buffer.from([0])])
+      : shape === 'extra-nulls'
+        ? Buffer.concat([owner, Buffer.from([0]), Buffer.from([1, 0, 2, 0, 3])])
+        : Buffer.concat([owner, Buffer.from([0]), Buffer.from([1, 2, 3])])
+  const tit2 = frame('TIT2', Buffer.concat([Buffer.from([0]), Buffer.from('Old Title', 'latin1')]))
+  const body = Buffer.concat([tit2, frame('UFID', payload)])
+  const header = Buffer.concat([Buffer.from('ID3'), Buffer.from([3, 0, 0]), syncsafe(body.length)])
+  const mpegFrame = Buffer.concat([Buffer.from([0xff, 0xfb, 0x90, 0x00]), Buffer.alloc(413)])
+  const audio = Buffer.concat(Array(20).fill(mpegFrame))
+  const path = join(dir, `ufid-${shape}.mp3`)
+  writeFileSync(path, Buffer.concat([header, body, audio]))
+  return path
+}
+
 // Builds an MP3 whose grouping lives ONLY in iTunes' proprietary GRP1 frame (a raw text
 // frame: [encoding byte][Latin1 text]) — the state a file re-saved by Apple Music reaches.
 // GRP1 isn't a standard identifier, so it's written as raw bytes like buildSeed's own frames
@@ -278,6 +314,53 @@ describe('writeTags', () => {
     expect(f.tag.initialKey).toBe('8A')
     expect(f.tag.pictures).toHaveLength(1)
     expect(f.getTag(TagTypes.Id3v2, false)).toBeFalsy()
+    f.dispose()
+  })
+
+  // The bug behind a user's "MP3s that keep failing" (21/09/2026): a malformed UFID took
+  // the whole tag write down, so converting MP3→MP3 or updating in place failed outright
+  // while the same files converted fine to FLAC/WAV/AIFF/ALAC (those never re-render the
+  // ID3). Measured: 8 of 9 files the user sent, and 12 of the 14 UFID-carrying MP3s in an
+  // 847-file library. The frame is a store's internal id (Beatport, CDDB) with no meaning
+  // to the user, and every non-MP3 conversion drops it anyway — so a broken one goes.
+  it.each(['empty-id', 'extra-nulls'] as const)(
+    'drops a malformed UFID (%s) instead of failing the whole tag write',
+    (shape) => {
+      const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+      const file = buildSeedWithUfid(dir, shape)
+
+      // The guard: without the fix this very call throws, so a green test here would be
+      // meaningless if the fixture did not actually carry the broken frame.
+      const before = TagFile.createFromPath(file)
+      const beforeUfid = (
+        before.getTag(TagTypes.Id3v2, false) as Id3v2Tag
+      ).frames.filter((f) => f.frameId.toString() === 'UFID')
+      expect(beforeUfid, 'the fixture no longer carries a UFID').toHaveLength(1)
+      before.dispose()
+
+      writeTags(file, { ...meta, title: 'New Title' })
+
+      const f = TagFile.createFromPath(file)
+      expect(f.tag.title, 'the write has to actually land').toBe('New Title')
+      const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
+      expect(id3.frames.filter((fr) => fr.frameId.toString() === 'UFID')).toHaveLength(0)
+      f.dispose()
+    },
+  )
+
+  // The other half of the same decision: a UFID that parses and renders cleanly is a
+  // store's identifier doing no harm, and dropping it would be deleting someone else's
+  // data to save a branch. Only the broken ones go.
+  it('keeps a well-formed UFID', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeedWithUfid(dir, 'valid')
+
+    writeTags(file, { ...meta, title: 'New Title' })
+
+    const f = TagFile.createFromPath(file)
+    expect(f.tag.title).toBe('New Title')
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
+    expect(id3.frames.filter((fr) => fr.frameId.toString() === 'UFID')).toHaveLength(1)
     f.dispose()
   })
 
