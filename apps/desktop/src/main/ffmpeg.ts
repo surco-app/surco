@@ -1241,9 +1241,11 @@ const MIN_VERIFIABLE_SEC = 3
 //
 // -v error is deliberately not passed: ffmpeg reports the decoded length on the
 // progress line, so one decode answers both questions instead of paying for two.
-export async function assertDecodable(file: string): Promise<void> {
+export async function assertDecodable(file: string, copiedFrom?: string): Promise<void> {
   const whole = await decodeForCheck(file)
   if (whole.ok) return assertNotTruncated(file, whole.stderr, whole.stdout)
+  if (copiedFrom !== undefined && !(await decodeForCheck(copiedFrom)).ok)
+    return assertDeliversAsMuchAs(file, copiedFrom)
   // -xerror fails on the first packet the decoder rejects wherever it sits, and a
   // complete file can carry one after its last frame: three of a user's MP3s (17/09/2026)
   // ended in a Lyrics3v2 block, which ffmpeg's mp3 demuxer does not know and hands to the
@@ -1261,6 +1263,46 @@ export async function assertDecodable(file: string): Promise<void> {
   if (header === null || header < MIN_VERIFIABLE_SEC) throw whole.error
   const bounded = await decodeForCheck(file, header * (1 - MAX_DECODE_SHORTFALL / 2))
   if (!bounded.ok) throw bounded.error
+}
+
+async function assertDeliversAsMuchAs(file: string, source: string): Promise<void> {
+  const [delivered, playable] = await Promise.all([
+    deliveredDurationSec(file),
+    deliveredDurationSec(source),
+  ])
+  if (delivered === null || playable === null)
+    throw errorWithKey('convertedOutputUnreadable', basename(file))
+  if (delivered >= playable * (1 - MAX_DECODE_SHORTFALL)) return
+  throw errorWithKey(
+    'convertedOutputTruncated',
+    `${delivered.toFixed(2)}s of ${playable.toFixed(2)}s in ${basename(file)}`,
+  )
+}
+
+async function deliveredDurationSec(file: string): Promise<number | null> {
+  try {
+    const { stdout } = await run(
+      ffmpegPath,
+      [
+        '-hide_banner',
+        '-nostats',
+        ...forcedInputArgs(file),
+        '-i',
+        file,
+        '-map',
+        '0:a',
+        '-progress',
+        '-',
+        '-f',
+        'null',
+        '-',
+      ],
+      { maxBuffer: 1024 * 1024 * 16 },
+    )
+    return decodedDurationSec(String(stdout))
+  } catch {
+    return null
+  }
 }
 
 type DecodeForCheck =
@@ -1669,6 +1711,7 @@ export async function convertAudio(
     forceReencode ?? false,
   )
   const { codec, dither, ext } = plan
+  const copiedVerbatim = codec === 'copy' && preservesCuesInPlace(ext)
   // The trim runs first (every later stage works on the kept audio only), click
   // repair next — the gains below were measured through both — and the dither
   // stage last, right where the float chain is quantized back to 16 bits.
@@ -1683,7 +1726,7 @@ export async function convertAudio(
   let declickedSamples: number | undefined
 
   try {
-    if (codec === 'copy' && preservesCuesInPlace(ext)) {
+    if (copiedVerbatim) {
       // Source already in the target format: copy the bytes verbatim and edit the
       // tag in place (see tags.ts) instead of re-muxing through ffmpeg, which
       // would drop Traktor's cue/beatgrid GEOB frame even on a stream copy.
@@ -1922,7 +1965,7 @@ export async function convertAudio(
     // reported as a finished conversion. Immediately before the rename is the one point
     // both branches share and nothing further writes to the temp, which is exactly what
     // the rename's own comment below already claims to be true of it.
-    await assertDecodable(tmp)
+    await assertDecodable(tmp, copiedVerbatim ? input : undefined)
     // A rewrite lands on the source's own path, so the rename below would replace the
     // user's file with no way back. The original goes to Surco's trash first (see
     // surcoTrash.ts); unconfigured — the unit tests — keepOriginal keeps nothing and
