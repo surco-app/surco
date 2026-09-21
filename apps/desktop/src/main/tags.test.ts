@@ -758,6 +758,38 @@ describe('writeTags', () => {
     expect(readFileSync(file).includes(Buffer.from('TORY'))).toBe(true)
   })
 
+  // DJ software writes fractional tempos ("150.55"), and the ffmpeg conversion path
+  // copies them into TBPM verbatim. TagLib's numeric bpm setter only takes an unsigned
+  // integer, so the TagLib pass (AIFF copy, WAV, rated MP3) died with "Argument out of
+  // range" on any decimal BPM and produced no file at all.
+  it('writes a fractional BPM verbatim into TBPM', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+
+    writeTags(file, { ...meta, bpm: '150.55' })
+
+    const f = TagFile.createFromPath(file)
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
+    const tbpm = id3.frames.find(
+      (fr) => fr.frameId === Id3v2FrameIdentifiers.TBPM,
+    ) as Id3v2TextInformationFrame
+    expect(tbpm?.text).toEqual(['150.55'])
+    f.dispose()
+  })
+
+  // MP4's tmpo atom is a 16-bit integer, so the nearest whole tempo is all an .m4a
+  // can keep; the alternative was the same crash on every decimal BPM.
+  it('rounds a fractional BPM for the m4a tempo atom', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildM4aSeed(dir)
+
+    writeTags(file, { ...meta, bpm: '150.55' })
+
+    const f = TagFile.createFromPath(file)
+    expect(f.tag.beatsPerMinute).toBe(151)
+    f.dispose()
+  })
+
   // Collectors tag vinyl the Discogs way: the side position ("A2") IS the track
   // number. TagLib's numeric track setter can't hold it, so writeTags must rewrite
   // the TRCK frame verbatim — matching what the ffmpeg conversion path writes.
