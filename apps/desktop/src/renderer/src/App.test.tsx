@@ -180,18 +180,6 @@ class MockIntersectionObserver {
   }
 }
 
-// Reports every currently-observed row as on screen, driving the visible-gated auto-match the
-// way a real scroll would — the mock reports nothing visible by default, so import-enqueued
-// matches only fire once a test opts a row into view.
-function showAllRows(): void {
-  for (const o of observers) {
-    const entries = [...o.els].map(
-      (target) => ({ target, isIntersecting: true }) as IntersectionObserverEntry,
-    )
-    if (entries.length) o.cb(entries, {} as IntersectionObserver)
-  }
-}
-
 function setApi(over: Record<string, unknown> = {}): void {
   ;(window as unknown as { api: unknown }).api = {
     platform: 'win32',
@@ -552,10 +540,10 @@ describe('App auto-match', () => {
     expect(screen.getByTestId('auto-match')).toBeDisabled()
   })
 
-  // Auto-match on import follows what's shown: a row is probed once it's actually on screen,
-  // so an active filter never auto-matches the rows it hides. Here nothing is visible yet, so
-  // no row matches until the test scrolls them into view — then both do.
-  it('auto-matches an imported track only once its row is on screen', async () => {
+  // Auto-match on import runs the whole drop unattended: a folder of a thousand files is
+  // left alone and must finish, so no row waits for the user to scroll it into view. Here
+  // nothing is ever reported visible and both rows still match.
+  it('auto-matches every imported track without waiting for its row to be on screen', async () => {
     const search = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok', autoMatch: true })),
@@ -567,13 +555,6 @@ describe('App auto-match', () => {
     await renderApp()
     await addTwoTracks()
 
-    // Nothing is on screen (the observer reports nothing visible), so the import's auto-match
-    // stays queued and no row is matched.
-    await waitFor(() => expect(search).not.toHaveBeenCalled())
-    expect(screen.queryAllByTestId('track-automatched')).toHaveLength(0)
-
-    // Scrolling both rows into view releases the gate: both get matched.
-    act(() => showAllRows())
     await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
   })
 

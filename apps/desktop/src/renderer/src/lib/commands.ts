@@ -189,7 +189,7 @@ export interface CommandDeps {
   cancelAnalysis: () => void
   analyzeAllQuality: () => void
   cancelAutoMatch: () => void
-  enqueueAutoMatch: (candidates: TrackItem[], visibleOnly: boolean) => void
+  enqueueAutoMatch: (candidates: TrackItem[]) => void
   addTrackToAppleMusic: (id: string) => unknown
   removeTrack: (id: string) => void
   // Opens the converted file in the OS file manager. Injected so the registry doesn't
@@ -662,7 +662,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       enabled: matching ? true : !!settings?.discogsToken && autoMatchable > 0,
       run: () => {
         if (matching) cancelAutoMatch()
-        else enqueueAutoMatch(bulkTracks, false)
+        else enqueueAutoMatch(bulkTracks)
       },
     },
     {

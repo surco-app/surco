@@ -85,7 +85,7 @@ describe('useAutoMatch', () => {
     const tracks = [track('a'), track('b')]
     const { result, updateTrack } = setup(tracks)
 
-    act(() => result.current.enqueueAutoMatch(tracks, false))
+    act(() => result.current.enqueueAutoMatch(tracks))
 
     await waitFor(() => expect(updateTrack).toHaveBeenCalledTimes(2))
     expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ autoMatched: true }))
@@ -104,7 +104,7 @@ describe('useAutoMatch', () => {
     const tracks = [track('a')]
     const { result, updateTrack } = setup(tracks, null, { current: null }, ['album'])
 
-    act(() => result.current.enqueueAutoMatch(tracks, false))
+    act(() => result.current.enqueueAutoMatch(tracks))
 
     await waitFor(() => expect(updateTrack).toHaveBeenCalledTimes(1))
     const patch = updateTrack.mock.calls[0][1] as { meta: TrackMetadata }
@@ -122,7 +122,7 @@ describe('useAutoMatch', () => {
     const editingRef = { current: 'a' }
     const { result, updateTrack } = setup(tracks, null, editingRef)
 
-    act(() => result.current.enqueueAutoMatch(tracks, false))
+    act(() => result.current.enqueueAutoMatch(tracks))
 
     // The untouched track still matches; the one being edited is left alone.
     await waitFor(() =>
@@ -149,7 +149,7 @@ describe('useAutoMatch', () => {
     const tracks = [track('a')]
     const { result, updateTrack } = setup(tracks)
 
-    act(() => result.current.enqueueAutoMatch(tracks, false))
+    act(() => result.current.enqueueAutoMatch(tracks))
 
     await waitFor(() => expect(updateTrack).toHaveBeenCalled())
     expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ matchReview: true }))
@@ -159,38 +159,57 @@ describe('useAutoMatch', () => {
     expect(patch.matchConfidence).toBeGreaterThan(0)
   })
 
-  // The import path: a dropped crate must not fire one Discogs search per file at the
-  // rate limit — each row waits until the user actually scrolls it into view.
-  it('holds an import-enqueued track until its row reports visible', async () => {
-    const search = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
-    setApi({ search })
+  // The import path: a dropped folder of a thousand files is left to run unattended, so
+  // every row must be probed without waiting for the user to scroll it into view — a
+  // sweep that stalled at the twenty rows on screen read as "auto-match stopped at 20".
+  it('probes an import-enqueued track without waiting for its row to be visible', async () => {
+    setApi()
     const tracks = [track('a')]
     const { result, updateTrack } = setup(tracks)
 
-    act(() => result.current.enqueueAutoMatch(tracks, true))
-    await new Promise((r) => setTimeout(r, 0))
-    expect(search).not.toHaveBeenCalled()
+    act(() => result.current.enqueueAutoMatch(tracks))
 
-    act(() => result.current.onTrackVisible('a', true))
     await waitFor(() =>
       expect(updateTrack).toHaveBeenCalledWith('a', expect.objectContaining({ autoMatched: true })),
     )
   })
 
-  // A forgotten (removed/rebuilt) track must never probe, even if its row was queued
-  // and later reports visible — the queue entry is gone.
-  it('never probes a track that was forgotten before its row became visible', async () => {
+  // Rows on screen still go first: the slice the user is looking at resolves before the
+  // rest of the folder, and the visibility signal is what orders the queue.
+  it('probes the rows on screen ahead of the rest of the queue', async () => {
     const search = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
     setApi({ search })
-    const tracks = [track('a')]
+    const tracks = [track('a'), track('b'), { ...track('c'), query: 'the row on screen' }]
     const { result } = setup(tracks)
 
-    act(() => result.current.enqueueAutoMatch(tracks, true))
-    act(() => result.current.forgetTrack('a'))
-    act(() => result.current.onTrackVisible('a', true))
+    act(() => result.current.onTrackVisible('c', true))
+    act(() => result.current.enqueueAutoMatch(tracks))
 
-    await new Promise((r) => setTimeout(r, 0))
-    expect(search).not.toHaveBeenCalled()
+    await waitFor(() => expect(search).toHaveBeenCalledTimes(3))
+    expect(search.mock.calls[0][0]).toBe('the row on screen')
+  })
+
+  // A forgotten (removed/rebuilt) track must never probe, even if its row was queued
+  // and later reports visible — the queue entry is gone.
+  it('never probes a track that was forgotten while still waiting its turn', async () => {
+    const search = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
+    setApi({ search })
+    const tracks = [track('a'), track('b'), { ...track('c'), query: 'forgotten' }]
+    const { result } = setup(tracks)
+
+    act(() => result.current.enqueueAutoMatch(tracks))
+    act(() => result.current.forgetTrack('c'))
+    act(() => result.current.onTrackVisible('c', true))
+
+    await waitFor(() => expect(result.current.matching).toBeNull())
+    await new Promise((r) => setTimeout(r, 300))
+    expect(search).toHaveBeenCalledTimes(2)
+    expect(search).not.toHaveBeenCalledWith(
+      'forgotten',
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+    )
   })
 
   // Cancel mid-sweep: tracks whose probes haven't applied yet are left untouched, and
@@ -209,7 +228,7 @@ describe('useAutoMatch', () => {
     const tracks = [track('a')]
     const { result, updateTrack } = setup(tracks)
 
-    act(() => result.current.enqueueAutoMatch(tracks, false))
+    act(() => result.current.enqueueAutoMatch(tracks))
     await waitFor(() => expect(result.current.matching).not.toBeNull())
 
     act(() => result.current.cancelAutoMatch())
@@ -225,15 +244,21 @@ describe('useAutoMatch', () => {
   it('drops queued matches on cancel so a row scrolled in later never probes', async () => {
     const search = vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }])
     setApi({ search })
-    const tracks = [track('a')]
+    const tracks = [track('a'), track('b'), { ...track('c'), query: 'still queued' }]
     const { result } = setup(tracks)
 
-    act(() => result.current.enqueueAutoMatch(tracks, true))
+    act(() => result.current.enqueueAutoMatch(tracks))
     act(() => result.current.cancelAutoMatch())
-    act(() => result.current.onTrackVisible('a', true))
+    act(() => result.current.onTrackVisible('c', true))
 
-    await new Promise((r) => setTimeout(r, 0))
-    expect(search).not.toHaveBeenCalled()
+    await new Promise((r) => setTimeout(r, 300))
+    expect(search).toHaveBeenCalledTimes(2)
+    expect(search).not.toHaveBeenCalledWith(
+      'still queued',
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+    )
     expect(result.current.matching).toBeNull()
   })
 
@@ -260,14 +285,14 @@ describe('useAutoMatch', () => {
     const b = track('b')
     const { result, tracksRef } = setup([a])
 
-    act(() => result.current.enqueueAutoMatch([a], false))
+    act(() => result.current.enqueueAutoMatch([a]))
     await waitFor(() => expect(search).toHaveBeenCalledTimes(1))
 
     // Cancel while 'a's getRelease is still gated, then immediately re-enqueue 'b' —
     // both before the old pump's finally has a chance to run.
     act(() => result.current.cancelAutoMatch())
     tracksRef.current = [a, b]
-    act(() => result.current.enqueueAutoMatch([b], false))
+    act(() => result.current.enqueueAutoMatch([b]))
 
     releaseGate()
 
@@ -291,7 +316,7 @@ describe('useAutoMatch', () => {
     const { result } = setup([a, b])
 
     act(() => result.current.onTrackVisible('b', true))
-    act(() => result.current.enqueueAutoMatch([a, b], false))
+    act(() => result.current.enqueueAutoMatch([a, b]))
 
     await waitFor(() => expect(calls).toHaveLength(2))
     expect(calls[0]).toBe('query b')
@@ -309,7 +334,7 @@ describe('useAutoMatch', () => {
     const index = buildLibraryIndex([{ title: 'My Song', artist: 'Artist' }])
     const { result, updateTrack } = setup([t], index)
 
-    act(() => result.current.enqueueAutoMatch([t], false))
+    act(() => result.current.enqueueAutoMatch([t]))
 
     await waitFor(() => expect(updateTrack).toHaveBeenCalled())
     expect(updateTrack).toHaveBeenCalledWith(
@@ -327,7 +352,7 @@ describe('useAutoMatch', () => {
     const index = buildLibraryIndex([{ title: 'Something Else', artist: 'Other' }])
     const { result, updateTrack } = setup([t], index)
 
-    act(() => result.current.enqueueAutoMatch([t], false))
+    act(() => result.current.enqueueAutoMatch([t]))
 
     await waitFor(() => expect(updateTrack).toHaveBeenCalled())
     const patch = updateTrack.mock.calls[0][1]
@@ -348,7 +373,7 @@ describe('useAutoMatch', () => {
     const { result } = setup([a, b])
 
     act(() => result.current.focusTrack('b'))
-    act(() => result.current.enqueueAutoMatch([a, b], false))
+    act(() => result.current.enqueueAutoMatch([a, b]))
 
     await waitFor(() => expect(search).toHaveBeenCalledTimes(2))
     const hints = { artist: 'Artist', title: 'My Song', catalogNumber: undefined }
@@ -363,7 +388,7 @@ describe('useAutoMatch', () => {
     const tracks = [track('a')]
     const { result, reportActivity } = setup(tracks)
 
-    act(() => result.current.enqueueAutoMatch(tracks, false))
+    act(() => result.current.enqueueAutoMatch(tracks))
 
     await waitFor(() => expect(reportActivity).toHaveBeenCalledTimes(1))
     expect(reportActivity).toHaveBeenCalledWith(
@@ -389,7 +414,7 @@ describe('useAutoMatch', () => {
     const tracks = [track('a')]
     const { result, reportActivity } = setup(tracks)
 
-    act(() => result.current.enqueueAutoMatch(tracks, false))
+    act(() => result.current.enqueueAutoMatch(tracks))
 
     await waitFor(() => expect(reportActivity).toHaveBeenCalledTimes(1))
     expect(reportActivity).toHaveBeenCalledWith(
