@@ -5,7 +5,6 @@ import { constants as osConstants, setPriority, tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import { promisify } from 'node:util'
 import log from 'electron-log/main'
-import { type BackupPolicy, keepsBackup } from '../shared/backupPolicy'
 import { declickFilter } from '../shared/declick'
 import { errorWithKey } from '../shared/errorKeys'
 import { forcedInputArgs } from '../shared/inputFormat'
@@ -1690,12 +1689,6 @@ export async function convertAudio(
   // The file this conversion supersedes, when it replaces a copy already in the library.
   // rekordbox indexes that path, not the one being converted.
   replacesPath?: string,
-  // How much of an in-place rewrite is worth keeping a copy of (see backupPolicy.ts).
-  // An object so the one field inside it is named at every call site: this is the last
-  // of eighteen positional arguments, and a bare string here would read as noise.
-  // Resolved by the caller from Settings, like finderCovers; absent means 'always',
-  // which is what Surco did before the setting existed.
-  backup?: { backupPolicy?: BackupPolicy },
 ): Promise<{ normalizeSkipped: boolean; declickedSamples?: number }> {
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
@@ -2016,15 +2009,13 @@ export async function convertAudio(
     // A rewrite lands on the source's own path, so the rename below would replace the
     // user's file with no way back. The original goes to Surco's trash first (see
     // surcoTrash.ts); unconfigured — the unit tests — keepOriginal keeps nothing and
-    // the rename overwrites as it always did. What counts as worth keeping is the
-    // user's setting: `codec` is the planner's own verdict, 'copy' exactly when the
-    // audio passes through untouched, so "only when the audio changes" can be answered
-    // here without guessing at the operation.
-    if (
-      keepsBackup(backup?.backupPolicy ?? 'always', { reencodes: codec !== 'copy' }) &&
-      (await isSameFile(input, output))
-    )
-      await keepOriginal(input, 'replaced', output)
+    // the rename overwrites as it always did. Whether it is worth keeping is the
+    // keeper's call, not this one's: it owns the user's setting, and deciding here left
+    // the other two write paths (a format change, a NAS delete) ignoring it. What only
+    // this scope knows is what the encode did — `codec` is the planner's own verdict,
+    // 'copy' exactly when the audio passes through untouched — so that rides along.
+    if (await isSameFile(input, output))
+      await keepOriginal(input, 'replaced', output, { reencodes: codec !== 'copy' })
     // Logged because this failure only reproduces on Windows machines we cannot
     // attach a debugger to: when a user reports "another program is using the file",
     // these lines are the whole evidence — whether the destination was still held,
