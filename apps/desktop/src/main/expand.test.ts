@@ -76,19 +76,53 @@ describe('expandPaths', () => {
     // be filtered there too or the folder drop still doubles every track.
     const real = join(dir, 'track.flac')
     const ghost = join(dir, '._track.flac')
-    await writeFile(real, '')
-    await writeFile(ghost, '')
+    // Both carry bytes: this is about the "._" name being filtered, and an empty file
+    // is now dropped on its own account, which would pass the test for the wrong reason.
+    await writeFile(real, 'x')
+    await writeFile(ghost, 'x')
 
     expect(await expandPaths([real, ghost])).toEqual([real])
   })
 
   it('passes plain files through untouched so dropping files still works', async () => {
     // Folder support must not regress the existing multi-file drop: a dropped file
-    // is returned as-is and left for the renderer to filter.
+    // is returned as-is and left for the renderer to filter. Written with bytes in it
+    // because an empty file is now dropped on purpose (see the test below), and this
+    // one is about the pass-through, not about the size.
     const file = join(dir, 'track.aiff')
-    await writeFile(file, '')
+    await writeFile(file, 'x')
 
     expect(await expandPaths([file])).toEqual([file])
+  })
+
+  // A user sent two MP3s that "keep failing" (21/09/2026); one of them was 0 bytes. An
+  // empty file has no header, no frames and no tags, so every probe fails and the row
+  // sits in the list with no title, no duration and nothing saying why. Dropping it here
+  // costs nothing — this branch already stats each path to tell a file from a folder —
+  // and the caller can then say how many were skipped. Files found INSIDE a folder are
+  // deliberately not checked: readdir does not carry the size, so filtering there would
+  // cost one network stat per file (measured on an SMB share: ~340 ms per 100 files,
+  // even warm), which is exactly the round-trip cost the streaming walk exists to avoid.
+  it('drops a directly-dropped empty file, which can carry no audio at all', async () => {
+    const empty = join(dir, 'empty.mp3')
+    const real = join(dir, 'real.mp3')
+    await writeFile(empty, '')
+    await writeFile(real, 'x')
+
+    expect(await expandPaths([empty, real])).toEqual([real])
+  })
+
+  it('never announces an empty file it dropped', async () => {
+    // Same guarantee the other filters carry: a consumer driven by the callback must
+    // not see a path the walk refused, or the row appears and then never resolves.
+    const empty = join(dir, 'empty.mp3')
+    await writeFile(empty, '')
+
+    const seen: string[] = []
+    const all = await expandPaths([empty], (batch) => seen.push(...batch))
+
+    expect(all).toEqual([])
+    expect(seen).toEqual([])
   })
 
   it('ignores paths that no longer exist instead of throwing', async () => {
