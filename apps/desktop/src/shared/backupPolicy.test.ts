@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { BACKUP_POLICIES, type BackupPolicy, keepsBackup } from './backupPolicy'
+import {
+  BACKUP_POLICIES,
+  type BackupPolicy,
+  keepsBackup,
+  sanitizeMaxGb,
+  sanitizeRetentionDays,
+} from './backupPolicy'
+import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from './trash'
 
 describe('keepsBackup', () => {
   // The default, and what Surco did before the setting existed: every in-place rewrite
@@ -38,5 +45,50 @@ describe('BACKUP_POLICIES', () => {
   // spectrum from most protection to none rather than an arbitrary list.
   it('runs from the most protective to the least', () => {
     expect(BACKUP_POLICIES).toEqual<BackupPolicy[]>(['always', 'audioChanges', 'never'])
+  })
+})
+
+describe('sanitizeRetentionDays', () => {
+  it('keeps a whole number of days inside the allowed range', () => {
+    expect(sanitizeRetentionDays(7)).toBe(7)
+    expect(sanitizeRetentionDays('14')).toBe(14)
+  })
+
+  // The field is a text input the user can empty or paste rubbish into, and a NaN would
+  // reach the sweep as "now - NaN > NaN", which drops nothing and silently disables the
+  // retention the user thinks they set.
+  it('falls back to the default for anything that is not a number', () => {
+    expect(sanitizeRetentionDays('')).toBe(TRASH_RETENTION_DAYS)
+    expect(sanitizeRetentionDays('abc')).toBe(TRASH_RETENTION_DAYS)
+    expect(sanitizeRetentionDays(Number.NaN)).toBe(TRASH_RETENTION_DAYS)
+  })
+
+  // Zero would sweep a file away the moment it was stashed, which is "never keep
+  // anything" said in a way the Never level already says clearly.
+  it('clamps to at least a day and at most a year', () => {
+    expect(sanitizeRetentionDays(0)).toBe(1)
+    expect(sanitizeRetentionDays(-5)).toBe(1)
+    expect(sanitizeRetentionDays(9999)).toBe(365)
+    expect(sanitizeRetentionDays(2.7)).toBe(3)
+  })
+})
+
+describe('sanitizeMaxGb', () => {
+  it('keeps a size inside the allowed range', () => {
+    expect(sanitizeMaxGb(25)).toBe(25)
+    expect(sanitizeMaxGb('0.5')).toBe(0.5)
+  })
+
+  it('falls back to the default for anything that is not a number', () => {
+    expect(sanitizeMaxGb('')).toBe(TRASH_MAX_BYTES / 1024 ** 3)
+    expect(sanitizeMaxGb('abc')).toBe(TRASH_MAX_BYTES / 1024 ** 3)
+  })
+
+  // A cap of zero sweeps every entry on the next launch, so the smallest useful value is
+  // a tenth of a gigabyte — enough for one track, which is the point of the feature.
+  it('clamps to a tenth of a gigabyte at the bottom and a terabyte at the top', () => {
+    expect(sanitizeMaxGb(0)).toBe(0.1)
+    expect(sanitizeMaxGb(-3)).toBe(0.1)
+    expect(sanitizeMaxGb(99999)).toBe(1024)
   })
 })
