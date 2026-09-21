@@ -829,6 +829,22 @@ export function writeTags(
     // and stays readable on the CDJ/rekordbox/Serato setups that mishandle v2.4 —
     // and, for WAV, in mp3tag, which ignores a v2.4 "id3 " chunk entirely.
     if (ID3_V23.has(extname(file).toLowerCase())) id3.version = 3
+    // A malformed UFID kills the ENTIRE tag write, not just its own frame: TagLib's
+    // parseFields splits the payload on the null delimiter and demands exactly two
+    // fields, returning early — and leaving owner/identifier unset — when it gets
+    // anything else. renderFields then feeds that undefined to ByteVector.fromString
+    // and throws "Argument null: text was not provided", so every MP3→MP3 convert and
+    // every in-place update of the file failed outright, while the same file converted
+    // fine to FLAC/WAV/AIFF/ALAC (those never re-render the ID3). Measured on a user's
+    // files (21/09/2026): 8 of 9, and 12 of the 14 UFID-carrying MP3s in an 847-file
+    // library — Beatport leaves the identifier empty, jhutveckling.se puts nulls inside
+    // it. Only the broken ones go: a UFID that renders is a store's identifier doing no
+    // harm, and dropping it would be deleting someone else's data for no gain.
+    for (const frame of id3.frames.slice()) {
+      if (frame.frameId.toString() !== 'UFID') continue
+      const ufid = frame as unknown as { owner?: string; identifier?: unknown }
+      if (ufid.owner == null || ufid.identifier == null) id3.removeFrame(frame)
+    }
     // "Empty every metadata field" must reach frames the app never wrote — a foreign
     // NOTES/COMM/TXXX another tool left behind survived the managed-field overwrite and
     // read as junk the user couldn't clear. On clearExtras, drop every frame up front,
