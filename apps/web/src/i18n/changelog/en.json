@@ -63,6 +63,22 @@
       {
         "text": "Clearing an MP3’s tags no longer takes two passes: Surco left behind an old layer of tags, the one mp3tag calls ID3v1, with the title cut to 30 letters and the year set to zero, and that layer was what you saw come back. Now it goes on the first try, and clearing everything also removes the layer that volume-scanning tools leave behind.",
         "in": "0.99.6"
+      },
+      {
+        "text": "Converting a track no longer carries into the new file the trail of whoever produced it before it reached you: the previous owner's studio, engineer and tool were still inside a file whose title and artist were already yours, and they came back when you went back to WAV. The file that comes out is yours and nothing else.",
+        "in": "0.99.7"
+      },
+      {
+        "text": "An MP3 with a malformed store purchase mark, like the ones Beatport leaves with an empty identifier, no longer fails outright when you convert it to MP3 or update it in place. In an 847-track library that was 12 of the 14 files carrying one. Surco drops just the broken mark and writes the rest of the tags as usual.",
+        "in": "0.99.7"
+      },
+      {
+        "text": "A variable-bitrate MP3 with no internal index, the kind that declares an approximate rather than a real length, no longer has its conversion thrown away as \"shorter than the original\". That was 432 of the 837 MP3s in one library: the file came out fine and Surco discarded it anyway, against a length the file itself was guessing at.",
+        "in": "0.99.7"
+      },
+      {
+        "text": "An empty file you drop into the list no longer comes in as a row with no title and no length that fails without saying why: Surco drops it as you let go. And if a track cannot be read, its row says so, instead of sitting there with just the file name as if it simply had no tags.",
+        "in": "0.99.7"
       }
     ]
   },
