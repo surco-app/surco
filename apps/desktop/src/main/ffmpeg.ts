@@ -773,6 +773,21 @@ function pcmCodec(depth: SampleDepth, endian: 'be' | 'le'): string {
 // the TAG_FIELDS registry. A FLAC target (vorbis) gets the Vorbis comment names DJ
 // software reads; everything else gets the ID3 names. Fields with no id3 name (rating)
 // are written by the TagLib pass instead, so they're skipped here, as are empty values.
+// Los campos que nombran a quien produjo el fichero de origen (su estudio, su cadena
+// de herramientas), no a la obra ni a quien la tiene ahora. ffprobe los reporta en
+// minúscula y el muxer de cada formato los traduce a su convención (ENCODED_BY en
+// Vorbis, TENC/TSSE en ID3, ITCH/ISFT en RIFF), así que basta nombrarlos una vez.
+const SOURCE_PROVENANCE = [
+  'encoded_by',
+  'engineer',
+  'technician',
+  'software',
+  'originator',
+  'product',
+  'source',
+  'copyright',
+]
+
 function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
   // ffmpeg copies the source's global metadata into the re-encoded file by default,
   // so every managed field is written even when blank: an empty `-metadata name=`
@@ -931,6 +946,16 @@ export function convertArgs(
     // non-linear ramp the ID3 side uses, so both spell the same rating.
     args.push('-metadata', `RATING WMP=${set ? starsToWmpRating(rating) : ''}`)
   }
+  // Quién hizo el fichero ANTES de que llegara al usuario. ffmpeg copia la metadata
+  // global del origen por defecto (-map_metadata 0) y estos campos quedan fuera de
+  // TAG_FIELDS, así que nadie los sobrescribía: djotas (21/09/2026) veía el estudio y
+  // la herramienta del dueño anterior en un fichero cuyo título y artista ya eran los
+  // suyos, y reaparecían al volver a WAV porque el FLAC intermedio también los llevaba.
+  // Medido sobre las 9 rutas wav/mp3/flac: sobreviven los ocho. Se vacían siempre, no
+  // solo con clearExtras — una conversión normal produce el fichero del usuario, y la
+  // cadena de producción del anterior no forma parte de él. Con clearExtras activo
+  // -map_metadata -1 ya se los lleva por delante y estos clears son redundantes.
+  for (const name of SOURCE_PROVENANCE) args.push('-metadata', `${name}=`)
   // El usuario marcó estos tags de terceros para borrar en el inspector: un -metadata
   // NOMBRE= vacío los elimina del fichero exportado. Se aplica siempre — es una intención
   // explícita sobre tags concretos, independiente del "borrar todo" (-map_metadata -1, que
