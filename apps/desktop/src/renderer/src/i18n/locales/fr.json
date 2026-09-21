@@ -31,7 +31,7 @@
     "settings": "Réglages",
     "stats": "Statistiques",
     "activity": "Activité",
-    "trash": "Corbeille de Surco",
+    "trash": "Originaux de Surco",
     "selectAll": "Tout sélectionner",
     "revealSelected": "Aller au morceau sélectionné",
     "fillFromName": "Remplir tous les tags depuis le nom du fichier",
@@ -125,7 +125,7 @@
     "sourceTagsUnread": "Les tags de ce fichier n'ont pas pu être lus, il n'a donc pas été touché : le convertir aurait effacé ceux qu'il a. Rechargez-le et réessayez."
   },
   "trash": {
-    "title": "Corbeille de Surco",
+    "title": "Originaux de Surco",
     "summary_one": "{{count}} fichier · {{size}}",
     "summary_other": "{{count}} fichiers · {{size}}",
     "emptyTitle": "Rien à restaurer",
@@ -138,7 +138,7 @@
     },
     "restore": "Restaurer",
     "remove": "Supprimer définitivement",
-    "empty": "Vider la corbeille",
+    "empty": "Tout supprimer",
     "emptyConfirm_one": "Supprimer {{count}} fichier pour de bon ?",
     "emptyConfirm_other": "Supprimer {{count}} fichiers pour de bon ?",
     "reveal": "Ouvrir le dossier",
@@ -152,7 +152,7 @@
       "deleted": "Supprimés",
       "restored-over": "Mis de côté"
     },
-    "filtersLabel": "Corbeille",
+    "filtersLabel": "Originaux",
     "search": "Rechercher par titre ou dossier",
     "replacedBy": "remplacé par",
     "renamedTo": "renommé en",
@@ -1023,7 +1023,18 @@
     "rekordboxSync": "Collection rekordbox",
     "rekordboxDbPath": "Collection rekordbox",
     "rekordboxDbPathHint": "La collection rekordbox dans laquelle écrire. Elle est détectée automatiquement ; ne la change que si la tienne est ailleurs.",
-    "traktorNmlPathEmpty": "Pas encore choisi"
+    "traktorNmlPathEmpty": "Pas encore choisi",
+    "originalBackup": "Sauvegarde de l'original",
+    "originalBackupHint": "Avant de réécrire un fichier, Surco conserve le précédent pour pouvoir revenir en arrière.",
+    "originalBackupPolicies": {
+      "always": "Toujours",
+      "audioChanges": "Seulement si l'audio change",
+      "never": "Jamais"
+    },
+    "originalBackupAlwaysHint": "Modifier seulement les étiquettes conserve aussi une copie entière du fichier.",
+    "originalBackupAudioChangesHint": "Convertir ou normaliser conserve une copie ; modifier seulement les étiquettes, non.",
+    "originalBackupNeverHint": "Si une conversion échoue, le fichier original est perdu. Il n'y a aucun moyen de le récupérer.",
+    "originalBackupNeverLine": "Aucune copie n'est conservée, ni à la conversion ni à la normalisation."
   },
   "errorBoundary": {
     "title": "Quelque chose n'a pas pu s'afficher",

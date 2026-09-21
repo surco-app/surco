@@ -31,7 +31,7 @@
     "settings": "Einstellungen",
     "stats": "Statistiken",
     "activity": "Aktivität",
-    "trash": "Surco-Papierkorb",
+    "trash": "Surco-Originale",
     "selectAll": "Alles auswählen",
     "revealSelected": "Zum ausgewählten Track scrollen",
     "fillFromName": "Alle Tags aus dem Dateinamen füllen",
@@ -125,7 +125,7 @@
     "sourceTagsUnread": "Die Tags dieser Datei konnten nicht gelesen werden, daher wurde sie nicht angerührt: eine Konvertierung hätte die vorhandenen gelöscht. Lade sie erneut und versuche es noch einmal."
   },
   "trash": {
-    "title": "Surco-Papierkorb",
+    "title": "Surco-Originale",
     "summary_one": "{{count}} Datei · {{size}}",
     "summary_other": "{{count}} Dateien · {{size}}",
     "emptyTitle": "Nichts wiederherzustellen",
@@ -138,7 +138,7 @@
     },
     "restore": "Wiederherstellen",
     "remove": "Endgültig löschen",
-    "empty": "Papierkorb leeren",
+    "empty": "Alle löschen",
     "emptyConfirm_one": "{{count}} Datei endgültig löschen?",
     "emptyConfirm_other": "{{count}} Dateien endgültig löschen?",
     "reveal": "Ordner öffnen",
@@ -152,7 +152,7 @@
       "deleted": "Gelöscht",
       "restored-over": "Beiseitegelegt"
     },
-    "filtersLabel": "Papierkorb",
+    "filtersLabel": "Originale",
     "search": "Nach Titel oder Ordner suchen",
     "replacedBy": "ersetzt durch",
     "renamedTo": "umbenannt in",
@@ -1023,7 +1023,18 @@
     "rekordboxSync": "rekordbox-Sammlung",
     "rekordboxDbPath": "rekordbox-Sammlung",
     "rekordboxDbPathHint": "Die rekordbox-Sammlung, in die geschrieben wird. Sie wird automatisch gefunden; ändere sie nur, wenn deine woanders liegt.",
-    "traktorNmlPathEmpty": "Noch nicht gewählt"
+    "traktorNmlPathEmpty": "Noch nicht gewählt",
+    "originalBackup": "Sicherung des Originals",
+    "originalBackupHint": "Bevor Surco eine Datei überschreibt, bewahrt es die vorherige auf, damit sich das rückgängig machen lässt.",
+    "originalBackupPolicies": {
+      "always": "Immer",
+      "audioChanges": "Nur wenn sich das Audio ändert",
+      "never": "Nie"
+    },
+    "originalBackupAlwaysHint": "Auch das reine Bearbeiten der Tags bewahrt eine vollständige Kopie auf.",
+    "originalBackupAudioChangesHint": "Konvertieren oder Normalisieren bewahrt eine Kopie auf, das reine Bearbeiten der Tags nicht.",
+    "originalBackupNeverHint": "Schlägt eine Konvertierung fehl, ist die Originaldatei verloren. Sie lässt sich nicht zurückholen.",
+    "originalBackupNeverLine": "Es wird keine Kopie aufbewahrt, weder beim Konvertieren noch beim Normalisieren."
   },
   "errorBoundary": {
     "title": "Etwas konnte nicht dargestellt werden",

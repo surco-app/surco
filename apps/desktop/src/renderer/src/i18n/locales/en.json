@@ -31,7 +31,7 @@
     "settings": "Settings",
     "stats": "Stats",
     "activity": "Activity",
-    "trash": "Surco trash",
+    "trash": "Surco originals",
     "selectAll": "Select all",
     "revealSelected": "Scroll to the selected track",
     "fillFromName": "Fill all tags from file name",
@@ -125,7 +125,7 @@
     "sourceTagsUnread": "This file's tags could not be read, so it was left alone: converting it would have wiped the ones it has. Load it again and retry."
   },
   "trash": {
-    "title": "Surco trash",
+    "title": "Surco originals",
     "summary_one": "{{count}} file · {{size}}",
     "summary_other": "{{count}} files · {{size}}",
     "emptyTitle": "Nothing to restore",
@@ -138,7 +138,7 @@
     },
     "restore": "Restore",
     "remove": "Delete permanently",
-    "empty": "Empty trash",
+    "empty": "Delete all",
     "emptyConfirm_one": "Delete {{count}} file for good?",
     "emptyConfirm_other": "Delete {{count}} files for good?",
     "reveal": "Open folder",
@@ -152,7 +152,7 @@
       "deleted": "Deleted",
       "restored-over": "Set aside"
     },
-    "filtersLabel": "Trash",
+    "filtersLabel": "Originals",
     "search": "Search by title or folder",
     "replacedBy": "replaced by",
     "renamedTo": "renamed to",
@@ -1023,7 +1023,18 @@
     "rekordboxSync": "rekordbox collection",
     "rekordboxDbPath": "rekordbox collection",
     "rekordboxDbPathHint": "The rekordbox collection to write into. It is found automatically; change it only if yours lives elsewhere.",
-    "traktorNmlPathEmpty": "Not chosen yet"
+    "traktorNmlPathEmpty": "Not chosen yet",
+    "originalBackup": "Back up the original",
+    "originalBackupHint": "Before rewriting a file, Surco keeps the previous one so the change can be undone.",
+    "originalBackupPolicies": {
+      "always": "Always",
+      "audioChanges": "Only when the audio changes",
+      "never": "Never"
+    },
+    "originalBackupAlwaysHint": "Editing only the tags also keeps a full copy of the file.",
+    "originalBackupAudioChangesHint": "Converting or normalizing keeps a copy; editing only the tags does not.",
+    "originalBackupNeverHint": "If a conversion fails, the original file is lost. There is no way to get it back.",
+    "originalBackupNeverLine": "No copy is kept, not when converting and not when normalizing."
   },
   "errorBoundary": {
     "title": "Something failed to render",
