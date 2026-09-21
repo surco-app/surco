@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { emptyMetadata } from '../../../shared/metadata'
 import { NEW_TRACKS_PROMPT_TIMEOUT_MS, useTrackLibrary } from './useTrackLibrary'
 
 afterEach(() => {
@@ -831,6 +832,55 @@ describe('useTrackLibrary meta read failures', () => {
     const fine = result.current.tracks.find((t) => t.fileName.includes('fine'))
     expect(broken?.metaReadFailed).toBe(true)
     expect(broken?.loadingMeta).toBe(false)
+    expect(fine?.metaReadFailed).toBeUndefined()
+    expect(onMetaReadFailed).toHaveBeenCalledExactlyOnceWith(1)
+  })
+
+  // The same flag, reached the other way. readMeta does NOT reject when the probe fails:
+  // it resolves with empty fields so a transient failure never costs the row (see its
+  // own comment). That left the catch above unreachable for the commonest case — a
+  // 0-byte or unreadable file found inside a folder — and the row sat in the list with
+  // no title, no duration and no mark, indistinguishable from a file that carries no
+  // tags. A user sent exactly such a file among two "MP3s that keep failing"
+  // (21/09/2026). The read now says so, and the row has to honour it.
+  it('flags the track when the read reports a failure instead of rejecting', async () => {
+    const onMetaReadFailed = vi.fn()
+    setApi({
+      readMeta: vi.fn((path: string) =>
+        path.includes('empty')
+          ? Promise.resolve({
+              tags: emptyMetadata(),
+              duration: null,
+              cover: null,
+              foreignTags: [],
+              failed: true,
+            })
+          : Promise.resolve({
+              tags: { ...emptyMetadata(), title: 'Fine', artist: 'A' },
+              duration: 180,
+              cover: null,
+              foreignTags: [],
+            }),
+      ),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed,
+      }),
+    )
+    await act(() => result.current.addPaths(['/music/empty.mp3', '/music/fine.wav']))
+
+    const empty = result.current.tracks.find((t) => t.fileName.includes('empty'))
+    const fine = result.current.tracks.find((t) => t.fileName.includes('fine'))
+    expect(empty?.metaReadFailed).toBe(true)
+    expect(empty?.loadingMeta, 'the row must not be left spinning').toBe(false)
     expect(fine?.metaReadFailed).toBeUndefined()
     expect(onMetaReadFailed).toHaveBeenCalledExactlyOnceWith(1)
   })
