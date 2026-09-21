@@ -31,7 +31,7 @@
     "settings": "Ajustes",
     "stats": "Estadísticas",
     "activity": "Actividad",
-    "trash": "Papelera de Surco",
+    "trash": "Originales de Surco",
     "selectAll": "Seleccionar todo",
     "revealSelected": "Ir a la pista seleccionada",
     "fillFromName": "Rellenar todo desde el nombre",
@@ -125,7 +125,7 @@
     "sourceTagsUnread": "No se han podido leer las etiquetas de este archivo, así que no se ha tocado: convertirlo habría borrado las que tiene. Vuelve a cargarlo e inténtalo de nuevo."
   },
   "trash": {
-    "title": "Papelera de Surco",
+    "title": "Originales de Surco",
     "summary_one": "{{count}} archivo · {{size}}",
     "summary_other": "{{count}} archivos · {{size}}",
     "emptyTitle": "No hay nada que restaurar",
@@ -138,7 +138,7 @@
     },
     "restore": "Restaurar",
     "remove": "Eliminar definitivamente",
-    "empty": "Vaciar papelera",
+    "empty": "Eliminar todos",
     "emptyConfirm_one": "¿Eliminar {{count}} archivo para siempre?",
     "emptyConfirm_other": "¿Eliminar {{count}} archivos para siempre?",
     "reveal": "Abrir carpeta",
@@ -152,7 +152,7 @@
       "deleted": "Borrados",
       "restored-over": "Apartados"
     },
-    "filtersLabel": "Papelera",
+    "filtersLabel": "Originales",
     "search": "Buscar por título o carpeta",
     "replacedBy": "sustituido por",
     "renamedTo": "renombrado a",
@@ -160,7 +160,7 @@
     "selfEmpties": "Se vacía sola a los {{days}} días.",
     "expiring_one": "queda {{count}} día",
     "expiring_other": "quedan {{count}} días",
-    "summaryEmpty": "vacía",
+    "summaryEmpty": "vacío",
     "noMatches": "Nada coincide con la búsqueda"
   },
   "notices": {
@@ -1023,7 +1023,18 @@
     "rekordboxSync": "Colección de rekordbox",
     "rekordboxDbPath": "Colección de rekordbox",
     "rekordboxDbPathHint": "La colección de rekordbox en la que escribir. Se detecta sola; cámbiala solo si la tienes en otro sitio.",
-    "traktorNmlPathEmpty": "Sin elegir"
+    "traktorNmlPathEmpty": "Sin elegir",
+    "originalBackup": "Copia de seguridad del original",
+    "originalBackupHint": "Antes de reescribir un archivo, Surco guarda el anterior para poder deshacerlo.",
+    "originalBackupPolicies": {
+      "always": "Siempre",
+      "audioChanges": "Solo si cambia el audio",
+      "never": "Nunca"
+    },
+    "originalBackupAlwaysHint": "Actualizar solo las etiquetas también guarda una copia entera del archivo.",
+    "originalBackupAudioChangesHint": "Convertir o normalizar guarda una copia; actualizar solo las etiquetas, no.",
+    "originalBackupNeverHint": "Si una conversión falla, el archivo original se pierde. No hay forma de recuperarlo.",
+    "originalBackupNeverLine": "No se guardará ninguna copia, ni al convertir ni al normalizar."
   },
   "errorBoundary": {
     "title": "Algo ha fallado al renderizar",

@@ -1,5 +1,6 @@
 import {
   Activity,
+  Archive,
   ArrowRightLeft,
   ChartColumn,
   FilePlus,
@@ -7,7 +8,6 @@ import {
   Radio,
   Settings as SettingsIcon,
   Sparkles,
-  Trash2,
 } from 'lucide-react'
 import type React from 'react'
 import { memo } from 'react'
@@ -388,7 +388,7 @@ export const Toolbar = memo(function Toolbar({
           className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
           aria-label={tr('header.trash')}
         >
-          <Trash2 className="h-4 w-4" aria-hidden="true" />
+          <Archive className="h-4 w-4" aria-hidden="true" />
           {trashCount > 0 && (
             <span
               data-testid="trash-count"

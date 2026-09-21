@@ -1,4 +1,4 @@
-import { FolderOpen, Pencil, RotateCcw, Search, Trash2, Undo2, X } from 'lucide-react'
+import { Archive, FolderOpen, Pencil, RotateCcw, Search, Undo2, X } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -47,8 +47,8 @@ function baseName(path: string): string {
   return cut >= 0 ? path.slice(cut + 1) : path
 }
 
-const FILTER_ICONS: Record<TrashFilter, typeof Trash2> = {
-  all: Trash2,
+const FILTER_ICONS: Record<TrashFilter, typeof Archive> = {
+  all: Archive,
   replaced: RotateCcw,
   renamed: Pencil,
   deleted: X,
@@ -177,7 +177,7 @@ export function TrashPanel({
               data-testid="trash-empty"
             >
               <div className="flex h-13 w-13 items-center justify-center rounded-xl border border-[var(--color-line)] bg-[var(--color-field)] p-3.5">
-                <Trash2 className="h-5 w-5 text-fg-faint" strokeWidth={1.6} aria-hidden="true" />
+                <Archive className="h-5 w-5 text-fg-faint" strokeWidth={1.6} aria-hidden="true" />
               </div>
               <p className="mt-4 text-sm font-medium text-fg">{tr('trash.emptyTitle')}</p>
               <p className="mt-1.5 max-w-[380px] text-xs leading-relaxed text-fg-dim">
