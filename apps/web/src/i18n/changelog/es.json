@@ -47,6 +47,18 @@
       {
         "text": "Convertir una pista con BPM decimal, como los 150.55 que escriben Traktor o Mixed In Key, a AIFF o WAV fallaba con un error de rango y no salía ningún archivo. Ahora sale, y con el BPM tal cual.",
         "in": "0.99.4"
+      },
+      {
+        "text": "Con el emparejamiento automático activado, arrastrar una carpeta la recorre entera aunque no la toques: antes solo se emparejaban las filas que tenías en pantalla y el contador se quedaba clavado, como si se hubiera parado en 20 de 1000, hasta que hacías scroll o lo reactivabas desde la barra. Las filas que estás mirando siguen yendo primero.",
+        "in": "0.99.5"
+      },
+      {
+        "text": "Actualizar o renombrar un MP3 de descarga antigua ya no falla con «cabecera no encontrada» ni con «el archivo convertido salió ilegible»: algunos traen basura delante del audio o en medio, y Surco se negaba a escribirles las etiquetas aunque sonaran bien. Ahora las escribe y acepta el archivo mientras suene tanto como el original. De una carpeta de 11 MP3 que llevaban meses fallando pasan todos menos uno, que está vacío.",
+        "in": "0.99.5"
+      },
+      {
+        "text": "La papelera de Surco pasa a llamarse «Originales de Surco»: lo que guarda son los archivos de partida que una conversión sustituyó, nunca algo que hayas borrado tú. Y en Ajustes → Destino eliges cuándo guardar esa copia: siempre, solo cuando cambia el audio (convertir, normalizar, recortar) o nunca. Retocar las etiquetas de una crate entera llenaba el límite de la papelera con copias idénticas al archivo nuevo salvo por las etiquetas.",
+        "in": "0.99.5"
       }
     ]
   },

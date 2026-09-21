@@ -47,6 +47,18 @@
       {
         "text": "Converting a track with a decimal BPM, like the 150.55 Traktor or Mixed In Key write, to AIFF or WAV failed with an out-of-range error and produced no file at all. It now comes out, with the BPM kept as it was.",
         "in": "0.99.4"
+      },
+      {
+        "text": "With auto-match on, dropping a folder sweeps all of it even if you leave it alone: only the rows on screen used to get matched and the counter sat still, as if it had stopped at 20 of 1000, until you scrolled or restarted it from the toolbar. The rows you are looking at still go first.",
+        "in": "0.99.5"
+      },
+      {
+        "text": "Updating or renaming an MP3 from an old download no longer fails with “header not found” or “the converted file came out unreadable”: some carry junk ahead of the audio or in the middle of it, and Surco refused to write their tags even though they played fine. Now it writes them and accepts the file as long as it plays as much as the original. Of a folder of 11 MP3s that had been failing for months, every one passes except a file that is empty.",
+        "in": "0.99.5"
+      },
+      {
+        "text": "Surco’s trash is now called “Surco’s originals”: what it keeps are the files a conversion replaced, never anything you deleted yourself. And in Settings → Output you choose when to keep that copy: always, only when the audio changes (converting, normalizing, trimming) or never. Retouching the tags of a whole crate used to fill the trash’s limit with copies identical to the new file except for the tags.",
+        "in": "0.99.5"
       }
     ]
   },
