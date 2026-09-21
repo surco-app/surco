@@ -79,6 +79,14 @@
       {
         "text": "An empty file you drop into the list no longer comes in as a row with no title and no length that fails without saying why: Surco drops it as you let go. And if a track cannot be read, its row says so, instead of sitting there with just the file name as if it simply had no tags.",
         "in": "0.99.7"
+      },
+      {
+        "text": "The originals Surco keeps now have their own settings section, where you choose how long they are kept and how much space they may take. Going over either limit removes the oldest ones, and the limits you set also govern what was already kept.",
+        "in": "0.99.8"
+      },
+      {
+        "text": "Choosing to never keep copies is now always honoured. Converting a track to another format or deleting it on a network drive used to keep a copy anyway, so space filled up with files you had asked Surco not to keep.",
+        "in": "0.99.8"
       }
     ]
   },

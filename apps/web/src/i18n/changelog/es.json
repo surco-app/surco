@@ -79,6 +79,14 @@
       {
         "text": "Un archivo vacío que sueltas en la lista ya no entra como una fila sin título ni duración que falla sin decir por qué: Surco lo descarta al soltarlo. Y si una pista no se deja leer, su fila lo dice, en vez de quedarse con el nombre del archivo a secas como si simplemente no tuviera etiquetas.",
         "in": "0.99.7"
+      },
+      {
+        "text": "Los originales que Surco guarda tienen ya su propia sección en los ajustes, donde eliges cuánto tiempo se conservan y cuánto espacio pueden ocupar. Al pasarse de cualquiera de los dos límites se borran los más antiguos, y los límites que pongas rigen también para lo que ya estaba guardado.",
+        "in": "0.99.8"
+      },
+      {
+        "text": "Elegir «Nunca» guardar copias ahora se respeta siempre. Antes, convertir una pista a otro formato o borrarla en un disco de red guardaba una copia igualmente, así que el espacio se llenaba con archivos que habías pedido no guardar.",
+        "in": "0.99.8"
       }
     ]
   },
