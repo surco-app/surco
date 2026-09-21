@@ -766,7 +766,7 @@ export function writeTags(
     tag.comment = meta.comment
     tag.track = toTrackNumber(meta.trackNumber)
     tag.disc = toNumber(meta.discNumber)
-    tag.beatsPerMinute = toNumber(meta.bpm)
+    tag.beatsPerMinute = Math.round(toNumber(meta.bpm))
     tag.initialKey = meta.key
     tag.remixedBy = meta.remixArtist
     tag.publisher = meta.publisher
@@ -880,6 +880,16 @@ export function writeTags(
       const trck = Id3v2TextInformationFrame.fromIdentifier(Id3v2FrameIdentifiers.TRCK)
       trck.text = [meta.trackNumber]
       id3.addFrame(trck)
+    }
+    // Same story for a fractional tempo ("150.55", what Traktor and Mixed In Key write):
+    // the numeric bpm setter above only holds an unsigned integer, so it took the rounded
+    // value and TagLib threw on the decimal before this fix. TBPM is a text frame, so the
+    // ID3 path rewrites it verbatim — matching `-metadata TBPM=` on the ffmpeg path.
+    if (!Number.isInteger(toNumber(meta.bpm))) {
+      id3.removeFrames(Id3v2FrameIdentifiers.TBPM)
+      const tbpm = Id3v2TextInformationFrame.fromIdentifier(Id3v2FrameIdentifiers.TBPM)
+      tbpm.text = [meta.bpm.trim()]
+      id3.addFrame(tbpm)
     }
 
     if (coverPath || removeCover) {
