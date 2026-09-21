@@ -724,7 +724,7 @@ describe('bit depth verdict and corrected-rate plan', () => {
     expect(screen.getByTestId('quality-bits-pill')).toHaveTextContent(
       i18n.t('editor.qualityBitsPill'),
     )
-    // The didactic why-line and the convert consequence ride the hints toggle.
+    // The didactic why-line rides the hints toggle.
     expect(note).toHaveTextContent(i18n.t('editor.qualityBitsPaddedWhy'))
   })
 
@@ -733,6 +733,16 @@ describe('bit depth verdict and corrected-rate plan', () => {
     const note = await screen.findByTestId('quality-bits-padded')
     expect(note).toHaveTextContent('low 8 bits are zero')
     expect(screen.queryByText(i18n.t('editor.qualityBitsPaddedWhy'))).not.toBeInTheDocument()
+  })
+
+  // Converting a padded file writes true 16-bit, so the pill legitimately
+  // disappears from the result — and a user comparing the two reads that
+  // silence as the analysis breaking. The consequence has to reach whoever
+  // sees the finding, not just whoever turned hints on.
+  it('always states what converting will do, so the vanished pill reads as the fix', async () => {
+    renderSection({ ...base, bitsUsage: 'padded16', bitsLowPct: 0 }, '/m/a.flac', false)
+    const note = await screen.findByTestId('quality-bits-padded')
+    expect(note).toHaveTextContent(i18n.t('editor.qualityBitsPaddedNote'))
   })
 
   it('lets a real 24-bit file earn its depth while hints are on', async () => {
