@@ -63,6 +63,22 @@
       {
         "text": "Limpiar las etiquetas de un MP3 ya no hay que hacerlo dos veces: Surco dejaba detrás una capa antigua de etiquetas, la que mp3tag llama ID3v1, con un título recortado a 30 letras y el año puesto a cero, y esa capa era la que volvías a ver. Ahora se va a la primera, y al borrarlo todo se va también la capa que dejan los medidores de volumen.",
         "in": "0.99.6"
+      },
+      {
+        "text": "Convertir una pista ya no arrastra al archivo nuevo el rastro de quien la produjo antes de llegar a ti: el estudio, el técnico y la herramienta del dueño anterior seguían dentro de un archivo cuyo título y artista ya eran los tuyos, y reaparecían al volver a WAV. Ahora el archivo que sale es el tuyo y nada más.",
+        "in": "0.99.7"
+      },
+      {
+        "text": "Un MP3 con la marca de compra de la tienda mal escrita, como los que deja Beatport con el identificador vacío, ya no falla entero al convertirlo a MP3 ni al actualizarlo en su sitio. En una biblioteca de 847 pistas eran 12 de las 14 que la llevaban. Surco tira solo esa marca rota y escribe el resto de etiquetas con normalidad.",
+        "in": "0.99.7"
+      },
+      {
+        "text": "Un MP3 de tasa variable sin índice interno, de los que declaran una duración aproximada y no real, ya no ve descartada su conversión por «más corta que el original». Eran 432 de los 837 MP3 de una biblioteca: el archivo salía bien y Surco lo tiraba igualmente comparándolo contra una duración que el propio archivo se inventaba.",
+        "in": "0.99.7"
+      },
+      {
+        "text": "Un archivo vacío que sueltas en la lista ya no entra como una fila sin título ni duración que falla sin decir por qué: Surco lo descarta al soltarlo. Y si una pista no se deja leer, su fila lo dice, en vez de quedarse con el nombre del archivo a secas como si simplemente no tuviera etiquetas.",
+        "in": "0.99.7"
       }
     ]
   },
