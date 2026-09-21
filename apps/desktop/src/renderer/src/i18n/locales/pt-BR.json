@@ -1024,8 +1024,7 @@
     "rekordboxDbPath": "Coleção do rekordbox",
     "rekordboxDbPathHint": "A coleção do rekordbox em que gravar. Ela é detectada sozinha; troque apenas se a sua estiver em outro lugar.",
     "traktorNmlPathEmpty": "Ainda não escolhido",
-    "originalBackup": "Backup do original",
-    "originalBackupHint": "Antes de reescrever um arquivo, o Surco guarda o anterior para poder desfazer.",
+    "originalBackup": "O que é guardado",
     "originalBackupPolicies": {
       "always": "Sempre",
       "audioChanges": "Só se o áudio mudar",
@@ -1033,8 +1032,15 @@
     },
     "originalBackupAlwaysHint": "Editar só as etiquetas também guarda uma cópia inteira do arquivo.",
     "originalBackupAudioChangesHint": "Converter ou normalizar guarda uma cópia; editar só as etiquetas, não.",
-    "originalBackupNeverHint": "Se uma conversão falhar, o arquivo original se perde. Não há como recuperá-lo.",
-    "originalBackupNeverLine": "Nenhuma cópia é guardada, nem ao converter nem ao normalizar."
+    "originalBackupNeverHint": "Se uma conversão falhar, o arquivo original se perde. Apagar uma faixa num disco sem lixeira também será definitivo.",
+    "originalBackupNeverLine": "Nenhuma cópia é guardada, nem ao converter nem ao normalizar.",
+    "originals": "Originais",
+    "originalsHint": "Quando o Surco reescreve, renomeia ou apaga um arquivo seu, guarda o anterior aqui para você poder desfazer.",
+    "originalBackupDays": "Por",
+    "originalBackupDaysUnit": "dias",
+    "originalBackupSize": "Até",
+    "originalBackupLimitsHint": "Ao passar de qualquer um dos dois, os mais antigos são apagados.",
+    "originalBackupLimitsKept": "Os limites continuam valendo para o que já está guardado."
   },
   "errorBoundary": {
     "title": "Algo falhou ao renderizar",

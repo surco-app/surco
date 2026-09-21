@@ -1024,8 +1024,7 @@
     "rekordboxDbPath": "Collection rekordbox",
     "rekordboxDbPathHint": "La collection rekordbox dans laquelle écrire. Elle est détectée automatiquement ; ne la change que si la tienne est ailleurs.",
     "traktorNmlPathEmpty": "Pas encore choisi",
-    "originalBackup": "Sauvegarde de l'original",
-    "originalBackupHint": "Avant de réécrire un fichier, Surco conserve le précédent pour pouvoir revenir en arrière.",
+    "originalBackup": "Ce qui est conservé",
     "originalBackupPolicies": {
       "always": "Toujours",
       "audioChanges": "Seulement si l'audio change",
@@ -1033,8 +1032,15 @@
     },
     "originalBackupAlwaysHint": "Modifier seulement les étiquettes conserve aussi une copie entière du fichier.",
     "originalBackupAudioChangesHint": "Convertir ou normaliser conserve une copie ; modifier seulement les étiquettes, non.",
-    "originalBackupNeverHint": "Si une conversion échoue, le fichier original est perdu. Il n'y a aucun moyen de le récupérer.",
-    "originalBackupNeverLine": "Aucune copie n'est conservée, ni à la conversion ni à la normalisation."
+    "originalBackupNeverHint": "Si une conversion échoue, le fichier original est perdu. Supprimer une piste sur un disque sans corbeille sera également définitif.",
+    "originalBackupNeverLine": "Aucune copie n'est conservée, ni à la conversion ni à la normalisation.",
+    "originals": "Originaux",
+    "originalsHint": "Quand Surco réécrit, renomme ou supprime un de vos fichiers, il conserve le précédent ici pour que vous puissiez revenir en arrière.",
+    "originalBackupDays": "Pendant",
+    "originalBackupDaysUnit": "jours",
+    "originalBackupSize": "Jusqu'à",
+    "originalBackupLimitsHint": "Au-delà de l'un ou l'autre, les plus anciens sont supprimés.",
+    "originalBackupLimitsKept": "Les limites régissent toujours ce qui est déjà conservé."
   },
   "errorBoundary": {
     "title": "Quelque chose n'a pas pu s'afficher",

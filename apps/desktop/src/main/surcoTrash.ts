@@ -51,12 +51,23 @@ async function move(from: string, to: string): Promise<void> {
   }
 }
 
+// The limits, either fixed or read fresh on every sweep. A getter is what the app
+// passes: they are the user's setting now, saved while the app runs, and a value
+// captured when the trash was built would leave a tightened cap doing nothing until the
+// next restart — indistinguishable, to the user, from a setting that does not work.
+export type TrashLimits = { retentionDays?: number; maxBytes?: number }
+
 export function createSurcoTrash(
   dir: string,
-  opts: { retentionDays?: number; maxBytes?: number } = {},
+  opts: TrashLimits | (() => TrashLimits) = {},
 ): SurcoTrash {
-  const retentionMs = (opts.retentionDays ?? TRASH_RETENTION_DAYS) * DAY_MS
-  const maxBytes = opts.maxBytes ?? TRASH_MAX_BYTES
+  const limits = (): { retentionMs: number; maxBytes: number } => {
+    const o = typeof opts === 'function' ? opts() : opts
+    return {
+      retentionMs: (o.retentionDays ?? TRASH_RETENTION_DAYS) * DAY_MS,
+      maxBytes: o.maxBytes ?? TRASH_MAX_BYTES,
+    }
+  }
   const items = join(dir, 'items')
   const manifest = join(dir, 'trash.json')
 
@@ -136,6 +147,7 @@ export function createSurcoTrash(
       write([])
     },
     sweep: async (now = Date.now()) => {
+      const { retentionMs, maxBytes } = limits()
       const entries = newestFirst(read())
       const dropped: TrashEntry[] = []
       let kept: TrashEntry[] = []

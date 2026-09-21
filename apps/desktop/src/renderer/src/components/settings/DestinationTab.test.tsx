@@ -24,6 +24,8 @@ const synced: SyncedDraft = {
   overwriteOriginal: false,
   convertBesideOriginal: false,
   backupPolicy: 'always',
+  backupRetentionDays: 30,
+  backupMaxGb: 10,
   addToEngineDj: false,
   syncTraktor: false,
   syncRekordbox: false,
@@ -633,59 +635,73 @@ describe('DestinationTab Traktor collection', () => {
   })
 })
 
-describe('DestinationTab original backup', () => {
-  // The control only means anything where Surco rewrites the user's own file: every
-  // other destination writes a new file and never touches the source, so offering the
-  // choice there would describe a risk that does not exist. The picker keeps every
-  // detail mounted so it can animate the reveal, so "not offered" means inert and
-  // collapsed — out of the tab order and the accessibility tree — not absent.
-  it('offers the backup choice only under the overwrite destination', () => {
-    renderTab({ overwriteOriginal: true })
-    expect(screen.getByTestId('settings-backup').closest('[inert]')).toBeNull()
-    cleanup()
-    renderTab({ overwriteOriginal: false, convertBesideOriginal: true })
-    expect(screen.getByTestId('settings-backup').closest('[inert]')).not.toBeNull()
+describe('DestinationTab originals', () => {
+  // The setting used to hang off the overwrite radio, so it was invisible — and
+  // inapplicable — under every other destination. But Originals also fills from a format
+  // change and from a delete on a volume with no OS Trash, neither of which is the
+  // overwrite destination, so the section stands on its own and is always reachable.
+  it('shows the originals section whatever the destination is', () => {
+    renderTab({ addToAppleMusic: true, overwriteOriginal: false })
+    expect(screen.getByTestId('settings-backup-always')).toBeInTheDocument()
+    expect(screen.getByTestId('settings-backup-days')).toBeInTheDocument()
+    expect(screen.getByTestId('settings-backup-gb')).toBeInTheDocument()
   })
 
   it('stages the chosen level', () => {
-    const patch = renderTab({ overwriteOriginal: true })
+    const patch = renderTab()
     fireEvent.click(screen.getByTestId('settings-backup-audioChanges'))
     expect(patch).toHaveBeenCalledWith('backupPolicy', 'audioChanges')
   })
 
-  // Turning the net off is the one choice here that can cost a file, so it has to say
-  // so at the moment it is chosen rather than leaving the user to infer it from the
-  // word "never".
-  it('warns about losing the file only while the backup is off', () => {
-    renderTab({ overwriteOriginal: true, backupPolicy: 'never' })
-    expect(screen.getByTestId('settings-backup-warning')).toBeInTheDocument()
+  // The limits are number inputs inside the settings <form>, and the form is what Save
+  // submits. A field the browser considers invalid blocks that submit silently: with
+  // min=0.1 and step=0.5, the shipped default of 10 GB was not a valid step, so Save did
+  // nothing at all — on a field the user had never touched. Asserted on the defaults
+  // because that is the state every user starts in.
+  it('leaves the limit fields valid at their defaults, so Save can submit', () => {
+    renderTab()
+    const days = screen.getByTestId('settings-backup-days') as HTMLInputElement
+    const gb = screen.getByTestId('settings-backup-gb') as HTMLInputElement
+    expect(days.checkValidity()).toBe(true)
+    expect(gb.checkValidity()).toBe(true)
+  })
+
+  it('stages the limits as the user types them', () => {
+    const patch = renderTab()
+    fireEvent.change(screen.getByTestId('settings-backup-days'), { target: { value: '7' } })
+    expect(patch).toHaveBeenCalledWith('backupRetentionDays', 7)
+    fireEvent.change(screen.getByTestId('settings-backup-gb'), { target: { value: '25' } })
+    expect(patch).toHaveBeenCalledWith('backupMaxGb', 25)
+  })
+
+  // Turning the net off is the one choice here that can cost a file, and with Never it
+  // reaches a delete on a NAS too — where nothing else would have kept a copy. The
+  // warning has to say that before the user picks it, not after.
+  it('warns about losing files only while the backup is off', () => {
+    renderTab({ backupPolicy: 'never' })
+    const warning = screen.getByTestId('settings-backup-warning')
+    expect(warning.textContent).toMatch(/trash/i)
     cleanup()
-    renderTab({ overwriteOriginal: true, backupPolicy: 'audioChanges' })
+    renderTab({ backupPolicy: 'audioChanges' })
     expect(screen.queryByTestId('settings-backup-warning')).not.toBeInTheDocument()
   })
 
-
-  // The amber box carries the warning, so the grey line under the control must not
-  // repeat it word for word: the first build said "if a conversion fails the original is
-  // lost" twice, stacked, which reads as a rendering bug rather than emphasis.
-  it('does not say the same sentence twice under never', () => {
-    renderTab({ overwriteOriginal: true, backupPolicy: 'never' })
-    const hint = screen.getByTestId('settings-backup-hint').textContent ?? ''
-    const warning = screen.getByTestId('settings-backup-warning').textContent ?? ''
-    expect(hint).toBe(i18n.t('settings.originalBackupNeverLine'))
-    expect(warning).toContain(i18n.t('settings.originalBackupNeverHint'))
-    expect(hint).not.toBe(warning)
+  // Settings' rule: a control that does not apply stays visible and disabled. The limits
+  // still govern what is already stored, so they are dimmed rather than removed — and
+  // switching the feature off must never look like it discarded the existing copies.
+  it('disables the limits under never without hiding them', () => {
+    renderTab({ backupPolicy: 'never' })
+    expect(screen.getByTestId('settings-backup-days')).toBeDisabled()
+    expect(screen.getByTestId('settings-backup-gb')).toBeDisabled()
   })
 
-  // The cost of each level is what the user is actually choosing between, so the hint
-  // tracks the selection instead of stating one policy's consequence for all three.
   it('explains the level in force', () => {
-    renderTab({ overwriteOriginal: true, backupPolicy: 'always' })
+    renderTab({ backupPolicy: 'always' })
     expect(screen.getByTestId('settings-backup-hint')).toHaveTextContent(
       i18n.t('settings.originalBackupAlwaysHint'),
     )
     cleanup()
-    renderTab({ overwriteOriginal: true, backupPolicy: 'audioChanges' })
+    renderTab({ backupPolicy: 'audioChanges' })
     expect(screen.getByTestId('settings-backup-hint')).toHaveTextContent(
       i18n.t('settings.originalBackupAudioChangesHint'),
     )

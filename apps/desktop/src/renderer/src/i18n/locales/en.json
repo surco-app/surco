@@ -1024,8 +1024,7 @@
     "rekordboxDbPath": "rekordbox collection",
     "rekordboxDbPathHint": "The rekordbox collection to write into. It is found automatically; change it only if yours lives elsewhere.",
     "traktorNmlPathEmpty": "Not chosen yet",
-    "originalBackup": "Back up the original",
-    "originalBackupHint": "Before rewriting a file, Surco keeps the previous one so the change can be undone.",
+    "originalBackup": "What gets kept",
     "originalBackupPolicies": {
       "always": "Always",
       "audioChanges": "Only when the audio changes",
@@ -1033,8 +1032,15 @@
     },
     "originalBackupAlwaysHint": "Editing only the tags also keeps a full copy of the file.",
     "originalBackupAudioChangesHint": "Converting or normalizing keeps a copy; editing only the tags does not.",
-    "originalBackupNeverHint": "If a conversion fails, the original file is lost. There is no way to get it back.",
-    "originalBackupNeverLine": "No copy is kept, not when converting and not when normalizing."
+    "originalBackupNeverHint": "If a conversion fails, the original file is lost. Deleting a track on a disk with no Trash will be permanent too.",
+    "originalBackupNeverLine": "No copy is kept, not when converting and not when normalizing.",
+    "originals": "Originals",
+    "originalsHint": "When Surco rewrites, renames or deletes a file of yours, it keeps the previous one here so you can undo it.",
+    "originalBackupDays": "For",
+    "originalBackupDaysUnit": "days",
+    "originalBackupSize": "Up to",
+    "originalBackupLimitsHint": "Past either one, the oldest are deleted first.",
+    "originalBackupLimitsKept": "The limits still govern what is already kept."
   },
   "errorBoundary": {
     "title": "Something failed to render",
