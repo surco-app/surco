@@ -287,6 +287,31 @@ describe('convertArgs', () => {
     expect(normal).not.toContain('-map_metadata')
   })
 
+  // djotas, 21/09/2026: "convierto a FLAC y vuelvo a WAV y sigo viendo el campo que
+  // nunca se eliminó... sigo viendo información de la anterior persona". Measured: a
+  // source's encoded_by/engineer/technician/software/originator/product/source/copyright
+  // ride ffmpeg's default -map_metadata 0 into the output, so a converted file kept
+  // saying which studio and which tool made the ORIGINAL — beside the user's own title
+  // and artist, which the editor had already replaced. They are outside TAG_FIELDS, so
+  // nothing overwrote them; unlike `comment` (managed, cleared on empty) they simply
+  // carried through. Cleared always, not just on clearExtras: a normal convert produces
+  // the user's file, and the previous owner's toolchain is not part of it.
+  it('clears the source owner\'s provenance fields on a normal convert', () => {
+    const args = convertArgs('/in.mp3', '/o.flac', { codec: 'flac' }, meta)
+    for (const field of [
+      'encoded_by',
+      'engineer',
+      'technician',
+      'software',
+      'originator',
+      'product',
+      'source',
+      'copyright',
+    ]) {
+      expect(args, `${field} still rides through`).toContain(`${field}=`)
+    }
+  })
+
   // Reported 11/09/2026: a FLAC showing 2 stars in Surco and 5 in another tool. The
   // file carried both — RATING at 102 and "RATING WMP" at 255. Nothing wrote that on
   // Windows: the ID3 pass writes BOTH POPM users on purpose (setRating), ffmpeg carries
