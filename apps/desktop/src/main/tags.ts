@@ -750,6 +750,10 @@ export function writeTags(
 ): void {
   const f = TagFile.createFromPath(file)
   try {
+    if (extname(file).toLowerCase() === '.mp3') {
+      f.removeTags(TagTypes.Id3v1)
+      if (clearExtras) f.removeTags(TagTypes.Ape)
+    }
     const tag = f.tag
     // M4A carries iTunes atoms in a single ILST box with no per-frame overwrite
     // semantics like ID3's frame IDs — Tag.clear() (AppleTag: _ilstBox.clearChildren())

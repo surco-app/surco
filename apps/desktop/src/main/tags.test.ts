@@ -1694,3 +1694,76 @@ describe('record label on FLAC', () => {
     expect(xiphField(file, 'ORGANIZATION')).toEqual([])
   })
 })
+
+function appendId3v1(file: string, title: string, year: string): void {
+  const field = (text: string, width: number) => {
+    const buf = Buffer.alloc(width)
+    buf.write(text, 0, 'latin1')
+    return buf
+  }
+  const block = Buffer.concat([
+    Buffer.from('TAG', 'latin1'),
+    field(title, 30),
+    field('Old Artist', 30),
+    field('', 30),
+    field(year, 4),
+    field('', 30),
+    Buffer.from([255]),
+  ])
+  writeFileSync(file, Buffer.concat([readFileSync(file), block]))
+}
+
+function addApeTag(file: string, title: string): void {
+  const f = TagFile.createFromPath(file)
+  const ape = f.getTag(TagTypes.Ape, true) as { title?: string }
+  ape.title = title
+  f.save()
+  f.dispose()
+}
+
+function hasId3v1(file: string): boolean {
+  const bytes = readFileSync(file)
+  return bytes.subarray(bytes.length - 128, bytes.length - 125).toString('latin1') === 'TAG'
+}
+
+function hasApe(file: string): boolean {
+  return readFileSync(file).includes('APETAGEX')
+}
+
+// djotas (21/09/2026) had to press "clear metadata" twice on some MP3s and still saw a
+// layer mp3tag called ID3v1: TagLib adds a 128-byte ID3v1 block on every save of an MP3
+// that never had one, with the year spelled "0", and once the ID3v2 tag is empty ffprobe
+// reads that year back as the track's own. The ID3v2.3 tag Surco writes carries every
+// field, so an ID3v1 only ever holds a stale or 30-character-truncated copy of it.
+describe('tag layers on an mp3', () => {
+  it('never leaves an ID3v1 block behind, whether the file had one or not', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const fresh = buildSeed(dir)
+    writeTags(fresh, meta)
+    expect(hasId3v1(fresh)).toBe(false)
+
+    const legacy = join(dir, 'legacy.mp3')
+    writeFileSync(legacy, readFileSync(buildSeed(dir)))
+    appendId3v1(legacy, 'Stale v1 Title', '1999')
+    writeTags(legacy, meta)
+    expect(hasId3v1(legacy)).toBe(false)
+    const f = TagFile.createFromPath(legacy)
+    expect(f.tag.title).toBe('Till I Come')
+    f.dispose()
+  })
+
+  it('strips an APE tag only when the user clears everything', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const kept = buildSeed(dir)
+    addApeTag(kept, 'ReplayGain scanner left this')
+    writeTags(kept, meta)
+    expect(hasApe(kept)).toBe(true)
+
+    const cleared = join(dir, 'cleared.mp3')
+    writeFileSync(cleared, readFileSync(buildSeed(dir)))
+    addApeTag(cleared, 'ReplayGain scanner left this')
+    writeTags(cleared, meta, undefined, false, undefined, undefined, true)
+    expect(hasApe(cleared)).toBe(false)
+    expect(hasId3v1(cleared)).toBe(false)
+  })
+})
