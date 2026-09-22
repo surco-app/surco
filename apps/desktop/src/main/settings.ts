@@ -117,6 +117,7 @@ export const defaults: Settings = {
   shortcutOverrides: {},
   hasSeenOnboarding: false,
   deezerProviderMigrated: false,
+  outputCopyMigrated: false,
   conversionCount: 0,
   stats: {
     imported: 0,
@@ -486,4 +487,18 @@ export function migrateProviderDefaults(): void {
     ? cur.searchProviders
     : [...cur.searchProviders, 'deezer' as const]
   saveSettings({ searchProviders, deezerProviderMigrated: true })
+}
+
+export function migrateOutputCopy(): void {
+  const cur = getSettings()
+  if (cur.outputCopyMigrated) return
+  const appleMusicOnly =
+    cur.addToAppleMusic &&
+    !cur.addToEngineDj &&
+    !cur.convertBesideOriginal &&
+    !cur.overwriteOriginal
+  saveSettings({
+    outputCopyMigrated: true,
+    ...(appleMusicOnly ? { keepOutputCopy: false } : {}),
+  })
 }
