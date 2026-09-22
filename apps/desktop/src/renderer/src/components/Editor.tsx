@@ -1237,6 +1237,7 @@ export const Editor = memo(function Editor({
                           }}
                           item={item}
                           selectedCount={selectedTracks?.length ?? 1}
+                          format={format}
                           showHints={showEditorHints}
                           onShowHelp={onShowLoudnessHelp}
                           onHideHints={onHideEditorHints}

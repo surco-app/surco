@@ -617,6 +617,7 @@
     "suggestionsMore": "Mostrar {{count}} más"
   },
   "declick": {
+    "cueWarning": "ALAC no guarda los cues ni el beatgrid de Traktor: se pierden al convertir.",
     "title": "Reparación de clicks de vinilo",
     "hint": "Desactivado por defecto. Detecta los clicks y pops de la aguja y los interpola durante la conversión.",
     "mode": {
@@ -704,7 +705,7 @@
     "peakRemoveDc": "Eliminar desplazamiento DC (centrar en 0.0)",
     "peakPerChannel": "Normalizar canales estéreo independientemente",
     "cueWarning": "Recodifica el audio. Los cues y el beatgrid de Traktor se conservan en MP3, AIFF, FLAC y WAV; en ALAC se pierden.",
-    "cueWarningShort": "Reencoda el audio · cues se mantienen salvo en ALAC",
+    "cueWarningShort": "Reencoda el audio · en ALAC se pierden los cues",
     "predictionEstimate": "(estimado)",
     "presetHint": {
       "streaming": "Como nivelan Spotify y Apple Music: el valor seguro para una biblioteca de escucha.",

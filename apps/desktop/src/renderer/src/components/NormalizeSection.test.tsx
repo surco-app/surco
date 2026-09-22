@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { NormalizeConfig, TrackMetadata } from '../../../shared/types'
+import type { NormalizeConfig, OutputFormat, TrackMetadata } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
 import '../i18n'
 import type { TrackItem } from '../types'
@@ -47,6 +47,7 @@ function renderSection(
         onChange={vi.fn()}
         item={item}
         selectedCount={selectedCount}
+        format="aiff"
         onShowHelp={vi.fn()}
         showHints={showHints}
         onHideHints={onHideHints}
@@ -132,6 +133,7 @@ describe('NormalizeSection before/after waveforms', () => {
           onChange={vi.fn()}
           item={item}
           selectedCount={1}
+          format="aiff"
           onShowHelp={vi.fn()}
         />
       </QueryClientProvider>
@@ -156,7 +158,7 @@ describe('NormalizeSection layout', () => {
   const loud: NormalizeConfig = { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
 
   function renderWith(
-    over: { open?: boolean; value?: NormalizeConfig } = {},
+    over: { open?: boolean; value?: NormalizeConfig; format?: OutputFormat } = {},
   ): ReturnType<typeof render> {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], rms: [0.2, 0.4], durationSec: 10 }),
@@ -172,6 +174,7 @@ describe('NormalizeSection layout', () => {
           onChange={vi.fn()}
           item={track()}
           selectedCount={1}
+          format={over.format ?? 'alac'}
           onShowHelp={vi.fn()}
         />
       </QueryClientProvider>,
@@ -227,6 +230,14 @@ describe('NormalizeSection layout', () => {
     expect(screen.getAllByText(/Re-encodes the audio/)).toHaveLength(1)
     const strip = screen.getByTestId('waveform-strip')
     expect(strip.compareDocumentPosition(warning) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  // Only ALAC loses the Traktor cues on the re-encode; on every other format a warning
+  // would be noise the DJ learns to skip past.
+  it('shows no cue warning for a format that keeps the cues', async () => {
+    renderWith({ value: loud, format: 'flac' })
+    await screen.findByTestId('waveform-solo')
+    expect(screen.queryByTestId('normalize-cue-warning')).not.toBeInTheDocument()
   })
 
   it('shows no cue warning while normalization is off', async () => {

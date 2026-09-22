@@ -2,6 +2,7 @@ import { ChevronRight, Loader2, Pause, Play, X } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { losesTraktorCues } from '../../../shared/outputFormats'
 import type { DeclickMode, OutputFormat, TrimRange } from '../../../shared/types'
 import { useClicks } from '../hooks/useClicks'
 import { useDeclickAb } from '../hooks/useDeclickAb'
@@ -17,11 +18,6 @@ import { SectionSubhead } from './SectionSubhead'
 import { Tooltip } from './Tooltip'
 import { AFTER_COLOR, Strip, ZOOM_MAX, zoomLabel } from './WaveformCompare'
 import { ZoomStepper } from './ZoomStepper'
-
-// The formats whose re-encode carries the Traktor cue/beatgrid frame over (see
-// convertAudio's copyCueFrames): converting to these loses nothing, so the amber
-// cue warning would be pure noise there.
-const CUES_SURVIVE: OutputFormat[] = ['mp3', 'aiff']
 
 const PLAYHEAD_FINE_STEP_SEC = 0.01
 const PLAYHEAD_COARSE_STEP_SEC = 0.25
@@ -437,9 +433,9 @@ export function DeclickSection({
               )}
             </div>
           )}
-          {value !== 'off' && !CUES_SURVIVE.includes(format) && (
+          {value !== 'off' && losesTraktorCues(format) && (
             <p data-testid="declick-cue-warning" className="mt-3 text-xs text-warn">
-              {tr('normalize.cueWarning')}
+              {tr('declick.cueWarning')}
             </p>
           )}
         </div>
