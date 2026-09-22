@@ -35,9 +35,8 @@ interface Props {
 // rest — it used to place its Open control wherever its "FIXED" label happened to end.
 const SECTION_GRID = 'grid grid-cols-[1fr_4.75rem_4.75rem_1.75rem_1.75rem] items-center gap-1'
 
-// Which editor sections show, in what order, and which start open — split out of the
-// Editor tab (which keeps the behaviour toggles) so this reorder manager gets its own room
-// instead of trailing a long scroll under the preferences.
+// Which editor sections show, in what order, and which start open: the block under the
+// Editor tab's behaviour toggles, set off as its own section.
 export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const sections = synced.editorSections
@@ -68,7 +67,7 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
     setSections(next)
   }
   return (
-    <SettingsSection first>
+    <SettingsSection>
       <SettingsLabel>{tr('settings.sections.title')}</SettingsLabel>
       <SettingsHint className="mt-2 mb-3">{tr('settings.sections.hint')}</SettingsHint>
       {/* Column headings on the row grid, so each label sits over its own control. Each
