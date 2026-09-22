@@ -39,7 +39,7 @@ describe('exportButtonLabel', () => {
   })
 
   // After an export, picking a different format from the menu only relabels the button —
-  // so the label is the ONLY place the pending format is visible. A bare "Re-export"
+  // so the label is the ONLY place the pending format is visible. A bare "Convert again"
   // would export to FLAC while reading like a repeat of the WAV that just finished.
   it('names the pending format on the re-export button when it differs from the exported one', () => {
     const spec = exportButtonLabel({ ...base, quiet: true, format: 'FLAC', exportedFormat: 'WAV' })

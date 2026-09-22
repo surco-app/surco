@@ -234,7 +234,7 @@
   },
   "commands": {
     "add": "Add files",
-    "processCurrent": "Process current track",
+    "processCurrent": "Convert current track",
     "processAll": "Convert all tracks",
     "play": "Play / pause track",
     "seekBack": "Rewind 5 seconds",
@@ -313,7 +313,7 @@
     "remove": "Remove",
     "status": {
       "idle": "Not converted",
-      "processing": "Processing…",
+      "processing": "Converting…",
       "done": "Done",
       "stale": "Unapplied changes",
       "error": "Error"
@@ -487,13 +487,13 @@
     "convert": "Convert to {{format}} + Apple Music",
     "convertEngine": "Convert to {{format}} + Engine DJ",
     "convertNoMusic": "Convert to {{format}}",
-    "exportAgain": "Export again",
+    "exportAgain": "Convert again",
     "chooseFormat": "Choose format",
     "menuFormat": "Format",
     "menuDestination": "Destination",
-    "update": "Update",
-    "updateMusic": "Update + Apple Music",
-    "processing": "Processing…",
+    "update": "Update tags",
+    "updateMusic": "Update tags + Apple Music",
+    "processing": "Converting…",
     "exportedAs": "✓ Exported as {{format}}",
     "exportedCount_one": "✓ {{count}} track exported",
     "exportedCount_other": "✓ {{count}} tracks exported",
@@ -501,8 +501,8 @@
     "addedToAppleMusicCount_one": "✓ {{count}} track added to Apple Music",
     "addedToAppleMusicCount_other": "✓ {{count}} tracks added to Apple Music",
     "showFile": "Show file",
-    "reexport": "Re-export",
-    "reexportAs": "Re-export ({{format}})",
+    "reexport": "Convert again",
+    "reexportAs": "Convert again to {{format}}",
     "exportCollection": "Export to another DJ app…",
     "deleteOriginal": "Delete original file",
     "appleMusicAdd": "Add to Apple Music",
@@ -522,7 +522,7 @@
     "searchError": "Search failed",
     "releaseError": "Could not load the release",
     "analyzeError": "Could not analyze the audio",
-    "processError": "Processing failed",
+    "processError": "Conversion failed",
     "fileInUseError": "Another program is using this file (antivirus, player…). Your conversion is safe: it was saved next to it, with ~ at the end of the name.",
     "missingRequired": "Missing required fields: {{fields}}",
     "mixedReplaceSelection": "The selection mixes tracks that replace a copy in your library with tracks that are added. Separate them to convert.",
@@ -768,7 +768,7 @@
       "groupTags": "Tags",
       "groupTagsHint": "Track metadata",
       "groupConvert": "Convert",
-      "groupConvertHint": "Process and export",
+      "groupConvertHint": "Convert and export",
       "groupLibrary": "Library",
       "groupLibraryHint": "Files and housekeeping",
       "groupPlayback": "Playback",
@@ -1110,7 +1110,7 @@
       },
       "appleMusic": {
         "q": "What does “Add to Apple Music” do?",
-        "a": "When enabled (macOS only), Surco automatically imports each converted track into your Apple Music library right after processing, so your freshly tagged files land there without a manual drag-and-drop.\n\nWhile editing, Surco also checks whether a track is already in your library and shows a small badge, so you don't create duplicates. You can turn auto-add off anytime in Settings → Output."
+        "a": "When enabled (macOS only), Surco automatically imports each converted track into your Apple Music library right after converting it, so your freshly tagged files land there without a manual drag-and-drop.\n\nWhile editing, Surco also checks whether a track is already in your library and shows a small badge, so you don't create duplicates. You can turn auto-add off anytime in Settings → Output."
       },
       "windows": {
         "q": "Is anything different on Windows?",

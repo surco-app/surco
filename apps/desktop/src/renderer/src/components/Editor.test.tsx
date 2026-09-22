@@ -1777,18 +1777,18 @@ describe('Editor export control', () => {
   // Exporting to the source's own format edits the original in place rather than
   // writing a converted copy, so the button must not promise a conversion that
   // never happens — it offers to update the file instead.
-  it('labels the button "Update" when the export format matches the source', () => {
+  it('labels the button "Update tags" when the export format matches the source', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'wav')
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update')
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
   })
 
   // With Keep MP3 on, "converting to AIFF" an mp3 is actually an in-place tag
   // edit: the button must say "Update", not promise an AIFF that never gets written.
-  it('labels the button "Update" for an mp3 source when keep mp3 is on', () => {
+  it('labels the button "Update tags" for an mp3 source when keep mp3 is on', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.mp3', fileName: 'a.mp3' }, 'aiff', {
       keepMp3Sources: true,
     })
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update')
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
   })
 
   // Picking a format from the dropdown used to convert on the spot, so a misclick
