@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { NormalizeConfig, SpectrumResult } from '../../../shared/types'
+import type { SpectrumResult } from '../../../shared/types'
 import i18n from '../i18n'
 import { createQueryClient } from '../lib/queryClient'
 import { ToastProvider } from '../lib/toastContext'
@@ -19,10 +19,6 @@ vi.mock('../lib/qualityReport', async (importOriginal) => ({
 }))
 
 afterEach(cleanup)
-
-// These cases are about the spectrogram, and mount with the loudness table off; with
-// normalization off too, nothing here draws a post-conversion estimate.
-const OFF: NormalizeConfig = { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
 
 function track(inputPath = '/music/a.flac'): TrackItem {
   const fileName = inputPath.split('/').pop() ?? inputPath
@@ -68,11 +64,8 @@ function renderSection(
       <QualitySection
         item={track(inputPath)}
         showSpectrum
-        showLoudness={false}
-        normalize={OFF}
         open
         onToggle={vi.fn()}
-        onShowLoudnessHelp={vi.fn()}
         showHints={showHints}
         outputSampleRate={outputSampleRate}
       />
@@ -95,15 +88,7 @@ describe('QualitySection analysis gating', () => {
     const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
-        <QualitySection
-          item={track()}
-          showSpectrum
-          showLoudness={false}
-          normalize={OFF}
-          open={false}
-          onToggle={vi.fn()}
-          onShowLoudnessHelp={vi.fn()}
-        />
+        <QualitySection item={track()} showSpectrum open={false} onToggle={vi.fn()} />
       </QueryClientProvider>,
     )
     await new Promise((r) => setTimeout(r, 0))
@@ -122,15 +107,7 @@ describe('QualitySection analysis gating', () => {
     const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
-        <QualitySection
-          item={track()}
-          showSpectrum
-          showLoudness={false}
-          normalize={OFF}
-          open
-          onToggle={vi.fn()}
-          onShowLoudnessHelp={vi.fn()}
-        />
+        <QualitySection item={track()} showSpectrum open onToggle={vi.fn()} />
       </QueryClientProvider>,
     )
     await vi.waitFor(() => expect(spectrogram).toHaveBeenCalled())
@@ -150,15 +127,7 @@ describe('QualitySection analysis gating', () => {
     const client = createQueryClient()
     const { unmount } = render(
       <QueryClientProvider client={client}>
-        <QualitySection
-          item={track()}
-          showSpectrum
-          showLoudness={false}
-          normalize={OFF}
-          open
-          onToggle={vi.fn()}
-          onShowLoudnessHelp={vi.fn()}
-        />
+        <QualitySection item={track()} showSpectrum open onToggle={vi.fn()} />
       </QueryClientProvider>,
     )
     // Unmount well inside the settle window, the way the editor remounts when the
@@ -268,11 +237,8 @@ describe('QualitySection verdict caption', () => {
           <QualitySection
             item={track('/m/a.flac')}
             showSpectrum
-            showLoudness={false}
-            normalize={OFF}
             open
             onToggle={vi.fn()}
-            onShowLoudnessHelp={vi.fn()}
             showHints
           />
         </ToastProvider>
@@ -440,15 +406,7 @@ describe('QualitySection analysis failure', () => {
     const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
-        <QualitySection
-          item={track()}
-          showSpectrum
-          showLoudness={false}
-          normalize={OFF}
-          open
-          onToggle={vi.fn()}
-          onShowLoudnessHelp={vi.fn()}
-        />
+        <QualitySection item={track()} showSpectrum open onToggle={vi.fn()} />
       </QueryClientProvider>,
     )
     const error = await screen.findByTestId('quality-error')
@@ -468,15 +426,7 @@ describe('QualitySection analysis failure', () => {
     const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
-        <QualitySection
-          item={track()}
-          showSpectrum
-          showLoudness={false}
-          normalize={OFF}
-          open
-          onToggle={vi.fn()}
-          onShowLoudnessHelp={vi.fn()}
-        />
+        <QualitySection item={track()} showSpectrum open onToggle={vi.fn()} />
       </QueryClientProvider>,
     )
 

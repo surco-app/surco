@@ -148,6 +148,7 @@ function renderEditor(
     visibleFields?: string[]
     genrePresets?: string[]
     showLoudness?: boolean
+    showSpectrum?: boolean
     normalize?: NormalizeConfig
     declick?: DeclickMode
     overwriteOriginal?: boolean
@@ -243,6 +244,7 @@ function renderEditor(
       discogsFormats: props.discogsFormats ?? [],
       discogsMaxResults: 25,
       showLoudness: props.showLoudness ?? false,
+      ...(props.showSpectrum ? { showSpectrum: true } : {}),
       keyNotation: props.keyNotation ?? 'camelot',
       normalize: props.normalize ?? { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
       ...(props.declick ? { declick: props.declick } : {}),
@@ -575,6 +577,9 @@ describe('Editor convert button normalization note', () => {
   })
 })
 
+// The loudness table lives in the Normalize section, which ships folded.
+const NORMALIZE_OPEN = [{ id: 'normalize' as const, open: true }]
+
 describe('Editor loudness pills', () => {
   const healthy: LoudnessResult = {
     integratedLufs: -12,
@@ -591,7 +596,7 @@ describe('Editor loudness pills', () => {
   it('does not measure loudness until the selection rests on the track', async () => {
     const loudness = vi.fn().mockResolvedValue(healthy)
     ;(window as unknown as { api: { loudness: unknown } }).api.loudness = loudness
-    renderEditor({ id: 'a' }, 'wav', { showLoudness: true })
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true, editorSections: NORMALIZE_OPEN })
     await new Promise((r) => setTimeout(r, 0))
     expect(loudness).not.toHaveBeenCalled()
     await screen.findByTestId('loudness-pill-lufs')
@@ -619,7 +624,7 @@ describe('Editor loudness pills', () => {
       crestDb: 5,
       noiseFloorDb: -20,
     })
-    renderEditor({ id: 'a' }, 'wav', { showLoudness: true })
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true, editorSections: NORMALIZE_OPEN })
     expect(await screen.findByTestId('loudness-pill-lufs')).toHaveAttribute('data-grade', 'bad')
     expect(screen.getByTestId('loudness-pill-peak')).toHaveAttribute('data-grade', 'bad')
     expect(screen.getByTestId('loudness-pill-range')).toHaveAttribute('data-grade', 'bad')
@@ -631,7 +636,7 @@ describe('Editor loudness pills', () => {
 
   it('grades a healthy track green on every pill', async () => {
     seedLoudness(healthy)
-    renderEditor({ id: 'a' }, 'wav', { showLoudness: true })
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true, editorSections: NORMALIZE_OPEN })
     expect(await screen.findByTestId('loudness-pill-lufs')).toHaveAttribute('data-grade', 'good')
     expect(screen.getByTestId('loudness-pill-peak')).toHaveAttribute('data-grade', 'good')
     expect(screen.getByTestId('loudness-pill-range')).toHaveAttribute('data-grade', 'good')
@@ -643,7 +648,7 @@ describe('Editor loudness pills', () => {
 
   it('drops the balance pill for a mono rip, where there is no left/right to compare', async () => {
     seedLoudness({ ...healthy, channelBalanceDb: null })
-    renderEditor({ id: 'a' }, 'wav', { showLoudness: true })
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true, editorSections: NORMALIZE_OPEN })
     await screen.findByTestId('loudness-pill-lufs')
     expect(screen.queryByTestId('loudness-pill-balance')).toBeNull()
     expect(screen.getByTestId('loudness-pill-dc')).toBeInTheDocument()
@@ -653,7 +658,10 @@ describe('Editor loudness pills', () => {
   // other dialog); the editor's ⓘ button only signals the intent upward.
   it('asks App to show the explanation when the help button is pressed', async () => {
     seedLoudness(healthy)
-    const { onShowLoudnessHelp } = renderEditor({ id: 'a' }, 'wav', { showLoudness: true })
+    const { onShowLoudnessHelp } = renderEditor({ id: 'a' }, 'wav', {
+      showLoudness: true,
+      editorSections: NORMALIZE_OPEN,
+    })
     fireEvent.click(await screen.findByTestId('loudness-help-toggle'))
     expect(onShowLoudnessHelp).toHaveBeenCalledTimes(1)
   })
@@ -662,7 +670,7 @@ describe('Editor loudness pills', () => {
   // announces "button" with no clue it opens the loudness explanation.
   it('gives the icon-only help toggle an accessible name', async () => {
     seedLoudness(healthy)
-    renderEditor({ id: 'a' }, 'wav', { showLoudness: true })
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true, editorSections: NORMALIZE_OPEN })
     expect(await screen.findByTestId('loudness-help-toggle')).toHaveAccessibleName()
   })
 })
@@ -700,6 +708,7 @@ describe('Editor loudness estimates', () => {
     seedLoudness(measured)
     renderEditor({ id: 'a' }, 'wav', {
       showLoudness: true,
+      editorSections: NORMALIZE_OPEN,
       normalize: { ...club, mode: 'none' },
     })
     await screen.findByTestId('loudness-pill-lufs')
@@ -711,7 +720,11 @@ describe('Editor loudness estimates', () => {
   // needs +2.1 dB, which would push its -0.4 dBTP peak over the -1 ceiling.
   it('estimates the loudness and peak the conversion will land on', async () => {
     seedLoudness(measured)
-    renderEditor({ id: 'a' }, 'wav', { showLoudness: true, normalize: club })
+    renderEditor({ id: 'a' }, 'wav', {
+      showLoudness: true,
+      editorSections: NORMALIZE_OPEN,
+      normalize: club,
+    })
     expect(await screen.findByTestId('loudness-estimate-lufs')).toHaveTextContent('-9.0')
     expect(screen.getByTestId('loudness-estimate-peak')).toHaveTextContent('-1.0')
   })
@@ -722,7 +735,11 @@ describe('Editor loudness estimates', () => {
   // Printing a shifted figure there would be a number the converted file contradicts.
   it('marks the gain-invariant figures as unchanged instead of inventing a shift', async () => {
     seedLoudness(measured)
-    renderEditor({ id: 'a' }, 'wav', { showLoudness: true, normalize: club })
+    renderEditor({ id: 'a' }, 'wav', {
+      showLoudness: true,
+      editorSections: NORMALIZE_OPEN,
+      normalize: club,
+    })
     await screen.findByTestId('loudness-estimate-lufs')
     for (const id of ['range', 'crest', 'balance']) {
       expect(screen.getByTestId(`loudness-estimate-${id}`)).toHaveTextContent(
@@ -741,6 +758,7 @@ describe('Editor loudness estimates', () => {
     seedLoudness(measured)
     renderEditor({ id: 'a' }, 'wav', {
       showLoudness: true,
+      editorSections: NORMALIZE_OPEN,
       normalize: { ...club, mode: 'peak', peakDb: 0, peakPerChannel: true },
     })
     await screen.findByTestId('loudness-estimate-lufs')
@@ -754,6 +772,7 @@ describe('Editor loudness estimates', () => {
     seedLoudness(measured)
     renderEditor({ id: 'a' }, 'wav', {
       showLoudness: true,
+      editorSections: NORMALIZE_OPEN,
       normalize: { ...club, peakPerChannel: true },
     })
     await screen.findByTestId('loudness-estimate-lufs')
@@ -768,6 +787,7 @@ describe('Editor loudness estimates', () => {
     seedLoudness(measured)
     renderEditor({ id: 'a' }, 'wav', {
       showLoudness: true,
+      editorSections: NORMALIZE_OPEN,
       normalize: { ...club, mode: 'peak', peakDb: 0, peakPerChannel: false },
     })
     await screen.findByTestId('loudness-estimate-lufs')
@@ -782,6 +802,7 @@ describe('Editor loudness estimates', () => {
     seedLoudness(measured)
     renderEditor({ id: 'a' }, 'wav', {
       showLoudness: true,
+      editorSections: NORMALIZE_OPEN,
       normalize: { ...club, removeDcOffset: true },
     })
     expect(await screen.findByTestId('loudness-estimate-dc')).toHaveTextContent('0.0%')
@@ -789,7 +810,11 @@ describe('Editor loudness estimates', () => {
 
   it('leaves the DC offset unchanged when removal is off', async () => {
     seedLoudness(measured)
-    renderEditor({ id: 'a' }, 'wav', { showLoudness: true, normalize: club })
+    renderEditor({ id: 'a' }, 'wav', {
+      showLoudness: true,
+      editorSections: NORMALIZE_OPEN,
+      normalize: club,
+    })
     await screen.findByTestId('loudness-estimate-lufs')
     expect(screen.getByTestId('loudness-estimate-dc')).toHaveTextContent(
       i18n.t('editor.loudnessEstimateSame'),
@@ -801,7 +826,11 @@ describe('Editor loudness estimates', () => {
   // ones take the full gain and no single figure describes the floor's shift.
   it('drops the noise floor estimate when the limiter engages', async () => {
     seedLoudness(measured)
-    renderEditor({ id: 'a' }, 'wav', { showLoudness: true, normalize: club })
+    renderEditor({ id: 'a' }, 'wav', {
+      showLoudness: true,
+      editorSections: NORMALIZE_OPEN,
+      normalize: club,
+    })
     await screen.findByTestId('loudness-estimate-lufs')
     expect(screen.queryByTestId('loudness-estimate-noise')).toBeNull()
   })
@@ -812,7 +841,11 @@ describe('Editor loudness estimates', () => {
   // The measured figure beside it carries the unit, so the estimate goes without.
   it('leaves the unit to the measured figure so the widest label still fits', async () => {
     seedLoudness(measured)
-    renderEditor({ id: 'a' }, 'wav', { showLoudness: true, normalize: club })
+    renderEditor({ id: 'a' }, 'wav', {
+      showLoudness: true,
+      editorSections: NORMALIZE_OPEN,
+      normalize: club,
+    })
     const estimate = await screen.findByTestId('loudness-estimate-lufs')
     expect(estimate.textContent).toBe('→ -9.0')
     expect(estimate.textContent).not.toMatch(/LUFS/)
@@ -824,6 +857,7 @@ describe('Editor loudness estimates', () => {
     seedLoudness({ ...measured, integratedLufs: -20, truePeakDb: -12 })
     renderEditor({ id: 'a' }, 'wav', {
       showLoudness: true,
+      editorSections: NORMALIZE_OPEN,
       normalize: { ...club, targetLufs: -14 },
     })
     expect(await screen.findByTestId('loudness-estimate-noise')).toHaveTextContent('-52.3')
@@ -1587,7 +1621,7 @@ describe('Editor export control', () => {
   // the editor must honor that instead of hardcoding one editorial order.
   it('renders the sections in the settings-configured order', () => {
     renderEditor({ id: 'a' }, 'wav', {
-      showLoudness: true,
+      showSpectrum: true,
       editorSections: [
         { id: 'form', open: true },
         { id: 'normalize', open: false },
