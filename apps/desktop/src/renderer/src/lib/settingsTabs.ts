@@ -3,7 +3,6 @@ import {
   FolderOutput,
   Image,
   Keyboard,
-  LayoutList,
   List,
   type LucideIcon,
   RefreshCw,
@@ -25,7 +24,6 @@ export type SettingsTab =
   | 'destination'
   | 'naming'
   | 'editor'
-  | 'layout'
   | 'fields'
   | 'artwork'
   | 'shortcuts'
@@ -38,7 +36,7 @@ export type SettingsTab =
 // never drift apart.
 export const SETTINGS_TAB_GROUPS: { heading: string | null; tabs: SettingsTab[] }[] = [
   { heading: null, tabs: ['general', 'search'] },
-  { heading: 'editing', tabs: ['editor', 'layout', 'fields', 'artwork'] },
+  { heading: 'editing', tabs: ['editor', 'fields', 'artwork'] },
   { heading: 'output', tabs: ['conversion', 'processing', 'naming', 'destination'] },
   { heading: 'app', tabs: ['shortcuts'] },
 ]
@@ -55,7 +53,6 @@ export const SETTINGS_TAB_ICONS: Record<SettingsTab, LucideIcon> = {
   destination: FolderOutput,
   naming: Tag,
   editor: SquarePen,
-  layout: LayoutList,
   fields: List,
   artwork: Image,
   shortcuts: Keyboard,

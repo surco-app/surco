@@ -323,8 +323,12 @@ export function SettingsModal({
                 />
               )}
               {tab === 'naming' && <NamingTab synced={synced} patch={patch} />}
-              {tab === 'editor' && <EditorTab synced={synced} patch={patch} />}
-              {tab === 'layout' && <LayoutTab synced={synced} patch={patch} />}
+              {tab === 'editor' && (
+                <>
+                  <EditorTab synced={synced} patch={patch} />
+                  <LayoutTab synced={synced} patch={patch} />
+                </>
+              )}
               {tab === 'artwork' && <ArtworkTab synced={synced} patch={patch} />}
               {tab === 'fields' && (
                 <FieldsEditor
