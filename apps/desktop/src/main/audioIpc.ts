@@ -68,7 +68,7 @@ function cancellable<T>(
 // permanent miss instead of the warm hit the live handler already wrote.
 const SPECTROGRAM_NAMESPACE = 'spectrogram-mono-v28'
 const CLICKS_NAMESPACE = 'clickcount-v2'
-const PROPERTIES_NAMESPACE = 'properties'
+const PROPERTIES_NAMESPACE = 'properties-v2'
 const BPM_NAMESPACE = 'bpm'
 const KEY_NAMESPACE = 'key'
 const WAVEFORM_NAMESPACE = 'waveform-v6'

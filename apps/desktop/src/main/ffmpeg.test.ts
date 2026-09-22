@@ -1438,7 +1438,7 @@ describe('propertiesFromProbe', () => {
         streams: [
           {
             codec_name: 'pcm_s16le',
-            bits_per_raw_sample: '16',
+            bits_per_sample: 16,
             sample_rate: '44100',
             channels: 2,
           },
@@ -1471,6 +1471,25 @@ describe('propertiesFromProbe', () => {
     // hides the bit-depth row rather than inventing a "0 Bit" reading.
     const p = propertiesFromProbe(
       { streams: [{ codec_name: 'mp3', sample_rate: '44100', channels: 2 }], format: {} },
+      file,
+    )
+    expect(p.bitDepth).toBeNull()
+  })
+
+  it('reads a FLAC depth from bits_per_raw_sample, where ffprobe reports bits_per_sample as 0', () => {
+    const p = propertiesFromProbe(
+      {
+        streams: [{ codec_name: 'flac', bits_per_sample: 0, bits_per_raw_sample: '24' }],
+        format: {},
+      },
+      file,
+    )
+    expect(p.bitDepth).toBe(24)
+  })
+
+  it('still reports no depth for an MP3 whose bits_per_sample ffprobe prints as 0', () => {
+    const p = propertiesFromProbe(
+      { streams: [{ codec_name: 'mp3', bits_per_sample: 0 }], format: {} },
       file,
     )
     expect(p.bitDepth).toBeNull()
