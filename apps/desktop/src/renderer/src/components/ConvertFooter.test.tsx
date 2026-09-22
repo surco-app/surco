@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SelectionStatus } from '../lib/selectionStatus'
 import type { TrackItem } from '../types'
 import '../i18n'
-import type { Destination } from '../lib/destination'
 import { ConvertFooter } from './ConvertFooter'
 
 afterEach(cleanup)
@@ -37,8 +36,8 @@ function footer(showDone: boolean): React.JSX.Element {
       willEditInPlace={false}
       addToAppleMusic={false}
       addToEngineDj={false}
-      destination={'beside' as Destination}
-      destinations={['beside' as Destination]}
+      destination={{ location: 'beside', appleMusic: false, engineDj: false, keepOutputCopy: true }}
+      locations={['beside']}
       format="aiff"
       exportedFormat={showDone ? 'aiff' : null}
       musicExt={null}

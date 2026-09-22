@@ -1925,7 +1925,9 @@ describe('Editor export control', () => {
       'source',
       { addToAppleMusic: true },
     )
-    expect(onDestinationChange).toHaveBeenCalledWith('folder')
+    expect(onDestinationChange).toHaveBeenCalledWith(
+      expect.objectContaining({ location: 'folder', appleMusic: false }),
+    )
   })
 
   it('reports the picked format so the keyboard shortcut can match it', () => {

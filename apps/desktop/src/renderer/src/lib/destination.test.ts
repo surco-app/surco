@@ -1,109 +1,135 @@
 import { describe, expect, it } from 'vitest'
-import { DESTINATIONS, fromDestination, toDestination } from './destination'
+import {
+  keepsOutputCopy,
+  planFromSettings,
+  planToSettings,
+  withAppleMusic,
+  withEngineDj,
+  withLocation,
+} from './destination'
 
-describe('toDestination', () => {
-  it('reads the stored booleans back as the single radio choice', () => {
-    expect(toDestination(false, false, false, false)).toBe('folder')
-    expect(toDestination(true, false, false, false)).toBe('appleMusic')
-    expect(toDestination(false, false, false, true)).toBe('engineDj')
-    expect(toDestination(false, false, false, false, true)).toBe('beside')
+const OLD_RADIO = {
+  folder: {
+    addToAppleMusic: false,
+    keepOutputCopy: true,
+    overwriteOriginal: false,
+    addToEngineDj: false,
+    convertBesideOriginal: false,
+  },
+  appleMusic: {
+    addToAppleMusic: true,
+    keepOutputCopy: false,
+    overwriteOriginal: false,
+    addToEngineDj: false,
+    convertBesideOriginal: false,
+  },
+  engineDj: {
+    addToAppleMusic: false,
+    keepOutputCopy: true,
+    overwriteOriginal: false,
+    addToEngineDj: true,
+    convertBesideOriginal: false,
+  },
+  beside: {
+    addToAppleMusic: false,
+    keepOutputCopy: true,
+    overwriteOriginal: false,
+    addToEngineDj: false,
+    convertBesideOriginal: true,
+  },
+  overwrite: {
+    addToAppleMusic: false,
+    keepOutputCopy: true,
+    overwriteOriginal: true,
+    addToEngineDj: false,
+    convertBesideOriginal: false,
+  },
+}
+
+describe('planFromSettings reads every setting the old destination radio wrote', () => {
+  it('output folder: saved in the folder, no DJ software', () => {
+    expect(planFromSettings(OLD_RADIO.folder, false)).toEqual({
+      location: 'folder',
+      appleMusic: false,
+      engineDj: false,
+      keepOutputCopy: true,
+    })
   })
 
-  // FLAC can't be added to Apple Music, so the choice falls back to the always-valid
-  // output folder regardless of what the booleans say.
-  it('pins to the output folder while FLAC is the format', () => {
-    expect(toDestination(true, true, false, false)).toBe('folder')
+  it('Apple Music: saved through the folder into Music, with no copy left behind', () => {
+    const plan = planFromSettings(OLD_RADIO.appleMusic, false)
+    expect(plan).toEqual({
+      location: 'folder',
+      appleMusic: true,
+      engineDj: false,
+      keepOutputCopy: false,
+    })
+    expect(keepsOutputCopy(plan)).toBe(false)
   })
 
-  // Engine DJ plays FLAC natively, so unlike Apple Music the choice survives the
-  // FLAC format — pinning it to the folder would silently drop the library add.
-  it('keeps Engine DJ while FLAC is the format', () => {
-    expect(toDestination(false, true, false, true)).toBe('engineDj')
+  it('Engine DJ: saved in the folder, where the Engine row points', () => {
+    const plan = planFromSettings(OLD_RADIO.engineDj, false)
+    expect(plan).toEqual({
+      location: 'folder',
+      appleMusic: false,
+      engineDj: true,
+      keepOutputCopy: true,
+    })
+    expect(keepsOutputCopy(plan)).toBe(true)
   })
 
-  // Overwrite is its own axis (it rewrites the source in place), so it wins over every
-  // other flag — including the FLAC pin and any library booleans left set.
-  it('reports overwrite whenever the flag is set, regardless of the other booleans', () => {
-    expect(toDestination(false, false, true, false)).toBe('overwrite')
-    expect(toDestination(true, true, true, true, true)).toBe('overwrite')
+  it('beside the original: no library', () => {
+    expect(planFromSettings(OLD_RADIO.beside, false)).toMatchObject({
+      location: 'beside',
+      appleMusic: false,
+      engineDj: false,
+    })
   })
 
-  // Beside-original writes a fresh file next to the source, so like Engine DJ it is
-  // FLAC-proof — the pin to the output folder must not eat the choice.
-  it('keeps beside-original while FLAC is the format', () => {
-    expect(toDestination(false, true, false, false, true)).toBe('beside')
+  it('overwrite: no library, and it wins over a leftover beside flag', () => {
+    expect(
+      planFromSettings({ ...OLD_RADIO.overwrite, convertBesideOriginal: true }, false),
+    ).toMatchObject({ location: 'overwrite', appleMusic: false, engineDj: false })
+  })
+
+  it('writes each old choice back to the exact booleans it was read from', () => {
+    for (const stored of Object.values(OLD_RADIO)) {
+      expect(planToSettings(planFromSettings(stored, false))).toEqual(stored)
+    }
+  })
+
+  it('keeps FLAC out of Apple Music while Engine DJ still takes it', () => {
+    expect(planFromSettings({ ...OLD_RADIO.appleMusic, addToEngineDj: true }, true)).toMatchObject({
+      appleMusic: false,
+      engineDj: true,
+    })
   })
 })
 
-describe('fromDestination', () => {
-  it('maps each choice onto the stored booleans', () => {
-    expect(fromDestination('folder')).toEqual({
-      addToAppleMusic: false,
-      keepOutputCopy: true,
-      overwriteOriginal: false,
-      addToEngineDj: false,
-      convertBesideOriginal: false,
-    })
-    expect(fromDestination('appleMusic')).toEqual({
-      addToAppleMusic: true,
-      keepOutputCopy: false,
-      overwriteOriginal: false,
-      addToEngineDj: false,
-      convertBesideOriginal: false,
-    })
+describe('changing the plan', () => {
+  const folder = planFromSettings(OLD_RADIO.folder, false)
+
+  it('Apple Music starts without a folder copy, as the old destination did', () => {
+    expect(withAppleMusic(folder, true)).toMatchObject({ appleMusic: true, keepOutputCopy: false })
   })
 
-  // Engine DJ references the converted file where it lives instead of importing a copy
-  // (the Apple Music model), so the output-folder copy must always be kept.
-  it('keeps the output copy and clears the other destinations for engineDj', () => {
-    expect(fromDestination('engineDj')).toEqual({
-      addToAppleMusic: false,
-      keepOutputCopy: true,
-      overwriteOriginal: false,
-      addToEngineDj: true,
-      convertBesideOriginal: false,
-    })
+  it('Engine DJ keeps the folder copy even beside an Apple Music only add', () => {
+    expect(keepsOutputCopy(withEngineDj(withAppleMusic(folder, true), true))).toBe(true)
   })
 
-  // Overwrite leaves nothing in the output folder and adds nothing to any library: the
-  // source file itself is rewritten, so the library booleans are cleared.
-  it('clears the library booleans and sets the overwrite flag for overwrite', () => {
-    expect(fromDestination('overwrite')).toEqual({
-      addToAppleMusic: false,
-      keepOutputCopy: true,
-      overwriteOriginal: true,
-      addToEngineDj: false,
-      convertBesideOriginal: false,
-    })
-  })
-
-  // Beside-original is the non-destructive sibling of overwrite: a fresh copy next to
-  // the source, nothing added to any library, the original never touched.
-  it('sets only the beside flag for beside', () => {
-    expect(fromDestination('beside')).toEqual({
-      addToAppleMusic: false,
-      keepOutputCopy: true,
-      overwriteOriginal: false,
-      addToEngineDj: false,
-      convertBesideOriginal: true,
-    })
-  })
-
-  // Round-tripping any choice through both functions must return it unchanged, which is
-  // what guarantees Settings and the wizard never drift apart.
-  it('round-trips every choice', () => {
-    for (const d of DESTINATIONS) {
-      const { addToAppleMusic, overwriteOriginal, addToEngineDj, convertBesideOriginal } =
-        fromDestination(d)
-      expect(
-        toDestination(
-          addToAppleMusic,
-          false,
-          overwriteOriginal,
-          addToEngineDj,
-          convertBesideOriginal,
-        ),
-      ).toBe(d)
+  it('saving beside or over the original leaves every library', () => {
+    const both = withEngineDj(withAppleMusic(folder, true), true)
+    for (const location of ['beside', 'overwrite'] as const) {
+      expect(withLocation(both, location)).toMatchObject({
+        location,
+        appleMusic: false,
+        engineDj: false,
+      })
     }
+  })
+
+  it('going back to the folder keeps what was ticked', () => {
+    const both = withEngineDj(withAppleMusic(folder, true), true)
+    expect(withLocation(both, 'folder')).toEqual(both)
   })
 })

@@ -29,7 +29,13 @@ import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
 import { BULK_FIELDS } from '../lib/bulkEdit'
 import { deriveTagPatches } from '../lib/deriveTags'
-import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
+import {
+  type DestinationPlan,
+  LOCATIONS,
+  planFromSettings,
+  planToSettings,
+  withAppleMusic,
+} from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
 import { FIELD_DEFS, missingRequired } from '../lib/fields'
@@ -126,7 +132,7 @@ interface Props {
   // Reports the destination chosen in the split-button menu, mirroring onFormatChange:
   // App pins it in a ref so every convert entry point sends this track where the
   // button says, not where Settings points.
-  onDestinationChange?: (destination: Destination) => void
+  onDestinationChange?: (destination: DestinationPlan) => void
   // Reports the per-track normalization override so the keyboard convert shortcuts
   // and "convert all" apply it too, mirroring onFormatChange.
   onNormalizeChange?: (normalize: NormalizeConfig) => void
@@ -215,6 +221,7 @@ export const Editor = memo(function Editor({
     autoMatch,
     outputFormat,
     addToAppleMusic,
+    keepOutputCopy,
     addToEngineDj,
     keepMp3Sources,
     overwriteOriginal,
@@ -322,12 +329,9 @@ export const Editor = memo(function Editor({
   // Settings booleans, updated only by the split-button menu, reset by the per-track
   // remount, never written back to Settings.
   const [destination, setDestination] = useState(() =>
-    toDestination(
-      addToAppleMusic,
+    planFromSettings(
+      { addToAppleMusic, keepOutputCopy, overwriteOriginal, addToEngineDj, convertBesideOriginal },
       format === 'flac',
-      overwriteOriginal,
-      addToEngineDj,
-      convertBesideOriginal,
     ),
   )
   // Changing the Default format (or the destination) in Settings while this same
@@ -342,6 +346,7 @@ export const Editor = memo(function Editor({
   const lastSettings = useRef({
     outputFormat,
     addToAppleMusic,
+    keepOutputCopy,
     overwriteOriginal,
     addToEngineDj,
     convertBesideOriginal,
@@ -354,6 +359,7 @@ export const Editor = memo(function Editor({
       outputFormat !== prev.outputFormat || keepMp3Sources !== prev.keepMp3Sources
     const destinationSettingsChanged =
       addToAppleMusic !== prev.addToAppleMusic ||
+      keepOutputCopy !== prev.keepOutputCopy ||
       overwriteOriginal !== prev.overwriteOriginal ||
       addToEngineDj !== prev.addToEngineDj ||
       convertBesideOriginal !== prev.convertBesideOriginal
@@ -361,6 +367,7 @@ export const Editor = memo(function Editor({
     lastSettings.current = {
       outputFormat,
       addToAppleMusic,
+      keepOutputCopy,
       overwriteOriginal,
       addToEngineDj,
       convertBesideOriginal,
@@ -375,18 +382,16 @@ export const Editor = memo(function Editor({
       setFormatPick(seededPick)
       onFormatChange?.(seededPick)
     }
-    const seededDestination = toDestination(
-      addToAppleMusic,
+    const seededDestination = planFromSettings(
+      { addToAppleMusic, keepOutputCopy, overwriteOriginal, addToEngineDj, convertBesideOriginal },
       seededFormat === 'flac',
-      overwriteOriginal,
-      addToEngineDj,
-      convertBesideOriginal,
     )
     setDestination(seededDestination)
     onDestinationChange?.(seededDestination)
   }, [
     outputFormat,
     addToAppleMusic,
+    keepOutputCopy,
     overwriteOriginal,
     addToEngineDj,
     convertBesideOriginal,
@@ -395,15 +400,13 @@ export const Editor = memo(function Editor({
   // The facets the picked destination means, replacing the raw Settings reads below
   // so the in-place warnings, the button label and the membership badge all describe
   // the conversion the button will actually run.
-  const picked = fromDestination(destination)
+  const picked = planToSettings(destination)
   // Overwrite is deliberately not offered as a one-shot pick (rewriting sources is a
   // Settings-level decision with its own confirmations); it stays listed only while
-  // it IS the configured destination, so the current choice is always visible.
-  const destinationChoices = DESTINATIONS.filter(
-    (d) => (d !== 'overwrite' || overwriteOriginal) && (d !== 'appleMusic' || isMacOS()),
-  )
+  // it IS the configured location, so the current choice is always visible.
+  const locationChoices = LOCATIONS.filter((l) => l !== 'overwrite' || overwriteOriginal)
   // Which library the membership badge reads — the conversion destination's. Null
-  // (folder/beside/overwrite, or Apple Music off macOS) hides the badge entirely.
+  // (no library, or Apple Music off macOS) hides the badge entirely.
   const librarySource = librarySourceOf({ ...picked, outputFormat: format }, isMacOS())
   // Per-track normalization, seeded from the track's own setting and falling back to
   // the Settings default for a track never touched. Editing it both updates the control
@@ -1309,7 +1312,7 @@ export const Editor = memo(function Editor({
           addToAppleMusic={picked.addToAppleMusic}
           addToEngineDj={picked.addToEngineDj}
           destination={destination}
-          destinations={destinationChoices}
+          locations={locationChoices}
           format={isMulti ? formatPick : format}
           exportedFormat={exportedFormat}
           musicExt={musicExt}
@@ -1321,12 +1324,13 @@ export const Editor = memo(function Editor({
             // resolves for the single-track state everything else here still reads.
             if (f !== 'source') setFormat(f)
             onFormatChange?.(f)
-            // Music can't ingest FLAC: picking it while Apple Music is the destination
-            // silently falls back to the output folder — the same pin Settings applies —
-            // and the button label updates to say so.
-            if (f === 'flac' && destination === 'appleMusic') {
-              setDestination('folder')
-              onDestinationChange?.('folder')
+            // Music can't ingest FLAC: picking it while Apple Music is ticked drops Apple
+            // Music for this conversion — the same pin Settings applies — and the button
+            // label updates to say so.
+            if (f === 'flac' && destination.appleMusic) {
+              const next = withAppleMusic(destination, false)
+              setDestination(next)
+              onDestinationChange?.(next)
             }
           }}
           onSelectDestination={(d) => {

@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import '../i18n'
+import i18n from '../i18n'
 import { ExportButton } from './ExportButton'
 
 afterEach(cleanup)
@@ -17,8 +17,14 @@ const baseProps = {
   withEngineDj: false,
   inPlace: false,
   sameFormat: false,
-  destination: 'folder' as const,
-  destinations: ['folder', 'appleMusic', 'engineDj', 'beside'] as const,
+  destination: {
+    location: 'folder' as const,
+    appleMusic: false,
+    engineDj: false,
+    keepOutputCopy: true,
+  },
+  locations: ['folder', 'beside'] as const,
+  mac: true,
   onProcess: () => {},
   onSelectFormat: () => {},
   onSelectDestination: () => {},
@@ -57,47 +63,94 @@ describe('ExportButton', () => {
     }
   })
 
-  // The chevron menu now carries both halves of the button's promise ("Convert to
-  // AIFF + Apple Music"): picking a destination must behave exactly like picking a
-  // format — relabel only, never convert — so a misclick can't write a file or push
-  // a track into a library the user didn't mean.
-  it('reports a destination pick without converting', () => {
+  it('reports a location pick without converting, leaving every library', () => {
     const onProcess = vi.fn()
     const onSelectDestination = vi.fn()
     render(
       <ExportButton
         {...baseProps}
         incomplete={false}
-        destination="appleMusic"
+        destination={{ ...baseProps.destination, appleMusic: true, engineDj: true }}
         onProcess={onProcess}
         onSelectDestination={onSelectDestination}
       />,
     )
     fireEvent.click(screen.getByTestId('process-format-toggle'))
-    fireEvent.click(screen.getByTestId('process-destination-engineDj'))
-    expect(onSelectDestination).toHaveBeenCalledWith('engineDj')
-    expect(onProcess).not.toHaveBeenCalled()
-    expect(screen.queryByTestId('process-destination-engineDj')).toBeNull()
-  })
-
-  it('marks the current destination in the menu', () => {
-    render(<ExportButton {...baseProps} incomplete={false} destination="engineDj" />)
-    fireEvent.click(screen.getByTestId('process-format-toggle'))
-    expect(screen.getByTestId('process-destination-engineDj')).toHaveAttribute(
-      'aria-current',
-      'true',
+    fireEvent.click(screen.getByTestId('process-location-beside'))
+    expect(onSelectDestination).toHaveBeenCalledWith(
+      expect.objectContaining({ location: 'beside', appleMusic: false, engineDj: false }),
     )
-    expect(screen.getByTestId('process-destination-folder')).not.toHaveAttribute('aria-current')
+    expect(onProcess).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('process-location-beside')).toBeNull()
   })
 
-  // Music can't ingest FLAC, so with FLAC picked the Apple Music destination must grey
-  // out — the same pin the Settings radio applies — instead of promising an add that
-  // the conversion would silently skip.
-  it('disables the Apple Music destination while FLAC is the picked format', () => {
+  it('adds a DJ software for this conversion without converting or closing the menu', () => {
+    const onProcess = vi.fn()
+    const onSelectDestination = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        destination={{ ...baseProps.destination, appleMusic: true, keepOutputCopy: false }}
+        onProcess={onProcess}
+        onSelectDestination={onSelectDestination}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('process-dj-engineDj'))
+    expect(onSelectDestination).toHaveBeenCalledWith(
+      expect.objectContaining({ location: 'folder', appleMusic: true, engineDj: true }),
+    )
+    expect(onProcess).not.toHaveBeenCalled()
+    expect(screen.getByTestId('process-dj-engineDj')).toBeInTheDocument()
+  })
+
+  it('marks the current location and the ticked DJ software', () => {
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        destination={{ ...baseProps.destination, engineDj: true }}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.getByTestId('process-location-folder')).toHaveAttribute('aria-current', 'true')
+    expect(screen.getByTestId('process-location-beside')).not.toHaveAttribute('aria-current')
+    expect(screen.getByTestId('process-dj-engineDj')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('process-dj-appleMusic')).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('disables Apple Music with the reason while FLAC is the picked format', () => {
     render(<ExportButton {...baseProps} incomplete={false} outputFormat="flac" />)
     fireEvent.click(screen.getByTestId('process-format-toggle'))
-    expect(screen.getByTestId('process-destination-appleMusic')).toBeDisabled()
-    expect(screen.getByTestId('process-destination-beside')).toBeEnabled()
+    expect(screen.getByTestId('process-dj-appleMusic')).toBeDisabled()
+    expect(screen.getByTestId('process-dj-appleMusic')).toHaveTextContent(
+      i18n.t('editor.menuNoFlac'),
+    )
+    expect(screen.getByTestId('process-dj-engineDj')).toBeEnabled()
+    expect(screen.getByTestId('process-location-beside')).toBeEnabled()
+  })
+
+  it('disables the libraries with the reason away from the output folder', () => {
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        destination={{ ...baseProps.destination, location: 'beside' }}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    for (const id of ['process-dj-appleMusic', 'process-dj-engineDj']) {
+      expect(screen.getByTestId(id)).toBeDisabled()
+      expect(screen.getByTestId(id)).toHaveTextContent(i18n.t('editor.menuNeedsFolder'))
+    }
+  })
+
+  it('offers no Apple Music off macOS', () => {
+    render(<ExportButton {...baseProps} incomplete={false} mac={false} />)
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.queryByTestId('process-dj-appleMusic')).toBeNull()
+    expect(screen.getByTestId('process-dj-engineDj')).toBeInTheDocument()
   })
 
   // While a track converts, the button mirrors the row in the track list: the
