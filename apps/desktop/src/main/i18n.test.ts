@@ -71,3 +71,16 @@ describe('resolveMenuLocale', () => {
     expect(resolveMenuLocale('system', 'de-DE')).toBe('de-DE')
   })
 })
+
+describe('the track-list search label', () => {
+  // The View menu, the palette and the shortcut list all run the same command, which puts
+  // the cursor in the track-list filter. Calling it a Discogs or metadata search sent DJs
+  // looking for results that never came.
+  it('names the track list in the menu and the palette alike', async () => {
+    for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR']) {
+      const palette = (await import(`../renderer/src/i18n/locales/${lang}.json`)).default
+      expect(palette.commands.search).not.toMatch(/Discogs/)
+      expect(createMenuT(lang)('search')).toBe(palette.commands.search)
+    }
+  })
+})
