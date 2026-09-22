@@ -10,7 +10,7 @@ import type {
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import { eligibleForBatch } from '../lib/batch'
 import { deriveTagPatches } from '../lib/deriveTags'
-import type { Destination } from '../lib/destination'
+import type { DestinationPlan } from '../lib/destination'
 import { DEFAULT_REQUIRED_FIELDS } from '../lib/fields'
 import { declickFor, declickForJob, normalizeFor, normalizeForJob } from '../lib/reapply'
 import { hasStagedEdits } from '../lib/sessionEdits'
@@ -88,7 +88,7 @@ interface Params {
     targets: TrackItem[],
     format?: FormatSetting,
     normalize?: NormalizeConfig,
-    destination?: Destination,
+    destination?: DestinationPlan,
     declick?: DeclickMode,
   ) => Promise<void>
   openConfirm: (confirm: ConfirmModal) => void
@@ -122,7 +122,7 @@ interface ConfirmFlows {
     targets: TrackItem[],
     format?: FormatSetting,
     normalize?: NormalizeConfig,
-    destination?: Destination,
+    destination?: DestinationPlan,
     declick?: DeclickMode,
   ) => void
   // The single-track counterpart of askConvertAll: it decides overwrite the same way,
@@ -133,7 +133,7 @@ interface ConfirmFlows {
   askConvertOne: (
     run: () => void,
     opts?: {
-      destination?: Destination
+      destination?: DestinationPlan
       track?: TrackItem
       format?: FormatSetting
       normalize?: NormalizeConfig
@@ -344,14 +344,16 @@ export function useConfirmFlows({
     targets: TrackItem[],
     format?: FormatSetting,
     normalize?: NormalizeConfig,
-    destination?: Destination,
+    destination?: DestinationPlan,
     declick?: DeclickMode,
   ): void {
     // The editor's one-shot destination pick decides whether this run rewrites
     // sources; only without one does the live setting. An override away from
     // overwrite needs no confirmation (the run only writes new files), and one
     // back onto it must still ask.
-    const overwriting = destination ? destination === 'overwrite' : settings?.overwriteOriginal
+    const overwriting = destination
+      ? destination.location === 'overwrite'
+      : settings?.overwriteOriginal
     const keep = batchKeepMp3(
       format,
       settings?.outputFormat ?? 'aiff',
@@ -410,7 +412,7 @@ export function useConfirmFlows({
   function askConvertOne(
     run: () => void,
     opts: {
-      destination?: Destination
+      destination?: DestinationPlan
       track?: TrackItem
       format?: FormatSetting
       normalize?: NormalizeConfig
@@ -418,7 +420,7 @@ export function useConfirmFlows({
     } = {},
   ): void {
     const overwriting = opts.destination
-      ? opts.destination === 'overwrite'
+      ? opts.destination.location === 'overwrite'
       : settings?.overwriteOriginal
     // Same 'source'-resolves-to-mp3 case as askConvertAll: in place regardless of
     // overwrite, so it's checked even when overwriting is off.

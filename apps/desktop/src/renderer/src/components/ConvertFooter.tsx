@@ -6,7 +6,7 @@ import { formatMatchesInput } from '../../../shared/format'
 import type { FormatSetting, NormalizeConfig, OutputFormat } from '../../../shared/types'
 import type { CleanupOffer } from '../hooks/useConfirmFlows'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
-import type { Destination } from '../lib/destination'
+import type { DestinationPlan, Location } from '../lib/destination'
 import { openFeedback } from '../lib/feedback'
 import { isMacOS } from '../lib/platform'
 import type { SelectionStatus } from '../lib/selectionStatus'
@@ -32,10 +32,10 @@ interface ConvertFooterProps {
   willEditInPlace: boolean
   addToAppleMusic: boolean
   addToEngineDj: boolean
-  // The editor's one-shot destination pick and the choices its split-button menu
-  // offers, pre-filtered by the editor (platform, configured overwrite).
-  destination: Destination
-  destinations: readonly Destination[]
+  // The editor's one-shot destination pick and the locations its split-button menu
+  // offers, pre-filtered by the editor (configured overwrite).
+  destination: DestinationPlan
+  locations: readonly Location[]
   format: FormatSetting
   exportedFormat: OutputFormat | null
   // The format whose Apple Music eligibility gates the add button: the pick in multi
@@ -44,7 +44,7 @@ interface ConvertFooterProps {
   normalizeCfg: NormalizeConfig
   onOpenNormalize: () => void
   onSelectFormat: (format: FormatSetting) => void
-  onSelectDestination: (destination: Destination) => void
+  onSelectDestination: (destination: DestinationPlan) => void
   // Pre-resolved by the editor: converts the selection in multi mode, the open track
   // in single, so the footer never forks on it.
   onProcess: (format: FormatSetting) => void
@@ -86,7 +86,7 @@ export function ConvertFooter({
   addToAppleMusic,
   addToEngineDj,
   destination,
-  destinations,
+  locations,
   format,
   exportedFormat,
   musicExt,
@@ -268,7 +268,8 @@ export function ConvertFooter({
                 inPlace={false}
                 sameFormat={false}
                 destination={destination}
-                destinations={destinations}
+                locations={locations}
+                mac={isMacOS()}
                 count={isMulti ? selectedCount : undefined}
                 onProcess={onProcess}
                 onSelectFormat={onSelectFormat}
@@ -295,7 +296,8 @@ export function ConvertFooter({
               !isMulti && format !== 'source' && formatMatchesInput(format, item.inputPath)
             }
             destination={destination}
-            destinations={destinations}
+            locations={locations}
+            mac={isMacOS()}
             count={isMulti ? selectedCount : undefined}
             onProcess={onProcess}
             onCancel={onCancel}

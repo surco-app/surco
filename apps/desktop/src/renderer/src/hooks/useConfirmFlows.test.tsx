@@ -333,7 +333,14 @@ describe('useConfirmFlows single-track overwrite', () => {
   it('confirms before an in-place single-track convert', () => {
     const { flows, opened } = setup([track('a')])
     const run = vi.fn()
-    flows.askConvertOne(run, { destination: 'overwrite' })
+    flows.askConvertOne(run, {
+      destination: {
+        location: 'overwrite',
+        appleMusic: false,
+        engineDj: false,
+        keepOutputCopy: true,
+      },
+    })
     expect(opened[0].destructive).toBe(true)
     expect(run).not.toHaveBeenCalled()
     opened[0].onConfirm()
@@ -345,7 +352,9 @@ describe('useConfirmFlows single-track overwrite', () => {
   it('fires straight through for a non-overwrite single-track convert', () => {
     const { flows, opened } = setup([track('a')])
     const run = vi.fn()
-    flows.askConvertOne(run, { destination: 'beside' })
+    flows.askConvertOne(run, {
+      destination: { location: 'beside', appleMusic: false, engineDj: false, keepOutputCopy: true },
+    })
     expect(opened).toHaveLength(0)
     expect(run).toHaveBeenCalledTimes(1)
   })

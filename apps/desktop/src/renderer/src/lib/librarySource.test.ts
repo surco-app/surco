@@ -45,6 +45,12 @@ describe('librarySourceOf', () => {
     )
   })
 
+  it('reads the Engine library when both libraries take the conversion', () => {
+    expect(librarySourceOf({ ...base, addToAppleMusic: true, addToEngineDj: true }, true)).toBe(
+      'engineDj',
+    )
+  })
+
   it('reports no source before settings load', () => {
     expect(librarySourceOf(null, true)).toBeNull()
   })

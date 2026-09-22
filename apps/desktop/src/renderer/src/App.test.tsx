@@ -1591,7 +1591,7 @@ describe('App editor format/destination reseed', () => {
 
     fireEvent.click(screen.getByTestId('open-settings'))
     fireEvent.click(await screen.findByTestId('settings-tab-destination'))
-    fireEvent.click(screen.getByTestId('settings-destination-appleMusic'))
+    fireEvent.click(screen.getByTestId('settings-dj-appleMusic'))
     fireEvent.click(screen.getByTestId('settings-save'))
 
     await waitFor(() =>

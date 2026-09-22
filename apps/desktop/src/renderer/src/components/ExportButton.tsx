@@ -4,7 +4,14 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FORMAT_SETTINGS, OUTPUT_FORMATS } from '../../../shared/outputFormats'
 import type { FormatSetting, OutputFormat, ProcessStage } from '../../../shared/types'
-import type { Destination } from '../lib/destination'
+import {
+  type DestinationPlan,
+  DJ_SOFTWARE_NAMES,
+  type Location,
+  withAppleMusic as planWithAppleMusic,
+  withEngineDj as planWithEngineDj,
+  withLocation,
+} from '../lib/destination'
 import { exportButtonLabel } from '../lib/exportLabel'
 import { STAGE_PROGRESS } from '../lib/progress'
 import type { TrackItem } from '../types'
@@ -45,18 +52,19 @@ interface ExportButtonProps {
   // that sits in the secondary row labelled "Convert again", rather than the prominent
   // accent button used to convert.
   quiet?: boolean
-  // The destination this conversion goes to and the picks on offer — the editor
-  // filters them (Apple Music off non-macOS, overwrite only when Settings chose it).
-  // Like the format, picking one only relabels the button for this track.
-  destination: Destination
-  destinations: readonly Destination[]
+  // Where this conversion is saved and which DJ software it reaches, plus the locations
+  // on offer — the editor filters them (overwrite only when Settings chose it). Like the
+  // format, picking one only relabels the button for this track.
+  destination: DestinationPlan
+  locations: readonly Location[]
+  mac: boolean
   onProcess: (format: FormatSetting) => void
   // When given, the button stays live while converting: clicking it cancels the in-flight
   // job instead of firing another convert. Single-only — multi cancels via the toolbar
   // batch pill — so it's absent (an inert progress bar) in the multi/quiet uses.
   onCancel?: () => void
   onSelectFormat: (format: FormatSetting) => void
-  onSelectDestination: (destination: Destination) => void
+  onSelectDestination: (destination: DestinationPlan) => void
 }
 
 // A split button: the body exports in the currently chosen format (seeded from
@@ -82,7 +90,8 @@ export function ExportButton({
   count,
   quiet,
   destination,
-  destinations,
+  locations,
+  mac,
   onProcess,
   onCancel,
   onSelectFormat,
@@ -142,9 +151,16 @@ export function ExportButton({
     onSelectFormat(format)
   }
 
-  function pickDestination(d: Destination): void {
+  function pickLocation(location: Location): void {
     setOpen(false)
-    onSelectDestination(d)
+    onSelectDestination(withLocation(destination, location))
+  }
+
+  const djChoices = mac ? (['appleMusic', 'engineDj'] as const) : (['engineDj'] as const)
+  function djReason(id: 'appleMusic' | 'engineDj'): string | undefined {
+    if (destination.location !== 'folder') return tr('editor.menuNeedsFolder')
+    if (id === 'appleMusic' && outputFormat === 'flac') return tr('editor.menuNoFlac')
+    return undefined
   }
 
   return (
@@ -240,24 +256,59 @@ export function ExportButton({
             </button>
           ))}
           <p className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-[11px] font-medium tracking-wide text-fg-dim uppercase">
-            {tr('editor.menuDestination')}
+            {tr('editor.menuLocation')}
           </p>
-          {destinations.map((d) => (
+          {locations.map((location) => (
             <button
-              key={d}
+              key={location}
               type="button"
-              data-testid={`process-destination-${d}`}
-              aria-current={d === destination ? 'true' : undefined}
-              // Music can't ingest FLAC — the same pin the Settings radio applies.
-              disabled={d === 'appleMusic' && outputFormat === 'flac'}
-              onClick={() => pickDestination(d)}
-              className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent ${
-                d === destination ? 'font-medium text-[var(--color-accent)]' : ''
+              data-testid={`process-location-${location}`}
+              aria-current={location === destination.location ? 'true' : undefined}
+              onClick={() => pickLocation(location)}
+              className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] ${
+                location === destination.location ? 'font-medium text-[var(--color-accent)]' : ''
               }`}
             >
-              {tr(`settings.destinations.${d}`)}
+              {tr(`settings.destinations.${location}`)}
             </button>
           ))}
+          <p className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-[11px] font-medium tracking-wide text-fg-dim uppercase">
+            {tr('editor.menuDjSoftware')}
+          </p>
+          {djChoices.map((id) => {
+            const on = destination.location === 'folder' && destination[id]
+            const reason = djReason(id)
+            return (
+              <button
+                key={id}
+                type="button"
+                role="menuitemcheckbox"
+                data-testid={`process-dj-${id}`}
+                aria-checked={on}
+                disabled={!!reason}
+                onClick={() =>
+                  onSelectDestination(
+                    id === 'appleMusic'
+                      ? planWithAppleMusic(destination, !on)
+                      : planWithEngineDj(destination, !on),
+                  )
+                }
+                className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              >
+                <span className={reason ? 'opacity-50' : ''}>
+                  {DJ_SOFTWARE_NAMES[id]}
+                  {reason && <span className="block text-xs text-fg-dim">{reason}</span>}
+                </span>
+                {on && (
+                  <Check
+                    className="h-3.5 w-3.5 shrink-0 text-[var(--color-accent)]"
+                    strokeWidth={2.5}
+                    aria-hidden="true"
+                  />
+                )}
+              </button>
+            )
+          })}
         </div>
       )}
     </div>

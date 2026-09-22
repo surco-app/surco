@@ -41,6 +41,7 @@ interface ResolvedSettings {
   outputBitDepth: OutputBitDepth
   outputSampleRate: OutputSampleRate
   addToAppleMusic: boolean
+  keepOutputCopy: boolean
   addToEngineDj: boolean
   overwriteOriginal: boolean
   convertBesideOriginal: boolean
@@ -79,6 +80,7 @@ const DEFAULTS: ResolvedSettings = {
   outputBitDepth: 'source',
   outputSampleRate: 'source',
   addToAppleMusic: false,
+  keepOutputCopy: true,
   addToEngineDj: false,
   overwriteOriginal: false,
   convertBesideOriginal: false,
@@ -115,6 +117,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     outputBitDepth: settings.outputBitDepth ?? DEFAULTS.outputBitDepth,
     outputSampleRate: settings.outputSampleRate ?? DEFAULTS.outputSampleRate,
     addToAppleMusic: settings.addToAppleMusic ?? DEFAULTS.addToAppleMusic,
+    keepOutputCopy: settings.keepOutputCopy ?? DEFAULTS.keepOutputCopy,
     addToEngineDj: settings.addToEngineDj ?? DEFAULTS.addToEngineDj,
     overwriteOriginal: settings.overwriteOriginal ?? DEFAULTS.overwriteOriginal,
     convertBesideOriginal: settings.convertBesideOriginal ?? DEFAULTS.convertBesideOriginal,
