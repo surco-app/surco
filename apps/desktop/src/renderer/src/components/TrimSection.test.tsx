@@ -5,9 +5,9 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WaveformResult } from '../../../shared/types'
+import i18n from '../i18n'
 import { createQueryClient } from '../lib/queryClient'
 import { runKeyClaim } from '../lib/spaceClaim'
-import '../i18n'
 import { drawWaveform } from '../lib/waveform'
 
 // TrimSection reads window.api.platform (isMacOS) at module scope; install a stub
@@ -81,6 +81,7 @@ function section(over: Partial<React.ComponentProps<typeof TrimSection>> = {}): 
         onToggle={() => {}}
         onChange={() => {}}
         inputPath="/in/track.wav"
+        format="aiff"
         {...over}
       />
     </QueryClientProvider>
@@ -947,10 +948,18 @@ describe('trim plan card', () => {
     expect(screen.queryByTestId('trim-cue-warning')).not.toBeInTheDocument()
   })
 
-  it('falls back to the terse cue warning when hints are off', async () => {
-    render(section({ value: { startSec: 0.8, endSec: 97.5 }, showHints: false }))
+  // Only ALAC drops the Traktor cues on the re-encode; an amber warning on the formats
+  // that re-anchor them teaches the DJ to skip past the one that matters.
+  it('falls back to the terse cue warning when hints are off and the format drops the cues', async () => {
+    const { rerender } = render(
+      section({ value: { startSec: 0.8, endSec: 97.5 }, showHints: false, format: 'alac' }),
+    )
     await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
     expect(screen.queryByTestId('trim-plan')).not.toBeInTheDocument()
-    expect(screen.getByTestId('trim-cue-warning')).toBeInTheDocument()
+    expect(screen.getByTestId('trim-cue-warning')).toHaveTextContent(i18n.t('trim.cueWarningShort'))
+    for (const format of ['mp3', 'aiff', 'flac', 'wav'] as const) {
+      rerender(section({ value: { startSec: 0.8, endSec: 97.5 }, showHints: false, format }))
+      expect(screen.queryByTestId('trim-cue-warning')).not.toBeInTheDocument()
+    }
   })
 })

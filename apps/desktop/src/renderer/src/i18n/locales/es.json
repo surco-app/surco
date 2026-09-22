@@ -670,7 +670,7 @@
     "applyEnd": "Recortar {{seconds}} del final",
     "applyAll_other": "Recortar el silencio detectado en {{count}} pistas",
     "cueWarning": "Recodifica el audio. Los cues y el beatgrid de Traktor guardados en el archivo se recolocan según el recorte en MP3, AIFF, FLAC y WAV; en ALAC se pierden.",
-    "cueWarningShort": "Reencoda el audio · cues reanclados",
+    "cueWarningShort": "Reencoda el audio · en ALAC se pierden los cues",
     "planHead": "Tras el corte",
     "planBoth": "Corta {{start}} del principio y {{end}} del final: {{from}} → {{to}}.",
     "planStart": "Corta {{start}} del principio: {{from}} → {{to}}.",
