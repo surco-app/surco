@@ -166,6 +166,16 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-unconverted')).toHaveTextContent('459')
   })
 
+  // The trigger is the only thing on screen once the menu closes; with just a retouch bucket
+  // active it read "All" over the whole crate while the list showed a handful of rows.
+  it('names an active retouch bucket and its count on the trigger', () => {
+    renderBar({ value: sel({ attention: 'clipping' }), tally: tally({ clipping: 4 }) })
+    const trigger = screen.getByTestId('quality-filter-trigger')
+    expect(trigger).toHaveTextContent('Clipping')
+    expect(trigger).toHaveTextContent('4')
+    expect(trigger).not.toHaveTextContent('498')
+  })
+
   // With nothing filtered the trigger reads "All" over the whole crate.
   it('shows the full track count on the trigger when nothing is filtered', () => {
     renderBar({ value: sel(), trackCount: 498 })

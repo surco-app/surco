@@ -314,6 +314,12 @@ export function QualityFilterBar({
       label: tr('sidebar.filter.duplicates'),
       count: countOf('duplicates'),
     })
+  if (value.attention)
+    activeChips.push({
+      Icon: FILTER_ICONS[value.attention],
+      label: tr(`sidebar.filter.${value.attention}`),
+      count: countOf(value.attention),
+    })
   if (value.format)
     activeChips.push({
       Icon: FileAudio,
