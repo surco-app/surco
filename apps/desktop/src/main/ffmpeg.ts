@@ -652,6 +652,7 @@ interface PropertiesProbe {
   streams?: {
     codec_name?: string
     bits_per_raw_sample?: string
+    bits_per_sample?: number
     sample_rate?: string
     channels?: number
     bit_rate?: string
@@ -682,7 +683,7 @@ export function propertiesFromProbe(
       .split(',')[0]
       .trim(),
     sampleRateHz: Number(stream.sample_rate) || 0,
-    bitDepth: Number(stream.bits_per_raw_sample) || null,
+    bitDepth: Number(stream.bits_per_raw_sample) || Number(stream.bits_per_sample) || null,
     channels: Number(stream.channels) || 0,
     bitrateKbps: Number.isFinite(bitrate) && bitrate > 0 ? Math.round(bitrate / 1000) : null,
     sizeBytes: file.sizeBytes,
@@ -701,7 +702,7 @@ export async function probeProperties(input: string): Promise<TrackProperties> {
       '-select_streams',
       'a:0',
       '-show_entries',
-      'stream=codec_name,bits_per_raw_sample,sample_rate,channels,bit_rate:format=format_name,bit_rate,size',
+      'stream=codec_name,bits_per_raw_sample,bits_per_sample,sample_rate,channels,bit_rate:format=format_name,bit_rate,size',
       '-of',
       'json',
       ...forcedInputArgs(input),
