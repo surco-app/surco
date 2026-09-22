@@ -74,6 +74,14 @@ describe('defaults for a fresh install', () => {
   it('searches Discogs, Bandcamp and Deezer by default', () => {
     expect(defaults.searchProviders).toEqual(['discogs', 'bandcamp', 'deezer'])
   })
+
+  // Originals exist to undo a conversion you just noticed went wrong, which is a
+  // same-session or next-day realisation, not a month-later one. A month of copies
+  // of every rewritten file is disk the user never asked to spend on a safety net
+  // they had already stopped needing.
+  it('keeps originals for a week, not a month', () => {
+    expect(defaults.backupRetentionDays).toBe(7)
+  })
 })
 
 describe('the update channel default', () => {
