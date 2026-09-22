@@ -2,10 +2,9 @@ import { ImageDown, TriangleAlert } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { NormalizeConfig, OutputSampleRate } from '../../../shared/types'
+import type { OutputSampleRate } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useSpectrogram } from '../hooks/useSpectrogram'
-import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { cleanIpcError, errorKeyOf } from '../lib/ipcError'
 import {
   formatKHz,
@@ -18,8 +17,6 @@ import {
 import { renderQualityReport } from '../lib/qualityReport'
 import { useToast } from '../lib/toastContext'
 import type { TrackItem } from '../types'
-import { LoudnessReadout } from './LoudnessReadout'
-import { LoudnessSkeleton } from './LoudnessSkeleton'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
@@ -52,41 +49,30 @@ const qualityCaption: Record<Verdict, string> = {
 interface Props {
   item: TrackItem
   showSpectrum: boolean
-  showLoudness: boolean
-  // The pending conversion's settings, so the loudness table can show where each figure
-  // will land. Owned by the Normalize section; read here because the figures it predicts
-  // are the ones this table measures.
-  normalize: NormalizeConfig
   open: boolean
   onToggle: () => void
-  onShowLoudnessHelp: () => void
   showHints?: boolean
   // The output sample-rate policy, read so the 'corrected' mode can announce on
   // the verdict itself what the next conversion will do to THIS file.
   outputSampleRate?: OutputSampleRate
 }
 
-// The audio-quality section: spectrogram with its lossless-cutoff verdict, and the
-// EBU R128 loudness pills. Owns both probes — the hover prefetch and the "analyze
-// all" sweep warm the same cache keys, so an already-warmed track shows instantly.
+// The audio-quality section: spectrogram with its lossless-cutoff verdict. Owns the
+// probe — the hover prefetch and the "analyze all" sweep warm the same cache key, so
+// an already-warmed track shows instantly.
 // The editor only mounts this in single-track mode.
 export function QualitySection({
   item,
   showSpectrum,
-  showLoudness,
-  normalize,
   open,
   onToggle,
-  onShowLoudnessHelp,
   showHints = true,
   outputSampleRate = 'source',
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { reportError } = useToast()
-  // Keyed by input path, so it measures once per file and reads the right figures on
-  // a track switch. The ffmpeg pass waits for the selection to rest (this section
-  // remounts with the per-track editor). A failed measure resolves null and the
-  // readout hides.
+  // The ffmpeg pass waits for the selection to rest (this section remounts with the
+  // per-track editor).
   const settled = useSettled(SELECTION_SETTLE_MS)
   // Gated on the feature setting AND the section being open: folding Quality away stops
   // the (heavy) decode until the user reopens it. A failed analysis surfaces as analyzeError.
@@ -113,7 +99,6 @@ export function QualitySection({
     spectrumQuery.error instanceof Error
       ? errorKeyOf(cleanIpcError(spectrumQuery.error.message))
       : null
-  const { data: loudness } = useTrackLoudness(item.inputPath, settled && showLoudness && open)
   // The container decides which scale the cutoff is read on, so it is resolved before the
   // verdict: lossy files are exempt (their lowpass is the format), lossless ones are graded.
   const ext = item.inputPath.split('.').pop()?.toLowerCase() ?? ''
@@ -428,20 +413,6 @@ export function QualitySection({
                   )}
               </>
             ) : null)}
-          {showLoudness &&
-            (loudness ? (
-              <LoudnessReadout
-                loudness={loudness}
-                normalize={normalize}
-                onShowHelp={onShowLoudnessHelp}
-              />
-            ) : (
-              // Measuring (undefined): show the pill placeholders so the figures don't pop
-              // into empty space. A failed measure resolves null, and the skeleton hides —
-              // the readout is simply absent, as before. Gated on the same conditions the
-              // measure is, so a closed/multi section shows nothing.
-              open && settled && loudness === undefined && <LoudnessSkeleton />
-            ))}
         </div>
       </SectionBody>
     </div>

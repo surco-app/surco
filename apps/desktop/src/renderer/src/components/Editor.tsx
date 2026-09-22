@@ -1105,16 +1105,13 @@ export const Editor = memo(function Editor({
                     case 'quality':
                       return (
                         !isMulti &&
-                        (showSpectrum || showLoudness) && (
+                        showSpectrum && (
                           <QualitySection
                             key={id}
                             item={item}
                             showSpectrum={showSpectrum}
-                            showLoudness={showLoudness}
-                            normalize={normalizeCfg}
                             open={spectrumOpen}
                             onToggle={() => setSectionOpen('quality', !spectrumOpen)}
-                            onShowLoudnessHelp={onShowLoudnessHelp}
                             showHints={showEditorHints}
                             outputSampleRate={outputSampleRate}
                           />
@@ -1241,6 +1238,8 @@ export const Editor = memo(function Editor({
                           format={format}
                           showHints={showEditorHints}
                           onHideHints={onHideEditorHints}
+                          showLoudness={showLoudness}
+                          onShowLoudnessHelp={onShowLoudnessHelp}
                         />
                       )
                     default:

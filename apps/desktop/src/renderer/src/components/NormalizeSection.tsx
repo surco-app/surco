@@ -8,6 +8,8 @@ import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 
 import type { TrackItem } from '../types'
+import { LoudnessReadout } from './LoudnessReadout'
+import { LoudnessSkeleton } from './LoudnessSkeleton'
 import { NormalizeControls } from './NormalizeControls'
 import { NormalizePlan } from './NormalizePlan'
 import { SectionBody } from './SectionBody'
@@ -30,6 +32,8 @@ interface Props {
   format: OutputFormat
   showHints?: boolean
   onHideHints?: () => void
+  showLoudness?: boolean
+  onShowLoudnessHelp?: () => void
 }
 
 // The per-track normalization override, with the active mode badged on the header so
@@ -44,10 +48,12 @@ export function NormalizeSection({
   format,
   showHints = true,
   onHideHints,
+  showLoudness = false,
+  onShowLoudnessHelp = () => {},
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // The waveform is the one full-length decode, so it waits for the selection to
-  // rest before analyzing — same pacing as the quality section's loudness pass.
+  // rest before analyzing — same pacing as the loudness pass below.
   const settled = useSettled(SELECTION_SETTLE_MS)
   // The before/after pair proves what these controls did, so it lives under them —
   // but only once there IS an after, never for an in-place export (the rewritten
@@ -79,12 +85,14 @@ export function NormalizeSection({
   // conversion just finished (not on mount — flipping back to a done track must not
   // yank the view), scroll it into view or most users never see it. Same reveal
   // pattern as NormalizeControls' mode switch.
-  // The plan card reads the same measurement the waveform legend uses (one shared
-  // query, so no second decode) and only for a single selected track: in multi the
-  // anchor's figures would masquerade as the batch's.
+  // The plan card and the loudness table read the same measurement the waveform legend
+  // uses (one shared query, so no second decode) and only for a single selected track:
+  // in multi the anchor's figures would masquerade as the batch's. The table measures
+  // only while the section is open, so a folded section never pays for the pass.
+  const showReadout = !isMulti && showLoudness && open
   const { data: planLoudness } = useTrackLoudness(
     item.inputPath,
-    settled && !isMulti && showHints && value.mode !== 'none',
+    settled && !isMulti && ((showHints && value.mode !== 'none') || showReadout),
   )
   const compareRef = useRef<HTMLDivElement>(null)
   const mounted = useRef(false)
@@ -123,8 +131,8 @@ export function NormalizeSection({
           <span className="flex shrink-0 items-center gap-1.5">
             {/* No measurement pill here. It used to ride alongside, justified as "the body
                 never repeats it as figures this compact" — no longer true: the estimate
-                below opens with the same "Now -21.8 LUFS · -18.1 dBTP", and the Quality
-                section states the same two figures graded by colour. Worse, it was
+                below opens with the same "Now -21.8 LUFS · -18.1 dBTP", and the loudness
+                table above the dials states the same two figures graded by colour. Worse, it was
                 typographically identical to the summary beside it (same template, same
                 units, same tabular-nums), so the header read as one figure printed twice
                 with nothing saying which was the target and which the measurement — while
@@ -151,6 +159,23 @@ export function NormalizeSection({
               {tr('normalize.appliesToSelection', { count: selectedCount })}
             </p>
           )}
+          {showReadout &&
+            (planLoudness ? (
+              <div className="mb-4">
+                <LoudnessReadout
+                  loudness={planLoudness}
+                  normalize={value}
+                  onShowHelp={onShowLoudnessHelp}
+                />
+              </div>
+            ) : (
+              settled &&
+              planLoudness === undefined && (
+                <div className="mb-4">
+                  <LoudnessSkeleton />
+                </div>
+              )
+            ))}
           {/* The cue warning renders once, below the wave: inline it sat between the
               dials and the preview, right where the eye travels while tuning. */}
           <NormalizeControls

@@ -874,7 +874,14 @@ describe('App loudness help overlay', () => {
   // the dialog under the user.
   it('keeps track shortcuts gated while the loudness help dialog is open', async () => {
     setApi({
-      getSettings: vi.fn().mockResolvedValue(settings({ showLoudness: true })),
+      getSettings: vi.fn().mockResolvedValue(
+        settings({
+          showLoudness: true,
+          editorSections: DEFAULT_EDITOR_SECTIONS.map((s) =>
+            s.id === 'normalize' ? { ...s, open: true } : s,
+          ),
+        }),
+      ),
       loudness: vi.fn().mockResolvedValue({
         integratedLufs: -12,
         truePeakDb: -1.5,
