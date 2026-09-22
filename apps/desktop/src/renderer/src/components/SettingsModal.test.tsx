@@ -135,7 +135,7 @@ describe('SettingsModal sidebar indicator', () => {
     expect(pill).toHaveAttribute('aria-hidden', 'true')
     expect(pill.className).toContain('pointer-events-none')
     expect(screen.getByTestId('settings-tab-general').className).not.toContain('accent-soft')
-    fireEvent.click(screen.getByTestId('settings-tab-naming'))
+    fireEvent.click(screen.getByTestId('settings-tab-output'))
     expect(screen.getByTestId('settings-tab-indicator')).toBeInTheDocument()
   })
 })
@@ -448,7 +448,7 @@ describe('SettingsModal filename tokens', () => {
   // every metadata field must be usable in the file name — e.g. {rating}/{artist}
   // sorts exports into per-rating folders.
   it('offers a rating entry that inserts {rating}', () => {
-    openTab('naming')
+    openTab('output')
     fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
     fireEvent.click(screen.getByTestId('field-insert-option-rating'))
     expect(screen.getByTestId('settings-filename-format')).toHaveValue('{rating}')
@@ -457,14 +457,14 @@ describe('SettingsModal filename tokens', () => {
   // input's ⋯ menu — the same one the editor fields carry — pick the field they
   // want, and its {token} lands in the format.
   it('inserts a token into the format from the input ⋯ menu', () => {
-    openTab('naming')
+    openTab('output')
     fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
     fireEvent.click(screen.getByTestId('field-insert-option-albumArtist'))
     expect(screen.getByTestId('settings-filename-format')).toHaveValue('{albumArtist}')
   })
 
   it('previews the rendered file name from the sample track', () => {
-    openTab('naming')
+    openTab('output')
     fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
     fireEvent.click(screen.getByTestId('field-insert-option-artist'))
     fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
@@ -477,7 +477,7 @@ describe('SettingsModal filename tokens', () => {
   // Every chip must move the preview: a token that renders to nothing reads as
   // "this field doesn't work in file names" even though real tracks fill it.
   it('renders a sample value for every insertable token', () => {
-    openTab('naming')
+    openTab('output')
     const format = screen.getByTestId('settings-filename-format')
     for (const key of [...FIELD_DEFS.map((f) => f.key), 'rating']) {
       fireEvent.change(format, { target: { value: `{${key}}` } })
@@ -503,7 +503,7 @@ describe('SettingsModal filename tokens', () => {
   // With 22 fields the menu is a lookup list: alphabetical by the localized label
   // is what lets the eye find one, and the order follows the UI language.
   it('lists the token menu alphabetically by the localized field label', () => {
-    openTab('naming')
+    openTab('output')
     fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
     const labels = Array.from(
       screen
@@ -611,6 +611,43 @@ describe('SettingsModal tags tab', () => {
     }
     expect(screen.queryByTestId('settings-tab-fields')).not.toBeInTheDocument()
     expect(screen.queryByTestId('settings-tab-artwork')).not.toBeInTheDocument()
+  })
+})
+
+describe('SettingsModal output tab', () => {
+  // What comes out of a conversion reads top to bottom in one tab: the format, the file
+  // name, the audio fixes. The encoder fine print folds under Advanced and still saves.
+  it('holds format, file name and audio, with the encoder details under Advanced', () => {
+    const onSave = vi.fn()
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={onSave}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+        initialTab="output"
+      />,
+    )
+    for (const id of [
+      'settings-format-aiff',
+      'settings-mp3-quality-320',
+      'settings-keep-mp3',
+      'settings-filename-format',
+      'settings-auto-apply-filename',
+      'declick-mode-standard',
+      'normalize-mode-loudness',
+    ]) {
+      expect(screen.getByTestId(id)).toBeVisible()
+    }
+    for (const tab of ['conversion', 'processing', 'naming']) {
+      expect(screen.queryByTestId(`settings-tab-${tab}`)).not.toBeInTheDocument()
+    }
+    expect(screen.getByTestId('settings-sample-rate-44100')).not.toBeVisible()
+    fireEvent.click(screen.getByTestId('settings-advanced-output'))
+    fireEvent.click(screen.getByTestId('settings-sample-rate-44100'))
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ outputSampleRate: '44100' }))
   })
 })
 

@@ -3,13 +3,13 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../../shared/editorSections'
+import i18n from '../../i18n'
 import type { SyncedDraft } from '../../lib/settingsDraft'
-import '../../i18n'
 
 // ConversionTab reads window.api.platform at module scope (isMacOS), so the bridge
 // must exist before the module loads — hence the dynamic import below.
 ;(window as unknown as { api: unknown }).api = { platform: 'darwin' }
-const { ConversionTab } = await import('./ConversionTab')
+const { ConversionTab, EncoderAdvancedSettings } = await import('./ConversionTab')
 
 afterEach(cleanup)
 
@@ -66,19 +66,26 @@ const synced: SyncedDraft = {
 
 function renderTab(over: Partial<SyncedDraft> = {}) {
   const patch = vi.fn()
-  render(<ConversionTab synced={{ ...synced, ...over }} patch={patch} />)
+  render(
+    <>
+      <ConversionTab synced={{ ...synced, ...over }} patch={patch} />
+      <EncoderAdvancedSettings synced={{ ...synced, ...over }} patch={patch} />
+    </>,
+  )
   return patch
 }
 
 describe('ConversionTab MP3 quality', () => {
-  // The encoder choice only means something while MP3 is the pick; surfacing it under
-  // AIFF would read as a knob that does nothing.
-  it('offers the quality control only while MP3 is the output format', () => {
+  // The encoder choice is set while MP3 is the pick. Under AIFF it stays on screen,
+  // disabled, with the reason: a control that vanished read as a setting that was gone.
+  it('keeps the quality control in view, disabled with the reason, until MP3 is the format', () => {
     renderTab()
-    expect(screen.queryByTestId('settings-mp3-quality-320')).toBeNull()
+    expect(screen.getByTestId('settings-mp3-quality-320')).toBeDisabled()
+    expect(screen.getByTestId('settings-mp3-quality-off')).toBeInTheDocument()
     cleanup()
     renderTab({ outputFormat: 'mp3' })
-    expect(screen.getByTestId('settings-mp3-quality-320')).toBeInTheDocument()
+    expect(screen.getByTestId('settings-mp3-quality-320')).toBeEnabled()
+    expect(screen.queryByTestId('settings-mp3-quality-off')).toBeNull()
   })
 
   it('stages the V0 pick through the draft patch', () => {
@@ -97,11 +104,12 @@ describe('ConversionTab MP3 quality', () => {
     expect(patch).toHaveBeenCalledWith('mp3Quality', 'v2')
   })
 
-  // Bit depth shapes PCM/FLAC/ALAC encodes; under MP3 it would read as a knob that
-  // does nothing (LAME has no bit depth).
-  it('shows the bit depth control only for lossless formats and stages the pick', () => {
+  // Bit depth shapes PCM/FLAC/ALAC encodes; under MP3 it is disabled and says why
+  // (LAME has no bit depth).
+  it('disables the bit depth control under MP3 and stages the pick for lossless', () => {
     renderTab({ outputFormat: 'mp3' })
-    expect(screen.queryByTestId('settings-bit-depth-16')).toBeNull()
+    expect(screen.getByTestId('settings-bit-depth-16')).toBeDisabled()
+    expect(screen.getByTestId('settings-bit-depth-off')).toBeInTheDocument()
     cleanup()
     const patch = renderTab({ outputFormat: 'flac' })
     fireEvent.click(screen.getByTestId('settings-bit-depth-16'))
@@ -123,9 +131,10 @@ describe('ConversionTab MP3 quality', () => {
     expect(patch).toHaveBeenCalledWith('outputSampleRate', 'corrected')
   })
 
-  it('shows the FLAC compression control only while FLAC is the format', () => {
+  it('disables the FLAC compression control until FLAC is the format', () => {
     renderTab()
-    expect(screen.queryByTestId('settings-flac-compression-8')).toBeNull()
+    expect(screen.getByTestId('settings-flac-compression-8')).toBeDisabled()
+    expect(screen.getByTestId('settings-flac-compression-off')).toBeInTheDocument()
     cleanup()
     const patch = renderTab({ outputFormat: 'flac' })
     fireEvent.click(screen.getByTestId('settings-flac-compression-8'))
@@ -138,19 +147,20 @@ describe('ConversionTab MP3 quality', () => {
   })
 
   describe('keep mp3 checkbox', () => {
-    // The checkbox only makes sense while the export would transcode an mp3: with MP3
-    // or "Same as source" as the format the rule never fires, so showing it would be noise.
-    it('shows the checkbox only for lossless formats', () => {
+    // The checkbox only acts while the export would transcode an mp3: with MP3 or "Same
+    // as source" as the format the rule never fires, so it is disabled and says so.
+    it('enables the checkbox for lossless formats', () => {
       renderTab({ outputFormat: 'aiff' })
-      expect(screen.getByTestId('settings-keep-mp3')).toBeInTheDocument()
+      expect(screen.getByTestId('settings-keep-mp3')).toBeEnabled()
     })
 
-    it('hides the checkbox under mp3 and source', () => {
+    it('disables the checkbox under mp3 and source and says why', () => {
       renderTab({ outputFormat: 'mp3' })
-      expect(screen.queryByTestId('settings-keep-mp3')).not.toBeInTheDocument()
+      expect(screen.getByTestId('settings-keep-mp3')).toBeDisabled()
+      expect(screen.getByText(i18n.t('settings.keepMp3SourcesOff'))).toBeInTheDocument()
       cleanup()
       renderTab({ outputFormat: 'source' })
-      expect(screen.queryByTestId('settings-keep-mp3')).not.toBeInTheDocument()
+      expect(screen.getByTestId('settings-keep-mp3')).toBeDisabled()
     })
 
     it('patches keepMp3Sources on toggle', () => {
@@ -169,11 +179,11 @@ describe('ConversionTab MP3 quality', () => {
   })
 
   // With 'source' picked, any of the batch's files could be MP3, lossless PCM or FLAC —
-  // so all three quality blocks must be visible at once instead of mutually exclusive.
-  it('shows every quality block at once when the format is "same as source"', () => {
+  // so all three quality blocks must be usable at once instead of mutually exclusive.
+  it('enables every quality block at once when the format is "same as source"', () => {
     renderTab({ outputFormat: 'source' })
-    expect(screen.getByTestId('settings-mp3-quality-320')).toBeInTheDocument()
-    expect(screen.getByTestId('settings-bit-depth-16')).toBeInTheDocument()
-    expect(screen.getByTestId('settings-flac-compression-8')).toBeInTheDocument()
+    expect(screen.getByTestId('settings-mp3-quality-320')).toBeEnabled()
+    expect(screen.getByTestId('settings-bit-depth-16')).toBeEnabled()
+    expect(screen.getByTestId('settings-flac-compression-8')).toBeEnabled()
   })
 })

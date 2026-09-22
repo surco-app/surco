@@ -1547,7 +1547,7 @@ describe('App editor format/destination reseed', () => {
     expect(await screen.findByTestId('process-btn')).toHaveTextContent('Update tags')
 
     fireEvent.click(screen.getByTestId('open-settings'))
-    fireEvent.click(await screen.findByTestId('settings-tab-conversion'))
+    fireEvent.click(await screen.findByTestId('settings-tab-output'))
     fireEvent.click(screen.getByTestId('settings-format-aiff'))
     fireEvent.click(screen.getByTestId('settings-save'))
 

@@ -497,7 +497,7 @@
     "overwriteLossyHint": "Sustituye el original sin pérdida por un MP3 de 320 kbps en su sitio — el máster se pierde y no se puede recuperar. Desactívalo en Ajustes → Destino.",
     "regenerate": "Regenerar nombre del archivo con los metadatos",
     "regenerateAll_other": "Regenerar {{count}} nombres de archivo con los metadatos",
-    "regenerateHint": "Reconstruir el nombre del archivo con los metadatos de arriba usando tu patrón de Ajustes → Nombres",
+    "regenerateHint": "Reconstruir el nombre del archivo con los metadatos de arriba usando tu patrón de Ajustes → Salida",
     "regenerateCustom": "Personalizar el patrón del nombre para esta pista…",
     "convert": "Convertir a {{format}} + Apple Music",
     "convertEngine": "Convertir a {{format}} + Engine DJ",
@@ -769,10 +769,8 @@
     "tabs": {
       "general": "General",
       "search": "Búsqueda",
-      "conversion": "Formato",
-      "processing": "Procesado",
+      "output": "Salida",
       "destination": "Destino",
-      "naming": "Nombres",
       "editor": "Editor",
       "tags": "Etiquetas",
       "shortcuts": "Atajos"
@@ -906,6 +904,7 @@
     "outputFormatHint": "«Igual que el origen» mantiene cada archivo en su propio formato, así que un lote mixto nunca se reconvierte. AIFF/WAV/FLAC sin pérdida (FLAC comprimido); MP3 ocupa menos. Un archivo ya en ese formato se copia sin reconvertir.",
     "keepMp3Sources": "Mantener los MP3 como MP3",
     "keepMp3SourcesHint": "Convertir un MP3 a un formato sin pérdida no recupera calidad: el archivo solo ocupa más. Con esto activo, los MP3 no se convierten: las etiquetas se actualizan sobre el archivo original, allí donde está.",
+    "keepMp3SourcesOff": "No hace falta con MP3 o «Igual que el origen»: los MP3 ya se quedan como MP3.",
     "mp3Quality": "Calidad MP3",
     "mp3Qualities": {
       "128": "128",
@@ -917,6 +916,7 @@
       "v2": "V2"
     },
     "mp3QualityHint": "Se aplica a todas las exportaciones MP3. Tasas CBR en kbps: 320 es el estándar de los pools de DJ; V0 y V2 son VBR (archivos más pequeños con calidad transparente). Un MP3 de origen nunca se recomprime.",
+    "mp3QualityOff": "Se elige con MP3 o «Igual que el origen» como formato por defecto.",
     "bitDepth": "Profundidad de bits",
     "bitDepths": {
       "16": "16 bits",
@@ -925,6 +925,7 @@
       "corrected": "Corregido"
     },
     "bitDepthHint": "«Igual que el origen» conserva la profundidad exacta del archivo, relleno incluido. Al reducir a 16 bits se aplica dither; un archivo ya en el formato de salida se copia sin reconvertir. «Corregido» escribe como 16 bits reales, sin pérdidas, un fichero con audio de 16 bits demostrado y rellenado a 24; el audio de 24 bits genuino conserva su profundidad.",
+    "bitDepthOff": "El MP3 no tiene profundidad de bits: se elige con AIFF, WAV, FLAC, ALAC o «Igual que el origen».",
     "sampleRate": "Frecuencia de muestreo",
     "sampleRates": {
       "44100": "44,1 kHz",
@@ -940,6 +941,7 @@
       "8": "Máxima"
     },
     "flacCompressionHint": "Solo afecta al tamaño y la velocidad; el audio es idéntico en todos los niveles.",
+    "flacCompressionOff": "Se elige con FLAC o «Igual que el origen» como formato por defecto.",
     "destination": "Destino de los archivos convertidos",
     "destinations": {
       "folder": "Carpeta de salida",

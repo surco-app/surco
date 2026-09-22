@@ -492,12 +492,12 @@
     "outputName": "Dateiname",
     "outputNameHintInPlace": "Gleiches Format wie die Quelle: Die Originaldatei wird direkt aktualisiert und umbenannt — es landet keine Kopie im Ausgabeordner.",
     "overwriteTitle": "Überschreibt das Original",
-    "overwriteHint": "Die Quelldatei wird direkt überschrieben und behält ihren Namen. Keine Kopie im Ausgabeordner. Abschaltbar unter Einstellungen → Ausgabe.",
+    "overwriteHint": "Die Quelldatei wird direkt überschrieben und behält ihren Namen. Keine Kopie im Ausgabeordner. Abschaltbar unter Einstellungen → Ziel.",
     "overwriteAlacHint": "ALAC ersetzt nie das Original: Die Quelle kann verlustbehaftetes Audio enthalten, deshalb wird eine neue Datei in den Ausgabeordner geschrieben und das Original bleibt erhalten.",
-    "overwriteLossyHint": "Das verlustfreie Original wird direkt durch eine 320-kbps-MP3 ersetzt — das Master ist verloren und nicht wiederherstellbar. Abschaltbar unter Einstellungen → Ausgabe.",
+    "overwriteLossyHint": "Das verlustfreie Original wird direkt durch eine 320-kbps-MP3 ersetzt — das Master ist verloren und nicht wiederherstellbar. Abschaltbar unter Einstellungen → Ziel.",
     "regenerate": "Dateinamen aus den Metadaten neu erzeugen",
     "regenerateAll_other": "{{count}} Dateinamen aus den Metadaten neu erzeugen",
-    "regenerateHint": "Baut den Dateinamen aus den Metadaten oben neu, mit deinem Muster aus Einstellungen → Benennung",
+    "regenerateHint": "Baut den Dateinamen aus den Metadaten oben neu, mit deinem Muster aus Einstellungen → Ausgabe",
     "regenerateCustom": "Dateinamen-Muster für diesen Track anpassen…",
     "convert": "In {{format}} konvertieren + Apple Music",
     "convertEngine": "In {{format}} konvertieren + Engine DJ",
@@ -769,10 +769,8 @@
     "tabs": {
       "general": "Allgemein",
       "search": "Suche",
-      "conversion": "Format",
-      "processing": "Verarbeitung",
-      "destination": "Ausgabe",
-      "naming": "Benennung",
+      "output": "Ausgabe",
+      "destination": "Ziel",
       "editor": "Editor",
       "tags": "Tags",
       "shortcuts": "Kürzel"
@@ -906,6 +904,7 @@
     "outputFormatHint": "„Wie die Quelle“ behält jede Datei in ihrem eigenen Format, sodass ein gemischter Stapel nie neu kodiert wird. AIFF/WAV/FLAC sind verlustfrei (FLAC komprimiert); MP3 ist kleiner. Eine Datei, die schon im Format vorliegt, wird ohne Neucodierung kopiert.",
     "keepMp3Sources": "MP3-Dateien als MP3 behalten",
     "keepMp3SourcesHint": "Die Umwandlung einer MP3 in ein verlustfreies Format bringt keine Qualität zurück – die Datei wird nur größer. Ist dies aktiv, werden MP3s nicht konvertiert: Die Tags werden direkt in der Originaldatei aktualisiert.",
+    "keepMp3SourcesOff": "Bei MP3 oder „Wie die Quelle“ nicht nötig: MP3s bleiben ohnehin MP3.",
     "mp3Quality": "MP3-Qualität",
     "mp3Qualities": {
       "128": "128",
@@ -917,6 +916,7 @@
       "v2": "V2"
     },
     "mp3QualityHint": "Gilt für alle MP3-Exporte. CBR-Raten in kbit/s — 320 ist der Standard der DJ-Pools; V0 und V2 sind VBR (kleinere Dateien bei transparenter Qualität). Eine MP3-Quelle wird nie neu kodiert.",
+    "mp3QualityOff": "Einstellbar, wenn MP3 oder „Wie die Quelle“ das Standardformat ist.",
     "bitDepth": "Bittiefe",
     "bitDepths": {
       "16": "16 Bit",
@@ -925,6 +925,7 @@
       "corrected": "Korrigiert"
     },
     "bitDepthHint": "„Wie die Quelle“ behält die exakte Tiefe der Datei, samt Auffüllung. Die Reduktion auf 16 Bit wendet Dither an; eine Datei, die bereits im Ausgabeformat vorliegt, wird ohne Neucodierung kopiert. „Korrigiert“ schreibt eine Datei, deren 16-Bit-Audio nachweislich auf 24 Bit aufgefüllt ist, verlustfrei als echte 16 Bit; echtes 24-Bit-Audio behält seine Tiefe.",
+    "bitDepthOff": "MP3 hat keine Bittiefe: einstellbar mit AIFF, WAV, FLAC, ALAC oder „Wie die Quelle“.",
     "sampleRate": "Abtastrate",
     "sampleRates": {
       "44100": "44,1 kHz",
@@ -940,6 +941,7 @@
       "8": "Maximal"
     },
     "flacCompressionHint": "Betrifft nur Größe und Geschwindigkeit; das Audio ist auf jeder Stufe identisch.",
+    "flacCompressionOff": "Einstellbar, wenn FLAC oder „Wie die Quelle“ das Standardformat ist.",
     "destination": "Wohin konvertierte Tracks gehen",
     "destinations": {
       "folder": "Ausgabeordner",
@@ -1141,7 +1143,7 @@
       },
       "appleMusic": {
         "q": "Was macht „Zu Apple Music hinzufügen“?",
-        "a": "Wenn aktiviert (nur macOS), importiert Surco jeden konvertierten Track direkt nach der Konvertierung automatisch in deine Apple Music-Bibliothek — deine frisch getaggten Dateien landen dort ohne manuelles Hineinziehen.\n\nBeim Bearbeiten prüft Surco außerdem, ob ein Track schon in deiner Bibliothek ist, und zeigt ein kleines Abzeichen, damit keine Duplikate entstehen. Das automatische Hinzufügen lässt sich jederzeit unter Einstellungen → Ausgabe abschalten."
+        "a": "Wenn aktiviert (nur macOS), importiert Surco jeden konvertierten Track direkt nach der Konvertierung automatisch in deine Apple Music-Bibliothek — deine frisch getaggten Dateien landen dort ohne manuelles Hineinziehen.\n\nBeim Bearbeiten prüft Surco außerdem, ob ein Track schon in deiner Bibliothek ist, und zeigt ein kleines Abzeichen, damit keine Duplikate entstehen. Das automatische Hinzufügen lässt sich jederzeit unter Einstellungen → Ziel abschalten."
       },
       "windows": {
         "q": "Gibt es Unterschiede unter Windows?",
