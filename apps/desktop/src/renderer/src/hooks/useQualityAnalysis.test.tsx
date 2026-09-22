@@ -353,3 +353,39 @@ describe('useQualityAnalysis removed tracks', () => {
     expect(spectrogram).toHaveBeenCalledWith('/music/keep.wav', expect.anything())
   })
 })
+
+describe('useQualityAnalysis renamed tracks', () => {
+  // A user's log listed dozens of files as missing mid-session, in pairs like
+  // "[MD Records] 2002.mp3" then "[Hot Pizza Records] 2001.mp3": an in-place conversion
+  // renames the file to its new match while the sweep still holds the row it queued.
+  // Probed at the old path, the track reads as gone although it sits right beside it.
+  it('measures a track at the path it has when its turn comes, not the one it was queued with', async () => {
+    let release: (v: SpectrumResult) => void = () => {}
+    const gate = new Promise<SpectrumResult>((r) => {
+      release = r
+    })
+    const spectrogram = vi.fn((path: string): Promise<SpectrumResult> => {
+      if (path.startsWith('/music/d')) return Promise.resolve(spectrum)
+      return gate
+    })
+    setApi({ spectrogram })
+    const targetsRef = { current: [track('a'), track('b'), track('c'), track('d')] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), { wrapper: wrapper() })
+
+    act(() => result.current.analyzeAllQuality())
+    targetsRef.current = [
+      track('a'),
+      track('b'),
+      track('c'),
+      track('d', { inputPath: '/music/d-renamed.wav', fileName: 'd-renamed.wav' }),
+    ]
+    await act(async () => {
+      release(spectrum)
+      await gate
+    })
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+
+    expect(spectrogram).not.toHaveBeenCalledWith('/music/d.wav', expect.anything())
+    expect(spectrogram).toHaveBeenCalledWith('/music/d-renamed.wav', expect.anything())
+  })
+})
