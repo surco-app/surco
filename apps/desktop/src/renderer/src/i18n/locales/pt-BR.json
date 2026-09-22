@@ -577,7 +577,7 @@
     "loudnessRangeBalance": "Bom: menos de 1 dB.",
     "loudnessFixBalance": "Dá para corrigir: normalização por pico com ganho por canal iguala os dois lados.",
     "loudnessRangeDc": "Bom: menos de 0,2%.",
-    "loudnessFixDc": "Dá para corrigir: marque “Remover offset de DC” em Normalização.",
+    "loudnessFixDc": "Dá para corrigir: marque “Remover deslocamento DC” em Normalização.",
     "loudnessRangeNoise": "Bom: -45 dB ou menos.",
     "loudnessFixNoise": "Não dá para corrigir aqui: o Surco não remove ruído. Vem da fonte ou da captura.",
     "loudnessAfterHeader": "agora → após converter",

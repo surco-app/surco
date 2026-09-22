@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import de from './locales/de.json'
 import en from './locales/en.json'
+import es from './locales/es.json'
+import fr from './locales/fr.json'
+import ptBR from './locales/pt-BR.json'
 
 // A user wrote in: the loudness figures meant nothing to someone still learning what a
 // good value looks like, and there was no way to tell which ones a Surco setting could
@@ -45,5 +49,14 @@ describe('loudness help copy', () => {
     expect(editor.loudnessFixDc).toMatch(/DC offset/i)
     expect(editor.loudnessFixLufs).toMatch(/normalization/i)
     expect(editor.loudnessFixBalance).toMatch(/per-channel/i)
+  })
+
+  // The help sends the DJ looking for a checkbox by name; if that name is not the one the
+  // checkbox actually carries, they scan the section and conclude the option is missing.
+  it('names the DC checkbox exactly as the checkbox reads, in every language', () => {
+    for (const locale of [es, en, de, fr, ptBR]) {
+      const label = locale.normalize.removeDcOffset.replace(/\s*\(.*\)$/, '')
+      expect(locale.editor.loudnessFixDc).toContain(label)
+    }
   })
 })
