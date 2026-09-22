@@ -707,3 +707,66 @@ describe('DestinationTab originals', () => {
     )
   })
 })
+
+// Where the file goes and which DJ libraries hear about it are the everyday choices; how
+// much of the originals is kept, the cue adjustment and a rekordbox collection outside
+// its usual place are set once, if ever, so they fold under Advanced.
+describe('DestinationTab advanced', () => {
+  it('keeps destination and sync in view and folds the rarely touched details', () => {
+    renderTab()
+    for (const id of [
+      'settings-destination-folder',
+      'settings-sync-traktor',
+      'settings-traktor-nml',
+      'settings-sync-rekordbox',
+      'settings-backup-summary',
+    ]) {
+      expect(screen.getByTestId(id)).toBeVisible()
+    }
+    for (const id of [
+      'settings-backup-always',
+      'settings-backup-days',
+      'settings-cue-dir-early',
+      'settings-rekordbox-db',
+    ]) {
+      expect(screen.getByTestId(id)).not.toBeVisible()
+    }
+    fireEvent.click(screen.getByTestId('settings-advanced-destination'))
+    expect(screen.getByTestId('settings-backup-days')).toBeVisible()
+    expect(screen.getByTestId('settings-cue-dir-early')).toBeVisible()
+  })
+
+  // Folded away, Originals still has to say it exists and what it is doing, so the line
+  // in view names the level in force.
+  it('names the originals level in force outside the fold', () => {
+    renderTab({ backupPolicy: 'audioChanges' })
+    expect(screen.getByTestId('settings-backup-summary')).toHaveTextContent(
+      i18n.t('settings.originalBackupPolicies.audioChanges'),
+    )
+  })
+
+  // A collection outside rekordbox's usual place was undetected AND unpickable: the field
+  // only appeared once one was found. It is always there now, so it can be pointed at.
+  it('offers the rekordbox collection picker even when none was found', () => {
+    const onChangeRekordboxDbPath = vi.fn()
+    render(
+      <DestinationTab
+        synced={synced}
+        local={local}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
+        onChangeRekordboxDbPath={onChangeRekordboxDbPath}
+      />,
+    )
+    expect(screen.getByTestId('settings-rekordbox-db')).toHaveTextContent(
+      i18n.t('settings.traktorNmlPathEmpty'),
+    )
+    fireEvent.click(screen.getByTestId('settings-rekordbox-db-change'))
+    expect(onChangeRekordboxDbPath).toHaveBeenCalled()
+  })
+})
