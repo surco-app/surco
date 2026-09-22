@@ -123,19 +123,21 @@ describe('tagListTags', () => {
   })
 })
 
-// Discogs names one genre "Folk, World, & Country". Split on commas, as grouping is, it
-// became three tags: its chip never lit up and a second click appended it again.
+// Genre is separated by commas like grouping, so the two fields read the same. Discogs
+// names one genre "Folk, World, & Country": split blindly it became three tags, its chip
+// never lit up and a second click appended it again.
 describe('genre tag list', () => {
   it('keeps a genre that contains commas as one tag', () => {
-    const tracks = [track({ genre: 'Folk, World, & Country; Pop' })]
+    const tracks = [track({ genre: 'Folk, World, & Country, Pop' })]
     expect(tagListState(tracks, GENRE_TAGS, 'Folk, World, & Country')).toBe('all')
     expect(tagListState(tracks, GENRE_TAGS, 'World')).toBe('none')
+    expect(tagListState(tracks, GENRE_TAGS, 'Pop')).toBe('all')
   })
 
-  it('joins the genres it adds with a semicolon', () => {
+  it('joins the genres it adds with a comma, as grouping does', () => {
     const a = track({ genre: 'Pop' })
     expect(toggleTagListAll([a], GENRE_TAGS, 'Indie Pop')).toEqual([
-      { id: a.id, meta: { genre: 'Pop; Indie Pop' } },
+      { id: a.id, meta: { genre: 'Pop, Indie Pop' } },
     ])
   })
 })

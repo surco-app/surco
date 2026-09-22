@@ -268,7 +268,7 @@ describe('buildFieldSpecs (bulk mode)', () => {
   // none of the tracks instead of stamping one value over what each track had.
   it('hands genre the selected tracks and its own tag list in bulk mode', () => {
     const onChangeTracksMeta = vi.fn()
-    const a = track('a', { genre: 'Pop; Indie Pop' })
+    const a = track('a', { genre: 'Pop, Indie Pop' })
     const b = track('b', { genre: 'Pop' })
     const specs = buildFieldSpecs(
       params({

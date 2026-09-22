@@ -253,6 +253,6 @@ describe('Field tag list chips', () => {
     )
     expect(screen.getByTestId('chip-Pop')).toHaveAttribute('data-state', 'on')
     fireEvent.click(screen.getByTestId('chip-Indie Pop'))
-    expect(onChange).toHaveBeenCalledWith('Pop; Indie Pop')
+    expect(onChange).toHaveBeenCalledWith('Pop, Indie Pop')
   })
 })
