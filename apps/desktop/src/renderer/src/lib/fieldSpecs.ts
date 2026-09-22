@@ -1,6 +1,6 @@
 import type { BpmResult, KeyNotation, KeyResult, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { BULK_FIELDS, commonValue, GROUPING_TAGS, type TagList } from './bulkEdit'
+import { BULK_FIELDS, commonValue, GENRE_TAGS, GROUPING_TAGS, type TagList } from './bulkEdit'
 import { FIELD_DEFS } from './fields'
 
 // One value offered by a field's { } insert menu — another field's literal value, so
@@ -24,7 +24,7 @@ export interface FieldSpec {
   wide?: boolean
   invalid?: boolean
   suggestions?: string[]
-  multiSuggestions?: boolean
+  tagList?: TagList
   // True while an audio-derived suggestion (BPM/Key) is still being detected: no chip
   // yet, but the field shows a placeholder chip so the real one doesn't pop in cold.
   suggesting?: boolean
@@ -91,6 +91,13 @@ export interface BuildFieldSpecsParams {
 // Bulk mode starts from BULK_FIELDS (only release-level fields make sense across a
 // selection) but still honours the user's visible-fields setting, so hidden fields
 // don't reappear just because several tracks are selected.
+// The fields whose chips add a tag rather than replace the value.
+function tagListFor(key: keyof TrackMetadata): TagList | undefined {
+  if (key === 'grouping') return GROUPING_TAGS
+  if (key === 'genre') return GENRE_TAGS
+  return undefined
+}
+
 export function buildFieldSpecs({
   isMulti,
   selectedTracks,
@@ -113,9 +120,10 @@ export function buildFieldSpecs({
   return isMulti && selectedTracks
     ? BULK_FIELDS.filter((key) => visibleFields.includes(key)).map((key) => {
         const shared = commonValue(selectedTracks, key)
+        const list = tagListFor(key)
         const perTrack =
-          key === 'grouping' && onChangeTracksMeta
-            ? { list: GROUPING_TAGS, tracks: selectedTracks, onChangeTracks: onChangeTracksMeta }
+          list && onChangeTracksMeta
+            ? { list, tracks: selectedTracks, onChangeTracks: onChangeTracksMeta }
             : undefined
         return {
           key,
@@ -125,7 +133,7 @@ export function buildFieldSpecs({
           onChange: bulkOnChange.get(key) ?? (() => {}),
           suggestions:
             key === 'genre' ? genreChips : key === 'grouping' ? groupingPresets : undefined,
-          multiSuggestions: key === 'grouping',
+          tagList: list,
           perTrack,
         }
       })
@@ -165,7 +173,7 @@ export function buildFieldSpecs({
               !isMulti &&
               ((def.key === 'bpm' && detectedBpm === undefined) ||
                 (def.key === 'key' && detectedKey === undefined)),
-            multiSuggestions: def.key === 'grouping',
+            tagList: tagListFor(def.key),
           },
         ]
       })

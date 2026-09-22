@@ -34,11 +34,15 @@ export function commonValue(tracks: TrackItem[], key: keyof TrackMetadata): stri
 
 // A text field that holds several tags: which field, and what separates them.
 export interface TagList {
-  key: 'grouping'
-  sep: ','
+  key: 'grouping' | 'genre'
+  sep: ',' | ';'
 }
 
 export const GROUPING_TAGS: TagList = { key: 'grouping', sep: ',' }
+
+// Semicolons, not commas: Discogs names a genre "Folk, World, & Country", which a comma
+// split would break into three tags. Apple Music keeps the field as one text either way.
+export const GENRE_TAGS: TagList = { key: 'genre', sep: ';' }
 
 export type TagListState = 'all' | 'some' | 'none'
 

@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { commonValue, GROUPING_TAGS, tagListState, tagListTags, toggleTagListAll } from './bulkEdit'
+import {
+  commonValue,
+  GENRE_TAGS,
+  GROUPING_TAGS,
+  tagListState,
+  tagListTags,
+  toggleTagListAll,
+} from './bulkEdit'
 
 const emptyMeta: TrackMetadata = {
   title: '',
@@ -112,6 +119,23 @@ describe('tagListTags', () => {
       'Cantaditas',
       'Discazos',
       'Cierre',
+    ])
+  })
+})
+
+// Discogs names one genre "Folk, World, & Country". Split on commas, as grouping is, it
+// became three tags: its chip never lit up and a second click appended it again.
+describe('genre tag list', () => {
+  it('keeps a genre that contains commas as one tag', () => {
+    const tracks = [track({ genre: 'Folk, World, & Country; Pop' })]
+    expect(tagListState(tracks, GENRE_TAGS, 'Folk, World, & Country')).toBe('all')
+    expect(tagListState(tracks, GENRE_TAGS, 'World')).toBe('none')
+  })
+
+  it('joins the genres it adds with a semicolon', () => {
+    const a = track({ genre: 'Pop' })
+    expect(toggleTagListAll([a], GENRE_TAGS, 'Indie Pop')).toEqual([
+      { id: a.id, meta: { genre: 'Pop; Indie Pop' } },
     ])
   })
 })

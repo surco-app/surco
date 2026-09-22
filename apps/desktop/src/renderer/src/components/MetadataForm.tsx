@@ -56,7 +56,7 @@ function renderField(f: FieldSpec): React.JSX.Element {
       wide={f.wide}
       invalid={f.invalid}
       suggestions={f.suggestions}
-      multiSuggestions={f.multiSuggestions}
+      tagList={f.tagList}
       suggesting={f.suggesting}
     />
   )
