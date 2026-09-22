@@ -157,31 +157,49 @@ async function withPreview(
 }
 
 describe('DeclickSection', () => {
-  it('badges the active mode only while folded', () => {
+  // Folded, the section is one row: a switch and the repair in words. The accent badge
+  // and the dim "Off" were two vocabularies for the same on/off fact.
+  it('reads the folded row as the repair mode in words beside a switch', () => {
     const { rerender } = render(section({ value: 'standard', open: false }))
-    expect(screen.getByTestId('declick-active-badge')).toBeInTheDocument()
-    rerender(section({ value: 'standard', open: true }))
+    expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent('Standard repair')
+    expect(screen.getByTestId('declick-switch')).toHaveAttribute('aria-checked', 'true')
     expect(screen.queryByTestId('declick-active-badge')).not.toBeInTheDocument()
+    rerender(section({ value: 'off', open: false }))
+    expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent('Off')
+    expect(screen.getByTestId('declick-switch')).toHaveAttribute('aria-checked', 'false')
   })
 
-  it('shows no badge while folded and off', () => {
-    render(section({ value: 'off', open: false }))
-    expect(screen.queryByTestId('declick-active-badge')).not.toBeInTheDocument()
+  // The estimate is a full scan; the folded row must never start one just to fill a
+  // sentence. It joins the row only once the open section has measured it.
+  it('adds the click estimate to the folded row only once it has been measured', async () => {
+    const { rerender } = render(section({ value: 'off', open: false }))
+    expect(screen.getByTestId('declick-row-sentence')).not.toHaveTextContent('clicks')
+    expect(window.api.clicks).not.toHaveBeenCalled()
+    rerender(section({ value: 'off', open: true }))
+    await screen.findByTestId('declick-estimate-pill', undefined, { timeout: 3000 })
+    rerender(section({ value: 'off', open: false }))
+    expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent('Off · ~23 clicks')
+  })
+
+  // Turning it back on should bring back the strength the DJ chose, not reset it: they
+  // switched it off to compare, not to start over.
+  it('switches on to the last mode used, or Standard the first time', () => {
+    const onChange = vi.fn()
+    const { rerender } = render(section({ value: 'off', open: false, onChange }))
+    fireEvent.click(screen.getByTestId('declick-switch'))
+    expect(onChange).toHaveBeenLastCalledWith('standard')
+    rerender(section({ value: 'strong', open: false, onChange }))
+    fireEvent.click(screen.getByTestId('declick-switch'))
+    expect(onChange).toHaveBeenLastCalledWith('off')
+    rerender(section({ value: 'off', open: false, onChange }))
+    fireEvent.click(screen.getByTestId('declick-switch'))
+    expect(onChange).toHaveBeenLastCalledWith('strong')
   })
 
   it('pills the click estimate on the header once measured', async () => {
     render(section({ open: true }))
     const pill = await screen.findByTestId('declick-estimate-pill', undefined, { timeout: 3000 })
     expect(pill).toHaveTextContent('~23 clicks')
-  })
-
-  it('summarizes the off state in the header while folded', () => {
-    const { rerender } = render(section({ value: 'off', open: false }))
-    expect(screen.getByTestId('declick-summary')).toHaveTextContent('Off')
-    rerender(section({ value: 'off', open: true }))
-    expect(screen.queryByTestId('declick-summary')).not.toBeInTheDocument()
-    rerender(section({ value: 'standard', open: false }))
-    expect(screen.queryByTestId('declick-summary')).not.toBeInTheDocument()
   })
 
   // Traktor cues ride the re-encode into MP3, AIFF, FLAC and WAV; only ALAC has nowhere to

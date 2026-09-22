@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NormalizeConfig, OutputFormat, TrackMetadata } from '../../../shared/types'
 import i18n from '../i18n'
@@ -156,11 +156,18 @@ describe('NormalizeSection layout', () => {
   const loud: NormalizeConfig = { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
 
   function renderWith(
-    over: { open?: boolean; value?: NormalizeConfig; format?: OutputFormat } = {},
+    over: {
+      open?: boolean
+      value?: NormalizeConfig
+      format?: OutputFormat
+      onChange?: (config: NormalizeConfig) => void
+      loudness?: unknown
+      selectedCount?: number
+    } = {},
   ): ReturnType<typeof render> {
     ;(window as unknown as { api: unknown }).api = {
       waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], rms: [0.2, 0.4], durationSec: 10 }),
-      loudness: vi.fn().mockResolvedValue(null),
+      loudness: vi.fn().mockResolvedValue(over.loudness ?? null),
     }
     const client = createQueryClient()
     return render(
@@ -169,9 +176,9 @@ describe('NormalizeSection layout', () => {
           value={over.value ?? cfg}
           open={over.open ?? true}
           onToggle={vi.fn()}
-          onChange={vi.fn()}
+          onChange={over.onChange ?? vi.fn()}
           item={track()}
-          selectedCount={1}
+          selectedCount={over.selectedCount ?? 1}
           format={over.format ?? 'alac'}
         />
       </QueryClientProvider>,
@@ -188,43 +195,93 @@ describe('NormalizeSection layout', () => {
     expect(info).toHaveTextContent(i18n.t('normalize.editorHint'))
   })
 
-  // Folded and off, the header used to show nothing at all — "off" and "never
-  // looked at it" were the same pixels. The dim summary states the off mode, and
-  // when a mode is active it carries the figures the badge alone omits: what the
-  // conversion will actually target.
-  it('summarizes the off state in the header while folded', () => {
+  // Folded, the section is one row: a switch and what the conversion will do to this
+  // track, in words. The mode badge and the bare figures beside it read as one number
+  // printed twice with nothing saying which was the target.
+  it('reads the off state as the original loudness beside a switch that is off', () => {
     renderWith({ open: false, value: cfg })
-    expect(screen.getByTestId('normalize-summary')).toHaveTextContent('None')
+    expect(screen.getByTestId('normalize-row-sentence')).toHaveTextContent('Original loudness')
+    expect(screen.getByTestId('normalize-switch')).toHaveAttribute('aria-checked', 'false')
+    expect(screen.queryByTestId('normalize-active-badge')).not.toBeInTheDocument()
   })
 
-  it('summarizes the loudness figures in the header while folded', () => {
+  it('names the target while the measurement is not there', () => {
     renderWith({ open: false, value: loud })
-    expect(screen.getByTestId('normalize-summary')).toHaveTextContent('-14 LUFS · -1 dBTP')
+    expect(screen.getByTestId('normalize-row-sentence')).toHaveTextContent('Levels to -14 LUFS')
+    expect(screen.getByTestId('normalize-switch')).toHaveAttribute('aria-checked', 'true')
   })
 
-  it('summarizes the peak ceiling in the header while folded', () => {
+  // "Where it is now and where it will land" is the whole decision; once the measurement
+  // the plan card already runs has landed, the row says both.
+  it('says where the track sounds now and where it will come out once measured', async () => {
+    renderWith({
+      open: false,
+      value: loud,
+      loudness: { integratedLufs: -21.8, truePeakDb: -3, lra: 6 },
+    })
+    await waitFor(
+      () =>
+        expect(screen.getByTestId('normalize-row-sentence')).toHaveTextContent(
+          'Plays at -21.8 LUFS, comes out at -14',
+        ),
+      { timeout: 3000 },
+    )
+  })
+
+  it('names the peak ceiling in peak mode', () => {
     renderWith({
       open: false,
       value: { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -0.1 },
     })
-    expect(screen.getByTestId('normalize-summary')).toHaveTextContent('-0.1 dB')
+    expect(screen.getByTestId('normalize-row-sentence')).toHaveTextContent('Peak at -0.1 dBFS')
   })
 
-  it('drops the summary once the section is open', () => {
+  it('drops the sentence once the section is open', () => {
     renderWith({ open: true, value: loud })
-    expect(screen.queryByTestId('normalize-summary')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('normalize-row-sentence')).not.toBeInTheDocument()
+    expect(screen.getByTestId('normalize-switch')).toBeInTheDocument()
   })
 
-  // The badge exists so a FOLDED section still shows that the convert will
-  // normalize; open, the segmented control right below says the same thing, and
-  // showing both reads as two controls for one fact.
-  it('shows the active-mode badge only while folded', () => {
-    const first = renderWith({ open: false, value: loud })
-    expect(screen.getByTestId('normalize-active-badge')).toBeInTheDocument()
+  // On means loudness to the target the dials already hold (the Settings default, or what
+  // the DJ last dialled); switching off and on again must bring back that same setup,
+  // peak mode included, rather than a reset.
+  it('switches on to the last setup used, loudness the first time, and off to none', () => {
+    const onChange = vi.fn()
+    const first = renderWith({ open: false, value: cfg, onChange })
+    fireEvent.click(screen.getByTestId('normalize-switch'))
+    expect(onChange).toHaveBeenLastCalledWith({ ...cfg, mode: 'loudness' })
     first.unmount()
+    const peak: NormalizeConfig = { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -0.1 }
+    const second = renderWith({ open: false, value: peak, onChange })
+    fireEvent.click(screen.getByTestId('normalize-switch'))
+    expect(onChange).toHaveBeenLastCalledWith({ ...peak, mode: 'none' })
+    second.rerender(
+      <QueryClientProvider client={createQueryClient()}>
+        <NormalizeSection
+          value={{ ...peak, mode: 'none' }}
+          open={false}
+          onToggle={vi.fn()}
+          onChange={onChange}
+          item={track()}
+          selectedCount={1}
+          format="alac"
+        />
+      </QueryClientProvider>,
+    )
+    fireEvent.click(screen.getByTestId('normalize-switch'))
+    expect(onChange).toHaveBeenLastCalledWith(peak)
+  })
 
-    renderWith({ open: true, value: loud })
-    expect(screen.queryByTestId('normalize-active-badge')).not.toBeInTheDocument()
+  // In a multi-selection the anchor's measurement would pass for the whole batch.
+  it('names only the target for a multi-selection', async () => {
+    renderWith({
+      open: false,
+      value: loud,
+      selectedCount: 3,
+      loudness: { integratedLufs: -21.8, truePeakDb: -3, lra: 6 },
+    })
+    await new Promise((r) => setTimeout(r, 500))
+    expect(screen.getByTestId('normalize-row-sentence')).toHaveTextContent('Levels to -14 LUFS')
   })
 
   // The cue warning used to sit between the dials and the wave — right where the

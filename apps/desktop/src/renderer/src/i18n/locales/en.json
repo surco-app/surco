@@ -660,7 +660,13 @@
     "hearingOriginal": "Hearing: original",
     "abHint": "Switches between the original and the repaired track without stopping the audio, so you can hear whether the repair removed the clicks — and whether it dulled the music.",
     "nextClick": "Next click",
-    "appliesToSelection": "This setting applies to all {{count}} selected tracks."
+    "appliesToSelection": "This setting applies to all {{count}} selected tracks.",
+    "row": {
+      "off": "Off",
+      "soft": "Gentle repair",
+      "standard": "Standard repair",
+      "strong": "Strong repair"
+    }
   },
   "trim": {
     "title": "Silence trim",
@@ -672,7 +678,6 @@
     "contextReset": "Back to the default context",
     "nudgeBack": "Move the cut back",
     "nudgeForward": "Move the cut forward",
-    "summaryNone": "Off",
     "cutsLabel": "Cuts",
     "cutStart": "{{seconds}} from the start",
     "cutEnd": "{{seconds}} from the end",
@@ -691,7 +696,17 @@
     "handleStart": "Trim start",
     "handleEnd": "Trim end",
     "auditionStart": "Hear the start",
-    "auditionEnd": "Hear the end"
+    "auditionEnd": "Hear the end",
+    "row": {
+      "removeBoth": "Removes {{start}} at the start and {{end}} at the end",
+      "removeStart": "Removes {{start}} of silence at the start",
+      "removeEnd": "Removes {{end}} of silence at the end",
+      "foundBoth": "{{start}} of silence at the start and {{end}} at the end",
+      "foundStart": "{{start}} of silence at the start",
+      "foundEnd": "{{end}} of silence at the end",
+      "nothing": "No silence to remove",
+      "unknown": "Trims the silence at the start and end"
+    }
   },
   "normalize": {
     "title": "Loudness normalization",
@@ -741,7 +756,13 @@
       "peak": "It will move {{gain}} dB: its loudest sample will sit exactly at {{peak}} dBFS.",
       "peakSub": "One constant gain, no limiter. It will play at about {{lufs}} LUFS."
     },
-    "hideHints": "Hide these explanations (bring them back in Settings → Editor)"
+    "hideHints": "Hide these explanations (bring them back in Settings → Editor)",
+    "row": {
+      "none": "Original loudness",
+      "measured": "Plays at {{now}} LUFS, comes out at {{target}}",
+      "target": "Levels to {{target}} LUFS",
+      "peak": "Peak at {{db}} dBFS"
+    }
   },
   "settings": {
     "tabs": {

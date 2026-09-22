@@ -660,7 +660,13 @@
     "hearingOriginal": "Écoute : original",
     "abHint": "Bascule entre l’original et la version réparée sans couper le son : vous entendez si la réparation a supprimé les clics — et si elle a terni la musique.",
     "nextClick": "Clic suivant",
-    "appliesToSelection": "Ce réglage s’applique aux {{count}} morceaux sélectionnés."
+    "appliesToSelection": "Ce réglage s’applique aux {{count}} morceaux sélectionnés.",
+    "row": {
+      "off": "Désactivée",
+      "soft": "Réparation douce",
+      "standard": "Réparation standard",
+      "strong": "Réparation forte"
+    }
   },
   "trim": {
     "title": "Rognage du silence",
@@ -672,7 +678,6 @@
     "contextReset": "Revenir au contexte par défaut",
     "nudgeBack": "Reculer la coupe",
     "nudgeForward": "Avancer la coupe",
-    "summaryNone": "Non",
     "cutsLabel": "Coupe",
     "cutStart": "{{seconds}} au début",
     "cutEnd": "{{seconds}} à la fin",
@@ -691,7 +696,17 @@
     "handleStart": "Début du rognage",
     "handleEnd": "Fin du rognage",
     "auditionStart": "Écouter le début",
-    "auditionEnd": "Écouter la fin"
+    "auditionEnd": "Écouter la fin",
+    "row": {
+      "removeBoth": "Retire {{start}} au début et {{end}} à la fin",
+      "removeStart": "Retire {{start}} de silence au début",
+      "removeEnd": "Retire {{end}} de silence à la fin",
+      "foundBoth": "{{start}} de silence au début et {{end}} à la fin",
+      "foundStart": "{{start}} de silence au début",
+      "foundEnd": "{{end}} de silence à la fin",
+      "nothing": "Aucun silence à retirer",
+      "unknown": "Coupe le silence au début et à la fin"
+    }
   },
   "normalize": {
     "title": "Normalisation du loudness",
@@ -741,7 +756,13 @@
       "peak": "Elle bougera de {{gain}} dB : son échantillon le plus fort sera exactement à {{peak}} dBFS.",
       "peakSub": "Gain constant, sans limiteur. Elle jouera à environ {{lufs}} LUFS."
     },
-    "hideHints": "Masquer ces explications (réactivables dans Réglages → Éditeur)"
+    "hideHints": "Masquer ces explications (réactivables dans Réglages → Éditeur)",
+    "row": {
+      "none": "Loudness d'origine",
+      "measured": "Sonne à {{now}} LUFS, sortira à {{target}}",
+      "target": "Égalise à {{target}} LUFS",
+      "peak": "Pic à {{db}} dBFS"
+    }
   },
   "settings": {
     "tabs": {

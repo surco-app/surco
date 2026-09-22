@@ -660,7 +660,13 @@
     "hearingOriginal": "Escuchando: original",
     "abHint": "Alterna entre la pista original y la reparada sin cortar el audio, para que oigas si la reparación ha quitado los clics — y si ha apagado la música.",
     "nextClick": "Siguiente clic",
-    "appliesToSelection": "Este ajuste se aplica a las {{count}} pistas seleccionadas."
+    "appliesToSelection": "Este ajuste se aplica a las {{count}} pistas seleccionadas.",
+    "row": {
+      "off": "Desactivada",
+      "soft": "Reparación suave",
+      "standard": "Reparación estándar",
+      "strong": "Reparación fuerte"
+    }
   },
   "trim": {
     "title": "Recorte de silencio",
@@ -672,7 +678,6 @@
     "contextReset": "Volver al contexto por defecto",
     "nudgeBack": "Mover el corte atrás",
     "nudgeForward": "Mover el corte adelante",
-    "summaryNone": "No",
     "cutsLabel": "Recorta",
     "cutStart": "{{seconds}} del inicio",
     "cutEnd": "{{seconds}} del final",
@@ -691,7 +696,17 @@
     "handleStart": "Inicio del recorte",
     "handleEnd": "Final del recorte",
     "auditionStart": "Escuchar el inicio",
-    "auditionEnd": "Escuchar el final"
+    "auditionEnd": "Escuchar el final",
+    "row": {
+      "removeBoth": "Quita {{start}} al inicio y {{end}} al final",
+      "removeStart": "Quita {{start}} de silencio al inicio",
+      "removeEnd": "Quita {{end}} de silencio al final",
+      "foundBoth": "Hay {{start}} de silencio al inicio y {{end}} al final",
+      "foundStart": "Hay {{start}} de silencio al inicio",
+      "foundEnd": "Hay {{end}} de silencio al final",
+      "nothing": "Sin silencio que quitar",
+      "unknown": "Recorta el silencio del inicio y del final"
+    }
   },
   "normalize": {
     "title": "Igualar volumen",
@@ -741,7 +756,13 @@
       "peak": "Cambiará {{gain}} dB: su sample más alto quedará exactamente en {{peak}} dBFS.",
       "peakSub": "Ganancia constante, sin limitador. Sonará a unos {{lufs}} LUFS."
     },
-    "hideHints": "Ocultar estas explicaciones (se reactivan en Ajustes → Editor)"
+    "hideHints": "Ocultar estas explicaciones (se reactivan en Ajustes → Editor)",
+    "row": {
+      "none": "Volumen original",
+      "measured": "Suena a {{now}} LUFS, saldrá a {{target}}",
+      "target": "Iguala a {{target}} LUFS",
+      "peak": "Pico a {{db}} dBFS"
+    }
   },
   "settings": {
     "tabs": {
