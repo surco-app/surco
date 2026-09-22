@@ -33,7 +33,7 @@ describe('supersededFile', () => {
   })
 
   // Nothing was superseded: an ordinary conversion leaves its own source alone, which the
-  // separate "delete original" action already covers.
+  // clean-up offer lists as the original.
   it('offers nothing when the conversion replaced no copy', () => {
     expect(supersededFile(track({ outputPath: '/m/new.aiff' }))).toBeNull()
   })

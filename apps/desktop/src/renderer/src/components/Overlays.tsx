@@ -177,6 +177,7 @@ export function Overlays({
         <ConfirmDialog
           title={activeModal.confirm.title}
           message={activeModal.confirm.message}
+          items={activeModal.confirm.items}
           confirmLabel={activeModal.confirm.confirmLabel}
           confirmDisabled={activeModal.confirm.confirmDisabled}
           destructive={activeModal.confirm.destructive}

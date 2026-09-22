@@ -16,6 +16,7 @@ import type {
   TrackMetadata,
 } from '../../../shared/types'
 import { useBpm } from '../hooks/useBpm'
+import type { CleanupOffer } from '../hooks/useConfirmFlows'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
 import { useKey } from '../hooks/useKey'
@@ -23,7 +24,7 @@ import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useStableCallback } from '../hooks/useStableCallback'
-import type { AppleMusicIndex, StaleLibraryCopy } from '../lib/appleMusicLibrary'
+import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
 import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
 import { BULK_FIELDS } from '../lib/bulkEdit'
@@ -132,19 +133,10 @@ interface Props {
   // Reports the per-track click-repair override, mirroring onNormalizeChange.
   onDeclickChange?: (declick: DeclickMode) => void
   onAddToAppleMusic: () => void
-  // Trashes the source file after a real conversion; the converted output and the
-  // track's row stay. Confirmation lives in App, so the button just signals intent.
-  onTrashOriginal?: () => void
-  // Sends the file this conversion superseded to the OS Trash. Recoverable, and offered
-  // rather than automatic: a replacement that looked right and was not would otherwise
-  // destroy the user's only copy.
-  onTrashSuperseded?: (path: string) => void
-  // The batch counterpart, for a multi-select whose tracks each superseded a file.
-  onTrashSupersededAll?: (paths: string[]) => void
-  // Removes the superseded Apple Music copy (the library entry the fresh add replaced).
-  // Confirmation lives in App, so the link just signals intent; the copy's label rides
-  // along so the dialog can name the entry it is about to delete.
-  onRemoveOldMusicCopy?: (stale: StaleLibraryCopy) => void
+  // Offers the files a conversion left behind (the original, the files a replacement
+  // superseded, the old Apple Music copy) for the Trash in one confirmed step. Confirmation
+  // lives in App, so the link just signals intent with what it would clean up.
+  onCleanUp?: (offer: CleanupOffer) => void
   // Persists the results column's width (Settings.resultsWidth): the panel
   // remounts per track, so the width must round-trip through settings to stick.
   onResultsWidthChange: (width: number) => void
@@ -201,10 +193,7 @@ export const Editor = memo(function Editor({
   onNormalizeChange,
   onDeclickChange,
   onAddToAppleMusic,
-  onTrashOriginal,
-  onTrashSuperseded,
-  onTrashSupersededAll,
-  onRemoveOldMusicCopy,
+  onCleanUp,
   onResultsWidthChange,
   onShowLoudnessHelp,
   onHideEditorHints,
@@ -1366,14 +1355,11 @@ export const Editor = memo(function Editor({
           // owns that cancel. Passing it in multi would cancel just the primary track.
           onCancel={isMulti ? undefined : onCancel}
           onAddToAppleMusic={isMulti ? onAddAllToAppleMusic : onAddToAppleMusic}
-          onTrashOriginal={onTrashOriginal}
           staleMusicCopy={staleMusicCopy}
-          onRemoveOldMusicCopy={onRemoveOldMusicCopy}
           // The file this track's replacement retired: gone from Apple Music, and rekordbox
           // now follows the new one, so nothing references it any more.
           supersededPath={isMulti ? null : supersededFile(item)}
-          onTrashSuperseded={onTrashSuperseded}
-          onTrashSupersededAll={onTrashSupersededAll}
+          onCleanUp={onCleanUp}
         />
       </div>
     </div>

@@ -171,8 +171,7 @@ function renderEditor(
   onApplyTitleFormat: ReturnType<typeof vi.fn>
   onFormatChange: ReturnType<typeof vi.fn>
   onDestinationChange: ReturnType<typeof vi.fn>
-  onTrashOriginal: ReturnType<typeof vi.fn>
-  onRemoveOldMusicCopy: ReturnType<typeof vi.fn>
+  onCleanUp: ReturnType<typeof vi.fn>
   onOpenSettings: ReturnType<typeof vi.fn>
   onShowLoudnessHelp: ReturnType<typeof vi.fn>
   onOpenRename: ReturnType<typeof vi.fn>
@@ -187,8 +186,7 @@ function renderEditor(
   const onApplyTitleFormat = vi.fn()
   const onFormatChange = vi.fn()
   const onDestinationChange = vi.fn()
-  const onTrashOriginal = vi.fn()
-  const onRemoveOldMusicCopy = vi.fn()
+  const onCleanUp = vi.fn()
   const onOpenSettings = vi.fn()
   const onShowLoudnessHelp = vi.fn()
   const onOpenRename = vi.fn()
@@ -211,8 +209,7 @@ function renderEditor(
         onDeriveTags={onDeriveTags}
         onApplyTitleFormat={onApplyTitleFormat}
         onAddToAppleMusic={vi.fn()}
-        onTrashOriginal={onTrashOriginal}
-        onRemoveOldMusicCopy={onRemoveOldMusicCopy}
+        onCleanUp={onCleanUp}
         onResultsWidthChange={vi.fn()}
         onShowLoudnessHelp={onShowLoudnessHelp}
         onHideEditorHints={vi.fn()}
@@ -259,8 +256,7 @@ function renderEditor(
     onApplyTitleFormat,
     onFormatChange,
     onDestinationChange,
-    onTrashOriginal,
-    onRemoveOldMusicCopy,
+    onCleanUp,
     onOpenSettings,
     onShowLoudnessHelp,
     onOpenRename,
@@ -1940,37 +1936,62 @@ describe('Editor export control', () => {
   })
 })
 
-describe('Editor delete original', () => {
+describe('Editor clean up previous files', () => {
   // A real conversion leaves the source file untouched beside the converted copy,
   // so once a track is done the user can reclaim the disk by trashing the original
   // — the converted output (and its row) stays.
-  it('offers to delete the original once a real conversion is done', () => {
-    const { onTrashOriginal } = renderEditor({
+  it('offers to clean up the original once a real conversion is done', () => {
+    const { onCleanUp } = renderEditor({
       id: 'a',
       status: 'done',
       inputPath: '/music/a.wav',
       outputPath: '/out/a.aiff',
     })
-    fireEvent.click(screen.getByTestId('delete-original'))
-    expect(onTrashOriginal).toHaveBeenCalledTimes(1)
+    expect(screen.getByTestId('clean-up-previous')).toHaveTextContent('previous file')
+    fireEvent.click(screen.getByTestId('clean-up-previous'))
+    expect(onCleanUp).toHaveBeenCalledWith({
+      originalPath: '/music/a.wav',
+      supersededPaths: [],
+      staleMusicCopy: null,
+    })
+  })
+
+  // Three separate delete links read as three decisions after every convert. One link
+  // carries everything that applies, and says how many files it covers.
+  it('offers the original and the replaced file through one link with its count', () => {
+    const { onCleanUp } = renderEditor({
+      id: 'a',
+      status: 'done',
+      inputPath: '/music/a.wav',
+      outputPath: '/out/a.aiff',
+      replacesPath: '/old/a.mp3',
+    })
+    expect(screen.getAllByTestId('clean-up-previous')).toHaveLength(1)
+    expect(screen.getByTestId('clean-up-previous')).toHaveTextContent('2')
+    fireEvent.click(screen.getByTestId('clean-up-previous'))
+    expect(onCleanUp).toHaveBeenCalledWith({
+      originalPath: '/music/a.wav',
+      supersededPaths: ['/old/a.mp3'],
+      staleMusicCopy: null,
+    })
   })
 
   // An in-place export rewrites and renames the original, so inputPath now points at
   // the output: there is no separate original to delete, and offering it would trash
   // the only copy the user has.
-  it('hides the delete-original button for an in-place export', () => {
+  it('offers nothing for an in-place export', () => {
     renderEditor({
       id: 'a',
       status: 'done',
       inputPath: '/out/a.wav',
       outputPath: '/out/a.wav',
     })
-    expect(screen.queryByTestId('delete-original')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('clean-up-previous')).not.toBeInTheDocument()
   })
 
-  // After the original is trashed the button has nothing left to act on, so it goes
+  // After the original is trashed the link has nothing left to act on, so it goes
   // away rather than letting a second click error on a missing file.
-  it('hides the delete-original button once the original is trashed', () => {
+  it('offers nothing once the original is trashed', () => {
     renderEditor({
       id: 'a',
       status: 'done',
@@ -1978,7 +1999,7 @@ describe('Editor delete original', () => {
       outputPath: '/out/a.aiff',
       originalTrashed: true,
     })
-    expect(screen.queryByTestId('delete-original')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('clean-up-previous')).not.toBeInTheDocument()
   })
 })
 
@@ -1997,7 +2018,7 @@ describe('Editor replace old Apple Music copy', () => {
         persistentId: 'OLDCOPY123456789',
       },
     ])
-    const { onRemoveOldMusicCopy } = renderEditor(
+    const { onCleanUp } = renderEditor(
       {
         id: 'a',
         status: 'done',
@@ -2010,11 +2031,15 @@ describe('Editor replace old Apple Music copy', () => {
       'aiff',
       { libraryIndex },
     )
-    fireEvent.click(screen.getByTestId('remove-old-copy'))
-    expect(onRemoveOldMusicCopy).toHaveBeenCalledWith({
-      persistentId: 'OLDCOPY123456789',
-      label: 'Djmofly - Save My Love (26 Rmx)',
-    })
+    fireEvent.click(screen.getByTestId('clean-up-previous'))
+    expect(onCleanUp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        staleMusicCopy: {
+          persistentId: 'OLDCOPY123456789',
+          label: 'Djmofly - Save My Love (26 Rmx)',
+        },
+      }),
+    )
   })
 
   // Once the snapshot refreshes it also holds the copy the add itself created; the
@@ -2030,7 +2055,7 @@ describe('Editor replace old Apple Music copy', () => {
         persistentId: 'NEWCOPY123456789',
       },
     ])
-    renderEditor(
+    const { onCleanUp } = renderEditor(
       {
         id: 'a',
         status: 'done',
@@ -2043,7 +2068,8 @@ describe('Editor replace old Apple Music copy', () => {
       'aiff',
       { libraryIndex },
     )
-    expect(screen.queryByTestId('remove-old-copy')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('clean-up-previous'))
+    expect(onCleanUp).toHaveBeenCalledWith(expect.objectContaining({ staleMusicCopy: null }))
   })
 
   // Before the add there is nothing in the library to supersede anything: the entry the
@@ -2058,7 +2084,7 @@ describe('Editor replace old Apple Music copy', () => {
         persistentId: 'OLDCOPY123456789',
       },
     ])
-    renderEditor(
+    const { onCleanUp } = renderEditor(
       {
         id: 'a',
         status: 'done',
@@ -2069,7 +2095,8 @@ describe('Editor replace old Apple Music copy', () => {
       'aiff',
       { libraryIndex },
     )
-    expect(screen.queryByTestId('remove-old-copy')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('clean-up-previous'))
+    expect(onCleanUp).toHaveBeenCalledWith(expect.objectContaining({ staleMusicCopy: null }))
   })
 
   // Two near-identical entries mean Surco adds instead of replacing, because replacing on a

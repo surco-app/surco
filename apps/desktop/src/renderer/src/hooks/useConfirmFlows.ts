@@ -17,6 +17,12 @@ import { hasStagedEdits } from '../lib/sessionEdits'
 import type { TrackItem } from '../types'
 import type { ConfirmModal } from './useOverlays'
 
+export interface CleanupOffer {
+  originalPath: string | null
+  supersededPaths: string[]
+  staleMusicCopy: StaleLibraryCopy | null
+}
+
 // Whether a track's own filters (normalize, trim, declick) will actually reach the
 // job — resolved through the same normalizeFor/declickFor precedence the conversion
 // itself uses (the track's own dial, then the batch pick, then the Settings default
@@ -104,14 +110,11 @@ interface Params {
 
 interface ConfirmFlows {
   askTrash: (targets: TrackItem[]) => void
-  askDeleteOriginal: (track: TrackItem) => void
-  // Sends the file a replacement superseded to the OS Trash, once the user confirms.
-  // Async because the wording depends on whether that file's volume keeps a Trash, which
-  // only the main process can answer.
-  askTrashSuperseded: (track: TrackItem, path: string) => Promise<void>
-  // The batch counterpart: every file a multi-select replacement stranded, in one offer.
-  askTrashSupersededAll: (targets: TrackItem[]) => Promise<void>
-  askRemoveOldMusicCopy: (track: TrackItem, stale: StaleLibraryCopy) => void
+  // The post-convert "clean up": the original, the files a replacement superseded and the
+  // old Apple Music copy, offered together in one dialog that lists each. Async because the
+  // wording depends on whether each file's volume keeps a Trash, which only the main
+  // process can answer.
+  askCleanUp: (track: TrackItem, offer: CleanupOffer) => Promise<void>
   askFillAll: (targets: TrackItem[], opts?: { fromSelection?: boolean }) => void
   askClearAll: (targets: TrackItem[]) => void
   askRemoveFromList: (targets: TrackItem[]) => void
@@ -139,7 +142,7 @@ interface ConfirmFlows {
   ) => void
 }
 
-// The destructive/overwriting actions that confirm before firing: trash, delete original,
+// The destructive/overwriting actions that confirm before firing: trash, clean up,
 // fill-all, clear-all and in-place convert-all. Each builds its dialog copy and wires the
 // onConfirm into the data layer; App only routes the resulting modal through useOverlays.
 export function useConfirmFlows({
@@ -186,150 +189,73 @@ export function useConfirmFlows({
     })
   }
 
-  // Post-convert "Delete original": a real conversion leaves the source file beside the
-  // converted copy, so this reclaims the disk. Confirm, send the original to the OS
-  // Trash/Recycle Bin (recoverable), then mark the row so the button disappears — unlike
-  // askTrash the row stays, because the converted output it points at is still there.
-  function askDeleteOriginal(track: TrackItem): void {
+  // Nothing here is automatic: three runs on 15/09 looked like a correct replacement and
+  // were not, and an automatic delete in any of them would have destroyed the only copy.
+  // So one confirmed dialog names every file it moves, to the OS Trash rather than a hard
+  // delete. The old library copy goes first because its file can BE the listed original
+  // (Music's "copy files to the Media folder" off): that removal already trashed it, and
+  // a second trash would fail on a missing file. Each row is marked only once its own file
+  // is gone, so a partial failure leaves the rest of the offer standing.
+  async function askCleanUp(track: TrackItem, offer: CleanupOffer): Promise<void> {
+    const { originalPath, supersededPaths, staleMusicCopy } = offer
+    const files = [...(originalPath ? [originalPath] : []), ...supersededPaths]
+    const count = files.length + (staleMusicCopy ? 1 : 0)
+    if (count === 0) return
     const isWin = window.api.platform === 'win32'
-    openConfirm({
-      title: tr(isWin ? 'confirm.trashTitleWin' : 'confirm.trashTitle'),
-      message: tr(isWin ? 'confirm.deleteOriginalMessageWin' : 'confirm.deleteOriginalMessage', {
-        name: track.fileName,
-      }),
-      confirmLabel: tr(isWin ? 'confirm.trashConfirmWin' : 'confirm.trashConfirm'),
-      destructive: true,
-      onConfirm: () => {
-        window.api
-          .trashFile(track.inputPath)
-          .then(() => updateTrack(track.id, { originalTrashed: true }))
-          // Same as askTrash: the user confirmed a destructive dialog, so a
-          // failure must be said out loud, not swallowed.
-          .catch(() => reportTrashFailure(track.fileName))
-      },
-    })
-  }
-
-  // Post-replace "Delete the replaced file": the superseded copy left Apple Music and
-  // rekordbox now follows the new file, so this one is referenced by nothing and is the
-  // orphan the user described on 15/09. Confirmed rather than automatic, and to the OS
-  // Trash rather than a hard delete: three runs that day looked like a correct replacement
-  // and were not, and an automatic delete in any of them would have destroyed the only
-  // copy. The row stays — its converted output is still there — with a flag so the offer
-  // retires instead of asking twice about a file that is already gone.
-  async function askTrashSuperseded(track: TrackItem, path: string): Promise<void> {
-    const isWin = window.api.platform === 'win32'
-    const name = path.slice(path.lastIndexOf('/') + 1)
+    const baseName = (path: string): string => path.slice(path.lastIndexOf('/') + 1)
     // A network volume may have no Trash, and the OS then deletes outright. Measured 15/09
-    // on the user's NAS (smbfs, no .Trashes): a file was lost while this very dialog
-    // promised it was recoverable. The delete is unchanged; the wording stops claiming
-    // what the volume cannot honour.
-    const recoverable = await window.api.keepsTrash(path)
-    openConfirm({
-      title: tr(isWin ? 'confirm.trashTitleWin' : 'confirm.trashTitle', { count: 1 }),
-      message: recoverable
-        ? tr(isWin ? 'confirm.trashSupersededMessageWin' : 'confirm.trashSupersededMessage', {
-            name,
-          })
-        : tr('confirm.trashSupersededMessageRemote', { name }),
-      confirmLabel: tr(isWin ? 'confirm.trashConfirmWin' : 'confirm.trashConfirm'),
-      destructive: true,
-      onConfirm: () => {
-        window.api
-          .trashFile(path)
-          .then(() => updateTrack(track.id, { supersededTrashed: true }))
-          // The user confirmed a destructive dialog, so a failure is said out loud rather
-          // than swallowed — the same contract askDeleteOriginal keeps.
-          .catch(() => reportTrashFailure(name))
-      },
-    })
-  }
-
-  // The batch counterpart of askTrashSuperseded: a multi-select replacement strands one
-  // file per track, so they are offered together. Each row is marked only once its own
-  // file is gone, so a partial failure leaves the rest of the offer standing rather than
-  // claiming files were removed that are still there.
-  async function askTrashSupersededAll(targets: TrackItem[]): Promise<void> {
-    const withFiles = targets.filter(
-      (t) => t.status === 'done' && t.replacesPath && !t.supersededTrashed,
-    )
-    if (withFiles.length === 0) return
-    const isWin = window.api.platform === 'win32'
-    const count = withFiles.length
-    const first = withFiles[0].replacesPath as string
-    // Any file on a volume without a Trash makes the "recoverable" promise unsafe for the
-    // whole batch, so the warning is appended rather than the promise repeated.
-    const keeps = await Promise.all(
-      withFiles.map((t) => window.api.keepsTrash(t.replacesPath as string)),
-    )
-    const allRecoverable = keeps.every(Boolean)
+    // on the user's NAS (smbfs, no .Trashes): a file was lost while the dialog promised it
+    // was recoverable. Any such file drops the promise for the whole offer.
+    const keeps = await Promise.all(files.map((path) => window.api.keepsTrash(path)))
+    const message = tr(isWin ? 'confirm.cleanUpMessageWin' : 'confirm.cleanUpMessage', { count })
+    const items = [
+      ...(originalPath ? [tr('confirm.cleanUpOriginal', { name: baseName(originalPath) })] : []),
+      ...supersededPaths.map((path) => tr('confirm.cleanUpSuperseded', { name: baseName(path) })),
+      ...(staleMusicCopy ? [tr('confirm.cleanUpMusicCopy', { copy: staleMusicCopy.label })] : []),
+    ]
+    const trash = (path: string, patch: Partial<TrackItem>, id: string): void => {
+      window.api
+        .trashFile(path)
+        .then(() => updateTrack(id, patch))
+        .catch(() => reportTrashFailure(baseName(path)))
+    }
+    const trashFiles = (alreadyGone: string | undefined): void => {
+      if (originalPath && originalPath !== alreadyGone)
+        trash(originalPath, { originalTrashed: true }, track.id)
+      for (const path of supersededPaths) {
+        if (path === alreadyGone) continue
+        const owner = tracksRef.current.find((t) => t.replacesPath === path) ?? track
+        trash(path, { supersededTrashed: true }, owner.id)
+      }
+    }
     openConfirm({
       title: tr(isWin ? 'confirm.trashTitleWin' : 'confirm.trashTitle', { count }),
-      // Same caution as the single-file flow: any file on a network volume makes the
-      // "recoverable" promise unsafe for the whole batch, so the warning is appended
-      // rather than the promise repeated.
-      message: allRecoverable
-        ? tr(isWin ? 'confirm.trashMessageWin' : 'confirm.trashMessage', {
-            count,
-            name: first.slice(first.lastIndexOf('/') + 1),
-          })
-        : `${tr(isWin ? 'confirm.trashMessageWin' : 'confirm.trashMessage', {
-            count,
-            name: first.slice(first.lastIndexOf('/') + 1),
-          })} ${tr('confirm.trashRemoteWarning')}`,
+      message: keeps.every(Boolean) ? message : `${message} ${tr('confirm.trashRemoteWarning')}`,
+      items,
       confirmLabel: tr(isWin ? 'confirm.trashConfirmWin' : 'confirm.trashConfirm'),
       destructive: true,
       onConfirm: () => {
-        for (const track of withFiles) {
-          const path = track.replacesPath as string
-          window.api
-            .trashFile(path)
-            .then(() => updateTrack(track.id, { supersededTrashed: true }))
-            .catch(() => reportTrashFailure(path.slice(path.lastIndexOf('/') + 1)))
+        if (!staleMusicCopy) {
+          trashFiles(undefined)
+          return
         }
-      },
-    })
-  }
-
-  // Post-add "Remove the old copy": the freshly converted track is already in Apple
-  // Music, so this deletes the library entry it superseded and sends that entry's file
-  // to the OS Trash — the half of "replace the old rip" the add itself can't do. It acts
-  // on the user's library off a scored hint (the stale-copy match), so it confirms
-  // first — naming the matched entry by its own artist/title, since that label is the
-  // only thing that lets the user catch a wrong match before it deletes. A 'missing'
-  // result resolves the same success path: the goal is "the old copy is no longer
-  // there", and it isn't.
-  function askRemoveOldMusicCopy(track: TrackItem, stale: StaleLibraryCopy): void {
-    openConfirm({
-      title: tr('confirm.removeOldCopyTitle'),
-      message: tr('confirm.removeOldCopyMessage', {
-        name: track.meta.title || track.fileName,
-        copy: stale.label,
-      }),
-      confirmLabel: tr('confirm.removeOldCopyConfirm'),
-      destructive: true,
-      onConfirm: () => {
-        // The activity row names what was actually removed: the old copy itself.
-        window.api
-          .deleteAppleMusic(stale.persistentId, stale.label)
-          .then((res) => {
-            // The trashed file can BE a loaded row's source (Music's "copy files to
-            // the Media folder" off + the user's own file added by hand): mark those
-            // rows originalTrashed so the footer's delete-original link retires
-            // instead of failing later on a file that's already in the Trash.
+        window.api.deleteAppleMusic(staleMusicCopy.persistentId, staleMusicCopy.label).then(
+          (res) => {
             if (res?.location) {
               for (const t of tracksRef.current) {
                 if (t.inputPath === res.location) updateTrack(t.id, { originalTrashed: true })
               }
             }
             onOldMusicCopyRemoved()
-          })
-          // Same as askTrash: the user confirmed a destructive dialog, so a
-          // failure must be said out loud, not swallowed. The sentinel travels as an
-          // error-message substring because Electron IPC rejections carry only that.
-          .catch((e: unknown) =>
-            reportOldCopyRemoveFailure(String(e).includes('applemusic-delete-mismatch')),
-          )
+            trashFiles(res?.location)
+          },
+          // The sentinel travels as an error-message substring because Electron IPC
+          // rejections carry only that.
+          (e: unknown) => {
+            reportOldCopyRemoveFailure(String(e).includes('applemusic-delete-mismatch'))
+            trashFiles(undefined)
+          },
+        )
       },
     })
   }
@@ -532,10 +458,7 @@ export function useConfirmFlows({
 
   return {
     askTrash,
-    askDeleteOriginal,
-    askTrashSuperseded,
-    askTrashSupersededAll,
-    askRemoveOldMusicCopy,
+    askCleanUp,
     askFillAll,
     askClearAll,
     askRemoveFromList,
