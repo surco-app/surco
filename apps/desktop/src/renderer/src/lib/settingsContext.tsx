@@ -43,6 +43,9 @@ interface ResolvedSettings {
   addToAppleMusic: boolean
   keepOutputCopy: boolean
   addToEngineDj: boolean
+  syncTraktor: boolean
+  traktorNmlPath: string
+  syncRekordbox: boolean
   overwriteOriginal: boolean
   convertBesideOriginal: boolean
   replaceLowResCover: boolean
@@ -82,6 +85,9 @@ const DEFAULTS: ResolvedSettings = {
   addToAppleMusic: false,
   keepOutputCopy: true,
   addToEngineDj: false,
+  syncTraktor: false,
+  traktorNmlPath: '',
+  syncRekordbox: false,
   overwriteOriginal: false,
   convertBesideOriginal: false,
   replaceLowResCover: false,
@@ -119,6 +125,9 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     addToAppleMusic: settings.addToAppleMusic ?? DEFAULTS.addToAppleMusic,
     keepOutputCopy: settings.keepOutputCopy ?? DEFAULTS.keepOutputCopy,
     addToEngineDj: settings.addToEngineDj ?? DEFAULTS.addToEngineDj,
+    syncTraktor: settings.syncTraktor ?? DEFAULTS.syncTraktor,
+    traktorNmlPath: settings.traktorNmlPath ?? DEFAULTS.traktorNmlPath,
+    syncRekordbox: settings.syncRekordbox ?? DEFAULTS.syncRekordbox,
     overwriteOriginal: settings.overwriteOriginal ?? DEFAULTS.overwriteOriginal,
     convertBesideOriginal: settings.convertBesideOriginal ?? DEFAULTS.convertBesideOriginal,
     replaceLowResCover: settings.replaceLowResCover ?? DEFAULTS.replaceLowResCover,

@@ -7,9 +7,10 @@ import type { FormatSetting, OutputFormat, ProcessStage } from '../../../shared/
 import {
   type DestinationPlan,
   DJ_SOFTWARE_NAMES,
+  type DjSoftware,
   type Location,
-  withAppleMusic as planWithAppleMusic,
-  withEngineDj as planWithEngineDj,
+  withAppleMusic,
+  withEngineDj,
   withLocation,
 } from '../lib/destination'
 import { exportButtonLabel } from '../lib/exportLabel'
@@ -28,8 +29,7 @@ interface ExportButtonProps {
   done: boolean
   outputFormat: FormatSetting
   exportedFormat: OutputFormat | null
-  withAppleMusic: boolean
-  withEngineDj: boolean
+  targets: DjSoftware[]
   incomplete: boolean
   // The reason the convert is blocked (the empty required fields), shown as a tooltip on
   // the disabled button so it explains itself. Only meaningful while incomplete.
@@ -81,8 +81,7 @@ export function ExportButton({
   stage,
   outputFormat,
   exportedFormat,
-  withAppleMusic,
-  withEngineDj,
+  targets,
   incomplete,
   incompleteReason,
   inPlace,
@@ -128,8 +127,7 @@ export function ExportButton({
     stale,
     replaces,
     done,
-    withAppleMusic,
-    withEngineDj,
+    targets,
     format: formatLabel,
     exportedFormat: exportedFormat?.toUpperCase() ?? null,
   })
@@ -144,7 +142,12 @@ export function ExportButton({
   const cancellable = !quiet && processing && !!onCancel
   const label = liveStage
     ? tr(`trackList.stage.${liveStage}`, { format: formatLabel })
-    : tr(labelSpec.key, labelSpec.options)
+    : labelSpec.targets
+      ? tr('editor.withTargets', {
+          label: tr(labelSpec.key, labelSpec.options),
+          targets: labelSpec.targets,
+        })
+      : tr(labelSpec.key, labelSpec.options)
 
   function pick(format: FormatSetting): void {
     setOpen(false)
@@ -289,8 +292,8 @@ export function ExportButton({
                 onClick={() =>
                   onSelectDestination(
                     id === 'appleMusic'
-                      ? planWithAppleMusic(destination, !on)
-                      : planWithEngineDj(destination, !on),
+                      ? withAppleMusic(destination, !on)
+                      : withEngineDj(destination, !on),
                   )
                 }
                 className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] disabled:cursor-not-allowed disabled:hover:bg-transparent"

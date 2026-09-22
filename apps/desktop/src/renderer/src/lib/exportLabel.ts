@@ -1,3 +1,5 @@
+import { DJ_SOFTWARE_NAMES, type DjSoftware } from './destination'
+
 export interface ExportLabelState {
   processing: boolean
   quiet?: boolean
@@ -5,8 +7,7 @@ export interface ExportLabelState {
   inPlace: boolean
   stale: boolean
   done: boolean
-  withAppleMusic: boolean
-  withEngineDj: boolean
+  targets: DjSoftware[]
   // Already uppercased for display ("AIFF").
   format: string
   // What the last export actually produced (uppercased), null before any export. Lets
@@ -26,10 +27,22 @@ export interface ExportLabelState {
 // re-export variant beats the batch count, and so on down to the plain convert.
 // Early returns instead of a nested ternary so adding a seventh state can't
 // silently change which existing state wins.
+function targetsText(targets: DjSoftware[]): string | undefined {
+  if (targets.length === 0) return undefined
+  const names = targets
+    .slice(0, 2)
+    .map((id) => DJ_SOFTWARE_NAMES[id])
+    .join(' · ')
+  return targets.length > 2 ? `${names} +${targets.length - 2}` : names
+}
+
 export function exportButtonLabel(state: ExportLabelState): {
   key: string
   options?: Record<string, unknown>
+  targets?: string
 } {
+  const targets = targetsText(state.targets)
+  const withTargets = targets ? { targets } : {}
   if (state.processing) return { key: 'editor.processing' }
   // Picking a format from the menu only relabels the button, so after an export the
   // label is the one place the pending format shows: "Convert again to FLAC" over a WAV
@@ -43,25 +56,14 @@ export function exportButtonLabel(state: ExportLabelState): {
   }
   if (state.count !== undefined) {
     return {
-      key: state.withAppleMusic
-        ? 'editor.convertAllMusic'
-        : state.withEngineDj
-          ? 'editor.convertAllEngine'
-          : 'editor.convertAll',
+      key: 'editor.convertAll',
       options: { count: state.count, format: state.format },
+      ...withTargets,
     }
   }
-  if (state.inPlace && state.sameFormat)
-    return { key: state.withAppleMusic ? 'editor.updateMusic' : 'editor.update' }
+  if (state.inPlace && state.sameFormat) return { key: 'editor.update', ...withTargets }
   if (state.stale && state.sameFormat) return { key: 'editor.update' }
   if (state.done) return { key: 'editor.exportAgain' }
   if (state.replaces) return { key: 'editor.replaceMusic', options: { format: state.format } }
-  return {
-    key: state.withAppleMusic
-      ? 'editor.convert'
-      : state.withEngineDj
-        ? 'editor.convertEngine'
-        : 'editor.convertNoMusic',
-    options: { format: state.format },
-  }
+  return { key: 'editor.convertNoMusic', options: { format: state.format }, ...withTargets }
 }

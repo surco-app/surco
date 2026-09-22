@@ -6,7 +6,7 @@ import { formatMatchesInput } from '../../../shared/format'
 import type { FormatSetting, NormalizeConfig, OutputFormat } from '../../../shared/types'
 import type { CleanupOffer } from '../hooks/useConfirmFlows'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
-import type { DestinationPlan, Location } from '../lib/destination'
+import { type DestinationPlan, type Location, reachedDjSoftware } from '../lib/destination'
 import { openFeedback } from '../lib/feedback'
 import { isMacOS } from '../lib/platform'
 import type { SelectionStatus } from '../lib/selectionStatus'
@@ -32,6 +32,8 @@ interface ConvertFooterProps {
   willEditInPlace: boolean
   addToAppleMusic: boolean
   addToEngineDj: boolean
+  syncTraktor: boolean
+  syncRekordbox: boolean
   // The editor's one-shot destination pick and the locations its split-button menu
   // offers, pre-filtered by the editor (configured overwrite).
   destination: DestinationPlan
@@ -85,6 +87,8 @@ export function ConvertFooter({
   willEditInPlace,
   addToAppleMusic,
   addToEngineDj,
+  syncTraktor,
+  syncRekordbox,
   destination,
   locations,
   format,
@@ -258,8 +262,7 @@ export function ConvertFooter({
                 done={false}
                 outputFormat={format}
                 exportedFormat={isMulti ? null : exportedFormat}
-                withAppleMusic={false}
-                withEngineDj={false}
+                targets={[]}
                 // A field emptied (or made required) after converting would send the
                 // re-export into the same silently-empty batch the main button gates
                 // against, so the quiet variant carries the identical block.
@@ -287,8 +290,12 @@ export function ConvertFooter({
             done={!isMulti && done}
             outputFormat={format}
             exportedFormat={isMulti ? null : exportedFormat}
-            withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
-            withEngineDj={addToEngineDj}
+            targets={reachedDjSoftware({
+              appleMusic: isMacOS() && format !== 'flac' && addToAppleMusic,
+              engineDj: addToEngineDj,
+              rekordbox: syncRekordbox,
+              traktor: syncTraktor,
+            })}
             incomplete={incomplete}
             incompleteReason={incompleteReason}
             inPlace={!isMulti && willEditInPlace}

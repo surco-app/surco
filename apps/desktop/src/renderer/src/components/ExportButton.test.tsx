@@ -13,8 +13,7 @@ const baseProps = {
   done: false,
   outputFormat: 'aiff' as const,
   exportedFormat: null,
-  withAppleMusic: false,
-  withEngineDj: false,
+  targets: [],
   inPlace: false,
   sameFormat: false,
   destination: {
