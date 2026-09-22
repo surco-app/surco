@@ -606,6 +606,8 @@
     "originalArtist": "Artiste original",
     "lyricist": "Parolier",
     "conductor": "Chef d'orchestre",
+    "trackTotal": "Nombre de pistes",
+    "discTotal": "Nombre de disques",
     "isrc": "ISRC",
     "mixName": "Mix",
     "originalYear": "Année d'origine",

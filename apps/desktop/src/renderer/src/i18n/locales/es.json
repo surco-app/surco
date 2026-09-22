@@ -606,6 +606,8 @@
     "originalArtist": "Artista original",
     "lyricist": "Letrista",
     "conductor": "Director",
+    "trackTotal": "Total de pistas",
+    "discTotal": "Total de discos",
     "isrc": "ISRC",
     "mixName": "Mix",
     "originalYear": "Año original",

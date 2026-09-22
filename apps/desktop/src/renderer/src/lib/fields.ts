@@ -17,6 +17,8 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'trackNumber' },
   { key: 'comment', wide: true },
   { key: 'discNumber' },
+  { key: 'trackTotal' },
+  { key: 'discTotal' },
   { key: 'bpm' },
   { key: 'key' },
   { key: 'remixArtist' },
@@ -72,7 +74,10 @@ export const FIELD_GROUPS: FieldGroup[] = [
     ],
   },
   { id: 'dj', fields: ['bpm', 'key', 'mood', 'energy', 'mixName', 'remixArtist', 'originalYear'] },
-  { id: 'order', fields: ['trackNumber', 'discNumber', 'compilation', 'comment'] },
+  {
+    id: 'order',
+    fields: ['trackNumber', 'trackTotal', 'discNumber', 'discTotal', 'compilation', 'comment'],
+  },
 ]
 
 // The group a field sits in, or undefined for a key not in any group (a future tag).

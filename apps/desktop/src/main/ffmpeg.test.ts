@@ -1180,7 +1180,7 @@ describe('tagsFromProbe', () => {
           genre: 'Trance',
           grouping: 'Set A',
           comment: 'vinyl rip',
-          track: '3',
+          track: '3/12',
           // advanced tags re-read from the frames we write: TBPM/TKEY/TPUB/TPOS/
           // TPE4 and the de-facto TXXX:CATALOGNUMBER
           TBPM: '138',
@@ -1219,7 +1219,9 @@ describe('tagsFromProbe', () => {
       grouping: 'Set A',
       comment: 'vinyl rip',
       trackNumber: '3',
+      trackTotal: '12',
       discNumber: '2',
+      discTotal: '',
       bpm: '138',
       key: '8A',
       publisher: 'Kontor',
@@ -1419,6 +1421,8 @@ describe('tagsFromProbe', () => {
       originalArtist: '',
       lyricist: '',
       conductor: '',
+      trackTotal: '',
+      discTotal: '',
       compilation: '',
       mood: '',
       energy: '',

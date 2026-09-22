@@ -163,6 +163,8 @@ export function readTagLibExtras(file: string): Partial<TrackMetadata> {
         composer: tag.composers?.join(', ').trim() || '',
         isrc: tag.isrc?.trim() || '',
         conductor: tag.conductor?.trim() || '',
+        trackTotal: tag.trackCount ? String(tag.trackCount) : '',
+        discTotal: tag.discCount ? String(tag.discCount) : '',
       }
       const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
       if (!id3) return extras
@@ -785,7 +787,9 @@ export function writeTags(
     tag.grouping = meta.grouping
     tag.comment = meta.comment
     tag.track = toTrackNumber(meta.trackNumber)
+    tag.trackCount = toNumber(meta.trackTotal ?? '')
     tag.disc = toNumber(meta.discNumber)
+    tag.discCount = toNumber(meta.discTotal ?? '')
     tag.beatsPerMinute = Math.round(toNumber(meta.bpm))
     tag.initialKey = meta.key
     tag.remixedBy = meta.remixArtist
