@@ -32,28 +32,40 @@ export function commonValue(tracks: TrackItem[], key: keyof TrackMetadata): stri
   return tracks.every((t) => (t.meta[key] ?? '') === first) ? first : undefined
 }
 
-export type GroupingTagState = 'all' | 'some' | 'none'
+// A text field that holds several tags: which field, and what separates them.
+export interface TagList {
+  key: 'grouping'
+  sep: ','
+}
 
-export function groupingTagState(tracks: TrackItem[], tag: string): GroupingTagState {
-  const count = tracks.filter((t) => csvHas(t.meta.grouping ?? '', tag)).length
+export const GROUPING_TAGS: TagList = { key: 'grouping', sep: ',' }
+
+export type TagListState = 'all' | 'some' | 'none'
+
+export function tagListState(tracks: TrackItem[], list: TagList, tag: string): TagListState {
+  const count = tracks.filter((t) => csvHas(t.meta[list.key] ?? '', tag, list.sep)).length
   if (count === 0) return 'none'
   return count === tracks.length ? 'all' : 'some'
 }
 
-export function toggleGroupingAll(
+export function toggleTagListAll(
   tracks: TrackItem[],
+  list: TagList,
   tag: string,
-): { id: string; meta: { grouping: string } }[] {
-  const removing = groupingTagState(tracks, tag) === 'all'
+): { id: string; meta: Partial<TrackMetadata> }[] {
+  const removing = tagListState(tracks, list, tag) === 'all'
   return tracks
-    .filter((t) => csvHas(t.meta.grouping ?? '', tag) === removing)
-    .map((t) => ({ id: t.id, meta: { grouping: toggleCsv(t.meta.grouping ?? '', tag) } }))
+    .filter((t) => csvHas(t.meta[list.key] ?? '', tag, list.sep) === removing)
+    .map((t) => ({
+      id: t.id,
+      meta: { [list.key]: toggleCsv(t.meta[list.key] ?? '', tag, list.sep) },
+    }))
 }
 
-export function groupingTags(presets: string[], tracks: TrackItem[]): string[] {
+export function tagListTags(presets: string[], tracks: TrackItem[], list: TagList): string[] {
   const seen = new Set(presets)
   const extra = tracks
-    .flatMap((t) => splitCsv(t.meta.grouping ?? ''))
+    .flatMap((t) => splitCsv(t.meta[list.key] ?? '', list.sep))
     .filter((tag) => (seen.has(tag) ? false : seen.add(tag)))
   return [...presets, ...extra]
 }

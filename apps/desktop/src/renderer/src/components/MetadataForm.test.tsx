@@ -2,6 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { GROUPING_TAGS } from '../lib/bulkEdit'
 import type { FieldSpec } from '../lib/fieldSpecs'
 import type { TrackItem } from '../types'
 import { MetadataForm } from './MetadataForm'
@@ -23,8 +24,8 @@ vi.mock('./Field', () => ({
 }))
 vi.mock('./CoverPicker', () => ({ CoverPicker: () => <div data-testid="cover" /> }))
 vi.mock('./StarRating', () => ({ StarRating: () => <div data-testid="stars" /> }))
-vi.mock('./GroupingBulkField', () => ({
-  GroupingBulkField: ({ presets }: { presets: string[] }) => (
+vi.mock('./TagListBulkField', () => ({
+  TagListBulkField: ({ presets }: { presets: string[] }) => (
     <div data-testid="grouping-bulk">{presets.join(',')}</div>
   ),
 }))
@@ -85,7 +86,7 @@ describe('MetadataForm', () => {
       {
         ...spec('grouping'),
         suggestions: ['Bases', 'Vocals'],
-        perTrack: { tracks: [], onChangeTracks: vi.fn() },
+        perTrack: { list: GROUPING_TAGS, tracks: [], onChangeTracks: vi.fn() },
       },
     ])
     expect(screen.getByTestId('grouping-bulk')).toHaveTextContent('Bases,Vocals')

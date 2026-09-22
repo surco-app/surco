@@ -5,8 +5,8 @@ import { buildFieldSpecs, type FieldSpec } from '../lib/fieldSpecs'
 import type { TrackItem } from '../types'
 import { CoverPicker } from './CoverPicker'
 import { Field } from './Field'
-import { GroupingBulkField } from './GroupingBulkField'
 import { StarRating } from './StarRating'
+import { TagListBulkField } from './TagListBulkField'
 
 // Re-exported from lib so the form and its callers keep a single import site for the
 // spec shape while the builder (buildFieldSpecs) stays a pure, testable lib function.
@@ -20,8 +20,9 @@ export { buildFieldSpecs }
 function renderField(f: FieldSpec): React.JSX.Element {
   if (f.perTrack) {
     return (
-      <GroupingBulkField
+      <TagListBulkField
         label={f.label}
+        list={f.perTrack.list}
         presets={f.suggestions ?? []}
         tracks={f.perTrack.tracks}
         onChangeTracks={f.perTrack.onChangeTracks}

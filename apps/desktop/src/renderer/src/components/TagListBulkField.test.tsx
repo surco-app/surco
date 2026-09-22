@@ -3,8 +3,9 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
+import { GROUPING_TAGS } from '../lib/bulkEdit'
 import type { TrackItem } from '../types'
-import { GroupingBulkField } from './GroupingBulkField'
+import { TagListBulkField } from './TagListBulkField'
 
 afterEach(cleanup)
 
@@ -33,8 +34,9 @@ const b1 = track('b1', { title: '', grouping: 'Bases' }, 'jungle.flac')
 function renderField(tracks: TrackItem[] = [a1, a2, b1]) {
   const onChangeTracks = vi.fn()
   const { rerender } = render(
-    <GroupingBulkField
+    <TagListBulkField
       label="Grouping"
+      list={GROUPING_TAGS}
       presets={['Bases', 'Cantaditas']}
       tracks={tracks}
       onChangeTracks={onChangeTracks}
@@ -44,8 +46,9 @@ function renderField(tracks: TrackItem[] = [a1, a2, b1]) {
     onChangeTracks,
     rerender: (next: TrackItem[]) =>
       rerender(
-        <GroupingBulkField
+        <TagListBulkField
           label="Grouping"
+          list={GROUPING_TAGS}
           presets={['Bases', 'Cantaditas']}
           tracks={next}
           onChangeTracks={onChangeTracks}
@@ -70,7 +73,7 @@ function openRows(): void {
   fireEvent.click(screen.getByTestId('grouping-per-track-toggle'))
 }
 
-describe('GroupingBulkField', () => {
+describe('TagListBulkField', () => {
   // WHY: the old bulk field showed "multiple values" and a chip click stamped one tag on
   // every track, wiping what each had. The summary row must tell all/some/none apart so
   // the user sees a partial tag before touching it.
