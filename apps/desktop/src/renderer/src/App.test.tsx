@@ -1775,10 +1775,10 @@ describe('App command palette list-wide actions', () => {
     await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
   })
 
-  // The palette's "Clear the list" is the deliberate start-over: unlike the toolbar trash
-  // (which mirrors the filter), it wipes every track including the ones an active format
-  // filter is hiding — so a filtered view can't leave stragglers behind after a clear.
-  it('clears the whole list from the palette even with a format filter active', async () => {
+  // The header button and the palette share one name, "Clear the list", so they must share
+  // one scope: what the DJ sees. A filtered view that the palette wiped entirely would take
+  // rows the DJ had hidden, not rows they had decided to drop.
+  it('clears only the visible rows from the palette, like the header button', async () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3']),
       readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
@@ -1786,7 +1786,6 @@ describe('App command palette list-wide actions', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
-    // Narrow to MP3 — the wav is hidden.
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
@@ -1796,11 +1795,8 @@ describe('App command palette list-wide actions', () => {
     })
     fireEvent.click(screen.getByTestId('palette-item'))
     fireEvent.click(await screen.findByTestId('confirm-ok'))
-    // Both the visible mp3 and the hidden wav are gone: the whole list is empty, and with no
-    // rows left the sidebar (filter and all) collapses to the drop zone. Had the clear honoured
-    // the MP3 filter, the hidden wav would have survived and a row would remain.
-    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
-    expect(screen.queryByTestId('quality-filter-trigger')).toBeNull()
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(screen.getByTestId('track-row')).toHaveTextContent('WAV')
   })
 })
 
