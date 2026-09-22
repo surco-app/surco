@@ -79,17 +79,33 @@ beforeAll(() => {
 // widest input format. The unit tests assert the planned flags; this asserts the
 // bytes ffmpeg actually writes.
 describe('convertAudio output bit depth', () => {
-  // "Same as source" means the width the audio really has, not the container's
-  // claim: a proven 16-in-24 padding converts to honest 16-bit, and dropping
+  // "Corrected" is the per-file policy, the bit-depth twin of the sample rate's:
+  // a proven 16-in-24 padding is written at its honest width, and dropping
   // all-zero bits is mathematically lossless, so no dither rides along.
-  it('writes a padded 16-in-24 source as true 16-bit under Same as source', async () => {
+  it('writes a padded 16-in-24 source as true 16-bit under Corrected', async () => {
     const padded = join(dir, 'padded24.flac')
     execFileSync(FF, ['-y', '-v', 'error', '-i', src, '-c:a', 'flac', '-sample_fmt', 's32', padded])
     const out = join(dir, 'out-padded.wav')
-    await convertAudio(padded, out, 'wav', meta)
+    await convertAudio(padded, out, 'wav', meta, undefined, undefined, undefined, {
+      bitDepth: 'corrected',
+    })
     // ffprobe reports no bits_per_raw_sample for 16-bit PCM in WAV/AIFF, so the
     // sample format is the honest witness here.
     expect(depthOf(out).sampleFmt).toBe('s16')
+  }, 30000)
+
+  // The setting says it keeps the file's exact depth, so it has to keep the
+  // container too: a user who picks "Same as source" over "Corrected" is asking
+  // for the padding to be left alone, and silently compacting it was read as a
+  // bug by the user who hit it.
+  it('leaves a padded 16-in-24 source at 24 bits under Same as source', async () => {
+    const padded = join(dir, 'padded24-kept.flac')
+    execFileSync(FF, ['-y', '-v', 'error', '-i', src, '-c:a', 'flac', '-sample_fmt', 's32', padded])
+    const out = join(dir, 'out-padded-kept.wav')
+    await convertAudio(padded, out, 'wav', meta, undefined, undefined, undefined, {
+      bitDepth: 'source',
+    })
+    expect(depthOf(out).sampleFmt).toBe('s32')
   }, 30000)
 
   it('keeps genuinely 24-bit audio at 24 bits under Same as source', async () => {

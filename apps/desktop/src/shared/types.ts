@@ -21,9 +21,12 @@ export type FormatSetting = OutputFormat | 'source'
 // kbps — whose variable rate some old CDJ firmwares dislike.
 export type Mp3Quality = '320' | '256' | '192' | '160' | '128' | 'v0' | 'v2'
 
-// Output bit depth for the lossless targets: 'source' (the default) preserves the
-// source's exact width — never silently widening it — or the user pins 16/24.
-export type OutputBitDepth = 'source' | '16' | '24'
+// Output bit depth for the lossless targets: 'source' preserves the source's exact
+// width — never silently widening it, and never narrowing it either — or the user
+// pins 16/24. 'corrected' is a per-file policy, not a pin, and the bit-depth twin of
+// the sample rate's: only files Surco proved to be 16-bit audio padded into a 24-bit
+// container are written at their honest width, everything genuine keeps its own.
+export type OutputBitDepth = 'source' | '16' | '24' | 'corrected'
 
 // Output sample rate: 'source' (the default) never resamples; pinning 44.1/48 kHz
 // unifies a library for gear that expects one rate. 'corrected' is a per-file

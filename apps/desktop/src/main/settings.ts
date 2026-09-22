@@ -93,7 +93,7 @@ export const defaults: Settings = {
   flacFinderCovers: false,
   mp3Quality: '320',
   // Max fidelity by default: preserve the source's own bit depth and sample rate.
-  outputBitDepth: 'source',
+  outputBitDepth: 'corrected',
   outputSampleRate: 'source',
   // ffmpeg's own FLAC default; higher only shrinks files slower, the audio is identical.
   flacCompression: '5',
@@ -306,8 +306,34 @@ export function getSettings(): Settings {
   const stamps = stampsOf()
   if (cache && cache.stamps === stamps) return cache.settings
   const settings = readSettings()
+  // The one migration that writes: see migrateBitDepth. persist() refreshes the
+  // stamps, so the cache is filled from its result rather than the stale read.
+  if (migrateBitDepth(storedSettings())) {
+    const migrated = persist({ ...settings, outputBitDepth: 'corrected' })
+    cache = { settings: migrated, stamps: stampsOf() }
+    return migrated
+  }
   cache = { settings, stamps }
   return settings
+}
+
+// 'source' used to compact a proven 16-in-24 padding to true 16-bit, and it was also
+// the default, so a stored 'source' means "my padded files get fixed" whether the user
+// picked it or never touched the setting. Now that 'source' keeps the container it was
+// given, leaving them there would silently withdraw a fix they already had, so they
+// move to 'corrected' — the option that still does what their conversions were doing.
+// Written back once rather than applied on every read: after this runs, 'source' is a
+// deliberate answer about the container, and a later read must not overturn it.
+function migrateBitDepth(stored: Partial<Settings>): boolean {
+  return stored.outputBitDepth === 'source'
+}
+
+// The file that owns outputBitDepth: with a custom folder active the synced file wins,
+// exactly as readSettings resolves it, so the migration reads the same answer the app
+// will use rather than a stale local copy.
+function storedSettings(): Partial<Settings> {
+  const sf = syncedFile()
+  return (sf ? readJson(sf) : readJson(localFile())) as Partial<Settings>
 }
 
 function readSettings(): Settings {

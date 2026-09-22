@@ -752,6 +752,9 @@ function sourceDepth(probe: ProbeResult): SampleDepth {
 // Resolves the settings' bit-depth choice against the source: 'source' preserves the
 // probed depth exactly, a pinned 16/24 wins over it (padding a narrower source is the
 // user's explicit ask, never done silently).
+// Only the pins resolve to a fixed width. 'source' and 'corrected' both fall
+// through to the source's own depth: the padding case is decided by the caller,
+// which has the probe, and reaches here already resolved.
 function targetDepth(src: SampleDepth, pin: ConversionQuality['bitDepth']): SampleDepth {
   if (pin === '16') return { float: false, bits: 16 }
   if (pin === '24') return { float: false, bits: 24 }
@@ -1039,12 +1042,15 @@ export async function planConversion(
     Pick<ConversionPlan, 'sampleRateHz' | 'dither'> & { depth: SampleDepth }
   > => {
     const src = sourceDepth(await probeOnce())
-    // "Same as source" means the width the audio really has, not the container's
+    // "Corrected" writes the width the audio really has, not the container's
     // claim: a proven 16-in-24 padding is written as true 16-bit. The dropped
     // bits are all zero, so the truncation is lossless and earns no dither on
     // its own; a float pipeline, a normalize pass or a resample still does.
+    // "Same as source" keeps the container it was given, padding and all: it
+    // promises the file's exact depth, and compacting it there read as a bug to
+    // the user who hit it.
     const padded =
-      q.bitDepth === 'source' &&
+      q.bitDepth === 'corrected' &&
       !src.float &&
       src.bits > 16 &&
       (await bitsProbe(input).catch(() => null))?.usage === 'padded16'

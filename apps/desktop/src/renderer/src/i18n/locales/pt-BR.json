@@ -411,7 +411,7 @@
     "qualityBitsPill": "Bits preenchidos",
     "qualityBitsPadded": "Declara 24 bits, mas os 8 bits baixos são zero em todas as amostras: áudio de 16 bits preenchido em um contêiner de 24.",
     "qualityBitsPaddedWhy": "Interpolação, dither, qualquer cadeia real de 24 bits preenche esses bits; tudo zero é prova aritmética, não estatística.",
-    "qualityBitsPaddedNote": "Converter com profundidade “Igual à origem” grava 16 bits reais; remover o preenchimento é sem perdas.",
+    "qualityBitsPaddedNote": "Converter com profundidade “Corrigido” grava 16 bits reais; remover o preenchimento é sem perdas.",
     "qualityBitsFull": "Os 24 bits declarados são reais: {{pct}}% das amostras usam o byte mais baixo.",
     "qualityBitsUnknown": "A profundidade de 24 bits declarada não pôde ser verificada: o minuto escaneado não deu uma leitura clara em nenhum sentido.",
     "qualityConvertHead": "Ao converter",
@@ -891,9 +891,10 @@
     "bitDepths": {
       "16": "16 bits",
       "24": "24 bits",
-      "source": "Igual à origem"
+      "source": "Igual à origem",
+      "corrected": "Corrigido"
     },
-    "bitDepthHint": "“Igual à origem” mantém a profundidade exata do arquivo. Reduzir para 16 bits aplica dither; um arquivo já no formato de saída é copiado sem recodificação. Com “Igual à origem”, um arquivo com áudio de 16 bits comprovadamente preenchido para 24 é gravado como 16 bits reais, sem perdas.",
+    "bitDepthHint": "“Igual à origem” mantém a profundidade exata do arquivo, incluindo o preenchimento. Reduzir para 16 bits aplica dither; um arquivo já no formato de saída é copiado sem reconverter. “Corrigido” grava como 16 bits reais, sem perdas, um arquivo com áudio de 16 bits comprovado e preenchido para 24; o áudio de 24 bits genuíno mantém sua profundidade.",
     "sampleRate": "Taxa de amostragem",
     "sampleRates": {
       "44100": "44,1 kHz",

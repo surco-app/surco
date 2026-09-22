@@ -411,7 +411,7 @@
     "qualityBitsPill": "Padded depth",
     "qualityBitsPadded": "Declared 24-bit, but the low 8 bits are zero in every sample: 16-bit audio padded into a 24-bit container.",
     "qualityBitsPaddedWhy": "Interpolation, dither, any real 24-bit pipeline fills those bits; all-zero is arithmetic proof, not statistics.",
-    "qualityBitsPaddedNote": "Converting with bit depth “Same as source” writes true 16-bit; dropping the padding is lossless.",
+    "qualityBitsPaddedNote": "Converting with bit depth “Corrected” writes true 16-bit; dropping the padding is lossless.",
     "qualityBitsFull": "The declared 24-bit depth is real: {{pct}}% of samples use the lowest byte.",
     "qualityBitsUnknown": "The declared 24-bit depth could not be verified: the scanned minute gave no clean reading either way.",
     "qualityConvertHead": "On convert",
@@ -891,9 +891,10 @@
     "bitDepths": {
       "16": "16-bit",
       "24": "24-bit",
-      "source": "Same as source"
+      "source": "Same as source",
+      "corrected": "Corrected"
     },
-    "bitDepthHint": "“Same as source” keeps the file's exact depth. Reducing to 16-bit applies dither; a file already in the output format is copied without re-encoding. With “Same as source”, a file proven to carry 16-bit audio padded to 24 is written as true 16-bit, losslessly.",
+    "bitDepthHint": "“Same as source” keeps the file's exact depth, padding included. Reducing to 16-bit applies dither; a file already in the output format is copied without re-encoding. “Corrected” writes a file proven to carry 16-bit audio padded to 24 as true 16-bit, losslessly; genuine 24-bit audio keeps its depth.",
     "sampleRate": "Sample rate",
     "sampleRates": {
       "44100": "44.1 kHz",
