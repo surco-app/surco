@@ -373,6 +373,11 @@ export interface TrackMetadata {
   isrc?: string
   mixName?: string
   originalYear?: string
+  // The credits TagScanner and mp3tag edit that Surco only carried through untouched:
+  // TOPE/ORIGARTIST, TEXT/LYRICIST, TPE3/CONDUCTOR. Hidden in the editor by default.
+  originalArtist?: string
+  lyricist?: string
+  conductor?: string
   // Boolean-ish: '1' when the album is a various-artists compilation, '' when
   // not. Kept a string like every other field; written as TCMP/COMPILATION,
   // which is what makes Apple Music group VA albums instead of splitting them.

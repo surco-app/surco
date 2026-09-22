@@ -9,6 +9,11 @@ export interface TagField {
   key: keyof TrackMetadata
   // ffprobe tag keys to read from, lowercased, in priority order (first non-empty wins).
   aliases: string[]
+  // Aliases that mean this field only on an ID3 container (MP3/AIFF/WAV): read from an
+  // ID3 probe and cleared on an ID3 write, never touched on FLAC or M4A. ffprobe names
+  // ID3's conductor frame "performer", while a FLAC's PERFORMER comment is a different
+  // credit that reading as the conductor, or clearing on write, would destroy.
+  id3Aliases?: string[]
   // The name ffmpeg writes on ID3 targets (AIFF/MP3/WAV). Omitted for a field not written
   // through ffmpeg's -metadata — rating rides POPM/Vorbis RATING via the TagLib pass.
   id3?: string
@@ -122,6 +127,22 @@ export const TAG_FIELDS: TagField[] = [
     aliases: ['tit3', 'subtitle', 'mixname', 'mix_name'],
     id3: 'TIT3',
     vorbis: 'SUBTITLE',
+  },
+  // The credits TagScanner and mp3tag edit, under mp3tag's Vorbis and freeform names.
+  // An AIFF's ID3 probes back with the v2.2 spellings (TOA, TXT).
+  {
+    key: 'originalArtist',
+    aliases: ['tope', 'toa', 'origartist', 'originalartist', 'original_artist'],
+    id3: 'TOPE',
+    vorbis: 'ORIGARTIST',
+  },
+  { key: 'lyricist', aliases: ['text', 'txt', 'lyricist'], id3: 'TEXT', vorbis: 'LYRICIST' },
+  {
+    key: 'conductor',
+    aliases: ['tpe3', 'tp3', 'conductor'],
+    id3Aliases: ['performer'],
+    id3: 'TPE3',
+    vorbis: 'CONDUCTOR',
   },
   // TORY, not TDOR: the ID3 targets are pinned to v2.3, where TDOR doesn't exist. TDOR is
   // its v2.4 successor and ORIGINALYEAR the Picard-convention Vorbis comment, both read.
