@@ -34,9 +34,7 @@
     "settings": "Ajustes",
     "stats": "Estatísticas",
     "trash": "Originais do Surco",
-    "selectAll": "Selecionar tudo",
     "revealSelected": "Ir para a faixa selecionada",
-    "fillFromName": "Preencher tudo a partir do nome",
     "importingCount": "Lendo {{done}}/{{total}}",
     "analyzeQuality": "Analisar a qualidade de todas as faixas",
     "analyzingCount": "Analisando qualidade… {{done}}/{{total}}",
@@ -49,8 +47,7 @@
     "autoMatchNoToken": "Adicione um token do Discogs em Ajustes para auto-associar",
     "autoMatchLabel": "Associar",
     "addToken": "Adicionar token",
-    "autoMatchingCount": "Auto-associando… {{done}}/{{total}}",
-    "clearAll": "Limpar a lista"
+    "autoMatchingCount": "Auto-associando… {{done}}/{{total}}"
   },
   "sidebar": {
     "dropHint": "Arraste suas faixas para cá.",

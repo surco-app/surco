@@ -26,6 +26,9 @@ interface MenuStrings {
   stats: string
   tracks: string
   analyzeQuality: string
+  selectAllTracks: string
+  fillAll: string
+  trashSelected: string
   search: string
   play: string
   prev: string
@@ -89,6 +92,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     stats: 'Estadísticas',
     tracks: 'Pistas',
     analyzeQuality: 'Analizar calidad',
+    selectAllTracks: 'Seleccionar todas las pistas',
+    fillAll: 'Rellenar todo desde el nombre…',
+    trashSelected: 'Mover la selección a la papelera…',
     search: 'Buscar en la lista de pistas',
     play: 'Reproducir / pausar',
     prev: 'Pista anterior',
@@ -154,6 +160,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     stats: 'Stats',
     tracks: 'Tracks',
     analyzeQuality: 'Analyze quality',
+    selectAllTracks: 'Select all tracks',
+    fillAll: 'Fill all tags from file name…',
+    trashSelected: 'Move selection to Trash…',
     search: 'Search the track list',
     play: 'Play / pause',
     prev: 'Previous track',
@@ -219,6 +228,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     stats: 'Statistiken',
     tracks: 'Tracks',
     analyzeQuality: 'Qualität analysieren',
+    selectAllTracks: 'Alle Tracks auswählen',
+    fillAll: 'Alle Tags aus dem Dateinamen füllen…',
+    trashSelected: 'Auswahl in den Papierkorb legen…',
     search: 'In der Trackliste suchen',
     play: 'Abspielen / Pause',
     prev: 'Vorheriger Track',
@@ -284,6 +296,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     stats: 'Statistiques',
     tracks: 'Morceaux',
     analyzeQuality: 'Analyser la qualité',
+    selectAllTracks: 'Sélectionner tous les morceaux',
+    fillAll: 'Remplir tous les tags depuis le nom du fichier…',
+    trashSelected: 'Mettre la sélection à la corbeille…',
     search: 'Rechercher dans la liste des morceaux',
     play: 'Lecture / pause',
     prev: 'Morceau précédent',
@@ -350,6 +365,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     stats: 'Estatísticas',
     tracks: 'Faixas',
     analyzeQuality: 'Analisar qualidade',
+    selectAllTracks: 'Selecionar todas as faixas',
+    fillAll: 'Preencher tudo a partir do nome…',
+    trashSelected: 'Mover a seleção para a lixeira…',
     search: 'Buscar na lista de faixas',
     play: 'Reproduzir / pausar',
     prev: 'Faixa anterior',

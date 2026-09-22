@@ -110,10 +110,30 @@ export function appMenuTemplate({
       label: t('tracks'),
       submenu: [
         {
+          label: t('selectAllTracks'),
+          accelerator: accel('select-all'),
+          registerAccelerator: false,
+          click: keymapMenuClick(run, 'select-all'),
+        },
+        {
+          label: t('fillAll'),
+          accelerator: accel('fill-all'),
+          registerAccelerator: false,
+          click: keymapMenuClick(run, 'fill-all'),
+        },
+        { type: 'separator' },
+        {
           label: t('analyzeQuality'),
           accelerator: accel('analyze-quality'),
           registerAccelerator: false,
           click: keymapMenuClick(run, 'analyze-quality'),
+        },
+        { type: 'separator' },
+        {
+          label: t('trashSelected'),
+          accelerator: accel('trash-selected'),
+          registerAccelerator: false,
+          click: keymapMenuClick(run, 'trash-selected'),
         },
       ],
     },

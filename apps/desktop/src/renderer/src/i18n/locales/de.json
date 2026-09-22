@@ -34,9 +34,7 @@
     "settings": "Einstellungen",
     "stats": "Statistiken",
     "trash": "Surco-Originale",
-    "selectAll": "Alles auswählen",
     "revealSelected": "Zum ausgewählten Track scrollen",
-    "fillFromName": "Alle Tags aus dem Dateinamen füllen",
     "importingCount": "Lese {{done}}/{{total}}",
     "analyzeQuality": "Qualität aller Tracks analysieren",
     "analyzingCount": "Analysiere Qualität… {{done}}/{{total}}",
@@ -49,8 +47,7 @@
     "autoMatchNoToken": "Füg in den Einstellungen einen Discogs-Token hinzu, um automatisch abzugleichen",
     "autoMatchLabel": "Abgleichen",
     "addToken": "Token hinzufügen",
-    "autoMatchingCount": "Gleiche automatisch ab… {{done}}/{{total}}",
-    "clearAll": "Liste leeren"
+    "autoMatchingCount": "Gleiche automatisch ab… {{done}}/{{total}}"
   },
   "sidebar": {
     "dropHint": "Zieh deine Tracks hierher.",
