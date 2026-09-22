@@ -1109,7 +1109,7 @@ export function TrimSection({
                   <Lane {...laneProps('end')} />
                 </div>
               )}
-              {/* The warning matters (a WAV or FLAC loses its cues on the re-encode),
+              {/* The warning matters,
                   but it was two lines of yellow prose under every trim. With hints
                   on, the plan card states the whole outcome instead; with hints
                   off, the short line states the consequence and the full sentence

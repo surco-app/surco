@@ -1,4 +1,4 @@
-// What Surco's trash keeps (main/surcoTrash.ts), shared so the panel can say it too.
+// What Surco's trash keeps by default (main/surcoTrash.ts).
 // A week: undoing a conversion is something you realise in the same session or the
 // next day, so a month of copies of every rewritten file spends disk on a net the
 // user had long stopped needing. The field takes anything from 1 to 365 days.
