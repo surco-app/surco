@@ -11,15 +11,26 @@ interface Props {
   patch: PatchSynced
 }
 
-function OffHint({ testid, children }: { testid: string; children: string }): React.JSX.Element {
-  return <span data-testid={testid}>{children}</span>
+function AppliesHint({
+  testid,
+  applies,
+  hint,
+}: {
+  testid: string
+  applies: string
+  hint: string
+}): React.JSX.Element {
+  return (
+    <>
+      <span data-testid={testid}>{applies}</span> {hint}
+    </>
+  )
 }
 
 // The format and the everyday per-format choices. The encoder fine print is
 // EncoderAdvancedSettings, shown under the Output tab's Advanced fold.
 export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const mp3Off = synced.outputFormat !== 'mp3' && synced.outputFormat !== 'source'
   const keepMp3Off = synced.outputFormat === 'mp3' || synced.outputFormat === 'source'
   return (
     <SettingsSection first>
@@ -32,16 +43,14 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
           />
         </SettingsField>
 
-        {/* The encoder choice applies while MP3 (or "Same as source") is the pick;
-              under any other format it stays in view, disabled, with the reason. */}
         <SettingsField
           label={tr('settings.mp3Quality')}
           hint={
-            mp3Off ? (
-              <OffHint testid="settings-mp3-quality-off">{tr('settings.mp3QualityOff')}</OffHint>
-            ) : (
-              tr('settings.mp3QualityHint')
-            )
+            <AppliesHint
+              testid="settings-mp3-quality-applies"
+              applies={tr('settings.mp3QualityApplies')}
+              hint={tr('settings.mp3QualityHint')}
+            />
           }
         >
           <SegmentedControl
@@ -50,7 +59,6 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
             onChange={(id) => patch('mp3Quality', id)}
             testidPrefix="settings-mp3-quality"
             labelFor={(id) => tr(`settings.mp3Qualities.${id}`)}
-            disabled={mp3Off}
           />
         </SettingsField>
 
@@ -71,20 +79,16 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
 
 export function EncoderAdvancedSettings({ synced, patch }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const bitDepthOff = synced.outputFormat === 'mp3'
-  const flacOff = synced.outputFormat !== 'flac' && synced.outputFormat !== 'source'
   return (
     <div className="flex flex-col gap-5">
-      {/* Bit depth shapes the PCM/FLAC/ALAC encoders; LAME has no bit depth, so under
-            MP3 it is disabled with the reason. */}
       <SettingsField
         label={tr('settings.bitDepth')}
         hint={
-          bitDepthOff ? (
-            <OffHint testid="settings-bit-depth-off">{tr('settings.bitDepthOff')}</OffHint>
-          ) : (
-            tr('settings.bitDepthHint')
-          )
+          <AppliesHint
+            testid="settings-bit-depth-applies"
+            applies={tr('settings.bitDepthApplies')}
+            hint={tr('settings.bitDepthHint')}
+          />
         }
       >
         <SegmentedControl
@@ -93,7 +97,6 @@ export function EncoderAdvancedSettings({ synced, patch }: Props): React.JSX.Ele
           onChange={(id) => patch('outputBitDepth', id)}
           testidPrefix="settings-bit-depth"
           labelFor={(id) => tr(`settings.bitDepths.${id}`)}
-          disabled={bitDepthOff}
         />
       </SettingsField>
 
@@ -110,13 +113,11 @@ export function EncoderAdvancedSettings({ synced, patch }: Props): React.JSX.Ele
       <SettingsField
         label={tr('settings.flacCompression')}
         hint={
-          flacOff ? (
-            <OffHint testid="settings-flac-compression-off">
-              {tr('settings.flacCompressionOff')}
-            </OffHint>
-          ) : (
-            tr('settings.flacCompressionHint')
-          )
+          <AppliesHint
+            testid="settings-flac-compression-applies"
+            applies={tr('settings.flacCompressionApplies')}
+            hint={tr('settings.flacCompressionHint')}
+          />
         }
       >
         <SegmentedControl
@@ -125,7 +126,6 @@ export function EncoderAdvancedSettings({ synced, patch }: Props): React.JSX.Ele
           onChange={(id) => patch('flacCompression', id)}
           testidPrefix="settings-flac-compression"
           labelFor={(id) => tr(`settings.flacCompressions.${id}`)}
-          disabled={flacOff}
         />
       </SettingsField>
     </div>
