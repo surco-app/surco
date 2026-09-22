@@ -1,8 +1,7 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTrackProperties } from '../hooks/useTrackProperties'
-import { formatFileSize } from '../lib/properties'
-import { formatKHz } from '../lib/quality'
+import { audioSummaryParts, formatFileSize } from '../lib/properties'
 import type { TrackItem } from '../types'
 import { PropertiesReadout } from './PropertiesReadout'
 import { PropertiesSkeleton } from './PropertiesSkeleton'
@@ -25,22 +24,8 @@ export function PropertiesSection({ item, open, onToggle }: Props): React.JSX.El
   // facts (container · kHz · bit · mode · size), so a folded panel still needs them.
   // The query is cached per path, so this is one cheap probe per file either way.
   const { data: properties, isError: propertiesError } = useTrackProperties(item.inputPath, true)
-  // A glanceable digest of the rip's shape; each part drops out when the probe could
-  // not read it, so a lossy file just shows fewer fields rather than blanks.
   const summary = properties
-    ? [
-        properties.container.toUpperCase(),
-        properties.sampleRateHz ? formatKHz(properties.sampleRateHz) : '',
-        properties.bitDepth !== null
-          ? tr('editor.propBitDepthValue', { bits: properties.bitDepth })
-          : '',
-        properties.channels
-          ? tr(
-              `editor.channelMode${properties.channels <= 1 ? 'Mono' : properties.channels === 2 ? 'Stereo' : 'Multi'}`,
-            )
-          : '',
-        formatFileSize(properties.sizeBytes),
-      ]
+    ? [...audioSummaryParts(properties, tr), formatFileSize(properties.sizeBytes)]
         .filter(Boolean)
         .join(' · ')
     : ''

@@ -3,8 +3,10 @@ import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { SpectrumResult } from '../../../shared/types'
+import type { SpectrumResult, TrackProperties } from '../../../shared/types'
+import { resetEditorSections } from '../hooks/useEditorSections'
 import i18n from '../i18n'
+import { formatKHz } from '../lib/quality'
 import { createQueryClient } from '../lib/queryClient'
 import { ToastProvider } from '../lib/toastContext'
 import type { TrackItem } from '../types'
@@ -49,6 +51,26 @@ function track(inputPath = '/music/a.flac'): TrackItem {
   }
 }
 
+const WAV_FACTS: TrackProperties = {
+  codec: 'pcm_s16le',
+  container: 'wav',
+  sampleRateHz: 44100,
+  bitDepth: 16,
+  channels: 2,
+  bitrateKbps: 1411,
+  sizeBytes: 40_000_000,
+  createdMs: null,
+  modifiedMs: null,
+  tagFormats: [],
+}
+
+// The detail behind a verdict is one click away: "Show spectrum" on a clean file,
+// "Why?" on a flagged one.
+async function openDetails(): Promise<void> {
+  const toggle = await screen.findByTestId(/quality-(show-spectrum|why-toggle)/)
+  fireEvent.click(toggle)
+}
+
 function renderSection(
   spectrum: SpectrumResult,
   inputPath?: string,
@@ -57,6 +79,7 @@ function renderSection(
 ): void {
   ;(window as unknown as { api: unknown }).api = {
     spectrogram: vi.fn().mockResolvedValue(spectrum),
+    properties: vi.fn().mockResolvedValue(WAV_FACTS),
   }
   const client = createQueryClient()
   render(
@@ -75,6 +98,102 @@ function renderSection(
 
 beforeEach(() => {
   vi.restoreAllMocks()
+  resetEditorSections()
+})
+
+// A usability pass found the section showing the work instead of the result. When the
+// file is fine the DJ needs one line saying so; the spectrum and its numbers are there
+// on request. When it is not, the spectrum and one plain sentence make the case, and the
+// measured evidence waits behind "Why?".
+describe('QualitySection verdict first', () => {
+  const clean = {
+    image: 'data:image/png;base64,x',
+    cutoffHz: 21000,
+    sampleRateHz: 44100,
+    processed: false,
+    hasKnee: false,
+    fineStepDb: 4.5,
+    bitsUsage: 'full' as const,
+    bitsLowPct: 99,
+    resolution: 'native' as const,
+  }
+
+  it('says a clean file is fine in one line with its real format, and nothing else', async () => {
+    renderSection(clean, '/m/a.wav')
+    const line = await screen.findByTestId('quality-verdict')
+    expect(line).toHaveTextContent(i18n.t('editor.qualityGood'))
+    await waitFor(() => expect(line).toHaveTextContent('WAV · 44.1 kHz'))
+    expect(line).toHaveTextContent(i18n.t('editor.propBitDepthValue', { bits: 16 }))
+    expect(line).toHaveTextContent(i18n.t('editor.channelModeStereo'))
+    expect(screen.queryByTestId('spectrogram')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('quality-evidence')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('quality-bits-full')).not.toBeInTheDocument()
+  })
+
+  it('draws the spectrum of a clean file only when asked', async () => {
+    renderSection(clean, '/m/a.wav')
+    fireEvent.click(await screen.findByTestId('quality-show-spectrum'))
+    expect(screen.getByTestId('spectrogram')).toBeInTheDocument()
+  })
+
+  it('folds the spectrum away again when the next track comes up', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      spectrogram: vi.fn().mockResolvedValue(clean),
+      properties: vi.fn().mockResolvedValue(WAV_FACTS),
+    }
+    const client = createQueryClient()
+    const view = (path: string) => (
+      <QueryClientProvider client={client}>
+        <QualitySection item={track(path)} showSpectrum open onToggle={vi.fn()} />
+      </QueryClientProvider>
+    )
+    const { rerender } = render(view('/m/a.wav'))
+    fireEvent.click(await screen.findByTestId('quality-show-spectrum'))
+    expect(screen.getByTestId('spectrogram')).toBeInTheDocument()
+    rerender(view('/m/b.wav'))
+    await screen.findByTestId('quality-verdict')
+    expect(screen.queryByTestId('spectrogram')).not.toBeInTheDocument()
+  })
+
+  it('makes the case for a fake lossless with the spectrum and one plain sentence', async () => {
+    renderSection({ ...clean, cutoffHz: 16000, hasKnee: true, fineStepDb: 43.2 }, '/m/a.flac')
+    expect(await screen.findByTestId('spectrogram')).toBeInTheDocument()
+    expect(screen.getByTestId('quality-badge')).toHaveTextContent(i18n.t('editor.qualityTranscode'))
+    expect(screen.getByTestId('quality-plain')).toHaveTextContent(
+      i18n.t('editor.qualityPlainTranscode', { cutoff: '16.0 kHz' }),
+    )
+    expect(screen.queryByTestId('quality-evidence')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('quality-why-toggle'))
+    expect(screen.getByTestId('quality-evidence')).toHaveTextContent('43 dB')
+  })
+
+  it.each<[Partial<SpectrumResult>, string]>([
+    [{ cutoffHz: 16000, processed: true }, 'editor.qualityPlainProcessed'],
+    [{ cutoffHz: 18000, hasKnee: undefined }, 'editor.qualityPlainWarn'],
+    [{ bitsUsage: 'padded16' }, 'editor.qualityPlainPadded'],
+    [{ sampleRateHz: 48000, resolution: 'upsampled' }, 'editor.qualityPlainUpsampled'],
+  ])('flags %o with its own plain sentence', async (over, key) => {
+    renderSection({ ...clean, fineStepDb: undefined, ...over }, '/m/a.m4a')
+    expect(await screen.findByTestId('quality-plain')).toHaveTextContent(
+      i18n.t(key, { cutoff: formatKHz(over.cutoffHz ?? 21000), rate: '48.0 kHz' }),
+    )
+    expect(screen.getByTestId('spectrogram')).toBeInTheDocument()
+  })
+
+  it('shows no spectrum when no verdict could be reached', async () => {
+    renderSection({ ...clean, cutoffHz: null })
+    await new Promise((r) => setTimeout(r, 500))
+    expect(screen.queryByTestId('spectrogram')).not.toBeInTheDocument()
+  })
+
+  it('lays everything out when the section is maximized', async () => {
+    renderSection(clean, '/m/a.wav')
+    await screen.findByTestId('quality-verdict')
+    fireEvent.click(screen.getByTestId('section-maximize'))
+    expect(await screen.findByTestId('spectrogram')).toBeInTheDocument()
+    expect(screen.getByTestId('quality-evidence')).toBeInTheDocument()
+    expect(screen.getByTestId('quality-bits-full')).toBeInTheDocument()
+  })
 })
 
 // Folding the section away must stop its (heavy) decode, not just hide the result — the
@@ -148,6 +267,7 @@ describe('QualitySection verdict caption', () => {
     // strict scale and gets the plain bad caption rather than the transcode one, which is
     // reserved for containers that are lossless by definition.
     renderSection({ image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false }, '/m/a.m4a')
+    await openDetails()
     expect(
       await screen.findByText(i18n.t('editor.qualityCaptionBad', { cutoff: '16.0 kHz' })),
     ).toBeInTheDocument()
@@ -155,6 +275,7 @@ describe('QualitySection verdict caption', () => {
 
   it('explains a warn verdict as the high-bitrate-lossy ambiguity zone', async () => {
     renderSection({ image: '', cutoffHz: 18000, sampleRateHz: 44100, processed: false }, '/m/a.m4a')
+    await openDetails()
     expect(
       await screen.findByText(i18n.t('editor.qualityCaptionWarn', { cutoff: '18.0 kHz' })),
     ).toBeInTheDocument()
@@ -198,7 +319,7 @@ describe('QualitySection verdict caption', () => {
   // It stays reserved for verdicts that need justifying (warn/bad/processed/genuine).
   it('shows no caption for a plain full-band good verdict', async () => {
     renderSection({ image: '', cutoffHz: 21000, sampleRateHz: 44100, processed: false })
-    await screen.findByTestId('quality-badge')
+    await openDetails()
     expect(
       screen.queryByText(i18n.t('editor.qualityCaptionGood', { cutoff: '21.0 kHz' })),
     ).not.toBeInTheDocument()
@@ -211,6 +332,7 @@ describe('QualitySection verdict caption', () => {
       { image: 'data:image/png;base64,x', cutoffHz: 21000, sampleRateHz: 44100, processed: false },
       '/m/a.flac',
     )
+    await openDetails()
     const button = await screen.findByTestId('quality-save-report')
     const spectrogram = screen.getByTestId('spectrogram')
     expect(
@@ -255,6 +377,7 @@ describe('QualitySection verdict caption', () => {
     // a "Bad quality" badge reads as a contradiction. The processed case gets its
     // own badge naming the manipulation, paired with its enhancer caption.
     renderSection({ image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: true })
+    await openDetails()
     expect(
       await screen.findByText(i18n.t('editor.qualityCaptionProcessed', { cutoff: '16.0 kHz' })),
     ).toBeInTheDocument()
@@ -272,10 +395,11 @@ describe('QualitySection verdict caption', () => {
       processed: false,
       hasKnee: false,
     })
+    await openDetails()
     expect(
       await screen.findByText(i18n.t('editor.qualityCaptionGenuine', { cutoff: '18.0 kHz' })),
     ).toBeInTheDocument()
-    expect(screen.getByTestId('quality-badge')).toHaveTextContent(i18n.t('editor.qualityGood'))
+    expect(screen.getByTestId('quality-verdict')).toHaveTextContent(i18n.t('editor.qualityGood'))
   })
 
   it('shows the upsample note when a high-rate file walls off at 22.05 kHz', async () => {
@@ -290,6 +414,7 @@ describe('QualitySection verdict caption', () => {
       hasKnee: false,
       upsampled: true,
     })
+    await openDetails()
     expect(await screen.findByTestId('quality-upsampled')).toHaveTextContent(
       i18n.t('editor.qualityUpsampled'),
     )
@@ -303,6 +428,7 @@ describe('QualitySection verdict caption', () => {
       { image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false, hasKnee: true },
       '/music/a.flac',
     )
+    await openDetails()
     expect(await screen.findByTestId('quality-badge')).toHaveTextContent(
       i18n.t('editor.qualityTranscode'),
     )
@@ -320,9 +446,8 @@ describe('QualitySection verdict caption', () => {
       { image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false, hasKnee: true },
       '/music/a.mp3',
     )
-    expect(await screen.findByTestId('quality-badge')).toHaveTextContent(
-      i18n.t('editor.qualityGood'),
-    )
+    await openDetails()
+    expect(screen.getByTestId('quality-verdict')).toHaveTextContent(i18n.t('editor.qualityGood'))
     expect(
       screen.getByText(i18n.t('editor.qualityCaptionLossy', { cutoff: '16.0 kHz' })),
     ).toBeInTheDocument()
@@ -337,7 +462,7 @@ describe('QualitySection verdict caption', () => {
       hasKnee: false,
       upsampled: false,
     })
-    await screen.findByTestId('quality-badge')
+    await openDetails()
     expect(screen.queryByTestId('quality-upsampled')).not.toBeInTheDocument()
   })
 
@@ -354,6 +479,7 @@ describe('QualitySection verdict caption', () => {
       upsampled: false,
       resolution: 'hires',
     })
+    await openDetails()
     expect(await screen.findByTestId('quality-hires')).toBeInTheDocument()
     expect(screen.queryByTestId('quality-upsampled')).not.toBeInTheDocument()
   })
@@ -370,6 +496,7 @@ describe('QualitySection verdict caption', () => {
       upsampled: false,
       resolution: 'unknown',
     })
+    await openDetails()
     expect(await screen.findByTestId('quality-resolution-unknown')).toBeInTheDocument()
     expect(screen.queryByTestId('quality-hires')).not.toBeInTheDocument()
   })
@@ -386,7 +513,7 @@ describe('QualitySection verdict caption', () => {
       upsampled: false,
       resolution: 'native',
     })
-    await screen.findByTestId('quality-badge')
+    await openDetails()
     expect(screen.queryByTestId('quality-hires')).not.toBeInTheDocument()
     expect(screen.queryByTestId('quality-resolution-unknown')).not.toBeInTheDocument()
   })
@@ -460,7 +587,9 @@ describe('QualitySection shareable report', () => {
       { image: 'data:image/png;base64,x', cutoffHz: null, sampleRateHz: 44100, processed: false },
       '/m/a.flac',
     )
-    expect(await screen.findByTestId('spectrogram')).toBeInTheDocument()
+    const api = (window as unknown as { api: { spectrogram: ReturnType<typeof vi.fn> } }).api
+    await vi.waitFor(() => expect(api.spectrogram).toHaveBeenCalled())
+    await new Promise((r) => setTimeout(r, 0))
     expect(screen.queryByTestId('quality-save-report')).not.toBeInTheDocument()
   })
 })
@@ -481,6 +610,7 @@ describe('verdict evidence', () => {
       },
       '/m/a.flac',
     )
+    await openDetails()
     const evidence = await screen.findByTestId('quality-evidence')
     expect(evidence).toHaveTextContent('drops 43 dB within one kilohertz')
     expect(evidence).toHaveTextContent('16.0 kHz')
@@ -504,6 +634,7 @@ describe('verdict evidence', () => {
       },
       '/m/a.mp3',
     )
+    await openDetails()
     const evidence = await screen.findByTestId('quality-evidence')
     expect(evidence).toHaveTextContent('drops 31 dB within one kilohertz')
   })
@@ -521,6 +652,7 @@ describe('verdict evidence', () => {
       '/m/a.flac',
       false,
     )
+    await openDetails()
     const evidence = await screen.findByTestId('quality-evidence')
     expect(evidence).toHaveTextContent('drops 43 dB within one kilohertz')
     expect(screen.queryByText(i18n.t('editor.qualityEvidenceWallWhy'))).not.toBeInTheDocument()
@@ -539,6 +671,7 @@ describe('verdict evidence', () => {
       },
       '/m/a.flac',
     )
+    await openDetails()
     const evidence = await screen.findByTestId('quality-evidence')
     expect(evidence).toHaveTextContent('rise 3 times between 17.5 kHz and 20.0 kHz')
     expect(evidence).toHaveTextContent('16.5 kHz')
@@ -555,6 +688,7 @@ describe('verdict evidence', () => {
       },
       '/m/a.flac',
     )
+    await openDetails()
     const evidence = await screen.findByTestId('quality-evidence')
     expect(evidence).toHaveTextContent(
       i18n.t('editor.qualityEvidenceHump', { cutoff: '16.0 kHz', peak: '19.0 kHz' }),
@@ -572,6 +706,7 @@ describe('verdict evidence', () => {
       },
       '/m/a.flac',
     )
+    await openDetails()
     const evidence = await screen.findByTestId('quality-evidence')
     expect(evidence).toHaveTextContent(
       i18n.t('editor.qualityEvidenceShelf', { cutoff: '16.0 kHz' }),
@@ -590,6 +725,7 @@ describe('verdict evidence', () => {
       hasKnee: false,
       fineStepDb: 4.5,
     })
+    await openDetails()
     const evidence = await screen.findByTestId('quality-evidence')
     expect(evidence).toHaveTextContent('5 dB')
   })
@@ -607,7 +743,7 @@ describe('verdict evidence', () => {
       '/m/a.flac',
       false,
     )
-    await screen.findByTestId('quality-badge')
+    await openDetails()
     expect(screen.queryByTestId('quality-evidence')).not.toBeInTheDocument()
   })
 
@@ -618,6 +754,7 @@ describe('verdict evidence', () => {
       { image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false, hasKnee: true },
       '/m/a.flac',
     )
+    await openDetails()
     expect(
       await screen.findByText(i18n.t('editor.qualityCaptionTranscode', { cutoff: '16.0 kHz' })),
     ).toBeInTheDocument()
@@ -669,6 +806,7 @@ describe('bit depth verdict and corrected-rate plan', () => {
 
   it('flags a padded 16-in-24 container with its pill and the arithmetic proof', async () => {
     renderSection({ ...base, bitsUsage: 'padded16', bitsLowPct: 0 }, '/m/a.flac')
+    await openDetails()
     const note = await screen.findByTestId('quality-bits-padded')
     expect(note).toHaveTextContent('low 8 bits are zero')
     expect(screen.getByTestId('quality-bits-pill')).toHaveTextContent(
@@ -680,6 +818,7 @@ describe('bit depth verdict and corrected-rate plan', () => {
 
   it('keeps the padding proof but drops the didactic lines when hints are off', async () => {
     renderSection({ ...base, bitsUsage: 'padded16', bitsLowPct: 0 }, '/m/a.flac', false)
+    await openDetails()
     const note = await screen.findByTestId('quality-bits-padded')
     expect(note).toHaveTextContent('low 8 bits are zero')
     expect(screen.queryByText(i18n.t('editor.qualityBitsPaddedWhy'))).not.toBeInTheDocument()
@@ -691,37 +830,40 @@ describe('bit depth verdict and corrected-rate plan', () => {
   // sees the finding, not just whoever turned hints on.
   it('always states what converting will do, so the vanished pill reads as the fix', async () => {
     renderSection({ ...base, bitsUsage: 'padded16', bitsLowPct: 0 }, '/m/a.flac', false)
+    await openDetails()
     const note = await screen.findByTestId('quality-bits-padded')
     expect(note).toHaveTextContent(i18n.t('editor.qualityBitsPaddedNote'))
   })
 
   it('lets a real 24-bit file earn its depth while hints are on', async () => {
     renderSection({ ...base, bitsUsage: 'full', bitsLowPct: 99.6 }, '/m/a.flac')
+    await openDetails()
     const note = await screen.findByTestId('quality-bits-full')
     expect(note).toHaveTextContent('99.6%')
   })
 
   it('keeps the real-24 reassurance quiet when hints are off', async () => {
     renderSection({ ...base, bitsUsage: 'full', bitsLowPct: 99.6 }, '/m/a.flac', false)
-    await screen.findByTestId('quality-badge')
+    await openDetails()
     expect(screen.queryByTestId('quality-bits-full')).not.toBeInTheDocument()
   })
 
   it('says the depth could not be verified instead of staying silent', async () => {
     renderSection({ ...base, bitsUsage: 'unknown' }, '/m/a.flac')
+    await openDetails()
     const note = await screen.findByTestId('quality-bits-unknown')
     expect(note).toHaveTextContent(i18n.t('editor.qualityBitsUnknown'))
   })
 
   it('keeps the could-not-verify line quiet when hints are off', async () => {
     renderSection({ ...base, bitsUsage: 'unknown' }, '/m/a.flac', false)
-    await screen.findByTestId('quality-badge')
+    await openDetails()
     expect(screen.queryByTestId('quality-bits-unknown')).not.toBeInTheDocument()
   })
 
   it('says nothing about bits when a cached analysis has no verdict', async () => {
     renderSection({ ...base }, '/m/a.flac')
-    await screen.findByTestId('quality-badge')
+    await openDetails()
     expect(screen.queryByTestId('quality-bits-padded')).not.toBeInTheDocument()
     expect(screen.queryByTestId('quality-bits-full')).not.toBeInTheDocument()
   })
@@ -733,6 +875,7 @@ describe('bit depth verdict and corrected-rate plan', () => {
       true,
       'corrected',
     )
+    await openDetails()
     const plan = await screen.findByTestId('quality-convert-plan')
     expect(plan).toHaveTextContent('48 kHz')
     expect(plan).toHaveTextContent('44.1 kHz')
@@ -745,7 +888,7 @@ describe('bit depth verdict and corrected-rate plan', () => {
       true,
       'source',
     )
-    await screen.findByTestId('quality-badge')
+    await openDetails()
     expect(screen.queryByTestId('quality-convert-plan')).not.toBeInTheDocument()
     cleanup()
     renderSection(
@@ -754,7 +897,7 @@ describe('bit depth verdict and corrected-rate plan', () => {
       true,
       'corrected',
     )
-    await screen.findByTestId('quality-badge')
+    await openDetails()
     expect(screen.queryByTestId('quality-convert-plan')).not.toBeInTheDocument()
   })
 })
