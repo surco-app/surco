@@ -192,7 +192,7 @@ const run = (async (file: string, args: string[], opts?: RunOpts) => {
 const ANALYSIS_TIMEOUT_MS = 120_000
 
 interface ProbeTags {
-  format?: { tags?: Record<string, unknown> }
+  format?: { format_name?: string; tags?: Record<string, unknown> }
   streams?: { codec_type?: string; tags?: Record<string, unknown> }[]
 }
 
@@ -201,6 +201,9 @@ interface ProbeTags {
 // stream.tags for some containers); keys vary in case across muxers, so we match
 // case-insensitively and accept the common aliases each writer uses. The aliases
 // (and the per-field normalization) live in the TAG_FIELDS registry.
+// The containers whose tags ffprobe reads from ID3, where a TagField's id3Aliases apply.
+const ID3_CONTAINER = /^(mp3|aiff|wav)$/
+
 export function tagsFromProbe(data: ProbeTags): TrackMetadata {
   // Skip the attached-picture stream: FLAC stores the cover's "Cover (front)"
   // description as a comment tag on that video stream, which would otherwise be read
@@ -226,9 +229,10 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
     }
     return ''
   }
+  const id3 = ID3_CONTAINER.test(data.format?.format_name ?? '')
   const meta = {} as Record<keyof TrackMetadata, string>
   for (const field of TAG_FIELDS) {
-    const raw = pick(...field.aliases)
+    const raw = pick(...field.aliases, ...(id3 ? (field.id3Aliases ?? []) : []))
     meta[field.key] = field.parse ? field.parse(raw) : raw
   }
   return meta
@@ -364,7 +368,7 @@ export async function readTags(input: string): Promise<TrackMetadata> {
       '-v',
       'error',
       '-show_entries',
-      'format_tags:stream_tags:stream=codec_type',
+      'format=format_name:format_tags:stream_tags:stream=codec_type',
       '-of',
       'json',
       ...forcedInputArgs(input),
@@ -559,7 +563,7 @@ async function readMetaUncached(input: string): Promise<MetaRead | null> {
         '-v',
         'error',
         '-show_entries',
-        'format=duration:format_tags:stream_tags:stream=codec_type,width,height',
+        'format=duration,format_name:format_tags:stream_tags:stream=codec_type,width,height',
         '-of',
         'json',
         ...forcedInputArgs(input),
@@ -812,7 +816,7 @@ function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
     // from the clears below, or the alias sweep would erase what was just written.
     const also = vorbis ? (field.vorbisAlso ?? []) : []
     const written = new Set([name.toLowerCase(), ...also.map((n) => n.toLowerCase())])
-    const clears = field.aliases
+    const clears = [...field.aliases, ...(vorbis ? [] : (field.id3Aliases ?? []))]
       .filter((alias) => !written.has(alias))
       .flatMap((alias) => ['-metadata', `${alias}=`])
     return [

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_IMPORT_FIELDS, IMPORTABLE_FIELDS, normalizeImportFields } from './defaults'
+import {
+  DEFAULT_FIELDS,
+  DEFAULT_IMPORT_FIELDS,
+  IMPORTABLE_FIELDS,
+  normalizeImportFields,
+} from './defaults'
 
 // The stored preference is a plain string[] in settings.json, so what comes back is whatever
 // was on disk — written by an older build, a newer one, or a hand edit. It reaches
@@ -40,5 +45,15 @@ describe('normalizeImportFields', () => {
   // preference would offer a switch that normalization then silently discards.
   it('accepts every field the catalog offers', () => {
     expect(normalizeImportFields([...IMPORTABLE_FIELDS])).toEqual(IMPORTABLE_FIELDS)
+  })
+})
+
+// The TagScanner credits exist for the users who fill them elsewhere. Shown by default,
+// every DJ would get three more empty boxes in the editor; hidden, they wait in Settings →
+// Fields under Hidden, one "Show" away, and nobody's editor changes on update.
+describe('DEFAULT_FIELDS', () => {
+  it('ships the credit fields hidden', () => {
+    for (const key of ['originalArtist', 'lyricist', 'conductor'])
+      expect(DEFAULT_FIELDS).not.toContain(key)
   })
 })

@@ -381,6 +381,19 @@ describe('convertArgs', () => {
     expect(args).toContain('year=')
   })
 
+  // The conductor's "performer" alias belongs to ID3 alone. Clearing it on an MP3 stops a
+  // copied source value from landing in TPE3 beside the one Surco writes; on a FLAC,
+  // PERFORMER is another credit entirely and must go through untouched.
+  it('clears the ID3-only conductor alias on an ID3 target, never on a FLAC', () => {
+    const credits = { ...meta, conductor: 'B. Conductor' }
+    expect(convertArgs('/in.wav', '/o.mp3', { codec: 'libmp3lame' }, credits)).toContain(
+      'performer=',
+    )
+    const flac = convertArgs('/in.wav', '/o.flac', { codec: 'flac' }, credits)
+    expect(flac).toContain('CONDUCTOR=B. Conductor')
+    expect(flac).not.toContain('performer=')
+  })
+
   it('never emits a clearing entry for the key it just wrote', () => {
     // The alias list contains the written name's own spelling (it is also a read
     // alias); clearing it would wipe the value in the same command.
@@ -1182,6 +1195,9 @@ describe('tagsFromProbe', () => {
           TSRC: 'DEA449900124',
           TIT3: 'Club Mix',
           TORY: '1998',
+          TOPE: 'Three Drives',
+          TEXT: 'A. Lyricist',
+          TPE3: 'B. Conductor',
           MOOD: 'Dark',
           ENERGY: '4',
           // The collector fields, under the names mp3tag writes — reading them back is
@@ -1215,6 +1231,9 @@ describe('tagsFromProbe', () => {
       isrc: 'DEA449900124',
       mixName: 'Club Mix',
       originalYear: '1998',
+      originalArtist: 'Three Drives',
+      lyricist: 'A. Lyricist',
+      conductor: 'B. Conductor',
       compilation: '',
       mood: 'Dark',
       energy: '4',
@@ -1223,6 +1242,18 @@ describe('tagsFromProbe', () => {
       mediaType: 'Vinyl, 12"',
       discogsUrl: 'https://www.discogs.com/release/123456',
     })
+  })
+
+  // ffprobe names ID3's conductor frame (TPE3) "performer". On a FLAC, PERFORMER is the
+  // performer credit, a different field: reading it as the conductor would put the wrong
+  // name in the editor, and the writer clears every alias it reads.
+  it('reads "performer" as the conductor on an ID3 container only', () => {
+    const tags = { performer: 'B. Conductor' }
+    expect(tagsFromProbe({ format: { format_name: 'mp3', tags } }).conductor).toBe('B. Conductor')
+    expect(tagsFromProbe({ format: { format_name: 'aiff', tags } }).conductor).toBe('B. Conductor')
+    expect(
+      tagsFromProbe({ format: { format_name: 'flac', tags: { PERFORMER: 'X' } } }).conductor,
+    ).toBe('')
   })
 
   it('reads the Vorbis comment names a FLAC export carries', () => {
@@ -1385,6 +1416,9 @@ describe('tagsFromProbe', () => {
       isrc: '',
       mixName: '',
       originalYear: '',
+      originalArtist: '',
+      lyricist: '',
+      conductor: '',
       compilation: '',
       mood: '',
       energy: '',

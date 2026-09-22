@@ -162,6 +162,7 @@ export function readTagLibExtras(file: string): Partial<TrackMetadata> {
         mixName: tag.subtitle?.trim() || '',
         composer: tag.composers?.join(', ').trim() || '',
         isrc: tag.isrc?.trim() || '',
+        conductor: tag.conductor?.trim() || '',
       }
       const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
       if (!id3) return extras
@@ -180,6 +181,9 @@ export function readTagLibExtras(file: string): Partial<TrackMetadata> {
       return {
         ...extras,
         isrc: extras.isrc || text('TSRC'),
+        originalArtist: text('TOPE'),
+        lyricist: text('TEXT'),
+        conductor: extras.conductor || text('TPE3'),
         catalogNumber: userText('CATALOGNUMBER'),
         discogsReleaseId: userText('DISCOGS_RELEASE_ID'),
         energy: userText('ENERGYLEVEL') || userText('ENERGY'),
@@ -666,6 +670,18 @@ function extendedFields(meta: TrackMetadata): Array<[string, string]> {
   ]
 }
 
+// The credits with a standard ID3 frame of their own, and the name mp3tag gives each as
+// an iTunes freeform atom (MP4 has no dedicated box for any of the three).
+function creditFields(
+  meta: TrackMetadata,
+): Array<[(typeof Id3v2FrameIdentifiers)['TOPE'], string, string]> {
+  return [
+    [Id3v2FrameIdentifiers.TOPE, 'ORIGARTIST', meta.originalArtist ?? ''],
+    [Id3v2FrameIdentifiers.TEXT, 'LYRICIST', meta.lyricist ?? ''],
+    [Id3v2FrameIdentifiers.TPE3, 'CONDUCTOR', meta.conductor ?? ''],
+  ]
+}
+
 // The MP4 counterpart of setUserText: writes a freeform atom, or removes it when the value
 // is empty. setItunesStrings with no data strings is TagLib's own way of clearing one, so
 // an emptied field leaves nothing behind rather than keeping the previous value.
@@ -819,6 +835,7 @@ export function writeTags(
       // nothing reads back — not even Surco itself.
       const apple = f.tag as Mpeg4AppleTag
       for (const [name, value] of extendedFields(meta)) setItunesText(apple, name, value)
+      for (const [, name, value] of creditFields(meta)) setItunesText(apple, name, value)
       for (const name of foreignRemoved) apple.setItunesStrings('com.apple.iTunes', name)
       f.save()
       return
@@ -868,6 +885,13 @@ export function writeTags(
     // catalog number, Discogs ids, the DJ's mood/energy judgement and the collector fields
     // off the release. Shared with the m4a branch above so neither container can drift.
     for (const [name, value] of extendedFields(meta)) setUserText(id3, name, value)
+    for (const [frameId, , value] of creditFields(meta)) {
+      id3.removeFrames(frameId)
+      if (!value.trim()) continue
+      const frame = Id3v2TextInformationFrame.fromIdentifier(frameId)
+      frame.text = [value]
+      id3.addFrame(frame)
+    }
     // Original year has no TagLib property, so it rides the raw frame. The TDOR
     // identifier is version-aware: on the v2.3 tags pinned above it renders as
     // TORY, its v2.3 predecessor.
