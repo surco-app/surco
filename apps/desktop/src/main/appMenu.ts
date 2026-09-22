@@ -107,6 +107,17 @@ export function appMenuTemplate({
     },
     { role: 'editMenu' },
     {
+      label: t('tracks'),
+      submenu: [
+        {
+          label: t('analyzeQuality'),
+          accelerator: accel('analyze-quality'),
+          registerAccelerator: false,
+          click: keymapMenuClick(run, 'analyze-quality'),
+        },
+      ],
+    },
+    {
       label: t('view'),
       submenu: [
         {
@@ -141,6 +152,12 @@ export function appMenuTemplate({
           click: keymapMenuClick(run, 'next'),
         },
         { type: 'separator' },
+        {
+          label: t('stats'),
+          accelerator: accel('stats'),
+          registerAccelerator: false,
+          click: keymapMenuClick(run, 'stats'),
+        },
         { label: t('activity'), click: () => run('activity') },
         { type: 'separator' },
         { role: 'togglefullscreen' },
