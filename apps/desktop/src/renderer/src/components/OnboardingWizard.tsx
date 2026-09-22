@@ -292,12 +292,14 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                         checked={
                           library.id === 'rekordbox' ? synced.syncRekordbox : synced.syncTraktor
                         }
-                        onChange={(e) =>
+                        onChange={(e) => {
                           patch(
                             library.id === 'rekordbox' ? 'syncRekordbox' : 'syncTraktor',
                             e.target.checked,
                           )
-                        }
+                          if (library.id === 'traktor' && e.target.checked && !local.traktorNmlPath)
+                            patchLocal('traktorNmlPath', library.path)
+                        }}
                         className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
                       />
                       <span className="min-w-0 text-sm font-medium">

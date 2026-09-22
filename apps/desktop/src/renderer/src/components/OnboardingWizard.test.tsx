@@ -249,6 +249,73 @@ describe('OnboardingWizard destination', () => {
     expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ syncRekordbox: true }))
   })
 
+  // Traktor sync writes into the collection.nml it is given and skips entirely without one,
+  // so ticking the collection the wizard found has to save that path along with the toggle.
+  it('saves the Traktor collection it found when the DJ ticks it', async () => {
+    const api = window as unknown as {
+      api: {
+        rekordboxCollection: () => Promise<string>
+        detectTraktorNmlPath: () => Promise<string | null>
+      }
+    }
+    api.api.rekordboxCollection = async () => ''
+    api.api.detectTraktorNmlPath = async () => '/Users/dj/Documents/NI/collection.nml'
+    try {
+      const onFinish = vi.fn()
+      render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+      expect(
+        await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
+      ).toBeInTheDocument()
+      for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+      fireEvent.click(await screen.findByTestId('onboarding-sync-traktor'))
+      fireEvent.click(screen.getByTestId('onboarding-next'))
+      expect(onFinish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          syncTraktor: true,
+          traktorNmlPath: '/Users/dj/Documents/NI/collection.nml',
+        }),
+      )
+    } finally {
+      api.api.detectTraktorNmlPath = async () => null
+    }
+  })
+
+  // A DJ re-running the wizard may already point Surco at a collection outside the standard
+  // folder; the detected one must not quietly replace the path they chose.
+  it('keeps a Traktor collection path the DJ already set', async () => {
+    const api = window as unknown as {
+      api: {
+        rekordboxCollection: () => Promise<string>
+        detectTraktorNmlPath: () => Promise<string | null>
+      }
+    }
+    api.api.rekordboxCollection = async () => ''
+    api.api.detectTraktorNmlPath = async () => '/Users/dj/Documents/NI/collection.nml'
+    try {
+      const onFinish = vi.fn()
+      render(
+        <OnboardingWizard
+          settings={{ ...settings, traktorNmlPath: '/Volumes/iCloud/collection.nml' }}
+          onFinish={onFinish}
+        />,
+      )
+      expect(
+        await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
+      ).toBeInTheDocument()
+      for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+      fireEvent.click(await screen.findByTestId('onboarding-sync-traktor'))
+      fireEvent.click(screen.getByTestId('onboarding-next'))
+      expect(onFinish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          syncTraktor: true,
+          traktorNmlPath: '/Volumes/iCloud/collection.nml',
+        }),
+      )
+    } finally {
+      api.api.detectTraktorNmlPath = async () => null
+    }
+  })
+
   // Someone who runs no DJ software should not be shown a step with nothing in it, and the
   // counter has to agree: five of five when the step is there, four of four when it is not.
   it('leaves the step out entirely when no collection was found', async () => {
