@@ -3,30 +3,36 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Settings } from '../../../shared/types'
-import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
-import { type DetectedDjLibrary, detectedDjLibraries } from '../lib/djLibraries'
+import {
+  type DestinationPlan,
+  planFromSettings,
+  planToSettings,
+  withLocation,
+} from '../lib/destination'
 import { type AudioIntent, buildOnboardingPatch, seedAudioIntents } from '../lib/onboarding'
 import { isMacOS } from '../lib/platform'
 import { formatKHz } from '../lib/quality'
 import { type LocalDraft, pickLocal, pickSynced, type SyncedDraft } from '../lib/settingsDraft'
 import { AutoMatchControl } from './AutoMatchControl'
-import { DestinationPicker } from './DestinationPicker'
 import { DiscogsTokenField } from './DiscogsTokenField'
+import { DjSoftwarePicker } from './DjSoftwarePicker'
 import { EngineLibraryFields } from './EngineLibraryFields'
 import { FormatSettingControl } from './FormatSettingControl'
+import { LocationPicker } from './LocationPicker'
 import { OutputFolderField } from './OutputFolderField'
+import { PathField } from './PathField'
 import { SearchProvidersControl } from './SearchProvidersControl'
 import { useFocusTrap } from './useFocusTrap'
 
 // The optional audio intents, in the order they're offered. Correct metadata is the
 // product's core, so it's shown as an always-on row above these rather than a choice.
 const AUDIO_INTENTS: AudioIntent[] = ['restore', 'level', 'quality']
-// Four steps only: what shapes the first import (search sources + auto-match, output
-// format + destination) plus the workflow question that tailors the editor to the DJ.
-// Naming, grouping/genre presets and the fields editor are power-user tuning that lives
-// in Settings — every extra question here delays the first drop of files.
-const BASE_STEPS = ['welcome', 'search', 'format', 'audio'] as const
-type Step = (typeof BASE_STEPS)[number] | 'djLibraries'
+// Five steps only: what shapes the first import (search sources + auto-match, output
+// format + where the file is saved), the workflow question that tailors the editor to
+// the DJ, and what they play with. Naming, grouping/genre presets and the fields editor
+// are power-user tuning that lives in Settings — every extra question here delays the
+// first drop of files.
+const STEPS = ['welcome', 'search', 'format', 'audio', 'djSoftware'] as const
 
 interface Props {
   settings: Settings
@@ -51,18 +57,13 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const dialogRef = useRef<HTMLDivElement>(null)
   useFocusTrap(dialogRef)
 
-  // The collection step only exists for a DJ who actually runs one of these programs, so
-  // the wizard's length is decided by what was found rather than fixed — a user with no DJ
-  // software still finishes at step 4 of 4, with no empty step and no gap in the count.
-  const [djLibraries, setDjLibraries] = useState<DetectedDjLibrary[]>([])
+  const [found, setFound] = useState({ rekordbox: '', traktor: '' })
   useEffect(() => {
     Promise.all([window.api.rekordboxCollection(), window.api.detectTraktorNmlPath()]).then(
-      ([rekordbox, traktor]) =>
-        setDjLibraries(detectedDjLibraries({ rekordbox, traktor: traktor ?? '' })),
+      ([rekordbox, traktor]) => setFound({ rekordbox, traktor: traktor ?? '' }),
     )
   }, [])
-  const STEPS: readonly Step[] =
-    djLibraries.length > 0 ? [...BASE_STEPS, 'djLibraries'] : BASE_STEPS
+  const traktorPath = local.traktorNmlPath || found.traktor
 
   const isLast = step === STEPS.length - 1
   const discogsOn = synced.searchProviders.includes('discogs')
@@ -77,22 +78,19 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
     onFinish(buildOnboardingPatch({ synced, local, audioIntents, seededIntents, settings }))
   }
 
-  // FLAC can't go to Apple Music, so the destination pins to the output folder while
-  // it's the format. chooseDestination maps the single radio back onto the stored booleans.
-  const destination = toDestination(
-    synced.addToAppleMusic,
-    synced.outputFormat === 'flac',
-    synced.overwriteOriginal,
-    synced.addToEngineDj,
-    synced.convertBesideOriginal,
-  )
-  function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
-    const next = fromDestination(d)
-    patch('addToAppleMusic', next.addToAppleMusic)
-    patch('keepOutputCopy', next.keepOutputCopy)
-    patch('overwriteOriginal', next.overwriteOriginal)
-    patch('convertBesideOriginal', next.convertBesideOriginal)
-    patch('addToEngineDj', next.addToEngineDj)
+  const flac = synced.outputFormat === 'flac'
+  const plan = planFromSettings(synced, flac)
+  function applyPlan(next: DestinationPlan): void {
+    const flags = planToSettings(next)
+    patch('addToAppleMusic', flags.addToAppleMusic)
+    patch('keepOutputCopy', flags.keepOutputCopy)
+    patch('overwriteOriginal', flags.overwriteOriginal)
+    patch('convertBesideOriginal', flags.convertBesideOriginal)
+    patch('addToEngineDj', flags.addToEngineDj)
+  }
+  async function changeTraktorPath(): Promise<void> {
+    const path = await window.api.pickTraktorNmlPath()
+    if (path) patchLocal('traktorNmlPath', path)
   }
   function toggleIntent(intent: AudioIntent, on: boolean): void {
     setAudioIntents((prev) => (on ? [...prev, intent] : prev.filter((i) => i !== intent)))
@@ -182,42 +180,21 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
                 <div className="mt-5 border-t border-[var(--color-line)] pt-4">
                   <span className="mb-1.5 block text-sm font-medium text-fg-muted">
-                    {tr('settings.destination')}
+                    {tr('settings.location')}
                   </span>
-                  <DestinationPicker
-                    destinations={DESTINATIONS.filter(
-                      (d) => d !== 'overwrite' && (isMac || d !== 'appleMusic'),
-                    )}
-                    value={destination}
-                    onChange={chooseDestination}
-                    flacOnly={synced.outputFormat === 'flac'}
-                    testidPrefix="onboarding-destination"
-                    radioName="onboarding-destination"
-                    details={{
-                      // WHERE the files land is the first thing a new user looks for
-                      // after converting — show it (and let them change it) right
-                      // under the choice it applies to, exactly like Settings.
-                      folder: (
-                        <OutputFolderField
-                          value={local.outputDir}
-                          onChange={(dir) => patchLocal('outputDir', dir)}
-                          testid="onboarding-output"
-                        />
-                      ),
-                      // Engine DJ was offered here with nothing under it, so a new user
-                      // could finish setup with the destination chosen and the library
-                      // pointing at a default folder that need not exist. Same two fields
-                      // Settings shows under the same radio.
-                      engineDj: (
-                        <EngineLibraryFields
-                          libraryDir={local.engineLibraryDir}
-                          onLibraryDirChange={(dir) => patchLocal('engineLibraryDir', dir)}
-                          playlist={synced.engineDjPlaylist}
-                          onPlaylistChange={(name) => patch('engineDjPlaylist', name)}
-                          testidPrefix="onboarding-engine"
-                        />
-                      ),
-                    }}
+                  <LocationPicker
+                    locations={['folder', 'beside']}
+                    value={plan.location}
+                    onChange={(location) => applyPlan(withLocation(plan, location))}
+                    testidPrefix="onboarding-location"
+                    radioName="onboarding-location"
+                    folderDetail={
+                      <OutputFolderField
+                        value={local.outputDir}
+                        onChange={(dir) => patchLocal('outputDir', dir)}
+                        testid="onboarding-output"
+                      />
+                    }
                   />
                 </div>
               </>
@@ -274,49 +251,54 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
               </>
             )}
 
-            {STEPS[step] === 'djLibraries' && (
+            {STEPS[step] === 'djSoftware' && (
               <>
                 <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
-                  {tr('onboarding.djLibrariesTitle')}
+                  {tr('settings.djSoftware')}
                 </h2>
-                <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.djLibrariesBody')}</p>
-                <div className="flex flex-col gap-2">
-                  {djLibraries.map((library) => (
-                    <label
-                      key={library.id}
-                      className="flex cursor-pointer items-start gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2.5"
-                    >
-                      <input
-                        data-testid={`onboarding-sync-${library.id}`}
-                        type="checkbox"
-                        checked={
-                          library.id === 'rekordbox' ? synced.syncRekordbox : synced.syncTraktor
-                        }
-                        onChange={(e) => {
-                          patch(
-                            library.id === 'rekordbox' ? 'syncRekordbox' : 'syncTraktor',
-                            e.target.checked,
-                          )
-                          if (library.id === 'traktor' && e.target.checked && !local.traktorNmlPath)
-                            patchLocal('traktorNmlPath', library.path)
-                        }}
-                        className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+                <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.djSoftwareBody')}</p>
+                <div className="max-h-[360px] overflow-y-auto">
+                  <DjSoftwarePicker
+                    plan={plan}
+                    onPlanChange={applyPlan}
+                    mac={isMac}
+                    flac={flac}
+                    syncTraktor={synced.syncTraktor}
+                    onSyncTraktorChange={(on) => {
+                      patch('syncTraktor', on)
+                      if (on && !local.traktorNmlPath) patchLocal('traktorNmlPath', traktorPath)
+                    }}
+                    traktorAvailable={!!traktorPath}
+                    traktorDetail={
+                      <PathField
+                        value={traktorPath}
+                        onChange={() => void changeTraktorPath()}
+                        testid="onboarding-traktor-nml"
+                        emptyLabel={tr('settings.traktorNmlPathEmpty')}
+                        ariaLabel={tr('settings.traktorNmlPath')}
                       />
-                      <span className="min-w-0 text-sm font-medium">
-                        {tr(`onboarding.djLibrary.${library.id}`)}
-                        <span className="mt-0.5 block text-xs font-normal text-fg-dim">
-                          {tr(`onboarding.djLibrary.${library.id}Body`)}
-                        </span>
-                        {/* The path it found, so the DJ can see WHICH collection is about
-                            to be written to before switching it on. */}
-                        <span className="mt-1 block truncate text-xs text-fg-faint">
-                          {library.path}
-                        </span>
-                      </span>
-                    </label>
-                  ))}
+                    }
+                    syncRekordbox={synced.syncRekordbox}
+                    onSyncRekordboxChange={(on) => patch('syncRekordbox', on)}
+                    rekordboxAvailable={!!found.rekordbox}
+                    rekordboxDetail={
+                      found.rekordbox && (
+                        <p className="truncate text-xs text-fg-faint">{found.rekordbox}</p>
+                      )
+                    }
+                    engineDetail={
+                      <EngineLibraryFields
+                        libraryDir={local.engineLibraryDir}
+                        onLibraryDirChange={(dir) => patchLocal('engineLibraryDir', dir)}
+                        playlist={synced.engineDjPlaylist}
+                        onPlaylistChange={(name) => patch('engineDjPlaylist', name)}
+                        testidPrefix="onboarding-engine"
+                      />
+                    }
+                    testidPrefix="onboarding"
+                  />
                 </div>
-                <p className="mt-4 text-xs text-fg-dim">{tr('onboarding.djLibrariesNote')}</p>
+                <p className="mt-4 text-xs text-fg-dim">{tr('onboarding.djSoftwareLater')}</p>
               </>
             )}
           </div>

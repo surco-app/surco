@@ -1115,15 +1115,8 @@
     "next": "Suivant",
     "finish": "Commencer",
     "step": "Étape {{current}} sur {{total}}",
-    "djLibrariesTitle": "Tes collections DJ",
-    "djLibrariesBody": "À la conversion, Surco peut laisser ta collection pointer vers le nouveau fichier, avec ses playlists et ses cue points intacts.",
-    "djLibrariesNote": "Surco sauvegarde la collection avant d'écrire et n'écrit jamais quand le programme est ouvert. Tu peux changer cela plus tard dans les réglages.",
-    "djLibrary": {
-      "rekordbox": "rekordbox",
-      "rekordboxBody": "Garder la collection à jour à la conversion.",
-      "traktor": "Traktor",
-      "traktorBody": "Écrire les cue points et la grille dans la collection."
-    }
+    "djSoftwareBody": "Coche tous ceux que tu utilises : à la conversion, Surco prépare le morceau dans chacun.",
+    "djSoftwareLater": "Tu peux changer cela plus tard dans les réglages."
   },
   "help": {
     "title": "Aide et FAQ",
