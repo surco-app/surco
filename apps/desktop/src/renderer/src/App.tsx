@@ -536,7 +536,7 @@ export default function App(): React.JSX.Element {
 
   // The last session: offered back at launch, written out as it changes. Self-contained —
   // it hands nothing back.
-  useSessionPersistence({ tracks, tracksRef, addPaths, seedRestoredEdits, store, tr })
+  useSessionPersistence({ tracks, tracksRef, addPaths, seedRestoredEdits, store })
 
   // The watcher's "N new tracks" prompt rides the same queue as every other toast: keyed so a
   // second copy-in updates the count in place, and with a Load action that adds the tracks.
@@ -551,13 +551,13 @@ export default function App(): React.JSX.Element {
       key: 'new-tracks',
       tone: 'neutral',
       testid: 'new-tracks',
-      message: tr('newTracks.prompt', { count: pendingNew.paths.length, folder }),
-      action: { label: tr('newTracks.load'), onAction: loadPending },
+      message: { key: 'newTracks.prompt', values: { count: pendingNew.paths.length, folder } },
+      action: { label: { key: 'newTracks.load' }, onAction: loadPending },
       onDismiss: dismissPending,
       duration: NEW_TRACKS_PROMPT_TIMEOUT_MS,
     })
     return () => dismissToast(store, id)
-  }, [pendingNew, loadPending, dismissPending, store, tr])
+  }, [pendingNew, loadPending, dismissPending, store])
 
   // The auto-updater reports a downloaded version (or a download failure) over IPC; surface
   // each as a toast instead of a bespoke component. The ready prompt offers Restart (applies
@@ -570,11 +570,11 @@ export default function App(): React.JSX.Element {
           key: 'update',
           tone: 'neutral',
           testid: 'update',
-          message: tr('update.ready', { version }),
-          action: { label: tr('update.restart'), onAction: () => window.api.installUpdate() },
+          message: { key: 'update.ready', values: { version } },
+          action: { label: { key: 'update.restart' }, onAction: () => window.api.installUpdate() },
         }),
       ),
-    [store, tr],
+    [store],
   )
   useEffect(
     () =>
@@ -583,10 +583,10 @@ export default function App(): React.JSX.Element {
           key: 'update',
           tone: 'danger',
           testid: 'update-error',
-          message: tr('update.failed', { error }),
+          message: { key: 'update.failed', values: { error } },
         }),
       ),
-    [store, tr],
+    [store],
   )
   useEffect(
     () =>
@@ -595,9 +595,11 @@ export default function App(): React.JSX.Element {
           key: 'update',
           tone: 'danger',
           testid: 'update-check-failed',
-          message: status ? tr('update.checkFailedStatus', { status }) : tr('update.checkFailed'),
+          message: status
+            ? { key: 'update.checkFailedStatus', values: { status } }
+            : { key: 'update.checkFailed' },
           action: {
-            label: tr('update.retry'),
+            label: { key: 'update.retry' },
             onAction: () => {
               dismissToast(store, id)
               window.api.checkForUpdates()
@@ -605,7 +607,7 @@ export default function App(): React.JSX.Element {
           },
         })
       }),
-    [store, tr],
+    [store],
   )
 
   const onSelectTrack = useCallback((id: string, mods: ClickMods): void => {

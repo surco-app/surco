@@ -2,7 +2,7 @@ import { Check, Copy, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Toast } from '../lib/toastQueue'
+import type { Toast, ToastText } from '../lib/toastQueue'
 
 // How long the copy button shows its "copied" check before reverting to the copy icon.
 const COPIED_FEEDBACK_MS = 1500
@@ -116,12 +116,15 @@ function ToastCard({
   onClose: (id: string) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const text = (value: ToastText): string =>
+    typeof value === 'string' ? value : tr(value.key, value.values)
+  const message = text(toast.message)
   const [copied, setCopied] = useState(false)
   const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => () => clearTimeout(copiedTimer.current), [])
 
   const onCopy = () => {
-    void window.api.copyText(toast.message)
+    void window.api.copyText(message)
     setCopied(true)
     clearTimeout(copiedTimer.current)
     copiedTimer.current = setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS)
@@ -153,7 +156,7 @@ function ToastCard({
           danger ? 'text-danger' : 'text-fg'
         }`}
       >
-        {toast.message}
+        {message}
       </span>
       {toast.action && (
         <button
@@ -162,7 +165,7 @@ function ToastCard({
           onClick={toast.action.onAction}
           className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-1.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
         >
-          {toast.action.label}
+          {text(toast.action.label)}
         </button>
       )}
       {danger && (
