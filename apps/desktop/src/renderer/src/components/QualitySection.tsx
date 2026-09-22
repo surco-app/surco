@@ -2,9 +2,10 @@ import { ImageDown, TriangleAlert } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { OutputSampleRate } from '../../../shared/types'
+import type { NormalizeConfig, OutputSampleRate } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useSpectrogram } from '../hooks/useSpectrogram'
+import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { cleanIpcError, errorKeyOf } from '../lib/ipcError'
 import {
   formatKHz,
@@ -17,6 +18,8 @@ import {
 import { renderQualityReport } from '../lib/qualityReport'
 import { useToast } from '../lib/toastContext'
 import type { TrackItem } from '../types'
+import { LoudnessReadout } from './LoudnessReadout'
+import { LoudnessSkeleton } from './LoudnessSkeleton'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
@@ -49,6 +52,11 @@ const qualityCaption: Record<Verdict, string> = {
 interface Props {
   item: TrackItem
   showSpectrum: boolean
+  // The loudness table lives in Normalize; the editor sets this only when that section
+  // is hidden from the layout, so the table the Loudness setting promises stays reachable.
+  showLoudness?: boolean
+  normalize?: NormalizeConfig
+  onShowLoudnessHelp?: () => void
   open: boolean
   onToggle: () => void
   showHints?: boolean
@@ -59,11 +67,15 @@ interface Props {
 
 // The audio-quality section: spectrogram with its lossless-cutoff verdict. Owns the
 // probe — the hover prefetch and the "analyze all" sweep warm the same cache key, so
-// an already-warmed track shows instantly.
+// an already-warmed track shows instantly. Hosts the loudness table only as the
+// fallback for a layout without the Normalize section.
 // The editor only mounts this in single-track mode.
 export function QualitySection({
   item,
   showSpectrum,
+  showLoudness = false,
+  normalize,
+  onShowLoudnessHelp = () => {},
   open,
   onToggle,
   showHints = true,
@@ -82,6 +94,7 @@ export function QualitySection({
   // the cache still renders instantly — a disabled query keeps returning its cached data.
   const spectrumQuery = useSpectrogram(item.inputPath, settled && showSpectrum && open)
   const spectrum = spectrumQuery.data
+  const { data: loudness } = useTrackLoudness(item.inputPath, settled && showLoudness && open)
   const analyzeFailed = spectrumQuery.isError
   // Show the scanning frame the instant the section opens, not only once the query reports
   // fetching: for the first tick after open the query hasn't started, so `isFetching` is
@@ -413,6 +426,17 @@ export function QualitySection({
                   )}
               </>
             ) : null)}
+          {showLoudness &&
+            normalize &&
+            (loudness ? (
+              <LoudnessReadout
+                loudness={loudness}
+                normalize={normalize}
+                onShowHelp={onShowLoudnessHelp}
+              />
+            ) : (
+              open && settled && loudness === undefined && <LoudnessSkeleton />
+            ))}
         </div>
       </SectionBody>
     </div>
