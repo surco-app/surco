@@ -753,16 +753,14 @@ describe('TrimSection', () => {
     expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.699, endSec: 90.3 })
   })
 
-  // Folded, the section is one row: a switch and what the conversion will cut, in
-  // words. A zero side is left out rather than read as "0.0 s at the start".
-  it('states the staged cut in words beside a switch that is on', () => {
+  it('states the staged cut in words with no switch, since the cut itself is the state', () => {
     const { rerender } = render(
       section({ value: { startSec: 9.7, endSec: 90.3 }, open: false, durationSec: 100 }),
     )
     expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent(
       'Removes 9.7 s at the start and 9.7 s at the end',
     )
-    expect(screen.getByTestId('trim-switch')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.queryByTestId('trim-switch')).not.toBeInTheDocument()
     expect(screen.queryByTestId('trim-active-badge')).not.toBeInTheDocument()
     rerender(section({ value: { endSec: 96.4 }, open: false, durationSec: 100 }))
     expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent(
@@ -770,45 +768,26 @@ describe('TrimSection', () => {
     )
   })
 
-  it('clears the staged cut when switched off', () => {
-    const onChange = vi.fn()
-    render(section({ value: { startSec: 9.7 }, open: false, durationSec: 100, onChange }))
-    fireEvent.click(screen.getByTestId('trim-switch'))
-    expect(onChange).toHaveBeenCalledWith(undefined)
-  })
-
-  // The detection needs the full decode, which only runs once the section has been open.
-  // A folded row must not start that decode just to fill a sentence, so until then it
-  // says what the section does and its switch has nothing to apply.
   it('says what it does without decoding while nothing has been measured', () => {
     render(section({ open: false, durationSec: 100 }))
     expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent(
       'Trims the silence at the start and end',
     )
-    expect(screen.getByTestId('trim-switch')).toBeDisabled()
+    expect(screen.queryByTestId('trim-switch')).not.toBeInTheDocument()
     expect(window.api.waveform).not.toHaveBeenCalled()
   })
 
-  // Once the wave is known the row says what was found, and switching it on stages the
-  // detected cut at both ends, the same as applying the suggestion.
-  it('offers the detected silence and stages it on both ends when switched on', async () => {
-    const onChange = vi.fn()
-    const onToggle = vi.fn()
-    const { rerender } = render(section({ onChange, onToggle }))
+  it('says what silence was found once the wave is known', async () => {
+    const { rerender } = render(section())
     await screen.findByTestId('trim-apply-start', undefined, { timeout: 3000 })
-    rerender(section({ onChange, onToggle, open: false }))
+    rerender(section({ open: false }))
     expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent(
       '9.9 s of silence at the start and 9.9 s at the end',
     )
-    const toggle = screen.getByTestId('trim-switch')
-    expect(toggle).toHaveAttribute('aria-checked', 'false')
-    fireEvent.click(toggle)
-    expect(onChange).toHaveBeenCalledWith({ startSec: 9.9, endSec: 90.1 })
-    expect(onToggle).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('trim-switch')).not.toBeInTheDocument()
   })
 
-  // Nothing to cut is a state, not a missing control: the switch stays, disabled.
-  it('keeps the switch disabled when the track starts and ends on music', async () => {
+  it('says there is nothing to cut when the track starts and ends on music', async () => {
     ;(window as unknown as { api: { waveform: unknown } }).api.waveform = vi
       .fn()
       .mockResolvedValue(musicOnlyWave())
@@ -816,7 +795,6 @@ describe('TrimSection', () => {
     await screen.findByTestId('trim-detected', undefined, { timeout: 3000 })
     rerender(section({ open: false }))
     expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent('No silence to remove')
-    expect(screen.getByTestId('trim-switch')).toBeDisabled()
   })
 
   it('marca el handle enfocado aunque el foco haya llegado con el ratón', async () => {

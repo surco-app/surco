@@ -67,7 +67,7 @@ describe('SectionHeader switch row', () => {
         summaryTestId="trim-row-sentence"
         help="What trim does"
         right={<span data-testid="pill">pill</span>}
-        toggle={{ checked: false, onChange: onSwitch, testId: 'trim-switch' }}
+        toggle={{ checked: false, onChange: onSwitch, testId: 'section-switch' }}
         {...over}
       />,
     )
@@ -88,7 +88,7 @@ describe('SectionHeader switch row', () => {
   // both would open a tool the user only meant to turn on.
   it('flips the switch without folding or unfolding the section', () => {
     const { onToggle, onSwitch } = header()
-    fireEvent.click(screen.getByTestId('trim-switch'))
+    fireEvent.click(screen.getByTestId('section-switch'))
     expect(onSwitch).toHaveBeenCalledWith(true)
     expect(onToggle).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'TRIM' }))
@@ -99,17 +99,17 @@ describe('SectionHeader switch row', () => {
   // shape between tracks.
   it('keeps a switch with nothing to do on screen but disabled', () => {
     const { onSwitch } = header({
-      toggle: { checked: false, disabled: true, onChange: vi.fn(), testId: 'trim-switch' },
+      toggle: { checked: false, disabled: true, onChange: vi.fn(), testId: 'section-switch' },
     })
-    expect(screen.getByTestId('trim-switch')).toBeDisabled()
-    fireEvent.click(screen.getByTestId('trim-switch'))
+    expect(screen.getByTestId('section-switch')).toBeDisabled()
+    fireEvent.click(screen.getByTestId('section-switch'))
     expect(onSwitch).not.toHaveBeenCalled()
   })
 
   // Open, the full tool is below: the header keeps the switch and its usual extras.
   it('keeps the switch and the extras once open', () => {
     header({ open: true })
-    expect(screen.getByTestId('trim-switch')).toBeInTheDocument()
+    expect(screen.getByTestId('section-switch')).toBeInTheDocument()
     expect(screen.getByTestId('pill')).toBeInTheDocument()
     expect(screen.getByTestId('section-help')).toBeInTheDocument()
   })
