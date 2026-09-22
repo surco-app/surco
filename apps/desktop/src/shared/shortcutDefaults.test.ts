@@ -36,6 +36,12 @@ describe('matchChord', () => {
     expect(matchChord(b, ['/'], false)).toBe('search')
   })
 
+  // Finder's Get Info chord, the keyboard way to the file's facts. It fires from a
+  // focused field too, like the other mod chords.
+  it('binds ⌘I to the track info window', () => {
+    expect(matchChord(b, ['mod', 'i'], true)).toBe('info')
+  })
+
   // The list-wide toolbar actions are bindable too, so the palette, the keymap and the
   // Shortcuts tab all expose them.
   it('resolves the list-wide action chords', () => {

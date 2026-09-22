@@ -87,6 +87,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     openStripNumbering: () => {},
     openExport: () => {},
     openRename: () => {},
+    openInfo: () => {},
     openActivity: () => {},
     openHelp: () => {},
     openOnboarding: () => {},
@@ -431,6 +432,21 @@ describe('buildCommands platform-gated entries', () => {
 
   it('disables reveal with no track selected', () => {
     expect(commandById(makeDeps({ selected: null }), 'reveal').enabled).toBe(false)
+  })
+
+  // ⌘I opens the file's technical facts for the track the editor is showing, whether
+  // or not the Properties section is part of the user's editor layout.
+  it('opens the info window for the selected track', () => {
+    const openInfo = vi.fn()
+    const selected = track()
+    const info = commandById(makeDeps({ openInfo, selected }), 'info')
+    expect(info.enabled).toBe(true)
+    info.run()
+    expect(openInfo).toHaveBeenCalledWith(selected)
+  })
+
+  it('disables info with no track selected', () => {
+    expect(commandById(makeDeps({ selected: null }), 'info').enabled).toBe(false)
   })
 
   // The ←/→ seek nudges the playhead by ±5s and is gated on the player being open, so the

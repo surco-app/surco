@@ -1428,6 +1428,7 @@ export default function App(): React.JSX.Element {
         canPasteMeta={copiedMeta !== null}
         onRemove={removeFromList}
         onTrash={onTrashRow}
+        onInfo={overlays.openInfo}
       />
     ),
   )
@@ -1633,6 +1634,7 @@ export default function App(): React.JSX.Element {
       openStripNumbering: overlays.openStripNumbering,
       openExport: overlays.openExport,
       openRename: overlays.openRename,
+      openInfo: overlays.openInfo,
       openActivity: () => setActivityOpen(true),
       openHelp: overlays.openHelp,
       openOnboarding: overlays.openOnboarding,

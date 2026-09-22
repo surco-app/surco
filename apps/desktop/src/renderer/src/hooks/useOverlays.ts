@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { SettingsTab } from '../lib/settingsTabs'
+import type { TrackItem } from '../types'
 
 export type { SettingsTab }
 
@@ -25,6 +26,7 @@ export type ActiveModal =
   | { type: 'findReplace' }
   | { type: 'stripNumbering' }
   | { type: 'rename' }
+  | { type: 'info'; track: TrackItem }
   | { type: 'export' }
   | { type: 'applePlaylist' }
   | { type: 'palette' }
@@ -42,6 +44,7 @@ export interface Overlays {
   openFindReplace: () => void
   openStripNumbering: () => void
   openRename: () => void
+  openInfo: (track: TrackItem) => void
   openExport: () => void
   openApplePlaylist: () => void
   openPalette: () => void
@@ -75,6 +78,7 @@ export function useOverlays(): Overlays {
   const openFindReplace = useCallback(() => setActiveModal({ type: 'findReplace' }), [])
   const openStripNumbering = useCallback(() => setActiveModal({ type: 'stripNumbering' }), [])
   const openRename = useCallback(() => setActiveModal({ type: 'rename' }), [])
+  const openInfo = useCallback((track: TrackItem) => setActiveModal({ type: 'info', track }), [])
   const openExport = useCallback(() => setActiveModal({ type: 'export' }), [])
   const openApplePlaylist = useCallback(() => setActiveModal({ type: 'applePlaylist' }), [])
   const openPalette = useCallback(() => setActiveModal({ type: 'palette' }), [])
@@ -102,6 +106,7 @@ export function useOverlays(): Overlays {
     openFindReplace,
     openStripNumbering,
     openRename,
+    openInfo,
     openExport,
     openApplePlaylist,
     openPalette,

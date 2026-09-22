@@ -37,6 +37,7 @@ const StripNumberingModal = lazy(() =>
   import('./StripNumberingModal').then((m) => ({ default: m.StripNumberingModal })),
 )
 const RenameModal = lazy(() => import('./RenameModal').then((m) => ({ default: m.RenameModal })))
+const InfoModal = lazy(() => import('./InfoModal').then((m) => ({ default: m.InfoModal })))
 const ExportModal = lazy(() => import('./ExportModal').then((m) => ({ default: m.ExportModal })))
 const CommandPalette = lazy(() =>
   import('./CommandPalette').then((m) => ({ default: m.CommandPalette })),
@@ -159,6 +160,7 @@ export function Overlays({
           onClose={close}
         />
       )}
+      {activeModal?.type === 'info' && <InfoModal track={activeModal.track} onClose={close} />}
       {activeModal?.type === 'export' && <ExportModal tracks={bulkTracks} onClose={close} />}
       {activeModal?.type === 'applePlaylist' && importApplePlaylist && (
         <ApplePlaylistModal

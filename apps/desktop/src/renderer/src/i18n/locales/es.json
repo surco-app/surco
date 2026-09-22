@@ -11,6 +11,9 @@
     "description": "Combina texto y metadatos para generar el nombre del archivo.",
     "apply": "Aplicar"
   },
+  "info": {
+    "title": "Información"
+  },
   "export": {
     "title": "Exportar colección",
     "subtitle": "Surco guarda un fichero de colección. Tu software DJ lo lee como fuente de importación — no se añade nada a su biblioteca automáticamente; importas las pistas desde ahí.",
@@ -254,6 +257,7 @@
     "search": "Buscar en la lista de pistas",
     "settings": "Ajustes",
     "clearAll": "Vaciar la lista",
+    "info": "Información de la pista",
     "reveal": "Mostrar en Finder",
     "addAppleMusic": "Añadir a Apple Music",
     "help": "Ayuda y FAQ",
@@ -325,6 +329,7 @@
       "engineDj": "Añadiendo a Engine DJ…"
     },
     "context": {
+      "info": "Información",
       "reveal": "Mostrar en Finder",
       "revealWin": "Mostrar en el Explorador",
       "open": "Abrir archivo",

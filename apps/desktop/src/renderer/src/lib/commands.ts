@@ -210,6 +210,7 @@ export interface CommandDeps {
   openFindReplace: () => void
   openExport: () => void
   openRename: () => void
+  openInfo: (track: TrackItem) => void
   openActivity: () => void
   openHelp: () => void
   openOnboarding: () => void
@@ -318,6 +319,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     openFindReplace,
     openExport,
     openRename,
+    openInfo,
     openActivity,
     openHelp,
     openOnboarding,
@@ -696,6 +698,14 @@ export function buildCommands(deps: CommandDeps): Command[] {
         const path = selected?.outputPath ?? selected?.inputPath
         if (path) reveal(path)
       },
+    },
+    {
+      id: 'info',
+      group: 'library',
+      title: tr('commands.info'),
+      hint: hintFor('info'),
+      enabled: !!selected,
+      run: () => selected && openInfo(selected),
     },
     {
       // Builds the output name from a pattern. Only one track has a File name section

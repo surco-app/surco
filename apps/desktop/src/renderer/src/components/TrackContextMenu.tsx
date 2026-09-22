@@ -20,6 +20,7 @@ interface Props {
   canPasteMeta: boolean
   onRemove: (id: string) => void
   onTrash: (track: TrackItem) => void
+  onInfo: (track: TrackItem) => void
 }
 
 function MenuItem({
@@ -68,6 +69,7 @@ export function TrackContextMenu({
   canPasteMeta,
   onRemove,
   onTrash,
+  onInfo,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const menuRef = useRef<HTMLDivElement>(null)
@@ -179,6 +181,11 @@ export function TrackContextMenu({
           onClick={() => run(() => onStartOver(track))}
         />
         <div className="my-1 h-px bg-[var(--color-line)]" />
+        <MenuItem
+          testid="track-menu-info"
+          label={tr('trackList.context.info')}
+          onClick={() => run(() => onInfo(track))}
+        />
         <MenuItem
           testid="track-menu-reveal"
           label={tr(isWin ? 'trackList.context.revealWin' : 'trackList.context.reveal')}

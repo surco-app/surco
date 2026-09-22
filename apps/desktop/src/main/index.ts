@@ -369,6 +369,12 @@ function buildAppMenu(win: BrowserWindow): void {
           registerAccelerator: false,
           click: keymapMenuClick(run, 'add'),
         },
+        {
+          label: t('info'),
+          accelerator: accel('info'),
+          registerAccelerator: false,
+          click: keymapMenuClick(run, 'info'),
+        },
         // Reveal is renderer-owned like the others now (it used to register ⌘R itself):
         // its chord is configurable, so the keystroke must reach the keymap, not the menu.
         {

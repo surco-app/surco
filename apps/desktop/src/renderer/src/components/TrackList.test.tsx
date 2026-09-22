@@ -117,6 +117,7 @@ function renderList(
           canPasteMeta={canPasteMeta}
           onRemove={onRemove}
           onTrash={onTrash}
+          onInfo={vi.fn()}
         />
       )}
     />,
