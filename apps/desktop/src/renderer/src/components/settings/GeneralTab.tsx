@@ -6,7 +6,12 @@ import { formatFileSize } from '../../lib/properties'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchLocal, PatchSynced } from '../../lib/settingsTabs'
 import { SegmentedControl } from '../SegmentedControl'
-import { SettingsCheckboxField, SettingsField, SettingsSection } from './SettingsPrimitives'
+import {
+  AdvancedDisclosure,
+  SettingsCheckboxField,
+  SettingsField,
+  SettingsSection,
+} from './SettingsPrimitives'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR']
@@ -80,7 +85,11 @@ export function GeneralTab({
               labelFor={(id) => tr(`settings.languages.${id}`)}
             />
           </SettingsField>
+        </div>
+      </SettingsSection>
 
+      <AdvancedDisclosure id="general">
+        <div className="flex flex-col gap-5">
           <SettingsField label={tr('settings.configDir')} hint={tr('settings.configDirHint')}>
             <div className="flex gap-2">
               <input
@@ -178,22 +187,22 @@ export function GeneralTab({
             </button>
           </SettingsField>
         </div>
-      </SettingsSection>
 
-      {/* Its own section, with the rule and eyebrow every other block on this tab has:
+        {/* Its own section, with the rule and eyebrow every other block on this tab has:
         dropped in bare it sat under the settings-folder hint and read as an option OF
         that folder, when it is about which builds this machine installs. Machine-bound
         (see settings.ts), so it stages through patchLocal — a synced flag would drag a
         tester's laptop channel onto the machine he plays gigs from. */}
-      <SettingsSection eyebrow={tr('settings.updates')}>
-        <SettingsCheckboxField
-          testid="settings-beta-updates"
-          checked={local.betaUpdates}
-          onChange={(v) => patchLocal('betaUpdates', v)}
-          label={tr('settings.betaUpdates')}
-          hint={tr('settings.betaUpdatesHint')}
-        />
-      </SettingsSection>
+        <SettingsSection eyebrow={tr('settings.updates')}>
+          <SettingsCheckboxField
+            testid="settings-beta-updates"
+            checked={local.betaUpdates}
+            onChange={(v) => patchLocal('betaUpdates', v)}
+            label={tr('settings.betaUpdates')}
+            hint={tr('settings.betaUpdatesHint')}
+          />
+        </SettingsSection>
+      </AdvancedDisclosure>
     </>
   )
 }

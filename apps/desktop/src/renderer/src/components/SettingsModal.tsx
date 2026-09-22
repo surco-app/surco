@@ -29,6 +29,7 @@ import { LayoutTab } from './settings/LayoutTab'
 import { NamingTab } from './settings/NamingTab'
 import { ProcessingTab } from './settings/ProcessingTab'
 import { SearchTab } from './settings/SearchTab'
+import { SettingsAdvancedProvider } from './settings/SettingsPrimitives'
 import { ShortcutsTab } from './settings/ShortcutsTab'
 import { StatsTab } from './settings/StatsTab'
 
@@ -281,101 +282,103 @@ export function SettingsModal({
         ))}
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col p-6">
-        <div className="relative flex min-h-[280px] flex-1 flex-col">
-          <div
-            ref={bodyRef}
-            role="tabpanel"
-            id="settings-tabpanel"
-            aria-labelledby={`settings-tab-${tab}`}
-            className="-mr-2 flex-1 overflow-x-hidden overflow-y-auto pr-2"
-          >
-            {tab === 'general' && (
-              <GeneralTab
-                synced={synced}
-                patch={patch}
-                local={local}
-                patchLocal={patchLocal}
-                onPreviewTheme={onPreviewTheme}
-                configDir={configDir}
-                defaultDir={defaultDir}
-                onChangeConfigDir={changeConfigDir}
-                onResetConfigDir={() => moveConfigDir(null)}
-                onExportSettings={exportSettings}
-                onImportSettings={importSettings}
-              />
-            )}
-            {tab === 'search' && (
-              <SearchTab synced={synced} local={local} patch={patch} patchLocal={patchLocal} />
-            )}
-            {tab === 'conversion' && <ConversionTab synced={synced} patch={patch} />}
-            {tab === 'processing' && <ProcessingTab synced={synced} patch={patch} />}
-            {tab === 'destination' && (
-              <DestinationTab
-                synced={synced}
-                local={local}
-                patch={patch}
-                onOutputDirChange={(dir) => patchLocal('outputDir', dir)}
-                onChangeEngineDir={(dir) => patchLocal('engineLibraryDir', dir)}
-                onChangeTraktorNmlPath={changeTraktorNmlPath}
-                rekordboxCollection={rekordboxCollection}
-                onChangeRekordboxDbPath={() => void changeRekordboxDbPath()}
-                detectedNmlPath={detectedNmlPath}
-                onAcceptDetectedNmlPath={acceptDetectedNmlPath}
-              />
-            )}
-            {tab === 'naming' && <NamingTab synced={synced} patch={patch} />}
-            {tab === 'editor' && <EditorTab synced={synced} patch={patch} />}
-            {tab === 'layout' && <LayoutTab synced={synced} patch={patch} />}
-            {tab === 'artwork' && <ArtworkTab synced={synced} patch={patch} />}
-            {tab === 'fields' && (
-              <FieldsEditor
-                visibleFields={synced.visibleFields}
-                requiredFields={synced.requiredFields}
-                importFields={synced.importFields}
-                onChangeVisible={(fields) => patch('visibleFields', fields)}
-                onChangeRequired={(fields) => patch('requiredFields', fields)}
-                onChangeImport={(fields) => patch('importFields', fields)}
-              />
-            )}
-            {tab === 'shortcuts' && (
-              <ShortcutsTab
-                synced={synced}
-                patch={patch}
-                bindings={bindings}
-                conflictIds={conflictIds}
-              />
-            )}
-            {tab === 'stats' && <StatsTab settings={settings} />}
-          </div>
-          {/* Fades the cut-off last line into the panel while there's more below, then
+      <SettingsAdvancedProvider>
+        <div className="flex min-w-0 flex-1 flex-col p-6">
+          <div className="relative flex min-h-[280px] flex-1 flex-col">
+            <div
+              ref={bodyRef}
+              role="tabpanel"
+              id="settings-tabpanel"
+              aria-labelledby={`settings-tab-${tab}`}
+              className="-mr-2 flex-1 overflow-x-hidden overflow-y-auto pr-2"
+            >
+              {tab === 'general' && (
+                <GeneralTab
+                  synced={synced}
+                  patch={patch}
+                  local={local}
+                  patchLocal={patchLocal}
+                  onPreviewTheme={onPreviewTheme}
+                  configDir={configDir}
+                  defaultDir={defaultDir}
+                  onChangeConfigDir={changeConfigDir}
+                  onResetConfigDir={() => moveConfigDir(null)}
+                  onExportSettings={exportSettings}
+                  onImportSettings={importSettings}
+                />
+              )}
+              {tab === 'search' && (
+                <SearchTab synced={synced} local={local} patch={patch} patchLocal={patchLocal} />
+              )}
+              {tab === 'conversion' && <ConversionTab synced={synced} patch={patch} />}
+              {tab === 'processing' && <ProcessingTab synced={synced} patch={patch} />}
+              {tab === 'destination' && (
+                <DestinationTab
+                  synced={synced}
+                  local={local}
+                  patch={patch}
+                  onOutputDirChange={(dir) => patchLocal('outputDir', dir)}
+                  onChangeEngineDir={(dir) => patchLocal('engineLibraryDir', dir)}
+                  onChangeTraktorNmlPath={changeTraktorNmlPath}
+                  rekordboxCollection={rekordboxCollection}
+                  onChangeRekordboxDbPath={() => void changeRekordboxDbPath()}
+                  detectedNmlPath={detectedNmlPath}
+                  onAcceptDetectedNmlPath={acceptDetectedNmlPath}
+                />
+              )}
+              {tab === 'naming' && <NamingTab synced={synced} patch={patch} />}
+              {tab === 'editor' && <EditorTab synced={synced} patch={patch} />}
+              {tab === 'layout' && <LayoutTab synced={synced} patch={patch} />}
+              {tab === 'artwork' && <ArtworkTab synced={synced} patch={patch} />}
+              {tab === 'fields' && (
+                <FieldsEditor
+                  visibleFields={synced.visibleFields}
+                  requiredFields={synced.requiredFields}
+                  importFields={synced.importFields}
+                  onChangeVisible={(fields) => patch('visibleFields', fields)}
+                  onChangeRequired={(fields) => patch('requiredFields', fields)}
+                  onChangeImport={(fields) => patch('importFields', fields)}
+                />
+              )}
+              {tab === 'shortcuts' && (
+                <ShortcutsTab
+                  synced={synced}
+                  patch={patch}
+                  bindings={bindings}
+                  conflictIds={conflictIds}
+                />
+              )}
+              {tab === 'stats' && <StatsTab settings={settings} />}
+            </div>
+            {/* Fades the cut-off last line into the panel while there's more below, then
             clears at the end — the "keep scrolling" cue the faint scrollbar didn't give. */}
-          <div
-            aria-hidden="true"
-            className={`pointer-events-none absolute inset-x-0 bottom-0 mr-2 h-10 bg-gradient-to-t from-[var(--color-panel)] to-transparent transition-opacity duration-200 ${
-              moreBelow ? 'opacity-100' : 'opacity-0'
-            }`}
-          />
-        </div>
+            <div
+              aria-hidden="true"
+              className={`pointer-events-none absolute inset-x-0 bottom-0 mr-2 h-10 bg-gradient-to-t from-[var(--color-panel)] to-transparent transition-opacity duration-200 ${
+                moreBelow ? 'opacity-100' : 'opacity-0'
+              }`}
+            />
+          </div>
 
-        <div className="-mx-6 mt-6 flex shrink-0 justify-end gap-2 border-t border-[var(--color-line)] px-6 pt-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="press rounded-lg px-4 py-2 text-sm text-fg-muted hover:text-fg"
-          >
-            {tr('common.cancel')}
-          </button>
-          <button
-            type="submit"
-            data-testid="settings-save"
-            disabled={conflictIds.size > 0}
-            className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
-          >
-            {tr('common.save')}
-          </button>
+          <div className="-mx-6 mt-6 flex shrink-0 justify-end gap-2 border-t border-[var(--color-line)] px-6 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="press rounded-lg px-4 py-2 text-sm text-fg-muted hover:text-fg"
+            >
+              {tr('common.cancel')}
+            </button>
+            <button
+              type="submit"
+              data-testid="settings-save"
+              disabled={conflictIds.size > 0}
+              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+            >
+              {tr('common.save')}
+            </button>
+          </div>
         </div>
-      </div>
+      </SettingsAdvancedProvider>
     </ModalShell>
   )
 }
