@@ -1277,7 +1277,6 @@ export default function App(): React.JSX.Element {
       id: string,
       format?: FormatSetting,
       normalize?: NormalizeConfig,
-      forceReencode?: boolean,
       destination?: Destination,
       declick?: DeclickMode,
       // Runs the moment the conversion actually starts — immediately when it fires straight
@@ -1289,17 +1288,11 @@ export default function App(): React.JSX.Element {
       askConvertOne(
         () => {
           onStarted?.()
-          void processOne(
-            id,
-            format,
-            normalize,
-            undefined,
-            forceReencode,
-            destination,
-            declick,
-          ).then((outcome) => {
-            if (outcome === 'converted') void maybeShowDonateNudge()
-          })
+          void processOne(id, format, normalize, undefined, destination, declick).then(
+            (outcome) => {
+              if (outcome === 'converted') void maybeShowDonateNudge()
+            },
+          )
         },
         {
           destination,
@@ -1320,20 +1313,6 @@ export default function App(): React.JSX.Element {
         selected.id,
         format,
         editorNormalizeRef.current ?? undefined,
-        undefined,
-        editorDestinationRef.current ?? undefined,
-        editorDeclickRef.current ?? undefined,
-      )
-  })
-  // The editor's explicit "Re-encode": a same-format source rendered again with the
-  // pinned quality applied — the only path that sets forceReencode.
-  const onReencodeSelected = useStableCallback((format: OutputFormat) => {
-    if (selected)
-      void convertSelected(
-        selected.id,
-        format,
-        editorNormalizeRef.current ?? undefined,
-        true,
         editorDestinationRef.current ?? undefined,
         editorDeclickRef.current ?? undefined,
       )
@@ -1960,7 +1939,6 @@ export default function App(): React.JSX.Element {
                         onChange={onEditorChange}
                         onProcess={onProcessSelected}
                         onCancel={onCancelSelected}
-                        onReencode={onReencodeSelected}
                         onFormatChange={onFormatChange}
                         onDestinationChange={onDestinationChange}
                         onNormalizeChange={onNormalizeChange}

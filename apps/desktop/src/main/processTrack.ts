@@ -46,7 +46,6 @@ export interface ProcessTrackDeps {
     coverPath?: string,
     normalize?: NormalizeConfig,
     removeCover?: boolean,
-    forceReencode?: boolean,
     onChild?: (child: { kill: (signal: string) => void }) => void,
     onTmp?: (path: string) => void,
     declick?: DeclickMode,
@@ -188,7 +187,6 @@ export async function runProcessTrack(
       format,
       settings.outputDir,
       job.overwriteOriginal ?? settings.overwriteOriginal,
-      job.forceReencode ?? false,
       besideOriginal,
     )
     const outputPath = resolved.outputPath
@@ -277,7 +275,6 @@ export async function runProcessTrack(
         coverPath,
         job.normalize ?? settings.normalize,
         job.removeCover,
-        job.forceReencode,
         (child) => deps.registerActiveConversion(job.id, (signal) => child.kill(signal)),
         (path) => {
           tmpPath = path

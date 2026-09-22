@@ -66,7 +66,6 @@ describe('convertAudio — killed mid-encode', () => {
       undefined,
       undefined,
       undefined,
-      undefined,
       (child) => child.kill('SIGTERM'),
     )
 

@@ -277,7 +277,7 @@ describe('buildCommands convert-and-advance', () => {
   // it fires when the run actually commits, not while a confirm dialog is still open.
   it('processes the selected track then advances the selection when the run starts', () => {
     // Fire onStarted synchronously, standing in for a conversion that starts with no confirm.
-    const processOne = vi.fn((_id, _f, _n, _r, _d, _dk, onStarted?: () => void) => onStarted?.())
+    const processOne = vi.fn((_id, _f, _n, _d, _dk, onStarted?: () => void) => onStarted?.())
     const moveSelection = vi.fn()
     const cmd = commandById(
       makeDeps({ selected: track(), canProcessSelected: true, processOne, moveSelection }),
@@ -286,7 +286,6 @@ describe('buildCommands convert-and-advance', () => {
     cmd.run()
     expect(processOne).toHaveBeenCalledWith(
       't1',
-      undefined,
       undefined,
       undefined,
       undefined,

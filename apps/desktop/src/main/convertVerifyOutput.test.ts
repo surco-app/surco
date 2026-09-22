@@ -366,7 +366,6 @@ describe.skipIf(platform() === 'win32')('a conversion whose encode wrote unreada
       undefined,
       undefined,
       undefined,
-      undefined,
       (p) => {
         tmpPath = p
       },

@@ -640,7 +640,7 @@ describe('useTrackProcessing', () => {
       { wrapper: withClient() },
     )
     await act(async () => {
-      await result.current.processOne('a', undefined, undefined, undefined, undefined, 'engineDj')
+      await result.current.processOne('a', undefined, undefined, undefined, 'engineDj')
     })
     expect(processTrack).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -668,7 +668,7 @@ describe('useTrackProcessing', () => {
       { wrapper: withClient() },
     )
     await act(async () => {
-      await result.current.processOne('a', undefined, undefined, undefined, undefined, 'overwrite')
+      await result.current.processOne('a', undefined, undefined, undefined, 'overwrite')
     })
     expect(processTrack).toHaveBeenCalledWith(
       expect.objectContaining({ outputName: 'a.wav', overwriteOriginal: true }),

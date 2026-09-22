@@ -118,7 +118,6 @@ describe('convertAudio with Finder covers enabled', () => {
       undefined,
       undefined,
       undefined,
-      undefined,
       true,
     )
     const buf = readFileSync(out)
@@ -139,7 +138,6 @@ describe('convertAudio with Finder covers enabled', () => {
       out,
       'flac',
       meta,
-      undefined,
       undefined,
       undefined,
       undefined,
@@ -184,7 +182,6 @@ describe('convertAudio with Finder covers enabled', () => {
       out,
       'flac',
       meta,
-      undefined,
       undefined,
       undefined,
       undefined,

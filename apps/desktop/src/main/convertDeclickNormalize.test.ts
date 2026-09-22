@@ -165,7 +165,6 @@ describe('convertAudio declick × normalize', () => {
       undefined,
       undefined,
       undefined,
-      undefined,
       'standard',
     )
     // Clicks repaired, then the linear gain: the 0.9 impulses would have survived
@@ -189,7 +188,6 @@ describe('convertAudio declick × normalize', () => {
       // A target the measured audio cannot reach linearly (the gain would push the
       // true peak past the ceiling), so the volume+alimiter path runs.
       { mode: 'loudness', targetLufs: -3, truePeakDb: -1, peakDb: -1 },
-      undefined,
       undefined,
       undefined,
       undefined,
@@ -231,7 +229,6 @@ describe('convertAudio declick × normalize', () => {
       undefined,
       undefined,
       undefined,
-      undefined,
       'standard',
     )
     const [left, right] = channelStats(out)
@@ -264,7 +261,6 @@ describe('convertAudio declick × normalize', () => {
         meta,
         undefined,
         peak,
-        undefined,
         undefined,
         undefined,
         undefined,

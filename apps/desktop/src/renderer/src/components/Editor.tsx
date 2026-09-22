@@ -23,7 +23,6 @@ import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useStableCallback } from '../hooks/useStableCallback'
-import { useTrackProperties } from '../hooks/useTrackProperties'
 import type { AppleMusicIndex, StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
@@ -38,7 +37,7 @@ import { librarySourceOf } from '../lib/librarySource'
 import { renderOutputName, titleFormatPatches } from '../lib/outputName'
 import { isMacOS } from '../lib/platform'
 import { splitPosition } from '../lib/position'
-import { formatKHz, isLowResCover } from '../lib/quality'
+import { isLowResCover } from '../lib/quality'
 import {
   bestMatch,
   buildReleaseMeta,
@@ -120,10 +119,6 @@ interface Props {
   // runs, so a long convert has the escape a batch always had. Multi cancels via the
   // toolbar batch pill, so this is single-only.
   onCancel?: () => void
-  // The explicit "re-encode this one" action: a same-format source rendered again
-  // with the pinned bit depth/sample rate. Offered only when the source doesn't
-  // meet the pins — the regular process button stays a metadata-only update.
-  onReencode?: (format: OutputFormat) => void
   // Reports the format chosen in the split-button menu so the keyboard convert
   // shortcuts (⌘⏎ / ⌘⇧⏎) export in it too, instead of the Settings default.
   onFormatChange?: (format: FormatSetting) => void
@@ -201,7 +196,6 @@ export const Editor = memo(function Editor({
   onChange,
   onProcess,
   onCancel,
-  onReencode,
   onFormatChange,
   onDestinationChange,
   onNormalizeChange,
@@ -256,7 +250,6 @@ export const Editor = memo(function Editor({
     keyNotation,
     normalize,
     declick,
-    outputBitDepth,
     outputSampleRate,
     editorSections,
   } = useAppSettings()
@@ -765,49 +758,6 @@ export const Editor = memo(function Editor({
   // must not carry the in-place rename warning.
   const willEditInPlace =
     !picked.convertBesideOriginal && editsInPlace(format, item.inputPath, picked.overwriteOriginal)
-  // Same-format exports never touch the audio (metadata-only, by design), so when the
-  // quality pins ask for something the source isn't, the honest move is an explicit
-  // offer: a passive line naming the gap plus a "Re-encode" action — never a silent
-  // re-encode. Lossless formats only (re-encoding an MP3 onto itself just degrades it);
-  // hidden in overwrite mode, whose contract is rewriting the source, not a fresh copy.
-  // 'corrected' is a per-file policy, not a fixed pin: whether THIS file gets
-  // resampled is its own verdict's call, so the pinned-rate re-encode note
-  // (which compares the source against one concrete number) treats it as
-  // unpinned instead of comparing rates against Number('corrected') = NaN.
-  const ratePinned = outputSampleRate !== 'source' && outputSampleRate !== 'corrected'
-  const qualityPinned = ratePinned || outputBitDepth !== 'source'
-  const reencodeCandidate =
-    !isMulti &&
-    !picked.overwriteOriginal &&
-    qualityPinned &&
-    format !== 'mp3' &&
-    formatMatchesInput(format, item.inputPath)
-  const sourceProps = useTrackProperties(item.inputPath, reencodeCandidate).data
-  const rateMismatch =
-    ratePinned &&
-    !!sourceProps?.sampleRateHz &&
-    sourceProps.sampleRateHz !== Number(outputSampleRate)
-  const depthMismatch =
-    outputBitDepth !== 'source' &&
-    sourceProps?.bitDepth != null &&
-    sourceProps.bitDepth !== Number(outputBitDepth)
-  const reencode =
-    reencodeCandidate && sourceProps && (rateMismatch || depthMismatch)
-      ? {
-          current: [
-            rateMismatch ? formatKHz(sourceProps.sampleRateHz) : '',
-            depthMismatch ? tr('editor.propBitDepthValue', { bits: sourceProps.bitDepth }) : '',
-          ]
-            .filter(Boolean)
-            .join(' / '),
-          target: [
-            rateMismatch ? formatKHz(Number(outputSampleRate)) : '',
-            depthMismatch ? tr('editor.propBitDepthValue', { bits: Number(outputBitDepth) }) : '',
-          ]
-            .filter(Boolean)
-            .join(' / '),
-        }
-      : undefined
   // Overwriting a lossless master (WAV/AIFF/FLAC) with MP3 is the one irreversible,
   // quality-losing case worth a sharper warning before the user commits to it.
   const lossyOverwrite =
@@ -1361,8 +1311,6 @@ export const Editor = memo(function Editor({
           incomplete={incomplete}
           incompleteReason={incompleteReason}
           willEditInPlace={willEditInPlace}
-          reencode={reencode}
-          onReencode={() => onReencode?.(format)}
           addToAppleMusic={picked.addToAppleMusic}
           addToEngineDj={picked.addToEngineDj}
           destination={destination}

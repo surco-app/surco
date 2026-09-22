@@ -100,7 +100,6 @@ describe('convertAudio trim', () => {
       undefined,
       undefined,
       undefined,
-      undefined,
       { startSec: 1, endSec: 3 },
     )
     // 4 s in, 2 s out — and a wav→wav conversion, so a stream copy would have
@@ -124,7 +123,6 @@ describe('convertAudio trim', () => {
       undefined,
       undefined,
       undefined,
-      undefined,
       { startSec: 1 },
     )
     expect(durationOf(out)).toBeGreaterThan(2.9)
@@ -140,7 +138,6 @@ describe('convertAudio trim', () => {
       meta,
       undefined,
       { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
-      undefined,
       undefined,
       undefined,
       undefined,

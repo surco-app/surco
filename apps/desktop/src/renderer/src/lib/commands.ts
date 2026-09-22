@@ -172,7 +172,6 @@ export interface CommandDeps {
     id: string,
     format?: FormatSetting,
     normalize?: NormalizeConfig,
-    forceReencode?: boolean,
     destination?: Destination,
     declick?: DeclickMode,
     // Fires when the conversion actually starts (after an overwrite confirm, if any), so
@@ -586,7 +585,6 @@ export function buildCommands(deps: CommandDeps): Command[] {
           selected.id,
           editorFormatRef.current ?? undefined,
           editorNormalizeRef.current ?? undefined,
-          undefined,
           editorDestinationRef.current ?? undefined,
           editorDeclickRef.current ?? undefined,
           () => moveSelection(1),

@@ -988,23 +988,19 @@ export interface ConversionPlan extends EncodeArgs {
 // `normalize` forces a re-encode: applying a loudness/peak filter changes the
 // samples, so a stream copy (which would emit the untouched source) is never
 // valid — every matching-format shortcut is gated on it being off.
-// `forceReencode` is the editor's explicit per-track "Re-encode" action: the one
-// path where a same-format source is rendered again (applying the pins) instead
-// of taking the metadata-only shortcut. Never set by bulk conversions.
 export async function planConversion(
   input: string,
   format: OutputFormat,
   probe: (input: string) => Promise<ProbeResult>,
   normalize = false,
   quality: Partial<ConversionQuality> = {},
-  forceReencode = false,
   // Injected so plan-level tests run without a real decode; conversions use the
   // real probe. A probe failure reads as "not padded": the plan then keeps the
   // declared width, which is the pre-probe behaviour.
   bitsProbe: typeof analyzeBitsUsage = analyzeBitsUsage,
 ): Promise<ConversionPlan> {
   const q = { ...DEFAULT_QUALITY, ...quality }
-  const copyOk = !normalize && !forceReencode
+  const copyOk = !normalize
   // One probe shared by every decision below; only spawned when something needs it,
   // so the fast paths (stream copy, plain MP3 encode) stay probe-free.
   let probed: Promise<ProbeResult> | undefined
@@ -1667,7 +1663,6 @@ export async function convertAudio(
   normalize?: NormalizeConfig,
   removeCover?: boolean,
   quality?: Partial<ConversionQuality>,
-  forceReencode?: boolean,
   // Learns the encode's child process the moment it spawns, so a cancel can kill
   // a conversion already in flight instead of only skipping ones not yet started.
   // Never fired for the stream-copy shortcut (copyFile spawns nothing) or the
@@ -1755,7 +1750,6 @@ export async function convertAudio(
     probeOnce,
     normalizing || declickAf !== undefined || trimAf !== undefined,
     resolvedQuality,
-    forceReencode ?? false,
   )
   const { codec, dither, ext } = plan
   const copiedVerbatim = codec === 'copy' && preservesCuesInPlace(ext)

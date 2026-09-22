@@ -45,19 +45,6 @@ describe('sanitizeOutputName', () => {
 })
 
 describe('resolveOutputTarget', () => {
-  // The editor's explicit "Re-encode" action: same format, but the user asked for a
-  // real conversion — it must land in the output folder, leaving the original alone.
-  // Overwrite mode is the exception: rewriting the source is its whole contract.
-  it('routes a forced re-encode to the output folder instead of in place', () => {
-    expect(resolveOutputTarget('/music/a.flac', 'a', 'flac', '/out', false, true)).toEqual({
-      outputPath: '/out/a.flac',
-      inPlace: false,
-    })
-    expect(resolveOutputTarget('/music/a.flac', 'a', 'flac', '/out', true, true)).toEqual({
-      outputPath: '/music/a.flac',
-      inPlace: true,
-    })
-  })
   // ALAC's extension is its container: the output must land as .m4a, and never in
   // place — a same-extension .m4a source might be lossy AAC the re-encode would replace.
   it('renders an ALAC target as a fresh .m4a in the output folder', () => {
@@ -121,9 +108,7 @@ describe('resolveOutputTarget', () => {
   // from ever unlinking the source, whatever the format.
   describe('beside-original mode', () => {
     it('lands a conversion next to the source, original kept', () => {
-      expect(
-        resolveOutputTarget('/music/old.wav', 'old', 'flac', '/out', false, false, true),
-      ).toEqual({
+      expect(resolveOutputTarget('/music/old.wav', 'old', 'flac', '/out', false, true)).toEqual({
         outputPath: '/music/old.flac',
         inPlace: false,
       })
@@ -132,19 +117,8 @@ describe('resolveOutputTarget', () => {
     it('is never in place, even when the format matches the source', () => {
       // Same extension resolves to the source's own path here; the caller bumps it to
       // "old (2).wav" — what matters is inPlace false so the original survives.
-      expect(
-        resolveOutputTarget('/music/old.wav', 'old', 'wav', '/out', false, false, true),
-      ).toEqual({
+      expect(resolveOutputTarget('/music/old.wav', 'old', 'wav', '/out', false, true)).toEqual({
         outputPath: '/music/old.wav',
-        inPlace: false,
-      })
-    })
-
-    it('stays beside the source on a forced re-encode too', () => {
-      expect(
-        resolveOutputTarget('/music/old.flac', 'old', 'flac', '/out', false, true, true),
-      ).toEqual({
-        outputPath: '/music/old.flac',
         inPlace: false,
       })
     })

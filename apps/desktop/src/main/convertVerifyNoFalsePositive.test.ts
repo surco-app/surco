@@ -124,7 +124,6 @@ describe('la verificación de truncado no rechaza conversiones legítimas', () =
       undefined,
       undefined,
       undefined,
-      undefined,
       { startSec: 2, endSec: 6 },
     )
     expect(existsSync(out)).toBe(true)
