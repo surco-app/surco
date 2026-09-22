@@ -12,7 +12,6 @@ type Props = React.ComponentProps<typeof Toolbar>
 
 function renderBar(over: Partial<Props> = {}): Props {
   const props: Props = {
-    isMac: true,
     hintFor: () => '',
     trackCount: 3,
     convertibleCount: 3,
@@ -23,23 +22,17 @@ function renderBar(over: Partial<Props> = {}): Props {
     onShowFailed: vi.fn(),
     batching: false,
     analysis: null,
-    allAnalyzed: false,
     batchProgress: { done: 0, total: 0 },
     matching: null,
     canAutoMatch: true,
     needsToken: false,
     autoMatchable: 2,
-    onAnalyzeAll: vi.fn(),
     onFixToken: vi.fn(),
     onCancelAnalyze: vi.fn(),
     onAutoMatch: vi.fn(),
     onCancelAutoMatch: vi.fn(),
     onCancelBatch: vi.fn(),
     onCancelImport: vi.fn(),
-    onPalette: vi.fn(),
-    onStats: vi.fn(),
-    onActivity: vi.fn(),
-    activityRunning: false,
     onTrash: vi.fn(),
     trashCount: 0,
     onSettings: vi.fn(),
@@ -50,20 +43,18 @@ function renderBar(over: Partial<Props> = {}): Props {
 }
 
 describe('Toolbar', () => {
-  // The two sweep buttons flip meaning mid-run: the same control must start the sweep
-  // when idle and cancel it while running, or a misfired 500-track sweep could not be
-  // stopped from where it was started.
-  it('starts the analyze sweep when idle and cancels it while running', () => {
-    const idle = renderBar()
-    fireEvent.click(screen.getByTestId('analyze-quality'))
-    expect(idle.onAnalyzeAll).toHaveBeenCalledOnce()
+  // Analyzing already runs by itself on import, and ⌘⇧A, the palette and the Tracks menu
+  // start it by hand, so an idle button only crowded the bar. A running sweep still shows
+  // where it can be stopped: a misfired 500-track sweep must not have to be waited out.
+  it('shows the analyze sweep only while it runs, as a pill that cancels it', () => {
+    renderBar()
+    expect(screen.queryByTestId('analyze-quality')).toBeNull()
     cleanup()
 
     const running = renderBar({ analysis: { done: 2, total: 10 } })
     expect(screen.getByTestId('analyze-progress')).toHaveTextContent('2/10')
     fireEvent.click(screen.getByTestId('analyze-quality'))
     expect(running.onCancelAnalyze).toHaveBeenCalledOnce()
-    expect(running.onAnalyzeAll).not.toHaveBeenCalled()
   })
 
   it('starts the auto-match sweep when idle and cancels it while running', () => {
@@ -79,10 +70,15 @@ describe('Toolbar', () => {
 
   // A sweep with nothing to do must not be startable: no token means Discogs can't be
   // queried at all, and an all-analyzed list has nothing left to measure.
-  it('disables the sweeps when they have nothing to work on', () => {
-    renderBar({ canAutoMatch: false, allAnalyzed: true })
+  it('disables auto-match when it has nothing to work on', () => {
+    renderBar({ canAutoMatch: false })
     expect(screen.getByTestId('auto-match')).toBeDisabled()
-    expect(screen.getByTestId('analyze-quality')).toBeDisabled()
+  })
+
+  // An icon alone did not say what the sparkle did; the word does, in every state.
+  it('names auto-match with a visible word', () => {
+    renderBar()
+    expect(screen.getByTestId('auto-match')).toHaveTextContent(i18n.t('header.autoMatchLabel'))
   })
 
   // Auto-match on but no usable token is a silent dead end: the sweep can't run and the
@@ -162,12 +158,13 @@ describe('Toolbar', () => {
     expect(screen.getByTestId('convert-all')).toHaveTextContent('12')
   })
 
-  // On a one-track crate "convert them all" and the editor footer's "Convert to AIFF" are
-  // the same click, and no wording can tell them apart — so the header stays out of the way
-  // and lets the footer, which names the format, own it.
-  it('stays away on a single-track crate', () => {
+  // The main action has to be where the user expects it however many tracks are loaded:
+  // hiding it on a one-track crate made the button come and go as tracks were added.
+  it('offers to convert a single-track crate, named for one track', () => {
     renderBar({ trackCount: 1, convertibleCount: 1 })
-    expect(screen.queryByTestId('convert-all')).toBeNull()
+    expect(screen.getByTestId('convert-all')).toHaveTextContent(
+      i18n.t('header.convertAll', { count: 1 }),
+    )
   })
 
   // Same shape as the sweeps beside it: the control that shows a run is the one that stops
@@ -201,13 +198,14 @@ describe('Toolbar', () => {
     expect(screen.queryByTestId('convert-all')).toBeNull()
   })
 
-  // The dot is the only always-visible signal that background work is running while
-  // the activity panel is closed.
-  it('marks the activity button while background work runs', () => {
-    renderBar({ activityRunning: true })
-    expect(screen.getByTestId('open-activity').querySelector('.bg-good')).not.toBeNull()
-    cleanup()
+  // The palette (⌘K), stats and activity live in the View menu and the palette now; the
+  // bar keeps the main action, the originals and settings.
+  it('leaves the palette, stats and activity to the menus', () => {
     renderBar()
-    expect(screen.getByTestId('open-activity').querySelector('.bg-good')).toBeNull()
+    expect(screen.queryByTestId('open-palette')).toBeNull()
+    expect(screen.queryByTestId('open-stats')).toBeNull()
+    expect(screen.queryByTestId('open-activity')).toBeNull()
+    expect(screen.getByTestId('open-trash')).toBeInTheDocument()
+    expect(screen.getByTestId('open-settings')).toBeInTheDocument()
   })
 })

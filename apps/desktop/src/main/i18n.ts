@@ -23,6 +23,9 @@ interface MenuStrings {
   view: string
   palette: string
   activity: string
+  stats: string
+  tracks: string
+  analyzeQuality: string
   search: string
   play: string
   prev: string
@@ -83,6 +86,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     view: 'Ver',
     palette: 'Paleta de comandos',
     activity: 'Actividad',
+    stats: 'Estadísticas',
+    tracks: 'Pistas',
+    analyzeQuality: 'Analizar calidad',
     search: 'Buscar en la lista de pistas',
     play: 'Reproducir / pausar',
     prev: 'Pista anterior',
@@ -145,6 +151,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     view: 'View',
     palette: 'Command palette',
     activity: 'Activity',
+    stats: 'Stats',
+    tracks: 'Tracks',
+    analyzeQuality: 'Analyze quality',
     search: 'Search the track list',
     play: 'Play / pause',
     prev: 'Previous track',
@@ -207,6 +216,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     view: 'Ansicht',
     palette: 'Befehlspalette',
     activity: 'Aktivität',
+    stats: 'Statistiken',
+    tracks: 'Tracks',
+    analyzeQuality: 'Qualität analysieren',
     search: 'In der Trackliste suchen',
     play: 'Abspielen / Pause',
     prev: 'Vorheriger Track',
@@ -269,6 +281,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     view: 'Présentation',
     palette: 'Palette de commandes',
     activity: 'Activité',
+    stats: 'Statistiques',
+    tracks: 'Morceaux',
+    analyzeQuality: 'Analyser la qualité',
     search: 'Rechercher dans la liste des morceaux',
     play: 'Lecture / pause',
     prev: 'Morceau précédent',
@@ -332,6 +347,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     view: 'Visualizar',
     palette: 'Paleta de comandos',
     activity: 'Atividade',
+    stats: 'Estatísticas',
+    tracks: 'Faixas',
+    analyzeQuality: 'Analisar qualidade',
     search: 'Buscar na lista de faixas',
     play: 'Reproduzir / pausar',
     prev: 'Faixa anterior',

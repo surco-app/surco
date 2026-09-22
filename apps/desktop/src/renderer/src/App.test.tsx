@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../preload/api'
 import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
 import { emptyMetadata } from '../../shared/metadata'
-import type { Release, Settings } from '../../shared/types'
+import type { ActivityEvent, Release, Settings } from '../../shared/types'
 import { resetEditorSections } from './hooks/useEditorSections'
 import i18n from './i18n'
 import { createQueryClient } from './lib/queryClient'
@@ -365,9 +365,16 @@ describe('App quality triage', () => {
   // rips at once: every track gets measured and flagged with a verdict dot, so the user
   // never has to open each one. This is the behaviour the spectrum data layer must keep.
   it('measures every track and flags each with a quality verdict on demand', async () => {
+    let menu: ((id: string) => void) | undefined
+    setApi({
+      onMenuCommand: (cb: (id: string) => void) => {
+        menu = cb
+        return () => {}
+      },
+    })
     await renderApp()
     await addTwoTracks()
-    fireEvent.click(screen.getByTestId('analyze-quality'))
+    act(() => menu?.('analyze-quality'))
     await waitFor(() => expect(screen.getAllByTestId('track-quality')).toHaveLength(2))
   })
 
@@ -429,10 +436,15 @@ describe('App quality triage', () => {
       for (const cb of focusListeners) cb(focused)
     }
     const spectrogram = vi.fn().mockResolvedValue(spectrum)
+    let menu: ((id: string) => void) | undefined
     setApi({
       spectrogram,
       onWindowFocus: (cb: (focused: boolean) => void) => {
         focusListeners.push(cb)
+        return () => {}
+      },
+      onMenuCommand: (cb: (id: string) => void) => {
+        menu = cb
         return () => {}
       },
     })
@@ -444,7 +456,7 @@ describe('App quality triage', () => {
     const baseline = spectrogram.mock.calls.length
 
     setFocus(false)
-    fireEvent.click(screen.getByTestId('analyze-quality'))
+    act(() => menu?.('analyze-quality'))
     await new Promise((r) => setTimeout(r, 0))
     expect(spectrogram.mock.calls.length).toBe(baseline)
 
@@ -1736,12 +1748,46 @@ describe('App settings button', () => {
   })
 })
 
-describe('App stats button', () => {
-  // Stats is something to look at, not something to set, so it opens on its own instead
-  // of as one more tab among the settings.
-  it('opens the stats window, not Settings', async () => {
+describe('App background work signal', () => {
+  // The activity button's dot was the one always-visible sign that a search, a cover
+  // download or an Apple Music read was running. The button moved to the View menu, so
+  // the top bar carries that signal instead.
+  it('runs the top bar while the activity log shows work in flight', async () => {
+    let emit: ((event: ActivityEvent) => void) | undefined
+    setApi({
+      onActivity: (cb: (event: ActivityEvent) => void) => {
+        emit = cb
+        return () => {}
+      },
+    })
     await renderApp()
-    fireEvent.click(screen.getByTestId('open-stats'))
+    await screen.findByTestId('add-files')
+    expect(screen.queryByTestId('top-progress')).toBeNull()
+    act(() =>
+      emit?.({ id: 'a1', kind: 'discogs', phase: 'start', labelKey: 'activity.searchDiscogs' }),
+    )
+    expect(screen.getByTestId('top-progress')).toBeInTheDocument()
+    act(() =>
+      emit?.({ id: 'a1', kind: 'discogs', phase: 'done', labelKey: 'activity.searchDiscogs' }),
+    )
+    expect(screen.queryByTestId('top-progress')).toBeNull()
+  })
+})
+
+describe('App stats', () => {
+  // Stats is something to look at, not something to set, so it opens on its own instead
+  // of as one more tab among the settings. Its toolbar button moved to the View menu.
+  it('opens the stats window from the menu, not Settings', async () => {
+    let menu: ((id: string) => void) | undefined
+    setApi({
+      onMenuCommand: (cb: (id: string) => void) => {
+        menu = cb
+        return () => {}
+      },
+    })
+    await renderApp()
+    await screen.findByTestId('add-files')
+    act(() => menu?.('stats'))
     await waitFor(() => expect(screen.getByTestId('stats-modal')).toBeInTheDocument())
     expect(screen.queryByTestId('settings-tab-general')).toBeNull()
     fireEvent.click(screen.getByTestId('stats-close'))

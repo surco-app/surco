@@ -33,7 +33,6 @@
     "palette": "Befehlspalette",
     "settings": "Einstellungen",
     "stats": "Statistiken",
-    "activity": "Aktivität",
     "trash": "Surco-Originale",
     "selectAll": "Alles auswählen",
     "revealSelected": "Zum ausgewählten Track scrollen",
@@ -48,6 +47,7 @@
     "cancelImport": "Einlesen stoppen: bereits Gelesenes bleibt, der Rest entfällt",
     "autoMatch": "Alle Tracks automatisch mit Discogs abgleichen",
     "autoMatchNoToken": "Füg in den Einstellungen einen Discogs-Token hinzu, um automatisch abzugleichen",
+    "autoMatchLabel": "Abgleichen",
     "addToken": "Token hinzufügen",
     "autoMatchingCount": "Gleiche automatisch ab… {{done}}/{{total}}",
     "clearAll": "Liste leeren"

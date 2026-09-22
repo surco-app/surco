@@ -33,7 +33,6 @@
     "palette": "Paleta de comandos",
     "settings": "Ajustes",
     "stats": "Estadísticas",
-    "activity": "Actividad",
     "trash": "Originales de Surco",
     "selectAll": "Seleccionar todo",
     "revealSelected": "Ir a la pista seleccionada",
@@ -48,6 +47,7 @@
     "cancelImport": "Dejar de leer: lo ya leído se queda, el resto se descarta",
     "autoMatch": "Auto-emparejar todas las pistas en Discogs",
     "autoMatchNoToken": "Añade un token de Discogs en Ajustes para auto-emparejar",
+    "autoMatchLabel": "Emparejar",
     "addToken": "Añadir token",
     "autoMatchingCount": "Auto-emparejando… {{done}}/{{total}}",
     "clearAll": "Vaciar la lista"

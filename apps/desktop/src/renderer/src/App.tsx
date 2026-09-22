@@ -1126,7 +1126,6 @@ export default function App(): React.JSX.Element {
     askFillAll(bulkTracksRef.current, { fromSelection: selectedTracks.length > 1 }),
   )
   const onFindReplace = useStableCallback(overlays.openFindReplace)
-  const onAnalyzeAll = useStableCallback(() => analyzeAllQuality())
   const onAutoMatchAll = useStableCallback(() => enqueueAutoMatch(bulkTracks))
   const onOpenExport = useStableCallback(overlays.openExport)
   const onClearAll = useStableCallback(() => askClearAll(visibleTracksRef.current))
@@ -1137,16 +1136,10 @@ export default function App(): React.JSX.Element {
   // The toolbar/palette "Move the selection to Trash": the same confirmed flow as the
   // context menu, over the multi-selection or the single selected row.
   const onTrashSelected = useStableCallback(() => askTrash(editScope(selectedTracks, selected)))
-  const onOpenPalette = useStableCallback(overlays.openPalette)
-  const onOpenStats = useStableCallback(overlays.openStats)
   const onOpenSettings = useStableCallback(openSettings)
   // The toolbar's "add a token" fix (shown when auto-match is on but no token is set) opens
   // Settings straight to Search, where the Discogs token lives.
   const onFixToken = useStableCallback(() => openSettings('search'))
-  // Toolbar is memoized so a keystroke in a metadata field doesn't re-render it;
-  // an inline arrow here would give onActivity a fresh identity every render and
-  // defeat that memo just like the other Toolbar handlers above.
-  const onToggleActivity = useStableCallback(() => setActivityOpen((v) => !v))
   const onOpenTrash = useStableCallback(() => {
     void refreshTrash()
     setTrashOpen(true)
@@ -1533,13 +1526,6 @@ export default function App(): React.JSX.Element {
   // command can fire it again and again. The burst tears itself down once it settles.
   const [confettiBurst, setConfettiBurst] = useState(0)
   const fireConfetti = useStableCallback(() => setConfettiBurst((n) => n + 1))
-  // Gates the Analyze button: the sweep works on the visible rows, so it's "done" (disabled)
-  // once every visible row is measured — not the hidden ones. Change the filter to reveal
-  // unanalysed tracks and the button re-enables. O(N), memoised over the visible set.
-  const allAnalyzed = useMemo(
-    () => visibleTracks.every((t) => Boolean(t.spectrum)),
-    [visibleTracks],
-  )
 
   // Move keyboard focus between the three columns. The targets are found by their stable
   // data-testid (the same approach the Discogs panel already uses for autofit) rather than
@@ -1683,10 +1669,12 @@ export default function App(): React.JSX.Element {
   // changes, not on every App render — the same frequent-render concern as `selected` above.
   const anyLoadingMeta = useMemo(() => tracks.some((t) => t.loadingMeta), [tracks])
   // Drives the slim top bar: the analyze/auto-match/convert sweeps pool their progress,
-  // and a fresh drop still reading its tags shows as an indeterminate run.
+  // and a fresh drop still reading its tags, or any background task the activity log
+  // shows running, is an indeterminate run.
+  const activityRunning = activityRows.some((r) => r.status === 'running')
   const progress = topBarProgress(
     [analysis, matching, batchProgress, importProgress],
-    anyLoadingMeta,
+    anyLoadingMeta || activityRunning,
   )
 
   return (
@@ -1718,7 +1706,6 @@ export default function App(): React.JSX.Element {
             <div className="relative">
               {progress && <TopProgressBar fraction={progress.fraction} />}
               <Toolbar
-                isMac={isMac}
                 hintFor={hintFor}
                 trackCount={tracks.length}
                 convertibleCount={eligibleCount}
@@ -1730,24 +1717,18 @@ export default function App(): React.JSX.Element {
                 batching={batching}
                 batchProgress={batchProgress}
                 analysis={analysis}
-                allAnalyzed={allAnalyzed}
                 matching={matching}
                 canAutoMatch={!!settings && autoMatchAvailable(settings)}
                 needsToken={needsToken}
                 autoMatchable={autoMatchable}
-                onAnalyzeAll={onAnalyzeAll}
                 onCancelAnalyze={cancelAnalysis}
                 onAutoMatch={onAutoMatchAll}
                 onCancelAutoMatch={cancelAutoMatch}
                 onFixToken={onFixToken}
                 onCancelBatch={cancelBatch}
                 onCancelImport={cancelImport}
-                onPalette={onOpenPalette}
-                onStats={onOpenStats}
-                onActivity={onToggleActivity}
                 onTrash={onOpenTrash}
                 trashCount={trashEntries.length}
-                activityRunning={activityRows.some((r) => r.status === 'running')}
                 onSettings={onOpenSettings}
               />
             </div>

@@ -33,7 +33,6 @@
     "palette": "Paleta de comandos",
     "settings": "Ajustes",
     "stats": "Estatísticas",
-    "activity": "Atividade",
     "trash": "Originais do Surco",
     "selectAll": "Selecionar tudo",
     "revealSelected": "Ir para a faixa selecionada",
@@ -48,6 +47,7 @@
     "cancelImport": "Parar a leitura: o que já foi lido fica, o resto é descartado",
     "autoMatch": "Auto-associar todas as faixas no Discogs",
     "autoMatchNoToken": "Adicione um token do Discogs em Ajustes para auto-associar",
+    "autoMatchLabel": "Associar",
     "addToken": "Adicionar token",
     "autoMatchingCount": "Auto-associando… {{done}}/{{total}}",
     "clearAll": "Limpar a lista"
