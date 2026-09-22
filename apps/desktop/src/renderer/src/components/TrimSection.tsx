@@ -1066,12 +1066,6 @@ export function TrimSection({
         summary={rowSentence}
         summaryTestId="trim-row-sentence"
         summaryMuted={!value}
-        toggle={{
-          checked: value !== undefined,
-          disabled: !value && !suggestion,
-          onChange: (on) => onChange(on ? suggestion : undefined),
-          testId: 'trim-switch',
-        }}
         right={
           !value && detected ? (
             <SectionPill tone="neutral" testid="trim-detected-pill">
