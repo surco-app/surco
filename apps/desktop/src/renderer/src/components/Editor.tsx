@@ -223,6 +223,9 @@ export const Editor = memo(function Editor({
     addToAppleMusic,
     keepOutputCopy,
     addToEngineDj,
+    syncTraktor,
+    traktorNmlPath,
+    syncRekordbox,
     keepMp3Sources,
     overwriteOriginal,
     convertBesideOriginal,
@@ -1311,6 +1314,8 @@ export const Editor = memo(function Editor({
           willEditInPlace={willEditInPlace}
           addToAppleMusic={picked.addToAppleMusic}
           addToEngineDj={picked.addToEngineDj}
+          syncTraktor={syncTraktor && !!traktorNmlPath}
+          syncRekordbox={syncRekordbox}
           destination={destination}
           locations={locationChoices}
           format={isMulti ? formatPick : format}

@@ -70,3 +70,7 @@ export const DJ_SOFTWARE_NAMES: Record<DjSoftware, string> = {
   rekordbox: 'rekordbox',
   traktor: 'Traktor',
 }
+
+export function reachedDjSoftware(reaches: Record<DjSoftware, boolean>): DjSoftware[] {
+  return (Object.keys(DJ_SOFTWARE_NAMES) as DjSoftware[]).filter((id) => reaches[id])
+}
