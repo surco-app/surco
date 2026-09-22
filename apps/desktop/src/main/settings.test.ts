@@ -49,6 +49,7 @@ import {
   defaults,
   getConfigDir,
   getSettings,
+  migrateOutputCopy,
   migrateProviderDefaults,
   recordConversion,
   recordStat,
@@ -674,5 +675,43 @@ describe('migrateProviderDefaults', () => {
     const s = getSettings()
     expect(s.searchProviders.filter((p) => p === 'deezer')).toHaveLength(1)
     expect(s.deezerProviderMigrated).toBe(true)
+  })
+})
+
+describe('migrateOutputCopy', () => {
+  const file = (): string => join(app.getPath('userData'), 'settings.json')
+  const wipe = (): void => {
+    rmSync(file(), { force: true })
+    rmSync(join(app.getPath('userData'), 'config-dir.json'), { force: true })
+  }
+  beforeEach(wipe)
+  afterEach(wipe)
+  const stored = (s: Partial<Settings>): void => writeFileSync(file(), JSON.stringify(s))
+
+  it('drops the folder copy for an Apple Music destination, which never kept one', () => {
+    stored({ addToAppleMusic: true, keepOutputCopy: true })
+    migrateOutputCopy()
+    expect(getSettings().keepOutputCopy).toBe(false)
+    expect(getSettings().outputCopyMigrated).toBe(true)
+  })
+
+  it('leaves the copy of every destination that kept one', () => {
+    for (const s of [
+      { addToAppleMusic: false },
+      { addToAppleMusic: true, addToEngineDj: true },
+      { addToAppleMusic: true, convertBesideOriginal: true },
+      { addToAppleMusic: true, overwriteOriginal: true },
+    ]) {
+      wipe()
+      stored({ ...s, keepOutputCopy: true })
+      migrateOutputCopy()
+      expect(getSettings().keepOutputCopy).toBe(true)
+    }
+  })
+
+  it('never overturns the copy a user chose after the migration ran', () => {
+    stored({ addToAppleMusic: true, keepOutputCopy: true, outputCopyMigrated: true })
+    migrateOutputCopy()
+    expect(getSettings().keepOutputCopy).toBe(true)
   })
 })

@@ -67,6 +67,7 @@ export const testSettings: Settings = {
   commandUsage: {},
   hasSeenOnboarding: false,
   deezerProviderMigrated: true,
+  outputCopyMigrated: true,
   conversionCount: 0,
   stats: {
     imported: 0,

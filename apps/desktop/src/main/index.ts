@@ -83,6 +83,7 @@ import {
   defaultConfigDir,
   getConfigDir,
   getSettings,
+  migrateOutputCopy,
   migrateProviderDefaults,
   recordConversion,
   recordStat,
@@ -1348,6 +1349,7 @@ app.whenReady().then(() => {
     })
   })
   migrateProviderDefaults()
+  migrateOutputCopy()
   createWindow()
 
   // Downloads a newer version in the background, then tells the renderer so it can

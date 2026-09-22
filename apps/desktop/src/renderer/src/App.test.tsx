@@ -135,6 +135,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     commandUsage: {},
     hasSeenOnboarding: true,
     deezerProviderMigrated: true,
+    outputCopyMigrated: true,
     conversionCount: 0,
     stats: {
       imported: 0,
