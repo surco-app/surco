@@ -25,6 +25,13 @@ export interface TagField {
   // differently and both matter. Unlike an alias — which is read from and actively
   // cleared on write — every name here gets the value.
   vorbisAlso?: string[]
+  // For a total ("of N") field: the aliases whose "n/N" value carries it in its second
+  // half, read when the field's own aliases are empty. ID3 and MP4 keep the total inside
+  // the number ("3/12"); Vorbis gives it a comment of its own (TRACKTOTAL).
+  totalFrom?: string[]
+  // For a number field: the total field written after a slash on ID3 and MP4 ("3/12"),
+  // the only place those containers have for it. Vorbis writes the total on its own.
+  withTotal?: keyof TrackMetadata
   // Normalizes the raw probed string into the stored value: dropping a "3/12" track total,
   // the compilation flag, the rating stars. Identity when omitted.
   parse?: (raw: string) => string
@@ -60,12 +67,26 @@ export const TAG_FIELDS: TagField[] = [
     aliases: ['track', 'tracknumber', 'tracknum'],
     id3: 'track',
     parse: dropTotal,
+    withTotal: 'trackTotal',
+  },
+  {
+    key: 'trackTotal',
+    aliases: ['tracktotal', 'totaltracks'],
+    totalFrom: ['track', 'tracknumber', 'tracknum'],
+    vorbis: 'TRACKTOTAL',
   },
   {
     key: 'discNumber',
     aliases: ['disc', 'tpos', 'disc_number', 'discnumber'],
     id3: 'disc',
     parse: dropTotal,
+    withTotal: 'discTotal',
+  },
+  {
+    key: 'discTotal',
+    aliases: ['disctotal', 'totaldiscs'],
+    totalFrom: ['disc', 'tpos', 'disc_number', 'discnumber'],
+    vorbis: 'DISCTOTAL',
   },
   // ffmpeg maps these to the real ID3 frames DJ software and Music read (TBPM/TKEY/TPE4);
   // the FLAC muxer has no ID3 mapping and writes keys verbatim, so a Vorbis target gets the

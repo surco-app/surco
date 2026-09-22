@@ -184,6 +184,8 @@ describe('readTagLibExtras', () => {
       originalArtist: 'The Original Band',
       lyricist: 'A. Lyricist',
       conductor: 'B. Conductor',
+      trackTotal: '',
+      discTotal: '',
       catalogNumber: 'MQDRFREE015',
       discogsReleaseId: '12345',
       energy: '8',

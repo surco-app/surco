@@ -30,6 +30,8 @@ const FIELD_PRESENCE: Record<keyof TrackMetadata, true> = {
   originalArtist: true,
   lyricist: true,
   conductor: true,
+  trackTotal: true,
+  discTotal: true,
   compilation: true,
   mood: true,
   energy: true,

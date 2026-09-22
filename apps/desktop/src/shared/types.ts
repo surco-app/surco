@@ -378,6 +378,10 @@ export interface TrackMetadata {
   originalArtist?: string
   lyricist?: string
   conductor?: string
+  // The "of N" halves of the track and disc numbers: inside TRCK/TPOS ("3/12") on ID3,
+  // TRACKTOTAL/DISCTOTAL on Vorbis, trkn/disk on MP4. Hidden in the editor by default.
+  trackTotal?: string
+  discTotal?: string
   // Boolean-ish: '1' when the album is a various-artists compilation, '' when
   // not. Kept a string like every other field; written as TCMP/COMPILATION,
   // which is what makes Apple Music group VA albums instead of splitting them.

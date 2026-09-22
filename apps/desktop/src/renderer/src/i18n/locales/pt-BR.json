@@ -606,6 +606,8 @@
     "originalArtist": "Artista original",
     "lyricist": "Letrista",
     "conductor": "Regente",
+    "trackTotal": "Total de faixas",
+    "discTotal": "Total de discos",
     "isrc": "ISRC",
     "mixName": "Mix",
     "originalYear": "Ano original",

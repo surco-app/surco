@@ -31,6 +31,8 @@ const FULLY_TAGGED: TrackMetadata = {
   originalArtist: 'Original Artist',
   lyricist: 'Lyricist',
   conductor: 'Conductor',
+  trackTotal: '12',
+  discTotal: '2',
   compilation: '1',
   mood: 'Dark',
   energy: '4',

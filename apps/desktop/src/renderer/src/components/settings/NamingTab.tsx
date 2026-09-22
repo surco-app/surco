@@ -41,6 +41,8 @@ const SAMPLE_META: TrackMetadata = {
   isrc: 'ES-SRC-26-00031',
   mixName: 'Original Remix',
   originalYear: '1998',
+  trackTotal: '12',
+  discTotal: '2',
   originalArtist: 'Three Drives',
   lyricist: 'Dj Vixent',
   conductor: 'Dj Vixent',
