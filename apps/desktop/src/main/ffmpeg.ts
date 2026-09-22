@@ -2455,10 +2455,18 @@ const BITS_SCAN_SECONDS = 60
 const BITS_MIN_CONTENT_SAMPLES = 100_000
 // The verdict bands, wide apart on purpose: under this share of used low bytes
 // the padding is proven, above BITS_FULL_MIN_PCT the depth is real, and the
-// (never observed) middle answers 'unknown' out loud — silence here would be
-// indistinguishable from a file the probe never qualified for, the exact
-// ambiguity the resolution verdict already learned to avoid.
-const BITS_PADDED_MAX_PCT = 0.01
+// middle answers 'unknown' out loud — silence here would be indistinguishable
+// from a file the probe never qualified for, the exact ambiguity the resolution
+// verdict already learned to avoid. The middle IS reached: a 24-bit WAV holding
+// gain-shifted 16-bit audio measured 7.0%, and a track whose fade-out alone was
+// computed at a wider depth measured 0.6% over its whole length.
+// 0.05, not the 0.01 this read for two releases: the value used to be rounded to
+// one decimal before the comparison, which swallowed everything under 0.05 into
+// 0.0 and made the stricter figure unreachable. Measuring a library settled which
+// of the two to keep — 54 qualifying files split cleanly into 0.0% and 99.5%+,
+// with nothing in between, so the looser bound costs no verdict and the rounding
+// is gone from the comparison.
+const BITS_PADDED_MAX_PCT = 0.05
 const BITS_FULL_MIN_PCT = 50
 
 // The exact bit-depth check: 16-bit audio padded into a 24-bit container leaves
@@ -2507,9 +2515,12 @@ export async function analyzeBitsUsage(
   // The file qualified but the scan cannot judge it: say so instead of the
   // silence a 16-bit file gets. Null stays reserved for "nothing to verify".
   if (content < BITS_MIN_CONTENT_SAMPLES) return { usage: 'unknown' }
-  const lowBytePct = Number(((lowUsed / content) * 100).toFixed(1))
-  if (lowBytePct <= BITS_PADDED_MAX_PCT) return { usage: 'padded16', lowBytePct }
-  if (lowBytePct >= BITS_FULL_MIN_PCT) return { usage: 'full', lowBytePct }
+  // Judged at full precision, reported rounded: rounding first made a share of
+  // 0.0158% read as 0.0 and clear a 0.01 bound it was actually over.
+  const exact = (lowUsed / content) * 100
+  const lowBytePct = Number(exact.toFixed(1))
+  if (exact <= BITS_PADDED_MAX_PCT) return { usage: 'padded16', lowBytePct }
+  if (exact >= BITS_FULL_MIN_PCT) return { usage: 'full', lowBytePct }
   return { usage: 'unknown', lowBytePct }
 }
 
