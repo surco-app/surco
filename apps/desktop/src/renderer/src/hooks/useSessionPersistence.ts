@@ -1,4 +1,3 @@
-import type { TFunction } from 'i18next'
 import { useEffect, useRef } from 'react'
 import type { SessionData, SessionEdit } from '../../../shared/types'
 import type { AppStore } from '../lib/appStore'
@@ -17,7 +16,6 @@ interface Params {
   addPaths: (paths: string[], restore?: Record<string, SessionEdit>) => Promise<void>
   seedRestoredEdits: (edits: Record<string, SessionEdit>) => void
   store: AppStore
-  tr: TFunction
 }
 
 // The last session: offered back at launch, and written out as it changes.
@@ -36,7 +34,6 @@ export function useSessionPersistence({
   addPaths,
   seedRestoredEdits,
   store,
-  tr,
 }: Params): void {
   // The launch-time "reopen last session" offer. Asked once, and only while the list is
   // still empty — restoring the old list on top of a fresh import would mix two sessions,
@@ -62,9 +59,9 @@ export function useSessionPersistence({
     // retagged but not yet applied when the last session ended.
     await addPaths(await window.api.expandPaths(session.paths), session.edits)
   })
-  // Stable identity so the ask-once effect below never re-runs (tr changes identity when
-  // the settings load applies the language, which would cancel the in-flight ask), while
-  // the closure still reads the current translations when the answer lands.
+  // Stable identity so the ask-once effect below never re-runs, which would cancel the
+  // in-flight ask. The offer carries translation keys, not text: it is raised before the
+  // settings apply the user's language, so the card renders it in whatever is current.
   const declineLastSession = useStableCallback(() => {
     lastSessionToastId.current = null
     void window.api.saveLastSession([], {})
@@ -80,8 +77,11 @@ export function useSessionPersistence({
       key: 'last-session',
       tone: 'neutral',
       testid: 'last-session',
-      message: tr('lastSession.prompt', { count: session.paths.length }),
-      action: { label: tr('lastSession.load'), onAction: () => void reopenLastSession(session) },
+      message: { key: 'lastSession.prompt', values: { count: session.paths.length } },
+      action: {
+        label: { key: 'lastSession.load' },
+        onAction: () => void reopenLastSession(session),
+      },
       onDismiss: declineLastSession,
       ...(hasEdits
         ? {}

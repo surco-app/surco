@@ -1,5 +1,7 @@
 import type { AppStore } from './appStore'
 
+export type ToastText = string | { key: string; values?: Record<string, unknown> }
+
 // One entry in the unified notification queue. Tone drives the colour (neutral status vs a
 // red failure); an optional action turns the card into a prompt (Restart / Load); duration
 // auto-dismisses transient notices, while a missing duration keeps prompts and failures up
@@ -9,8 +11,8 @@ export interface Toast {
   id: string
   key?: string
   tone: 'neutral' | 'danger'
-  message: string
-  action?: { label: string; onAction: () => void }
+  message: ToastText
+  action?: { label: ToastText; onAction: () => void }
   duration?: number
   testid?: string
   // Extra cleanup to run when this toast is dismissed (by the ✕, its timer, or an action),

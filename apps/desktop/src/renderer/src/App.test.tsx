@@ -9,8 +9,8 @@ import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
 import { emptyMetadata } from '../../shared/metadata'
 import type { Release, Settings } from '../../shared/types'
 import { resetEditorSections } from './hooks/useEditorSections'
+import i18n from './i18n'
 import { createQueryClient } from './lib/queryClient'
-import './i18n'
 
 // Pass-through triage that counts sort runs, so the derived-list stability test can
 // assert renders without track changes skip the whole filter+sort pipeline.
@@ -2246,6 +2246,58 @@ describe('App update check failure', () => {
     expect(checkForUpdates).toHaveBeenCalledTimes(1)
     await waitFor(() => expect(screen.queryByTestId('update-check-failed')).not.toBeInTheDocument())
   })
+
+  // The launch check can fail before the settings apply the user's language, so the
+  // card must read in whatever language is current when it is on screen.
+  it('follows a language change made while the failure card is up', async () => {
+    let fail: ((status: number | null) => void) | undefined
+    setApi({
+      onUpdateCheckFailed: (cb: (status: number | null) => void) => {
+        fail = cb
+        return () => {}
+      },
+    })
+    try {
+      await renderApp()
+      act(() => fail?.(null))
+      await screen.findByTestId('update-check-failed')
+      await act(async () => {
+        await i18n.changeLanguage('es')
+      })
+      expect(screen.getByTestId('update-check-failed-message')).toHaveTextContent(
+        'No se pudo comprobar si hay actualizaciones',
+      )
+      expect(screen.getByTestId('update-check-failed-action')).toHaveTextContent('Reintentar')
+    } finally {
+      await act(async () => {
+        await i18n.changeLanguage('en')
+      })
+    }
+  })
+
+  it('follows a language change made while the update-ready card is up', async () => {
+    let ready: ((version: string) => void) | undefined
+    setApi({
+      onUpdateDownloaded: (cb: (version: string) => void) => {
+        ready = cb
+        return () => {}
+      },
+    })
+    try {
+      await renderApp()
+      act(() => ready?.('9.9.9'))
+      await screen.findByTestId('update')
+      await act(async () => {
+        await i18n.changeLanguage('es')
+      })
+      expect(screen.getByTestId('update-message')).toHaveTextContent('La versión 9.9.9 está lista')
+      expect(screen.getByTestId('update-action')).toHaveTextContent('Reiniciar para actualizar')
+    } finally {
+      await act(async () => {
+        await i18n.changeLanguage('en')
+      })
+    }
+  })
 })
 
 describe("App what's new popup", () => {
@@ -2495,6 +2547,37 @@ describe('App reopen last session', () => {
     await screen.findByTestId('last-session')
     fireEvent.click(screen.getByTestId('last-session-action'))
     await waitFor(() => expect(screen.queryByTestId('last-session')).toBeNull())
+  })
+
+  // The offer is raised the moment the saved list comes back, which at launch is before
+  // the settings apply the user's language: frozen at push time, a DJ who picked Spanish
+  // read it in the system's English.
+  it('shows the offer in the language the settings apply after it was raised', async () => {
+    let loadSettings: (s: Settings) => void = () => {}
+    const pending = new Promise<Settings>((resolve) => {
+      loadSettings = resolve
+    })
+    setApi({
+      getSettings: vi.fn(() => pending),
+      getLastSession: vi
+        .fn<Api['getLastSession']>()
+        .mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
+    })
+    try {
+      await renderApp()
+      await screen.findByTestId('last-session')
+      await act(async () => loadSettings(settings({ language: 'es' })))
+      await waitFor(() =>
+        expect(screen.getByTestId('last-session-message')).toHaveTextContent(
+          '¿Reabrir la última sesión? (1 pista)',
+        ),
+      )
+      expect(screen.getByTestId('last-session-action')).toHaveTextContent('Reabrir')
+    } finally {
+      await act(async () => {
+        await i18n.changeLanguage('en')
+      })
+    }
   })
 
   it('stays quiet when there is no previous session', async () => {
