@@ -166,6 +166,14 @@ describe('buildSettingsPatch', () => {
     )
   })
 
+  // The rekordbox collection picked in Settings is where sync writes; if it fell out of the
+  // patch the picker would show the new path and sync would keep writing the old one.
+  it('saves the rekordbox collection path the user picked', () => {
+    const draft = pickSynced({ ...settings })
+    const patch = buildSettingsPatch(draft, { ...local, rekordboxDbPath: '/dj/master.db' })
+    expect(patch.rekordboxDbPath).toBe('/dj/master.db')
+  })
+
   // The token is stored trimmed so stray paste whitespace can't break the auth header.
   it('trims the token', () => {
     const draft = pickSynced({ ...settings })
