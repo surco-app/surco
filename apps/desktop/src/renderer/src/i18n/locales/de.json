@@ -670,7 +670,7 @@
     "applyEnd": "{{seconds}} am Ende abschneiden",
     "applyAll_other": "Erkannte Stille in {{count}} Tracks abschneiden",
     "cueWarning": "Codiert das Audio neu. In der Datei gespeicherte Traktor-Cues und das Beatgrid werden bei MP3, AIFF, FLAC und WAV an den Schnitt angepasst; bei ALAC gehen sie verloren.",
-    "cueWarningShort": "Kodiert das Audio neu · Cues neu verankert",
+    "cueWarningShort": "Kodiert das Audio neu · bei ALAC gehen die Cues verloren",
     "planHead": "Nach dem Schnitt",
     "planBoth": "Schneidet {{start}} vom Anfang und {{end}} vom Ende: {{from}} → {{to}}.",
     "planStart": "Schneidet {{start}} vom Anfang: {{from}} → {{to}}.",

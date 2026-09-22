@@ -11,7 +11,8 @@ import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { mediaUrl } from '../../../shared/media'
-import type { TrimRange, WaveformResult } from '../../../shared/types'
+import { losesTraktorCues } from '../../../shared/outputFormats'
+import type { OutputFormat, TrimRange, WaveformResult } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
 import { useWaveformWindow } from '../hooks/useWaveformWindow'
@@ -75,6 +76,7 @@ interface Props {
   onToggle: () => void
   onChange: (trim: TrimRange | undefined) => void
   inputPath: string
+  format: OutputFormat
   showHints?: boolean
 }
 
@@ -548,6 +550,7 @@ export function TrimSection({
   onToggle,
   onChange,
   inputPath,
+  format,
   showHints = true,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -1117,7 +1120,8 @@ export function TrimSection({
               {value && showHints && durationSec > 0 ? (
                 <TrimPlan value={value} durationSec={durationSec} />
               ) : (
-                value && (
+                value &&
+                losesTraktorCues(format) && (
                   <p
                     data-testid="trim-cue-warning"
                     className="relative mt-2 inline-flex items-center gap-1.5 text-[10px] text-warn"

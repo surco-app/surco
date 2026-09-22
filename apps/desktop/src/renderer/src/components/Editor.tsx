@@ -1198,6 +1198,7 @@ export const Editor = memo(function Editor({
                           onToggle={() => setSectionOpen('trim', !trimOpen)}
                           onChange={(trim) => onChange({ trim })}
                           inputPath={item.inputPath}
+                          format={format}
                           showHints={showEditorHints}
                         />
                       )

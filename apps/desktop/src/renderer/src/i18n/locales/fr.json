@@ -670,7 +670,7 @@
     "applyEnd": "Rogner {{seconds}} à la fin",
     "applyAll_other": "Rogner le silence détecté sur {{count}} morceaux",
     "cueWarning": "Ré-encode l'audio. Les cues et le beatgrid Traktor enregistrés dans le fichier sont réalignés sur la coupe en MP3, AIFF, FLAC et WAV ; en ALAC ils sont perdus.",
-    "cueWarningShort": "Réencode l'audio · repères réancrés",
+    "cueWarningShort": "Réencode l'audio · en ALAC les repères sont perdus",
     "planHead": "Après la coupe",
     "planBoth": "Coupe {{start}} au début et {{end}} à la fin : {{from}} → {{to}}.",
     "planStart": "Coupe {{start}} au début : {{from}} → {{to}}.",
