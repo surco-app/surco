@@ -1003,6 +1003,43 @@ describe('runProcessTrack — Engine DJ', () => {
   })
 })
 
+describe('runProcessTrack — Apple Music and Engine DJ together', () => {
+  it('adds the output-folder file to both libraries when the copy is kept', async () => {
+    const deps = makeDeps({
+      platform: 'darwin',
+      settings: settings({ addToAppleMusic: true, addToEngineDj: true, keepOutputCopy: true }),
+    })
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.addToAppleMusic).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, undefined)
+    expect(deps.addToEngineDj).toHaveBeenCalledWith(
+      '/out/Artist - Title.aiff',
+      {},
+      '/tmp/cover.jpg',
+    )
+    expect(deps.rm).not.toHaveBeenCalled()
+    expect(result.outputPath).toBe('/out/Artist - Title.aiff')
+    expect(result.addedToEngineDj).toBe(true)
+  })
+
+  it('keeps the output copy for Engine DJ even when Apple Music alone would drop it', async () => {
+    const deps = makeDeps({
+      platform: 'darwin',
+      settings: settings({ addToAppleMusic: true, addToEngineDj: true, keepOutputCopy: false }),
+    })
+    const result = await runProcessTrack(job(), deps)
+
+    expect(deps.mkdtemp).not.toHaveBeenCalled()
+    expect(deps.addToEngineDj).toHaveBeenCalledWith(
+      '/out/Artist - Title.aiff',
+      {},
+      '/tmp/cover.jpg',
+    )
+    expect(result.outputPath).toBe('/out/Artist - Title.aiff')
+    expect(result.addedToMusicOnly).toBeUndefined()
+  })
+})
+
 describe('runProcessTrack — Apple Music only', () => {
   const musicOnly = () =>
     makeDeps({
