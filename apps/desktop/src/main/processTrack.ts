@@ -1,5 +1,6 @@
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
+import log from 'electron-log/main'
 import { errorWithKey } from '../shared/errorKeys'
 import { resolveJobFormat } from '../shared/format'
 import type {
@@ -406,6 +407,11 @@ export async function runProcessTrack(
       declickedSamples,
       addedToEngineDj,
     }
+  } catch (e) {
+    // The toast is all the user sees and it is gone once dismissed; the log is what a
+    // report attaches ("Send feedback" reads its error lines), so the failure goes there.
+    log.error('process:track failed', job.inputPath, e)
+    throw e
   } finally {
     deps.endJob(job.id)
     if (prepared) await prepared.cleanup()
