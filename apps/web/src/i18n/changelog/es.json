@@ -5,6 +5,10 @@
     "title": "Normaliza más rápido y actualiza sin perder etiquetas",
     "items": [
       {
+        "text": "La profundidad de bits tiene su propia opción «Corregido», como ya la tenía la frecuencia de muestreo. Es la que reduce a 16 bits reales un archivo que declara 24 pero lleva audio de 16 dentro, sin perder nada y ocupando un tercio menos. «Igual que el origen» vuelve a significar lo que dice y conserva el archivo tal cual. Si ya convertías con «Igual que el origen», tu ajuste pasa a «Corregido» y tus conversiones siguen saliendo igual.",
+        "in": "0.99.9"
+      },
+      {
         "text": "Normalizar va más rápido: medir la sonoridad de una pista cuesta una cuarta parte de lo que costaba, y Surco mide una sola vez. La lectura de la sección de loudness del editor es la misma que usa la conversión, así que normalizar un lote deja medidas todas sus pistas y abrir una pista ya medida no vuelve a medirla.",
         "in": "0.99.0"
       },
