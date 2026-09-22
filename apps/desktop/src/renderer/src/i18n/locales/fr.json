@@ -774,8 +774,7 @@
       "destination": "Sortie",
       "naming": "Noms",
       "editor": "Éditeur",
-      "artwork": "Pochette",
-      "fields": "Champs",
+      "tags": "Tags",
       "shortcuts": "Raccourcis"
     },
     "tabGroups": {

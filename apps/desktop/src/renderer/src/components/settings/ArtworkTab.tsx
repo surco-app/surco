@@ -19,7 +19,7 @@ export function ArtworkTab({ synced, patch }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   return (
     <>
-      <SettingsSection first>
+      <SettingsSection>
         <SettingsField label={tr('settings.coverMaxSize')} htmlFor="settings-cover-max">
           <div className="flex items-center gap-2">
             <input

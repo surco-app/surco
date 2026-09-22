@@ -21,6 +21,7 @@ import '../i18n'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import type { Settings } from '../../../shared/types'
 import { FIELD_DEFS } from '../lib/fields'
+import type { SettingsTab } from '../lib/settingsTabs'
 import { SettingsModal } from './SettingsModal'
 
 afterEach(cleanup)
@@ -101,7 +102,7 @@ const settings: Settings = {
   lastSeenChangelogVersion: '',
 }
 
-function openNaming() {
+function openTab(tab: SettingsTab) {
   render(
     <SettingsModal
       settings={settings}
@@ -109,9 +110,9 @@ function openNaming() {
       onSave={() => {}}
       onPreviewTheme={() => {}}
       onSettingsReplaced={() => {}}
+      initialTab={tab}
     />,
   )
-  fireEvent.click(screen.getByTestId('settings-tab-naming'))
 }
 
 describe('SettingsModal sidebar indicator', () => {
@@ -166,8 +167,7 @@ describe('SettingsModal cover size clamp', () => {
   // An invalid cap used to save silently as 1200 — the typed value just vanished on
   // the next open. Clamping visibly on blur shows the figure that will be in effect.
   it('snaps an invalid cover size back to the default where the user can see it', async () => {
-    openNaming()
-    fireEvent.click(screen.getByTestId('settings-tab-artwork'))
+    openTab('tags')
     const input = screen.getByTestId('settings-cover-max') as HTMLInputElement
     fireEvent.change(input, { target: { value: '-5' } })
     fireEvent.blur(input)
@@ -448,7 +448,7 @@ describe('SettingsModal filename tokens', () => {
   // every metadata field must be usable in the file name — e.g. {rating}/{artist}
   // sorts exports into per-rating folders.
   it('offers a rating entry that inserts {rating}', () => {
-    openNaming()
+    openTab('naming')
     fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
     fireEvent.click(screen.getByTestId('field-insert-option-rating'))
     expect(screen.getByTestId('settings-filename-format')).toHaveValue('{rating}')
@@ -457,14 +457,14 @@ describe('SettingsModal filename tokens', () => {
   // input's ⋯ menu — the same one the editor fields carry — pick the field they
   // want, and its {token} lands in the format.
   it('inserts a token into the format from the input ⋯ menu', () => {
-    openNaming()
+    openTab('naming')
     fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
     fireEvent.click(screen.getByTestId('field-insert-option-albumArtist'))
     expect(screen.getByTestId('settings-filename-format')).toHaveValue('{albumArtist}')
   })
 
   it('previews the rendered file name from the sample track', () => {
-    openNaming()
+    openTab('naming')
     fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
     fireEvent.click(screen.getByTestId('field-insert-option-artist'))
     fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
@@ -477,7 +477,7 @@ describe('SettingsModal filename tokens', () => {
   // Every chip must move the preview: a token that renders to nothing reads as
   // "this field doesn't work in file names" even though real tracks fill it.
   it('renders a sample value for every insertable token', () => {
-    openNaming()
+    openTab('naming')
     const format = screen.getByTestId('settings-filename-format')
     for (const key of [...FIELD_DEFS.map((f) => f.key), 'rating']) {
       fireEvent.change(format, { target: { value: `{${key}}` } })
@@ -489,7 +489,7 @@ describe('SettingsModal filename tokens', () => {
   // inserting into ITS caret — without it the user has to remember token names the
   // filename input teaches by clicking.
   it('inserts a token into the title format via its own ⋯ menu and previews it', () => {
-    openNaming()
+    openTab('tags')
     fireEvent.click(screen.getByTestId('field-insert-settings-title-format'))
     fireEvent.click(screen.getByTestId('field-insert-option-trackNumber'))
     fireEvent.click(screen.getByTestId('field-insert-settings-title-format'))
@@ -503,7 +503,7 @@ describe('SettingsModal filename tokens', () => {
   // With 22 fields the menu is a lookup list: alphabetical by the localized label
   // is what lets the eye find one, and the order follows the UI language.
   it('lists the token menu alphabetically by the localized field label', () => {
-    openNaming()
+    openTab('naming')
     fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
     const labels = Array.from(
       screen
@@ -591,6 +591,26 @@ describe('SettingsModal organization', () => {
     ]) {
       expect(screen.getByTestId(id)).toBeVisible()
     }
+  })
+})
+
+describe('SettingsModal tags tab', () => {
+  // Everything about what gets written into the tags sits together: which fields, how the
+  // title is shaped and cleaned, and the embedded artwork.
+  it('gathers the fields, the title format, its cleanup and the artwork in one tab', () => {
+    openTab('tags')
+    for (const id of [
+      'auto-organize-fields',
+      'settings-title-format',
+      'settings-trim',
+      'settings-zeropad',
+      'settings-cover-max',
+      'settings-cover-square',
+    ]) {
+      expect(screen.getByTestId(id)).toBeVisible()
+    }
+    expect(screen.queryByTestId('settings-tab-fields')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('settings-tab-artwork')).not.toBeInTheDocument()
   })
 })
 

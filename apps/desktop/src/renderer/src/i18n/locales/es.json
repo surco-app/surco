@@ -774,8 +774,7 @@
       "destination": "Destino",
       "naming": "Nombres",
       "editor": "Editor",
-      "artwork": "Carátula",
-      "fields": "Campos",
+      "tags": "Etiquetas",
       "shortcuts": "Atajos"
     },
     "tabGroups": {
