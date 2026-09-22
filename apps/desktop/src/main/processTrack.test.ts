@@ -1,3 +1,4 @@
+import log from 'electron-log/main'
 import { describe, expect, it, vi } from 'vitest'
 import { errorKeyOf } from '../shared/errorKeys'
 import type { ProcessJob, Settings, TrackMetadata } from '../shared/types'
@@ -170,6 +171,28 @@ describe('runProcessTrack — metadata that never came from the file', () => {
     expect(errorKeyOf((err as Error).message)).toBe('sourceTagsUnread')
     expect(deps.convertAudio).not.toHaveBeenCalled()
     expect(deps.prepareProcessedCover).not.toHaveBeenCalled()
+  })
+})
+
+// A failed conversion reached the user only as a toast: nothing in main.log, so a report
+// of "-83 on rename" from an external disk arrived with no evidence beyond a screenshot,
+// and the "Send feedback" report, which attaches the log's error lines, carried none.
+describe('runProcessTrack — a failed job', () => {
+  it('writes the file and the error to the log before rejecting', async () => {
+    const error = vi.spyOn(log, 'error').mockImplementation(() => undefined as never)
+    const failure = Object.assign(new Error('EEXIST: file already exists, rename'), {
+      code: 'EEXIST',
+    })
+    const deps = makeDeps({
+      convertAudio: vi.fn(async () => {
+        throw failure
+      }),
+    })
+
+    await expect(runProcessTrack(job(), deps)).rejects.toBe(failure)
+
+    expect(error).toHaveBeenCalledWith('process:track failed', '/in/song.wav', failure)
+    error.mockRestore()
   })
 })
 
