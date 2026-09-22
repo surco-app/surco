@@ -1,3 +1,6 @@
+import type { TrackProperties } from '../../../shared/types'
+import { formatKHz } from './quality'
+
 // The source container, read off the input PATH's last extension and uppercased (FLAC,
 // MP3, WAV…). The path is the only reliable place: the parsed file name has already
 // dropped its extension and carries a track-number dot ("20. Title"), so splitting THAT
@@ -20,4 +23,21 @@ export function formatFileSize(bytes: number): string {
   const mb = kb / 1024
   if (mb < 1024) return `${mb.toFixed(1)} MB`
   return `${(mb / 1024).toFixed(2)} GB`
+}
+
+// A glanceable digest of the rip's shape (container · kHz · bits · channel mode); each
+// part drops out when the probe could not read it, so a lossy file just shows fewer
+// fields rather than blanks.
+export function audioSummaryParts(
+  p: TrackProperties,
+  tr: (key: string, params?: Record<string, unknown>) => string,
+): string[] {
+  return [
+    p.container.toUpperCase(),
+    p.sampleRateHz ? formatKHz(p.sampleRateHz) : '',
+    p.bitDepth !== null ? tr('editor.propBitDepthValue', { bits: p.bitDepth }) : '',
+    p.channels
+      ? tr(`editor.channelMode${p.channels <= 1 ? 'Mono' : p.channels === 2 ? 'Stereo' : 'Multi'}`)
+      : '',
+  ].filter(Boolean)
 }
