@@ -278,8 +278,9 @@ export function TrackListHeader({
               type="button"
               data-testid="trash-selected"
               onClick={onTrashSelected}
+              disabled={!selectedId && selectedIds.length === 0}
               aria-label={tr('commands.trashSelected')}
-              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-danger"
+              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-danger disabled:opacity-40"
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />
               <Tooltip label={tr('commands.trashSelected')} />
