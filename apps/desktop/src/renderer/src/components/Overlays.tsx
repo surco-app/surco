@@ -14,6 +14,7 @@ import { ConfirmDialog } from './ConfirmDialog'
 const SettingsModal = lazy(() =>
   import('./SettingsModal').then((m) => ({ default: m.SettingsModal })),
 )
+const StatsModal = lazy(() => import('./StatsModal').then((m) => ({ default: m.StatsModal })))
 const OnboardingWizard = lazy(() =>
   import('./OnboardingWizard').then((m) => ({ default: m.OnboardingWizard })),
 )
@@ -119,6 +120,10 @@ export function Overlays({
           onSettingsReplaced={setSettings}
           initialTab={activeModal.tab}
         />
+      )}
+
+      {activeModal?.type === 'stats' && settings && (
+        <StatsModal settings={settings} onClose={close} />
       )}
 
       {activeModal?.type === 'onboarding' && settings && (

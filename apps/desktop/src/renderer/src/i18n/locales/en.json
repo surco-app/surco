@@ -777,8 +777,7 @@
       "layout": "Sections",
       "artwork": "Artwork",
       "fields": "Fields",
-      "shortcuts": "Shortcuts",
-      "stats": "Stats"
+      "shortcuts": "Shortcuts"
     },
     "tabGroups": {
       "editing": "Editing",
