@@ -10,6 +10,7 @@ interface Props<T extends string> {
   labelFor: (option: T) => string
   // Extra container classes (margins) — the pill styling itself is fixed.
   className?: string
+  disabled?: boolean
 }
 
 // The option row used for normalization mode, theme, output format and key notation
@@ -33,6 +34,7 @@ export function SegmentedControl<T extends string>({
   testidPrefix,
   labelFor,
   className,
+  disabled = false,
 }: Props<T>): React.JSX.Element {
   const overlayRef = useRef<HTMLDivElement>(null)
   // null = no real measurement yet. A control can mount before it has geometry (a
@@ -90,7 +92,7 @@ export function SegmentedControl<T extends string>({
     <div
       // self-start: several callers stack settings in a flex column, whose default
       // stretch would pull the track to the panel's full width now that it paints a box.
-      className={`relative inline-flex gap-0.5 self-start rounded-[9px] border border-[var(--color-line)] bg-[var(--color-field)] p-[3px] ${className ?? ''}`}
+      className={`relative inline-flex gap-0.5 self-start rounded-[9px] border border-[var(--color-line)] bg-[var(--color-field)] p-[3px] ${disabled ? 'opacity-50' : ''} ${className ?? ''}`}
     >
       {options.map((id) => (
         <button
@@ -98,11 +100,12 @@ export function SegmentedControl<T extends string>({
           type="button"
           data-testid={`${testidPrefix}-${id}`}
           aria-pressed={value === id}
+          disabled={disabled}
           onClick={() => onChange(id)}
           // The buttons themselves all stay quiet — the overlay below paints the
           // raised state — so a segment the highlight is leaving fades back to muted
           // exactly as the clip uncovers it. Hover previews the fill without relief.
-          className="rounded-md px-4 py-1.5 text-sm text-fg-muted transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="rounded-md px-4 py-1.5 text-sm text-fg-muted transition-colors enabled:hover:bg-[var(--color-panel-2)] enabled:hover:text-fg disabled:cursor-not-allowed"
         >
           {labelFor(id)}
         </button>

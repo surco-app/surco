@@ -20,7 +20,7 @@ import {
 import { FieldsEditor } from './FieldsEditor'
 import { ModalShell } from './ModalShell'
 import { ArtworkTab } from './settings/ArtworkTab'
-import { ConversionTab } from './settings/ConversionTab'
+import { ConversionTab, EncoderAdvancedSettings } from './settings/ConversionTab'
 import { DestinationTab } from './settings/DestinationTab'
 import { EditorTab } from './settings/EditorTab'
 import { GeneralTab } from './settings/GeneralTab'
@@ -28,7 +28,7 @@ import { LayoutTab } from './settings/LayoutTab'
 import { NamingTab, TitleFormatSettings } from './settings/NamingTab'
 import { ProcessingTab } from './settings/ProcessingTab'
 import { SearchTab } from './settings/SearchTab'
-import { SettingsAdvancedProvider } from './settings/SettingsPrimitives'
+import { AdvancedDisclosure, SettingsAdvancedProvider } from './settings/SettingsPrimitives'
 import { ShortcutsTab } from './settings/ShortcutsTab'
 
 interface Props {
@@ -306,8 +306,16 @@ export function SettingsModal({
               {tab === 'search' && (
                 <SearchTab synced={synced} local={local} patch={patch} patchLocal={patchLocal} />
               )}
-              {tab === 'conversion' && <ConversionTab synced={synced} patch={patch} />}
-              {tab === 'processing' && <ProcessingTab synced={synced} patch={patch} />}
+              {tab === 'output' && (
+                <>
+                  <ConversionTab synced={synced} patch={patch} />
+                  <NamingTab synced={synced} patch={patch} />
+                  <ProcessingTab synced={synced} patch={patch} />
+                  <AdvancedDisclosure id="output">
+                    <EncoderAdvancedSettings synced={synced} patch={patch} />
+                  </AdvancedDisclosure>
+                </>
+              )}
               {tab === 'destination' && (
                 <DestinationTab
                   synced={synced}
@@ -322,7 +330,6 @@ export function SettingsModal({
                   onAcceptDetectedNmlPath={acceptDetectedNmlPath}
                 />
               )}
-              {tab === 'naming' && <NamingTab synced={synced} patch={patch} />}
               {tab === 'editor' && (
                 <>
                   <EditorTab synced={synced} patch={patch} />
