@@ -147,3 +147,12 @@ export function withEngineDj(p: DestinationPlan, on: boolean): DestinationPlan {
 export function keepsOutputCopy(p: DestinationPlan): boolean {
   return !p.appleMusic || p.engineDj || p.keepOutputCopy
 }
+
+export type DjSoftware = 'appleMusic' | 'engineDj' | 'rekordbox' | 'traktor'
+
+export const DJ_SOFTWARE_NAMES: Record<DjSoftware, string> = {
+  appleMusic: 'Apple Music',
+  engineDj: 'Engine DJ',
+  rekordbox: 'rekordbox',
+  traktor: 'Traktor',
+}
