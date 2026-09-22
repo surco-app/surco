@@ -5,6 +5,22 @@
     "title": "Normalize faster and update without losing tags",
     "items": [
       {
+        "text": "If you pin the bit depth or the sample rate in Settings, Surco now applies them when you convert or update a file in its own format too: a 96 kHz FLAC comes out at the 48 kHz you asked for, and the original goes to Originals. If the file already meets your settings, only its tags are updated, as before. The notice asking you to re-encode by hand is gone. An MP3 is never encoded to MP3 again.",
+        "in": "0.99.10"
+      },
+      {
+        "text": "If a conversion fails at the very last step, for instance on an external drive that refuses to rename the file, your track stays in its folder. Before, it could end up only in Originals and vanish from the folder without you noticing.",
+        "in": "0.99.10"
+      },
+      {
+        "text": "The convert button at the top counts only the tracks your filters and search leave visible, which are the ones it converts. Before, it could say 81 and convert 79.",
+        "in": "0.99.10"
+      },
+      {
+        "text": "Originals keeps files for a week by default instead of a month: undoing a conversion is something you decide the same day or the next. You can change it in Settings.",
+        "in": "0.99.10"
+      },
+      {
         "text": "Bit depth now has its own “Corrected” option, the way sample rate already did. It writes true 16-bit for a file that claims 24 but carries 16-bit audio inside, losing nothing and taking a third less space. “Same as source” goes back to meaning what it says and keeps the file as it is. If you were converting with “Same as source”, your setting moves to “Corrected” and your conversions come out the same as before.",
         "in": "0.99.9"
       },
