@@ -775,11 +775,6 @@
       "tags": "Tags",
       "shortcuts": "Atalhos"
     },
-    "tabGroups": {
-      "editing": "Edição",
-      "output": "Saída",
-      "app": "App"
-    },
     "shortcuts": {
       "intro": "Clique em um atalho e pressione as novas teclas. Esc cancela.",
       "recording": "Pressione as teclas…",

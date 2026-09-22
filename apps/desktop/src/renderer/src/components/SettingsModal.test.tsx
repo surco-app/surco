@@ -210,15 +210,20 @@ describe('SettingsModal tablist', () => {
     expect(screen.getByTestId('settings-tab-shortcuts')).toHaveFocus()
   })
 
-  // The sidebar groups the tabs under headings, but the arrow keys still walk the whole
-  // list — a group boundary is a visual divider, not a stop. Down from the last tab of one
-  // group lands on the first of the next.
-  it('crosses group boundaries with the arrow keys', () => {
+  // Seven tabs read as one short list in the order a setup runs, with no group headings
+  // to scan past.
+  it('lists the seven tabs in workflow order, with no group headings', () => {
     open()
-    const search = screen.getByTestId('settings-tab-search')
-    search.focus()
-    fireEvent.keyDown(search, { key: 'ArrowDown' })
-    expect(screen.getByTestId('settings-tab-editor')).toHaveFocus()
+    expect(screen.getAllByRole('tab').map((t) => t.dataset.testid)).toEqual([
+      'settings-tab-general',
+      'settings-tab-search',
+      'settings-tab-editor',
+      'settings-tab-tags',
+      'settings-tab-output',
+      'settings-tab-destination',
+      'settings-tab-shortcuts',
+    ])
+    expect(screen.getByRole('tablist').querySelectorAll('p')).toHaveLength(0)
   })
 })
 
