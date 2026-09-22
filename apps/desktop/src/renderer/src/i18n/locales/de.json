@@ -933,7 +933,6 @@
     },
     "flacCompressionHint": "Betrifft nur Größe und Geschwindigkeit; das Audio ist auf jeder Stufe identisch.",
     "flacCompressionApplies": "Gilt beim Konvertieren nach FLAC.",
-    "destination": "Wohin konvertierte Tracks gehen",
     "djSoftware": "Womit legst du auf?",
     "djSoftwareDoes": {
       "appleMusic": "Fügt den Track deiner Mediathek hinzu",
@@ -948,13 +947,9 @@
     "location": "Wo wird die konvertierte Datei gespeichert?",
     "destinations": {
       "folder": "Ausgabeordner",
-      "appleMusic": "Apple Music",
-      "engineDj": "Engine DJ",
       "beside": "Neben dem Original",
       "overwrite": "Original überschreiben"
     },
-    "destinationAppleMusicHint": "Fügt zu Apple Music hinzu, keine Kopie im Ausgabeordner.",
-    "destinationEngineDjHint": "Registriert den Track in deiner Engine DJ-Bibliothek; die Datei bleibt im Ausgabeordner.",
     "destinationBesideHint": "Schreibt die Konvertierung neben die Quelldatei, ohne sie je anzutasten; beim gleichen Format erhält die Kopie einen „(2)“-Namen.",
     "destinationOverwriteHint": "Überschreibt jede Quelldatei direkt; keine Ausgabekopie. Bei Formatwechsel wird das Original entfernt.",
     "engineLibraryDir": "Engine DJ-Bibliothek",
