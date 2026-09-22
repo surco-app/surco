@@ -6,6 +6,7 @@ import { ModalShell } from './ModalShell'
 interface Props {
   title: string
   message: string
+  items?: string[]
   confirmLabel: string
   confirmDisabled?: boolean
   // Paints the confirm button red for irreversible actions (delete, clear), the macOS
@@ -21,6 +22,7 @@ interface Props {
 export function ConfirmDialog({
   title,
   message,
+  items,
   confirmLabel,
   confirmDisabled,
   destructive,
@@ -55,6 +57,15 @@ export function ConfirmDialog({
         {title}
       </h2>
       <p className="mt-2 text-sm text-fg-dim">{message}</p>
+      {items && items.length > 0 && (
+        <ul data-testid="confirm-items" className="mt-3 space-y-1 text-sm">
+          {items.map((line) => (
+            <li key={line} className="break-words">
+              {line}
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="mt-6 flex justify-end gap-2">
         <button
           ref={cancelRef}

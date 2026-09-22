@@ -42,7 +42,7 @@ import { TrackListHeader } from './components/TrackListHeader'
 import { TrashPanel } from './components/TrashPanel'
 import { useActivityLog } from './hooks/useActivityLog'
 import { useAutoMatch } from './hooks/useAutoMatch'
-import { useConfirmFlows } from './hooks/useConfirmFlows'
+import { type CleanupOffer, useConfirmFlows } from './hooks/useConfirmFlows'
 import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
 import { useEditorPicks } from './hooks/useEditorPicks'
 import { editorSectionOpen, useMaximizedSection } from './hooks/useEditorSections'
@@ -65,7 +65,7 @@ import { useTriageFilters } from './hooks/useTriageFilters'
 import { waveformOptions } from './hooks/useWaveform'
 import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries, seedCachedAnalyses } from './lib/analysisQueries'
-import type { AppleMusicIndex, StaleLibraryCopy } from './lib/appleMusicLibrary'
+import type { AppleMusicIndex } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
 import { acceptReviewPatch, type MatchCleanup, tracksToAutoMatch } from './lib/autoMatch'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
@@ -870,14 +870,11 @@ export default function App(): React.JSX.Element {
     },
   )
 
-  // The confirm-before-firing actions (trash, delete original, fill-all, clear-all,
+  // The confirm-before-firing actions (trash, clean up previous files, fill-all, clear-all,
   // in-place convert-all): each builds its dialog and wires onConfirm into the data layer.
   const {
     askTrash,
-    askDeleteOriginal,
-    askTrashSuperseded,
-    askTrashSupersededAll,
-    askRemoveOldMusicCopy,
+    askCleanUp,
     askFillAll,
     askClearAll,
     askRemoveFromList,
@@ -1316,19 +1313,9 @@ export default function App(): React.JSX.Element {
   const onAddSelectedToAppleMusic = useStableCallback(() => {
     if (selected) void addTrackToAppleMusic(selected.id)
   })
-  const onTrashOriginal = useStableCallback(() => {
-    if (selected) askDeleteOriginal(selected)
+  const onCleanUp = useStableCallback((offer: CleanupOffer) => {
+    if (selected) void askCleanUp(selected, offer)
   })
-  const onRemoveOldMusicCopy = useStableCallback((stale: StaleLibraryCopy) => {
-    if (selected) askRemoveOldMusicCopy(selected, stale)
-  })
-  const onTrashSuperseded = useStableCallback((path: string) => {
-    if (selected) void askTrashSuperseded(selected, path)
-  })
-  // The batch offer works off the selected rows rather than the paths the footer showed:
-  // the flow marks each row as its own file goes, so a partial failure leaves the rest of
-  // the offer standing.
-  const onTrashSupersededAll = useStableCallback(() => void askTrashSupersededAll(selectedTracks))
   const onShowLoudnessHelp = useStableCallback(overlays.openLoudnessHelp)
   // The X on the plan card: the same synced flag the Settings checkbox writes, so one
   // click quiets every inline explanation and Settings > Editor brings them back.
@@ -1942,10 +1929,7 @@ export default function App(): React.JSX.Element {
                         onNormalizeChange={onNormalizeChange}
                         onDeclickChange={onDeclickChange}
                         onAddToAppleMusic={onAddSelectedToAppleMusic}
-                        onTrashOriginal={onTrashOriginal}
-                        onTrashSuperseded={onTrashSuperseded}
-                        onTrashSupersededAll={onTrashSupersededAll}
-                        onRemoveOldMusicCopy={onRemoveOldMusicCopy}
+                        onCleanUp={onCleanUp}
                         onResultsWidthChange={onResultsWidthChange}
                         onShowLoudnessHelp={onShowLoudnessHelp}
                         onHideEditorHints={onHideEditorHints}

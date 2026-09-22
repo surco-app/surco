@@ -7,6 +7,7 @@ export type { SettingsTab }
 export interface ConfirmModal {
   title: string
   message: string
+  items?: string[]
   confirmLabel: string
   confirmDisabled?: boolean
   destructive?: boolean

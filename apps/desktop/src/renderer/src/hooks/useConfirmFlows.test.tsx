@@ -30,6 +30,7 @@ function setup(
     reportOldCopyRemoveFailure?: ReturnType<typeof vi.fn<(mismatch: boolean) => void>>
     updateTrack?: ReturnType<typeof vi.fn<(id: string, patch: Partial<TrackItem>) => void>>
     removeTrack?: ReturnType<typeof vi.fn<(id: string) => void>>
+    reportTrashFailure?: ReturnType<typeof vi.fn<(fileName: string) => void>>
     settings?: Settings | null
   } = {},
 ) {
@@ -44,7 +45,7 @@ function setup(
       deriveTracks: vi.fn(),
       processAll: vi.fn(),
       openConfirm: (c) => opened.push(c),
-      reportTrashFailure: vi.fn(),
+      reportTrashFailure: extra.reportTrashFailure ?? vi.fn(),
       onOldMusicCopyRemoved: extra.onOldMusicCopyRemoved ?? vi.fn(),
       reportOldCopyRemoveFailure: extra.reportOldCopyRemoveFailure ?? vi.fn(),
       tracksRef: { current: allTracks },
@@ -161,93 +162,166 @@ describe('useConfirmFlows scope wording', () => {
   })
 })
 
-describe('useConfirmFlows remove old Apple Music copy', () => {
-  // Removing a track from the user's Apple Music library is destructive and rides on a
-  // scored hint (the stale-copy match), so nothing may fire before the confirmation —
-  // and the outcome must be reported so the library snapshot refreshes. The dialog must
-  // name the library entry by ITS OWN artist/title, not the fresh track's: the match can
-  // be wrong, and the entry's label is the only thing that lets the user catch it.
-  it('deletes the superseded copy only after a confirmation naming that copy', async () => {
-    // The shape the handler really resolves with. It used to be the bare string
-    // 'deleted', which `res?.location` reads as undefined — so the branch that retires
-    // the delete-original link never ran here and the test passed on a fiction. Typing
-    // the mock against the contract is what turned that into a compile error.
+describe('useConfirmFlows clean up previous files', () => {
+  const stale = { persistentId: 'OLDCOPY123456789', label: 'Djmofly - Save My Love (26 Rmx)' }
+
+  // One link replaced three, so the one dialog must say everything it is about to move:
+  // a single "clean up" that silently took the old Apple Music entry along with the
+  // original would delete more than the user agreed to. Nothing moves before the answer.
+  it('lists the original, the replaced file and the old library copy before touching any', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
     const deleteAppleMusic = vi
       .fn<Api['deleteAppleMusic']>()
       .mockResolvedValue({ outcome: 'deleted' })
-    installApi({ deleteAppleMusic })
-    const onOldMusicCopyRemoved = vi.fn()
-    const { flows, opened } = setup([], { onOldMusicCopyRemoved })
-    flows.askRemoveOldMusicCopy(track('a'), {
-      persistentId: 'OLDCOPY123456789',
-      label: 'Djmofly - Save My Love (26 Rmx)',
+    installApi({ trashFile, deleteAppleMusic, keepsTrash: vi.fn().mockResolvedValue(true) })
+    const a = track('a', { status: 'done', replacesPath: '/old/a.mp3' })
+    const { flows, opened } = setup([a])
+    await flows.askCleanUp(a, {
+      originalPath: '/a.wav',
+      supersededPaths: ['/old/a.mp3'],
+      staleMusicCopy: stale,
     })
     expect(opened[0].destructive).toBe(true)
-    expect(opened[0].message).toContain('Djmofly - Save My Love (26 Rmx)')
+    expect(opened[0].items).toHaveLength(3)
+    expect(opened[0].items?.join('\n')).toContain('a.wav')
+    expect(opened[0].items?.join('\n')).toContain('a.mp3')
+    expect(opened[0].items?.join('\n')).toContain('Djmofly - Save My Love (26 Rmx)')
+    expect(trashFile).not.toHaveBeenCalled()
     expect(deleteAppleMusic).not.toHaveBeenCalled()
-    opened[0].onConfirm()
-    expect(deleteAppleMusic).toHaveBeenCalledWith(
-      'OLDCOPY123456789',
-      'Djmofly - Save My Love (26 Rmx)',
-    )
-    await waitFor(() => expect(onOldMusicCopyRemoved).toHaveBeenCalled())
   })
 
-  // The user confirmed a destructive dialog; a silent failure would read as "the old
-  // copy is gone" when it isn't.
-  it('reports a failed removal out loud', async () => {
+  // Confirming runs the same three actions the separate links ran, and each row learns
+  // its file is gone so the link retires instead of offering a file already in the Trash.
+  it('runs every listed removal and marks the rows once confirmed', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
     const deleteAppleMusic = vi
       .fn<Api['deleteAppleMusic']>()
-      .mockRejectedValue(new Error('osascript failed'))
-    installApi({ deleteAppleMusic })
-    const reportOldCopyRemoveFailure = vi.fn()
-    const { flows, opened } = setup([], { reportOldCopyRemoveFailure })
-    flows.askRemoveOldMusicCopy(track('a'), {
-      persistentId: 'OLDCOPY123456789',
-      label: 'Djmofly - Save My Love (26 Rmx)',
+      .mockResolvedValue({ outcome: 'deleted' })
+    installApi({ trashFile, deleteAppleMusic, keepsTrash: vi.fn().mockResolvedValue(true) })
+    const a = track('a', { status: 'done', replacesPath: '/old/a.mp3' })
+    const updateTrack = vi.fn()
+    const onOldMusicCopyRemoved = vi.fn()
+    const { flows, opened } = setup([a], { updateTrack, onOldMusicCopyRemoved })
+    await flows.askCleanUp(a, {
+      originalPath: '/a.wav',
+      supersededPaths: ['/old/a.mp3'],
+      staleMusicCopy: stale,
     })
+    opened[0].onConfirm()
+    await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('a', { originalTrashed: true }))
+    await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('a', { supersededTrashed: true }))
+    expect(deleteAppleMusic).toHaveBeenCalledWith(stale.persistentId, stale.label)
+    expect(trashFile).toHaveBeenCalledWith('/a.wav')
+    expect(trashFile).toHaveBeenCalledWith('/old/a.mp3')
+    expect(onOldMusicCopyRemoved).toHaveBeenCalled()
+  })
+
+  // A multi-select replacement strands one file per track; each row is marked by its own
+  // file so a partial failure leaves the rest of the offer standing.
+  it('marks each replaced file on the row that replaced it', async () => {
+    installApi({
+      trashFile: vi.fn<Api['trashFile']>().mockResolvedValue(undefined),
+      keepsTrash: vi.fn().mockResolvedValue(true),
+    })
+    const a = track('a', { status: 'done', replacesPath: '/old/a.mp3' })
+    const b = track('b', { status: 'done', replacesPath: '/old/b.mp3' })
+    const updateTrack = vi.fn()
+    const { flows, opened } = setup([a, b], { updateTrack })
+    await flows.askCleanUp(a, {
+      originalPath: null,
+      supersededPaths: ['/old/a.mp3', '/old/b.mp3'],
+      staleMusicCopy: null,
+    })
+    opened[0].onConfirm()
+    await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('b', { supersededTrashed: true }))
+    expect(updateTrack).toHaveBeenCalledWith('a', { supersededTrashed: true })
+  })
+
+  // Measured 15/09 on the user's NAS (smbfs, no .Trashes): a file was lost while the
+  // dialog promised it was recoverable. Any file on such a volume drops the promise.
+  it('warns that the deletion may be permanent when a file sits on a volume without a Trash', async () => {
+    installApi({
+      keepsTrash: vi.fn(async (path: string) => path !== '/Volumes/NAS/old/a.mp3'),
+    })
+    const a = track('a', { status: 'done', replacesPath: '/Volumes/NAS/old/a.mp3' })
+    const { flows, opened } = setup([a])
+    await flows.askCleanUp(a, {
+      originalPath: '/a.wav',
+      supersededPaths: ['/Volumes/NAS/old/a.mp3'],
+      staleMusicCopy: null,
+    })
+    expect(opened[0].message).toContain('network volume')
+  })
+
+  // The user confirmed a destructive dialog; a silent failure would read as done.
+  it('reports a file that could not be moved out loud', async () => {
+    installApi({
+      trashFile: vi.fn<Api['trashFile']>().mockRejectedValue(new Error('EPERM')),
+      keepsTrash: vi.fn().mockResolvedValue(true),
+    })
+    const reportTrashFailure = vi.fn()
+    const a = track('a', { status: 'done' })
+    const { flows, opened } = setup([a], { reportTrashFailure })
+    await flows.askCleanUp(a, { originalPath: '/a.wav', supersededPaths: [], staleMusicCopy: null })
+    opened[0].onConfirm()
+    await waitFor(() => expect(reportTrashFailure).toHaveBeenCalledWith('a.wav'))
+  })
+
+  it('reports a failed Apple Music removal out loud', async () => {
+    installApi({
+      deleteAppleMusic: vi
+        .fn<Api['deleteAppleMusic']>()
+        .mockRejectedValue(new Error('osascript failed')),
+    })
+    const reportOldCopyRemoveFailure = vi.fn()
+    const a = track('a')
+    const { flows, opened } = setup([], { reportOldCopyRemoveFailure })
+    await flows.askCleanUp(a, { originalPath: null, supersededPaths: [], staleMusicCopy: stale })
     opened[0].onConfirm()
     await waitFor(() => expect(reportOldCopyRemoveFailure).toHaveBeenCalledWith(false))
   })
 
-  // With Music's "copy files to the Media folder" off, the old entry's file can BE a
-  // loaded row's source. Once it goes to the Trash, that row must know (originalTrashed)
-  // so the footer's own delete-original link retires instead of failing confusingly on
-  // a file that is already in the Trash.
-  it('marks a loaded track whose source file was the trashed old copy', async () => {
-    const deleteAppleMusic = vi
-      .fn<Api['deleteAppleMusic']>()
-      .mockResolvedValue({ outcome: 'deleted', location: '/a.wav' })
-    installApi({ deleteAppleMusic })
+  // The delete script refused because the live Music track no longer matches the label
+  // the user confirmed: nothing was deleted, and App must refresh the poisoned snapshot.
+  it('reports a refused mismatched removal as a mismatch', async () => {
+    installApi({
+      deleteAppleMusic: vi
+        .fn<Api['deleteAppleMusic']>()
+        .mockRejectedValue(
+          new Error("Error invoking remote method 'applemusic:delete': applemusic-delete-mismatch"),
+        ),
+    })
+    const reportOldCopyRemoveFailure = vi.fn()
+    const a = track('a')
+    const { flows, opened } = setup([], { reportOldCopyRemoveFailure })
+    await flows.askCleanUp(a, { originalPath: null, supersededPaths: [], staleMusicCopy: stale })
+    opened[0].onConfirm()
+    await waitFor(() => expect(reportOldCopyRemoveFailure).toHaveBeenCalledWith(true))
+  })
+
+  // With Music's "copy files to the Media folder" off, the old entry's file can BE the
+  // original listed beside it. Removing the entry already sent that file to the Trash,
+  // so trashing it again would fail on a missing file and report a false error.
+  it('does not trash the original again when the old library copy was that same file', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    installApi({
+      trashFile,
+      keepsTrash: vi.fn().mockResolvedValue(true),
+      deleteAppleMusic: vi
+        .fn<Api['deleteAppleMusic']>()
+        .mockResolvedValue({ outcome: 'deleted', location: '/a.wav' }),
+    })
     const updateTrack = vi.fn()
-    const { flows, opened } = setup([track('a')], { updateTrack })
-    flows.askRemoveOldMusicCopy(track('a'), {
-      persistentId: 'OLDCOPY123456789',
-      label: 'Djmofly - Save My Love (26 Rmx)',
+    const a = track('a', { status: 'done' })
+    const { flows, opened } = setup([a], { updateTrack })
+    await flows.askCleanUp(a, {
+      originalPath: '/a.wav',
+      supersededPaths: [],
+      staleMusicCopy: stale,
     })
     opened[0].onConfirm()
     await waitFor(() => expect(updateTrack).toHaveBeenCalledWith('a', { originalTrashed: true }))
-  })
-
-  // The delete script refused because the live Music track no longer matches the label
-  // the user confirmed (a stale/misaligned snapshot). Nothing was deleted — the flow
-  // must say so distinctly, not with the generic "could not remove" error, so App can
-  // also refresh the poisoned snapshot.
-  it('reports a refused mismatched removal as a mismatch', async () => {
-    const deleteAppleMusic = vi
-      .fn<Api['deleteAppleMusic']>()
-      .mockRejectedValue(
-        new Error("Error invoking remote method 'applemusic:delete': applemusic-delete-mismatch"),
-      )
-    installApi({ deleteAppleMusic })
-    const reportOldCopyRemoveFailure = vi.fn()
-    const { flows, opened } = setup([], { reportOldCopyRemoveFailure })
-    flows.askRemoveOldMusicCopy(track('a'), {
-      persistentId: 'OLDCOPY123456789',
-      label: 'Djmofly - Save My Love (26 Rmx)',
-    })
-    opened[0].onConfirm()
-    await waitFor(() => expect(reportOldCopyRemoveFailure).toHaveBeenCalledWith(true))
+    expect(trashFile).not.toHaveBeenCalled()
   })
 })
 

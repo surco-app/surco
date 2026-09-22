@@ -30,6 +30,14 @@ describe('ConfirmDialog', () => {
     expect(screen.getByText('This removes all 4 tracks.')).toBeInTheDocument()
   })
 
+  // A dialog that moves several things at once must name each one: the user can only
+  // catch a wrong file (or a wrong library match) if it is written out before confirming.
+  it('lists every item the action will touch', () => {
+    renderDialog({ items: ['Original: “a.wav”', 'Replaced file: “a.mp3”'] })
+    expect(screen.getByTestId('confirm-items')).toHaveTextContent('a.wav')
+    expect(screen.getByTestId('confirm-items')).toHaveTextContent('a.mp3')
+  })
+
   // A screen reader announces a dialog by its accessible name; without one it just
   // says "dialog", leaving the user unsure what they're confirming.
   it('names the dialog after its title for screen readers', () => {

@@ -4,6 +4,7 @@ import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatMatchesInput } from '../../../shared/format'
 import type { FormatSetting, NormalizeConfig, OutputFormat } from '../../../shared/types'
+import type { CleanupOffer } from '../hooks/useConfirmFlows'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import type { Destination } from '../lib/destination'
 import { openFeedback } from '../lib/feedback'
@@ -51,21 +52,18 @@ interface ConvertFooterProps {
   // it runs. Undefined in multi, where the toolbar batch pill owns the cancel.
   onCancel?: () => void
   onAddToAppleMusic?: () => void
-  onTrashOriginal?: () => void
   // The library copy this track's add superseded (the old rip the fresh copy replaces),
   // resolved by the editor from the library snapshot: its persistent ID plus the raw
   // label the confirm dialog names it by. Null when there is nothing to replace.
   staleMusicCopy?: StaleLibraryCopy | null
-  onRemoveOldMusicCopy?: (stale: StaleLibraryCopy) => void
   // The file this conversion SUPERSEDED, once the replacement finished: it left Apple
   // Music and rekordbox now follows the new file, so nothing references it any more.
   // Null when the conversion replaced nothing, or the file is already trashed.
   supersededPath?: string | null
-  onTrashSuperseded?: (path: string) => void
-  // The batch counterpart: one offer for every file a multi-select replacement stranded,
-  // rather than a link per track. The paths come from selectionStatus, which already
-  // filters out the unfinished and the already-trashed.
-  onTrashSupersededAll?: (paths: string[]) => void
+  // One quiet link for everything the conversion left behind: the original, the
+  // superseded files (one per track in multi, from selectionStatus) and the old Apple
+  // Music copy. App confirms with a dialog that lists each before anything moves.
+  onCleanUp?: (offer: CleanupOffer) => void
   // Opens the DJ-app collection export — offered once the export landed, since the
   // collection file references the converted copies.
   onExportCollection: () => void
@@ -73,7 +71,7 @@ interface ConvertFooterProps {
 
 // The editor's bottom bar: the error row, the normalization note, and either the
 // convert split-button or — once everything selected is done — the outcome line with
-// its inline file links (reveal/re-export/trash) and the Apple-Music/DJ-app row.
+// its inline file links (reveal/re-export/clean up) and the Apple-Music/DJ-app row.
 export function ConvertFooter({
   item,
   isMulti,
@@ -99,12 +97,9 @@ export function ConvertFooter({
   onProcess,
   onCancel,
   onAddToAppleMusic,
-  onTrashOriginal,
   staleMusicCopy,
-  onRemoveOldMusicCopy,
   supersededPath,
-  onTrashSuperseded,
-  onTrashSupersededAll,
+  onCleanUp,
   onExportCollection,
 }: ConvertFooterProps): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -125,6 +120,15 @@ export function ConvertFooter({
   // keeps the plain add semantics: the sweep resolves add-vs-update per track.
   const hasMusicCopy = !isMulti && !!item.musicPersistentId
   const showInMusic = hasMusicCopy && musicAdded
+  const cleanup: CleanupOffer = {
+    originalPath: canDeleteOriginal ? item.inputPath : null,
+    supersededPaths: isMulti ? status.supersededPaths : supersededPath ? [supersededPath] : [],
+    staleMusicCopy: !isMulti && musicAdded && staleMusicCopy ? staleMusicCopy : null,
+  }
+  const cleanupCount =
+    (cleanup.originalPath ? 1 : 0) +
+    cleanup.supersededPaths.length +
+    (cleanup.staleMusicCopy ? 1 : 0)
   // The footer swaps wholesale between the convert button and the done line — the
   // one state change every conversion ends on, and it used to snap. The keyed block
   // below rises in on a real swap only: the editor remounts this footer per track,
@@ -199,44 +203,14 @@ export function ConvertFooter({
                   {tr('editor.showFile')}
                 </button>
               )}
-              {canDeleteOriginal && (
+              {cleanupCount > 0 && (
                 <button
                   type="button"
-                  data-testid="delete-original"
-                  onClick={onTrashOriginal}
+                  data-testid="clean-up-previous"
+                  onClick={() => onCleanUp?.(cleanup)}
                   className="press text-xs text-fg-dim hover:text-danger"
                 >
-                  {tr('editor.deleteOriginal')}
-                </button>
-              )}
-              {isMulti && status.supersededPaths.length > 0 && (
-                <button
-                  type="button"
-                  data-testid="trash-superseded-all"
-                  onClick={() => onTrashSupersededAll?.(status.supersededPaths)}
-                  className="press text-xs text-fg-dim hover:text-danger"
-                >
-                  {tr('editor.trashSupersededCount', { count: status.supersededPaths.length })}
-                </button>
-              )}
-              {!isMulti && supersededPath && (
-                <button
-                  type="button"
-                  data-testid="trash-superseded"
-                  onClick={() => onTrashSuperseded?.(supersededPath)}
-                  className="press text-xs text-fg-dim hover:text-danger"
-                >
-                  {tr('editor.trashSuperseded')}
-                </button>
-              )}
-              {!isMulti && musicAdded && staleMusicCopy && (
-                <button
-                  type="button"
-                  data-testid="remove-old-copy"
-                  onClick={() => onRemoveOldMusicCopy?.(staleMusicCopy)}
-                  className="press text-xs text-fg-dim hover:text-danger"
-                >
-                  {tr('editor.removeOldCopy')}
+                  {tr('editor.cleanUpPrevious', { count: cleanupCount })}
                 </button>
               )}
             </div>
