@@ -150,41 +150,41 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
         // ffmpeg off-screen; it resumes the moment the app is focused again.
         await focusGate.current.wait()
         if (analyzeCancel.current) return
+        // Read at the track's turn, not when it was queued: an in-place conversion that
+        // renames the file meanwhile leaves the queued row on a path that no longer exists,
+        // and the probe then reports a file the user can see right there as missing.
+        const path = targetsRef.current.find((x) => x.id === t.id)?.inputPath ?? t.inputPath
         try {
-          await queryClient.fetchQuery(spectrogramOptions(t.inputPath))
+          await queryClient.fetchQuery(spectrogramOptions(path))
           // The wave feeds the silence attention filter (silence left to trim); the
           // clip/channel scan — a separate probe since the split — feeds the clipping
           // one. Both decoded here so a single "analyze all" fills those buckets
           // collection-wide instead of only for tracks the user opened or played.
-          await queryClient.fetchQuery(waveformOptions(t.inputPath))
-          await queryClient.fetchQuery(waveformScanOptions(t.inputPath))
+          await queryClient.fetchQuery(waveformOptions(path))
+          await queryClient.fetchQuery(waveformScanOptions(path))
           // Each probe returns a different result type, so the fetchQuery calls are wrapped
           // as thunks: kept in one array they'd unify to a union of option shapes fetchQuery
           // can't accept, whereas each thunk keeps its own probe type monomorphic at its call.
           const rest = [
             () =>
               queryClient.fetchQuery(
-                analysisOptions('loudness', t.inputPath, () =>
-                  window.api.loudness(t.inputPath, 'low'),
-                ),
+                analysisOptions('loudness', path, () => window.api.loudness(path, 'low')),
               ),
             () =>
               queryClient.fetchQuery(
-                analysisOptions('clicks', t.inputPath, () => window.api.clicks(t.inputPath, 'low')),
+                analysisOptions('clicks', path, () => window.api.clicks(path, 'low')),
               ),
             () =>
               queryClient.fetchQuery(
-                analysisOptions('bpm', t.inputPath, () => window.api.bpm(t.inputPath, 'low')),
+                analysisOptions('bpm', path, () => window.api.bpm(path, 'low')),
               ),
             () =>
               queryClient.fetchQuery(
-                analysisOptions('key', t.inputPath, () => window.api.key(t.inputPath, 'low')),
+                analysisOptions('key', path, () => window.api.key(path, 'low')),
               ),
             () =>
               queryClient.fetchQuery(
-                analysisOptions('properties', t.inputPath, () =>
-                  window.api.properties(t.inputPath),
-                ),
+                analysisOptions('properties', path, () => window.api.properties(path)),
               ),
           ]
           for (const run of rest) {
