@@ -1068,14 +1068,35 @@ export async function planConversion(
     }
   }
 
+  // A same-format lossless source copies unless the pins would change its audio: the
+  // pins are what every file should end up as, so Surco applies them rather than
+  // leaving the user to spot the gap. Unpinned, the copy needs no probe at all.
+  const pinned =
+    q.bitDepth !== 'source' || (q.sampleRate !== 'source' && q.sampleRate !== 'corrected')
+  const keepsSource = async (plan: Awaited<ReturnType<typeof losslessPlan>>): Promise<boolean> => {
+    const src = sourceDepth(await probeOnce())
+    return (
+      plan.sampleRateHz === undefined &&
+      !plan.dither &&
+      plan.depth.bits === src.bits &&
+      plan.depth.float === src.float
+    )
+  }
+
   if (format === 'wav') {
-    if (WAV_INPUT.test(input) && copyOk) return { codec: 'copy', ext: '.wav' }
-    const { depth, ...rest } = await losslessPlan()
+    const same = WAV_INPUT.test(input) && copyOk
+    if (same && !pinned) return { codec: 'copy', ext: '.wav' }
+    const plan = await losslessPlan()
+    if (same && (await keepsSource(plan))) return { codec: 'copy', ext: '.wav' }
+    const { depth, ...rest } = plan
     return { codec: pcmCodec(depth, 'le'), ...rest, ext: '.wav' }
   }
   if (format === 'flac') {
-    if (FLAC_INPUT.test(input) && copyOk) return { codec: 'copy', ext: '.flac' }
-    const { depth, ...rest } = await losslessPlan()
+    const same = FLAC_INPUT.test(input) && copyOk
+    if (same && !pinned) return { codec: 'copy', ext: '.flac' }
+    const plan = await losslessPlan()
+    if (same && (await keepsSource(plan))) return { codec: 'copy', ext: '.flac' }
+    const { depth, ...rest } = plan
     // FLAC holds integers only (its s32 input writes 24-bit), so a float source
     // lands on the encoder's widest width rather than keeping float.
     return {
@@ -1098,8 +1119,11 @@ export async function planConversion(
       ext: '.m4a',
     }
   }
-  if (AIFF_INPUT.test(input) && copyOk) return { codec: 'copy', ext: '.aiff' }
-  const { depth, ...rest } = await losslessPlan()
+  const same = AIFF_INPUT.test(input) && copyOk
+  if (same && !pinned) return { codec: 'copy', ext: '.aiff' }
+  const plan = await losslessPlan()
+  if (same && (await keepsSource(plan))) return { codec: 'copy', ext: '.aiff' }
+  const { depth, ...rest } = plan
   return { codec: pcmCodec(depth, 'be'), ...rest, ext: '.aiff' }
 }
 

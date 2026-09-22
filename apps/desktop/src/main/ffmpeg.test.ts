@@ -565,10 +565,11 @@ describe('planConversion', () => {
     })
   })
 
-  // Djotas' case: a same-format source (96/24 FLAC → FLAC) is a metadata-only
-  // update BY DESIGN, even with pins set — the quality knobs never silently
-  // re-encode what looks like "already converted".
-  it('keeps the same-format copy shortcut even when quality pins are set', async () => {
+  // The quality pins are what the user asked every file to end up as. A same-format
+  // source used to copy regardless, with an editor banner offering a manual re-encode
+  // and reading "your settings ask for NaN bits"; the user's call was that Surco should
+  // simply apply them. Replaced in place, the original lands in Originals as any rewrite.
+  it('re-encodes a same-format lossless source that misses the pinned quality', async () => {
     const probe96 = vi.fn(async () => ({
       codecName: 'flac',
       sampleFmt: 's32',
@@ -578,8 +579,51 @@ describe('planConversion', () => {
     }))
     expect(
       await planConversion('/in.flac', 'flac', probe96, false, { sampleRate: '48000' }),
+    ).toEqual({
+      codec: 'flac',
+      sampleFmt: 's32',
+      compressionLevel: '5',
+      sampleRateHz: 48000,
+      ext: '.flac',
+    })
+    expect(await planConversion('/in.wav', 'wav', probe96, false, { bitDepth: '16' })).toEqual({
+      codec: 'pcm_s16le',
+      dither: true,
+      ext: '.wav',
+    })
+  })
+
+  // Updating tags must not touch audio that already is what the settings ask for: a
+  // re-encode there is churn at best, and loses the stream-copy's verbatim cues.
+  it('still copies a same-format source that already meets the pinned quality', async () => {
+    expect(
+      await planConversion('/in.flac', 'flac', probe16, false, {
+        bitDepth: '16',
+        sampleRate: '44100',
+      }),
     ).toEqual({ codec: 'copy', ext: '.flac' })
-    expect(probe96).not.toHaveBeenCalled()
+    expect(
+      await planConversion('/in.aiff', 'aiff', probe, false, { bitDepth: 'corrected' }, () =>
+        Promise.resolve({ usage: 'full' }),
+      ),
+    ).toEqual({ codec: 'copy', ext: '.aiff' })
+  })
+
+  // The default depth policy: a 24-bit container proven to carry 16-bit audio is
+  // compacted even when it stays in its own format, losslessly and without dither.
+  it('compacts a padded same-format source under the corrected depth', async () => {
+    expect(
+      await planConversion('/in.aiff', 'aiff', probe, false, { bitDepth: 'corrected' }, () =>
+        Promise.resolve({ usage: 'padded16' }),
+      ),
+    ).toEqual({ codec: 'pcm_s16be', ext: '.aiff' })
+  })
+
+  it('never re-encodes a same-format MP3, whatever rate is pinned', async () => {
+    expect(await planConversion('/in.mp3', 'mp3', probe, false, { sampleRate: '48000' })).toEqual({
+      codec: 'copy',
+      ext: '.mp3',
+    })
   })
 
   it('never stream-copies when normalizing, since the gain filter must re-encode the samples', async () => {
