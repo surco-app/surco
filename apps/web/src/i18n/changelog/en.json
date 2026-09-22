@@ -5,6 +5,10 @@
     "title": "Normalize faster and update without losing tags",
     "items": [
       {
+        "text": "Bit depth now has its own “Corrected” option, the way sample rate already did. It writes true 16-bit for a file that claims 24 but carries 16-bit audio inside, losing nothing and taking a third less space. “Same as source” goes back to meaning what it says and keeps the file as it is. If you were converting with “Same as source”, your setting moves to “Corrected” and your conversions come out the same as before.",
+        "in": "0.99.9"
+      },
+      {
         "text": "Normalizing is faster: measuring a track’s loudness costs a quarter of what it did, and Surco measures only once. The reading in the editor’s loudness section is the same one the conversion uses, so normalizing a batch leaves every track measured, and opening a track already measured does not measure it again.",
         "in": "0.99.0"
       },
