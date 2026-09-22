@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
@@ -54,10 +54,9 @@ describe('SectionHeader folded summary', () => {
   })
 })
 
-describe('SectionHeader switch row', () => {
+describe('SectionHeader folded row', () => {
   function header(over: Partial<React.ComponentProps<typeof SectionHeader>> = {}) {
     const onToggle = vi.fn()
-    const onSwitch = vi.fn()
     render(
       <SectionHeader
         title="TRIM"
@@ -67,49 +66,23 @@ describe('SectionHeader switch row', () => {
         summaryTestId="trim-row-sentence"
         help="What trim does"
         right={<span data-testid="pill">pill</span>}
-        toggle={{ checked: false, onChange: onSwitch, testId: 'section-switch' }}
+        foldedRow
         {...over}
       />,
     )
-    return { onToggle, onSwitch }
+    return { onToggle }
   }
 
-  // Folded, the audio sections read as one row: a switch and what will happen. Pills,
-  // badges and the help note were a second vocabulary for the same fact.
-  it('reads as the sentence and the switch alone while folded', () => {
+  it('reads as the sentence alone while folded, with no switch, pill or help note', () => {
     header()
     expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent('Removes 3.6 s')
-    expect(screen.getByRole('switch', { name: 'TRIM' })).toHaveAttribute('aria-checked', 'false')
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument()
     expect(screen.queryByTestId('pill')).not.toBeInTheDocument()
     expect(screen.queryByTestId('section-help')).not.toBeInTheDocument()
   })
 
-  // The switch acts on the conversion; folding is a different question. A click that did
-  // both would open a tool the user only meant to turn on.
-  it('flips the switch without folding or unfolding the section', () => {
-    const { onToggle, onSwitch } = header()
-    fireEvent.click(screen.getByTestId('section-switch'))
-    expect(onSwitch).toHaveBeenCalledWith(true)
-    expect(onToggle).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: 'TRIM' }))
-    expect(onToggle).toHaveBeenCalledTimes(1)
-  })
-
-  // A switch with nothing to act on stays in place, disabled, so the row never changes
-  // shape between tracks.
-  it('keeps a switch with nothing to do on screen but disabled', () => {
-    const { onSwitch } = header({
-      toggle: { checked: false, disabled: true, onChange: vi.fn(), testId: 'section-switch' },
-    })
-    expect(screen.getByTestId('section-switch')).toBeDisabled()
-    fireEvent.click(screen.getByTestId('section-switch'))
-    expect(onSwitch).not.toHaveBeenCalled()
-  })
-
-  // Open, the full tool is below: the header keeps the switch and its usual extras.
-  it('keeps the switch and the extras once open', () => {
+  it('keeps the extras once open', () => {
     header({ open: true })
-    expect(screen.getByTestId('section-switch')).toBeInTheDocument()
     expect(screen.getByTestId('pill')).toBeInTheDocument()
     expect(screen.getByTestId('section-help')).toBeInTheDocument()
   })

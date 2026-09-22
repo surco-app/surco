@@ -2,7 +2,6 @@ import { ChevronRight, Info, Maximize2, Minimize2 } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { type EditorSection, useMaximizedSection } from '../hooks/useEditorSections'
-import { SectionSwitch, type SectionToggle } from './SectionSwitch'
 import { Tooltip } from './Tooltip'
 
 interface SectionHeaderProps {
@@ -33,7 +32,7 @@ interface SectionHeaderProps {
   // wires itself to the shared maximized-section store, so the Editor's overlay and every
   // header stay one state.
   maximizable?: boolean
-  toggle?: SectionToggle
+  foldedRow?: boolean
 }
 
 export function SectionHeader({
@@ -47,12 +46,12 @@ export function SectionHeader({
   help,
   sectionId,
   maximizable,
-  toggle,
+  foldedRow,
 }: SectionHeaderProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { maximized, setMaximized } = useMaximizedSection()
   const isMaximized = sectionId !== undefined && maximized === sectionId
-  const row = !open && toggle !== undefined
+  const row = !open && foldedRow === true
   return (
     <div className="flex items-center justify-between gap-3">
       {/* The button stretches across the free width (and pads a few px vertically)
@@ -99,7 +98,6 @@ export function SectionHeader({
         </span>
       )}
       {!row && right}
-      {toggle && <SectionSwitch {...toggle} label={title} />}
       {maximizable === true && sectionId !== undefined && (
         <button
           type="button"

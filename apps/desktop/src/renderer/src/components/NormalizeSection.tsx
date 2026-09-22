@@ -93,8 +93,6 @@ export function NormalizeSection({
     item.inputPath,
     settled && !isMulti && ((showHints && value.mode !== 'none') || showReadout),
   )
-  const lastOn = useRef<NormalizeConfig | null>(value.mode === 'none' ? null : value)
-  if (value.mode !== 'none') lastOn.current = value
   const compareRef = useRef<HTMLDivElement>(null)
   const mounted = useRef(false)
   useEffect(() => {
@@ -129,14 +127,7 @@ export function NormalizeSection({
         }
         summaryTestId="normalize-row-sentence"
         summaryMuted={value.mode === 'none'}
-        toggle={{
-          checked: value.mode !== 'none',
-          onChange: (on) =>
-            onChange(
-              on ? (lastOn.current ?? { ...value, mode: 'loudness' }) : { ...value, mode: 'none' },
-            ),
-          testId: 'normalize-switch',
-        }}
+        foldedRow
       />
       <SectionBody open={open}>
         <div className="mt-4">

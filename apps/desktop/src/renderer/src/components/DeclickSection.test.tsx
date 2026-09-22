@@ -157,16 +157,14 @@ async function withPreview(
 }
 
 describe('DeclickSection', () => {
-  // Folded, the section is one row: a switch and the repair in words. The accent badge
-  // and the dim "Off" were two vocabularies for the same on/off fact.
-  it('reads the folded row as the repair mode in words beside a switch', () => {
+  it('reads the folded row as the repair mode in words, with no switch since the mode is the state', () => {
     const { rerender } = render(section({ value: 'standard', open: false }))
     expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent('Standard repair')
-    expect(screen.getByTestId('declick-switch')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.queryByTestId('declick-switch')).not.toBeInTheDocument()
     expect(screen.queryByTestId('declick-active-badge')).not.toBeInTheDocument()
     rerender(section({ value: 'off', open: false }))
     expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent('Off')
-    expect(screen.getByTestId('declick-switch')).toHaveAttribute('aria-checked', 'false')
+    expect(screen.queryByTestId('declick-switch')).not.toBeInTheDocument()
   })
 
   // The estimate is a full scan; the folded row must never start one just to fill a
@@ -179,21 +177,6 @@ describe('DeclickSection', () => {
     await screen.findByTestId('declick-estimate-pill', undefined, { timeout: 3000 })
     rerender(section({ value: 'off', open: false }))
     expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent('Off · ~23 clicks')
-  })
-
-  // Turning it back on should bring back the strength the DJ chose, not reset it: they
-  // switched it off to compare, not to start over.
-  it('switches on to the last mode used, or Standard the first time', () => {
-    const onChange = vi.fn()
-    const { rerender } = render(section({ value: 'off', open: false, onChange }))
-    fireEvent.click(screen.getByTestId('declick-switch'))
-    expect(onChange).toHaveBeenLastCalledWith('standard')
-    rerender(section({ value: 'strong', open: false, onChange }))
-    fireEvent.click(screen.getByTestId('declick-switch'))
-    expect(onChange).toHaveBeenLastCalledWith('off')
-    rerender(section({ value: 'off', open: false, onChange }))
-    fireEvent.click(screen.getByTestId('declick-switch'))
-    expect(onChange).toHaveBeenLastCalledWith('strong')
   })
 
   it('pills the click estimate on the header once measured', async () => {
