@@ -195,20 +195,16 @@ describe('NormalizeSection layout', () => {
     expect(info).toHaveTextContent(i18n.t('normalize.editorHint'))
   })
 
-  // Folded, the section is one row: a switch and what the conversion will do to this
-  // track, in words. The mode badge and the bare figures beside it read as one number
-  // printed twice with nothing saying which was the target.
-  it('reads the off state as the original loudness beside a switch that is off', () => {
+  it('reads the off state as the original loudness, with no switch since the mode is the state', () => {
     renderWith({ open: false, value: cfg })
     expect(screen.getByTestId('normalize-row-sentence')).toHaveTextContent('Original loudness')
-    expect(screen.getByTestId('normalize-switch')).toHaveAttribute('aria-checked', 'false')
+    expect(screen.queryByTestId('normalize-switch')).not.toBeInTheDocument()
     expect(screen.queryByTestId('normalize-active-badge')).not.toBeInTheDocument()
   })
 
   it('names the target while the measurement is not there', () => {
     renderWith({ open: false, value: loud })
     expect(screen.getByTestId('normalize-row-sentence')).toHaveTextContent('Levels to -14 LUFS')
-    expect(screen.getByTestId('normalize-switch')).toHaveAttribute('aria-checked', 'true')
   })
 
   // "Where it is now and where it will land" is the whole decision; once the measurement
@@ -239,37 +235,6 @@ describe('NormalizeSection layout', () => {
   it('drops the sentence once the section is open', () => {
     renderWith({ open: true, value: loud })
     expect(screen.queryByTestId('normalize-row-sentence')).not.toBeInTheDocument()
-    expect(screen.getByTestId('normalize-switch')).toBeInTheDocument()
-  })
-
-  // On means loudness to the target the dials already hold (the Settings default, or what
-  // the DJ last dialled); switching off and on again must bring back that same setup,
-  // peak mode included, rather than a reset.
-  it('switches on to the last setup used, loudness the first time, and off to none', () => {
-    const onChange = vi.fn()
-    const first = renderWith({ open: false, value: cfg, onChange })
-    fireEvent.click(screen.getByTestId('normalize-switch'))
-    expect(onChange).toHaveBeenLastCalledWith({ ...cfg, mode: 'loudness' })
-    first.unmount()
-    const peak: NormalizeConfig = { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -0.1 }
-    const second = renderWith({ open: false, value: peak, onChange })
-    fireEvent.click(screen.getByTestId('normalize-switch'))
-    expect(onChange).toHaveBeenLastCalledWith({ ...peak, mode: 'none' })
-    second.rerender(
-      <QueryClientProvider client={createQueryClient()}>
-        <NormalizeSection
-          value={{ ...peak, mode: 'none' }}
-          open={false}
-          onToggle={vi.fn()}
-          onChange={onChange}
-          item={track()}
-          selectedCount={1}
-          format="alac"
-        />
-      </QueryClientProvider>,
-    )
-    fireEvent.click(screen.getByTestId('normalize-switch'))
-    expect(onChange).toHaveBeenLastCalledWith(peak)
   })
 
   // In a multi-selection the anchor's measurement would pass for the whole batch.

@@ -181,8 +181,6 @@ export function DeclickSection({
   )
 
   const count = clicks?.count
-  const lastOn = useRef<DeclickMode>(value === 'off' ? 'standard' : value)
-  if (value !== 'off') lastOn.current = value
   // The detector reads the first eight minutes (CLICK_SCAN_SECONDS). Past that nothing was
   // analysed, and a wave that simply stops marking would read as a clean tail — so the
   // unscanned tail says so rather than lying by omission.
@@ -206,11 +204,7 @@ export function DeclickSection({
         ].join(' · ')}
         summaryTestId="declick-row-sentence"
         summaryMuted={value === 'off'}
-        toggle={{
-          checked: value !== 'off',
-          onChange: (on) => onChange(on ? lastOn.current : 'off'),
-          testId: 'declick-switch',
-        }}
+        foldedRow
         right={
           !isMulti && typeof count === 'number' ? (
             <SectionPill tone="neutral" testid="declick-estimate-pill" numeric>
