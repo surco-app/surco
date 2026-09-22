@@ -1122,8 +1122,7 @@ export default function App(): React.JSX.Element {
   // The toolbar bulk actions (fill, empty) act on the visible (filtered) rows — never the
   // whole list behind an active filter, and never scoped to the selection: the toolbar mirrors
   // what's on screen, so a click can't touch rows the user filtered out of view. Removing only
-  // a few rows is the right-click menu's "Remove from list"; wiping the entire list regardless
-  // of filter is the palette's "Clear the list".
+  // a few rows is the right-click menu's "Remove from list".
   const onFillAll = useStableCallback(() =>
     askFillAll(bulkTracksRef.current, { fromSelection: selectedTracks.length > 1 }),
   )
@@ -1139,9 +1138,6 @@ export default function App(): React.JSX.Element {
   // The toolbar/palette "Move the selection to Trash": the same confirmed flow as the
   // context menu, over the multi-selection or the single selected row.
   const onTrashSelected = useStableCallback(() => askTrash(editScope(selectedTracks, selected)))
-  // The palette's "Clear the list" is the deliberate start-over: it wipes every track,
-  // including the ones an active format filter is hiding, unlike the toolbar trash button.
-  const onClearEverything = useStableCallback(() => askClearAll(tracksRef.current))
   const onOpenPalette = useStableCallback(overlays.openPalette)
   const onOpenStats = useStableCallback(() => openSettings('stats'))
   const onOpenSettings = useStableCallback(openSettings)
@@ -1628,7 +1624,7 @@ export default function App(): React.JSX.Element {
       addTrackToAppleMusic,
       removeTrack,
       reveal: window.api.reveal,
-      askClearAll: onClearEverything,
+      askClearAll: onClearAll,
       bulkTracks,
       askTrashSuspects: onTrashSuspects,
       askTrashSelected: onTrashSelected,

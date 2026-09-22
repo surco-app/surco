@@ -616,6 +616,17 @@ describe('buildCommands trash-selected gate', () => {
   })
 })
 
+describe('buildCommands clear-the-list gate', () => {
+  // The palette clears what the DJ sees, like the header button; with a filter hiding every
+  // row there is nothing on screen to clear, so the entry must not offer a confirm for none.
+  it('enables the clear only when rows are visible', () => {
+    const hidden = makeDeps({ tracks: [track()], visibleTracks: [] })
+    expect(commandById(hidden, 'remove-all').enabled).toBe(false)
+    const shown = makeDeps({ tracks: [track()], visibleTracks: [track()] })
+    expect(commandById(shown, 'remove-all').enabled).toBe(true)
+  })
+})
+
 describe('buildCommands bulk scope', () => {
   // The palette's Convert-all and Auto-match must act on the shared bulk scope (a
   // deliberate multi-selection when there is one, else the visible rows) — the same

@@ -761,7 +761,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       id: 'remove-all',
       group: 'library',
       title: tr('commands.clearAll'),
-      enabled: tracks.length > 0,
+      enabled: visibleTracks.length > 0,
       run: askClearAll,
     },
     {
