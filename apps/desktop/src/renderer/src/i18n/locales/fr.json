@@ -433,7 +433,7 @@
     "loudnessLufsLabel": "Loudness",
     "loudnessPeakLabel": "Pic",
     "loudnessRangeLabel": "Plage",
-    "loudnessLufsHint": "Loudness intégré (LUFS) — le volume global perçu du morceau",
+    "loudnessLufsHint": "Loudness intégré (LUFS) : le niveau global perçu du morceau",
     "loudnessPeakHint": "Pic réel (dBTP) — l'instant le plus fort du signal",
     "loudnessRangeHint": "Plage de loudness (LU) — l'écart entre les passages doux et forts",
     "loudnessGroupLoudness": "Loudness",
@@ -460,7 +460,7 @@
     "waveformViewSide": "Côte à côte",
     "waveformViewOverlay": "Superposée",
     "waveformFade": "Fondu entre l'avant et l'après",
-    "loudnessLufsHelp": "(LUFS) — le volume global perçu du morceau. Trop bas, il sonne plus faible que tes autres morceaux ; trop haut, il sonne écrasé.",
+    "loudnessLufsHelp": "(LUFS) : le loudness global perçu du morceau. Trop bas, il sonne plus faible que tes autres morceaux ; trop haut, il sonne écrasé.",
     "loudnessPeakHelp": "(dBTP) — l'instant le plus fort du signal. Au-dessus de 0, ça peut distordre (clipper) à la conversion ou à la lecture.",
     "loudnessRangeHelp": "(LU) — l'écart entre les passages doux et forts. Une plage très basse signale une grosse compression (la loudness war).",
     "loudnessCrestHelp": "(dB) — l'écart entre les pics et le niveau moyen, autrement dit le punch. Une valeur basse veut dire que le morceau est écrasé.",
@@ -684,7 +684,7 @@
   "normalize": {
     "title": "Normalisation du loudness",
     "hint": "Désactivée par défaut. Aligne chaque morceau sur un loudness ou un pic cible.",
-    "editorHint": "Aligne chaque piste sur une sonie ou une crête cible.",
+    "editorHint": "Aligne chaque morceau sur un loudness ou un pic cible.",
     "mode": {
       "none": "Aucune",
       "loudness": "Loudness",
@@ -716,8 +716,8 @@
     "appliesToSelection": "Ces réglages s’appliquent aux {{count}} morceaux sélectionnés.",
     "truePeakCaption": "Une limite de sécurité, pas un second objectif : elle n'agit que si les crêtes l'atteignent.",
     "modeLine": {
-      "loudness": "Toutes les pistes sortiront au même volume : le gain amène chacune à l'objectif.",
-      "peak": "Aligne l'échantillon le plus fort de chaque piste ; le volume perçu variera encore."
+      "loudness": "Toutes les pistes sortiront avec le même loudness : le gain amène chacune à l'objectif.",
+      "peak": "Aligne l'échantillon le plus fort de chaque piste ; le loudness perçu variera encore."
     },
     "plan": {
       "head": "Ce qui arrivera à cette piste",
@@ -1073,8 +1073,8 @@
       "metadataBody": "Tags, pochette et l'appariement Discogs — toujours actif. C'est à ça que sert Surco.",
       "restore": "Restaurer les rips de vinyle",
       "restoreBody": "Couper les silences et réparer les clics et craquements des enregistrements de vinyle.",
-      "level": "Égaliser le volume",
-      "levelBody": "Normaliser le volume pour que les morceaux restent à un niveau constant dans ton set.",
+      "level": "Égaliser le loudness",
+      "levelBody": "Normaliser le loudness pour que les morceaux restent à un niveau constant dans ton set.",
       "quality": "Vérifier la qualité audio",
       "qualityBody": "Afficher un spectre de chaque morceau pour repérer les fichiers avec perte ré-encodés en sans perte."
     },

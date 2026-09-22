@@ -1073,7 +1073,7 @@
       "metadataBody": "Tags, artwork and the Discogs match — always on. It's what Surco is for.",
       "restore": "Restore vinyl rips",
       "restoreBody": "Trim dead air and repair clicks and pops on recordings from vinyl.",
-      "level": "Level the volume",
+      "level": "Level the loudness",
       "levelBody": "Normalize loudness so tracks sit at a consistent level across your set.",
       "quality": "Check audio quality",
       "qualityBody": "Show a spectrum of each track to spot lossy files re-encoded as lossless."
