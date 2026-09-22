@@ -66,7 +66,7 @@ import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { keymapMenuClick } from './menuCommand'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { abandonNmlBatch, beginNmlBatch, endNmlBatch } from './nmlBatch'
-import { configureOriginalKeeper } from './originalKeeper'
+import { configureOriginalKeeper, configureOriginalRestorer } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
 import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
 import { runProcessTrack } from './processTrack'
@@ -171,6 +171,9 @@ const surcoTrash = createSurcoTrash(join(app.getPath('userData'), 'trash'), () =
   return { retentionDays: s.backupRetentionDays, maxBytes: s.backupMaxGb * 1024 ** 3 }
 })
 configureOriginalKeeper((path, reason, outputPath) => surcoTrash.stash(path, reason, outputPath))
+configureOriginalRestorer(async (entry) => {
+  await surcoTrash.restore(entry.id)
+})
 app.on('open-file', (event, path) => {
   event.preventDefault()
   mediaAccess.allow(path)

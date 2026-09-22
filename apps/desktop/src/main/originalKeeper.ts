@@ -54,3 +54,17 @@ export async function keepOriginal(
 ): Promise<TrashEntry | null> {
   return keeper ? keeper(path, reason, outputPath, ctx) : null
 }
+
+// The way back for a write that archived the original and then failed: without it the
+// user's file is gone from its folder and survives only in Originals, which empties itself.
+export type OriginalRestorer = (entry: TrashEntry) => Promise<void>
+
+let restorer: OriginalRestorer | null = null
+
+export function configureOriginalRestorer(next: OriginalRestorer | null): void {
+  restorer = next
+}
+
+export async function restoreOriginal(entry: TrashEntry): Promise<void> {
+  if (restorer) await restorer(entry)
+}
