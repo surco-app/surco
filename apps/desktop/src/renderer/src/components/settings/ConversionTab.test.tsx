@@ -76,16 +76,15 @@ function renderTab(over: Partial<SyncedDraft> = {}) {
 }
 
 describe('ConversionTab MP3 quality', () => {
-  // The encoder choice is set while MP3 is the pick. Under AIFF it stays on screen,
-  // disabled, with the reason: a control that vanished read as a setting that was gone.
-  it('keeps the quality control in view, disabled with the reason, until MP3 is the format', () => {
+  // A track can be converted to MP3 from the editor's format menu whatever the default
+  // is, and that conversion uses this setting too: disabling it under AIFF hid a knob
+  // that still decided how those MP3s sounded.
+  it('keeps the quality control usable under any default format and says when it applies', () => {
     renderTab()
-    expect(screen.getByTestId('settings-mp3-quality-320')).toBeDisabled()
-    expect(screen.getByTestId('settings-mp3-quality-off')).toBeInTheDocument()
-    cleanup()
-    renderTab({ outputFormat: 'mp3' })
     expect(screen.getByTestId('settings-mp3-quality-320')).toBeEnabled()
-    expect(screen.queryByTestId('settings-mp3-quality-off')).toBeNull()
+    expect(screen.getByTestId('settings-mp3-quality-applies')).toHaveTextContent(
+      i18n.t('settings.mp3QualityApplies'),
+    )
   })
 
   it('stages the V0 pick through the draft patch', () => {
@@ -104,14 +103,13 @@ describe('ConversionTab MP3 quality', () => {
     expect(patch).toHaveBeenCalledWith('mp3Quality', 'v2')
   })
 
-  // Bit depth shapes PCM/FLAC/ALAC encodes; under MP3 it is disabled and says why
-  // (LAME has no bit depth).
-  it('disables the bit depth control under MP3 and stages the pick for lossless', () => {
-    renderTab({ outputFormat: 'mp3' })
-    expect(screen.getByTestId('settings-bit-depth-16')).toBeDisabled()
-    expect(screen.getByTestId('settings-bit-depth-off')).toBeInTheDocument()
-    cleanup()
-    const patch = renderTab({ outputFormat: 'flac' })
+  // Bit depth shapes the lossless encodes a track can be sent to from the editor even
+  // when MP3 is the default, so it stays usable and names the formats it shapes.
+  it('keeps the bit depth control usable under MP3 and stages the pick', () => {
+    const patch = renderTab({ outputFormat: 'mp3' })
+    expect(screen.getByTestId('settings-bit-depth-applies')).toHaveTextContent(
+      i18n.t('settings.bitDepthApplies'),
+    )
     fireEvent.click(screen.getByTestId('settings-bit-depth-16'))
     expect(patch).toHaveBeenCalledWith('outputBitDepth', '16')
   })
@@ -131,12 +129,11 @@ describe('ConversionTab MP3 quality', () => {
     expect(patch).toHaveBeenCalledWith('outputSampleRate', 'corrected')
   })
 
-  it('disables the FLAC compression control until FLAC is the format', () => {
-    renderTab()
-    expect(screen.getByTestId('settings-flac-compression-8')).toBeDisabled()
-    expect(screen.getByTestId('settings-flac-compression-off')).toBeInTheDocument()
-    cleanup()
-    const patch = renderTab({ outputFormat: 'flac' })
+  it('keeps the FLAC compression control usable under any default format', () => {
+    const patch = renderTab()
+    expect(screen.getByTestId('settings-flac-compression-applies')).toHaveTextContent(
+      i18n.t('settings.flacCompressionApplies'),
+    )
     fireEvent.click(screen.getByTestId('settings-flac-compression-8'))
     expect(patch).toHaveBeenCalledWith('flacCompression', '8')
   })

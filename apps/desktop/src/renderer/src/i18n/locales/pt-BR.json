@@ -910,8 +910,8 @@
       "v0": "V0",
       "v2": "V2"
     },
-    "mp3QualityHint": "Aplica-se a todas as exportações MP3. Taxas CBR em kbps — 320 é o padrão dos pools de DJ; V0 e V2 são VBR (arquivos menores com qualidade transparente). Uma fonte já em MP3 nunca é recodificada.",
-    "mp3QualityOff": "Ajuste com MP3 ou “Igual à origem” como formato padrão.",
+    "mp3QualityHint": "Taxas CBR em kbps: 320 é o padrão dos pools de DJ; V0 e V2 são VBR (arquivos menores com qualidade transparente). Uma fonte já em MP3 nunca é recodificada.",
+    "mp3QualityApplies": "Usado ao converter para MP3, também quando você o escolhe para uma única faixa.",
     "bitDepth": "Profundidade de bits",
     "bitDepths": {
       "16": "16 bits",
@@ -920,7 +920,7 @@
       "corrected": "Corrigido"
     },
     "bitDepthHint": "“Igual à origem” mantém a profundidade exata do arquivo, incluindo o preenchimento. Reduzir para 16 bits aplica dither; um arquivo já no formato de saída é copiado sem reconverter. “Corrigido” grava como 16 bits reais, sem perdas, um arquivo com áudio de 16 bits comprovado e preenchido para 24; o áudio de 24 bits genuíno mantém sua profundidade.",
-    "bitDepthOff": "O MP3 não tem profundidade de bits: ajuste com AIFF, WAV, FLAC, ALAC ou “Igual à origem”.",
+    "bitDepthApplies": "Usado ao converter para AIFF, WAV, FLAC ou ALAC; o MP3 não tem profundidade de bits.",
     "sampleRate": "Taxa de amostragem",
     "sampleRates": {
       "44100": "44,1 kHz",
@@ -936,7 +936,7 @@
       "8": "Máxima"
     },
     "flacCompressionHint": "Afeta apenas tamanho e velocidade; o áudio é idêntico em todos os níveis.",
-    "flacCompressionOff": "Ajuste com FLAC ou “Igual à origem” como formato padrão.",
+    "flacCompressionApplies": "Usado ao converter para FLAC.",
     "destination": "Para onde vão as faixas convertidas",
     "destinations": {
       "folder": "Pasta de saída",

@@ -910,8 +910,8 @@
       "v0": "V0",
       "v2": "V2"
     },
-    "mp3QualityHint": "Applies to every MP3 export. CBR rates in kbps — 320 is the DJ-pool standard; V0 and V2 are VBR (smaller files, transparent quality). A source already in MP3 is never re-encoded.",
-    "mp3QualityOff": "Set it with MP3 or “Same as source” as the default format.",
+    "mp3QualityHint": "CBR rates in kbps: 320 is the DJ-pool standard; V0 and V2 are VBR (smaller files, transparent quality). A source already in MP3 is never re-encoded.",
+    "mp3QualityApplies": "Used when converting to MP3, also when you pick it for a single track.",
     "bitDepth": "Bit depth",
     "bitDepths": {
       "16": "16-bit",
@@ -920,7 +920,7 @@
       "corrected": "Corrected"
     },
     "bitDepthHint": "“Same as source” keeps the file's exact depth, padding included. Reducing to 16-bit applies dither; a file already in the output format is copied without re-encoding. “Corrected” writes a file proven to carry 16-bit audio padded to 24 as true 16-bit, losslessly; genuine 24-bit audio keeps its depth.",
-    "bitDepthOff": "MP3 has no bit depth: set it with AIFF, WAV, FLAC, ALAC or “Same as source”.",
+    "bitDepthApplies": "Used when converting to AIFF, WAV, FLAC or ALAC; MP3 has no bit depth.",
     "sampleRate": "Sample rate",
     "sampleRates": {
       "44100": "44.1 kHz",
@@ -936,7 +936,7 @@
       "8": "Maximum"
     },
     "flacCompressionHint": "Size vs. speed only — the audio is identical at every level.",
-    "flacCompressionOff": "Set it with FLAC or “Same as source” as the default format.",
+    "flacCompressionApplies": "Used when converting to FLAC.",
     "destination": "Where converted tracks go",
     "destinations": {
       "folder": "Output folder",
