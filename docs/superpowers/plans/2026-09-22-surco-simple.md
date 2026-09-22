@@ -5,7 +5,7 @@ Rama: `worktree-surco-simple`, base `main` @ c9f50409.
 
 ## Decisiones tomadas sin preguntar (el usuario pidió no preguntar)
 
-1. **Esconder antes que borrar.** Ningún ajuste guardado se borra del disco ni se migra con pérdida.
+1. **No quitar funcionalidad (confirmado por el usuario el 22/09).** Esconder antes que borrar. Ningún ajuste guardado se borra del disco ni se migra con pérdida.
    Lo que se quita de la vista pasa a un bloque "Avanzado" o se decide solo con el valor que ya
    tenía por defecto.
 2. **El original tras convertir.** No se borra nada automáticamente. Los tres enlaces de borrado
@@ -46,16 +46,16 @@ Una palabra por concepto en los 5 idiomas:
 
 - 2.1 Calidad como veredicto: una línea (veredicto + formato real) cuando está bien; se despliega sola cuando hay problema, con el espectro y una frase llana; evidencia numérica detrás de "Ver por qué".
 - 2.2 La tabla de loudness sale de Calidad y vive en la vista "Ajustar" de volumen.
-- 2.3 Sección "Audio" única: recorte, clicks y volumen como tres filas (interruptor + frase + "Ajustar…" que abre la vista maximizada existente).
-- 2.4 Propiedades sale del editor a "Información" (⌘I y menú contextual); su resumen se funde en la línea de calidad.
+- 2.3 Recorte, clicks y volumen siguen siendo tres secciones (configurables en Secciones), pero su cabecera plegada pasa a ser una fila con interruptor y una frase con el resultado; abrir o maximizar da la herramienta completa.
+- 2.4 Propiedades se queda como sección y además se puede ver en "Información" (⌘I y menú contextual); su resumen aparece también en la línea de calidad.
 - 2.5 Pie tras convertir: un único enlace de borrado.
 
 ## Fase 3: ajustes
 
-De 12 pestañas a 5: General, Etiquetas, Salida, Programas DJ, Atajos. Estadísticas sale a su propio
-modal. Profundidad, frecuencia, compresión FLAC, máximo de resultados, palabras a ignorar, carpeta
-de configuración, copia, caché, registro, betas, offset de cues y ruta de rekordbox pasan a "Avanzado".
-La pestaña Secciones y los interruptores que solo aliviaban el editor desaparecen de la vista.
+Reorganizar sin quitar nada (decisión del 22/09: "simplificar, pero no quitar funcionalidad"; Secciones,
+Mostrar calidad, Mostrar loudness y Explicaciones en línea "se usan muchísimo"). Menos pestañas agrupando
+por tarea; ningún ajuste desaparece. Los de uso raro pasan a un bloque "Avanzado" plegable dentro de su
+pestaña. Estadísticas sale a su propio modal.
 
 ## Fase 4: barra y lista
 
