@@ -43,6 +43,8 @@ const SAMPLE_META: TrackMetadata = {
   originalYear: '1998',
   trackTotal: '12',
   discTotal: '2',
+  copyright: '(P) 2026 Label',
+  encodedBy: 'Dj Vixent',
   originalArtist: 'Three Drives',
   lyricist: 'Dj Vixent',
   conductor: 'Dj Vixent',

@@ -608,6 +608,8 @@
     "conductor": "Conductor",
     "trackTotal": "Total tracks",
     "discTotal": "Total discs",
+    "copyright": "Copyright",
+    "encodedBy": "Encoded by",
     "isrc": "ISRC",
     "mixName": "Mix",
     "originalYear": "Original year",

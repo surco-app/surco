@@ -299,17 +299,19 @@ describe('convertArgs', () => {
   it('clears the source owner\'s provenance fields on a normal convert', () => {
     const args = convertArgs('/in.mp3', '/o.flac', { codec: 'flac' }, meta)
     for (const field of [
-      'encoded_by',
       'engineer',
       'technician',
       'software',
       'originator',
       'product',
       'source',
-      'copyright',
     ]) {
       expect(args, `${field} still rides through`).toContain(`${field}=`)
     }
+    // Copyright and "encoded by" are fields now: an empty value clears them the same way,
+    // which is what the editor sends while the user keeps them hidden.
+    expect(args).toContain('COPYRIGHT=')
+    expect(args).toContain('ENCODEDBY=')
   })
 
   // Reported 11/09/2026: a FLAC showing 2 stars in Surco and 5 in another tool. The
@@ -1222,6 +1224,8 @@ describe('tagsFromProbe', () => {
       trackTotal: '12',
       discNumber: '2',
       discTotal: '',
+      copyright: '',
+      encodedBy: '',
       bpm: '138',
       key: '8A',
       publisher: 'Kontor',
@@ -1423,6 +1427,8 @@ describe('tagsFromProbe', () => {
       conductor: '',
       trackTotal: '',
       discTotal: '',
+      copyright: '',
+      encodedBy: '',
       compilation: '',
       mood: '',
       energy: '',

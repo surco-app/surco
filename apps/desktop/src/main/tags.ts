@@ -163,6 +163,7 @@ export function readTagLibExtras(file: string): Partial<TrackMetadata> {
         composer: tag.composers?.join(', ').trim() || '',
         isrc: tag.isrc?.trim() || '',
         conductor: tag.conductor?.trim() || '',
+        copyright: tag.copyright?.trim() || '',
         trackTotal: tag.trackCount ? String(tag.trackCount) : '',
         discTotal: tag.discCount ? String(tag.discCount) : '',
       }
@@ -186,6 +187,7 @@ export function readTagLibExtras(file: string): Partial<TrackMetadata> {
         originalArtist: text('TOPE'),
         lyricist: text('TEXT'),
         conductor: extras.conductor || text('TPE3'),
+        encodedBy: text('TENC'),
         catalogNumber: userText('CATALOGNUMBER'),
         discogsReleaseId: userText('DISCOGS_RELEASE_ID'),
         energy: userText('ENERGYLEVEL') || userText('ENERGY'),
@@ -672,8 +674,8 @@ function extendedFields(meta: TrackMetadata): Array<[string, string]> {
   ]
 }
 
-// The credits with a standard ID3 frame of their own, and the name mp3tag gives each as
-// an iTunes freeform atom (MP4 has no dedicated box for any of the three).
+// The fields with a standard ID3 text frame TagLib has no property for, and the name
+// mp3tag gives each as an iTunes freeform atom (MP4 has no dedicated box for any of them).
 function creditFields(
   meta: TrackMetadata,
 ): Array<[(typeof Id3v2FrameIdentifiers)['TOPE'], string, string]> {
@@ -681,6 +683,7 @@ function creditFields(
     [Id3v2FrameIdentifiers.TOPE, 'ORIGARTIST', meta.originalArtist ?? ''],
     [Id3v2FrameIdentifiers.TEXT, 'LYRICIST', meta.lyricist ?? ''],
     [Id3v2FrameIdentifiers.TPE3, 'CONDUCTOR', meta.conductor ?? ''],
+    [Id3v2FrameIdentifiers.TENC, 'ENCODEDBY', meta.encodedBy ?? ''],
   ]
 }
 
@@ -796,6 +799,7 @@ export function writeTags(
     tag.publisher = meta.publisher
     tag.composers = toArray(meta.composer ?? '')
     tag.isrc = meta.isrc ?? ''
+    tag.copyright = meta.copyright ?? ''
     tag.subtitle = meta.mixName ?? ''
     tag.isCompilation = meta.compilation === '1'
 

@@ -165,6 +165,21 @@ export const TAG_FIELDS: TagField[] = [
     id3: 'TPE3',
     vorbis: 'CONDUCTOR',
   },
+  // Who made the file before it reached the user. Written from the editor like any other
+  // field, so an empty value clears them: the editor sends them empty while the user keeps
+  // the fields hidden, and the previous owner's studio and ripping tool do not ride along.
+  {
+    key: 'copyright',
+    aliases: ['copyright', 'tcop', 'tcr', 'cprt'],
+    id3: 'copyright',
+    vorbis: 'COPYRIGHT',
+  },
+  {
+    key: 'encodedBy',
+    aliases: ['encoded_by', 'encodedby', 'tenc', 'ten'],
+    id3: 'encoded_by',
+    vorbis: 'ENCODEDBY',
+  },
   // TORY, not TDOR: the ID3 targets are pinned to v2.3, where TDOR doesn't exist. TDOR is
   // its v2.4 successor and ORIGINALYEAR the Picard-convention Vorbis comment, both read.
   {

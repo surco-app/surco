@@ -608,6 +608,8 @@
     "conductor": "Regente",
     "trackTotal": "Total de faixas",
     "discTotal": "Total de discos",
+    "copyright": "Copyright",
+    "encodedBy": "Codificado por",
     "isrc": "ISRC",
     "mixName": "Mix",
     "originalYear": "Ano original",

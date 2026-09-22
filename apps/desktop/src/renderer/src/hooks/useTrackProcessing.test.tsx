@@ -579,6 +579,31 @@ describe('useTrackProcessing', () => {
     expect(onConversion).not.toHaveBeenCalled()
   })
 
+  // The conversion is where "hidden means cleared" has to hold: the previous owner's
+  // copyright goes out empty unless the user has chosen to show the field.
+  it('sends the copyright empty while the field is hidden and as edited once shown', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' })
+    setApi({ processTrack })
+    const owned = track({ id: 'a', meta: meta({ copyright: '(P) Label' }) })
+    const run = async (visibleFields: string[]) => {
+      const { result } = renderHook(
+        () =>
+          useTrackProcessing({
+            tracks: [owned],
+            settings: { visibleFields } as unknown as Settings,
+            updateTrack: vi.fn(),
+          }),
+        { wrapper: withClient() },
+      )
+      await act(async () => {
+        await result.current.processOne('a')
+      })
+      return processTrack.mock.lastCall?.[0].meta.copyright
+    }
+    expect(await run(['title'])).toBe('')
+    expect(await run(['title', 'copyright'])).toBe('(P) Label')
+  })
+
   // A per-track custom name (set via rename/regenerate) is normally honored, so the
   // export lands under the user's chosen file name rather than the source's.
   it('honors a custom output name when not overwriting', async () => {

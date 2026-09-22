@@ -608,6 +608,8 @@
     "conductor": "Dirigent",
     "trackTotal": "Titel gesamt",
     "discTotal": "Discs gesamt",
+    "copyright": "Copyright",
+    "encodedBy": "Kodiert von",
     "isrc": "ISRC",
     "mixName": "Mix",
     "originalYear": "Originaljahr",

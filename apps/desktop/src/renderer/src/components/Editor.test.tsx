@@ -465,6 +465,8 @@ describe('Editor clear metadata', () => {
         conductor: '',
         trackTotal: '',
         discTotal: '',
+        copyright: '',
+        encodedBy: '',
         compilation: '',
         mood: '',
         energy: '',

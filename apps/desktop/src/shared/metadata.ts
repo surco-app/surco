@@ -32,6 +32,8 @@ const FIELD_PRESENCE: Record<keyof TrackMetadata, true> = {
   conductor: true,
   trackTotal: true,
   discTotal: true,
+  copyright: true,
+  encodedBy: true,
   compilation: true,
   mood: true,
   energy: true,

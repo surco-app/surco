@@ -87,3 +87,14 @@ export function sanitizeMeta(meta: TrackMetadata, opts: HygieneOptions): TrackMe
   }
   return clean
 }
+
+// The fields that name who made the file before the user had it. While the user keeps a
+// field hidden it goes out empty, which clears the previous owner's value on conversion;
+// once shown, the editor's value is written like any other field's.
+const PROVENANCE_FIELDS = ['copyright', 'encodedBy'] as const
+
+export function clearHiddenProvenance(meta: TrackMetadata, visibleFields: string[]): TrackMetadata {
+  const out = { ...meta }
+  for (const key of PROVENANCE_FIELDS) if (!visibleFields.includes(key)) out[key] = ''
+  return out
+}
