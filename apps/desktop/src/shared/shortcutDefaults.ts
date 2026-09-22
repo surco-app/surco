@@ -28,6 +28,7 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   { id: 'find-replace', chord: ['mod', 'f'] },
   { id: 'rename', chord: ['mod', 'shift', 'r'] },
   { id: 'reveal', chord: ['mod', 'r'] },
+  { id: 'info', chord: ['mod', 'i'] },
   { id: 'add-apple-music', chord: ['mod', 'shift', 'm'] },
   { id: 'remove', chord: ['mod', 'backspace'], suppressWhileTyping: true },
   { id: 'settings', chord: ['mod', ','] },

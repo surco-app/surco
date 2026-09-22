@@ -11,6 +11,7 @@ interface MenuStrings {
   feedback: string
   file: string
   add: string
+  info: string
   reveal: string
   rename: string
   findReplace: string
@@ -70,6 +71,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     feedback: 'Enviar comentarios…',
     file: 'Archivo',
     add: 'Añadir pistas…',
+    info: 'Información',
     reveal: 'Mostrar en Finder',
     rename: 'Generar nombre del archivo…',
     findReplace: 'Buscar y reemplazar…',
@@ -131,6 +133,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     feedback: 'Send feedback…',
     file: 'File',
     add: 'Add tracks…',
+    info: 'Info',
     reveal: 'Reveal in Finder',
     rename: 'Build file name…',
     findReplace: 'Find & Replace…',
@@ -192,6 +195,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     feedback: 'Feedback senden…',
     file: 'Datei',
     add: 'Tracks hinzufügen…',
+    info: 'Informationen',
     reveal: 'Im Finder zeigen',
     rename: 'Dateinamen erstellen…',
     findReplace: 'Suchen & Ersetzen…',
@@ -253,6 +257,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     feedback: 'Envoyer un retour…',
     file: 'Fichier',
     add: 'Ajouter des morceaux…',
+    info: 'Informations',
     reveal: 'Afficher dans le Finder',
     rename: 'Composer le nom du fichier…',
     findReplace: 'Rechercher et remplacer…',
@@ -315,6 +320,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     feedback: 'Enviar feedback…',
     file: 'Arquivo',
     add: 'Adicionar faixas…',
+    info: 'Informações',
     reveal: 'Mostrar no Finder',
     rename: 'Gerar nome do arquivo…',
     findReplace: 'Localizar e substituir…',

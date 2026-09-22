@@ -11,6 +11,9 @@
     "description": "Combine text and metadata to build the file name.",
     "apply": "Apply"
   },
+  "info": {
+    "title": "Info"
+  },
   "export": {
     "title": "Export collection",
     "subtitle": "Surco saves a collection file. Your DJ software reads it as an import source — nothing is added to its library automatically; you import the tracks from there.",
@@ -254,6 +257,7 @@
     "search": "Search the track list",
     "settings": "Settings",
     "clearAll": "Clear the list",
+    "info": "Track info",
     "reveal": "Reveal in Finder",
     "addAppleMusic": "Add to Apple Music",
     "help": "Help & FAQ",
@@ -325,6 +329,7 @@
       "engineDj": "Adding to Engine DJ…"
     },
     "context": {
+      "info": "Info",
       "reveal": "Reveal in Finder",
       "revealWin": "Show in File Explorer",
       "open": "Open file",

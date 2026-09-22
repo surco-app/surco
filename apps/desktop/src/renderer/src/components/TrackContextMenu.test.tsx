@@ -39,6 +39,7 @@ function renderMenu(over: Record<string, unknown> = {}) {
     canPasteMeta: false,
     onRemove: vi.fn(),
     onTrash: vi.fn(),
+    onInfo: vi.fn(),
     ...over,
   }
   render(<TrackContextMenu {...props} />)
@@ -60,12 +61,24 @@ describe('TrackContextMenu order', () => {
       'track-menu-copy-meta',
       'track-menu-paste-meta',
       'track-menu-startover',
+      'track-menu-info',
       'track-menu-reveal',
       'track-menu-open',
       'track-menu-copy',
       'track-menu-remove',
       'track-menu-trash',
     ])
+  })
+})
+
+// A right-click on a row is where a Finder user looks for Get Info, and it must show
+// THAT row, not the selection.
+describe('TrackContextMenu info', () => {
+  it('opens the info window for the right-clicked track', () => {
+    const props = renderMenu()
+    fireEvent.click(screen.getByTestId('track-menu-info'))
+    expect(props.onInfo).toHaveBeenCalledWith(track)
+    expect(props.onClose).toHaveBeenCalled()
   })
 })
 
