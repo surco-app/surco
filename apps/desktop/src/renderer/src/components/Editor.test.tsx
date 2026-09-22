@@ -1866,6 +1866,15 @@ describe('Editor export control', () => {
     expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
   })
 
+  // Overwrite mode edits the original's path whatever the format, but a WAV overwritten
+  // as AIFF is re-encoded: the button must promise the conversion, not a tag update.
+  it('labels an overwrite into another format as a conversion', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'aiff', { overwriteOriginal: true })
+    const button = screen.getByTestId('process-btn')
+    expect(button).toHaveTextContent('AIFF')
+    expect(button).not.toHaveTextContent('Update tags')
+  })
+
   // Picking a format from the dropdown used to convert on the spot, so a misclick
   // wrote a file. The dropdown now only chooses the format; conversion waits for a
   // deliberate click on the main button.

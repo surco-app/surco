@@ -2,6 +2,7 @@ import { SlidersVertical } from 'lucide-react'
 import type React from 'react'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatMatchesInput } from '../../../shared/format'
 import type { FormatSetting, NormalizeConfig, OutputFormat } from '../../../shared/types'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import type { Destination } from '../lib/destination'
@@ -291,6 +292,7 @@ export function ConvertFooter({
                 incomplete={incomplete}
                 incompleteReason={incompleteReason}
                 inPlace={false}
+                sameFormat={false}
                 destination={destination}
                 destinations={destinations}
                 count={isMulti ? selectedCount : undefined}
@@ -315,6 +317,9 @@ export function ConvertFooter({
             incomplete={incomplete}
             incompleteReason={incompleteReason}
             inPlace={!isMulti && willEditInPlace}
+            sameFormat={
+              !isMulti && format !== 'source' && formatMatchesInput(format, item.inputPath)
+            }
             destination={destination}
             destinations={destinations}
             count={isMulti ? selectedCount : undefined}
