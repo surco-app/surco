@@ -691,12 +691,12 @@ export const Editor = memo(function Editor({
   }
 
   // Dialing a different normalization is an edit like any other: the file on disk
-  // no longer matches the editor, so the convert button must return as "Update" —
+  // no longer matches the editor, so the convert button must return as "Update tags" —
   // Djotas's flow of re-applying another loudness without faking a tag edit.
   const stale =
     isStale(item) || isNormalizeStale(item, normalizeCfg) || isDeclickStale(item, declickCfg)
   // A stale track is done but edited since, so it shows the convert button again
-  // (as "Update") rather than the done/reveal state.
+  // (as "Update tags") rather than the done/reveal state.
   const done = item.status === 'done' && !stale
   const exportedExt = item.outputPath?.split('.').pop()?.toLowerCase()
   // ALAC's extension is its container (.m4a), not its format name, so map it back.

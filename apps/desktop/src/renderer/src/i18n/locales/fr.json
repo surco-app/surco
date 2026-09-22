@@ -234,7 +234,7 @@
   },
   "commands": {
     "add": "Ajouter des fichiers",
-    "processCurrent": "Traiter le morceau actuel",
+    "processCurrent": "Convertir le morceau actuel",
     "processAll": "Convertir tous les morceaux",
     "play": "Lire / mettre en pause",
     "seekBack": "Reculer de 5 secondes",
@@ -313,7 +313,7 @@
     "remove": "Retirer",
     "status": {
       "idle": "Non converti",
-      "processing": "Traitement…",
+      "processing": "Conversion…",
       "done": "Terminé",
       "stale": "Modifications non appliquées",
       "error": "Erreur"
@@ -487,13 +487,13 @@
     "convert": "Convertir en {{format}} + Apple Music",
     "convertEngine": "Convertir en {{format}} + Engine DJ",
     "convertNoMusic": "Convertir en {{format}}",
-    "exportAgain": "Exporter à nouveau",
+    "exportAgain": "Convertir à nouveau",
     "chooseFormat": "Choisir le format",
     "menuFormat": "Format",
     "menuDestination": "Destination",
-    "update": "Mettre à jour",
-    "updateMusic": "Mettre à jour + Apple Music",
-    "processing": "Traitement…",
+    "update": "Mettre à jour les étiquettes",
+    "updateMusic": "Mettre à jour les étiquettes + Apple Music",
+    "processing": "Conversion…",
     "exportedAs": "✓ Exporté en {{format}}",
     "exportedCount_one": "✓ {{count}} morceau exporté",
     "exportedCount_other": "✓ {{count}} morceaux exportés",
@@ -501,8 +501,8 @@
     "addedToAppleMusicCount_one": "✓ {{count}} morceau ajouté à Apple Music",
     "addedToAppleMusicCount_other": "✓ {{count}} morceaux ajoutés à Apple Music",
     "showFile": "Afficher le fichier",
-    "reexport": "Réexporter",
-    "reexportAs": "Réexporter ({{format}})",
+    "reexport": "Convertir à nouveau",
+    "reexportAs": "Convertir à nouveau en {{format}}",
     "exportCollection": "Exporter vers une autre app…",
     "deleteOriginal": "Supprimer le fichier original",
     "appleMusicAdd": "Ajouter à Apple Music",
@@ -522,7 +522,7 @@
     "searchError": "Échec de la recherche",
     "releaseError": "Impossible de charger la release",
     "analyzeError": "Impossible d'analyser l'audio",
-    "processError": "Échec du traitement",
+    "processError": "Échec de la conversion",
     "fileInUseError": "Un autre programme utilise ce fichier (antivirus, lecteur…). Votre conversion n'est pas perdue : elle est enregistrée à côté, avec ~ à la fin du nom.",
     "missingRequired": "Champs obligatoires manquants : {{fields}}",
     "mixedReplaceSelection": "La sélection mélange des pistes qui remplacent une copie de ta bibliothèque et des pistes qui sont ajoutées. Sépare-les pour convertir.",
@@ -768,7 +768,7 @@
       "groupTags": "Tags",
       "groupTagsHint": "Métadonnées du morceau",
       "groupConvert": "Convertir",
-      "groupConvertHint": "Traiter et exporter",
+      "groupConvertHint": "Convertir et exporter",
       "groupLibrary": "Bibliothèque",
       "groupLibraryHint": "Fichiers et rangement",
       "groupPlayback": "Lecture",
@@ -1110,7 +1110,7 @@
       },
       "appleMusic": {
         "q": "Que fait « Ajouter à Apple Music » ?",
-        "a": "Quand c'est activé (macOS uniquement), Surco importe automatiquement chaque morceau converti dans ta bibliothèque Apple Music juste après le traitement, pour que tes fichiers fraîchement tagués y arrivent sans glisser-déposer manuel.\n\nPendant l'édition, Surco vérifie aussi si un morceau est déjà dans ta bibliothèque et affiche un petit badge, pour éviter les doublons. Tu peux désactiver l'ajout automatique quand tu veux dans Réglages → Sortie."
+        "a": "Quand c'est activé (macOS uniquement), Surco importe automatiquement chaque morceau converti dans ta bibliothèque Apple Music juste après la conversion, pour que tes fichiers fraîchement tagués y arrivent sans glisser-déposer manuel.\n\nPendant l'édition, Surco vérifie aussi si un morceau est déjà dans ta bibliothèque et affiche un petit badge, pour éviter les doublons. Tu peux désactiver l'ajout automatique quand tu veux dans Réglages → Sortie."
       },
       "windows": {
         "q": "Quelque chose change-t-il sous Windows ?",

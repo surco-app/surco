@@ -234,7 +234,7 @@
   },
   "commands": {
     "add": "Dateien hinzufügen",
-    "processCurrent": "Aktuellen Track verarbeiten",
+    "processCurrent": "Aktuellen Track konvertieren",
     "processAll": "Alle Tracks konvertieren",
     "play": "Track abspielen / pausieren",
     "seekBack": "5 Sekunden zurück",
@@ -313,7 +313,7 @@
     "remove": "Entfernen",
     "status": {
       "idle": "Nicht konvertiert",
-      "processing": "Wird verarbeitet…",
+      "processing": "Wird konvertiert…",
       "done": "Fertig",
       "stale": "Nicht angewendete Änderungen",
       "error": "Fehler"
@@ -487,13 +487,13 @@
     "convert": "In {{format}} konvertieren + Apple Music",
     "convertEngine": "In {{format}} konvertieren + Engine DJ",
     "convertNoMusic": "In {{format}} konvertieren",
-    "exportAgain": "Erneut exportieren",
+    "exportAgain": "Erneut konvertieren",
     "chooseFormat": "Format wählen",
     "menuFormat": "Format",
     "menuDestination": "Ziel",
-    "update": "Aktualisieren",
-    "updateMusic": "Aktualisieren + Apple Music",
-    "processing": "Wird verarbeitet…",
+    "update": "Tags aktualisieren",
+    "updateMusic": "Tags aktualisieren + Apple Music",
+    "processing": "Wird konvertiert…",
     "exportedAs": "✓ Exportiert als {{format}}",
     "exportedCount_one": "✓ {{count}} Track exportiert",
     "exportedCount_other": "✓ {{count}} Tracks exportiert",
@@ -501,8 +501,8 @@
     "addedToAppleMusicCount_one": "✓ {{count}} Track zu Apple Music hinzugefügt",
     "addedToAppleMusicCount_other": "✓ {{count}} Tracks zu Apple Music hinzugefügt",
     "showFile": "Datei zeigen",
-    "reexport": "Neu exportieren",
-    "reexportAs": "Neu exportieren ({{format}})",
+    "reexport": "Erneut konvertieren",
+    "reexportAs": "Erneut in {{format}} konvertieren",
     "exportCollection": "In andere DJ-App exportieren…",
     "deleteOriginal": "Originaldatei löschen",
     "appleMusicAdd": "Zu Apple Music hinzufügen",
@@ -522,7 +522,7 @@
     "searchError": "Suche fehlgeschlagen",
     "releaseError": "Das Release konnte nicht geladen werden",
     "analyzeError": "Das Audio konnte nicht analysiert werden",
-    "processError": "Verarbeitung fehlgeschlagen",
+    "processError": "Konvertierung fehlgeschlagen",
     "fileInUseError": "Ein anderes Programm verwendet diese Datei (Antivirus, Player…). Deine Konvertierung ist sicher: Sie wurde daneben gespeichert, mit ~ am Ende des Namens.",
     "missingRequired": "Pflichtfelder fehlen: {{fields}}",
     "mixedReplaceSelection": "Die Auswahl mischt Titel, die eine Kopie in deiner Mediathek ersetzen, mit Titeln, die hinzugefügt werden. Trenne sie zum Konvertieren.",
@@ -768,7 +768,7 @@
       "groupTags": "Tags",
       "groupTagsHint": "Track-Metadaten",
       "groupConvert": "Konvertieren",
-      "groupConvertHint": "Verarbeiten und exportieren",
+      "groupConvertHint": "Konvertieren und exportieren",
       "groupLibrary": "Bibliothek",
       "groupLibraryHint": "Dateien und Ordnung",
       "groupPlayback": "Wiedergabe",
@@ -1110,7 +1110,7 @@
       },
       "appleMusic": {
         "q": "Was macht „Zu Apple Music hinzufügen“?",
-        "a": "Wenn aktiviert (nur macOS), importiert Surco jeden konvertierten Track direkt nach der Verarbeitung automatisch in deine Apple Music-Bibliothek — deine frisch getaggten Dateien landen dort ohne manuelles Hineinziehen.\n\nBeim Bearbeiten prüft Surco außerdem, ob ein Track schon in deiner Bibliothek ist, und zeigt ein kleines Abzeichen, damit keine Duplikate entstehen. Das automatische Hinzufügen lässt sich jederzeit unter Einstellungen → Ausgabe abschalten."
+        "a": "Wenn aktiviert (nur macOS), importiert Surco jeden konvertierten Track direkt nach der Konvertierung automatisch in deine Apple Music-Bibliothek — deine frisch getaggten Dateien landen dort ohne manuelles Hineinziehen.\n\nBeim Bearbeiten prüft Surco außerdem, ob ein Track schon in deiner Bibliothek ist, und zeigt ein kleines Abzeichen, damit keine Duplikate entstehen. Das automatische Hinzufügen lässt sich jederzeit unter Einstellungen → Ausgabe abschalten."
       },
       "windows": {
         "q": "Gibt es Unterschiede unter Windows?",

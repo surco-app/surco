@@ -1537,7 +1537,7 @@ describe('App editor format/destination reseed', () => {
     const rows = await addOneTrack()
     fireEvent.click(rows[0])
     // Same format as the source .flac: the button offers to update it in place.
-    expect(await screen.findByTestId('process-btn')).toHaveTextContent('Update')
+    expect(await screen.findByTestId('process-btn')).toHaveTextContent('Update tags')
 
     fireEvent.click(screen.getByTestId('open-settings'))
     fireEvent.click(await screen.findByTestId('settings-tab-conversion'))

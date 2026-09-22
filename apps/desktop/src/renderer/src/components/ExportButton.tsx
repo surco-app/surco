@@ -29,7 +29,7 @@ interface ExportButtonProps {
   incompleteReason?: string
   // True when the chosen format is the source's own: the export edits the original in
   // place and renames it rather than writing a converted copy, so the button offers to
-  // "Update" instead of promising a conversion.
+  // "Update tags" instead of promising a conversion.
   inPlace: boolean
   // When set, the button converts the whole selection in the chosen format and labels
   // itself "Convert all (N)" instead of the single-track convert; the format menu works
@@ -40,7 +40,7 @@ interface ExportButtonProps {
   // Absent until the first progress event lands (and always in multi/quiet uses).
   stage?: ProcessStage
   // The demoted variant shown after a successful export: a bordered, muted control
-  // that sits in the secondary row labelled "Re-export", rather than the prominent
+  // that sits in the secondary row labelled "Convert again", rather than the prominent
   // accent button used to convert.
   quiet?: boolean
   // The destination this conversion goes to and the picks on offer — the editor

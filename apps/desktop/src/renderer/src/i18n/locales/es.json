@@ -234,7 +234,7 @@
   },
   "commands": {
     "add": "Añadir archivos",
-    "processCurrent": "Procesar pista actual",
+    "processCurrent": "Convertir pista actual",
     "processAll": "Convertir todas las pistas",
     "play": "Reproducir / pausar pista",
     "seekBack": "Retroceder 5 segundos",
@@ -313,7 +313,7 @@
     "remove": "Quitar",
     "status": {
       "idle": "Sin convertir",
-      "processing": "Procesando…",
+      "processing": "Convirtiendo…",
       "done": "Hecho",
       "stale": "Cambios sin aplicar",
       "error": "Error"
@@ -487,13 +487,13 @@
     "convert": "Convertir a {{format}} + Apple Music",
     "convertEngine": "Convertir a {{format}} + Engine DJ",
     "convertNoMusic": "Convertir a {{format}}",
-    "exportAgain": "Exportar de nuevo",
+    "exportAgain": "Convertir de nuevo",
     "chooseFormat": "Elegir formato",
     "menuFormat": "Formato",
     "menuDestination": "Destino",
-    "update": "Actualizar",
-    "updateMusic": "Actualizar + Apple Music",
-    "processing": "Procesando…",
+    "update": "Actualizar etiquetas",
+    "updateMusic": "Actualizar etiquetas + Apple Music",
+    "processing": "Convirtiendo…",
     "exportedAs": "✓ Exportado como {{format}}",
     "exportedCount_one": "✓ {{count}} pista exportada",
     "exportedCount_other": "✓ {{count}} pistas exportadas",
@@ -501,8 +501,8 @@
     "addedToAppleMusicCount_one": "✓ {{count}} pista añadida a Apple Music",
     "addedToAppleMusicCount_other": "✓ {{count}} pistas añadidas a Apple Music",
     "showFile": "Mostrar archivo",
-    "reexport": "Reexportar",
-    "reexportAs": "Reexportar ({{format}})",
+    "reexport": "Convertir de nuevo",
+    "reexportAs": "Convertir de nuevo a {{format}}",
     "exportCollection": "Exportar a otra app…",
     "deleteOriginal": "Eliminar archivo original",
     "appleMusicAdd": "Añadir a Apple Music",
@@ -522,7 +522,7 @@
     "searchError": "Error en la búsqueda",
     "releaseError": "No se pudo cargar el release",
     "analyzeError": "No se pudo analizar el audio",
-    "processError": "Error al procesar",
+    "processError": "Error al convertir",
     "fileInUseError": "Otro programa está usando este archivo (antivirus, reproductor…). La conversión no se ha perdido: está guardada al lado, con ~ al final del nombre.",
     "missingRequired": "Faltan campos obligatorios: {{fields}}",
     "mixedReplaceSelection": "La selección mezcla pistas que sustituyen a una copia de tu biblioteca y pistas que se añaden. Sepáralas para convertirlas.",
@@ -768,7 +768,7 @@
       "groupTags": "Etiquetas",
       "groupTagsHint": "Metadatos de la pista",
       "groupConvert": "Convertir",
-      "groupConvertHint": "Procesar y exportar",
+      "groupConvertHint": "Convertir y exportar",
       "groupLibrary": "Biblioteca",
       "groupLibraryHint": "Archivos y organización",
       "groupPlayback": "Reproducción",
@@ -1110,7 +1110,7 @@
       },
       "appleMusic": {
         "q": "¿Qué hace “Añadir a Apple Music”?",
-        "a": "Cuando está activado (solo en macOS), Surco importa automáticamente cada pista convertida a tu biblioteca de Apple Music justo después de procesarla, así tus archivos recién etiquetados llegan ahí sin arrastrarlos a mano.\n\nMientras editas, Surco también comprueba si una pista ya está en tu biblioteca y muestra una pequeña insignia, para que no acabes con duplicados. Puedes desactivar el añadido automático cuando quieras en Ajustes → Destino."
+        "a": "Cuando está activado (solo en macOS), Surco importa automáticamente cada pista convertida a tu biblioteca de Apple Music justo después de convertirla, así tus archivos recién etiquetados llegan ahí sin arrastrarlos a mano.\n\nMientras editas, Surco también comprueba si una pista ya está en tu biblioteca y muestra una pequeña insignia, para que no acabes con duplicados. Puedes desactivar el añadido automático cuando quieras en Ajustes → Destino."
       },
       "windows": {
         "q": "¿Hay algo distinto en Windows?",

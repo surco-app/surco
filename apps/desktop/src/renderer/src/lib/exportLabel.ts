@@ -29,9 +29,9 @@ export function exportButtonLabel(state: ExportLabelState): {
 } {
   if (state.processing) return { key: 'editor.processing' }
   // Picking a format from the menu only relabels the button, so after an export the
-  // label is the one place the pending format shows: "Re-export (FLAC)" over a WAV
+  // label is the one place the pending format shows: "Convert again to FLAC" over a WAV
   // export says what the next click writes, while a matching format stays the plain
-  // "Re-export" instead of stating the obvious.
+  // "Convert again" instead of stating the obvious.
   if (state.quiet) {
     if (state.exportedFormat && state.format !== state.exportedFormat) {
       return { key: 'editor.reexportAs', options: { format: state.format } }

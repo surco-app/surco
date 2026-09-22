@@ -157,7 +157,7 @@ describe('ExportButton', () => {
   // button falls back to the generic processing label instead of an empty bar.
   it('falls back to the plain processing label before the first stage lands', () => {
     render(<ExportButton {...baseProps} incomplete={false} status="processing" />)
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Processing…')
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Converting…')
     expect(screen.queryByTestId('process-progress')).not.toBeInTheDocument()
   })
 
