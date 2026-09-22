@@ -59,6 +59,34 @@ describe('appMenuTemplate', () => {
     expect(run).toHaveBeenCalledWith('analyze-quality')
   })
 
+  // The list header dropped its row of list tools; each one is in a menu with the
+  // shortcut the keymap owns, next to the ones that were already there.
+  it('keeps every list tool the header gave up in the menus', () => {
+    const { template, run } = build()
+    const tracks = menu(template, 'Tracks')
+    const file = menu(template, 'File')
+    const selectAll = itemFor(tracks, 'Select all tracks')
+    expect(selectAll.accelerator).toBe('accel:select-all')
+    const fill = itemFor(tracks, 'Fill all tags from file name…')
+    expect(fill.accelerator).toBe('accel:fill-all')
+    for (const item of [
+      selectAll,
+      fill,
+      itemFor(file, 'Find & Replace…'),
+      itemFor(file, 'Remove all'),
+      itemFor(tracks, 'Move selection to Trash…'),
+    ]) {
+      click(item)
+    }
+    expect(run.mock.calls.map((c) => c[0])).toEqual([
+      'select-all',
+      'fill-all',
+      'find-replace',
+      'remove-all',
+      'trash-selected',
+    ])
+  })
+
   it('names the Tracks menu and its items in every shipped language', () => {
     for (const locale of ['es', 'de', 'fr', 'pt-BR']) {
       const t = createMenuT(locale)

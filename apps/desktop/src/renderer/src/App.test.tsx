@@ -182,6 +182,12 @@ class MockIntersectionObserver {
   }
 }
 
+let menuListener: ((id: string) => void) | undefined
+
+function runMenu(id: string): void {
+  act(() => menuListener?.(id))
+}
+
 function setApi(over: Record<string, unknown> = {}): void {
   ;(window as unknown as { api: unknown }).api = {
     platform: 'win32',
@@ -196,7 +202,10 @@ function setApi(over: Record<string, unknown> = {}): void {
     cacheStats: vi.fn().mockResolvedValue({ files: 0, bytes: 0 }),
     clearCache: vi.fn().mockResolvedValue(undefined),
     detectTraktorNmlPath: vi.fn().mockResolvedValue(null),
-    onMenuCommand: () => () => {},
+    onMenuCommand: (cb: (id: string) => void) => {
+      menuListener = cb
+      return () => {}
+    },
     onProcessProgress: () => () => {},
     onActivity: () => () => {},
     onUpdateDownloaded: () => () => {},
@@ -365,16 +374,9 @@ describe('App quality triage', () => {
   // rips at once: every track gets measured and flagged with a verdict dot, so the user
   // never has to open each one. This is the behaviour the spectrum data layer must keep.
   it('measures every track and flags each with a quality verdict on demand', async () => {
-    let menu: ((id: string) => void) | undefined
-    setApi({
-      onMenuCommand: (cb: (id: string) => void) => {
-        menu = cb
-        return () => {}
-      },
-    })
     await renderApp()
     await addTwoTracks()
-    act(() => menu?.('analyze-quality'))
+    runMenu('analyze-quality')
     await waitFor(() => expect(screen.getAllByTestId('track-quality')).toHaveLength(2))
   })
 
@@ -436,15 +438,10 @@ describe('App quality triage', () => {
       for (const cb of focusListeners) cb(focused)
     }
     const spectrogram = vi.fn().mockResolvedValue(spectrum)
-    let menu: ((id: string) => void) | undefined
     setApi({
       spectrogram,
       onWindowFocus: (cb: (focused: boolean) => void) => {
         focusListeners.push(cb)
-        return () => {}
-      },
-      onMenuCommand: (cb: (id: string) => void) => {
-        menu = cb
         return () => {}
       },
     })
@@ -456,7 +453,7 @@ describe('App quality triage', () => {
     const baseline = spectrogram.mock.calls.length
 
     setFocus(false)
-    act(() => menu?.('analyze-quality'))
+    runMenu('analyze-quality')
     await new Promise((r) => setTimeout(r, 0))
     expect(spectrogram.mock.calls.length).toBe(baseline)
 
@@ -1014,7 +1011,7 @@ describe('App multi-select removal', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(screen.getByTestId('clear-all'))
+    runMenu('remove-all')
     fireEvent.click(await screen.findByTestId('confirm-ok'))
     // The two-row selection doesn't narrow it: all three visible rows go.
     await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
@@ -1778,16 +1775,9 @@ describe('App stats', () => {
   // Stats is something to look at, not something to set, so it opens on its own instead
   // of as one more tab among the settings. Its toolbar button moved to the View menu.
   it('opens the stats window from the menu, not Settings', async () => {
-    let menu: ((id: string) => void) | undefined
-    setApi({
-      onMenuCommand: (cb: (id: string) => void) => {
-        menu = cb
-        return () => {}
-      },
-    })
     await renderApp()
     await screen.findByTestId('add-files')
-    act(() => menu?.('stats'))
+    runMenu('stats')
     await waitFor(() => expect(screen.getByTestId('stats-modal')).toBeInTheDocument())
     expect(screen.queryByTestId('settings-tab-general')).toBeNull()
     fireEvent.click(screen.getByTestId('stats-close'))
@@ -1967,7 +1957,7 @@ describe('App derived list stability', () => {
       await new Promise((r) => setTimeout(r, 0))
     })
     const before = sortRuns.count
-    fireEvent.click(screen.getByTestId('open-find-replace'))
+    runMenu('find-replace')
     await screen.findByTestId('find-replace-find')
     expect(sortRuns.count).toBe(before)
   })
@@ -1984,7 +1974,7 @@ describe('App derived list stability', () => {
       await new Promise((r) => setTimeout(r, 0))
     })
     const before = trackListRenders.count
-    fireEvent.click(screen.getByTestId('open-find-replace'))
+    runMenu('find-replace')
     await screen.findByTestId('find-replace-find')
     expect(trackListRenders.count).toBe(before)
   })
@@ -2073,7 +2063,7 @@ describe('App per-format filter', () => {
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
-    fireEvent.click(screen.getByTestId('clear-all'))
+    runMenu('remove-all')
     fireEvent.click(await screen.findByTestId('confirm-ok'))
     // The mp3 is gone. The format axis, now MP3-less, falls back to every format, so the wav
     // that was hidden behind the filter shows — proof Empty didn't sweep it in. Had Empty
@@ -2091,7 +2081,7 @@ describe('App per-format filter', () => {
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
-    fireEvent.click(screen.getByTestId('open-find-replace'))
+    runMenu('find-replace')
     fireEvent.change(await screen.findByTestId('find-replace-find'), { target: { value: 'A' } })
     fireEvent.change(screen.getByTestId('find-replace-replace'), { target: { value: 'Z' } })
     // The preview counts one track — the visible mp3 — not the two-track crate.
@@ -2127,12 +2117,11 @@ describe('App select all', () => {
   it('toggles between selecting every track and clearing the selection', async () => {
     await renderApp()
     await addTwoTracks()
-    const selectAll = screen.getByTestId('select-all')
-    fireEvent.click(selectAll)
+    runMenu('select-all')
     let rows = screen.getAllByTestId('track-row')
     expect(rows[0]).toHaveAttribute('aria-selected', 'true')
     expect(rows[1]).toHaveAttribute('aria-selected', 'true')
-    fireEvent.click(selectAll)
+    runMenu('select-all')
     rows = screen.getAllByTestId('track-row')
     expect(rows[0]).toHaveAttribute('aria-selected', 'false')
     expect(rows[1]).toHaveAttribute('aria-selected', 'false')
@@ -2154,7 +2143,7 @@ describe('App select all', () => {
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
-    fireEvent.click(screen.getByTestId('select-all'))
+    runMenu('select-all')
     // Both visible mp3 rows are selected; the hidden wav is not swept in.
     let rows = screen.getAllByTestId('track-row')
     expect(rows[0]).toHaveAttribute('aria-selected', 'true')
@@ -3117,14 +3106,39 @@ describe('App Originals panel', () => {
   })
 })
 
-describe('App list header trash button', () => {
-  // The button sends the selection to the OS Trash; with nothing selected a click did
-  // nothing at all, which reads as a broken button rather than an empty selection.
-  it('is disabled while nothing is selected', async () => {
+describe('App list header', () => {
+  // The header keeps what fills and narrows the list; the list-wide tools live in the
+  // Tracks and File menus, the palette and their shortcuts instead of a row of icons.
+  it('leaves select all, fill, find, clear and trash to the menus', async () => {
     await renderApp()
     await addTwoTracks()
-    expect(screen.getByTestId('trash-selected')).toBeEnabled()
+    expect(screen.getByTestId('add-files')).toBeInTheDocument()
+    for (const id of [
+      'select-all',
+      'reveal-selected',
+      'fill-all',
+      'open-find-replace',
+      'clear-all',
+      'trash-selected',
+    ]) {
+      expect(screen.queryByTestId(id)).toBeNull()
+    }
+  })
+
+  // From the menu the selection goes to the OS Trash after a confirm; with nothing
+  // selected there is nothing to move, so no dialog asks about an empty set.
+  it('moves the selection to the Trash from the menu, and nothing without one', async () => {
+    await renderApp()
+    await addTwoTracks()
+    runMenu('trash-selected')
+    expect(await screen.findByTestId('confirm-ok')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('confirm-cancel'))
+    await waitFor(() => expect(screen.queryByTestId('confirm-ok')).toBeNull())
     fireEvent.keyDown(window, { key: 'Escape' })
-    await waitFor(() => expect(screen.getByTestId('trash-selected')).toBeDisabled())
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'false'),
+    )
+    runMenu('trash-selected')
+    expect(screen.queryByTestId('confirm-ok')).toBeNull()
   })
 })
