@@ -21,7 +21,7 @@ import '../i18n'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import type { Settings } from '../../../shared/types'
 import { FIELD_DEFS } from '../lib/fields'
-import { DONATE_URL, SettingsModal } from './SettingsModal'
+import { SettingsModal } from './SettingsModal'
 
 afterEach(cleanup)
 
@@ -207,7 +207,7 @@ describe('SettingsModal tablist', () => {
     expect(screen.getByTestId('settings-tab-general')).toHaveFocus()
     // Up from the first tab wraps to the last.
     fireEvent.keyDown(screen.getByTestId('settings-tab-general'), { key: 'ArrowUp' })
-    expect(screen.getByTestId('settings-tab-stats')).toHaveFocus()
+    expect(screen.getByTestId('settings-tab-shortcuts')).toHaveFocus()
   })
 
   // The sidebar groups the tabs under headings, but the arrow keys still walk the whole
@@ -567,91 +567,6 @@ describe('SettingsModal organization', () => {
     expect(screen.queryByTestId('settings-show-spectrum')).not.toBeInTheDocument()
     fireEvent.click(screen.getByTestId('settings-tab-editor'))
     expect(screen.getByTestId('settings-show-spectrum')).toBeInTheDocument()
-  })
-})
-
-describe('SettingsModal stats', () => {
-  // The whole reason for the tab: turn a raw tally into the "time you saved"
-  // story we want to tell users, derived from the count, not the audio length.
-  it('shows the conversion count and the estimated time saved', () => {
-    render(
-      <SettingsModal
-        settings={{ ...settings, conversionCount: 142 }}
-        onClose={() => {}}
-        onSave={() => {}}
-        onPreviewTheme={() => {}}
-        onSettingsReplaced={() => {}}
-      />,
-    )
-    fireEvent.click(screen.getByTestId('settings-tab-stats'))
-    expect(screen.getByTestId('stats-count')).toHaveTextContent('142')
-    expect(screen.getByTestId('stats-time-saved')).toHaveTextContent('9 h 28 min')
-  })
-
-  // Before the first conversion, "0" and "0 min" would read as broken; explain the
-  // value instead so the empty state still earns its place.
-  it('explains the value instead of showing zeros before the first conversion', () => {
-    render(
-      <SettingsModal
-        settings={settings}
-        onClose={() => {}}
-        onSave={() => {}}
-        onPreviewTheme={() => {}}
-        onSettingsReplaced={() => {}}
-      />,
-    )
-    fireEvent.click(screen.getByTestId('settings-tab-stats'))
-    expect(screen.getByTestId('stats-empty')).toBeInTheDocument()
-    expect(screen.queryByTestId('stats-count')).not.toBeInTheDocument()
-  })
-
-  // Surco is free, so the stats tab — the place that shows the hours the
-  // app saved you — is where we ask for support. The link must open in the
-  // system browser (target=_blank routes through the window-open handler) and
-  // exist even before the first conversion.
-  it('offers a donation link in both the filled and empty states', () => {
-    render(
-      <SettingsModal
-        settings={{ ...settings, conversionCount: 142 }}
-        onClose={() => {}}
-        onSave={() => {}}
-        onPreviewTheme={() => {}}
-        onSettingsReplaced={() => {}}
-      />,
-    )
-    fireEvent.click(screen.getByTestId('settings-tab-stats'))
-    const donate = screen.getByTestId('stats-donate')
-    expect(donate).toHaveAttribute('href', DONATE_URL)
-    expect(donate).toHaveAttribute('target', '_blank')
-    cleanup()
-
-    render(
-      <SettingsModal
-        settings={settings}
-        onClose={() => {}}
-        onSave={() => {}}
-        onPreviewTheme={() => {}}
-        onSettingsReplaced={() => {}}
-      />,
-    )
-    fireEvent.click(screen.getByTestId('settings-tab-stats'))
-    expect(screen.getByTestId('stats-donate')).toHaveAttribute('href', DONATE_URL)
-  })
-
-  // The toolbar stats icon opens settings straight on this tab, so a caller can
-  // land the user on the time-saved view without an extra click.
-  it('opens directly on the stats tab when asked', () => {
-    render(
-      <SettingsModal
-        settings={{ ...settings, conversionCount: 142 }}
-        onClose={() => {}}
-        onSave={() => {}}
-        onPreviewTheme={() => {}}
-        onSettingsReplaced={() => {}}
-        initialTab="stats"
-      />,
-    )
-    expect(screen.getByTestId('stats-count')).toBeInTheDocument()
   })
 })
 

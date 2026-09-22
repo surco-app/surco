@@ -777,8 +777,7 @@
       "layout": "Seções",
       "artwork": "Capa",
       "fields": "Campos",
-      "shortcuts": "Atalhos",
-      "stats": "Estatísticas"
+      "shortcuts": "Atalhos"
     },
     "tabGroups": {
       "editing": "Edição",

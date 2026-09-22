@@ -19,6 +19,7 @@ export interface ConfirmModal {
 // break, and lets the keyboard/overlay logic read a single value.
 export type ActiveModal =
   | { type: 'settings'; tab: SettingsTab }
+  | { type: 'stats' }
   | { type: 'onboarding' }
   | { type: 'donateNudge' }
   | { type: 'whatsNew'; lastSeen: string }
@@ -37,6 +38,7 @@ export type ActiveModal =
 export interface Overlays {
   activeModal: ActiveModal
   openSettings: (tab?: SettingsTab) => void
+  openStats: () => void
   openOnboarding: () => void
   openDonateNudge: () => void
   openWhatsNew: (lastSeen: string) => void
@@ -68,6 +70,7 @@ export function useOverlays(): Overlays {
     (tab: SettingsTab = 'general') => setActiveModal({ type: 'settings', tab }),
     [],
   )
+  const openStats = useCallback(() => setActiveModal({ type: 'stats' }), [])
   const openOnboarding = useCallback(() => setActiveModal({ type: 'onboarding' }), [])
   const openDonateNudge = useCallback(() => setActiveModal({ type: 'donateNudge' }), [])
   const openWhatsNew = useCallback(
@@ -99,6 +102,7 @@ export function useOverlays(): Overlays {
   return {
     activeModal,
     openSettings,
+    openStats,
     openOnboarding,
     openDonateNudge,
     openWhatsNew,

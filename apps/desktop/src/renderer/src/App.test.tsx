@@ -1736,6 +1736,19 @@ describe('App settings button', () => {
   })
 })
 
+describe('App stats button', () => {
+  // Stats is something to look at, not something to set, so it opens on its own instead
+  // of as one more tab among the settings.
+  it('opens the stats window, not Settings', async () => {
+    await renderApp()
+    fireEvent.click(screen.getByTestId('open-stats'))
+    await waitFor(() => expect(screen.getByTestId('stats-modal')).toBeInTheDocument())
+    expect(screen.queryByTestId('settings-tab-general')).toBeNull()
+    fireEvent.click(screen.getByTestId('stats-close'))
+    await waitFor(() => expect(screen.queryByTestId('stats-modal')).toBeNull())
+  })
+})
+
 describe('App landmarks', () => {
   // A screen reader user lands in an app with no document outline; a single top-level
   // heading names the window so they know where they are.
@@ -1749,7 +1762,7 @@ describe('App command palette list-wide actions', () => {
   // The list-wide toolbar actions are reachable from the palette too, so a keyboard-only
   // user can run them without hunting for the icon. Stats needs no loaded tracks, so it
   // proves the run wiring on its own.
-  it('runs a list-wide action from the palette (Stats opens its settings tab)', async () => {
+  it('runs a list-wide action from the palette (Stats opens its own window)', async () => {
     await renderApp()
     fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
     const input = await screen.findByTestId('palette-input')
@@ -1757,9 +1770,8 @@ describe('App command palette list-wide actions', () => {
     const items = screen.getAllByTestId('palette-item')
     expect(items).toHaveLength(1)
     fireEvent.click(items[0])
-    await waitFor(() =>
-      expect(screen.getByTestId('settings-tab-stats')).toHaveAttribute('aria-selected', 'true'),
-    )
+    await waitFor(() => expect(screen.getByTestId('stats-modal')).toBeInTheDocument())
+    expect(screen.queryByTestId('settings-tab-general')).toBeNull()
   })
 
   // The list-wide commands act on the whole crate, so they stay disabled until something

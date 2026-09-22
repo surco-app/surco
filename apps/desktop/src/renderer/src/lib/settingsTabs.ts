@@ -1,6 +1,5 @@
 import {
   AudioWaveform,
-  ChartColumn,
   FolderOutput,
   Image,
   Keyboard,
@@ -30,7 +29,6 @@ export type SettingsTab =
   | 'fields'
   | 'artwork'
   | 'shortcuts'
-  | 'stats'
 
 // The tabs, grouped for the sidebar so twelve entries scan as four short runs instead of
 // one long list. `heading` is an i18n key under settings.tabGroups (null on the opening
@@ -42,7 +40,7 @@ export const SETTINGS_TAB_GROUPS: { heading: string | null; tabs: SettingsTab[] 
   { heading: null, tabs: ['general', 'search'] },
   { heading: 'editing', tabs: ['editor', 'layout', 'fields', 'artwork'] },
   { heading: 'output', tabs: ['conversion', 'processing', 'naming', 'destination'] },
-  { heading: 'app', tabs: ['shortcuts', 'stats'] },
+  { heading: 'app', tabs: ['shortcuts'] },
 ]
 
 // The flat tab order, derived from the groups — the roving-tabindex sequence and the
@@ -61,7 +59,6 @@ export const SETTINGS_TAB_ICONS: Record<SettingsTab, LucideIcon> = {
   fields: List,
   artwork: Image,
   shortcuts: Keyboard,
-  stats: ChartColumn,
 }
 
 // Which control a settings option uses, so new panels match the existing ones instead of

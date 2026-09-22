@@ -230,7 +230,7 @@ export default function App(): React.JSX.Element {
   }, [refreshTrash])
   // Persisted settings (initial load, modal-open refresh, theme application,
   // optimistic save) live in the hook; App only decides the launch modal.
-  const settingsOpen = activeModal?.type === 'settings'
+  const settingsOpen = activeModal?.type === 'settings' || activeModal?.type === 'stats'
   const { settings, setSettings, saveSettings, setThemePreview } = useSettings({
     settingsOpen,
     // Fired async after the first read lands, so closing over the hook defined right
@@ -1136,7 +1136,7 @@ export default function App(): React.JSX.Element {
   // context menu, over the multi-selection or the single selected row.
   const onTrashSelected = useStableCallback(() => askTrash(editScope(selectedTracks, selected)))
   const onOpenPalette = useStableCallback(overlays.openPalette)
-  const onOpenStats = useStableCallback(() => openSettings('stats'))
+  const onOpenStats = useStableCallback(overlays.openStats)
   const onOpenSettings = useStableCallback(openSettings)
   // The toolbar's "add a token" fix (shown when auto-match is on but no token is set) opens
   // Settings straight to Search, where the Discogs token lives.
@@ -1617,6 +1617,7 @@ export default function App(): React.JSX.Element {
       askTrashSuspects: onTrashSuspects,
       askTrashSelected: onTrashSelected,
       openSettings,
+      openStats: overlays.openStats,
       openFindReplace: overlays.openFindReplace,
       openStripNumbering: overlays.openStripNumbering,
       openExport: overlays.openExport,
