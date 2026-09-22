@@ -981,11 +981,6 @@ export default function App(): React.JSX.Element {
 
   const canProcessSelected =
     !!selected && canProcessTrack(selected, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
-  const eligibleCount = useMemo(
-    () => eligibleForBatch(tracks, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS).length,
-    [tracks, settings?.requiredFields],
-  )
-
   // Which library the membership check reads — the conversion destination's (Apple
   // Music or the Engine DJ database), or none for folder/overwrite conversions.
   const librarySource = useMemo(() => librarySourceOf(settings, isMacOS()), [settings])
@@ -1048,6 +1043,12 @@ export default function App(): React.JSX.Element {
     [selectedTracks, visibleTracks],
   )
   bulkTracksRef.current = bulkTracks
+  // Counted over the same scope convert-all runs on, so the button's number is the work
+  // the click does: over every loaded track it read "81" behind a filter showing 79.
+  const eligibleCount = useMemo(
+    () => eligibleForBatch(bulkTracks, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS).length,
+    [bulkTracks, settings?.requiredFields],
+  )
   // Keyboard / continuous-playback navigation over the visible list (move + scroll paging).
   const {
     moveSelection,

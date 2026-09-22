@@ -1383,6 +1383,31 @@ describe('App conversion failure notice', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     expect(screen.getByTestId('track-row')).toHaveTextContent('Second')
   })
+
+  // Reported from a video: filtered to the 79 auto-matched rows, the button read "Convert
+  // 81 tracks" and then converted 79. The run already honoured the filter; the label
+  // counted every loaded track, so the user was promised work the click would not do.
+  it('counts only the rows the filter leaves visible, the same ones it converts', async () => {
+    const processTrack = vi.fn(async () => ({ outputPath: '/out/x.aiff', inPlace: false }))
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3']),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+
+    expect(screen.getByTestId('convert-all')).toHaveAccessibleName('Convert 1 track')
+    fireEvent.click(screen.getByTestId('convert-all'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ inputPath: '/music/b.mp3' }),
+    )
+  })
 })
 
 // The Default format x input-extension matrix from the user's own single-track convert
