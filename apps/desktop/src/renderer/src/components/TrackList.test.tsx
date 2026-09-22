@@ -357,6 +357,26 @@ describe('TrackList', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent('Unapplied changes')
   })
 
+  // Amber means "this needs you": a doubtful file, a match to confirm, a failed tag read,
+  // changes not yet applied. A conversion in progress needs nothing from the user, so it
+  // pulses in the accent instead of wearing the same amber as the rows that do.
+  it('keeps amber for unapplied changes and marks a running conversion as busy', () => {
+    const edited = track({ id: 'b', status: 'done', meta: { title: 'New title' } })
+    renderList([
+      track({ id: 'a', status: 'processing' }),
+      {
+        ...edited,
+        processedSignature: trackSignature({
+          ...edited,
+          meta: { ...edited.meta, title: 'Old title' },
+        }),
+      },
+      track({ id: 'c', status: 'error' }),
+    ])
+    const badges = screen.getAllByTestId('track-status-badge')
+    expect(badges.map((b) => b.dataset.tone)).toEqual(['busy', 'attention', 'danger'])
+  })
+
   it('selects a track when its row is clicked', () => {
     const { onSelect } = renderList([track({ id: 'a' }), track({ id: 'b' })])
     fireEvent.click(screen.getAllByTestId('track-row')[1])

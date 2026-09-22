@@ -66,12 +66,30 @@ export type MenuState = { track: TrackItem; x: number; y: number }
 // each row's first paint mid-scroll. Past it, skipping off-screen work wins again.
 const DEFER_PAINT_MIN_ROWS = 150
 
-// A hollow ring, not a filled dot: the conversion state shares the green/amber/red palette
-// with the quality stripe/glyph on the same row, so a solid coin read as a second alarm. As a
+// A hollow ring, not a filled dot: the conversion state shares the amber/red palette with
+// the quality stripe/glyph on the same row, so a solid coin read as a second alarm. As a
 // thin outline it still carries its colour but sits back a weight, keeping the two axes —
 // conversion (this corner) and quality (the left stripe) — from competing.
 const badgeBase =
   'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 bg-[var(--color-panel)] ring-2 ring-[var(--color-panel)]'
+
+// Amber is kept for what needs the user (here, changes not yet applied); a running
+// conversion needs nothing from them, so it pulses in the accent instead.
+const badgeTone = {
+  attention: 'border-warn',
+  busy: 'animate-pulse border-[var(--color-accent)]',
+  danger: 'border-danger',
+} as const
+
+function ToneBadge({ tone }: { tone: keyof typeof badgeTone }): React.JSX.Element {
+  return (
+    <span
+      data-testid="track-status-badge"
+      data-tone={tone}
+      className={`${badgeBase} ${badgeTone[tone]}`}
+    />
+  )
+}
 
 function StatusBadge({
   track,
@@ -80,9 +98,9 @@ function StatusBadge({
   track: TrackItem
   stale: boolean
 }): React.JSX.Element | null {
-  // Stale wins over done: a converted track edited afterwards shows steady amber (unlike the
-  // processing pulse) so pending Updates stay visible and can be batched for later.
-  if (stale) return <span className={`${badgeBase} border-warn`} />
+  // Stale wins over done: a converted track edited afterwards shows steady amber so
+  // pending Updates stay visible and can be batched for later.
+  if (stale) return <ToneBadge tone="attention" />
   // done lands as a check on a Tokyo Night accent coin — an unmistakable "converted" mark,
   // set apart from the ring states by its shape and fill. The check uses the ink token so it
   // keeps contrast on the accent in both the light and dark themes.
@@ -95,12 +113,7 @@ function StatusBadge({
   // idle is the default for nearly every imported row, so a constant dot says nothing; a clean
   // corner now reads as "not converted yet" and lets the live states stand out.
   if (track.status === 'idle') return null
-  // processing (a pulsing amber ring) and error (a red ring).
-  return (
-    <span
-      className={`${badgeBase} ${track.status === 'processing' ? 'animate-pulse border-warn' : 'border-danger'}`}
-    />
-  )
+  return <ToneBadge tone={track.status === 'processing' ? 'busy' : 'danger'} />
 }
 
 // The verdicts that actually render a glyph — every TrackQuality except 'unanalyzed',
