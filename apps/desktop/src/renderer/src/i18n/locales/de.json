@@ -411,7 +411,7 @@
     "qualityBitsPill": "Aufgefüllte Tiefe",
     "qualityBitsPadded": "Deklariert 24 Bit, aber die unteren 8 Bits sind in jedem Sample null: 16-Bit-Audio, aufgefüllt in einem 24-Bit-Container.",
     "qualityBitsPaddedWhy": "Interpolation, Dither, jede echte 24-Bit-Kette füllt diese Bits; alles auf null ist arithmetischer Beweis, keine Statistik.",
-    "qualityBitsPaddedNote": "Beim Konvertieren mit Bittiefe „Wie Quelle“ werden echte 16 Bit geschrieben; das Entfernen der Füllung ist verlustfrei.",
+    "qualityBitsPaddedNote": "Beim Konvertieren mit Bittiefe „Korrigiert“ werden echte 16 Bit geschrieben; das Entfernen der Füllung ist verlustfrei.",
     "qualityBitsFull": "Die deklarierten 24 Bit sind echt: {{pct}}% der Samples nutzen das unterste Byte.",
     "qualityBitsUnknown": "Die deklarierten 24 Bit ließen sich nicht überprüfen: die gescannte Minute ergab in keine Richtung eine klare Lesung.",
     "qualityConvertHead": "Beim Konvertieren",
@@ -891,9 +891,10 @@
     "bitDepths": {
       "16": "16 Bit",
       "24": "24 Bit",
-      "source": "Wie die Quelle"
+      "source": "Wie die Quelle",
+      "corrected": "Korrigiert"
     },
-    "bitDepthHint": "„Wie die Quelle“ behält die exakte Bittiefe der Datei. Beim Reduzieren auf 16 Bit wird Dithering angewendet; eine Datei im Zielformat wird ohne Neukodierung kopiert. Mit „Wie Quelle“ wird eine Datei mit nachweislich auf 24 Bit aufgefülltem 16-Bit-Audio verlustfrei als echte 16 Bit geschrieben.",
+    "bitDepthHint": "„Wie die Quelle“ behält die exakte Tiefe der Datei, samt Auffüllung. Die Reduktion auf 16 Bit wendet Dither an; eine Datei, die bereits im Ausgabeformat vorliegt, wird ohne Neucodierung kopiert. „Korrigiert“ schreibt eine Datei, deren 16-Bit-Audio nachweislich auf 24 Bit aufgefüllt ist, verlustfrei als echte 16 Bit; echtes 24-Bit-Audio behält seine Tiefe.",
     "sampleRate": "Abtastrate",
     "sampleRates": {
       "44100": "44,1 kHz",

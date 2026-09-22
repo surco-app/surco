@@ -302,6 +302,25 @@ describe('nested settings from an older install', () => {
   })
 })
 
+// 'source' used to compact a proven 16-in-24 padding to true 16-bit, and it was
+// also the default, so a stored 'source' means "I get the padding fixed" whether
+// the user picked it or never touched it. Now that 'source' keeps the container
+// it was given, leaving them on it would silently stop a fix they already had:
+// they move to 'corrected', which is what their files were doing all along.
+describe('bit depth from an install that predates Corrected', () => {
+  const localFile = (): string => join(app.getPath('userData'), 'settings.json')
+
+  it('moves a stored Same as source onto Corrected, so the padding fix survives the update', () => {
+    writeFileSync(localFile(), JSON.stringify({ outputBitDepth: 'source' }))
+    expect(getSettings().outputBitDepth).toBe('corrected')
+  })
+
+  it('leaves a pinned depth alone', () => {
+    writeFileSync(localFile(), JSON.stringify({ outputBitDepth: '24' }))
+    expect(getSettings().outputBitDepth).toBe('24')
+  })
+})
+
 describe('outputFormat from a synced settings.json', () => {
   const localFile = (): string => join(app.getPath('userData'), 'settings.json')
 

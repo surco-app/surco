@@ -58,7 +58,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
         {synced.outputFormat !== 'mp3' && (
           <SettingsField label={tr('settings.bitDepth')} hint={tr('settings.bitDepthHint')}>
             <SegmentedControl
-              options={['source', '16', '24'] as const}
+              options={['source', '16', '24', 'corrected'] as const}
               value={synced.outputBitDepth}
               onChange={(id) => patch('outputBitDepth', id)}
               testidPrefix="settings-bit-depth"
