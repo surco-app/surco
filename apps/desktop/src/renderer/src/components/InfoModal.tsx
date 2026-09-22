@@ -24,7 +24,7 @@ export function InfoModal({ track, onClose }: Props): React.JSX.Element {
       backdropTestId="info-backdrop"
       dialogTestId="info-modal"
       labelledBy="info-title"
-      className="flex max-h-[80vh] w-[520px] flex-col rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
+      className="flex max-h-[80vh] w-[640px] max-w-[calc(100vw-2rem)] flex-col rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
     >
       <div className="-mx-6 -mt-6 flex items-center justify-between border-b border-[var(--color-line)] px-6 pt-5 pb-3">
         <h2 id="info-title" className="text-base font-semibold">
