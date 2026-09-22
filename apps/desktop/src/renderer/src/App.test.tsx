@@ -535,6 +535,18 @@ describe('App auto-match', () => {
     expect(screen.getAllByTestId('track-automatched')).toHaveLength(1)
   })
 
+  // Bandcamp needs no token, so a Bandcamp-only DJ has everything the sweep needs; greying
+  // the button out over a Discogs token they will never use made the feature unreachable.
+  it('enables the button without a token when Discogs is not a source', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ searchProviders: ['bandcamp'] })),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+    })
+    await renderApp()
+    await addTwoTracks()
+    await waitFor(() => expect(screen.getByTestId('auto-match')).toBeEnabled())
+  })
+
   it('leaves the button disabled without a Discogs token to search', async () => {
     setApi({ readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }) })
     await renderApp()

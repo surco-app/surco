@@ -1740,7 +1740,7 @@ export default function App(): React.JSX.Element {
                 analysis={analysis}
                 allAnalyzed={allAnalyzed}
                 matching={matching}
-                hasToken={!!settings?.discogsToken}
+                canAutoMatch={!!settings && autoMatchAvailable(settings)}
                 needsToken={needsToken}
                 autoMatchable={autoMatchable}
                 onAnalyzeAll={onAnalyzeAll}
