@@ -17,3 +17,7 @@ export const FORMAT_SETTINGS = [
   'source',
   ...OUTPUT_FORMATS,
 ] as const satisfies readonly FormatSetting[]
+
+export function losesTraktorCues(format: OutputFormat): boolean {
+  return format === 'alac'
+}

@@ -2,7 +2,8 @@ import { TriangleAlert } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { NormalizeConfig } from '../../../shared/types'
+import { losesTraktorCues } from '../../../shared/outputFormats'
+import type { NormalizeConfig, OutputFormat } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 
@@ -26,6 +27,7 @@ interface Props {
   // are not this track's loudness — they are all of them at once, and the section has to
   // say so. A count rather than a boolean because the number is the warning.
   selectedCount: number
+  format: OutputFormat
   // Opens the loudness metric help ("What do these mean?"): the ranges and the
   // fixable/not-fixable notes lived only behind Quality's readout ⓘ, unreachable from
   // the section whose dials those metrics govern.
@@ -43,6 +45,7 @@ export function NormalizeSection({
   onChange,
   item,
   selectedCount,
+  format,
   onShowHelp,
   showHints = true,
   onHideHints,
@@ -184,7 +187,7 @@ export function NormalizeSection({
               />
             </div>
           )}
-          {value.mode !== 'none' && (
+          {value.mode !== 'none' && losesTraktorCues(format) && (
             <p
               data-testid="normalize-cue-warning"
               className="relative mt-2 inline-flex items-center gap-1.5 text-[10px] text-warn"

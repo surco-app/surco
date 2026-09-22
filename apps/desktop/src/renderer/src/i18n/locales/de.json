@@ -617,6 +617,7 @@
     "suggestionsMore": "{{count}} weitere anzeigen"
   },
   "declick": {
+    "cueWarning": "ALAC speichert keine Traktor-Cues und kein Beatgrid: Beim Konvertieren gehen sie verloren.",
     "title": "Vinyl-Klick-Reparatur",
     "hint": "Standardmäßig aus. Erkennt Nadel-Klicks und -Knackser und interpoliert sie bei der Konvertierung weg.",
     "mode": {
@@ -704,7 +705,7 @@
     "peakRemoveDc": "DC-Versatz entfernen (auf 0.0 zentrieren)",
     "peakPerChannel": "Stereokanäle unabhängig normalisieren",
     "cueWarning": "Codiert das Audio neu. Traktor-Cues und -Beatgrid bleiben bei MP3, AIFF, FLAC und WAV erhalten; bei ALAC gehen sie verloren.",
-    "cueWarningShort": "Kodiert das Audio neu · Cues bleiben außer bei ALAC",
+    "cueWarningShort": "Kodiert das Audio neu · bei ALAC gehen die Cues verloren",
     "predictionEstimate": "(geschätzt)",
     "presetHint": {
       "streaming": "So pegeln Spotify und Apple Music — der sichere Standard für eine Hörbibliothek.",

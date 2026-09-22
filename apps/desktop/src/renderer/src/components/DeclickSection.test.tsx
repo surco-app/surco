@@ -4,8 +4,8 @@ import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import i18n from '../i18n'
 import { createQueryClient } from '../lib/queryClient'
-import '../i18n'
 import { runKeyClaim } from '../lib/spaceClaim'
 import { DeclickSection } from './DeclickSection'
 import { AFTER_COLOR } from './WaveformCompare'
@@ -184,13 +184,19 @@ describe('DeclickSection', () => {
     expect(screen.queryByTestId('declick-summary')).not.toBeInTheDocument()
   })
 
+  // Traktor cues ride the re-encode into MP3, AIFF, FLAC and WAV; only ALAC has nowhere to
+  // keep them. A warning on the formats that keep them teaches the DJ to ignore it.
   it('warns about dropped cues only when the format actually drops them', () => {
-    const { rerender } = render(section({ value: 'off', format: 'wav' }))
+    const { rerender } = render(section({ value: 'off', format: 'alac' }))
     expect(screen.queryByTestId('declick-cue-warning')).not.toBeInTheDocument()
-    rerender(section({ value: 'strong', format: 'wav' }))
-    expect(screen.getByTestId('declick-cue-warning')).toBeInTheDocument()
-    rerender(section({ value: 'strong', format: 'aiff' }))
-    expect(screen.queryByTestId('declick-cue-warning')).not.toBeInTheDocument()
+    rerender(section({ value: 'strong', format: 'alac' }))
+    expect(screen.getByTestId('declick-cue-warning')).toHaveTextContent(
+      i18n.t('declick.cueWarning'),
+    )
+    for (const format of ['mp3', 'aiff', 'flac', 'wav'] as const) {
+      rerender(section({ value: 'strong', format }))
+      expect(screen.queryByTestId('declick-cue-warning')).not.toBeInTheDocument()
+    }
   })
 
   it('reports mode picks up through onChange', () => {
