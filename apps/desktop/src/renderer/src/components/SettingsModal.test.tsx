@@ -1024,3 +1024,29 @@ describe('SettingsModal search advanced', () => {
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ searchIgnoreWords: ['vinyl'] }))
   })
 })
+
+describe('SettingsModal folded invalid field', () => {
+  // A limit the browser refuses blocks Save. Folded under Advanced, that looked like a
+  // Save button that did nothing; the fold opens so the field that needs fixing shows.
+  it('opens the fold holding a field that blocks Save', () => {
+    const onSave = vi.fn()
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={onSave}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+        initialTab="destination"
+      />,
+    )
+    fireEvent.change(screen.getByTestId('settings-backup-days'), { target: { value: '0' } })
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSave).not.toHaveBeenCalled()
+    expect(screen.getByTestId('settings-advanced-destination')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+    expect(screen.getByTestId('settings-backup-days')).toBeVisible()
+  })
+})
