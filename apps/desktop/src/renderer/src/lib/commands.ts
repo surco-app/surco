@@ -1,3 +1,4 @@
+import { autoMatchAvailable } from '../../../shared/autoMatch'
 import { resolveJobFormat } from '../../../shared/format'
 import type { DeclickMode, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
 import i18n from '../i18n'
@@ -650,14 +651,14 @@ export function buildCommands(deps: CommandDeps): Command[] {
       run: askTrashSelected,
     },
     {
-      // Toggles the Discogs auto-match sweep. Needs a user token and at least one unmatched
-      // visible track, mirroring the toolbar button's disabled rule. Matches the visible rows
+      // Toggles the auto-match sweep. Needs sources that can run (autoMatchAvailable) and at
+      // least one unmatched visible track, mirroring the toolbar button's disabled rule. Matches the visible rows
       // so an active filter narrows the sweep to what's shown.
       id: 'auto-match',
       group: 'tags',
       title: tr('commands.autoMatch'),
       hint: hintFor('auto-match'),
-      enabled: matching ? true : !!settings?.discogsToken && autoMatchable > 0,
+      enabled: matching ? true : !!settings && autoMatchAvailable(settings) && autoMatchable > 0,
       run: () => {
         if (matching) cancelAutoMatch()
         else enqueueAutoMatch(bulkTracks)

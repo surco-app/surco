@@ -26,7 +26,7 @@ function renderBar(over: Partial<Props> = {}): Props {
     allAnalyzed: false,
     batchProgress: { done: 0, total: 0 },
     matching: null,
-    hasToken: true,
+    canAutoMatch: true,
     needsToken: false,
     autoMatchable: 2,
     onAnalyzeAll: vi.fn(),
@@ -80,7 +80,7 @@ describe('Toolbar', () => {
   // A sweep with nothing to do must not be startable: no token means Discogs can't be
   // queried at all, and an all-analyzed list has nothing left to measure.
   it('disables the sweeps when they have nothing to work on', () => {
-    renderBar({ hasToken: false, allAnalyzed: true })
+    renderBar({ canAutoMatch: false, allAnalyzed: true })
     expect(screen.getByTestId('auto-match')).toBeDisabled()
     expect(screen.getByTestId('analyze-quality')).toBeDisabled()
   })
@@ -89,7 +89,7 @@ describe('Toolbar', () => {
   // only hint was a tooltip on a greyed-out button. Surface it as a live "add a token"
   // affordance that isn't disabled and takes the user straight to where they fix it.
   it('offers a clickable fix when auto-match is on but the token is missing', () => {
-    const props = renderBar({ needsToken: true, hasToken: false })
+    const props = renderBar({ needsToken: true, canAutoMatch: false })
     const button = screen.getByTestId('auto-match')
     expect(button).not.toBeDisabled()
     fireEvent.click(button)

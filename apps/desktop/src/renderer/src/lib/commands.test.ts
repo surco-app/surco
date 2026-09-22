@@ -43,7 +43,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     visibleTracks: [],
     selected: null,
     selectedTracksCount: 0,
-    settings: { outputFormat: 'aiff' } as Settings,
+    settings: { outputFormat: 'aiff', searchProviders: ['discogs'], discogsToken: '' } as Settings,
     analysis: null,
     matching: null,
     autoMatchable: 0,
@@ -502,7 +502,12 @@ describe('buildCommands editor + theme entries', () => {
     const overwrite = makeDeps({
       regenerateNames,
       selected: track(),
-      settings: { outputFormat: 'aiff', overwriteOriginal: true } as Settings,
+      settings: {
+        outputFormat: 'aiff',
+        overwriteOriginal: true,
+        searchProviders: ['discogs'],
+        discogsToken: '',
+      } as Settings,
     })
     expect(commandById(overwrite, 'regenerate-names').enabled).toBe(false)
 
@@ -646,12 +651,28 @@ describe('buildCommands bulk scope', () => {
     expect(askConvertAll).toHaveBeenCalledWith(bulk, undefined, undefined, undefined, undefined)
   })
 
+  // A token is only a prerequisite when Discogs is one of the sources; Bandcamp and Deezer
+  // run without one, so a DJ who picked only those must still be able to start the sweep.
+  it('offers auto-match without a token when Discogs is not a source', () => {
+    const deps = (over: Partial<Settings>) =>
+      makeDeps({
+        settings: { outputFormat: 'aiff', discogsToken: '', ...over } as Settings,
+        autoMatchable: 1,
+      })
+    expect(commandById(deps({ searchProviders: ['bandcamp'] }), 'auto-match').enabled).toBe(true)
+    expect(commandById(deps({ searchProviders: ['discogs'] }), 'auto-match').enabled).toBe(false)
+  })
+
   it('auto-matches the bulk scope, not the visible rows', () => {
     const enqueueAutoMatch = vi.fn()
     const bulk = [track({ id: 'sel1' })]
     commandById(
       makeDeps({
-        settings: { outputFormat: 'aiff', discogsToken: 'tok' } as Settings,
+        settings: {
+          outputFormat: 'aiff',
+          discogsToken: 'tok',
+          searchProviders: ['discogs'],
+        } as Settings,
         autoMatchable: 1,
         enqueueAutoMatch,
         bulkTracks: bulk,

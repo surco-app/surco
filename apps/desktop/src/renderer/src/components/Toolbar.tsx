@@ -44,10 +44,10 @@ interface Props {
   // already analyzed (which, when idle, disables the button).
   analysis: { done: number; total: number } | null
   allAnalyzed: boolean
-  // Progress of the auto-match sweep (null when idle), whether a Discogs token is set,
-  // and how many tracks are still matchable (zero disables the button).
+  // Progress of the auto-match sweep (null when idle), whether its sources can run (see
+  // autoMatchAvailable), and how many tracks are still matchable (zero disables the button).
   matching: { done: number; total: number } | null
-  hasToken: boolean
+  canAutoMatch: boolean
   // Auto-match is on in Settings but the provider it needs can't run (no Discogs token) —
   // so the sweep would silently do nothing. The button then reads as a live "add a token"
   // fix instead of a disabled control, and onFixToken opens Settings where it's set.
@@ -95,7 +95,7 @@ export const Toolbar = memo(function Toolbar({
   analysis,
   allAnalyzed,
   matching,
-  hasToken,
+  canAutoMatch,
   needsToken,
   autoMatchable,
   onAnalyzeAll,
@@ -260,7 +260,7 @@ export const Toolbar = memo(function Toolbar({
               onClick={matching ? onCancelAutoMatch : needsToken ? onFixToken : onAutoMatch}
               // When auto-match is on but the token is missing, the button isn't a dead
               // disabled control — it's the fix, so it stays enabled and routes to Settings.
-              disabled={!matching && !needsToken && (!hasToken || autoMatchable === 0)}
+              disabled={!matching && !needsToken && (!canAutoMatch || autoMatchable === 0)}
               aria-label={needsToken ? tr('header.autoMatchNoToken') : tr('header.autoMatch')}
               className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
                 matching
