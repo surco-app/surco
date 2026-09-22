@@ -297,6 +297,8 @@ export const Editor = memo(function Editor({
   const trimOpen = sectionOpen.trim
   const declickOpen = sectionOpen.declick
   const normalizeOpen = sectionOpen.normalize
+  const loudnessInQuality =
+    showLoudness && !editorSections.some((s) => s.id === 'normalize' && s.hidden !== true)
   // The chosen export format, seeded from the Settings default. The format menu
   // only updates this; conversion waits for a deliberate click on the main button.
   // The Editor remounts per track (key={track.id}), so each track starts from the
@@ -1105,11 +1107,14 @@ export const Editor = memo(function Editor({
                     case 'quality':
                       return (
                         !isMulti &&
-                        showSpectrum && (
+                        (showSpectrum || loudnessInQuality) && (
                           <QualitySection
                             key={id}
                             item={item}
                             showSpectrum={showSpectrum}
+                            showLoudness={loudnessInQuality}
+                            normalize={normalizeCfg}
+                            onShowLoudnessHelp={onShowLoudnessHelp}
                             open={spectrumOpen}
                             onToggle={() => setSectionOpen('quality', !spectrumOpen)}
                             showHints={showEditorHints}

@@ -678,6 +678,47 @@ describe('Editor loudness pills', () => {
 // A second user asked to read the post-conversion figures next to the measured ones,
 // instead of switching to the Normalize section to see where the track lands. The
 // estimate is the same prediction that section draws, so the two cannot disagree.
+// The table's home is Normalize, but a layout that hides Normalize (the setup assistant
+// does it for every DJ who did not ask to level volume) must not lose a readout the
+// Loudness setting still promises: there it stays in Quality, where it always was.
+describe('Editor loudness readout placement', () => {
+  const measured: LoudnessResult = {
+    integratedLufs: -11.1,
+    truePeakDb: -0.4,
+    lra: 3.8,
+    channelBalanceDb: 0.1,
+    dcOffset: 0.004,
+    crestDb: 10.2,
+    noiseFloorDb: -58.3,
+  }
+
+  beforeEach(() => {
+    ;(window as unknown as { api: { loudness: unknown } }).api.loudness = vi
+      .fn()
+      .mockResolvedValue(measured)
+  })
+
+  it('shows the table once, in Normalize, while that section is in the layout', async () => {
+    renderEditor({ id: 'a' }, 'wav', { showLoudness: true, editorSections: NORMALIZE_OPEN })
+    const readout = await screen.findByTestId('loudness-readout')
+    expect(screen.getByTestId('editor-normalize')).toContainElement(readout)
+    expect(screen.getAllByTestId('loudness-readout')).toHaveLength(1)
+  })
+
+  it('keeps the table in Quality when Normalize is hidden from the editor', async () => {
+    renderEditor({ id: 'a' }, 'wav', {
+      showLoudness: true,
+      editorSections: [
+        { id: 'form', open: true },
+        { id: 'quality', open: true },
+        { id: 'normalize', open: true, hidden: true },
+      ],
+    })
+    expect(await screen.findByTestId('loudness-readout')).toBeInTheDocument()
+    expect(screen.queryByTestId('editor-normalize')).not.toBeInTheDocument()
+  })
+})
+
 describe('Editor loudness estimates', () => {
   const measured: LoudnessResult = {
     integratedLufs: -11.1,
