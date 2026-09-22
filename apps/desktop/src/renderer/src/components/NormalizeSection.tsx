@@ -14,7 +14,6 @@ import { NormalizeControls } from './NormalizeControls'
 import { NormalizePlan } from './NormalizePlan'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
-import { SectionPill } from './SectionPill'
 import { Tooltip } from './Tooltip'
 import { WaveformCompare, WaveformSolo } from './WaveformCompare'
 
@@ -36,7 +35,7 @@ interface Props {
   onShowLoudnessHelp?: () => void
 }
 
-// The per-track normalization override, with the active mode badged on the header so
+// The per-track normalization override, with what it will do stated on the header so
 // a folded section still shows that the convert will normalize.
 export function NormalizeSection({
   value,
@@ -94,6 +93,8 @@ export function NormalizeSection({
     item.inputPath,
     settled && !isMulti && ((showHints && value.mode !== 'none') || showReadout),
   )
+  const lastOn = useRef<NormalizeConfig | null>(value.mode === 'none' ? null : value)
+  if (value.mode !== 'none') lastOn.current = value
   const compareRef = useRef<HTMLDivElement>(null)
   const mounted = useRef(false)
   useEffect(() => {
@@ -113,41 +114,29 @@ export function NormalizeSection({
         // before/after preview is worth the whole window when tuning the target.
         sectionId="normalize"
         maximizable
-        // The badge names the active mode; the summary carries what it omits — the
-        // figures the conversion will target — and states "None" when off, so the
-        // folded header never reads blank.
         help={tr('normalize.editorHint')}
         summary={
           value.mode === 'loudness'
-            ? `${value.targetLufs} LUFS · ${value.truePeakDb} dBTP`
+            ? !isMulti && planLoudness
+              ? tr('normalize.row.measured', {
+                  now: planLoudness.integratedLufs.toFixed(1),
+                  target: value.targetLufs,
+                })
+              : tr('normalize.row.target', { target: value.targetLufs })
             : value.mode === 'peak'
-              ? `${value.peakDb} dB`
-              : tr('normalize.mode.none')
+              ? tr('normalize.row.peak', { db: value.peakDb })
+              : tr('normalize.row.none')
         }
-        summaryTestId="normalize-summary"
-        // Only the "None" state recedes; an active target is a live figure worth reading.
+        summaryTestId="normalize-row-sentence"
         summaryMuted={value.mode === 'none'}
-        right={
-          <span className="flex shrink-0 items-center gap-1.5">
-            {/* No measurement pill here. It used to ride alongside, justified as "the body
-                never repeats it as figures this compact" — no longer true: the estimate
-                below opens with the same "Now -21.8 LUFS · -18.1 dBTP", and the loudness
-                table above the dials states the same two figures graded by colour. Worse, it was
-                typographically identical to the summary beside it (same template, same
-                units, same tabular-nums), so the header read as one figure printed twice
-                with nothing saying which was the target and which the measurement — while
-                eating 164px of a 241px header and truncating the target to "No…".
-                Trim hit the same collision and made the two mutually exclusive
-                (TrimSection.tsx); this is that same fix. */}
-            {/* The mode badge only while folded: open, the segmented control right
-                below says the same thing. */}
-            {value.mode !== 'none' && !open && (
-              <SectionPill tone="accent" testid="normalize-active-badge">
-                {tr(`normalize.mode.${value.mode}`)}
-              </SectionPill>
-            )}
-          </span>
-        }
+        toggle={{
+          checked: value.mode !== 'none',
+          onChange: (on) =>
+            onChange(
+              on ? (lastOn.current ?? { ...value, mode: 'loudness' }) : { ...value, mode: 'none' },
+            ),
+          testId: 'normalize-switch',
+        }}
       />
       <SectionBody open={open}>
         <div className="mt-4">

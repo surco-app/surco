@@ -660,7 +660,13 @@
     "hearingOriginal": "Ouvindo: original",
     "abHint": "Alterna entre a original e a reparada sem interromper o áudio, para você ouvir se o reparo removeu os cliques — e se abafou a música.",
     "nextClick": "Próximo clique",
-    "appliesToSelection": "Este ajuste se aplica às {{count}} faixas selecionadas."
+    "appliesToSelection": "Este ajuste se aplica às {{count}} faixas selecionadas.",
+    "row": {
+      "off": "Desativado",
+      "soft": "Reparo suave",
+      "standard": "Reparo padrão",
+      "strong": "Reparo forte"
+    }
   },
   "trim": {
     "title": "Corte de silêncio",
@@ -672,7 +678,6 @@
     "contextReset": "Voltar ao contexto padrão",
     "nudgeBack": "Mover o corte para trás",
     "nudgeForward": "Mover o corte para frente",
-    "summaryNone": "Não",
     "cutsLabel": "Corta",
     "cutStart": "{{seconds}} do início",
     "cutEnd": "{{seconds}} do final",
@@ -691,7 +696,17 @@
     "handleStart": "Início do corte",
     "handleEnd": "Final do corte",
     "auditionStart": "Ouvir o início",
-    "auditionEnd": "Ouvir o final"
+    "auditionEnd": "Ouvir o final",
+    "row": {
+      "removeBoth": "Remove {{start}} no início e {{end}} no final",
+      "removeStart": "Remove {{start}} de silêncio no início",
+      "removeEnd": "Remove {{end}} de silêncio no final",
+      "foundBoth": "Há {{start}} de silêncio no início e {{end}} no final",
+      "foundStart": "Há {{start}} de silêncio no início",
+      "foundEnd": "Há {{end}} de silêncio no final",
+      "nothing": "Nenhum silêncio a remover",
+      "unknown": "Corta o silêncio do início e do final"
+    }
   },
   "normalize": {
     "title": "Normalização de volume",
@@ -741,7 +756,13 @@
       "peak": "Vai mover {{gain}} dB: sua amostra mais alta ficará exatamente em {{peak}} dBFS.",
       "peakSub": "Ganho constante, sem limitador. Vai tocar a cerca de {{lufs}} LUFS."
     },
-    "hideHints": "Ocultar estas explicações (reative em Ajustes → Editor)"
+    "hideHints": "Ocultar estas explicações (reative em Ajustes → Editor)",
+    "row": {
+      "none": "Volume original",
+      "measured": "Soa a {{now}} LUFS, sairá a {{target}}",
+      "target": "Iguala a {{target}} LUFS",
+      "peak": "Pico em {{db}} dBFS"
+    }
   },
   "settings": {
     "tabs": {

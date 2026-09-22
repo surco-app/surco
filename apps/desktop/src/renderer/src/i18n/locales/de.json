@@ -660,7 +660,13 @@
     "hearingOriginal": "Zu hören: Original",
     "abHint": "Wechselt zwischen Original und repariertem Titel, ohne den Ton anzuhalten — so hörst du, ob die Reparatur die Klicks entfernt und ob sie die Musik dumpf gemacht hat.",
     "nextClick": "Nächster Klick",
-    "appliesToSelection": "Diese Einstellung gilt für alle {{count}} ausgewählten Titel."
+    "appliesToSelection": "Diese Einstellung gilt für alle {{count}} ausgewählten Titel.",
+    "row": {
+      "off": "Aus",
+      "soft": "Sanfte Reparatur",
+      "standard": "Standardreparatur",
+      "strong": "Starke Reparatur"
+    }
   },
   "trim": {
     "title": "Stille kürzen",
@@ -672,7 +678,6 @@
     "contextReset": "Zurück zum Standardkontext",
     "nudgeBack": "Schnitt nach hinten",
     "nudgeForward": "Schnitt nach vorne",
-    "summaryNone": "Aus",
     "cutsLabel": "Schneidet",
     "cutStart": "{{seconds}} am Anfang",
     "cutEnd": "{{seconds}} am Ende",
@@ -691,7 +696,17 @@
     "handleStart": "Schnittanfang",
     "handleEnd": "Schnittende",
     "auditionStart": "Anfang anhören",
-    "auditionEnd": "Ende anhören"
+    "auditionEnd": "Ende anhören",
+    "row": {
+      "removeBoth": "Entfernt {{start}} am Anfang und {{end}} am Ende",
+      "removeStart": "Entfernt {{start}} Stille am Anfang",
+      "removeEnd": "Entfernt {{end}} Stille am Ende",
+      "foundBoth": "{{start}} Stille am Anfang und {{end}} am Ende",
+      "foundStart": "{{start}} Stille am Anfang",
+      "foundEnd": "{{end}} Stille am Ende",
+      "nothing": "Keine Stille zu entfernen",
+      "unknown": "Schneidet die Stille am Anfang und Ende ab"
+    }
   },
   "normalize": {
     "title": "Lautheitsnormalisierung",
@@ -741,7 +756,13 @@
       "peak": "Er wird um {{gain}} dB verschoben: sein lautestes Sample landet genau bei {{peak}} dBFS.",
       "peakSub": "Konstante Verstärkung, kein Limiter. Er wird etwa {{lufs}} LUFS laut sein."
     },
-    "hideHints": "Diese Erklärungen ausblenden (zurück über Einstellungen → Editor)"
+    "hideHints": "Diese Erklärungen ausblenden (zurück über Einstellungen → Editor)",
+    "row": {
+      "none": "Originale Lautheit",
+      "measured": "Jetzt {{now}} LUFS, danach {{target}}",
+      "target": "Gleicht auf {{target}} LUFS an",
+      "peak": "Peak bei {{db}} dBFS"
+    }
   },
   "settings": {
     "tabs": {

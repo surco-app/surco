@@ -1191,6 +1191,7 @@ export const Editor = memo(function Editor({
                           inputPath={item.inputPath}
                           format={format}
                           showHints={showEditorHints}
+                          durationSec={item.duration}
                         />
                       )
                     case 'declick':

@@ -78,6 +78,7 @@ interface Props {
   inputPath: string
   format: OutputFormat
   showHints?: boolean
+  durationSec?: number
 }
 
 function cutSeconds(seconds: number): string {
@@ -552,6 +553,7 @@ export function TrimSection({
   inputPath,
   format,
   showHints = true,
+  durationSec: trackDurationSec,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // The waveform decodes the full file, so it waits for the selection to rest and
@@ -970,8 +972,6 @@ export function TrimSection({
     })
   }, [open])
 
-  // The folded header states the cuts (or that there are none) exactly once, like
-  // the click-repair header: dim summary when off, accent badge when active.
   const cuts = [
     cutStart ? tr('trim.cutStart', { seconds: cutSeconds(startSec) }) : undefined,
     cutEnd ? tr('trim.cutEnd', { seconds: cutSeconds(durationSec - endSec) }) : undefined,
@@ -991,6 +991,20 @@ export function TrimSection({
         .filter(Boolean)
         .join(' · ')
     : undefined
+
+  const rowDurationSec = wave?.durationSec ?? trackDurationSec ?? 0
+  const rowRange = value ?? suggestion
+  const rowStart = rowRange?.startSec ?? 0
+  const rowEnd =
+    rowRange?.endSec !== undefined && rowDurationSec > 0 ? rowDurationSec - rowRange.endSec : 0
+  const rowKind = value ? 'remove' : 'found'
+  const rowSide =
+    rowStart > 0 && rowEnd > 0 ? 'Both' : rowStart > 0 ? 'Start' : rowEnd > 0 ? 'End' : null
+  const rowSentence = rowSide
+    ? tr(`trim.row.${rowKind}${rowSide}`, { start: cutSeconds(rowStart), end: cutSeconds(rowEnd) })
+    : wave
+      ? tr('trim.row.nothing')
+      : tr('trim.row.unknown')
 
   const laneProps = (which: Side): React.ComponentProps<typeof Lane> => {
     const lane = which === 'start' ? startLane : endLane
@@ -1049,17 +1063,17 @@ export function TrimSection({
         open={open}
         onToggle={onToggle}
         help={tr('trim.hint')}
-        summary={value ? undefined : tr('trim.summaryNone')}
-        summaryTestId="trim-summary"
-        summaryMuted
+        summary={rowSentence}
+        summaryTestId="trim-row-sentence"
+        summaryMuted={!value}
+        toggle={{
+          checked: value !== undefined,
+          disabled: !value && !suggestion,
+          onChange: (on) => onChange(on ? suggestion : undefined),
+          testId: 'trim-switch',
+        }}
         right={
-          value ? (
-            !open ? (
-              <SectionPill tone="accent" testid="trim-active-badge">
-                {`−${cutSeconds((value.startSec ?? 0) + (value.endSec !== undefined && durationSec > 0 ? durationSec - value.endSec : 0))}`}
-              </SectionPill>
-            ) : undefined
-          ) : detected ? (
+          !value && detected ? (
             <SectionPill tone="neutral" testid="trim-detected-pill">
               {detected}
             </SectionPill>

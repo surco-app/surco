@@ -181,6 +181,8 @@ export function DeclickSection({
   )
 
   const count = clicks?.count
+  const lastOn = useRef<DeclickMode>(value === 'off' ? 'standard' : value)
+  if (value !== 'off') lastOn.current = value
   // The detector reads the first eight minutes (CLICK_SCAN_SECONDS). Past that nothing was
   // analysed, and a wave that simply stops marking would read as a clean tail — so the
   // unscanned tail says so rather than lying by omission.
@@ -196,22 +198,25 @@ export function DeclickSection({
         // clicks-found strip reads far better with the whole window to mark them in.
         sectionId="declick"
         maximizable
-        summary={value === 'off' ? tr('declick.mode.off') : undefined}
-        summaryTestId="declick-summary"
-        summaryMuted
+        summary={[
+          tr(`declick.row.${value}`),
+          ...(!isMulti && typeof count === 'number'
+            ? [count > 0 ? tr('declick.estimatePill', { count }) : tr('declick.estimateNonePill')]
+            : []),
+        ].join(' · ')}
+        summaryTestId="declick-row-sentence"
+        summaryMuted={value === 'off'}
+        toggle={{
+          checked: value !== 'off',
+          onChange: (on) => onChange(on ? lastOn.current : 'off'),
+          testId: 'declick-switch',
+        }}
         right={
-          <span className="flex shrink-0 items-center gap-1.5">
-            {!isMulti && typeof count === 'number' && (
-              <SectionPill tone="neutral" testid="declick-estimate-pill" numeric>
-                {count > 0 ? tr('declick.estimatePill', { count }) : tr('declick.estimateNonePill')}
-              </SectionPill>
-            )}
-            {value !== 'off' && !open && (
-              <SectionPill tone="accent" testid="declick-active-badge">
-                {tr(`declick.mode.${value}`)}
-              </SectionPill>
-            )}
-          </span>
+          !isMulti && typeof count === 'number' ? (
+            <SectionPill tone="neutral" testid="declick-estimate-pill" numeric>
+              {count > 0 ? tr('declick.estimatePill', { count }) : tr('declick.estimateNonePill')}
+            </SectionPill>
+          ) : undefined
         }
       />
       <SectionBody open={open}>
