@@ -3,6 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
+import { GENRE_TAGS } from '../lib/bulkEdit'
 import { Field } from './Field'
 
 afterEach(cleanup)
@@ -231,5 +232,27 @@ describe('Field suggestion chips layout', () => {
     render(<Field name="genre" label="Genre" value="" onChange={() => {}} suggestions={FIVE} />)
     expect(screen.getByTestId('chip-italo dance')).toBeInTheDocument()
     expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
+  })
+})
+
+// A genre chip used to replace the field, so a release tagged "Pop" and "Indie Pop" on
+// Discogs could only keep one. With a tag list it adds instead, joined by the list's own
+// separator, and a chip already in the value reads as on.
+describe('Field tag list chips', () => {
+  it('adds a second genre instead of replacing the first', () => {
+    const onChange = vi.fn()
+    render(
+      <Field
+        name="genre"
+        label="Genre"
+        value="Pop"
+        onChange={onChange}
+        suggestions={['Pop', 'Indie Pop']}
+        tagList={GENRE_TAGS}
+      />,
+    )
+    expect(screen.getByTestId('chip-Pop')).toHaveAttribute('data-state', 'on')
+    fireEvent.click(screen.getByTestId('chip-Indie Pop'))
+    expect(onChange).toHaveBeenCalledWith('Pop; Indie Pop')
   })
 })

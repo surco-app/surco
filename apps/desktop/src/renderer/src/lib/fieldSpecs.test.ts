@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { BpmResult, KeyResult, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { BULK_FIELDS } from './bulkEdit'
+import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from './bulkEdit'
 import { type BuildFieldSpecsParams, buildFieldSpecs } from './fieldSpecs'
 import { FIELD_DEFS } from './fields'
 
@@ -157,6 +157,13 @@ describe('buildFieldSpecs (single mode)', () => {
     expect(specs.find((s) => s.key === 'key')?.suggestions).toEqual(['8A'])
   })
 
+  it('lets genre and grouping chips add tags, each with its own separator', () => {
+    const specs = buildFieldSpecs(params())
+    expect(specs.find((s) => s.key === 'genre')?.tagList).toBe(GENRE_TAGS)
+    expect(specs.find((s) => s.key === 'grouping')?.tagList).toBe(GROUPING_TAGS)
+    expect(specs.find((s) => s.key === 'bpm')?.tagList).toBeUndefined()
+  })
+
   it('offers the musical key name when that notation is selected', () => {
     const detectedKey = { camelot: '8A', name: 'A minor' } as KeyResult
     const specs = buildFieldSpecs(params({ detectedKey, keyNotation: 'musical' }))
@@ -252,8 +259,28 @@ describe('buildFieldSpecs (bulk mode)', () => {
     const grouping = specs.find((s) => s.key === 'grouping')
     expect(grouping?.perTrack?.tracks).toEqual([a, b])
     expect(grouping?.perTrack?.onChangeTracks).toBe(onChangeTracksMeta)
+    expect(grouping?.perTrack?.list).toBe(GROUPING_TAGS)
     expect(grouping?.placeholder).toBeUndefined()
-    expect(specs.find((s) => s.key === 'genre')?.perTrack).toBeUndefined()
+  })
+
+  // A user asked for every Discogs genre and style of a release, not just one. Genre now
+  // works like grouping: several tags, and across a selection a chip marks all, some or
+  // none of the tracks instead of stamping one value over what each track had.
+  it('hands genre the selected tracks and its own tag list in bulk mode', () => {
+    const onChangeTracksMeta = vi.fn()
+    const a = track('a', { genre: 'Pop; Indie Pop' })
+    const b = track('b', { genre: 'Pop' })
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [a, b],
+        visibleFields: ['genre'],
+        onChangeTracksMeta,
+      }),
+    )
+    const genre = specs.find((s) => s.key === 'genre')
+    expect(genre?.perTrack?.list).toBe(GENRE_TAGS)
+    expect(genre?.perTrack?.tracks).toEqual([a, b])
   })
 
   it('honours the visible-fields setting and drops non-bulk fields', () => {
