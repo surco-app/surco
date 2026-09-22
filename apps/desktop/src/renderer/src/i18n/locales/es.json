@@ -1115,15 +1115,8 @@
     "next": "Siguiente",
     "finish": "Empezar",
     "step": "Paso {{current}} de {{total}}",
-    "djLibrariesTitle": "Tus colecciones de DJ",
-    "djLibrariesBody": "Al convertir una pista, Surco puede dejar tu colección apuntando al fichero nuevo, con sus playlists y sus cue points intactos.",
-    "djLibrariesNote": "Surco hace una copia de seguridad antes de escribir y nunca escribe con el programa abierto. Puedes cambiarlo luego en Ajustes.",
-    "djLibrary": {
-      "rekordbox": "rekordbox",
-      "rekordboxBody": "Mantener la colección al día al convertir.",
-      "traktor": "Traktor",
-      "traktorBody": "Escribir cue points y rejilla en la colección."
-    }
+    "djSoftwareBody": "Marca todos los que uses: al convertir, Surco deja la pista lista en cada uno.",
+    "djSoftwareLater": "Puedes cambiarlo luego en Ajustes."
   },
   "help": {
     "title": "Ayuda y FAQ",

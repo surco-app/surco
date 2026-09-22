@@ -51,8 +51,8 @@ export const SETTINGS_TAB_ICONS: Record<SettingsTab, LucideIcon> = {
 //     theme, language, output format, bit depth, key notation.
 //   • Checkbox / CheckboxRow — an independent on/off switch: search providers, auto-match,
 //     show spectrum/loudness, the artwork toggles.
-//   • Radio (DestinationPicker) — pick ONE where each option needs a sentence of
-//     explanation next to it: where converted tracks go.
+//   • Radio (LocationPicker) — pick ONE where each option needs a sentence of
+//     explanation next to it: where the converted file is saved.
 //
 // Rule of thumb: exclusive + self-evident → pills; exclusive + needs description → radios;
 // standalone toggle → checkbox.
