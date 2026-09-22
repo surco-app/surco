@@ -32,22 +32,23 @@ export function commonValue(tracks: TrackItem[], key: keyof TrackMetadata): stri
   return tracks.every((t) => (t.meta[key] ?? '') === first) ? first : undefined
 }
 
-// A text field that holds several tags: which field, and what separates them.
+// A text field that holds several comma-separated tags, and the tag names that contain a
+// comma themselves and must stay whole.
 export interface TagList {
   key: 'grouping' | 'genre'
-  sep: ',' | ';'
+  whole?: readonly string[]
 }
 
-export const GROUPING_TAGS: TagList = { key: 'grouping', sep: ',' }
+export const GROUPING_TAGS: TagList = { key: 'grouping' }
 
-// Semicolons, not commas: Discogs names a genre "Folk, World, & Country", which a comma
-// split would break into three tags. Apple Music keeps the field as one text either way.
-export const GENRE_TAGS: TagList = { key: 'genre', sep: ';' }
+// Discogs names one genre "Folk, World, & Country": split on its commas it would become
+// three tags. Apple Music keeps the field as one text either way.
+export const GENRE_TAGS: TagList = { key: 'genre', whole: ['Folk, World, & Country'] }
 
 export type TagListState = 'all' | 'some' | 'none'
 
 export function tagListState(tracks: TrackItem[], list: TagList, tag: string): TagListState {
-  const count = tracks.filter((t) => csvHas(t.meta[list.key] ?? '', tag, list.sep)).length
+  const count = tracks.filter((t) => csvHas(t.meta[list.key] ?? '', tag, list.whole)).length
   if (count === 0) return 'none'
   return count === tracks.length ? 'all' : 'some'
 }
@@ -59,17 +60,17 @@ export function toggleTagListAll(
 ): { id: string; meta: Partial<TrackMetadata> }[] {
   const removing = tagListState(tracks, list, tag) === 'all'
   return tracks
-    .filter((t) => csvHas(t.meta[list.key] ?? '', tag, list.sep) === removing)
+    .filter((t) => csvHas(t.meta[list.key] ?? '', tag, list.whole) === removing)
     .map((t) => ({
       id: t.id,
-      meta: { [list.key]: toggleCsv(t.meta[list.key] ?? '', tag, list.sep) },
+      meta: { [list.key]: toggleCsv(t.meta[list.key] ?? '', tag, list.whole) },
     }))
 }
 
 export function tagListTags(presets: string[], tracks: TrackItem[], list: TagList): string[] {
   const seen = new Set(presets)
   const extra = tracks
-    .flatMap((t) => splitCsv(t.meta[list.key] ?? '', list.sep))
+    .flatMap((t) => splitCsv(t.meta[list.key] ?? '', list.whole))
     .filter((tag) => (seen.has(tag) ? false : seen.add(tag)))
   return [...presets, ...extra]
 }
