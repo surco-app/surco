@@ -1047,7 +1047,6 @@ function registerIpc(): void {
         coverPath,
         normalize,
         removeCover,
-        force,
         onChild,
         onTmp,
         declick,
@@ -1086,7 +1085,6 @@ function registerIpc(): void {
                 sampleRate: s.outputSampleRate,
                 flacCompression: s.flacCompression,
               },
-              force,
               onChild,
               onTmp,
               // Resolved here like the quality knobs, with the platform folded in:

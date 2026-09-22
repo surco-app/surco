@@ -130,7 +130,6 @@ describe('convertAudio with "Same as source" under a filter', () => {
       undefined,
       undefined,
       undefined,
-      undefined,
       { startSec: 1, endSec: 3 },
     )
     expect(extname(out)).toBe('.wav')
@@ -150,7 +149,6 @@ describe('convertAudio with "Same as source" under a filter', () => {
       out,
       format,
       meta('Declicked'),
-      undefined,
       undefined,
       undefined,
       undefined,

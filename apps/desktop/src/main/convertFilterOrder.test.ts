@@ -148,7 +148,6 @@ describe('encode filter chain order', () => {
       { mode: 'loudness', targetLufs: -14, peakDb: -1, truePeakDb: -1 },
       undefined, // removeCover
       undefined, // quality
-      undefined, // forceReencode
       undefined, // onChild
       undefined, // onTmp
       undefined, // finderCovers

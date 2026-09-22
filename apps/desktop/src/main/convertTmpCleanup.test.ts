@@ -68,7 +68,6 @@ describe('the temp a failed conversion leaves behind', () => {
       undefined,
       undefined,
       undefined,
-      undefined,
       (p) => {
         tmpPath = p
       },
@@ -164,7 +163,6 @@ describe('the temp a failed conversion leaves behind', () => {
           out,
           'flac',
           meta,
-          undefined,
           undefined,
           undefined,
           undefined,

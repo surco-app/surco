@@ -55,7 +55,6 @@ export function resolveOutputTarget(
   format: OutputFormat,
   outputDir: string,
   overwriteOriginal = false,
-  forceReencode = false,
   besideOriginal = false,
 ): OutputTarget {
   // The dir comes from the real inputPath (trusted), like the in-place branch below,
@@ -66,11 +65,7 @@ export function resolveOutputTarget(
       inPlace: false,
     }
   }
-  // An explicit re-encode is a real conversion: it renders a fresh file into the
-  // output folder and leaves the same-format original untouched — unless overwrite
-  // mode already promises to rewrite the source where it lives.
-  const inPlace =
-    editsInPlace(format, inputPath, overwriteOriginal) && !(forceReencode && !overwriteOriginal)
+  const inPlace = editsInPlace(format, inputPath, overwriteOriginal)
   const dir = inPlace ? dirname(inputPath) : outputDir
   const outputPath = join(dir, `${name}.${formatExtension(format)}`)
   // Defense in depth on top of sanitizeOutputName (the primary guard against a

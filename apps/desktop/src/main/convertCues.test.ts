@@ -237,7 +237,6 @@ describe('convertAudio cue preservation', () => {
       undefined, // normalize
       true, // removeCover
       undefined, // quality
-      undefined, // forceReencode
       undefined, // onChild
       undefined, // onTmp
       undefined, // finderCovers
@@ -283,7 +282,6 @@ describe('convertAudio cue preservation', () => {
       undefined, // normalize
       false, // removeCover
       undefined, // quality
-      undefined, // forceReencode
       undefined, // onChild
       undefined, // onTmp
       undefined, // finderCovers
@@ -442,7 +440,6 @@ describe('convertAudio cue preservation', () => {
       undefined, // normalize
       false, // removeCover
       undefined, // quality
-      undefined, // forceReencode
       undefined, // onChild
       undefined, // onTmp
       undefined, // finderCovers
@@ -472,7 +469,6 @@ describe('convertAudio cue preservation', () => {
       undefined, // normalize
       false, // removeCover
       undefined, // quality
-      undefined, // forceReencode
       undefined, // onChild
       undefined, // onTmp
       undefined, // finderCovers
@@ -512,7 +508,6 @@ describe('convertAudio cue preservation', () => {
       undefined, // normalize
       false, // removeCover
       undefined, // quality
-      undefined, // forceReencode
       undefined, // onChild
       undefined, // onTmp
       undefined, // finderCovers

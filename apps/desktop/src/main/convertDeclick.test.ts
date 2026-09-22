@@ -82,7 +82,6 @@ describe('convertAudio declick', () => {
       undefined,
       undefined,
       undefined,
-      undefined,
       'standard',
     )
     // The 0.9 impulses are gone, leaving the 0.25 sine as the true peak — and the
@@ -100,7 +99,6 @@ describe('convertAudio declick', () => {
       out,
       'wav',
       meta,
-      undefined,
       undefined,
       undefined,
       undefined,
@@ -142,7 +140,6 @@ describe('convertAudio declick', () => {
       undefined,
       undefined,
       undefined,
-      undefined,
       'strong',
     )
     expect(peakOf(out)).toBeLessThan(0.3)
@@ -158,7 +155,6 @@ describe('convertAudio declick', () => {
       meta,
       undefined,
       { mode: 'peak', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
-      undefined,
       undefined,
       undefined,
       undefined,

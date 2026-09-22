@@ -86,7 +86,6 @@ describe('runProcessTrack — plain conversion', () => {
       undefined,
       { mode: 'none' },
       undefined,
-      undefined,
       expect.any(Function),
       expect.any(Function),
       'off',
@@ -122,7 +121,7 @@ describe('runProcessTrack — plain conversion', () => {
     })
     await runProcessTrack(job({ declick: 'strong' }), deps)
     const call = (deps.convertAudio as ReturnType<typeof vi.fn>).mock.calls[0]
-    expect(call[10]).toEqual('strong')
+    expect(call[9]).toEqual('strong')
   })
 
   // Unlike declick, trim has no settings default — it only exists as the per-track
@@ -131,7 +130,7 @@ describe('runProcessTrack — plain conversion', () => {
     const deps = makeDeps()
     await runProcessTrack(job({ trim: { startSec: 1.5, endSec: 200 } }), deps)
     const call = (deps.convertAudio as ReturnType<typeof vi.fn>).mock.calls[0]
-    expect(call[11]).toEqual({ startSec: 1.5, endSec: 200 })
+    expect(call[10]).toEqual({ startSec: 1.5, endSec: 200 })
   })
 
   // The inspector's foreign-tag deletions ride the job like trim — no Settings
@@ -141,7 +140,7 @@ describe('runProcessTrack — plain conversion', () => {
     const deps = makeDeps()
     await runProcessTrack(job({ foreignRemoved: ['SERATO_MARKERS_V2', 'TRAKTOR4'] }), deps)
     const call = (deps.convertAudio as ReturnType<typeof vi.fn>).mock.calls[0]
-    expect(call[13]).toEqual(['SERATO_MARKERS_V2', 'TRAKTOR4'])
+    expect(call[12]).toEqual(['SERATO_MARKERS_V2', 'TRAKTOR4'])
   })
 
   it('surfaces the repaired-sample count the encoder reported', async () => {
@@ -216,7 +215,6 @@ describe('runProcessTrack — cover handling', () => {
       {},
       '/tmp/cover.jpg',
       { mode: 'none' },
-      undefined,
       undefined,
       expect.any(Function),
       expect.any(Function),
@@ -305,7 +303,6 @@ describe('runProcessTrack — output conflict', () => {
       undefined,
       { mode: 'none' },
       undefined,
-      undefined,
       expect.any(Function),
       expect.any(Function),
       'off',
@@ -329,7 +326,6 @@ describe('runProcessTrack — output conflict', () => {
       {},
       undefined,
       { mode: 'none' },
-      undefined,
       undefined,
       expect.any(Function),
       expect.any(Function),
@@ -466,7 +462,7 @@ describe('runProcessTrack — cancel reaches the running encode', () => {
   it('registers the child under the job id and unregisters it once the job settles, success or failure', async () => {
     const deps = makeDeps({
       convertAudio: vi.fn(async (...args: unknown[]) => {
-        const onChild = args[8] as (child: { kill: (s: string) => void }) => void
+        const onChild = args[7] as (child: { kill: (s: string) => void }) => void
         onChild({ kill: vi.fn() })
         return { normalizeSkipped: false }
       }),
@@ -536,7 +532,7 @@ describe('runProcessTrack — orphaned tmp trail', () => {
   it('tracks the tmp path the instant convertAudio picks it, untracking it once the job settles', async () => {
     const deps = makeDeps({
       convertAudio: vi.fn(async (...args: unknown[]) => {
-        const onTmp = args[9] as (path: string) => void
+        const onTmp = args[8] as (path: string) => void
         onTmp('/out/Artist - Title.tmp-a1b2c3d4.aiff')
         return { normalizeSkipped: false }
       }),
@@ -550,7 +546,7 @@ describe('runProcessTrack — orphaned tmp trail', () => {
   it('still untracks the tmp path when the encode throws', async () => {
     const deps = makeDeps({
       convertAudio: vi.fn(async (...args: unknown[]) => {
-        const onTmp = args[9] as (path: string) => void
+        const onTmp = args[8] as (path: string) => void
         onTmp('/out/Artist - Title.tmp-a1b2c3d4.aiff')
         throw new Error('disk full')
       }),
@@ -567,7 +563,7 @@ describe('runProcessTrack — orphaned tmp trail', () => {
   it('keeps the tmp path listed when the cleanup could not delete it', async () => {
     const deps = makeDeps({
       convertAudio: vi.fn(async (...args: unknown[]) => {
-        const onTmp = args[9] as (path: string) => void
+        const onTmp = args[8] as (path: string) => void
         onTmp('/nas/Artist - Title.tmp-a1b2c3d4.flac')
         throw Object.assign(new Error('EBUSY: resource busy'), { tmpSurvived: true })
       }),
@@ -582,7 +578,7 @@ describe('runProcessTrack — orphaned tmp trail', () => {
   it('untracks normally when the temp was already gone', async () => {
     const deps = makeDeps({
       convertAudio: vi.fn(async (...args: unknown[]) => {
-        const onTmp = args[9] as (path: string) => void
+        const onTmp = args[8] as (path: string) => void
         onTmp('/out/Artist - Title.tmp-a1b2c3d4.aiff')
         throw new Error('encode died before writing anything')
       }),
@@ -602,41 +598,6 @@ describe('runProcessTrack — orphaned tmp trail', () => {
   })
 })
 
-// The editor's explicit "Re-encode": same-format source, but the job carries
-// forceReencode — it must route to the output folder like a real conversion
-// (original untouched) and hand the flag to convertAudio so the copy shortcut
-// is skipped and the pinned quality applies.
-describe('runProcessTrack — forced re-encode', () => {
-  it('writes a fresh output-folder file and passes the flag to the encoder', async () => {
-    const deps = makeDeps()
-    const result = await runProcessTrack(
-      job({ inputPath: '/in/song.aiff', forceReencode: true }),
-      deps,
-    )
-
-    expect(result.inPlace).toBe(false)
-    expect(result.outputPath).toBe('/out/Artist - Title.aiff')
-    expect(deps.convertAudio).toHaveBeenCalledWith(
-      '/in/song.aiff',
-      '/out/Artist - Title.aiff',
-      'aiff',
-      {},
-      undefined,
-      { mode: 'none' },
-      undefined,
-      true,
-      expect.any(Function),
-      expect.any(Function),
-      'off',
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-    )
-    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
-  })
-})
-
 describe('runProcessTrack — beside the original', () => {
   // The mode's whole contract: a fresh file in the source's own folder and the
   // original never touched — no in-place rewrite, no unlink, no prompt.
@@ -651,7 +612,6 @@ describe('runProcessTrack — beside the original', () => {
       {},
       undefined,
       { mode: 'none' },
-      undefined,
       undefined,
       expect.any(Function),
       expect.any(Function),
@@ -684,7 +644,6 @@ describe('runProcessTrack — beside the original', () => {
       {},
       undefined,
       { mode: 'none' },
-      undefined,
       undefined,
       expect.any(Function),
       expect.any(Function),
@@ -747,7 +706,6 @@ describe('runProcessTrack — in-place rewrite', () => {
       {},
       undefined,
       { mode: 'none' },
-      undefined,
       undefined,
       expect.any(Function),
       expect.any(Function),
@@ -845,7 +803,6 @@ describe('runProcessTrack — pinned overwrite', () => {
       {},
       undefined,
       { mode: 'none' },
-      undefined,
       undefined,
       expect.any(Function),
       expect.any(Function),
@@ -1065,7 +1022,6 @@ describe('runProcessTrack — Apple Music only', () => {
       {},
       undefined,
       { mode: 'none' },
-      undefined,
       undefined,
       expect.any(Function),
       expect.any(Function),
