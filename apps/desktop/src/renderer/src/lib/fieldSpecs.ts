@@ -1,6 +1,6 @@
 import type { BpmResult, KeyNotation, KeyResult, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { BULK_FIELDS, commonValue } from './bulkEdit'
+import { BULK_FIELDS, commonValue, GROUPING_TAGS, type TagList } from './bulkEdit'
 import { FIELD_DEFS } from './fields'
 
 // One value offered by a field's { } insert menu — another field's literal value, so
@@ -32,6 +32,7 @@ export interface FieldSpec {
   cleanResult?: string
   formatResult?: string
   perTrack?: {
+    list: TagList
     tracks: TrackItem[]
     onChangeTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   }
@@ -114,7 +115,7 @@ export function buildFieldSpecs({
         const shared = commonValue(selectedTracks, key)
         const perTrack =
           key === 'grouping' && onChangeTracksMeta
-            ? { tracks: selectedTracks, onChangeTracks: onChangeTracksMeta }
+            ? { list: GROUPING_TAGS, tracks: selectedTracks, onChangeTracks: onChangeTracksMeta }
             : undefined
         return {
           key,

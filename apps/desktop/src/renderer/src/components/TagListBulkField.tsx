@@ -3,13 +3,14 @@ import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrackMetadata } from '../../../shared/types'
-import { groupingTagState, groupingTags, toggleGroupingAll } from '../lib/bulkEdit'
+import { type TagList, tagListState, tagListTags, toggleTagListAll } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
 import type { TrackItem } from '../types'
 import { SuggestionChips } from './SuggestionChips'
 
-interface GroupingBulkFieldProps {
+interface TagListBulkFieldProps {
   label: string
+  list: TagList
   presets: string[]
   tracks: TrackItem[]
   onChangeTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
@@ -21,19 +22,20 @@ interface TagOrder {
   rows: Record<string, string[]>
 }
 
-function tagOrder(selection: string, tags: string[], tracks: TrackItem[]): TagOrder {
+function tagOrder(selection: string, tags: string[], tracks: TrackItem[], list: TagList): TagOrder {
   const rank = { all: 0, some: 1, none: 2 }
   return {
     selection,
     summary: [...tags].sort(
-      (a, b) => rank[groupingTagState(tracks, a)] - rank[groupingTagState(tracks, b)],
+      (a, b) => rank[tagListState(tracks, list, a)] - rank[tagListState(tracks, list, b)],
     ),
     rows: Object.fromEntries(
       tracks.map((t) => [
         t.id,
         [...tags].sort(
           (a, b) =>
-            Number(csvHas(t.meta.grouping ?? '', b)) - Number(csvHas(t.meta.grouping ?? '', a)),
+            Number(csvHas(t.meta[list.key] ?? '', b, list.sep)) -
+            Number(csvHas(t.meta[list.key] ?? '', a, list.sep)),
         ),
       ]),
     ),
@@ -49,36 +51,37 @@ function sortedAs(tags: string[], order: string[] | undefined): string[] {
   return [...tags].sort((a, b) => at(a) - at(b))
 }
 
-export function GroupingBulkField({
+export function TagListBulkField({
   label,
+  list,
   presets,
   tracks,
   onChangeTracks,
-}: GroupingBulkFieldProps): React.JSX.Element {
+}: TagListBulkFieldProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
-  const tags = groupingTags(presets, tracks)
+  const tags = tagListTags(presets, tracks, list)
   const selection = tracks.map((t) => t.id).join('\n')
-  const [order, setOrder] = useState(() => tagOrder(selection, tags, tracks))
-  if (order.selection !== selection) setOrder(tagOrder(selection, tags, tracks))
+  const [order, setOrder] = useState(() => tagOrder(selection, tags, tracks, list))
+  if (order.selection !== selection) setOrder(tagOrder(selection, tags, tracks, list))
   const summaryTags = sortedAs(tags, order.summary)
-  const varying = tags.filter((tag) => groupingTagState(tracks, tag) === 'some').length
+  const varying = tags.filter((tag) => tagListState(tracks, list, tag) === 'some').length
   return (
-    <div className="block" data-testid="grouping-bulk">
+    <div className="block" data-testid={`${list.key}-bulk`}>
       <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-fg-dim">
         {label}
         <span className="font-normal text-fg-faint">· {tr('editor.groupingAllTracks')}</span>
       </span>
       <SuggestionChips
         suggestions={summaryTags}
-        isOn={(tag) => groupingTagState(tracks, tag) === 'all'}
-        isPartial={(tag) => groupingTagState(tracks, tag) === 'some'}
-        onPick={(tag) => onChangeTracks(toggleGroupingAll(tracks, tag))}
+        isOn={(tag) => tagListState(tracks, list, tag) === 'all'}
+        isPartial={(tag) => tagListState(tracks, list, tag) === 'some'}
+        onPick={(tag) => onChangeTracks(toggleTagListAll(tracks, list, tag))}
       />
       <div className="mt-2.5 ml-[5px] border-l-2 border-[var(--color-line-strong)] pl-2.5">
         <button
           type="button"
-          data-testid="grouping-per-track-toggle"
+          data-testid={`${list.key}-per-track-toggle`}
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
           className="flex w-full items-center gap-1.5 py-0.5 text-[11px] text-fg-muted transition-colors hover:text-fg"
@@ -99,7 +102,7 @@ export function GroupingBulkField({
             {tracks.map((t) => (
               <div key={t.id} className="min-w-0">
                 <div
-                  data-testid={`grouping-track-${t.id}`}
+                  data-testid={`${list.key}-track-${t.id}`}
                   className="flex min-w-0 items-center gap-1.5 text-[10px] text-fg-faint"
                 >
                   {t.meta.trackNumber && (
@@ -113,10 +116,13 @@ export function GroupingBulkField({
                   scope={t.id}
                   dim
                   suggestions={sortedAs(tags, order.rows[t.id])}
-                  isOn={(tag) => csvHas(t.meta.grouping ?? '', tag)}
+                  isOn={(tag) => csvHas(t.meta[list.key] ?? '', tag, list.sep)}
                   onPick={(tag) =>
                     onChangeTracks([
-                      { id: t.id, meta: { grouping: toggleCsv(t.meta.grouping ?? '', tag) } },
+                      {
+                        id: t.id,
+                        meta: { [list.key]: toggleCsv(t.meta[list.key] ?? '', tag, list.sep) },
+                      },
                     ])
                   }
                 />
