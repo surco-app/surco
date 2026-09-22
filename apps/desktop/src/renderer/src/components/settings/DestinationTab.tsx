@@ -191,22 +191,24 @@ export function DestinationTab({
           testidPrefix="settings"
         />
       </SettingsField>
-      <SettingsField label={tr('settings.location')}>
-        <LocationPicker
-          locations={LOCATIONS}
-          value={plan.location}
-          onChange={(location) => applyPlan(withLocation(plan, location))}
-          testidPrefix="settings-location"
-          radioName="location"
-          folderDetail={
-            <OutputFolderField
-              value={local.outputDir}
-              onChange={onOutputDirChange}
-              testid="settings-output"
-            />
-          }
-        />
-      </SettingsField>
+      <SettingsSection>
+        <SettingsField label={tr('settings.location')}>
+          <LocationPicker
+            locations={LOCATIONS}
+            value={plan.location}
+            onChange={(location) => applyPlan(withLocation(plan, location))}
+            testidPrefix="settings-location"
+            radioName="location"
+            folderDetail={
+              <OutputFolderField
+                value={local.outputDir}
+                onChange={onOutputDirChange}
+                testid="settings-output"
+              />
+            }
+          />
+        </SettingsField>
+      </SettingsSection>
       {/* Not a detail of the overwrite radio, which is where this started: Originals also
           fills from a format change and from a delete on a volume with no OS Trash, and
           hanging the setting off one destination left the other two paths ignoring it
