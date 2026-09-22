@@ -186,6 +186,8 @@ describe('readTagLibExtras', () => {
       conductor: 'B. Conductor',
       trackTotal: '',
       discTotal: '',
+      copyright: '',
+      encodedBy: '',
       catalogNumber: 'MQDRFREE015',
       discogsReleaseId: '12345',
       energy: '8',

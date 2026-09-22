@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
-import { sanitizeMeta, stripTitleNumbering, stripTitleNumberingLoose } from './hygiene'
+import {
+  clearHiddenProvenance,
+  sanitizeMeta,
+  stripTitleNumbering,
+  stripTitleNumberingLoose,
+} from './hygiene'
 
 function meta(patch: Partial<TrackMetadata>): TrackMetadata {
   return {
@@ -198,5 +203,27 @@ describe('stripTitleNumberingLoose', () => {
 
   it('only strips at the start, so a mid-title number survives', () => {
     expect(stripTitleNumberingLoose('Track 1. Reprise')).toBe('Track 1. Reprise')
+  })
+})
+
+// djotas saw the previous owner's studio and tool on files that were already his, so
+// conversion clears them. Now that they are fields a TagScanner user can keep, that clear
+// has to follow the user's own choice: hidden means cleared, shown means kept.
+describe('clearHiddenProvenance', () => {
+  const owned = { title: 'T', copyright: '(P) Label', encodedBy: 'Ripper' } as TrackMetadata
+
+  it('sends copyright and encoded-by empty while the fields are hidden', () => {
+    expect(clearHiddenProvenance(owned, ['title'])).toMatchObject({
+      title: 'T',
+      copyright: '',
+      encodedBy: '',
+    })
+  })
+
+  it('keeps each one the user has chosen to show', () => {
+    expect(clearHiddenProvenance(owned, ['title', 'copyright'])).toMatchObject({
+      copyright: '(P) Label',
+      encodedBy: '',
+    })
   })
 })

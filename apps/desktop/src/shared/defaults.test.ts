@@ -53,7 +53,15 @@ describe('normalizeImportFields', () => {
 // Fields under Hidden, one "Show" away, and nobody's editor changes on update.
 describe('DEFAULT_FIELDS', () => {
   it('ships the credit fields hidden', () => {
-    for (const key of ['originalArtist', 'lyricist', 'conductor', 'trackTotal', 'discTotal'])
+    for (const key of [
+      'originalArtist',
+      'lyricist',
+      'conductor',
+      'trackTotal',
+      'discTotal',
+      'copyright',
+      'encodedBy',
+    ])
       expect(DEFAULT_FIELDS).not.toContain(key)
   })
 })

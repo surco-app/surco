@@ -33,6 +33,8 @@ const FULLY_TAGGED: TrackMetadata = {
   conductor: 'Conductor',
   trackTotal: '12',
   discTotal: '2',
+  copyright: '(P) Label',
+  encodedBy: 'Encoder',
   compilation: '1',
   mood: 'Dark',
   energy: '4',

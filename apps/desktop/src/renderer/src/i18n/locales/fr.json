@@ -608,6 +608,8 @@
     "conductor": "Chef d'orchestre",
     "trackTotal": "Nombre de pistes",
     "discTotal": "Nombre de disques",
+    "copyright": "Copyright",
+    "encodedBy": "Encodé par",
     "isrc": "ISRC",
     "mixName": "Mix",
     "originalYear": "Année d'origine",

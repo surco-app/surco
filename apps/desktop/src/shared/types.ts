@@ -382,6 +382,10 @@ export interface TrackMetadata {
   // TRACKTOTAL/DISCTOTAL on Vorbis, trkn/disk on MP4. Hidden in the editor by default.
   trackTotal?: string
   discTotal?: string
+  // TCOP/COPYRIGHT and TENC/ENCODEDBY. Hidden by default, and while hidden the editor sends
+  // them empty, which clears the previous owner's values on conversion.
+  copyright?: string
+  encodedBy?: string
   // Boolean-ish: '1' when the album is a various-artists compilation, '' when
   // not. Kept a string like every other field; written as TCMP/COMPILATION,
   // which is what makes Apple Music group VA albums instead of splitting them.

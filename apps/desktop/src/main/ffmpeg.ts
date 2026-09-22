@@ -798,16 +798,7 @@ function pcmCodec(depth: SampleDepth, endian: 'be' | 'le'): string {
 // de herramientas), no a la obra ni a quien la tiene ahora. ffprobe los reporta en
 // minúscula y el muxer de cada formato los traduce a su convención (ENCODED_BY en
 // Vorbis, TENC/TSSE en ID3, ITCH/ISFT en RIFF), así que basta nombrarlos una vez.
-const SOURCE_PROVENANCE = [
-  'encoded_by',
-  'engineer',
-  'technician',
-  'software',
-  'originator',
-  'product',
-  'source',
-  'copyright',
-]
+const SOURCE_PROVENANCE = ['engineer', 'technician', 'software', 'originator', 'product', 'source']
 
 function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
   // ffmpeg copies the source's global metadata into the re-encoded file by default,
