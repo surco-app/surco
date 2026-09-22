@@ -577,7 +577,7 @@
     "loudnessRangeBalance": "Gut: unter 1 dB.",
     "loudnessFixBalance": "Korrigierbar: Peak-Normalisierung mit Gain pro Kanal gleicht beide Seiten an.",
     "loudnessRangeDc": "Gut: unter 0,2 %.",
-    "loudnessFixDc": "Korrigierbar: „DC-Offset entfernen“ unter Normalisierung aktivieren.",
+    "loudnessFixDc": "Korrigierbar: „DC-Versatz entfernen“ unter Normalisierung aktivieren.",
     "loudnessRangeNoise": "Gut: -45 dB oder niedriger.",
     "loudnessFixNoise": "Hier nicht korrigierbar: Surco entrauscht nicht. Es stammt aus Quelle oder Aufnahme.",
     "loudnessAfterHeader": "jetzt → nach dem Konvertieren",
