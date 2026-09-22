@@ -4,8 +4,8 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NormalizeConfig, OutputFormat, TrackMetadata } from '../../../shared/types'
+import i18n from '../i18n'
 import { createQueryClient } from '../lib/queryClient'
-import '../i18n'
 import type { TrackItem } from '../types'
 import { NormalizeSection } from './NormalizeSection'
 
@@ -48,7 +48,6 @@ function renderSection(
         item={item}
         selectedCount={selectedCount}
         format="aiff"
-        onShowHelp={vi.fn()}
         showHints={showHints}
         onHideHints={onHideHints}
       />
@@ -134,7 +133,6 @@ describe('NormalizeSection before/after waveforms', () => {
           item={item}
           selectedCount={1}
           format="aiff"
-          onShowHelp={vi.fn()}
         />
       </QueryClientProvider>
     )
@@ -175,11 +173,20 @@ describe('NormalizeSection layout', () => {
           item={track()}
           selectedCount={1}
           format={over.format ?? 'alac'}
-          onShowHelp={vi.fn()}
         />
       </QueryClientProvider>,
     )
   }
+
+  // The header ⓘ says what the section does, like every other section's. As a button it
+  // opened the loudness-metrics help instead, so the sentence it showed promised one thing
+  // and the click delivered another.
+  it('keeps the header info as a plain note about the section', () => {
+    renderWith()
+    const info = screen.getByTestId('section-help')
+    expect(info).toHaveAttribute('role', 'note')
+    expect(info).toHaveTextContent(i18n.t('normalize.editorHint'))
+  })
 
   // Folded and off, the header used to show nothing at all — "off" and "never
   // looked at it" were the same pixels. The dim summary states the off mode, and

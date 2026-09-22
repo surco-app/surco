@@ -28,10 +28,6 @@ interface Props {
   // say so. A count rather than a boolean because the number is the warning.
   selectedCount: number
   format: OutputFormat
-  // Opens the loudness metric help ("What do these mean?"): the ranges and the
-  // fixable/not-fixable notes lived only behind Quality's readout ⓘ, unreachable from
-  // the section whose dials those metrics govern.
-  onShowHelp: () => void
   showHints?: boolean
   onHideHints?: () => void
 }
@@ -46,7 +42,6 @@ export function NormalizeSection({
   item,
   selectedCount,
   format,
-  onShowHelp,
   showHints = true,
   onHideHints,
 }: Props): React.JSX.Element {
@@ -114,7 +109,6 @@ export function NormalizeSection({
         // figures the conversion will target — and states "None" when off, so the
         // folded header never reads blank.
         help={tr('normalize.editorHint')}
-        onHelp={onShowHelp}
         summary={
           value.mode === 'loudness'
             ? `${value.targetLufs} LUFS · ${value.truePeakDb} dBTP`
