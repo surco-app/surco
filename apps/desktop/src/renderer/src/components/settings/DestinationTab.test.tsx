@@ -113,102 +113,142 @@ function renderWithCollection(patch: PatchSynced, offset = '0'): void {
   )
 }
 
-describe('DestinationTab FLAC restriction', () => {
-  // ALAC exists as a target precisely because Music ingests it — unlike FLAC it must
-  // not pin the destination to the output folder. The format is chosen on the
-  // Conversion tab, but its consequence surfaces here, next to the pinned radio.
-  it('shows the Apple Music note only while FLAC is the format', () => {
-    renderTab({ outputFormat: 'flac' })
-    expect(screen.getByText(/Apple Music can't play FLAC/)).toBeInTheDocument()
-    cleanup()
-    renderTab({ outputFormat: 'alac' })
-    expect(screen.queryByText(/Apple Music can't play FLAC/)).not.toBeInTheDocument()
-  })
-})
+const OLD_RADIO: Record<string, Partial<SyncedDraft>> = {
+  folder: { addToAppleMusic: false, keepOutputCopy: true },
+  appleMusic: { addToAppleMusic: true, keepOutputCopy: false },
+  engineDj: { addToEngineDj: true, keepOutputCopy: true },
+  beside: { convertBesideOriginal: true },
+  overwrite: { overwriteOriginal: true },
+}
 
-describe('DestinationTab Engine DJ destination', () => {
-  // Choosing Engine DJ must clear the other destinations in the same patch batch —
-  // a leftover addToAppleMusic or overwriteOriginal would make the radio show one
-  // thing and the conversion do another.
-  it('stages Engine DJ as an exclusive destination choice', () => {
+function checkedIds(prefix: string): string[] {
+  return screen
+    .getAllByTestId(new RegExp(`^${prefix}-`))
+    .filter((el) => (el as HTMLInputElement).checked)
+    .map((el) => el.getAttribute('data-testid') ?? '')
+}
+
+describe('DestinationTab two questions', () => {
+  it('asks what the DJ plays with before where the file is saved', () => {
+    renderTab()
+    const dj = screen.getByTestId('settings-dj-engineDj')
+    const location = screen.getByTestId('settings-location-folder')
+    expect(dj.compareDocumentPosition(location) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it.each([
+    ['folder', 'settings-location-folder', []],
+    ['appleMusic', 'settings-location-folder', ['settings-dj-appleMusic']],
+    ['engineDj', 'settings-location-folder', ['settings-dj-engineDj']],
+    ['beside', 'settings-location-beside', []],
+    ['overwrite', 'settings-location-overwrite', []],
+  ])('renders an old %s destination as the same location and DJ software', (old, location, dj) => {
+    renderTab(OLD_RADIO[old])
+    expect(checkedIds('settings-location')).toEqual([location])
+    expect(checkedIds('settings-dj')).toEqual(dj)
+  })
+
+  it('keeps no folder copy for an old Apple Music destination', () => {
+    renderTab(OLD_RADIO.appleMusic)
+    expect(screen.getByTestId('settings-apple-music-copy')).not.toBeChecked()
+    expect(screen.getByTestId('settings-apple-music-copy')).toBeEnabled()
+  })
+
+  it('stages Apple Music without a folder copy, as choosing it always meant', () => {
     const patch = renderTab()
-    fireEvent.click(screen.getByTestId('settings-destination-engineDj'))
-    expect(patch).toHaveBeenCalledWith('addToEngineDj', true)
-    expect(patch).toHaveBeenCalledWith('addToAppleMusic', false)
-    expect(patch).toHaveBeenCalledWith('keepOutputCopy', true)
+    fireEvent.click(screen.getByTestId('settings-dj-appleMusic'))
+    expect(patch).toHaveBeenCalledWith('addToAppleMusic', true)
+    expect(patch).toHaveBeenCalledWith('keepOutputCopy', false)
     expect(patch).toHaveBeenCalledWith('overwriteOriginal', false)
+    expect(patch).toHaveBeenCalledWith('convertBesideOriginal', false)
   })
 
-  // "Next to the original" is the non-destructive sibling of overwrite: a fresh copy
-  // beside the source, nothing in any library — one radio choice like the rest, so a
-  // leftover boolean can't make the radio show one thing and the conversion do another.
-  it('stages beside-the-original as an exclusive destination choice', () => {
-    const patch = renderTab()
-    fireEvent.click(screen.getByTestId('settings-destination-beside'))
+  it('lets Apple Music keep a folder copy when asked', () => {
+    const patch = renderTab(OLD_RADIO.appleMusic)
+    fireEvent.click(screen.getByTestId('settings-apple-music-copy'))
+    expect(patch).toHaveBeenCalledWith('keepOutputCopy', true)
+  })
+
+  it('adds Engine DJ next to Apple Music instead of replacing it', () => {
+    const patch = renderTab(OLD_RADIO.appleMusic)
+    fireEvent.click(screen.getByTestId('settings-dj-engineDj'))
+    expect(patch).toHaveBeenCalledWith('addToEngineDj', true)
+    expect(patch).toHaveBeenCalledWith('addToAppleMusic', true)
+  })
+
+  it('shows the folder copy as kept and fixed while Engine DJ needs the file', () => {
+    renderTab({ ...OLD_RADIO.appleMusic, addToEngineDj: true })
+    expect(screen.getByTestId('settings-apple-music-copy')).toBeChecked()
+    expect(screen.getByTestId('settings-apple-music-copy')).toBeDisabled()
+    expect(screen.getByText(i18n.t('settings.appleMusicKeepCopyEngine'))).toBeInTheDocument()
+  })
+
+  it('leaves every library when saving beside the original', () => {
+    const patch = renderTab({ ...OLD_RADIO.appleMusic, addToEngineDj: true })
+    fireEvent.click(screen.getByTestId('settings-location-beside'))
     expect(patch).toHaveBeenCalledWith('convertBesideOriginal', true)
     expect(patch).toHaveBeenCalledWith('overwriteOriginal', false)
     expect(patch).toHaveBeenCalledWith('addToAppleMusic', false)
     expect(patch).toHaveBeenCalledWith('addToEngineDj', false)
   })
 
-  // Like Engine DJ, a fresh copy beside the source is FLAC-proof, so the FLAC pin
-  // that greys Apple Music out must not touch it.
-  it('keeps beside-the-original selectable while FLAC is the format', () => {
-    renderTab({ outputFormat: 'flac' })
-    expect(screen.getByTestId('settings-destination-beside')).toBeEnabled()
-  })
+  it.each(['beside', 'overwrite'])(
+    'disables Apple Music and Engine DJ with the reason while saving %s the original',
+    (old) => {
+      renderTab(OLD_RADIO[old])
+      expect(screen.getByTestId('settings-dj-appleMusic')).toBeDisabled()
+      expect(screen.getByTestId('settings-dj-engineDj')).toBeDisabled()
+      expect(screen.getAllByText(i18n.t('settings.libraryNeedsFolder'))).toHaveLength(2)
+    },
+  )
 
-  // A greyed-out Apple Music radio alone doesn't say WHY; the note names the FLAC
-  // limitation, and only while FLAC is the format — the rest of the time it would
-  // just be noise under the picker.
-  it('explains the Apple Music FLAC limitation only while FLAC is the format', () => {
-    renderTab({ outputFormat: 'flac' })
+  it.each(['beside', 'overwrite'])(
+    'keeps the Traktor and rekordbox collections in step while saving %s the original',
+    (old) => {
+      render(
+        <DestinationTab
+          synced={{ ...synced, ...OLD_RADIO[old] }}
+          local={{ ...local, traktorNmlPath: '/dj/collection.nml' }}
+          patch={vi.fn()}
+          onOutputDirChange={vi.fn()}
+          onChangeEngineDir={vi.fn()}
+          onChangeTraktorNmlPath={vi.fn()}
+          detectedNmlPath={null}
+          onAcceptDetectedNmlPath={vi.fn()}
+          rekordboxCollection="/Users/dj/Library/Pioneer/rekordbox/master.db"
+          onChangeRekordboxDbPath={vi.fn()}
+        />,
+      )
+      expect(screen.getByTestId('settings-dj-traktor')).toBeEnabled()
+      expect(screen.getByTestId('settings-dj-rekordbox')).toBeEnabled()
+    },
+  )
+
+  it('keeps FLAC out of Apple Music with the reason, and Engine DJ and beside open', () => {
+    renderTab({ ...OLD_RADIO.appleMusic, outputFormat: 'flac' })
+    expect(screen.getByTestId('settings-dj-appleMusic')).toBeDisabled()
+    expect(screen.getByTestId('settings-dj-appleMusic')).not.toBeChecked()
     expect(screen.getByText(i18n.t('settings.appleMusicFlacNote'))).toBeInTheDocument()
+    expect(screen.getByTestId('settings-dj-engineDj')).toBeEnabled()
+    expect(screen.getByTestId('settings-location-beside')).toBeEnabled()
     cleanup()
-    renderTab()
+    renderTab({ outputFormat: 'alac' })
     expect(screen.queryByText(i18n.t('settings.appleMusicFlacNote'))).toBeNull()
   })
 
-  // The output folder is a detail OF the "Output folder" choice, so it lives under
-  // that radio — floating above the group it read as an unrelated global path, and
-  // under Apple Music or overwrite (no folder copy) it would just mislead.
-  it('shows the output folder under its radio only while it is the destination', () => {
-    renderTab()
-    expect(screen.getByTestId('settings-output')).toHaveTextContent('/out')
-    expect(screen.getByTestId('settings-output').closest('[inert]')).toBeNull()
-    cleanup()
-    // Kept mounted so the collapse can animate out; inert is what "hidden" means —
-    // no focus stop, no interaction — while the height/opacity transition runs.
-    renderTab({ addToEngineDj: true })
-    expect(screen.getByTestId('settings-output').closest('[inert]')).not.toBeNull()
+  it('keeps the output folder and Engine fields on screen whatever is chosen', () => {
+    for (const old of Object.keys(OLD_RADIO)) {
+      renderTab(OLD_RADIO[old])
+      for (const id of ['settings-output', 'settings-engine-library', 'settings-engine-playlist']) {
+        expect(screen.getByTestId(id)).toBeVisible()
+        expect(screen.getByTestId(id).closest('[inert]')).toBeNull()
+      }
+      cleanup()
+    }
   })
 
-  // The library folder only matters once conversions are actually registered there;
-  // showing it under every destination would read as an unrelated global path.
-  it('shows the Engine library folder under its radio only while Engine DJ is the destination', () => {
-    renderTab()
-    expect(screen.getByTestId('settings-engine-library').closest('[inert]')).not.toBeNull()
-    cleanup()
-    renderTab({ addToEngineDj: true })
-    expect(screen.getByTestId('settings-engine-library')).toHaveTextContent('/music/Engine Library')
-    expect(screen.getByTestId('settings-engine-library').closest('[inert]')).toBeNull()
-  })
-
-  // Engine DJ plays FLAC natively, so the FLAC restriction that pins Apple Music to
-  // the folder must not grey this option out.
-  it('keeps Engine DJ selectable while FLAC is the format', () => {
-    renderTab({ outputFormat: 'flac' })
-    expect(screen.getByTestId('settings-destination-engineDj')).toBeEnabled()
-    expect(screen.getByTestId('settings-destination-appleMusic')).toBeDisabled()
-  })
-
-  // The playlist is where the DJ finds what Surco converted, so it belongs with the
-  // destination — editable, seeded from the setting, staged through the draft patch.
-  it('shows the editable playlist field only while Engine DJ is the destination', () => {
-    renderTab()
-    expect(screen.getByTestId('settings-engine-playlist').closest('[inert]')).not.toBeNull()
-    cleanup()
-    const patch = renderTab({ addToEngineDj: true })
+  it('stages the Engine playlist typed under its chip', () => {
+    const patch = renderTab()
     const field = screen.getByTestId('settings-engine-playlist')
     expect(field).toHaveValue('Surco')
     fireEvent.change(field, { target: { value: 'Pool' } })
@@ -329,7 +369,7 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    fireEvent.click(screen.getByTestId('settings-sync-traktor'))
+    fireEvent.click(screen.getByTestId('settings-dj-traktor'))
     expect(patch).toHaveBeenCalledWith('syncTraktor', true)
   })
 
@@ -352,7 +392,7 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    expect(screen.getByTestId('settings-sync-traktor')).toBeDisabled()
+    expect(screen.getByTestId('settings-dj-traktor')).toBeDisabled()
   })
 
   // rekordbox keeps its collection in one place per platform, so unlike Traktor there is
@@ -374,7 +414,7 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    fireEvent.click(screen.getByTestId('settings-sync-rekordbox'))
+    fireEvent.click(screen.getByTestId('settings-dj-rekordbox'))
     expect(patch).toHaveBeenCalledWith('syncRekordbox', true)
   })
 
@@ -396,7 +436,7 @@ describe('DestinationTab Traktor collection', () => {
       />,
     )
 
-    expect(screen.getByTestId('settings-sync-rekordbox')).toBeDisabled()
+    expect(screen.getByTestId('settings-dj-rekordbox')).toBeDisabled()
   })
 
   // Nothing configured means nothing to clear, and a live button that does nothing reads
@@ -715,10 +755,10 @@ describe('DestinationTab advanced', () => {
   it('keeps destination and sync in view and folds the rarely touched details', () => {
     renderTab()
     for (const id of [
-      'settings-destination-folder',
-      'settings-sync-traktor',
+      'settings-location-folder',
+      'settings-dj-traktor',
       'settings-traktor-nml',
-      'settings-sync-rekordbox',
+      'settings-dj-rekordbox',
       'settings-backup-summary',
     ]) {
       expect(screen.getByTestId(id)).toBeVisible()
