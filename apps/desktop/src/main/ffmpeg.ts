@@ -24,6 +24,7 @@ import type {
   OutputFormat,
   TrackMetadata,
   TrackProperties,
+  TrashEntry,
   TrimRange,
   WaveformResult,
   WaveformScan,
@@ -79,7 +80,7 @@ import {
   volumedetectArgs,
   volumeFilter,
 } from './normalize'
-import { keepOriginal } from './originalKeeper'
+import { keepOriginal, restoreOriginal } from './originalKeeper'
 import { recordRekordboxRepoint } from './rekordboxBatch'
 import { rekordboxRepointFor } from './rekordboxRepointFor'
 import { renameWithRetry, rescuePath } from './renameRetry'
@@ -1770,6 +1771,7 @@ export async function convertAudio(
   // adeclick reports its repaired-sample total on the encode's stderr; undefined
   // when declick is off so "not run" and "ran, found 0" stay distinct upstream.
   let declickedSamples: number | undefined
+  let archived: TrashEntry | null = null
 
   try {
     if (copiedVerbatim) {
@@ -2021,7 +2023,7 @@ export async function convertAudio(
     // this scope knows is what the encode did — `codec` is the planner's own verdict,
     // 'copy' exactly when the audio passes through untouched — so that rides along.
     if (await isSameFile(input, output))
-      await keepOriginal(input, 'replaced', output, { reencodes: codec !== 'copy' })
+      archived = await keepOriginal(input, 'replaced', output, { reencodes: codec !== 'copy' })
     // Logged because this failure only reproduces on Windows machines we cannot
     // attach a debugger to: when a user reports "another program is using the file",
     // these lines are the whole evidence — whether the destination was still held,
@@ -2039,6 +2041,7 @@ export async function convertAudio(
       // as it would any half-written output.
       rescue: rescuePath,
     })
+    archived = null
     // Comes after the rename, not before: the patch has to describe the file as
     // it now exists at `output`, and the cue-writing branches above (copyCueFrames,
     // copyCuesToFlac, shiftFlacCues) only ever touched `tmp`.
@@ -2049,6 +2052,13 @@ export async function convertAudio(
     const repoint = rekordboxRepointFor(input, output, { replaces: replacesPath })
     if (repoint) recordRekordboxRepoint(repoint)
   } catch (e) {
+    // The original was archived for a rename that never landed, so the user's path is
+    // empty: reported from an external disk as a track that vanished from its folder and
+    // lived on only in Originals, which empties itself. Put it back before anything else.
+    if (archived)
+      await restoreOriginal(archived).catch((err) =>
+        log.warn(`original stayed in Originals after a failed rename: ${err}`),
+      )
     // A rescued temp is no longer at `tmp` — the rescue renamed it away — so the unlink
     // below finds nothing and the finished conversion survives on its own. Returning
     // early anyway makes that explicit rather than load-bearing on an ENOENT, and puts
