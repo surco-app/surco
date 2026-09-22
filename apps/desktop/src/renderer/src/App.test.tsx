@@ -2940,3 +2940,23 @@ describe('App empty screen offers a single way in', () => {
     expect(await screen.findByTestId('empty-dropzone')).toBeInTheDocument()
   })
 })
+
+describe('App Originals panel', () => {
+  // The panel states how long originals stay and how much room they get; showing the
+  // shipped defaults instead of the user's own choice tells them their setting did nothing.
+  it('shows the retention and size cap the user chose', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ backupRetentionDays: 3, backupMaxGb: 2 })),
+      trashList: vi.fn().mockResolvedValue([]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('open-trash'))
+
+    const { default: i18n } = await import('./i18n')
+    const { formatBytes } = await import('./components/TrashPanel')
+    expect(await screen.findByText(i18n.t('trash.selfEmpties', { days: 3 }))).toBeInTheDocument()
+    expect(screen.getByTestId('trash-usage')).toHaveTextContent(
+      formatBytes(2 * 1024 ** 3, i18n.language),
+    )
+  })
+})
