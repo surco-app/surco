@@ -16,6 +16,9 @@ export interface ExportLabelState {
   // offer a replacement instead of an add. Ranked below the in-place and stale updates:
   // those already describe an update of the file itself.
   replaces?: boolean
+  // Whether the pending output keeps the source's format. Only then can an in-place or
+  // stale export be a tag update; across formats it is a real conversion.
+  sameFormat: boolean
 }
 
 // Which label the convert split-button wears, as an i18n key plus its params. The
@@ -48,8 +51,9 @@ export function exportButtonLabel(state: ExportLabelState): {
       options: { count: state.count, format: state.format },
     }
   }
-  if (state.inPlace) return { key: state.withAppleMusic ? 'editor.updateMusic' : 'editor.update' }
-  if (state.stale) return { key: 'editor.update' }
+  if (state.inPlace && state.sameFormat)
+    return { key: state.withAppleMusic ? 'editor.updateMusic' : 'editor.update' }
+  if (state.stale && state.sameFormat) return { key: 'editor.update' }
   if (state.done) return { key: 'editor.exportAgain' }
   if (state.replaces) return { key: 'editor.replaceMusic', options: { format: state.format } }
   return {
