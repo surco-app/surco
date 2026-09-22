@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import type React from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { SettingsSection } from './SettingsPrimitives'
+import '../../i18n'
+import { AdvancedDisclosure, SettingsAdvancedProvider, SettingsSection } from './SettingsPrimitives'
 
 afterEach(cleanup)
 
@@ -49,5 +51,66 @@ describe('SettingsSection', () => {
     )
 
     expect(screen.getByTestId('settings-section').className).not.toMatch(/rounded/)
+  })
+})
+
+// The rarely touched settings fold under one "Advanced" toggle per tab so the everyday ones
+// lead. Folding must never cost a setting: the controls stay in the form, and one the
+// browser refuses to submit opens its fold, or Save would do nothing with no field in view.
+describe('AdvancedDisclosure', () => {
+  it('starts folded and unfolds from its toggle', () => {
+    render(
+      <AdvancedDisclosure id="general">
+        <p>raro</p>
+      </AdvancedDisclosure>,
+    )
+
+    const toggle = screen.getByTestId('settings-advanced-general')
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByText('raro')).not.toBeVisible()
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('raro')).toBeVisible()
+  })
+
+  it('unfolds when a field inside it blocks the form from submitting', () => {
+    render(
+      <form>
+        <AdvancedDisclosure id="destination">
+          <input data-testid="limit" type="number" min={1} defaultValue={0} />
+        </AdvancedDisclosure>
+      </form>,
+    )
+
+    const form = screen.getByTestId('limit').closest('form') as HTMLFormElement
+    let valid = true
+    act(() => {
+      valid = form.checkValidity()
+    })
+    expect(valid).toBe(false)
+    expect(screen.getByTestId('settings-advanced-destination')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+    expect(screen.getByTestId('limit')).toBeVisible()
+  })
+
+  it('keeps each fold open across remounts while the shared state holds it', () => {
+    function Harness({ show }: { show: boolean }): React.JSX.Element {
+      return (
+        <SettingsAdvancedProvider>
+          {show && (
+            <AdvancedDisclosure id="search">
+              <p>oculto</p>
+            </AdvancedDisclosure>
+          )}
+        </SettingsAdvancedProvider>
+      )
+    }
+    const { rerender } = render(<Harness show />)
+    fireEvent.click(screen.getByTestId('settings-advanced-search'))
+    rerender(<Harness show={false} />)
+    rerender(<Harness show />)
+    expect(screen.getByTestId('settings-advanced-search')).toHaveAttribute('aria-expanded', 'true')
   })
 })

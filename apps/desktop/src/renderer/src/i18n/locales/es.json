@@ -765,6 +765,7 @@
     }
   },
   "settings": {
+    "advanced": "Avanzado",
     "tabs": {
       "general": "General",
       "search": "Búsqueda",
