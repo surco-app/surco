@@ -2956,3 +2956,15 @@ describe('App Originals panel', () => {
     )
   })
 })
+
+describe('App list header trash button', () => {
+  // The button sends the selection to the OS Trash; with nothing selected a click did
+  // nothing at all, which reads as a broken button rather than an empty selection.
+  it('is disabled while nothing is selected', async () => {
+    await renderApp()
+    await addTwoTracks()
+    expect(screen.getByTestId('trash-selected')).toBeEnabled()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    await waitFor(() => expect(screen.getByTestId('trash-selected')).toBeDisabled())
+  })
+})
