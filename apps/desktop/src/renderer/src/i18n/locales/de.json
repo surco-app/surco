@@ -545,7 +545,7 @@
     "convertAllMusic": "Konvertieren ({{count}}) · {{format}} + Apple Music",
     "convertAllEngine": "Konvertieren ({{count}}) · {{format}} + Engine DJ",
     "fieldActions": "Feld-Aktionen",
-    "caseTitle": "Title Case",
+    "caseTitle": "Wortanfänge groß",
     "caseLower": "kleinschreibung",
     "caseUpper": "GROSSSCHREIBUNG",
     "baseTitle": "Basistitel",
