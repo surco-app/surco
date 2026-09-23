@@ -769,8 +769,8 @@
       "gainSub": "Nichts wird limitiert oder komprimiert; die Dynamik bleibt erhalten.",
       "peak": "Er wird um {{gain}} dB verschoben: sein lautestes Sample landet genau bei {{peak}} dBFS.",
       "peakSub": "Konstante Verstärkung, kein Limiter. Er wird etwa {{lufs}} LUFS laut sein.",
-      "mp3Ceiling": "Die MP3-Kodierung hebt die Spitzen etwas an. Surco misst deshalb die MP3 und kodiert sie mit niedriger gehaltenen Spitzen neu, wenn sie über {{ceiling}} dBTP liegt.",
-      "limiterCeiling": "Der Limiter hält die Spitzen Sample für Sample, zwischen den Samples können sie trotzdem etwas höher liegen. Surco misst deshalb die Datei und erzeugt sie mit niedriger gehaltenen Spitzen neu, wenn sie über {{ceiling}} dBTP liegt."
+      "mp3Ceiling": "Die MP3-Kodierung hebt die Spitzen etwas an. Surco misst deshalb die MP3 und kodiert sie mit niedriger gehaltenen Spitzen neu, wenn sie über {{ceiling}} dBTP liegt. Sie kann dann etwas unter {{lufs}} LUFS landen.",
+      "limiterCeiling": "Der Limiter hält die Spitzen Sample für Sample, zwischen den Samples können sie trotzdem etwas höher liegen. Surco misst deshalb die Datei und erzeugt sie mit niedriger gehaltenen Spitzen neu, wenn sie über {{ceiling}} dBTP liegt. Sie kann dann etwas unter {{lufs}} LUFS landen."
     },
     "hideHints": "Diese Erklärungen ausblenden (zurück über Einstellungen → Editor)",
     "row": {

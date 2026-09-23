@@ -88,6 +88,7 @@ export function NormalizePlan({
         >
           {tr('normalize.plan.mp3Ceiling', {
             ceiling: formatDb(Math.min(0, Math.max(-9, normalize.truePeakDb))),
+            lufs: values.lufs,
           })}
         </p>
       )}
@@ -98,6 +99,7 @@ export function NormalizePlan({
         >
           {tr('normalize.plan.limiterCeiling', {
             ceiling: formatDb(Math.min(0, Math.max(-9, normalize.truePeakDb))),
+            lufs: values.lufs,
           })}
         </p>
       )}
