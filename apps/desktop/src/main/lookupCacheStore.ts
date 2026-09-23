@@ -15,6 +15,12 @@ const DEFAULT_RELEASE_CAP = 300
 // into one write a few seconds after the last mutation.
 export const SAVE_DEBOUNCE_MS = 3000
 
+// How long a search that found nothing is remembered in memory. Long enough to cover the
+// background sweep asking first and the editor asking again when the track is opened;
+// short enough that a transient empty (a drifted payload, a rate limit's empty body) is
+// retried within the same session.
+export const EMPTY_SEARCH_TTL_MS = 10 * 60 * 1000
+
 interface Options {
   searchCap?: number
   releaseCap?: number
@@ -24,6 +30,8 @@ export interface LookupCacheStore<S, R> {
   hasSearch(key: string): boolean
   getSearch(key: string): S | undefined
   setSearch(key: string, value: S): void
+  rememberEmptySearch(key: string): void
+  hasEmptySearch(key: string): boolean
   hasRelease(key: string | number): boolean
   getRelease(key: string | number): R | undefined
   setRelease(key: string | number, value: R): void
@@ -45,13 +53,22 @@ interface Persisted<S, R> {
 //
 // Kept beside the store rather than in it because the store is generic over S: only the
 // caller knows the shape it persists, and only these three persist a list.
+//
+// The miss is still remembered briefly in memory (never on disk), so the same ladder
+// asked again within minutes does not go back out for every empty rung.
 export function cacheIfUsable<S, R>(
   store: LookupCacheStore<S[], R>,
   key: string,
   results: S[],
 ): void {
-  if (results.length === 0) return
-  store.setSearch(key, results)
+  if (results.length === 0) store.rememberEmptySearch(key)
+  else store.setSearch(key, results)
+}
+
+// The read side of cacheIfUsable: a stored answer, a recently remembered miss as [], or
+// undefined when the network has to be asked.
+export function cachedSearch<S, R>(store: LookupCacheStore<S[], R>, key: string): S[] | undefined {
+  return store.getSearch(key) ?? (store.hasEmptySearch(key) ? [] : undefined)
 }
 
 // A future shape change to the persisted SearchResult/Release entries is handled by
@@ -145,12 +162,24 @@ export function createLookupCacheStore<S, R>(
 
   const releaseKey = (key: string | number): string => String(key)
 
+  const emptySearchExpiry = new Map<string, number>()
+
   return {
     hasSearch: (key) => ensureLoaded().search.has(key),
     getSearch: (key) => ensureLoaded().search.get(key),
     setSearch: (key, value) => {
       capacityAwareSet(ensureLoaded().search, key, value, searchCap)
       scheduleSave()
+    },
+    rememberEmptySearch: (key) => {
+      emptySearchExpiry.set(key, Date.now() + EMPTY_SEARCH_TTL_MS)
+    },
+    hasEmptySearch: (key) => {
+      const expiry = emptySearchExpiry.get(key)
+      if (expiry === undefined) return false
+      if (Date.now() < expiry) return true
+      emptySearchExpiry.delete(key)
+      return false
     },
     hasRelease: (key) => ensureLoaded().release.has(releaseKey(key)),
     getRelease: (key) => ensureLoaded().release.get(releaseKey(key)),

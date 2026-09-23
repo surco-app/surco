@@ -16,6 +16,7 @@ const { deezerCacheDir } = vi.hoisted(() => {
 vi.mock('electron', () => ({ app: { getPath: () => deezerCacheDir, on: () => {} } }))
 
 import { getRelease, groupByAlbum, search } from './deezer'
+import { EMPTY_SEARCH_TTL_MS } from './lookupCacheStore'
 
 // Deezer answers every endpoint with JSON bodies; errors ride a 200 with an `error`
 // object, so the mock always responds ok and the body drives each scenario.
@@ -30,7 +31,10 @@ function mockFetch(bodies: unknown[]): ReturnType<typeof vi.fn> {
   return fn
 }
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.useRealTimers()
+})
 
 describe('groupByAlbum', () => {
   // The search endpoint returns one hit per TRACK; the results column lists releases,
@@ -286,8 +290,10 @@ describe('search with an ISRC hint', () => {
   // different half of the same truthy-[] problem: it stops the two families colliding.
   // This one stops the ambiguous empty being remembered at all.)
   it('retries the network after a text search that came back empty', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
     mockFetch([{ data: [] }])
     await search('nada de nada xyz', 'high', {})
+    vi.advanceTimersByTime(EMPTY_SEARCH_TTL_MS)
 
     const second = mockFetch([
       {
