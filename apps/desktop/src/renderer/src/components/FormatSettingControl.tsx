@@ -24,6 +24,7 @@ export function FormatSettingControl({
       value={value}
       onChange={onChange}
       testidPrefix={testidPrefix}
+      label={tr('settings.outputFormat')}
       labelFor={(id) => tr(`settings.formats.${id}`)}
     />
   )

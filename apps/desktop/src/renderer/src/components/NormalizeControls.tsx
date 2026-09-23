@@ -121,6 +121,7 @@ export function NormalizeControls({
         value={value.mode}
         onChange={(mode) => onChange({ ...value, mode })}
         testidPrefix="normalize-mode"
+        label={tr('normalize.title')}
         labelFor={(mode) => tr(`normalize.mode.${mode}`)}
       />
       {/* The mode named by its effect on the batch, which is the only fact that picks
