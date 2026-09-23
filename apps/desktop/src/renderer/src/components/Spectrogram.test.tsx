@@ -36,6 +36,25 @@ describe('Spectrogram cutoff label', () => {
     expect(screen.getByText(/cutoff ~17\.0 kHz/)).toBeInTheDocument()
   })
 
+  // Full-band audio reports the highest band the analysis probed, not a place the highs
+  // stop: "~22.1 kHz" read as a measured edge when it is only where the bands ended.
+  it.each([
+    [44100, 22050],
+    [96000, 22050],
+  ])(
+    'labels a reach at the probed ceiling as at least 22 kHz (%i Hz)',
+    (sampleRateHz, cutoffHz) => {
+      render(<Spectrogram spectrum={{ ...base, sampleRateHz, cutoffHz, hasKnee: false }} />)
+      expect(screen.getByText('highs ≥ 22 kHz')).toBeInTheDocument()
+      expect(screen.queryByText(/22\.1/)).toBeNull()
+    },
+  )
+
+  it('keeps the measured figure for a reach below the probed ceiling', () => {
+    render(<Spectrogram spectrum={{ ...base, cutoffHz: 21000, hasKnee: false }} />)
+    expect(screen.getByText(/highs to ~21\.0 kHz/)).toBeInTheDocument()
+  })
+
   // Regenerated highs still sit over a real ceiling, so the line is a cutoff there even
   // though no plain knee was found.
   it('labels regenerated highs as a cutoff despite no knee', () => {

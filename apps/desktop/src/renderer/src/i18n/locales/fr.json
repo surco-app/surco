@@ -477,6 +477,7 @@
     "spectrumAlt": "Spectrogramme de fréquences du morceau",
     "spectrumCutoff": "coupure ~{{cutoff}}",
     "spectrumHighs": "aigus jusqu'à ~{{cutoff}}",
+    "spectrumHighsCap": "aigus ≥ {{cutoff}}",
     "outputName": "Nom du fichier",
     "outputNameHintInPlace": "Même format que la source : le fichier original est mis à jour sur place et renommé — aucune copie n'est écrite dans le dossier de sortie.",
     "overwriteTitle": "Écrase l'original",

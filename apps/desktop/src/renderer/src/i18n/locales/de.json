@@ -477,6 +477,7 @@
     "spectrumAlt": "Frequenz-Spektrogramm des Tracks",
     "spectrumCutoff": "Cutoff ~{{cutoff}}",
     "spectrumHighs": "Höhen bis ~{{cutoff}}",
+    "spectrumHighsCap": "Höhen ≥ {{cutoff}}",
     "outputName": "Dateiname",
     "outputNameHintInPlace": "Gleiches Format wie die Quelle: Die Originaldatei wird direkt aktualisiert und umbenannt — es landet keine Kopie im Ausgabeordner.",
     "overwriteTitle": "Überschreibt das Original",
