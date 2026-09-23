@@ -503,6 +503,11 @@ export function QualityFilterBar({
             type="button"
             data-testid="track-position"
             onClick={onRevealSelected}
+            // Bare digits say neither what they count nor that a press scrolls back to it.
+            aria-label={tr('sidebar.positionReveal', {
+              current: selectedPosition,
+              total: visibleCount,
+            })}
             className="press relative ml-auto self-center rounded pr-0.5 pl-1 text-xs tabular-nums text-fg-faint outline-none hover:text-fg"
           >
             {`${selectedPosition}/${visibleCount}`}

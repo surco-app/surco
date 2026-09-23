@@ -101,7 +101,8 @@
     },
     "position": "Morceau {{current}} sur {{total}}",
     "selectedCount_one": "{{count}} sélectionné",
-    "selectedCount_other": "{{count}} sélectionnés"
+    "selectedCount_other": "{{count}} sélectionnés",
+    "positionReveal": "Morceau {{current}} sur {{total}} : y faire défiler la liste"
   },
   "empty": {
     "title": "Dépose tes morceaux ici",

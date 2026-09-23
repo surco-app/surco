@@ -101,7 +101,8 @@
     },
     "position": "Track {{current}} von {{total}}",
     "selectedCount_one": "{{count}} ausgewählt",
-    "selectedCount_other": "{{count}} ausgewählt"
+    "selectedCount_other": "{{count}} ausgewählt",
+    "positionReveal": "Track {{current}} von {{total}}: dorthin scrollen"
   },
   "empty": {
     "title": "Zieh deine Tracks hierher",
