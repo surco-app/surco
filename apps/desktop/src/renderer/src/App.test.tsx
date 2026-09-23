@@ -1333,6 +1333,95 @@ describe('App multi-select convert', () => {
       '/music/c.flac': 'flac',
     })
   })
+
+  // The multi-select button shows the Settings default until the user opens its menu, and
+  // it sent that label back as if it had been picked by hand. A picked format outranks the
+  // respect for an Apple Music import's own format, so every imported WAV in the selection
+  // was re-encoded to the default without anyone choosing it.
+  it('keeps Apple Music imports in their own format unless a format is picked by hand', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x', inPlace: false })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ outputFormat: 'aiff' })),
+      getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({
+        paths: ['/music/a.wav', '/music/b.wav'],
+        edits: {
+          '/music/a.wav': {
+            meta: { ...emptyMetadata(), title: 'T', artist: 'A' },
+            fromAppleMusic: true,
+          },
+          '/music/b.wav': {
+            meta: { ...emptyMetadata(), title: 'T', artist: 'A' },
+            fromAppleMusic: true,
+          },
+        },
+      }),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('last-session-action'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(await screen.findByTestId('process-btn'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
+    expect(processTrack.mock.calls.map((c) => c[0].format)).toEqual(['wav', 'wav'])
+  })
+
+  // The destination is seeded against the anchor track alone: a FLAC anchor pins it to the
+  // output folder because Music can't take FLAC. Sent as a pick for the whole selection, it
+  // kept every MP3 of the batch out of Apple Music too, which the user never asked for.
+  it('leaves the destination to each track unless one is picked by hand', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x', inPlace: false })
+    setApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(settings({ outputFormat: 'source', addToAppleMusic: true })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.flac', '/music/b.mp3']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(await screen.findByTestId('process-btn'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
+    const mp3Job = processTrack.mock.calls.find((c) => c[0].inputPath === '/music/b.mp3')?.[0]
+    expect(mp3Job.addToAppleMusic).toBeUndefined()
+  })
+
+  it('applies a format and destination picked by hand to the whole selection', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x', inPlace: false })
+    setApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(settings({ outputFormat: 'source', addToAppleMusic: true })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.flac', '/music/b.mp3']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    await screen.findByTestId('process-btn')
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('process-format-wav'))
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('process-destination-beside'))
+    fireEvent.click(screen.getByTestId('process-btn'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
+    for (const [job] of processTrack.mock.calls) {
+      expect(job.format).toBe('wav')
+      expect(job.convertBesideOriginal).toBe(true)
+    }
+  })
 })
 
 // A batch's failure card is keyed, so thirty broken conversions raise one toast instead
