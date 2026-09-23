@@ -1096,15 +1096,15 @@ describe('Editor Discogs loading skeleton', () => {
     expect(await hoverForTooltip(badge)).toHaveTextContent(i18n.t('editor.matchSuggested'))
   })
 
-  // The provider is an origin label, not a match signal — so it wears the same
-  // bordered, unfilled pill the track list gives the WAV/FLAC format tag, not a
-  // filled chip that would compete with the sparkle for attention.
-  it('shows the provider as a bordered pill like the track list format tag', async () => {
+  // The provider is an origin label, not a match signal — so it reads as the same plain
+  // secondary text the track list gives the WAV/FLAC format tag. A boxed or filled badge
+  // would compete with the sparkle, and with every other box in the column, for attention.
+  it('shows the provider as plain text like the track list format tag', async () => {
     const api = (window as unknown as { api: Record<string, unknown> }).api
     api.search = vi.fn(async () => [{ provider: 'bandcamp', id: 1, title: 'The Release' }])
     renderEditor({ id: 'a', query: 'artist song' })
     const provider = await screen.findByTestId('result-provider')
-    expect(provider.className).toContain('border')
+    expect(provider.className).not.toContain('border')
     expect(provider.className).not.toMatch(/bg-\[var\(--color-panel-2\)\]/)
   })
 })
