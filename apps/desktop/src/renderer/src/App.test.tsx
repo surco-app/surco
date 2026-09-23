@@ -3406,3 +3406,23 @@ describe('App list header', () => {
     expect(screen.queryByTestId('confirm-ok')).toBeNull()
   })
 })
+
+// The page shipped with lang="es" baked into index.html and nothing ever touched it, so
+// VoiceOver and NVDA read the English, German or French interface with a Spanish voice.
+// The document language has to follow the one the interface is actually shown in.
+describe('App document language', () => {
+  it('follows the interface language', async () => {
+    try {
+      await renderApp()
+      expect(document.documentElement.lang).toBe('en')
+      await act(async () => {
+        await i18n.changeLanguage('de')
+      })
+      expect(document.documentElement.lang).toBe('de')
+    } finally {
+      await act(async () => {
+        await i18n.changeLanguage('en')
+      })
+    }
+  })
+})
