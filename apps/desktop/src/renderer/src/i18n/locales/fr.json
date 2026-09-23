@@ -602,7 +602,8 @@
     "loudnessAfterHeader": "avant → après conversion",
     "replaceMusic": "Remplacer par {{format}} + Apple Music",
     "requiredEmpty": "Obligatoire : à remplir avant la conversion",
-    "coverMixed": "Les pistes sélectionnées ont des pochettes différentes"
+    "coverMixed": "Les pistes sélectionnées ont des pochettes différentes",
+    "coverLowRes": "Basse résolution"
   },
   "fields": {
     "groupFilled_one": "{{count}} rempli",

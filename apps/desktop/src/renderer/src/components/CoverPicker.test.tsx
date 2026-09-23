@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
@@ -226,6 +226,34 @@ describe('CoverPicker remove keeps focus', () => {
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ coverRemoved: true }))
     rerender(<CoverPicker item={item({ coverRemoved: true })} {...props} />)
     expect(screen.getByTestId('cover-pick')).toHaveFocus()
+  })
+})
+
+describe('CoverPicker resolution readout', () => {
+  function renderWithDims(w: number, h: number): void {
+    render(
+      <CoverPicker
+        item={item({ coverUrl: 'http://img/cover.jpg' })}
+        isMulti={false}
+        selectedTracks={undefined}
+        release={null}
+        coverDims={{ w, h }}
+        setCoverDims={vi.fn()}
+        onChange={vi.fn()}
+      />,
+    )
+  }
+
+  // The amber dot is the only sign the artwork is too small for a DJ library, and a color
+  // alone reaches neither a screen reader nor someone who can't tell amber from green.
+  it('names a low-resolution cover in words next to its size', () => {
+    renderWithDims(255, 255)
+    expect(within(screen.getByTestId('cover-resolution')).getByText('Low resolution')).toBeTruthy()
+  })
+
+  it('adds no warning to a cover that is large enough', () => {
+    renderWithDims(600, 600)
+    expect(within(screen.getByTestId('cover-resolution')).queryByText('Low resolution')).toBeNull()
   })
 })
 
