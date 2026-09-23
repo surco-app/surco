@@ -301,6 +301,14 @@ describe('custom fields', () => {
     expect(screen.getByText('{vinylCondition}')).toBeInTheDocument()
   })
 
+  // The {key} hint belongs to the name: reaching the Delete button beside it must not
+  // pop the token up over the button the user is about to press.
+  it('keeps the key tooltip off the delete button', () => {
+    setup({ visibleFields: ['title', 'vinylCondition'], customFields: [vinyl] })
+    fireEvent.focusIn(screen.getByTestId('field-delete-vinylCondition'))
+    expect(screen.queryByText('{vinylCondition}')).toBeNull()
+  })
+
   it('lists a hidden custom field among the hidden ones', () => {
     setup({ visibleFields: ['title'], customFields: [vinyl] })
     expect(screen.getByTestId('hidden-field-vinylCondition')).toHaveTextContent('Estado del vinilo')

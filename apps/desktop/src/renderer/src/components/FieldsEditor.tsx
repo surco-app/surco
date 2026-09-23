@@ -244,8 +244,10 @@ export function FieldsEditor({
                   className="h-4 w-4 cursor-grab text-fg-dim"
                   aria-hidden="true"
                 />
-                {labelOf(key)}
-                <Tooltip label={`{${key}}`} />
+                <span>
+                  {labelOf(key)}
+                  <Tooltip label={`{${key}}`} />
+                </span>
                 {deleteButton(key)}
               </span>
               {autoToggle(key)}
@@ -324,8 +326,10 @@ export function FieldsEditor({
                 className={`${ROW_GRID} rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2`}
               >
                 <span className="flex items-center gap-1.5 text-sm text-fg-muted">
-                  {labelOf(key)}
-                  <Tooltip label={`{${key}}`} />
+                  <span>
+                    {labelOf(key)}
+                    <Tooltip label={`{${key}}`} />
+                  </span>
                   {deleteButton(key)}
                 </span>
                 {autoToggle(key)}
