@@ -548,7 +548,7 @@ textarea {
 }
 
 /* Text laid directly over the waveform — the zoom ruler's time labels. The wave is a
-   dense field of bright blue bars, and a 9 px label sitting on it has no ground to be
+   dense field of bright blue bars, and a small label sitting on it has no ground to be
    read against: over a loud passage the glyphs disappear into the bars entirely (user
    report, with a screenshot of a ruler nobody could read).
    A panel-coloured halo, drawn on all four sides, gives every glyph its own ground
@@ -556,8 +556,10 @@ textarea {
    wrong one: the ruler repeats its label six or eight times across the strip, and eight
    little boxes read as UI competing with the wave rather than as a scale beneath it.
    The halo is the theme's own panel colour, so it inverts with the theme like everything
-   else — a dark outline would glow on the light palette. */
+   else — a dark outline would glow on the light palette.
+   The size lives here too: 10px, up from 9, which was too small to read on this ground. */
 .wave-label {
+  font-size: 10px;
   text-shadow:
     0 0 3px var(--color-panel),
     0 0 3px var(--color-panel),

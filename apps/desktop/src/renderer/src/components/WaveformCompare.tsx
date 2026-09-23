@@ -542,7 +542,7 @@ export function Strip({
                     hairline vanished into the bars just as the digits did, and a scale
                     whose marks you cannot see is not a scale. */}
                 <span className="wave-tick absolute bottom-0 h-2.5 w-px bg-fg-muted" />
-                <span className="wave-label absolute bottom-0.5 pl-1 text-[9px] font-medium leading-none tabular-nums text-fg">
+                <span className="wave-label absolute bottom-0.5 pl-1 font-medium leading-none tabular-nums text-fg">
                   {t.label}
                 </span>
               </span>
