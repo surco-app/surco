@@ -47,6 +47,26 @@
       {
         "text": "Auto-emparejar funciona sin token de Discogs si solo usas Bandcamp o Deezer, y cada pista emparejada dice de qué fuente vino.",
         "in": "1.0.0"
+      },
+      {
+        "text": "Lo que Surco guarda al sobrescribir una pista se llama ahora Copias de seguridad, porque es eso: tu original, no algo borrado. La pista que tiene copia lo marca en su fila, y desde esa marca, el menú de la pista, la paleta de comandos o el menú Ver llegas a sus copias. Al sobrescribir, el aviso te dice si el original se guarda.",
+        "in": "1.0.1"
+      },
+      {
+        "text": "Al buscar el disco de una pista, los resultados de cada fuente aparecen en cuanto llegan, sin esperar a las demás, y la lista no se reordena mientras la estás recorriendo. Las descargas de Bandcamp se buscan por su título, sin el artista ni el número de pista delante.",
+        "in": "1.0.1"
+      },
+      {
+        "text": "Los géneros y agrupaciones que solo se diferencian en mayúsculas cuentan como el mismo, y un género que llega de Discogs, Bandcamp o Deezer se escribe igual que en tu lista de géneros.",
+        "in": "1.0.1"
+      },
+      {
+        "text": "Surco se puede usar entero con teclado y con lector de pantalla: cada control dice qué es y en qué estado está, los avisos y el progreso se leen en voz alta, el foco se ve siempre y los colores tienen más contraste. Mayúsculas y las flechas amplían la selección de pistas, y con «Reducir movimiento» activado en el sistema las animaciones se quedan quietas.",
+        "in": "1.0.1"
+      },
+      {
+        "text": "El editor tiene más aire y se lee mejor: encabezados más claros, más espacio entre secciones y, en una ventana estrecha, los controles bajan de línea en vez de cortarse. La pista que se está convirtiendo muestra su avance como un anillo alrededor de la carátula, y el zoom de la interfaz vuelve al menú Ver.",
+        "in": "1.0.1"
       }
     ]
   },

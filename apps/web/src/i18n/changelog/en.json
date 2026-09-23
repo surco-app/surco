@@ -47,6 +47,26 @@
       {
         "text": "Auto-match works without a Discogs token if you only use Bandcamp or Deezer, and each matched track says which source it came from.",
         "in": "1.0.0"
+      },
+      {
+        "text": "What Surco keeps when you overwrite a track is now called Backups, because that is what it is: your original, not something deleted. A track with a backup shows it on its row, and from that mark, the track menu, the command palette or the View menu you reach its backups. When you overwrite, the prompt tells you whether the original is kept.",
+        "in": "1.0.1"
+      },
+      {
+        "text": "When you search for a track's release, each source's results show up as soon as they arrive, without waiting for the others, and the list no longer reorders while you are going through it. Bandcamp downloads are searched by their title, without the artist or track number in front.",
+        "in": "1.0.1"
+      },
+      {
+        "text": "Genres and groupings that differ only in capitals count as the same one, and a genre that comes from Discogs, Bandcamp or Deezer is written the same way as in your genre list.",
+        "in": "1.0.1"
+      },
+      {
+        "text": "Surco can be used entirely with the keyboard and a screen reader: every control says what it is and what state it is in, notices and progress are read aloud, keyboard focus is always visible and colours have more contrast. Shift and the arrows extend the track selection, and with “Reduce motion” on in your system the animations hold still.",
+        "in": "1.0.1"
+      },
+      {
+        "text": "The editor has more room and reads better: clearer headings, more space between sections and, in a narrow window, controls wrap to the next line instead of getting cut. A converting track shows its progress as a ring round its cover, and the interface zoom is back in the View menu.",
+        "in": "1.0.1"
       }
     ]
   },
