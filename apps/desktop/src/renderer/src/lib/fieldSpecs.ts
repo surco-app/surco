@@ -1,6 +1,14 @@
-import type { BpmResult, KeyNotation, KeyResult, TrackMetadata } from '../../../shared/types'
+import { effectiveMeta } from '../../../shared/customFields'
+import type {
+  BpmResult,
+  CustomField,
+  KeyNotation,
+  KeyResult,
+  MetaTextKey,
+  TrackMetadata,
+} from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { BULK_FIELDS, commonValue } from './bulkEdit'
+import { BULK_FIELDS, commonValue, GENRE_TAGS, GROUPING_TAGS, type TagList } from './bulkEdit'
 import { FIELD_DEFS } from './fields'
 
 // One value offered by a field's { } insert menu — another field's literal value, so
@@ -16,7 +24,8 @@ export interface InsertSource {
 // open track and write through setField — so the form itself renders a single tree
 // instead of forking on every field.
 export interface FieldSpec {
-  key: keyof TrackMetadata
+  // A managed field's key, or the key of one of the user's own fields.
+  key: string
   label: string
   value: string
   onChange: (v: string) => void
@@ -24,7 +33,7 @@ export interface FieldSpec {
   wide?: boolean
   invalid?: boolean
   suggestions?: string[]
-  multiSuggestions?: boolean
+  tagList?: TagList
   // True while an audio-derived suggestion (BPM/Key) is still being detected: no chip
   // yet, but the field shows a placeholder chip so the real one doesn't pop in cold.
   suggesting?: boolean
@@ -32,6 +41,7 @@ export interface FieldSpec {
   cleanResult?: string
   formatResult?: string
   perTrack?: {
+    list: TagList
     tracks: TrackItem[]
     onChangeTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   }
@@ -42,7 +52,7 @@ export interface FieldSpec {
 // values (year, BPM, key, track numbers, ISRC, the Discogs id) stay out: they'd
 // swallow a pasted title whole. So do the chip-driven genre/grouping and the
 // compilation checkbox.
-const INSERT_TARGET_FIELDS: ReadonlySet<keyof TrackMetadata> = new Set([
+const INSERT_TARGET_FIELDS: ReadonlySet<MetaTextKey> = new Set([
   'title',
   'artist',
   'albumArtist',
@@ -79,9 +89,23 @@ export interface BuildFieldSpecsParams {
   // fresh one every render defeats that memo and re-renders every field on every
   // keystroke. The maps are built once in Editor.tsx (see fieldOnChangeByKey) and
   // reused across renders since setField/onChangeAllMeta are themselves stable.
-  singleOnChange: ReadonlyMap<keyof TrackMetadata, (v: string) => void>
-  bulkOnChange: ReadonlyMap<keyof TrackMetadata, (v: string) => void>
+  singleOnChange: ReadonlyMap<MetaTextKey, (v: string) => void>
+  bulkOnChange: ReadonlyMap<MetaTextKey, (v: string) => void>
+  // The user's own fields: their settings entries, the value each holds on this track and
+  // a stable writer per key, built once like singleOnChange.
+  customFields: readonly CustomField[]
+  customValues: Record<string, string>
+  customOnChange: ReadonlyMap<string, (v: string) => void>
+  // The same per key for a selection: writes the value into every selected track.
+  customBulkOnChange: ReadonlyMap<string, (v: string) => void>
   onChangeTracksMeta?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
+}
+
+// The fields whose chips add a tag rather than replace the value.
+function tagListFor(key: MetaTextKey): TagList | undefined {
+  if (key === 'grouping') return GROUPING_TAGS
+  if (key === 'genre') return GENRE_TAGS
+  return undefined
 }
 
 // The bulk and single forms render the same tree; only where a field's value comes
@@ -107,30 +131,71 @@ export function buildFieldSpecs({
   tr,
   singleOnChange,
   bulkOnChange,
+  customFields,
+  customValues,
+  customOnChange,
+  customBulkOnChange,
   onChangeTracksMeta,
 }: BuildFieldSpecsParams): FieldSpec[] {
+  // Each selected track's custom values, resolved once for every custom field below.
+  const selectedCustom =
+    isMulti && selectedTracks && customFields.length > 0
+      ? selectedTracks.map((t) => effectiveMeta(t, customFields).custom ?? {})
+      : []
   return isMulti && selectedTracks
-    ? BULK_FIELDS.filter((key) => visibleFields.includes(key)).map((key) => {
-        const shared = commonValue(selectedTracks, key)
-        const perTrack =
-          key === 'grouping' && onChangeTracksMeta
-            ? { tracks: selectedTracks, onChangeTracks: onChangeTracksMeta }
-            : undefined
-        return {
-          key,
-          label: tr(`fields.${key}`),
-          value: shared ?? '',
-          placeholder: shared === undefined && !perTrack ? tr('editor.multipleValues') : undefined,
-          onChange: bulkOnChange.get(key) ?? (() => {}),
-          suggestions:
-            key === 'genre' ? genreChips : key === 'grouping' ? groupingPresets : undefined,
-          multiSuggestions: key === 'grouping',
-          perTrack,
-        }
-      })
+    ? [
+        ...BULK_FIELDS.filter((key) => visibleFields.includes(key)).map((key) => {
+          const shared = commonValue(selectedTracks, key)
+          const list = tagListFor(key)
+          const perTrack =
+            list && onChangeTracksMeta
+              ? { list, tracks: selectedTracks, onChangeTracks: onChangeTracksMeta }
+              : undefined
+          return {
+            key,
+            label: tr(`fields.${key}`),
+            value: shared ?? '',
+            placeholder:
+              shared === undefined && !perTrack ? tr('editor.multipleValues') : undefined,
+            onChange: bulkOnChange.get(key) ?? (() => {}),
+            suggestions:
+              key === 'genre' ? genreChips : key === 'grouping' ? groupingPresets : undefined,
+            tagList: list,
+            perTrack,
+          }
+        }),
+        ...customFields
+          .filter((f) => visibleFields.includes(f.key))
+          .map((f) => {
+            const values = selectedCustom.map((c) => c[f.key] ?? '')
+            const shared = values.every((v) => v === values[0]) ? values[0] : undefined
+            return {
+              key: f.key,
+              label: f.label,
+              value: shared ?? '',
+              placeholder: shared === undefined ? tr('editor.multipleValues') : undefined,
+              onChange: customBulkOnChange.get(f.key) ?? (() => {}),
+            }
+          }),
+      ]
     : visibleFields.flatMap((key) => {
         const def = FIELD_DEFS.find((d) => d.key === key)
-        if (!def) return []
+        if (!def) {
+          // A field the user added: no chips or menus of its own, just its name, value and
+          // writer. A key that names none (a field deleted in Settings) is skipped.
+          const field = customFields.find((f) => f.key === key)
+          if (!field) return []
+          const value = customValues[key] ?? ''
+          return [
+            {
+              key,
+              label: field.label,
+              value,
+              onChange: customOnChange.get(key) ?? (() => {}),
+              invalid: requiredFields.includes(key) && !value.trim(),
+            },
+          ]
+        }
         return [
           {
             key: def.key,
@@ -164,7 +229,7 @@ export function buildFieldSpecs({
               !isMulti &&
               ((def.key === 'bpm' && detectedBpm === undefined) ||
                 (def.key === 'key' && detectedKey === undefined)),
-            multiSuggestions: def.key === 'grouping',
+            tagList: tagListFor(def.key),
           },
         ]
       })

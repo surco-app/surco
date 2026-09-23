@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { BpmResult, KeyResult, TrackMetadata } from '../../../shared/types'
+import type { BpmResult, KeyResult, MetaTextKey, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { BULK_FIELDS } from './bulkEdit'
+import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from './bulkEdit'
 import { type BuildFieldSpecsParams, buildFieldSpecs } from './fieldSpecs'
 import { FIELD_DEFS } from './fields'
 
@@ -9,13 +9,13 @@ import { FIELD_DEFS } from './fields'
 // closing over the given setField/onChangeAllMeta so a test can still assert what
 // each field's onChange was called with.
 function singleOnChangeFrom(
-  setField: (key: keyof TrackMetadata, value: string) => void,
-): Map<keyof TrackMetadata, (v: string) => void> {
+  setField: (key: MetaTextKey, value: string) => void,
+): Map<MetaTextKey, (v: string) => void> {
   return new Map(FIELD_DEFS.map((def) => [def.key, (v: string) => setField(def.key, v)]))
 }
 function bulkOnChangeFrom(
   onChangeAllMeta: (patch: Partial<TrackMetadata>) => void,
-): Map<keyof TrackMetadata, (v: string) => void> {
+): Map<MetaTextKey, (v: string) => void> {
   return new Map(BULK_FIELDS.map((key) => [key, (v: string) => onChangeAllMeta({ [key]: v })]))
 }
 
@@ -69,6 +69,10 @@ function params(over: Partial<BuildFieldSpecsParams> = {}): BuildFieldSpecsParam
     tr,
     singleOnChange: singleOnChangeFrom(vi.fn()),
     bulkOnChange: bulkOnChangeFrom(vi.fn()),
+    customFields: [],
+    customValues: {},
+    customOnChange: new Map(),
+    customBulkOnChange: new Map(),
     ...over,
   }
 }
@@ -155,6 +159,33 @@ describe('buildFieldSpecs (single mode)', () => {
     // The tag layer stores whole bpm, so the chip rounds.
     expect(specs.find((s) => s.key === 'bpm')?.suggestions).toEqual(['128'])
     expect(specs.find((s) => s.key === 'key')?.suggestions).toEqual(['8A'])
+  })
+
+  it('lets genre and grouping chips add tags, each with its own separator', () => {
+    const specs = buildFieldSpecs(params())
+    expect(specs.find((s) => s.key === 'genre')?.tagList).toBe(GENRE_TAGS)
+    expect(specs.find((s) => s.key === 'grouping')?.tagList).toBe(GROUPING_TAGS)
+    expect(specs.find((s) => s.key === 'bpm')?.tagList).toBeUndefined()
+  })
+
+  // A field the user added in Settings → Fields sits in the form where they put it, under
+  // the name they gave it, holding what the file carries, and an edit reaches it by key.
+  it('builds a custom field from its settings entry, value and writer', () => {
+    const write = vi.fn()
+    const specs = buildFieldSpecs(
+      params({
+        visibleFields: ['title', 'vinylCondition'],
+        requiredFields: ['vinylCondition'],
+        customFields: [{ key: 'vinylCondition', label: 'Estado del vinilo' }],
+        customValues: { vinylCondition: '' },
+        customOnChange: new Map([['vinylCondition', write]]),
+      }),
+    )
+    expect(specs.map((s) => s.key)).toEqual(['title', 'vinylCondition'])
+    const custom = specs[1]
+    expect(custom).toMatchObject({ label: 'Estado del vinilo', value: '', invalid: true })
+    custom.onChange('VG+')
+    expect(write).toHaveBeenCalledWith('VG+')
   })
 
   it('offers the musical key name when that notation is selected', () => {
@@ -252,8 +283,52 @@ describe('buildFieldSpecs (bulk mode)', () => {
     const grouping = specs.find((s) => s.key === 'grouping')
     expect(grouping?.perTrack?.tracks).toEqual([a, b])
     expect(grouping?.perTrack?.onChangeTracks).toBe(onChangeTracksMeta)
+    expect(grouping?.perTrack?.list).toBe(GROUPING_TAGS)
     expect(grouping?.placeholder).toBeUndefined()
-    expect(specs.find((s) => s.key === 'genre')?.perTrack).toBeUndefined()
+  })
+
+  // A user asked for every Discogs genre and style of a release, not just one. Genre now
+  // works like grouping: several tags, and across a selection a chip marks all, some or
+  // none of the tracks instead of stamping one value over what each track had.
+  it('hands genre the selected tracks and its own tag list in bulk mode', () => {
+    const onChangeTracksMeta = vi.fn()
+    const a = track('a', { genre: 'Pop, Indie Pop' })
+    const b = track('b', { genre: 'Pop' })
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [a, b],
+        visibleFields: ['genre'],
+        onChangeTracksMeta,
+      }),
+    )
+    const genre = specs.find((s) => s.key === 'genre')
+    expect(genre?.perTrack?.list).toBe(GENRE_TAGS)
+    expect(genre?.perTrack?.tracks).toEqual([a, b])
+  })
+
+  // Across a selection a custom field reads like a managed one: the shared value, or the
+  // "multiple values" hint when the tracks disagree, and an edit reaches every track.
+  it('builds a custom field over the selection from each track own value', () => {
+    const write = vi.fn()
+    const vinyl = { key: 'vinylCondition', label: 'Estado del vinilo' }
+    const a = { ...track('a'), foreignTags: [{ name: 'VINYLCONDITION', value: 'NM' }] }
+    const b = { ...track('b', { custom: { vinylCondition: 'NM' } }) }
+    const c = { ...track('c', { custom: { vinylCondition: 'VG' } }) }
+    const build = (selectedTracks: TrackItem[]) =>
+      buildFieldSpecs(
+        params({
+          isMulti: true,
+          selectedTracks,
+          visibleFields: ['vinylCondition'],
+          customFields: [vinyl],
+          customBulkOnChange: new Map([['vinylCondition', write]]),
+        }),
+      ).find((s) => s.key === 'vinylCondition')
+    expect(build([a, b])).toMatchObject({ label: 'Estado del vinilo', value: 'NM' })
+    expect(build([a, c])).toMatchObject({ value: '', placeholder: 'editor.multipleValues' })
+    build([a, b])?.onChange('VG+')
+    expect(write).toHaveBeenCalledWith('VG+')
   })
 
   it('honours the visible-fields setting and drops non-bulk fields', () => {

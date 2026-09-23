@@ -2,7 +2,7 @@ import { autoMatchAvailable } from '../../../shared/autoMatch'
 import type { BackupPolicy } from '../../../shared/backupPolicy'
 import { normalizeImportFields } from '../../../shared/defaults'
 import { normalizeEditorSections } from '../../../shared/editorSections'
-import type { Settings } from '../../../shared/types'
+import type { CustomField, Settings } from '../../../shared/types'
 
 // The synced staged fields in their editable forms (presets as comma text, the cover cap
 // as a string), derived from Settings in one place so the modal's seeding and the
@@ -31,6 +31,7 @@ export interface SyncedDraft {
   trimWhitespace: boolean
   zeroPadTrack: boolean
   visibleFields: string[]
+  customFields: CustomField[]
   requiredFields: string[]
   importFields: string[]
   coverMaxSize: string
@@ -114,6 +115,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     trimWhitespace: s.trimWhitespace,
     zeroPadTrack: s.zeroPadTrack,
     visibleFields: s.visibleFields,
+    customFields: s.customFields ?? [],
     requiredFields: s.requiredFields,
     // Normalized on the way in so an older/hand-edited settings.json can't seed the
     // checkboxes with a name that isn't a real field.

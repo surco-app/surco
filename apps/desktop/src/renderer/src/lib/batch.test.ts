@@ -89,6 +89,20 @@ describe('canProcessTrack', () => {
     expect(canProcessTrack(track('a', 'processing', { title: 'x' }), ['title'])).toBe(false)
   })
 
+  // A custom field marked required reads through the same resolution as the form: the
+  // value the file carries counts, so a tagged track is not blocked by a field it fills.
+  it('checks a required custom field against the value the file carries', () => {
+    const fields = [{ key: 'vinylCondition', label: 'Estado del vinilo' }]
+    const tagged = {
+      ...track('a', 'idle', { title: 'x' }),
+      foreignTags: [{ name: 'VINYLCONDITION', value: 'NM' }],
+    }
+    expect(canProcessTrack(tagged, ['title', 'vinylCondition'], fields)).toBe(true)
+    expect(canProcessTrack(track('b', 'idle', { title: 'x' }), ['vinylCondition'], fields)).toBe(
+      false,
+    )
+  })
+
   it('allows re-converting a done track edited since it was processed', () => {
     const stale = { ...track('a', 'done', { title: 'x', artist: 'y' }), processedSignature: 'old' }
     expect(canProcessTrack(stale, ['title', 'artist'])).toBe(true)

@@ -12,15 +12,16 @@ import {
   normalizeEditorSections,
 } from '../../../shared/editorSections'
 import type {
+  CustomField,
   DeclickMode,
   FormatSetting,
   KeyNotation,
+  MetaTextKey,
   NormalizeConfig,
   OutputBitDepth,
   OutputSampleRate,
   SearchProviderId,
   Settings,
-  TrackMetadata,
 } from '../../../shared/types'
 import { seedEditorSections } from '../hooks/useEditorSections'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './fields'
@@ -51,8 +52,9 @@ interface ResolvedSettings {
   groupingPresets: string[]
   genrePresets: string[]
   visibleFields: string[]
+  customFields: CustomField[]
   requiredFields: string[]
-  importFields: (keyof TrackMetadata)[]
+  importFields: MetaTextKey[]
   discogsFormats: string[]
   discogsMaxResults: number
   searchProviders: SearchProviderId[]
@@ -89,6 +91,7 @@ const DEFAULTS: ResolvedSettings = {
   groupingPresets: [],
   genrePresets: [],
   visibleFields: DEFAULT_FIELDS,
+  customFields: [],
   requiredFields: DEFAULT_REQUIRED_FIELDS,
   importFields: DEFAULT_IMPORT_FIELDS,
   discogsFormats: [],
@@ -125,6 +128,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     groupingPresets: settings.groupingPresets ?? DEFAULTS.groupingPresets,
     genrePresets: settings.genrePresets ?? DEFAULTS.genrePresets,
     visibleFields: settings.visibleFields ?? DEFAULTS.visibleFields,
+    customFields: settings.customFields ?? DEFAULTS.customFields,
     requiredFields: settings.requiredFields ?? DEFAULTS.requiredFields,
     importFields: normalizeImportFields(settings.importFields),
     discogsFormats: settings.discogsFormats ?? DEFAULTS.discogsFormats,

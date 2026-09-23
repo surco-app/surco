@@ -32,6 +32,12 @@ function meta(patch: Partial<TrackMetadata>): TrackMetadata {
 }
 
 describe('renderOutputName', () => {
+  // A custom field is a {token} like any other: its key names it in the pattern.
+  it('fills a custom field token from its value', () => {
+    const meta = { artist: 'Alex', custom: { vinylCondition: 'VG+' } } as unknown as TrackMetadata
+    expect(renderOutputName('{artist} [{vinylCondition}]', meta)).toBe('Alex [VG+]')
+  })
+
   it('fills tokens in template order so the user controls the file-name shape', () => {
     const r = renderOutputName(
       '{artist} - {title}',

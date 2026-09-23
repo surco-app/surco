@@ -5,6 +5,22 @@
     "title": "Normaliza más rápido y actualiza sin perder etiquetas",
     "items": [
       {
+        "text": "Si fijas la profundidad de bits o la frecuencia de muestreo en Ajustes, Surco las aplica también cuando conviertes o actualizas un archivo sin cambiarlo de formato: un FLAC a 96 kHz sale a los 48 kHz que pides, y el original queda en Originales. Si el archivo ya cumple tus ajustes, solo se actualizan sus etiquetas, como hasta ahora. Desaparece el aviso que te pedía reconvertir a mano. Un MP3 nunca se vuelve a codificar a MP3.",
+        "in": "0.99.10"
+      },
+      {
+        "text": "Si una conversión falla en el último momento, por ejemplo en un disco externo que no deja renombrar el archivo, tu pista se queda en su carpeta. Antes podía acabar solo en Originales y desaparecer de la carpeta sin que te dieras cuenta.",
+        "in": "0.99.10"
+      },
+      {
+        "text": "El botón de convertir de arriba cuenta solo las pistas que ves con tus filtros y tu búsqueda, que son las que convierte. Antes podía decir 81 y convertir 79.",
+        "in": "0.99.10"
+      },
+      {
+        "text": "Originales guarda los archivos una semana por defecto, en vez de un mes: deshacer una conversión es algo que se decide el mismo día o al siguiente. Puedes cambiarlo en Ajustes.",
+        "in": "0.99.10"
+      },
+      {
         "text": "La profundidad de bits tiene su propia opción «Corregido», como ya la tenía la frecuencia de muestreo. Es la que reduce a 16 bits reales un archivo que declara 24 pero lleva audio de 16 dentro, sin perder nada y ocupando un tercio menos. «Igual que el origen» vuelve a significar lo que dice y conserva el archivo tal cual. Si ya convertías con «Igual que el origen», tu ajuste pasa a «Corregido» y tus conversiones siguen saliendo igual.",
         "in": "0.99.9"
       },

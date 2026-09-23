@@ -4,7 +4,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import {
+  Id3v2FrameIdentifiers,
   type Id3v2Tag,
+  Id3v2TextInformationFrame,
   Id3v2UserTextInformationFrame,
   File as TagFile,
   TagTypes,
@@ -133,7 +135,16 @@ describe('readTagLibExtras', () => {
       f.tag.subtitle = 'Unofficial Edit'
       f.tag.composers = ['A. Writer', 'B. Writer']
       f.tag.isrc = 'ESA012600001'
+      f.tag.conductor = 'B. Conductor'
       const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+      for (const [id, value] of [
+        [Id3v2FrameIdentifiers.TOPE, 'The Original Band'],
+        [Id3v2FrameIdentifiers.TEXT, 'A. Lyricist'],
+      ] as const) {
+        const frame = Id3v2TextInformationFrame.fromIdentifier(id)
+        frame.text = [value]
+        id3.addFrame(frame)
+      }
       for (const [desc, value] of [
         ['CATALOGNUMBER', 'MQDRFREE015'],
         ['DISCOGS_RELEASE_ID', '12345'],
@@ -170,6 +181,13 @@ describe('readTagLibExtras', () => {
       mixName: 'Unofficial Edit',
       composer: 'A. Writer, B. Writer',
       isrc: 'ESA012600001',
+      originalArtist: 'The Original Band',
+      lyricist: 'A. Lyricist',
+      conductor: 'B. Conductor',
+      trackTotal: '',
+      discTotal: '',
+      copyright: '',
+      encodedBy: '',
       catalogNumber: 'MQDRFREE015',
       discogsReleaseId: '12345',
       energy: '8',

@@ -1,5 +1,6 @@
 import type React from 'react'
 import { lazy, Suspense } from 'react'
+import { effectiveMeta } from '../../../shared/customFields'
 import { formatExtension } from '../../../shared/format'
 import type { FormatSetting, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
 import type { ActiveModal } from '../hooks/useOverlays'
@@ -142,14 +143,20 @@ export function Overlays({
       {activeModal?.type === 'help' && <HelpModal onClose={close} />}
       {activeModal?.type === 'loudnessHelp' && <LoudnessHelpModal onClose={close} />}
       {activeModal?.type === 'findReplace' && (
-        <FindReplaceModal tracks={bulkTracks} onApply={deriveTracksUndoable} onClose={close} />
+        <FindReplaceModal
+          tracks={bulkTracks}
+          customFields={settings?.customFields}
+          onApply={deriveTracksUndoable}
+          onClose={close}
+        />
       )}
       {activeModal?.type === 'stripNumbering' && (
         <StripNumberingModal tracks={bulkTracks} onApply={deriveTracksUndoable} onClose={close} />
       )}
       {activeModal?.type === 'rename' && selected && (
         <RenameModal
-          meta={selected.meta}
+          meta={effectiveMeta(selected, settings?.customFields ?? [])}
+          customFields={settings?.customFields ?? []}
           initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
           extension={formatExtension(
             (editorFormatRef.current !== 'source' ? editorFormatRef.current : undefined) ??

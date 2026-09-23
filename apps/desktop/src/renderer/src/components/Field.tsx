@@ -1,5 +1,6 @@
 import type React from 'react'
 import { memo, useEffect, useRef, useState } from 'react'
+import type { TagList } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
 import { SuggestionChips } from './SuggestionChips'
@@ -20,7 +21,7 @@ interface FieldProps {
   invalid?: boolean
   placeholder?: string
   suggestions?: string[]
-  multiSuggestions?: boolean
+  tagList?: TagList
   // An audio-derived suggestion (BPM/Key) is still being detected — show a placeholder
   // chip until the real one lands, so it doesn't pop into empty space.
   suggesting?: boolean
@@ -41,7 +42,7 @@ export const Field = memo(function Field({
   invalid,
   placeholder,
   suggestions,
-  multiSuggestions,
+  tagList,
   suggesting,
   insertSources,
   cleanResult,
@@ -173,8 +174,10 @@ export const Field = memo(function Field({
       {suggestions && suggestions.length > 0 && (
         <SuggestionChips
           suggestions={suggestions}
-          isOn={(s) => (multiSuggestions ? csvHas(draft, s) : draft === s)}
-          onPick={(s) => commit(multiSuggestions ? toggleCsv(draft, s) : draft === s ? '' : s)}
+          isOn={(s) => (tagList ? csvHas(draft, s, tagList.whole) : draft === s)}
+          onPick={(s) =>
+            commit(tagList ? toggleCsv(draft, s, tagList.whole) : draft === s ? '' : s)
+          }
         />
       )}
     </label>

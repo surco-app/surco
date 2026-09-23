@@ -13,6 +13,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { autoMatchAvailable } from '../../shared/autoMatch'
 import { trashLimits } from '../../shared/backupPolicy'
+import { effectiveMeta } from '../../shared/customFields'
 import { normalizeImportFields } from '../../shared/defaults'
 import { emptyMetadata } from '../../shared/metadata'
 import { resolveBindings } from '../../shared/shortcutDefaults'
@@ -20,6 +21,7 @@ import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
   DeclickMode,
   FormatSetting,
+  MetaTextKey,
   NormalizeConfig,
   OutputFormat,
   SearchProviderId,
@@ -306,7 +308,7 @@ export default function App(): React.JSX.Element {
   // providers above: the sweep applies matches in the background, so it must read the
   // current choice at apply time rather than one captured when the sweep started.
   const importFields = normalizeImportFields(settings?.importFields)
-  const importFieldsRef = useRef<(keyof TrackMetadata)[]>(importFields)
+  const importFieldsRef = useRef<MetaTextKey[]>(importFields)
   importFieldsRef.current = importFields
   // Live title-cleanup settings for the sweep's scorer (the Naming pattern and the
   // user's junk phrases), read at probe time like the providers above.
@@ -980,7 +982,12 @@ export default function App(): React.JSX.Element {
   useDockPlayingIndicator(audioRef)
 
   const canProcessSelected =
-    !!selected && canProcessTrack(selected, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
+    !!selected &&
+    canProcessTrack(
+      selected,
+      settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+      settings?.customFields,
+    )
   // Which library the membership check reads — the conversion destination's (Apple
   // Music or the Engine DJ database), or none for folder/overwrite conversions.
   const librarySource = useMemo(() => librarySourceOf(settings, isMacOS()), [settings])
@@ -1046,8 +1053,13 @@ export default function App(): React.JSX.Element {
   // Counted over the same scope convert-all runs on, so the button's number is the work
   // the click does: over every loaded track it read "81" behind a filter showing 79.
   const eligibleCount = useMemo(
-    () => eligibleForBatch(bulkTracks, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS).length,
-    [bulkTracks, settings?.requiredFields],
+    () =>
+      eligibleForBatch(
+        bulkTracks,
+        settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+        settings?.customFields,
+      ).length,
+    [bulkTracks, settings?.requiredFields, settings?.customFields],
   )
   // Keyboard / continuous-playback navigation over the visible list (move + scroll paging).
   const {
@@ -1213,6 +1225,7 @@ export default function App(): React.JSX.Element {
       selectedIds,
       selected,
       filenameFormat: settings?.filenameFormat ?? '{artist} - {title}',
+      customFields: settings?.customFields ?? [],
       recordMetaUndo,
       updateTracksMeta,
       patchTracks,
@@ -1330,7 +1343,10 @@ export default function App(): React.JSX.Element {
   // single rename land is hidden there, so the toast is the only feedback.
   const onRegenerateName = useStableCallback(() => {
     const targets = editScope(selectedTracks, selected)
-    const patches = outputNamePatches(settings?.filenameFormat ?? '{artist} - {title}', targets)
+    const patches = outputNamePatches(
+      settings?.filenameFormat ?? '{artist} - {title}',
+      targets.map((t) => ({ ...t, meta: effectiveMeta(t, settings?.customFields ?? []) })),
+    )
     for (const p of patches) updateTrack(p.id, { outputName: p.outputName })
     if (targets.length > 1) setNotice(tr('notices.regeneratedNames', { count: patches.length }))
   })
@@ -1390,7 +1406,10 @@ export default function App(): React.JSX.Element {
   // (shell.openExternal), the same path every external link takes. The editor button acts
   // on the current selection; the track context menu passes the right-clicked track.
   const searchTrackWeb = useStableCallback((track: TrackItem) => {
-    const name = renderOutputName(settings?.filenameFormat ?? '{artist} - {title}', track.meta)
+    const name = renderOutputName(
+      settings?.filenameFormat ?? '{artist} - {title}',
+      effectiveMeta(track, settings?.customFields ?? []),
+    )
     if (name) {
       const query = name.split('/').pop() ?? name
       window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`)
@@ -1470,7 +1489,10 @@ export default function App(): React.JSX.Element {
   const applyTitleFormat = useStableCallback(() => {
     const format = settings?.titleFormat ?? ''
     if (!format.trim()) return
-    const targets = editScope(selectedTracks, selected)
+    const targets = editScope(selectedTracks, selected).map((t) => ({
+      ...t,
+      meta: effectiveMeta(t, settings?.customFields ?? []),
+    }))
     const { patches, skipped, missingFields } = titleFormatSummary(format, targets)
     // A silent no-op reads as a broken button — say WHY nothing changed: name the
     // pattern field that is empty on these tracks when that's the cause (worded by

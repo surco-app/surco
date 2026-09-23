@@ -34,6 +34,7 @@ const synced: SyncedDraft = {
   trimWhitespace: true,
   zeroPadTrack: true,
   visibleFields: [],
+  customFields: [],
   importFields: [],
   requiredFields: [],
   coverMaxSize: '1200',
@@ -65,6 +66,18 @@ function renderTab(over: Partial<SyncedDraft> = {}) {
   render(<NamingTab synced={{ ...synced, ...over }} patch={patch} />)
   return patch
 }
+
+// A custom field has no sample value, so the preview shows its name where its token sits:
+// the user sees the pattern uses it instead of a gap that reads like a typo.
+describe('NamingTab custom field token', () => {
+  it('previews a custom field token with the field name', () => {
+    renderTab({
+      filenameFormat: '{artist} [{vinylCondition}]',
+      customFields: [{ key: 'vinylCondition', label: 'Estado del vinilo' }],
+    })
+    expect(screen.getByTestId('settings-format-preview')).toHaveTextContent('[Estado del vinilo]')
+  })
+})
 
 describe('NamingTab filename preview extension', () => {
   // ALAC lives in an .m4a container; the raw format name was shown instead of the

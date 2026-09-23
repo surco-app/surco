@@ -1,4 +1,5 @@
-import type { TrackMetadata } from '../../../shared/types'
+import { TAG_FIELDS } from '../../../shared/tagFields'
+import type { MetaTextKey, TrackMetadata } from '../../../shared/types'
 
 // Track numbering a rip glues to the front of the title: an optional vinyl side letter, the
 // number, and a separator. Bare "1 Shake It" is deliberately not matched — "7 Seconds" and
@@ -73,7 +74,7 @@ interface HygieneOptions {
 export function sanitizeMeta(meta: TrackMetadata, opts: HygieneOptions): TrackMetadata {
   const clean = { ...meta }
   if (opts.trim) {
-    for (const key of Object.keys(clean) as (keyof TrackMetadata)[]) {
+    for (const key of Object.keys(clean) as MetaTextKey[]) {
       const value = clean[key]
       // Optional fields (e.g. discogsReleaseId) may be absent; only clean strings.
       if (typeof value === 'string') clean[key] = value.replace(/\s+/g, ' ').trim()
@@ -86,4 +87,15 @@ export function sanitizeMeta(meta: TrackMetadata, opts: HygieneOptions): TrackMe
     if (digits) clean.trackNumber = digits.padStart(2, '0')
   }
   return clean
+}
+
+// The fields that name who made the file before the user had it. While the user keeps a
+// field hidden it goes out empty, which clears the previous owner's value on conversion;
+// once shown, the editor's value is written like any other field's.
+const PROVENANCE_FIELDS = TAG_FIELDS.filter((f) => f.provenance).map((f) => f.key)
+
+export function clearHiddenProvenance(meta: TrackMetadata, visibleFields: string[]): TrackMetadata {
+  const out = { ...meta }
+  for (const key of PROVENANCE_FIELDS) if (!visibleFields.includes(key)) out[key] = ''
+  return out
 }

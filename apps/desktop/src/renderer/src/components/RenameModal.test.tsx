@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { TrackMetadata } from '../../../shared/types'
+import type { CustomField, TrackMetadata } from '../../../shared/types'
 import './../i18n'
 import { RenameModal } from './RenameModal'
 
@@ -10,7 +10,13 @@ afterEach(cleanup)
 
 const META = { artist: 'Aladino', title: 'Make It Right Now' } as TrackMetadata
 
-function renderModal(over: { initialFormat?: string; meta?: Partial<TrackMetadata> } = {}): {
+function renderModal(
+  over: {
+    initialFormat?: string
+    meta?: Partial<TrackMetadata>
+    customFields?: CustomField[]
+  } = {},
+): {
   onApply: ReturnType<typeof vi.fn>
   onClose: ReturnType<typeof vi.fn>
 } {
@@ -21,6 +27,7 @@ function renderModal(over: { initialFormat?: string; meta?: Partial<TrackMetadat
       meta={{ ...META, ...over.meta }}
       initialFormat={over.initialFormat ?? '{artist} - {title}'}
       extension="aiff"
+      customFields={over.customFields ?? []}
       onApply={onApply}
       onClose={onClose}
     />,
@@ -29,6 +36,20 @@ function renderModal(over: { initialFormat?: string; meta?: Partial<TrackMetadat
 }
 
 describe('RenameModal', () => {
+  // The user's own fields are tokens like Surco's: a chip under their name inserts the
+  // key, and the preview fills it from the track.
+  it('offers a custom field as a token and previews its value', () => {
+    renderModal({
+      initialFormat: '{artist}',
+      meta: { custom: { vinylCondition: 'VG+' } },
+      customFields: [{ key: 'vinylCondition', label: 'Estado del vinilo' }],
+    })
+    const chip = screen.getByTestId('rename-token-vinylCondition')
+    expect(chip).toHaveTextContent('Estado del vinilo')
+    fireEvent.click(chip)
+    expect(screen.getByTestId('rename-preview')).toHaveTextContent('AladinoVG+')
+  })
+
   it('exposes an accessible name on the dialog', () => {
     renderModal()
     expect(screen.getByRole('dialog')).toHaveAccessibleName()

@@ -1,3 +1,4 @@
+import { fieldValue } from '../../../shared/customFields'
 import type { TrackMetadata } from '../../../shared/types'
 import { cleanName } from './release'
 
@@ -8,7 +9,7 @@ import { cleanName } from './release'
 // the fresh Discogs-apply path. Only {publisher} is cleaned: a real title or album may
 // legitimately end in "(2)".
 function tokenValue(meta: TrackMetadata, key: string): string {
-  const value = (meta as unknown as Record<string, string>)[key]
+  const value = fieldValue(meta, key)
   if (!value) return ''
   return key === 'publisher' ? cleanName(value) : value
 }

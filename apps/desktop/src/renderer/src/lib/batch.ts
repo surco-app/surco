@@ -1,6 +1,7 @@
+import type { CustomField } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { isStale } from './dirty'
-import { missingRequired } from './fields'
+import { missingRequiredOf } from './fields'
 
 // A track is convertible when it has not been processed yet (idle), a previous attempt
 // failed (error), or it was edited after converting (stale — the file no longer matches the
@@ -13,8 +14,12 @@ function isConvertible(track: TrackItem): boolean {
 // Whether a single track can be converted right now: a convertible state plus every required
 // field filled. The same gate the convert button enforces, so the keyboard shortcut and
 // command palette can't bypass it and trigger a process that only fails on missing tags.
-export function canProcessTrack(track: TrackItem, requiredFields: string[]): boolean {
-  return isConvertible(track) && missingRequired(track.meta, requiredFields).length === 0
+export function canProcessTrack(
+  track: TrackItem,
+  requiredFields: string[],
+  customFields: readonly CustomField[] = [],
+): boolean {
+  return isConvertible(track) && missingRequiredOf(track, requiredFields, customFields).length === 0
 }
 
 // The tracks "Convert all"/"Convert (N)" will actually process: convertible by state and
@@ -22,8 +27,12 @@ export function canProcessTrack(track: TrackItem, requiredFields: string[]): boo
 // count and the toolbar button's enabled state honest — it no longer offers a convert that
 // would only error per track — matching the single-track button's gate. Incomplete tracks
 // are left out (still flagged in the list), never attempted.
-export function eligibleForBatch(tracks: TrackItem[], requiredFields: string[]): string[] {
-  return tracks.filter((t) => canProcessTrack(t, requiredFields)).map((t) => t.id)
+export function eligibleForBatch(
+  tracks: TrackItem[],
+  requiredFields: string[],
+  customFields: readonly CustomField[] = [],
+): string[] {
+  return tracks.filter((t) => canProcessTrack(t, requiredFields, customFields)).map((t) => t.id)
 }
 
 // The outcome of converting one track: it wrote a file, the user skipped it past a

@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { commonValue, groupingTagState, groupingTags, toggleGroupingAll } from './bulkEdit'
+import {
+  commonValue,
+  GENRE_TAGS,
+  GROUPING_TAGS,
+  tagListState,
+  tagListTags,
+  toggleTagListAll,
+} from './bulkEdit'
 
 const emptyMeta: TrackMetadata = {
   title: '',
@@ -69,27 +76,27 @@ describe('commonValue', () => {
   })
 })
 
-describe('groupingTagState', () => {
+describe('tagListState', () => {
   it('reports all, some or none for a tag across the selection', () => {
     const tracks = [
       track({ grouping: 'Bases, Discazos' }),
       track({ grouping: 'Cantaditas, Discazos' }),
     ]
-    expect(groupingTagState(tracks, 'Discazos')).toBe('all')
-    expect(groupingTagState(tracks, 'Bases')).toBe('some')
-    expect(groupingTagState(tracks, 'Cierre')).toBe('none')
+    expect(tagListState(tracks, GROUPING_TAGS, 'Discazos')).toBe('all')
+    expect(tagListState(tracks, GROUPING_TAGS, 'Bases')).toBe('some')
+    expect(tagListState(tracks, GROUPING_TAGS, 'Cierre')).toBe('none')
   })
 
   it('matches whole tags, not substrings', () => {
-    expect(groupingTagState([track({ grouping: 'Bases' })], 'Base')).toBe('none')
+    expect(tagListState([track({ grouping: 'Bases' })], GROUPING_TAGS, 'Base')).toBe('none')
   })
 })
 
-describe('toggleGroupingAll', () => {
+describe('toggleTagListAll', () => {
   it('adds the tag only to the tracks missing it, keeping what each one had', () => {
     const a = track({ grouping: 'Bases' })
     const b = track({ grouping: 'Cantaditas, Discazos' })
-    expect(toggleGroupingAll([a, b], 'Discazos')).toEqual([
+    expect(toggleTagListAll([a, b], GROUPING_TAGS, 'Discazos')).toEqual([
       { id: a.id, meta: { grouping: 'Bases, Discazos' } },
     ])
   })
@@ -97,21 +104,40 @@ describe('toggleGroupingAll', () => {
   it('removes the tag from every track once all of them carry it', () => {
     const a = track({ grouping: 'Bases, Discazos' })
     const b = track({ grouping: 'Discazos' })
-    expect(toggleGroupingAll([a, b], 'Discazos')).toEqual([
+    expect(toggleTagListAll([a, b], GROUPING_TAGS, 'Discazos')).toEqual([
       { id: a.id, meta: { grouping: 'Bases' } },
       { id: b.id, meta: { grouping: '' } },
     ])
   })
 })
 
-describe('groupingTags', () => {
+describe('tagListTags', () => {
   it('lists the presets first, then tags the selection already carries that are not presets', () => {
     const tracks = [track({ grouping: 'Discazos, Bases' }), track({ grouping: 'Cierre' })]
-    expect(groupingTags(['Bases', 'Cantaditas'], tracks)).toEqual([
+    expect(tagListTags(['Bases', 'Cantaditas'], tracks, GROUPING_TAGS)).toEqual([
       'Bases',
       'Cantaditas',
       'Discazos',
       'Cierre',
+    ])
+  })
+})
+
+// Genre is separated by commas like grouping, so the two fields read the same. Discogs
+// names one genre "Folk, World, & Country": split blindly it became three tags, its chip
+// never lit up and a second click appended it again.
+describe('genre tag list', () => {
+  it('keeps a genre that contains commas as one tag', () => {
+    const tracks = [track({ genre: 'Folk, World, & Country, Pop' })]
+    expect(tagListState(tracks, GENRE_TAGS, 'Folk, World, & Country')).toBe('all')
+    expect(tagListState(tracks, GENRE_TAGS, 'World')).toBe('none')
+    expect(tagListState(tracks, GENRE_TAGS, 'Pop')).toBe('all')
+  })
+
+  it('joins the genres it adds with a comma, as grouping does', () => {
+    const a = track({ genre: 'Pop' })
+    expect(toggleTagListAll([a], GENRE_TAGS, 'Indie Pop')).toEqual([
+      { id: a.id, meta: { genre: 'Pop, Indie Pop' } },
     ])
   })
 })
