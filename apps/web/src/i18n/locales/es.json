@@ -51,12 +51,12 @@
             "d": "AIFF, WAV, FLAC, ALAC o MP3. Lee además M4A, AAC, OGG y OPUS, que siempre se transcodifican."
           },
           {
-            "t": "Sin recodificar si ya está",
-            "d": "Copia los bytes tal cual; en MP3 y AIFF sobre APFS es un clon instantáneo a cualquier tamaño."
+            "t": "Sin recodificar si no hace falta",
+            "d": "Un archivo que ya está en ese formato se copia byte a byte salvo que tus ajustes de calidad o un filtro de audio cambien su audio; en MP3 y AIFF sobre APFS es un clon instantáneo a cualquier tamaño."
           },
           {
             "t": "Calidad a tu gusto",
-            "d": "Bitrate del MP3, bits y frecuencia, o los del original, que es lo que viene por defecto."
+            "d": "Bitrate del MP3, bits y frecuencia. Por defecto se conservan los del original, salvo un audio de 16 bits rellenado a 24, que se guarda como 16 bits reales sin pérdida."
           },
           {
             "t": "Sin ensanchados por sorpresa",
@@ -470,7 +470,7 @@
       },
       {
         "q": "¿Qué formatos admite?",
-        "a": "Convierte entre AIFF, WAV, FLAC y ALAC lossless y MP3, de cualquiera a cualquiera. La calidad la eliges tú: bitrate del MP3 (de 320 a 128 kbps, o VBR V0/V2), profundidad de bits y frecuencia de muestreo. Por defecto se conservan las del original. Además lee M4A, AAC, OGG y OPUS."
+        "a": "Convierte entre AIFF, WAV, FLAC y ALAC lossless y MP3, de cualquiera a cualquiera. La calidad la eliges tú: bitrate del MP3 (de 320 a 128 kbps, o VBR V0/V2), profundidad de bits y frecuencia de muestreo. Por defecto se conservan las del original, salvo un audio de 16 bits rellenado a 24, que se guarda como 16 bits reales sin pérdida. Además lee M4A, AAC, OGG y OPUS."
       },
       {
         "q": "¿Y los WAV rotos?",
@@ -742,8 +742,8 @@
         "id": "convertir",
         "title": "Convierte la pista",
         "body": [
-          "El botón de abajo del editor convierte la pista seleccionada, y te dice a qué formato va a escribir antes de que lo pulses. El desplegable de su derecha elige el formato: AIFF, WAV, FLAC o ALAC sin pérdida, MP3, o «Igual que el origen». Si la pista ya está en ese formato, Surco la copia tal cual al instante, sin recodificar.",
-          "La calidad se ajusta en Ajustes → Conversión: bitrate del MP3 (de 320 a 128 kbps, o VBR V0/V2), profundidad de bits, frecuencia de muestreo y compresión FLAC. Por defecto se conservan las del original, sin recodificados de más. En Ajustes → Destino decides adónde va: una carpeta de salida, tu biblioteca de Apple Music, tu biblioteca de Engine DJ (Denon), junto al original (los exports al mismo formato toman un nombre «(2)» y la fuente no se toca), o sobrescribir el original en su sitio, que Surco te confirma antes de hacerlo. Si quieres, activa la normalización (loudness o pico, con presets de streaming, club o broadcast) para igualar el volumen. Al terminar, «Mostrar archivo» te lleva al resultado en el Finder o el Explorador."
+          "El botón de abajo del editor convierte la pista seleccionada, y te dice a qué formato va a escribir antes de que lo pulses. El desplegable de su derecha elige el formato: AIFF, WAV, FLAC o ALAC sin pérdida, MP3, o «Igual que el origen». Si la pista ya está en ese formato, Surco la copia tal cual al instante, sin recodificar, salvo que tus ajustes de calidad o un filtro de audio cambien su audio.",
+          "La calidad se ajusta en Ajustes → Conversión: bitrate del MP3 (de 320 a 128 kbps, o VBR V0/V2), profundidad de bits, frecuencia de muestreo y compresión FLAC. Por defecto se conservan las del original, salvo la profundidad: «Corregido» guarda como 16 bits reales, sin pérdida, un archivo de 16 bits rellenado a 24. En Ajustes → Destino decides adónde va: una carpeta de salida, tu biblioteca de Apple Music, tu biblioteca de Engine DJ (Denon), junto al original (los exports al mismo formato toman un nombre «(2)» y la fuente no se toca), o sobrescribir el original en su sitio, que Surco te confirma antes de hacerlo. Si quieres, activa la normalización (loudness o pico, con presets de streaming, club o broadcast) para igualar el volumen. Al terminar, «Mostrar archivo» te lleva al resultado en el Finder o el Explorador."
         ],
         "points": [
           "Formatos: AIFF, WAV, FLAC y ALAC (lossless) y MP3. De 320 a 128 kbps, o VBR V0/V2.",
@@ -763,7 +763,7 @@
         "title": "Etiqueta sin reconvertir",
         "body": [
           "A veces no quieres convertir nada: quieres que tus archivos se queden como están y solo llevar los metadatos y la carátula bien puestos. Para eso está «Igual que el origen»: cada archivo sale en su propio formato, así que una tanda mezclada de WAV, FLAC y MP3 se etiqueta entera sin que ninguno cambie de formato.",
-          "Con los filtros de audio apagados, el audio ni se toca: se copian los bytes tal cual y solo se reescriben las etiquetas. Es instantáneo por grande que sea el archivo, y no hay ninguna pérdida de calidad posible, porque no hay recodificación."
+          "Con los filtros de audio apagados, el audio ni se toca: se copian los bytes tal cual y solo se reescriben las etiquetas. Es instantáneo por grande que sea el archivo, y no hay ninguna pérdida de calidad posible, porque no hay recodificación. La única excepción es un archivo sin pérdida que tus ajustes de calidad cambian: con «Corregido», un audio de 16 bits rellenado a 24 se reescribe como 16 bits reales, también sin pérdida."
         ],
         "points": [
           "Elígelo en Ajustes → Formato o desde el asistente de bienvenida, y también en el desplegable del botón de convertir cuando tienes varias pistas seleccionadas.",
