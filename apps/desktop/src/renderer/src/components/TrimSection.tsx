@@ -113,9 +113,7 @@ function TrimPlan({
       data-testid="trim-plan"
       className="mt-3 rounded-lg border border-[var(--color-line)] border-l-[3px] border-l-[var(--color-accent)] bg-[var(--color-field)] px-3 py-2.5"
     >
-      <p className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
-        {tr('trim.planHead')}
-      </p>
+      <p className="text-[11px] font-medium text-fg-dim">{tr('trim.planHead')}</p>
       <p className="mt-1 text-xs leading-relaxed text-fg tabular-nums">
         {tr(`trim.plan${side ?? 'Start'}`, {
           start: cutSeconds(startCut),
@@ -295,11 +293,12 @@ function Lane({
       {/* Wrap, don't clip: at a narrow editor width the label + nudges + audition/clear +
           zoom stepper don't all fit across half the panel, and a nowrap row pushed the last
           control (the zoom +) off the right edge. Letting the row wrap drops whatever doesn't
-          fit onto a second line instead. The nudge trio (arrows + time field) is boxed as one
-          unit so it never splits mid-cluster; audition/clear and the zoom stepper are already
-          single units. */}
+          fit onto a second line instead. The lane label never shrinks: truncated to make room
+          it read as a lone "S" or "E", so the controls wrap before the label gives way. The
+          nudge trio (arrows + time field) is boxed as one unit so it never splits mid-cluster;
+          audition/clear and the zoom stepper are already single units. */}
       <div className="mb-1 flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
-        <SectionSubhead className="min-w-0 flex-1 truncate">
+        <SectionSubhead className="shrink-0 grow">
           {tr(side === 'start' ? 'trim.laneStart' : 'trim.laneEnd')}
         </SectionSubhead>
         {/* The cut's own time, and the place to set it: type the second you want,
@@ -1065,7 +1064,7 @@ export function TrimSection({
   }
 
   return (
-    <div data-testid="editor-trim" className="mt-5 border-t border-[var(--color-line)] pt-5">
+    <div data-testid="editor-trim" className="mt-6 border-t border-[var(--color-line)] pt-6">
       <SectionHeader
         sectionId="trim"
         maximizable
@@ -1103,9 +1102,7 @@ export function TrimSection({
                     data-testid="trim-cuts"
                     className="min-w-0 truncate text-[10px] tabular-nums text-fg-dim"
                   >
-                    <span className="font-medium uppercase tracking-wider">
-                      {tr('trim.cutsLabel')}
-                    </span>
+                    <span className="font-medium">{tr('trim.cutsLabel')}</span>
                     {` ${cuts.join(' · ')}`}
                   </span>
                 ) : (

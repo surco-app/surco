@@ -873,7 +873,7 @@ export const Editor = memo(function Editor({
       data-testid="clear-meta-btn"
       aria-label={tr('editor.clearMeta')}
       onClick={clearAllMeta}
-      className="press group relative flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
     >
       <Eraser className="h-3.5 w-3.5" aria-hidden="true" />
       <Tooltip label={tr('editor.clearMetaHint')} align="end" />
@@ -888,7 +888,7 @@ export const Editor = memo(function Editor({
       data-testid="derive-btn"
       aria-label={tr('editor.deriveFromName')}
       onClick={deriveFromNames}
-      className="press group relative flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
     >
       <Tag className="h-3.5 w-3.5" aria-hidden="true" />
       <Tooltip label={tr('editor.deriveFromNameHint')} align="end" />
@@ -904,7 +904,7 @@ export const Editor = memo(function Editor({
         data-testid="apply-title-format-btn"
         aria-label={tr('editor.applyTitleFormat')}
         onClick={onApplyTitleFormat}
-        className="press group relative flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+        className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
       >
         <Type className="h-3.5 w-3.5" aria-hidden="true" />
         <Tooltip label={tr('editor.applyTitleFormatHint')} align="end" />
@@ -919,7 +919,7 @@ export const Editor = memo(function Editor({
       data-testid="copy-filename-btn"
       aria-label={tr('editor.copyFilename')}
       onClick={onCopyFilename}
-      className="press group relative flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
     >
       <Copy className="h-3.5 w-3.5" aria-hidden="true" />
       <Tooltip label={tr('editor.copyFilenameHint')} align="end" />
@@ -934,7 +934,7 @@ export const Editor = memo(function Editor({
       data-testid="search-web-btn"
       aria-label={tr('editor.searchWeb')}
       onClick={onSearchWeb}
-      className="press group relative flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
     >
       <Globe className="h-3.5 w-3.5" aria-hidden="true" />
       <Tooltip label={tr('editor.searchWebHint')} align="end" />
@@ -960,7 +960,7 @@ export const Editor = memo(function Editor({
       />
 
       <div data-shortcut-scope="editor" className="flex min-w-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 overflow-y-auto p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto p-7">
           {/* The pinned metadata form opens the "File" phase; the mapped sections
               below label "Audio" and "Output" as the group changes down the list. */}
           <SectionGroupHeading
@@ -986,30 +986,51 @@ export const Editor = memo(function Editor({
             }
             summaryTestId="form-summary"
             right={
-              // One row: the library badge (state) sits by the title, the two action groups
-              // (file: copy/search — tags: clear/fill/format) follow to the right, split by a
-              // divider. The buttons keep their own tooltips/aria-labels, so dropping the inline
-              // File/Tags text costs no meaning while the header reads as a single line, like
-              // OUTPUT and PROPERTIES. Same yes/no/checking and formOpen/isMulti conditions as
-              // before — only the layout collapsed from two stacked rows to one.
-              <div className="flex items-center gap-3">
+              // The two action groups (file: copy/search — tags: clear/fill/format) ride the
+              // title line as bare toolbar glyphs, split by a divider. The library status that
+              // used to share this row sits on its own line below: it is a fact to read, not a
+              // control, and as pills beside the buttons it pushed them onto a second line.
+              <div className="flex items-center gap-1">
+                {formOpen && !isMulti && (
+                  <div className="flex items-center gap-0.5">
+                    {copyFilenameButton}
+                    {searchWebButton}
+                  </div>
+                )}
+                {formOpen && !isMulti && (
+                  <div
+                    aria-hidden="true"
+                    className="mx-1 h-4 w-px self-center bg-[var(--color-line)]"
+                  />
+                )}
+                {formOpen && (
+                  <div className="flex items-center gap-0.5">
+                    {clearButton}
+                    {deriveButton}
+                    {titleFormatButton}
+                  </div>
+                )}
+              </div>
+            }
+          />
+          {!isMulti &&
+            (inLibrary === 'yes' ||
+              inLibrary === 'no' ||
+              inLibrary === 'checking' ||
+              isAmbiguousCandidate(replaceTarget)) && (
+              <div
+                data-testid="form-status"
+                className="mt-2 ml-[18px] flex flex-wrap items-center gap-x-4 gap-y-1"
+              >
                 {!isMulti && inLibrary === 'yes' && (
-                  <SectionPill
-                    tone="neutral"
-                    testid="apple-music-status"
-                    icon={<Disc3 className="h-3.5 w-3.5" aria-hidden="true" />}
-                  >
+                  <SectionPill tone="good" testid="apple-music-status">
                     {tr(
                       librarySource === 'engineDj' ? 'editor.inLibraryEngine' : 'editor.inLibrary',
                     )}
                   </SectionPill>
                 )}
                 {!isMulti && inLibrary === 'no' && (
-                  <SectionPill
-                    tone="neutral"
-                    testid="apple-music-status"
-                    icon={<Disc3 className="h-3.5 w-3.5" aria-hidden="true" />}
-                  >
+                  <SectionPill tone="neutral" testid="apple-music-status">
                     {tr(
                       librarySource === 'engineDj'
                         ? 'editor.notInLibraryEngine'
@@ -1032,35 +1053,14 @@ export const Editor = memo(function Editor({
                     cannot resolve until someone names the duplicates sitting in their library.
                     warn, not danger: nothing is broken and nothing is blocked. */}
                 {!isMulti && isAmbiguousCandidate(replaceTarget) && (
-                  <SectionPill
-                    tone="warn"
-                    testid="ambiguous-library-copies"
-                    icon={<Disc3 className="h-3.5 w-3.5" aria-hidden="true" />}
-                  >
+                  <SectionPill tone="warn" testid="ambiguous-library-copies">
                     {tr('editor.ambiguousLibraryCopies', {
                       count: replaceTarget.ambiguous.length,
                     })}
                   </SectionPill>
                 )}
-                {formOpen && !isMulti && (
-                  <div className="flex items-center gap-1.5">
-                    {copyFilenameButton}
-                    {searchWebButton}
-                  </div>
-                )}
-                {formOpen && !isMulti && (
-                  <div aria-hidden="true" className="h-5 w-px self-center bg-[var(--color-line)]" />
-                )}
-                {formOpen && (
-                  <div className="flex items-center gap-1.5">
-                    {clearButton}
-                    {deriveButton}
-                    {titleFormatButton}
-                  </div>
-                )}
               </div>
-            }
-          />
+            )}
           <SectionBody open={formOpen} id={formBodyId}>
             {/* Capture focus entering/leaving the field grid so the sweep knows which row is
                 under edit. Blur only clears when focus leaves the grid entirely (relatedTarget
@@ -1324,7 +1324,7 @@ export const Editor = memo(function Editor({
                       ? tr('editor.groupOutput')
                       : tr('editor.groupMetadata')
                 // The heading owns the group's top separator, so the section right
-                // under it drops its own `mt-6 border-t pt-5` (targeted at its root
+                // under it drops its own `mt-6 border-t pt-6` (targeted at its root
                 // div) — otherwise two hairlines stack a few pixels apart.
                 return [
                   <SectionGroupHeading

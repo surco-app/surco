@@ -105,15 +105,18 @@ function Legend({
   loudness: LoudnessResult | null | undefined
 }): React.JSX.Element {
   return (
-    <span data-testid={testid} className="flex min-w-0 items-center gap-1.5 text-[10px]">
+    <span
+      data-testid={testid}
+      className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px]"
+    >
       <span
         aria-hidden="true"
         className="h-1.5 w-1.5 shrink-0 rounded-full"
         style={{ background: color }}
       />
-      <span className="font-medium uppercase tracking-wider text-fg-dim">{label}</span>
+      <span className="whitespace-nowrap font-medium text-fg-dim">{label}</span>
       {loudness && (
-        <span className="truncate tabular-nums text-fg-dim">
+        <span className="whitespace-nowrap tabular-nums text-fg-dim">
           {`${formatDb(loudness.integratedLufs)} LUFS · ${formatDb(loudness.truePeakDb)} dBTP`}
         </span>
       )}
@@ -792,17 +795,17 @@ export function WaveformSolo({
             />
             <span
               data-testid="waveform-preview"
-              className="flex min-w-0 items-center gap-1.5 text-[10px]"
+              className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px]"
             >
               <span
                 aria-hidden="true"
                 className="h-1.5 w-1.5 shrink-0 rounded-full"
                 style={{ background: AFTER_COLOR }}
               />
-              <span className="font-medium uppercase tracking-wider text-fg-dim">
+              <span className="whitespace-nowrap font-medium text-fg-dim">
                 {tr('editor.waveformPreview')}
               </span>
-              <span className="truncate tabular-nums text-fg-dim">
+              <span className="whitespace-nowrap tabular-nums text-fg-dim">
                 {predicted
                   ? `${formatDb(predicted.lufs)} LUFS · ${formatDb(predicted.truePeakDb)} dBTP`
                   : normalize.mode === 'loudness'

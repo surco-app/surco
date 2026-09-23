@@ -32,7 +32,7 @@ export function ForeignTagsInspector({
   return (
     <div
       data-testid="foreign-tags-toggle"
-      className="mt-5 border-t border-[var(--color-line)] pt-5"
+      className="mt-6 border-t border-[var(--color-line)] pt-6"
     >
       <SectionHeader
         sectionId="otherTags"

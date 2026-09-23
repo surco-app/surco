@@ -54,13 +54,17 @@ export function SectionHeader({
   const { maximized, setMaximized } = useMaximizedSection()
   const isMaximized = sectionId !== undefined && maximized === sectionId
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
       {/* The button stretches across the free width (and pads a few px vertically)
           so the whole header row folds the section, not just the title's letters;
           the right-slot actions stay outside it. aria-label pins the accessible
           name to the title alone — the summary is state, not name. The h3 puts each
-          section in a screen reader's heading list; it takes the button's flex slot. */}
-      <h3 className="flex min-w-0 flex-1">
+          section in a screen reader's heading list; it takes the button's flex slot.
+          The heading never narrows below its chevron and title: when the right-slot pills and
+          buttons don't fit beside it, the row wraps them onto a line of their own instead of
+          letting them paint over the title. The folded summary is zero-width at rest and only
+          grows into free space, so a long digest truncates rather than forcing that wrap. */}
+      <h3 className="flex min-w-min flex-1">
         <button
           type="button"
           // The section jumps (⌘[ / ⌘]) move focus header to header, so each one has to be
@@ -70,7 +74,7 @@ export function SectionHeader({
           aria-label={title}
           aria-expanded={open}
           aria-controls={bodyId}
-          className="-my-1.5 flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left text-xs font-medium uppercase tracking-wide text-fg-dim hover:text-fg-muted"
+          className="-my-1.5 flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left text-[13px] font-semibold text-fg-muted hover:text-fg"
         >
           <ChevronRight
             aria-hidden="true"
@@ -80,8 +84,8 @@ export function SectionHeader({
           {!open && summary && (
             <span
               data-testid={summaryTestId}
-              className={`ml-auto min-w-0 truncate pl-3 font-normal tracking-normal normal-case tabular-nums ${
-                summaryMuted ? 'text-fg-faint' : ''
+              className={`w-0 min-w-0 flex-1 truncate pl-3 text-right text-xs font-normal tabular-nums ${
+                summaryMuted ? 'text-fg-faint' : 'text-fg-dim'
               }`}
             >
               {summary}

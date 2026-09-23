@@ -313,6 +313,8 @@ const TrackRow = memo(function TrackRow({
         })
   const rowRef = useRef<HTMLDivElement>(null)
   const reviewPending = !t.autoMatched && t.matchReview && !t.matched
+  const stage = t.status === 'processing' ? t.stage : undefined
+  const converting = stage !== undefined
   // Shared by each mark's hover tooltip and its sr-only twin, so what a screen reader
   // hears is the same sentence the pointer reveals.
   const statusLabel = tr(stale ? 'trackList.status.stale' : `trackList.status.${t.status}`)
@@ -352,7 +354,7 @@ const TrackRow = memo(function TrackRow({
       // painting the whole small list once keeps scrolling on already-rasterized content.
       className={`group relative ${
         setSize >= DEFER_PAINT_MIN_ROWS
-          ? '[content-visibility:auto] [contain-intrinsic-size:auto_44px]'
+          ? '[content-visibility:auto] [contain-intrinsic-size:auto_52px]'
           : ''
       }`}
       draggable
@@ -443,23 +445,23 @@ const TrackRow = memo(function TrackRow({
         }}
         onMouseEnter={() => onPrefetch(t.id)}
         onFocus={() => onPrefetch(t.id)}
-        className={`group/row relative flex w-full items-center gap-2 rounded-lg px-2.5 py-1 text-left shadow-[inset_0_0_0_1px_var(--color-line)] ${
+        className={`group/row relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left ${
           // A selected row paints its fill on the keystroke: ↑/↓ and j/k run through this
           // list constantly, and easing the fill in leaves the highlight a step behind the
           // cursor. Only the unselected rows animate, where the transition belongs to the
           // hover tint and its mouse pace suits it.
           selected ? 'transition-none' : 'transition-colors'
         } ${
-          // One solid-fill focal for the primary row (the one open in the editor) — it reads
-          // as "this is what you're editing" at a glance, the way Finder/Mail fill the active
-          // row. It uses the dedicated selection blue (deeper than the light accent, so it
-          // doesn't wash out in dark). A multi-selected-but-not-primary row gets the quiet
-          // accent tint; everything else is panel with a grey hover, so blue never fights itself.
+          // The primary row (the one open in the editor) takes the selection fill, the way
+          // Finder/Mail fill the active row. A multi-selected-but-not-primary row gets the
+          // quieter accent tint. Everything else is bare: no outline and no fill of its own,
+          // like the lists in Music or Mail, so the page of rows reads as one list instead of
+          // a stack of cards, and only the hover tints it.
           primary
-            ? 'is-primary bg-[var(--color-row-selected)] shadow-none'
+            ? 'is-primary bg-[var(--color-row-selected)]'
             : selected
               ? 'bg-[var(--color-accent-soft)]/85'
-              : 'bg-[var(--color-panel)]/50 hover:bg-[var(--color-panel-2)]/85'
+              : 'hover:bg-[var(--color-panel-2)]/85'
         } focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-[var(--color-accent)]`}
       >
         {/* Severity stripe at the left edge: ambient, scannable — a page of rows shows which
@@ -475,8 +477,18 @@ const TrackRow = memo(function TrackRow({
         )}
         {/* The cover doubles as the scan target — DJs recognise a track by its art faster
             than by its name — so the leading slot shows the artwork with the processing
-            status demoted to a small ringed dot on its corner. */}
+            status demoted to a small ringed dot on its corner. While a conversion runs the
+            cover rounds into a disc and a ring closes round it phase by phase, the way the
+            App Store draws a download, instead of a bar under the stage text. */}
         <span data-testid="track-status" className="group/dot relative shrink-0">
+          {converting && (
+            <span
+              data-testid="track-progress-ring"
+              aria-hidden="true"
+              className="progress-ring"
+              style={{ '--progress': STAGE_PROGRESS[stage] } as React.CSSProperties}
+            />
+          )}
           {t.embeddedCover ? (
             <img
               data-testid="track-cover"
@@ -487,17 +499,21 @@ const TrackRow = memo(function TrackRow({
               // which, combined with content-visibility below, lands mid-scroll and janks.
               loading="lazy"
               decoding="async"
-              className="h-7 w-7 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
+              className={`h-8 w-8 object-cover outline outline-1 -outline-offset-1 outline-white/10 transition-[border-radius] duration-300 ${
+                converting ? 'rounded-full' : 'rounded-md'
+              }`}
             />
           ) : (
             <span
               data-testid="track-cover-placeholder"
-              className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-white/10"
+              className={`flex h-8 w-8 items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-white/10 transition-[border-radius] duration-300 ${
+                converting ? 'rounded-full' : 'rounded-md'
+              }`}
             >
               <Music className="h-3.5 w-3.5 text-fg-faint" aria-hidden="true" />
             </span>
           )}
-          <StatusBadge track={t} stale={stale} />
+          {!converting && <StatusBadge track={t} stale={stale} />}
           <Tooltip label={statusLabel} align="start" scope="dot" />
           {/* The badge is an unlabelled shape and the tooltip only shows on hover, so the
               state is spoken from here. Idle draws no badge and stays silent too. */}
@@ -523,7 +539,7 @@ const TrackRow = memo(function TrackRow({
             </span>
             <span
               data-testid="track-duration-slot"
-              className="w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim"
+              className="w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim transition-opacity group-hover:opacity-0"
             >
               {t.duration !== undefined && (
                 <span data-testid="track-duration">{formatTime(t.duration)}</span>
@@ -535,23 +551,17 @@ const TrackRow = memo(function TrackRow({
               data-testid="track-loading"
               className="mt-2 block h-2.5 w-28 animate-pulse rounded bg-[var(--color-panel-2)]"
             />
-          ) : t.status === 'processing' && t.stage ? (
-            <span data-testid="track-stage" className="mt-1 block">
+          ) : converting ? (
+            <span data-testid="track-stage" className="mt-0.5 block">
               <span className="block truncate text-xs text-[var(--color-accent)]">
-                {tr(`trackList.stage.${t.stage}`, {
+                {tr(`trackList.stage.${stage}`, {
                   format: (t.format ?? outputFormat).toUpperCase(),
                 })}
-              </span>
-              <span className="mt-1 block h-1 overflow-hidden rounded-full bg-[var(--color-panel-2)]">
-                <span
-                  className="progress-sweep block h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-500"
-                  style={{ width: `${STAGE_PROGRESS[t.stage] * 100}%` }}
-                />
               </span>
               {/* Text, not role="progressbar": an option's children are presentational,
                   so a nested role would be flattened away and the amount never spoken. */}
               <span className="sr-only">
-                {tr('trackList.progress', { percent: Math.round(STAGE_PROGRESS[t.stage] * 100) })}
+                {tr('trackList.progress', { percent: Math.round(STAGE_PROGRESS[stage] * 100) })}
               </span>
             </span>
           ) : (
@@ -614,11 +624,14 @@ const TrackRow = memo(function TrackRow({
               )}
               {/* A fixed slot, right-aligned under the duration, so the two read as one
                   trailing column and the review sparkle's place never moves. */}
-              <span data-testid="track-format-slot" className="flex w-[34px] shrink-0 justify-end">
+              <span
+                data-testid="track-format-slot"
+                className="flex w-[34px] shrink-0 justify-end transition-opacity group-hover:opacity-0"
+              >
                 {format && (
                   <span
                     data-testid="track-format"
-                    className="rounded border border-[var(--color-line-strong)] px-1 text-[10px] font-medium leading-4 text-fg-dim"
+                    className="text-[10px] font-medium leading-4 text-fg-dim"
                   >
                     {format}
                   </span>
@@ -634,17 +647,17 @@ const TrackRow = memo(function TrackRow({
           is invalid and folds the action into the row's name. It is placed over the empty
           slot the artist line keeps for it beside the pill: that slot ends 52px from the
           right edge (the row padding plus the pill slot and its gap), and its centre sits
-          13px up from the bottom. The button is a 24px target (WCAG 2.5.8) centred there,
+          17px up from the bottom. The button is a 24px target (WCAG 2.5.8) centred there,
           so the 12px glyph lands where the slot would have drawn it. Shown under the same
           conditions as that line. */}
-      {!t.loadingMeta && !(t.status === 'processing' && t.stage) && reviewPending && (
+      {!t.loadingMeta && !converting && reviewPending && (
         <button
           type="button"
           data-testid="track-match-review"
           data-confidence="review"
           aria-label={tr('commands.acceptReview')}
           onClick={() => onAcceptReview(t.id)}
-          className="group/dot press absolute right-[46px] bottom-px flex h-6 w-6 items-center justify-center text-warn"
+          className="group/dot press absolute right-[46px] bottom-[5px] flex h-6 w-6 items-center justify-center text-warn"
         >
           <Sparkles className="h-3 w-3" aria-hidden="true" />
           <Tooltip
@@ -677,8 +690,11 @@ const TrackRow = memo(function TrackRow({
         aria-label={tr('trackList.remove')}
         tabIndex={-1}
         onClick={() => onRemove(t.id)}
-        // Same rule as the ▶ overlay above: no per-row backdrop-blur inside the scroller.
-        className="absolute top-1/2 right-1.5 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-[var(--color-panel-2)]/90 text-fg-dim opacity-0 shadow-md ring-1 ring-[var(--color-line-strong)] transition-opacity pointer-events-none hover:bg-[var(--color-panel-2)] hover:text-fg group-hover:pointer-events-auto group-hover:opacity-100"
+        // Takes the place of the duration and format column, which fade out on hover the way
+        // Mail swaps a row's date for its actions: floating over them, the X covered the
+        // numbers and its ringed disc was the loudest thing in the row. A bare glyph in the
+        // freed column needs no backdrop, so the per-row backdrop-blur rule above holds too.
+        className="absolute top-1/2 right-2.5 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-fg-dim opacity-0 transition-opacity pointer-events-none hover:bg-[var(--color-line-strong)] hover:text-fg group-hover:pointer-events-auto group-hover:opacity-100"
       >
         <X className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
@@ -796,7 +812,7 @@ export const TrackList = memo(function TrackList({
         role="listbox"
         aria-label={tr('trackList.label')}
         aria-multiselectable="true"
-        className="flex flex-col gap-1 p-2"
+        className="flex flex-col gap-0.5 p-2"
       >
         {tracks.map((t, i) => (
           <TrackRow

@@ -330,7 +330,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
               const identity = resultIdentity(r)
               const pressing = resultPressing(r)
               return (
-                <div key={rk} data-testid="result-card" className="px-1.5 pt-1.5">
+                <div key={rk} data-testid="result-card" className="px-1.5 pt-0.5">
                   {/* Result as a card, matching the track list's rows so both columns read as the
                       same component. The wide column earns the title a full two lines instead of a
                       hard cut, and the release line shows year · label · catalogue no · format ·
@@ -348,10 +348,10 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                     style={{
                       animationDelay: `${i < STAGGERED_ROWS ? i * STAGGER_STEP_MS : 0}ms`,
                     }}
-                    className={`press result-in group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] transition-colors focus:bg-[var(--color-accent-soft)] focus:shadow-[inset_0_0_0_1px_var(--color-accent)] focus:outline-none ${
+                    className={`press result-in group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors focus:bg-[var(--color-accent-soft)] focus:shadow-[inset_0_0_0_1px_var(--color-accent)] focus:outline-none ${
                       expanded
                         ? 'bg-[var(--color-accent-soft)]/85'
-                        : 'bg-[var(--color-panel)]/50 hover:bg-[var(--color-panel-2)]/85'
+                        : 'hover:bg-[var(--color-panel-2)]/85'
                     }`}
                   >
                     {r.thumb ? (
@@ -375,13 +375,13 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                           lines said nothing. The facts truncate so one long Discogs row can't
                           blow up the card. */}
                       <span className="mt-0.5 flex min-w-0 items-center gap-1.5">
-                        {/* The provider is an origin label, so it wears the same bordered,
-                            unfilled pill the track list gives the WAV/FLAC format tag —
+                        {/* The provider is an origin label, so it reads as the same plain
+                            secondary text the track list gives the WAV/FLAC format tag —
                             same vocabulary across both columns. */}
                         <span
                           data-testid="result-provider"
                           data-provider={r.provider}
-                          className="shrink-0 rounded border border-[var(--color-line-strong)] px-1 text-[10px] font-medium uppercase leading-4 tracking-wide text-fg-dim"
+                          className="shrink-0 text-[11px] font-medium leading-4 text-fg-dim"
                         >
                           {tr(`settings.provider.${r.provider}`)}
                         </span>
@@ -436,13 +436,13 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                     />
                   </button>
                   <CollapsibleTracks open={expanded}>
-                    <div className="pb-1">
+                    <div className="flex flex-col gap-0.5 pb-1">
                       {/* A phase band, not a lone caption: a field-coloured strip with rules
                           top and bottom marks the shift from "search a release" (the cards
                           above) to "pick the track to apply" (the numbered list below), and
                           states the track count so the change of context is unmistakable. */}
                       <div className="flex items-center justify-between gap-2 border-y border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-fg-dim">
+                        <span className="text-[11px] font-semibold text-fg-dim">
                           {isMulti ? tr('match.title') : tr('editor.chooseTrack')}
                         </span>
                         {release && (
@@ -468,9 +468,9 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                                 t === appliedTrack || t === matchedTrack ? 'true' : undefined
                               }
                               onClick={() => selectTrack(t)}
-                              className={`flex w-full items-center gap-3 py-1.5 pr-3 pl-4 text-left focus:bg-[var(--color-accent-soft)] focus:shadow-[inset_0_0_0_1px_var(--color-accent)] focus:outline-none ${
-                                // Same solid selection-blue as the library row, so the applied
-                                // track reads with equal weight in both columns (was a faint
+                              className={`flex w-full items-center gap-3 rounded-lg py-1.5 pr-3 pl-4 text-left focus:bg-[var(--color-accent-soft)] focus:shadow-[inset_0_0_0_1px_var(--color-accent)] focus:outline-none ${
+                                // Same selection fill and rounded shape as the library row, so the
+                                // applied track reads with equal weight in both columns (was a faint
                                 // tint that looked second-class next to the filled library row).
                                 t === appliedTrack || t === matchedTrack
                                   ? 'is-applied bg-[var(--color-row-selected)]'

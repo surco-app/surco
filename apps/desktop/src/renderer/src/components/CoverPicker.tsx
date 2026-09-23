@@ -48,7 +48,7 @@ function CoverActionButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className={`press pointer-events-auto rounded-lg p-1.5 text-white transition-colors ${
+      className={`press pointer-events-auto rounded-lg p-1 text-white @[26rem]:p-1.5 transition-colors ${
         disabled
           ? 'cursor-not-allowed opacity-40'
           : danger
@@ -242,7 +242,7 @@ export function CoverPicker({
   const coverActions = (
     // The scrim is decorative and lets pointer events through; only the buttons take
     // them, so the rest of the strip still passes clicks to the zoom/drag image beneath.
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-1 rounded-b-xl bg-gradient-to-t from-black/75 via-black/40 to-transparent px-2 pt-7 pb-2 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center rounded-b-xl bg-gradient-to-t from-black/75 via-black/40 to-transparent px-1 pt-5 pb-1 @[26rem]:gap-1 @[26rem]:px-2 @[26rem]:pt-7 @[26rem]:pb-2 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
       {ownCover && (
         <CoverActionButton
           testid="cover-copy"
@@ -373,7 +373,11 @@ export function CoverPicker({
         setCoverDragging(false)
       }}
       onDrop={onCoverDrop}
-      className="shrink-0 self-start"
+      // In a narrow editor the well shrinks to a 96px thumbnail with its image stepper and
+      // resolution beside it, like the header of Music's Get Info, instead of a 160px block
+      // with everything stacked under it that pushed the first field half a screen down.
+      // From 26rem up it is the full well again, stacked as before.
+      className="flex shrink-0 items-center gap-4 self-start @[26rem]:block"
     >
       <input
         ref={coverInputRef}
@@ -387,7 +391,7 @@ export function CoverPicker({
         }}
       />
       {displayCover ? (
-        <div className="group relative w-40">
+        <div className="group relative w-24 shrink-0 @[26rem]:w-40">
           {/* The button opens the artwork big; the img inside keeps its own drag-out
               gesture (an actual drag suppresses the click, so the two don't fight). */}
           <button
@@ -413,7 +417,7 @@ export function CoverPicker({
                 e.preventDefault()
                 window.api.startCoverDrag(coverDragPath.current)
               }}
-              className={`h-40 w-40 rounded-xl object-cover outline outline-1 -outline-offset-1 outline-white/10 ${
+              className={`h-24 w-24 rounded-xl object-cover @[26rem]:h-40 @[26rem]:w-40 outline outline-1 -outline-offset-1 outline-white/10 ${
                 coverDragging ? 'ring-2 ring-[var(--color-accent)]' : ''
               }`}
             />
@@ -421,21 +425,24 @@ export function CoverPicker({
           {coverActions}
         </div>
       ) : (
-        <div className="group relative w-40">
+        <div className="group relative w-24 shrink-0 @[26rem]:w-40">
           <button
             ref={pickRef}
             type="button"
             data-testid="cover-pick"
             aria-describedby={coversDiffer ? coversDifferId : undefined}
             onClick={() => coverInputRef.current?.click()}
-            className={`flex h-40 w-40 flex-col items-center justify-center gap-2 rounded-xl bg-[var(--color-field)] p-2 text-center text-xs outline outline-1 -outline-offset-1 transition-colors ${
+            aria-label={coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
+            className={`flex h-24 w-24 flex-col items-center justify-center gap-2 rounded-xl bg-[var(--color-field)] p-2 text-center text-xs outline outline-1 -outline-offset-1 transition-colors @[26rem]:h-40 @[26rem]:w-40 ${
               coverDragging
                 ? 'text-[var(--color-accent)] outline-[var(--color-accent)]'
                 : 'text-fg-faint outline-white/10 hover:text-fg-dim'
             }`}
           >
             <ImageIcon className="h-7 w-7" strokeWidth={1.5} aria-hidden="true" />
-            {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
+            <span aria-hidden="true" className="hidden @[26rem]:block">
+              {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
+            </span>
           </button>
           {coversDiffer && (
             <span id={coversDifferId} className="sr-only">
@@ -445,95 +452,104 @@ export function CoverPicker({
           {coverActions}
         </div>
       )}
-      {coverChoices.length > 1 && (
-        <div
-          data-testid="cover-image-picker"
-          className="mt-1.5 flex items-center justify-center gap-2"
-        >
-          <button
-            type="button"
-            data-testid="cover-prev"
-            aria-label={tr('editor.coverPrev')}
-            onClick={() => pickCoverImage(-1)}
-            className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+      <div className="flex min-w-0 flex-col items-start gap-1.5 @[26rem]:items-stretch @[26rem]:gap-0">
+        {!displayCover && (
+          <p aria-hidden="true" className="text-xs text-fg-faint @[26rem]:hidden">
+            {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
+          </p>
+        )}
+        {coverChoices.length > 1 && (
+          <div
+            data-testid="cover-image-picker"
+            className="flex items-center gap-2 @[26rem]:mt-1.5 @[26rem]:justify-center"
           >
-            <ChevronLeft className="h-3 w-3" aria-hidden="true" />
-          </button>
-          {(() => {
-            const pos = coverChoices.findIndex((c) => c.uri === displayCover) + 1
-            const total = coverChoices.length
-            // 0 (not '–') when no cover is selected, e.g. just after deleting one: the
-            // arrows still step into the choices, so "0/4" reads as "none of 4 picked".
-            // Read aloud, "2/4" is "two slash four", so assistive tech gets the words.
-            return (
-              <>
-                <span
-                  data-testid="cover-image-count"
-                  aria-hidden="true"
-                  className="text-[11px] tabular-nums text-fg-dim"
-                >
-                  {`${pos}/${total}`}
-                </span>
-                <span className="sr-only">
-                  {pos === 0
-                    ? tr('editor.coverPositionNone', { total })
-                    : tr('editor.coverPosition', { position: pos, total })}
-                </span>
-              </>
-            )
-          })()}
-          <button
-            type="button"
-            data-testid="cover-next"
-            aria-label={tr('editor.coverNext')}
-            onClick={() => pickCoverImage(1)}
-            className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
-          >
-            <ChevronRight className="h-3 w-3" aria-hidden="true" />
-          </button>
-        </div>
-      )}
-      {lightboxOpen && displayCover && (
-        <CoverLightbox
-          src={displayCover}
-          // Mirrors coverSourceOf: only when the shown cover is the file's own
-          // embedded thumbnail does the audio file hold a better original.
-          fullResFrom={!isMulti && displayCover === item.embeddedCover ? item.inputPath : undefined}
-          // Same gate and stepper as the well's inline arrows, so the lightbox can
-          // browse the file's art and the release's images and close on whichever.
-          nav={
-            coverChoices.length > 1
-              ? {
-                  position: coverChoices.findIndex((c) => c.uri === displayCover) + 1,
-                  count: coverChoices.length,
-                  onStep: pickCoverImage,
-                }
-              : undefined
-          }
-          onClose={() => setLightboxOpen(false)}
-        />
-      )}
-      {displayCover && coverDims && (
-        <div
-          data-testid="cover-resolution"
-          className="mt-1.5 flex items-center justify-center gap-1.5 text-[11px]"
-        >
-          <span
-            data-testid="cover-quality-dot"
-            data-lowres={isLowResCover(coverDims.w, coverDims.h)}
-            className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-              isLowResCover(coverDims.w, coverDims.h) ? 'bg-warn' : 'bg-good'
-            }`}
+            <button
+              type="button"
+              data-testid="cover-prev"
+              aria-label={tr('editor.coverPrev')}
+              onClick={() => pickCoverImage(-1)}
+              className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+            >
+              <ChevronLeft className="h-3 w-3" aria-hidden="true" />
+            </button>
+            {(() => {
+              const pos = coverChoices.findIndex((c) => c.uri === displayCover) + 1
+              const total = coverChoices.length
+              // 0 (not '–') when no cover is selected, e.g. just after deleting one: the
+              // arrows still step into the choices, so "0/4" reads as "none of 4 picked".
+              // Read aloud, "2/4" is "two slash four", so assistive tech gets the words.
+              return (
+                <>
+                  <span
+                    data-testid="cover-image-count"
+                    aria-hidden="true"
+                    className="text-[11px] tabular-nums text-fg-dim"
+                  >
+                    {`${pos}/${total}`}
+                  </span>
+                  <span className="sr-only">
+                    {pos === 0
+                      ? tr('editor.coverPositionNone', { total })
+                      : tr('editor.coverPosition', { position: pos, total })}
+                  </span>
+                </>
+              )
+            })()}
+            <button
+              type="button"
+              data-testid="cover-next"
+              aria-label={tr('editor.coverNext')}
+              onClick={() => pickCoverImage(1)}
+              className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+            >
+              <ChevronRight className="h-3 w-3" aria-hidden="true" />
+            </button>
+          </div>
+        )}
+        {lightboxOpen && displayCover && (
+          <CoverLightbox
+            src={displayCover}
+            // Mirrors coverSourceOf: only when the shown cover is the file's own
+            // embedded thumbnail does the audio file hold a better original.
+            fullResFrom={
+              !isMulti && displayCover === item.embeddedCover ? item.inputPath : undefined
+            }
+            // Same gate and stepper as the well's inline arrows, so the lightbox can
+            // browse the file's art and the release's images and close on whichever.
+            nav={
+              coverChoices.length > 1
+                ? {
+                    position: coverChoices.findIndex((c) => c.uri === displayCover) + 1,
+                    count: coverChoices.length,
+                    onStep: pickCoverImage,
+                  }
+                : undefined
+            }
+            onClose={() => setLightboxOpen(false)}
           />
-          <span className="tabular-nums text-fg-dim">
-            {coverDims.w} × {coverDims.h} px
-          </span>
-          {/* The dot's amber is the only visual cue, so a low-res cover is also named. */}
-          {isLowResCover(coverDims.w, coverDims.h) && (
-            <span className="sr-only">{tr('editor.coverLowRes')}</span>
-          )}
-        </div>
-      )}
+        )}
+        {displayCover && coverDims && (
+          <div
+            data-testid="cover-resolution"
+            className="flex items-center gap-1.5 text-[11px] @[26rem]:mt-1.5 @[26rem]:justify-center"
+          >
+            <span
+              data-testid="cover-quality-dot"
+              data-lowres={isLowResCover(coverDims.w, coverDims.h)}
+              className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                isLowResCover(coverDims.w, coverDims.h) ? 'bg-warn' : 'bg-good'
+              }`}
+            />
+            <span className="tabular-nums text-fg-dim">
+              {coverDims.w} × {coverDims.h} px
+            </span>
+            {/* The dot's amber is the only visual cue, so a low-res cover is also named. */}
+            {isLowResCover(coverDims.w, coverDims.h) && (
+              <span className="sr-only">{tr('editor.coverLowRes')}</span>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

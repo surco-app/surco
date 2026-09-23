@@ -316,7 +316,7 @@ export function QualitySection({
             .join(', ')
         : ''
   return (
-    <div className="mt-5 border-t border-[var(--color-line)] pt-5">
+    <div className="mt-6 border-t border-[var(--color-line)] pt-6">
       <p data-testid="quality-status" role="status" className="sr-only">
         {announcement}
       </p>
@@ -448,7 +448,7 @@ export function QualitySection({
                       data-testid="quality-convert-plan"
                       className="mt-3 rounded-lg border border-[var(--color-line)] border-l-[3px] border-l-[var(--color-accent)] bg-[var(--color-field)] px-3 py-2.5"
                     >
-                      <p className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
+                      <p className="text-[11px] font-medium text-fg-dim">
                         {tr('editor.qualityConvertHead')}
                       </p>
                       <p className="mt-1 text-xs leading-relaxed text-fg tabular-nums">

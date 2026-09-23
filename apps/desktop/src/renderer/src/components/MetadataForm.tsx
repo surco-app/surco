@@ -110,7 +110,7 @@ export function MetadataForm({
           <StarRating value={item.meta.rating ?? ''} onChange={onRate} labelledBy={ratingLabelId} />
         </div>
       )}
-      <div className="flex flex-col gap-5 @[26rem]:flex-row @[26rem]:gap-6">
+      <div className="flex flex-col gap-5 @[26rem]:flex-row @[26rem]:gap-7">
         <CoverPicker
           item={item}
           isMulti={isMulti}
@@ -122,7 +122,7 @@ export function MetadataForm({
           onApplyCoverAll={onApplyCoverAll}
         />
 
-        <div className="grid min-w-0 flex-1 grid-cols-1 gap-x-3 gap-y-2 @[26rem]:grid-cols-2">
+        <div className="grid min-w-0 flex-1 grid-cols-1 gap-x-4 gap-y-4 @[26rem]:grid-cols-2">
           {fields.map((f) => (
             <div
               key={f.key}

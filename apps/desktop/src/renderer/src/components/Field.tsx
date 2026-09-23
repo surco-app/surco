@@ -133,7 +133,7 @@ export const Field = memo(function Field({
     <div className={`group block ${wide ? 'col-span-1 @[26rem]:col-span-2' : ''}`}>
       <label
         htmlFor={inputId}
-        className="mb-1 flex items-center gap-1.5 text-xs font-medium text-fg-dim"
+        className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-fg-dim"
       >
         {label}
         {/* A required field that's still empty isn't an error the user made — it's a

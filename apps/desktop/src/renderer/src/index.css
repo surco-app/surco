@@ -31,13 +31,13 @@
      3:1 bar, and it was the same white in both themes. Dark ink on the light fills, white
      on the dark ones; every filled pair then clears AA (4.5:1) with room to spare. */
   --color-on-accent: #16161e;
-  /* The fill for a selected library/tracklist row. The plain accent is a deliberately LIGHT
-     blue in dark mode, which washes out as a large filled surface over the near-black panel —
-     it reads grey, not selected. A deeper, more saturated blue gives the selection the
-     "this row is active" punch a small accent glyph doesn't need, with white text on top. In
-     light mode the accent is already a strong dark blue, so the row fill just reuses it. */
-  --color-row-selected: #3b63d6;
-  --color-on-row-selected: #ffffff;
+  /* The fill for a selected library/tracklist row. A quiet navy, not a saturated blue: the
+     solid #3b63d6 it replaces competed with the chips, the applied match and the convert
+     button, four accent blues on one screen with nothing telling the eye which one leads.
+     The row still reads as selected against the panel, and the primary action keeps the only
+     saturated fill. Near-white text on top clears AA; the focus ring still clears 3:1. */
+  --color-row-selected: #34487e;
+  --color-on-row-selected: #e9edff;
   --color-scrollbar: rgba(192, 202, 245, 0.13);
   --color-scrollbar-hover: rgba(192, 202, 245, 0.24);
 }
@@ -67,11 +67,11 @@
   --color-warn: #7c5212;
   --color-danger: #8c4351;
   --color-on-accent: #ffffff;
-  /* Más oscuro que --color-accent a propósito: el contorno de foco de una fila se pinta en
-     accent, así que un relleno del mismo tono lo haría invisible (como en oscuro, donde el
-     relleno ya es el más oscuro de los dos). */
-  --color-row-selected: #1e4480;
-  --color-on-row-selected: #ffffff;
+  /* Un azul claro y tranquilo, por lo mismo que en oscuro: el relleno macizo competía con
+     el botón principal. Lo bastante lejos de --color-accent para que el contorno de foco de
+     la fila, que se pinta en accent, siga viéndose encima. */
+  --color-row-selected: #bccdee;
+  --color-on-row-selected: #1b2440;
   --color-scrollbar: rgba(20, 22, 38, 0.18);
   --color-scrollbar-hover: rgba(20, 22, 38, 0.3);
 }
@@ -245,6 +245,34 @@ textarea {
 @media (prefers-reduced-motion: reduce) {
   .progress-sweep {
     animation: none;
+  }
+}
+
+/* A conversion's phase progress, drawn as a ring closing round the row's cover (see TrackList).
+   The filled arc and its faint track are one conic gradient masked to a 2px band, so the ring
+   costs one element. --progress is registered so the arc eases from one phase to the next
+   instead of jumping; with reduced motion it simply jumps. */
+@property --progress {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+.progress-ring {
+  --ring-color: var(--color-accent);
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  background: conic-gradient(
+    var(--ring-color) calc(var(--progress) * 1turn),
+    color-mix(in srgb, var(--ring-color) 20%, transparent) 0
+  );
+  mask: radial-gradient(circle, transparent 18px, #000 18.5px);
+  transition: --progress 0.6s ease;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress-ring {
+    transition: none;
   }
 }
 
@@ -622,9 +650,9 @@ textarea {
   display: none;
 }
 
-/* The applied tracklist row (Discogs column) shares the same solid selection-blue fill, so its
+/* The applied tracklist row (Discogs column) shares the same selection fill, so its
    text and its suggestion sparkle flip the same way: title full-strength, the position number
-   softened, and the sparkle to white so amber-on-blue stops clashing. It sits above the
+   softened, and the sparkle to the on-selection colour so amber-on-blue stops clashing. It sits above the
    .is-primary block because its selectors are less specific: the two never meet on one element
    (library list and editor panel are siblings), but source order matching specificity order is
    what keeps that true if they ever nest. */
@@ -638,10 +666,10 @@ textarea {
   color: var(--color-on-row-selected);
 }
 
-/* The primary library row is a solid selection-blue fill (see TrackList). Its text and format
+/* The primary library row is the selection fill (see TrackList). Its text and format
    badge were coloured for a dark panel — grey-on-blue is unreadable — so on the filled row
-   they flip to the on-selection colour (white in both themes): the title full-strength, the
-   secondary text (artist, duration) softened, and the format badge keyed off it too. One rule
+   they flip to the on-selection colour: the title full-strength, the
+   secondary text (artist, duration) softened, and the format tag keyed off it too. One rule
    so no descendant is missed. */
 .is-primary [data-fit] .text-fg,
 .is-primary [data-testid="track-duration-slot"] {
@@ -652,7 +680,6 @@ textarea {
 }
 .is-primary [data-testid="track-format"] {
   color: color-mix(in srgb, var(--color-on-row-selected) 85%, transparent);
-  border-color: color-mix(in srgb, var(--color-on-row-selected) 38%, transparent);
 }
 /* The right-hand glyphs (quality verdict, match sparkles) carry their own accent/semantic
    colour, which on the blue fill either vanishes (accent-on-blue) or clashes (amber-on-blue).
@@ -674,11 +701,8 @@ textarea {
 .is-primary [data-testid="track-stage"] .text-\[var\(--color-accent\)\] {
   color: var(--color-on-row-selected);
 }
-.is-primary [data-testid="track-stage"] .progress-sweep {
-  background: var(--color-on-row-selected);
-}
-.is-primary [data-testid="track-stage"] .bg-\[var\(--color-panel-2\)\] {
-  background: color-mix(in srgb, var(--color-on-row-selected) 28%, transparent);
+.is-primary .progress-ring {
+  --ring-color: var(--color-on-row-selected);
 }
 
 /* Reduced motion means gentler, not nothing. The blanket rule this replaces collapsed every
