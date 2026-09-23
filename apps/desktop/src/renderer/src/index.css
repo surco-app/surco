@@ -531,6 +531,15 @@ textarea {
   animation: toast-leave 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
 }
 
+/* Keyboard focus on a trim handle: a solid 2px accent ring around the grip, held off it by
+   a 2px moat of the lane colour so it reads as a ring rather than a fatter grip. The handle
+   opts out of the global ring (it boxed the whole 12px strip), so this is its indicator. */
+.trim-handle[data-focused] .trim-grip {
+  box-shadow:
+    0 0 0 2px var(--color-field),
+    0 0 0 4px var(--color-accent);
+}
+
 .press {
   transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1);
 }
