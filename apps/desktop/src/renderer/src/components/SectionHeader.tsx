@@ -1,5 +1,6 @@
 import { ChevronRight, Info, Maximize2, Minimize2 } from 'lucide-react'
 import type React from 'react'
+import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { type EditorSection, useMaximizedSection } from '../hooks/useEditorSections'
 import { Tooltip } from './Tooltip'
@@ -35,6 +36,10 @@ interface SectionHeaderProps {
   // The id of the SectionBody this header folds, so aria-controls can say which region
   // the expanded state belongs to.
   bodyId?: string
+  // A short state that belongs to the whole section (the metadata's library membership),
+  // set right after the title on the same line, open or folded. It is described to a screen
+  // reader rather than folded into the button's name, which stays the title alone.
+  status?: React.ReactNode
 }
 
 export function SectionHeader({
@@ -49,8 +54,10 @@ export function SectionHeader({
   sectionId,
   maximizable,
   bodyId,
+  status,
 }: SectionHeaderProps): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const statusId = useId()
   const { maximized, setMaximized } = useMaximizedSection()
   const isMaximized = sectionId !== undefined && maximized === sectionId
   return (
@@ -74,6 +81,7 @@ export function SectionHeader({
           aria-label={title}
           aria-expanded={open}
           aria-controls={bodyId}
+          aria-describedby={status ? statusId : undefined}
           className="-my-1.5 flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left text-[13px] font-semibold text-fg-muted hover:text-fg"
         >
           <ChevronRight
@@ -81,6 +89,11 @@ export function SectionHeader({
             className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`}
           />
           <span className="shrink-0">{title}</span>
+          {status && (
+            <span id={statusId} className="flex shrink-0 items-center gap-x-4 pl-2">
+              {status}
+            </span>
+          )}
           {!open && summary && (
             <span
               data-testid={summaryTestId}
