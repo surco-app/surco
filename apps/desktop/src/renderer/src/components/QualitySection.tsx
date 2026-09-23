@@ -3,7 +3,6 @@ import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig, OutputSampleRate } from '../../../shared/types'
-import { useMaximizedSection } from '../hooks/useEditorSections'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useSpectrogram } from '../hooks/useSpectrogram'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
@@ -55,9 +54,10 @@ const qualityCaption: Record<Verdict, string> = {
 interface Props {
   item: TrackItem
   showSpectrum: boolean
-  // The loudness table lives in Normalize; the editor sets this only when that section
-  // is hidden from the layout, so the table the Loudness setting promises stays reachable.
   showLoudness?: boolean
+  // The pending conversion's settings, so the loudness table can show where each figure
+  // will land. Owned by the Normalize section; read here because the figures it predicts
+  // are the ones this table measures.
   normalize?: NormalizeConfig
   onShowLoudnessHelp?: () => void
   open: boolean
@@ -68,10 +68,9 @@ interface Props {
   outputSampleRate?: OutputSampleRate
 }
 
-// The audio-quality section: spectrogram with its lossless-cutoff verdict. Owns the
-// probe — the hover prefetch and the "analyze all" sweep warm the same cache key, so
-// an already-warmed track shows instantly. Hosts the loudness table only as the
-// fallback for a layout without the Normalize section.
+// The audio-quality section: spectrogram with its lossless-cutoff verdict, and the
+// EBU R128 loudness pills. Owns both probes — the hover prefetch and the "analyze
+// all" sweep warm the same cache keys, so an already-warmed track shows instantly.
 // The editor only mounts this in single-track mode.
 export function QualitySection({
   item,
@@ -86,8 +85,10 @@ export function QualitySection({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { reportError } = useToast()
-  // The ffmpeg pass waits for the selection to rest (this section remounts with the
-  // per-track editor).
+  // Keyed by input path, so it measures once per file and reads the right figures on
+  // a track switch. The ffmpeg pass waits for the selection to rest (this section
+  // remounts with the per-track editor). A failed measure resolves null and the
+  // readout hides.
   const settled = useSettled(SELECTION_SETTLE_MS)
   // Gated on the feature setting AND the section being open: folding Quality away stops
   // the (heavy) decode until the user reopens it. A failed analysis surfaces as analyzeError.
@@ -269,8 +270,6 @@ export function QualitySection({
       setSavingReport(false)
     }
   }
-  const { maximized } = useMaximizedSection()
-  const maximizedHere = maximized === 'quality'
   const upsampledFlag = spectrum?.upsampled === true || spectrum?.resolution === 'upsampled'
   const padded = spectrum?.bitsUsage === 'padded16'
   const healthy = verdict === 'good' && !transcoded && !padded && !upsampledFlag
@@ -287,108 +286,8 @@ export function QualitySection({
             : padded
               ? 'editor.qualityPlainPadded'
               : null
-  const [spectrumShownFor, setSpectrumShownFor] = useState<string | null>(null)
-  const [whyShownFor, setWhyShownFor] = useState<string | null>(null)
-  const spectrumShown = spectrumShownFor === item.inputPath
-  const whyShown = maximizedHere || whyShownFor === item.inputPath
   const { data: properties } = useTrackProperties(item.inputPath, settled && showSpectrum && open)
   const formatSummary = properties ? audioSummaryParts(properties, tr).join(' · ') : ''
-  const details = spectrum ? (
-    <>
-      {/* Only when the verdict needs justifying: a full-band good file is
-         already said twice (green badge, cutoff chip), so its caption
-         would be the third telling of the same fact. With measured
-         evidence available, the numbered claim replaces the caption
-         outright; saying "cut at 16 kHz" twice would be noise. */}
-      {evidence ? (
-        <div
-          data-testid="quality-evidence"
-          className="mt-2 border-l-2 pl-2.5 text-xs"
-          style={{ borderColor: `var(--color-${evidence.tone})` }}
-        >
-          <p className="text-fg-dim">{tr(evidence.key, evidence.params)}</p>
-          {showHints && evidence.why && <p className="mt-1 text-fg-muted">{tr(evidence.why)}</p>}
-        </div>
-      ) : (
-        spectrum.cutoffHz !== null &&
-        captionKey &&
-        captionKey !== 'editor.qualityCaptionGood' && (
-          <p className="mt-2 text-xs text-fg-dim">
-            {tr(captionKey, { cutoff: formatKHz(spectrum.cutoffHz) })}
-          </p>
-        )
-      )}
-      {/* Orthogonal to the codec verdict: the bandwidth claim, not the
-         fidelity. Shown amber so a green "good" badge over an upsampled
-         file doesn't read as a clean bill of hi-res. A file that declares a
-         high rate always gets an answer here — confirmed, denied, or an honest
-         "couldn't tell" — because saying nothing left a real hi-res file looking
-         exactly like one nobody analysed. A plain 44.1 kHz file makes no claim to
-         check, so it stays silent rather than gaining a line that says nothing. */}
-      {spectrum.upsampled || spectrum.resolution === 'upsampled' ? (
-        <p data-testid="quality-upsampled" className="mt-2 text-xs text-warn">
-          {tr('editor.qualityUpsampled')}
-        </p>
-      ) : spectrum.resolution === 'hires' ? (
-        <p data-testid="quality-hires" className="mt-2 text-xs text-fg-dim">
-          {tr('editor.qualityHiRes', {
-            rate: formatKHz(spectrum.sampleRateHz),
-          })}
-        </p>
-      ) : spectrum.resolution === 'unknown' ? (
-        <p data-testid="quality-resolution-unknown" className="mt-2 text-xs text-fg-dim">
-          {tr('editor.qualityResolutionUnknown')}
-        </p>
-      ) : null}
-      {/* The bit-depth verdict, argued the arithmetic way: which bytes
-         actually carry signal. Padding is a finding, so its proof and
-         what converting will do about it always show: the result loses
-         the pill because the padding is gone, and saying so beforehand
-         is what keeps that absence from reading as a broken analysis.
-         Only the didactic why-line rides the hints toggle; a confirmed
-         real depth is reassurance and shows only with hints. */}
-      {spectrum.bitsUsage === 'padded16' ? (
-        <div
-          data-testid="quality-bits-padded"
-          className="mt-2 border-l-2 pl-2.5 text-xs"
-          style={{ borderColor: 'var(--color-danger)' }}
-        >
-          <p className="text-fg-dim">{tr('editor.qualityBitsPadded')}</p>
-          {showHints && <p className="mt-1 text-fg-muted">{tr('editor.qualityBitsPaddedWhy')}</p>}
-          <p className="mt-1 text-fg-muted">{tr('editor.qualityBitsPaddedNote')}</p>
-        </div>
-      ) : spectrum.bitsUsage === 'full' && showHints ? (
-        <p data-testid="quality-bits-full" className="mt-2 text-xs text-fg-dim">
-          {tr('editor.qualityBitsFull', { pct: spectrum.bitsLowPct ?? 0 })}
-        </p>
-      ) : spectrum.bitsUsage === 'unknown' && showHints ? (
-        <p data-testid="quality-bits-unknown" className="mt-2 text-xs text-fg-dim">
-          {tr('editor.qualityBitsUnknown')}
-        </p>
-      ) : null}
-      {/* The corrected-rate plan card: what the policy will do to THIS
-         file, said before it happens and beside the verdict that
-         decided it. Same visual family as the normalize and trim plans,
-         and hints-gated like both of them. */}
-      {showHints && outputSampleRate === 'corrected' && spectrum.resolution === 'upsampled' && (
-        <div
-          data-testid="quality-convert-plan"
-          className="mt-3 rounded-lg border border-[var(--color-line)] border-l-[3px] border-l-[var(--color-accent)] bg-[var(--color-field)] px-3 py-2.5"
-        >
-          <p className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
-            {tr('editor.qualityConvertHead')}
-          </p>
-          <p className="mt-1 text-xs leading-relaxed text-fg tabular-nums">
-            {tr('editor.qualityConvertRate', {
-              from: `${spectrum.sampleRateHz / 1000} kHz`,
-              to: '44.1 kHz',
-            })}
-          </p>
-          <p className="mt-0.5 text-[11px] text-fg-muted">{tr('editor.qualityConvertRateSub')}</p>
-        </div>
-      )}
-    </>
-  ) : null
   return (
     <div className="mt-5 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
@@ -414,7 +313,7 @@ export function QualitySection({
                 <Tooltip label={tr('editor.saveQualityReport')} align="end" />
               </button>
             )}
-            {verdict && !(open && healthy && !maximizedHere) && (
+            {verdict && (
               <SectionPill
                 tone={transcoded ? 'danger' : qualityBadge[verdict].tone}
                 testid="quality-badge"
@@ -444,10 +343,13 @@ export function QualitySection({
                 {tr(analyzeErrorKey ? `errors.${analyzeErrorKey}` : 'editor.analyzeError')}
                 {analyzeErrorDetail && <Tooltip label={analyzeErrorDetail} />}
               </div>
-            ) : spectrum && verdict ? (
-              healthy && !maximizedHere ? (
-                <>
-                  <div data-testid="quality-verdict" className="flex items-center gap-2 text-xs">
+            ) : spectrum ? (
+              <>
+                {healthy && (
+                  <div
+                    data-testid="quality-verdict"
+                    className="mb-3 flex items-center gap-2 text-xs"
+                  >
                     <CircleCheck className="h-3.5 w-3.5 shrink-0 text-good" aria-hidden="true" />
                     <span className="min-w-0 truncate">
                       <span className="font-medium text-good">{tr(qualityBadge.good.label)}</span>
@@ -455,50 +357,118 @@ export function QualitySection({
                         <span className="text-fg-dim tabular-nums"> · {formatSummary}</span>
                       )}
                     </span>
-                    <button
-                      type="button"
-                      data-testid="quality-show-spectrum"
-                      aria-expanded={spectrumShown}
-                      onClick={() => setSpectrumShownFor(spectrumShown ? null : item.inputPath)}
-                      className="press ml-auto shrink-0 text-[var(--color-accent)] hover:underline"
-                    >
-                      {tr(
-                        spectrumShown ? 'editor.qualityHideSpectrum' : 'editor.qualityShowSpectrum',
-                      )}
-                    </button>
                   </div>
-                  {spectrumShown && (
-                    <div className="mt-3">
-                      <Spectrogram spectrum={spectrum} transcoded={transcoded} />
-                      {details}
+                )}
+                <Spectrogram spectrum={spectrum} transcoded={transcoded} />
+                {plainKey && (
+                  <p data-testid="quality-plain" className="mt-2 text-xs text-fg">
+                    {tr(plainKey, {
+                      cutoff: spectrum.cutoffHz !== null ? formatKHz(spectrum.cutoffHz) : '',
+                      rate: formatKHz(spectrum.sampleRateHz),
+                    })}
+                  </p>
+                )}
+                {/* Only when the verdict needs justifying: a full-band good file is
+                    already said twice (green badge, cutoff chip), so its caption
+                    would be the third telling of the same fact. With measured
+                    evidence available, the numbered claim replaces the caption
+                    outright; saying "cut at 16 kHz" twice would be noise. */}
+                {evidence ? (
+                  <div
+                    data-testid="quality-evidence"
+                    className="mt-2 border-l-2 pl-2.5 text-xs"
+                    style={{ borderColor: `var(--color-${evidence.tone})` }}
+                  >
+                    <p className="text-fg-dim">{tr(evidence.key, evidence.params)}</p>
+                    {showHints && evidence.why && (
+                      <p className="mt-1 text-fg-muted">{tr(evidence.why)}</p>
+                    )}
+                  </div>
+                ) : (
+                  spectrum.cutoffHz !== null &&
+                  captionKey &&
+                  captionKey !== 'editor.qualityCaptionGood' && (
+                    <p className="mt-2 text-xs text-fg-dim">
+                      {tr(captionKey, { cutoff: formatKHz(spectrum.cutoffHz) })}
+                    </p>
+                  )
+                )}
+                {/* Orthogonal to the codec verdict: the bandwidth claim, not the
+                    fidelity. Shown amber so a green "good" badge over an upsampled
+                    file doesn't read as a clean bill of hi-res. A file that declares a
+                    high rate always gets an answer here — confirmed, denied, or an honest
+                    "couldn't tell" — because saying nothing left a real hi-res file looking
+                    exactly like one nobody analysed. A plain 44.1 kHz file makes no claim to
+                    check, so it stays silent rather than gaining a line that says nothing. */}
+                {spectrum.upsampled || spectrum.resolution === 'upsampled' ? (
+                  <p data-testid="quality-upsampled" className="mt-2 text-xs text-warn">
+                    {tr('editor.qualityUpsampled')}
+                  </p>
+                ) : spectrum.resolution === 'hires' ? (
+                  <p data-testid="quality-hires" className="mt-2 text-xs text-fg-dim">
+                    {tr('editor.qualityHiRes', {
+                      rate: formatKHz(spectrum.sampleRateHz),
+                    })}
+                  </p>
+                ) : spectrum.resolution === 'unknown' ? (
+                  <p data-testid="quality-resolution-unknown" className="mt-2 text-xs text-fg-dim">
+                    {tr('editor.qualityResolutionUnknown')}
+                  </p>
+                ) : null}
+                {/* The bit-depth verdict, argued the arithmetic way: which bytes
+                    actually carry signal. Padding is a finding, so its proof and
+                    what converting will do about it always show: the result loses
+                    the pill because the padding is gone, and saying so beforehand
+                    is what keeps that absence from reading as a broken analysis.
+                    Only the didactic why-line rides the hints toggle; a confirmed
+                    real depth is reassurance and shows only with hints. */}
+                {spectrum.bitsUsage === 'padded16' ? (
+                  <div
+                    data-testid="quality-bits-padded"
+                    className="mt-2 border-l-2 pl-2.5 text-xs"
+                    style={{ borderColor: 'var(--color-danger)' }}
+                  >
+                    <p className="text-fg-dim">{tr('editor.qualityBitsPadded')}</p>
+                    {showHints && (
+                      <p className="mt-1 text-fg-muted">{tr('editor.qualityBitsPaddedWhy')}</p>
+                    )}
+                    <p className="mt-1 text-fg-muted">{tr('editor.qualityBitsPaddedNote')}</p>
+                  </div>
+                ) : spectrum.bitsUsage === 'full' && showHints ? (
+                  <p data-testid="quality-bits-full" className="mt-2 text-xs text-fg-dim">
+                    {tr('editor.qualityBitsFull', { pct: spectrum.bitsLowPct ?? 0 })}
+                  </p>
+                ) : spectrum.bitsUsage === 'unknown' && showHints ? (
+                  <p data-testid="quality-bits-unknown" className="mt-2 text-xs text-fg-dim">
+                    {tr('editor.qualityBitsUnknown')}
+                  </p>
+                ) : null}
+                {/* The corrected-rate plan card: what the policy will do to THIS
+                    file, said before it happens and beside the verdict that
+                    decided it. Same visual family as the normalize and trim plans,
+                    and hints-gated like both of them. */}
+                {showHints &&
+                  outputSampleRate === 'corrected' &&
+                  spectrum.resolution === 'upsampled' && (
+                    <div
+                      data-testid="quality-convert-plan"
+                      className="mt-3 rounded-lg border border-[var(--color-line)] border-l-[3px] border-l-[var(--color-accent)] bg-[var(--color-field)] px-3 py-2.5"
+                    >
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
+                        {tr('editor.qualityConvertHead')}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-fg tabular-nums">
+                        {tr('editor.qualityConvertRate', {
+                          from: `${spectrum.sampleRateHz / 1000} kHz`,
+                          to: '44.1 kHz',
+                        })}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-fg-muted">
+                        {tr('editor.qualityConvertRateSub')}
+                      </p>
                     </div>
                   )}
-                </>
-              ) : (
-                <>
-                  <Spectrogram spectrum={spectrum} transcoded={transcoded} />
-                  {plainKey && (
-                    <p data-testid="quality-plain" className="mt-2 text-xs text-fg">
-                      {tr(plainKey, {
-                        cutoff: spectrum.cutoffHz !== null ? formatKHz(spectrum.cutoffHz) : '',
-                        rate: formatKHz(spectrum.sampleRateHz),
-                      })}{' '}
-                      {!maximizedHere && (
-                        <button
-                          type="button"
-                          data-testid="quality-why-toggle"
-                          aria-expanded={whyShown}
-                          onClick={() => setWhyShownFor(whyShown ? null : item.inputPath)}
-                          className="press text-[var(--color-accent)] hover:underline"
-                        >
-                          {tr(whyShown ? 'editor.qualityWhyHide' : 'editor.qualityWhy')}
-                        </button>
-                      )}
-                    </p>
-                  )}
-                  {(healthy || whyShown) && details}
-                </>
-              )
+              </>
             ) : null)}
           {showLoudness &&
             normalize &&
@@ -509,6 +479,10 @@ export function QualitySection({
                 onShowHelp={onShowLoudnessHelp}
               />
             ) : (
+              // Measuring (undefined): show the pill placeholders so the figures don't pop
+              // into empty space. A failed measure resolves null, and the skeleton hides —
+              // the readout is simply absent, as before. Gated on the same conditions the
+              // measure is, so a closed/multi section shows nothing.
               open && settled && loudness === undefined && <LoudnessSkeleton />
             ))}
         </div>
