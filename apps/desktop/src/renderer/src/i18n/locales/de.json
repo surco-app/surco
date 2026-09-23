@@ -249,6 +249,7 @@
     "seek": "Spulen",
     "seekValue": "{{current}} von {{total}}",
     "volume": "Lautstärke",
+    "volumeValue": "{{pct}} %",
     "unmute": "Ton einschalten",
     "reveal": "Den laufenden Track in der Liste zeigen",
     "close": "Player schließen"
@@ -727,6 +728,7 @@
     "title": "Lautheitsnormalisierung",
     "hint": "Standardmäßig aus. Gleicht jeden Track an eine Ziel-Lautheit oder einen Ziel-Peak an.",
     "editorHint": "Gleicht jeden Track an eine Ziel-Lautheit oder einen Ziel-Peak an.",
+    "fadeValue": "Nachher bei {{pct}} %",
     "mode": {
       "none": "Keine",
       "loudness": "Lautheit",

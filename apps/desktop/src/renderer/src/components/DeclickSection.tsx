@@ -277,6 +277,7 @@ export function DeclickSection({
                   aria-valuemin={0}
                   aria-valuemax={Number(durationSec.toFixed(2))}
                   aria-valuenow={Number(ab.at.toFixed(2))}
+                  aria-valuetext={`${ab.at.toFixed(2)} s`}
                   onPointerDown={(e) => {
                     e.currentTarget.setPointerCapture?.(e.pointerId)
                     scrubFrom(e.clientX, e.currentTarget)

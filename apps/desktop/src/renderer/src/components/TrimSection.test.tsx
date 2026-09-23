@@ -527,6 +527,15 @@ describe('TrimSection', () => {
     expect(onChange).toHaveBeenCalledWith({ endSec: 90.3 })
   })
 
+  // A bare aria-valuenow is read as a unitless number; the value text says it is a time,
+  // in the same seconds the field beside the lane shows, so both read the same cut.
+  it('reads each handle out as the cut time the field shows', async () => {
+    render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+    expect(start).toHaveAttribute('aria-valuetext', '9.700 s')
+    expect(screen.getByTestId('trim-handle-end')).toHaveAttribute('aria-valuetext', '90.300 s')
+  })
+
   // Clearing the last remaining cut leaves the track with no trim at all.
   it('drops the trim entirely when the last cut is cleared', async () => {
     const onChange = vi.fn()

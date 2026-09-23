@@ -249,6 +249,7 @@
     "seek": "Ir para posição",
     "seekValue": "{{current}} de {{total}}",
     "volume": "Volume",
+    "volumeValue": "{{pct}}%",
     "unmute": "Ativar som",
     "reveal": "Mostrar na lista a faixa em reprodução",
     "close": "Fechar reprodutor"
@@ -727,6 +728,7 @@
     "title": "Normalização de volume",
     "hint": "Desativada por padrão. Iguala cada faixa a um volume ou pico alvo.",
     "editorHint": "Iguala cada faixa a um volume ou pico alvo.",
+    "fadeValue": "Depois em {{pct}}%",
     "mode": {
       "none": "Nenhuma",
       "loudness": "Volume",

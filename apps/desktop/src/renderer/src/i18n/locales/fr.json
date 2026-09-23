@@ -249,6 +249,7 @@
     "seek": "Se déplacer",
     "seekValue": "{{current}} sur {{total}}",
     "volume": "Volume",
+    "volumeValue": "{{pct}} %",
     "unmute": "Réactiver le son",
     "reveal": "Afficher le morceau en cours dans la liste",
     "close": "Fermer le lecteur"
@@ -727,6 +728,7 @@
     "title": "Normalisation du loudness",
     "hint": "Désactivée par défaut. Aligne chaque morceau sur un loudness ou un pic cible.",
     "editorHint": "Aligne chaque morceau sur un loudness ou un pic cible.",
+    "fadeValue": "Après à {{pct}} %",
     "mode": {
       "none": "Aucune",
       "loudness": "Loudness",

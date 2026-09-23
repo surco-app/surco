@@ -175,6 +175,24 @@ describe('WaveformCompare', () => {
     expect(fade.value).toBe('0')
   })
 
+  // A range from 0 to 1 is read out as "0.5", which says nothing about what is on screen;
+  // the value text names how strongly the "after" layer shows.
+  it('reads the fade out as how much of the after layer shows', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      cancelAnalysis: vi.fn(),
+      waveform: vi.fn().mockResolvedValue(wave),
+      waveformScan: vi.fn().mockResolvedValue(null),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformCompare inputPath="/m/a.wav" outputPath="/out/a.aiff" enabled />)
+    await screen.findByTestId('waveform-side')
+    fireEvent.click(screen.getByTestId('waveform-view-overlay'))
+    const fade = screen.getByTestId('waveform-overlay-fade')
+    expect(fade).toHaveAttribute('aria-valuetext', 'After at 50%')
+    fireEvent.change(fade, { target: { value: '0.2' } })
+    expect(fade).toHaveAttribute('aria-valuetext', 'After at 20%')
+  })
+
   // The comparison strips split into L/R lanes too — but only side by side; the
   // overlaid view already stacks two envelopes, and four lanes would be unreadable.
   it('offers the split-channels toggle in the side view only', async () => {
