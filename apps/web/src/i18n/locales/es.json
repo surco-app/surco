@@ -84,7 +84,7 @@
           },
           {
             "t": "Frecuencia corregida",
-            "d": "El modo «Corregido» reescribe a 44.1 solo las pistas medidas como upsampleadas; lo genuino y lo dudoso sale intacto. Y la profundidad «igual que el origen» escribe la anchura real: el relleno probado de 16-en-24 sale como 16 bits, sin pérdidas."
+            "d": "El modo «Corregido» reescribe a 44.1 solo las pistas medidas como upsampleadas; lo genuino y lo dudoso sale intacto. Y la profundidad «Corregido» guarda como 16 bits reales, sin pérdidas, el audio de 16 bits rellenado a 24; «igual que el origen» conserva el contenedor tal cual."
           },
           {
             "t": "Comprueba la copia antes de darla por buena",
@@ -162,7 +162,7 @@
           },
           {
             "t": "Tres cosas, no una",
-            "d": "Una transcodificación, unos agudos regenerados por un «enhancer» y un hi-res que era un 44,1 estirado."
+            "d": "Una transcodificación, unos posibles agudos regenerados por un «enhancer» y un hi-res que era un 44,1 estirado."
           },
           {
             "t": "Sin falsos positivos",
@@ -170,7 +170,7 @@
           },
           {
             "t": "Enseña sus cuentas",
-            "d": "Cada veredicto viene con la medida que lo sostiene: hasta dónde llega la energía, cuánto cae en un kilohercio y por qué esa forma delata al culpable."
+            "d": "Cada veredicto viene con la medida que lo sostiene: hasta dónde llega la energía, dónde está el corte y cuánto cae en un kilohercio."
           },
           {
             "t": "Un MP3 no es un defecto",
@@ -202,7 +202,7 @@
           },
           {
             "t": "Los bits, comprobados",
-            "d": "Un 24 bits declarado se verifica contra sus propias muestras: el relleno de 16 bits se delata con los 8 bits bajos a cero en todas, prueba aritmética. Lo real se gana su frase con la medida delante."
+            "d": "Un 24 bits declarado se verifica contra sus propias muestras: si casi ninguna muestra del primer minuto usa el byte bajo, es audio de 16 bits rellenado. No es un defecto, suena igual, y con las explicaciones activas ves el porcentaje medido."
           }
         ]
       },
@@ -550,11 +550,11 @@
         "id": "lista",
         "title": "Conoce la lista de pistas",
         "body": [
-          "La columna de la izquierda es tu cola de trabajo. Cada fila muestra el título, el artista, la duración, el formato de origen y un punto de estado que indica si la pista está sin tocar, procesándose, lista o con error. Cuando analizas la calidad, la fila luce su veredicto en el borde: verde si es buena, ámbar si es sospechosa, rojo si es mala.",
+          "La columna de la izquierda es tu cola de trabajo. Cada fila muestra el título, el artista, la duración, el formato de origen y un punto de estado que indica si la pista está sin tocar, procesándose, lista o con error. Cuando analizas la calidad, la fila luce su veredicto en el borde: verde si es buena, ámbar si es dudosa, rojo si es mala.",
           "Pulsa Espacio para escuchar la pista seleccionada en el reproductor, anclado en su propia barra abajo para que no te tape la lista. Doble clic en una fila la reproduce, y otro doble clic la para. Arrastra el borde derecho para ensanchar la lista, o haz doble clic para ajustarla al nombre más largo."
         ],
         "points": [
-          "Filtros rápidos arriba: Sospechosas, Buenas, Sin analizar, Sin convertir, Auto-emparejadas (también por fuente), Duplicadas, Clipping, Silencio por recortar, y lo que está (o falta) en tu biblioteca de Apple Music o Engine DJ. Cada uno aparece solo cuando hay pistas que lo justifiquen.",
+          "Filtros rápidos arriba: Dudosas, Buenas, Sin analizar, Sin convertir, Auto-emparejadas (también por fuente), Duplicadas, Clipping, Silencio por recortar, y lo que está (o falta) en tu biblioteca de Apple Music o Engine DJ. Cada uno aparece solo cuando hay pistas que lo justifiquen.",
           "Un buscador filtra la lista por texto, y puedes ordenarla por nombre, artista, duración o formato, en un sentido o en el otro.",
           "Haz clic para seleccionar una pista; ⌘ (o Ctrl) + clic para sumar varias y Mayús + clic para un rango. Supr quita la pista seleccionada, y si quitas una selección entera Surco te lo pregunta antes.",
           "Filtrar acota de verdad: si filtras y conviertes, solo se convierte lo que ves. Lo mismo vale para seleccionar todo, rellenar tags, buscar y reemplazar o analizar. Nunca actúan a tus espaldas sobre el resto de la cola.",
@@ -610,13 +610,13 @@
         "title": "Comprueba la calidad real",
         "body": [
           "Abre la sección de calidad y Surco dibuja el espectro de la pista: las frecuencias de arriba abajo a lo largo del tema. Un archivo sin pérdidas de verdad conserva energía hasta arriba; un MP3 disfrazado de WAV se corta de golpe y deja un hueco en la parte alta. Una línea de puntos marca dónde se corta, y el espectro sombrea la banda muerta para que veas dónde se acaba el sonido.",
-          "El veredicto se lee en absoluto, como lo lee un DJ: llegar a unos 20 kHz es calidad completa, entre 18 y 19,5 kHz es sospechoso y por debajo de 18 kHz es malo. Da igual la frecuencia de muestreo del archivo. Debajo, una lectura con colores resume el nivel: LUFS integrado, pico real, dinámica, balance entre canales, DC offset y ruido de fondo. Para analizar toda la cola de golpe, usa el botón de la barra o ⌘⇧A.",
-          "Cada pista luce su veredicto en la propia lista, y puedes filtrar por «Sospechosas», «Buenas» o «Sin analizar» para triar una carpeta entera recién soltada. Merece la pena el repaso antes de pinchar: un corte que pasa desapercibido en unos cascos se nota en cuanto el tema suena por un equipo grande."
+          "El veredicto se lee en absoluto, como lo lee un DJ: llegar a unos 20 kHz es calidad completa, entre 18 y 19,5 kHz es dudoso y por debajo de 18 kHz es malo. Da igual la frecuencia de muestreo del archivo. Debajo, una lectura con colores resume el nivel: LUFS integrado, pico real, dinámica, balance entre canales, DC offset y ruido de fondo. Para analizar toda la cola de golpe, usa el botón de la barra o ⌘⇧A.",
+          "Cada pista luce su veredicto en la propia lista, y puedes filtrar por «Dudosas», «Buenas» o «Sin analizar» para triar una carpeta entera recién soltada. Merece la pena el repaso antes de pinchar: un corte que pasa desapercibido en unos cascos se nota en cuanto el tema suena por un equipo grande."
         ],
         "points": [
-          "Verde «buena calidad»: el sonido llega arriba del todo, no falta nada. Ámbar «sospechoso»: corte antes de tiempo. Rojo: mala calidad.",
+          "Verde «buena calidad»: el sonido llega arriba del todo, no falta nada. Ámbar «Dudosa»: corte antes de tiempo. Rojo: «Mala calidad», o «Fuente con pérdidas» si es un archivo sin pérdida con el corte de un códec dentro.",
           "Un MP3 no se juzga contra la vara de un lossless: su corte es el formato, no un defecto, así que sale limpio si lo está. Lo que sí se acusa es un FLAC o un WAV con el corte de un códec dentro.",
-          "«Reprocesado» es un aviso distinto: no es que falte información, es que alguien ha fabricado agudos que el archivo ya no tenía.",
+          "«Posible reprocesado» es un aviso distinto, en ámbar: el espectro muestra agudos que parecen regenerados sobre un corte anterior. Es una sospecha medida, no una prueba; unos agudos solo planos salen como observación, sin veredicto.",
           "Detecta también el lossless falso, un FLAC o un WAV que en realidad es un MP3 reempaquetado. Y a todo archivo que diga ir por encima de 44,1 kHz le contesta siempre por su frecuencia: hi-res de verdad, estirado desde 44,1, o un honesto «no se ha podido verificar» cuando no hay nada arriba que medir.",
           "Un retículo sobre el espectro te dice la frecuencia exacta bajo el cursor.",
           "La sección de loudness dibuja la onda con el clipping marcado en rojo, se amplía hasta el detalle de la muestra, separa los dos canales y previsualiza cómo quedará al normalizar. Y, una vez convertida, compara el antes y el después lado a lado o superpuestos.",
@@ -641,7 +641,7 @@
           "Es una estimación de clics audibles: los que quedan enterrados bajo un pasaje denso se escapan, igual que se le escapan al oído.",
           "El A/B compara la pista reparada con la original sin cortes, para oír si la reparación se ha llevado también algo de música.",
           "Si además recortas el silencio, la parte que se va queda atenuada en la onda para que no ajustes sobre audio que no saldrá.",
-          "Repara el audio al convertir, así que recodifica: revisa la nota sobre cue points antes de aplicarlo a un WAV o un ALAC con cues."
+          "Repara el audio al convertir, así que recodifica: revisa la nota sobre cue points antes de aplicarlo a un ALAC con cues."
         ],
         "shot": "declick-es.webp",
         "shotCaption": "Los clics detectados, marcados sobre la forma de onda."
@@ -674,7 +674,7 @@
         "points": [
           "Busca por texto o pega un release id si ya sabes cuál es. Si el archivo ya trae uno, Surco abre directamente esa ficha.",
           "Si la primera búsqueda no da nada, Surco reintenta solo: quita el prefijo del DJ, prueba con el artista principal o busca por catálogo o por título.",
-          "Con un token y la opción activada, Surco auto-empareja las pistas nada más importarlas.",
+          "Con la opción activada (y tu token si Discogs es una de tus fuentes; con Bandcamp y Deezer no hace falta), Surco auto-empareja las pistas nada más importarlas.",
           "Tu carátula se conserva si ya tienes una; la de Discogs queda como alternativa, y puedes activar que sustituya solo a las de baja resolución.",
           "¿Firmas de rip o marcas de agua ensuciando tus títulos? Lístalas en Ajustes → Búsqueda, trae «vinyl» y «rip» de serie, y se ignoran al buscar y emparejar; tus tags no se tocan.",
           "Con varias fuentes activas, un filtro reduce la lista de resultados a una sola, y puedes limitar los de Discogs a vinilo, CD, archivo o casete.",
@@ -689,7 +689,7 @@
         "title": "Auto-match: etiquetado sin tocar nada",
         "body": [
           "Con «Auto-emparejar al importar» activado en Ajustes, cada archivo que sueltes se busca solo en segundo plano en las fuentes que tengas encendidas: Discogs primero, y Bandcamp y Deezer de respaldo. Surco compara título, duración, número de pista y artista con cada candidato, y solo si la coincidencia es fiable aplica los metadatos por ti. Artista, álbum, año, género, sello y carátula, igual que si la hubieras elegido a mano. Si el archivo trae ISRC en sus tags (habitual en descargas de streaming), Surco lo usa para localizar la grabación exacta en Deezer, así el single original no se confunde con remixes de nombre parecido.",
-          "Un título idéntico no basta por sí solo: hace falta que algo más lo corrobore (la duración, el artista o el número de catálogo), porque un título de una palabra existe en decenas de discos que no tienen nada que ver. Si nada lo confirma, la pista no se etiqueta sola: queda marcada «para revisar» con su grado de confianza, y la aceptas de un paso desde ⌘K sin abrir siquiera el editor. Con el interruptor apagado (así viene de serie) Surco sugiere, pero nunca actualiza por su cuenta."
+          "Un título idéntico no basta por sí solo: hace falta que algo más lo corrobore (la duración, el artista o el número de catálogo), porque un título de una palabra existe en decenas de discos que no tienen nada que ver. Si nada lo confirma, la pista no se etiqueta sola: queda marcada «Por confirmar» con su grado de confianza, y la aceptas de un paso desde ⌘K sin abrir siquiera el editor. Con el interruptor apagado (así viene de serie) Surco sugiere, pero nunca actualiza por su cuenta."
         ],
         "points": [
           "Nunca pisa tu trabajo: salta las pistas ya emparejadas, conserva tu carátula y relanzarlo solo rellena los huecos.",
@@ -831,7 +831,7 @@
         "id": "atajos",
         "title": "Vuela con el teclado",
         "body": [
-          "Surco está pensado para ir sin ratón. La paleta de comandos (⌘K) te da todo a un buscador (agrupado por temas, sin distinguir acentos y aprendiendo cuáles usas más), y casi cada acción tiene su atajo: añadir archivos (⌘O), procesar pista (⌘Enter), procesar todas (⌘⇧Enter), analizar calidad (⌘⇧A), auto-emparejar (⌘⇧D), buscar en Discogs (/) y navegar la lista con las flechas.",
+          "Surco está pensado para ir sin ratón. La paleta de comandos (⌘K) te da todo a un buscador (agrupado por temas, sin distinguir acentos y aprendiendo cuáles usas más), y casi cada acción tiene su atajo: añadir archivos (⌘O), convertir pista (⌘Enter), convertir todas (⌘⇧Enter), analizar calidad (⌘⇧A), auto-emparejar (⌘⇧D), buscar en Discogs (/) y navegar la lista con las flechas.",
           "Pulsa ? en cualquier momento para ver la lista completa, y reasigna los que quieras en Ajustes → Atajos. Cada acción enseña su atajo en el propio tooltip, así que se aprenden sobre la marcha."
         ],
         "points": [
