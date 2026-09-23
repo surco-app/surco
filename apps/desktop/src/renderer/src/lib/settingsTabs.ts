@@ -22,17 +22,22 @@ export type SettingsTab =
   | 'tags'
   | 'shortcuts'
 
-// The sidebar order, which its arrow keys walk too: set up the app and its sources, then
-// how you edit, then what comes out and where it goes, then the keyboard.
-export const SETTINGS_TABS: SettingsTab[] = [
-  'general',
-  'search',
-  'editor',
-  'tags',
-  'output',
-  'destination',
-  'shortcuts',
+// The tabs, grouped for the sidebar so twelve entries scan as four short runs instead of
+// one long list. `heading` is an i18n key under settings.tabGroups (null on the opening
+// group, which needs no label). Ordered by workflow within and across groups: set up the
+// app and its sources, then how you edit metadata, then how the file is produced, then the
+// utilities. SETTINGS_TABS below flattens this so the flat order and the grouped order can
+// never drift apart.
+export const SETTINGS_TAB_GROUPS: { heading: string | null; tabs: SettingsTab[] }[] = [
+  { heading: null, tabs: ['general', 'search'] },
+  { heading: 'editing', tabs: ['editor', 'tags'] },
+  { heading: 'output', tabs: ['output', 'destination'] },
+  { heading: 'app', tabs: ['shortcuts'] },
 ]
+
+// The flat tab order, derived from the groups — the roving-tabindex sequence and the
+// deep-link opener both read this, so a tab moved between groups moves here for free.
+export const SETTINGS_TABS: SettingsTab[] = SETTINGS_TAB_GROUPS.flatMap((g) => g.tabs)
 
 export const SETTINGS_TAB_ICONS: Record<SettingsTab, LucideIcon> = {
   general: SlidersHorizontal,
