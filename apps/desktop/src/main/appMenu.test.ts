@@ -50,6 +50,14 @@ describe('appMenuTemplate', () => {
     expect(run.mock.calls.map((c) => c[0])).toEqual(['stats', 'activity', 'palette'])
   })
 
+  // The toolbar gave up the backups icon (its running count read as files going to the
+  // trash), so the View menu has to reach the panel, next to the other "what happened" one.
+  it('opens the backups from the View menu', () => {
+    const { template, run } = build()
+    click(itemFor(menu(template, 'View'), 'Backups'))
+    expect(run).toHaveBeenCalledWith('backups')
+  })
+
   // Analyze quality left the toolbar; it runs on import by default and by hand from here.
   it('analyzes the quality of the list from the Tracks menu', () => {
     const { template, run } = build()

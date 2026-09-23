@@ -314,6 +314,7 @@
     "export": "Export to DJ software",
     "stats": "Stats",
     "activity": "Show activity",
+    "backups": "Open backups",
     "toggleLanguage": "Switch language",
     "toggleTheme": "Switch theme (system / light / dark)",
     "confetti": "Throw confetti 🎉",
