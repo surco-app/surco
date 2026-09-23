@@ -224,7 +224,7 @@ export function CoverPicker({
   const coverActions = (
     // The scrim is decorative and lets pointer events through; only the buttons take
     // them, so the rest of the strip still passes clicks to the zoom/drag image beneath.
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-1 rounded-b-xl bg-gradient-to-t from-black/75 via-black/40 to-transparent px-2 pt-7 pb-2 opacity-0 transition-opacity group-hover:opacity-100">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-1 rounded-b-xl bg-gradient-to-t from-black/75 via-black/40 to-transparent px-2 pt-7 pb-2 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
       {ownCover && (
         <CoverActionButton
           testid="cover-copy"

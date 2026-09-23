@@ -171,6 +171,17 @@ describe('CoverPicker copy/paste', () => {
   })
 })
 
+// The action bar fades in on hover, but its buttons are Tab stops, "Remove" among them:
+// a keyboard user landed on invisible buttons and could delete the artwork without ever
+// seeing what they pressed. Focus inside the well has to reveal the bar as hover does.
+describe('CoverPicker action bar under keyboard focus', () => {
+  it('reveals the bar when one of its buttons takes focus', () => {
+    renderPicker({ coverUrl: 'http://img/cover.jpg' })
+    const bar = screen.getByTestId('cover-remove').parentElement
+    expect(bar?.className).toContain('group-focus-within:opacity-100')
+  })
+})
+
 describe('CoverPicker drag and counter', () => {
   const release = {
     id: 1,

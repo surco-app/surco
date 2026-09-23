@@ -563,10 +563,13 @@ const TrackRow = memo(function TrackRow({
       </button>
       {/* A ▶ overlay over the cover makes play discoverable — double-click and Space are
           the only other ways in, and neither shows itself. A sibling of the row button
-          (not a child) so it stays a valid nested-button-free control, like remove. */}
+          (not a child) so it stays a valid nested-button-free control, like remove.
+          Neither is a Tab stop: they are invisible until hovered, and the row itself
+          already answers Space and Backspace. */}
       <button
         type="button"
         aria-label={tr('player.play')}
+        tabIndex={-1}
         onClick={() => onActivate(t)}
         // No backdrop-blur here: with one of these per row, Chromium promotes every
         // overlay to a render surface even at opacity-0, and dozens of backdrop-filter
@@ -579,6 +582,7 @@ const TrackRow = memo(function TrackRow({
       <button
         type="button"
         aria-label={tr('trackList.remove')}
+        tabIndex={-1}
         onClick={() => onRemove(t.id)}
         // Same rule as the ▶ overlay above: no per-row backdrop-blur inside the scroller.
         className="absolute top-1/2 right-1.5 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-[var(--color-panel-2)]/90 text-fg-dim opacity-0 shadow-md ring-1 ring-[var(--color-line-strong)] transition-opacity pointer-events-none hover:bg-[var(--color-panel-2)] hover:text-fg group-hover:pointer-events-auto group-hover:opacity-100"
