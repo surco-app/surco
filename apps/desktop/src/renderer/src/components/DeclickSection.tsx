@@ -404,6 +404,7 @@ export function DeclickSection({
                     type="button"
                     data-testid="declick-ab"
                     onClick={ab.toggle}
+                    aria-label={tr('declick.abLabel')}
                     aria-pressed={ab.side === 'repaired'}
                     className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs font-medium transition-colors hover:text-fg"
                   >

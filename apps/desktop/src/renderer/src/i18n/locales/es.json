@@ -250,7 +250,7 @@
     "seekValue": "{{current}} de {{total}}",
     "volume": "Volumen",
     "volumeValue": "{{pct}} %",
-    "unmute": "Activar sonido",
+    "mute": "Silenciar",
     "reveal": "Mostrar la pista en reproducción en la lista",
     "close": "Cerrar reproductor"
   },
@@ -674,6 +674,7 @@
     "pause": "Pausar",
     "hearingRepaired": "Escuchando: reparada",
     "hearingOriginal": "Escuchando: original",
+    "abLabel": "Escuchar la versión reparada",
     "abHint": "Alterna entre la pista original y la reparada sin cortar el audio, para que oigas si la reparación ha quitado los clics — y si ha apagado la música.",
     "nextClick": "Siguiente clic",
     "appliesToSelection": "Este ajuste se aplica a las {{count}} pistas seleccionadas.",

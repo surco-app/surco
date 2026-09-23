@@ -382,7 +382,7 @@ export function Player({
           volume={volume}
           onSetVolume={onSetVolume}
           label={t('player.volume')}
-          muteLabel={t('player.unmute')}
+          muteLabel={t('player.mute')}
           valueText={t('player.volumeValue', { pct: Math.round(volume * 100) })}
         />
 
@@ -511,7 +511,7 @@ function VolumeControl({
         type="button"
         data-testid="player-volume-button"
         onClick={() => onSetVolume(muted ? lastAudible.current : 0)}
-        aria-label={muted ? muteLabel : label}
+        aria-label={muteLabel}
         aria-pressed={muted}
         className={`press flex h-5 w-5 shrink-0 items-center justify-center rounded transition-colors ${
           muted
