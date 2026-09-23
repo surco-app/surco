@@ -494,6 +494,11 @@ const TrackRow = memo(function TrackRow({
                   style={{ width: `${STAGE_PROGRESS[t.stage] * 100}%` }}
                 />
               </span>
+              {/* Text, not role="progressbar": an option's children are presentational,
+                  so a nested role would be flattened away and the amount never spoken. */}
+              <span className="sr-only">
+                {tr('trackList.progress', { percent: Math.round(STAGE_PROGRESS[t.stage] * 100) })}
+              </span>
             </span>
           ) : (
             <span className="flex items-center gap-2">

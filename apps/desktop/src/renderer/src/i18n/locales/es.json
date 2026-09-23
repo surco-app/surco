@@ -360,7 +360,8 @@
       "remove": "Quitar de la lista",
       "trash": "Mover a la papelera",
       "trashWin": "Mover a la papelera de reciclaje"
-    }
+    },
+    "progress": "{{percent}} % completado"
   },
   "editor": {
     "searchPlaceholder": "Busca en tus fuentes o pega un ID de release de Discogs…",

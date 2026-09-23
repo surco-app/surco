@@ -360,7 +360,8 @@
       "remove": "Retirer de la liste",
       "trash": "Mettre à la corbeille",
       "trashWin": "Mettre à la corbeille"
-    }
+    },
+    "progress": "{{percent}} % terminé"
   },
   "editor": {
     "searchPlaceholder": "Rechercher dans tes sources ou coller un id de release Discogs…",

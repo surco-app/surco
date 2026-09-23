@@ -360,7 +360,8 @@
       "remove": "Remove from list",
       "trash": "Move to Trash",
       "trashWin": "Move to Recycle Bin"
-    }
+    },
+    "progress": "{{percent}}% complete"
   },
   "editor": {
     "searchPlaceholder": "Search your sources or paste a Discogs release id…",

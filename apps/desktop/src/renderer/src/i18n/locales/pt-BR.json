@@ -360,7 +360,8 @@
       "remove": "Remover da lista",
       "trash": "Mover para a Lixeira",
       "trashWin": "Mover para a Lixeira"
-    }
+    },
+    "progress": "{{percent}}% concluído"
   },
   "editor": {
     "searchPlaceholder": "Busque nas suas fontes ou cole um release id do Discogs…",
