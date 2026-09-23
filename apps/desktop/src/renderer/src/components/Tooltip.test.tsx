@@ -186,3 +186,49 @@ describe('Tooltip', () => {
     expect(screen.queryByRole('tooltip')).toBeNull()
   })
 })
+
+describe('Tooltip semantics', () => {
+  // A role="tooltip" floating in a body portal is unreachable to a screen reader unless the
+  // control points at it: the hint must become the trigger's description while it shows,
+  // and stop being one once it hides, or VoiceOver reads a stale id.
+  it('describes its trigger while visible and stops once hidden', () => {
+    renderTooltip()
+    const trigger = screen.getByTestId('trigger')
+    fireEvent.focusIn(trigger)
+    expect(trigger).toHaveAccessibleDescription('Helpful hint')
+    expect(trigger.getAttribute('aria-describedby')).toBe(screen.getByRole('tooltip').id)
+    fireEvent.focusOut(trigger)
+    expect(trigger).not.toHaveAttribute('aria-describedby')
+  })
+
+  // An icon button often carries the tooltip text as its aria-label too; describing it with
+  // the same words would make VoiceOver say "Close, Close".
+  it('does not describe a trigger whose name already is the tooltip text', () => {
+    render(
+      <button type="button" data-testid="named" aria-label="Close">
+        <Tooltip label="Close" />
+      </button>,
+    )
+    const trigger = screen.getByTestId('named')
+    fireEvent.focusIn(trigger)
+    expect(screen.getByRole('tooltip')).toBeInTheDocument()
+    expect(trigger).not.toHaveAttribute('aria-describedby')
+  })
+
+  // WCAG 1.4.13: a hover-opened hint must be dismissable without moving the pointer, and a
+  // hovering user's focus is usually somewhere else entirely, so Escape works from anywhere.
+  it('dismisses on Escape pressed anywhere while it shows', () => {
+    vi.useFakeTimers()
+    try {
+      renderTooltip()
+      const trigger = screen.getByTestId('trigger')
+      trigger.dispatchEvent(new MouseEvent('pointerenter', { clientX: 10, clientY: 10 }))
+      act(() => vi.advanceTimersByTime(400))
+      expect(screen.getByRole('tooltip')).toBeInTheDocument()
+      fireEvent.keyDown(document.body, { key: 'Escape' })
+      expect(screen.queryByRole('tooltip')).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})

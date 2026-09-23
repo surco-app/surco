@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 // Themed hover tooltip, dropped in as a child of the trigger element. It follows the cursor
@@ -33,6 +33,11 @@ export function Tooltip({
 }): React.JSX.Element {
   const markerRef = useRef<HTMLSpanElement>(null)
   const [pos, setPos] = useState<{ left: number; top: number; transform: string } | null>(null)
+  const id = useId()
+  // The mount effect's own hide, so the document-level Escape below resets the same
+  // closure state the trigger's listeners do instead of only clearing the position.
+  const hideRef = useRef<() => void>(() => setPos(null))
+  const visible = pos !== null
 
   useEffect(() => {
     const trigger = markerRef.current?.parentElement
@@ -141,11 +146,8 @@ export function Tooltip({
       const { x, y } = anchor()
       showAt(x, y)
     }
-    const onKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onLeave()
-    }
+    hideRef.current = onLeave
     trigger.addEventListener('pointerenter', onEnter)
-    trigger.addEventListener('keydown', onKeyDown)
     // An editable trigger opts out of the focus reveal (it would cover the text being
     // typed); the pointer listeners above still give it a normal hover hint.
     if (!hoverOnly) {
@@ -155,7 +157,6 @@ export function Tooltip({
     }
     return () => {
       trigger.removeEventListener('pointerenter', onEnter)
-      trigger.removeEventListener('keydown', onKeyDown)
       trigger.removeEventListener('pointerdown', onPointerDownFocus)
       trigger.removeEventListener('focusin', onFocus)
       trigger.removeEventListener('focusout', onLeave)
@@ -170,11 +171,44 @@ export function Tooltip({
     }
   }, [hoverOnly])
 
+  // While it shows, the hint is the description of the control it belongs to: a portal
+  // tooltip is otherwise unreachable to a screen reader. It goes on the nearest interactive
+  // element (the trigger itself or the button it sits in), and is skipped when that
+  // control's name already says the same words, which VoiceOver would read twice.
+  useEffect(() => {
+    const trigger = markerRef.current?.parentElement
+    if (!visible || !trigger) return
+    const target =
+      trigger.closest<HTMLElement>(
+        'button, a[href], input, select, textarea, [role="button"], [role="option"], [role="menuitem"], [role="tab"]',
+      ) ?? trigger
+    if ((target.getAttribute('aria-label') ?? target.textContent?.trim()) === label) return
+    const before = target.getAttribute('aria-describedby')
+    target.setAttribute('aria-describedby', before ? `${before} ${id}` : id)
+    return () => {
+      if (before) target.setAttribute('aria-describedby', before)
+      else target.removeAttribute('aria-describedby')
+    }
+  }, [visible, id, label])
+
+  // WCAG 1.4.13: Escape dismisses a showing hint wherever the focus is; a hovering user's
+  // focus is rarely on the trigger. Bound only while visible, since the track list mounts
+  // thousands of tooltips and only one is ever up.
+  useEffect(() => {
+    if (!visible) return
+    const onKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') hideRef.current()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [visible])
+
   return (
     <span ref={markerRef} className="hidden" aria-hidden="true">
       {pos &&
         createPortal(
           <span
+            id={id}
             role="tooltip"
             style={{ left: pos.left, top: pos.top, transform: pos.transform, maxWidth: WIDTH }}
             className="animate-overlay pointer-events-none fixed z-50 w-max rounded-md bg-[var(--color-panel-2)] px-2 py-1 text-left text-xs font-normal text-fg shadow-md ring-1 ring-[var(--color-line-strong)]"
