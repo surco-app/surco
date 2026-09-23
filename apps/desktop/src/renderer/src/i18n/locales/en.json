@@ -312,7 +312,8 @@
   "trackList": {
     "label": "Tracks",
     "noArtist": "No artist",
-    "autoMatched": "Auto-matched from Discogs",
+    "autoMatched": "Auto-matched",
+    "autoMatchedFrom": "Auto-matched from {{source}}",
     "matchReview": "Match to confirm",
     "metaReadFailed": "Couldn't read this file's tags — showing file name data only",
     "remove": "Remove",

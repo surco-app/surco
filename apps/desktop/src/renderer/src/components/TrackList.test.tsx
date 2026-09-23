@@ -158,6 +158,22 @@ describe('TrackList', () => {
     expect(screen.queryByTestId('track-automatched')).not.toBeInTheDocument()
   })
 
+  // The sweep falls back from Discogs to Bandcamp and Deezer, so a sparkle claiming
+  // "from Discogs" on a Bandcamp hit sends the user to verify the wrong catalog. A row
+  // restored without its provider must not guess one either.
+  it('names the source that actually auto-matched the row, and none when unknown', () => {
+    renderList([
+      track({ id: 'a', autoMatched: true, matchProvider: 'bandcamp', matchConfidence: 0.96 }),
+      track({ id: 'b', autoMatched: true, matchConfidence: 0.9 }),
+    ])
+    const sparks = screen.getAllByTestId('track-automatched')
+    fireEvent.focusIn(sparks[0])
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Auto-matched from Bandcamp · 96%')
+    fireEvent.focusOut(sparks[0])
+    fireEvent.focusIn(sparks[1])
+    expect(screen.getByRole('tooltip')).toHaveTextContent(/^Auto-matched · 90%$/)
+  })
+
   // The spark is the click the sweep promised: useAutoMatch stores the release so the
   // suggestion can be accepted "in one action (shortcut or click)", but the click never
   // existed — the spark was inert, accept-review ships with no default chord, and the

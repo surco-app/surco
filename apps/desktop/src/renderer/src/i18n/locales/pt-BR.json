@@ -312,7 +312,8 @@
   "trackList": {
     "label": "Faixas",
     "noArtist": "Sem artista",
-    "autoMatched": "Auto-associada do Discogs",
+    "autoMatched": "Auto-associada",
+    "autoMatchedFrom": "Auto-associada do {{source}}",
     "matchReview": "Correspondência a confirmar",
     "metaReadFailed": "Não foi possível ler as tags deste arquivo — mostrando só os dados do nome",
     "remove": "Remover",

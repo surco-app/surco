@@ -471,7 +471,14 @@ const TrackRow = memo(function TrackRow({
                   >
                     <Sparkles className="h-3 w-3" aria-hidden="true" />
                     <Tooltip
-                      label={matchTooltip(tr('trackList.autoMatched'), t.matchConfidence)}
+                      label={matchTooltip(
+                        t.matchProvider
+                          ? tr('trackList.autoMatchedFrom', {
+                              source: tr(`settings.provider.${t.matchProvider}`),
+                            })
+                          : tr('trackList.autoMatched'),
+                        t.matchConfidence,
+                      )}
                       align="end"
                       scope="dot"
                     />

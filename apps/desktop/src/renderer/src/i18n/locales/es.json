@@ -312,7 +312,8 @@
   "trackList": {
     "label": "Pistas",
     "noArtist": "Sin artista",
-    "autoMatched": "Auto-emparejada desde Discogs",
+    "autoMatched": "Auto-emparejada",
+    "autoMatchedFrom": "Auto-emparejada desde {{source}}",
     "matchReview": "Coincidencia por confirmar",
     "metaReadFailed": "No se pudieron leer los metadatos del archivo — se muestra solo el nombre",
     "remove": "Quitar",
