@@ -50,6 +50,17 @@ describe('parseFileName', () => {
     expect(r.query).toBe('4 Strings Day Time (String Remix)')
   })
 
+  // An untagged Bandcamp download searched as "Javier Fig Javier Fig - Fast Food - Slow Kids -
+  // 03 Javier Fig - Fast Food": no catalog field matched it, so every open ran the full
+  // Discogs fallback ladder and the panel sat on its skeleton for seconds.
+  it('searches a Bandcamp download by its artist and bare track title', () => {
+    const r = parseFileName(
+      '/a/Javier Fig - Javier Fig - Fast Food - Slow Kids - 03 Javier Fig - Fast Food.wav',
+    )
+    expect(r.title).toBe('Fast Food')
+    expect(r.query).toBe('Javier Fig Fast Food')
+  })
+
   it('strips the extension and directory from the file name', () => {
     const r = parseFileName('/a/b/Chumi Dj - Open Your Eyes.wav')
     expect(r.fileName).toBe('Chumi Dj - Open Your Eyes')

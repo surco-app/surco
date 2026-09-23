@@ -89,6 +89,41 @@ describe('smartDeriveTags', () => {
     })
   })
 
+  // Bandcamp names every track of a download "Artist - Album - NN Title". Read as plain
+  // "Artist - Title", the album and the number landed in the title, so the precise
+  // artist+title search could never hit and every Bandcamp download ran the whole slow
+  // fallback ladder against Discogs.
+  it('reads the Bandcamp download name "Artist - Album - NN Title"', () => {
+    expect(smartDeriveTags('Kolter - Hot Mess - 02 Hot Mess (Dub).wav')).toEqual({
+      artist: 'Kolter',
+      album: 'Hot Mess',
+      trackNumber: '02',
+      title: 'Hot Mess (Dub)',
+    })
+  })
+
+  it('keeps an album that has its own dashes and drops the artist the title repeats', () => {
+    expect(
+      smartDeriveTags(
+        'Javier Fig - Javier Fig - Fast Food - Slow Kids - 03 Javier Fig - Fast Food.wav',
+      ),
+    ).toEqual({
+      artist: 'Javier Fig',
+      album: 'Javier Fig - Fast Food - Slow Kids',
+      trackNumber: '03',
+      title: 'Fast Food',
+    })
+  })
+
+  // Bandcamp always pads to two digits; anything else after the last dash is part of a
+  // title ("99 Luftballons", "1999"), not a track number.
+  it('does not read a title that starts with a number as a Bandcamp track number', () => {
+    expect(smartDeriveTags('Nena - Live - 1999 Mix.flac')).toEqual({
+      artist: 'Nena',
+      title: 'Live - 1999 Mix',
+    })
+  })
+
   it('returns nothing when no common naming fits', () => {
     expect(smartDeriveTags('noseparator.flac')).toEqual({})
   })

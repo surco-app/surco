@@ -51,10 +51,17 @@ export function deriveTags(fileName: string, pattern: string): Partial<TrackMeta
 // ("104. Artist - Title", "07 - Artist - Title") and a plain "Artist - Title" still works.
 // The digit-only track number means the numbered patterns simply don't match an unnumbered
 // name, letting it fall through to the plain one.
+// Bandcamp's own download naming. Its track number is always two digits, which is what
+// keeps a title that merely starts with a number ("Live - 1999 Mix") on the plain pattern.
+// Labels often upload the title as "Artist - Title" too, so that echo is dropped.
+const BANDCAMP = '{artist} - {album} - {trackNumber} {title}'
+const TWO_DIGITS = /^\d{2}$/
+
 const SMART_PATTERNS = [
   '{trackNumber}. {artist} - {title}',
   '{trackNumber} - {artist} - {title}',
   '{trackNumber} {artist} - {title}',
+  BANDCAMP,
   '{artist} - {title}',
 ]
 
@@ -87,6 +94,12 @@ export function smartDeriveTags(fileName: string): Partial<TrackMetadata> {
     if (Object.keys(tags).length === 0) continue
     if (pattern === BARE_SPACE_NUMBERED && tags.trackNumber && !ZERO_PADDED.test(tags.trackNumber))
       continue
+    if (pattern === BANDCAMP) {
+      if (!tags.trackNumber || !TWO_DIGITS.test(tags.trackNumber)) continue
+      const echo = `${tags.artist} - `
+      if (tags.title?.startsWith(echo) && tags.title.length > echo.length)
+        tags.title = tags.title.slice(echo.length)
+    }
     return tags
   }
   return {}
