@@ -583,7 +583,10 @@ describe('applyPatches', () => {
         '<CUE_V2 NAME="Old1" DISPL_ORDER="0" TYPE="0" START="1000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="0"></CUE_V2>' +
         '<!-- gap --><CUE_V2 NAME="Old2" DISPL_ORDER="0" TYPE="0" START="2000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="1"></CUE_V2>',
     )
-    const tree = buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)])
+    const tree = buildTraktorTree([
+      traktorCue('Drop', 0, 79672.64, 1),
+      traktorCue('Lift', 0, 1500, 0),
+    ])
 
     const out = applyPatches(withSplitCues, [
       { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', cueTree: tree },
@@ -591,7 +594,7 @@ describe('applyPatches', () => {
 
     expect(out).not.toContain('Old1')
     expect(out).not.toContain('Old2')
-    expect(out.match(/<CUE_V2/g)).toHaveLength(1)
+    expect(out.match(/<CUE_V2/g)).toHaveLength(2)
     expect(out).toContain('NAME="Drop"')
   })
 
@@ -623,7 +626,7 @@ describe('applyPatches', () => {
     const selfClosingCue = NML.replace(
       '<LOCATION DIR="/:Musica/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>',
       '<LOCATION DIR="/:Musica/:" FILE="uno.aiff" VOLUME="Macintosh HD"></LOCATION>' +
-        '<CUE_V2 NAME="Old" DISPL_ORDER="0" TYPE="0" START="1000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="0" />',
+        '<CUE_V2 NAME="Old" DISPL_ORDER="0" TYPE="0" START="1000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="1" />',
     )
     const tree = buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)])
 

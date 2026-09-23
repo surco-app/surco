@@ -1646,6 +1646,7 @@ function recordConversionPatch(
   meta: TrackMetadata,
   keptArtwork: boolean,
   clearedExtras: boolean,
+  cueShift: CueShift | undefined,
 ): void {
   // Both have to hold: the toggle is the permission and the path is the address. Checking
   // only the path would keep recording patches for a sync the user has switched off, and
@@ -1669,6 +1670,7 @@ function recordConversionPatch(
       file,
       newFile: sameDir && outputName !== file ? outputName : undefined,
       cueTree: readCueTree(output) ?? undefined,
+      cueShift: cueShift && { shiftMs: cueShift.shiftMs, maxMs: cueShift.maxMs },
       bpm,
       // Traktor reads a library track's stars from the collection, not the file, so
       // writing the POPM byte alone left the DJ looking at the ENTRY's stale RANKING —
@@ -2086,7 +2088,14 @@ export async function convertAudio(
     // Comes after the rename, not before: the patch has to describe the file as
     // it now exists at `output`, and the cue-writing branches above (copyCueFrames,
     // copyCuesToFlac, shiftFlacCues) only ever touched `tmp`.
-    recordConversionPatch(input, output, meta, !removeCover, clearExtras ?? false)
+    recordConversionPatch(
+      input,
+      output,
+      meta,
+      !removeCover,
+      clearExtras ?? false,
+      cueShiftFor(trim, trimAf !== undefined, meta.bpm, input, ext),
+    )
     // rekordbox indexes by path too, and unlike Traktor it stores the whole path in one
     // column, so the entry can follow the file even into another folder. Recorded here
     // for the same reason as the patch above: the file now exists at `output`.
