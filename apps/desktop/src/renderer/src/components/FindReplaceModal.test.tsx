@@ -2,8 +2,8 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import '../i18n'
 import type { TrackMetadata } from '../../../shared/types'
+import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { FindReplaceModal } from './FindReplaceModal'
 
@@ -53,6 +53,24 @@ describe('FindReplaceModal a11y', () => {
   it('exposes an accessible name on the dialog', () => {
     renderModal([track('1', { title: 'x' })])
     expect(screen.getByRole('dialog')).toHaveAccessibleName()
+  })
+
+  // The preview is the only feedback while typing a pattern: without a live region a screen
+  // reader user types blind, never hearing "no matches" or how many tracks would change.
+  it('announces the preview as it updates', () => {
+    renderModal([track('a', { title: 'Original Mix' })])
+    expect(screen.getByTestId('find-replace-preview')).toHaveAttribute('aria-live', 'polite')
+  })
+
+  // The red border says "this pattern is broken" only to sighted users; the field itself
+  // must be invalid and carry the reason, so focusing it reads the error out.
+  it('ties the invalid regex message to the find field', () => {
+    renderModal([track('a', { title: 'anything' })])
+    fireEvent.click(screen.getByTestId('find-replace-regex'))
+    type('find-replace-find', '(')
+    const field = screen.getByTestId('find-replace-find')
+    expect(field).toHaveAttribute('aria-invalid', 'true')
+    expect(field).toHaveAccessibleDescription(i18n.t('findReplace.invalidRegex'))
   })
 
   // Enter in the find/replace fields submits the form rather than doing nothing.

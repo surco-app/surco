@@ -175,6 +175,9 @@ export function FindReplaceModal({
               value={find}
               onChange={(e) => setFind(e.target.value)}
               aria-invalid={badRegex}
+              // The error below is the reason the field is invalid; tying it here makes the
+              // field read it out on focus instead of leaving it to the red border.
+              aria-describedby={badRegex ? 'find-replace-error' : undefined}
               spellCheck={false}
               className={`min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none ${
                 regex ? 'pr-1 pl-1.5 font-mono' : ''
@@ -206,9 +209,17 @@ export function FindReplaceModal({
         </label>
       </div>
 
-      <div className="mt-3 min-h-[3rem] text-xs" data-testid="find-replace-preview">
+      {/* Live, so typing a pattern is heard as well as seen: the count, "no matches" and
+          the invalid-regex error are the only feedback before applying. */}
+      <div
+        className="mt-3 min-h-[3rem] text-xs"
+        data-testid="find-replace-preview"
+        aria-live="polite"
+      >
         {badRegex ? (
-          <p className="text-danger">{tr('findReplace.invalidRegex')}</p>
+          <p id="find-replace-error" className="text-danger">
+            {tr('findReplace.invalidRegex')}
+          </p>
         ) : !find ? (
           <p className="text-fg-faint">{tr('findReplace.hint')}</p>
         ) : patches.length === 0 ? (
