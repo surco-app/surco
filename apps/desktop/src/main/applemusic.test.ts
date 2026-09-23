@@ -398,20 +398,26 @@ describe('shouldAddToAppleMusic', () => {
 
 describe('isAppleMusicOnly', () => {
   it('is true only when the track is added to Apple Music and the user opted out of keeping a copy', () => {
-    expect(isAppleMusicOnly(true, false, 'darwin', 'aiff', false)).toBe(true)
+    expect(isAppleMusicOnly(true, false, false, 'darwin', 'aiff', false)).toBe(true)
     // Keeping the copy ("both") writes to the output folder as usual.
-    expect(isAppleMusicOnly(true, true, 'darwin', 'aiff', false)).toBe(false)
+    expect(isAppleMusicOnly(true, true, false, 'darwin', 'aiff', false)).toBe(false)
   })
 
   it('keeps the copy when nothing is added to Apple Music, so a conversion never ends with no file at all', () => {
     // Setting off, non-macOS, and FLAC each mean no Apple Music add — the output
     // folder is then the only place the file lives, so it must be kept.
-    expect(isAppleMusicOnly(false, false, 'darwin', 'aiff', false)).toBe(false)
-    expect(isAppleMusicOnly(true, false, 'win32', 'aiff', false)).toBe(false)
-    expect(isAppleMusicOnly(true, false, 'darwin', 'flac', false)).toBe(false)
+    expect(isAppleMusicOnly(false, false, false, 'darwin', 'aiff', false)).toBe(false)
+    expect(isAppleMusicOnly(true, false, false, 'win32', 'aiff', false)).toBe(false)
+    expect(isAppleMusicOnly(true, false, false, 'darwin', 'flac', false)).toBe(false)
+  })
+
+  // Engine DJ's library references the output copy, so dropping it would leave that
+  // library pointing at a file that is gone.
+  it('keeps the copy when Engine DJ registers the conversion', () => {
+    expect(isAppleMusicOnly(true, false, true, 'darwin', 'aiff', false)).toBe(false)
   })
 
   it('never drops an in-place rewrite, which edits the user’s own source file rather than a fresh copy', () => {
-    expect(isAppleMusicOnly(true, false, 'darwin', 'aiff', true)).toBe(false)
+    expect(isAppleMusicOnly(true, false, false, 'darwin', 'aiff', true)).toBe(false)
   })
 })
