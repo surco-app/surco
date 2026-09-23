@@ -250,9 +250,15 @@ export async function runProcessTrack(
       // run claimed and has not written yet, so there is nothing there to replace.
       // Overwriting it would aim both jobs at one destination and the second rename
       // would land on the first — a track silently lost from a run that still counts
-      // it converted. Step aside the way keep-both does; the file the user meant to
-      // overwrite (if any) is still overwritten by whichever job owns that path.
-      else if (choice === 'overwrite' && !deps.existsSync(outputPath)) {
+      // it converted. The same holds when the file IS on disk but a sibling job already
+      // claimed it: that job overwrites it, and a second overwrite would land on the
+      // first. Step aside the way keep-both does; the file the user meant to overwrite
+      // (if any) is still overwritten by whichever job owns that path. Read after the
+      // prompt, since a sibling may have claimed the path while this one waited on it.
+      else if (
+        choice === 'overwrite' &&
+        (!deps.existsSync(outputPath) || deps.isPathReserved(outputPath))
+      ) {
         target = uniqueOutputPath(outputPath, (p) => deps.existsSync(p) || deps.isPathReserved(p))
         inPlace = false
       }
