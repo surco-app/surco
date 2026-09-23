@@ -349,7 +349,8 @@ export const Toolbar = memo(function Toolbar({
           data-testid="open-palette"
           onClick={onPalette}
           className="press flex h-8 items-center gap-1 rounded-lg px-2.5 text-[11px] font-medium text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
-          aria-label={tr('header.palette')}
+          // Starts with the keys it shows, so voice control finds it by what is on screen.
+          aria-label={`${isMac ? '⌘K' : 'Ctrl K'} ${tr('header.palette')}`}
         >
           <kbd className="font-sans">{isMac ? '⌘' : 'Ctrl'}</kbd>
           <kbd className="font-sans">K</kbd>
