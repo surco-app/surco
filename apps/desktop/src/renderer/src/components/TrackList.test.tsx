@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // TrackContextMenu reads window.api at render; install a stub before importing it.
@@ -877,6 +877,26 @@ describe('TrackList keyboard selection', () => {
     expect(onSelect).toHaveBeenCalledWith('b', { meta: true })
     fireEvent.keyDown(rows[1], { key: ' ', ctrlKey: true })
     expect(onSelect).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('TrackList error badge', () => {
+  // A failed conversion and unapplied changes were the same hollow ring told apart only by
+  // red versus amber, which a colour-blind user cannot separate. The error has to carry a
+  // glyph of its own, and the pending ring must stay a plain ring.
+  it('marks a failed conversion with an alert glyph, not just a red ring', () => {
+    const edited = track({ id: 'b', status: 'done', meta: { title: 'New title' } })
+    renderList([
+      track({ id: 'a', status: 'error' }),
+      {
+        ...edited,
+        processedSignature: trackSignature({ ...edited, meta: { ...edited.meta, title: 'Old' } }),
+      },
+    ])
+    const [error, stale] = screen.getAllByTestId('track-status-badge')
+    expect(error).toHaveAttribute('data-tone', 'danger')
+    expect(within(error).getByTestId('track-status-error-glyph')).toBeInTheDocument()
+    expect(within(stale).queryByTestId('track-status-error-glyph')).not.toBeInTheDocument()
   })
 })
 
