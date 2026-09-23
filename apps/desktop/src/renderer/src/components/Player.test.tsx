@@ -443,6 +443,19 @@ describe('Player', () => {
     renderUI(<Player {...props({ volume: 0 })} />)
     expect(screen.getByTestId('player-volume-button')).toHaveAttribute('aria-pressed', 'true')
   })
+
+  // The speaker was called "Volume" when live and "Unmute" when muted, on top of
+  // aria-pressed: a muted speaker read "Unmute, pressed", which says the state twice and
+  // contradicts itself. One name for the toggle, the state in aria-pressed alone.
+  it('keeps one name on the mute toggle in both states', () => {
+    const { rerender } = renderUI(<Player {...props({ volume: 0.8 })} />)
+    const speaker = screen.getByTestId('player-volume-button')
+    expect(speaker).toHaveAccessibleName('Mute')
+    expect(speaker).toHaveAttribute('aria-pressed', 'false')
+    rerender(<Player {...props({ volume: 0 })} />)
+    expect(speaker).toHaveAccessibleName('Mute')
+    expect(speaker).toHaveAttribute('aria-pressed', 'true')
+  })
 })
 
 describe('LivePlayer', () => {

@@ -250,7 +250,7 @@
     "seekValue": "{{current}} sur {{total}}",
     "volume": "Volume",
     "volumeValue": "{{pct}} %",
-    "unmute": "Réactiver le son",
+    "mute": "Couper le son",
     "reveal": "Afficher le morceau en cours dans la liste",
     "close": "Fermer le lecteur"
   },
@@ -674,6 +674,7 @@
     "pause": "Pause",
     "hearingRepaired": "Écoute : réparé",
     "hearingOriginal": "Écoute : original",
+    "abLabel": "Écouter la version réparée",
     "abHint": "Bascule entre l’original et la version réparée sans couper le son : vous entendez si la réparation a supprimé les clics — et si elle a terni la musique.",
     "nextClick": "Clic suivant",
     "appliesToSelection": "Ce réglage s’applique aux {{count}} morceaux sélectionnés.",
