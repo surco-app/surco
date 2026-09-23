@@ -33,6 +33,7 @@ export const ERROR_KEYS = [
   'bandcampUrlBlocked',
   'deezerUnavailable',
   'discogsUnavailable',
+  'pathNotAllowed',
 ] as const
 
 export type ErrorKey = (typeof ERROR_KEYS)[number]
