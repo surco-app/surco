@@ -147,24 +147,33 @@ describe('Toolbar', () => {
     expect(props.onCancelImport).toHaveBeenCalledOnce()
   })
 
-  // The other three counters were visible-only: without sight, a 500-track run is
-  // silence between the click and the final toast. Each live counter is a named status
-  // region — the exact pattern the import pill already had — so a screen reader hears
-  // the sweep advance.
-  it('announces the batch, auto-match and analyze progress as status regions', () => {
+  // The counters were visible-only: without sight, a 500-track run is silence between the
+  // click and the final toast. Each sweep speaks its count through a status region. The
+  // regions sit outside the buttons (a button flattens what it holds into its own name,
+  // which here is the cancel action) and are mounted empty from the start: a live region
+  // born together with its text is often never announced.
+  it('announces every sweep through persistent status regions outside the buttons', () => {
+    const regions = (): HTMLElement[] => screen.getAllByRole('status')
+    renderBar()
+    expect(regions()).toHaveLength(4)
+    for (const region of regions()) {
+      expect(region).toBeEmptyDOMElement()
+      expect(region.closest('button')).toBeNull()
+    }
+    cleanup()
     renderBar({
       batching: true,
       batchProgress: { done: 3, total: 12 },
+      importing: { done: 5, total: 9 },
       matching: { done: 1, total: 4 },
       analysis: { done: 2, total: 10 },
     })
-    for (const name of [
+    expect(regions().map((r) => r.textContent)).toEqual([
       i18n.t('header.convertingCount', { done: 3, total: 12 }),
+      i18n.t('header.importingCount', { done: 5, total: 9 }),
       i18n.t('header.autoMatchingCount', { done: 1, total: 4 }),
       i18n.t('header.analyzingCount', { done: 2, total: 10 }),
-    ]) {
-      expect(screen.getByRole('status', { name })).toBeInTheDocument()
-    }
+    ])
   })
 
   // Converting the whole list is what Surco is for, and it had no button anywhere: only a
@@ -208,7 +217,7 @@ describe('Toolbar', () => {
   it('announces how far the run has got, once', () => {
     renderBar({ batching: true, batchProgress: { done: 12, total: 40 } })
     const name = i18n.t('header.convertingCount', { done: 12, total: 40 })
-    expect(screen.getAllByRole('status', { name })).toHaveLength(1)
+    expect(screen.getAllByRole('status').filter((r) => r.textContent === name)).toHaveLength(1)
   })
 
   // Nothing eligible (every track converted, or a run already going) leaves the button

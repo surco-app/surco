@@ -119,6 +119,31 @@ export const Toolbar = memo(function Toolbar({
       className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-20"
       style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
+      {/* The sweeps' counters, spoken. Outside the buttons because a button flattens what
+          it holds into its own name (the cancel action), and always mounted, empty while
+          idle, because a live region born together with its text is often never read. */}
+      <div className="sr-only">
+        <span role="status">
+          {batching
+            ? tr('header.convertingCount', { done: batchProgress.done, total: batchProgress.total })
+            : ''}
+        </span>
+        <span role="status">
+          {importing
+            ? tr('header.importingCount', { done: importing.done, total: importing.total })
+            : ''}
+        </span>
+        <span role="status">
+          {matching
+            ? tr('header.autoMatchingCount', { done: matching.done, total: matching.total })
+            : ''}
+        </span>
+        <span role="status">
+          {analysis
+            ? tr('header.analyzingCount', { done: analysis.done, total: analysis.total })
+            : ''}
+        </span>
+      </div>
       {trackCount > 0 ? (
         // Converting the list is the app's whole point, so it leads the header whenever
         // there is a list, one track included, so the button never comes and goes.
@@ -147,16 +172,9 @@ export const Toolbar = memo(function Toolbar({
             {batching ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                {/* The digits alone are silent to a screen reader, and the button's own
-                    name is the cancel action — so the count needs its own status region. */}
-                <span
-                  role="status"
-                  aria-label={tr('header.convertingCount', {
-                    done: batchProgress.done,
-                    total: batchProgress.total,
-                  })}
-                  className="tabular-nums"
-                >
+                {/* Spoken by the status regions at the top of the header, not here: the
+                    button's own name is the cancel action. */}
+                <span className="tabular-nums">
                   {tr('header.convertingCount', {
                     done: batchProgress.done,
                     total: batchProgress.total,
@@ -233,15 +251,7 @@ export const Toolbar = memo(function Toolbar({
                 glyph already; this is the import's, echoing the Add files button it
                 follows from. */}
             <FilePlus className="h-4 w-4" aria-hidden="true" />
-            {/* A status region like the batch pill's: the visible counter alone is silent
-                to a screen reader, and the button's own name is the cancel action. */}
-            <span
-              role="status"
-              aria-label={tr('header.importingCount', {
-                done: importing.done,
-                total: importing.total,
-              })}
-            >
+            <span>
               {tr('header.importingCount', { done: importing.done, total: importing.total })}
             </span>
             <Tooltip label={tr('header.cancelImport')} align="end" />
@@ -280,15 +290,7 @@ export const Toolbar = memo(function Toolbar({
                 aria-hidden="true"
               />
               {matching && (
-                <span
-                  data-testid="auto-match-progress"
-                  role="status"
-                  aria-label={tr('header.autoMatchingCount', {
-                    done: matching.done,
-                    total: matching.total,
-                  })}
-                  className="text-xs tabular-nums"
-                >
+                <span data-testid="auto-match-progress" className="text-xs tabular-nums">
                   {matching.done}/{matching.total}
                 </span>
               )}
@@ -325,15 +327,7 @@ export const Toolbar = memo(function Toolbar({
                 aria-hidden="true"
               />
               {analysis && (
-                <span
-                  data-testid="analyze-progress"
-                  role="status"
-                  aria-label={tr('header.analyzingCount', {
-                    done: analysis.done,
-                    total: analysis.total,
-                  })}
-                  className="text-xs tabular-nums"
-                >
+                <span data-testid="analyze-progress" className="text-xs tabular-nums">
                   {analysis.done}/{analysis.total}
                 </span>
               )}
