@@ -1834,6 +1834,7 @@ export default function App(): React.JSX.Element {
             <div className="flex min-h-0 flex-1">
               <aside
                 data-testid="sidebar"
+                aria-label={tr('common.trackList')}
                 // The drag answers here because this is the column the tracks land in. The
                 // styling hangs off a data attribute rather than a class so the drop state
                 // is readable in the DOM (and in tests) as state, not as styling.

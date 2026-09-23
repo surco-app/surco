@@ -1,5 +1,6 @@
 {
   "common": {
+    "trackList": "Pistes",
     "cancel": "Annuler",
     "save": "Enregistrer",
     "change": "Changer",

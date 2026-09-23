@@ -329,6 +329,15 @@ describe('App sidebar clipping', () => {
     await renderApp()
     expect(screen.getByTestId('sidebar').className).toContain('overflow-hidden')
   })
+
+  // VoiceOver's landmark rotor listed the column as a bare "complementary", with nothing to
+  // tell it apart; its name is what lets a screen reader user jump straight to the tracks.
+  it('names the sidebar landmark', async () => {
+    await renderApp()
+    expect(screen.getByRole('complementary', { name: i18n.t('common.trackList') })).toBe(
+      screen.getByTestId('sidebar'),
+    )
+  })
 })
 
 describe('App sidebar divider', () => {
