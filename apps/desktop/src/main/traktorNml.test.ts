@@ -370,6 +370,88 @@ describe('identity of a converted file that coexists with its source', () => {
   })
 })
 
+// A conversion to another folder, or beside a source that stays, leaves the source's
+// audio exactly as it was, so the cues Traktor keeps for it are still right. The tree read
+// back from the converted file has been moved by the trim and the per-format calibration;
+// writing it onto the source's ENTRY shifted the hotcues of a file nobody touched.
+describe('cues of a conversion whose source survives', () => {
+  const SOURCE_CUE =
+    '<CUE_V2 NAME="Old" DISPL_ORDER="0" TYPE="0" START="10000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="0"></CUE_V2>'
+  const shifted = buildTraktorTree([traktorCue('Old', 0, 10051, 0)])
+  const toFolder = {
+    volume: 'HD',
+    dir: '/:M/:',
+    file: 'uno.flac',
+    cueTree: shifted,
+    outputVolume: 'HD',
+    outputDir: '/:Out/:',
+    outputFile: 'uno.mp3',
+  }
+  const onlySource = `<NML VERSION="20"><COLLECTION ENTRIES="1">
+<ENTRY TITLE="Uno"><LOCATION DIR="/:M/:" FILE="uno.flac" VOLUME="HD"></LOCATION>${SOURCE_CUE}</ENTRY>
+</COLLECTION></NML>`
+  const both = `<NML VERSION="20"><COLLECTION ENTRIES="2">
+<ENTRY TITLE="Uno"><LOCATION DIR="/:M/:" FILE="uno.flac" VOLUME="HD"></LOCATION>${SOURCE_CUE}</ENTRY>
+<ENTRY TITLE="Uno"><LOCATION DIR="/:Out/:" FILE="uno.mp3" VOLUME="HD"></LOCATION></ENTRY>
+</COLLECTION></NML>`
+
+  function entryFor(nml: string, file: string): string {
+    const at = nml.indexOf(`FILE="${file}"`)
+    return nml.slice(nml.lastIndexOf('<ENTRY', at), nml.indexOf('</ENTRY>', at))
+  }
+
+  it('keeps the source entry cues when the output went to another folder', () => {
+    const out = applyPatches(onlySource, [toFolder])
+
+    expect(entryFor(out, 'uno.flac')).toContain('START="10000.000000"')
+    expect(out).not.toContain('START="10051.000000"')
+    expect(matchedPatchCount(onlySource, [toFolder])).toBe(0)
+  })
+
+  it('writes the shifted cues onto the converted file entry and not the source', () => {
+    const out = applyPatches(both, [toFolder])
+
+    expect(entryFor(out, 'uno.flac')).toContain('START="10000.000000"')
+    expect(entryFor(out, 'uno.flac')).not.toContain('START="10051.000000"')
+    expect(entryFor(out, 'uno.mp3')).toContain('START="10051.000000"')
+    expect(matchedPatchCount(both, [toFolder])).toBe(1)
+  })
+
+  it('writes the shifted cues onto the converted file entry when the source is not in the collection', () => {
+    const onlyOutput = `<NML VERSION="20"><COLLECTION ENTRIES="1">
+<ENTRY TITLE="Uno"><LOCATION DIR="/:Out/:" FILE="uno.mp3" VOLUME="HD"></LOCATION></ENTRY>
+</COLLECTION></NML>`
+
+    expect(applyPatches(onlyOutput, [toFolder])).toContain('START="10051.000000"')
+  })
+
+  it('keeps the source entry cues when the converted file beside it already has its own entry', () => {
+    const beside = { ...toFolder, outputDir: '/:M/:', newFile: 'uno.mp3' }
+    const besideBoth = both.replace('DIR="/:Out/:"', 'DIR="/:M/:"')
+
+    const out = applyPatches(besideBoth, [beside])
+
+    expect(entryFor(out, 'uno.flac')).toContain('START="10000.000000"')
+    expect(entryFor(out, 'uno.flac')).not.toContain('START="10051.000000"')
+    expect(entryFor(out, 'uno.mp3')).toContain('START="10051.000000"')
+  })
+
+  it('moves the cues with the entry when it follows the converted file', () => {
+    const beside = { ...toFolder, outputDir: '/:M/:', newFile: 'uno.mp3' }
+
+    const out = applyPatches(onlySource, [beside])
+
+    expect(out).toContain('FILE="uno.mp3"')
+    expect(out).toContain('START="10051.000000"')
+  })
+
+  it('rewrites the cues of a file converted over itself', () => {
+    const inPlace = { ...toFolder, outputDir: '/:M/:', outputFile: 'uno.flac' }
+
+    expect(applyPatches(onlySource, [inPlace])).toContain('START="10051.000000"')
+  })
+})
+
 describe('repointing onto a path the collection already has', () => {
   const BOTH = `<NML VERSION="20"><COLLECTION ENTRIES="2">
 <ENTRY TITLE="Open Eyes"><LOCATION DIR="/:M/:" FILE="uno.flac" VOLUME="HD"></LOCATION><INFO BITRATE="1042000" PLAYTIME="369"></INFO></ENTRY>
