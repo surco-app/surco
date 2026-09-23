@@ -1,7 +1,7 @@
-import type { TrackMetadata } from '../../../shared/types'
+import type { MetaTextKey, TrackMetadata } from '../../../shared/types'
 
 interface FieldDef {
-  key: keyof TrackMetadata
+  key: MetaTextKey
   wide?: boolean
 }
 
@@ -51,7 +51,7 @@ type FieldGroupId = 'identity' | 'catalog' | 'dj' | 'order'
 
 interface FieldGroup {
   id: FieldGroupId
-  fields: (keyof TrackMetadata)[]
+  fields: MetaTextKey[]
 }
 
 export const FIELD_GROUPS: FieldGroup[] = [
@@ -86,7 +86,7 @@ export const FIELD_GROUPS: FieldGroup[] = [
 
 // The group a field sits in, or undefined for a key not in any group (a future tag).
 export function groupOfField(key: string): FieldGroupId | undefined {
-  return FIELD_GROUPS.find((g) => g.fields.includes(key as keyof TrackMetadata))?.id
+  return FIELD_GROUPS.find((g) => g.fields.includes(key as MetaTextKey))?.id
 }
 
 // Reorders the shown fields into group order (identity → catalog → dj → order), keeping
@@ -96,7 +96,7 @@ export function groupOfField(key: string): FieldGroupId | undefined {
 export function sortFieldsByGroup(visibleFields: string[]): string[] {
   const order = FIELD_GROUPS.flatMap((g) => g.fields)
   const rank = (key: string): number => {
-    const i = order.indexOf(key as keyof TrackMetadata)
+    const i = order.indexOf(key as MetaTextKey)
     return i === -1 ? order.length : i
   }
   return [...visibleFields]
@@ -115,7 +115,7 @@ export {
 } from '../../../shared/defaults'
 
 export function missingRequired(meta: TrackMetadata, requiredFields: string[]): string[] {
-  return requiredFields.filter((key) => !meta[key as keyof TrackMetadata]?.trim())
+  return requiredFields.filter((key) => !meta[key as MetaTextKey]?.trim())
 }
 
 export function moveItem<T>(arr: T[], index: number, delta: number): T[] {

@@ -1,4 +1,4 @@
-import type { TrackMetadata } from '../../../shared/types'
+import type { MetaTextKey, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { csvHas, splitCsv, toggleCsv } from './csv'
 
@@ -6,7 +6,7 @@ import { csvHas, splitCsv, toggleCsv } from './csv'
 // across a multi-selection is meaningful. Per-track fields (title, trackNumber, bpm,
 // key, comment, remixArtist) are deliberately excluded: applying one value to all
 // would overwrite genuinely different data rather than fill in a shared blank.
-export const BULK_FIELDS: (keyof TrackMetadata)[] = [
+export const BULK_FIELDS: MetaTextKey[] = [
   'artist',
   'albumArtist',
   'album',
@@ -26,7 +26,7 @@ export const BULK_FIELDS: (keyof TrackMetadata)[] = [
 // it is undefined, so an edit only overwrites the field the user actually touches.
 // Optional fields read undefined when unset — folded to '' so a field no track
 // carries shows as a shared blank, not as mixed.
-export function commonValue(tracks: TrackItem[], key: keyof TrackMetadata): string | undefined {
+export function commonValue(tracks: TrackItem[], key: MetaTextKey): string | undefined {
   if (tracks.length === 0) return undefined
   const first = tracks[0].meta[key] ?? ''
   return tracks.every((t) => (t.meta[key] ?? '') === first) ? first : undefined

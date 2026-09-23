@@ -11,7 +11,7 @@ import {
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { TrackMetadata } from '../../../shared/types'
+import type { MetaTextKey } from '../../../shared/types'
 import { FIELD_DEFS, IMPORTABLE_FIELDS, moveItem, sortFieldsByGroup } from '../lib/fields'
 import {
   COLUMN_HEAD,
@@ -78,7 +78,7 @@ export function FieldsEditor({
     // A field no provider fills gets an empty slot of the same width rather than nothing,
     // so Required/Hide stay on one vertical line down the list instead of jumping left on
     // every row without a toggle.
-    if (!IMPORTABLE_FIELDS.includes(key as keyof TrackMetadata)) return <span aria-hidden="true" />
+    if (!IMPORTABLE_FIELDS.includes(key as MetaTextKey)) return <span aria-hidden="true" />
     const on = importFields.includes(key)
     return (
       <button

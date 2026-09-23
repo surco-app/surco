@@ -2,7 +2,7 @@ import { ArrowRight } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { TrackMetadata } from '../../../shared/types'
+import type { MetaTextKey, TrackMetadata } from '../../../shared/types'
 import { findReplaceTrack, isValidRegex } from '../lib/findReplace'
 import type { TrackItem } from '../types'
 import { ModalShell } from './ModalShell'
@@ -56,7 +56,7 @@ export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX
         Object.entries(p.meta).map(([field, after]) => ({
           id: p.id,
           field,
-          before: byId.get(p.id)?.meta[field as keyof TrackMetadata] ?? '',
+          before: byId.get(p.id)?.meta[field as MetaTextKey] ?? '',
           after: after as string,
         })),
       )

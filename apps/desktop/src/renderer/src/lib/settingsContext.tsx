@@ -15,12 +15,12 @@ import type {
   DeclickMode,
   FormatSetting,
   KeyNotation,
+  MetaTextKey,
   NormalizeConfig,
   OutputBitDepth,
   OutputSampleRate,
   SearchProviderId,
   Settings,
-  TrackMetadata,
 } from '../../../shared/types'
 import { seedEditorSections } from '../hooks/useEditorSections'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './fields'
@@ -52,7 +52,7 @@ interface ResolvedSettings {
   genrePresets: string[]
   visibleFields: string[]
   requiredFields: string[]
-  importFields: (keyof TrackMetadata)[]
+  importFields: MetaTextKey[]
   discogsFormats: string[]
   discogsMaxResults: number
   searchProviders: SearchProviderId[]

@@ -1,4 +1,4 @@
-import type { TrackMetadata } from '../../../shared/types'
+import type { MetaTextKey, TrackMetadata } from '../../../shared/types'
 import { FIELD_DEFS } from './fields'
 
 const TOKEN = /\{(\w+)\}/g
@@ -42,7 +42,7 @@ export function deriveTags(fileName: string, pattern: string): Partial<TrackMeta
   const out: Partial<TrackMetadata> = {}
   fields.forEach((field, i) => {
     const value = match[i + 1]?.trim()
-    if (value && META_KEYS.has(field)) out[field as keyof TrackMetadata] = value
+    if (value && META_KEYS.has(field)) out[field as MetaTextKey] = value
   })
   return out
 }

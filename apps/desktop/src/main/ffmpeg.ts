@@ -19,6 +19,7 @@ import type {
   KeyResult,
   LoudnessResult,
   MetaRead,
+  MetaTextKey,
   Mp3Quality,
   NormalizeConfig,
   OutputFormat,
@@ -242,7 +243,7 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
     return ''
   }
   const id3 = ID3_CONTAINER.test(data.format?.format_name ?? '')
-  const meta = {} as Record<keyof TrackMetadata, string>
+  const meta = {} as Record<MetaTextKey, string>
   for (const field of TAG_FIELDS) {
     const raw =
       pick(...field.aliases, ...(id3 ? (field.id3Aliases ?? []) : [])) ||
@@ -400,7 +401,7 @@ const TAGLIB_FILLED_INPUT = /\.(wav|aiff?|m4a)$/i
 function withTagLibExtras(input: string, tags: TrackMetadata): TrackMetadata {
   if (!TAGLIB_FILLED_INPUT.test(input)) return tags
   for (const [field, value] of Object.entries(readTagLibExtras(input))) {
-    const key = field as keyof TrackMetadata
+    const key = field as MetaTextKey
     if (value && !tags[key]?.trim()) tags[key] = value
   }
   return tags

@@ -1,10 +1,10 @@
 import { cleanMatchTitle, stripIgnoredWords } from '../../../shared/searchClean'
 import type {
+  MetaTextKey,
   Release,
   ReleaseTrack,
   SearchProviderId,
   SearchResult,
-  TrackMetadata,
 } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import type { LocalActivityReport } from './activityLog'
@@ -79,7 +79,7 @@ export function matchTargetOf(track: TrackItem, cleanup: MatchCleanup = {}): Tra
 // re-probe. Returns undefined when there's nothing to accept, so the caller stays a no-op.
 export function acceptReviewPatch(
   track: TrackItem,
-  importFields?: readonly (keyof TrackMetadata)[],
+  importFields?: readonly MetaTextKey[],
 ): Partial<TrackItem> | undefined {
   const rm = track.reviewMatch
   if (!rm) return undefined

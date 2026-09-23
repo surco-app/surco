@@ -1,12 +1,12 @@
 import { ratingTagToStars } from '../shared/rating'
-import type { TrackMetadata } from '../shared/types'
+import type { MetaTextKey } from '../shared/types'
 
 // The per-field tag mapping shared by the reader (tagsFromProbe) and the writer
 // (metadataArgs): the ffprobe aliases a field is read from and the muxer name(s) it is
 // written to. Co-locating both directions means adding a metadata field is one entry
 // here instead of an edit to two functions that silently drift.
 export interface TagField {
-  key: keyof TrackMetadata
+  key: MetaTextKey
   // ffprobe tag keys to read from, lowercased, in priority order (first non-empty wins).
   aliases: string[]
   // Aliases that mean this field only on an ID3 container (MP3/AIFF/WAV): read from an
@@ -31,7 +31,7 @@ export interface TagField {
   totalFrom?: string[]
   // For a number field: the total field written after a slash on ID3 and MP4 ("3/12"),
   // the only place those containers have for it. Vorbis writes the total on its own.
-  withTotal?: keyof TrackMetadata
+  withTotal?: MetaTextKey
   // Normalizes the raw probed string into the stored value: dropping a "3/12" track total,
   // the compilation flag, the rating stars. Identity when omitted.
   parse?: (raw: string) => string

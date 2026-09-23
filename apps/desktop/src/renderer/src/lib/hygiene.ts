@@ -1,4 +1,4 @@
-import type { TrackMetadata } from '../../../shared/types'
+import type { MetaTextKey, TrackMetadata } from '../../../shared/types'
 
 // Track numbering a rip glues to the front of the title: an optional vinyl side letter, the
 // number, and a separator. Bare "1 Shake It" is deliberately not matched — "7 Seconds" and
@@ -73,7 +73,7 @@ interface HygieneOptions {
 export function sanitizeMeta(meta: TrackMetadata, opts: HygieneOptions): TrackMetadata {
   const clean = { ...meta }
   if (opts.trim) {
-    for (const key of Object.keys(clean) as (keyof TrackMetadata)[]) {
+    for (const key of Object.keys(clean) as MetaTextKey[]) {
       const value = clean[key]
       // Optional fields (e.g. discogsReleaseId) may be absent; only clean strings.
       if (typeof value === 'string') clean[key] = value.replace(/\s+/g, ' ').trim()
