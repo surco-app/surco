@@ -623,7 +623,6 @@
     "searching": "Buscando…",
     "resultsCount_one": "{{count}} resultado",
     "resultsCount_other": "{{count}} resultados",
-    "searchingProvider": "Buscando en {{provider}}…",
     "suggestedStatus": "Sugerido: {{title}}"
   },
   "fields": {
