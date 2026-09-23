@@ -80,7 +80,8 @@
       "silence": "Silence à rogner",
       "clipping": "Clipping",
       "trashSuspects_one": "Mettre le fichier douteux à la corbeille",
-      "trashSuspects_other": "Mettre les {{count}} fichiers douteux à la corbeille"
+      "trashSuspects_other": "Mettre les {{count}} fichiers douteux à la corbeille",
+      "current": "Filtre : {{filter}} {{count}}"
     },
     "search": {
       "placeholder": "Rechercher des morceaux",

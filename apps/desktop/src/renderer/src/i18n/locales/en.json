@@ -80,7 +80,8 @@
       "silence": "Silence to trim",
       "clipping": "Clipping",
       "trashSuspects_one": "Move the doubtful file to Trash",
-      "trashSuspects_other": "Move the {{count}} doubtful files to Trash"
+      "trashSuspects_other": "Move the {{count}} doubtful files to Trash",
+      "current": "Filter: {{filter}} {{count}}"
     },
     "search": {
       "placeholder": "Search tracks",

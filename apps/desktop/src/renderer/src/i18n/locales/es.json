@@ -80,7 +80,8 @@
       "silence": "Silencio por recortar",
       "clipping": "Clipping",
       "trashSuspects_one": "Mover el archivo dudoso a la papelera",
-      "trashSuspects_other": "Mover los {{count}} archivos dudosos a la papelera"
+      "trashSuspects_other": "Mover los {{count}} archivos dudosos a la papelera",
+      "current": "Filtro: {{filter}} {{count}}"
     },
     "search": {
       "placeholder": "Buscar pistas",
