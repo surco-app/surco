@@ -666,6 +666,24 @@ describe('verdict evidence', () => {
     )
   })
 
+  // The pill says the file is fine, and the line under it says why: the cut is what the
+  // format does. An amber edge beside a green pill read as a warning the DJ had to act on.
+  it('frames a lossy-container cut as a neutral fact beside the green pill', async () => {
+    renderSection(
+      {
+        image: '',
+        cutoffHz: 16000,
+        sampleRateHz: 44100,
+        processed: false,
+        hasKnee: true,
+        fineStepDb: 30.6,
+      },
+      '/m/a.mp3',
+    )
+    expect(await screen.findByTestId('quality-evidence')).toHaveAttribute('data-tone', 'neutral')
+    expect(screen.getByTestId('quality-badge')).toHaveAttribute('data-tone', 'good')
+  })
+
   it('keeps the measured claim when hints are off', async () => {
     renderSection(
       {

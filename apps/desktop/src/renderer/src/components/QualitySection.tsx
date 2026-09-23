@@ -220,7 +220,7 @@ export function QualitySection({
     if (lossyCut)
       return {
         key: 'editor.qualityEvidenceLossy',
-        tone: 'warn' as const,
+        tone: 'neutral' as const,
         params: { cutoff },
       }
     // A knee at or past the good line still reads good but its step is a wall,
