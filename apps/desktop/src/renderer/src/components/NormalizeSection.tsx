@@ -8,8 +8,6 @@ import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 
 import type { TrackItem } from '../types'
-import { LoudnessReadout } from './LoudnessReadout'
-import { LoudnessSkeleton } from './LoudnessSkeleton'
 import { NormalizeControls } from './NormalizeControls'
 import { NormalizePlan } from './NormalizePlan'
 import { SectionBody } from './SectionBody'
@@ -31,8 +29,6 @@ interface Props {
   format: OutputFormat
   showHints?: boolean
   onHideHints?: () => void
-  showLoudness?: boolean
-  onShowLoudnessHelp?: () => void
 }
 
 // The per-track normalization override, with what it will do stated on the header so
@@ -47,12 +43,10 @@ export function NormalizeSection({
   format,
   showHints = true,
   onHideHints,
-  showLoudness = false,
-  onShowLoudnessHelp = () => {},
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // The waveform is the one full-length decode, so it waits for the selection to
-  // rest before analyzing — same pacing as the loudness pass below.
+  // rest before analyzing — same pacing as the quality section's loudness pass.
   const settled = useSettled(SELECTION_SETTLE_MS)
   // The before/after pair proves what these controls did, so it lives under them —
   // but only once there IS an after, never for an in-place export (the rewritten
@@ -84,14 +78,12 @@ export function NormalizeSection({
   // conversion just finished (not on mount — flipping back to a done track must not
   // yank the view), scroll it into view or most users never see it. Same reveal
   // pattern as NormalizeControls' mode switch.
-  // The plan card and the loudness table read the same measurement the waveform legend
-  // uses (one shared query, so no second decode) and only for a single selected track:
-  // in multi the anchor's figures would masquerade as the batch's. The table measures
-  // only while the section is open, so a folded section never pays for the pass.
-  const showReadout = !isMulti && showLoudness && open
+  // The plan card reads the same measurement the waveform legend uses (one shared
+  // query, so no second decode) and only for a single selected track: in multi the
+  // anchor's figures would masquerade as the batch's.
   const { data: planLoudness } = useTrackLoudness(
     item.inputPath,
-    settled && !isMulti && ((showHints && value.mode !== 'none') || showReadout),
+    settled && !isMulti && showHints && value.mode !== 'none',
   )
   const compareRef = useRef<HTMLDivElement>(null)
   const mounted = useRef(false)
@@ -139,23 +131,6 @@ export function NormalizeSection({
               {tr('normalize.appliesToSelection', { count: selectedCount })}
             </p>
           )}
-          {showReadout &&
-            (planLoudness ? (
-              <div className="mb-4">
-                <LoudnessReadout
-                  loudness={planLoudness}
-                  normalize={value}
-                  onShowHelp={onShowLoudnessHelp}
-                />
-              </div>
-            ) : (
-              settled &&
-              planLoudness === undefined && (
-                <div className="mb-4">
-                  <LoudnessSkeleton />
-                </div>
-              )
-            ))}
           {/* The cue warning renders once, below the wave: inline it sat between the
               dials and the preview, right where the eye travels while tuning. */}
           <NormalizeControls

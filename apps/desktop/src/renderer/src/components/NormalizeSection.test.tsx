@@ -281,7 +281,7 @@ describe('NormalizeSection layout', () => {
 // typographically identical to the target summary beside it (same template, same units,
 // same tabular-nums), so the header printed one figure twice with nothing saying which was
 // which — and it took 164px of a 241px header, truncating the target to "No…". The figure
-// is not lost: the estimate below opens with it, and the loudness table grades it by colour.
+// is not lost: the estimate below opens with it, and Quality grades it by colour.
 describe('NormalizeSection measured figures', () => {
   it('opens the estimate with the source measurement instead of a header pill', async () => {
     renderSection(
@@ -455,92 +455,5 @@ describe('NormalizeSection plan limiter reassurance', () => {
     const plan = await screen.findByTestId('normalize-plan')
     expect(plan.textContent).toContain('by 5.0 dB')
     expect(plan.textContent).toContain('less punch')
-  })
-})
-
-// The loudness table used to sit under the spectrogram in Quality, where nothing acted on
-// it. Its figures are the ones this section's dials move, so they live here, above the
-// controls, measured once by the same query the plan card already reads.
-describe('NormalizeSection loudness readout', () => {
-  const measured = {
-    integratedLufs: -16.3,
-    truePeakDb: -3.3,
-    lra: 6.8,
-    channelBalanceDb: 0.3,
-    dcOffset: 0.001,
-    crestDb: 17.3,
-    noiseFloorDb: -60,
-  }
-
-  function renderReadout(
-    over: { showLoudness?: boolean; selectedCount?: number; value?: NormalizeConfig } = {},
-  ): { loudness: ReturnType<typeof vi.fn>; onShowLoudnessHelp: ReturnType<typeof vi.fn> } {
-    const loudness = vi.fn().mockResolvedValue(measured)
-    const onShowLoudnessHelp = vi.fn()
-    ;(window as unknown as { api: unknown }).api = {
-      waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], rms: [0.2, 0.4], durationSec: 10 }),
-      loudness,
-    }
-    render(
-      <QueryClientProvider client={createQueryClient()}>
-        <NormalizeSection
-          value={over.value ?? { ...cfg, mode: 'loudness' }}
-          open
-          onToggle={vi.fn()}
-          onChange={vi.fn()}
-          item={track()}
-          selectedCount={over.selectedCount ?? 1}
-          format="aiff"
-          showLoudness={over.showLoudness ?? true}
-          onShowLoudnessHelp={onShowLoudnessHelp}
-        />
-      </QueryClientProvider>,
-    )
-    return { loudness, onShowLoudnessHelp }
-  }
-
-  it('shows the measured table above the dials, measured once for table and plan', async () => {
-    const { loudness } = renderReadout()
-    const readout = await screen.findByTestId('loudness-readout', undefined, { timeout: 3000 })
-    const controls = screen.getByTestId('normalize-mode-none')
-    expect(
-      readout.compareDocumentPosition(controls) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
-    await screen.findByTestId('normalize-plan')
-    expect(loudness).toHaveBeenCalledTimes(1)
-  })
-
-  it('keeps predicting where each figure lands after converting', async () => {
-    renderReadout()
-    expect(
-      await screen.findByTestId('loudness-after-header', undefined, { timeout: 3000 }),
-    ).toBeInTheDocument()
-  })
-
-  it('opens the metrics help from the readout', async () => {
-    const { onShowLoudnessHelp } = renderReadout()
-    fireEvent.click(await screen.findByTestId('loudness-help-toggle', undefined, { timeout: 3000 }))
-    expect(onShowLoudnessHelp).toHaveBeenCalled()
-  })
-
-  it('measures with normalization off, since the table is the reason to turn it on', async () => {
-    renderReadout({ value: cfg })
-    expect(
-      await screen.findByTestId('loudness-readout', undefined, { timeout: 3000 }),
-    ).toBeInTheDocument()
-  })
-
-  it('honours the loudness setting being off', async () => {
-    renderReadout({ showLoudness: false, value: cfg })
-    await screen.findByTestId('waveform-solo')
-    await new Promise((r) => setTimeout(r, 500))
-    expect(screen.queryByTestId('loudness-readout')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('loudness-skeleton')).not.toBeInTheDocument()
-  })
-
-  it('shows no table in multi-select, where the anchor is not the batch', async () => {
-    renderReadout({ selectedCount: 3 })
-    await new Promise((r) => setTimeout(r, 500))
-    expect(screen.queryByTestId('loudness-readout')).not.toBeInTheDocument()
   })
 })
