@@ -2,16 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { buildTraktorTree, traktorCue } from './traktor4Fixture'
 import { applyPatches } from './traktorNml'
 
-// replaceCues borra TODOS los CUE_V2 de la ENTRY con un replace global y luego
-// inserta cuesToXml(tree). El único elemento que rescata es la rejilla, y sólo
-// cuando cuesToXml la ha tirado por falta de bpm (droppedGrid). Cualquier otro
-// CUE_V2 que la ENTRY tuviera y que el árbol binario NO traiga desaparece.
-//
-// Los tests que ya existen no lo ven porque siempre construyen el árbol con los
-// mismos marcadores que el fixture del NML ya tiene: el borrado global y la
-// reinserción producen el mismo texto. En cuanto el fichero y el NML difieren
-// (el caso real: el DJ puso cues en Traktor y Surco lee el árbol que había en el
-// fichero cuando lo convirtió), el NML pierde los que sólo estaban en el NML.
+// replaceCues borraba TODOS los CUE_V2 de la ENTRY con un replace global y luego
+// insertaba cuesToXml(tree), así que cualquier CUE_V2 que la ENTRY tuviera y que el
+// árbol binario NO trajera desaparecía. Los tests vecinos no lo veían porque siempre
+// construyen el árbol con los mismos marcadores que el fixture del NML ya tiene. En
+// cuanto el fichero y el NML difieren (el caso real: el DJ puso cues en Traktor y
+// Surco lee el árbol que había en el fichero cuando lo convirtió), el NML perdía los
+// que sólo estaban en el NML.
 const ENTRY_WITH_EXTRA_CUES = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <NML VERSION="19">
 <COLLECTION ENTRIES="1">
@@ -28,27 +25,12 @@ const ENTRY_WITH_EXTRA_CUES = `<?xml version="1.0" encoding="UTF-8" standalone="
 </NML>`
 
 describe('el parche de cues del NML frente a la colección real', () => {
-  // CONFLICTO DE CONTRATO, no un bug suelto. Los dos tests vecinos de
-  // traktorNml.test.ts ('replaces every CUE_V2 even when they are not one contiguous
-  // run' y 'removes an old self-closing CUE_V2 instead of leaving a duplicate')
-  // fijan a propósito lo contrario: el fichero es la verdad y el juego de CUE_V2 se
-  // sustituye entero, para no dejar duplicados en Traktor.
-  //
-  // Ese contrato sólo es correcto si el fichero SIEMPRE contiene lo que el DJ ve en
-  // Traktor, y djotas ya confirmó que no: el .nml manda y hay cues que sólo viven
-  // allí. El árbol que llega aquí es readCueTree(output) (ffmpeg.ts:1235), o sea el
-  // del fichero convertido. Cuando el .nml tiene hotcues que el fichero no lleva,
-  // este módulo los borra de su colección y syncCollection reporta written: true.
-  //
-  // Marcado it.fails a propósito: afirma que HOY se pierden, así que la suite queda
-  // verde documentando la pérdida en vez de esconderla, y se pondrá roja en cuanto
-  // alguien la arregle, obligando a releer esta nota en lugar de dejarla obsoleta.
-  //
-  // La decisión no es de una línea y no es técnica: o el borrado global deja de ser
-  // incondicional (fusionar por HOTCUE, lo que pone en rojo los dos tests citados y
-  // arriesga duplicados en Traktor), o "el fichero manda" se asume como pérdida
-  // aceptada y se dice en la interfaz antes de tocar la colección de nadie.
-  it.fails('no borra los hotcues del NML que el árbol del fichero no trae', () => {
+  // El árbol que llega aquí es readCueTree(output), el del fichero convertido, y djotas
+  // confirmó que el .nml manda: hay hotcues que sólo viven allí. Sustituir el juego de
+  // CUE_V2 entero los borraba de su colección con syncCollection reportando written:
+  // true. Se fusionan: el fichero gana en el mismo slot, lo que sólo está en el NML se
+  // conserva.
+  it('no borra los hotcues del NML que el árbol del fichero no trae', () => {
     const tree = buildTraktorTree([
       traktorCue('AutoGrid', 4, 143.38, 0),
       traktorCue('Intro', 0, 1000, 1),
@@ -60,6 +42,96 @@ describe('el parche de cues del NML frente a la colección real', () => {
 
     expect(out, 'el hotcue 2 "Break" del NML se ha perdido').toContain('NAME="Break"')
     expect(out, 'el hotcue 3 "Outro" del NML se ha perdido').toContain('NAME="Outro"')
+  })
+
+  // Mismo slot en los dos lados: gana el fichero, que es el que la conversión acaba de
+  // escribir. Quedarse con los dos daría dos hotcues en un mismo botón de Traktor.
+  it('deja que el fichero gane en un slot que también tiene el NML', () => {
+    const tree = buildTraktorTree([
+      traktorCue('AutoGrid', 4, 143.38, 0),
+      traktorCue('Intro', 0, 1000, 1),
+      traktorCue('Drop', 0, 60000, 2),
+    ])
+
+    const out = applyPatches(ENTRY_WITH_EXTRA_CUES, [
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', cueTree: tree, bpm: 128 },
+    ])
+
+    expect(out).toContain('NAME="Drop"')
+    expect(out).not.toContain('NAME="Break"')
+    expect(out).toContain('NAME="Outro"')
+    expect(out.match(/HOTCUE="2"/g)).toHaveLength(1)
+    expect(out.match(/<CUE_V2/g)).toHaveLength(4)
+  })
+
+  // Los del NML describen el mismo audio que los del fichero antes de convertir, así que
+  // un recorte o la calibración los mueve lo mismo. Dejarlos donde estaban los pondría a
+  // destiempo de sus vecinos, que sí se movieron.
+  it('mueve los que sólo están en el NML lo mismo que se movieron los del fichero', () => {
+    const tree = buildTraktorTree([
+      traktorCue('AutoGrid', 4, 143.38 + 51, 0),
+      traktorCue('Intro', 0, 1000 + 51, 1),
+    ])
+
+    const out = applyPatches(ENTRY_WITH_EXTRA_CUES, [
+      {
+        volume: 'Macintosh HD',
+        dir: '/:Musica/:',
+        file: 'uno.aiff',
+        cueTree: tree,
+        bpm: 128,
+        cueShift: { shiftMs: -51 },
+      },
+    ])
+
+    expect(out).toContain('NAME="Break" DISPL_ORDER="0" TYPE="0" START="45051.000000"')
+    expect(out).toContain('NAME="Outro" DISPL_ORDER="0" TYPE="0" START="200051.000000"')
+  })
+
+  // Un recorte de cabeza deja fuera lo que caía antes del corte; el fichero los pega al
+  // nuevo inicio (shiftTraktorCues), y el NML tiene que hacer lo mismo en vez de escribir
+  // una posición negativa que Traktor no sabe pintar.
+  it('pega al inicio los del NML que caían dentro del recorte', () => {
+    const tree = buildTraktorTree([traktorCue('Intro', 0, 0, 1)])
+
+    const out = applyPatches(ENTRY_WITH_EXTRA_CUES, [
+      {
+        volume: 'Macintosh HD',
+        dir: '/:Musica/:',
+        file: 'uno.aiff',
+        cueTree: tree,
+        bpm: 128,
+        cueShift: { shiftMs: 50000, maxMs: 120000 },
+      },
+    ])
+
+    expect(out).toContain('NAME="Break" DISPL_ORDER="0" TYPE="0" START="0.000000"')
+    expect(out).toContain('NAME="Outro" DISPL_ORDER="0" TYPE="0" START="120000.000000"')
+  })
+
+  // Los cues de memoria (HOTCUE -1) no tienen slot que comparar. Si el fichero ya trae
+  // uno en la misma posición, es el mismo cue: conservar el del NML lo duplicaría.
+  it('no duplica un cue de memoria que ya trae el fichero en la misma posición', () => {
+    const memory =
+      '<CUE_V2 NAME="Mem" DISPL_ORDER="0" TYPE="0" START="30000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="-1"></CUE_V2>'
+    const nml = ENTRY_WITH_EXTRA_CUES.replace('</ENTRY>', `${memory}</ENTRY>`)
+    const tree = buildTraktorTree([
+      traktorCue('Intro', 0, 1051, 1),
+      traktorCue('Mem', 0, 30051, -1),
+    ])
+
+    const out = applyPatches(nml, [
+      {
+        volume: 'Macintosh HD',
+        dir: '/:Musica/:',
+        file: 'uno.aiff',
+        cueTree: tree,
+        bpm: 128,
+        cueShift: { shiftMs: -51 },
+      },
+    ])
+
+    expect(out.match(/NAME="Mem"/g)).toHaveLength(1)
   })
 
   // Lo que ve el DJ: aunque los cues sobrevivan, el bloque se reordena. El anchor

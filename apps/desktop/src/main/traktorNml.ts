@@ -2,7 +2,7 @@
 // normaliza comillas, entidades y espaciado del documento entero, y convertiría un
 // cambio de tres atributos en un diff de toda la colección del usuario. Aquí cada
 // ENTRY se localiza por posición y sólo se sustituyen los tramos que cambian.
-import { readTraktorMarkers } from './traktor4'
+import { readTraktorMarkers, shiftCueStart, type TraktorMarker } from './traktor4'
 
 export interface NmlEntry {
   start: number
@@ -62,6 +62,9 @@ export interface NmlPatch {
   dir: string
   file: string
   cueTree?: Uint8Array
+  // How the conversion moved the file's cues (see cueShiftFor in ffmpeg.ts), so the
+  // cues that only the collection holds move with them.
+  cueShift?: { shiftMs: number; maxMs?: number }
   bpm?: number
   // Stars as Traktor's own 0-255 byte, 51 per star, the same scale it uses for the POPM
   // frame in the file (see shared/rating.ts). The collection wins over the file for a
@@ -269,7 +272,51 @@ function gridBpmFor(block: string, bpm: number | undefined): number | undefined 
   return Math.abs(analysed - bpm) < SAME_TEMPO_MS ? analysed : bpm
 }
 
-function replaceCues(block: string, tree: Uint8Array, bpm: number | undefined): string {
+// A cue within this of a file marker of the same kind is that marker: the NML keeps six
+// decimals of the same double the tree holds.
+const SAME_CUE_MS = 1
+
+// The entry's own cues that the file does not carry, moved the way the conversion moved
+// the file's. The file wins a hotcue slot both sides use, since it is what was just
+// written; a memory cue (no slot) is the file's own when it sits where one of the file's
+// markers of the same type does.
+function collectionOnlyCues(
+  block: string,
+  markers: TraktorMarker[],
+  shift: NmlPatch['cueShift'],
+  bpm: number | undefined,
+  skip: string | undefined,
+): string {
+  const slots = new Set(markers.filter((m) => m.hotcue >= 0).map((m) => m.hotcue))
+  const beatMs = bpm !== undefined && bpm > 0 ? 60000 / bpm : undefined
+  let out = ''
+  for (const cue of block.match(CUE_V2_RE) ?? []) {
+    if (cue === skip) continue
+    const open = cue.match(/<CUE_V2\b[^>]*?\/?>/)?.[0] ?? cue
+    const hotcue = Number(attr(open, 'HOTCUE') || '-1')
+    if (hotcue >= 0 && slots.has(hotcue)) continue
+    const type = Number(attr(open, 'TYPE'))
+    const start = Number(attr(open, 'START'))
+    const next = shift ? shiftCueStart(type, start, shift.shiftMs, shift.maxMs, beatMs) : start
+    if (next === null) continue
+    const known = markers.some(
+      (m) => m.hotcue < 0 && m.type === type && Math.abs(m.startMs - next) < SAME_CUE_MS,
+    )
+    if (hotcue < 0 && known) continue
+    out +=
+      next === start
+        ? cue
+        : cue.replace(/(\sSTART)="[^"]*"/, (_m, prefix) => `${prefix}="${next.toFixed(6)}"`)
+  }
+  return out
+}
+
+function replaceCues(
+  block: string,
+  tree: Uint8Array,
+  bpm: number | undefined,
+  shift?: NmlPatch['cueShift'],
+): string {
   const markers = readTraktorMarkers(tree)
   // readTraktorMarkers never throws: a bad checksum, an unknown Traktor variant or
   // a truncated blob all come back as [] (see walkTraktorTree's `return null` paths
@@ -278,13 +325,15 @@ function replaceCues(block: string, tree: Uint8Array, bpm: number | undefined): 
   // and insert nothing — an unreadable tree carries no information worth writing,
   // so leave the block exactly as it is instead of erasing what Traktor already has.
   if (markers.length === 0) return block
-  const newCues = cuesToXml(tree, gridBpmFor(block, bpm))
+  const tempo = gridBpmFor(block, bpm)
+  const newCues = cuesToXml(tree, tempo)
   const droppedGrid = markers.some((m) => m.type === 4) && !newCues.includes('TYPE="4"')
   const existingGrid = droppedGrid
     ? block.match(new RegExp(CUE_V2_RE.source.replace('[^>]*?', '[^>]*?TYPE="4"[^>]*?')))?.[0]
     : undefined
 
-  const cuesXml = existingGrid ? existingGrid + newCues : newCues
+  const cuesXml =
+    (existingGrid ?? '') + newCues + collectionOnlyCues(block, markers, shift, tempo, existingGrid)
   // Where the ENTRY already kept its cues, when it had any. The fixed anchor below is
   // right after LOCATION, which is the FIRST child of an ENTRY — so using it for a block
   // that already had cues further down moves them ahead of INFO, TEMPO, LOUDNESS and
@@ -332,7 +381,7 @@ function patchEntry(block: string, patch: NmlPatch): string {
     out = out.replace(/(<LOCATION\b[^>]*\bFILE)="[^"]*"/, (_m, prefix) => `${prefix}="${newFile}"`)
   }
   if (patch.cueTree) {
-    out = replaceCues(out, patch.cueTree, patch.bpm)
+    out = replaceCues(out, patch.cueTree, patch.bpm, patch.cueShift)
   }
   if (patch.ranking !== undefined) {
     out = replaceRanking(out, patch.ranking)

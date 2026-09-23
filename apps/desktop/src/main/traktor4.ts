@@ -148,6 +148,21 @@ export function readTraktorMarkers(tree: Uint8Array): TraktorMarker[] {
   }
 }
 
+// One marker's position after the shift below; null for a grid anchor with no tempo to
+// recompute its phase from.
+export function shiftCueStart(
+  type: number,
+  start: number,
+  shiftMs: number,
+  maxMs?: number,
+  beatMs?: number,
+): number | null {
+  if (type === GRID_CUE_TYPE)
+    return beatMs === undefined ? null : shiftGridAnchor(start, shiftMs, beatMs)
+  const next = Math.max(0, start - shiftMs)
+  return maxMs !== undefined ? Math.min(next, maxMs) : next
+}
+
 // Re-anchors every cue position after a head trim: each start moves back by
 // shiftMs (clamped to 0 — a cue inside the removed lead-in lands on the new
 // track start) and, when the tail was cut too, forward positions clamp to the
@@ -198,17 +213,10 @@ export function shiftTraktorCues(
         const type = view.getInt32(cursor, true)
         cursor += 4
         if (cursor + 16 + 8 > end) throw new Error('cue entry overruns CUEP')
-        const start = view.getFloat64(cursor, true)
-        let next: number
-        if (type === GRID_CUE_TYPE) {
-          // No tempo, no phase we can compute: dropping the blob makes Traktor
-          // re-analyze, which beats handing back a ruler that is silently off.
-          if (beatMs === undefined) return null
-          next = shiftGridAnchor(start, shiftMs, beatMs)
-        } else {
-          next = Math.max(0, start - shiftMs)
-          if (maxMs !== undefined) next = Math.min(next, maxMs)
-        }
+        const next = shiftCueStart(type, view.getFloat64(cursor, true), shiftMs, maxMs, beatMs)
+        // No tempo, no phase we can compute: dropping the blob makes Traktor
+        // re-analyze, which beats handing back a ruler that is silently off.
+        if (next === null) return null
         view.setFloat64(cursor, next, true)
         cursor += 16 // start + length doubles
         cursor += 8 // repeats + hotcue
