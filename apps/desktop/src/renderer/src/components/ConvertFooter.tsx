@@ -160,7 +160,9 @@ export function ConvertFooter({
     >
       {item.status === 'error' && (
         <div className="mb-2 flex items-center justify-between gap-3">
-          <p className="truncate text-xs text-danger">{item.error}</p>
+          <p role="alert" className="truncate text-xs text-danger">
+            {item.error}
+          </p>
           <button
             type="button"
             data-testid="report-error"
@@ -200,7 +202,11 @@ export function ConvertFooter({
           // chevron re-picks the format without converting on the spot.
           <>
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-              <p data-testid="export-success" className="text-xs font-medium text-good">
+              <p
+                data-testid="export-success"
+                role="status"
+                className="text-xs font-medium text-good"
+              >
                 {inMusicLibraryOnly
                   ? isMulti
                     ? tr('editor.addedToAppleMusicCount', { count: selectedCount })
@@ -290,7 +296,11 @@ export function ConvertFooter({
                 onSelectDestination={onSelectDestination}
               />
             </div>
-            {musicError && <p className="text-xs text-danger">{musicError}</p>}
+            {musicError && (
+              <p role="alert" className="text-xs text-danger">
+                {musicError}
+              </p>
+            )}
           </>
         ) : (
           <ExportButton

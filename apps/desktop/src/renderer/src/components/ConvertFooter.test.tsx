@@ -98,6 +98,44 @@ describe('ConvertFooter state swap', () => {
   })
 })
 
+// The outcome of a conversion only showed up as coloured text in the footer; a screen reader
+// user who pressed Convert heard nothing when it finished or failed. Success is a polite
+// status, a failure an assertive alert.
+describe('ConvertFooter announcements', () => {
+  it('announces a finished conversion as a status', () => {
+    render(footer(true))
+    expect(screen.getByRole('status')).toBe(screen.getByTestId('export-success'))
+  })
+
+  it('announces a failed conversion as an alert', () => {
+    render(
+      <ConvertFooter
+        {...footer(false).props}
+        item={
+          {
+            id: 't1',
+            status: 'error',
+            error: 'Disk full',
+            inputPath: '/a.wav',
+            meta: {},
+          } as TrackItem
+        }
+      />,
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent('Disk full')
+  })
+
+  it('announces a failed Apple Music add as an alert', () => {
+    render(
+      <ConvertFooter
+        {...footer(true).props}
+        status={{ ...status(true), musicError: 'Music is not running' }}
+      />,
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent('Music is not running')
+  })
+})
+
 // Reported 14/09 with a screenshot in French: the row of footer buttons shares its width
 // evenly (flex-1), so a label longer than its share wrapped and the button grew to two
 // lines while its neighbours stayed at one — a ragged row. The labels are translated, so
