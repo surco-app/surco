@@ -430,7 +430,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                     />
                   </button>
                   <CollapsibleTracks open={expanded}>
-                    <div className="pb-1">
+                    <div className="flex flex-col gap-0.5 pb-1">
                       {/* A phase band, not a lone caption: a field-coloured strip with rules
                           top and bottom marks the shift from "search a release" (the cards
                           above) to "pick the track to apply" (the numbered list below), and
@@ -462,9 +462,9 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                                 t === appliedTrack || t === matchedTrack ? 'true' : undefined
                               }
                               onClick={() => selectTrack(t)}
-                              className={`flex w-full items-center gap-3 py-1.5 pr-3 pl-4 text-left focus:bg-[var(--color-accent-soft)] focus:shadow-[inset_0_0_0_1px_var(--color-accent)] focus:outline-none ${
-                                // Same solid selection-blue as the library row, so the applied
-                                // track reads with equal weight in both columns (was a faint
+                              className={`flex w-full items-center gap-3 rounded-lg py-1.5 pr-3 pl-4 text-left focus:bg-[var(--color-accent-soft)] focus:shadow-[inset_0_0_0_1px_var(--color-accent)] focus:outline-none ${
+                                // Same selection fill and rounded shape as the library row, so the
+                                // applied track reads with equal weight in both columns (was a faint
                                 // tint that looked second-class next to the filled library row).
                                 t === appliedTrack || t === matchedTrack
                                   ? 'is-applied bg-[var(--color-row-selected)]'
