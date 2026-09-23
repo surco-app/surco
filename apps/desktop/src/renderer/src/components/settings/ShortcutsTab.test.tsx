@@ -13,9 +13,9 @@ import {
   resolveBindings,
   SHORTCUT_DEFAULTS,
 } from '../../../../shared/shortcutDefaults'
+import i18n from '../../i18n'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
-import '../../i18n'
 import { ShortcutsTab } from './ShortcutsTab'
 
 afterEach(cleanup)
@@ -104,6 +104,24 @@ describe('ShortcutsTab agrupa por función', () => {
       expect(screen.getByTestId(`shortcut-row-${def.id}`)).toBeInTheDocument()
     }
   })
+})
+
+// The reset button shows only a "↺" glyph and its words lived in a hover tooltip, so a
+// screen reader announced it as a bare arrow symbol with no hint of what it does.
+it('names the reset button of an overridden shortcut for screen readers', () => {
+  const overridden: SyncedDraft = { ...synced, shortcutOverrides: { play: ['alt', 'e'] } }
+  const bindings = resolveBindings(overridden.shortcutOverrides)
+  render(
+    <ShortcutsTab
+      synced={overridden}
+      patch={vi.fn()}
+      bindings={bindings}
+      conflictIds={new Set()}
+    />,
+  )
+  expect(screen.getByTestId('shortcut-reset-play')).toHaveAccessibleName(
+    i18n.t('settings.shortcuts.reset'),
+  )
 })
 
 // El reporte que originó esto: "option+E control+E o option+E no funciona, no hace
