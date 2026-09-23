@@ -310,8 +310,8 @@
     "lede": "A command palette and shortcuts for the whole flow: add, tag, analyze and process track after track without leaving the keyboard, and remap any of them.",
     "items": [
       "Add files",
-      "Process track",
-      "Process all",
+      "Convert track",
+      "Convert all",
       "Play / pause",
       "Navigate tracks",
       "Search Discogs"
@@ -782,7 +782,7 @@
           "One thing to know: convert all only converts and renames with the metadata the tracks already have, it never goes to Discogs on its own. If you want fresh data first, run “Auto-match” (⌘⇧D) from the toolbar."
         ],
         "points": [
-          "Processes the whole queue at once; cancel it from the toolbar progress or the command palette.",
+          "Converts the whole queue at once; cancel it from the toolbar progress or the command palette.",
           "If you've filtered the list, the batch converts only what you can see.",
           "Conversions run in parallel across your machine's cores; same-format ones are near-instant.",
           "It only uses the current metadata: nothing is downloaded from Discogs during the batch.",
