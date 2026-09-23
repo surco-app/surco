@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
+import { GRADE_MARK, GRADE_NAME } from './LoudnessReadout'
 import { ModalShell } from './ModalShell'
 
 interface Props {
@@ -65,18 +66,16 @@ export function LoudnessHelpModal({ onClose }: Props): React.JSX.Element {
           </p>
         ))}
         <p className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-[var(--color-line)] pt-3">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-good" />
-            {tr('editor.loudnessGradeGood')}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-warn" />
-            {tr('editor.loudnessGradeWarn')}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-danger" />
-            {tr('editor.loudnessGradeBad')}
-          </span>
+          {(['good', 'warn', 'bad'] as const).map((grade) => (
+            <span key={grade} className="inline-flex items-center gap-1.5">
+              <span
+                data-testid={`loudness-help-grade-${grade}`}
+                data-shape={GRADE_MARK[grade].shape}
+                className={GRADE_MARK[grade].className}
+              />
+              {tr(GRADE_NAME[grade])}
+            </span>
+          ))}
         </p>
       </div>
     </ModalShell>
