@@ -340,6 +340,21 @@ describe('WaveformSolo', () => {
     expect(await screen.findByTestId('waveform-clipped')).toHaveTextContent('-1')
   })
 
+  // The envelope holds sample peaks, so the marks compare dBFS against the ceiling's number.
+  // Naming the ceiling in dB beside a dBTP setting read as a true-peak verdict it never was.
+  it('names the flag in the unit the envelope measures', async () => {
+    ;(window as unknown as { api: unknown }).api = {
+      cancelAnalysis: vi.fn(),
+      waveform: vi.fn().mockResolvedValue({ peaks: [0.1, 0.9, 0.4, 1], durationSec: 60 }),
+      waveformScan: vi.fn().mockResolvedValue(null),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    renderWithQuery(<WaveformSolo inputPath="/m/a.wav" enabled clipDb={-1} normalize={CFG_NONE} />)
+    expect(await screen.findByTestId('waveform-clipped')).toHaveTextContent(
+      'Sample peaks over -1.0 dBFS',
+    )
+  })
+
   // With normalization off there is no dB line at all: the marks come from the
   // decoder's per-bucket true-clipping flags (native-rate samples pinned at full
   // scale, Audacity's exact criterion) and the label reads "Clipping".

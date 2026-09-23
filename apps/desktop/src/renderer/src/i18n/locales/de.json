@@ -451,7 +451,7 @@
     "loudnessNoiseHint": "Grundrauschen (dB): Pegel der leisesten Stelle des Tracks; je niedriger, desto sauberer",
     "loudnessHelpTitle": "Was bedeuten die Werte?",
     "waveformSource": "Original",
-    "waveformClipped": "Spitzen über {{db}} dB",
+    "waveformClipped": "Sample-Spitzen über {{db}} dBFS",
     "waveformClipping": "Clipping",
     "waveformSplit": "Kanäle trennen",
     "waveformPreview": "Vorschau",
