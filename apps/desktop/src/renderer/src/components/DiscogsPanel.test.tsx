@@ -90,8 +90,7 @@ describe('DiscogsPanel empty states', () => {
   it('shows the no-results placeholder when a search settled with zero rows', () => {
     renderPanel(browser({ query: 'zzz no such album', noResults: true }))
 
-    expect(screen.getByTestId('discogs-no-results')).toBeInTheDocument()
-    expect(screen.getByText(/no albums matched/i)).toBeInTheDocument()
+    expect(screen.getByTestId('discogs-no-results')).toHaveTextContent(/no albums matched/i)
     expect(screen.queryByText(/choose an album/i)).not.toBeInTheDocument()
   })
 
@@ -102,6 +101,48 @@ describe('DiscogsPanel empty states', () => {
 
     expect(screen.getByText(/choose an album/i)).toBeInTheDocument()
     expect(screen.queryByTestId('discogs-no-results')).not.toBeInTheDocument()
+  })
+})
+
+// A screen reader user pressing Enter in the search box heard nothing afterwards: the
+// spinner is an icon, the skeleton is hidden and the rows just appear. A status region,
+// mounted empty before any search so assistive tech is already listening, says each step,
+// and an error interrupts as an alert.
+describe('DiscogsPanel search announcements', () => {
+  const results = [
+    { provider: 'discogs', id: 1, title: 'Uno' },
+    { provider: 'discogs', id: 2, title: 'Dos' },
+  ] as unknown as DiscogsBrowser['results']
+
+  it('keeps an empty status region mounted before any search', () => {
+    renderPanel(browser({}))
+    const status = screen.getByTestId('discogs-status')
+    expect(status).toHaveAttribute('role', 'status')
+    expect(status).toBeEmptyDOMElement()
+  })
+
+  it('says it is searching, then how many results arrived', () => {
+    const { rerender } = renderPanel(browser({ query: 'uno', busy: true }))
+    const status = screen.getByTestId('discogs-status')
+    expect(status).toHaveTextContent('Searching…')
+    rerender(panel(browser({ query: 'uno', results })))
+    expect(screen.getByTestId('discogs-status')).toBe(status)
+    expect(status).toHaveTextContent('2 results')
+  })
+
+  it('says a search came up empty', () => {
+    renderPanel(browser({ query: 'zzz', noResults: true }))
+    expect(screen.getByTestId('discogs-status')).toHaveTextContent(/no albums matched/i)
+  })
+
+  it('does not call opening a release a search', () => {
+    renderPanel(browser({ query: 'uno', results, busy: true, loading: true }))
+    expect(screen.getByTestId('discogs-status')).toHaveTextContent('2 results')
+  })
+
+  it('announces a failed search as an alert', () => {
+    renderPanel(browser({ query: 'uno', error: 'Discogs refused the token' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Discogs refused the token')
   })
 })
 

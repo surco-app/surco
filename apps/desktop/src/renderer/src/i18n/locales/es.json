@@ -606,7 +606,10 @@
     "coverMixed": "Las pistas seleccionadas tienen carátulas distintas",
     "coverLowRes": "Baja resolución",
     "coverPosition": "Imagen {{position}} de {{total}}",
-    "coverPositionNone": "Ninguna de las {{total}} imágenes elegida"
+    "coverPositionNone": "Ninguna de las {{total}} imágenes elegida",
+    "searching": "Buscando…",
+    "resultsCount_one": "{{count}} resultado",
+    "resultsCount_other": "{{count}} resultados"
   },
   "fields": {
     "groupFilled_one": "{{count}} con datos",

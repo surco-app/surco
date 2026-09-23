@@ -606,7 +606,10 @@
     "coverMixed": "As faixas selecionadas têm capas diferentes",
     "coverLowRes": "Baixa resolução",
     "coverPosition": "Imagem {{position}} de {{total}}",
-    "coverPositionNone": "Nenhuma das {{total}} imagens escolhida"
+    "coverPositionNone": "Nenhuma das {{total}} imagens escolhida",
+    "searching": "Buscando…",
+    "resultsCount_one": "{{count}} resultado",
+    "resultsCount_other": "{{count}} resultados"
   },
   "fields": {
     "groupFilled_one": "{{count}} preenchido",
