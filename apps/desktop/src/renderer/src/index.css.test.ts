@@ -235,3 +235,13 @@ describe('reduced motion', () => {
     expect(frames.slice(0, frames.indexOf('}\n}'))).toContain('opacity')
   })
 })
+
+// The zoom ruler's time labels were 9px, the smallest text in the app, sitting on the
+// busiest ground in it; 10px is the least that reads there.
+describe('waveform ruler labels', () => {
+  it('sets the label no smaller than 10px', () => {
+    const rule = css.slice(css.indexOf('.wave-label {'))
+    const size = rule.slice(0, rule.indexOf('}')).match(/font-size:\s*(\d+)px/)
+    expect(Number(size?.[1])).toBeGreaterThanOrEqual(10)
+  })
+})
