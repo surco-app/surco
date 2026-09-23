@@ -293,7 +293,13 @@ export function DeclickSection({
                     const next = ab.at + (e.key === 'ArrowLeft' ? -step : step)
                     ab.seek(Math.min(durationSec, Math.max(0, next)))
                   }}
-                >
+                />
+                {/* The marks sit BESIDE the slider, not inside it: a slider's children are
+                    presentational to assistive tech, so nested buttons dropped out of the
+                    accessibility tree, and a control inside a control leaves a press
+                    ambiguous. The layer lets bare wave through to the slider below; only
+                    the marks themselves take the pointer. */}
+                <div className="pointer-events-none absolute inset-0">
                   {marks.map((m) => (
                     <button
                       key={m.sec}
@@ -309,23 +315,23 @@ export function DeclickSection({
                       // wraps): a dusty side carries dozens of marks, and a fat hit box
                       // would carpet the wave — every attempt to place the cursor would
                       // land on a mark instead, making the track unscrubbable.
-                      className="absolute inset-y-0 w-[3px] -translate-x-1/2 cursor-pointer"
+                      className="pointer-events-auto absolute inset-y-0 w-[3px] -translate-x-1/2 cursor-pointer"
                       style={{ left: `${m.pct}%` }}
                     >
                       <span className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-warn" />
                     </button>
                   ))}
-                  {/* Shown as soon as there is a wave, not only once a preview exists:
-                      it is the cursor the user is aiming, so it has to be visible while
-                      they aim it. */}
-                  {durationSec > 0 && (
-                    <span
-                      data-testid="declick-playhead"
-                      className="pointer-events-none absolute inset-y-0 w-px bg-fg"
-                      style={{ left: `${(ab.at / durationSec) * 100}%` }}
-                    />
-                  )}
                 </div>
+                {/* Shown as soon as there is a wave, not only once a preview exists:
+                    it is the cursor the user is aiming, so it has to be visible while
+                    they aim it. */}
+                {durationSec > 0 && (
+                  <span
+                    data-testid="declick-playhead"
+                    className="pointer-events-none absolute inset-y-0 w-px bg-fg"
+                    style={{ left: `${(ab.at / durationSec) * 100}%` }}
+                  />
+                )}
               </Strip>
               {unscanned && (
                 <p data-testid="declick-unscanned" className="mt-1 text-xs text-fg-dim">

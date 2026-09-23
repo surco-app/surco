@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
@@ -451,6 +451,16 @@ describe('DeclickSection', () => {
     const strip = screen.getByTestId('declick-marks')
     expect(strip).toHaveAttribute('role', 'slider')
     expect(strip).toHaveAttribute('tabindex', '0')
+  })
+
+  // A slider's children are presentational to assistive tech, so the mark buttons nested
+  // inside it vanished from the accessibility tree, and a control inside a control is
+  // ambiguous about which one a press belongs to. The marks sit beside the slider instead.
+  it('keeps the click marks out of the slider', async () => {
+    await withPreview()
+    const strip = screen.getByTestId('declick-marks')
+    await waitFor(() => expect(screen.getAllByTestId('declick-mark')).toHaveLength(3))
+    expect(within(strip).queryAllByRole('button')).toHaveLength(0)
   })
 
   it('moves the playhead by the fine step in either direction', async () => {
