@@ -8,7 +8,7 @@ vi.hoisted(() => {
   ;(globalThis.window as unknown as { api: unknown }).api = { platform: 'darwin' }
 })
 
-import '../i18n'
+import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { TrackContextMenu } from './TrackContextMenu'
 
@@ -115,6 +115,25 @@ describe('TrackContextMenu keyboard', () => {
     expect(screen.getByTestId('track-menu-search')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowUp' })
     expect(screen.getByTestId('track-menu-trash')).toHaveFocus()
+  })
+
+  // A menu is one Tab stop whose items the arrows walk. With every item tabbable, Tab
+  // stepped through eleven entries, and leaving with it left the menu open and orphaned.
+  it('keeps its items out of the Tab order and closes on Tab', () => {
+    const { onClose } = renderMenu()
+    for (const item of screen.getAllByRole('menuitem')) {
+      expect(item).toHaveAttribute('tabindex', '-1')
+    }
+    fireEvent.keyDown(screen.getByTestId('track-menu'), { key: 'Tab' })
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  // VoiceOver announces "menu" with no name and reads the dividers as nothing at all; the
+  // name says what the menu acts on and the separators mark where each group starts.
+  it('names the menu and exposes its dividers as separators', () => {
+    renderMenu()
+    expect(screen.getByRole('menu')).toHaveAccessibleName(i18n.t('common.trackActions'))
+    expect(screen.getAllByRole('separator')).toHaveLength(2)
   })
 
   it('returns focus to the element that opened it when it closes', () => {

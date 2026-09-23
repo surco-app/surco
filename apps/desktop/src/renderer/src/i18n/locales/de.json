@@ -1,5 +1,6 @@
 {
   "common": {
+    "trackActions": "Titelaktionen",
     "trackList": "Titel",
     "cancel": "Abbrechen",
     "save": "Speichern",

@@ -38,6 +38,8 @@ function MenuItem({
     <button
       type="button"
       role="menuitem"
+      // One Tab stop for the whole menu: the arrows move between items, Tab leaves.
+      tabIndex={-1}
       data-testid={testid}
       onClick={onClick}
       className={`block w-full rounded-md px-3 py-1.5 text-left text-sm transition-colors hover:bg-[var(--color-panel-2)] ${
@@ -111,6 +113,14 @@ export function TrackContextMenu({
       e.stopPropagation()
       return
     }
+    // Tab leaves the menu, so it closes like a native one and the focus goes back to the
+    // opener instead of wandering off behind an orphaned menu.
+    if (e.key === 'Tab') {
+      e.preventDefault()
+      e.stopPropagation()
+      onClose()
+      return
+    }
     const items = Array.from(
       menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [],
     )
@@ -148,6 +158,7 @@ export function TrackContextMenu({
       <div
         ref={menuRef}
         role="menu"
+        aria-label={tr('common.trackActions')}
         data-testid="track-menu"
         onKeyDown={onMenuKeyDown}
         style={{ top: pos.y, left: pos.x }}
@@ -180,7 +191,7 @@ export function TrackContextMenu({
           label={tr('trackList.context.startOver')}
           onClick={() => run(() => onStartOver(track))}
         />
-        <div className="my-1 h-px bg-[var(--color-line)]" />
+        <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
         <MenuItem
           testid="track-menu-info"
           label={tr('trackList.context.info')}
@@ -201,7 +212,7 @@ export function TrackContextMenu({
           label={tr('trackList.context.copyPath')}
           onClick={() => run(() => onCopyPath(track))}
         />
-        <div className="my-1 h-px bg-[var(--color-line)]" />
+        <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
         <MenuItem
           testid="track-menu-remove"
           label={tr('trackList.context.remove')}

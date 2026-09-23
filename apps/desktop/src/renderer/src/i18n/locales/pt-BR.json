@@ -1,5 +1,6 @@
 {
   "common": {
+    "trackActions": "Ações da faixa",
     "trackList": "Faixas",
     "cancel": "Cancelar",
     "save": "Salvar",
