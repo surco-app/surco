@@ -70,6 +70,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
             value={synced.mp3Quality}
             onChange={(id) => patch('mp3Quality', id)}
             testidPrefix="settings-mp3-quality"
+            label={tr('settings.mp3Quality')}
             labelFor={(id) => tr(`settings.mp3Qualities.${id}`)}
           />
         </SettingsField>
@@ -89,6 +90,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
             value={synced.outputBitDepth}
             onChange={(id) => patch('outputBitDepth', id)}
             testidPrefix="settings-bit-depth"
+            label={tr('settings.bitDepth')}
             labelFor={(id) => tr(`settings.bitDepths.${id}`)}
           />
         </SettingsField>
@@ -99,6 +101,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
             value={synced.outputSampleRate}
             onChange={(id) => patch('outputSampleRate', id)}
             testidPrefix="settings-sample-rate"
+            label={tr('settings.sampleRate')}
             labelFor={(id) => tr(`settings.sampleRates.${id}`)}
           />
         </SettingsField>
@@ -118,6 +121,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
             value={synced.flacCompression}
             onChange={(id) => patch('flacCompression', id)}
             testidPrefix="settings-flac-compression"
+            label={tr('settings.flacCompression')}
             labelFor={(id) => tr(`settings.flacCompressions.${id}`)}
           />
         </SettingsField>

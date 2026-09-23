@@ -91,6 +91,7 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
               value={synced.keyNotation}
               onChange={(id) => patch('keyNotation', id)}
               testidPrefix="settings-key-notation"
+              label={tr('settings.keyNotation')}
               labelFor={(id) => tr(`settings.keyNotations.${id}`)}
             />
           </SettingsField>

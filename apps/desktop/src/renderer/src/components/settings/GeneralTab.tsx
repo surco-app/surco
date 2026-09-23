@@ -67,6 +67,7 @@ export function GeneralTab({
                 onPreviewTheme(id)
               }}
               testidPrefix="settings-theme"
+              label={tr('settings.theme')}
               labelFor={(id) => tr(`settings.themes.${id}`)}
             />
           </SettingsField>
@@ -77,6 +78,7 @@ export function GeneralTab({
               value={synced.language}
               onChange={(id) => patch('language', id)}
               testidPrefix="settings-language"
+              label={tr('settings.language')}
               labelFor={(id) => tr(`settings.languages.${id}`)}
             />
           </SettingsField>

@@ -182,6 +182,7 @@ export function DestinationTab({
           value={synced.backupPolicy}
           onChange={(id) => patch('backupPolicy', id)}
           testidPrefix="settings-backup"
+          label={tr('settings.originalBackup')}
           labelFor={(id) => tr(`settings.originalBackupPolicies.${id}`)}
         />
         {/* What this level costs, rather than one sentence covering all three: the choice
