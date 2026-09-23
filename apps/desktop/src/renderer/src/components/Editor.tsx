@@ -992,7 +992,7 @@ export const Editor = memo(function Editor({
               // File/Tags text costs no meaning while the header reads as a single line, like
               // OUTPUT and PROPERTIES. Same yes/no/checking and formOpen/isMulti conditions as
               // before — only the layout collapsed from two stacked rows to one.
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 {!isMulti && inLibrary === 'yes' && (
                   <SectionPill
                     tone="neutral"
