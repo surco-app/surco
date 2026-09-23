@@ -682,7 +682,6 @@
     "pause": "Pause",
     "hearingRepaired": "Hearing: repaired",
     "hearingOriginal": "Hearing: original",
-    "abLabel": "Hear the repaired version",
     "abHint": "Switches between the original and the repaired track without stopping the audio, so you can hear whether the repair removed the clicks — and whether it dulled the music.",
     "nextClick": "Next click",
     "appliesToSelection": "This setting applies to all {{count}} selected tracks.",

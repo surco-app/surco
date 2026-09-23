@@ -315,17 +315,18 @@ describe('DeclickSection', () => {
     expect(pause).not.toHaveBeenCalled()
   })
 
-  // A name that flips with the state AND aria-pressed tells the state twice and garbles
-  // it: "Hearing: original, not pressed" leaves a screen reader user unable to tell which
-  // leg is playing. The name names the action once and aria-pressed alone carries whether
-  // it is on.
-  it('keeps one name on the A/B switch and reports the leg through aria-pressed', async () => {
+  // The button shows which leg is playing ("Hearing: repaired") and that visible text has
+  // to be its name: a fixed "Hear the repaired version" read as the opposite of what was on
+  // screen once the original was playing, and voice control users say what they see.
+  // aria-pressed on top of a state name would tell the state twice ("Hearing: original,
+  // not pressed"), so the name alone carries it.
+  it('names the A/B switch after the leg it shows playing', async () => {
     await withPreview()
-    const ab = screen.getByRole('button', { name: 'Hear the repaired version' })
-    expect(ab).toHaveAttribute('aria-pressed', 'true')
+    const ab = screen.getByTestId('declick-ab')
+    expect(ab).toHaveAccessibleName('Hearing: repaired')
+    expect(ab).not.toHaveAttribute('aria-pressed')
     fireEvent.click(ab)
-    expect(screen.getByRole('button', { name: 'Hear the repaired version' })).toBe(ab)
-    expect(ab).toHaveAttribute('aria-pressed', 'false')
+    expect(ab).toHaveAccessibleName('Hearing: original')
   })
 
   // Without this the only reachable points in the track are the click marks: a user who
