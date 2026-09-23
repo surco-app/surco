@@ -495,31 +495,7 @@ const TrackRow = memo(function TrackRow({
                       scope="dot"
                     />
                   </span>
-                ) : (
-                  // A review-tier suggestion the user hasn't acted on yet: amber, distinct from
-                  // the applied accent sparkle, and gone the moment the track is actually matched.
-                  t.matchReview &&
-                  !t.matched && (
-                    <button
-                      type="button"
-                      data-testid="track-match-review"
-                      data-confidence="review"
-                      aria-label={tr('commands.acceptReview')}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onAcceptReview(t.id)
-                      }}
-                      className="group/dot press relative flex items-center text-warn"
-                    >
-                      <Sparkles className="h-3 w-3" aria-hidden="true" />
-                      <Tooltip
-                        label={matchTooltip(tr('commands.acceptReview'), t.matchConfidence)}
-                        align="end"
-                        scope="dot"
-                      />
-                    </button>
-                  )
-                )}
+                ) : null}
               </span>
               <span className="flex w-3 shrink-0 justify-center">
                 {quality !== 'unanalyzed' ? (
@@ -561,6 +537,34 @@ const TrackRow = memo(function TrackRow({
           )}
         </span>
       </button>
+      {/* A review-tier suggestion the user hasn't acted on yet: amber, distinct from the
+          applied accent sparkle, and gone the moment the track is actually matched. A
+          sibling of the row button, not a child, since a button inside the option button
+          is invalid and folds the action into the row's name. It is placed over the empty
+          sparkle slot of the artist line: 120px from the right edge is the row padding
+          plus the duration, pill and verdict slots with their gaps, and 7px up from the
+          bottom centres it on that line. Shown under the same conditions as that line. */}
+      {!t.loadingMeta &&
+        !(t.status === 'processing' && t.stage) &&
+        !t.autoMatched &&
+        t.matchReview &&
+        !t.matched && (
+          <button
+            type="button"
+            data-testid="track-match-review"
+            data-confidence="review"
+            aria-label={tr('commands.acceptReview')}
+            onClick={() => onAcceptReview(t.id)}
+            className="group/dot press absolute right-[120px] bottom-[7px] flex items-center text-warn"
+          >
+            <Sparkles className="h-3 w-3" aria-hidden="true" />
+            <Tooltip
+              label={matchTooltip(tr('commands.acceptReview'), t.matchConfidence)}
+              align="end"
+              scope="dot"
+            />
+          </button>
+        )}
       {/* A ▶ overlay over the cover makes play discoverable — double-click and Space are
           the only other ways in, and neither shows itself. A sibling of the row button
           (not a child) so it stays a valid nested-button-free control, like remove.
