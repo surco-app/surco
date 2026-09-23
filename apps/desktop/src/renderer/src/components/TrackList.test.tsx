@@ -15,10 +15,10 @@ vi.hoisted(() => {
   ;(globalThis.window as unknown as { api: unknown }).api = {}
 })
 
-import '../i18n'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type { Chord } from '../../../shared/shortcuts'
 import type { TrackMetadata } from '../../../shared/types'
+import i18n from '../i18n'
 import { trackSignature } from '../lib/dirty'
 import type { TrackItem } from '../types'
 import { TrackContextMenu } from './TrackContextMenu'
@@ -811,5 +811,22 @@ describe('TrackList quality badge', () => {
     expect(row.className).toContain('focus-visible:outline-[var(--color-accent)]')
     expect(row.className).toContain('focus-visible:outline-1')
     expect(row.className).toContain('focus-visible:-outline-offset-1')
+  })
+})
+
+// Play and remove sit over every row at opacity 0 until the pointer hovers it. They were
+// still Tab stops, so a keyboard user walked through two invisible buttons per track,
+// a thousand of them in a 500-track crate, with no ring to show where the focus went.
+// The row already answers Space (play) and Backspace (remove), so the overlays stay
+// pointer-only.
+describe('TrackList hover overlays', () => {
+  it('keeps play and remove out of the Tab order on every row', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' })], 'a')
+    const overlays = [
+      ...screen.getAllByRole('button', { name: i18n.t('player.play') }),
+      ...screen.getAllByRole('button', { name: i18n.t('trackList.remove') }),
+    ]
+    expect(overlays).toHaveLength(4)
+    for (const button of overlays) expect(button).toHaveAttribute('tabindex', '-1')
   })
 })
