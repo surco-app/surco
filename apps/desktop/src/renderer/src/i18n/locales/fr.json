@@ -770,6 +770,7 @@
       "destination": "Sortie",
       "naming": "Noms",
       "editor": "Éditeur",
+      "layout": "Sections",
       "artwork": "Pochette",
       "fields": "Champs",
       "shortcuts": "Raccourcis"

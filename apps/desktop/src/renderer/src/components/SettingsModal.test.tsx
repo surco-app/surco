@@ -571,30 +571,6 @@ describe('SettingsModal organization', () => {
     fireEvent.click(screen.getByTestId('settings-tab-editor'))
     expect(screen.getByTestId('settings-show-spectrum')).toBeInTheDocument()
   })
-
-  // Sections, quality analysis, volume and the inline explanations are the settings people
-  // reach for most, and all four shape the editor: one tab, all in view, none folded.
-  it('shows the editor sections list on the Editor tab, in view', () => {
-    render(
-      <SettingsModal
-        settings={settings}
-        onClose={() => {}}
-        onSave={() => {}}
-        onPreviewTheme={() => {}}
-        onSettingsReplaced={() => {}}
-        initialTab="editor"
-      />,
-    )
-    expect(screen.queryByTestId('settings-tab-layout')).not.toBeInTheDocument()
-    for (const id of [
-      'settings-show-spectrum',
-      'settings-show-loudness',
-      'settings-show-editor-hints',
-      'settings-section-row-quality',
-    ]) {
-      expect(screen.getByTestId(id)).toBeVisible()
-    }
-  })
 })
 
 describe('SettingsModal shortcuts', () => {
