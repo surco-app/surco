@@ -67,6 +67,35 @@ describe('ConvertFooter state swap', () => {
     rerender(footer(true))
     expect(screen.getByTestId('footer-state').className).toContain('animate-footer-swap')
   })
+
+  // The swap replaces the button the keyboard user pressed, so focus fell to <body> the
+  // moment the conversion finished and the next Tab started over from the window's top.
+  // It has to land on the new state's convert button instead.
+  it('keeps keyboard focus in the footer when convert flips to done', () => {
+    const { rerender } = render(footer(false))
+    screen.getByTestId('process-btn').focus()
+    rerender(footer(true))
+    expect(screen.getByTestId('process-btn')).toHaveFocus()
+  })
+
+  // Focus that was elsewhere (the metadata form) must stay there: the footer only restores
+  // what its own swap took away.
+  it('leaves focus alone when it was outside the footer', () => {
+    const { rerender } = render(
+      <>
+        <input data-testid="elsewhere" />
+        {footer(false)}
+      </>,
+    )
+    screen.getByTestId('elsewhere').focus()
+    rerender(
+      <>
+        <input data-testid="elsewhere" />
+        {footer(true)}
+      </>,
+    )
+    expect(screen.getByTestId('elsewhere')).toHaveFocus()
+  })
 })
 
 // Reported 14/09 with a screenshot in French: the row of footer buttons shares its width
