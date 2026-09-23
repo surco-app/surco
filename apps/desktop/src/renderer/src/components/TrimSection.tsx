@@ -113,9 +113,7 @@ function TrimPlan({
       data-testid="trim-plan"
       className="mt-3 rounded-lg border border-[var(--color-line)] border-l-[3px] border-l-[var(--color-accent)] bg-[var(--color-field)] px-3 py-2.5"
     >
-      <p className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
-        {tr('trim.planHead')}
-      </p>
+      <p className="text-[11px] font-medium text-fg-dim">{tr('trim.planHead')}</p>
       <p className="mt-1 text-xs leading-relaxed text-fg tabular-nums">
         {tr(`trim.plan${side ?? 'Start'}`, {
           start: cutSeconds(startCut),
@@ -1103,9 +1101,7 @@ export function TrimSection({
                     data-testid="trim-cuts"
                     className="min-w-0 truncate text-[10px] tabular-nums text-fg-dim"
                   >
-                    <span className="font-medium uppercase tracking-wider">
-                      {tr('trim.cutsLabel')}
-                    </span>
+                    <span className="font-medium">{tr('trim.cutsLabel')}</span>
                     {` ${cuts.join(' · ')}`}
                   </span>
                 ) : (

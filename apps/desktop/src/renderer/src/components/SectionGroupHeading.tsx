@@ -5,8 +5,8 @@ import type React from 'react'
 // "describe the file" ends and "operate on the audio" begins.
 //
 // The label leads, then a hairline runs from its side out to the panel edge — the trailing
-// rule is what marks a PHASE as a different KIND of element than a section's own uppercase
-// subheads (Properties' "AUDIO"/"FILE" captions, Loudness' "LOUDNESS"), which carry no such
+// rule is what marks a PHASE as a different KIND of element than a section's own
+// subheads (Properties' "Audio"/"File" captions, Loudness' "Loudness"), which carry no such
 // line. This replaced a full-width rule that used to cross the whole panel ABOVE the label:
 // stacked a few pixels from each section's own hairlines, it read as too many lines. One
 // short line beside the word, and generous space below it, does the separating instead.
@@ -30,9 +30,7 @@ export function SectionGroupHeading({
           line beside the word instead of a heavy band above it, so a column of phases reads
           as a sequence of labels, not a stack of dividers. An h2, so the phases head the
           editor's outline for a screen reader, above each section's h3. */}
-      <h2 className="shrink-0 text-[10px] font-bold uppercase tracking-[0.14em] text-fg-dim">
-        {label}
-      </h2>
+      <h2 className="shrink-0 text-xs font-semibold text-fg-dim">{label}</h2>
       <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-line)]" />
     </div>
   )
