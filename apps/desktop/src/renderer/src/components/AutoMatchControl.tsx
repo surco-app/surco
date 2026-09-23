@@ -2,6 +2,7 @@ import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { autoMatchAvailable } from '../../../shared/autoMatch'
 import type { Settings } from '../../../shared/types'
+import { SettingsCheckboxField } from './settings/SettingsPrimitives'
 
 // The auto-match toggle, shared by Settings and the onboarding wizard. The readiness
 // rule and the three hint branches (ready / missing source / missing token) are baked
@@ -23,29 +24,19 @@ export function AutoMatchControl({
   const { t: tr } = useTranslation()
   const autoReady = autoMatchAvailable({ searchProviders, discogsToken })
   return (
-    <label
-      className={`flex items-center gap-3 ${
-        autoReady ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-      }`}
-    >
-      <input
-        data-testid={testid}
-        type="checkbox"
-        checked={checked && autoReady}
-        disabled={!autoReady}
-        onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 accent-[var(--color-accent)]"
-      />
-      <span className="text-sm">
-        {tr('settings.autoMatch')}
-        <span className="mt-0.5 block text-xs leading-relaxed text-fg-dim">
-          {searchProviders.length === 0
-            ? tr('settings.autoMatchNeedsSource')
-            : autoReady
-              ? tr('settings.autoMatchHint')
-              : tr('settings.autoMatchNeedsToken')}
-        </span>
-      </span>
-    </label>
+    <SettingsCheckboxField
+      testid={testid}
+      checked={checked && autoReady}
+      onChange={onChange}
+      disabled={!autoReady}
+      label={tr('settings.autoMatch')}
+      hint={
+        searchProviders.length === 0
+          ? tr('settings.autoMatchNeedsSource')
+          : autoReady
+            ? tr('settings.autoMatchHint')
+            : tr('settings.autoMatchNeedsToken')
+      }
+    />
   )
 }
