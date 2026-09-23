@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { SpectrumResult, TrackProperties } from '../../../shared/types'
+import type { NormalizeConfig, SpectrumResult, TrackProperties } from '../../../shared/types'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import i18n from '../i18n'
 import { formatKHz } from '../lib/quality'
@@ -11,6 +11,16 @@ import { createQueryClient } from '../lib/queryClient'
 import { ToastProvider } from '../lib/toastContext'
 import type { TrackItem } from '../types'
 import { QualitySection } from './QualitySection'
+
+const LOUDNESS_OFF: {
+  showLoudness: boolean
+  normalize: NormalizeConfig
+  onShowLoudnessHelp: () => void
+} = {
+  showLoudness: false,
+  normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+  onShowLoudnessHelp: () => {},
+}
 
 // The report composition is canvas work jsdom can't run; a plain stub (not vi.fn — the
 // restoreAllMocks in beforeEach would wipe a vi.fn's implementation) returns a
@@ -78,6 +88,7 @@ function renderSection(
   render(
     <QueryClientProvider client={client}>
       <QualitySection
+        {...LOUDNESS_OFF}
         item={track(inputPath)}
         showSpectrum
         open
@@ -147,6 +158,16 @@ describe('QualitySection verdict first', () => {
     expect(screen.getByTestId('spectrogram')).toBeInTheDocument()
   })
 
+  // The format facts only ride the clean file's verdict line, so a flagged file must not
+  // pay for a properties probe nothing on screen will read.
+  it('reads the format facts only for the clean verdict line that shows them', async () => {
+    renderSection({ ...clean, cutoffHz: 16000, hasKnee: true, fineStepDb: 43.2 }, '/m/a.flac')
+    await screen.findByTestId('quality-plain')
+    await new Promise((r) => setTimeout(r, 600))
+    const api = (window as unknown as { api: { properties: ReturnType<typeof vi.fn> } }).api
+    expect(api.properties).not.toHaveBeenCalled()
+  })
+
   it('still draws the spectrum when no verdict could be reached', async () => {
     renderSection({ ...clean, cutoffHz: null })
     expect(await screen.findByTestId('spectrogram')).toBeInTheDocument()
@@ -207,7 +228,13 @@ describe('QualitySection analysis gating', () => {
     const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
-        <QualitySection item={track()} showSpectrum open={false} onToggle={vi.fn()} />
+        <QualitySection
+          {...LOUDNESS_OFF}
+          item={track()}
+          showSpectrum
+          open={false}
+          onToggle={vi.fn()}
+        />
       </QueryClientProvider>,
     )
     await new Promise((r) => setTimeout(r, 0))
@@ -226,7 +253,7 @@ describe('QualitySection analysis gating', () => {
     const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
-        <QualitySection item={track()} showSpectrum open onToggle={vi.fn()} />
+        <QualitySection {...LOUDNESS_OFF} item={track()} showSpectrum open onToggle={vi.fn()} />
       </QueryClientProvider>,
     )
     await vi.waitFor(() => expect(spectrogram).toHaveBeenCalled())
@@ -246,7 +273,7 @@ describe('QualitySection analysis gating', () => {
     const client = createQueryClient()
     const { unmount } = render(
       <QueryClientProvider client={client}>
-        <QualitySection item={track()} showSpectrum open onToggle={vi.fn()} />
+        <QualitySection {...LOUDNESS_OFF} item={track()} showSpectrum open onToggle={vi.fn()} />
       </QueryClientProvider>,
     )
     // Unmount well inside the settle window, the way the editor remounts when the
@@ -357,6 +384,7 @@ describe('QualitySection verdict caption', () => {
       <QueryClientProvider client={createQueryClient()}>
         <ToastProvider value={{ reportError }}>
           <QualitySection
+            {...LOUDNESS_OFF}
             item={track('/m/a.flac')}
             showSpectrum
             open
@@ -533,7 +561,7 @@ describe('QualitySection analysis failure', () => {
     const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
-        <QualitySection item={track()} showSpectrum open onToggle={vi.fn()} />
+        <QualitySection {...LOUDNESS_OFF} item={track()} showSpectrum open onToggle={vi.fn()} />
       </QueryClientProvider>,
     )
     const error = await screen.findByTestId('quality-error')
@@ -553,7 +581,7 @@ describe('QualitySection analysis failure', () => {
     const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
-        <QualitySection item={track()} showSpectrum open onToggle={vi.fn()} />
+        <QualitySection {...LOUDNESS_OFF} item={track()} showSpectrum open onToggle={vi.fn()} />
       </QueryClientProvider>,
     )
 
