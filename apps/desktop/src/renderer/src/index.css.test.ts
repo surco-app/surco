@@ -175,3 +175,27 @@ describe('section pill label contrast (WCAG 1.4.3 AA)', () => {
     }
   }
 })
+
+// The trim handle opts out of the global ring (a box around a 12px-wide strip read as a
+// stray rectangle) and used to show focus only as a soft glow on a 1px line: nothing a
+// keyboard user could find at a glance. Focus now rings the grip with a solid 2px accent
+// band, kept off the grip by a 2px moat of the lane colour so it reads as a ring and not
+// as a fatter grip, and that band has to clear 3:1 against the lane it is drawn on.
+describe('trim handle focus indicator (WCAG 1.4.11)', () => {
+  const rule = css.slice(css.indexOf('.trim-handle[data-focused] .trim-grip'))
+  const body = rule.slice(0, rule.indexOf('}'))
+
+  it('rings the grip with a solid 2px accent band outside a lane-coloured gap', () => {
+    expect(body).toContain('0 0 0 2px var(--color-field)')
+    expect(body).toContain('0 0 0 4px var(--color-accent)')
+  })
+
+  for (const [theme, t] of [
+    ['dark', dark],
+    ['light', light],
+  ] as const) {
+    it(`${theme} ring reaches 3:1 on the lane`, () => {
+      expect(contrast(t['color-accent'], t['color-field'])).toBeGreaterThanOrEqual(3)
+    })
+  }
+})
