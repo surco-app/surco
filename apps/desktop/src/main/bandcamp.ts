@@ -2,7 +2,7 @@ import { errorWithKey } from '../shared/errorKeys'
 import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
 import { activity } from './activity'
 import { bandcampLimiter } from './bandcampLimiter'
-import { cacheIfUsable, createLookupCacheStore } from './lookupCacheStore'
+import { cachedSearch, cacheIfUsable, createLookupCacheStore } from './lookupCacheStore'
 import { isBlockedFetchUrl } from './navigation'
 import { buildSearchCandidates } from './searchQuery'
 
@@ -60,7 +60,7 @@ const cacheStore = createLookupCacheStore<SearchResult[], Release>('bandcamp-loo
 
 async function searchOnce(text: string, priority?: SearchPriority): Promise<SearchResult[]> {
   const key = text.trim().toLowerCase()
-  const cached = cacheStore.getSearch(key)
+  const cached = cachedSearch(cacheStore, key)
   if (cached) return cached
   await bandcampLimiter.acquire(priority)
   const res = await fetch(SEARCH_URL, {

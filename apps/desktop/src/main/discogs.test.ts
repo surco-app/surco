@@ -31,6 +31,7 @@ import {
   retryDelayMs,
   search,
 } from './discogs'
+import { EMPTY_SEARCH_TTL_MS } from './lookupCacheStore'
 
 const result = (over: Partial<SearchResult>): SearchResult =>
   ({ id: 1, title: 'X', ...over }) as SearchResult
@@ -73,7 +74,10 @@ function mockRelease(body: unknown): ReturnType<typeof vi.fn> {
   return fn
 }
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.useRealTimers()
+})
 
 describe('search', () => {
   // The auto-search fires on every keystroke, so without caching identical
@@ -99,14 +103,33 @@ describe('search', () => {
   // since the cache is on disk, not even after a relaunch, leaving the track permanently
   // unmatchable with no way for the user to force a retry.
   it('retries the network after a search that came back empty', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
     mockFetch([])
     await search('nothing here', 'tok')
     const second = mockFetch([{ id: 9 }])
+    vi.advanceTimersByTime(EMPTY_SEARCH_TTL_MS)
 
     const results = await search('nothing here', 'tok')
 
     expect(second, 'the empty answer was pinned and never re-fetched').toHaveBeenCalledTimes(1)
     expect(results).toHaveLength(1)
+  })
+
+  // The editor re-runs the search ladder the background sweep just ran for the same track.
+  // For an artist the catalog lacks, every rung comes back empty, and repeating them all
+  // through the paced limiter kept the panel on its skeleton for seconds.
+  it('does not repeat a search that came back empty moments ago', async () => {
+    mockFetch([])
+    const hints = { artist: 'Javier Fig', title: 'Fast Food' }
+    await search('Javier Fig Fast Food', 'tok', 'low', hints)
+    const again = mockFetch([])
+
+    await search('Javier Fig Fast Food', 'tok', 'high', hints)
+
+    expect(
+      again,
+      'the editor re-asked every rung the sweep had already asked',
+    ).not.toHaveBeenCalled()
   })
 
   // The rate limiter peeks this to let a cached repeat through without spending a token —
