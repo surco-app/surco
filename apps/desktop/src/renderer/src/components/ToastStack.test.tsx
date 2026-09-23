@@ -22,6 +22,24 @@ describe('ToastStack', () => {
     expect(region).toBeEmptyDOMElement()
   })
 
+  // The container is already a polite live region; a status or alert role on each card
+  // nested a second one inside it and VoiceOver read every toast twice. One path only.
+  it('announces a toast through the container alone, not a second live region per card', () => {
+    const { container } = render(
+      <ToastStack
+        toasts={[
+          toast({ id: 'a', message: 'saved' }),
+          toast({ id: 'b', tone: 'danger', message: 'failed' }),
+        ]}
+        onExpire={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    const region = container.firstElementChild as HTMLElement
+    expect(region).toHaveAttribute('aria-live', 'polite')
+    expect(region.querySelectorAll('[role="status"], [role="alert"], [aria-live]')).toHaveLength(0)
+  })
+
   // The stack always sits in the same corner — bottom-right — so a toast never surprises
   // the user by appearing somewhere else. It stays put even when a modal is open (its
   // Cancel/Save bar can sit under a toast; a predictable position wins over dodging it).
