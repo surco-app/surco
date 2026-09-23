@@ -1502,7 +1502,10 @@ export default function App(): React.JSX.Element {
   const applyTitleFormat = useStableCallback(() => {
     const format = settings?.titleFormat ?? ''
     if (!format.trim()) return
-    const targets = editScope(selectedTracks, selected)
+    const targets = editScope(selectedTracks, selected).map((t) => ({
+      ...t,
+      meta: effectiveMeta(t, settings?.customFields ?? []),
+    }))
     const { patches, skipped, missingFields } = titleFormatSummary(format, targets)
     // A silent no-op reads as a broken button — say WHY nothing changed: name the
     // pattern field that is empty on these tracks when that's the cause (worded by

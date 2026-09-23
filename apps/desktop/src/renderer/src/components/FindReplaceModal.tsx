@@ -46,27 +46,29 @@ export function FindReplaceModal({
   // The preview runs the replacement over every field of every track — O(tracks × 15)
   // regex passes — so it recomputes only when an input actually changes, not on every
   // keystroke-induced render of the modal.
+  // Each track's metadata with its custom fields resolved, shared by the replacement and
+  // the before→after rows, and rebuilt only when the tracks or the fields change.
+  const resolved = useMemo(
+    () => new Map(tracks.map((t) => [t.id, effectiveMeta(t, customFields)])),
+    [tracks, customFields],
+  )
   const patches = useMemo(
     () =>
       find && !badRegex
-        ? tracks
-            .map((t) => ({
-              id: t.id,
-              meta: findReplaceTrack(effectiveMeta(t, customFields), find, replace, {
-                regex,
-                caseSensitive,
-              }),
+        ? [...resolved]
+            .map(([id, meta]) => ({
+              id,
+              meta: findReplaceTrack(meta, find, replace, { regex, caseSensitive }),
             }))
             .filter((p) => Object.keys(p.meta).length > 0)
         : [],
-    [tracks, customFields, find, replace, regex, caseSensitive, badRegex],
+    [resolved, find, replace, regex, caseSensitive, badRegex],
   )
   // One row per field that changes, custom fields included one by one: a patch carries the
   // whole custom set, so the rows come from comparing it with what the track held.
   const changes = useMemo(() => {
-    const byId = new Map(tracks.map((t) => [t.id, effectiveMeta(t, customFields)]))
     return patches.flatMap((p) => {
-      const before = byId.get(p.id)
+      const before = resolved.get(p.id)
       return Object.entries(p.meta).flatMap(([field, after]) =>
         field === 'custom'
           ? Object.entries(after as Record<string, string>)
@@ -89,7 +91,7 @@ export function FindReplaceModal({
             ],
       )
     })
-  }, [patches, tracks, customFields, tr])
+  }, [patches, resolved, customFields, tr])
   const changedFields = changes.length
   const examples = changes.slice(0, PREVIEW_LIMIT)
 
