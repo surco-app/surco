@@ -121,6 +121,10 @@ const KNEE_MIN_BANDS_ABOVE = 2
 // single band above. The 20 dB line sits ~6 dB clear of both the worst genuine edge drop
 // and the shallowest collapse we must catch.
 const KNEE_CATASTROPHIC_DROP_DB = 20
+// How far a cliff moves when the read starts one second later: up to 0.75 dB over the 283
+// files a lossless library flagged (0.39 at p99). A cliff that clears its bar by less is
+// one trim away from vanishing, so it is not called.
+const KNEE_JITTER_DB = 0.75
 
 // The source's real ceiling (Hz) when the FFT bands carry a codec lowpass the biquad
 // pass missed, or null for a natural spectrum. Returns the last full band before the
@@ -133,11 +137,12 @@ export function detectFftKnee(
   bandWidthHz: number,
 ): number | null {
   let kneeIndex = -1
-  let maxDrop = KNEE_DROP_DB
+  let maxDrop = KNEE_DROP_DB + KNEE_JITTER_DB
   for (let i = 0; i < bandsDb.length - 1; i++) {
     if (!Number.isFinite(bandsDb[i]) || !Number.isFinite(bandsDb[i + 1])) continue
     const drop = bandsDb[i] - bandsDb[i + 1]
-    const minBandsAbove = drop >= KNEE_CATASTROPHIC_DROP_DB ? 1 : KNEE_MIN_BANDS_ABOVE
+    const minBandsAbove =
+      drop >= KNEE_CATASTROPHIC_DROP_DB + KNEE_JITTER_DB ? 1 : KNEE_MIN_BANDS_ABOVE
     if (bandsDb.length - 1 - (i + 1) < minBandsAbove) continue
     if (drop < maxDrop) continue
     const ceiling = bandsDb[i + 1] + KNEE_RECOVERY_DB

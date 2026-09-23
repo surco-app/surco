@@ -124,6 +124,18 @@ describe('detectFftKnee', () => {
     70.6, 70.8, 68.4, 68.0, 66.7, 65.8, 62.7, 60.1, 57.4, 51.5, 50.0, 43.2, 17.3, -16.5,
   ]
 
+  // Duran Duran - Come Undone (Edit), from a lossless library: 61.08 -> 53.08 dB at
+  // 17 -> 18 kHz, a cliff of 8.0 dB on the 8 dB bar. Read one second later into the
+  // track it measures 7.85 and the knee is gone; over 283 files such a shift moved a
+  // cliff by up to 0.75 dB. A knee that a trim decides is not a codec wall worth naming.
+  it('does not call a cliff that clears the bar by less than its measured jitter', () => {
+    const marginal = [
+      72.5, 73.81, 77.07, 70.01, 69.36, 67.31, 63.57, 62.88, 61.08, 53.08, 49.47, 48.95, 44.8,
+      30.74,
+    ]
+    expect(detectFftKnee(marginal, BAND_START_HZ, BAND_WIDTH_HZ)).toBeNull()
+  })
+
   // The knee must name the boundary where content ENDS, not the lower edge of
   // the last loud band. Reporting the lower edge read one band low: a real pair
   // of store FLACs with the same ~20 kHz cut graded "Lossy" at 44.1 kHz (shelf
