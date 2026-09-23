@@ -10,7 +10,6 @@ import ScrollProgress from './components/ScrollProgress'
 import SectionView from './components/SectionView'
 import Walkthrough from './components/Walkthrough'
 import { PAGES } from './lib/nav'
-import { useAutoLanguage } from './lib/useAutoLanguage'
 
 // The home page is three things: what this is, what it does to a track, and how to
 // get it. Everything that used to sit below — the feature lists, the five-app
@@ -31,7 +30,6 @@ const INTEGRATIONS = [
 
 export default function App() {
   const { t, i18n } = useTranslation()
-  useAutoLanguage()
   const featuresHref = PAGES.features[i18n.language === 'en' ? 'en' : 'es']
 
   return (

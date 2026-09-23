@@ -5,7 +5,7 @@ import { trackDonate } from '../lib/analytics'
 import { isCondensed } from '../lib/header'
 import { HEADER_SECTIONS, PAGES, type Page } from '../lib/nav'
 import { btnPrimary } from '../lib/ui'
-import { rememberLanguage } from '../lib/useAutoLanguage'
+import { rememberLanguage, useAutoLanguage } from '../lib/useAutoLanguage'
 
 // `page` marks which standalone page renders the header; section links then
 // point back to the landing instead of to anchors that don't exist here.
@@ -13,6 +13,7 @@ export default function Header({ page }: { page?: Page }) {
   const { t, i18n } = useTranslation()
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const [offerOther, dismissOffer] = useAutoLanguage()
   const lang = i18n.language === 'en' ? 'en' : 'es'
   const otherCode = lang === 'en' ? 'es' : 'en'
   const otherLabel = lang === 'en' ? 'ES' : 'EN'
@@ -71,6 +72,33 @@ export default function Header({ page }: { page?: Page }) {
       >
         {t('nav.skipToContent')}
       </a>
+      {offerOther && (
+        <div
+          data-testid="language-offer"
+          lang={otherCode}
+          className="border-b border-line/70 bg-bg/95 text-sm text-muted"
+        >
+          <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-1 px-6 py-2">
+            <span>{t('nav.languageOffer.text', { lng: otherCode })}</span>
+            <a
+              data-testid="language-offer-switch"
+              href={otherHref}
+              onClick={keepHash}
+              className="font-semibold text-blue transition-colors hover:text-cyan"
+            >
+              {t('nav.languageOffer.switch', { lng: otherCode })}
+            </a>
+            <button
+              type="button"
+              data-testid="language-offer-dismiss"
+              onClick={dismissOffer}
+              className="text-muted underline-offset-4 transition-colors hover:text-fg hover:underline"
+            >
+              {t('nav.languageOffer.dismiss', { lng: otherCode })}
+            </button>
+          </div>
+        </div>
+      )}
       {/* Fixed height, always. The header used to animate its own padding, which
           shortened the document as it condensed — near the threshold that fed back
           into the scroll position and flickered between both sizes. Only the inner

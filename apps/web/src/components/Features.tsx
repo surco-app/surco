@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { useAutoLanguage } from '../lib/useAutoLanguage'
 import Band from './Band'
 import DownloadButton from './DownloadButton'
 import Faq from './Faq'
@@ -29,7 +28,6 @@ function Kbd({ k }: { k: string }) {
 // where on the home page it was the problem.
 export default function Features() {
   const { t } = useTranslation()
-  useAutoLanguage()
   const featureGroups = t('features.groups', { returnObjects: true }) as {
     kick: string
     title: string

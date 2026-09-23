@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useAutoLanguage } from '../lib/useAutoLanguage'
 import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
@@ -77,7 +76,6 @@ function GuideShot({
 
 export default function Guide() {
   const { t } = useTranslation()
-  useAutoLanguage()
 
   const sections = t('guide.sections', { returnObjects: true }) as Section[]
   const placeholder = t('guide.shotPlaceholder')
