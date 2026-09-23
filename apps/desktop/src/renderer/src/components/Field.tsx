@@ -1,5 +1,5 @@
 import type React from 'react'
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useId, useRef, useState } from 'react'
 import type { TagList } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
@@ -49,6 +49,7 @@ export const Field = memo(function Field({
   formatResult,
 }: FieldProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
+  const inputId = useId()
   // The text the input shows while the user types, kept local so a keystroke doesn't
   // touch the global track array (and its O(n) pipeline) until they pause or leave.
   const [draft, setDraft] = useState(value)
@@ -114,8 +115,13 @@ export const Field = memo(function Field({
     insertSources !== undefined &&
     (insertable.length > 0 || draft.trim() !== '' || !!cleanResult || !!formatResult)
   return (
-    <label className={`group block ${wide ? 'col-span-1 @[26rem]:col-span-2' : ''}`}>
-      <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-fg-dim">
+    // A wrapping <label> would fold the { } menu button and every chip into the input's
+    // accessible name, so the label points at the input by id and the rest sits beside it.
+    <div className={`group block ${wide ? 'col-span-1 @[26rem]:col-span-2' : ''}`}>
+      <label
+        htmlFor={inputId}
+        className="mb-1 flex items-center gap-1.5 text-xs font-medium text-fg-dim"
+      >
         {label}
         {/* A required field that's still empty isn't an error the user made — it's a
             calm "you'll need this before converting" cue. Reserve danger-red for true
@@ -127,10 +133,11 @@ export const Field = memo(function Field({
             className="h-1.5 w-1.5 rounded-full bg-warn"
           />
         )}
-      </span>
+      </label>
       <span className="relative block">
         <input
           ref={inputRef}
+          id={inputId}
           data-testid={`field-${name}`}
           aria-invalid={invalid}
           value={draft}
@@ -180,6 +187,6 @@ export const Field = memo(function Field({
           }
         />
       )}
-    </label>
+    </div>
   )
 })
