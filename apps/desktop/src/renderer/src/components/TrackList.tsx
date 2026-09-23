@@ -581,9 +581,11 @@ const TrackRow = memo(function TrackRow({
           applied accent sparkle, and gone the moment the track is actually matched. A
           sibling of the row button, not a child, since a button inside the option button
           is invalid and folds the action into the row's name. It is placed over the empty
-          sparkle slot of the artist line: 120px from the right edge is the row padding
-          plus the duration, pill and verdict slots with their gaps, and 7px up from the
-          bottom centres it on that line. Shown under the same conditions as that line. */}
+          sparkle slot of the artist line: that slot ends 120px from the right edge (the row
+          padding plus the duration, pill and verdict slots with their gaps), and its centre
+          sits 13px up from the bottom. The button is a 24px target (WCAG 2.5.8) centred
+          there, so the 12px glyph lands where the slot would have drawn it. Shown under the
+          same conditions as that line. */}
       {!t.loadingMeta &&
         !(t.status === 'processing' && t.stage) &&
         !t.autoMatched &&
@@ -595,7 +597,7 @@ const TrackRow = memo(function TrackRow({
             data-confidence="review"
             aria-label={tr('commands.acceptReview')}
             onClick={() => onAcceptReview(t.id)}
-            className="group/dot press absolute right-[120px] bottom-[7px] flex items-center text-warn"
+            className="group/dot press absolute right-[114px] bottom-px flex h-6 w-6 items-center justify-center text-warn"
           >
             <Sparkles className="h-3 w-3" aria-hidden="true" />
             <Tooltip
