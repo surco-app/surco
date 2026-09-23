@@ -1957,7 +1957,7 @@ describe('Editor clean up previous files', () => {
     fireEvent.click(screen.getByTestId('clean-up-previous'))
     expect(onCleanUp).toHaveBeenCalledWith({
       originalPath: '/music/a.wav',
-      supersededPaths: [],
+      superseded: [],
       staleMusicCopy: null,
     })
   })
@@ -1977,7 +1977,7 @@ describe('Editor clean up previous files', () => {
     fireEvent.click(screen.getByTestId('clean-up-previous'))
     expect(onCleanUp).toHaveBeenCalledWith({
       originalPath: '/music/a.wav',
-      supersededPaths: ['/old/a.mp3'],
+      superseded: [{ trackId: 'a', path: '/old/a.mp3' }],
       staleMusicCopy: null,
     })
   })

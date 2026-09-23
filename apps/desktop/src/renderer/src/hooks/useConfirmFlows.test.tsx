@@ -178,7 +178,7 @@ describe('useConfirmFlows clean up previous files', () => {
     const { flows, opened } = setup([a])
     await flows.askCleanUp(a, {
       originalPath: '/a.wav',
-      supersededPaths: ['/old/a.mp3'],
+      superseded: [{ trackId: 'a', path: '/old/a.mp3' }],
       staleMusicCopy: stale,
     })
     expect(opened[0].destructive).toBe(true)
@@ -204,7 +204,7 @@ describe('useConfirmFlows clean up previous files', () => {
     const { flows, opened } = setup([a], { updateTrack, onOldMusicCopyRemoved })
     await flows.askCleanUp(a, {
       originalPath: '/a.wav',
-      supersededPaths: ['/old/a.mp3'],
+      superseded: [{ trackId: 'a', path: '/old/a.mp3' }],
       staleMusicCopy: stale,
     })
     opened[0].onConfirm()
@@ -229,7 +229,10 @@ describe('useConfirmFlows clean up previous files', () => {
     const { flows, opened } = setup([a, b], { updateTrack })
     await flows.askCleanUp(a, {
       originalPath: null,
-      supersededPaths: ['/old/a.mp3', '/old/b.mp3'],
+      superseded: [
+        { trackId: 'a', path: '/old/a.mp3' },
+        { trackId: 'b', path: '/old/b.mp3' },
+      ],
       staleMusicCopy: null,
     })
     opened[0].onConfirm()
@@ -247,7 +250,7 @@ describe('useConfirmFlows clean up previous files', () => {
     const { flows, opened } = setup([a])
     await flows.askCleanUp(a, {
       originalPath: '/a.wav',
-      supersededPaths: ['/Volumes/NAS/old/a.mp3'],
+      superseded: [{ trackId: 'a', path: '/Volumes/NAS/old/a.mp3' }],
       staleMusicCopy: null,
     })
     expect(opened[0].message).toContain('network volume')
@@ -262,7 +265,7 @@ describe('useConfirmFlows clean up previous files', () => {
     const reportTrashFailure = vi.fn()
     const a = track('a', { status: 'done' })
     const { flows, opened } = setup([a], { reportTrashFailure })
-    await flows.askCleanUp(a, { originalPath: '/a.wav', supersededPaths: [], staleMusicCopy: null })
+    await flows.askCleanUp(a, { originalPath: '/a.wav', superseded: [], staleMusicCopy: null })
     opened[0].onConfirm()
     await waitFor(() => expect(reportTrashFailure).toHaveBeenCalledWith('a.wav'))
   })
@@ -276,7 +279,7 @@ describe('useConfirmFlows clean up previous files', () => {
     const reportOldCopyRemoveFailure = vi.fn()
     const a = track('a')
     const { flows, opened } = setup([], { reportOldCopyRemoveFailure })
-    await flows.askCleanUp(a, { originalPath: null, supersededPaths: [], staleMusicCopy: stale })
+    await flows.askCleanUp(a, { originalPath: null, superseded: [], staleMusicCopy: stale })
     opened[0].onConfirm()
     await waitFor(() => expect(reportOldCopyRemoveFailure).toHaveBeenCalledWith(false))
   })
@@ -294,7 +297,7 @@ describe('useConfirmFlows clean up previous files', () => {
     const reportOldCopyRemoveFailure = vi.fn()
     const a = track('a')
     const { flows, opened } = setup([], { reportOldCopyRemoveFailure })
-    await flows.askCleanUp(a, { originalPath: null, supersededPaths: [], staleMusicCopy: stale })
+    await flows.askCleanUp(a, { originalPath: null, superseded: [], staleMusicCopy: stale })
     opened[0].onConfirm()
     await waitFor(() => expect(reportOldCopyRemoveFailure).toHaveBeenCalledWith(true))
   })
@@ -316,7 +319,7 @@ describe('useConfirmFlows clean up previous files', () => {
     const { flows, opened } = setup([a], { updateTrack })
     await flows.askCleanUp(a, {
       originalPath: '/a.wav',
-      supersededPaths: [],
+      superseded: [],
       staleMusicCopy: stale,
     })
     opened[0].onConfirm()

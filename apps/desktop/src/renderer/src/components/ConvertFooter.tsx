@@ -4,7 +4,7 @@ import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatMatchesInput } from '../../../shared/format'
 import type { FormatSetting, NormalizeConfig, OutputFormat } from '../../../shared/types'
-import type { CleanupOffer } from '../hooks/useConfirmFlows'
+import { type CleanupOffer, cleanupCount } from '../hooks/useConfirmFlows'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import type { Destination } from '../lib/destination'
 import { openFeedback } from '../lib/feedback'
@@ -122,13 +122,14 @@ export function ConvertFooter({
   const showInMusic = hasMusicCopy && musicAdded
   const cleanup: CleanupOffer = {
     originalPath: canDeleteOriginal ? item.inputPath : null,
-    supersededPaths: isMulti ? status.supersededPaths : supersededPath ? [supersededPath] : [],
+    superseded: isMulti
+      ? status.superseded
+      : supersededPath
+        ? [{ trackId: item.id, path: supersededPath }]
+        : [],
     staleMusicCopy: !isMulti && musicAdded && staleMusicCopy ? staleMusicCopy : null,
   }
-  const cleanupCount =
-    (cleanup.originalPath ? 1 : 0) +
-    cleanup.supersededPaths.length +
-    (cleanup.staleMusicCopy ? 1 : 0)
+  const cleanupFiles = cleanupCount(cleanup)
   // The footer swaps wholesale between the convert button and the done line — the
   // one state change every conversion ends on, and it used to snap. The keyed block
   // below rises in on a real swap only: the editor remounts this footer per track,
@@ -203,14 +204,14 @@ export function ConvertFooter({
                   {tr('editor.showFile')}
                 </button>
               )}
-              {cleanupCount > 0 && (
+              {cleanupFiles > 0 && (
                 <button
                   type="button"
                   data-testid="clean-up-previous"
                   onClick={() => onCleanUp?.(cleanup)}
                   className="press text-xs text-fg-dim hover:text-danger"
                 >
-                  {tr('editor.cleanUpPrevious', { count: cleanupCount })}
+                  {tr('editor.cleanUpPrevious', { count: cleanupFiles })}
                 </button>
               )}
             </div>
