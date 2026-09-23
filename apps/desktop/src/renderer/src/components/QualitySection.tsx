@@ -9,6 +9,7 @@ import { useSpectrogram } from '../hooks/useSpectrogram'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { cleanIpcError, errorKeyOf } from '../lib/ipcError'
 import {
+  cutoffLabel,
   formatKHz,
   GOOD_CUTOFF_HZ,
   isLossyContainer,
@@ -56,6 +57,12 @@ const EVIDENCE_BORDER = {
   warn: 'var(--color-warn)',
   danger: 'var(--color-danger)',
   neutral: 'var(--color-line-strong)',
+} as const
+
+const RESOLUTION_TESTID = {
+  'editor.qualityUpsampled': 'quality-upsampled',
+  'editor.qualityHiRes': 'quality-hires',
+  'editor.qualityResolutionUnknown': 'quality-resolution-unknown',
 } as const
 
 interface Props {
@@ -216,13 +223,10 @@ export function QualitySection({
         tone: 'warn' as const,
         params: { cutoff },
       }
-    // The good verdict earns its badge only while hints are on: it is
-    // reassurance, not a warning, and hints-off users already trust the badge.
     // A knee at or past the good line still reads good but its step is a wall,
     // so the no-cut claim would lie; only a knee-free spectrum whose steepest step
     // stays under the codec-wall size gets the line.
     if (
-      showHints &&
       spectrum.hasKnee !== true &&
       drop < CODEC_WALL_FINE_STEP_DB &&
       captionKey === 'editor.qualityCaptionGood'
@@ -234,6 +238,23 @@ export function QualitySection({
       }
     return null
   })()
+  // The good line is reassurance, not a finding, so on screen it waits for hints; the
+  // shared report always carries it as the verdict's proof.
+  const shownEvidence = evidence && (showHints || evidence.tone !== 'good') ? evidence : null
+  const caption = evidence
+    ? tr(evidence.key, evidence.params)
+    : spectrum?.cutoffHz != null && captionKey && captionKey !== 'editor.qualityCaptionGood'
+      ? tr(captionKey, { cutoff: formatKHz(spectrum.cutoffHz) })
+      : null
+  const resolutionKey: keyof typeof RESOLUTION_TESTID | null = !spectrum
+    ? null
+    : spectrum.upsampled || spectrum.resolution === 'upsampled'
+      ? 'editor.qualityUpsampled'
+      : spectrum.resolution === 'hires'
+        ? 'editor.qualityHiRes'
+        : spectrum.resolution === 'unknown'
+          ? 'editor.qualityResolutionUnknown'
+          : null
   // Composes the shareable PNG (the verdict's proof for a "is this file fake?" thread)
   // and hands it to the save dialog. Guarded against double-clicks while composing.
   const [savingReport, setSavingReport] = useState(false)
@@ -243,24 +264,22 @@ export function QualitySection({
     try {
       const heading =
         [item.meta.artist, item.meta.title].filter(Boolean).join(' — ') || item.fileName
-      const cutoff = spectrum.cutoffHz !== null ? formatKHz(spectrum.cutoffHz) : ''
+      const chip =
+        spectrum.cutoffHz !== null
+          ? cutoffLabel({ ...spectrum, cutoffHz: spectrum.cutoffHz })
+          : null
       const png = await renderQualityReport({
         spectrum,
         heading,
         facts: `${ext.toUpperCase()} · ${spectrum.sampleRateHz / 1000} kHz`,
         verdict: transcoded ? 'bad' : verdict,
         verdictLabel: tr(transcoded ? 'editor.qualityTranscode' : qualityBadge[verdict].label),
-        cutoffLabel:
-          spectrum.cutoffHz !== null
-            ? tr(
-                spectrum.hasKnee === false && !spectrum.processed
-                  ? 'editor.spectrumHighs'
-                  : 'editor.spectrumCutoff',
-                { cutoff },
-              )
-            : null,
-        caption: captionKey ? tr(captionKey, { cutoff }) : '',
-        upsampledNote: spectrum.upsampled ? tr('editor.qualityUpsampled') : undefined,
+        cutoffLabel: chip ? tr(chip.key, { cutoff: chip.cutoff }) : null,
+        caption: caption ?? '',
+        notes: [
+          resolutionKey && tr(resolutionKey),
+          spectrum.bitsUsage === 'padded16' && tr('editor.qualityBitsPadded'),
+        ].filter((note): note is string => typeof note === 'string'),
         footer: tr('editor.reportFooter'),
       })
       await window.api.exportQualityReport(png, `${item.fileName} — Surco`)
@@ -338,23 +357,17 @@ export function QualitySection({
                     would be the third telling of the same fact. With measured
                     evidence available, the numbered claim replaces the caption
                     outright; saying "cut at 16 kHz" twice would be noise. */}
-                {evidence ? (
+                {shownEvidence ? (
                   <div
                     data-testid="quality-evidence"
-                    data-tone={evidence.tone}
+                    data-tone={shownEvidence.tone}
                     className="mt-2 border-l-2 pl-2.5 text-xs"
-                    style={{ borderColor: EVIDENCE_BORDER[evidence.tone] }}
+                    style={{ borderColor: EVIDENCE_BORDER[shownEvidence.tone] }}
                   >
-                    <p className="text-fg-dim">{tr(evidence.key, evidence.params)}</p>
+                    <p className="text-fg-dim">{caption}</p>
                   </div>
                 ) : (
-                  spectrum.cutoffHz !== null &&
-                  captionKey &&
-                  captionKey !== 'editor.qualityCaptionGood' && (
-                    <p className="mt-2 text-xs text-fg-dim">
-                      {tr(captionKey, { cutoff: formatKHz(spectrum.cutoffHz) })}
-                    </p>
-                  )
+                  !evidence && caption && <p className="mt-2 text-xs text-fg-dim">{caption}</p>
                 )}
                 {/* Orthogonal to the codec verdict: the bandwidth claim, not the
                     fidelity. Stated beside a green "good" badge so it doesn't read as
@@ -363,19 +376,14 @@ export function QualitySection({
                     "couldn't tell" — because saying nothing left a real hi-res file looking
                     exactly like one nobody analysed. A plain 44.1 kHz file makes no claim to
                     check, so it stays silent rather than gaining a line that says nothing. */}
-                {spectrum.upsampled || spectrum.resolution === 'upsampled' ? (
-                  <p data-testid="quality-upsampled" className="mt-2 text-xs text-fg-dim">
-                    {tr('editor.qualityUpsampled')}
+                {resolutionKey && (
+                  <p
+                    data-testid={RESOLUTION_TESTID[resolutionKey]}
+                    className="mt-2 text-xs text-fg-dim"
+                  >
+                    {tr(resolutionKey)}
                   </p>
-                ) : spectrum.resolution === 'hires' ? (
-                  <p data-testid="quality-hires" className="mt-2 text-xs text-fg-dim">
-                    {tr('editor.qualityHiRes')}
-                  </p>
-                ) : spectrum.resolution === 'unknown' ? (
-                  <p data-testid="quality-resolution-unknown" className="mt-2 text-xs text-fg-dim">
-                    {tr('editor.qualityResolutionUnknown')}
-                  </p>
-                ) : null}
+                )}
                 {/* The bit-depth verdict: which bytes actually carry signal in the
                     scanned minute. Padding is a finding, so its one line always shows;
                     the reading behind it and what converting will do ride the hints
