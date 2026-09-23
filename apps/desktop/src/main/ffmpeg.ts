@@ -5,6 +5,7 @@ import { constants as osConstants, setPriority, tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import { promisify } from 'node:util'
 import log from 'electron-log/main'
+import { processesAudio } from '../shared/audioProcessing'
 import { declickFilter } from '../shared/declick'
 import { errorWithKey } from '../shared/errorKeys'
 import { forcedInputArgs } from '../shared/inputFormat'
@@ -1773,7 +1774,7 @@ export async function convertAudio(
     input,
     format,
     probeOnce,
-    normalizing || declickAf !== undefined || trimAf !== undefined,
+    processesAudio({ normalize, declick, trim }),
     resolvedQuality,
   )
   const { codec, dither, ext } = plan

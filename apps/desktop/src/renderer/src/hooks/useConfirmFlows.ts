@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { processesAudio } from '../../../shared/audioProcessing'
 import { batchKeepMp3, reencodesLossyInPlace } from '../../../shared/format'
 import type {
   DeclickMode,
@@ -13,7 +14,7 @@ import { eligibleForBatch } from '../lib/batch'
 import { deriveTagPatches } from '../lib/deriveTags'
 import type { Destination } from '../lib/destination'
 import { DEFAULT_REQUIRED_FIELDS } from '../lib/fields'
-import { declickFor, declickForJob, normalizeFor, normalizeForJob } from '../lib/reapply'
+import { jobAudio } from '../lib/reapply'
 import type { SupersededFile } from '../lib/selectionStatus'
 import { hasStagedEdits } from '../lib/sessionEdits'
 import type { TrackItem } from '../types'
@@ -45,16 +46,7 @@ function hasActiveFilters(
   declick: DeclickMode | undefined,
   settings: Settings | null,
 ): boolean {
-  const effectiveNormalize = normalizeForJob(
-    track,
-    normalizeFor(track, normalize, settings?.normalize),
-  )
-  const effectiveDeclick = declickForJob(track, declickFor(track, declick, settings?.declick))
-  return (
-    (effectiveNormalize !== undefined && effectiveNormalize.mode !== 'none') ||
-    (effectiveDeclick !== undefined && effectiveDeclick !== 'off') ||
-    track.trim !== undefined
-  )
+  return processesAudio(jobAudio(track, normalize, declick, settings))
 }
 
 // Whether converting this track under the given format/overwrite would re-encode an

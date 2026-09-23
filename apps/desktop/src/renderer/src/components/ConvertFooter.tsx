@@ -2,7 +2,6 @@ import { SlidersVertical } from 'lucide-react'
 import type React from 'react'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatMatchesInput } from '../../../shared/format'
 import type { FormatSetting, NormalizeConfig, OutputFormat } from '../../../shared/types'
 import { type CleanupOffer, cleanupCount } from '../hooks/useConfirmFlows'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
@@ -30,6 +29,7 @@ interface ConvertFooterProps {
   // tooltip. In multi it covers the whole selection; undefined when nothing is missing.
   incompleteReason?: string
   willEditInPlace: boolean
+  tagsOnly: boolean
   addToAppleMusic: boolean
   addToEngineDj: boolean
   // The editor's one-shot destination pick and the choices its split-button menu
@@ -83,6 +83,7 @@ export function ConvertFooter({
   incomplete,
   incompleteReason,
   willEditInPlace,
+  tagsOnly,
   addToAppleMusic,
   addToEngineDj,
   destination,
@@ -291,9 +292,7 @@ export function ConvertFooter({
             incomplete={incomplete}
             incompleteReason={incompleteReason}
             inPlace={!isMulti && willEditInPlace}
-            sameFormat={
-              !isMulti && format !== 'source' && formatMatchesInput(format, item.inputPath)
-            }
+            tagsOnly={tagsOnly}
             destination={destination}
             destinations={destinations}
             count={isMulti ? selectedCount : undefined}
