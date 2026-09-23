@@ -19,12 +19,22 @@ import { SectionSubhead } from './SectionSubhead'
 import { Tooltip } from './Tooltip'
 
 // Per-grade colour for the analysis rows, reusing the good/warn/danger tokens
-// (Tokyo Night). The dot is a solid status light; the value text carries the same
-// colour so the verdict reads at a glance.
-const GRADE_DOT: Record<Grade, string> = {
-  good: 'bg-good',
-  warn: 'bg-warn',
-  bad: 'bg-danger',
+// (Tokyo Night). The mark is a solid status light; the value text carries the same
+// colour so the verdict reads at a glance. Colour is never the only carrier: each grade
+// also has its own shape (round, a warning triangle, a square), so the verdict survives
+// colour blindness, and its name rides along in text for screen readers.
+const GRADE_MARK: Record<Grade, { shape: string; className: string }> = {
+  good: { shape: 'circle', className: 'h-1.5 w-1.5 rounded-full bg-good' },
+  warn: {
+    shape: 'triangle',
+    className: 'h-2 w-2 bg-warn [clip-path:polygon(50%_0,100%_100%,0_100%)]',
+  },
+  bad: { shape: 'square', className: 'h-1.5 w-1.5 rounded-[1px] bg-danger' },
+}
+const GRADE_NAME: Record<Grade, string> = {
+  good: 'editor.loudnessGradeGood',
+  warn: 'editor.loudnessGradeWarn',
+  bad: 'editor.loudnessGradeBad',
 }
 const GRADE_TEXT: Record<Grade, string> = {
   good: 'text-good',
@@ -202,13 +212,19 @@ export function LoudnessReadout({
               className={`group relative flex items-center justify-between gap-2 bg-[var(--color-field)] px-3 py-2 ${lastOdd ? 'col-span-2' : ''}`}
             >
               <span className="flex min-w-0 items-center gap-1.5">
-                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${GRADE_DOT[c.grade]}`} />
+                <span
+                  aria-hidden="true"
+                  data-testid={`loudness-grade-mark-${c.id}`}
+                  data-shape={GRADE_MARK[c.grade].shape}
+                  className={`shrink-0 ${GRADE_MARK[c.grade].className}`}
+                />
                 <span className="truncate text-xs text-fg-dim">{c.label}</span>
               </span>
               <span className="flex shrink-0 items-baseline gap-1.5">
                 <span className={`text-sm font-medium tabular-nums ${GRADE_TEXT[c.grade]}`}>
                   {c.value}
                 </span>
+                <span className="sr-only">{tr(GRADE_NAME[c.grade])}</span>
                 {/* The pending conversion's figure: an arrow marks only what the
                     conversion moves, and the figures a constant gain cannot move say
                     "=" instead of a shifted number the converted file would contradict.

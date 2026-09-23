@@ -294,8 +294,32 @@ export function QualitySection({
       setSavingReport(false)
     }
   }
+  // What a screen reader hears of the analysis: that it started, then the verdict with
+  // the cutoff that decided it. The pill and the image say it only to the eye. The live
+  // region is mounted from the first frame and only its text changes, because a region
+  // that appears together with its message is not announced.
+  const verdictLabel = verdict
+    ? tr(transcoded ? 'editor.qualityTranscode' : qualityBadge[verdict].label)
+    : null
+  const cutoffChip =
+    spectrum?.cutoffHz != null ? cutoffLabel({ ...spectrum, cutoffHz: spectrum.cutoffHz }) : null
+  const announcement = analyzing
+    ? tr('editor.analyzing')
+    : analyzeFailed
+      ? tr(analyzeErrorKey ? `errors.${analyzeErrorKey}` : 'editor.analyzeError')
+      : verdictLabel
+        ? [
+            `${tr('editor.qualityTitle')}: ${verdictLabel}`,
+            cutoffChip && tr(cutoffChip.key, { cutoff: cutoffChip.cutoff }),
+          ]
+            .filter(Boolean)
+            .join(', ')
+        : ''
   return (
     <div className="mt-5 border-t border-[var(--color-line)] pt-5">
+      <p data-testid="quality-status" role="status" className="sr-only">
+        {announcement}
+      </p>
       <SectionHeader
         sectionId="quality"
         maximizable

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
@@ -315,6 +315,19 @@ describe('DeclickSection', () => {
     expect(pause).not.toHaveBeenCalled()
   })
 
+  // A name that flips with the state AND aria-pressed tells the state twice and garbles
+  // it: "Hearing: original, not pressed" leaves a screen reader user unable to tell which
+  // leg is playing. The name names the action once and aria-pressed alone carries whether
+  // it is on.
+  it('keeps one name on the A/B switch and reports the leg through aria-pressed', async () => {
+    await withPreview()
+    const ab = screen.getByRole('button', { name: 'Hear the repaired version' })
+    expect(ab).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(ab)
+    expect(screen.getByRole('button', { name: 'Hear the repaired version' })).toBe(ab)
+    expect(ab).toHaveAttribute('aria-pressed', 'false')
+  })
+
   // Without this the only reachable points in the track are the click marks: a user who
   // wants to hear how a particular passage came out has no way to get there.
   it('moves the playhead to wherever the wave is clicked', async () => {
@@ -453,6 +466,16 @@ describe('DeclickSection', () => {
     expect(strip).toHaveAttribute('tabindex', '0')
   })
 
+  // A slider's children are presentational to assistive tech, so the mark buttons nested
+  // inside it vanished from the accessibility tree, and a control inside a control is
+  // ambiguous about which one a press belongs to. The marks sit beside the slider instead.
+  it('keeps the click marks out of the slider', async () => {
+    await withPreview()
+    const strip = screen.getByTestId('declick-marks')
+    await waitFor(() => expect(screen.getAllByTestId('declick-mark')).toHaveLength(3))
+    expect(within(strip).queryAllByRole('button')).toHaveLength(0)
+  })
+
   it('moves the playhead by the fine step in either direction', async () => {
     await withPreview()
     const strip = screen.getByTestId('declick-marks')
@@ -461,6 +484,16 @@ describe('DeclickSection', () => {
     expect(strip.getAttribute('aria-valuenow')).toBe('0.01')
     fireEvent.keyDown(strip, { key: 'ArrowLeft' })
     expect(strip.getAttribute('aria-valuenow')).toBe('0')
+  })
+
+  // A bare aria-valuenow is read as a unitless number; the value text says it is a time,
+  // in the same seconds the click marks are named in.
+  it('reads the playhead out as a time', async () => {
+    await withPreview()
+    const strip = screen.getByTestId('declick-marks')
+    strip.focus()
+    fireEvent.keyDown(strip, { key: 'ArrowRight', shiftKey: true })
+    expect(strip).toHaveAttribute('aria-valuetext', '0.25 s')
   })
 
   it('moves the playhead by the coarse step when Shift is held', async () => {

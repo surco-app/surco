@@ -63,6 +63,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 // The before/after pair lives with the normalization controls whose effect it
@@ -141,6 +142,37 @@ describe('NormalizeSection before/after waveforms', () => {
     expect(scroll).not.toHaveBeenCalled()
     rerender(ui(track({ outputPath: '/out/a.aiff', status: 'done' })))
     expect(scroll).toHaveBeenCalled()
+  })
+
+  // A scripted scroll the reduced-motion CSS never reaches: under that request the pair
+  // is jumped to, not glided to.
+  it('jumps to the pair instead of gliding under reduced motion', () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+    }))
+    const scroll = vi.fn()
+    Element.prototype.scrollIntoView = scroll
+    ;(window as unknown as { api: unknown }).api = {
+      waveform: vi.fn().mockResolvedValue(null),
+      loudness: vi.fn().mockResolvedValue(null),
+    }
+    const client = createQueryClient()
+    const ui = (item: TrackItem): React.ReactElement => (
+      <QueryClientProvider client={client}>
+        <NormalizeSection
+          value={cfg}
+          open
+          onToggle={vi.fn()}
+          onChange={vi.fn()}
+          item={item}
+          selectedCount={1}
+          format="aiff"
+        />
+      </QueryClientProvider>
+    )
+    const { rerender } = render(ui(track()))
+    rerender(ui(track({ outputPath: '/out/a.aiff', status: 'done' })))
+    expect(scroll).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'auto' }))
   })
 
   // Flipping back to an already-converted track remounts the editor with the pair

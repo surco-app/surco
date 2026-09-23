@@ -8,7 +8,10 @@ import type { NormalizeConfig } from '../../../shared/types'
 import '../i18n'
 import { NormalizeControls } from './NormalizeControls'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 const loudness: NormalizeConfig = { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
 
@@ -31,6 +34,19 @@ describe('NormalizeControls reveal', () => {
     expect(scroll).not.toHaveBeenCalled()
     fireEvent.click(screen.getByTestId('normalize-mode-loudness'))
     expect(scroll).toHaveBeenCalled()
+  })
+
+  // The reveal is a scripted scroll, so the reduced-motion CSS never reaches it: it has to
+  // jump rather than glide for someone who asked the OS for less motion.
+  it('jumps to the revealed fields instead of gliding under reduced motion', () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+    }))
+    const scroll = vi.fn()
+    Element.prototype.scrollIntoView = scroll
+    render(<Harness initial={{ mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }} />)
+    fireEvent.click(screen.getByTestId('normalize-mode-loudness'))
+    expect(scroll).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'auto' }))
   })
 
   // Mounting with a mode already active (the editor reopening a configured track, the

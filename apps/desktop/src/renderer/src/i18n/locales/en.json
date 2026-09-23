@@ -254,8 +254,10 @@
     "waveform": "Waveform",
     "waveformHelp": "Show the waveform. Hiding it skips the waveform analysis — useful for large files or network drives.",
     "seek": "Seek",
+    "seekValue": "{{current}} of {{total}}",
     "volume": "Volume",
-    "unmute": "Unmute",
+    "volumeValue": "{{pct}}%",
+    "mute": "Mute",
     "reveal": "Show the playing track in the list",
     "close": "Close player"
   },
@@ -680,6 +682,7 @@
     "pause": "Pause",
     "hearingRepaired": "Hearing: repaired",
     "hearingOriginal": "Hearing: original",
+    "abLabel": "Hear the repaired version",
     "abHint": "Switches between the original and the repaired track without stopping the audio, so you can hear whether the repair removed the clicks — and whether it dulled the music.",
     "nextClick": "Next click",
     "appliesToSelection": "This setting applies to all {{count}} selected tracks.",
@@ -717,6 +720,8 @@
     "planCues": "Re-encodes the audio. Traktor cues and beatgrid move with the cut, so everything still lands on the same beat (kept on MP3, AIFF, FLAC and WAV; only ALAC loses them).",
     "handleStart": "Trim start",
     "handleEnd": "Trim end",
+    "handleStartTime": "Trim start time",
+    "handleEndTime": "Trim end time",
     "auditionStart": "Hear the start",
     "auditionEnd": "Hear the end",
     "row": {
@@ -734,6 +739,7 @@
     "title": "Loudness normalization",
     "hint": "Off by default. Match every track to a target loudness or peak.",
     "editorHint": "Match every track to a target loudness or peak.",
+    "fadeValue": "After at {{pct}}%",
     "mode": {
       "none": "None",
       "loudness": "Loudness",

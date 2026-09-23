@@ -527,6 +527,35 @@ describe('TrimSection', () => {
     expect(onChange).toHaveBeenCalledWith({ endSec: 90.3 })
   })
 
+  // A bare aria-valuenow is read as a unitless number; the value text says it is a time,
+  // in the same seconds the field beside the lane shows, so both read the same cut.
+  it('reads each handle out as the cut time the field shows', async () => {
+    render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    const start = await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+    expect(start).toHaveAttribute('aria-valuetext', '9.700 s')
+    expect(screen.getByTestId('trim-handle-end')).toHaveAttribute('aria-valuetext', '90.300 s')
+  })
+
+  // The time field and the handle were both called "Trim start", so a screen reader's
+  // list of controls showed two identical names for two different things, and jumping
+  // to one by name could land on the other. The field says it holds the time.
+  it('names the time field apart from the handle it sets', async () => {
+    render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+    expect(screen.getByRole('slider', { name: 'Trim start' })).toHaveAttribute(
+      'data-testid',
+      'trim-handle-start',
+    )
+    expect(screen.getByRole('textbox', { name: 'Trim start time' })).toHaveAttribute(
+      'data-testid',
+      'trim-cut-time-start',
+    )
+    expect(screen.getByRole('textbox', { name: 'Trim end time' })).toHaveAttribute(
+      'data-testid',
+      'trim-cut-time-end',
+    )
+  })
+
   // Clearing the last remaining cut leaves the track with no trim at all.
   it('drops the trim entirely when the last cut is cleared', async () => {
     const onChange = vi.fn()
