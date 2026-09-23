@@ -66,8 +66,8 @@ function renderTab(over: Partial<SyncedDraft> = {}): ReturnType<typeof vi.fn> {
   return patch
 }
 
-// The Editor tab's behaviour preferences; the section list under them is LayoutTab (see
-// LayoutTab.test).
+// The Editor tab holds the editor's behaviour preferences; the section layout lives in
+// its own Sections tab now (see LayoutTab.test).
 describe('EditorTab preferences', () => {
   it('stages the grouping and genre quick-button lists', () => {
     const patch = renderTab()
@@ -96,6 +96,12 @@ describe('EditorTab preferences', () => {
     const patch = renderTab()
     fireEvent.click(screen.getByTestId('settings-key-notation-musical'))
     expect(patch).toHaveBeenCalledWith('keyNotation', 'musical')
+  })
+
+  // The section layout manager moved to the Sections tab — it must not render here.
+  it('no longer renders the section rows', () => {
+    renderTab()
+    expect(screen.queryByTestId('settings-section-row-form')).not.toBeInTheDocument()
   })
 })
 
