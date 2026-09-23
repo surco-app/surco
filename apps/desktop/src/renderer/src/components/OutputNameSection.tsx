@@ -63,7 +63,7 @@ export function OutputNameSection({
                   data-testid="regenerate-output-name"
                   aria-label={tr('editor.regenerate')}
                   onClick={onRegenerateName}
-                  className="press group relative flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+                  className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
                 >
                   <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
                   <Tooltip label={tr('editor.regenerateHint')} align="end" />
@@ -74,7 +74,7 @@ export function OutputNameSection({
                 data-testid="customize-output-name"
                 aria-label={tr('editor.regenerateCustom')}
                 onClick={onOpenRename}
-                className="press group relative flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+                className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
               >
                 <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                 <Tooltip label={tr('editor.regenerateCustom')} align="end" />
