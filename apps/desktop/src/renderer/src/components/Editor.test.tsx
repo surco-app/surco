@@ -674,9 +674,8 @@ describe('Editor loudness pills', () => {
 // A second user asked to read the post-conversion figures next to the measured ones,
 // instead of switching to the Normalize section to see where the track lands. The
 // estimate is the same prediction that section draws, so the two cannot disagree.
-// The table's home is Normalize, but a layout that hides Normalize (the setup assistant
-// does it for every DJ who did not ask to level volume) must not lose a readout the
-// Loudness setting still promises: there it stays in Quality, where it always was.
+// The table lives in Quality, where it always was, whether Normalize is open, folded or
+// hidden from the layout, and it is drawn once: the same figures twice would only be noise.
 describe('Editor loudness readout placement', () => {
   const measured: LoudnessResult = {
     integratedLufs: -11.1,
@@ -694,10 +693,17 @@ describe('Editor loudness readout placement', () => {
       .mockResolvedValue(measured)
   })
 
-  it('shows the table once, in Normalize, while that section is in the layout', async () => {
-    renderEditor({ id: 'a' }, 'wav', { showLoudness: true, editorSections: NORMALIZE_OPEN })
+  it('shows the table once, in Quality, with Normalize open beside it', async () => {
+    renderEditor({ id: 'a' }, 'wav', {
+      showLoudness: true,
+      editorSections: [
+        { id: 'form', open: true },
+        { id: 'quality', open: true },
+        { id: 'normalize', open: true },
+      ],
+    })
     const readout = await screen.findByTestId('loudness-readout')
-    expect(screen.getByTestId('editor-normalize')).toContainElement(readout)
+    expect(screen.getByTestId('editor-normalize')).not.toContainElement(readout)
     expect(screen.getAllByTestId('loudness-readout')).toHaveLength(1)
   })
 
