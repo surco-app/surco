@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { createRef } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
@@ -355,9 +355,15 @@ describe('DiscogsPanel progressive results', () => {
     { provider: 'bandcamp', id: 9, title: 'Javier Fig - Fast Food / Slow Kids' },
   ] as unknown as DiscogsBrowser['results']
 
-  it('says which catalog is still searching below the rows that already arrived', () => {
+  // The same placeholder rows the empty list shows, so it reads as more rows on the way
+  // rather than a message about one catalog: naming only the last one still out made the
+  // search look like it only covered Discogs.
+  it('keeps placeholder rows below the rows that already arrived while a catalog searches', () => {
     renderPanel(browser({ query: 'x', results: rows, busy: true, pendingProviders: ['discogs'] }))
-    expect(screen.getByTestId('discogs-pending')).toHaveTextContent('Searching Discogs…')
+    const pending = screen.getByTestId('discogs-pending')
+    expect(pending).toHaveAttribute('aria-hidden', 'true')
+    expect(within(pending).getAllByTestId('skeleton-row')).toHaveLength(2)
+    expect(pending).toHaveTextContent('')
   })
 
   it('shows no pending line once every catalog has answered', () => {

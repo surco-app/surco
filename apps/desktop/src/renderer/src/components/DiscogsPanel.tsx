@@ -1,4 +1,4 @@
-import { ChevronRight, ListFilter, Loader2, SearchX, Sparkles } from 'lucide-react'
+import { ChevronRight, ListFilter, SearchX, Sparkles } from 'lucide-react'
 import type React from 'react'
 import { memo, useCallback, useEffect, useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
@@ -307,20 +307,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
           {busy && results.length === 0 ? (
             // Searching with nothing to show yet: skeleton rows mirror the result-row
             // shape so the list doesn't pop into an area that looked idle.
-            <div data-testid="discogs-skeleton" aria-hidden="true">
-              {[0, 1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2.5 border-b border-[var(--color-line)]/60 px-2.5 py-1.5"
-                >
-                  <span className="skeleton-sweep h-[30px] w-[30px] shrink-0 rounded-md bg-[var(--color-panel-2)]" />
-                  <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-                    <span className="skeleton-sweep h-3 w-3/4 rounded bg-[var(--color-panel-2)]" />
-                    <span className="skeleton-sweep h-2.5 w-1/2 rounded bg-[var(--color-panel-2)]" />
-                  </span>
-                </div>
-              ))}
-            </div>
+            <SkeletonRows testid="discogs-skeleton" count={4} />
           ) : noResults ? (
             <div
               data-testid="discogs-no-results"
@@ -542,16 +529,9 @@ export const DiscogsPanel = memo(function DiscogsPanel({
               )
             })
           )}
+          {/* A catalog is still searching: more rows are on the way below these. */}
           {results.length > 0 && pendingProviders.length > 0 && (
-            <div
-              data-testid="discogs-pending"
-              className="mx-1.5 mt-1.5 flex items-center gap-2 rounded-lg border border-dashed border-[var(--color-line-strong)] px-2.5 py-1.5 text-[11px] text-fg-dim"
-            >
-              <Loader2 className="h-3 w-3 shrink-0 animate-spin text-fg-faint" aria-hidden="true" />
-              {tr('editor.searchingProvider', {
-                provider: pendingProviders.map((p) => tr(`settings.provider.${p}`)).join(', '),
-              })}
-            </div>
+            <SkeletonRows testid="discogs-pending" count={2} />
           )}
         </div>
       </div>
@@ -564,6 +544,28 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     </>
   )
 })
+
+// Placeholder rows shaped like a result row, for a search with rows still to come, so the
+// list never pops into an area that looked idle.
+function SkeletonRows({ testid, count }: { testid: string; count: number }): React.JSX.Element {
+  return (
+    <div data-testid={testid} aria-hidden="true">
+      {[0, 1, 2, 3].slice(0, count).map((i) => (
+        <div
+          key={i}
+          data-testid="skeleton-row"
+          className="flex items-center gap-2.5 border-b border-[var(--color-line)]/60 px-2.5 py-1.5"
+        >
+          <span className="skeleton-sweep h-[30px] w-[30px] shrink-0 rounded-md bg-[var(--color-panel-2)]" />
+          <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <span className="skeleton-sweep h-3 w-3/4 rounded bg-[var(--color-panel-2)]" />
+            <span className="skeleton-sweep h-2.5 w-1/2 rounded bg-[var(--color-panel-2)]" />
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 function CollapsibleTracks({
   open,
