@@ -94,6 +94,35 @@ describe('CoverPicker copy/paste', () => {
     })
   })
 
+  // A keyboard user never hovers, so the shortcut was mouse-only: with focus on the
+  // cover itself (or its action bar) Cmd+C must lift the artwork just the same.
+  it('copies with Cmd+C while keyboard focus is inside the cover well', () => {
+    renderPicker({ coverUrl: 'http://img/cover.jpg' })
+    screen.getByTestId('cover-zoom').focus()
+    fireEvent.keyDown(document, { key: 'c', metaKey: true })
+    expect(api.copyCoverImage).toHaveBeenCalledWith({
+      coverUrl: 'http://img/cover.jpg',
+      coverPath: undefined,
+    })
+  })
+
+  it('pastes with Cmd+V while keyboard focus is on the empty well', async () => {
+    api.pasteCoverImage.mockResolvedValue({
+      coverUrl: 'data:image/png;base64,AAAA',
+      coverPath: '/tmp/paste/cover.png',
+    })
+    const { onChange } = renderPicker()
+    screen.getByTestId('cover-pick').focus()
+    fireEvent.keyDown(document, { key: 'v', metaKey: true })
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith({
+        coverUrl: 'data:image/png;base64,AAAA',
+        coverPath: '/tmp/paste/cover.png',
+        coverRemoved: false,
+      }),
+    )
+  })
+
   // Gating on hover keeps the shortcut from hijacking a normal Cmd+C the user means
   // for selected text elsewhere in the app.
   it('ignores Cmd+C when the pointer is not over the cover', () => {
