@@ -143,6 +143,16 @@ interface ConfirmFlows {
 // The destructive/overwriting actions that confirm before firing: trash, clean up,
 // fill-all, clear-all and in-place convert-all. Each builds its dialog copy and wires the
 // onConfirm into the data layer; App only routes the resulting modal through useOverlays.
+// The overwrite prompt says what happens to the original under the backup policy: kept
+// as a backup, kept only when the audio changes, or gone for good. Main fills the policy
+// in on load ('always' by default), so a missing one only means settings not loaded yet.
+function inPlaceMessageKey(settings: Settings | null): string {
+  const policy = settings?.backupPolicy ?? 'always'
+  if (policy === 'never') return 'confirm.convertInPlaceMessage'
+  if (policy === 'audioChanges') return 'confirm.convertInPlaceMessageAudioBackup'
+  return 'confirm.convertInPlaceMessageBackup'
+}
+
 export function useConfirmFlows({
   settings,
   removeTrack,
@@ -390,7 +400,7 @@ export function useConfirmFlows({
           }
         : {
             title: tr('confirm.convertInPlaceTitle'),
-            message: tr('confirm.convertInPlaceMessage', { count }),
+            message: tr(inPlaceMessageKey(settings), { count }),
             confirmLabel: tr('confirm.convertInPlaceConfirm'),
             destructive: true,
             onConfirm: () => void processAll(targets, format, normalize, destination, declick),
@@ -444,7 +454,7 @@ export function useConfirmFlows({
           }
         : {
             title: tr('confirm.convertInPlaceTitle'),
-            message: tr('confirm.convertInPlaceMessage', { count: 1 }),
+            message: tr(inPlaceMessageKey(settings), { count: 1 }),
             confirmLabel: tr('confirm.convertInPlaceConfirm'),
             destructive: true,
             onConfirm: run,

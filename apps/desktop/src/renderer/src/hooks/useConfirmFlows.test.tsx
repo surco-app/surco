@@ -595,3 +595,30 @@ describe('useConfirmFlows fill-all selection scope', () => {
     expect(opened[0].message.toLowerCase()).not.toContain('visible')
   })
 })
+
+// The overwrite prompt said the original "is replaced and cannot be recovered", but with
+// the default backup policy Surco keeps a full copy first: the dialog scared users off a
+// safe action and contradicted the backups panel. It has to say what the policy does.
+describe('useConfirmFlows overwrite wording follows the backup policy', () => {
+  function messageFor(backupPolicy: Settings['backupPolicy']): string {
+    const { flows, opened } = setup([track('a')], {
+      settings: { overwriteOriginal: true, backupPolicy } as Settings,
+    })
+    flows.askConvertOne(vi.fn())
+    return String(opened[0].message)
+  }
+
+  it('says a backup is kept when every rewrite keeps one', () => {
+    const message = messageFor('always')
+    expect(message).toMatch(/backup/i)
+    expect(message).not.toMatch(/cannot be recovered/i)
+  })
+
+  it('says only audio changes are backed up under that policy', () => {
+    expect(messageFor('audioChanges')).toMatch(/only the tags/i)
+  })
+
+  it('keeps the warning that nothing comes back when no backup is kept', () => {
+    expect(messageFor('never')).toMatch(/cannot be recovered/i)
+  })
+})
