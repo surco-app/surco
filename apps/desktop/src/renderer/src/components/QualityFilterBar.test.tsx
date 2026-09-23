@@ -326,6 +326,16 @@ describe('QualityFilterBar', () => {
     expect(screen.getAllByTestId('quality-filter-separator')).toHaveLength(4)
   })
 
+  // The trigger shows the active filter ("Unconverted 12") but its name was a fixed
+  // "Filter", so a screen reader never heard which view the list was in, and voice
+  // control could not target it by the words on screen.
+  it('names the filter trigger with the filter it shows', () => {
+    renderBar({ value: sel({ conversion: 'unconverted' }), tally: tally({ unconverted: 12 }) })
+    const trigger = screen.getByTestId('quality-filter-trigger')
+    expect(trigger).toHaveAccessibleName(/Unconverted/)
+    expect(trigger).toHaveAccessibleName(/Filter/)
+  })
+
   // The x/total position indicator the user relies on must stay visible beside the
   // collapsed control, not fold away into a chip that no longer exists.
   it('keeps the x/total position counter visible next to the dropdown', () => {

@@ -80,7 +80,8 @@
       "silence": "Silêncio a cortar",
       "clipping": "Clipping",
       "trashSuspects_one": "Mover o arquivo duvidoso para a Lixeira",
-      "trashSuspects_other": "Mover os {{count}} arquivos duvidosos para a Lixeira"
+      "trashSuspects_other": "Mover os {{count}} arquivos duvidosos para a Lixeira",
+      "current": "Filtro: {{filter}} {{count}}"
     },
     "search": {
       "placeholder": "Buscar faixas",

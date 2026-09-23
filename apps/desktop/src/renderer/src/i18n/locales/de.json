@@ -80,7 +80,8 @@
       "silence": "Stille zum Kürzen",
       "clipping": "Clipping",
       "trashSuspects_one": "Die zweifelhafte Datei in den Papierkorb legen",
-      "trashSuspects_other": "Die {{count}} zweifelhaften Dateien in den Papierkorb legen"
+      "trashSuspects_other": "Die {{count}} zweifelhaften Dateien in den Papierkorb legen",
+      "current": "Filter: {{filter}} {{count}}"
     },
     "search": {
       "placeholder": "Tracks suchen",

@@ -412,7 +412,9 @@ export function QualityFilterBar({
           data-testid="quality-filter-trigger"
           aria-haspopup="listbox"
           aria-expanded={open}
-          aria-label={tr('sidebar.filter.label')}
+          // Carries the filter and count it shows: a fixed "Filter" hid which view the list
+          // is in and didn't match the words on screen.
+          aria-label={tr('sidebar.filter.current', { filter: trigger.label, count: trigger.count })}
           onClick={() => setOpen((v) => !v)}
           className="flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs font-medium text-fg-dim outline-none focus:border-[var(--color-accent)]"
         >
