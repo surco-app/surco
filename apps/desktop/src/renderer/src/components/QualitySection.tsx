@@ -54,12 +54,12 @@ const qualityCaption: Record<Verdict, string> = {
 interface Props {
   item: TrackItem
   showSpectrum: boolean
-  showLoudness?: boolean
+  showLoudness: boolean
   // The pending conversion's settings, so the loudness table can show where each figure
   // will land. Owned by the Normalize section; read here because the figures it predicts
   // are the ones this table measures.
-  normalize?: NormalizeConfig
-  onShowLoudnessHelp?: () => void
+  normalize: NormalizeConfig
+  onShowLoudnessHelp: () => void
   open: boolean
   onToggle: () => void
   showHints?: boolean
@@ -75,9 +75,9 @@ interface Props {
 export function QualitySection({
   item,
   showSpectrum,
-  showLoudness = false,
+  showLoudness,
   normalize,
-  onShowLoudnessHelp = () => {},
+  onShowLoudnessHelp,
   open,
   onToggle,
   showHints = true,
@@ -273,20 +273,19 @@ export function QualitySection({
   const upsampledFlag = spectrum?.upsampled === true || spectrum?.resolution === 'upsampled'
   const padded = spectrum?.bitsUsage === 'padded16'
   const healthy = verdict === 'good' && !transcoded && !padded && !upsampledFlag
-  const plainKey = transcoded
-    ? 'editor.qualityPlainTranscode'
-    : verdict === 'processed'
-      ? 'editor.qualityPlainProcessed'
-      : verdict === 'bad'
-        ? 'editor.qualityPlainBad'
-        : verdict === 'warn'
-          ? 'editor.qualityPlainWarn'
-          : upsampledFlag
-            ? 'editor.qualityPlainUpsampled'
-            : padded
-              ? 'editor.qualityPlainPadded'
-              : null
-  const { data: properties } = useTrackProperties(item.inputPath, settled && showSpectrum && open)
+  const plainKey = (() => {
+    if (transcoded) return 'editor.qualityPlainTranscode'
+    if (verdict === 'processed') return 'editor.qualityPlainProcessed'
+    if (verdict === 'bad') return 'editor.qualityPlainBad'
+    if (verdict === 'warn') return 'editor.qualityPlainWarn'
+    if (upsampledFlag) return 'editor.qualityPlainUpsampled'
+    if (padded) return 'editor.qualityPlainPadded'
+    return null
+  })()
+  const { data: properties } = useTrackProperties(
+    item.inputPath,
+    settled && showSpectrum && open && healthy,
+  )
   const formatSummary = properties ? audioSummaryParts(properties, tr).join(' · ') : ''
   return (
     <div className="mt-5 border-t border-[var(--color-line)] pt-5">
@@ -321,7 +320,7 @@ export function QualitySection({
                 {tr(transcoded ? 'editor.qualityTranscode' : qualityBadge[verdict].label)}
               </SectionPill>
             )}
-            {spectrum?.bitsUsage === 'padded16' && (
+            {padded && (
               <SectionPill tone="danger" testid="quality-bits-pill">
                 {tr('editor.qualityBitsPill')}
               </SectionPill>
@@ -400,7 +399,7 @@ export function QualitySection({
                     "couldn't tell" — because saying nothing left a real hi-res file looking
                     exactly like one nobody analysed. A plain 44.1 kHz file makes no claim to
                     check, so it stays silent rather than gaining a line that says nothing. */}
-                {spectrum.upsampled || spectrum.resolution === 'upsampled' ? (
+                {upsampledFlag ? (
                   <p data-testid="quality-upsampled" className="mt-2 text-xs text-warn">
                     {tr('editor.qualityUpsampled')}
                   </p>
@@ -422,7 +421,7 @@ export function QualitySection({
                     is what keeps that absence from reading as a broken analysis.
                     Only the didactic why-line rides the hints toggle; a confirmed
                     real depth is reassurance and shows only with hints. */}
-                {spectrum.bitsUsage === 'padded16' ? (
+                {padded ? (
                   <div
                     data-testid="quality-bits-padded"
                     className="mt-2 border-l-2 pl-2.5 text-xs"
@@ -471,7 +470,6 @@ export function QualitySection({
               </>
             ) : null)}
           {showLoudness &&
-            normalize &&
             (loudness ? (
               <LoudnessReadout
                 loudness={loudness}
