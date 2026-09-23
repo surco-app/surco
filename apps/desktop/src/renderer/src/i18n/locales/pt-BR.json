@@ -37,7 +37,7 @@
     "settings": "Ajustes",
     "stats": "Estatísticas",
     "activity": "Atividade",
-    "trash": "Originais do Surco",
+    "trash": "Cópias de segurança",
     "selectAll": "Selecionar tudo",
     "revealSelected": "Ir para a faixa selecionada",
     "fillFromName": "Preencher tudo a partir do nome",
@@ -152,7 +152,7 @@
     "ambiguous_other": "O rekordbox continua apontando para os arquivos antigos de {{count}} faixas, entre elas {{name}}: mais de uma entrada da coleção corresponde a cada uma."
   },
   "trash": {
-    "title": "Originais do Surco",
+    "title": "Cópias de segurança",
     "summary_one": "{{count}} arquivo · {{size}}",
     "summary_other": "{{count}} arquivos · {{size}}",
     "emptyTitle": "Nada para restaurar",
@@ -179,7 +179,7 @@
       "deleted": "Apagados",
       "restored-over": "Postos de lado"
     },
-    "filtersLabel": "Originais",
+    "filtersLabel": "Cópias",
     "search": "Buscar por título ou pasta",
     "replacedBy": "substituído por",
     "renamedTo": "renomeado para",
@@ -1125,7 +1125,7 @@
     "originalBackupAudioChangesHint": "Converter ou normalizar guarda uma cópia; editar só as etiquetas, não.",
     "originalBackupNeverHint": "Se uma conversão falhar, o arquivo original se perde. Apagar uma faixa num disco sem lixeira também será definitivo.",
     "originalBackupNeverLine": "Nenhuma cópia é guardada, nem ao converter nem ao normalizar.",
-    "originals": "Originais",
+    "originals": "Cópias de segurança",
     "originalsHint": "Quando o Surco reescreve, renomeia ou apaga um arquivo seu, guarda o anterior aqui para você poder desfazer.",
     "originalBackupDays": "Por",
     "originalBackupDaysUnit": "dias",

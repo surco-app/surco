@@ -37,7 +37,7 @@
     "settings": "Réglages",
     "stats": "Statistiques",
     "activity": "Activité",
-    "trash": "Originaux de Surco",
+    "trash": "Copies de sauvegarde",
     "selectAll": "Tout sélectionner",
     "revealSelected": "Aller au morceau sélectionné",
     "fillFromName": "Remplir tous les tags depuis le nom du fichier",
@@ -152,7 +152,7 @@
     "ambiguous_other": "rekordbox pointe toujours vers les anciens fichiers de {{count}} morceaux, dont {{name}} : plus d'une entrée de sa collection correspond à chacun."
   },
   "trash": {
-    "title": "Originaux de Surco",
+    "title": "Copies de sauvegarde",
     "summary_one": "{{count}} fichier · {{size}}",
     "summary_other": "{{count}} fichiers · {{size}}",
     "emptyTitle": "Rien à restaurer",
@@ -179,7 +179,7 @@
       "deleted": "Supprimés",
       "restored-over": "Mis de côté"
     },
-    "filtersLabel": "Originaux",
+    "filtersLabel": "Copies",
     "search": "Rechercher par titre ou dossier",
     "replacedBy": "remplacé par",
     "renamedTo": "renommé en",
@@ -1125,7 +1125,7 @@
     "originalBackupAudioChangesHint": "Convertir ou normaliser conserve une copie ; modifier seulement les étiquettes, non.",
     "originalBackupNeverHint": "Si une conversion échoue, le fichier original est perdu. Supprimer une piste sur un disque sans corbeille sera également définitif.",
     "originalBackupNeverLine": "Aucune copie n'est conservée, ni à la conversion ni à la normalisation.",
-    "originals": "Originaux",
+    "originals": "Copies de sauvegarde",
     "originalsHint": "Quand Surco réécrit, renomme ou supprime un de vos fichiers, il conserve le précédent ici pour que vous puissiez revenir en arrière.",
     "originalBackupDays": "Pendant",
     "originalBackupDaysUnit": "jours",

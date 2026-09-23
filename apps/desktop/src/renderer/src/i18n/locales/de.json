@@ -37,7 +37,7 @@
     "settings": "Einstellungen",
     "stats": "Statistiken",
     "activity": "Aktivität",
-    "trash": "Surco-Originale",
+    "trash": "Sicherungskopien",
     "selectAll": "Alles auswählen",
     "revealSelected": "Zum ausgewählten Track scrollen",
     "fillFromName": "Alle Tags aus dem Dateinamen füllen",
@@ -152,7 +152,7 @@
     "ambiguous_other": "rekordbox zeigt für {{count}} Tracks weiter auf die alten Dateien, darunter {{name}}: Zu jedem passt mehr als ein Eintrag der Sammlung."
   },
   "trash": {
-    "title": "Surco-Originale",
+    "title": "Sicherungskopien",
     "summary_one": "{{count}} Datei · {{size}}",
     "summary_other": "{{count}} Dateien · {{size}}",
     "emptyTitle": "Nichts wiederherzustellen",
@@ -179,7 +179,7 @@
       "deleted": "Gelöscht",
       "restored-over": "Beiseitegelegt"
     },
-    "filtersLabel": "Originale",
+    "filtersLabel": "Kopien",
     "search": "Nach Titel oder Ordner suchen",
     "replacedBy": "ersetzt durch",
     "renamedTo": "umbenannt in",
@@ -1125,7 +1125,7 @@
     "originalBackupAudioChangesHint": "Konvertieren oder Normalisieren bewahrt eine Kopie auf, das reine Bearbeiten der Tags nicht.",
     "originalBackupNeverHint": "Schlägt eine Konvertierung fehl, ist die Originaldatei verloren. Auch das Löschen eines Titels auf einem Laufwerk ohne Papierkorb ist dann endgültig.",
     "originalBackupNeverLine": "Es wird keine Kopie aufbewahrt, weder beim Konvertieren noch beim Normalisieren.",
-    "originals": "Originale",
+    "originals": "Sicherungskopien",
     "originalsHint": "Wenn Surco eine Datei von dir überschreibt, umbenennt oder löscht, bewahrt es die vorherige hier auf, damit du es rückgängig machen kannst.",
     "originalBackupDays": "Für",
     "originalBackupDaysUnit": "Tage",
