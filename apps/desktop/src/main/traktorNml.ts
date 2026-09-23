@@ -360,6 +360,17 @@ function replaceCues(
   return withoutCues.replace(location, () => `${location}${cuesXml}`)
 }
 
+// The file carries no cue tree of its own, so the collection holds every cue this entry
+// has: all of them move the way the conversion moved the audio, left where they sit.
+function shiftEntryCues(block: string, shift: NonNullable<NmlPatch['cueShift']>, bpm?: number) {
+  const firstCue = block.match(CUE_V2_RE)?.[0]
+  if (!firstCue) return block
+  const shifted = collectionOnlyCues(block, [], shift, gridBpmFor(block, bpm), undefined)
+  const at = block.indexOf(firstCue)
+  const withoutCues = block.replace(CUE_V2_RE, '')
+  return withoutCues.slice(0, at) + shifted + withoutCues.slice(at)
+}
+
 // Traktor writes RANKING on <INFO>, like COVERARTID, so an entry that has never been
 // rated has the attribute absent rather than zero and needs it inserted.
 function replaceRanking(block: string, ranking: number): string {
@@ -382,6 +393,8 @@ function patchEntry(block: string, patch: NmlPatch): string {
   }
   if (patch.cueTree) {
     out = replaceCues(out, patch.cueTree, patch.bpm, patch.cueShift)
+  } else if (patch.cueShift) {
+    out = shiftEntryCues(out, patch.cueShift, patch.bpm)
   }
   if (patch.ranking !== undefined) {
     out = replaceRanking(out, patch.ranking)
@@ -412,17 +425,17 @@ const outputKey = (patch: NmlPatch): string | undefined =>
     : undefined
 
 // What the patch may do to the entry it matched. The cue tree was read back from the
-// converted file, shifted by its trim and calibration, so it only belongs on an entry that
-// describes that file: one at the output's own location, or one the patch repoints there.
-// An entry left pointing at a source that stayed where it was keeps its own cues, since
-// that audio did not change.
+// converted file, shifted by its trim and calibration, so it and the shift only belong on
+// an entry that describes that file: one at the output's own location, or one the patch
+// repoints there. An entry left pointing at a source that stayed where it was keeps its
+// own cues, since that audio did not change.
 function patchFor(entries: NmlEntry[], patch: NmlPatch, entry: NmlEntry): NmlPatch {
   const repoints = patch.newFile !== undefined && !pathTaken(entries, patch, entry)
   const safe = repoints ? patch : { ...patch, newFile: undefined }
   const output = outputKey(patch)
   if (repoints || output === undefined || output === key(entry.volume, entry.dir, entry.file))
     return safe
-  return { ...safe, cueTree: undefined }
+  return { ...safe, cueTree: undefined, cueShift: undefined }
 }
 
 // The converted file's own entry, when the collection already has one apart from the
