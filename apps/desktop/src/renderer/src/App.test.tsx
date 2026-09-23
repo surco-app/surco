@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../preload/api'
 import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
 import { emptyMetadata } from '../../shared/metadata'
-import type { ActivityEvent, Release, Settings } from '../../shared/types'
+import type { ActivityEvent, RekordboxSyncIssue, Release, Settings } from '../../shared/types'
 import { resetEditorSections } from './hooks/useEditorSections'
 import i18n from './i18n'
 import { createQueryClient } from './lib/queryClient'
@@ -210,6 +210,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     onActivity: () => () => {},
     onUpdateDownloaded: () => () => {},
     onUpdateError: () => () => {},
+    onRekordboxSyncIssue: () => () => {},
     onUpdateCheckFailed: () => () => {},
     checkForUpdates: vi.fn().mockResolvedValue(undefined),
     onOpenFiles: () => () => {},
@@ -2417,6 +2418,34 @@ describe('App donate nudge', () => {
     await screen.findByTestId('batch-summary')
     expect(screen.queryByTestId('donate-nudge-count')).toBeNull()
     await flush()
+  })
+})
+
+// A repoint rekordbox could not make leaves its collection on the old file, and the run
+// otherwise ends like any successful one. Told only to the log, the DJ found out at the
+// gig, loading a track that pointed at a file Surco had replaced.
+describe('App rekordbox sync notice', () => {
+  async function raise(issue: RekordboxSyncIssue): Promise<HTMLElement> {
+    let send: ((issue: RekordboxSyncIssue) => void) | undefined
+    setApi({
+      onRekordboxSyncIssue: (cb: (issue: RekordboxSyncIssue) => void) => {
+        send = cb
+        return () => {}
+      },
+    })
+    await renderApp()
+    act(() => send?.(issue))
+    return screen.findByTestId('rekordbox-sync-issue')
+  }
+
+  it('says the collection was left alone because it is read-only', async () => {
+    const toast = await raise({ blocked: 'read-only', ambiguous: [] })
+    expect(toast.textContent).toContain('read-only')
+  })
+
+  it('names the track the collection holds under more than one entry', async () => {
+    const toast = await raise({ ambiguous: ['/music/Artist - Title.wav'] })
+    expect(toast.textContent).toContain('Artist - Title.wav')
   })
 })
 

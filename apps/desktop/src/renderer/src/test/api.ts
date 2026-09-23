@@ -223,6 +223,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     installUpdate: async () => {},
     onUpdateDownloaded: unsubscribe,
     onUpdateError: unsubscribe,
+    onRekordboxSyncIssue: unsubscribe,
     checkForUpdates: async () => {},
     onUpdateCheckFailed: unsubscribe,
     onWindowFocus: unsubscribe,

@@ -21,6 +21,7 @@ import type {
   ProcessJob,
   ProcessProgress,
   ProcessResult,
+  RekordboxSyncIssue,
   Release,
   SearchHints,
   SearchPriority,
@@ -248,6 +249,8 @@ export interface Api {
   installUpdate: () => Promise<void>
   onUpdateDownloaded: (cb: (version: string) => void) => () => void
   onUpdateError: (cb: (message: string) => void) => () => void
+  // What a run's rekordbox repoint could not do, sent once after the run ends.
+  onRekordboxSyncIssue: (cb: (issue: RekordboxSyncIssue) => void) => () => void
   checkForUpdates: () => Promise<void>
   onUpdateCheckFailed: (cb: (status: number | null) => void) => () => void
   onWindowFocus: (cb: (focused: boolean) => void) => () => void

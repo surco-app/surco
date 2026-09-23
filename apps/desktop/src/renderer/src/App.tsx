@@ -71,6 +71,7 @@ import { removeAnalysisQueries, seedCachedAnalyses } from './lib/analysisQueries
 import type { AppleMusicIndex } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
 import { acceptReviewPatch, type MatchCleanup, tracksToAutoMatch } from './lib/autoMatch'
+import { baseName } from './lib/baseName'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
@@ -576,6 +577,28 @@ export default function App(): React.JSX.Element {
           testid: 'update',
           message: { key: 'update.ready', values: { version } },
           action: { label: { key: 'update.restart' }, onAction: () => window.api.installUpdate() },
+        }),
+      ),
+    [store],
+  )
+  // What a run's rekordbox repoint could not do: the collection stays on the old file, so
+  // the DJ has to hear it now rather than when a track fails to load at the gig.
+  useEffect(
+    () =>
+      window.api.onRekordboxSyncIssue((issue) =>
+        pushToast(store, {
+          key: 'rekordbox-sync-issue',
+          tone: 'danger',
+          testid: 'rekordbox-sync-issue',
+          message: issue.blocked
+            ? { key: `rekordboxIssue.${issue.blocked}` }
+            : {
+                key: 'rekordboxIssue.ambiguous',
+                values: {
+                  count: issue.ambiguous.length,
+                  name: baseName(issue.ambiguous[0] ?? ''),
+                },
+              },
         }),
       ),
     [store],
