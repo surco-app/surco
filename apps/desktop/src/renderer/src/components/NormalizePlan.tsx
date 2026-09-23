@@ -1,13 +1,14 @@
 import { X } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import type { LoudnessResult, NormalizeConfig } from '../../../shared/types'
+import type { LoudnessResult, NormalizeConfig, OutputFormat } from '../../../shared/types'
 import { formatDb, predictNormalized } from '../lib/quality'
 import { Tooltip } from './Tooltip'
 
 interface Props {
   normalize: NormalizeConfig
   loudness: LoudnessResult | null | undefined
+  format: OutputFormat
   // Flips the SAME persisted setting as Settings > Editor's "Inline explanations":
   // the lever lives where the eyes are, the way back lives in Settings.
   onDismiss?: () => void
@@ -19,7 +20,12 @@ interface Props {
 // ceiling and sometimes under it. The figures live in the waveform legend below; this
 // card owns the mechanism: constant gain, or gain plus the limiter holding the overs.
 // Accent edge when the limiter will engage, the calm "good" edge when it will not.
-export function NormalizePlan({ normalize, loudness, onDismiss }: Props): React.JSX.Element | null {
+export function NormalizePlan({
+  normalize,
+  loudness,
+  format,
+  onDismiss,
+}: Props): React.JSX.Element | null {
   const { t: tr } = useTranslation()
   const predicted = loudness ? predictNormalized(normalize, loudness) : null
   if (!loudness || !predicted) return null
@@ -75,6 +81,16 @@ export function NormalizePlan({ normalize, loudness, onDismiss }: Props): React.
       <p className="mt-0.5 text-[11px] text-fg-muted tabular-nums">
         {tr(`normalize.plan.${subKey}`, values)}
       </p>
+      {format === 'mp3' && normalize.mode === 'loudness' && (
+        <p
+          data-testid="normalize-plan-mp3"
+          className="mt-0.5 text-[11px] text-fg-muted tabular-nums"
+        >
+          {tr('normalize.plan.mp3Ceiling', {
+            ceiling: formatDb(Math.min(0, Math.max(-9, normalize.truePeakDb))),
+          })}
+        </p>
+      )}
     </div>
   )
 }

@@ -753,7 +753,8 @@
       "gain": "Er wird um {{gain}} dB auf {{lufs}} LUFS verschoben, mit konstanter Verstärkung. Seine Peaks landen bei {{peak}} dBTP: die Obergrenze greift nicht.",
       "gainSub": "Nichts wird limitiert oder komprimiert; die Dynamik bleibt erhalten.",
       "peak": "Er wird um {{gain}} dB verschoben: sein lautestes Sample landet genau bei {{peak}} dBFS.",
-      "peakSub": "Konstante Verstärkung, kein Limiter. Er wird etwa {{lufs}} LUFS laut sein."
+      "peakSub": "Konstante Verstärkung, kein Limiter. Er wird etwa {{lufs}} LUFS laut sein.",
+      "mp3Ceiling": "Die MP3-Kodierung hebt die Spitzen etwas an. Surco misst deshalb die MP3 und kodiert sie mit niedriger gehaltenen Spitzen neu, wenn sie über {{ceiling}} dBTP liegt."
     },
     "hideHints": "Diese Erklärungen ausblenden (zurück über Einstellungen → Editor)",
     "row": {

@@ -32,6 +32,7 @@ function renderSection(
   value: NormalizeConfig = cfg,
   showHints?: boolean,
   onHideHints?: () => void,
+  format: OutputFormat = 'aiff',
 ): void {
   ;(window as unknown as { api: unknown }).api = {
     waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], rms: [0.2, 0.4], durationSec: 10 }),
@@ -47,7 +48,7 @@ function renderSection(
         onChange={vi.fn()}
         item={item}
         selectedCount={selectedCount}
-        format="aiff"
+        format={format}
         showHints={showHints}
         onHideHints={onHideHints}
       />
@@ -376,6 +377,29 @@ describe('NormalizeSection plan line', () => {
     const plan = await screen.findByTestId('normalize-plan')
     expect(plan.dataset.plan).toBe('gain')
     expect(plan.textContent).toContain('never engages')
+  })
+
+  // The MP3 encoder pushes peaks back over the ceiling the filter held them under, so an
+  // MP3 is measured after encoding and redone with the peaks held lower when it crossed.
+  // The plan says so, or its peak figure would read as the file's when it is not.
+  it('says an MP3 is checked against the ceiling after encoding', async () => {
+    renderSection(
+      track(),
+      1,
+      measuredLoud,
+      { ...cfg, mode: 'loudness', targetLufs: -13, truePeakDb: -1 },
+      undefined,
+      undefined,
+      'mp3',
+    )
+    const note = await screen.findByTestId('normalize-plan-mp3')
+    expect(note.textContent).toContain('-1.0')
+  })
+
+  it('adds no MP3 note for a lossless output', async () => {
+    renderSection(track(), 1, measuredLoud, { ...cfg, mode: 'loudness', targetLufs: -13 })
+    await screen.findByTestId('normalize-plan')
+    expect(screen.queryByTestId('normalize-plan-mp3')).not.toBeInTheDocument()
   })
 
   it('describes peak mode by where the loudest sample lands', async () => {

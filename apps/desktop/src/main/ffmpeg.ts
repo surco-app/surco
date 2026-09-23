@@ -1619,6 +1619,23 @@ export function toNmlLocation(path: string): { volume: string; dir: string; file
   return { volume, dir, file }
 }
 
+// How many times an MP3 is re-encoded under a lowered ceiling, and the extra room each
+// correction leaves on top of the overshoot it measured (ebur128 prints tenths).
+const LOSSY_CEILING_PASSES = 2
+const LOSSY_CEILING_STEP_DB = 0.1
+
+// How far an encoded file's true peak sits above the loudness ceiling it was normalized
+// to; zero when under it, outside loudness mode, or when the file cannot be measured.
+async function ceilingOvershootDb(file: string, normalize: NormalizeConfig): Promise<number> {
+  if (normalize.mode !== 'loudness') return 0
+  const { stderr } = await run(ffmpegPath, ebur128MeasureArgs(file), {
+    maxBuffer: 1024 * 1024 * 16,
+  })
+  const peak = parseEbur128Measured(stderr)?.inputTp
+  if (peak === undefined) return 0
+  return Math.max(0, peak - Math.min(0, Math.max(-9, normalize.truePeakDb)))
+}
+
 // Best-effort and gated on a configured collection path so the feature costs
 // nothing (no extra disk read, no accumulated patch) when it's off, which is the
 // default. Reads the cue tree from the OUTPUT — the file as it now exists on disk
@@ -1848,36 +1865,60 @@ export async function convertAudio(
       if (copyShift && !clearExtras)
         await runInWorker({ type: 'copyCueFrames', source: input, dest: tmp, shift: copyShift })
     } else {
-      const { stderr } = await run(
-        ffmpegPath,
-        convertArgs(
+      const encode = (filter: string | undefined) =>
+        run(
+          ffmpegPath,
+          convertArgs(
+            input,
+            tmp,
+            plan,
+            meta,
+            coverPath,
+            filter,
+            clearExtras,
+            foreignRemoved,
+            removeCover,
+          ),
+          {
+            maxBuffer: 1024 * 1024 * 32,
+            onChild,
+          },
+        ).catch((e: unknown) => {
+          // execFile prefixes a failed run with "Command failed: " and the ENTIRE command
+          // line before any of ffmpeg's own output. That line carries every -metadata flag
+          // Surco writes — around forty of them — so the message the user was shown ran to
+          // thousands of characters with the one line that says WHY buried at the bottom.
+          // Distilled to the decoder's own diagnosis, the same way assertDecodable already
+          // treats its failures; the raw text still reaches the log through the throw site.
+          // Not stamped with an error key: the cause here is open-ended (permissions, a
+          // full disk, a codec refusing a parameter) and ffmpeg's own line names it better
+          // than any sentence Surco could pick in advance.
+          const text = String((e as { stderr?: unknown })?.stderr ?? '').trim()
+          throw text ? new Error(firstErrorLine(text) || text) : e
+        })
+      let { stderr } = await encode(audioFilter)
+      // The MP3 encoder puts peaks back over the ceiling the filter held them under: on the
+      // reference track, 0.3 dB at 320 kbps with a constant gain and up to 1.7 dB at 128
+      // kbps (see convertLossyCeiling.test.ts). The overshoot depends on the material and
+      // the bitrate, so it is measured on the encoded file and the ceiling lowered by it.
+      let marginDb = 0
+      for (let pass = 0; pass < LOSSY_CEILING_PASSES && normalize && ext === '.mp3'; pass++) {
+        const over = await ceilingOvershootDb(tmp, normalize)
+        if (over <= 0) break
+        marginDb += over + LOSSY_CEILING_STEP_DB
+        const lowered = await normalizeFilter(
           input,
-          tmp,
-          plan,
-          meta,
-          coverPath,
-          audioFilter,
-          clearExtras,
-          foreignRemoved,
-          removeCover,
-        ),
-        {
-          maxBuffer: 1024 * 1024 * 32,
-          onChild,
-        },
-      ).catch((e: unknown) => {
-        // execFile prefixes a failed run with "Command failed: " and the ENTIRE command
-        // line before any of ffmpeg's own output. That line carries every -metadata flag
-        // Surco writes — around forty of them — so the message the user was shown ran to
-        // thousands of characters with the one line that says WHY buried at the bottom.
-        // Distilled to the decoder's own diagnosis, the same way assertDecodable already
-        // treats its failures; the raw text still reaches the log through the throw site.
-        // Not stamped with an error key: the cause here is open-ended (permissions, a
-        // full disk, a codec refusing a parameter) and ffmpeg's own line names it better
-        // than any sentence Surco could pick in advance.
-        const text = String((e as { stderr?: unknown })?.stderr ?? '').trim()
-        throw text ? new Error(firstErrorLine(text) || text) : e
-      })
+          { ...normalize, truePeakDb: Math.min(0, normalize.truePeakDb) - marginDb },
+          sampleRate,
+          declick,
+          trim,
+        )
+        if (!lowered) break
+        const filter = [trimAf, declickAf, lowered, dither ? DITHER_FILTER : undefined]
+          .filter(Boolean)
+          .join(',')
+        ;({ stderr } = await encode(filter))
+      }
       if (declickAf) declickedSamples = parseDeclickedSamples(String(stderr)) ?? undefined
       // The flac muxer just wrote the comment as DESCRIPTION whatever metadataArgs called
       // it; put it under the name the DJ software reads (see setFlacComment).

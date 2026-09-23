@@ -753,7 +753,8 @@
       "gain": "Cambiará {{gain}} dB hasta {{lufs}} LUFS con una ganancia constante. Sus picos quedarán en {{peak}} dBTP: el techo no llega a actuar.",
       "gainSub": "No se limita ni comprime nada; la dinámica queda intacta.",
       "peak": "Cambiará {{gain}} dB: su sample más alto quedará exactamente en {{peak}} dBFS.",
-      "peakSub": "Ganancia constante, sin limitador. Sonará a unos {{lufs}} LUFS."
+      "peakSub": "Ganancia constante, sin limitador. Sonará a unos {{lufs}} LUFS.",
+      "mp3Ceiling": "Codificar en MP3 sube un poco los picos, así que Surco mide el MP3 y, si pasa de {{ceiling}} dBTP, lo vuelve a codificar con los picos más abajo."
     },
     "hideHints": "Ocultar estas explicaciones (se reactivan en Ajustes → Editor)",
     "row": {
