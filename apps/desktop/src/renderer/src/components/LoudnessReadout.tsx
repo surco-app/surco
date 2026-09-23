@@ -172,7 +172,7 @@ export function LoudnessReadout({
       ),
   ].filter((c) => c !== false)
   return (
-    <div data-testid="loudness-readout" className="mt-3">
+    <div data-testid="loudness-readout" className="mt-3 @container">
       {/* The lone help affordance now that the group headings are gone: a compact info
           button above the flat pill row, explaining the figures beneath it. */}
       <div className="mb-1.5 flex items-center gap-1">
@@ -200,8 +200,10 @@ export function LoudnessReadout({
           read as one family. What Properties doesn't carry is the verdict: a status dot on
           the label and the grade colour on the value keep the good/warn/danger reading that
           the old stat cards had, inside the tighter table. An odd count (noise floor makes
-          seven) stretches the last cell across both columns so no half-cell is left empty. */}
-      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-[var(--color-line)]">
+          seven) stretches the last cell across both columns so no half-cell is left empty.
+          One column below 30rem, like Properties, so a narrow editor keeps the labels whole
+          instead of cutting "Volumen" down to "V…". */}
+      <div className="grid grid-cols-1 gap-px @[30rem]:grid-cols-2 overflow-hidden rounded-lg bg-[var(--color-line)]">
         {cells.map((c, i) => {
           const lastOdd = i === cells.length - 1 && cells.length % 2 === 1
           return (
@@ -209,7 +211,7 @@ export function LoudnessReadout({
               key={c.id}
               data-testid={`loudness-pill-${c.id}`}
               data-grade={c.grade}
-              className={`group relative flex items-center justify-between gap-2 bg-[var(--color-field)] px-3 py-2 ${lastOdd ? 'col-span-2' : ''}`}
+              className={`group relative flex items-center justify-between gap-2 bg-[var(--color-field)] px-3 py-2 ${lastOdd ? '@[30rem]:col-span-2' : ''}`}
             >
               <span className="flex min-w-0 items-center gap-1.5">
                 <span

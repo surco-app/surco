@@ -59,9 +59,7 @@ export function NormalizePlan({
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[10px] font-medium uppercase tracking-wider text-fg-dim">
-          {tr('normalize.plan.head')}
-        </p>
+        <p className="text-[11px] font-medium text-fg-dim">{tr('normalize.plan.head')}</p>
         {onDismiss && (
           <button
             type="button"

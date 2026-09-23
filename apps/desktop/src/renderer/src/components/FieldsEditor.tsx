@@ -194,9 +194,7 @@ export function FieldsEditor({
     <div className="space-y-4">
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-xs font-medium uppercase tracking-wide text-fg-dim">
-            {tr('settings.shown')}
-          </p>
+          <p className="text-xs font-medium text-fg-dim">{tr('settings.shown')}</p>
           <button
             type="button"
             data-testid="auto-organize-fields"
@@ -352,9 +350,7 @@ export function FieldsEditor({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-fg-dim">
-          {tr('settings.hidden')}
-        </p>
+        <p className="mb-2 text-xs font-medium text-fg-dim">{tr('settings.hidden')}</p>
         <div className="space-y-1.5">
           {/* The visible list keeps the user's order (it IS the editor's order); the
               hidden list has none of its own, so it sorts by label for scanning. */}
