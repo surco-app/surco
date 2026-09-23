@@ -37,7 +37,7 @@
     "settings": "Settings",
     "stats": "Stats",
     "activity": "Activity",
-    "trash": "Surco originals",
+    "trash": "Backups",
     "selectAll": "Select all",
     "revealSelected": "Scroll to the selected track",
     "fillFromName": "Fill all tags from file name",
@@ -152,7 +152,7 @@
     "ambiguous_other": "rekordbox still points at the old files for {{count}} tracks, among them {{name}}: more than one entry in its collection matches each."
   },
   "trash": {
-    "title": "Surco originals",
+    "title": "Backups",
     "summary_one": "{{count}} file · {{size}}",
     "summary_other": "{{count}} files · {{size}}",
     "emptyTitle": "Nothing to restore",
@@ -179,7 +179,7 @@
       "deleted": "Deleted",
       "restored-over": "Set aside"
     },
-    "filtersLabel": "Originals",
+    "filtersLabel": "Backups",
     "search": "Search by title or folder",
     "replacedBy": "replaced by",
     "renamedTo": "renamed to",
@@ -1125,7 +1125,7 @@
     "originalBackupAudioChangesHint": "Converting or normalizing keeps a copy; editing only the tags does not.",
     "originalBackupNeverHint": "If a conversion fails, the original file is lost. Deleting a track on a disk with no Trash will be permanent too.",
     "originalBackupNeverLine": "No copy is kept, not when converting and not when normalizing.",
-    "originals": "Originals",
+    "originals": "Backups",
     "originalsHint": "When Surco rewrites, renames or deletes a file of yours, it keeps the previous one here so you can undo it.",
     "originalBackupDays": "For",
     "originalBackupDaysUnit": "days",

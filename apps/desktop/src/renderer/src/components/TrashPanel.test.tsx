@@ -178,3 +178,13 @@ describe('formatBytes', () => {
     expect(formatBytes(1.5 * 1024 * 1024 * 1024, 'en')).toBe('1.5 GB')
   })
 })
+
+// "Originals" read like somewhere a file went when it was deleted: a user who updated a
+// track twice reported it "sent to the trash". What the panel holds is a backup Surco
+// takes before rewriting a file, and the name has to say so.
+describe('TrashPanel name', () => {
+  it('calls itself the backups', () => {
+    renderPanel([])
+    expect(screen.getByRole('dialog', { name: 'Backups' })).toBeInTheDocument()
+  })
+})
