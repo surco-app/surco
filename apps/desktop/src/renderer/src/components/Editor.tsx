@@ -804,6 +804,24 @@ export const Editor = memo(function Editor({
     () => new Map(customFields.map((f) => [f.key, (v: string) => setCustom(f.key, v)])),
     [customFields, setCustom],
   )
+  // Across a selection each track keeps its other custom values: the edit is merged into
+  // that track's own set, not stamped as one shared set over all of them.
+  const customBulkOnChange = useMemo(
+    () =>
+      new Map(
+        customFields.map((f) => [
+          f.key,
+          (v: string) =>
+            onChangeTracksMeta?.(
+              (selectedTracks ?? []).map((t) => ({
+                id: t.id,
+                meta: { custom: { ...effectiveMeta(t, customFields).custom, [f.key]: v } },
+              })),
+            ),
+        ]),
+      ),
+    [customFields, selectedTracks, onChangeTracksMeta],
+  )
   // The file's own value backs a custom field the user has not edited, except one marked
   // for removal in the inspector: that tag is on its way out of the file.
   const customValueMap = useMemo(
@@ -846,6 +864,7 @@ export const Editor = memo(function Editor({
         customFields,
         customValues: customValueMap,
         customOnChange,
+        customBulkOnChange,
         onChangeTracksMeta,
       }),
     [
@@ -868,6 +887,7 @@ export const Editor = memo(function Editor({
       customFields,
       customValueMap,
       customOnChange,
+      customBulkOnChange,
       onChangeTracksMeta,
     ],
   )

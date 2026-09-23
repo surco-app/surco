@@ -72,6 +72,7 @@ function params(over: Partial<BuildFieldSpecsParams> = {}): BuildFieldSpecsParam
     customFields: [],
     customValues: {},
     customOnChange: new Map(),
+    customBulkOnChange: new Map(),
     ...over,
   }
 }
@@ -304,6 +305,30 @@ describe('buildFieldSpecs (bulk mode)', () => {
     const genre = specs.find((s) => s.key === 'genre')
     expect(genre?.perTrack?.list).toBe(GENRE_TAGS)
     expect(genre?.perTrack?.tracks).toEqual([a, b])
+  })
+
+  // Across a selection a custom field reads like a managed one: the shared value, or the
+  // "multiple values" hint when the tracks disagree, and an edit reaches every track.
+  it('builds a custom field over the selection from each track own value', () => {
+    const write = vi.fn()
+    const vinyl = { key: 'vinylCondition', label: 'Estado del vinilo' }
+    const a = { ...track('a'), foreignTags: [{ name: 'VINYLCONDITION', value: 'NM' }] }
+    const b = { ...track('b', { custom: { vinylCondition: 'NM' } }) }
+    const c = { ...track('c', { custom: { vinylCondition: 'VG' } }) }
+    const build = (selectedTracks: TrackItem[]) =>
+      buildFieldSpecs(
+        params({
+          isMulti: true,
+          selectedTracks,
+          visibleFields: ['vinylCondition'],
+          customFields: [vinyl],
+          customBulkOnChange: new Map([['vinylCondition', write]]),
+        }),
+      ).find((s) => s.key === 'vinylCondition')
+    expect(build([a, b])).toMatchObject({ label: 'Estado del vinilo', value: 'NM' })
+    expect(build([a, c])).toMatchObject({ value: '', placeholder: 'editor.multipleValues' })
+    build([a, b])?.onChange('VG+')
+    expect(write).toHaveBeenCalledWith('VG+')
   })
 
   it('honours the visible-fields setting and drops non-bulk fields', () => {

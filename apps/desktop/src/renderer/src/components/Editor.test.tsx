@@ -1149,6 +1149,7 @@ describe('Editor multi-select', () => {
       metaA?: Partial<TrackMetadata>
       metaB?: Partial<TrackMetadata>
       groupingPresets?: string[]
+      customFields?: Settings['customFields']
     } = {},
   ) {
     if (opts.platform)
@@ -1203,6 +1204,7 @@ describe('Editor multi-select', () => {
       {
         addToAppleMusic: opts.music ?? false,
         groupingPresets: opts.groupingPresets ?? [],
+        customFields: opts.customFields ?? [],
         visibleFields: opts.visibleFields ?? ['title', 'album'],
         requiredFields: opts.requiredFields ?? ['title'],
         showSpectrum: true,
@@ -1225,6 +1227,24 @@ describe('Editor multi-select', () => {
     fireEvent.click(screen.getByTestId('grouping-per-track-toggle'))
     fireEvent.click(screen.getByTestId('chip-b-Vocals'))
     expect(onChangeTracksMeta).toHaveBeenCalledWith([{ id: 'b', meta: { grouping: 'Vocals' } }])
+    expect(onChangeAllMeta).not.toHaveBeenCalled()
+  })
+
+  // A custom field edited across a selection lands in every selected track, each through
+  // its own custom set rather than one shared value stamped over all the tracks' fields.
+  it('writes a custom field edited across the selection into every track', () => {
+    const { onChangeTracksMeta, onChangeAllMeta } = renderMulti({
+      visibleFields: ['vinylCondition'],
+      customFields: [{ key: 'vinylCondition', label: 'Estado del vinilo' }],
+      metaA: { custom: { vinylCondition: 'NM' } },
+    })
+    const field = screen.getByTestId('field-vinylCondition')
+    fireEvent.change(field, { target: { value: 'VG+' } })
+    fireEvent.blur(field)
+    expect(onChangeTracksMeta).toHaveBeenCalledWith([
+      { id: 'a', meta: { custom: { vinylCondition: 'VG+' } } },
+      { id: 'b', meta: { custom: { vinylCondition: 'VG+' } } },
+    ])
     expect(onChangeAllMeta).not.toHaveBeenCalled()
   })
 
