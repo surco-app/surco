@@ -31,6 +31,14 @@ describe('LoudnessReadout estimates', () => {
     const lufs = screen.getByTestId('loudness-estimate-lufs').textContent ?? ''
     expect(lufs).toContain('→')
     expect(lufs).toContain('-13.0')
+    cleanup()
+    render(
+      <LoudnessReadout
+        loudness={loud}
+        normalize={{ ...club, targetLufs: -14.3 }}
+        onShowHelp={vi.fn()}
+      />,
+    )
     expect(screen.getByTestId('loudness-estimate-range').textContent).toBe('=')
   })
 
@@ -103,5 +111,14 @@ describe('LoudnessReadout estimates that ride the gain', () => {
     cleanup()
     render(<LoudnessReadout loudness={loud} normalize={club} onShowHelp={vi.fn()} />)
     expect(screen.queryByTestId('loudness-estimate-crest')).not.toBeInTheDocument()
+  })
+
+  // The limiter pulls the loud passages down while the quiet ones take the full gain: the
+  // range shrinks, and a balance that differs between loud and quiet passages is weighted
+  // differently, so "=" there was a claim the converted file could contradict.
+  it('drops the range and balance claims under the limiter', () => {
+    render(<LoudnessReadout loudness={loud} normalize={club} onShowHelp={vi.fn()} />)
+    expect(screen.queryByTestId('loudness-estimate-range')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('loudness-estimate-balance')).not.toBeInTheDocument()
   })
 })

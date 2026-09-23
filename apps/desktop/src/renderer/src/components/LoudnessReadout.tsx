@@ -79,9 +79,12 @@ export function LoudnessReadout({
   // row still read "no change". How far it moves depends on each channel's own peak, which
   // the single-figure measurement here cannot know, so the row drops out rather than
   // printing a claim the converted file contradicts.
+  // The limiter is no constant gain either: it pulls the loud passages down while the quiet
+  // ones take the full gain, which moves the range, the dynamics and a balance that differs
+  // between loud and quiet passages by amounts the figures here cannot size.
   const perChannel = normalize.mode === 'peak' && normalize.peakPerChannel === true
-  const balanceEstimate = perChannel ? null : unchanged
-  const crestEstimate = predicted?.limited ? null : unchanged
+  const limitedEstimate = predicted?.limited ? null : unchanged
+  const balanceEstimate = perChannel ? null : limitedEstimate
   const dcEstimate = (dc: number): string | null => {
     if (!predicted) return null
     if (normalize.removeDcOffset) return formatPercent(0)
@@ -116,7 +119,7 @@ export function LoudnessReadout({
       `${formatDb(loud.lra)} LU`,
       gradeLra(loud.lra),
       tr('editor.loudnessRangeHint'),
-      unchanged,
+      limitedEstimate,
     ),
     loud.crestDb !== null &&
       cell(
@@ -125,7 +128,7 @@ export function LoudnessReadout({
         `${formatDb(loud.crestDb)} dB`,
         gradeCrest(loud.crestDb),
         tr('editor.loudnessCrestHint'),
-        crestEstimate,
+        limitedEstimate,
       ),
     loud.channelBalanceDb !== null &&
       cell(
