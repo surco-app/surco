@@ -712,6 +712,8 @@
     "planCues": "Re-encodes the audio. Traktor cues and beatgrid move with the cut, so everything still lands on the same beat (kept on MP3, AIFF, FLAC and WAV; only ALAC loses them).",
     "handleStart": "Trim start",
     "handleEnd": "Trim end",
+    "handleStartTime": "Trim start time",
+    "handleEndTime": "Trim end time",
     "auditionStart": "Hear the start",
     "auditionEnd": "Hear the end",
     "row": {

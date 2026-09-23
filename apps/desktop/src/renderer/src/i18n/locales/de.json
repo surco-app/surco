@@ -712,6 +712,8 @@
     "planCues": "Kodiert das Audio neu. Traktor-Cues und Beatgrid wandern mit dem Schnitt, alles sitzt weiter auf demselben Beat (erhalten bei MP3, AIFF, FLAC und WAV; nur ALAC verliert sie).",
     "handleStart": "Schnittanfang",
     "handleEnd": "Schnittende",
+    "handleStartTime": "Zeit des Schnittanfangs",
+    "handleEndTime": "Zeit des Schnittendes",
     "auditionStart": "Anfang anhören",
     "auditionEnd": "Ende anhören",
     "row": {
