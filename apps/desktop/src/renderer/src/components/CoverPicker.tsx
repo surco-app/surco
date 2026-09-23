@@ -9,7 +9,7 @@ import {
   X,
 } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Release } from '../../../shared/types'
 import { useWindowFocus } from '../hooks/useWindowFocus'
@@ -99,6 +99,11 @@ export function CoverPicker({
       ? selectedTracks[0].coverUrl
       : undefined
   const displayCover = isMulti ? sharedCover : item.coverUrl
+  // Tracks that carry different artwork show the same empty well as tracks with none, so
+  // the pick button says so: picking one replaces every track's own cover.
+  const coversDiffer =
+    isMulti && !!selectedTracks?.some((t) => t.coverUrl !== selectedTracks[0].coverUrl)
+  const coversDifferId = useId()
   const [coverDragging, setCoverDragging] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   // The artwork the file arrived with: its embedded cover, not whatever coverUrl
@@ -421,6 +426,7 @@ export function CoverPicker({
             ref={pickRef}
             type="button"
             data-testid="cover-pick"
+            aria-describedby={coversDiffer ? coversDifferId : undefined}
             onClick={() => coverInputRef.current?.click()}
             className={`flex h-40 w-40 flex-col items-center justify-center gap-2 rounded-xl bg-[var(--color-field)] p-2 text-center text-xs outline outline-1 -outline-offset-1 transition-colors ${
               coverDragging
@@ -431,6 +437,11 @@ export function CoverPicker({
             <ImageIcon className="h-7 w-7" strokeWidth={1.5} aria-hidden="true" />
             {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
           </button>
+          {coversDiffer && (
+            <span id={coversDifferId} className="sr-only">
+              {tr('editor.coverMixed')}
+            </span>
+          )}
           {coverActions}
         </div>
       )}

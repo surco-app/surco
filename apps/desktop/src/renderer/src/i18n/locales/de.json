@@ -601,7 +601,8 @@
     "loudnessFixNoise": "Hier nicht korrigierbar: Surco entrauscht nicht. Es stammt aus Quelle oder Aufnahme.",
     "loudnessAfterHeader": "jetzt → nach dem Konvertieren",
     "replaceMusic": "Durch {{format}} ersetzen + Apple Music",
-    "requiredEmpty": "Pflichtfeld: vor dem Konvertieren ausfüllen"
+    "requiredEmpty": "Pflichtfeld: vor dem Konvertieren ausfüllen",
+    "coverMixed": "Die ausgewählten Titel haben unterschiedliche Cover"
   },
   "fields": {
     "groupFilled_one": "{{count}} ausgefüllt",

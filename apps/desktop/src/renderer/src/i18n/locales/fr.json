@@ -601,7 +601,8 @@
     "loudnessFixNoise": "Non corrigible ici : Surco ne débruite pas. Cela vient de la source ou de la captation.",
     "loudnessAfterHeader": "avant → après conversion",
     "replaceMusic": "Remplacer par {{format}} + Apple Music",
-    "requiredEmpty": "Obligatoire : à remplir avant la conversion"
+    "requiredEmpty": "Obligatoire : à remplir avant la conversion",
+    "coverMixed": "Les pistes sélectionnées ont des pochettes différentes"
   },
   "fields": {
     "groupFilled_one": "{{count}} rempli",

@@ -601,7 +601,8 @@
     "loudnessFixNoise": "Not fixable here: Surco does not denoise. It comes from the source or the capture.",
     "loudnessAfterHeader": "now → after converting",
     "replaceMusic": "Replace with {{format}} + Apple Music",
-    "requiredEmpty": "Required: fill it in before converting"
+    "requiredEmpty": "Required: fill it in before converting",
+    "coverMixed": "The selected tracks have different artwork"
   },
   "fields": {
     "groupFilled_one": "{{count}} filled",
