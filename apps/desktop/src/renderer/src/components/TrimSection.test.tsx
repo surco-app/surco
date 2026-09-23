@@ -536,6 +536,26 @@ describe('TrimSection', () => {
     expect(screen.getByTestId('trim-handle-end')).toHaveAttribute('aria-valuetext', '90.300 s')
   })
 
+  // The time field and the handle were both called "Trim start", so a screen reader's
+  // list of controls showed two identical names for two different things, and jumping
+  // to one by name could land on the other. The field says it holds the time.
+  it('names the time field apart from the handle it sets', async () => {
+    render(section({ value: { startSec: 9.7, endSec: 90.3 } }))
+    await screen.findByTestId('trim-handle-start', undefined, { timeout: 3000 })
+    expect(screen.getByRole('slider', { name: 'Trim start' })).toHaveAttribute(
+      'data-testid',
+      'trim-handle-start',
+    )
+    expect(screen.getByRole('textbox', { name: 'Trim start time' })).toHaveAttribute(
+      'data-testid',
+      'trim-cut-time-start',
+    )
+    expect(screen.getByRole('textbox', { name: 'Trim end time' })).toHaveAttribute(
+      'data-testid',
+      'trim-cut-time-end',
+    )
+  })
+
   // Clearing the last remaining cut leaves the track with no trim at all.
   it('drops the trim entirely when the last cut is cleared', async () => {
     const onChange = vi.fn()

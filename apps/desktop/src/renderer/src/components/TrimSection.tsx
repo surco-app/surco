@@ -322,7 +322,7 @@ function Lane({
             data-testid={`trim-cut-time-${side}`}
             type="text"
             inputMode="decimal"
-            aria-label={tr(side === 'start' ? 'trim.handleStart' : 'trim.handleEnd')}
+            aria-label={tr(side === 'start' ? 'trim.handleStartTime' : 'trim.handleEndTime')}
             value={timeText ?? `${cut.toFixed(3)}`}
             onChange={(e) => setTimeText(e.target.value)}
             onBlur={commitTime}

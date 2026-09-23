@@ -712,6 +712,8 @@
     "planCues": "Recodifica el audio. Los cues y el beatgrid de Traktor se mueven con el corte, así que todo sigue cayendo en el mismo golpe (se conservan en MP3, AIFF, FLAC y WAV; solo ALAC los pierde).",
     "handleStart": "Inicio del recorte",
     "handleEnd": "Final del recorte",
+    "handleStartTime": "Tiempo del inicio del recorte",
+    "handleEndTime": "Tiempo del final del recorte",
     "auditionStart": "Escuchar el inicio",
     "auditionEnd": "Escuchar el final",
     "row": {

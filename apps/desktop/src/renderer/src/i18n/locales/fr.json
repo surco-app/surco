@@ -712,6 +712,8 @@
     "planCues": "Réencode l'audio. Les cues et la grille de Traktor suivent la coupe, tout retombe sur le même temps (conservés en MP3, AIFF, FLAC et WAV ; seul l'ALAC les perd).",
     "handleStart": "Début du rognage",
     "handleEnd": "Fin du rognage",
+    "handleStartTime": "Temps du début du rognage",
+    "handleEndTime": "Temps de la fin du rognage",
     "auditionStart": "Écouter le début",
     "auditionEnd": "Écouter la fin",
     "row": {
