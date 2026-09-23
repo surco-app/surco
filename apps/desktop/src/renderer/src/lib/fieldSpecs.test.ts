@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { BpmResult, KeyResult, TrackMetadata } from '../../../shared/types'
+import type { BpmResult, KeyResult, MetaTextKey, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from './bulkEdit'
 import { type BuildFieldSpecsParams, buildFieldSpecs } from './fieldSpecs'
@@ -9,13 +9,13 @@ import { FIELD_DEFS } from './fields'
 // closing over the given setField/onChangeAllMeta so a test can still assert what
 // each field's onChange was called with.
 function singleOnChangeFrom(
-  setField: (key: keyof TrackMetadata, value: string) => void,
-): Map<keyof TrackMetadata, (v: string) => void> {
+  setField: (key: MetaTextKey, value: string) => void,
+): Map<MetaTextKey, (v: string) => void> {
   return new Map(FIELD_DEFS.map((def) => [def.key, (v: string) => setField(def.key, v)]))
 }
 function bulkOnChangeFrom(
   onChangeAllMeta: (patch: Partial<TrackMetadata>) => void,
-): Map<keyof TrackMetadata, (v: string) => void> {
+): Map<MetaTextKey, (v: string) => void> {
   return new Map(BULK_FIELDS.map((key) => [key, (v: string) => onChangeAllMeta({ [key]: v })]))
 }
 

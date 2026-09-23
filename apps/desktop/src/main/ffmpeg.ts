@@ -5,6 +5,7 @@ import { constants as osConstants, setPriority, tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import { promisify } from 'node:util'
 import log from 'electron-log/main'
+import { customTagName } from '../shared/customFields'
 import { declickFilter } from '../shared/declick'
 import { errorWithKey } from '../shared/errorKeys'
 import { forcedInputArgs } from '../shared/inputFormat'
@@ -402,7 +403,7 @@ function withTagLibExtras(input: string, tags: TrackMetadata): TrackMetadata {
   if (!TAGLIB_FILLED_INPUT.test(input)) return tags
   for (const [field, value] of Object.entries(readTagLibExtras(input))) {
     const key = field as MetaTextKey
-    if (value && !tags[key]?.trim()) tags[key] = value
+    if (typeof value === 'string' && value && !tags[key]?.trim()) tags[key] = value
   }
   return tags
 }
@@ -814,7 +815,7 @@ function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
   // written one at read time regardless of case, so only differing spellings need
   // the explicit clear — and the written name itself must be skipped, or the clear
   // would wipe the value set two arguments earlier.
-  return TAG_FIELDS.flatMap((field) => {
+  const managed = TAG_FIELDS.flatMap((field) => {
     const name = vorbis ? (field.vorbis ?? field.id3) : field.id3
     if (!name) return []
     const own = (meta[field.key] ?? '').trim()
@@ -834,6 +835,13 @@ function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
       ...clears,
     ]
   })
+  // The user's own fields, under the upper-case key: TXXX on ID3, a comment on Vorbis. An
+  // empty value clears the tag, like an emptied managed field.
+  const custom = Object.entries(meta.custom ?? {}).flatMap(([key, value]) => [
+    '-metadata',
+    `${customTagName(key)}=${value.trim()}`,
+  ])
+  return [...managed, ...custom]
 }
 
 const AIFF_INPUT = /\.aiff?$/i

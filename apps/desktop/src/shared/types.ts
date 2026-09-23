@@ -386,6 +386,9 @@ export interface TrackMetadata {
   // them empty, which clears the previous owner's values on conversion.
   copyright?: string
   encodedBy?: string
+  // The user's own fields (Settings → Fields), by key: vinylCondition → "VG+". Written to
+  // the file as VINYLCONDITION: TXXX on ID3, a Vorbis comment, an iTunes freeform atom.
+  custom?: Record<string, string>
   // Boolean-ish: '1' when the album is a various-artists compilation, '' when
   // not. Kept a string like every other field; written as TCMP/COMPILATION,
   // which is what makes Apple Music group VA albums instead of splitting them.
@@ -411,10 +414,10 @@ export interface TrackMetadata {
   discogsUrl?: string
 }
 
-// The metadata fields that hold one text value each: every field of TrackMetadata today.
-// Code that reads or writes a field as a string names its key with this, so a field of
-// another shape can join TrackMetadata without every such site reading it as text.
-export type MetaTextKey = keyof TrackMetadata
+// The metadata fields that hold one text value each: every field but the user's own,
+// which ride together in `custom`. Code that reads or writes a field as a string names
+// its key with this.
+export type MetaTextKey = Exclude<keyof TrackMetadata, 'custom'>
 
 // One track's editable state, persisted alongside the session paths so a crash or
 // forced quit never loses metadata the user staged but hadn't converted yet. Keyed
