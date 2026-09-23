@@ -33,4 +33,21 @@ describe('ArtworkTab', () => {
     const hint = screen.getByText(i18n.t('settings.flacFinderCoversHint'))
     expect(hint.textContent).toMatch(/traktor/i)
   })
+
+  // With Traktor sync on, main never writes the header (Traktor would drop the ENTRY), so
+  // the box would promise something that does not happen. It stays visible, per the rule
+  // that settings never vanish, but disabled and saying why.
+  it('disables the option and says why while Traktor sync is on', () => {
+    render(<ArtworkTab synced={{ ...synced, syncTraktor: true }} patch={vi.fn()} />)
+
+    expect(screen.getByTestId('settings-flac-finder-covers')).toBeDisabled()
+    expect(screen.getByText(i18n.t('settings.flacFinderCoversTraktor'))).toBeInTheDocument()
+  })
+
+  it('offers the option with its usual hint while Traktor sync is off', () => {
+    render(<ArtworkTab synced={{ ...synced, syncTraktor: false }} patch={vi.fn()} />)
+
+    expect(screen.getByTestId('settings-flac-finder-covers')).toBeEnabled()
+    expect(screen.queryByText(i18n.t('settings.flacFinderCoversTraktor'))).toBeNull()
+  })
 })
