@@ -150,6 +150,56 @@ describe('ToastStack', () => {
       expect(onClose).not.toHaveBeenCalled()
     })
 
+    // WCAG 2.2.1: a toast that vanishes on a clock is lost to anyone who reads slowly or
+    // is still reaching for its action. Resting the pointer on it must stop the clock, and
+    // leaving must resume with the time that was left, not restart or expire at once.
+    it('pauses the countdown while the pointer rests on the card and resumes on leave', () => {
+      const onExpire = vi.fn()
+      render(
+        <ToastStack
+          toasts={[toast({ id: 'n', testid: 'app-notice', duration: 4000 })]}
+          onExpire={onExpire}
+          onClose={vi.fn()}
+        />,
+      )
+      act(() => vi.advanceTimersByTime(1000))
+      fireEvent.pointerEnter(screen.getByTestId('app-notice'))
+      act(() => vi.advanceTimersByTime(10_000))
+      expect(onExpire).not.toHaveBeenCalled()
+      expect(screen.getByTestId('app-notice-countdown').style.animationPlayState).toBe('paused')
+      fireEvent.pointerLeave(screen.getByTestId('app-notice'))
+      act(() => vi.advanceTimersByTime(2999))
+      expect(onExpire).not.toHaveBeenCalled()
+      act(() => vi.advanceTimersByTime(1))
+      expect(onExpire).toHaveBeenCalledWith('n')
+    })
+
+    // A keyboard user tabbing to "Undo trim" has the focus inside the card: the toast must
+    // not expire under them while they are about to press the action.
+    it('holds a toast with an action open while the focus is inside it', () => {
+      const onExpire = vi.fn()
+      render(
+        <ToastStack
+          toasts={[
+            toast({
+              id: 'u',
+              testid: 'undo',
+              duration: 4000,
+              action: { label: 'Undo', onAction: vi.fn() },
+            }),
+          ]}
+          onExpire={onExpire}
+          onClose={vi.fn()}
+        />,
+      )
+      act(() => screen.getByTestId('undo-action').focus())
+      act(() => vi.advanceTimersByTime(10_000))
+      expect(onExpire).not.toHaveBeenCalled()
+      act(() => screen.getByTestId('undo-action').blur())
+      act(() => vi.advanceTimersByTime(4000))
+      expect(onExpire).toHaveBeenCalledWith('u')
+    })
+
     it('leaves a toast without a duration on screen indefinitely', () => {
       const onExpire = vi.fn()
       render(<ToastStack toasts={[toast({ id: 'p' })]} onExpire={onExpire} onClose={vi.fn()} />)
