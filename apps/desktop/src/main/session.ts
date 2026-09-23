@@ -3,7 +3,13 @@ import { readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, nativeImage } from 'electron'
 import { normalizeTrim } from '../shared/trim'
-import type { SessionData, SessionEdit } from '../shared/types'
+import type {
+  DeclickMode,
+  NormalizeConfig,
+  NormalizeMode,
+  SessionData,
+  SessionEdit,
+} from '../shared/types'
 
 // The last-loaded track paths plus each track's staged (not yet converted) edits, so
 // a relaunch can offer to reopen where the user left off — edits included, because a
@@ -62,6 +68,18 @@ function previewOf(entry: CoverEntry, path: string): string | undefined {
   return entry.preview
 }
 
+const DECLICK_MODES: DeclickMode[] = ['off', 'soft', 'standard', 'strong']
+const NORMALIZE_MODES: NormalizeMode[] = ['none', 'loudness', 'peak']
+
+function isNormalizeConfig(raw: unknown): raw is NormalizeConfig {
+  if (typeof raw !== 'object' || raw === null) return false
+  const n = raw as NormalizeConfig
+  return (
+    NORMALIZE_MODES.includes(n.mode) &&
+    [n.targetLufs, n.truePeakDb, n.peakDb].every((v) => typeof v === 'number' && Number.isFinite(v))
+  )
+}
+
 // An edit written by this app is well-formed, but the file is hand-editable and old
 // versions wrote no edits at all — anything that isn't the expected shape degrades to
 // "no staged edits for this track" instead of poisoning the restore.
@@ -91,6 +109,10 @@ function sanitizeEdit(raw: unknown, previews: Map<string, ResolvedCover>): Sessi
   const trim = normalizeTrim(edit.trim)
   if (trim) edit.trim = trim
   else delete edit.trim
+  // The dials feed the next conversion's filters directly, so a hand-edited value that
+  // is not a known shape reads as "never dialled" and the Settings default applies.
+  if (!isNormalizeConfig(edit.normalize)) delete edit.normalize
+  if (!DECLICK_MODES.includes(edit.declick as DeclickMode)) delete edit.declick
   // Sessions written before the beatgrid feature was removed still carry a
   // beatgrid key; drop it so the stale grid never rides the restore.
   delete (edit as Record<string, unknown>).beatgrid

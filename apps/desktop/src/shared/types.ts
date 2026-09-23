@@ -454,6 +454,10 @@ export interface SessionEdit {
   // The staged silence trim — seconds the user confirmed on the waveform but
   // hadn't converted yet, exactly the kind of edit this store exists to save.
   trim?: TrimRange
+  // The loudness and click repair dialled for this track, which the batch honours per
+  // track: without them a reopened session converted with the Settings defaults.
+  normalize?: NormalizeConfig
+  declick?: DeclickMode
 }
 
 // What the session store round-trips: the loaded source paths (the reopen offer)

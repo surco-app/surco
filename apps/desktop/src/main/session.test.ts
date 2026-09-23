@@ -157,6 +157,26 @@ describe('session store', () => {
     expect((await loadLastSession()).edits[kept].trim).toBeUndefined()
   })
 
+  // The per-track loudness and click-repair dials feed the next conversion directly, so a
+  // hand-edited value that is not one of the known shapes reads as "never dialled" and the
+  // track falls back to the Settings default, while a valid one comes back as saved.
+  it('round-trips per-track normalize and declick and drops malformed ones', async () => {
+    const dir = app.getPath('userData')
+    const kept = join(dir, 'kept.wav')
+    writeFileSync(kept, 'x')
+    const normalize = { mode: 'peak' as const, targetLufs: -14, truePeakDb: -1, peakDb: -0.5 }
+    saveLastSession([kept], { [kept]: edit({ normalize, declick: 'soft' }) })
+    const good = (await loadLastSession()).edits[kept]
+    expect(good.normalize).toEqual(normalize)
+    expect(good.declick).toBe('soft')
+    saveLastSession([kept], {
+      [kept]: edit({ normalize: { mode: 'loud' } as never, declick: 'max' as never }),
+    })
+    const bad = (await loadLastSession()).edits[kept]
+    expect(bad.normalize).toBeUndefined()
+    expect(bad.declick).toBeUndefined()
+  })
+
   // Sessions written before the beatgrid feature was removed still carry the
   // key; the load must drop it so no stale grid rides the restore.
   it('drops the beatgrid key an older session stored', async () => {

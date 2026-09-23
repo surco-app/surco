@@ -401,6 +401,8 @@ export function useTrackLibrary({
     if (saved.matchConfidence !== undefined) patch.matchConfidence = saved.matchConfidence
     if (saved.matchProvider) patch.matchProvider = saved.matchProvider
     if (saved.trim) patch.trim = saved.trim
+    if (saved.normalize) patch.normalize = saved.normalize
+    if (saved.declick) patch.declick = saved.declick
     return patch
   }
 

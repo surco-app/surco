@@ -62,6 +62,24 @@ describe('sessionEdits', () => {
   // A row whose disk snapshot never landed (the read failed before stamping) has
   // nothing to compare against; counting it as edited would make every such save
   // claim there is work to lose.
+  // The batch honours each track's own loudness and click-repair dials, so a relaunch that
+  // forgot them converted every track with the defaults instead. They are not part of the
+  // disk signature (turning a dial must not flip a converted track stale), so a track whose
+  // only change is a dial still has to be saved.
+  it('saves the per-track loudness and click repair, even on an otherwise clean track', () => {
+    const normalize = {
+      mode: 'loudness' as const,
+      targetLufs: -9,
+      truePeakDb: -1,
+      peakDb: -0.3,
+    }
+    const clean = track({ normalize, declick: 'strong' })
+    clean.diskSignature = trackSignature(clean)
+    const edits = sessionEdits([clean])
+    expect(edits['/music/a.wav'].normalize).toEqual(normalize)
+    expect(edits['/music/a.wav'].declick).toBe('strong')
+  })
+
   it('skips tracks with no disk snapshot', () => {
     expect(sessionEdits([track({ diskSignature: undefined })])).toEqual({})
   })
