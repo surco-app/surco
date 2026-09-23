@@ -134,8 +134,9 @@ export function FieldsEditor({
         data-testid={`field-auto-${key}`}
         aria-pressed={on}
         // The word lives in the column heading, so the cell carries no text of its own —
-        // which leaves a screen reader nothing to announce unless the label says it.
-        aria-label={tr('settings.autoFill')}
+        // which leaves a screen reader nothing to announce unless the label says it. The
+        // field goes in the name too, or thirty rows of "Auto" can't be told apart.
+        aria-label={tr('fields.rowAutoFill', { name: labelOf(key) })}
         onClick={() =>
           onChangeImport(on ? importFields.filter((k) => k !== key) : [...importFields, key])
         }
@@ -279,7 +280,7 @@ export function FieldsEditor({
                       : [...requiredFields, key],
                   )
                 }
-                aria-label={tr('settings.required')}
+                aria-label={tr('fields.rowRequired', { name: labelOf(key) })}
                 className={`${TOGGLE_BOX} ${requiredFields.includes(key) ? TOGGLE_ON : TOGGLE_OFF}`}
               >
                 {requiredFields.includes(key) ? (
@@ -293,7 +294,7 @@ export function FieldsEditor({
                 onClick={() => onChangeVisible(moveItem(visibleFields, i, -1))}
                 disabled={i === 0}
                 className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
-                aria-label={tr('settings.moveUp')}
+                aria-label={tr('fields.rowMoveUp', { name: labelOf(key) })}
               >
                 <ChevronUp className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -302,13 +303,14 @@ export function FieldsEditor({
                 onClick={() => onChangeVisible(moveItem(visibleFields, i, 1))}
                 disabled={i === visibleFields.length - 1}
                 className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
-                aria-label={tr('settings.moveDown')}
+                aria-label={tr('fields.rowMoveDown', { name: labelOf(key) })}
               >
                 <ChevronDown className="h-4 w-4" aria-hidden="true" />
               </button>
               <button
                 type="button"
                 onClick={() => hide(key)}
+                aria-label={tr('fields.rowHide', { name: labelOf(key) })}
                 className="ml-1 rounded px-2 py-0.5 text-xs text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
               >
                 {tr('settings.hide')}
@@ -346,6 +348,7 @@ export function FieldsEditor({
               <button
                 type="button"
                 onClick={() => onChangeVisible([...visibleFields, key])}
+                aria-label={tr('fields.rowShow', { name: labelOf(key) })}
                 className="rounded px-2 py-0.5 text-xs text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
               >
                 {tr('settings.show')}

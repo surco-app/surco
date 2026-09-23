@@ -645,7 +645,13 @@
     "country": "País",
     "mediaType": "Tipo de mídia",
     "discogsUrl": "URL do Discogs",
-    "suggestionsMore": "Mostrar mais {{count}}"
+    "suggestionsMore": "Mostrar mais {{count}}",
+    "rowAutoFill": "Preencher {{name}} automaticamente",
+    "rowRequired": "{{name}} obrigatório",
+    "rowMoveUp": "Mover {{name}} para cima",
+    "rowMoveDown": "Mover {{name}} para baixo",
+    "rowHide": "Ocultar {{name}}",
+    "rowShow": "Mostrar {{name}}"
   },
   "declick": {
     "cueWarning": "ALAC não guarda os cues nem o beatgrid do Traktor: eles se perdem ao converter.",
