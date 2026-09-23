@@ -2173,6 +2173,21 @@ describe('App sort direction', () => {
     fireEvent.click(toggle)
     expect(toggle).toHaveAttribute('aria-pressed', 'false')
   })
+
+  // A toggle speaks its state through aria-pressed, so its name must hold still: with the
+  // label swapping too, a screen reader heard "Ascending order, not pressed", which
+  // reads as the opposite of the order on screen.
+  it('keeps one name on the direction toggle and lets aria-pressed carry the state', async () => {
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(screen.getByTestId('track-sort'))
+    fireEvent.click(screen.getByTestId('track-sort-option-name'))
+    const toggle = screen.getByTestId('track-sort-direction')
+    const name = i18n.t('sidebar.sort.descending')
+    expect(toggle).toHaveAccessibleName(name)
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAccessibleName(name)
+  })
 })
 
 describe('App per-format filter', () => {
