@@ -32,7 +32,6 @@
     "batchCancelled": "Cancelled",
     "palette": "Command palette",
     "settings": "Settings",
-    "stats": "Stats",
     "trash": "Surco originals",
     "revealSelected": "Scroll to the selected track",
     "importingCount": "Reading {{done}}/{{total}}",
