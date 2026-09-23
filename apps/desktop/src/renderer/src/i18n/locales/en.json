@@ -451,7 +451,7 @@
     "loudnessNoiseHint": "Noise floor (dB): level of the quietest stretch of the track; lower is cleaner",
     "loudnessHelpTitle": "What do these mean?",
     "waveformSource": "Original",
-    "waveformClipped": "Peaks over {{db}} dB",
+    "waveformClipped": "Sample peaks over {{db}} dBFS",
     "waveformClipping": "Clipping",
     "waveformSplit": "Split channels",
     "waveformPreview": "Preview",

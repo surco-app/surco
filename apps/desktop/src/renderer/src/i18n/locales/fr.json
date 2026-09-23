@@ -451,7 +451,7 @@
     "loudnessNoiseHint": "Plancher de bruit (dB) : niveau du passage le plus calme du morceau ; plus bas, plus propre",
     "loudnessHelpTitle": "Qu'est-ce que ça veut dire ?",
     "waveformSource": "Original",
-    "waveformClipped": "Crêtes au-dessus de {{db}} dB",
+    "waveformClipped": "Crêtes d'échantillon au-dessus de {{db}} dBFS",
     "waveformClipping": "Écrêtage",
     "waveformSplit": "Séparer les canaux",
     "waveformPreview": "Aperçu",

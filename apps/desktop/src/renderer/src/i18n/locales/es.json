@@ -451,7 +451,7 @@
     "loudnessNoiseHint": "Suelo de ruido (dB): nivel del tramo más silencioso de la pista; más bajo, más limpio",
     "loudnessHelpTitle": "¿Qué significan?",
     "waveformSource": "Original",
-    "waveformClipped": "Picos sobre {{db}} dB",
+    "waveformClipped": "Picos de muestra sobre {{db}} dBFS",
     "waveformClipping": "Clipping",
     "waveformSplit": "Separar canales",
     "waveformPreview": "Vista previa",

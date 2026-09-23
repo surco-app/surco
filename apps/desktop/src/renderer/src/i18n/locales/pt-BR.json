@@ -451,7 +451,7 @@
     "loudnessNoiseHint": "Piso de ruído (dB): nível do trecho mais silencioso da faixa; quanto mais baixo, mais limpo",
     "loudnessHelpTitle": "O que isso significa?",
     "waveformSource": "Original",
-    "waveformClipped": "Picos acima de {{db}} dB",
+    "waveformClipped": "Picos de amostra acima de {{db}} dBFS",
     "waveformClipping": "Clipping",
     "waveformSplit": "Separar canais",
     "waveformPreview": "Prévia",
