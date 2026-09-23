@@ -46,7 +46,7 @@
     "convertAll_other": "{{count}} Titel konvertieren",
     "cancelConvert": "Konvertierung abbrechen: Tracks in der Warteschlange werden übersprungen, laufende werden beendet",
     "cancelImport": "Einlesen stoppen: bereits Gelesenes bleibt, der Rest entfällt",
-    "autoMatch": "Alle Tracks automatisch mit Discogs abgleichen",
+    "autoMatch": "Alle Tracks automatisch abgleichen",
     "autoMatchNoToken": "Füg in den Einstellungen einen Discogs-Token hinzu, um automatisch abzugleichen",
     "autoMatchLabel": "Abgleichen",
     "addToken": "Token hinzufügen",
@@ -251,7 +251,7 @@
     "listPageUp": "Eine Seite nach oben",
     "listPageDown": "Eine Seite nach unten",
     "focusList": "Trackliste fokussieren",
-    "focusMatches": "Discogs-Treffer fokussieren",
+    "focusMatches": "Suchergebnisse fokussieren",
     "focusEditor": "Editor fokussieren",
     "focusColumnPrev": "Vorherige Spalte fokussieren",
     "focusColumnNext": "Nächste Spalte fokussieren",
@@ -284,7 +284,7 @@
     "analyzeQuality": "Qualität aller Tracks analysieren",
     "trashSuspects": "Zweifelhafte Dateien in den Papierkorb legen",
     "trashSelected": "Auswahl in den Papierkorb legen",
-    "autoMatch": "Alle Tracks automatisch mit Discogs abgleichen",
+    "autoMatch": "Alle Tracks automatisch abgleichen",
     "acceptReview": "Vorgeschlagenen Treffer übernehmen",
     "export": "An DJ-Software exportieren",
     "stats": "Statistiken",
@@ -335,7 +335,7 @@
       "revealWin": "Im Explorer zeigen",
       "open": "Datei öffnen",
       "copyPath": "Dateipfad kopieren",
-      "search": "Auf Discogs suchen",
+      "search": "In deinen Quellen suchen",
       "searchWeb": "Auf Google suchen",
       "startOver": "Von vorn beginnen",
       "copyMeta": "Alle Metadaten kopieren",
@@ -346,7 +346,7 @@
     }
   },
   "editor": {
-    "searchPlaceholder": "Discogs durchsuchen oder eine Release-ID einfügen…",
+    "searchPlaceholder": "Deine Quellen durchsuchen oder eine Discogs-Release-ID einfügen…",
     "searchClear": "Suche leeren",
     "tokenTip": "Die Suche funktioniert ohne Einrichtung. Füg in den <0>Einstellungen</0> deinen eigenen Discogs-Token hinzu — für ein höheres, privates Limit.",
     "chooseTrack": "Wähl den Track zum Anwenden",
@@ -788,7 +788,7 @@
       "reset": "Auf Standard zurücksetzen",
       "resetAll": "Alle zurücksetzen ({{count}})",
       "conflict": "Zwei Befehle teilen sich ein Kürzel. Lös den Konflikt, um zu speichern.",
-      "fixedNav": "Immer aktiv (nicht änderbar): ↑↓ oder j / k bewegen sich durch die Trackliste und die Discogs-Ergebnisse, Pos1 / Ende springen an die Enden und Bild ↑ / Bild ↓ blättern seitenweise.",
+      "fixedNav": "Immer aktiv (nicht änderbar): ↑↓ oder j / k bewegen sich durch die Trackliste und die Suchergebnisse, Pos1 / Ende springen an die Enden und Bild ↑ / Bild ↓ blättern seitenweise.",
       "groupTrim": "Stille-Editor",
       "groupTrimHint": "Solange der Schnittbereich geöffnet ist",
       "groupTrackList": "Trackliste",
@@ -870,7 +870,7 @@
     "tokenWhy": "Optional. Die Suche nutzt geteilte Zugangsdaten, die zu Stoßzeiten kurz ausfallen können; dein eigener Token hält sie schnell.",
     "tokenHelp": "Erstell kostenlos einen auf",
     "autoMatch": "Beim Import automatisch abgleichen",
-    "autoMatchHint": "Durchsucht beim Import deine Quellen und übernimmt sichere Treffer. Discogs zuerst, Bandcamp als Rückfall. Standardmäßig aus.",
+    "autoMatchHint": "Durchsucht beim Import deine Quellen und übernimmt sichere Treffer. Discogs zuerst, deine übrigen Quellen als Rückfall. Standardmäßig aus.",
     "autoMatchNeedsToken": "Discogs ist eine deiner Quellen — füg seinen Token hinzu, um automatisch abzugleichen.",
     "autoMatchNeedsSource": "Aktivier mindestens eine Suchquelle, um automatisch abzugleichen.",
     "discogsFormats": "Nur diese Formate zeigen",
@@ -880,7 +880,7 @@
     "searchIgnoreWords": "Bei der Suche zu ignorierende Wörter",
     "searchIgnoreWordsHint": "Kommagetrennte Wörter oder Phrasen (Rip-Signaturen, Wasserzeichen), die beim Suchen und Abgleichen aus den Titeln entfernt werden. Deine Tags bleiben unverändert.",
     "searchProviders": "Suchquellen",
-    "searchProvidersHint": "Kataloge, die der Editor durchsucht. Discogs ist kuratiert; Bandcamp ergänzt selbstveröffentlichtes Material.",
+    "searchProvidersHint": "Kataloge, die der Editor durchsucht. Discogs ist kuratiert, Bandcamp ergänzt selbstveröffentlichtes Material und Deezer deckt kommerzielle digitale Veröffentlichungen ab.",
     "provider": {
       "discogs": "Discogs",
       "bandcamp": "Bandcamp",
@@ -990,7 +990,7 @@
     "groupingHint": "Erscheinen als Schnellbuttons beim Bearbeiten eines Tracks.",
     "genre": "Genres (kommagetrennt)",
     "genrePlaceholder": "Hard Dance, Techno",
-    "genreHint": "Erscheinen als Schnellbuttons neben denen von Discogs.",
+    "genreHint": "Erscheinen als Schnellbuttons neben denen des gewählten Releases.",
     "trimWhitespace": "Überflüssige Leerzeichen entfernen",
     "zeroPadTrack": "Track-Nummer mit führender Null (03)",
     "coverMaxSize": "Maximale Covergröße",
@@ -1104,7 +1104,7 @@
     "audioBody": "Surco zeigt nur die Editor-Bereiche, die dein Workflow braucht. Wähl, was passt — du kannst es jederzeit in den Einstellungen ändern.",
     "intent": {
       "metadata": "Metadaten richtig setzen",
-      "metadataBody": "Tags, Cover und der Discogs-Abgleich — immer an. Dafür ist Surco da.",
+      "metadataBody": "Tags, Cover und der Abgleich mit Discogs, Bandcamp und Deezer. Immer an: Dafür ist Surco da.",
       "restore": "Vinyl-Rips restaurieren",
       "restoreBody": "Stille abschneiden und Knackser und Klicks in Vinyl-Aufnahmen reparieren.",
       "level": "Lautheit angleichen",
@@ -1148,7 +1148,7 @@
       },
       "windows": {
         "q": "Gibt es Unterschiede unter Windows?",
-        "a": "Fast alles funktioniert genau gleich: Konvertierung, Tagging, die Suche auf Discogs und Bandcamp, die Qualitätsanalyse und der Export zu rekordbox, Traktor, Serato und Engine DJ.\n\nDas Einzige, was es unter Windows nicht gibt, ist die Apple Music-Integration. Surco steuert Apples Musik-App über AppleScript, eine Automatisierungsbrücke, die nur unter macOS existiert — die Apple Music-App für Windows bietet nichts Vergleichbares —, deshalb erscheinen das Apple Music-Ziel, die Buttons und das Bibliotheks-Abzeichen einfach nicht.\n\nEine WAV-Eigenheit, die man kennen sollte: Surco speichert WAV-Tags im standardmäßigen ID3-Chunk, den DJ-Apps und Tag-Editoren wie Mp3tag problemlos lesen, den der Windows-Explorer aber nicht anzeigen kann — eine konvertierte WAV kann in einem Ordner ungetaggt wirken, obwohl alle Tags da sind. Bei MP3 oder FLAC zeigt der Explorer sie ganz normal an."
+        "a": "Fast alles funktioniert genau gleich: Konvertierung, Tagging, die Suche auf Discogs, Bandcamp und Deezer, die Qualitätsanalyse und der Export zu rekordbox, Traktor, Serato und Engine DJ.\n\nDas Einzige, was es unter Windows nicht gibt, ist die Apple Music-Integration. Surco steuert Apples Musik-App über AppleScript, eine Automatisierungsbrücke, die nur unter macOS existiert — die Apple Music-App für Windows bietet nichts Vergleichbares —, deshalb erscheinen das Apple Music-Ziel, die Buttons und das Bibliotheks-Abzeichen einfach nicht.\n\nEine WAV-Eigenheit, die man kennen sollte: Surco speichert WAV-Tags im standardmäßigen ID3-Chunk, den DJ-Apps und Tag-Editoren wie Mp3tag problemlos lesen, den der Windows-Explorer aber nicht anzeigen kann — eine konvertierte WAV kann in einem Ordner ungetaggt wirken, obwohl alle Tags da sind. Bei MP3 oder FLAC zeigt der Explorer sie ganz normal an."
       }
     }
   },
