@@ -6,6 +6,7 @@ import {
   detectResolution,
   detectUpsample,
   fineBandFrequencies,
+  fineBandsShowWall,
 } from './cutoff'
 
 // Per-band RMS (dB) measured from real signals at 44.1 kHz (Nyquist 22.05 kHz),
@@ -323,17 +324,12 @@ const SMOOTH_TAPER_320_FINE = fine([
 ])
 
 describe('detectCutoff fine-band roughness', () => {
-  it('flags patched highs by their fine-band sawtooth and reports the real ceiling', () => {
-    expect(detectCutoff(SBR_COARSE, NYQUIST, SBR_FINE)).toEqual({
-      cutoffHz: 16500,
-      processed: true,
-      hasKnee: false,
-      // The evidence the verdict shows: three separate fine-band rises between
-      // 17.5 and 20 kHz (18, 19 and 20 kHz), counted off this very fixture.
-      teethCount: 3,
-      teethFromHz: 17500,
-      teethToHz: 20000,
-    })
+  // Its third tooth is 1.1 dB, 0.1 over the bar where a tooth measured 0.49 dB of
+  // jitter at p99 between probe grids: a trim can take it away, and with it the verdict.
+  // A real saw-tooth whose teeth clear the bar with room is still called (the Fuse pair
+  // below).
+  it('holds back a saw-tooth whose third tooth clears the bar by less than the jitter', () => {
+    expect(detectCutoff(SBR_COARSE, NYQUIST, SBR_FINE).processed).toBe(false)
   })
 
   it('leaves a genuine smooth taper alone when its fine bands fall monotonically', () => {
@@ -400,12 +396,12 @@ describe('detectCutoff fine-band roughness', () => {
     // Reprocessed in 24 of 41 grid positions and clean in the rest. The
     // enhancer fixtures keep every tooth below it.
     const coarse = fftBand([
-      -52.85, -53.25, -53.94, -54.89, -56.3, -58.96, -59.18, -61.13, -65.83, -67.9, -68.8,
-      -72.03, -75.91,
+      -52.85, -53.25, -53.94, -54.89, -56.3, -58.96, -59.18, -61.13, -65.83, -67.9, -68.8, -72.03,
+      -75.91,
     ])
     const ripple = fine([
-      -55.89, -60.79, -57.37, -59.66, -58.35, -62.19, -59.98, -63.61, -68.0, -67.18, -66.39,
-      -68.15, -71.71, -70.9, -69.86, -76.48, -73.71,
+      -55.89, -60.79, -57.37, -59.66, -58.35, -62.19, -59.98, -63.61, -68.0, -67.18, -66.39, -68.15,
+      -71.71, -70.9, -69.86, -76.48, -73.71,
     ])
     expect(detectCutoff(coarse, NYQUIST, ripple).processed).toBe(false)
   })
@@ -836,5 +832,70 @@ describe('detectCutoff over the library sweep', () => {
   it('does not read a mastering rolloff that reaches -100 dB as a codec wall', () => {
     expect(detectCutoff(ALFREDO_COARSE, NYQUIST, ALFREDO_FINE).hasKnee).toBe(false)
     expect(detectCutoff(BEN_COARSE, NYQUIST, BEN_FINE).hasKnee).toBe(false)
+  })
+})
+
+// Files of the 6000-track lossless library, measured off the real files, whose verdict
+// rested on a reading that cleared its bar by less than that reading moves when the
+// probe grid does (trimming under two seconds off the end). Three of them read
+// "Reprocessed" or "Lossy" on one grid and clean on the next; the hump sat 0.5 dB over
+// a bar where humps moved up to 2.35. A verdict the user's next trim can overturn is not
+// a finding: inside the jitter the alarm stays unsaid. The knee is built by hand, since
+// no real wall in the library came that close to its bar.
+describe('detectCutoff holds back an alarm that sits within the jitter of its threshold', () => {
+  it('does not call a hump whose rise clears its bar by less than the jitter', () => {
+    const coarse = fftBand([
+      -53.43, -54.23, -54.39, -56.22, -57.62, -60.39, -62.03, -62.69, -61.3, -60.37, -58.87, -55.49,
+      -51.41,
+    ])
+    const rising = fine([
+      -58.22, -58.22, -59.78, -61.94, -61.86, -62.73, -62.61, -62.39, -60.72, -60.65, -59.89,
+      -61.05, -58.51, -57.62, -55.88, -53.35, -51.54,
+    ])
+    expect(detectCutoff(coarse, NYQUIST, rising).processed).toBe(false)
+  })
+
+  it('does not believe a knee whose drop clears the 7 dB bar by less than the jitter', () => {
+    const shallow = band([
+      -33.0, -33.6, -34.4, -35.1, -36.0, -37.0, -38.0, -38.9, -47.9, -48.6, -49.4, -50.1, -50.9,
+    ])
+    expect(detectCutoff(shallow, NYQUIST).hasKnee).toBe(false)
+  })
+
+  it('does not count a tooth that clears the 1 dB bar by less than the jitter', () => {
+    const coarse = fftBand([
+      -49.14, -50.09, -51.16, -54.29, -54.29, -57.18, -62.35, -64.19, -64.33, -65.83, -66.71,
+      -66.81, -69.9,
+    ])
+    const teeth = fine([
+      -56.23, -55.86, -57.03, -61.1, -62.02, -63.48, -65.44, -65.02, -63.53, -65.49, -65.67, -67.22,
+      -66.07, -67.06, -65.96, -67.95, -70.46,
+    ])
+    expect(detectCutoff(coarse, NYQUIST, teeth).processed).toBe(false)
+  })
+
+  it('does not call teeth even when their spread is within the jitter of the bar', () => {
+    const coarse = fftBand([
+      -57.77, -57.64, -57.14, -58.2, -62.14, -63.27, -66.77, -68.47, -68.4, -70.51, -68.91, -69.84,
+      -77.73,
+    ])
+    const teeth = fine([
+      -61.38, -63.13, -63.0, -65.14, -67.01, -67.79, -68.44, -68.32, -69.44, -68.2, -70.8, -71.18,
+      -67.21, -70.55, -69.1, -73.1, -77.68,
+    ])
+    expect(detectCutoff(coarse, NYQUIST, teeth).processed).toBe(false)
+  })
+
+  it('does not trust a knee whose fine-band wall clears the bar by less than the jitter', () => {
+    const coarse = fftBand([
+      -52.46, -53.32, -52.31, -55.52, -57.31, -58.23, -58.82, -60.69, -62.13, -62.93, -77.04,
+      -92.76, -90.14,
+    ])
+    const wall = fine([
+      -57.07, -58.25, -58.25, -59.04, -58.36, -59.46, -60.55, -60.37, -63.75, -63.35, -62.44,
+      -65.55, -86.33, -97.04, -95.92, -88.38, -90.82,
+    ])
+    expect(detectCutoff(coarse, NYQUIST, wall).hasKnee).toBe(false)
+    expect(fineBandsShowWall(wall)).toBe(false)
   })
 })

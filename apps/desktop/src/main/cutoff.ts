@@ -96,6 +96,25 @@ const HUMP_RISE_DB = 5
 // highs push up to reference level, louder than bands an octave lower.
 const HUMP_PLATEAU_MARGIN_DB = 2
 
+// How far a reading moves when the probe grid does. Trimming under two seconds off a
+// track's end slides every window, and the same audio reads a little differently. Measured
+// over the 283 files a 6000-track lossless library flagged, each graded on eight grids 0 to
+// 2 s apart: 12 of them read Reprocessed or Lossy on some grids and clean on others. An
+// alarm is raised only when the reading it rests on clears its bar by more than that
+// reading's jitter; inside it the verdict falls back to the one that accuses nothing.
+// Measured movement near each bar, p99 and max: hump 0.54 / 2.35 dB, coarse knee 0.84 /
+// 2.68, a tooth 0.49 / 1.59. The hump and the knee take their max, which costs no verdict
+// of the corpus. A tooth takes its p99: its max comes from teeth that merge or split
+// between grids, and at that size 1 of the 72 saw-teeth survived while more files flipped
+// (3 against 2), since a wider jitter only moves the bar the grid lands on. The fine step
+// is capped by the corpus instead: it moved 1.13 dB at p90 but 7.2 on one file whose wall
+// ends in noise, and the weakest real encode, through a 16-bit dither floor, clears the
+// bar by only 4.6.
+const HUMP_JITTER_DB = 2.4
+const KNEE_JITTER_DB = 2.7
+const FINE_STEP_JITTER_DB = 4.5
+const TOOTH_JITTER_DB = 0.5
+
 // Reconstructed highs (HE-AAC SBR, spectral-band enhancers) can defeat every
 // coarse rule: they track the music, sit below the hump threshold and taper
 // smoothly to Nyquist. Their trace is spectral, not temporal — at 500 Hz
@@ -204,8 +223,9 @@ function findHumpValley(bands: Band[], plateau: number): { valley: Band; peak: B
     const b = bands[i]
     if (b.rmsDb < valley.rmsDb) valley = b
     const rise = b.rmsDb - valley.rmsDb
-    const held = bands[i + 1].rmsDb - valley.rmsDb >= HUMP_RISE_DB
-    if (rise >= HUMP_RISE_DB && held && b.rmsDb >= plateau - HUMP_PLATEAU_MARGIN_DB) {
+    const bar = HUMP_RISE_DB + HUMP_JITTER_DB
+    const held = bands[i + 1].rmsDb - valley.rmsDb >= bar
+    if (rise >= bar && held && b.rmsDb >= plateau - HUMP_PLATEAU_MARGIN_DB + HUMP_JITTER_DB) {
       // The caption cites where the hump actually crests, not the band that
       // happened to trip the rise rule, so scan past the valley for the loudest.
       let peak = b
@@ -224,7 +244,8 @@ function findKneeIndex(bands: Band[]): number {
   let maxDrop = 0
   for (let i = 0; i < bands.length - 1; i++) {
     const drop = bands[i].rmsDb - bands[i + 1].rmsDb
-    const required = bands[i].freqHz >= KNEE_TOP_FROM_HZ ? KNEE_TOP_DROP_DB : KNEE_DROP_DB
+    const required =
+      (bands[i].freqHz >= KNEE_TOP_FROM_HZ ? KNEE_TOP_DROP_DB : KNEE_DROP_DB) + KNEE_JITTER_DB
     if (drop < required || drop < maxDrop) continue
     const ceiling = bands[i + 1].rmsDb + KNEE_RECOVERY_DB
     if (bands.slice(i + 2).some((b) => b.rmsDb > ceiling)) continue
@@ -252,7 +273,9 @@ export function steepestFineStep(fineBands: Band[]): number {
 // a wall exactly as the coarse bands can. Without fine bands there is nothing to
 // check against, so a knee stands on its own as it always did.
 export function fineBandsShowWall(fineBands: Band[]): boolean {
-  return fineBands.length === 0 || steepestFineStep(fineBands) >= KNEE_FINE_STEP_DB
+  return (
+    fineBands.length === 0 || steepestFineStep(fineBands) >= KNEE_FINE_STEP_DB + FINE_STEP_JITTER_DB
+  )
 }
 
 // The ceiling the synthetic patches were grafted onto, or null when the fine
@@ -294,10 +317,21 @@ function roughnessCeiling(
   const againstNyquist = (c: { toHz: number }): boolean =>
     c.toHz + FINE_BAND_WIDTH_HZ / 2 > nyquistHz - BAND_WIDTH_HZ
   const teeth = climbs.filter((c) => c.db > ROUGHNESS_RISE_MIN_DB && !againstNyquist(c))
-  const totalRise = teeth.reduce((sum, c) => sum + c.db, 0)
-  if (totalRise < ROUGHNESS_TOTAL_DB || teeth.length < ROUGHNESS_MIN_RISES) return null
-  const sizes = teeth.map((c) => c.db)
-  if (Math.max(...sizes) / Math.min(...sizes) > ROUGHNESS_MAX_TOOTH_SPREAD) return null
+  // Every rule must hold however the grid moves each tooth: only a tooth that clears the
+  // bar by more than the jitter surely counts, while any tooth the jitter could lift over
+  // the bar may join the run and widen its spread.
+  const possible = climbs.filter(
+    (c) => c.db + TOOTH_JITTER_DB > ROUGHNESS_RISE_MIN_DB && !againstNyquist(c),
+  )
+  const sure = possible
+    .map((c) => c.db - TOOTH_JITTER_DB)
+    .filter((db) => db > ROUGHNESS_RISE_MIN_DB)
+  const totalRise = sure.reduce((sum, db) => sum + db, 0)
+  if (totalRise < ROUGHNESS_TOTAL_DB || sure.length < ROUGHNESS_MIN_RISES) return null
+  const sizes = possible.map((c) => c.db)
+  const widest = Math.max(...sizes) + TOOTH_JITTER_DB
+  const narrowest = Math.max(Math.min(...sizes) - TOOTH_JITTER_DB, ROUGHNESS_RISE_MIN_DB)
+  if (widest / narrowest > ROUGHNESS_MAX_TOOTH_SPREAD) return null
   // The caption cites the span of the saw-tooth: from the foot of the first
   // tooth to the top of the last one.
   const span = { teeth: teeth.length, fromHz: teeth[0].fromHz, toHz: teeth[teeth.length - 1].toHz }
