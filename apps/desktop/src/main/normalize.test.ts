@@ -6,6 +6,7 @@ import {
   dcRemovalFilter,
   ebur128MeasureArgs,
   limitedLoudnormFilter,
+  limitsPeaks,
   loudnormFilter,
   loudnormMeasuredFrom,
   parseAstatsChannels,
@@ -226,6 +227,15 @@ describe('limitedLoudnormFilter', () => {
     const cfg: NormalizeConfig = { mode: 'loudness', targetLufs: -9, truePeakDb: -1, peakDb: -1 }
     const m = { inputI: -14, inputTp: -1.7, inputLra: 6, inputThresh: -24, targetOffset: 0 }
     expect(limitedLoudnormFilter(cfg, m)).not.toContain('aresample')
+  })
+})
+
+describe('limitsPeaks', () => {
+  const m = { inputI: -14, inputTp: -1.7, inputLra: 6, inputThresh: -24, targetOffset: 0 }
+
+  it('tells a limited filter, whose lowered ceiling moves the peaks, from a constant gain, whose TP moves nothing', () => {
+    expect(limitsPeaks(limitedLoudnormFilter(loudness, m, 44100))).toBe(true)
+    expect(limitsPeaks(loudnormFilter(loudness, m, 44100))).toBe(false)
   })
 })
 

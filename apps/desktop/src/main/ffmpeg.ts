@@ -73,6 +73,7 @@ import {
   dcRemovalFilter,
   ebur128MeasureArgs,
   limitedLoudnormFilter,
+  limitsPeaks,
   loudnormFilter,
   loudnormMeasuredFrom,
   parseAstatsChannels,
@@ -1619,9 +1620,9 @@ export function toNmlLocation(path: string): { volume: string; dir: string; file
   return { volume, dir, file }
 }
 
-// How many times a normalized file is re-encoded under a lowered ceiling, and the extra
-// room each correction leaves on top of the overshoot it measured (ebur128 prints tenths).
-const CEILING_PASSES = 2
+// How many times a normalized file is re-encoded under a lowered ceiling or gain, and the
+// extra room each correction leaves on top of the overshoot it measured (ebur128 prints tenths).
+const CEILING_PASSES = 3
 const CEILING_STEP_DB = 0.1
 
 // How far an encoded file's true peak sits above the loudness ceiling it was normalized
@@ -1634,6 +1635,40 @@ async function ceilingOvershootDb(file: string, normalize: NormalizeConfig): Pro
   const peak = parseEbur128Measured(stderr)?.inputTp
   if (peak === undefined) return 0
   return Math.max(0, peak - Math.min(0, Math.max(-9, normalize.truePeakDb)))
+}
+
+export interface CeilingSteps {
+  overshootDb: () => Promise<number>
+  lowerCeiling: (marginDb: number) => Promise<string | null>
+  encode: (normalizeAf: string) => Promise<string>
+}
+
+export async function holdUnderCeiling(
+  stderr: string,
+  normalizeAf: string,
+  steps: CeilingSteps,
+): Promise<string> {
+  let marginDb = 0
+  let trimDb = 0
+  let ceilingAf = normalizeAf
+  let over = 0
+  for (let pass = 0; pass <= CEILING_PASSES; pass++) {
+    over = await steps.overshootDb()
+    if (over <= 0) return stderr
+    if (pass === CEILING_PASSES) break
+    const correction = over + CEILING_STEP_DB
+    const lowered =
+      pass < CEILING_PASSES - 1 ? await steps.lowerCeiling(marginDb + correction) : null
+    if (lowered && limitsPeaks(lowered)) {
+      marginDb += correction
+      ceilingAf = lowered
+    } else trimDb += correction
+    stderr = await steps.encode(
+      trimDb > 0 ? `${ceilingAf},${volumeFilter(-Number(trimDb.toFixed(2)))}` : ceilingAf,
+    )
+  }
+  log.warn(`[ffmpeg] true peak still ${over.toFixed(1)} dB over the ceiling after re-encoding`)
+  return stderr
 }
 
 // Best-effort and gated on a configured collection path so the feature costs
@@ -1902,25 +1937,30 @@ export async function convertAudio(
       // kbps. The limiter does it in any format: it holds sample peaks at four times the
       // rate, and the return to the file's own rate rebuilds peaks between the samples, up
       // to 1 dB on sharp bursts (see convertLossyCeiling.test.ts). The overshoot depends on
-      // the material, so it is measured on the encoded file and the ceiling lowered by it.
-      let marginDb = 0
-      for (let pass = 0; pass < CEILING_PASSES && normalize && normalizeAf; pass++) {
-        const over = await ceilingOvershootDb(tmp, normalize)
-        if (over <= 0) break
-        marginDb += over + CEILING_STEP_DB
-        const lowered = await normalizeFilter(
-          input,
-          { ...normalize, truePeakDb: Math.min(0, normalize.truePeakDb) - marginDb },
-          sampleRate,
-          declick,
-          trim,
-        )
-        if (!lowered) break
-        const filter = [trimAf, declickAf, lowered, dither ? DITHER_FILTER : undefined]
-          .filter(Boolean)
-          .join(',')
-        ;({ stderr } = await encode(filter))
-      }
+      // the material, so every encoded file is measured and the ceiling lowered by it, or the
+      // gain where only a constant gain was applied, until the written file is under it.
+      if (normalize && normalizeAf)
+        stderr = await holdUnderCeiling(String(stderr), normalizeAf, {
+          overshootDb: () => ceilingOvershootDb(tmp, normalize),
+          lowerCeiling: (marginDb) =>
+            normalizeFilter(
+              input,
+              { ...normalize, truePeakDb: Math.min(0, normalize.truePeakDb) - marginDb },
+              sampleRate,
+              declick,
+              trim,
+            ),
+          encode: async (af) =>
+            String(
+              (
+                await encode(
+                  [trimAf, declickAf, af, dither ? DITHER_FILTER : undefined]
+                    .filter(Boolean)
+                    .join(','),
+                )
+              ).stderr,
+            ),
+        })
       if (declickAf) declickedSamples = parseDeclickedSamples(String(stderr)) ?? undefined
       // The flac muxer just wrote the comment as DESCRIPTION whatever metadataArgs called
       // it; put it under the name the DJ software reads (see setFlacComment).
