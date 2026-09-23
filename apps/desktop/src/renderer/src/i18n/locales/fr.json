@@ -312,7 +312,8 @@
   "trackList": {
     "label": "Morceaux",
     "noArtist": "Sans artiste",
-    "autoMatched": "Auto-associé depuis Discogs",
+    "autoMatched": "Auto-associé",
+    "autoMatchedFrom": "Auto-associé depuis {{source}}",
     "matchReview": "Correspondance à confirmer",
     "metaReadFailed": "Impossible de lire les tags de ce fichier — seules les données du nom sont affichées",
     "remove": "Retirer",
