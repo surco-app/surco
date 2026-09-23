@@ -77,8 +77,8 @@ interface QualityReportInput {
   cutoffLabel: string | null
   // The verdict's justification paragraph, wrapped under the image.
   caption: string
-  // The upsample note, when the analysis flagged one.
-  upsampledNote?: string
+  // The section's other findings (the rate line, padded depth), one per entry.
+  notes: string[]
   footer: string
 }
 
@@ -165,7 +165,7 @@ export async function renderQualityReport(input: QualityReportInput): Promise<st
   // Measure the caption first so the canvas height fits the wrapped text exactly.
   ctx.font = '16px system-ui, sans-serif'
   const captionLines = wrapLines(ctx, input.caption, contentWidth)
-  const noteLines = input.upsampledNote ? wrapLines(ctx, input.upsampledNote, contentWidth) : []
+  const noteLines = input.notes.flatMap((note) => wrapLines(ctx, note, contentWidth))
   const textBlock = (captionLines.length + noteLines.length) * 24
   const height = PAD + 56 + IMAGE_HEIGHT + 20 + textBlock + 56 + PAD / 2
   canvas.width = WIDTH

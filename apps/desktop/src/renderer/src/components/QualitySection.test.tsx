@@ -13,9 +13,13 @@ import { QualitySection } from './QualitySection'
 // The report composition is canvas work jsdom can't run; a plain stub (not vi.fn — the
 // restoreAllMocks in beforeEach would wipe a vi.fn's implementation) returns a
 // recognisable data URL so the tests can assert what reaches the export dialog.
+const reportInputs = vi.hoisted(() => [] as Record<string, unknown>[])
 vi.mock('../lib/qualityReport', async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  renderQualityReport: () => Promise.resolve('data:image/png;base64,report'),
+  renderQualityReport: (input: Record<string, unknown>) => {
+    reportInputs.push(input)
+    return Promise.resolve('data:image/png;base64,report')
+  },
 }))
 
 afterEach(cleanup)
@@ -547,6 +551,66 @@ describe('QualitySection shareable report', () => {
     await waitFor(() => expect(exportQualityReport).toHaveBeenCalled())
     expect(exportQualityReport.mock.calls[0][0]).toBe('data:image/png;base64,report')
     expect(exportQualityReport.mock.calls[0][1]).toContain('a.flac')
+  })
+
+  // The shared PNG is the proof users post in "is this fake?" threads, so it must say
+  // exactly what the section says, not an older wording the UI no longer stands behind.
+  async function saveAndRead(
+    spectrum: SpectrumResult,
+    path: string,
+    showHints = true,
+  ): Promise<Record<string, unknown>> {
+    reportInputs.length = 0
+    renderSection(spectrum, path, showHints)
+    ;(window as unknown as { api: { exportQualityReport: unknown } }).api.exportQualityReport = vi
+      .fn()
+      .mockResolvedValue('/tmp/r.png')
+    fireEvent.click(await screen.findByTestId('quality-save-report'))
+    await waitFor(() => expect(reportInputs).toHaveLength(1))
+    return reportInputs[0]
+  }
+
+  it('writes the same evidence line the section shows', async () => {
+    const input = await saveAndRead(
+      { image: 'x', cutoffHz: 16000, sampleRateHz: 44100, processed: true, humpPeakHz: 19000 },
+      '/m/a.flac',
+    )
+    expect(input.caption).toBe(
+      i18n.t('editor.qualityEvidenceHump', { cutoff: '16.0 kHz', peak: '19.0 kHz' }),
+    )
+  })
+
+  it('writes the full-band chip and the no-cut line for a good file, whatever the hints', async () => {
+    const input = await saveAndRead(
+      {
+        image: 'x',
+        cutoffHz: 22050,
+        sampleRateHz: 44100,
+        processed: false,
+        hasKnee: false,
+        fineStepDb: 6,
+      },
+      '/m/a.flac',
+      false,
+    )
+    expect(input.cutoffLabel).toBe('highs ≥ 22 kHz')
+    expect(input.caption).toBe(i18n.t('editor.qualityEvidenceGood', { drop: 6 }))
+  })
+
+  it('writes the rate and padded-depth findings the section shows', async () => {
+    const input = await saveAndRead(
+      {
+        image: 'x',
+        cutoffHz: 21000,
+        sampleRateHz: 96000,
+        processed: false,
+        hasKnee: false,
+        resolution: 'hires',
+        bitsUsage: 'padded16',
+      },
+      '/m/a.flac',
+    )
+    expect(input.notes).toEqual([i18n.t('editor.qualityHiRes'), i18n.t('editor.qualityBitsPadded')])
   })
 
   it('offers no report while there is no verdict to share', async () => {
