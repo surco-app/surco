@@ -19,17 +19,17 @@ interface SweepProgress {
 // Collapses the app's long-running sweeps into one top-bar value. The determinate sweeps
 // (analyze quality, auto-match, batch convert) pool their done/total so the bar reflects the
 // overall work left even when several run at once; an idle sweep (total 0) contributes
-// nothing. Work with no fixed total (importing tags, a background task) yields, when nothing
-// determinate is running, an indeterminate bar (fraction null) that animates instead of
-// filling. Returns null when the app is idle, so the bar can render nothing.
+// nothing. Importing tags has no fixed total, so when nothing determinate is running it
+// yields an indeterminate bar (fraction null) that animates instead of filling. Returns null
+// when the app is idle, so the bar can render nothing.
 export function topBarProgress(
   sweeps: Array<SweepProgress | null | undefined>,
-  busy: boolean,
+  importing: boolean,
 ): { fraction: number | null } | null {
   const active = sweeps.filter((s): s is SweepProgress => !!s && s.total > 0)
   const total = active.reduce((sum, s) => sum + s.total, 0)
   if (total > 0) return { fraction: active.reduce((sum, s) => sum + s.done, 0) / total }
-  if (busy) return { fraction: null }
+  if (importing) return { fraction: null }
   return null
 }
 

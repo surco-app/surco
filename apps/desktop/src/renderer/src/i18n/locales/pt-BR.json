@@ -32,6 +32,8 @@
     "batchCancelled": "Cancelado",
     "palette": "Paleta de comandos",
     "settings": "Ajustes",
+    "stats": "Estatísticas",
+    "activity": "Atividade",
     "trash": "Originais do Surco",
     "revealSelected": "Ir para a faixa selecionada",
     "importingCount": "Lendo {{done}}/{{total}}",

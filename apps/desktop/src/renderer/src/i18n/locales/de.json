@@ -32,6 +32,8 @@
     "batchCancelled": "Abgebrochen",
     "palette": "Befehlspalette",
     "settings": "Einstellungen",
+    "stats": "Statistiken",
+    "activity": "Aktivität",
     "trash": "Surco-Originale",
     "revealSelected": "Zum ausgewählten Track scrollen",
     "importingCount": "Lese {{done}}/{{total}}",
