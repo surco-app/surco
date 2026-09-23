@@ -223,7 +223,7 @@ export default function App(): React.JSX.Element {
   const { rows: activityRows, clear: clearActivity, report: reportActivity } = useActivityLog()
   const [activityOpen, setActivityOpen] = useState(false)
   // Surco's own trash (main/surcoTrash.ts): the list is read when the panel opens and
-  // after every run that could have added to it; the count feeds the toolbar badge.
+  // after every run that could have added to it.
   const [trashOpen, setTrashOpen] = useState(false)
   const [trashEntries, setTrashEntries] = useState<TrashEntry[]>([])
   const refreshTrash = useStableCallback(async (): Promise<void> => {
@@ -1825,8 +1825,6 @@ export default function App(): React.JSX.Element {
                 onPalette={onOpenPalette}
                 onStats={onOpenStats}
                 onActivity={onToggleActivity}
-                onTrash={onOpenTrash}
-                trashCount={trashEntries.length}
                 activityRunning={activityRows.some((r) => r.status === 'running')}
                 onSettings={onOpenSettings}
               />
