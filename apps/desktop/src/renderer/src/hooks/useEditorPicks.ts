@@ -1,16 +1,16 @@
 import type React from 'react'
 import { useRef } from 'react'
 import type { DeclickMode, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
-import type { DestinationPlan } from '../lib/destination'
+import type { Destination } from '../lib/destination'
 import { useStableCallback } from './useStableCallback'
 
 interface EditorPicks {
   formatRef: React.RefObject<FormatSetting | null>
-  destinationRef: React.RefObject<DestinationPlan | null>
+  destinationRef: React.RefObject<Destination | null>
   normalizeRef: React.RefObject<NormalizeConfig | null>
   declickRef: React.RefObject<DeclickMode | null>
   onFormatChange: (format: FormatSetting) => void
-  onDestinationChange: (destination: DestinationPlan) => void
+  onDestinationChange: (destination: Destination) => void
   onNormalizeChange: (n: NormalizeConfig) => void
   onDeclickChange: (d: DeclickMode) => void
   // Called when the selection empties: the picks belong to the track that was open, and a
@@ -35,14 +35,14 @@ export function useEditorPicks(
 ): EditorPicks {
   // The format picked in the editor's split-button menu, for THIS track only.
   const formatRef = useRef<FormatSetting | null>(null)
-  const destinationRef = useRef<DestinationPlan | null>(null)
+  const destinationRef = useRef<Destination | null>(null)
   const normalizeRef = useRef<NormalizeConfig | null>(null)
   const declickRef = useRef<DeclickMode | null>(null)
 
   const onFormatChange = useStableCallback((format: FormatSetting) => {
     formatRef.current = format
   })
-  const onDestinationChange = useStableCallback((destination: DestinationPlan) => {
+  const onDestinationChange = useStableCallback((destination: Destination) => {
     destinationRef.current = destination
   })
   const onNormalizeChange = useStableCallback((n: NormalizeConfig) => {

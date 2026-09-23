@@ -6,7 +6,8 @@ const base: ExportLabelState = {
   inPlace: false,
   stale: false,
   done: false,
-  targets: [],
+  withAppleMusic: false,
+  withEngineDj: false,
   format: 'AIFF',
   sameFormat: true,
 }
@@ -17,10 +18,15 @@ describe('exportButtonLabel', () => {
   it.each([
     [{ ...base, processing: true, quiet: true, count: 2, done: true }, 'editor.processing'],
     [{ ...base, quiet: true, count: 2, inPlace: true }, 'editor.reexport'],
+    [{ ...base, count: 2, inPlace: true, withAppleMusic: true }, 'editor.convertAllMusic'],
+    [{ ...base, count: 2, inPlace: true, withEngineDj: true }, 'editor.convertAllEngine'],
     [{ ...base, count: 2, inPlace: true }, 'editor.convertAll'],
+    [{ ...base, inPlace: true, stale: true, withAppleMusic: true }, 'editor.updateMusic'],
     [{ ...base, inPlace: true, stale: true }, 'editor.update'],
     [{ ...base, stale: true, done: true }, 'editor.update'],
     [{ ...base, done: true }, 'editor.exportAgain'],
+    [{ ...base, withAppleMusic: true }, 'editor.convert'],
+    [{ ...base, withEngineDj: true }, 'editor.convertEngine'],
     [base, 'editor.convertNoMusic'],
   ])('resolves %o to %s', (state, key) => {
     expect(exportButtonLabel(state).key).toBe(key)
@@ -59,7 +65,8 @@ describe('exportButtonLabel', () => {
         inPlace: false,
         stale: false,
         done: false,
-        targets: ['appleMusic'],
+        withAppleMusic: true,
+        withEngineDj: false,
         format: 'AIFF',
         sameFormat: true,
         replaces: true,
@@ -76,12 +83,13 @@ describe('exportButtonLabel', () => {
         inPlace: true,
         stale: false,
         done: false,
-        targets: ['appleMusic'],
+        withAppleMusic: true,
+        withEngineDj: false,
         format: 'AIFF',
         sameFormat: true,
         replaces: true,
       }),
-    ).toEqual({ key: 'editor.update', targets: 'Apple Music' })
+    ).toEqual({ key: 'editor.updateMusic' })
   })
 
   // Nothing to supersede is the ordinary case, and the plain convert label stands.
@@ -92,36 +100,22 @@ describe('exportButtonLabel', () => {
         inPlace: false,
         stale: false,
         done: false,
-        targets: ['appleMusic'],
+        withAppleMusic: true,
+        withEngineDj: false,
         format: 'AIFF',
         sameFormat: true,
       }),
-    ).toEqual({ key: 'editor.convertNoMusic', options: { format: 'AIFF' }, targets: 'Apple Music' })
+    ).toEqual({ key: 'editor.convert', options: { format: 'AIFF' } })
   })
 
   // "Update tags" promises the audio is left alone. Overwriting a WAV with an AIFF is a
   // full conversion that happens to land on the original's path, and so is re-running a
   // done WAV→AIFF track: naming either a tag update undersells what the click does.
   it.each([
-    { ...base, inPlace: true, sameFormat: false },
-    { ...base, stale: true, sameFormat: false },
-  ])('labels %o as a conversion, not a tag update', (state) => {
-    expect(exportButtonLabel(state)).toEqual({
-      key: 'editor.convertNoMusic',
-      options: { format: 'AIFF' },
-    })
-  })
-
-  it.each([
-    [['appleMusic'], 'Apple Music'],
-    [['engineDj', 'traktor'], 'Engine DJ · Traktor'],
-    [['appleMusic', 'engineDj', 'rekordbox', 'traktor'], 'Apple Music · Engine DJ +2'],
-  ] as const)('names the DJ software %j the conversion reaches as %s', (targets, text) => {
-    expect(exportButtonLabel({ ...base, targets: [...targets] }).targets).toBe(text)
-    expect(exportButtonLabel({ ...base, count: 3, targets: [...targets] }).targets).toBe(text)
-  })
-
-  it('names no DJ software when the conversion reaches none', () => {
-    expect(exportButtonLabel(base).targets).toBeUndefined()
+    [{ ...base, inPlace: true, sameFormat: false }, 'editor.convertNoMusic'],
+    [{ ...base, inPlace: true, sameFormat: false, withAppleMusic: true }, 'editor.convert'],
+    [{ ...base, stale: true, sameFormat: false }, 'editor.convertNoMusic'],
+  ])('labels %o as a conversion, not a tag update', (state, key) => {
+    expect(exportButtonLabel(state)).toEqual({ key, options: { format: 'AIFF' } })
   })
 })

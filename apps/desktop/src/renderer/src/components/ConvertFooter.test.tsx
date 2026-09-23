@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SelectionStatus } from '../lib/selectionStatus'
 import type { TrackItem } from '../types'
 import '../i18n'
+import type { Destination } from '../lib/destination'
 import { ConvertFooter } from './ConvertFooter'
 
 afterEach(cleanup)
@@ -23,10 +24,7 @@ function status(showDone: boolean): SelectionStatus {
   } as SelectionStatus
 }
 
-function footer(
-  showDone: boolean,
-  over: Partial<React.ComponentProps<typeof ConvertFooter>> = {},
-): React.JSX.Element {
+function footer(showDone: boolean): React.JSX.Element {
   return (
     <ConvertFooter
       item={{ id: 't1', status: 'idle', inputPath: '/a.wav', meta: {} } as TrackItem}
@@ -39,8 +37,8 @@ function footer(
       willEditInPlace={false}
       addToAppleMusic={false}
       addToEngineDj={false}
-      destination={{ location: 'beside', appleMusic: false, engineDj: false, keepOutputCopy: true }}
-      locations={['beside']}
+      destination={'beside' as Destination}
+      destinations={['beside' as Destination]}
       format="aiff"
       exportedFormat={showDone ? 'aiff' : null}
       musicExt={null}
@@ -50,26 +48,9 @@ function footer(
       onSelectDestination={vi.fn()}
       onProcess={vi.fn()}
       onExportCollection={vi.fn()}
-      syncTraktor={false}
-      syncRekordbox={false}
-      {...over}
     />
   )
 }
-
-describe('ConvertFooter convert label', () => {
-  it('names the DJ software the conversion reaches', () => {
-    render(footer(false, { addToEngineDj: true, syncTraktor: true }))
-    expect(screen.getByTestId('process-btn')).toHaveTextContent(
-      'Convert to AIFF → Engine DJ · Traktor',
-    )
-  })
-
-  it('names no DJ software when the conversion reaches none', () => {
-    render(footer(false))
-    expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert to AIFF$/)
-  })
-})
 
 describe('ConvertFooter state swap', () => {
   // The editor remounts the footer on every track switch — stepping through a crate

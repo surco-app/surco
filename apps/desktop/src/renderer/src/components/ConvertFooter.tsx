@@ -6,7 +6,7 @@ import { formatMatchesInput } from '../../../shared/format'
 import type { FormatSetting, NormalizeConfig, OutputFormat } from '../../../shared/types'
 import type { CleanupOffer } from '../hooks/useConfirmFlows'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
-import { type DestinationPlan, type Location, reachedDjSoftware } from '../lib/destination'
+import type { Destination } from '../lib/destination'
 import { openFeedback } from '../lib/feedback'
 import { isMacOS } from '../lib/platform'
 import type { SelectionStatus } from '../lib/selectionStatus'
@@ -32,12 +32,10 @@ interface ConvertFooterProps {
   willEditInPlace: boolean
   addToAppleMusic: boolean
   addToEngineDj: boolean
-  syncTraktor: boolean
-  syncRekordbox: boolean
-  // The editor's one-shot destination pick and the locations its split-button menu
-  // offers, pre-filtered by the editor (configured overwrite).
-  destination: DestinationPlan
-  locations: readonly Location[]
+  // The editor's one-shot destination pick and the choices its split-button menu
+  // offers, pre-filtered by the editor (platform, configured overwrite).
+  destination: Destination
+  destinations: readonly Destination[]
   format: FormatSetting
   exportedFormat: OutputFormat | null
   // The format whose Apple Music eligibility gates the add button: the pick in multi
@@ -46,7 +44,7 @@ interface ConvertFooterProps {
   normalizeCfg: NormalizeConfig
   onOpenNormalize: () => void
   onSelectFormat: (format: FormatSetting) => void
-  onSelectDestination: (destination: DestinationPlan) => void
+  onSelectDestination: (destination: Destination) => void
   // Pre-resolved by the editor: converts the selection in multi mode, the open track
   // in single, so the footer never forks on it.
   onProcess: (format: FormatSetting) => void
@@ -87,10 +85,8 @@ export function ConvertFooter({
   willEditInPlace,
   addToAppleMusic,
   addToEngineDj,
-  syncTraktor,
-  syncRekordbox,
   destination,
-  locations,
+  destinations,
   format,
   exportedFormat,
   musicExt,
@@ -262,7 +258,8 @@ export function ConvertFooter({
                 done={false}
                 outputFormat={format}
                 exportedFormat={isMulti ? null : exportedFormat}
-                targets={[]}
+                withAppleMusic={false}
+                withEngineDj={false}
                 // A field emptied (or made required) after converting would send the
                 // re-export into the same silently-empty batch the main button gates
                 // against, so the quiet variant carries the identical block.
@@ -271,8 +268,7 @@ export function ConvertFooter({
                 inPlace={false}
                 sameFormat={false}
                 destination={destination}
-                locations={locations}
-                mac={isMacOS()}
+                destinations={destinations}
                 count={isMulti ? selectedCount : undefined}
                 onProcess={onProcess}
                 onSelectFormat={onSelectFormat}
@@ -290,12 +286,8 @@ export function ConvertFooter({
             done={!isMulti && done}
             outputFormat={format}
             exportedFormat={isMulti ? null : exportedFormat}
-            targets={reachedDjSoftware({
-              appleMusic: isMacOS() && format !== 'flac' && addToAppleMusic,
-              engineDj: addToEngineDj,
-              rekordbox: syncRekordbox,
-              traktor: syncTraktor,
-            })}
+            withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
+            withEngineDj={addToEngineDj}
             incomplete={incomplete}
             incompleteReason={incompleteReason}
             inPlace={!isMulti && willEditInPlace}
@@ -303,8 +295,7 @@ export function ConvertFooter({
               !isMulti && format !== 'source' && formatMatchesInput(format, item.inputPath)
             }
             destination={destination}
-            locations={locations}
-            mac={isMacOS()}
+            destinations={destinations}
             count={isMulti ? selectedCount : undefined}
             onProcess={onProcess}
             onCancel={onCancel}

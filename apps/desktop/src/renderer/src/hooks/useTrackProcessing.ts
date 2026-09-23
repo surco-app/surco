@@ -12,7 +12,7 @@ import {
 } from '../lib/batch'
 import { mapWithConcurrency } from '../lib/concurrency'
 import { coverSourceOf } from '../lib/coverSource'
-import { type DestinationPlan, planToSettings } from '../lib/destination'
+import { type Destination, fromDestination } from '../lib/destination'
 import { exportedPatch } from '../lib/export'
 import { DEFAULT_REQUIRED_FIELDS, missingRequired } from '../lib/fields'
 import { sanitizeMeta } from '../lib/hygiene'
@@ -87,7 +87,7 @@ interface TrackProcessing {
     formatOverride?: FormatSetting,
     normalizeOverride?: NormalizeConfig,
     overwriteOverride?: boolean,
-    destinationOverride?: DestinationPlan,
+    destinationOverride?: Destination,
     declickOverride?: DeclickMode,
     keepMp3?: boolean,
   ) => Promise<BatchOutcome>
@@ -95,7 +95,7 @@ interface TrackProcessing {
     targets: TrackItem[],
     formatOverride?: FormatSetting,
     normalizeOverride?: NormalizeConfig,
-    destinationOverride?: DestinationPlan,
+    destinationOverride?: Destination,
     declickOverride?: DeclickMode,
   ) => Promise<void>
   addTrackToAppleMusic: (id: string) => Promise<void>
@@ -166,7 +166,7 @@ export function useTrackProcessing({
       formatOverride?: FormatSetting,
       normalizeOverride?: NormalizeConfig,
       overwriteOverride?: boolean,
-      destinationOverride?: DestinationPlan,
+      destinationOverride?: Destination,
       declickOverride?: DeclickMode,
       keepMp3?: boolean,
     ): Promise<BatchOutcome> => {
@@ -267,7 +267,7 @@ export function useTrackProcessing({
       // Settings per facet, so sending only the changed flag would mix the pick with
       // whatever the settings say for the rest. The explicit overwrite pin still wins
       // (a batch pinned it before the destination existed as an override).
-      const destination = destinationOverride ? planToSettings(destinationOverride) : undefined
+      const destination = destinationOverride ? fromDestination(destinationOverride) : undefined
       const overwriteOriginal =
         overwriteOverride ?? destination?.overwriteOriginal ?? settings?.overwriteOriginal
       const outputName = overwriteOriginal
@@ -383,7 +383,7 @@ export function useTrackProcessing({
       formatOverride?: FormatSetting,
       normalizeOverride?: NormalizeConfig,
       overwriteOverride?: boolean,
-      destinationOverride?: DestinationPlan,
+      destinationOverride?: Destination,
       declickOverride?: DeclickMode,
       keepMp3?: boolean,
     ): Promise<BatchOutcome> => {
@@ -493,7 +493,7 @@ export function useTrackProcessing({
       targets: TrackItem[],
       formatOverride?: FormatSetting,
       normalizeOverride?: NormalizeConfig,
-      destinationOverride?: DestinationPlan,
+      destinationOverride?: Destination,
       declickOverride?: DeclickMode,
     ): Promise<void> => {
       if (batching) return

@@ -41,11 +41,7 @@ interface ResolvedSettings {
   outputBitDepth: OutputBitDepth
   outputSampleRate: OutputSampleRate
   addToAppleMusic: boolean
-  keepOutputCopy: boolean
   addToEngineDj: boolean
-  syncTraktor: boolean
-  traktorNmlPath: string
-  syncRekordbox: boolean
   overwriteOriginal: boolean
   convertBesideOriginal: boolean
   replaceLowResCover: boolean
@@ -83,11 +79,7 @@ const DEFAULTS: ResolvedSettings = {
   outputBitDepth: 'source',
   outputSampleRate: 'source',
   addToAppleMusic: false,
-  keepOutputCopy: true,
   addToEngineDj: false,
-  syncTraktor: false,
-  traktorNmlPath: '',
-  syncRekordbox: false,
   overwriteOriginal: false,
   convertBesideOriginal: false,
   replaceLowResCover: false,
@@ -123,11 +115,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     outputBitDepth: settings.outputBitDepth ?? DEFAULTS.outputBitDepth,
     outputSampleRate: settings.outputSampleRate ?? DEFAULTS.outputSampleRate,
     addToAppleMusic: settings.addToAppleMusic ?? DEFAULTS.addToAppleMusic,
-    keepOutputCopy: settings.keepOutputCopy ?? DEFAULTS.keepOutputCopy,
     addToEngineDj: settings.addToEngineDj ?? DEFAULTS.addToEngineDj,
-    syncTraktor: settings.syncTraktor ?? DEFAULTS.syncTraktor,
-    traktorNmlPath: settings.traktorNmlPath ?? DEFAULTS.traktorNmlPath,
-    syncRekordbox: settings.syncRekordbox ?? DEFAULTS.syncRekordbox,
     overwriteOriginal: settings.overwriteOriginal ?? DEFAULTS.overwriteOriginal,
     convertBesideOriginal: settings.convertBesideOriginal ?? DEFAULTS.convertBesideOriginal,
     replaceLowResCover: settings.replaceLowResCover ?? DEFAULTS.replaceLowResCover,

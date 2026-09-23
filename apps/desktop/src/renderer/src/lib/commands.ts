@@ -4,7 +4,7 @@ import type { DeclickMode, FormatSetting, NormalizeConfig, Settings } from '../.
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { canAddToAppleMusic } from './appleMusic'
-import type { DestinationPlan } from './destination'
+import type { Destination } from './destination'
 import { DONATE_URL } from './donate'
 import { openFeedback } from './feedback'
 import { suspectTracks } from './triage'
@@ -143,7 +143,7 @@ export interface CommandDeps {
   cancelBatch: () => void
   // The editor's split-button picks, read at run time so ⌘⏎ honors them.
   editorFormatRef: { readonly current: FormatSetting | null }
-  editorDestinationRef: { readonly current: DestinationPlan | null }
+  editorDestinationRef: { readonly current: Destination | null }
   editorNormalizeRef: { readonly current: NormalizeConfig | null }
   editorDeclickRef: { readonly current: DeclickMode | null }
   // The sidebar's track-filter field — the `/` shortcut focuses this.
@@ -173,7 +173,7 @@ export interface CommandDeps {
     id: string,
     format?: FormatSetting,
     normalize?: NormalizeConfig,
-    destination?: DestinationPlan,
+    destination?: Destination,
     declick?: DeclickMode,
     // Fires when the conversion actually starts (after an overwrite confirm, if any), so
     // convert-and-advance only steps the selection once the run commits.
@@ -183,7 +183,7 @@ export interface CommandDeps {
     targets: TrackItem[],
     format?: FormatSetting,
     normalize?: NormalizeConfig,
-    destination?: DestinationPlan,
+    destination?: Destination,
     declick?: DeclickMode,
   ) => void
   cancelAnalysis: () => void

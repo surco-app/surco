@@ -385,63 +385,61 @@ describe('SettingsModal destination', () => {
     fireEvent.click(screen.getByTestId('settings-tab-destination'))
   }
 
-  it('saves Apple Music without the output-folder copy', () => {
+  // The single radio choice is what keeps "no copy anywhere" unrepresentable, so the
+  // mapping onto the two stored booleans is the contract worth pinning down.
+  it('saves Apple Music as the only destination by dropping the output-folder copy', () => {
     const onSave = vi.fn()
-    openDestination({ addToAppleMusic: false }, onSave)
-    fireEvent.click(screen.getByTestId('settings-dj-appleMusic'))
+    openDestination({}, onSave)
+    fireEvent.click(screen.getByTestId('settings-destination-appleMusic'))
     fireEvent.click(screen.getByTestId('settings-save'))
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ addToAppleMusic: true, keepOutputCopy: false }),
     )
   })
 
-  it('reflects a saved "Apple Music only" setting as Apple Music without a copy', () => {
+  it('reflects a saved "Apple Music only" setting as the selected radio', () => {
     openDestination({ addToAppleMusic: true, keepOutputCopy: false })
-    expect(screen.getByTestId('settings-dj-appleMusic')).toBeChecked()
-    expect(screen.getByTestId('settings-location-folder')).toBeChecked()
-    expect(screen.getByTestId('settings-apple-music-copy')).not.toBeChecked()
+    expect(screen.getByTestId('settings-destination-appleMusic')).toBeChecked()
   })
 
-  it('reflects a kept Apple Music copy as its own ticked choice', () => {
+  // "Output folder + Apple Music" was retired: a legacy both-copies setting must show
+  // as plain Apple Music instead of leaving no radio selected.
+  it('collapses a legacy keep-the-copy Apple Music setting onto the Apple Music radio', () => {
     openDestination({ addToAppleMusic: true, keepOutputCopy: true })
-    expect(screen.getByTestId('settings-dj-appleMusic')).toBeChecked()
-    expect(screen.getByTestId('settings-apple-music-copy')).toBeChecked()
+    expect(screen.getByTestId('settings-destination-appleMusic')).toBeChecked()
+    expect(screen.queryByTestId('settings-destination-both')).toBeNull()
   })
 
-  it('saves Apple Music and Engine DJ together with the copy Engine needs', () => {
-    const onSave = vi.fn()
-    openDestination({ addToAppleMusic: true, keepOutputCopy: false }, onSave)
-    fireEvent.click(screen.getByTestId('settings-dj-engineDj'))
-    fireEvent.click(screen.getByTestId('settings-save'))
-    expect(onSave).toHaveBeenCalledWith(
-      expect.objectContaining({ addToAppleMusic: true, addToEngineDj: true }),
-    )
-  })
-
-  it('keeps Apple Music out while FLAC is the format', () => {
+  // Apple Music can't ingest FLAC, so its options can't be chosen while FLAC is the
+  // format — the choice falls back to the always-valid output folder.
+  it('pins the destination to the output folder and disables Apple Music for FLAC', () => {
     openDestination({ outputFormat: 'flac', addToAppleMusic: true, keepOutputCopy: false })
-    expect(screen.getByTestId('settings-location-folder')).toBeChecked()
-    expect(screen.getByTestId('settings-dj-appleMusic')).toBeDisabled()
+    expect(screen.getByTestId('settings-destination-folder')).toBeChecked()
+    expect(screen.getByTestId('settings-destination-appleMusic')).toBeDisabled()
   })
 
+  // Overwrite is the one destination that touches the source itself, so picking it must
+  // turn its flag on and clear the Apple Music booleans (the file never reaches a library).
   it('saves overwrite by setting the flag and clearing Apple Music', () => {
     const onSave = vi.fn()
-    openDestination({ addToAppleMusic: true }, onSave)
-    fireEvent.click(screen.getByTestId('settings-location-overwrite'))
+    openDestination({}, onSave)
+    fireEvent.click(screen.getByTestId('settings-destination-overwrite'))
     fireEvent.click(screen.getByTestId('settings-save'))
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ overwriteOriginal: true, addToAppleMusic: false }),
     )
   })
 
-  it('reflects a saved overwrite setting as the selected location', () => {
+  it('reflects a saved overwrite setting as the selected radio', () => {
     openDestination({ overwriteOriginal: true })
-    expect(screen.getByTestId('settings-location-overwrite')).toBeChecked()
+    expect(screen.getByTestId('settings-destination-overwrite')).toBeChecked()
   })
 
+  // FLAC only blocks Apple Music; overwrite rewrites the source in place and stays
+  // selectable for any format.
   it('keeps overwrite available while FLAC is the format', () => {
     openDestination({ outputFormat: 'flac' })
-    expect(screen.getByTestId('settings-location-overwrite')).not.toBeDisabled()
+    expect(screen.getByTestId('settings-destination-overwrite')).not.toBeDisabled()
   })
 })
 

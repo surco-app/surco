@@ -640,12 +640,7 @@ describe('useTrackProcessing', () => {
       { wrapper: withClient() },
     )
     await act(async () => {
-      await result.current.processOne('a', undefined, undefined, undefined, {
-        location: 'folder',
-        appleMusic: false,
-        engineDj: true,
-        keepOutputCopy: true,
-      })
+      await result.current.processOne('a', undefined, undefined, undefined, 'engineDj')
     })
     expect(processTrack).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -655,33 +650,6 @@ describe('useTrackProcessing', () => {
         convertBesideOriginal: false,
         overwriteOriginal: false,
       }),
-    )
-  })
-
-  it('sends Apple Music and Engine DJ together when the override ticks both', async () => {
-    const processTrack = vi
-      .fn<Api['processTrack']>()
-      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
-    setApi({ processTrack })
-    const { result } = renderHook(
-      () =>
-        useTrackProcessing({
-          tracks: [track({ id: 'a' })],
-          settings: { addToAppleMusic: false, keepOutputCopy: true } as unknown as Settings,
-          updateTrack: vi.fn(),
-        }),
-      { wrapper: withClient() },
-    )
-    await act(async () => {
-      await result.current.processOne('a', undefined, undefined, undefined, {
-        location: 'folder',
-        appleMusic: true,
-        engineDj: true,
-        keepOutputCopy: false,
-      })
-    })
-    expect(processTrack).toHaveBeenCalledWith(
-      expect.objectContaining({ addToAppleMusic: true, addToEngineDj: true }),
     )
   })
 
@@ -700,12 +668,7 @@ describe('useTrackProcessing', () => {
       { wrapper: withClient() },
     )
     await act(async () => {
-      await result.current.processOne('a', undefined, undefined, undefined, {
-        location: 'overwrite',
-        appleMusic: false,
-        engineDj: false,
-        keepOutputCopy: true,
-      })
+      await result.current.processOne('a', undefined, undefined, undefined, 'overwrite')
     })
     expect(processTrack).toHaveBeenCalledWith(
       expect.objectContaining({ outputName: 'a.wav', overwriteOriginal: true }),
@@ -730,12 +693,7 @@ describe('useTrackProcessing', () => {
       { wrapper: withClient() },
     )
     await act(async () => {
-      await result.current.processAll(tracks, undefined, undefined, {
-        location: 'folder',
-        appleMusic: false,
-        engineDj: false,
-        keepOutputCopy: true,
-      })
+      await result.current.processAll(tracks, undefined, undefined, 'folder')
     })
     expect(processTrack).toHaveBeenCalledTimes(2)
     for (const call of processTrack.mock.calls) {
