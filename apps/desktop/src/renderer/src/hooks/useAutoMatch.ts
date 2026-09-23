@@ -99,12 +99,13 @@ export function useAutoMatch({
   const [matching, setMatching] = useState<{ done: number; total: number } | null>(null)
   const matchCancel = useRef(false)
   const matchingRef = useRef(false)
-  // Cumulative progress of the active sweep: how many distinct tracks were enqueued (and
-  // weren't already matched) and how many have been probed. Both reset to 0 when the sweep
-  // idles, so the toolbar pill reads e.g. 5/200 across a whole-crate run rather than the
-  // size of the current concurrent slice.
-  const sweepDone = useRef(0)
-  const sweepTotal = useRef(0)
+  // Cumulative progress of the active sweep: which distinct tracks were enqueued (and
+  // weren't already matched) and which have been probed. Sets, not counters: an unmatched
+  // track is enqueued again every time it is selected, and it is still one track. Both
+  // empty when the sweep idles, so the toolbar pill reads e.g. 5/200 across a whole-crate
+  // run rather than the size of the current concurrent slice.
+  const sweepDone = useRef<Set<string>>(new Set())
+  const sweepTotal = useRef<Set<string>>(new Set())
   // Track ids waiting for an auto-match. The drain reads this together with which rows
   // are currently visible, which decides the order and nothing else.
   const matchQueue = useRef<Set<string>>(new Set())
@@ -239,8 +240,8 @@ export function useAutoMatch({
   // Zeroes the sweep's progress and hides the toolbar pill — used when it finishes, is
   // cancelled, or the list is cleared out from under it.
   const resetProgress = useCallback((): void => {
-    sweepDone.current = 0
-    sweepTotal.current = 0
+    sweepDone.current.clear()
+    sweepTotal.current.clear()
     setMatching(null)
   }, [])
 
@@ -271,8 +272,8 @@ export function useAutoMatch({
             // A cancel mid-probe tears the sweep down, so don't resurrect the pill by
             // bumping progress after it was cleared.
             if (!matchCancel.current) {
-              sweepDone.current += 1
-              setMatching({ done: sweepDone.current, total: sweepTotal.current })
+              sweepDone.current.add(t.id)
+              setMatching({ done: sweepDone.current.size, total: sweepTotal.current.size })
             }
           }
         })
@@ -304,14 +305,13 @@ export function useAutoMatch({
   // Queues tracks for auto-match and kicks the drain.
   const enqueueAutoMatch = useCallback(
     (candidates: TrackItem[]): void => {
-      let added = 0
+      const before = sweepTotal.current.size
       for (const t of tracksToAutoMatch(candidates)) {
-        if (!matchQueue.current.has(t.id)) added += 1
         matchQueue.current.add(t.id)
+        sweepTotal.current.add(t.id)
       }
-      if (added > 0) {
-        sweepTotal.current += added
-        setMatching({ done: sweepDone.current, total: sweepTotal.current })
+      if (sweepTotal.current.size > before) {
+        setMatching({ done: sweepDone.current.size, total: sweepTotal.current.size })
       }
       void pumpAutoMatch()
     },
@@ -353,6 +353,9 @@ export function useAutoMatch({
   const forgetTrack = useCallback((id: string): void => {
     matchQueue.current.delete(id)
     visibleIds.current.delete(id)
+    if (!sweepTotal.current.delete(id)) return
+    sweepDone.current.delete(id)
+    setMatching({ done: sweepDone.current.size, total: sweepTotal.current.size })
   }, [])
 
   const reset = useCallback((): void => {

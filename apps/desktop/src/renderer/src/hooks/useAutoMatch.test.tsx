@@ -212,6 +212,58 @@ describe('useAutoMatch', () => {
     )
   })
 
+  // A track the probe found nothing for stays unmatched, so selecting it enqueues it again.
+  // Counting that as a new track made a crate of 13 read 22/26: the pill has to count
+  // tracks, not how many times each one was asked for.
+  it('counts a re-enqueued track once in the sweep progress', async () => {
+    let releaseGate: () => void = () => {}
+    const gate = new Promise<void>((res) => {
+      releaseGate = res
+    })
+    setApi({
+      search: vi.fn(async () => {
+        await gate
+        return []
+      }),
+    })
+    const tracks = [track('a'), track('b')]
+    const { result } = setup(tracks)
+
+    act(() => result.current.enqueueAutoMatch(tracks))
+    await waitFor(() => expect(result.current.matching).toEqual({ done: 0, total: 2 }))
+    act(() => result.current.enqueueAutoMatch([tracks[0]]))
+    act(() => result.current.enqueueAutoMatch([tracks[0]]))
+
+    expect(result.current.matching).toEqual({ done: 0, total: 2 })
+    releaseGate()
+    await waitFor(() => expect(result.current.matching).toBeNull())
+  })
+
+  // The pill is read against the list beside it: a track removed mid-sweep has to leave the
+  // count with it, or the total promises tracks that are no longer there.
+  it('drops a removed track from the sweep progress', async () => {
+    let releaseGate: () => void = () => {}
+    const gate = new Promise<void>((res) => {
+      releaseGate = res
+    })
+    setApi({
+      search: vi.fn(async () => {
+        await gate
+        return []
+      }),
+    })
+    const tracks = [track('a'), track('b'), track('c'), track('d'), track('e')]
+    const { result } = setup(tracks)
+
+    act(() => result.current.enqueueAutoMatch(tracks))
+    await waitFor(() => expect(result.current.matching).toEqual({ done: 0, total: 5 }))
+    act(() => result.current.forgetTrack('e'))
+
+    expect(result.current.matching).toEqual({ done: 0, total: 4 })
+    releaseGate()
+    await waitFor(() => expect(result.current.matching).toBeNull())
+  })
+
   // Cancel mid-sweep: tracks whose probes haven't applied yet are left untouched, and
   // the progress state still settles back to idle.
   it('stops applying once cancelled and settles back to idle', async () => {
