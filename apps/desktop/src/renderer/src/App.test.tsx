@@ -1773,16 +1773,14 @@ describe('App background work signal', () => {
 })
 
 describe('App stats', () => {
-  // Stats is something to look at, not something to set, so it opens on its own instead
-  // of as one more tab among the settings. Its toolbar button moved to the View menu.
-  it('opens the stats window from the menu, not Settings', async () => {
+  it('opens Settings on the stats tab from the menu', async () => {
     await renderApp()
     await screen.findByTestId('add-files')
     runMenu('stats')
-    await waitFor(() => expect(screen.getByTestId('stats-modal')).toBeInTheDocument())
-    expect(screen.queryByTestId('settings-tab-general')).toBeNull()
-    fireEvent.click(screen.getByTestId('stats-close'))
-    await waitFor(() => expect(screen.queryByTestId('stats-modal')).toBeNull())
+    await waitFor(() =>
+      expect(screen.getByTestId('settings-tab-stats')).toHaveAttribute('aria-selected', 'true'),
+    )
+    expect(screen.queryByTestId('stats-modal')).toBeNull()
   })
 })
 
@@ -1799,7 +1797,7 @@ describe('App command palette list-wide actions', () => {
   // The list-wide toolbar actions are reachable from the palette too, so a keyboard-only
   // user can run them without hunting for the icon. Stats needs no loaded tracks, so it
   // proves the run wiring on its own.
-  it('runs a list-wide action from the palette (Stats opens its own window)', async () => {
+  it('runs a list-wide action from the palette (Stats opens its settings tab)', async () => {
     await renderApp()
     fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
     const input = await screen.findByTestId('palette-input')
@@ -1807,8 +1805,9 @@ describe('App command palette list-wide actions', () => {
     const items = screen.getAllByTestId('palette-item')
     expect(items).toHaveLength(1)
     fireEvent.click(items[0])
-    await waitFor(() => expect(screen.getByTestId('stats-modal')).toBeInTheDocument())
-    expect(screen.queryByTestId('settings-tab-general')).toBeNull()
+    await waitFor(() =>
+      expect(screen.getByTestId('settings-tab-stats')).toHaveAttribute('aria-selected', 'true'),
+    )
   })
 
   // The list-wide commands act on the whole crate, so they stay disabled until something

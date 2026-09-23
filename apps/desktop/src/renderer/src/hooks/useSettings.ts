@@ -97,8 +97,8 @@ export function useSettings({
   }, [latest])
 
   // Conversions and the lifetime tallies bump their persisted counts from the main
-  // process, so re-read settings each time the Settings or Stats modal opens to keep the
-  // stats current within a session. Only the counters are merged in — never the whole
+  // process, so re-read settings each time the Settings modal opens to keep the Stats
+  // tab current within a session. Only the counters are merged in — never the whole
   // object: a save or config-dir adoption can land while this read is still in flight,
   // and replacing everything would revert those just-applied fields. The cancel flag
   // still drops it once the modal closes.

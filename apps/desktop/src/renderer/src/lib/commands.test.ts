@@ -83,7 +83,6 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     askTrashSelected: () => {},
     bulkTracks: [],
     openSettings: () => {},
-    openStats: () => {},
     openFindReplace: () => {},
     openStripNumbering: () => {},
     openExport: () => {},

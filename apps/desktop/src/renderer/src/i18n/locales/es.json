@@ -773,7 +773,8 @@
       "layout": "Secciones",
       "artwork": "Carátula",
       "fields": "Campos",
-      "shortcuts": "Atajos"
+      "shortcuts": "Atajos",
+      "stats": "Estadísticas"
     },
     "tabGroups": {
       "editing": "Edición",

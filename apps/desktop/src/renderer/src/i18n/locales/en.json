@@ -773,7 +773,8 @@
       "layout": "Sections",
       "artwork": "Artwork",
       "fields": "Fields",
-      "shortcuts": "Shortcuts"
+      "shortcuts": "Shortcuts",
+      "stats": "Stats"
     },
     "tabGroups": {
       "editing": "Editing",

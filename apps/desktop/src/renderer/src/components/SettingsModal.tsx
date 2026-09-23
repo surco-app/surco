@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { findConflicts, resolveBindings } from '../../../shared/shortcutDefaults'
 import type { Settings, ThemePref } from '../../../shared/types'
 import { useScrollAffordance } from '../hooks/useScrollAffordance'
+import { DONATE_URL } from '../lib/donate'
 import {
   buildSettingsPatch,
   type LocalDraft,
@@ -30,6 +31,9 @@ import { ProcessingTab } from './settings/ProcessingTab'
 import { SearchTab } from './settings/SearchTab'
 import { SettingsAdvancedProvider } from './settings/SettingsPrimitives'
 import { ShortcutsTab } from './settings/ShortcutsTab'
+import { StatsTab } from './settings/StatsTab'
+
+export { DONATE_URL }
 
 interface Props {
   settings: Settings
@@ -344,6 +348,7 @@ export function SettingsModal({
                   conflictIds={conflictIds}
                 />
               )}
+              {tab === 'stats' && <StatsTab settings={settings} />}
             </div>
             {/* Fades the cut-off last line into the panel while there's more below, then
             clears at the end — the "keep scrolling" cue the faint scrollbar didn't give. */}
