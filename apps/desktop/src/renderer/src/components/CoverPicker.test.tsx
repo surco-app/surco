@@ -411,6 +411,20 @@ describe('CoverPicker drag and counter', () => {
     expect(screen.getByTestId('cover-image-count')).toHaveTextContent('0/2')
   })
 
+  // "2/4" read aloud is "two slash four", which says nothing about what is being counted
+  // between the previous and next image buttons; the counter needs its words.
+  it('reads the counter as the image position among the choices', () => {
+    renderWithRelease({ coverUrl: 'http://a/2.jpg' })
+    expect(within(screen.getByTestId('cover-image-picker')).getByText('Image 2 of 2')).toBeTruthy()
+  })
+
+  it('reads the counter as none picked when no cover is selected', () => {
+    renderWithRelease({ coverUrl: undefined })
+    expect(
+      within(screen.getByTestId('cover-image-picker')).getByText('None of the 2 images picked'),
+    ).toBeTruthy()
+  })
+
   // Discogs often returns the same image under several entries (a primary plus secondaries
   // that point at the same resource). Pushing each entry as its own choice left the stepper
   // cycling through identical-looking slots, so the user clicked next and the cover didn't

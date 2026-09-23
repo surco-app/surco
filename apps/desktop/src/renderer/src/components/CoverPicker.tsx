@@ -459,14 +459,29 @@ export function CoverPicker({
           >
             <ChevronLeft className="h-3 w-3" aria-hidden="true" />
           </button>
-          <span data-testid="cover-image-count" className="text-[11px] tabular-nums text-fg-dim">
-            {(() => {
-              const pos = coverChoices.findIndex((c) => c.uri === displayCover) + 1
-              // 0 (not '–') when no cover is selected, e.g. just after deleting one: the
-              // arrows still step into the choices, so "0/4" reads as "none of 4 picked".
-              return `${pos}/${coverChoices.length}`
-            })()}
-          </span>
+          {(() => {
+            const pos = coverChoices.findIndex((c) => c.uri === displayCover) + 1
+            const total = coverChoices.length
+            // 0 (not '–') when no cover is selected, e.g. just after deleting one: the
+            // arrows still step into the choices, so "0/4" reads as "none of 4 picked".
+            // Read aloud, "2/4" is "two slash four", so assistive tech gets the words.
+            return (
+              <>
+                <span
+                  data-testid="cover-image-count"
+                  aria-hidden="true"
+                  className="text-[11px] tabular-nums text-fg-dim"
+                >
+                  {`${pos}/${total}`}
+                </span>
+                <span className="sr-only">
+                  {pos === 0
+                    ? tr('editor.coverPositionNone', { total })
+                    : tr('editor.coverPosition', { position: pos, total })}
+                </span>
+              </>
+            )
+          })()}
           <button
             type="button"
             data-testid="cover-next"
