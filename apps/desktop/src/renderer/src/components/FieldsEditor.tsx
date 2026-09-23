@@ -108,13 +108,15 @@ export function FieldsEditor({
         {tr('settings.customFieldDelete')}
       </button>
     ) : null
-  // A row's name with its {key} hint, the hint kept off the Delete button beside it.
+  // A row's name with its {key} hint, the hint kept off the Delete button beside it. The
+  // tooltip only answers a pointer, so the token is also there in words for a screen reader.
   const nameCell = (key: string): React.JSX.Element => (
     <>
       <span>
         {labelOf(key)}
         <Tooltip label={`{${key}}`} />
       </span>
+      <span className="sr-only">{tr('fields.rowToken', { token: `{${key}}` })}</span>
       {deleteButton(key)}
     </>
   )
@@ -159,6 +161,7 @@ export function FieldsEditor({
   // The arrow buttons remain as the keyboard-accessible path.
   const [dragKey, setDragKey] = useState<string | null>(null)
   const [dropKey, setDropKey] = useState<string | null>(null)
+  const organizeHintId = useId()
   const organizedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(organizedTimer.current), [])
   // An arrow that moves its field to either end disables itself, and a disabled button
@@ -197,6 +200,7 @@ export function FieldsEditor({
           <button
             type="button"
             data-testid="auto-organize-fields"
+            aria-describedby={organizeHintId}
             onClick={autoOrganize}
             className={`flex items-center gap-1 rounded px-2 py-0.5 text-xs transition-colors ${
               organized
@@ -212,6 +216,9 @@ export function FieldsEditor({
             {tr(organized ? 'settings.autoOrganized' : 'settings.autoOrganize')}
             <Tooltip label={tr('settings.autoOrganizeHint')} />
           </button>
+          <span id={organizeHintId} className="sr-only">
+            {tr('settings.autoOrganizeHint')}
+          </span>
           {/* The button's own flip is only seen; this region, mounted empty from the
               start so assistive tech is already listening, says the reorder happened. */}
           <span data-testid="auto-organize-status" role="status" className="sr-only">

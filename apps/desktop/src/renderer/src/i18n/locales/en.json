@@ -651,7 +651,8 @@
     "rowMoveUp": "Move {{name}} up",
     "rowMoveDown": "Move {{name}} down",
     "rowHide": "Hide {{name}}",
-    "rowShow": "Show {{name}}"
+    "rowShow": "Show {{name}}",
+    "rowToken": "Internal name {{token}}"
   },
   "declick": {
     "cueWarning": "ALAC does not keep Traktor cues or the beatgrid: converting loses them.",
