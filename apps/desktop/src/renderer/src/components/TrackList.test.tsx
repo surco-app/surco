@@ -341,6 +341,22 @@ describe('TrackList', () => {
     )
   })
 
+  // The ring round the cover is the only visual measure of how far a conversion has come,
+  // so it has to advance with each phase; a ring stuck at one value would read as a stall.
+  it('fills the ring round the cover as the conversion moves through its phases', () => {
+    renderList([
+      track({ id: 'a', status: 'processing', stage: 'cover' }),
+      track({ id: 'b', status: 'processing', stage: 'converting' }),
+      track({ id: 'c', status: 'processing', stage: 'appleMusic' }),
+    ])
+    const rings = screen.getAllByTestId('track-progress-ring')
+    expect(rings.map((r) => r.style.getPropertyValue('--progress'))).toEqual([
+      '0.2',
+      '0.55',
+      '0.85',
+    ])
+  })
+
   it('labels the stage with the track’s own format over the default', () => {
     renderList([track({ id: 'busy', status: 'processing', stage: 'converting', format: 'mp3' })])
     expect(screen.getByTestId('track-stage')).toHaveTextContent(/MP3/)
