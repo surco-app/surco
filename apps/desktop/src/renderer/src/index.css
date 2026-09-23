@@ -40,7 +40,7 @@
 
 :root {
   color-scheme: dark;
-  --ring: 0 0 0 3.5px color-mix(in srgb, var(--color-accent) 32%, transparent);
+  --ring: 0 0 0 2px var(--color-accent);
 }
 
 :root[data-theme="light"] {
