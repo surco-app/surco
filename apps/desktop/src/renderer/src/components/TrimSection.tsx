@@ -85,6 +85,16 @@ function cutSeconds(seconds: number): string {
   return `${seconds.toFixed(1)} s`
 }
 
+function cutAmounts(
+  range: TrimRange,
+  durationSec: number,
+): { start: number; end: number; side: 'Both' | 'Start' | 'End' | null } {
+  const start = range.startSec ?? 0
+  const end = range.endSec !== undefined && durationSec > 0 ? durationSec - range.endSec : 0
+  const side = start > 0 && end > 0 ? 'Both' : start > 0 ? 'Start' : end > 0 ? 'End' : null
+  return { start, end, side }
+}
+
 // The plan card: the outcome of the staged cut in plain numbers, mirroring the
 // normalize plan. While inline explanations are on it replaces the terse cue
 // warning, and the didactic line under the numbers tells the same fact the
@@ -97,9 +107,7 @@ function TrimPlan({
   durationSec: number
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const startCut = value.startSec ?? 0
-  const endCut = value.endSec !== undefined ? durationSec - value.endSec : 0
-  const planKey = startCut > 0 && endCut > 0 ? 'planBoth' : endCut > 0 ? 'planEnd' : 'planStart'
+  const { start: startCut, end: endCut, side } = cutAmounts(value, durationSec)
   return (
     <div
       data-testid="trim-plan"
@@ -109,7 +117,7 @@ function TrimPlan({
         {tr('trim.planHead')}
       </p>
       <p className="mt-1 text-xs leading-relaxed text-fg tabular-nums">
-        {tr(`trim.${planKey}`, {
+        {tr(`trim.plan${side ?? 'Start'}`, {
           start: cutSeconds(startCut),
           end: cutSeconds(endCut),
           from: formatTime(durationSec),
@@ -979,13 +987,14 @@ export function TrimSection({
   // The detection's finding, worn on the header like the quality section's verdict
   // pill: the one convention for analysis results, readable without opening the
   // section (once the wave has been decoded) and without hunting through the body.
-  const detected = suggestion
+  const detectedCut = suggestion ? cutAmounts(suggestion, durationSec) : undefined
+  const detected = detectedCut
     ? [
-        suggestion.startSec !== undefined
-          ? tr('trim.cutStart', { seconds: cutSeconds(suggestion.startSec) })
+        detectedCut.start > 0
+          ? tr('trim.cutStart', { seconds: cutSeconds(detectedCut.start) })
           : undefined,
-        suggestion.endSec !== undefined
-          ? tr('trim.cutEnd', { seconds: cutSeconds(durationSec - suggestion.endSec) })
+        detectedCut.end > 0
+          ? tr('trim.cutEnd', { seconds: cutSeconds(detectedCut.end) })
           : undefined,
       ]
         .filter(Boolean)
@@ -993,13 +1002,12 @@ export function TrimSection({
     : undefined
 
   const rowDurationSec = wave?.durationSec ?? trackDurationSec ?? 0
-  const rowRange = value ?? suggestion
-  const rowStart = rowRange?.startSec ?? 0
-  const rowEnd =
-    rowRange?.endSec !== undefined && rowDurationSec > 0 ? rowDurationSec - rowRange.endSec : 0
+  const {
+    start: rowStart,
+    end: rowEnd,
+    side: rowSide,
+  } = cutAmounts(value ?? suggestion ?? {}, rowDurationSec)
   const rowKind = value ? 'remove' : 'found'
-  const rowSide =
-    rowStart > 0 && rowEnd > 0 ? 'Both' : rowStart > 0 ? 'Start' : rowEnd > 0 ? 'End' : null
   const rowSentence = rowSide
     ? tr(`trim.row.${rowKind}${rowSide}`, { start: cutSeconds(rowStart), end: cutSeconds(rowEnd) })
     : wave
