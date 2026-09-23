@@ -162,6 +162,11 @@ const _EMPTY_FORMATS: string[] = []
 
 export default function App(): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
+  // Screen readers pick their voice from the document language, and index.html can only
+  // bake in one; it has to follow whichever locale the interface is showing.
+  useEffect(() => {
+    document.documentElement.lang = i18n.language
+  }, [i18n.language])
   const [selection, setSelection] = useState<Selection>({ ids: [], anchor: null })
   const selectedId = selection.anchor
   const selectedIds = selection.ids
