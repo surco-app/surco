@@ -1747,10 +1747,9 @@ describe('App settings button', () => {
 })
 
 describe('App background work signal', () => {
-  // The activity button's dot was the one always-visible sign that a search, a cover
-  // download or an Apple Music read was running. The button moved to the View menu, so
-  // the top bar carries that signal instead.
-  it('runs the top bar while the activity log shows work in flight', async () => {
+  // The dot on the activity button is the one always-visible sign that a search, a cover
+  // download or an Apple Music read is running while the panel is closed.
+  it('marks the activity button while the activity log shows work in flight', async () => {
     let emit: ((event: ActivityEvent) => void) | undefined
     setApi({
       onActivity: (cb: (event: ActivityEvent) => void) => {
@@ -1760,15 +1759,15 @@ describe('App background work signal', () => {
     })
     await renderApp()
     await screen.findByTestId('add-files')
-    expect(screen.queryByTestId('top-progress')).toBeNull()
+    expect(screen.queryByTestId('activity-running')).toBeNull()
     act(() =>
       emit?.({ id: 'a1', kind: 'discogs', phase: 'start', labelKey: 'activity.searchDiscogs' }),
     )
-    expect(screen.getByTestId('top-progress')).toBeInTheDocument()
+    expect(screen.getByTestId('activity-running')).toBeInTheDocument()
     act(() =>
       emit?.({ id: 'a1', kind: 'discogs', phase: 'done', labelKey: 'activity.searchDiscogs' }),
     )
-    expect(screen.queryByTestId('top-progress')).toBeNull()
+    expect(screen.queryByTestId('activity-running')).toBeNull()
   })
 })
 
@@ -1781,6 +1780,14 @@ describe('App stats', () => {
       expect(screen.getByTestId('settings-tab-stats')).toHaveAttribute('aria-selected', 'true'),
     )
     expect(screen.queryByTestId('stats-modal')).toBeNull()
+  })
+
+  it('opens Settings on the stats tab from the toolbar button', async () => {
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('open-stats'))
+    await waitFor(() =>
+      expect(screen.getByTestId('settings-tab-stats')).toHaveAttribute('aria-selected', 'true'),
+    )
   })
 })
 

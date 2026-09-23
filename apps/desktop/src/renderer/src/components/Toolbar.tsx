@@ -2,8 +2,10 @@ import {
   Activity,
   Archive,
   ArrowRightLeft,
+  ChartColumn,
   FilePlus,
   Loader2,
+  Radio,
   Settings as SettingsIcon,
   Sparkles,
 } from 'lucide-react'
@@ -14,6 +16,7 @@ import type { BatchSummary } from '../lib/batch'
 import { Tooltip } from './Tooltip'
 
 interface Props {
+  isMac: boolean
   // Formats a command's bound chord (e.g. "⌘⇧D") for the button tooltips, so a sweep's
   // shortcut is discoverable on hover. Passed in (rather than computed here) to keep the
   // binding table in App the single source of truth.
@@ -37,9 +40,10 @@ interface Props {
   // Progress of the running batch (convert-all / add-all), shown as a cancellable pill
   // while `batching` — the conversion's counterpart of the sweep buttons below.
   batchProgress: { done: number; total: number }
-  // Progress of the analyze-quality sweep (null when idle), shown as a cancellable pill
-  // while it runs. Starting it lives in the Tracks menu, the palette and its shortcut.
+  // Progress of the analyze-quality sweep (null when idle) and whether every track is
+  // already analyzed (which, when idle, disables the button).
   analysis: { done: number; total: number } | null
+  allAnalyzed: boolean
   // Progress of the auto-match sweep (null when idle), whether its sources can run (see
   // autoMatchAvailable), and how many tracks are still matchable (zero disables the button).
   matching: { done: number; total: number } | null
@@ -49,6 +53,7 @@ interface Props {
   // fix instead of a disabled control, and onFixToken opens Settings where it's set.
   needsToken: boolean
   autoMatchable: number
+  onAnalyzeAll: () => void
   onCancelAnalyze: () => void
   onAutoMatch: () => void
   onCancelAutoMatch: () => void
@@ -57,6 +62,12 @@ interface Props {
   // ones already in ffmpeg finish.
   onCancelBatch: () => void
   onCancelImport: () => void
+  onPalette: () => void
+  onStats: () => void
+  onActivity: () => void
+  // True while any background work (search, cover download, conversion) is in flight,
+  // for the dot on the activity button — the same signal the panel's rows show.
+  activityRunning: boolean
   onTrash: () => void
   // How many originals Surco's trash holds, for the badge: a user who just replaced a
   // crate sees at a glance that the old files are still there.
@@ -64,13 +75,13 @@ interface Props {
   onSettings: () => void
 }
 
-// The window's title-bar toolbar: the convert-the-list action, the auto-match sweep, the
-// progress of whatever runs, and the originals and settings. The palette, stats, activity
-// and the analyze sweep live in the native menu and the palette. App owns the state and
-// hands every action down.
+// The window's title-bar toolbar: the convert-the-list action, the auto-match and
+// analyze-quality sweeps, the progress of whatever runs, and the always-present
+// palette/stats/activity/originals/settings. App owns the state and hands every action down.
 // Memoized for the same contract as the Editor: App hands it stable handlers, so a
 // keystroke in a metadata field no longer re-renders the whole toolbar.
 export const Toolbar = memo(function Toolbar({
+  isMac,
   hintFor,
   trackCount,
   convertibleCount,
@@ -82,16 +93,22 @@ export const Toolbar = memo(function Toolbar({
   batching,
   batchProgress,
   analysis,
+  allAnalyzed,
   matching,
   canAutoMatch,
   needsToken,
   autoMatchable,
+  onAnalyzeAll,
   onCancelAnalyze,
   onAutoMatch,
   onCancelAutoMatch,
   onFixToken,
   onCancelBatch,
   onCancelImport,
+  onPalette,
+  onStats,
+  onActivity,
+  activityRunning,
   onTrash,
   trashCount,
   onSettings,
@@ -232,6 +249,9 @@ export const Toolbar = memo(function Toolbar({
         )}
         {trackCount > 0 && (
           <>
+            {/* Auto-match and analyze are the two crate-wide "intelligence" sweeps. Add files
+                and the per-list edit tools (select/fill/find/clear) now live in the list's own
+                header, so the toolbar keeps only crate-wide sweeps and global actions. */}
             <button
               type="button"
               data-testid="auto-match"
@@ -281,15 +301,23 @@ export const Toolbar = memo(function Toolbar({
                 align="end"
               />
             </button>
-            {analysis && (
-              <button
-                type="button"
-                data-testid="analyze-quality"
-                onClick={onCancelAnalyze}
-                aria-label={tr('header.analyzeQuality')}
-                className="press group relative flex h-8 min-w-[3.25rem] items-center justify-center gap-1.5 rounded-lg border border-[var(--color-accent)] px-2 text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
-              >
-                <Activity className="h-4 w-4 animate-pulse" aria-hidden="true" />
+            <button
+              type="button"
+              data-testid="analyze-quality"
+              onClick={analysis ? onCancelAnalyze : onAnalyzeAll}
+              disabled={!analysis && allAnalyzed}
+              aria-label={tr('header.analyzeQuality')}
+              className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
+                analysis
+                  ? 'min-w-[3.25rem] border border-[var(--color-accent)] text-[var(--color-accent)]'
+                  : 'w-8 text-fg-muted hover:text-fg'
+              }`}
+            >
+              <Activity
+                className={`h-4 w-4 ${analysis ? 'animate-pulse' : ''}`}
+                aria-hidden="true"
+              />
+              {analysis && (
                 <span
                   data-testid="analyze-progress"
                   role="status"
@@ -301,18 +329,60 @@ export const Toolbar = memo(function Toolbar({
                 >
                   {analysis.done}/{analysis.total}
                 </span>
-                <Tooltip
-                  label={tr('header.analyzingCount', {
-                    done: analysis.done,
-                    total: analysis.total,
-                  })}
-                  align="end"
-                />
-              </button>
-            )}
+              )}
+              <Tooltip
+                label={
+                  analysis
+                    ? tr('header.analyzingCount', { done: analysis.done, total: analysis.total })
+                    : tr('header.analyzeQuality')
+                }
+                hint={analysis ? undefined : hintFor('analyze-quality')}
+                align="end"
+              />
+            </button>
           </>
         )}
         <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
+        <button
+          type="button"
+          data-testid="open-palette"
+          onClick={onPalette}
+          className="press flex h-8 items-center gap-1 rounded-lg px-2.5 text-[11px] font-medium text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          aria-label={tr('header.palette')}
+        >
+          <kbd className="font-sans">{isMac ? '⌘' : 'Ctrl'}</kbd>
+          <kbd className="font-sans">K</kbd>
+        </button>
+        {/* Split the command launcher from the app-level views (stats, activity, settings)
+            so the header reads as three groups — track actions · command · app — instead
+            of one undifferentiated run of icons. */}
+        <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
+        <button
+          type="button"
+          data-testid="open-stats"
+          onClick={onStats}
+          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          aria-label={tr('header.stats')}
+        >
+          <ChartColumn className="h-4 w-4" aria-hidden="true" />
+          <Tooltip label={tr('header.stats')} hint={hintFor('stats')} align="end" />
+        </button>
+        <button
+          type="button"
+          data-testid="open-activity"
+          onClick={onActivity}
+          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          aria-label={tr('header.activity')}
+        >
+          <Radio className="h-4 w-4" aria-hidden="true" />
+          {activityRunning && (
+            <span
+              data-testid="activity-running"
+              className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-good"
+            />
+          )}
+          <Tooltip label={tr('header.activity')} align="end" />
+        </button>
         <button
           type="button"
           data-testid="open-trash"
