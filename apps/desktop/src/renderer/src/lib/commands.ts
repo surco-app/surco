@@ -213,6 +213,8 @@ export interface CommandDeps {
   openRename: () => void
   openInfo: (track: TrackItem) => void
   openActivity: () => void
+  // Opens Surco's backups panel, which no longer has a toolbar icon of its own.
+  openBackups: () => void
   openHelp: () => void
   openOnboarding: () => void
   toggleLanguage: () => void
@@ -323,6 +325,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     openRename,
     openInfo,
     openActivity,
+    openBackups,
     openHelp,
     openOnboarding,
     toggleLanguage,
@@ -808,6 +811,14 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('activity'),
       enabled: true,
       run: openActivity,
+    },
+    {
+      id: 'backups',
+      group: 'app',
+      title: tr('commands.backups'),
+      hint: hintFor('backups'),
+      enabled: true,
+      run: openBackups,
     },
     {
       // Flips the UI between the two shipped locales. Not persisted on purpose: the app

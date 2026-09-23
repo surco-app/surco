@@ -1701,6 +1701,7 @@ export default function App(): React.JSX.Element {
       openRename: overlays.openRename,
       openInfo: overlays.openInfo,
       openActivity: () => setActivityOpen(true),
+      openBackups: onOpenTrash,
       openHelp: overlays.openHelp,
       openOnboarding: overlays.openOnboarding,
       toggleLanguage: () => void i18n.changeLanguage(nextLocale(i18n.language)),

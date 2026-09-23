@@ -90,6 +90,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     openRename: () => {},
     openInfo: () => {},
     openActivity: () => {},
+    openBackups: () => {},
     openHelp: () => {},
     openOnboarding: () => {},
     toggleLanguage: () => {},
@@ -364,6 +365,18 @@ describe('buildCommands trash-suspects gate', () => {
       'trash-suspects',
     ).run()
     expect(askTrashSuspects).toHaveBeenCalledOnce()
+  })
+})
+
+// With the toolbar icon gone, the palette is the keyboard's way into the backups: typing
+// "backup" has to find the panel from anywhere, with or without a track selected.
+describe('buildCommands backups', () => {
+  it('opens the backups panel', () => {
+    const openBackups = vi.fn()
+    const command = commandById(makeDeps({ openBackups }), 'backups')
+    expect(command.enabled).toBe(true)
+    command.run()
+    expect(openBackups).toHaveBeenCalledOnce()
   })
 })
 

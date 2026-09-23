@@ -23,6 +23,7 @@ interface MenuStrings {
   view: string
   palette: string
   activity: string
+  backups: string
   stats: string
   tracks: string
   analyzeQuality: string
@@ -106,6 +107,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     view: 'Ver',
     palette: 'Paleta de comandos',
     activity: 'Actividad',
+    backups: 'Copias de seguridad',
     stats: 'Estadísticas',
     tracks: 'Pistas',
     analyzeQuality: 'Analizar calidad',
@@ -192,6 +194,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     view: 'View',
     palette: 'Command palette',
     activity: 'Activity',
+    backups: 'Backups',
     stats: 'Stats',
     tracks: 'Tracks',
     analyzeQuality: 'Analyze quality',
@@ -278,6 +281,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     view: 'Ansicht',
     palette: 'Befehlspalette',
     activity: 'Aktivität',
+    backups: 'Sicherungskopien',
     stats: 'Statistiken',
     tracks: 'Tracks',
     analyzeQuality: 'Qualität analysieren',
@@ -364,6 +368,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     view: 'Présentation',
     palette: 'Palette de commandes',
     activity: 'Activité',
+    backups: 'Copies de sauvegarde',
     stats: 'Statistiques',
     tracks: 'Morceaux',
     analyzeQuality: 'Analyser la qualité',
@@ -451,6 +456,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     view: 'Visualizar',
     palette: 'Paleta de comandos',
     activity: 'Atividade',
+    backups: 'Cópias de segurança',
     stats: 'Estatísticas',
     tracks: 'Faixas',
     analyzeQuality: 'Analisar qualidade',
