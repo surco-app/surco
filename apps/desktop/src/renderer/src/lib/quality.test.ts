@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { NormalizeConfig } from '../../../shared/types'
 import {
+  cutoffLabel,
   formatDb,
   formatKHz,
   formatPercent,
@@ -159,6 +160,26 @@ describe('isTranscode', () => {
   // the flag keeps a high precision and never cries wolf on full-bandwidth lossless.
   it('does not flag a knee at or above the full-quality line', () => {
     expect(isTranscode('flac', 20000, true)).toBe(false)
+  })
+})
+
+describe('cutoffLabel', () => {
+  it('states a reach at the probed ceiling as a lower bound', () => {
+    expect(
+      cutoffLabel({ cutoffHz: 22050, sampleRateHz: 44100, hasKnee: false, processed: false }),
+    ).toEqual({ key: 'editor.spectrumHighsCap', cutoff: '22 kHz' })
+    expect(
+      cutoffLabel({ cutoffHz: 16000, sampleRateHz: 32000, hasKnee: false, processed: false }),
+    ).toEqual({ key: 'editor.spectrumHighsCap', cutoff: '16 kHz' })
+  })
+
+  it('keeps the measured reach below the ceiling, and a knee as a cutoff', () => {
+    expect(
+      cutoffLabel({ cutoffHz: 21000, sampleRateHz: 44100, hasKnee: false, processed: false }),
+    ).toEqual({ key: 'editor.spectrumHighs', cutoff: '21.0 kHz' })
+    expect(
+      cutoffLabel({ cutoffHz: 16000, sampleRateHz: 44100, hasKnee: true, processed: false }),
+    ).toEqual({ key: 'editor.spectrumCutoff', cutoff: '16.0 kHz' })
   })
 })
 

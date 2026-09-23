@@ -1,4 +1,4 @@
-import { CODEC_WALL_FINE_STEP_DB } from '../shared/spectrum'
+import { CODEC_WALL_FINE_STEP_DB, PROBED_CEILING_HZ } from '../shared/spectrum'
 
 // Detects the lowpass of a lossy codec — the telltale of an MP3/AAC re-encoded
 // as a higher quality file. We probe the energy in successive high-frequency
@@ -40,11 +40,6 @@ const BAND_START_HZ = 9000
 // Lossy encoders never place their lowpass above ~22 kHz; probing higher only
 // risks reading the natural taper near Nyquist as a wall.
 const BAND_MAX_HZ = 22000
-// The highest frequency the bands meaningfully cover (the 44.1 kHz Nyquist). Full-band
-// audio reports its reach as min(Nyquist, this): on a 44.1 kHz file that is Nyquist itself,
-// but on a 96 kHz file (Nyquist 48 kHz) the bands never looked past ~22 kHz, so reporting
-// Nyquist would claim a 48 kHz reach we never measured — and contradict the ~20 kHz caption.
-const PROBED_CEILING_HZ = 22050
 // A natural HF taper loses a few dB per band step; a codec lowpass collapses in
 // one. Calibrated on FFT bands (see fftBands.ts) over 12 lossless tracks and the
 // 108 real LAME/AAC encodes made from them. The old 6 dB was calibrated against

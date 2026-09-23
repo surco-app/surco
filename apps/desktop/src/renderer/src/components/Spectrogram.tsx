@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { SpectrumResult } from '../../../shared/types'
 import { useMaximizedSection } from '../hooks/useEditorSections'
 import { useSpectrumDuotone } from '../hooks/useSpectrumDuotone'
-import { formatKHz } from '../lib/quality'
+import { cutoffLabel, formatKHz } from '../lib/quality'
 import { freqAtFraction, spectrumTopHz } from '../lib/spectrumAxis'
 
 const FREQ_MARKS = [0, 5000, 10000, 15000, 20000]
@@ -41,6 +41,8 @@ export function Spectrogram({
   // 24 kHz, so positioning anything against its 96 kHz Nyquist would put every mark and line
   // at the wrong row. Everything that reads the axis scales against this one number.
   const topHz = spectrumTopHz(spectrum.sampleRateHz, spectrum.imageTopHz)
+  const chip =
+    spectrum.cutoffHz !== null ? cutoffLabel({ ...spectrum, cutoffHz: spectrum.cutoffHz }) : null
   // The hover crosshair: where the cursor sits as a percent from the top, and the frequency
   // that row maps to. Null while the cursor is outside, so the line shows only when reading.
   const [hover, setHover] = useState<{ topPct: number; hz: number } | null>(null)
@@ -102,7 +104,7 @@ export function Spectrogram({
           className="spectrum-deadband pointer-events-none absolute inset-x-0 top-0"
         />
       )}
-      {topHz > 0 && spectrum.cutoffHz !== null && (
+      {topHz > 0 && spectrum.cutoffHz !== null && chip && (
         <div
           style={{ top: `${(1 - spectrum.cutoffHz / topHz) * 100}%` }}
           className={`pointer-events-none absolute inset-x-0 border-t border-dashed ${
@@ -119,12 +121,7 @@ export function Spectrogram({
             {/* The line marks a codec wall only when a knee was actually found; a knee-free
                 taper just shows how far the genuine highs reach, so calling it a "cutoff"
                 there would contradict the "no codec cut" caption below and read as a fake. */}
-            {tr(
-              spectrum.hasKnee === false && !spectrum.processed
-                ? 'editor.spectrumHighs'
-                : 'editor.spectrumCutoff',
-              { cutoff: formatKHz(spectrum.cutoffHz) },
-            )}
+            {tr(chip.key, { cutoff: chip.cutoff })}
           </span>
         </div>
       )}

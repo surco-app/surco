@@ -477,6 +477,7 @@
     "spectrumAlt": "Espectrograma de frequências da faixa",
     "spectrumCutoff": "corte ~{{cutoff}}",
     "spectrumHighs": "agudos até ~{{cutoff}}",
+    "spectrumHighsCap": "agudos ≥ {{cutoff}}",
     "outputName": "Nome do arquivo",
     "outputNameHintInPlace": "Mesmo formato do original: atualiza o arquivo original no lugar e o renomeia — nenhuma cópia é criada na pasta de saída.",
     "overwriteTitle": "Sobrescreve o original",

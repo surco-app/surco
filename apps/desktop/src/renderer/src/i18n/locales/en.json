@@ -477,6 +477,7 @@
     "spectrumAlt": "Frequency spectrogram of the track",
     "spectrumCutoff": "cutoff ~{{cutoff}}",
     "spectrumHighs": "highs to ~{{cutoff}}",
+    "spectrumHighsCap": "highs ≥ {{cutoff}}",
     "outputName": "File name",
     "outputNameHintInPlace": "Same format as the source: this updates the original file in place and renames it — no copy is written to the output folder.",
     "overwriteTitle": "Overwrites the original",

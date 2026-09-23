@@ -1,3 +1,4 @@
+import { PROBED_CEILING_HZ } from '../../../shared/spectrum'
 import type { NormalizeConfig } from '../../../shared/types'
 
 // Three-step lossless verdict (green/amber/red), banded on the absolute cutoff
@@ -80,6 +81,20 @@ export function isTranscode(
 
 export function formatKHz(hz: number): string {
   return `${(hz / 1000).toFixed(1)} kHz`
+}
+
+export function cutoffLabel(spectrum: {
+  cutoffHz: number
+  sampleRateHz: number
+  hasKnee?: boolean
+  processed: boolean
+}): { key: string; cutoff: string } {
+  if (spectrum.hasKnee !== false || spectrum.processed)
+    return { key: 'editor.spectrumCutoff', cutoff: formatKHz(spectrum.cutoffHz) }
+  const ceiling = Math.min(spectrum.sampleRateHz / 2, PROBED_CEILING_HZ)
+  if (spectrum.sampleRateHz > 0 && spectrum.cutoffHz >= ceiling)
+    return { key: 'editor.spectrumHighsCap', cutoff: `${Math.floor(ceiling / 1000)} kHz` }
+  return { key: 'editor.spectrumHighs', cutoff: formatKHz(spectrum.cutoffHz) }
 }
 
 // DJ artwork should be reasonably sharp; Discogs usually serves 600px but some

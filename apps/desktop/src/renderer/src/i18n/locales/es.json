@@ -477,6 +477,7 @@
     "spectrumAlt": "Espectrograma de frecuencias de la pista",
     "spectrumCutoff": "corte ~{{cutoff}}",
     "spectrumHighs": "agudos hasta ~{{cutoff}}",
+    "spectrumHighsCap": "agudos ≥ {{cutoff}}",
     "outputName": "Nombre del archivo",
     "outputNameHintInPlace": "Mismo formato que el original: actualiza el archivo original y lo renombra — no se crea ninguna copia en la carpeta de salida.",
     "overwriteTitle": "Sobrescribe el original",
