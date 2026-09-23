@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.100",
+    "date": "September 23, 2026",
+    "title": "Your own fields and more tags",
+    "items": [
+      {
+        "text": "Create your own tag fields in Settings → Fields: give them a name and a key, and edit them like any other, across several tracks at once too. You can use them in the file name, in rename, in find and replace and as a required field, and they are saved to the file in every format. If another program already wrote that key, Surco shows its value.",
+        "in": "0.100.0"
+      },
+      {
+        "text": "New fields, hidden by default so the editor stays uncluttered: original artist, lyricist, conductor, track and disc totals, copyright and encoded by. Turn them on in Settings → Fields. Surco no longer drops the track or disc totals other programs set.",
+        "in": "0.100.0"
+      },
+      {
+        "text": "Genre takes several tags, like Grouping: \"Pop, Indie Pop\" shows as two tags you turn on or off with a click, across several tracks at once too. Discogs genres that contain a comma, like \"Folk, World, & Country\", stay whole.",
+        "in": "0.100.0"
+      }
+    ]
+  },
+  {
     "version": "0.99",
     "date": "September 18, 2026",
     "title": "Normalize faster and update without losing tags",
