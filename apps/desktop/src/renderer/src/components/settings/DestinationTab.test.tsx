@@ -748,41 +748,23 @@ describe('DestinationTab originals', () => {
   })
 })
 
-// Where the file goes and which DJ libraries hear about it are the everyday choices; how
-// much of the originals is kept, the cue adjustment and a rekordbox collection outside
-// its usual place are set once, if ever, so they fold under Advanced.
-describe('DestinationTab advanced', () => {
-  it('keeps destination and sync in view and folds the rarely touched details', () => {
+describe('DestinationTab everything visible', () => {
+  it('shows the originals limits, the cue adjustment and the rekordbox path', () => {
     renderTab()
     for (const id of [
       'settings-location-folder',
       'settings-dj-traktor',
       'settings-traktor-nml',
       'settings-dj-rekordbox',
-      'settings-backup-summary',
-    ]) {
-      expect(screen.getByTestId(id)).toBeVisible()
-    }
-    for (const id of [
       'settings-backup-always',
       'settings-backup-days',
+      'settings-backup-gb',
       'settings-cue-dir-early',
       'settings-rekordbox-db',
     ]) {
-      expect(screen.getByTestId(id)).not.toBeVisible()
+      expect(screen.getByTestId(id)).toBeVisible()
     }
-    fireEvent.click(screen.getByTestId('settings-advanced-destination'))
-    expect(screen.getByTestId('settings-backup-days')).toBeVisible()
-    expect(screen.getByTestId('settings-cue-dir-early')).toBeVisible()
-  })
-
-  // Folded away, Originals still has to say it exists and what it is doing, so the line
-  // in view names the level in force.
-  it('names the originals level in force outside the fold', () => {
-    renderTab({ backupPolicy: 'audioChanges' })
-    expect(screen.getByTestId('settings-backup-summary')).toHaveTextContent(
-      i18n.t('settings.originalBackupPolicies.audioChanges'),
-    )
+    expect(screen.queryByTestId('settings-advanced-destination')).toBeNull()
   })
 
   // A collection outside rekordbox's usual place was undetected AND unpickable: the field
