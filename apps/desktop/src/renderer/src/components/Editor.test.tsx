@@ -34,24 +34,29 @@ import { Editor } from './Editor'
 
 afterEach(cleanup)
 
-// Raise a hover tooltip and wait out its deliberate pause in fake time, so the assertion
-// that follows can be synchronous. Waiting in REAL time made these tests flaky on CI: the
-// tooltip sits behind a 400ms delay, which left only ~600ms of findBy* budget, and a loaded
-// runner ate it (the sparkle test burned 1612ms before failing). jsdom's synthetic
-// PointerEvent drops clientX/clientY, so drive the listener with MouseEvents, entering
-// before moving — the cursor-tracking listeners are bound lazily on pointerenter.
-// Timers are faked only here, AFTER the caller's async setup has settled, since installing
-// them earlier would strand the pending API promises these tests await.
-function hoverForTooltip(trigger: HTMLElement): void {
-  vi.useFakeTimers()
-  try {
-    for (const type of ['pointerenter', 'pointermove']) {
-      trigger.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
+// Raise a hover tooltip and wait out its deliberate pause in fake time, so the tooltip's
+// 400ms delay never eats the waiting budget. jsdom's synthetic PointerEvent drops
+// clientX/clientY, so drive the listener with MouseEvents, entering before moving — the
+// cursor-tracking listeners are bound lazily on pointerenter. Timers are faked only inside
+// each attempt, since faking them across the caller's async setup would strand the pending
+// API promises these tests await.
+// The hover is retried until the tooltip shows because the trigger usually arrives from an
+// async render outside act: findBy* resolves on the DOM commit, but the Tooltip binds its
+// pointerenter listener in a passive effect React may not have flushed yet on a loaded
+// runner, and a hover dispatched into that gap raises nothing.
+async function hoverForTooltip(trigger: HTMLElement): Promise<HTMLElement> {
+  return waitFor(() => {
+    vi.useFakeTimers()
+    try {
+      for (const type of ['pointerenter', 'pointermove']) {
+        trigger.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
+      }
+      act(() => vi.advanceTimersByTime(400))
+    } finally {
+      vi.useRealTimers()
     }
-    act(() => vi.advanceTimersByTime(400))
-  } finally {
-    vi.useRealTimers()
-  }
+    return screen.getByRole('tooltip')
+  })
 }
 
 // The Editor's read-only data (currently Properties) is fetched through React Query,
@@ -1088,8 +1093,7 @@ describe('Editor Discogs loading skeleton', () => {
     renderEditor({ id: 'a', query: 'artist song', meta: { title: 'My Song' } })
     const badge = await screen.findByTestId('result-suggested')
     expect(badge).toHaveTextContent('')
-    hoverForTooltip(badge)
-    expect(screen.getByRole('tooltip')).toHaveTextContent(i18n.t('editor.matchSuggested'))
+    expect(await hoverForTooltip(badge)).toHaveTextContent(i18n.t('editor.matchSuggested'))
   })
 
   // The provider is an origin label, not a match signal — so it wears the same
@@ -2723,13 +2727,16 @@ describe('Editor track preselection', () => {
     }
   }
 
-  async function loadTracklist(): Promise<HTMLElement[]> {
+  async function loadTracklist({ autoOpens }: { autoOpens: boolean }): Promise<HTMLElement[]> {
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
-    // A confident match auto-opens its tracklist; a low-confidence one doesn't, so open it
-    // by hand only when it isn't already expanded — clicking an open row would collapse it.
+    // A confident match auto-opens its tracklist; a low-confidence one doesn't, so the test
+    // says which it expects and only the latter opens the row by hand. Deciding from the
+    // row's aria-expanded raced the probe: under load the row rendered collapsed while the
+    // probe's open was still queued, the click toggled that queued open shut, and no
+    // tracklist ever appeared.
     const result = await screen.findByTestId('discogs-result')
-    if (result.getAttribute('aria-expanded') !== 'true') fireEvent.click(result)
+    if (!autoOpens) fireEvent.click(result)
     return screen.findAllByTestId('discogs-track')
   }
 
@@ -2739,7 +2746,7 @@ describe('Editor track preselection', () => {
   it('preselects the tracklist entry that best matches the file title', async () => {
     withDiscogs()
     renderEditor({ id: 'a', meta: { title: 'track two remix' } })
-    const rows = await loadTracklist()
+    const rows = await loadTracklist({ autoOpens: true })
     const remix = rows.find((r) => r.textContent?.includes('Track Two (Remix)'))
     const other = rows.find((r) => r.textContent?.includes('Track One'))
     expect(remix).toHaveAttribute('aria-current', 'true')
@@ -2752,7 +2759,7 @@ describe('Editor track preselection', () => {
   it('marks an exact-title preselection with an agreeing artist as a confident match', async () => {
     withDiscogs()
     renderEditor({ id: 'a', meta: { title: 'track two remix', artist: 'The Artist' } })
-    await loadTracklist()
+    await loadTracklist({ autoOpens: true })
     expect(await screen.findByTestId('track-confidence')).toHaveAttribute('data-confidence', 'high')
   })
 
@@ -2762,7 +2769,7 @@ describe('Editor track preselection', () => {
   it('marks an exact-title preselection with no corroborating signal for review', async () => {
     withDiscogs()
     renderEditor({ id: 'a', meta: { title: 'track two remix' } })
-    await loadTracklist()
+    await loadTracklist({ autoOpens: true })
     expect(await screen.findByTestId('track-confidence')).toHaveAttribute(
       'data-confidence',
       'review',
@@ -2777,17 +2784,16 @@ describe('Editor track preselection', () => {
   it('marks the preselection with a sparkle and no on-row label', async () => {
     withDiscogs()
     renderEditor({ id: 'a', meta: { title: 'track two remix' } })
-    await loadTracklist()
+    await loadTracklist({ autoOpens: true })
     const badge = await screen.findByTestId('track-confidence')
     expect(badge).toHaveTextContent('')
-    hoverForTooltip(badge)
-    expect(screen.getByRole('tooltip')).toHaveTextContent(i18n.t('editor.matchSuggested'))
+    expect(await hoverForTooltip(badge)).toHaveTextContent(i18n.t('editor.matchSuggested'))
   })
 
   it('flags a partial-title preselection for review', async () => {
     withDiscogs()
     renderEditor({ id: 'a', meta: { title: 'track two' } })
-    await loadTracklist()
+    await loadTracklist({ autoOpens: true })
     expect(await screen.findByTestId('track-confidence')).toHaveAttribute(
       'data-confidence',
       'review',
@@ -2812,7 +2818,7 @@ describe('Editor track preselection', () => {
         ],
       })
     renderEditor({ id: 'a', duration: 390, meta: { title: 'Track One', trackNumber: 'A1' } })
-    const rows = await loadTracklist()
+    const rows = await loadTracklist({ autoOpens: false })
     const applied = rows.find((r) => r.textContent?.includes('Track One'))
     const other = rows.find((r) => r.textContent?.includes('Track Two (Remix)'))
     // The weak score suppresses the suggestion badge, but the applied mark stays.
@@ -2827,7 +2833,7 @@ describe('Editor track preselection', () => {
   it('does not preselect or badge a low-confidence match', async () => {
     withDiscogs()
     renderEditor({ id: 'a', meta: { title: 'track elsewhere entirely' } })
-    const rows = await loadTracklist()
+    const rows = await loadTracklist({ autoOpens: false })
     expect(rows.some((r) => r.getAttribute('aria-current') === 'true')).toBe(false)
     expect(screen.queryByTestId('track-confidence')).toBeNull()
   })
@@ -3340,13 +3346,12 @@ describe('Editor Discogs format filter hint', () => {
   // When a format filter is active (Settings → Search), the Discogs column flags it with a
   // discreet funnel icon, so a thinned or empty result list reads as the filter at work
   // rather than a broken search — without a line of text repeating a setting the user chose.
-  it('flags an active format filter with the funnel control, naming the formats on hover', () => {
+  it('flags an active format filter with the funnel control, naming the formats on hover', async () => {
     renderEditor({ id: 'a' }, 'wav', { discogsFormats: ['Vinyl', 'CD'] })
     const filter = screen.getByTestId('discogs-format-filter')
     expect(filter).toBeInTheDocument()
     // The formats live in the themed tooltip, surfaced on hover, not as always-on text.
-    hoverForTooltip(filter)
-    const tip = screen.getByRole('tooltip')
+    const tip = await hoverForTooltip(filter)
     expect(tip).toHaveTextContent('Vinyl')
     expect(tip).toHaveTextContent('CD')
   })
