@@ -1,3 +1,4 @@
+import { TAG_FIELDS } from '../../../shared/tagFields'
 import type { MetaTextKey, TrackMetadata } from '../../../shared/types'
 
 // Track numbering a rip glues to the front of the title: an optional vinyl side letter, the
@@ -91,7 +92,7 @@ export function sanitizeMeta(meta: TrackMetadata, opts: HygieneOptions): TrackMe
 // The fields that name who made the file before the user had it. While the user keeps a
 // field hidden it goes out empty, which clears the previous owner's value on conversion;
 // once shown, the editor's value is written like any other field's.
-const PROVENANCE_FIELDS = ['copyright', 'encodedBy'] as const
+const PROVENANCE_FIELDS = TAG_FIELDS.filter((f) => f.provenance).map((f) => f.key)
 
 export function clearHiddenProvenance(meta: TrackMetadata, visibleFields: string[]): TrackMetadata {
   const out = { ...meta }

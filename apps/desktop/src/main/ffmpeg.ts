@@ -248,7 +248,7 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
   for (const field of TAG_FIELDS) {
     const raw =
       pick(...field.aliases, ...(id3 ? (field.id3Aliases ?? []) : [])) ||
-      totalPart(pick(...(field.totalFrom ?? [])))
+      totalPart(pick(...(TAG_FIELDS.find((f) => f.withTotal === field.key)?.aliases ?? [])))
     meta[field.key] = field.parse ? field.parse(raw) : raw
   }
   return meta

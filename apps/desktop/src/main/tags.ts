@@ -672,20 +672,34 @@ function extendedFields(meta: TrackMetadata): Array<[string, string]> {
     ['COUNTRY', meta.country ?? ''],
     ['MEDIATYPE', meta.mediaType ?? ''],
     ['DISCOGS_RELEASE_URL', meta.discogsUrl ?? ''],
+    // The user's own fields, under the upper-case key (see shared/customFields).
+    ...Object.entries(meta.custom ?? {}).map(([key, value]): [string, string] => [
+      customTagName(key),
+      value,
+    ]),
   ]
 }
 
+type Id3v2TextFrameId = (typeof Id3v2FrameIdentifiers)['TOPE']
+
 // The fields with a standard ID3 text frame TagLib has no property for, and the name
 // mp3tag gives each as an iTunes freeform atom (MP4 has no dedicated box for any of them).
-function creditFields(
-  meta: TrackMetadata,
-): Array<[(typeof Id3v2FrameIdentifiers)['TOPE'], string, string]> {
+function creditFields(meta: TrackMetadata): Array<[Id3v2TextFrameId, string, string]> {
   return [
     [Id3v2FrameIdentifiers.TOPE, 'ORIGARTIST', meta.originalArtist ?? ''],
     [Id3v2FrameIdentifiers.TEXT, 'LYRICIST', meta.lyricist ?? ''],
     [Id3v2FrameIdentifiers.TPE3, 'CONDUCTOR', meta.conductor ?? ''],
     [Id3v2FrameIdentifiers.TENC, 'ENCODEDBY', meta.encodedBy ?? ''],
   ]
+}
+
+// Replaces a standard ID3 text frame with the value, or removes it when the value is empty.
+function setTextFrame(tag: Id3v2Tag, frameId: Id3v2TextFrameId, value: string): void {
+  tag.removeFrames(frameId)
+  if (!value.trim()) return
+  const frame = Id3v2TextInformationFrame.fromIdentifier(frameId)
+  frame.text = [value]
+  tag.addFrame(frame)
 }
 
 // The MP4 counterpart of setUserText: writes a freeform atom, or removes it when the value
@@ -845,8 +859,6 @@ export function writeTags(
       const apple = f.tag as Mpeg4AppleTag
       for (const [name, value] of extendedFields(meta)) setItunesText(apple, name, value)
       for (const [, name, value] of creditFields(meta)) setItunesText(apple, name, value)
-      for (const [key, value] of Object.entries(meta.custom ?? {}))
-        setItunesText(apple, customTagName(key), value)
       for (const name of foreignRemoved) apple.setItunesStrings('com.apple.iTunes', name)
       f.save()
       return
@@ -896,15 +908,7 @@ export function writeTags(
     // catalog number, Discogs ids, the DJ's mood/energy judgement and the collector fields
     // off the release. Shared with the m4a branch above so neither container can drift.
     for (const [name, value] of extendedFields(meta)) setUserText(id3, name, value)
-    for (const [key, value] of Object.entries(meta.custom ?? {}))
-      setUserText(id3, customTagName(key), value)
-    for (const [frameId, , value] of creditFields(meta)) {
-      id3.removeFrames(frameId)
-      if (!value.trim()) continue
-      const frame = Id3v2TextInformationFrame.fromIdentifier(frameId)
-      frame.text = [value]
-      id3.addFrame(frame)
-    }
+    for (const [frameId, , value] of creditFields(meta)) setTextFrame(id3, frameId, value)
     // Original year has no TagLib property, so it rides the raw frame. The TDOR
     // identifier is version-aware: on the v2.3 tags pinned above it renders as
     // TORY, its v2.3 predecessor.
