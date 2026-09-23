@@ -80,6 +80,7 @@ export function matchTargetOf(track: TrackItem, cleanup: MatchCleanup = {}): Tra
 export function acceptReviewPatch(
   track: TrackItem,
   importFields?: readonly MetaTextKey[],
+  genrePresets?: readonly string[],
 ): Partial<TrackItem> | undefined {
   const rm = track.reviewMatch
   if (!rm) return undefined
@@ -89,6 +90,7 @@ export function acceptReviewPatch(
     rm.track,
     keepCoverArg(track),
     importFields,
+    genrePresets,
   )
   return {
     meta: patch.meta,

@@ -49,6 +49,7 @@ function setup(
   libraryIndex: AppleMusicIndex | null = null,
   editingRef: { current: string | null } = { current: null },
   importFields: MetaTextKey[] = [...DEFAULT_IMPORT_FIELDS],
+  genrePresets: string[] = [],
 ): {
   result: { current: ReturnType<typeof useAutoMatch> }
   updateTrack: ReturnType<typeof vi.fn>
@@ -61,6 +62,7 @@ function setup(
   const libraryIndexRef = { current: libraryIndex }
   const searchProvidersRef: { current: SearchProviderId[] } = { current: ['discogs'] }
   const importFieldsRef = { current: importFields }
+  const genrePresetsRef = { current: genrePresets }
   const matchCleanupRef = { current: {} }
   const { result } = renderHook(() =>
     useAutoMatch({
@@ -69,6 +71,7 @@ function setup(
       libraryIndexRef,
       searchProvidersRef,
       importFieldsRef,
+      genrePresetsRef,
       matchCleanupRef,
       editingRef,
       reportActivity,
@@ -110,6 +113,26 @@ describe('useAutoMatch', () => {
     const patch = updateTrack.mock.calls[0][1] as { meta: TrackMetadata }
     expect(patch.meta.album).toBe('Album')
     expect(patch.meta.country).toBe('')
+  })
+
+  // The sweep writes genres nobody reviews, so the user's preset spelling has to win there
+  // too: a provider's "electronic" lands as their "Electronic".
+  it('writes the genre in the casing of the matching preset when applying unattended', async () => {
+    setApi({
+      getRelease: vi
+        .fn<Api['getRelease']>()
+        .mockResolvedValue({ ...release, genres: ['electronic'] }),
+    })
+    const tracks = [track('a')]
+    const { result, updateTrack } = setup(tracks, null, { current: null }, undefined, [
+      'Electronic',
+    ])
+
+    act(() => result.current.enqueueAutoMatch(tracks))
+
+    await waitFor(() => expect(updateTrack).toHaveBeenCalledTimes(1))
+    const patch = updateTrack.mock.calls[0][1] as { meta: TrackMetadata }
+    expect(patch.meta.genre).toBe('Electronic')
   })
 
   // A field buffers its text and only commits to the track array on pause/blur, so while
