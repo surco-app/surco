@@ -82,11 +82,24 @@ function applyIntentDelta(
   })
 }
 
+// Whether the editor layout is already the DJ's own: after a wizard run on this machine,
+// or arriving through the synced settings from another one (hasSeenOnboarding is per
+// machine, editorSections is not). Only a layout still at the defaults is rebuilt.
+function layoutConfigured(
+  settings: Pick<Settings, 'hasSeenOnboarding' | 'editorSections'>,
+): boolean {
+  if (settings.hasSeenOnboarding) return true
+  return (
+    JSON.stringify(normalizeEditorSections(settings.editorSections)) !==
+    JSON.stringify(normalizeEditorSections(DEFAULT_EDITOR_SECTIONS))
+  )
+}
+
 export function shouldShowOnboarding(settings: Pick<Settings, 'hasSeenOnboarding'>): boolean {
   return !settings.hasSeenOnboarding
 }
 
-// What the intent checkboxes start as. First run: unpicked (except the spectrum-backed
+// What the intent checkboxes start as. First run over a default layout: unpicked (except the spectrum-backed
 // quality) so the new DJ's editor stays minimal until they opt in. Re-run: read back
 // from the sections each intent governs, so finishing untouched changes nothing —
 // restore owns two sections and only seeds picked when both are visible, leaving a
@@ -94,7 +107,7 @@ export function shouldShowOnboarding(settings: Pick<Settings, 'hasSeenOnboarding
 export function seedAudioIntents(
   settings: Pick<Settings, 'hasSeenOnboarding' | 'showSpectrum' | 'editorSections'>,
 ): AudioIntent[] {
-  if (!settings.hasSeenOnboarding) return settings.showSpectrum ? ['quality'] : []
+  if (!layoutConfigured(settings)) return settings.showSpectrum ? ['quality'] : []
   const visible = (id: EditorSectionId): boolean =>
     settings.editorSections.find((s) => s.id === id)?.hidden !== true
   const intents: AudioIntent[] = []
@@ -116,11 +129,12 @@ export function buildOnboardingPatch(drafts: OnboardingDrafts | null): Partial<S
     // metadata-only DJ isn't paying for the analysis pass.
     showSpectrum: drafts.audioIntents.includes('quality'),
     // First run builds the layout from the defaults (the shipped new-user behavior,
-    // otherTags included); a re-run applies only what the DJ toggled onto their own.
+    // otherTags included); a re-run, or a first run on a machine that synced a layout
+    // in, applies only what the DJ toggled onto their own.
     // Normalized first: a store that predates a section (upgraded install) would
     // otherwise miss that section's hide entirely, since applyIntentDelta only ever
     // touches sections already in the list it's given.
-    editorSections: drafts.settings.hasSeenOnboarding
+    editorSections: layoutConfigured(drafts.settings)
       ? applyIntentDelta(
           normalizeEditorSections(drafts.settings.editorSections),
           drafts.seededIntents,

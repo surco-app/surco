@@ -435,3 +435,40 @@ describe('buildOnboardingPatch on a re-run', () => {
     expect(ids.indexOf('declick')).toBe(ids.indexOf('trim') + 1)
   })
 })
+
+// hasSeenOnboarding is per machine but editorSections syncs. On a second Mac that adopts
+// the synced settings, the wizard opens as a first run, and its Finish rebuilt the layout
+// from the defaults, wiping the one the DJ arranged on the first Mac. A layout that is no
+// longer the default is the DJ's own, and the wizard treats it like a re-run.
+describe('the wizard on a second machine with a synced layout', () => {
+  const synced = [
+    { id: 'form', open: true },
+    { id: 'otherTags', open: true, hidden: true },
+    { id: 'quality', open: false },
+    { id: 'properties', open: true },
+    { id: 'normalize', open: true },
+    { id: 'trim', open: false, hidden: true },
+    { id: 'declick', open: false, hidden: true },
+    { id: 'output', open: false },
+  ] satisfies Settings['editorSections']
+  const secondMac = { hasSeenOnboarding: false, editorSections: synced }
+
+  it('seeds the intents from the synced layout', () => {
+    expect(seedAudioIntents({ ...secondMac, showSpectrum: false })).toEqual(['level'])
+  })
+
+  it('leaves the synced layout untouched when no intent was toggled', () => {
+    const patch = buildOnboardingPatch(
+      drafts({ audioIntents: ['level'], seededIntents: ['level'], settings: secondMac }),
+    )
+    expect(patch.editorSections).toEqual(synced)
+  })
+
+  it('still derives from the defaults when the layout was never changed', () => {
+    const fresh = { hasSeenOnboarding: false, editorSections: DEFAULT_EDITOR_SECTIONS }
+    const patch = buildOnboardingPatch(
+      drafts({ audioIntents: ['restore'], seededIntents: [], settings: fresh }),
+    )
+    expect(patch.editorSections).toEqual(deriveEditorSections(['restore']))
+  })
+})
