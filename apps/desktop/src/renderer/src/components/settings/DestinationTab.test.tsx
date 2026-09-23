@@ -399,6 +399,31 @@ describe('DestinationTab Traktor collection', () => {
     expect(screen.getByTestId('settings-sync-rekordbox')).toBeDisabled()
   })
 
+  // A collection outside rekordbox's usual place was undetected AND unpickable: the field
+  // only appeared once one was found. It is always there now, so it can be pointed at.
+  it('offers the rekordbox collection picker even when none was found', () => {
+    const onChangeRekordboxDbPath = vi.fn()
+    render(
+      <DestinationTab
+        synced={synced}
+        local={local}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
+        onChangeRekordboxDbPath={onChangeRekordboxDbPath}
+      />,
+    )
+    expect(screen.getByTestId('settings-rekordbox-db')).toHaveTextContent(
+      i18n.t('settings.traktorNmlPathEmpty'),
+    )
+    fireEvent.click(screen.getByTestId('settings-rekordbox-db-change'))
+    expect(onChangeRekordboxDbPath).toHaveBeenCalled()
+  })
+
   // Nothing configured means nothing to clear, and a live button that does nothing reads
   it('keeps the cue offset usable with no collection configured', () => {
     render(
