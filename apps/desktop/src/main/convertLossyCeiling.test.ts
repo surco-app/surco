@@ -114,3 +114,21 @@ describe('an MP3 normalized to a true-peak ceiling', () => {
     expect(truePeakDb(out)).toBeLessThanOrEqual(-1)
   }, 60000)
 })
+
+// The limiter holds sample peaks at four times the rate, and bringing the audio back down
+// to its own rate rebuilds peaks between the samples: the same bursts came out of a WAV at
+// 0.0 dBTP under a -1.0 ceiling, and the guide's reference WAV at -0.8. Nothing about a
+// lossless format keeps that promise for free, so it is checked on the written file too.
+describe('a lossless file normalized to a true-peak ceiling', () => {
+  it('stays under the ceiling in a WAV when the limiter holds the peaks', async () => {
+    const out = join(dir, 'limited.wav')
+    await convertAudio(hats, out, 'wav', meta, undefined, loudness(-9), undefined, MP3_320)
+    expect(truePeakDb(out)).toBeLessThanOrEqual(-1)
+  }, 60000)
+
+  it('stays under the ceiling in a FLAC when the limiter holds the peaks', async () => {
+    const out = join(dir, 'limited.flac')
+    await convertAudio(hats, out, 'flac', meta, undefined, loudness(-9), undefined, MP3_320)
+    expect(truePeakDb(out)).toBeLessThanOrEqual(-1)
+  }, 60000)
+})

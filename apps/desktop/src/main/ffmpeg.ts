@@ -1619,10 +1619,10 @@ export function toNmlLocation(path: string): { volume: string; dir: string; file
   return { volume, dir, file }
 }
 
-// How many times an MP3 is re-encoded under a lowered ceiling, and the extra room each
-// correction leaves on top of the overshoot it measured (ebur128 prints tenths).
-const LOSSY_CEILING_PASSES = 2
-const LOSSY_CEILING_STEP_DB = 0.1
+// How many times a normalized file is re-encoded under a lowered ceiling, and the extra
+// room each correction leaves on top of the overshoot it measured (ebur128 prints tenths).
+const CEILING_PASSES = 2
+const CEILING_STEP_DB = 0.1
 
 // How far an encoded file's true peak sits above the loudness ceiling it was normalized
 // to; zero when under it, outside loudness mode, or when the file cannot be measured.
@@ -1899,13 +1899,15 @@ export async function convertAudio(
       let { stderr } = await encode(audioFilter)
       // The MP3 encoder puts peaks back over the ceiling the filter held them under: on the
       // reference track, 0.3 dB at 320 kbps with a constant gain and up to 1.7 dB at 128
-      // kbps (see convertLossyCeiling.test.ts). The overshoot depends on the material and
-      // the bitrate, so it is measured on the encoded file and the ceiling lowered by it.
+      // kbps. The limiter does it in any format: it holds sample peaks at four times the
+      // rate, and the return to the file's own rate rebuilds peaks between the samples, up
+      // to 1 dB on sharp bursts (see convertLossyCeiling.test.ts). The overshoot depends on
+      // the material, so it is measured on the encoded file and the ceiling lowered by it.
       let marginDb = 0
-      for (let pass = 0; pass < LOSSY_CEILING_PASSES && normalize && ext === '.mp3'; pass++) {
+      for (let pass = 0; pass < CEILING_PASSES && normalize && normalizeAf; pass++) {
         const over = await ceilingOvershootDb(tmp, normalize)
         if (over <= 0) break
-        marginDb += over + LOSSY_CEILING_STEP_DB
+        marginDb += over + CEILING_STEP_DB
         const lowered = await normalizeFilter(
           input,
           { ...normalize, truePeakDb: Math.min(0, normalize.truePeakDb) - marginDb },
