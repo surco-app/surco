@@ -10,6 +10,7 @@ import type {
   KeyResult,
   LoudnessResult,
   ProcessProgress,
+  RekordboxSyncIssue,
   SearchHints,
   SearchPriority,
   SearchProviderId,
@@ -207,6 +208,11 @@ const api: Api = {
     const listener = (_e: unknown, version: string): void => cb(version)
     ipcRenderer.on('update:downloaded', listener)
     return () => ipcRenderer.removeListener('update:downloaded', listener)
+  },
+  onRekordboxSyncIssue: (cb: (issue: RekordboxSyncIssue) => void) => {
+    const listener = (_e: unknown, issue: RekordboxSyncIssue): void => cb(issue)
+    ipcRenderer.on('rekordbox:sync-issue', listener)
+    return () => ipcRenderer.removeListener('rekordbox:sync-issue', listener)
   },
   onUpdateError: (cb: (message: string) => void) => {
     const listener = (_e: unknown, message: string): void => cb(message)

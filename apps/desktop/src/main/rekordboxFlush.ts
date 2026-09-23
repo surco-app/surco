@@ -1,3 +1,4 @@
+import type { RekordboxSyncIssue } from '../shared/types'
 import type { Activity } from './activity'
 import type { RekordboxRepoint } from './rekordboxBatch'
 import type { RepointResult } from './rekordboxLibrary'
@@ -58,12 +59,15 @@ export interface FlushRekordboxDeps {
   // caller does not offer to close it, and the per-track guard is the only protection.
   ensureClosed?: () => Promise<boolean>
   // Shown only when rekordbox being open is what stopped the run — the one blocked reason
-  // the user can act on. Reported 15/09: a replacement left the collection on the old MP3
-  // with no indication why, because the refusal went to the log alone and a refusal nobody
-  // sees reads as the feature being broken. The other collection-wide reasons stay silent:
-  // a dialog about an unreadable or read-only file, on every convert, names nothing the
-  // user can fix.
+  // the user can act on right there, by closing it. Reported 15/09: a replacement left the
+  // collection on the old MP3 with no indication why, because the refusal went to the log
+  // alone and a refusal nobody sees reads as the feature being broken.
   showBlockedDialog?: () => void
+  // Everything else the run could not do, told once after it: a collection that stopped the
+  // run for another reason, and the tracks it holds under more than one entry. Neither is
+  // fixable mid-convert, which is why it is a notice and not a dialog, but left to the log
+  // the collection stayed on the old file while the run looked like it had worked.
+  reportIssue?: (issue: RekordboxSyncIssue) => void
 }
 
 // What the Activity panel shows once the repoint finishes. The count is the point of the
@@ -124,6 +128,11 @@ async function runRepoints(
     }
     if (COLLECTION_WIDE.has(result.reason)) {
       if (result.reason === 'rekordbox-running') deps.showBlockedDialog?.()
+      else
+        deps.reportIssue?.({
+          blocked: result.reason as RekordboxSyncIssue['blocked'],
+          ambiguous: ambiguousOf(skipped),
+        })
       return { written, blocked: result.reason, skipped }
     }
     // A track the collection never had is the common case for a partly-imported library,
@@ -132,5 +141,11 @@ async function runRepoints(
     skipped.push({ track: repoint.to, reason: result.reason })
   }
 
+  const ambiguous = ambiguousOf(skipped)
+  if (ambiguous.length > 0) deps.reportIssue?.({ ambiguous })
   return { written, skipped }
+}
+
+function ambiguousOf(skipped: SkippedRepoint[]): string[] {
+  return skipped.filter((s) => s.reason === 'ambiguous').map((s) => s.track)
 }

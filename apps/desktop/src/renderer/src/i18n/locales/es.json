@@ -135,6 +135,14 @@
     "deezerUnavailable": "Deezer no ha respondido bien. Prueba otra vez en un momento.",
     "discogsUnavailable": "Discogs no ha respondido bien. Prueba otra vez en un momento."
   },
+  "rekordboxIssue": {
+    "read-only": "La colección de rekordbox no se ha actualizado: el archivo es de solo lectura.",
+    "unreadable": "La colección de rekordbox no se ha actualizado: Surco no ha podido leerla.",
+    "write-failed": "La colección de rekordbox no se ha actualizado: no se pudo escribir y se ha dejado como estaba.",
+    "backup-failed": "La colección de rekordbox no se ha actualizado: Surco no pudo hacer antes una copia de seguridad.",
+    "ambiguous_one": "rekordbox sigue apuntando al archivo antiguo de {{name}}: su colección tiene más de una entrada que coincide.",
+    "ambiguous_other": "rekordbox sigue apuntando a los archivos antiguos de {{count}} pistas, entre ellas {{name}}: su colección tiene más de una entrada que coincide con cada una."
+  },
   "trash": {
     "title": "Originales de Surco",
     "summary_one": "{{count}} archivo · {{size}}",

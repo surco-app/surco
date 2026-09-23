@@ -1001,3 +1001,11 @@ export interface DockIconFrames {
   resting: string
   frames: string[]
 }
+
+// What a rekordbox repoint could not do in a run, told to the user once it ends: the
+// collection-wide reason that stopped it (rekordbox being open has its own dialog), and
+// the converted files whose track the collection holds under more than one entry.
+export interface RekordboxSyncIssue {
+  blocked?: 'backup-failed' | 'read-only' | 'unreadable' | 'write-failed'
+  ambiguous: string[]
+}

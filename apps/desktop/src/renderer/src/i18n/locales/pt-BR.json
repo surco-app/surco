@@ -135,6 +135,14 @@
     "deezerUnavailable": "O Deezer não respondeu direito. Tente de novo daqui a pouco.",
     "discogsUnavailable": "O Discogs não respondeu direito. Tente de novo daqui a pouco."
   },
+  "rekordboxIssue": {
+    "read-only": "A coleção do rekordbox não foi atualizada: o arquivo é somente leitura.",
+    "unreadable": "A coleção do rekordbox não foi atualizada: o Surco não conseguiu lê-la.",
+    "write-failed": "A coleção do rekordbox não foi atualizada: a gravação falhou e ela ficou como estava.",
+    "backup-failed": "A coleção do rekordbox não foi atualizada: o Surco não conseguiu fazer um backup antes.",
+    "ambiguous_one": "O rekordbox continua apontando para o arquivo antigo de {{name}}: mais de uma entrada da coleção corresponde a ele.",
+    "ambiguous_other": "O rekordbox continua apontando para os arquivos antigos de {{count}} faixas, entre elas {{name}}: mais de uma entrada da coleção corresponde a cada uma."
+  },
   "trash": {
     "title": "Originais do Surco",
     "summary_one": "{{count}} arquivo · {{size}}",

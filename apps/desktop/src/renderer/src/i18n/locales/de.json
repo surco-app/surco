@@ -135,6 +135,14 @@
     "deezerUnavailable": "Deezer hat nicht richtig geantwortet. Versuche es gleich noch einmal.",
     "discogsUnavailable": "Discogs hat nicht richtig geantwortet. Versuche es gleich noch einmal."
   },
+  "rekordboxIssue": {
+    "read-only": "Die rekordbox-Sammlung wurde nicht aktualisiert: Die Datei ist schreibgeschützt.",
+    "unreadable": "Die rekordbox-Sammlung wurde nicht aktualisiert: Surco konnte sie nicht lesen.",
+    "write-failed": "Die rekordbox-Sammlung wurde nicht aktualisiert: Das Schreiben ist fehlgeschlagen, sie bleibt unverändert.",
+    "backup-failed": "Die rekordbox-Sammlung wurde nicht aktualisiert: Surco konnte vorher keine Sicherung anlegen.",
+    "ambiguous_one": "rekordbox zeigt für {{name}} weiter auf die alte Datei: Mehr als ein Eintrag der Sammlung passt dazu.",
+    "ambiguous_other": "rekordbox zeigt für {{count}} Tracks weiter auf die alten Dateien, darunter {{name}}: Zu jedem passt mehr als ein Eintrag der Sammlung."
+  },
   "trash": {
     "title": "Surco-Originale",
     "summary_one": "{{count}} Datei · {{size}}",

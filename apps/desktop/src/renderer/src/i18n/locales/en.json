@@ -135,6 +135,14 @@
     "deezerUnavailable": "Deezer didn't answer properly. Try again in a moment.",
     "discogsUnavailable": "Discogs didn't answer properly. Try again in a moment."
   },
+  "rekordboxIssue": {
+    "read-only": "rekordbox's collection wasn't updated: the file is read-only.",
+    "unreadable": "rekordbox's collection wasn't updated: Surco couldn't read it.",
+    "write-failed": "rekordbox's collection wasn't updated: writing it failed, so it was left as it was.",
+    "backup-failed": "rekordbox's collection wasn't updated: Surco couldn't back it up first.",
+    "ambiguous_one": "rekordbox still points at the old file for {{name}}: more than one entry in its collection matches it.",
+    "ambiguous_other": "rekordbox still points at the old files for {{count}} tracks, among them {{name}}: more than one entry in its collection matches each."
+  },
   "trash": {
     "title": "Surco originals",
     "summary_one": "{{count}} file · {{size}}",

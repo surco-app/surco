@@ -322,3 +322,73 @@ describe('flushRekordboxSync reporting itself in Activity', () => {
     expect(track).not.toHaveBeenCalled()
   })
 })
+
+// Reported by the owner for 1.0: a read-only collection, or a track rekordbox holds under
+// more than one entry, left the collection on the old file with the reason in the log and
+// the Activity panel alone. Nobody reads either after a convert, so the run looked like it
+// had worked. These are the cases the user now hears about, once, after the run.
+describe('flushRekordboxSync reporting what it could not do', () => {
+  it('reports a collection it could not write', async () => {
+    const reportIssue = vi.fn()
+    await flushRekordboxSync(
+      deps({
+        repointTrack: vi.fn(
+          async (): Promise<RepointResult> => ({ written: false, reason: 'read-only' }),
+        ),
+        reportIssue,
+      }),
+    )
+
+    expect(reportIssue).toHaveBeenCalledWith({ blocked: 'read-only', ambiguous: [] })
+  })
+
+  it('names the tracks the collection holds under more than one entry', async () => {
+    const reportIssue = vi.fn()
+    await flushRekordboxSync(
+      deps({
+        endBatch: () => [ONE, TWO],
+        repointTrack: vi.fn(
+          async (_p: string, o: { from: string }): Promise<RepointResult> =>
+            o.from === ONE.from
+              ? { written: false, reason: 'ambiguous', ids: ['1', '2'] }
+              : { written: true, id: '3' },
+        ),
+        reportIssue,
+      }),
+    )
+
+    expect(reportIssue).toHaveBeenCalledWith({ ambiguous: ['/m/one.wav'] })
+  })
+
+  it('leaves rekordbox being open to its own dialog', async () => {
+    const reportIssue = vi.fn()
+    await flushRekordboxSync(
+      deps({
+        repointTrack: vi.fn(
+          async (): Promise<RepointResult> => ({ written: false, reason: 'rekordbox-running' }),
+        ),
+        reportIssue,
+      }),
+    )
+
+    expect(reportIssue).not.toHaveBeenCalled()
+  })
+
+  it('stays quiet when every track landed or was never in the collection', async () => {
+    const reportIssue = vi.fn()
+    await flushRekordboxSync(
+      deps({
+        endBatch: () => [ONE, TWO],
+        repointTrack: vi.fn(
+          async (_p: string, o: { from: string }): Promise<RepointResult> =>
+            o.from === ONE.from
+              ? { written: true, id: '1' }
+              : { written: false, reason: 'no-match' },
+        ),
+        reportIssue,
+      }),
+    )
+
+    expect(reportIssue).not.toHaveBeenCalled()
+  })
+})

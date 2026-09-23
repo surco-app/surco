@@ -867,12 +867,12 @@ function registerIpc(): void {
         if (win) dialog.showMessageBox(win, opts)
         else dialog.showMessageBox(opts)
       },
+      reportIssue: (issue) => {
+        if (!e.sender.isDestroyed()) e.sender.send('rekordbox:sync-issue', issue)
+      },
     })
-    // Logged in every case, and additionally shown for the one blocked reason the user can
-    // act on (see showBlockedDialog above). What to surface for an ambiguous track, or for
-    // a collection that is unreadable or read-only, is still undecided: those name nothing
-    // the user can fix mid-convert, so the counts stay here for that decision to be made
-    // from real runs.
+    // Logged in every case, on top of the dialog for rekordbox being open and the notice
+    // for everything else the run could not do (see flushRekordboxSync).
     if (result.written > 0 || result.blocked || result.skipped.length > 0) {
       log.info(
         `rekordbox repoint: ${result.written} written` +
