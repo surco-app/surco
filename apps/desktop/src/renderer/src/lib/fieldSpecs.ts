@@ -1,3 +1,4 @@
+import { effectiveMeta } from '../../../shared/customFields'
 import type {
   BpmResult,
   CustomField,
@@ -95,6 +96,8 @@ export interface BuildFieldSpecsParams {
   customFields: readonly CustomField[]
   customValues: Record<string, string>
   customOnChange: ReadonlyMap<string, (v: string) => void>
+  // The same per key for a selection: writes the value into every selected track.
+  customBulkOnChange: ReadonlyMap<string, (v: string) => void>
   onChangeTracksMeta?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
 }
 
@@ -154,29 +157,48 @@ export function buildFieldSpecs({
   customFields,
   customValues,
   customOnChange,
+  customBulkOnChange,
   onChangeTracksMeta,
 }: BuildFieldSpecsParams): FieldSpec[] {
   const custom = { customFields, customValues, customOnChange, requiredFields }
   return isMulti && selectedTracks
-    ? BULK_FIELDS.filter((key) => visibleFields.includes(key)).map((key) => {
-        const shared = commonValue(selectedTracks, key)
-        const list = tagListFor(key)
-        const perTrack =
-          list && onChangeTracksMeta
-            ? { list, tracks: selectedTracks, onChangeTracks: onChangeTracksMeta }
-            : undefined
-        return {
-          key,
-          label: tr(`fields.${key}`),
-          value: shared ?? '',
-          placeholder: shared === undefined && !perTrack ? tr('editor.multipleValues') : undefined,
-          onChange: bulkOnChange.get(key) ?? (() => {}),
-          suggestions:
-            key === 'genre' ? genreChips : key === 'grouping' ? groupingPresets : undefined,
-          tagList: list,
-          perTrack,
-        }
-      })
+    ? [
+        ...BULK_FIELDS.filter((key) => visibleFields.includes(key)).map((key) => {
+          const shared = commonValue(selectedTracks, key)
+          const list = tagListFor(key)
+          const perTrack =
+            list && onChangeTracksMeta
+              ? { list, tracks: selectedTracks, onChangeTracks: onChangeTracksMeta }
+              : undefined
+          return {
+            key,
+            label: tr(`fields.${key}`),
+            value: shared ?? '',
+            placeholder:
+              shared === undefined && !perTrack ? tr('editor.multipleValues') : undefined,
+            onChange: bulkOnChange.get(key) ?? (() => {}),
+            suggestions:
+              key === 'genre' ? genreChips : key === 'grouping' ? groupingPresets : undefined,
+            tagList: list,
+            perTrack,
+          }
+        }),
+        ...customFields
+          .filter((f) => visibleFields.includes(f.key))
+          .map((f) => {
+            const values = selectedTracks.map(
+              (t) => effectiveMeta(t, customFields).custom?.[f.key] ?? '',
+            )
+            const shared = values.every((v) => v === values[0]) ? values[0] : undefined
+            return {
+              key: f.key,
+              label: f.label,
+              value: shared ?? '',
+              placeholder: shared === undefined ? tr('editor.multipleValues') : undefined,
+              onChange: customBulkOnChange.get(f.key) ?? (() => {}),
+            }
+          }),
+      ]
     : visibleFields.flatMap((key) => {
         const def = FIELD_DEFS.find((d) => d.key === key)
         if (!def) return customSpecFor(custom, key)
