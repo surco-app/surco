@@ -546,7 +546,8 @@ export const DiscogsPanel = memo(function DiscogsPanel({
 })
 
 // Placeholder rows shaped like a result row, for a search with rows still to come, so the
-// list never pops into an area that looked idle.
+// list never pops into an area that looked idle. The side padding adds up the card's own
+// (its wrapper and its button) so the placeholder thumbnail lines up with the real ones.
 function SkeletonRows({ testid, count }: { testid: string; count: number }): React.JSX.Element {
   return (
     <div data-testid={testid} aria-hidden="true">
@@ -554,7 +555,7 @@ function SkeletonRows({ testid, count }: { testid: string; count: number }): Rea
         <div
           key={i}
           data-testid="skeleton-row"
-          className="flex items-center gap-2.5 border-b border-[var(--color-line)]/60 px-2.5 py-1.5"
+          className="flex items-center gap-2.5 border-b border-[var(--color-line)]/60 px-4 py-1.5"
         >
           <span className="skeleton-sweep h-[30px] w-[30px] shrink-0 rounded-md bg-[var(--color-panel-2)]" />
           <span className="flex min-w-0 flex-1 flex-col gap-1.5">
