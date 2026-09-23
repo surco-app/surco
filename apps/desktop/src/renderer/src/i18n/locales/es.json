@@ -52,7 +52,9 @@
     "autoMatchLabel": "Emparejar",
     "addToken": "Añadir token",
     "autoMatchingCount": "Auto-emparejando… {{done}}/{{total}}",
-    "clearAll": "Vaciar la lista"
+    "clearAll": "Vaciar la lista",
+    "cancelAutoMatch": "Detener el emparejado: las pistas ya emparejadas conservan sus etiquetas",
+    "cancelAnalyze": "Detener el análisis: las pistas ya analizadas conservan su veredicto"
   },
   "sidebar": {
     "dropHint": "Arrastra aquí tus pistas.",

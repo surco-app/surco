@@ -52,7 +52,9 @@
     "autoMatchLabel": "Associer",
     "addToken": "Ajouter un token",
     "autoMatchingCount": "Association auto… {{done}}/{{total}}",
-    "clearAll": "Vider la liste"
+    "clearAll": "Vider la liste",
+    "cancelAutoMatch": "Arrêter l'association automatique : les morceaux déjà associés gardent leurs tags",
+    "cancelAnalyze": "Arrêter l'analyse : les morceaux déjà analysés gardent leur verdict"
   },
   "sidebar": {
     "dropHint": "Dépose tes morceaux ici.",
