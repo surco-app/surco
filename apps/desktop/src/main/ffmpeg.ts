@@ -2459,8 +2459,8 @@ export async function analyzeCutoff(
       processed: false,
       hasKnee: false,
       upsampled: false,
-      // Too few bands to measure anything, so the rate claim was never checked either.
-      resolution: 'unknown',
+      // Too few bands to measure anything; a rate this low makes no hi-res claim to check.
+      resolution: detectResolution(sampleRateHz, -Infinity, -Infinity),
     }
   const fineFreqs = fineBandFrequencies(nyquist)
   // Only worth probing the 22.05 kHz wall when Nyquist clears the upper band; on a
@@ -3031,9 +3031,10 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
     processed,
     hasKnee: (cutoff?.hasKnee ?? false) || kneeCutoffHz !== null,
     upsampled: cutoff?.upsampled ?? false,
-    // A failed cutoff pass measured nothing, so the rate claim is unverified rather than
-    // cleared: say unknown instead of implying the file passed a check that never ran.
-    resolution: cutoff?.resolution ?? 'unknown',
+    // A failed cutoff pass measured nothing, so a rate claim the probe could have checked is
+    // unverified rather than cleared: say unknown instead of implying the file passed a check
+    // that never ran. A rate below the probe's reach makes no claim, and stays native.
+    resolution: cutoff?.resolution ?? detectResolution(sampleRateHz, -Infinity, -Infinity),
     fineStepDb: cutoff?.fineStepDb,
     teethCount: cutoff?.teethCount,
     teethFromHz: cutoff?.teethFromHz,

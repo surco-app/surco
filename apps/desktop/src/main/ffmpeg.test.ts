@@ -1844,6 +1844,26 @@ describe('buildSpectrum', () => {
     expect(res.cutoffHz).toBe(22050)
   })
 
+  // The could-not-verify line answers a rate the upsample probe can check (Nyquist above its
+  // upper band, so 48 kHz and up). A 44.1 kHz file has nothing to verify, even when the
+  // cutoff pass failed.
+  it.each([
+    ['44100', 'native'],
+    ['48000', 'unknown'],
+    ['96000', 'unknown'],
+  ])('reports resolution for a failed cutoff pass at %s Hz as %s', async (rate, expected) => {
+    const res = await buildSpectrum(
+      '/in.flac',
+      deps({
+        probe: vi.fn(async () => ({ sampleRate: rate })),
+        cutoff: vi.fn(async () => {
+          throw new Error('boom')
+        }),
+      }),
+    )
+    expect(res.resolution).toBe(expected)
+  })
+
   it('still returns the image and codec verdict when the shelf probe fails', async () => {
     const boom = new Error('shelf decode failed')
     const res = await buildSpectrum(
