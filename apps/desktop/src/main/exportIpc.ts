@@ -4,6 +4,7 @@ import { errorWithKey } from '../shared/errorKeys'
 import { buildSeratoCrate } from '../shared/serato'
 import type { Settings } from '../shared/types'
 import { activity } from './activity'
+import type { createMenuT } from './i18n'
 import { defaults, getSettings, replaceSettings } from './settings'
 
 // The DJ-software export dialogs, split out of index.ts's registerIpc by domain (the
@@ -26,12 +27,14 @@ export function applyImportedSettings(raw: unknown): Settings {
   return replaceSettings(raw as Partial<Settings>)
 }
 
-export function registerExportIpc(): void {
+// The panels are the main process's own windows, out of the renderer's i18next reach, so
+// their titles resolve through the menu strings in the language Surco is set to.
+export function registerExportIpc(menuT: () => ReturnType<typeof createMenuT>): void {
   // Writes a rekordbox collection XML the user can import (File ▸ Import Collection).
   // Returns the saved path, or null when the save dialog is cancelled.
   ipcMain.handle('dialog:exportRekordbox', async (_e, xml: string) => {
     const { canceled, filePath } = await dialog.showSaveDialog({
-      title: 'Exporta a rekordbox',
+      title: menuT()('dialogExportRekordbox'),
       defaultPath: 'rekordbox.xml',
       filters: [{ name: 'rekordbox XML', extensions: ['xml'] }],
     })
@@ -52,7 +55,7 @@ export function registerExportIpc(): void {
   // the saved path, or null when cancelled — same shape as the rekordbox export.
   ipcMain.handle('dialog:exportTraktor', async (_e, nml: string) => {
     const { canceled, filePath } = await dialog.showSaveDialog({
-      title: 'Exporta a Traktor',
+      title: menuT()('dialogExportTraktor'),
       defaultPath: 'collection.nml',
       filters: [{ name: 'Traktor NML', extensions: ['nml'] }],
     })
@@ -75,7 +78,7 @@ export function registerExportIpc(): void {
     'dialog:exportSerato',
     async (_e, tracks: { inputPath: string; outputPath?: string }[]) => {
       const { canceled, filePath } = await dialog.showSaveDialog({
-        title: 'Exporta a Serato',
+        title: menuT()('dialogExportSerato'),
         defaultPath: 'Surco.crate',
         filters: [{ name: 'Serato crate', extensions: ['crate'] }],
       })
@@ -102,7 +105,7 @@ export function registerExportIpc(): void {
         .replace(/\s+/g, ' ')
         .trim() || 'Surco'
     const { canceled, filePath } = await dialog.showSaveDialog({
-      title: 'Guarda el informe de calidad',
+      title: menuT()('dialogSaveQualityReport'),
       defaultPath: `${safe}.png`,
       filters: [{ name: 'PNG', extensions: ['png'] }],
     })
@@ -116,8 +119,8 @@ export function registerExportIpc(): void {
   ipcMain.handle('dialog:exportStatsImage', async (_e, dataUrl: string) => {
     const base64 = dataUrl.replace(/^data:image\/png;base64,/, '')
     const { canceled, filePath } = await dialog.showSaveDialog({
-      title: 'Guarda tus estadísticas',
-      defaultPath: 'Mis estadísticas de Surco.png',
+      title: menuT()('dialogSaveStats'),
+      defaultPath: menuT()('dialogStatsFileName'),
       filters: [{ name: 'PNG', extensions: ['png'] }],
     })
     if (canceled || !filePath) return null
@@ -129,7 +132,7 @@ export function registerExportIpc(): void {
   // Returns the saved path, or null when cancelled, like the other exports.
   ipcMain.handle('dialog:exportM3u', async (_e, m3u: string) => {
     const { canceled, filePath } = await dialog.showSaveDialog({
-      title: 'Exporta a M3U8',
+      title: menuT()('dialogExportM3u'),
       defaultPath: 'surco.m3u8',
       filters: [{ name: 'M3U8 playlist', extensions: ['m3u8', 'm3u'] }],
     })
@@ -142,7 +145,7 @@ export function registerExportIpc(): void {
 
   ipcMain.handle('dialog:exportSettings', async () => {
     const { canceled, filePath } = await dialog.showSaveDialog({
-      title: 'Exporta la configuración',
+      title: menuT()('dialogExportSettings'),
       defaultPath: 'surco-config.json',
       filters: [{ name: 'JSON', extensions: ['json'] }],
     })
@@ -159,7 +162,7 @@ export function registerExportIpc(): void {
 
   ipcMain.handle('dialog:importSettings', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
-      title: 'Importa la configuración',
+      title: menuT()('dialogImportSettings'),
       filters: [{ name: 'JSON', extensions: ['json'] }],
       properties: ['openFile'],
     })

@@ -14,7 +14,9 @@ describe('downloadCover timeout', () => {
       headers: { get: () => null },
     }))
     vi.stubGlobal('fetch', fn)
-    await expect(downloadCover('https://img.discogs.com/x.jpg')).rejects.toThrow()
+    await expect(downloadCover('https://img.discogs.com/x.jpg')).rejects.toThrow(
+      /^SURCO_ERR:coverDownloadFailed/,
+    )
     expect(fn.mock.calls[0][1]?.signal).toBeInstanceOf(AbortSignal)
   })
 })
@@ -37,7 +39,7 @@ describe('downloadCover image validation', () => {
   it('rejects a URL whose bytes are not a known image', async () => {
     mockBytes([...Buffer.from('<!DOCTYPE html><html></html>')])
     await expect(downloadCover('https://page.example/article')).rejects.toThrow(
-      /no apunta a una imagen/i,
+      /^SURCO_ERR:coverNotImage/,
     )
   })
 

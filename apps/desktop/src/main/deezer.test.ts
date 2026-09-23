@@ -323,3 +323,21 @@ describe('search with an ISRC hint', () => {
     expect(isrcCalls).toHaveLength(0)
   })
 })
+
+// These reach the search panel through mainErrorMessage, which translates a stamped key and
+// shows any other message as it came. Written as Spanish sentences, they reached every
+// user in Spanish whatever language Surco was set to.
+describe('failures the user reads', () => {
+  it('stamps a translatable key when Deezer answers with an HTTP error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ status: 503, ok: false, json: async () => ({}) })),
+    )
+    await expect(search('deezer down query')).rejects.toThrow(/^SURCO_ERR:deezerUnavailable/)
+  })
+
+  it('stamps the same key when Deezer reports an error in the body', async () => {
+    mockFetch([{ error: { code: 100 } }])
+    await expect(search('deezer error body query')).rejects.toThrow(/^SURCO_ERR:deezerUnavailable/)
+  })
+})

@@ -560,3 +560,15 @@ describe('lookup cache persistence across sessions', () => {
     expect(releaseFetch).toHaveBeenCalledTimes(1)
   })
 })
+
+// These reach the search panel through mainErrorMessage, which translates a stamped key and
+// shows any other message as it came. Written as Spanish sentences, they reached every
+// user in Spanish whatever language Surco was set to.
+describe('failures the user reads', () => {
+  it('stamps a translatable key when Discogs answers with an HTTP error', async () => {
+    mockSequence([res(500, {})])
+    await expect(search('discogs down query', 'tok')).rejects.toThrow(
+      /^SURCO_ERR:discogsUnavailable/,
+    )
+  })
+})

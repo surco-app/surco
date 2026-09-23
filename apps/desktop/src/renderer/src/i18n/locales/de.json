@@ -126,7 +126,14 @@
     "convertedOutputUnreadable": "Die konvertierte Datei war nicht lesbar, daher wurde sie verworfen und das Original unverändert gelassen. Versuche es mit anderen Konvertierungseinstellungen.",
     "convertedOutputTruncated": "Die konvertierte Datei war kürzer als das Original, daher wurde sie verworfen und das Original unverändert gelassen. Versuche es mit anderen Konvertierungseinstellungen.",
     "engineDjOpen": "Schließ Engine DJ vor dem Konvertieren: Es hat die Bibliothek geöffnet.",
-    "sourceTagsUnread": "Die Tags dieser Datei konnten nicht gelesen werden, daher wurde sie nicht angerührt: eine Konvertierung hätte die vorhandenen gelöscht. Lade sie erneut und versuche es noch einmal."
+    "sourceTagsUnread": "Die Tags dieser Datei konnten nicht gelesen werden, daher wurde sie nicht angerührt: eine Konvertierung hätte die vorhandenen gelöscht. Lade sie erneut und versuche es noch einmal.",
+    "coverDownloadFailed": "Das Cover konnte nicht heruntergeladen werden.",
+    "coverNotImage": "Diese Adresse führt zu keinem Bild.",
+    "bandcampUnavailable": "Bandcamp hat nicht richtig geantwortet. Versuche es gleich noch einmal.",
+    "bandcampPageUnreadable": "Diese Bandcamp-Seite konnte nicht gelesen werden.",
+    "bandcampUrlBlocked": "Diese Bandcamp-Adresse ist nicht erlaubt und wurde daher nicht geöffnet.",
+    "deezerUnavailable": "Deezer hat nicht richtig geantwortet. Versuche es gleich noch einmal.",
+    "discogsUnavailable": "Discogs hat nicht richtig geantwortet. Versuche es gleich noch einmal."
   },
   "trash": {
     "title": "Surco-Originale",

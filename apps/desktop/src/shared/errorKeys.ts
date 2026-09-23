@@ -26,6 +26,13 @@ export const ERROR_KEYS = [
   'convertedOutputTruncated',
   'engineDjOpen',
   'sourceTagsUnread',
+  'coverDownloadFailed',
+  'coverNotImage',
+  'bandcampUnavailable',
+  'bandcampPageUnreadable',
+  'bandcampUrlBlocked',
+  'deezerUnavailable',
+  'discogsUnavailable',
 ] as const
 
 export type ErrorKey = (typeof ERROR_KEYS)[number]

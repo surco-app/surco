@@ -43,13 +43,13 @@ export async function downloadCover(url: string): Promise<string> {
         headers: { 'User-Agent': USER_AGENT },
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       })
-      if (!res.ok) throw new Error(`No se pudo descargar la carátula (${res.status})`)
+      if (!res.ok) throw errorWithKey('coverDownloadFailed', String(res.status))
       const buf = Buffer.from(await res.arrayBuffer())
       // Trust the bytes, not the extension: a URL that resolves to an HTML page (the common
       // outcome of a link dragged from a browser) would otherwise be saved as .jpg and only
       // blow up later inside ffmpeg with an inscrutable "No JPEG data found".
       const ext = imageExt(buf)
-      if (!ext) throw new Error('La URL no apunta a una imagen')
+      if (!ext) throw errorWithKey('coverNotImage', url)
       const path = join(tmpdir(), tmpName('cover', ext))
       await writeFile(path, buf)
       return path

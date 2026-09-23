@@ -69,6 +69,22 @@ interface MenuStrings {
   quitBusyDetail: string
   quitBusyConfirm: string
   quitBusyCancel: string
+  dialogConfigDir: string
+  dialogPickTracks: string
+  dialogOutputDir: string
+  dialogEngineLibrary: string
+  dialogTraktorCollection: string
+  dialogRekordboxCollection: string
+  dialogExportCover: string
+  dialogExportRekordbox: string
+  dialogExportTraktor: string
+  dialogExportSerato: string
+  dialogSaveQualityReport: string
+  dialogSaveStats: string
+  dialogStatsFileName: string
+  dialogExportM3u: string
+  dialogExportSettings: string
+  dialogImportSettings: string
 }
 
 const strings: Record<MenuLang, MenuStrings> = {
@@ -139,6 +155,22 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Si sales ahora se detendrán {n} conversiones y las pistas que faltan se quedarán sin convertir.',
     quitBusyConfirm: 'Salir igualmente',
     quitBusyCancel: 'Seguir convirtiendo',
+    dialogConfigDir: 'Carpeta de configuración',
+    dialogPickTracks: 'Selecciona pistas',
+    dialogOutputDir: 'Carpeta de salida',
+    dialogEngineLibrary: 'Biblioteca de Engine DJ',
+    dialogTraktorCollection: 'Colección de Traktor',
+    dialogRekordboxCollection: 'Colección de rekordbox',
+    dialogExportCover: 'Exporta la carátula',
+    dialogExportRekordbox: 'Exporta a rekordbox',
+    dialogExportTraktor: 'Exporta a Traktor',
+    dialogExportSerato: 'Exporta a Serato',
+    dialogSaveQualityReport: 'Guarda el informe de calidad',
+    dialogSaveStats: 'Guarda tus estadísticas',
+    dialogStatsFileName: 'Mis estadísticas de Surco.png',
+    dialogExportM3u: 'Exporta a M3U8',
+    dialogExportSettings: 'Exporta la configuración',
+    dialogImportSettings: 'Importa la configuración',
   },
   en: {
     settings: 'Settings…',
@@ -207,6 +239,22 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Quitting now stops {n} conversions, and the tracks still queued will be left unconverted.',
     quitBusyConfirm: 'Quit anyway',
     quitBusyCancel: 'Keep converting',
+    dialogConfigDir: 'Settings folder',
+    dialogPickTracks: 'Choose tracks',
+    dialogOutputDir: 'Output folder',
+    dialogEngineLibrary: 'Engine DJ library',
+    dialogTraktorCollection: 'Traktor collection',
+    dialogRekordboxCollection: 'rekordbox collection',
+    dialogExportCover: 'Export the artwork',
+    dialogExportRekordbox: 'Export to rekordbox',
+    dialogExportTraktor: 'Export to Traktor',
+    dialogExportSerato: 'Export to Serato',
+    dialogSaveQualityReport: 'Save the quality report',
+    dialogSaveStats: 'Save your stats',
+    dialogStatsFileName: 'My Surco stats.png',
+    dialogExportM3u: 'Export to M3U8',
+    dialogExportSettings: 'Export the settings',
+    dialogImportSettings: 'Import the settings',
   },
   de: {
     settings: 'Einstellungen…',
@@ -275,6 +323,22 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Beim Beenden werden {n} Konvertierungen gestoppt, und die noch wartenden Titel bleiben unkonvertiert.',
     quitBusyConfirm: 'Trotzdem beenden',
     quitBusyCancel: 'Weiter konvertieren',
+    dialogConfigDir: 'Einstellungsordner',
+    dialogPickTracks: 'Tracks auswählen',
+    dialogOutputDir: 'Ausgabeordner',
+    dialogEngineLibrary: 'Engine-DJ-Bibliothek',
+    dialogTraktorCollection: 'Traktor-Sammlung',
+    dialogRekordboxCollection: 'rekordbox-Sammlung',
+    dialogExportCover: 'Cover exportieren',
+    dialogExportRekordbox: 'Nach rekordbox exportieren',
+    dialogExportTraktor: 'Nach Traktor exportieren',
+    dialogExportSerato: 'Nach Serato exportieren',
+    dialogSaveQualityReport: 'Qualitätsbericht speichern',
+    dialogSaveStats: 'Deine Statistik speichern',
+    dialogStatsFileName: 'Meine Surco-Statistik.png',
+    dialogExportM3u: 'Als M3U8 exportieren',
+    dialogExportSettings: 'Einstellungen exportieren',
+    dialogImportSettings: 'Einstellungen importieren',
   },
   fr: {
     settings: 'Réglages…',
@@ -344,6 +408,22 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Quitter maintenant arrête {n} conversions, et les morceaux en attente resteront non convertis.',
     quitBusyConfirm: 'Quitter quand même',
     quitBusyCancel: 'Continuer la conversion',
+    dialogConfigDir: 'Dossier de configuration',
+    dialogPickTracks: 'Choisis des morceaux',
+    dialogOutputDir: 'Dossier de sortie',
+    dialogEngineLibrary: 'Bibliothèque Engine DJ',
+    dialogTraktorCollection: 'Collection Traktor',
+    dialogRekordboxCollection: 'Collection rekordbox',
+    dialogExportCover: 'Exporter la pochette',
+    dialogExportRekordbox: 'Exporter vers rekordbox',
+    dialogExportTraktor: 'Exporter vers Traktor',
+    dialogExportSerato: 'Exporter vers Serato',
+    dialogSaveQualityReport: 'Enregistrer le rapport de qualité',
+    dialogSaveStats: 'Enregistrer tes statistiques',
+    dialogStatsFileName: 'Mes statistiques Surco.png',
+    dialogExportM3u: 'Exporter en M3U8',
+    dialogExportSettings: 'Exporter la configuration',
+    dialogImportSettings: 'Importer la configuration',
   },
   'pt-BR': {
     settings: 'Ajustes…',
@@ -412,6 +492,22 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Sair agora interrompe {n} conversões, e as faixas na fila ficarão sem converter.',
     quitBusyConfirm: 'Sair mesmo assim',
     quitBusyCancel: 'Continuar convertendo',
+    dialogConfigDir: 'Pasta de configuração',
+    dialogPickTracks: 'Escolha faixas',
+    dialogOutputDir: 'Pasta de saída',
+    dialogEngineLibrary: 'Biblioteca do Engine DJ',
+    dialogTraktorCollection: 'Coleção do Traktor',
+    dialogRekordboxCollection: 'Coleção do rekordbox',
+    dialogExportCover: 'Exportar a capa',
+    dialogExportRekordbox: 'Exportar para o rekordbox',
+    dialogExportTraktor: 'Exportar para o Traktor',
+    dialogExportSerato: 'Exportar para o Serato',
+    dialogSaveQualityReport: 'Salvar o relatório de qualidade',
+    dialogSaveStats: 'Salvar suas estatísticas',
+    dialogStatsFileName: 'Minhas estatísticas do Surco.png',
+    dialogExportM3u: 'Exportar para M3U8',
+    dialogExportSettings: 'Exportar a configuração',
+    dialogImportSettings: 'Importar a configuração',
   },
 }
 

@@ -1,3 +1,4 @@
+import { errorWithKey } from '../shared/errorKeys'
 import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
 import { activity } from './activity'
 import { bandcampLimiter } from './bandcampLimiter'
@@ -68,7 +69,7 @@ async function searchOnce(text: string, priority?: SearchPriority): Promise<Sear
     body: JSON.stringify({ search_text: text, search_filter: '', full_page: false }),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   })
-  if (!res.ok) throw new Error(`Bandcamp devolvió ${res.status}`)
+  if (!res.ok) throw errorWithKey('bandcampUnavailable', String(res.status))
   const data = (await res.json()) as { auto?: { results?: AutoResult[] } }
   const results = (data.auto?.results ?? [])
     .map(mapResult)
@@ -184,7 +185,7 @@ function parseTags(html: string): string[] {
 
 export function parseRelease(html: string, url: string): Release {
   const data = extractTralbum(html)
-  if (!data) throw new Error(`No se pudo leer la página de Bandcamp (${url})`)
+  if (!data) throw errorWithKey('bandcampPageUnreadable', url)
   const artist = data.artist ?? data.current?.artist ?? ''
   const cover = artUrl(data.art_id ?? data.current?.art_id, 0)
   const tags = parseTags(html)
@@ -214,7 +215,7 @@ export async function getRelease(url: string, priority?: SearchPriority): Promis
   // The renderer names this URL (a search result, or a compromised renderer
   // forging one) and it reaches fetch from the trusted main process — the same
   // SSRF primitive coverDownload.ts already guards against for cover art.
-  if (isBlockedFetchUrl(url)) throw new Error('URL de Bandcamp no permitida')
+  if (isBlockedFetchUrl(url)) throw errorWithKey('bandcampUrlBlocked', url)
   const cached = cacheStore.getRelease(url)
   if (cached) return cached
   return activity.track(
@@ -226,7 +227,7 @@ export async function getRelease(url: string, priority?: SearchPriority): Promis
         headers: { 'User-Agent': USER_AGENT },
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       })
-      if (!res.ok) throw new Error(`Bandcamp devolvió ${res.status}`)
+      if (!res.ok) throw errorWithKey('bandcampUnavailable', String(res.status))
       const release = parseRelease(await res.text(), url)
       cacheStore.setRelease(url, release)
       return release

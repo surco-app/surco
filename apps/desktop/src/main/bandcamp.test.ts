@@ -340,3 +340,29 @@ describe('lookup cache persistence across sessions', () => {
     expect(releaseFetch).toHaveBeenCalledTimes(1)
   })
 })
+
+// These reach the search panel through mainErrorMessage, which translates a stamped key and
+// shows any other message as it came. Written as Spanish sentences, they reached every
+// user in Spanish whatever language Surco was set to.
+describe('failures the user reads', () => {
+  it('stamps a translatable key when the Bandcamp search answers with an HTTP error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ status: 503, ok: false, json: async () => ({}) })),
+    )
+    await expect(search('bandcamp down query')).rejects.toThrow(/^SURCO_ERR:bandcampUnavailable/)
+  })
+
+  it('stamps a translatable key when a release page has no album data', () => {
+    expect(() => parseRelease('<html></html>', 'https://x.bandcamp.com/album/y')).toThrow(
+      /^SURCO_ERR:bandcampPageUnreadable/,
+    )
+  })
+
+  it('stamps a translatable key when the release address is refused', async () => {
+    vi.stubGlobal('fetch', vi.fn())
+    await expect(getRelease('http://127.0.0.1:8080/admin')).rejects.toThrow(
+      /^SURCO_ERR:bandcampUrlBlocked/,
+    )
+  })
+})

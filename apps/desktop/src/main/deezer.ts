@@ -32,7 +32,7 @@ async function api<T>(url: string, priority?: SearchPriority): Promise<T> {
       headers: { 'User-Agent': USER_AGENT },
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     })
-    if (!res.ok) throw new Error(`Deezer devolvió ${res.status}`)
+    if (!res.ok) throw errorWithKey('deezerUnavailable', String(res.status))
     const data = (await res.json()) as T & DeezerErrorBody
     const code = data.error?.code
     if (code === QUOTA_CODE) {
@@ -41,7 +41,7 @@ async function api<T>(url: string, priority?: SearchPriority): Promise<T> {
       continue
     }
     if (code !== undefined && code !== NO_DATA_CODE)
-      throw new Error(`Deezer devolvió error ${code}`)
+      throw errorWithKey('deezerUnavailable', `error ${code}`)
     return data
   }
 }

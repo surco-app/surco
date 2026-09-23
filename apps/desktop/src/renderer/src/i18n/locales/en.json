@@ -126,7 +126,14 @@
     "convertedOutputUnreadable": "The converted file came out unreadable, so it was discarded and the original left untouched. Try again with different conversion settings.",
     "convertedOutputTruncated": "The converted file came out shorter than the original, so it was discarded and the original left untouched. Try again with different conversion settings.",
     "engineDjOpen": "Close Engine DJ before converting: it has the library open.",
-    "sourceTagsUnread": "This file's tags could not be read, so it was left alone: converting it would have wiped the ones it has. Load it again and retry."
+    "sourceTagsUnread": "This file's tags could not be read, so it was left alone: converting it would have wiped the ones it has. Load it again and retry.",
+    "coverDownloadFailed": "The artwork couldn't be downloaded.",
+    "coverNotImage": "That address doesn't point to an image.",
+    "bandcampUnavailable": "Bandcamp didn't answer properly. Try again in a moment.",
+    "bandcampPageUnreadable": "That Bandcamp page couldn't be read.",
+    "bandcampUrlBlocked": "That Bandcamp address isn't allowed, so it wasn't opened.",
+    "deezerUnavailable": "Deezer didn't answer properly. Try again in a moment.",
+    "discogsUnavailable": "Discogs didn't answer properly. Try again in a moment."
   },
   "trash": {
     "title": "Surco originals",

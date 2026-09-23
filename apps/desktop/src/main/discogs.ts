@@ -57,7 +57,7 @@ async function api<T>(path: string, token: string, priority?: SearchPriority): P
       await discogsLimiterFor(token).acquire(priority)
       continue
     }
-    if (!res.ok) throw new Error(`Discogs devolvió ${res.status}`)
+    if (!res.ok) throw errorWithKey('discogsUnavailable', String(res.status))
     return res.json() as Promise<T>
   }
 }
