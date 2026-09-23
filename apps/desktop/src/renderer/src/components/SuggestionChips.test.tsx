@@ -25,6 +25,22 @@ describe('SuggestionChips', () => {
     expect(screen.getByTestId('chip-Cierre')).toHaveAttribute('data-state', 'off')
   })
 
+  // The on/some/off state is painted only in color, so a screen reader user toggling a
+  // chip had no way to know whether the tag was applied, to all tracks or to some.
+  it('exposes each chip state as a pressed state assistive tech can read', () => {
+    render(
+      <SuggestionChips
+        suggestions={['Bases', 'Cantaditas', 'Cierre']}
+        isOn={(s) => s === 'Bases'}
+        isPartial={(s) => s === 'Cantaditas'}
+        onPick={() => {}}
+      />,
+    )
+    expect(screen.getByTestId('chip-Bases')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('chip-Cantaditas')).toHaveAttribute('aria-pressed', 'mixed')
+    expect(screen.getByTestId('chip-Cierre')).toHaveAttribute('aria-pressed', 'false')
+  })
+
   it('scopes its testids so several rows of the same tags stay addressable', () => {
     const onPick = vi.fn()
     render(
