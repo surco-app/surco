@@ -173,3 +173,18 @@ describe('TrackContextMenu copy path', () => {
     expect(onClose).toHaveBeenCalled()
   })
 })
+
+// The backup mark on a row is a pointer target; the menu is how a keyboard (Shift+F10)
+// reaches the same backup. It is offered only for a track that has one, so the menu never
+// holds an entry that opens onto nothing.
+describe('TrackContextMenu backup entry', () => {
+  it('offers the backup only for a track that has one, and opens it', () => {
+    const onOpenBackup = vi.fn()
+    renderMenu({ hasBackup: true, onOpenBackup })
+    fireEvent.click(screen.getByTestId('track-menu-backup'))
+    expect(onOpenBackup).toHaveBeenCalledWith(track)
+    cleanup()
+    renderMenu({ hasBackup: false, onOpenBackup })
+    expect(screen.queryByTestId('track-menu-backup')).toBeNull()
+  })
+})

@@ -215,6 +215,9 @@ export interface CommandDeps {
   openActivity: () => void
   // Opens Surco's backups panel, which no longer has a toolbar icon of its own.
   openBackups: () => void
+  // The selected track's backups: whether it has any, and the panel searched to it.
+  hasBackup: (track: TrackItem) => boolean
+  openTrackBackup: (track: TrackItem) => void
   openHelp: () => void
   openOnboarding: () => void
   toggleLanguage: () => void
@@ -326,6 +329,8 @@ export function buildCommands(deps: CommandDeps): Command[] {
     openInfo,
     openActivity,
     openBackups,
+    hasBackup,
+    openTrackBackup,
     openHelp,
     openOnboarding,
     toggleLanguage,
@@ -711,6 +716,14 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('info'),
       enabled: !!selected,
       run: () => selected && openInfo(selected),
+    },
+    {
+      id: 'track-backup',
+      group: 'library',
+      title: tr('commands.trackBackup'),
+      hint: hintFor('track-backup'),
+      enabled: !!selected && hasBackup(selected),
+      run: () => selected && openTrackBackup(selected),
     },
     {
       // Builds the output name from a pattern. Only one track has a File name section

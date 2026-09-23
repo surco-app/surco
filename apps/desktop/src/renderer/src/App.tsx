@@ -1502,6 +1502,8 @@ export default function App(): React.JSX.Element {
         onRemove={removeFromList}
         onTrash={onTrashRow}
         onInfo={overlays.openInfo}
+        hasBackup={backupAtByPath.has(menu.track.inputPath)}
+        onOpenBackup={onOpenBackup}
       />
     ),
   )
@@ -1714,6 +1716,8 @@ export default function App(): React.JSX.Element {
       openInfo: overlays.openInfo,
       openActivity: () => setActivityOpen(true),
       openBackups: onOpenTrash,
+      hasBackup: (track) => backupAtByPath.has(track.inputPath),
+      openTrackBackup: onOpenBackup,
       openHelp: overlays.openHelp,
       openOnboarding: overlays.openOnboarding,
       toggleLanguage: () => void i18n.changeLanguage(nextLocale(i18n.language)),

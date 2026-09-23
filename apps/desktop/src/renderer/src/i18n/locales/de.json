@@ -314,6 +314,7 @@
     "stats": "Statistiken",
     "activity": "Aktivität anzeigen",
     "backups": "Sicherungskopien öffnen",
+    "trackBackup": "Sicherungskopie dieses Titels wiederherstellen",
     "toggleLanguage": "Sprache wechseln",
     "toggleTheme": "Design wechseln (System / Hell / Dunkel)",
     "confetti": "Konfetti werfen 🎉",
@@ -357,6 +358,7 @@
       "engineDj": "Wird zu Engine DJ hinzugefügt…"
     },
     "context": {
+      "backup": "Sicherungskopie wiederherstellen…",
       "info": "Informationen",
       "reveal": "Im Finder zeigen",
       "revealWin": "Im Explorer zeigen",
