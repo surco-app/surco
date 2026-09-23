@@ -126,6 +126,10 @@
             "d": "Estilo, país, tipo de medio y la URL de la edición, con los nombres que usa mp3tag para que no se dupliquen."
           },
           {
+            "t": "Tus propios campos",
+            "d": "Crea el campo que te falte con un nombre y una clave, y úsalo en el editor, en el nombre de archivo y en buscar y reemplazar. Se guarda en todos los formatos."
+          },
+          {
             "t": "Tú decides qué toca Discogs",
             "d": "Un interruptor por campo: el género que pusiste a mano no se pierde al aplicar una edición."
           },
@@ -706,7 +710,7 @@
         ],
         "points": [
           "Cabecera «Editando N pistas»: edita título, artista, álbum o género una vez para todas.",
-          "El grouping va aparte: cada etiqueta es una pastilla que dice si está en todas, en algunas o en ninguna, y un desplegable «Por pista» deja afinar cada pista sin pisar las demás.",
+          "El grouping y el género van aparte: cada etiqueta es una pastilla que dice si está en todas, en algunas o en ninguna, y un desplegable «Por pista» deja afinar cada pista sin pisar las demás.",
           "La rejilla empareja cada archivo con una canción del tracklist; cambia cualquier asignación desde su desplegable.",
           "Un archivo que no encaje en ninguna se queda sin asignar en vez de colocarse a la fuerza en la canción equivocada.",
           "Se permiten duplicados: dos archivos pueden apuntar a la misma canción si hace falta.",
@@ -851,7 +855,7 @@
         ],
         "points": [
           "Define géneros y groupings recurrentes para que aparezcan como sugerencias.",
-          "Elige qué campos ver y cuáles obligar, y reordénalos arrastrando o pulsa «Auto-organizar» para ponerlos en un orden sensato de un clic.",
+          "Elige qué campos ver y cuáles obligar, crea los tuyos con un nombre y una clave, y reordénalos arrastrando o pulsa «Auto-organizar» para ponerlos en un orden sensato de un clic.",
           "La pestaña Estadísticas acumula tus números de por vida (pistas cargadas, convertidas, analizadas, encontradas en cada fuente…) y genera una imagen lista para compartir.",
           "En Carátula, las portadas pequeñas pueden ampliarse hasta tu tamaño mínimo, recortarse a cuadrado, y una opción de macOS hace que el Finder muestre la carátula de los FLAC convertidos.",
           "En Búsqueda puedes limitar los resultados de Discogs a vinilo, CD, archivo o casete, y decidir cuántos ver.",
