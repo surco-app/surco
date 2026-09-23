@@ -203,6 +203,32 @@ describe('CoverPicker copy/paste', () => {
 // The action bar fades in on hover, but its buttons are Tab stops, "Remove" among them:
 // a keyboard user landed on invisible buttons and could delete the artwork without ever
 // seeing what they pressed. Focus inside the well has to reveal the bar as hover does.
+describe('CoverPicker remove keeps focus', () => {
+  // "Remove" lives in the bar of a cover that the click takes away, so the button
+  // unmounts under the keyboard user's focus and drops them on the body. The empty well
+  // that replaces it is the natural next step: pick or paste new artwork.
+  it('moves focus to the empty well once the artwork is removed', () => {
+    const onChange = vi.fn()
+    const props = {
+      isMulti: false,
+      selectedTracks: undefined,
+      release: null,
+      coverDims: null,
+      setCoverDims: vi.fn(),
+      onChange,
+    }
+    const { rerender } = render(
+      <CoverPicker item={item({ coverUrl: 'http://img/cover.jpg' })} {...props} />,
+    )
+    const remove = screen.getByTestId('cover-remove')
+    remove.focus()
+    fireEvent.click(remove)
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ coverRemoved: true }))
+    rerender(<CoverPicker item={item({ coverRemoved: true })} {...props} />)
+    expect(screen.getByTestId('cover-pick')).toHaveFocus()
+  })
+})
+
 describe('CoverPicker action bar under keyboard focus', () => {
   it('reveals the bar when one of its buttons takes focus', () => {
     renderPicker({ coverUrl: 'http://img/cover.jpg' })
