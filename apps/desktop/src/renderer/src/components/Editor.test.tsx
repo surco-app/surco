@@ -793,7 +793,7 @@ describe('Editor loudness estimates', () => {
       normalize: club,
     })
     await screen.findByTestId('loudness-estimate-lufs')
-    for (const id of ['range', 'crest', 'balance']) {
+    for (const id of ['range', 'balance']) {
       expect(screen.getByTestId(`loudness-estimate-${id}`)).toHaveTextContent(
         i18n.t('editor.loudnessEstimateSame'),
       )
@@ -860,7 +860,9 @@ describe('Editor loudness estimates', () => {
     expect(await screen.findByTestId('loudness-estimate-dc')).toHaveTextContent('0.0%')
   })
 
-  it('leaves the DC offset unchanged when removal is off', async () => {
+  // With removal off the offset rides the gain; this track limits, so the gain is no
+  // longer one figure and the row claims nothing rather than a wrong "=".
+  it('offers no DC estimate when removal is off and the limiter engages', async () => {
     seedLoudness(measured)
     renderEditor({ id: 'a' }, 'wav', {
       showLoudness: true,
@@ -868,9 +870,7 @@ describe('Editor loudness estimates', () => {
       normalize: club,
     })
     await screen.findByTestId('loudness-estimate-lufs')
-    expect(screen.getByTestId('loudness-estimate-dc')).toHaveTextContent(
-      i18n.t('editor.loudnessEstimateSame'),
-    )
+    expect(screen.queryByTestId('loudness-estimate-dc')).toBeNull()
   })
 
   // The floor rides the gain, but only while the gain is a single constant. This track

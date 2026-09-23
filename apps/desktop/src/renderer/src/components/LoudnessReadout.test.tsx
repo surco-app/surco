@@ -46,3 +46,62 @@ describe('LoudnessReadout estimates', () => {
     expect(screen.queryByTestId('loudness-estimate-lufs')).not.toBeInTheDocument()
   })
 })
+
+// The DC offset is a constant added to every sample, so the gain scales it like any other
+// level: "=" was false the moment the conversion applied gain. And a limiter holds the
+// peaks back while the body takes the full gain, so the peak-to-RMS distance shrinks.
+describe('LoudnessReadout estimates that ride the gain', () => {
+  const linear: NormalizeConfig = { ...club, targetLufs: -14.3 }
+
+  it('scales the DC offset with the applied gain', () => {
+    render(
+      <LoudnessReadout
+        loudness={{ ...loud, dcOffset: 0.02 }}
+        normalize={linear}
+        onShowHelp={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('loudness-estimate-dc').textContent).toBe('→ 2.5%')
+  })
+
+  it('offers no DC estimate once the limiter makes the gain uneven', () => {
+    render(
+      <LoudnessReadout
+        loudness={{ ...loud, dcOffset: 0.02 }}
+        normalize={club}
+        onShowHelp={vi.fn()}
+      />,
+    )
+    expect(screen.queryByTestId('loudness-estimate-dc')).not.toBeInTheDocument()
+  })
+
+  it('offers no DC estimate when each channel takes its own gain', () => {
+    render(
+      <LoudnessReadout
+        loudness={{ ...loud, dcOffset: 0.02 }}
+        normalize={{ ...club, mode: 'peak', peakDb: -1, peakPerChannel: true }}
+        onShowHelp={vi.fn()}
+      />,
+    )
+    expect(screen.queryByTestId('loudness-estimate-dc')).not.toBeInTheDocument()
+  })
+
+  it('still lands the DC offset on zero when centring is ticked', () => {
+    render(
+      <LoudnessReadout
+        loudness={{ ...loud, dcOffset: 0.02 }}
+        normalize={{ ...club, removeDcOffset: true }}
+        onShowHelp={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('loudness-estimate-dc').textContent).toBe('→ 0.0%')
+  })
+
+  it('keeps dynamics unchanged under a constant gain, and drops the claim under the limiter', () => {
+    render(<LoudnessReadout loudness={loud} normalize={linear} onShowHelp={vi.fn()} />)
+    expect(screen.getByTestId('loudness-estimate-crest').textContent).toBe('=')
+    cleanup()
+    render(<LoudnessReadout loudness={loud} normalize={club} onShowHelp={vi.fn()} />)
+    expect(screen.queryByTestId('loudness-estimate-crest')).not.toBeInTheDocument()
+  })
+})
