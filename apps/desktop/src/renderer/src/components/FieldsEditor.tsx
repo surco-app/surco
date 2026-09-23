@@ -11,7 +11,7 @@ import {
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { customKeyProblem, customTagName, suggestCustomKey } from '../../../shared/customFields'
+import { customKeyProblem, suggestCustomKey } from '../../../shared/customFields'
 import type { CustomField, MetaTextKey } from '../../../shared/types'
 import { FIELD_DEFS, IMPORTABLE_FIELDS, moveItem, sortFieldsByGroup } from '../lib/fields'
 import {
@@ -374,14 +374,12 @@ function AddCustomField({
   const key = typedKey ?? suggestCustomKey(label)
   const problem = key ? customKeyProblem(key, customFields) : null
   const blocked = !label.trim() || !key || problem !== null
-  const hint =
+  const error =
     problem === 'invalid'
       ? tr('settings.customFieldInvalid')
       : problem === 'taken'
         ? tr('settings.customFieldTaken')
-        : key
-          ? tr('settings.customFieldPreview', { token: `{${key}}`, tag: customTagName(key) })
-          : tr('settings.customFieldIntro')
+        : null
   const add = (): void => {
     if (blocked) return
     onAdd({ key, label: label.trim() })
@@ -405,7 +403,16 @@ function AddCustomField({
           />
         </label>
         <label className="flex w-44 flex-col gap-1">
-          <span className="text-xs text-fg-dim">{tr('settings.customFieldKey')}</span>
+          <span
+            data-testid="custom-field-key-note"
+            role="note"
+            className="flex items-center gap-1 text-xs text-fg-dim"
+          >
+            {tr('settings.customFieldKey')}
+            <Info className="h-3 w-3" aria-hidden="true" />
+            <span className="sr-only">{tr('settings.customFieldKeyHint')}</span>
+            <Tooltip label={tr('settings.customFieldKeyHint')} />
+          </span>
           <input
             type="text"
             data-testid="custom-field-key"
@@ -432,12 +439,11 @@ function AddCustomField({
           {tr('settings.customFieldAdd')}
         </button>
       </div>
-      <p
-        data-testid="custom-field-hint"
-        className={`text-xs ${problem ? 'text-[var(--color-danger)]' : 'text-fg-faint'}`}
-      >
-        {hint}
-      </p>
+      {error && (
+        <p data-testid="custom-field-hint" className="text-xs text-[var(--color-danger)]">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

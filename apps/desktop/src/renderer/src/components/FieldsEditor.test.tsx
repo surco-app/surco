@@ -319,6 +319,17 @@ describe('custom fields', () => {
     expect(onChangeVisible).toHaveBeenCalledWith(['title', 'estadoDelVinilo'])
   })
 
+  // The explanation of the key is read once, not repeated under every name typed: it
+  // sits behind a visible (i) on the key label, and the line below shows only errors.
+  it('explains the key once in a note and keeps the line below for errors', () => {
+    setup()
+    fireEvent.change(screen.getByTestId('custom-field-name'), {
+      target: { value: 'Estado del vinilo' },
+    })
+    expect(screen.queryByTestId('custom-field-hint')).toBeNull()
+    expect(screen.getByTestId('custom-field-key-note')).toHaveAttribute('role', 'note')
+  })
+
   it('refuses a key another field already uses and says so', () => {
     const { onChangeCustom } = setup()
     fireEvent.change(screen.getByTestId('custom-field-name'), { target: { value: 'Estilo' } })
