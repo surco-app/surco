@@ -941,6 +941,34 @@ export const Editor = memo(function Editor({
     </button>
   )
 
+  // The library state rides the section's title line, beside the title: a line of its own
+  // under the header hung there like a stray fragment of the body, open or folded.
+  const hasLibraryMarks =
+    !isMulti && (inLibrary === 'yes' || inLibrary === 'no' || inLibrary === 'checking')
+  const libraryMarks = (
+    <>
+      {!isMulti && inLibrary === 'yes' && (
+        <SectionPill tone="good" testid="apple-music-status">
+          {tr(librarySource === 'engineDj' ? 'editor.inLibraryEngine' : 'editor.inLibrary')}
+        </SectionPill>
+      )}
+      {!isMulti && inLibrary === 'no' && (
+        <SectionPill tone="neutral" testid="apple-music-status">
+          {tr(librarySource === 'engineDj' ? 'editor.notInLibraryEngine' : 'editor.notInLibrary')}
+        </SectionPill>
+      )}
+      {!isMulti && inLibrary === 'checking' && (
+        <SectionPill
+          tone="neutral"
+          testid="apple-music-status"
+          icon={<Disc3 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
+        >
+          {tr('editor.checkingLibrary')}
+        </SectionPill>
+      )}
+    </>
+  )
+
   return (
     <div className="flex h-full min-h-0">
       <DiscogsPanel
@@ -985,11 +1013,10 @@ export const Editor = memo(function Editor({
                 : undefined
             }
             summaryTestId="form-summary"
+            status={hasLibraryMarks ? libraryMarks : undefined}
             right={
               // The two action groups (file: copy/search — tags: clear/fill/format) ride the
-              // title line as bare toolbar glyphs, split by a divider. The library status that
-              // used to share this row sits on its own line below: it is a fact to read, not a
-              // control, and as pills beside the buttons it pushed them onto a second line.
+              // title line as bare toolbar glyphs, split by a divider.
               <div className="flex items-center gap-1">
                 {formOpen && !isMulti && (
                   <div className="flex items-center gap-0.5">
@@ -1013,54 +1040,6 @@ export const Editor = memo(function Editor({
               </div>
             }
           />
-          {!isMulti &&
-            (inLibrary === 'yes' ||
-              inLibrary === 'no' ||
-              inLibrary === 'checking' ||
-              isAmbiguousCandidate(replaceTarget)) && (
-              <div
-                data-testid="form-status"
-                className="mt-2 ml-[18px] flex flex-wrap items-center gap-x-4 gap-y-1"
-              >
-                {!isMulti && inLibrary === 'yes' && (
-                  <SectionPill tone="good" testid="apple-music-status">
-                    {tr(
-                      librarySource === 'engineDj' ? 'editor.inLibraryEngine' : 'editor.inLibrary',
-                    )}
-                  </SectionPill>
-                )}
-                {!isMulti && inLibrary === 'no' && (
-                  <SectionPill tone="neutral" testid="apple-music-status">
-                    {tr(
-                      librarySource === 'engineDj'
-                        ? 'editor.notInLibraryEngine'
-                        : 'editor.notInLibrary',
-                    )}
-                  </SectionPill>
-                )}
-                {!isMulti && inLibrary === 'checking' && (
-                  <SectionPill
-                    tone="neutral"
-                    testid="apple-music-status"
-                    icon={<Disc3 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
-                  >
-                    {tr('editor.checkingLibrary')}
-                  </SectionPill>
-                )}
-                {/* Why the button below offers an add on a track the badge just called owned.
-                    Two near-identical entries make replacing a guess that can delete the wrong
-                    song, so Surco adds — correct, but it reads as a contradiction the user
-                    cannot resolve until someone names the duplicates sitting in their library.
-                    warn, not danger: nothing is broken and nothing is blocked. */}
-                {!isMulti && isAmbiguousCandidate(replaceTarget) && (
-                  <SectionPill tone="warn" testid="ambiguous-library-copies">
-                    {tr('editor.ambiguousLibraryCopies', {
-                      count: replaceTarget.ambiguous.length,
-                    })}
-                  </SectionPill>
-                )}
-              </div>
-            )}
           <SectionBody open={formOpen} id={formBodyId}>
             {/* Capture focus entering/leaving the field grid so the sweep knows which row is
                 under edit. Blur only clears when focus leaves the grid entirely (relatedTarget
