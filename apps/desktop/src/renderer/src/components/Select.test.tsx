@@ -29,6 +29,25 @@ describe('Select', () => {
     expect(document.querySelector('select')).toBeNull()
   })
 
+  // The aria-label replaced the visible text, so VoiceOver said "Sort, pop-up button" and
+  // never which order was active; a sighted user reads both, a blind one needs both too.
+  it('names the trigger with its label and the current value', () => {
+    renderSelect('name')
+    expect(screen.getByTestId('sort')).toHaveAccessibleName('Sort: Name')
+  })
+
+  // Tab out of an open menu used to leave the listbox floating with the focus elsewhere,
+  // detached from anything the keyboard user is doing.
+  it('closes the menu when the focus leaves it with Tab', () => {
+    renderSelect('name')
+    fireEvent.click(screen.getByTestId('sort'))
+    const outside = document.createElement('button')
+    document.body.appendChild(outside)
+    fireEvent.blur(screen.getByTestId('sort-option-name'), { relatedTarget: outside })
+    expect(screen.queryByTestId('sort-listbox')).toBeNull()
+    outside.remove()
+  })
+
   it('opens a listbox on click and marks the current option as selected', () => {
     renderSelect('name')
     fireEvent.click(screen.getByTestId('sort'))
