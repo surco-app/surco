@@ -383,6 +383,7 @@ export function Player({
           onSetVolume={onSetVolume}
           label={t('player.volume')}
           muteLabel={t('player.unmute')}
+          valueText={t('player.volumeValue', { pct: Math.round(volume * 100) })}
         />
 
         <div className="ml-auto flex shrink-0 items-center gap-0.5">
@@ -490,11 +491,13 @@ function VolumeControl({
   onSetVolume,
   label,
   muteLabel,
+  valueText,
 }: {
   volume: number
   onSetVolume: (value: number) => void
   label: string
   muteLabel: string
+  valueText: string
 }): React.JSX.Element {
   const muted = volume === 0
   // Survives the trip to zero and back; seeded so the very first click on an already-muted
@@ -527,6 +530,7 @@ function VolumeControl({
         type="range"
         data-testid="player-volume-slider"
         aria-label={label}
+        aria-valuetext={valueText}
         min={0}
         max={1}
         step={0.01}

@@ -688,6 +688,7 @@ function OverlayStrip({
           type="range"
           data-testid="waveform-overlay-fade"
           aria-label={tr('editor.waveformFade')}
+          aria-valuetext={tr('normalize.fadeValue', { pct: Math.round(fade * 100) })}
           min={0}
           max={1}
           step={0.01}

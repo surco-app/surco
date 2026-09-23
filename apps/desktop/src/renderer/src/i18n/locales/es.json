@@ -249,6 +249,7 @@
     "seek": "Ir a posición",
     "seekValue": "{{current}} de {{total}}",
     "volume": "Volumen",
+    "volumeValue": "{{pct}} %",
     "unmute": "Activar sonido",
     "reveal": "Mostrar la pista en reproducción en la lista",
     "close": "Cerrar reproductor"
@@ -727,6 +728,7 @@
     "title": "Igualar volumen",
     "hint": "Desactivado por defecto. Iguala cada pista a un volumen o pico objetivo.",
     "editorHint": "Iguala cada pista a un volumen o pico objetivo.",
+    "fadeValue": "Después al {{pct}} %",
     "mode": {
       "none": "Ninguna",
       "loudness": "Volumen",

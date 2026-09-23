@@ -460,6 +460,7 @@ function Lane({
               aria-valuemin={0}
               aria-valuemax={Number(durationSec.toFixed(2))}
               aria-valuenow={Number(cut.toFixed(2))}
+              aria-valuetext={`${cut.toFixed(3)} s`}
               tabIndex={0}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}

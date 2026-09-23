@@ -411,6 +411,13 @@ describe('Player', () => {
     expect(screen.getByTestId('player-volume')).toHaveTextContent('70%')
   })
 
+  // The range runs 0 to 1, so a screen reader announced "0.7": the same percentage the
+  // sighted user reads beside the slider has to be what it says.
+  it('reads the volume out as the percentage shown beside it', () => {
+    renderUI(<Player {...props({ volume: 0.7 })} />)
+    expect(screen.getByTestId('player-volume-slider')).toHaveAttribute('aria-valuetext', '70%')
+  })
+
   // Volume sits on the transport row, not on the title's line — sharing that line is what
   // squeezed a long title into an ellipsis.
   it('keeps the volume out of the title block', () => {

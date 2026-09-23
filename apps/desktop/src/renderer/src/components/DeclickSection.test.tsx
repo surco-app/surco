@@ -473,6 +473,16 @@ describe('DeclickSection', () => {
     expect(strip.getAttribute('aria-valuenow')).toBe('0')
   })
 
+  // A bare aria-valuenow is read as a unitless number; the value text says it is a time,
+  // in the same seconds the click marks are named in.
+  it('reads the playhead out as a time', async () => {
+    await withPreview()
+    const strip = screen.getByTestId('declick-marks')
+    strip.focus()
+    fireEvent.keyDown(strip, { key: 'ArrowRight', shiftKey: true })
+    expect(strip).toHaveAttribute('aria-valuetext', '0.25 s')
+  })
+
   it('moves the playhead by the coarse step when Shift is held', async () => {
     await withPreview()
     const strip = screen.getByTestId('declick-marks')
