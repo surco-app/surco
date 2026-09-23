@@ -1988,20 +1988,23 @@ describe('Editor export control', () => {
 
   // The keyboard convert shortcuts (⌘⏎) live in App and only know the chosen
   // format through this callback, so picking one must report it up.
-  // App mirrors the editor's picks in refs for the keyboard convert shortcuts. The
-  // mount report is what keeps that mirror right by construction: the editor remounts
-  // per track, so the seed lands without App watching the selection separately.
-  it('reports the seeded format up on mount', () => {
+  // App mirrors the editor's picks in refs for the keyboard convert shortcuts and convert
+  // all. The seeded format is resolved against this track alone, so the mount report says
+  // "nothing picked" rather than the seed: reported as a pick, an open MP3 turned every
+  // FLAC and WAV of a convert all into MP3.
+  it('reports no format pick on mount, only the reset of a previous one', () => {
     const { onFormatChange } = renderEditor({ id: 'a' }, 'wav')
-    expect(onFormatChange).toHaveBeenCalledWith('wav')
+    expect(onFormatChange).toHaveBeenCalledTimes(1)
+    expect(onFormatChange).toHaveBeenCalledWith(null)
   })
 
-  // 'source' can never reach onProcess/onFormatChange (both OutputFormat-typed) or
-  // the in-place/re-encode checks, which all key off the item's own extension —
-  // the editor must resolve it against the track before seeding, same as a job would.
+  // 'source' can never reach onProcess (OutputFormat-typed) or the in-place/re-encode
+  // checks, which all key off the item's own extension — the editor must resolve it
+  // against the track before seeding, same as a job would.
   it('resolves a "same as source" default against the track before seeding', () => {
-    const { onFormatChange } = renderEditor({ id: 'a' }, 'source')
-    expect(onFormatChange).toHaveBeenCalledWith('wav')
+    const { onProcess } = renderEditor({ id: 'a' }, 'source')
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onProcess).toHaveBeenCalledWith('wav')
   })
 
   // Apple Music can't ingest FLAC. With "Same as source" and Apple Music configured,

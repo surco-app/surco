@@ -1339,6 +1339,75 @@ describe('App multi-select convert', () => {
 // of thirty. That collapse is what made the card useless: it named the reason ("came out
 // unreadable") but never the track, so the user was told something failed in a crate of
 // hundreds and left to hunt for the red ring. The name is the whole point of the card.
+// Convert all ran with the format the editor had seeded for whichever track was open, as if
+// the user had picked it. With an MP3 open, "Same as source", keep-MP3 or an Apple Music
+// import all resolve that track to MP3, and every FLAC and WAV in the batch was then
+// re-encoded to lossy MP3 without anyone choosing it. Only a pick made by hand in the
+// editor's menu speaks for the whole batch; otherwise each track resolves its own format.
+describe('App convert all format with a track open', () => {
+  async function convertAllWithMp3Open(overrides: Partial<Settings>, pick?: string) {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x', inPlace: false })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings(overrides)),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.mp3', '/music/b.flac', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await screen.findByTestId('process-btn')
+    if (pick) {
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      fireEvent.click(screen.getByTestId(`process-format-${pick}`))
+    }
+    fireEvent.click(screen.getByTestId('convert-all'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(3))
+    return Object.fromEntries(
+      processTrack.mock.calls.map((c) => [c[0].inputPath as string, c[0].format as string]),
+    )
+  }
+
+  it('keeps each track in its own format under "Same as source" with an MP3 open', async () => {
+    expect(await convertAllWithMp3Open({ outputFormat: 'source' })).toEqual({
+      '/music/a.mp3': 'mp3',
+      '/music/b.flac': 'flac',
+      '/music/c.wav': 'wav',
+    })
+  })
+
+  it('converts only the MP3 to itself under keep-MP3 with an MP3 open', async () => {
+    expect(await convertAllWithMp3Open({ outputFormat: 'aiff', keepMp3Sources: true })).toEqual({
+      '/music/a.mp3': 'mp3',
+      '/music/b.flac': 'aiff',
+      '/music/c.wav': 'aiff',
+    })
+  })
+
+  it('previews the rename in the open track own format when nothing was picked', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ outputFormat: 'source' })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.mp3']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(await screen.findByTestId('customize-output-name'))
+    expect(await screen.findByTestId('rename-preview')).toHaveTextContent(/\.mp3$/)
+  })
+
+  it('still applies a format picked by hand in the editor to the whole batch', async () => {
+    expect(await convertAllWithMp3Open({ outputFormat: 'aiff' }, 'wav')).toEqual({
+      '/music/a.mp3': 'wav',
+      '/music/b.flac': 'wav',
+      '/music/c.wav': 'wav',
+    })
+  })
+})
+
 describe('App conversion failure notice', () => {
   it('names the failing track in the error toast', async () => {
     setApi({

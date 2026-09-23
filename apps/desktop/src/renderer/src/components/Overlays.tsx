@@ -1,7 +1,7 @@
 import type React from 'react'
 import { lazy, Suspense } from 'react'
 import { effectiveMeta } from '../../../shared/customFields'
-import { formatExtension } from '../../../shared/format'
+import { formatExtension, resolveJobFormat } from '../../../shared/format'
 import type { FormatSetting, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
 import type { ActiveModal } from '../hooks/useOverlays'
 import type { Command } from '../lib/commands'
@@ -159,9 +159,14 @@ export function Overlays({
           customFields={settings?.customFields ?? []}
           initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
           extension={formatExtension(
-            (editorFormatRef.current !== 'source' ? editorFormatRef.current : undefined) ??
-              (settings?.outputFormat !== 'source' ? settings?.outputFormat : undefined) ??
+            resolveJobFormat(
+              editorFormatRef.current ?? settings?.outputFormat ?? 'aiff',
+              selected.inputPath,
               'aiff',
+              editorFormatRef.current === null && (settings?.keepMp3Sources ?? false),
+              selected.fromAppleMusic,
+              editorFormatRef.current !== null,
+            ),
           )}
           onApply={(outputName) => updateTrack(selected.id, { outputName })}
           onClose={close}

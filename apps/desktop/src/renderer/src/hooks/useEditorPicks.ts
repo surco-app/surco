@@ -9,7 +9,7 @@ interface EditorPicks {
   destinationRef: React.RefObject<Destination | null>
   normalizeRef: React.RefObject<NormalizeConfig | null>
   declickRef: React.RefObject<DeclickMode | null>
-  onFormatChange: (format: FormatSetting) => void
+  onFormatChange: (format: FormatSetting | null) => void
   onDestinationChange: (destination: Destination) => void
   onNormalizeChange: (n: NormalizeConfig) => void
   onDeclickChange: (d: DeclickMode) => void
@@ -39,7 +39,7 @@ export function useEditorPicks(
   const normalizeRef = useRef<NormalizeConfig | null>(null)
   const declickRef = useRef<DeclickMode | null>(null)
 
-  const onFormatChange = useStableCallback((format: FormatSetting) => {
+  const onFormatChange = useStableCallback((format: FormatSetting | null) => {
     formatRef.current = format
   })
   const onDestinationChange = useStableCallback((destination: Destination) => {

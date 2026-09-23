@@ -124,8 +124,10 @@ interface Props {
   // toolbar batch pill, so this is single-only.
   onCancel?: () => void
   // Reports the format chosen in the split-button menu so the keyboard convert
-  // shortcuts (⌘⏎ / ⌘⇧⏎) export in it too, instead of the Settings default.
-  onFormatChange?: (format: FormatSetting) => void
+  // shortcuts (⌘⏎ / ⌘⇧⏎) and convert all export in it too, instead of the Settings
+  // default. Null means nothing was picked by hand: a seeded format is resolved against
+  // this track alone, so passing it on would force it onto every track of a batch.
+  onFormatChange?: (format: FormatSetting | null) => void
   // Reports the destination chosen in the split-button menu, mirroring onFormatChange:
   // App pins it in a ref so every convert entry point sends this track where the
   // button says, not where Settings points.
@@ -316,9 +318,8 @@ export const Editor = memo(function Editor({
   useEffect(() => {
     if (wasMulti.current === isMulti) return
     wasMulti.current = isMulti
-    const seeded = isMulti ? outputFormat : format
-    setFormatPick(seeded)
-    onFormatChange?.(seeded)
+    setFormatPick(isMulti ? outputFormat : format)
+    onFormatChange?.(null)
   }, [isMulti])
   // The chosen destination, same one-shot contract as the format: seeded from the
   // Settings booleans, updated only by the split-button menu, reset by the per-track
@@ -373,9 +374,8 @@ export const Editor = memo(function Editor({
       : format
     if (formatSettingChanged) {
       setFormat(seededFormat)
-      const seededPick = isMulti ? outputFormat : seededFormat
-      setFormatPick(seededPick)
-      onFormatChange?.(seededPick)
+      setFormatPick(isMulti ? outputFormat : seededFormat)
+      onFormatChange?.(null)
     }
     const seededDestination = toDestination(
       addToAppleMusic,
@@ -415,11 +415,11 @@ export const Editor = memo(function Editor({
   const [declickCfg, setDeclickCfg] = useState(item.declick ?? declick)
   // Report the seeded picks up once on mount: App mirrors them in refs for the
   // keyboard convert shortcuts, and since this editor remounts per track, the mount
-  // report IS the per-track reseed — one mechanism (the editor reporting) keeps the
+  // report IS the per-track reseed (the format as null: nothing picked by hand yet) — one mechanism (the editor reporting) keeps the
   // mirror right by construction, with no selection-watching reset in App.
   // biome-ignore lint/correctness/useExhaustiveDependencies: deliberately mount-only — the change handlers report every later pick.
   useEffect(() => {
-    onFormatChange?.(formatPick)
+    onFormatChange?.(null)
     onDestinationChange?.(destination)
     onNormalizeChange?.(normalizeCfg)
     onDeclickChange?.(declickCfg)
