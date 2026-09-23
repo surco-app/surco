@@ -999,6 +999,20 @@ describe('buildReleaseMeta', () => {
     expect(patch.meta.genre).toBe('Electronic')
   })
 
+  // The user's genre presets are their house spelling: a provider's "electronic" lands as
+  // their "Electronic", or the same genre ends up written two ways across the library.
+  it('writes the genre in the casing of the matching preset', () => {
+    const patch = buildReleaseMeta(
+      meta(),
+      release({ genres: ['electronic'] }),
+      undefined,
+      {},
+      undefined,
+      ['House', 'Electronic'],
+    )
+    expect(patch.meta.genre).toBe('Electronic')
+  })
+
   // Several styles are the norm on Discogs ("House", "Deep House"); joining them keeps
   // the information the user came for instead of silently dropping all but the first.
   it('joins multiple styles rather than keeping only the first', () => {
