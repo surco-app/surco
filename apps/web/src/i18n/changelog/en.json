@@ -1,5 +1,56 @@
 [
   {
+    "version": "1.0",
+    "date": "September 23, 2026",
+    "title": "Surco 1.0: stable",
+    "items": [
+      {
+        "text": "Surco 1.0 closes a chapter. From this version on, no new features: every update goes into making everything Surco already does work well, on Mac and Windows, with Traktor, rekordbox, Engine DJ and Apple Music.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "The Quality section only says what it measures. Red is kept for files that come from a lossy source or have bad quality; anything that is only a suspicion shows in amber and says “possible”; padded bits and upsampled audio are no longer flagged as a defect, because they sound the same. The lines are shorter, and with \u201cInline explanations\u201d off there is one line per finding.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "Club masters with heavily limited highs no longer show as “Reprocessed”, and verdicts stop changing when you trim a second of silence: across a sweep of nearly 600 tracks, alarms that flipped that way went from 9 to 1, with none added on clean files.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "When you level the volume, the final file really stays under the peak ceiling you ask for, in MP3 and also in AIFF, WAV and FLAC. To hold it, a track can end a few tenths under the target loudness, and the track's plan tells you.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "Convert all and converting several tracks at once keep each track's own format: with an MP3 open, your FLAC and WAV files no longer come out as MP3.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "If two tracks in the same batch would end up with the same name, each one is saved separately. Before, one could land on top of the other.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "Traktor: hotcues you only had in Traktor are kept when you convert, and the original track keeps its cues even when the conversion goes to another folder. With Traktor sync on, “Show FLAC covers in Finder” is disabled so Traktor doesn't lose those tracks.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "The volume and click repair you set on each track are kept when you close and reopen Surco.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "Problems with your rekordbox collection, or when checking your Apple Music or Engine DJ library, now show on screen instead of staying in the log. The rekordbox collection you pick in Settings is saved, and errors show in your language.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "The editor reads at a glance: trim, clicks and volume say in one sentence what converting will do; ⌘I shows the file's information; and after converting, one link cleans up the previous files. The same words across the app: Convert, Loudness, Doubtful, To confirm.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "Auto-match works without a Discogs token if you only use Bandcamp or Deezer, and each matched track says which source it came from.",
+        "in": "1.0.0"
+      }
+    ]
+  },
+  {
     "version": "0.100",
     "date": "September 23, 2026",
     "title": "Your own fields and more tags",
