@@ -293,11 +293,12 @@ function Lane({
       {/* Wrap, don't clip: at a narrow editor width the label + nudges + audition/clear +
           zoom stepper don't all fit across half the panel, and a nowrap row pushed the last
           control (the zoom +) off the right edge. Letting the row wrap drops whatever doesn't
-          fit onto a second line instead. The nudge trio (arrows + time field) is boxed as one
-          unit so it never splits mid-cluster; audition/clear and the zoom stepper are already
-          single units. */}
+          fit onto a second line instead. The lane label never shrinks: truncated to make room
+          it read as a lone "S" or "E", so the controls wrap before the label gives way. The
+          nudge trio (arrows + time field) is boxed as one unit so it never splits mid-cluster;
+          audition/clear and the zoom stepper are already single units. */}
       <div className="mb-1 flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
-        <SectionSubhead className="min-w-0 flex-1 truncate">
+        <SectionSubhead className="shrink-0 grow">
           {tr(side === 'start' ? 'trim.laneStart' : 'trim.laneEnd')}
         </SectionSubhead>
         {/* The cut's own time, and the place to set it: type the second you want,
