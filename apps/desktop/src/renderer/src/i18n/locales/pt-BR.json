@@ -682,7 +682,6 @@
     "pause": "Pausar",
     "hearingRepaired": "Ouvindo: reparada",
     "hearingOriginal": "Ouvindo: original",
-    "abLabel": "Ouvir a versão reparada",
     "abHint": "Alterna entre a original e a reparada sem interromper o áudio, para você ouvir se o reparo removeu os cliques — e se abafou a música.",
     "nextClick": "Próximo clique",
     "appliesToSelection": "Este ajuste se aplica às {{count}} faixas selecionadas.",
