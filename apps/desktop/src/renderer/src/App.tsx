@@ -655,7 +655,6 @@ export default function App(): React.JSX.Element {
 
   async function onDrop(e: React.DragEvent): Promise<void> {
     e.preventDefault()
-    setDragging(dragDepth.current.reset())
     const dropped = Array.from(e.dataTransfer.files).map((f) => window.api.getPathForFile(f))
     addPaths(await window.api.expandPaths(dropped))
   }
@@ -1794,12 +1793,13 @@ export default function App(): React.JSX.Element {
           {/* biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control */}
           <div
             className="flex h-screen flex-col"
-            onDragEnter={() => setDragging(dragDepth.current.enter())}
+            onDragEnterCapture={() => setDragging(dragDepth.current.enter())}
             onDragOver={(e) => {
               // Only to keep the drop allowed; the hint is driven by enter/leave counting.
               e.preventDefault()
             }}
-            onDragLeave={() => setDragging(dragDepth.current.leave())}
+            onDragLeaveCapture={() => setDragging(dragDepth.current.leave())}
+            onDropCapture={() => setDragging(dragDepth.current.reset())}
             onDrop={onDrop}
           >
             {/* Music preview playback — there is no speech to caption. The clock
