@@ -48,6 +48,7 @@ export function SuggestionChips({
             type="button"
             data-testid={scope ? `chip-${scope}-${s}` : `chip-${s}`}
             data-state={state}
+            aria-pressed={state === 'on' ? true : state === 'some' ? 'mixed' : false}
             onClick={() => onPick(s)}
             // Colapsado, el chip puede encoger y truncar con elipsis — solo pasa en el caso
             // mínimo-1 (ni un chip cabe entero); si el corte dice que cabe, no encoge nada.
