@@ -100,6 +100,39 @@ describe('FieldsEditor', () => {
     expect(onChangeVisible).toHaveBeenCalledWith(['artist', 'title', 'album'])
   })
 
+  // Moving a field to the top or bottom disables the arrow that moved it, and a disabled
+  // button drops keyboard focus to the body: the user lost their place in a long list.
+  // Focus goes to the other arrow of the same row, which is still usable.
+  it('keeps focus in the row when an arrow moves the field to either end', () => {
+    const props = {
+      requiredFields: [],
+      importFields: [],
+      customFields: [],
+      onChangeVisible: vi.fn(),
+      onChangeRequired: vi.fn(),
+      onChangeImport: vi.fn(),
+      onChangeCustom: vi.fn(),
+    }
+    const { rerender } = render(
+      <FieldsEditor visibleFields={['title', 'artist', 'album']} {...props} />,
+    )
+    const up = within(screen.getByTestId('field-row-artist')).getByLabelText('Move Artist up')
+    up.focus()
+    fireEvent.click(up)
+    rerender(<FieldsEditor visibleFields={['artist', 'title', 'album']} {...props} />)
+    expect(
+      within(screen.getByTestId('field-row-artist')).getByLabelText('Move Artist down'),
+    ).toHaveFocus()
+
+    const down = within(screen.getByTestId('field-row-title')).getByLabelText('Move Title down')
+    down.focus()
+    fireEvent.click(down)
+    rerender(<FieldsEditor visibleFields={['artist', 'album', 'title']} {...props} />)
+    expect(
+      within(screen.getByTestId('field-row-title')).getByLabelText('Move Title up'),
+    ).toHaveFocus()
+  })
+
   // Thirty rows of identical "Auto, Required, Move up, Move down, Hide" buttons are
   // indistinguishable in a screen reader's list of controls, and out of the row's visual
   // context "Hide" doesn't say what it hides. Each name carries its field, as Delete does.

@@ -161,6 +161,23 @@ export function FieldsEditor({
   const [dropKey, setDropKey] = useState<string | null>(null)
   const organizedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(organizedTimer.current), [])
+  // An arrow that moves its field to either end disables itself, and a disabled button
+  // drops keyboard focus to the body; once the list re-renders, focus moves to the same
+  // row's other arrow so the user keeps their place.
+  const listRef = useRef<HTMLDivElement>(null)
+  const refocusArrow = useRef<string | null>(null)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the reordered list is the trigger to refocus, not a value read in the body.
+  useEffect(() => {
+    if (refocusArrow.current === null) return
+    listRef.current?.querySelector<HTMLElement>(`[data-arrow="${refocusArrow.current}"]`)?.focus()
+    refocusArrow.current = null
+  }, [visibleFields])
+  function move(i: number, delta: -1 | 1): void {
+    const to = i + delta
+    if (to === 0) refocusArrow.current = `down-${visibleFields[i]}`
+    else if (to === visibleFields.length - 1) refocusArrow.current = `up-${visibleFields[i]}`
+    onChangeVisible(moveItem(visibleFields, i, delta))
+  }
   function autoOrganize(): void {
     onChangeVisible(sortFieldsByGroup(visibleFields))
     setOrganized(true)
@@ -225,7 +242,7 @@ export function FieldsEditor({
           <span />
           <span />
         </div>
-        <div className="space-y-1.5">
+        <div ref={listRef} className="space-y-1.5">
           {visibleFields.map((key, i) => (
             // biome-ignore lint/a11y/noStaticElementInteractions: the drag handlers are a pointer-only enhancement — the arrow buttons inside remain the keyboard-accessible way to reorder.
             <div
@@ -291,7 +308,8 @@ export function FieldsEditor({
               </button>
               <button
                 type="button"
-                onClick={() => onChangeVisible(moveItem(visibleFields, i, -1))}
+                data-arrow={`up-${key}`}
+                onClick={() => move(i, -1)}
                 disabled={i === 0}
                 className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
                 aria-label={tr('fields.rowMoveUp', { name: labelOf(key) })}
@@ -300,7 +318,8 @@ export function FieldsEditor({
               </button>
               <button
                 type="button"
-                onClick={() => onChangeVisible(moveItem(visibleFields, i, 1))}
+                data-arrow={`down-${key}`}
+                onClick={() => move(i, 1)}
                 disabled={i === visibleFields.length - 1}
                 className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
                 aria-label={tr('fields.rowMoveDown', { name: labelOf(key) })}
