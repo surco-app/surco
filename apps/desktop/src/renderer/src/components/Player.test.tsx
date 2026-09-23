@@ -274,6 +274,46 @@ describe('Player', () => {
     expect(onScrub).toHaveBeenCalledWith(50)
   })
 
+  // The bar was a <button> reading e.clientX: Enter or Space on it fires a click at
+  // clientX 0, so a keyboard user trying to seek threw the track back to 0:00. As a
+  // slider it states where the track is and moves by keys, never by a phantom click.
+  it('exposes the compact progress bar as a slider that states the position', () => {
+    renderUI(<Player {...props({ showWaveform: false, currentTime: 83, duration: 245 })} />)
+    const bar = screen.getByRole('slider', { name: 'Seek' })
+    expect(bar).toHaveAttribute('data-testid', 'player-seek')
+    expect(bar).toHaveAttribute('tabindex', '0')
+    expect(bar).toHaveAttribute('aria-valuemin', '0')
+    expect(bar).toHaveAttribute('aria-valuemax', '245')
+    expect(bar).toHaveAttribute('aria-valuenow', '83')
+    expect(bar).toHaveAttribute('aria-valuetext', '1:23 of 4:05')
+  })
+
+  // Same 5 s step as the global seek commands, so the arrows mean one thing everywhere,
+  // and Shift takes the coarse step the trim and click-repair scrubbers take with it.
+  it('steps the position with the arrow keys and jumps with Home and End', () => {
+    const onScrub = vi.fn()
+    renderUI(
+      <Player {...props({ showWaveform: false, currentTime: 83, duration: 245, onScrub })} />,
+    )
+    const bar = screen.getByTestId('player-seek')
+    fireEvent.keyDown(bar, { key: 'ArrowRight' })
+    fireEvent.keyDown(bar, { key: 'ArrowLeft' })
+    fireEvent.keyDown(bar, { key: 'ArrowRight', shiftKey: true })
+    fireEvent.keyDown(bar, { key: 'Home' })
+    fireEvent.keyDown(bar, { key: 'End' })
+    expect(onScrub.mock.calls.map((c) => c[0])).toEqual([88, 78, 113, 0, 245])
+  })
+
+  // The arrows it owns must not also reach the global keymap, or one press would seek
+  // twice (or, for Home/End, also jump the track list).
+  it('keeps the keys it handles from reaching the global shortcuts', () => {
+    renderUI(<Player {...props({ showWaveform: false, currentTime: 83, duration: 245 })} />)
+    const bar = screen.getByTestId('player-seek')
+    for (const key of ['ArrowLeft', 'ArrowRight', 'Home', 'End']) {
+      expect(fireEvent.keyDown(bar, { key })).toBe(false)
+    }
+  })
+
   it('renders the waveform when shown', async () => {
     renderUI(<Player {...props({ showWaveform: true })} />)
     expect(await screen.findByTestId('waveform')).toBeInTheDocument()

@@ -247,6 +247,7 @@
     "waveform": "Waveform",
     "waveformHelp": "Show the waveform. Hiding it skips the waveform analysis — useful for large files or network drives.",
     "seek": "Seek",
+    "seekValue": "{{current}} of {{total}}",
     "volume": "Volume",
     "unmute": "Unmute",
     "reveal": "Show the playing track in the list",

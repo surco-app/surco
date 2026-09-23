@@ -18,6 +18,12 @@ import { MarqueeText } from './MarqueeText'
 import { Tooltip } from './Tooltip'
 import { Waveform } from './Waveform'
 
+// The seek bar's arrow step matches the global seek-back/seek-forward commands, so the
+// arrows mean the same jump with or without the bar focused; Shift is the coarse step,
+// as on the trim and click-repair scrubbers.
+const SEEK_STEP_SEC = 5
+const SEEK_COARSE_STEP_SEC = 30
+
 // Owns the playback clock by subscribing straight to the shared <audio> element,
 // so the ~4Hz timeupdate stream re-renders only this card — not App, the editor
 // and the whole track list, as it did when currentTime lived in App state.
@@ -317,18 +323,44 @@ export function Player({
           // buttons stay exactly where they were whether the wave is on or off, and the card
           // just loses the wave's height.
           <div className="flex items-center px-3 pt-1.5">
-            {/* The visible track is 4px, but the button is taller with a centered bar inside,
+            {/* The visible track is 4px, but the control is taller with a centered bar inside,
                 so the clickable target clears the 40px-ish comfort zone — a thin 6px bar was
-                fiddly to hit mid-set. */}
-            <button
-              type="button"
+                fiddly to hit mid-set. A slider, not a button: a button's keyboard click
+                arrives at clientX 0 and threw the track back to 0:00, while a slider moves
+                by its keys and reads its position out. */}
+            <div
+              role="slider"
+              tabIndex={0}
               data-testid="player-seek"
               aria-label={t('player.seek')}
+              aria-valuemin={0}
+              aria-valuemax={Math.round(duration)}
+              aria-valuenow={Math.round(currentTime)}
+              aria-valuetext={t('player.seekValue', {
+                current: formatTime(currentTime),
+                total: formatTime(duration),
+              })}
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect()
                 if (duration > 0) onScrub(((e.clientX - rect.left) / rect.width) * duration)
               }}
-              className="group/seek relative flex h-4 min-w-0 flex-1 items-center"
+              onKeyDown={(e) => {
+                const step = e.shiftKey ? SEEK_COARSE_STEP_SEC : SEEK_STEP_SEC
+                const target =
+                  e.key === 'ArrowRight'
+                    ? currentTime + step
+                    : e.key === 'ArrowLeft'
+                      ? currentTime - step
+                      : e.key === 'Home'
+                        ? 0
+                        : e.key === 'End'
+                          ? duration
+                          : null
+                if (target === null) return
+                e.preventDefault()
+                if (duration > 0) onScrub(Math.min(duration, Math.max(0, target)))
+              }}
+              className="group/seek relative flex h-4 min-w-0 flex-1 cursor-pointer items-center"
             >
               <span className="relative h-1 w-full overflow-hidden rounded-full bg-[var(--color-panel)] transition-[height] group-hover/seek:h-1.5">
                 <span
@@ -336,7 +368,7 @@ export function Player({
                   style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
                 />
               </span>
-            </button>
+            </div>
           </div>
         )}
       </div>
