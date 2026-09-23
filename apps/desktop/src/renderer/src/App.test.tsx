@@ -2629,6 +2629,20 @@ describe('App Apple Music library filter', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
   })
 
+  // A library Music refused to hand over leaves every row without a verdict, which looked
+  // exactly like a check still loading: no badge, no filter buckets, nothing said.
+  it('says so when the library could not be read', async () => {
+    setApi({
+      platform: 'darwin',
+      getSettings: vi.fn().mockResolvedValue(settings({ addToAppleMusic: true })),
+      readTags: vi.fn().mockResolvedValue({ artist: 'deadmau5', title: 'Strobe' }),
+      loadAppleMusicLibrary: vi.fn().mockRejectedValue(new Error('Music got an error (-1728)')),
+    })
+    await renderApp()
+    await addTwoTracks()
+    expect((await screen.findByTestId('library-check-failed')).textContent).toContain('Apple Music')
+  })
+
   // Off macOS there is no library to read, so the buckets never resolve and must not be
   // listed — a Windows build shows no Apple Music filters in the menu at all.
   it('lists no library buckets off macOS', async () => {

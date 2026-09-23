@@ -100,22 +100,28 @@ describe('useLibraryMembership', () => {
     const { result } = renderHook(() => useLibraryMembership(3, 'appleMusic'), {
       wrapper: wrapper(),
     })
-    await waitFor(() => expect(result.current).not.toBeNull())
+    await waitFor(() => expect(result.current.index).not.toBeNull())
     expect(
-      isInLibrary(result.current as AppleMusicIndex, { title: 'Old Song', artist: 'Old Artist' }),
+      isInLibrary(result.current.index as AppleMusicIndex, {
+        title: 'Old Song',
+        artist: 'Old Artist',
+      }),
     ).toBe(true)
 
     resolveDump([{ title: 'New Song', artist: 'New Artist' }])
     await waitFor(() =>
       expect(
-        isInLibrary(result.current as AppleMusicIndex, {
+        isInLibrary(result.current.index as AppleMusicIndex, {
           title: 'New Song',
           artist: 'New Artist',
         }),
       ).toBe(true),
     )
     expect(
-      isInLibrary(result.current as AppleMusicIndex, { title: 'Old Song', artist: 'Old Artist' }),
+      isInLibrary(result.current.index as AppleMusicIndex, {
+        title: 'Old Song',
+        artist: 'Old Artist',
+      }),
     ).toBe(false)
   })
 
@@ -138,9 +144,9 @@ describe('useLibraryMembership', () => {
       wrapper: wrapper(),
     })
     await waitFor(() => expect(cached).toHaveBeenCalledTimes(1))
-    expect(result.current).toBeNull()
+    expect(result.current.index).toBeNull()
     resolveDump([{ title: 'One', artist: 'A' }])
-    await waitFor(() => expect(result.current).not.toBeNull())
+    await waitFor(() => expect(result.current.index).not.toBeNull())
   })
 
   // The Engine DJ read is a local SQLite file — already instant, so it earns no disk
@@ -157,5 +163,34 @@ describe('useLibraryMembership', () => {
     renderHook(() => useLibraryMembership(3, 'engineDj'), { wrapper: wrapper() })
     await waitFor(() => expect(engine).toHaveBeenCalledTimes(1))
     expect(cached).not.toHaveBeenCalled()
+  })
+
+  // A dump that fails (Music refusing, -1728 on an empty library, permissions) used to leave
+  // the index null exactly as it is while loading: no badge, no filter buckets, nothing to
+  // say the check never happened. The failure has to be told apart from "not checked yet",
+  // and a return to Surco tries again instead of leaving it failed for the session.
+  it('reports a failed check and retries it on refocus', async () => {
+    let focusCb: (focused: boolean) => void = () => {}
+    const load = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Music got an error (-1728)'))
+      .mockResolvedValue([{ title: 'Strobe', artist: 'deadmau5' }])
+    setApi({
+      loadAppleMusicLibrary: load,
+      loadAppleMusicLibraryCached: vi.fn().mockResolvedValue(null),
+      onWindowFocus: (cb: (f: boolean) => void) => {
+        focusCb = cb
+        return () => {}
+      },
+    })
+    const { result } = renderHook(() => useLibraryMembership(3, 'appleMusic'), {
+      wrapper: wrapper(),
+    })
+    await waitFor(() => expect(result.current.failed).toBe(true))
+    expect(result.current.index).toBeNull()
+
+    act(() => focusCb(true))
+    await waitFor(() => expect(result.current.index).not.toBeNull())
+    expect(result.current.failed).toBe(false)
   })
 })
