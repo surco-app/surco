@@ -31,6 +31,14 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05)
 }
 
+// A translucent colour as the browser paints it over an opaque surface.
+function blend(fg: string, bg: string, a: number): string {
+  const f = parseInt(fg.slice(1), 16)
+  const b = parseInt(bg.slice(1), 16)
+  const ch = [16, 8, 0].map((s) => Math.round(((f >> s) & 255) * a + ((b >> s) & 255) * (1 - a)))
+  return `#${ch.map((v) => v.toString(16).padStart(2, '0')).join('')}`
+}
+
 describe('theme text contrast (WCAG 1.4.3 AA)', () => {
   for (const [theme, t] of [
     ['dark', dark],
@@ -103,13 +111,6 @@ describe('focus ring contrast (WCAG 1.4.11)', () => {
   const mix = ring.match(/color-mix\(in srgb, var\(--color-accent\) (\d+)%, transparent\)/)
   const alpha = mix ? Number(mix[1]) / 100 : 1
 
-  function blend(fg: string, bg: string, a: number): string {
-    const f = parseInt(fg.slice(1), 16)
-    const b = parseInt(bg.slice(1), 16)
-    const ch = [16, 8, 0].map((s) => Math.round(((f >> s) & 255) * a + ((b >> s) & 255) * (1 - a)))
-    return `#${ch.map((v) => v.toString(16).padStart(2, '0')).join('')}`
-  }
-
   it('paints the ring in the accent', () => {
     expect(ring).toContain('var(--color-accent)')
   })
@@ -148,4 +149,29 @@ describe('control border contrast (WCAG 1.4.11)', () => {
     const track = css.slice(css.indexOf('.player-volume-range::-webkit-slider-runnable-track'))
     expect(track.slice(0, track.indexOf('}'))).toContain('var(--color-input-border)')
   })
+})
+
+// The section header pills print their label in the tone colour over a wash of that same
+// colour at low opacity. In the light palette the wash lifted the ground just enough to
+// sink the label under AA: warn measured 3.72:1, good 4.49, accent 4.46. The check blends
+// the wash at the opacity SectionPill actually uses, over the panel the headers sit on, so
+// a palette edit or a heavier wash can't slide them back under the line.
+describe('section pill label contrast (WCAG 1.4.3 AA)', () => {
+  const pill = readFileSync(
+    fileURLToPath(new URL('./components/SectionPill.tsx', import.meta.url)),
+    'utf8',
+  )
+  for (const tone of ['accent', 'good', 'warn', 'danger']) {
+    const wash = pill.match(new RegExp(`bg-\\[var\\(--color-${tone}\\)\\]/(\\d+)`))
+    for (const [theme, t] of [
+      ['dark', dark],
+      ['light', light],
+    ] as const) {
+      it(`${theme} ${tone} pill label reaches 4.5:1 on its wash`, () => {
+        expect(wash).not.toBeNull()
+        const ground = blend(t[`color-${tone}`], t['color-panel'], Number(wash?.[1]) / 100)
+        expect(contrast(t[`color-${tone}`], ground)).toBeGreaterThanOrEqual(4.5)
+      })
+    }
+  }
 })

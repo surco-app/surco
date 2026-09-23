@@ -56,15 +56,15 @@
   --color-line: rgba(20, 22, 38, 0.12);
   --color-line-strong: rgba(20, 22, 38, 0.22);
   --color-input-border: #81838d;
-  --color-accent: #2959aa;
+  --color-accent: #2958a9;
   --color-accent-hover: #21498f;
   --color-accent-soft: #d4def0;
   --color-fg: #2c3043;
   --color-fg-muted: #424757;
   --color-fg-dim: #565969;
   --color-fg-faint: #62657a;
-  --color-good: #33635c;
-  --color-warn: #8f5e15;
+  --color-good: #33625b;
+  --color-warn: #7c5212;
   --color-danger: #8c4351;
   --color-on-accent: #ffffff;
   /* Más oscuro que --color-accent a propósito: el contorno de foco de una fila se pinta en
