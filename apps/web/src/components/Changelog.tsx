@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { useAutoLanguage } from '../lib/useAutoLanguage'
 import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
@@ -42,7 +41,6 @@ function ItemList({ items }: { items: Item[] }) {
 
 export default function Changelog() {
   const { t } = useTranslation()
-  useAutoLanguage()
 
   const releases = t('changelog.releases', { returnObjects: true }) as Release[]
   const recent = releases.slice(0, EXPANDED_RELEASES)

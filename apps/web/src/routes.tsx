@@ -1,5 +1,6 @@
 import { Analytics } from '@vercel/analytics/react'
 import type { i18n } from 'i18next'
+import type { ReactNode } from 'react'
 import { I18nextProvider } from 'react-i18next'
 import { Outlet } from 'react-router-dom'
 import type { RouteRecord } from 'vite-react-ssg'
@@ -159,6 +160,17 @@ function LocalizedChangelog({ lng }: { lng: Language }) {
   )
 }
 
+function NoIndex({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <Head>
+        <meta name="robots" content="noindex" />
+      </Head>
+      {children}
+    </>
+  )
+}
+
 // Wraps every page so the analytics components load once across all routes (they
 // render nothing during SSG and inject their client scripts after hydration).
 function RootLayout() {
@@ -188,8 +200,24 @@ export const routes: RouteRecord[] = [
       // Transactional pages PayPal redirects to after the donate flow: their copy is
       // self-contained and language-detected on the client, so they don't need the
       // localized App shell.
-      { path: 'donate/cancel', element: <DonateCancel />, entry: 'src/routes.tsx' },
-      { path: 'donate/completed', element: <DonateCompleted />, entry: 'src/routes.tsx' },
+      {
+        path: 'donate/cancel',
+        element: (
+          <NoIndex>
+            <DonateCancel />
+          </NoIndex>
+        ),
+        entry: 'src/routes.tsx',
+      },
+      {
+        path: 'donate/completed',
+        element: (
+          <NoIndex>
+            <DonateCompleted />
+          </NoIndex>
+        ),
+        entry: 'src/routes.tsx',
+      },
     ],
   },
 ]
