@@ -2,6 +2,7 @@ import {
   Check,
   CircleAlert,
   CircleCheck,
+  History,
   type LucideIcon,
   Music,
   OctagonAlert,
@@ -58,6 +59,10 @@ interface Props {
   // Row buttons by track id, kept current as rows mount/unmount, so App can focus
   // and measure rows without querying the DOM by test id.
   rowRegistry?: RefObject<Map<string, HTMLButtonElement>>
+  // When each file was last backed up (lib/trashView latestBackupByPath), so a row can
+  // mark a track Surco keeps a backup of, and what clicking that mark opens.
+  backupAtByPath?: ReadonlyMap<string, number>
+  onOpenBackup?: (track: TrackItem) => void
 }
 
 export type MenuState = { track: TrackItem; x: number; y: number }
@@ -246,6 +251,8 @@ interface RowProps {
   observeRow?: (el: Element, onVisible: (visible: boolean) => void) => () => void
   onVisible?: (id: string, visible: boolean) => void
   rowRegistry?: RefObject<Map<string, HTMLButtonElement>>
+  backupAt?: number
+  onOpenBackup?: (track: TrackItem) => void
 }
 
 // Memoized so a progress event — which replaces only the updated track's object
@@ -272,8 +279,10 @@ const TrackRow = memo(function TrackRow({
   observeRow,
   onVisible,
   rowRegistry,
+  backupAt,
+  onOpenBackup,
 }: RowProps): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const quality = trackQuality(t)
   // isStale JSON.stringifies the track's meta; computing it once per row and
   // threading it to the badge and the tooltip avoids paying that serialization twice on
@@ -284,6 +293,15 @@ const TrackRow = memo(function TrackRow({
   // needs a conversion without opening each track. Shared with the per-format filter
   // and sort, so the pill, the filter chip and the sort order all agree.
   const format = sourceFormat(t)
+  const backupLabel =
+    backupAt === undefined
+      ? ''
+      : tr('trackList.backup', {
+          when: new Intl.DateTimeFormat(i18n.language, {
+            dateStyle: 'short',
+            timeStyle: 'short',
+          }).format(backupAt),
+        })
   const rowRef = useRef<HTMLDivElement>(null)
   // Shared by each mark's hover tooltip and its sr-only twin, so what a screen reader
   // hears is the same sentence the pointer reveals.
@@ -361,7 +379,15 @@ const TrackRow = memo(function TrackRow({
         // Roving tabindex: only the tab-stop row is reachable by Tab; the rest are driven
         // by the global ↑/↓ (and j/k) handler that focuses them as the selection moves.
         tabIndex={tabbable ? 0 : -1}
-        onClick={(e) => onSelect(t.id, { meta: e.metaKey || e.ctrlKey, shift: e.shiftKey })}
+        onClick={(e) => {
+          // The backup mark is part of the row (a button can't hold another), so its click
+          // is told apart here: it opens the backup instead of only selecting the track.
+          if (onOpenBackup && (e.target as Element).closest('[data-backup-mark]')) {
+            onOpenBackup(t)
+            return
+          }
+          onSelect(t.id, { meta: e.metaKey || e.ctrlKey, shift: e.shiftKey })
+        }}
         onKeyDown={(e) => {
           const chord = eventToChord(e, isMac)
           if (chord && matchChord(bindings, chord, false, 'track-list') === 'track-menu') {
@@ -524,6 +550,19 @@ const TrackRow = memo(function TrackRow({
                   <span className="sr-only">{tr('trackList.metaReadFailed')}</span>
                 </span>
               )}
+              {/* Only on rows with a backup, and leftmost, so the reserved slots to its
+                  right stay aligned down the list whether or not a row carries it. */}
+              {backupAt !== undefined && (
+                <span
+                  data-testid="track-backup"
+                  data-backup-mark
+                  className="group/dot relative flex shrink-0 items-center text-fg-faint"
+                >
+                  <History className="h-3 w-3" aria-hidden="true" />
+                  <Tooltip label={backupLabel} align="end" scope="dot" />
+                  <span className="sr-only">{backupLabel}</span>
+                </span>
+              )}
               {/* Both indicators reserve a fixed-width slot even when absent, so the FLAC
                   badge and duration line up in the same column down every row instead of
                   shifting whenever a track lacks a sparkle or a quality verdict. */}
@@ -663,6 +702,8 @@ export const TrackList = memo(function TrackList({
   scrollRootRef,
   onVisible,
   rowRegistry,
+  backupAtByPath,
+  onOpenBackup,
 }: Props): React.JSX.Element {
   const [menu, setMenu] = useState<MenuState | null>(null)
   // The keyboard ✕ (plain ⌫/Supr on a focused row). Removal deselects, which would
@@ -777,6 +818,8 @@ export const TrackList = memo(function TrackList({
             observeRow={observeRow}
             onVisible={onVisible}
             rowRegistry={rowRegistry}
+            backupAt={backupAtByPath?.get(t.inputPath)}
+            onOpenBackup={onOpenBackup}
           />
         ))}
       </div>

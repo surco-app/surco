@@ -31,9 +31,10 @@ export function daysLeft(entry: TrashEntry, retentionDays: number, now = Date.no
   return Math.max(0, Math.ceil(retentionDays - elapsed / DAY_MS))
 }
 
-// The rows on screen: the chosen reason, then the query over the name and the folder it
-// came from. The folder matters as much as the name — a bad batch is looked up by the
-// crate it damaged, and every file in that crate is named differently.
+// The rows on screen: the chosen reason, then the query over the name, the folder it
+// came from and the file that took its place. The folder matters as much as the name — a
+// bad batch is looked up by the crate it damaged, and every file in that crate is named
+// differently — and a track renamed by a format change is looked up by its new name.
 export function visibleEntries(
   entries: TrashEntry[],
   filter: TrashFilter,
@@ -43,7 +44,7 @@ export function visibleEntries(
   return entries.filter((entry) => {
     if (filter !== 'all' && entry.reason !== filter) return false
     if (!q) return true
-    return foldText(`${entry.name} ${entry.originalPath}`).includes(q)
+    return foldText(`${entry.name} ${entry.originalPath} ${entry.outputPath ?? ''}`).includes(q)
   })
 }
 
@@ -59,4 +60,19 @@ export function countByReason(entries: TrashEntry[]): Record<TrashFilter, number
   }
   for (const entry of entries) counts[entry.reason]++
   return counts
+}
+
+// When each file on disk was last backed up, keyed by every path a backup answers to: the
+// one it came from (a rewrite in place keeps the path) and the file that took its place (a
+// format change renamed it). The track rows read it to mark a track that has a backup.
+export function latestBackupByPath(entries: TrashEntry[]): Map<string, number> {
+  const map = new Map<string, number>()
+  const note = (path: string | undefined, at: number) => {
+    if (path && at > (map.get(path) ?? -Infinity)) map.set(path, at)
+  }
+  for (const entry of entries) {
+    note(entry.originalPath, entry.trashedAt)
+    note(entry.outputPath, entry.trashedAt)
+  }
+  return map
 }

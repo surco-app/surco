@@ -104,6 +104,7 @@ import { formatShortcut } from './lib/shortcuts'
 import { matchStatKey } from './lib/stats'
 import { ToastProvider, type ToastReporter } from './lib/toastContext'
 import { dismissToast, dismissToastByExpiry, dismissToastByUser, pushToast } from './lib/toastQueue'
+import { latestBackupByPath } from './lib/trashView'
 import {
   EMPTY_FILTER,
   filterWithSticky,
@@ -226,6 +227,10 @@ export default function App(): React.JSX.Element {
   // after every run that could have added to it.
   const [trashOpen, setTrashOpen] = useState(false)
   const [trashEntries, setTrashEntries] = useState<TrashEntry[]>([])
+  // The search the panel opens with: empty from the palette or the menu, the file's name
+  // from a track's backup mark.
+  const [trashQuery, setTrashQuery] = useState('')
+  const backupAtByPath = useMemo(() => latestBackupByPath(trashEntries), [trashEntries])
   const refreshTrash = useStableCallback(async (): Promise<void> => {
     try {
       setTrashEntries(await window.api.trashList())
@@ -1214,6 +1219,13 @@ export default function App(): React.JSX.Element {
   const onToggleActivity = useStableCallback(() => setActivityOpen((v) => !v))
   const onOpenTrash = useStableCallback(() => {
     void refreshTrash()
+    setTrashQuery('')
+    setTrashOpen(true)
+  })
+  // A track's backup mark (and its menu entry) opens the panel searched to that file.
+  const onOpenBackup = useStableCallback((track: TrackItem) => {
+    void refreshTrash()
+    setTrashQuery(baseName(track.inputPath))
     setTrashOpen(true)
   })
   const onRestoreFromTrash = useStableCallback(async (entry: TrashEntry): Promise<void> => {
@@ -1922,6 +1934,8 @@ export default function App(): React.JSX.Element {
                           scrollRootRef={listScrollRef}
                           onVisible={onTrackVisible}
                           rowRegistry={rowEls}
+                          backupAtByPath={backupAtByPath}
+                          onOpenBackup={onOpenBackup}
                         />
                       )}
                     </>
@@ -2130,6 +2144,7 @@ export default function App(): React.JSX.Element {
                 onEmpty={() => void onEmptyTrash()}
                 onReveal={() => void window.api.trashReveal()}
                 onClose={() => setTrashOpen(false)}
+                initialQuery={trashQuery}
               />
             )}
             {activityOpen && (
