@@ -543,4 +543,22 @@ describe('CoverPicker multi-select', () => {
     fireEvent.click(screen.getByTestId('cover-next'))
     expect(onApplyCoverAll).toHaveBeenLastCalledWith('http://a/2.jpg', undefined)
   })
+
+  // With tracks that carry different artwork the well shows the same empty box as a
+  // selection with none at all, so "add artwork" hid that picking one replaces every
+  // track's own cover. The difference has to be said, not left to an empty picture.
+  it('says the selected tracks have different artwork when they disagree', () => {
+    renderMulti([
+      item({ coverUrl: 'blob:one' }),
+      item({ inputPath: '/music/b.flac', coverUrl: 'blob:two' }),
+    ])
+    expect(screen.getByTestId('cover-pick')).toHaveAccessibleDescription(
+      'The selected tracks have different artwork',
+    )
+  })
+
+  it('says nothing extra when none of the selected tracks has artwork', () => {
+    renderMulti([item(), item({ inputPath: '/music/b.flac' })])
+    expect(screen.getByTestId('cover-pick')).not.toHaveAccessibleDescription()
+  })
 })

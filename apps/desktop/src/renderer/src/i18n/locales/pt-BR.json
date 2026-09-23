@@ -601,7 +601,8 @@
     "loudnessFixNoise": "Não dá para corrigir aqui: o Surco não remove ruído. Vem da fonte ou da captura.",
     "loudnessAfterHeader": "agora → após converter",
     "replaceMusic": "Substituir por {{format}} + Apple Music",
-    "requiredEmpty": "Obrigatório: preencha antes de converter"
+    "requiredEmpty": "Obrigatório: preencha antes de converter",
+    "coverMixed": "As faixas selecionadas têm capas diferentes"
   },
   "fields": {
     "groupFilled_one": "{{count}} preenchido",
