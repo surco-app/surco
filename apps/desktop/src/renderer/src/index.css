@@ -661,7 +661,8 @@ textarea {
 .is-primary [data-testid="track-quality"],
 .is-primary [data-testid="track-quality-loading"],
 .is-primary [data-testid="track-automatched"],
-.is-primary [data-testid="track-match-review"] {
+.is-primary [data-testid="track-match-review"],
+.is-primary [data-testid="track-backup"] {
   color: var(--color-on-row-selected);
 }
 /* Conversion progress is the same story and the one that costs most: the stage label and its

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { TrashEntry } from '../../../shared/types'
-import { countByReason, daysLeft, EXPIRING_SOON_DAYS, visibleEntries } from './trashView'
+import {
+  countByReason,
+  daysLeft,
+  EXPIRING_SOON_DAYS,
+  latestBackupByPath,
+  visibleEntries,
+} from './trashView'
 
 const DAY = 24 * 60 * 60 * 1000
 const now = Date.parse('2026-09-20T12:00:00Z')
@@ -102,5 +108,43 @@ describe('EXPIRING_SOON_DAYS', () => {
   // every row is noise, so the badge appears in the last week and nowhere else.
   it('is the last week of the retention', () => {
     expect(EXPIRING_SOON_DAYS).toBe(7)
+  })
+})
+
+describe('latestBackupByPath', () => {
+  // The track row marks a file that has a backup, and a track's path is either the one
+  // the backup came from (a rewrite in place) or the one that took its place (a format
+  // change renamed it). Both have to find it, and a track updated twice shows when the
+  // most recent copy was taken, since that is the one a restore would bring back first.
+  it('finds a backup by the path it came from and by the file that replaced it', () => {
+    const map = latestBackupByPath([
+      entry({ id: 'a', originalPath: '/Crate/A.aiff', trashedAt: now - DAY }),
+      entry({ id: 'b', originalPath: '/Crate/A.aiff', trashedAt: now }),
+      entry({
+        id: 'c',
+        originalPath: '/Crate/B.wav',
+        outputPath: '/Crate/B.aiff',
+        trashedAt: now - 2 * DAY,
+        reason: 'renamed',
+      }),
+    ])
+    expect(map.get('/Crate/A.aiff')).toBe(now)
+    expect(map.get('/Crate/B.aiff')).toBe(now - 2 * DAY)
+    expect(map.get('/Crate/C.aiff')).toBeUndefined()
+  })
+})
+
+describe('visibleEntries for a renamed file', () => {
+  // A format change renames the file, so the track now answers to B.aiff while its backup
+  // is B.wav. Opened from that track's mark, the search is the track's own name, and it
+  // has to still find the copy through the file that took its place.
+  it('finds a backup by the name of the file that replaced it', () => {
+    const renamed = entry({
+      name: 'B.wav',
+      originalPath: '/Crate/B.wav',
+      outputPath: '/Crate/B.aiff',
+      reason: 'renamed',
+    })
+    expect(visibleEntries([renamed], 'all', 'B.aiff')).toEqual([renamed])
   })
 })

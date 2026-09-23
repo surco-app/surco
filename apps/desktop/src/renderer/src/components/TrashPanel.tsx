@@ -24,6 +24,9 @@ interface Props {
   onEmpty: () => void
   onReveal: () => void
   onClose: () => void
+  // Opened from one track's backup mark: the search starts on that file's name, so the
+  // panel lands on its copies and clearing the box brings the whole list back.
+  initialQuery?: string
 }
 
 export function formatBytes(bytes: number, lng: string): string {
@@ -66,12 +69,13 @@ export function TrashPanel({
   onEmpty,
   onReveal,
   onClose,
+  initialQuery = '',
 }: Props): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const lng = i18n.language
   const [confirmEmpty, setConfirmEmpty] = useState(false)
   const [filter, setFilter] = useState<TrashFilter>('all')
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(initialQuery)
   const total = entries.reduce((sum, e) => sum + e.bytes, 0)
   const counts = countByReason(entries)
   const rows = visibleEntries(entries, filter, query)

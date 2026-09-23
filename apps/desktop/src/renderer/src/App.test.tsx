@@ -3341,6 +3341,34 @@ describe('App empty screen offers a single way in', () => {
 })
 
 describe('App Originals panel', () => {
+  // The toolbar count is gone; a track Surco backed up says so on its own row, and that
+  // mark is the way into its backup: the panel opens searched to the file, not on the
+  // whole list of everything a crate conversion ever rewrote.
+  it('marks a backed-up track and opens its backups from the mark', async () => {
+    setApi({
+      trashList: vi.fn().mockResolvedValue([
+        {
+          id: 'e1',
+          name: 'a.wav',
+          originalPath: '/music/a.wav',
+          storedPath: '/ud/trash/items/e1-a.wav',
+          bytes: 1024,
+          trashedAt: Date.now(),
+          reason: 'replaced',
+          outputPath: '/music/a.wav',
+        },
+      ]),
+    })
+    await renderApp()
+    const [first, second] = await addTwoTracks()
+    const mark = await within(first).findByTestId('track-backup')
+    expect(within(second).queryByTestId('track-backup')).toBeNull()
+
+    fireEvent.click(mark)
+    await screen.findByTestId('trash-panel')
+    expect(screen.getByDisplayValue('a.wav')).toBeInTheDocument()
+  })
+
   // The panel states how long originals stay and how much room they get; showing the
   // shipped defaults instead of the user's own choice tells them their setting did nothing.
   it('shows the retention and size cap the user chose', async () => {

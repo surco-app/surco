@@ -335,6 +335,7 @@
     "importApplePlaylist": "Importar do Apple Music…"
   },
   "trackList": {
+    "backup": "Cópia de segurança do original, {{when}}",
     "label": "Faixas",
     "noArtist": "Sem artista",
     "autoMatched": "Auto-associada",

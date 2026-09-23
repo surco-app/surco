@@ -965,3 +965,49 @@ describe('TrackList current row', () => {
     expect(rows[1]).toHaveAttribute('aria-current', 'true')
   })
 })
+
+// A track whose file Surco backed up before rewriting it carries a quiet mark on its
+// row, in place of the toolbar count that climbed with every conversion. The mark has
+// to say what it is to a screen reader too, and a click on it opens that backup rather
+// than just selecting the row, since that is what someone clicking it is after.
+describe('TrackList backup mark', () => {
+  it('marks only the rows whose file has a backup, and names it', () => {
+    renderListWithBackups([track({ id: 'a' }), track({ id: 'b' })], { '/music/a.wav': Date.now() })
+    const marks = screen.getAllByTestId('track-backup')
+    expect(marks).toHaveLength(1)
+    expect(within(screen.getAllByTestId('track-row')[0]).getByTestId('track-backup')).toBe(marks[0])
+    expect(marks[0]).toHaveTextContent(/backup/i)
+  })
+
+  it('opens the backup when its mark is clicked, instead of only selecting the row', () => {
+    const { onOpenBackup, onSelect } = renderListWithBackups([track({ id: 'a' })], {
+      '/music/a.wav': Date.now(),
+    })
+    fireEvent.click(screen.getByTestId('track-backup'))
+    expect(onOpenBackup).toHaveBeenCalledWith(expect.objectContaining({ id: 'a' }))
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+})
+
+function renderListWithBackups(tracks: TrackItem[], backups: Record<string, number>) {
+  const onSelect = vi.fn()
+  const onOpenBackup = vi.fn()
+  render(
+    <TrackList
+      tracks={tracks}
+      selectedId={null}
+      selectedIds={new Set()}
+      outputFormat="aiff"
+      bindings={bindings}
+      onSelect={onSelect}
+      onActivate={vi.fn()}
+      onRemove={vi.fn()}
+      onAcceptReview={vi.fn()}
+      onPrefetch={vi.fn()}
+      renderMenu={() => null}
+      backupAtByPath={new Map(Object.entries(backups))}
+      onOpenBackup={onOpenBackup}
+    />,
+  )
+  return { onSelect, onOpenBackup }
+}

@@ -188,3 +188,22 @@ describe('TrashPanel name', () => {
     expect(screen.getByRole('dialog', { name: 'Backups' })).toBeInTheDocument()
   })
 })
+
+// Opened from a track's backup mark, the panel has to land on that track's copies: with
+// a whole crate converted, the list is otherwise every file Surco ever rewrote. The query
+// sits in the search box, so clearing it gets the full list back.
+describe('TrashPanel opened for one track', () => {
+  it('starts searched to the file it was opened for', () => {
+    renderPanel(
+      [
+        entry({ id: 'a', name: 'Funk The Beat.flac', originalPath: '/Crate/Funk The Beat.flac' }),
+        entry({ id: 'b', name: 'Jungle.flac', originalPath: '/Crate/Jungle.flac' }),
+      ],
+      { initialQuery: 'Funk The Beat.flac' },
+    )
+    expect(screen.getByDisplayValue('Funk The Beat.flac')).toBeInTheDocument()
+    const rows = screen.getAllByTestId('trash-row')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toHaveTextContent('Funk The Beat.flac')
+  })
+})
