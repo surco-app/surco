@@ -22,7 +22,8 @@
     "seratoHint": "En Serato: pon el fichero guardado en tu carpeta _Serato_/Subcrates y reinicia Serato — tus pistas aparecen en la barra lateral.",
     "m3uHint": "Una lista de reproducción estándar para todo lo demás — reproductores, equipos de coche, otras herramientas.",
     "unconverted": "{{count}} pista(s) aún sin convertir — se exportarán como sus archivos originales.",
-    "failed": "Error al exportar: {{error}}"
+    "failed": "Error al exportar: {{error}}",
+    "cancelWhile": "{{stage}} Pulsa para cancelar"
   },
   "header": {
     "add": "Añadir archivos",

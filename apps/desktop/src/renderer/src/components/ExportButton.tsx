@@ -166,6 +166,9 @@ export function ExportButton({
         // Cancellable keeps the button live during the convert; otherwise the old block
         // (missing tags, or a non-cancellable processing state) still disables it.
         disabled={blocked && !cancellable}
+        // The visible text is the stage, but pressing cancels: the name says both, keeping
+        // the visible words first so voice control still finds it by what it shows.
+        aria-label={cancellable ? tr('export.cancelWhile', { stage: label }) : undefined}
         className={
           quiet
             ? 'press flex-1 rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50'
@@ -184,12 +187,18 @@ export function ExportButton({
             style={{ width: `${STAGE_PROGRESS[liveStage] * 100}%` }}
           />
         )}
-        {/* Converting: the stage names progress by default, and a hover swaps in "Cancel"
-            so the click's effect is legible before it's made. Without a cancel handler the
-            stage label just stays. */}
-        <span className={`relative ${cancellable ? 'group-hover:hidden' : ''}`}>{label}</span>
+        {/* Converting: the stage names progress by default, and a hover or keyboard focus
+            swaps in "Cancel" so the press's effect is legible before it's made. Without a
+            cancel handler the stage label just stays. */}
+        <span
+          className={`relative ${cancellable ? 'group-hover:hidden group-focus-within:hidden' : ''}`}
+        >
+          {label}
+        </span>
         {cancellable && (
-          <span className="relative hidden group-hover:inline">{tr('common.cancel')}</span>
+          <span className="relative hidden group-hover:inline group-focus-within:inline">
+            {tr('common.cancel')}
+          </span>
         )}
       </button>
       <button
