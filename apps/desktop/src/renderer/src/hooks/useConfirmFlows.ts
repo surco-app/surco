@@ -8,6 +8,7 @@ import type {
   TrackMetadata,
 } from '../../../shared/types'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
+import { baseName } from '../lib/baseName'
 import { eligibleForBatch } from '../lib/batch'
 import { deriveTagPatches } from '../lib/deriveTags'
 import type { Destination } from '../lib/destination'
@@ -206,7 +207,6 @@ export function useConfirmFlows({
     const files = [...(originalPath ? [originalPath] : []), ...superseded.map((s) => s.path)]
     const count = cleanupCount(offer)
     const isWin = window.api.platform === 'win32'
-    const baseName = (path: string): string => path.slice(path.lastIndexOf('/') + 1)
     // A network volume may have no Trash, and the OS then deletes outright. Measured 15/09
     // on the user's NAS (smbfs, no .Trashes): a file was lost while the dialog promised it
     // was recoverable. Any such file drops the promise for the whole offer.
