@@ -156,8 +156,9 @@ function ToastCard({
   // (no action, danger tone) pins to the top so its ✕ stays reachable as the body grows.
   const align = danger && !toast.action ? 'items-start' : 'items-center'
   return (
+    // No status/alert role here: the stack container is the one live region, and a role on
+    // the card nested a second one inside it, so every toast was read twice.
     <div
-      role={danger ? 'alert' : 'status'}
       aria-hidden={leaving || undefined}
       data-testid={toast.testid}
       onPointerEnter={() => setHovered(true)}
