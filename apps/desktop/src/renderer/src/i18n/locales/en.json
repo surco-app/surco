@@ -35,7 +35,9 @@
     "stats": "Stats",
     "activity": "Activity",
     "trash": "Surco originals",
+    "selectAll": "Select all",
     "revealSelected": "Scroll to the selected track",
+    "fillFromName": "Fill all tags from file name",
     "importingCount": "Reading {{done}}/{{total}}",
     "analyzeQuality": "Analyze quality of all tracks",
     "analyzingCount": "Analyzing quality… {{done}}/{{total}}",
@@ -48,7 +50,8 @@
     "autoMatchNoToken": "Add a Discogs token in Settings to auto-match",
     "autoMatchLabel": "Match",
     "addToken": "Add token",
-    "autoMatchingCount": "Auto-matching… {{done}}/{{total}}"
+    "autoMatchingCount": "Auto-matching… {{done}}/{{total}}",
+    "clearAll": "Clear the list"
   },
   "sidebar": {
     "dropHint": "Drag your tracks here.",

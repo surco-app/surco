@@ -5,9 +5,15 @@ import {
   ArrowUpNarrowWide,
   CaseSensitive,
   Clock,
+  Crosshair,
   FileAudio,
   FilePlus,
   ListMusic,
+  ListX,
+  Replace,
+  SquareCheckBig,
+  Tag,
+  Trash2,
   User,
 } from 'lucide-react'
 import type React from 'react'
@@ -40,6 +46,7 @@ interface Props {
   toggleSortDir: () => void
   tracks: TrackItem[]
   visibleTracks: TrackItem[]
+  selectedId: string | null
   selectedIds: string[]
   // 1-based position of the selected row, shown when exactly one row is selected.
   selectedPosition: number | null
@@ -48,14 +55,17 @@ interface Props {
   // rendered at all rather than shown disabled: nothing the user could configure would
   // make it work there.
   onImportApplePlaylist?: () => void
+  onSelectAllTracks: () => void
   scrollToSelected: () => void
+  onFillAll: () => void
+  onFindReplace: () => void
+  onClearAll: () => void
+  onTrashSelected: () => void
   onTrashSuspects: () => void
 }
 
-// The track column's sticky header: search, the ways to fill the list, the quality/format
-// filter and the sort control. The list-wide tools (select all, fill from name, find and
-// replace, clear, move to Trash) live in the Tracks and File menus and the palette. Pure
-// presentation — every handler is owned by App, which is where the
+// The track column's sticky header: search, the quality/format filter, the sort control and
+// the list actions. Pure presentation — every handler is owned by App, which is where the
 // state they act on lives. Split out of App because it was 175 lines of markup wedged into
 // a component that already had plenty to do; nothing here decides anything.
 export function TrackListHeader({
@@ -76,11 +86,17 @@ export function TrackListHeader({
   toggleSortDir,
   tracks,
   visibleTracks,
+  selectedId,
   selectedIds,
   selectedPosition,
   onAdd,
   onImportApplePlaylist,
+  onSelectAllTracks,
   scrollToSelected,
+  onFillAll,
+  onFindReplace,
+  onClearAll,
+  onTrashSelected,
   onTrashSuspects,
 }: Props): React.JSX.Element {
   return (
@@ -116,32 +132,6 @@ export function TrackListHeader({
           placeholder={tr('sidebar.search.placeholder')}
           clearLabel={tr('sidebar.search.clear')}
         />
-        {/* Add files sits beside the search: it's what fills this column, so it
-            belongs with the list rather than the global toolbar. */}
-        <button
-          type="button"
-          data-testid="add-files"
-          onClick={onAdd}
-          aria-label={tr('header.add')}
-          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
-        >
-          <FilePlus className="h-4 w-4" aria-hidden="true" />
-          <Tooltip label={tr('header.add')} hint={hintFor('add')} align="end" />
-        </button>
-        {/* Its sibling: the other way to fill this column, so it sits beside adding files
-            rather than hiding in the palette once a list is loaded. */}
-        {onImportApplePlaylist && (
-          <button
-            type="button"
-            data-testid="import-apple-playlist"
-            onClick={onImportApplePlaylist}
-            aria-label={tr('commands.importApplePlaylist')}
-            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
-          >
-            <ListMusic className="h-4 w-4" aria-hidden="true" />
-            <Tooltip label={tr('commands.importApplePlaylist')} align="end" />
-          </button>
-        )}
       </div>
       <QualityFilterBar
         librarySource={librarySource}
@@ -191,6 +181,113 @@ export function TrackListHeader({
           </button>
         )}
       </QualityFilterBar>
+      {/* List actions get their own row under the filter/sort, not squeezed into
+          it — crammed beside the filter they pushed the "All" quality dropdown out
+          of sight. They operate on these rows, so they live in the list header (not
+          the global toolbar where it wasn't clear which column they touched). */}
+      <div className="flex items-center gap-0.5 px-1.5 pb-2">
+        {/* Add files leads the list's own action row: it's what fills this column,
+            so it belongs with the list rather than the global toolbar. */}
+        <button
+          type="button"
+          data-testid="add-files"
+          onClick={onAdd}
+          aria-label={tr('header.add')}
+          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+        >
+          <FilePlus className="h-4 w-4" aria-hidden="true" />
+          <Tooltip label={tr('header.add')} hint={hintFor('add')} />
+        </button>
+        {/* Its sibling: the other way to fill this column, so it sits beside adding files
+            rather than hiding in the palette once a list is loaded. */}
+        {onImportApplePlaylist && (
+          <button
+            type="button"
+            data-testid="import-apple-playlist"
+            onClick={onImportApplePlaylist}
+            aria-label={tr('commands.importApplePlaylist')}
+            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+          >
+            <ListMusic className="h-4 w-4" aria-hidden="true" />
+            <Tooltip label={tr('commands.importApplePlaylist')} />
+          </button>
+        )}
+        {tracks.length > 0 && (
+          <>
+            <span
+              aria-hidden="true"
+              className="mx-0.5 h-5 w-px shrink-0 self-center bg-[var(--color-line)]"
+            />
+            <button
+              type="button"
+              data-testid="select-all"
+              onClick={onSelectAllTracks}
+              aria-label={tr('header.selectAll')}
+              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+            >
+              <SquareCheckBig className="h-4 w-4" aria-hidden="true" />
+              <Tooltip label={tr('header.selectAll')} hint={hintFor('select-all')} />
+            </button>
+            {selectedId && (
+              <button
+                type="button"
+                data-testid="reveal-selected"
+                onClick={scrollToSelected}
+                aria-label={tr('header.revealSelected')}
+                className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+              >
+                <Crosshair className="h-4 w-4" aria-hidden="true" />
+                <Tooltip label={tr('header.revealSelected')} />
+              </button>
+            )}
+            <button
+              type="button"
+              data-testid="fill-all"
+              onClick={onFillAll}
+              aria-label={tr('header.fillFromName')}
+              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+            >
+              <Tag className="h-4 w-4" aria-hidden="true" />
+              <Tooltip label={tr('header.fillFromName')} hint={hintFor('fill-all')} />
+            </button>
+            <button
+              type="button"
+              data-testid="open-find-replace"
+              onClick={onFindReplace}
+              aria-label={tr('commands.findReplace')}
+              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+            >
+              <Replace className="h-4 w-4" aria-hidden="true" />
+              <Tooltip label={tr('commands.findReplace')} hint={hintFor('find-replace')} />
+            </button>
+            {/* The destructive pair sits apart at the far end, mildest first:
+                  clear the list (rows only), then move the selection to the
+                  Trash (real files). */}
+            <span className="flex-1" />
+            <button
+              type="button"
+              data-testid="clear-all"
+              onClick={onClearAll}
+              aria-label={tr('header.clearAll')}
+              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-danger"
+            >
+              <ListX className="h-4 w-4" aria-hidden="true" />
+              <Tooltip label={tr('header.clearAll')} />
+            </button>
+            <button
+              type="button"
+              data-testid="trash-selected"
+              onClick={onTrashSelected}
+              disabled={!selectedId && selectedIds.length === 0}
+              aria-label={tr('commands.trashSelected')}
+              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-muted outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-danger disabled:opacity-40"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+              <Tooltip label={tr('commands.trashSelected')} />
+            </button>
+          </>
+        )}
+      </div>
     </div>
   )
 }
