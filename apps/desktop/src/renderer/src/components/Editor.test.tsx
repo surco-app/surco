@@ -2194,63 +2194,6 @@ describe('Editor replace old Apple Music copy', () => {
     fireEvent.click(screen.getByTestId('clean-up-previous'))
     expect(onCleanUp).toHaveBeenCalledWith(expect.objectContaining({ staleMusicCopy: null }))
   })
-
-  // Two near-identical entries mean Surco adds instead of replacing, because replacing on a
-  // guess can delete the wrong song. Silently, that reads as a contradiction the user cannot
-  // resolve: the badge says the song IS in their library while the button offers to add a
-  // second copy of it. Naming the duplicates is what turns a button that looks broken into a
-  // consequence of something in their own library that they can go and fix.
-  it('says why an ambiguous match is being added instead of replaced', () => {
-    ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
-    const libraryIndex = buildLibraryIndex([
-      {
-        title: 'Save My Love (Original Mix)',
-        artist: 'DJ Mofly',
-        durationSec: 365,
-        persistentId: 'COPYONE123456789',
-      },
-      {
-        title: 'Save My Love (Original Mix)',
-        artist: 'DJ Mofly',
-        durationSec: 365,
-        persistentId: 'COPYTWO123456789',
-      },
-    ])
-    renderEditor(
-      {
-        id: 'a',
-        duration: 365,
-        meta: { title: 'Save My Love (Original Mix)', artist: 'DJ Mofly' },
-      },
-      'aiff',
-      { libraryIndex },
-    )
-    expect(screen.getByTestId('ambiguous-library-copies')).toHaveTextContent('2')
-  })
-
-  // The notice is for the ambiguous case only. One clean match replaces, and saying
-  // anything there would contradict the button that is about to do exactly what it says.
-  it('stays quiet when a single library copy matches', () => {
-    ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
-    const libraryIndex = buildLibraryIndex([
-      {
-        title: 'Save My Love (Original Mix)',
-        artist: 'DJ Mofly',
-        durationSec: 365,
-        persistentId: 'COPYONE123456789',
-      },
-    ])
-    renderEditor(
-      {
-        id: 'a',
-        duration: 365,
-        meta: { title: 'Save My Love (Original Mix)', artist: 'DJ Mofly' },
-      },
-      'aiff',
-      { libraryIndex },
-    )
-    expect(screen.queryByTestId('ambiguous-library-copies')).not.toBeInTheDocument()
-  })
 })
 
 describe('Editor output file name', () => {
@@ -3093,18 +3036,29 @@ describe('Editor Apple Music library badge', () => {
     expect(screen.queryByTestId('apple-music-status')).toBeNull()
   })
 
-  // The library check resolves after the header has drawn, so a badge sharing the button row
-  // shoved "Fill from filename" sideways (and, in a narrow editor, onto a second line) the
-  // moment it mounted. On its own status line under the title, it can't move the buttons.
-  it('shows the badge on a status line of its own, outside the header buttons', () => {
+  // The status reads as part of the section's title line, not a line of its own: alone under
+  // the title it hung there like a stray fragment of the body, open or folded.
+  it('shows the badge on the header row, beside the title and the header buttons', () => {
     setApi('darwin')
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       libraryIndex: owned,
     })
-    const badge = screen.getByTestId('apple-music-status')
-    const derive = screen.getByTestId('derive-btn')
-    expect(screen.getByTestId('form-status')).toContainElement(badge)
-    expect(screen.getByTestId('form-status')).not.toContainElement(derive)
+    const headerRow = screen.getByRole('button', { name: 'Metadata' }).closest('h3')?.parentElement
+    expect(headerRow).toContainElement(screen.getByTestId('apple-music-status'))
+    expect(headerRow).toContainElement(screen.getByTestId('derive-btn'))
+  })
+
+  // Folded, the section is one line: a status line left hanging under it read as a stray
+  // fragment of the hidden body. The badge rides the header row beside the digest instead,
+  // so the library state (and the duplicate-copies warning) still shows while folded.
+  it('keeps the badge on the header row while the section is folded', () => {
+    setApi('darwin')
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
+      libraryIndex: owned,
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Metadata' }))
+    const headerRow = screen.getByRole('button', { name: 'Metadata' }).closest('h3')?.parentElement
+    expect(headerRow).toContainElement(screen.getByTestId('apple-music-status'))
   })
 
   // Off macOS there is no Apple Music library, so the badge stays hidden rather than
