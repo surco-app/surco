@@ -1,4 +1,5 @@
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from './trash'
+import type { Settings } from './types'
 
 // Whether a write path stashes the file it is about to replace, rename away or delete.
 // Three paths reach it — a rewrite onto the source's own path, the old-extension file a
@@ -55,4 +56,11 @@ export function sanitizeMaxGb(value: unknown): number {
   const n = Number(value)
   if (!Number.isFinite(n) || value === '' || value === null) return TRASH_MAX_BYTES / 1024 ** 3
   return clamp(n, GB_MIN, GB_MAX)
+}
+
+export function trashLimits(settings: Pick<Settings, 'backupRetentionDays' | 'backupMaxGb'>): {
+  retentionDays: number
+  maxBytes: number
+} {
+  return { retentionDays: settings.backupRetentionDays, maxBytes: settings.backupMaxGb * 1024 ** 3 }
 }

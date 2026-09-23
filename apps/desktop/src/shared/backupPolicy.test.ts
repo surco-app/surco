@@ -5,6 +5,7 @@ import {
   keepsBackup,
   sanitizeMaxGb,
   sanitizeRetentionDays,
+  trashLimits,
 } from './backupPolicy'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from './trash'
 
@@ -90,5 +91,16 @@ describe('sanitizeMaxGb', () => {
     expect(sanitizeMaxGb(0)).toBe(0.1)
     expect(sanitizeMaxGb(-3)).toBe(0.1)
     expect(sanitizeMaxGb(99999)).toBe(1024)
+  })
+})
+
+// The setting is in gigabytes and the sweep counts bytes; main's sweep and the panel's
+// meter both read these, so a unit slip in either would disagree with the other.
+describe('trashLimits', () => {
+  it('turns the settings into the retention and the byte cap the sweep uses', () => {
+    expect(trashLimits({ backupRetentionDays: 14, backupMaxGb: 2 })).toEqual({
+      retentionDays: 14,
+      maxBytes: 2 * 1024 ** 3,
+    })
   })
 })
