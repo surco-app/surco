@@ -1,10 +1,10 @@
 import { useCallback, useRef, useState } from 'react'
 import { searchHintsOf } from '../../../shared/metadata'
 import type {
+  MetaTextKey,
   SearchHints,
   SearchPriority,
   SearchProviderId,
-  TrackMetadata,
 } from '../../../shared/types'
 import type { LocalActivityReport } from '../lib/activityLog'
 import { type AppleMusicIndex, isInLibrary } from '../lib/appleMusicLibrary'
@@ -49,7 +49,7 @@ interface Params {
   // Bandcamp on/off takes effect without restarting the sweep. Discogs is always tried
   // first; Bandcamp, when enabled, is the fallback for what Discogs doesn't carry.
   searchProvidersRef: { readonly current: SearchProviderId[] }
-  importFieldsRef: { readonly current: (keyof TrackMetadata)[] }
+  importFieldsRef: { readonly current: MetaTextKey[] }
   // Live view of the title-cleanup settings (the Naming pattern). Read at probe time so
   // editing the pattern applies to the next probe without restarting the sweep.
   matchCleanupRef: { readonly current: MatchCleanup }

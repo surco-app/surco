@@ -1,0 +1,102 @@
+import { METADATA_KEYS } from './metadata'
+import { MANAGED_ALIASES, TAG_FIELDS } from './tagFields'
+import type { CustomField, ForeignTag, TrackMetadata } from './types'
+
+// The tag a custom field is written under: its key upper-cased, the convention mp3tag and
+// TagScanner follow for fields of their own. A file tagged elsewhere with any casing still
+// reads back, since the reader compares names case-insensitively.
+export function customTagName(key: string): string {
+  return key.toUpperCase()
+}
+
+// A key in the shape Surco's own keys have (catalogNumber), from the name the user gave
+// the field: accents and symbols dropped, words joined in camelCase, never led by a digit.
+export function suggestCustomKey(label: string): string {
+  const words = label
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean)
+  const key = words
+    .map((w, i) => (i === 0 ? w.toLowerCase() : w[0].toUpperCase() + w.slice(1).toLowerCase()))
+    .join('')
+  return /^[0-9]/.test(key) ? `field${key[0].toUpperCase()}${key.slice(1)}` : key
+}
+
+export type CustomKeyProblem = 'invalid' | 'taken'
+
+// A tag name every container accepts: Vorbis allows no spaces or '=', and a key leading
+// with a letter reads as a {token} in a filename pattern.
+const VALID_KEY = /^[A-Za-z][A-Za-z0-9_]*$/
+
+// Every name a managed field is read from or written to, lower-cased: a custom field on
+// one of them would be read as that field and never reach the editor as its own.
+const TAKEN = new Set(
+  [
+    ...METADATA_KEYS,
+    ...MANAGED_ALIASES,
+    ...TAG_FIELDS.flatMap((f) => [f.id3 ?? '', f.vorbis ?? '', ...(f.vorbisAlso ?? [])]),
+    'encoder',
+  ]
+    .filter(Boolean)
+    .map((name) => name.toLowerCase()),
+)
+
+export function customKeyProblem(
+  key: string,
+  existing: readonly CustomField[],
+): CustomKeyProblem | null {
+  if (!VALID_KEY.test(key)) return 'invalid'
+  const lower = key.toLowerCase()
+  if (TAKEN.has(lower) || existing.some((f) => f.key.toLowerCase() === lower)) return 'taken'
+  return null
+}
+
+export function isCustomTag(name: string, fields: readonly CustomField[]): boolean {
+  const upper = name.toUpperCase()
+  return fields.some((f) => customTagName(f.key) === upper)
+}
+
+export function customValues(
+  meta: TrackMetadata,
+  foreignTags: readonly ForeignTag[],
+  fields: readonly CustomField[],
+): Record<string, string> {
+  const byTag = new Map(foreignTags.map((t) => [t.name.toUpperCase(), t.value]))
+  const values: Record<string, string> = {}
+  for (const field of fields)
+    values[field.key] = meta.custom?.[field.key] ?? byTag.get(customTagName(field.key)) ?? ''
+  return values
+}
+
+type TaggedTrack = { meta: TrackMetadata; foreignTags?: ForeignTag[]; foreignRemoved?: string[] }
+
+// The file's own tags a track still keeps: every foreign tag but the ones the user marked
+// for removal in the inspector, which are on their way out of the file.
+function liveTags(track: TaggedTrack): ForeignTag[] {
+  const removed = new Set(track.foreignRemoved)
+  return (track.foreignTags ?? []).filter((t) => !removed.has(t.name))
+}
+
+// The tags that spell a custom field's name another way ("VinylCondition"): a conversion
+// clears them, since it writes the field upper-cased and the file would hold it twice.
+export function strayTags(track: TaggedTrack, fields: readonly CustomField[]): string[] {
+  return liveTags(track)
+    .filter((t) => isCustomTag(t.name, fields) && t.name !== t.name.toUpperCase())
+    .map((t) => t.name)
+}
+
+// A field's value by key: a managed field's own text, else the custom field of that key.
+export function fieldValue(meta: TrackMetadata, key: string): string {
+  const own = (meta as unknown as Record<string, unknown>)[key]
+  if (typeof own === 'string') return own
+  return meta.custom?.[key] ?? ''
+}
+
+// The track's metadata with every custom field resolved, for anything that reads fields
+// by key off a track: the user's edit, else the tag the file keeps (minus one marked for
+// removal), else empty.
+export function effectiveMeta(track: TaggedTrack, fields: readonly CustomField[]): TrackMetadata {
+  if (fields.length === 0) return track.meta
+  return { ...track.meta, custom: customValues(track.meta, liveTags(track), fields) }
+}

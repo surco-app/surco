@@ -1,6 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { effectiveMeta, strayTags } from '../../../shared/customFields'
+import { DEFAULT_FIELDS } from '../../../shared/defaults'
 import { batchKeepMp3, hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
 import type { DeclickMode, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
 import { removeAnalysisQueries } from '../lib/analysisQueries'
@@ -14,8 +16,8 @@ import { mapWithConcurrency } from '../lib/concurrency'
 import { coverSourceOf } from '../lib/coverSource'
 import { type Destination, fromDestination } from '../lib/destination'
 import { exportedPatch } from '../lib/export'
-import { DEFAULT_REQUIRED_FIELDS, missingRequired } from '../lib/fields'
-import { sanitizeMeta } from '../lib/hygiene'
+import { DEFAULT_REQUIRED_FIELDS, missingRequiredOf } from '../lib/fields'
+import { clearHiddenProvenance, sanitizeMeta } from '../lib/hygiene'
 import { cleanIpcError, isFileInUseMessage, mainErrorMessage } from '../lib/ipcError'
 import { renderOutputName } from '../lib/outputName'
 import { declickFor, declickForJob, normalizeFor, normalizeForJob } from '../lib/reapply'
@@ -194,9 +196,10 @@ export function useTrackProcessing({
         }
         track = fresh
       }
-      const missing = missingRequired(
-        track.meta,
+      const missing = missingRequiredOf(
+        track,
         settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+        settings?.customFields ?? [],
       )
       if (missing.length) {
         const names = missing.map((k) => tr(`fields.${k}`)).join(', ')
@@ -250,10 +253,15 @@ export function useTrackProcessing({
         musicStatus: undefined,
         musicError: undefined,
       })
-      const meta = sanitizeMeta(track.meta, {
-        trim: settings?.trimWhitespace ?? true,
-        zeroPad: settings?.zeroPadTrack ?? true,
-      })
+      const customFields = settings?.customFields ?? []
+      const stray = strayTags(track, customFields)
+      const meta = clearHiddenProvenance(
+        sanitizeMeta(effectiveMeta(track, customFields), {
+          trim: settings?.trimWhitespace ?? true,
+          zeroPad: settings?.zeroPadTrack ?? true,
+        }),
+        settings?.visibleFields ?? DEFAULT_FIELDS,
+      )
       // Default to the source file's own name: users expect "load and convert" to keep
       // their filename. A metadata-derived name is used when the editor's "Regenerate from
       // metadata" button (or a manual edit) set track.outputName, or — with auto-apply on —
@@ -295,7 +303,8 @@ export function useTrackProcessing({
           ...coverSourceOf(track),
           removeCover: track.coverRemoved,
           clearExtras: track.metaCleared,
-          foreignRemoved: track.foreignRemoved,
+          foreignRemoved:
+            stray.length > 0 ? [...(track.foreignRemoved ?? []), ...stray] : track.foreignRemoved,
           metaUnread: track.metaReadFailed || undefined,
           format: jobFormat,
           normalize: normalizeForJob(track, normalizeFor(track, normalizeOverride)),
@@ -499,7 +508,11 @@ export function useTrackProcessing({
       if (batching) return
       // Same completeness gate as the count/button: incomplete tracks aren't attempted (and
       // so aren't marked failed) — they stay flagged in the list for the user to finish.
-      const ids = eligibleForBatch(targets, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
+      const ids = eligibleForBatch(
+        targets,
+        settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+        settings?.customFields,
+      )
       // Pin the settings that decide what a conversion DOES to the user's files: every
       // queued track converts under the settings the run started with, so a Settings
       // change mid-batch can't fork the run into another format or into unconfirmed

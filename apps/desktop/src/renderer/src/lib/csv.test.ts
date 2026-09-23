@@ -27,3 +27,21 @@ describe('toggleCsv', () => {
     expect(toggleCsv('', 'Bases')).toBe('Bases')
   })
 })
+
+// A tag that holds commas ("Folk, World, & Country") stays one tag wherever it sits, and
+// toggling a neighbour neither splits it nor moves it.
+describe('tags that contain commas', () => {
+  const whole = ['Folk, World, & Country']
+
+  it('splits around the whole name, in the order the text has', () => {
+    expect(splitCsv('Pop, Folk, World, & Country, Rock', whole)).toEqual([
+      'Pop',
+      'Folk, World, & Country',
+      'Rock',
+    ])
+  })
+
+  it('removes the whole name as one tag', () => {
+    expect(toggleCsv('Pop, Folk, World, & Country', 'Folk, World, & Country', whole)).toBe('Pop')
+  })
+})

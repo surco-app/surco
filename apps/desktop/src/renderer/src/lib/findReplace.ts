@@ -1,9 +1,9 @@
-import type { TrackMetadata } from '../../../shared/types'
+import type { MetaTextKey, TrackMetadata } from '../../../shared/types'
 
 // The free-text tags find/replace runs over — where bulk cleanup of rips actually happens.
 // Pure-numeric fields (year, track/disc number, bpm) are left out so a search like "0" can't
 // mangle them.
-const FIND_REPLACE_FIELDS: (keyof TrackMetadata)[] = [
+const FIND_REPLACE_FIELDS: MetaTextKey[] = [
   'title',
   'artist',
   'album',
@@ -67,5 +67,11 @@ export function findReplaceTrack(
     const next = replaceInValue(meta[field] ?? '', find, replace, opts)
     if (next !== meta[field]) out[field] = next
   }
+  const custom = meta.custom ?? {}
+  const changed = Object.entries(custom).flatMap(([key, value]) => {
+    const next = replaceInValue(value, find, replace, opts)
+    return next === value ? [] : [[key, next] as const]
+  })
+  if (changed.length > 0) out.custom = { ...custom, ...Object.fromEntries(changed) }
   return out
 }

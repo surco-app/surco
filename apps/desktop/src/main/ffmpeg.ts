@@ -6,10 +6,12 @@ import { basename, dirname, extname, join } from 'node:path'
 import { promisify } from 'node:util'
 import log from 'electron-log/main'
 import { processesAudio } from '../shared/audioProcessing'
+import { customTagName } from '../shared/customFields'
 import { declickFilter } from '../shared/declick'
 import { errorWithKey } from '../shared/errorKeys'
 import { forcedInputArgs } from '../shared/inputFormat'
 import { formatRatingTag, starsToRating, starsToWmpRating } from '../shared/rating'
+import { MANAGED_ALIASES, TAG_FIELDS } from '../shared/tagFields'
 import { trimFilter } from '../shared/trim'
 import type {
   BpmResult,
@@ -20,6 +22,7 @@ import type {
   KeyResult,
   LoudnessResult,
   MetaRead,
+  MetaTextKey,
   Mp3Quality,
   NormalizeConfig,
   OutputFormat,
@@ -87,7 +90,6 @@ import { rekordboxRepointFor } from './rekordboxRepointFor'
 import { renameWithRetry, rescuePath } from './renameRetry'
 import { getSettings } from './settings'
 import { createSharedScan } from './sharedScan'
-import { MANAGED_ALIASES, TAG_FIELDS } from './tagFields'
 import { readTagFormats } from './tagFormats'
 import {
   type CueShift,
@@ -193,7 +195,7 @@ const run = (async (file: string, args: string[], opts?: RunOpts) => {
 const ANALYSIS_TIMEOUT_MS = 120_000
 
 interface ProbeTags {
-  format?: { tags?: Record<string, unknown> }
+  format?: { format_name?: string; tags?: Record<string, unknown> }
   streams?: { codec_type?: string; tags?: Record<string, unknown> }[]
 }
 
@@ -202,6 +204,21 @@ interface ProbeTags {
 // stream.tags for some containers); keys vary in case across muxers, so we match
 // case-insensitively and accept the common aliases each writer uses. The aliases
 // (and the per-field normalization) live in the TAG_FIELDS registry.
+// The "N" of an "n/N" number, or '' when the value carries no total.
+function totalPart(raw: string): string {
+  const [, total] = raw.split('/')
+  return total?.trim() ?? ''
+}
+
+// "3" and "12" as the "3/12" ID3 and MP4 keep in one tag. A vinyl side position ("A2")
+// counts nothing, so it is written alone.
+function withTotal(number: string, total: string): string {
+  return total && /^\d+$/.test(number) ? `${number}/${total}` : number
+}
+
+// The containers whose tags ffprobe reads from ID3, where a TagField's id3Aliases apply.
+const ID3_CONTAINER = /^(mp3|aiff|wav)$/
+
 export function tagsFromProbe(data: ProbeTags): TrackMetadata {
   // Skip the attached-picture stream: FLAC stores the cover's "Cover (front)"
   // description as a comment tag on that video stream, which would otherwise be read
@@ -227,9 +244,12 @@ export function tagsFromProbe(data: ProbeTags): TrackMetadata {
     }
     return ''
   }
-  const meta = {} as Record<keyof TrackMetadata, string>
+  const id3 = ID3_CONTAINER.test(data.format?.format_name ?? '')
+  const meta = {} as Record<MetaTextKey, string>
   for (const field of TAG_FIELDS) {
-    const raw = pick(...field.aliases)
+    const raw =
+      pick(...field.aliases, ...(id3 ? (field.id3Aliases ?? []) : [])) ||
+      totalPart(pick(...(TAG_FIELDS.find((f) => f.withTotal === field.key)?.aliases ?? [])))
     meta[field.key] = field.parse ? field.parse(raw) : raw
   }
   return meta
@@ -365,7 +385,7 @@ export async function readTags(input: string): Promise<TrackMetadata> {
       '-v',
       'error',
       '-show_entries',
-      'format_tags:stream_tags:stream=codec_type',
+      'format=format_name:format_tags:stream_tags:stream=codec_type',
       '-of',
       'json',
       ...forcedInputArgs(input),
@@ -383,8 +403,8 @@ const TAGLIB_FILLED_INPUT = /\.(wav|aiff?|m4a)$/i
 function withTagLibExtras(input: string, tags: TrackMetadata): TrackMetadata {
   if (!TAGLIB_FILLED_INPUT.test(input)) return tags
   for (const [field, value] of Object.entries(readTagLibExtras(input))) {
-    const key = field as keyof TrackMetadata
-    if (value && !tags[key]?.trim()) tags[key] = value
+    const key = field as MetaTextKey
+    if (typeof value === 'string' && value && !tags[key]?.trim()) tags[key] = value
   }
   return tags
 }
@@ -560,7 +580,7 @@ async function readMetaUncached(input: string): Promise<MetaRead | null> {
         '-v',
         'error',
         '-show_entries',
-        'format=duration:format_tags:stream_tags:stream=codec_type,width,height',
+        'format=duration,format_name:format_tags:stream_tags:stream=codec_type,width,height',
         '-of',
         'json',
         ...forcedInputArgs(input),
@@ -782,16 +802,7 @@ function pcmCodec(depth: SampleDepth, endian: 'be' | 'le'): string {
 // de herramientas), no a la obra ni a quien la tiene ahora. ffprobe los reporta en
 // minúscula y el muxer de cada formato los traduce a su convención (ENCODED_BY en
 // Vorbis, TENC/TSSE en ID3, ITCH/ISFT en RIFF), así que basta nombrarlos una vez.
-const SOURCE_PROVENANCE = [
-  'encoded_by',
-  'engineer',
-  'technician',
-  'software',
-  'originator',
-  'product',
-  'source',
-  'copyright',
-]
+const SOURCE_PROVENANCE = ['engineer', 'technician', 'software', 'originator', 'product', 'source']
 
 function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
   // ffmpeg copies the source's global metadata into the re-encoded file by default,
@@ -806,15 +817,17 @@ function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
   // written one at read time regardless of case, so only differing spellings need
   // the explicit clear — and the written name itself must be skipped, or the clear
   // would wipe the value set two arguments earlier.
-  return TAG_FIELDS.flatMap((field) => {
-    if (!field.id3) return []
+  const managed = TAG_FIELDS.flatMap((field) => {
     const name = vorbis ? (field.vorbis ?? field.id3) : field.id3
-    const value = (meta[field.key] ?? '').trim()
+    if (!name) return []
+    const own = (meta[field.key] ?? '').trim()
+    const total = field.withTotal && !vorbis ? (meta[field.withTotal] ?? '').trim() : ''
+    const value = withTotal(own, total)
     // Extra spellings the same value is written under (Vorbis only): they must be excluded
     // from the clears below, or the alias sweep would erase what was just written.
     const also = vorbis ? (field.vorbisAlso ?? []) : []
     const written = new Set([name.toLowerCase(), ...also.map((n) => n.toLowerCase())])
-    const clears = field.aliases
+    const clears = [...field.aliases, ...(vorbis ? [] : (field.id3Aliases ?? []))]
       .filter((alias) => !written.has(alias))
       .flatMap((alias) => ['-metadata', `${alias}=`])
     return [
@@ -824,6 +837,13 @@ function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
       ...clears,
     ]
   })
+  // The user's own fields, under the upper-case key: TXXX on ID3, a comment on Vorbis. An
+  // empty value clears the tag, like an emptied managed field.
+  const custom = Object.entries(meta.custom ?? {}).flatMap(([key, value]) => [
+    '-metadata',
+    `${customTagName(key)}=${value.trim()}`,
+  ])
+  return [...managed, ...custom]
 }
 
 const AIFF_INPUT = /\.aiff?$/i

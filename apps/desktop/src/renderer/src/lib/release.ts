@@ -1,5 +1,6 @@
 import { METADATA_KEYS } from '../../../shared/metadata'
 import type {
+  MetaTextKey,
   Release,
   ReleaseTrack,
   SearchProviderId,
@@ -505,7 +506,7 @@ export function buildReleaseMeta(
   rel: Release,
   track: ReleaseTrack | undefined,
   cover: { url?: string; path?: string; keep?: boolean } = {},
-  importFields?: readonly (keyof TrackMetadata)[],
+  importFields?: readonly MetaTextKey[],
 ): ReleaseMetaPatch {
   const albumArtist = joinArtists(rel.artists)
   // Discogs classifies twice: a broad genre ("Electronic") and finer styles ("House",
@@ -583,9 +584,9 @@ export function buildReleaseMeta(
 function onlyImported(
   current: TrackMetadata,
   imported: TrackMetadata,
-  fields: readonly (keyof TrackMetadata)[],
+  fields: readonly MetaTextKey[],
 ): TrackMetadata {
-  const allowed = new Set<keyof TrackMetadata>(fields)
+  const allowed = new Set<MetaTextKey>(fields)
   const result = { ...imported }
   for (const key of METADATA_KEYS) {
     if (!allowed.has(key)) result[key] = current[key] ?? ''

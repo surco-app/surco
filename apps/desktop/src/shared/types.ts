@@ -213,6 +213,9 @@ export interface Settings {
   trimWhitespace: boolean
   zeroPadTrack: boolean
   visibleFields: string[]
+  // The user's own fields (Settings → Fields). Optional so settings saved before they
+  // existed load unchanged; absent reads as none.
+  customFields?: CustomField[]
   requiredFields: string[]
   // Which fields applying a Discogs release is allowed to fill. Separate from
   // visibleFields on purpose: hiding an input is about the form, not about whether a
@@ -373,6 +376,22 @@ export interface TrackMetadata {
   isrc?: string
   mixName?: string
   originalYear?: string
+  // The credits TagScanner and mp3tag edit that Surco only carried through untouched:
+  // TOPE/ORIGARTIST, TEXT/LYRICIST, TPE3/CONDUCTOR. Hidden in the editor by default.
+  originalArtist?: string
+  lyricist?: string
+  conductor?: string
+  // The "of N" halves of the track and disc numbers: inside TRCK/TPOS ("3/12") on ID3,
+  // TRACKTOTAL/DISCTOTAL on Vorbis, trkn/disk on MP4. Hidden in the editor by default.
+  trackTotal?: string
+  discTotal?: string
+  // TCOP/COPYRIGHT and TENC/ENCODEDBY. Hidden by default, and while hidden the editor sends
+  // them empty, which clears the previous owner's values on conversion.
+  copyright?: string
+  encodedBy?: string
+  // The user's own fields (Settings → Fields), by key: vinylCondition → "VG+". Written to
+  // the file as VINYLCONDITION: TXXX on ID3, a Vorbis comment, an iTunes freeform atom.
+  custom?: Record<string, string>
   // Boolean-ish: '1' when the album is a various-artists compilation, '' when
   // not. Kept a string like every other field; written as TCMP/COMPILATION,
   // which is what makes Apple Music group VA albums instead of splitting them.
@@ -397,6 +416,11 @@ export interface TrackMetadata {
   // match months later without searching for it again.
   discogsUrl?: string
 }
+
+// The metadata fields that hold one text value each: every field but the user's own,
+// which ride together in `custom`. Code that reads or writes a field as a string names
+// its key with this.
+export type MetaTextKey = Exclude<keyof TrackMetadata, 'custom'>
 
 // One track's editable state, persisted alongside the session paths so a crash or
 // forced quit never loses metadata the user staged but hadn't converted yet. Keyed
@@ -521,6 +545,14 @@ export interface CoverRead {
 // Un tag que el fichero lleva pero que la app no gestiona (SERATO_MARKERS_V2, TRAKTOR4,
 // MUSICBRAINZ_*, REPLAYGAIN_*…). El inspector los muestra y permite borrarlos. El valor
 // puede venir truncado por ffprobe en blobs enormes; se muestra tal cual (solo lectura).
+// A field the user added in Settings → Fields: the name shown in the editor and the key
+// that names it everywhere else ({vinylCondition} in a filename pattern) and, upper-cased,
+// in the file.
+export interface CustomField {
+  key: string
+  label: string
+}
+
 export interface ForeignTag {
   name: string
   value: string

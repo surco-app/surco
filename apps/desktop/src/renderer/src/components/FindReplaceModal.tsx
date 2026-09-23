@@ -2,24 +2,35 @@ import { ArrowRight } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { TrackMetadata } from '../../../shared/types'
+import { effectiveMeta } from '../../../shared/customFields'
+import type { CustomField, MetaTextKey, TrackMetadata } from '../../../shared/types'
+import { labeledFields } from '../lib/fields'
 import { findReplaceTrack, isValidRegex } from '../lib/findReplace'
 import type { TrackItem } from '../types'
 import { ModalShell } from './ModalShell'
 
 interface Props {
   tracks: TrackItem[]
+  customFields?: readonly CustomField[]
   onApply: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   onClose: () => void
 }
 
 const PREVIEW_LIMIT = 6
 
+// A stable default, so the preview's memo is not rebuilt on every render.
+const NO_CUSTOM_FIELDS: readonly CustomField[] = []
+
 // Bulk find/replace across the given tracks' text tags — the cleanup pass for messy rips.
 // App scopes `tracks` to the selection-or-visible set, so an active filter never rewrites
 // hidden rows. Plain or regex (with $1 capture groups); a live preview shows how many fields
 // would change and a few before→after examples, so the user commits only once it looks right.
-export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX.Element {
+export function FindReplaceModal({
+  tracks,
+  customFields = NO_CUSTOM_FIELDS,
+  onApply,
+  onClose,
+}: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [find, setFind] = useState('')
   const [replace, setReplace] = useState('')
@@ -36,32 +47,55 @@ export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX
   // The preview runs the replacement over every field of every track — O(tracks × 15)
   // regex passes — so it recomputes only when an input actually changes, not on every
   // keystroke-induced render of the modal.
+  // Each track's metadata with its custom fields resolved, shared by the replacement and
+  // the before→after rows, and rebuilt only when the tracks or the fields change.
+  const resolved = useMemo(
+    () => new Map(tracks.map((t) => [t.id, effectiveMeta(t, customFields)])),
+    [tracks, customFields],
+  )
   const patches = useMemo(
     () =>
       find && !badRegex
-        ? tracks
-            .map((t) => ({
-              id: t.id,
-              meta: findReplaceTrack(t.meta, find, replace, { regex, caseSensitive }),
+        ? [...resolved]
+            .map(([id, meta]) => ({
+              id,
+              meta: findReplaceTrack(meta, find, replace, { regex, caseSensitive }),
             }))
             .filter((p) => Object.keys(p.meta).length > 0)
         : [],
-    [tracks, find, replace, regex, caseSensitive, badRegex],
+    [resolved, find, replace, regex, caseSensitive, badRegex],
   )
-  const changedFields = patches.reduce((n, p) => n + Object.keys(p.meta).length, 0)
-  const examples = useMemo(() => {
-    const byId = new Map(tracks.map((t) => [t.id, t]))
-    return patches
-      .flatMap((p) =>
-        Object.entries(p.meta).map(([field, after]) => ({
-          id: p.id,
-          field,
-          before: byId.get(p.id)?.meta[field as keyof TrackMetadata] ?? '',
-          after: after as string,
-        })),
+  // One row per field that changes, custom fields included one by one: a patch carries the
+  // whole custom set, so the rows come from comparing it with what the track held.
+  const changes = useMemo(() => {
+    const labels = new Map(labeledFields(customFields, tr).map((f) => [f.key, f.label]))
+    return patches.flatMap((p) => {
+      const before = resolved.get(p.id)
+      return Object.entries(p.meta).flatMap(([field, after]) =>
+        field === 'custom'
+          ? Object.entries(after as Record<string, string>)
+              .filter(([key, value]) => before?.custom?.[key] !== value)
+              .map(([key, value]) => ({
+                id: p.id,
+                field: key,
+                label: labels.get(key) ?? key,
+                before: before?.custom?.[key] ?? '',
+                after: value,
+              }))
+          : [
+              {
+                id: p.id,
+                field,
+                label: labels.get(field) ?? field,
+                before: before?.[field as MetaTextKey] ?? '',
+                after: after as string,
+              },
+            ],
       )
-      .slice(0, PREVIEW_LIMIT)
-  }, [patches, tracks])
+    })
+  }, [patches, resolved, customFields, tr])
+  const changedFields = changes.length
+  const examples = changes.slice(0, PREVIEW_LIMIT)
 
   // Cleaning a rip takes several passes ("1. ", then "2. ", then "3. "), so applying keeps the
   // panel up and resets it for the next pattern instead of closing — the user dismisses it when
@@ -187,7 +221,7 @@ export function FindReplaceModal({ tracks, onApply, onClose }: Props): React.JSX
             <ul className="flex flex-col gap-1">
               {examples.map((ex) => (
                 <li key={`${ex.id}-${ex.field}`} className="flex items-center gap-2 truncate">
-                  <span className="shrink-0 text-fg-faint">{tr(`fields.${ex.field}`)}</span>
+                  <span className="shrink-0 text-fg-faint">{ex.label}</span>
                   <span className="truncate text-fg-dim line-through">{ex.before}</span>
                   <ArrowRight className="h-3.5 w-3.5 shrink-0 text-fg-faint" aria-hidden="true" />
                   <span className="truncate text-fg">{ex.after}</span>

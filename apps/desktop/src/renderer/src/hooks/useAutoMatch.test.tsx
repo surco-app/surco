@@ -3,7 +3,7 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { DEFAULT_IMPORT_FIELDS } from '../../../shared/defaults'
-import type { SearchProviderId, TrackMetadata } from '../../../shared/types'
+import type { MetaTextKey, SearchProviderId, TrackMetadata } from '../../../shared/types'
 import { type AppleMusicIndex, buildLibraryIndex } from '../lib/appleMusicLibrary'
 import type { TrackItem } from '../types'
 import { useAutoMatch } from './useAutoMatch'
@@ -48,7 +48,7 @@ function setup(
   tracks: TrackItem[],
   libraryIndex: AppleMusicIndex | null = null,
   editingRef: { current: string | null } = { current: null },
-  importFields: (keyof TrackMetadata)[] = [...DEFAULT_IMPORT_FIELDS],
+  importFields: MetaTextKey[] = [...DEFAULT_IMPORT_FIELDS],
 ): {
   result: { current: ReturnType<typeof useAutoMatch> }
   updateTrack: ReturnType<typeof vi.fn>

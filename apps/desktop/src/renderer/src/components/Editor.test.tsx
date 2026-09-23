@@ -163,6 +163,7 @@ function renderEditor(
     filenameFormat?: string
     titleFormat?: string
     editorSections?: Settings['editorSections']
+    customFields?: Settings['customFields']
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
@@ -237,6 +238,7 @@ function renderEditor(
       genrePresets: props.genrePresets ?? [],
       groupingPresets: [],
       visibleFields: props.visibleFields ?? [],
+      customFields: props.customFields ?? [],
       requiredFields: props.requiredFields ?? [],
       discogsFormats: props.discogsFormats ?? [],
       discogsMaxResults: 25,
@@ -458,6 +460,13 @@ describe('Editor clear metadata', () => {
         isrc: '',
         mixName: '',
         originalYear: '',
+        originalArtist: '',
+        lyricist: '',
+        conductor: '',
+        trackTotal: '',
+        discTotal: '',
+        copyright: '',
+        encodedBy: '',
         compilation: '',
         mood: '',
         energy: '',
@@ -1217,6 +1226,7 @@ describe('Editor multi-select', () => {
       metaA?: Partial<TrackMetadata>
       metaB?: Partial<TrackMetadata>
       groupingPresets?: string[]
+      customFields?: Settings['customFields']
     } = {},
   ) {
     if (opts.platform)
@@ -1271,6 +1281,7 @@ describe('Editor multi-select', () => {
       {
         addToAppleMusic: opts.music ?? false,
         groupingPresets: opts.groupingPresets ?? [],
+        customFields: opts.customFields ?? [],
         visibleFields: opts.visibleFields ?? ['title', 'album'],
         requiredFields: opts.requiredFields ?? ['title'],
         showSpectrum: true,
@@ -1293,6 +1304,24 @@ describe('Editor multi-select', () => {
     fireEvent.click(screen.getByTestId('grouping-per-track-toggle'))
     fireEvent.click(screen.getByTestId('chip-b-Vocals'))
     expect(onChangeTracksMeta).toHaveBeenCalledWith([{ id: 'b', meta: { grouping: 'Vocals' } }])
+    expect(onChangeAllMeta).not.toHaveBeenCalled()
+  })
+
+  // A custom field edited across a selection lands in every selected track, each through
+  // its own custom set rather than one shared value stamped over all the tracks' fields.
+  it('writes a custom field edited across the selection into every track', () => {
+    const { onChangeTracksMeta, onChangeAllMeta } = renderMulti({
+      visibleFields: ['vinylCondition'],
+      customFields: [{ key: 'vinylCondition', label: 'Estado del vinilo' }],
+      metaA: { custom: { vinylCondition: 'NM' } },
+    })
+    const field = screen.getByTestId('field-vinylCondition')
+    fireEvent.change(field, { target: { value: 'VG+' } })
+    fireEvent.blur(field)
+    expect(onChangeTracksMeta).toHaveBeenCalledWith([
+      { id: 'a', meta: { custom: { vinylCondition: 'VG+' } } },
+      { id: 'b', meta: { custom: { vinylCondition: 'VG+' } } },
+    ])
     expect(onChangeAllMeta).not.toHaveBeenCalled()
   })
 
@@ -1733,6 +1762,33 @@ describe('Editor export control', () => {
       ],
     })
     expect(screen.getByTestId('foreign-tags-toggle')).toBeInTheDocument()
+  })
+
+  // A tag the user made into a field of their own leaves Other Metadata for the form: it
+  // shows there with the value the file carries, and an edit goes to that field.
+  it('shows a custom field with the file value and keeps its tag out of Other Metadata', () => {
+    const { onChange } = renderEditor(
+      { id: 'a', foreignTags: [{ name: 'VINYLCONDITION', value: 'NM' }] },
+      'wav',
+      {
+        visibleFields: ['title', 'vinylCondition'],
+        customFields: [{ key: 'vinylCondition', label: 'Estado del vinilo' }],
+        editorSections: [
+          { id: 'form', open: true },
+          { id: 'otherTags', open: true },
+          { id: 'properties', open: false },
+          { id: 'quality', open: false },
+          { id: 'normalize', open: false },
+          { id: 'output', open: false },
+        ],
+      },
+    )
+    const field = screen.getByTestId('field-vinylCondition')
+    expect(field).toHaveValue('NM')
+    expect(screen.queryByTestId('foreign-tags-toggle')).not.toBeInTheDocument()
+    fireEvent.change(field, { target: { value: 'VG+' } })
+    fireEvent.blur(field)
+    expect(onChange.mock.calls.at(-1)?.[0].meta.custom).toEqual({ vinylCondition: 'VG+' })
   })
 
   // The inspector returns null with no foreign tags, so the section shows nothing rather

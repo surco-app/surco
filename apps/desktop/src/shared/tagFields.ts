@@ -1,14 +1,19 @@
-import { ratingTagToStars } from '../shared/rating'
-import type { TrackMetadata } from '../shared/types'
+import { ratingTagToStars } from './rating'
+import type { MetaTextKey } from './types'
 
 // The per-field tag mapping shared by the reader (tagsFromProbe) and the writer
 // (metadataArgs): the ffprobe aliases a field is read from and the muxer name(s) it is
 // written to. Co-locating both directions means adding a metadata field is one entry
 // here instead of an edit to two functions that silently drift.
 export interface TagField {
-  key: keyof TrackMetadata
+  key: MetaTextKey
   // ffprobe tag keys to read from, lowercased, in priority order (first non-empty wins).
   aliases: string[]
+  // Aliases that mean this field only on an ID3 container (MP3/AIFF/WAV): read from an
+  // ID3 probe and cleared on an ID3 write, never touched on FLAC or M4A. ffprobe names
+  // ID3's conductor frame "performer", while a FLAC's PERFORMER comment is a different
+  // credit that reading as the conductor, or clearing on write, would destroy.
+  id3Aliases?: string[]
   // The name ffmpeg writes on ID3 targets (AIFF/MP3/WAV). Omitted for a field not written
   // through ffmpeg's -metadata — rating rides POPM/Vorbis RATING via the TagLib pass.
   id3?: string
@@ -20,6 +25,13 @@ export interface TagField {
   // differently and both matter. Unlike an alias — which is read from and actively
   // cleared on write — every name here gets the value.
   vorbisAlso?: string[]
+  // For a number field: its total field, kept after a slash on ID3 and MP4 ("3/12"), the
+  // only place those containers have for it. Vorbis gives the total a comment of its own
+  // (TRACKTOTAL), so the total field reads the number's "n/N" only when its own is empty.
+  withTotal?: MetaTextKey
+  // Names who made the file before the user had it. While the user keeps such a field
+  // hidden the editor sends it empty, so a conversion clears the previous owner's value.
+  provenance?: true
   // Normalizes the raw probed string into the stored value: dropping a "3/12" track total,
   // the compilation flag, the rating stars. Identity when omitted.
   parse?: (raw: string) => string
@@ -55,12 +67,24 @@ export const TAG_FIELDS: TagField[] = [
     aliases: ['track', 'tracknumber', 'tracknum'],
     id3: 'track',
     parse: dropTotal,
+    withTotal: 'trackTotal',
+  },
+  {
+    key: 'trackTotal',
+    aliases: ['tracktotal', 'totaltracks'],
+    vorbis: 'TRACKTOTAL',
   },
   {
     key: 'discNumber',
     aliases: ['disc', 'tpos', 'disc_number', 'discnumber'],
     id3: 'disc',
     parse: dropTotal,
+    withTotal: 'discTotal',
+  },
+  {
+    key: 'discTotal',
+    aliases: ['disctotal', 'totaldiscs'],
+    vorbis: 'DISCTOTAL',
   },
   // ffmpeg maps these to the real ID3 frames DJ software and Music read (TBPM/TKEY/TPE4);
   // the FLAC muxer has no ID3 mapping and writes keys verbatim, so a Vorbis target gets the
@@ -122,6 +146,39 @@ export const TAG_FIELDS: TagField[] = [
     aliases: ['tit3', 'subtitle', 'mixname', 'mix_name'],
     id3: 'TIT3',
     vorbis: 'SUBTITLE',
+  },
+  // The credits TagScanner and mp3tag edit, under mp3tag's Vorbis and freeform names.
+  // An AIFF's ID3 probes back with the v2.2 spellings (TOA, TXT).
+  {
+    key: 'originalArtist',
+    aliases: ['tope', 'toa', 'origartist', 'originalartist', 'original_artist'],
+    id3: 'TOPE',
+    vorbis: 'ORIGARTIST',
+  },
+  { key: 'lyricist', aliases: ['text', 'txt', 'lyricist'], id3: 'TEXT', vorbis: 'LYRICIST' },
+  {
+    key: 'conductor',
+    aliases: ['tpe3', 'tp3', 'conductor'],
+    id3Aliases: ['performer'],
+    id3: 'TPE3',
+    vorbis: 'CONDUCTOR',
+  },
+  // Who made the file before it reached the user. Written from the editor like any other
+  // field, so an empty value clears them: the editor sends them empty while the user keeps
+  // the fields hidden, and the previous owner's studio and ripping tool do not ride along.
+  {
+    key: 'copyright',
+    aliases: ['copyright', 'tcop', 'tcr', 'cprt'],
+    id3: 'copyright',
+    vorbis: 'COPYRIGHT',
+    provenance: true,
+  },
+  {
+    key: 'encodedBy',
+    aliases: ['encoded_by', 'encodedby', 'tenc', 'ten'],
+    id3: 'encoded_by',
+    vorbis: 'ENCODEDBY',
+    provenance: true,
   },
   // TORY, not TDOR: the ID3 targets are pinned to v2.3, where TDOR doesn't exist. TDOR is
   // its v2.4 successor and ORIGINALYEAR the Picard-convention Vorbis comment, both read.

@@ -4,6 +4,7 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { tagsOnly } from '../../../shared/audioProcessing'
+import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFields'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
@@ -33,7 +34,7 @@ import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
-import { FIELD_DEFS, missingRequired } from '../lib/fields'
+import { FIELD_DEFS, labeledFields, missingRequired, missingRequiredOf } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { librarySourceOf } from '../lib/librarySource'
 import { renderOutputName, titleFormatPatches } from '../lib/outputName'
@@ -228,6 +229,7 @@ export const Editor = memo(function Editor({
     groupingPresets,
     genrePresets,
     visibleFields,
+    customFields,
     requiredFields,
     importFields,
     discogsFormats,
@@ -601,6 +603,12 @@ export const Editor = memo(function Editor({
     // foreign tags the clear was meant to drop.
     onChange({ meta: { ...item.meta, [key]: value } })
   })
+  const setCustom = useStableCallback((key: string, value: string): void => {
+    onChange({ meta: { ...item.meta, custom: { ...item.meta.custom, [key]: value } } })
+  })
+
+  // The open track's metadata with its custom fields resolved, once, for every reader below.
+  const resolvedMeta = useMemo(() => effectiveMeta(item, customFields), [item, customFields])
 
   // What the per-field insert menu can offer: every visible text field of THIS
   // track. Bulk edits hold no single per-field value to insert, and compilation
@@ -610,10 +618,10 @@ export const Editor = memo(function Editor({
     () =>
       isMulti
         ? []
-        : FIELD_DEFS.filter((d) => visibleFields.includes(d.key) && d.key !== 'compilation').map(
-            (d) => ({ key: d.key, label: tr(`fields.${d.key}`), value: item.meta[d.key] ?? '' }),
-          ),
-    [isMulti, visibleFields, item.meta, tr],
+        : labeledFields(customFields, tr)
+            .filter((f) => visibleFields.includes(f.key) && f.key !== 'compilation')
+            .map((f) => ({ ...f, value: fieldValue(resolvedMeta, f.key) })),
+    [isMulti, visibleFields, resolvedMeta, customFields, tr],
   )
 
   // "Without version" proposal for the album menu: strip the mix/label parenthetical
@@ -631,7 +639,7 @@ export const Editor = memo(function Editor({
   const titleFormatResult =
     isMulti || !titleFormat.trim()
       ? undefined
-      : titleFormatPatches(titleFormat, [item])[0]?.meta.title
+      : titleFormatPatches(titleFormat, [{ ...item, meta: resolvedMeta }])[0]?.meta.title
 
   // Fills tags from each file's own name (auto-detecting the common rip naming): the primary
   // track in single view, every selected track in multi. Merges, so only matched fields change.
@@ -712,8 +720,8 @@ export const Editor = memo(function Editor({
   // promises N conversions, and eligibleForBatch would silently drop incomplete
   // tracks — with all N incomplete, the click ran an empty batch that looked dead.
   const missing = isMulti
-    ? [...new Set(multiTracks.flatMap((t) => missingRequired(t.meta, requiredFields)))]
-    : missingRequired(item.meta, requiredFields)
+    ? [...new Set(multiTracks.flatMap((t) => missingRequiredOf(t, requiredFields, customFields)))]
+    : missingRequired(resolvedMeta, requiredFields)
   // A multi-select whose tracks disagree about what the convert MEANS: some supersede a
   // copy in the library, others are plain adds. One click cannot honestly do both, so the
   // batch is refused and the button says why rather than silently picking one for all of
@@ -738,7 +746,7 @@ export const Editor = memo(function Editor({
   // opt-in via the "Regenerate from metadata" button below — unless auto-apply is on, where
   // it derives live from the pattern (falling back to the file name for sparse metadata).
   const defaultOutputName =
-    (autoApplyFilename && renderOutputName(filenameFormat, item.meta)) || item.fileName
+    (autoApplyFilename && renderOutputName(filenameFormat, resolvedMeta)) || item.fileName
   // Exporting to the source's own format edits the original file in place (and
   // renames it on disk) rather than writing a copy to the output folder — warn the
   // user before they hit the button so the rename isn't a surprise. Overwrite mode
@@ -771,6 +779,29 @@ export const Editor = memo(function Editor({
     () => new Map(FIELD_DEFS.map((def) => [def.key, (v: string) => setField(def.key, v)])),
     [setField],
   )
+  const customOnChange = useMemo(
+    () => new Map(customFields.map((f) => [f.key, (v: string) => setCustom(f.key, v)])),
+    [customFields, setCustom],
+  )
+  // Across a selection each track keeps its other custom values: the edit is merged into
+  // that track's own set, not stamped as one shared set over all of them.
+  const customBulkOnChange = useMemo(
+    () =>
+      new Map(
+        customFields.map((f) => [
+          f.key,
+          (v: string) =>
+            onChangeTracksMeta?.(
+              (selectedTracks ?? []).map((t) => ({
+                id: t.id,
+                meta: { custom: { ...effectiveMeta(t, customFields).custom, [f.key]: v } },
+              })),
+            ),
+        ]),
+      ),
+    [customFields, selectedTracks, onChangeTracksMeta],
+  )
+  const customValueMap = useMemo(() => resolvedMeta.custom ?? {}, [resolvedMeta])
   const bulkOnChange = useMemo(
     () => new Map(BULK_FIELDS.map((key) => [key, (v: string) => onChangeAllMeta?.({ [key]: v })])),
     [onChangeAllMeta],
@@ -799,6 +830,10 @@ export const Editor = memo(function Editor({
         tr,
         singleOnChange,
         bulkOnChange,
+        customFields,
+        customValues: customValueMap,
+        customOnChange,
+        customBulkOnChange,
         onChangeTracksMeta,
       }),
     [
@@ -818,6 +853,10 @@ export const Editor = memo(function Editor({
       tr,
       singleOnChange,
       bulkOnChange,
+      customFields,
+      customValueMap,
+      customOnChange,
+      customBulkOnChange,
       onChangeTracksMeta,
     ],
   )
@@ -1073,7 +1112,9 @@ export const Editor = memo(function Editor({
                         !isMulti && (
                           <ForeignTagsInspector
                             key={id}
-                            foreignTags={item.foreignTags ?? []}
+                            foreignTags={(item.foreignTags ?? []).filter(
+                              (t) => !isCustomTag(t.name, customFields),
+                            )}
                             foreignRemoved={item.foreignRemoved ?? []}
                             onToggleRemove={(name) => {
                               const current = item.foreignRemoved ?? []

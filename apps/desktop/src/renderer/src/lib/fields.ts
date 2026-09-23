@@ -1,7 +1,8 @@
-import type { TrackMetadata } from '../../../shared/types'
+import { effectiveMeta, fieldValue } from '../../../shared/customFields'
+import type { CustomField, MetaTextKey, TrackMetadata } from '../../../shared/types'
 
 interface FieldDef {
-  key: keyof TrackMetadata
+  key: MetaTextKey
   wide?: boolean
 }
 
@@ -17,11 +18,18 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'trackNumber' },
   { key: 'comment', wide: true },
   { key: 'discNumber' },
+  { key: 'trackTotal' },
+  { key: 'discTotal' },
   { key: 'bpm' },
   { key: 'key' },
   { key: 'remixArtist' },
   { key: 'mixName' },
   { key: 'composer' },
+  { key: 'originalArtist' },
+  { key: 'lyricist' },
+  { key: 'conductor' },
+  { key: 'copyright' },
+  { key: 'encodedBy' },
   { key: 'originalYear' },
   { key: 'isrc' },
   { key: 'compilation' },
@@ -44,7 +52,7 @@ type FieldGroupId = 'identity' | 'catalog' | 'dj' | 'order'
 
 interface FieldGroup {
   id: FieldGroupId
-  fields: (keyof TrackMetadata)[]
+  fields: MetaTextKey[]
 }
 
 export const FIELD_GROUPS: FieldGroup[] = [
@@ -63,15 +71,23 @@ export const FIELD_GROUPS: FieldGroup[] = [
       'country',
       'mediaType',
       'composer',
+      'originalArtist',
+      'lyricist',
+      'conductor',
+      'copyright',
+      'encodedBy',
     ],
   },
   { id: 'dj', fields: ['bpm', 'key', 'mood', 'energy', 'mixName', 'remixArtist', 'originalYear'] },
-  { id: 'order', fields: ['trackNumber', 'discNumber', 'compilation', 'comment'] },
+  {
+    id: 'order',
+    fields: ['trackNumber', 'trackTotal', 'discNumber', 'discTotal', 'compilation', 'comment'],
+  },
 ]
 
 // The group a field sits in, or undefined for a key not in any group (a future tag).
 export function groupOfField(key: string): FieldGroupId | undefined {
-  return FIELD_GROUPS.find((g) => g.fields.includes(key as keyof TrackMetadata))?.id
+  return FIELD_GROUPS.find((g) => g.fields.includes(key as MetaTextKey))?.id
 }
 
 // Reorders the shown fields into group order (identity → catalog → dj → order), keeping
@@ -81,7 +97,7 @@ export function groupOfField(key: string): FieldGroupId | undefined {
 export function sortFieldsByGroup(visibleFields: string[]): string[] {
   const order = FIELD_GROUPS.flatMap((g) => g.fields)
   const rank = (key: string): number => {
-    const i = order.indexOf(key as keyof TrackMetadata)
+    const i = order.indexOf(key as MetaTextKey)
     return i === -1 ? order.length : i
   }
   return [...visibleFields]
@@ -99,8 +115,34 @@ export {
   IMPORTABLE_FIELDS,
 } from '../../../shared/defaults'
 
+// Every field the form can show, Surco's and the user's own, with the name the user reads:
+// the translated label, or the one the user gave a custom field.
+export function labeledFields(
+  customFields: readonly CustomField[],
+  tr: (key: string) => string,
+): { key: string; label: string }[] {
+  return [
+    ...FIELD_DEFS.map((d) => ({ key: d.key as string, label: tr(`fields.${d.key}`) })),
+    ...customFields.map((f) => ({ key: f.key, label: f.label })),
+  ]
+}
+
 export function missingRequired(meta: TrackMetadata, requiredFields: string[]): string[] {
-  return requiredFields.filter((key) => !meta[key as keyof TrackMetadata]?.trim())
+  return requiredFields.filter((key) => !fieldValue(meta, key).trim())
+}
+
+// The same check off a track, resolving its custom fields only when one of them is required:
+// the gate runs over whole lists on every change, and most never require a custom field.
+export function missingRequiredOf(
+  track: Parameters<typeof effectiveMeta>[0],
+  requiredFields: string[],
+  customFields: readonly CustomField[],
+): string[] {
+  const needsCustom = customFields.some((f) => requiredFields.includes(f.key))
+  return missingRequired(
+    needsCustom ? effectiveMeta(track, customFields) : track.meta,
+    requiredFields,
+  )
 }
 
 export function moveItem<T>(arr: T[], index: number, delta: number): T[] {

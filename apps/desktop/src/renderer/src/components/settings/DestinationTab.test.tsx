@@ -38,6 +38,7 @@ const synced: SyncedDraft = {
   trimWhitespace: true,
   zeroPadTrack: true,
   visibleFields: [],
+  customFields: [],
   importFields: [],
   requiredFields: [],
   coverMaxSize: '1200',

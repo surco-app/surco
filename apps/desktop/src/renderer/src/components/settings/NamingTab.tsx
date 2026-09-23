@@ -2,8 +2,8 @@ import type React from 'react'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatExtension } from '../../../../shared/format'
-import type { TrackMetadata } from '../../../../shared/types'
-import { FIELD_DEFS } from '../../lib/fields'
+import type { CustomField, TrackMetadata } from '../../../../shared/types'
+import { labeledFields } from '../../lib/fields'
 import { renderOutputName, renderTitle } from '../../lib/outputName'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
@@ -41,6 +41,13 @@ const SAMPLE_META: TrackMetadata = {
   isrc: 'ES-SRC-26-00031',
   mixName: 'Original Remix',
   originalYear: '1998',
+  trackTotal: '12',
+  discTotal: '2',
+  copyright: '(P) 2026 Label',
+  encodedBy: 'Dj Vixent',
+  originalArtist: 'Three Drives',
+  lyricist: 'Dj Vixent',
+  conductor: 'Dj Vixent',
   mood: 'Dark',
   energy: '8',
   compilation: '1',
@@ -52,11 +59,6 @@ const SAMPLE_META: TrackMetadata = {
   // so it degrades to an unreadable run of text rather than breaking the path.
   discogsUrl: 'discogs.com/release/2406512',
 }
-
-// Every metadata field is a legal {token}, including rating — it lives outside
-// FIELD_DEFS (the editor draws it as the stars row, not a text field), so it's
-// appended here rather than added to the registry.
-const TOKEN_KEYS = [...FIELD_DEFS.map((f) => f.key), 'rating']
 
 // One pattern editor — label, format input with the editor-style ⋯ token menu, and
 // a live preview — shared by the file name and the title format so both teach the
@@ -71,6 +73,7 @@ function FormatField({
   hint,
   preview,
   previewTestId,
+  customFields,
   onChange,
 }: {
   id: string
@@ -81,6 +84,7 @@ function FormatField({
   // The rendered sample, or undefined to omit the preview line (empty title format).
   preview: string | undefined
   previewTestId: string
+  customFields: readonly CustomField[]
   onChange: (value: string) => void
 }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
@@ -89,11 +93,14 @@ function FormatField({
   // Alphabetical by the LOCALIZED label: with 22 fields, the menu is a lookup list,
   // and scanning it only works when the order matches the language on screen (the
   // editor's insert menu instead mirrors the form's own field order).
-  const sources = TOKEN_KEYS.map((key) => ({
-    key,
-    label: tr(`fields.${key}`),
-    value: `{${key}}`,
-  })).sort((a, b) => a.label.localeCompare(b.label, i18n.language))
+  // Every field is a legal {token}, including rating — it lives outside FIELD_DEFS (the
+  // editor draws it as the stars row, not a text field), so it's appended here.
+  const sources = [
+    ...labeledFields(customFields, tr),
+    { key: 'rating', label: tr('fields.rating') },
+  ]
+    .map((f) => ({ ...f, value: `{${f.key}}` }))
+    .sort((a, b) => a.label.localeCompare(b.label, i18n.language))
 
   return (
     <>
@@ -137,6 +144,11 @@ interface Props {
 }
 
 export function NamingTab({ synced, patch }: Props): React.JSX.Element {
+  // A custom field has no sample of its own, so the preview shows its name in its place.
+  const sample: TrackMetadata = {
+    ...SAMPLE_META,
+    custom: Object.fromEntries(synced.customFields.map((f) => [f.key, f.label])),
+  }
   const { t: tr } = useTranslation()
 
   return (
@@ -154,9 +166,10 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
           }
           preview={
             synced.titleFormat.trim() !== ''
-              ? renderTitle(synced.titleFormat, SAMPLE_META) || '—'
+              ? renderTitle(synced.titleFormat, sample) || '—'
               : undefined
           }
+          customFields={synced.customFields}
           previewTestId="settings-title-format-preview"
           onChange={(v) => patch('titleFormat', v)}
         />
@@ -176,9 +189,10 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
               </span>
             </p>
           }
-          preview={`${renderOutputName(synced.filenameFormat, SAMPLE_META) || '—'}.${formatExtension(
+          preview={`${renderOutputName(synced.filenameFormat, sample) || '—'}.${formatExtension(
             synced.outputFormat === 'source' ? 'aiff' : synced.outputFormat,
           )}`}
+          customFields={synced.customFields}
           previewTestId="settings-format-preview"
           onChange={(v) => patch('filenameFormat', v)}
         />
