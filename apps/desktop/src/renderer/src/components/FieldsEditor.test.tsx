@@ -193,6 +193,18 @@ describe('FieldsEditor', () => {
     }
   })
 
+  // The in-button "Organized" flip is only seen: the button keeps focus and a screen
+  // reader doesn't re-read its label, so the reorder looked like it did nothing. A live
+  // status region, present from the start so it is listened to, says it out loud.
+  it('announces the reorder through a status region', () => {
+    setup({ visibleFields: ['bpm', 'title'], requiredFields: [] })
+    const status = screen.getByTestId('auto-organize-status')
+    expect(status).toHaveAttribute('role', 'status')
+    expect(status).toBeEmptyDOMElement()
+    fireEvent.click(screen.getByTestId('auto-organize-fields'))
+    expect(status).toHaveTextContent('Organized')
+  })
+
   // Unlike the visible list — whose order the user curates because it IS the
   // editor's order — the hidden list has no meaningful order of its own, so it
   // sorts alphabetically by the translated label to be scannable.

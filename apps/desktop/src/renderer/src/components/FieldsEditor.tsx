@@ -212,6 +212,11 @@ export function FieldsEditor({
             {tr(organized ? 'settings.autoOrganized' : 'settings.autoOrganize')}
             <Tooltip label={tr('settings.autoOrganizeHint')} />
           </button>
+          {/* The button's own flip is only seen; this region, mounted empty from the
+              start so assistive tech is already listening, says the reorder happened. */}
+          <span data-testid="auto-organize-status" role="status" className="sr-only">
+            {organized ? tr('settings.autoOrganized') : ''}
+          </span>
         </div>
         {/* Column headings, laid out on the row's own grid so each label resolves to the
             same track as the buttons under it — no measured offsets, and nothing to drift
