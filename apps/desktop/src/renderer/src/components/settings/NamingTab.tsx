@@ -2,7 +2,7 @@ import type React from 'react'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatExtension } from '../../../../shared/format'
-import type { TrackMetadata } from '../../../../shared/types'
+import type { CustomField, TrackMetadata } from '../../../../shared/types'
 import { FIELD_DEFS } from '../../lib/fields'
 import { renderOutputName, renderTitle } from '../../lib/outputName'
 import type { SyncedDraft } from '../../lib/settingsDraft'
@@ -78,6 +78,7 @@ function FormatField({
   hint,
   preview,
   previewTestId,
+  customFields,
   onChange,
 }: {
   id: string
@@ -88,6 +89,7 @@ function FormatField({
   // The rendered sample, or undefined to omit the preview line (empty title format).
   preview: string | undefined
   previewTestId: string
+  customFields: readonly CustomField[]
   onChange: (value: string) => void
 }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
@@ -96,11 +98,10 @@ function FormatField({
   // Alphabetical by the LOCALIZED label: with 22 fields, the menu is a lookup list,
   // and scanning it only works when the order matches the language on screen (the
   // editor's insert menu instead mirrors the form's own field order).
-  const sources = TOKEN_KEYS.map((key) => ({
-    key,
-    label: tr(`fields.${key}`),
-    value: `{${key}}`,
-  })).sort((a, b) => a.label.localeCompare(b.label, i18n.language))
+  const sources = [
+    ...TOKEN_KEYS.map((key) => ({ key, label: tr(`fields.${key}`), value: `{${key}}` })),
+    ...customFields.map((f) => ({ key: f.key, label: f.label, value: `{${f.key}}` })),
+  ].sort((a, b) => a.label.localeCompare(b.label, i18n.language))
 
   return (
     <>
@@ -144,6 +145,11 @@ interface Props {
 }
 
 export function NamingTab({ synced, patch }: Props): React.JSX.Element {
+  // A custom field has no sample of its own, so the preview shows its name in its place.
+  const sample: TrackMetadata = {
+    ...SAMPLE_META,
+    custom: Object.fromEntries(synced.customFields.map((f) => [f.key, f.label])),
+  }
   const { t: tr } = useTranslation()
 
   return (
@@ -161,9 +167,10 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
           }
           preview={
             synced.titleFormat.trim() !== ''
-              ? renderTitle(synced.titleFormat, SAMPLE_META) || '—'
+              ? renderTitle(synced.titleFormat, sample) || '—'
               : undefined
           }
+          customFields={synced.customFields}
           previewTestId="settings-title-format-preview"
           onChange={(v) => patch('titleFormat', v)}
         />
@@ -183,9 +190,10 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
               </span>
             </p>
           }
-          preview={`${renderOutputName(synced.filenameFormat, SAMPLE_META) || '—'}.${formatExtension(
+          preview={`${renderOutputName(synced.filenameFormat, sample) || '—'}.${formatExtension(
             synced.outputFormat === 'source' ? 'aiff' : synced.outputFormat,
           )}`}
+          customFields={synced.customFields}
           previewTestId="settings-format-preview"
           onChange={(v) => patch('filenameFormat', v)}
         />

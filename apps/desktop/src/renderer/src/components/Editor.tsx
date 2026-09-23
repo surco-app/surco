@@ -624,10 +624,23 @@ export const Editor = memo(function Editor({
     () =>
       isMulti
         ? []
-        : FIELD_DEFS.filter((d) => visibleFields.includes(d.key) && d.key !== 'compilation').map(
-            (d) => ({ key: d.key, label: tr(`fields.${d.key}`), value: item.meta[d.key] ?? '' }),
-          ),
-    [isMulti, visibleFields, item.meta, tr],
+        : [
+            ...FIELD_DEFS.filter(
+              (d) => visibleFields.includes(d.key) && d.key !== 'compilation',
+            ).map((d) => ({
+              key: d.key as string,
+              label: tr(`fields.${d.key}`),
+              value: item.meta[d.key] ?? '',
+            })),
+            ...customFields
+              .filter((f) => visibleFields.includes(f.key))
+              .map((f) => ({
+                key: f.key,
+                label: f.label,
+                value: effectiveMeta(item, customFields).custom?.[f.key] ?? '',
+              })),
+          ],
+    [isMulti, visibleFields, item, customFields, tr],
   )
 
   // "Without version" proposal for the album menu: strip the mix/label parenthetical
