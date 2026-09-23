@@ -1,5 +1,6 @@
 {
   "common": {
+    "trackList": "Faixas",
     "cancel": "Cancelar",
     "save": "Salvar",
     "change": "Alterar",

@@ -1,5 +1,6 @@
 {
   "common": {
+    "trackList": "Tracks",
     "cancel": "Cancel",
     "save": "Save",
     "change": "Change",

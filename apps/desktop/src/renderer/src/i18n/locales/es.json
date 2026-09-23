@@ -1,5 +1,6 @@
 {
   "common": {
+    "trackList": "Pistas",
     "cancel": "Cancelar",
     "save": "Guardar",
     "change": "Cambiar",
