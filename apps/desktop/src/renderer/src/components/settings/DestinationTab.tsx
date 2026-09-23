@@ -18,21 +18,15 @@ import { LocationPicker } from '../LocationPicker'
 import { OutputFolderField } from '../OutputFolderField'
 import { PathField } from '../PathField'
 import { SegmentedControl } from '../SegmentedControl'
-import {
-  AdvancedDisclosure,
-  SettingsField,
-  SettingsHint,
-  SettingsLabel,
-  SettingsSection,
-} from './SettingsPrimitives'
+import { SettingsField, SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
 
 // Apple Music automation only exists on macOS, so the destination is meaningless on
 // other platforms where a track simply finishes in the output folder.
 const isMac = isMacOS()
 
 // The grey line states what each level DOES, in one register. 'never' gets a line of
-// its own rather than reusing its warning text: the amber box under the summary already
-// carries the risk, and printing the same sentence twice, stacked, read as a rendering fault.
+// its own rather than reusing its warning text: the amber box below already carries the
+// risk, and printing the same sentence twice, stacked, read as a rendering fault.
 const POLICY_HINT: Record<BackupPolicy, string> = {
   always: 'settings.originalBackupAlwaysHint',
   audioChanges: 'settings.originalBackupAudioChangesHint',
@@ -174,11 +168,124 @@ export function DestinationTab({
                   </button>
                 </div>
               )}
+              {/* One signed row, not a question plus a size. Splitting the sign from the
+                  magnitude cost four controls for one number — a question to pick the
+                  direction, an unsigned row to pick the size, a slider, and a sentence to read
+                  the result back — and made the least-used setting in Output the largest. A
+                  button labelled "-25 ms" carries the whole decision, and "No adjustment" is
+                  the middle of the row rather than an answer of its own.
+
+                  Always rendered, never conditionally mounted: a control that appears and
+                  disappears leaves the user unable to tell whether the setting exists at all.
+                  Without a collection it is disabled and the hint says what is missing. */}
+              <div className="mt-6">
+                <SettingsLabel>{tr('settings.traktorCueOffset')}</SettingsLabel>
+                <p className="mt-1 text-sm text-fg-muted">{tr('settings.traktorCueQuestion')}</p>
+
+                {/* Radios, not a row of signed buttons: the DJ answers what he HEARS and Surco
+                    derives the sign. The previous row asked him to know which way a negative
+                    number moves a cue, and he guessed wrong. */}
+                <div className="mt-3 flex flex-col gap-0.5">
+                  {CUE_CHOICES.map(({ id, labelKey, noteKey }) => {
+                    const chosen = direction === id
+                    return (
+                      // A real radio input rather than a button wearing the role: it brings
+                      // arrow-key navigation and the group semantics for free, and the visible
+                      // dot is drawn beside it with the input itself kept off-screen but
+                      // focusable, so the ring still follows the keyboard.
+                      <label
+                        key={id}
+                        className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 hover:bg-[var(--color-panel-2)]/30 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--color-accent)]"
+                      >
+                        <input
+                          type="radio"
+                          name="settings-cue-direction"
+                          data-testid={`settings-cue-dir-${id}`}
+                          checked={chosen}
+                          onChange={() =>
+                            patch(
+                              'traktorCueOffsetMs',
+                              id === 'none'
+                                ? '0'
+                                : String(CUE_SIGN[id] * (magnitude || CUE_DEFAULT_MS)),
+                            )
+                          }
+                          className="peer sr-only"
+                        />
+                        <span
+                          aria-hidden="true"
+                          className={`size-[15px] shrink-0 rounded-full border ${
+                            chosen
+                              ? 'border-[5px] border-[var(--color-accent)]'
+                              : 'border-[1.5px] border-[var(--color-line-strong)]'
+                          }`}
+                        />
+                        <span className="text-sm text-fg">
+                          {tr(labelKey)}
+                          <span className="text-fg-muted"> · {tr(noteKey)}</span>
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
+
+                {/* Always the magnitude, never the stored sign: a "-51" beside a choice that
+                    already says "early" is the double negative this redesign removes. Stepping
+                    keeps the chosen direction, so the amount can never cross zero and flip it
+                    under a DJ who was only making the correction smaller. */}
+                <div className="mt-3 flex items-center gap-2 border-t border-[var(--color-line)] pt-3">
+                  <span className="flex-1 text-sm text-fg-muted">
+                    {tr('settings.traktorCueAmount')}
+                  </span>
+                  <button
+                    type="button"
+                    data-testid="settings-cue-amount-down"
+                    aria-label={tr('settings.traktorCueAmountDown')}
+                    disabled={direction === 'none' || magnitude <= 1}
+                    onClick={() => patch('traktorCueOffsetMs', String(stored - Math.sign(stored)))}
+                    className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-panel-2)]/40 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    −
+                  </button>
+                  <span
+                    data-testid="settings-cue-amount"
+                    className="min-w-14 text-center text-sm tabular-nums text-fg"
+                  >
+                    {magnitude} ms
+                  </span>
+                  <button
+                    type="button"
+                    data-testid="settings-cue-amount-up"
+                    aria-label={tr('settings.traktorCueAmountUp')}
+                    disabled={direction === 'none' || magnitude >= CUE_MAX_MS}
+                    onClick={() => patch('traktorCueOffsetMs', String(stored + Math.sign(stored)))}
+                    className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-panel-2)]/40 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <SettingsHint className="mt-2">{tr('settings.traktorCueOffsetHint')}</SettingsHint>
+              </div>
             </>
           }
           syncRekordbox={synced.syncRekordbox}
           onSyncRekordboxChange={(on) => patch('syncRekordbox', on)}
           rekordboxAvailable={!!rekordboxCollection}
+          rekordboxDetail={
+            <>
+              <SettingsLabel>{tr('settings.rekordboxDbPath')}</SettingsLabel>
+              <div className="mt-2">
+                <PathField
+                  value={rekordboxCollection}
+                  onChange={onChangeRekordboxDbPath}
+                  testid="settings-rekordbox-db"
+                  emptyLabel={tr('settings.traktorNmlPathEmpty')}
+                />
+              </div>
+              <SettingsHint className="mt-2">{tr('settings.rekordboxDbPathHint')}</SettingsHint>
+            </>
+          }
           engineDetail={
             <EngineLibraryFields
               libraryDir={local.engineLibraryDir}
@@ -215,12 +322,19 @@ export function DestinationTab({
           while the control was not even on screen. Its own section, always reachable. */}
       <SettingsSection eyebrow={tr('settings.originals')}>
         <SettingsHint className="-mt-1 mb-3">{tr('settings.originalsHint')}</SettingsHint>
-        <p data-testid="settings-backup-summary" className="text-sm text-fg-muted">
-          {tr('settings.originalBackup')}:{' '}
-          <span className="text-fg">
-            {tr(`settings.originalBackupPolicies.${synced.backupPolicy}`)}
-          </span>
-        </p>
+        <SettingsLabel className="mb-2">{tr('settings.originalBackup')}</SettingsLabel>
+        <SegmentedControl
+          options={BACKUP_POLICIES}
+          value={synced.backupPolicy}
+          onChange={(id) => patch('backupPolicy', id)}
+          testidPrefix="settings-backup"
+          labelFor={(id) => tr(`settings.originalBackupPolicies.${id}`)}
+        />
+        {/* What this level costs, rather than one sentence covering all three: the choice
+            IS the trade-off, so the line has to move with it. */}
+        <SettingsHint className="mt-2.5" data-testid="settings-backup-hint">
+          {tr(POLICY_HINT[synced.backupPolicy])}
+        </SettingsHint>
         {/* Only 'never' can cost a file, and the word alone doesn't say so — least of all
             for the NAS delete, the one case where nothing else would have kept a copy.
             Amber, not danger red: switching it off is a legitimate choice, not a mistake. */}
@@ -239,193 +353,61 @@ export function DestinationTab({
             </p>
           </div>
         )}
+
+        {/* Disabled rather than hidden under 'never' (Settings' own rule), and for a
+            reason the hint states: they still govern the copies already stored. Turning
+            the feature off must never read as having discarded them. */}
+        <div className="mt-4 flex gap-4 border-t border-[var(--color-line)] pt-4">
+          <div className="flex-1">
+            <SettingsLabel htmlFor="backup-days" className="mb-2">
+              {tr('settings.originalBackupDays')}
+            </SettingsLabel>
+            <div className="flex items-center gap-2">
+              <input
+                id="backup-days"
+                data-testid="settings-backup-days"
+                type="number"
+                min={1}
+                max={365}
+                value={synced.backupRetentionDays}
+                disabled={backupOff}
+                onChange={(e) => patch('backupRetentionDays', Number(e.target.value))}
+                className="w-20 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm text-fg tabular-nums disabled:opacity-50"
+              />
+              <span className="text-xs text-fg-dim">{tr('settings.originalBackupDaysUnit')}</span>
+            </div>
+          </div>
+          <div className="flex-1">
+            <SettingsLabel htmlFor="backup-gb" className="mb-2">
+              {tr('settings.originalBackupSize')}
+            </SettingsLabel>
+            <div className="flex items-center gap-2">
+              <input
+                id="backup-gb"
+                data-testid="settings-backup-gb"
+                type="number"
+                min={0.1}
+                max={1024}
+                // "any", not a step: with min=0.1 a step of 0.5 makes the valid values
+                // 0.1, 0.6, 1.1 … so the default of 10 failed the browser's own
+                // constraint check and silently blocked the form from submitting —
+                // Save did nothing at all, on a field the user had not even touched.
+                step="any"
+                value={synced.backupMaxGb}
+                disabled={backupOff}
+                onChange={(e) => patch('backupMaxGb', Number(e.target.value))}
+                className="w-20 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm text-fg tabular-nums disabled:opacity-50"
+              />
+              <span className="text-xs text-fg-dim">GB</span>
+            </div>
+          </div>
+        </div>
+        <SettingsHint className="mt-2.5">
+          {backupOff
+            ? tr('settings.originalBackupLimitsKept')
+            : tr('settings.originalBackupLimitsHint')}
+        </SettingsHint>
       </SettingsSection>
-
-      <AdvancedDisclosure id="destination">
-        <SettingsSection first eyebrow={tr('settings.originals')}>
-          <SettingsLabel className="mb-2">{tr('settings.originalBackup')}</SettingsLabel>
-          <SegmentedControl
-            options={BACKUP_POLICIES}
-            value={synced.backupPolicy}
-            onChange={(id) => patch('backupPolicy', id)}
-            testidPrefix="settings-backup"
-            labelFor={(id) => tr(`settings.originalBackupPolicies.${id}`)}
-          />
-          {/* What this level costs, rather than one sentence covering all three: the choice
-              IS the trade-off, so the line has to move with it. */}
-          <SettingsHint className="mt-2.5" data-testid="settings-backup-hint">
-            {tr(POLICY_HINT[synced.backupPolicy])}
-          </SettingsHint>
-          {/* Disabled rather than hidden under 'never' (Settings' own rule), and for a
-              reason the hint states: they still govern the copies already stored. Turning
-              the feature off must never read as having discarded them. */}
-          <div className="mt-4 flex gap-4 border-t border-[var(--color-line)] pt-4">
-            <div className="flex-1">
-              <SettingsLabel htmlFor="backup-days" className="mb-2">
-                {tr('settings.originalBackupDays')}
-              </SettingsLabel>
-              <div className="flex items-center gap-2">
-                <input
-                  id="backup-days"
-                  data-testid="settings-backup-days"
-                  type="number"
-                  min={1}
-                  max={365}
-                  value={synced.backupRetentionDays}
-                  disabled={backupOff}
-                  onChange={(e) => patch('backupRetentionDays', Number(e.target.value))}
-                  className="w-20 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm text-fg tabular-nums disabled:opacity-50"
-                />
-                <span className="text-xs text-fg-dim">{tr('settings.originalBackupDaysUnit')}</span>
-              </div>
-            </div>
-            <div className="flex-1">
-              <SettingsLabel htmlFor="backup-gb" className="mb-2">
-                {tr('settings.originalBackupSize')}
-              </SettingsLabel>
-              <div className="flex items-center gap-2">
-                <input
-                  id="backup-gb"
-                  data-testid="settings-backup-gb"
-                  type="number"
-                  min={0.1}
-                  max={1024}
-                  // "any", not a step: with min=0.1 a step of 0.5 makes the valid values
-                  // 0.1, 0.6, 1.1 … so the default of 10 failed the browser's own
-                  // constraint check and silently blocked the form from submitting —
-                  // Save did nothing at all, on a field the user had not even touched.
-                  step="any"
-                  value={synced.backupMaxGb}
-                  disabled={backupOff}
-                  onChange={(e) => patch('backupMaxGb', Number(e.target.value))}
-                  className="w-20 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm text-fg tabular-nums disabled:opacity-50"
-                />
-                <span className="text-xs text-fg-dim">GB</span>
-              </div>
-            </div>
-          </div>
-          <SettingsHint className="mt-2.5">
-            {backupOff
-              ? tr('settings.originalBackupLimitsKept')
-              : tr('settings.originalBackupLimitsHint')}
-          </SettingsHint>
-        </SettingsSection>
-
-        <SettingsSection eyebrow={tr('settings.traktorSync')}>
-          {/* One signed row, not a question plus a size. Splitting the sign from the
-              magnitude cost four controls for one number — a question to pick the
-              direction, an unsigned row to pick the size, a slider, and a sentence to read
-              the result back — and made the least-used setting in Output the largest. A
-              button labelled "-25 ms" carries the whole decision, and "No adjustment" is
-              the middle of the row rather than an answer of its own.
-
-              Always rendered, never conditionally mounted: a control that appears and
-              disappears leaves the user unable to tell whether the setting exists at all.
-              Without a collection it is disabled and the hint says what is missing. */}
-          <div>
-            <SettingsLabel>{tr('settings.traktorCueOffset')}</SettingsLabel>
-            <p className="mt-1 text-sm text-fg-muted">{tr('settings.traktorCueQuestion')}</p>
-
-            {/* Radios, not a row of signed buttons: the DJ answers what he HEARS and Surco
-                derives the sign. The previous row asked him to know which way a negative
-                number moves a cue, and he guessed wrong. */}
-            <div className="mt-3 flex flex-col gap-0.5">
-              {CUE_CHOICES.map(({ id, labelKey, noteKey }) => {
-                const chosen = direction === id
-                return (
-                  // A real radio input rather than a button wearing the role: it brings
-                  // arrow-key navigation and the group semantics for free, and the visible
-                  // dot is drawn beside it with the input itself kept off-screen but
-                  // focusable, so the ring still follows the keyboard.
-                  <label
-                    key={id}
-                    className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 hover:bg-[var(--color-panel-2)]/30 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--color-accent)]"
-                  >
-                    <input
-                      type="radio"
-                      name="settings-cue-direction"
-                      data-testid={`settings-cue-dir-${id}`}
-                      checked={chosen}
-                      onChange={() =>
-                        patch(
-                          'traktorCueOffsetMs',
-                          id === 'none'
-                            ? '0'
-                            : String(CUE_SIGN[id] * (magnitude || CUE_DEFAULT_MS)),
-                        )
-                      }
-                      className="peer sr-only"
-                    />
-                    <span
-                      aria-hidden="true"
-                      className={`size-[15px] shrink-0 rounded-full border ${
-                        chosen
-                          ? 'border-[5px] border-[var(--color-accent)]'
-                          : 'border-[1.5px] border-[var(--color-line-strong)]'
-                      }`}
-                    />
-                    <span className="text-sm text-fg">
-                      {tr(labelKey)}
-                      <span className="text-fg-muted"> · {tr(noteKey)}</span>
-                    </span>
-                  </label>
-                )
-              })}
-            </div>
-
-            {/* Always the magnitude, never the stored sign: a "-51" beside a choice that
-                already says "early" is the double negative this redesign removes. Stepping
-                keeps the chosen direction, so the amount can never cross zero and flip it
-                under a DJ who was only making the correction smaller. */}
-            <div className="mt-3 flex items-center gap-2 border-t border-[var(--color-line)] pt-3">
-              <span className="flex-1 text-sm text-fg-muted">
-                {tr('settings.traktorCueAmount')}
-              </span>
-              <button
-                type="button"
-                data-testid="settings-cue-amount-down"
-                aria-label={tr('settings.traktorCueAmountDown')}
-                disabled={direction === 'none' || magnitude <= 1}
-                onClick={() => patch('traktorCueOffsetMs', String(stored - Math.sign(stored)))}
-                className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-panel-2)]/40 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                −
-              </button>
-              <span
-                data-testid="settings-cue-amount"
-                className="min-w-14 text-center text-sm tabular-nums text-fg"
-              >
-                {magnitude} ms
-              </span>
-              <button
-                type="button"
-                data-testid="settings-cue-amount-up"
-                aria-label={tr('settings.traktorCueAmountUp')}
-                disabled={direction === 'none' || magnitude >= CUE_MAX_MS}
-                onClick={() => patch('traktorCueOffsetMs', String(stored + Math.sign(stored)))}
-                className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-panel-2)]/40 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                +
-              </button>
-            </div>
-
-            <SettingsHint className="mt-2">{tr('settings.traktorCueOffsetHint')}</SettingsHint>
-          </div>
-        </SettingsSection>
-
-        <SettingsSection eyebrow={tr('settings.rekordboxSync')}>
-          <SettingsLabel>{tr('settings.rekordboxDbPath')}</SettingsLabel>
-          <div className="mt-2">
-            <PathField
-              value={rekordboxCollection}
-              onChange={onChangeRekordboxDbPath}
-              testid="settings-rekordbox-db"
-              emptyLabel={tr('settings.traktorNmlPathEmpty')}
-            />
-          </div>
-          <SettingsHint className="mt-2">{tr('settings.rekordboxDbPathHint')}</SettingsHint>
-        </SettingsSection>
-      </AdvancedDisclosure>
     </>
   )
 }
