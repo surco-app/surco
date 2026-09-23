@@ -16,6 +16,12 @@ export function appMenuTemplate({
   run,
   checkForUpdates,
 }: Params): Electron.MenuItemConstructorOptions[] {
+  const keymapItem = (label: string, id: string): Electron.MenuItemConstructorOptions => ({
+    label,
+    accelerator: accel(id),
+    registerAccelerator: false,
+    click: keymapMenuClick(run, id),
+  })
   return [
     {
       label: appName,
@@ -23,12 +29,7 @@ export function appMenuTemplate({
         { role: 'about' },
         { label: t('checkUpdates'), click: checkForUpdates },
         { type: 'separator' },
-        {
-          label: t('settings'),
-          accelerator: accel('settings'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'settings'),
-        },
+        keymapItem(t('settings'), 'settings'),
         { type: 'separator' },
         { role: 'services' },
         { type: 'separator' },
@@ -42,64 +43,19 @@ export function appMenuTemplate({
     {
       label: t('file'),
       submenu: [
-        {
-          label: t('add'),
-          accelerator: accel('add'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'add'),
-        },
-        {
-          label: t('info'),
-          accelerator: accel('info'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'info'),
-        },
+        keymapItem(t('add'), 'add'),
+        keymapItem(t('info'), 'info'),
         // Reveal is renderer-owned like the others now (it used to register ⌘R itself):
         // its chord is configurable, so the keystroke must reach the keymap, not the menu.
-        {
-          label: t('reveal'),
-          accelerator: accel('reveal'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'reveal'),
-        },
-        {
-          label: t('rename'),
-          accelerator: accel('rename'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'rename'),
-        },
-        {
-          label: t('findReplace'),
-          accelerator: accel('find-replace'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'find-replace'),
-        },
-        {
-          label: t('addAppleMusic'),
-          accelerator: accel('add-apple-music'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'add-apple-music'),
-        },
+        keymapItem(t('reveal'), 'reveal'),
+        keymapItem(t('rename'), 'rename'),
+        keymapItem(t('findReplace'), 'find-replace'),
+        keymapItem(t('addAppleMusic'), 'add-apple-music'),
         { type: 'separator' },
-        {
-          label: t('processCurrent'),
-          accelerator: accel('process-current'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'process-current'),
-        },
-        {
-          label: t('processAll'),
-          accelerator: accel('process-all'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'process-all'),
-        },
+        keymapItem(t('processCurrent'), 'process-current'),
+        keymapItem(t('processAll'), 'process-all'),
         { type: 'separator' },
-        {
-          label: t('remove'),
-          accelerator: accel('remove'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'remove'),
-        },
+        keymapItem(t('remove'), 'remove'),
         { label: t('removeAll'), click: () => run('remove-all') },
         { type: 'separator' },
         { role: 'close' },
@@ -109,32 +65,12 @@ export function appMenuTemplate({
     {
       label: t('tracks'),
       submenu: [
-        {
-          label: t('selectAllTracks'),
-          accelerator: accel('select-all'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'select-all'),
-        },
-        {
-          label: t('fillAll'),
-          accelerator: accel('fill-all'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'fill-all'),
-        },
+        keymapItem(t('selectAllTracks'), 'select-all'),
+        keymapItem(t('fillAll'), 'fill-all'),
         { type: 'separator' },
-        {
-          label: t('analyzeQuality'),
-          accelerator: accel('analyze-quality'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'analyze-quality'),
-        },
+        keymapItem(t('analyzeQuality'), 'analyze-quality'),
         { type: 'separator' },
-        {
-          label: t('trashSelected'),
-          accelerator: accel('trash-selected'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'trash-selected'),
-        },
+        keymapItem(t('trashSelected'), 'trash-selected'),
       ],
     },
     {
@@ -147,37 +83,12 @@ export function appMenuTemplate({
           click: keymapMenuClick(run, 'palette'),
         },
         { type: 'separator' },
-        {
-          label: t('search'),
-          accelerator: accel('search'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'search'),
-        },
-        {
-          label: t('play'),
-          accelerator: accel('play'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'play'),
-        },
-        {
-          label: t('prev'),
-          accelerator: accel('prev'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'prev'),
-        },
-        {
-          label: t('next'),
-          accelerator: accel('next'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'next'),
-        },
+        keymapItem(t('search'), 'search'),
+        keymapItem(t('play'), 'play'),
+        keymapItem(t('prev'), 'prev'),
+        keymapItem(t('next'), 'next'),
         { type: 'separator' },
-        {
-          label: t('stats'),
-          accelerator: accel('stats'),
-          registerAccelerator: false,
-          click: keymapMenuClick(run, 'stats'),
-        },
+        keymapItem(t('stats'), 'stats'),
         { label: t('activity'), click: () => run('activity') },
         { type: 'separator' },
         { role: 'togglefullscreen' },
