@@ -2450,6 +2450,30 @@ describe('App rekordbox sync notice', () => {
 })
 
 describe('App update check failure', () => {
+  // A launch check that downloaded an update and a later manual check that failed used to
+  // share one toast slot, so the failure replaced "restart to update" and the downloaded
+  // version had no way left to install until the next launch.
+  it('keeps the ready-to-install toast when a later check fails', async () => {
+    let ready: ((version: string) => void) | undefined
+    let fail: ((status: number | null) => void) | undefined
+    setApi({
+      onUpdateDownloaded: (cb: (version: string) => void) => {
+        ready = cb
+        return () => {}
+      },
+      onUpdateCheckFailed: (cb: (status: number | null) => void) => {
+        fail = cb
+        return () => {}
+      },
+    })
+    await renderApp()
+    act(() => ready?.('9.9.9'))
+    await screen.findByTestId('update')
+    act(() => fail?.(504))
+    await screen.findByTestId('update-check-failed')
+    expect(screen.getByTestId('update')).toBeInTheDocument()
+  })
+
   // The 504 screenshot that motivated this: a failed check used to dump the raw
   // HTTP error (HTML body, headers) into a toast. The user must instead get a short
   // localized line and a Retry button that actually re-runs the check.

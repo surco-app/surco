@@ -566,8 +566,9 @@ export default function App(): React.JSX.Element {
 
   // The auto-updater reports a downloaded version (or a download failure) over IPC; surface
   // each as a toast instead of a bespoke component. The ready prompt offers Restart (applies
-  // it immediately); a failure is a plain danger toast. Keyed so a retry supersedes the stale
-  // one rather than stacking.
+  // it immediately); a failure is a plain danger toast. Each kind has its own key, so a retry
+  // supersedes its own stale card rather than stacking, and a failed check can never take
+  // the place of a downloaded update still waiting for its restart.
   useEffect(
     () =>
       window.api.onUpdateDownloaded((version) =>
@@ -607,7 +608,7 @@ export default function App(): React.JSX.Element {
     () =>
       window.api.onUpdateError((error) =>
         pushToast(store, {
-          key: 'update',
+          key: 'update-error',
           tone: 'danger',
           testid: 'update-error',
           message: { key: 'update.failed', values: { error } },
@@ -619,7 +620,7 @@ export default function App(): React.JSX.Element {
     () =>
       window.api.onUpdateCheckFailed((status) => {
         const id = pushToast(store, {
-          key: 'update',
+          key: 'update-check',
           tone: 'danger',
           testid: 'update-check-failed',
           message: status
