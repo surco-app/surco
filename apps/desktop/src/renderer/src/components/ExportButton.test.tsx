@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import '../i18n'
+import i18n from '../i18n'
 import { ExportButton } from './ExportButton'
 
 afterEach(cleanup)
@@ -133,6 +133,28 @@ describe('ExportButton', () => {
     fireEvent.click(btn)
     expect(onCancel).toHaveBeenCalledOnce()
     expect(onProcess).not.toHaveBeenCalled()
+  })
+
+  // The live bar cancels on press, but its name was only the stage ("Converting to
+  // AIFF…") and "Cancel" appeared on mouse hover alone: a keyboard or screen reader user
+  // pressed it not knowing it would stop the job. The name must say so, keep the visible
+  // stage in it, and the "Cancel" swap must also show when the keyboard focus is there.
+  it('names the live bar as a cancel control and shows "Cancel" on keyboard focus too', () => {
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        status="processing"
+        stage="converting"
+        onCancel={vi.fn()}
+      />,
+    )
+    const btn = screen.getByTestId('process-btn')
+    expect(btn).toHaveAccessibleName(i18n.t('export.cancelWhile', { stage: 'Converting to AIFF…' }))
+    expect(btn).toHaveAccessibleName(/Converting to AIFF…/)
+    expect(screen.getByText(i18n.t('common.cancel')).className).toContain(
+      'group-focus-within:inline',
+    )
   })
 
   // Without a cancel handler the processing button stays the inert progress bar it was —

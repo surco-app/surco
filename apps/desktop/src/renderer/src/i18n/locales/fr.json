@@ -22,7 +22,8 @@
     "seratoHint": "Dans Serato : dépose le fichier enregistré dans ton dossier _Serato_/Subcrates, puis relance Serato — tes morceaux apparaissent dans la barre latérale.",
     "m3uHint": "Une playlist standard pour tout le reste — lecteurs, autoradios, autres outils.",
     "unconverted": "{{count}} morceau(x) pas encore converti(s) — ils seront exportés comme fichiers d'origine.",
-    "failed": "Échec de l'export : {{error}}"
+    "failed": "Échec de l'export : {{error}}",
+    "cancelWhile": "{{stage}} Appuyer pour annuler"
   },
   "header": {
     "add": "Ajouter des fichiers",

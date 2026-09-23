@@ -22,7 +22,8 @@
     "seratoHint": "In Serato: Leg die gespeicherte Datei in deinen Ordner _Serato_/Subcrates und starte Serato neu — deine Tracks erscheinen in der Seitenleiste.",
     "m3uHint": "Eine einfache Playlist für alles andere — Player, Autoradios, andere Bibliothekstools.",
     "unconverted": "{{count}} Track(s) sind noch nicht konvertiert — sie werden als Originaldateien exportiert.",
-    "failed": "Export fehlgeschlagen: {{error}}"
+    "failed": "Export fehlgeschlagen: {{error}}",
+    "cancelWhile": "{{stage}} Zum Abbrechen drücken"
   },
   "header": {
     "add": "Dateien hinzufügen",
