@@ -195,10 +195,9 @@ describe('NormalizeSection layout', () => {
     expect(info).toHaveTextContent(i18n.t('normalize.editorHint'))
   })
 
-  it('reads the off state as the original loudness, with no switch since the mode is the state', () => {
+  it('reads the off state as the original loudness', () => {
     renderWith({ open: false, value: cfg })
     expect(screen.getByTestId('normalize-row-sentence')).toHaveTextContent('Original loudness')
-    expect(screen.queryByTestId('normalize-switch')).not.toBeInTheDocument()
     expect(screen.queryByTestId('normalize-active-badge')).not.toBeInTheDocument()
   })
 

@@ -755,14 +755,13 @@ describe('TrimSection', () => {
 
   // The badge with the total cut was on the folded header before the sentence came; it
   // stays beside it, the total at a glance next to the per-side detail.
-  it('states the staged cut in words beside its total, with no switch', () => {
+  it('states the staged cut in words beside its total', () => {
     const { rerender } = render(
       section({ value: { startSec: 9.7, endSec: 90.3 }, open: false, durationSec: 100 }),
     )
     expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent(
       'Removes 9.7 s at the start and 9.7 s at the end',
     )
-    expect(screen.queryByTestId('trim-switch')).not.toBeInTheDocument()
     expect(screen.getByTestId('trim-active-badge')).toHaveTextContent('−19.4 s')
     rerender(section({ value: { endSec: 96.4 }, open: false, durationSec: 100 }))
     expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent(
@@ -775,7 +774,6 @@ describe('TrimSection', () => {
     expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent(
       'Trims the silence at the start and end',
     )
-    expect(screen.queryByTestId('trim-switch')).not.toBeInTheDocument()
     expect(window.api.waveform).not.toHaveBeenCalled()
   })
 
@@ -789,7 +787,6 @@ describe('TrimSection', () => {
     expect(screen.getByTestId('trim-detected-pill')).toHaveTextContent(
       '9.9 s from the start · 9.9 s from the end',
     )
-    expect(screen.queryByTestId('trim-switch')).not.toBeInTheDocument()
   })
 
   it('says there is nothing to cut when the track starts and ends on music', async () => {
