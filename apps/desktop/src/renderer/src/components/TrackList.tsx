@@ -523,7 +523,7 @@ const TrackRow = memo(function TrackRow({
             </span>
             <span
               data-testid="track-duration-slot"
-              className="w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim"
+              className="w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim transition-opacity group-hover:opacity-0"
             >
               {t.duration !== undefined && (
                 <span data-testid="track-duration">{formatTime(t.duration)}</span>
@@ -614,7 +614,10 @@ const TrackRow = memo(function TrackRow({
               )}
               {/* A fixed slot, right-aligned under the duration, so the two read as one
                   trailing column and the review sparkle's place never moves. */}
-              <span data-testid="track-format-slot" className="flex w-[34px] shrink-0 justify-end">
+              <span
+                data-testid="track-format-slot"
+                className="flex w-[34px] shrink-0 justify-end transition-opacity group-hover:opacity-0"
+              >
                 {format && (
                   <span
                     data-testid="track-format"
@@ -677,8 +680,11 @@ const TrackRow = memo(function TrackRow({
         aria-label={tr('trackList.remove')}
         tabIndex={-1}
         onClick={() => onRemove(t.id)}
-        // Same rule as the ▶ overlay above: no per-row backdrop-blur inside the scroller.
-        className="absolute top-1/2 right-1.5 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-[var(--color-panel-2)]/90 text-fg-dim opacity-0 shadow-md ring-1 ring-[var(--color-line-strong)] transition-opacity pointer-events-none hover:bg-[var(--color-panel-2)] hover:text-fg group-hover:pointer-events-auto group-hover:opacity-100"
+        // Takes the place of the duration and format column, which fade out on hover the way
+        // Mail swaps a row's date for its actions: floating over them, the X covered the
+        // numbers and its ringed disc was the loudest thing in the row. A bare glyph in the
+        // freed column needs no backdrop, so the per-row backdrop-blur rule above holds too.
+        className="absolute top-1/2 right-2.5 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-fg-dim opacity-0 transition-opacity pointer-events-none hover:bg-[var(--color-line-strong)] hover:text-fg group-hover:pointer-events-auto group-hover:opacity-100"
       >
         <X className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
