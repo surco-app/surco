@@ -273,15 +273,6 @@ export function QualitySection({
   const upsampledFlag = spectrum?.upsampled === true || spectrum?.resolution === 'upsampled'
   const padded = spectrum?.bitsUsage === 'padded16'
   const healthy = verdict === 'good' && !transcoded && !padded && !upsampledFlag
-  const plainKey = (() => {
-    if (transcoded) return 'editor.qualityPlainTranscode'
-    if (verdict === 'processed') return 'editor.qualityPlainProcessed'
-    if (verdict === 'bad') return 'editor.qualityPlainBad'
-    if (verdict === 'warn') return 'editor.qualityPlainWarn'
-    if (upsampledFlag) return 'editor.qualityPlainUpsampled'
-    if (padded) return 'editor.qualityPlainPadded'
-    return null
-  })()
   const { data: properties } = useTrackProperties(
     item.inputPath,
     settled && showSpectrum && open && healthy,
@@ -361,14 +352,6 @@ export function QualitySection({
                   </div>
                 )}
                 <Spectrogram spectrum={spectrum} transcoded={transcoded} />
-                {plainKey && (
-                  <p data-testid="quality-plain" className="mt-2 text-xs text-fg">
-                    {tr(plainKey, {
-                      cutoff: spectrum.cutoffHz !== null ? formatKHz(spectrum.cutoffHz) : '',
-                      rate: formatKHz(spectrum.sampleRateHz),
-                    })}
-                  </p>
-                )}
                 {/* Only when the verdict needs justifying: a full-band good file is
                     already said twice (green badge, cutoff chip), so its caption
                     would be the third telling of the same fact. With measured

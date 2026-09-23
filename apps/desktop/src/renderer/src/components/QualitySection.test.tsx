@@ -6,7 +6,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NormalizeConfig, SpectrumResult, TrackProperties } from '../../../shared/types'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import i18n from '../i18n'
-import { formatKHz } from '../lib/quality'
 import { createQueryClient } from '../lib/queryClient'
 import { ToastProvider } from '../lib/toastContext'
 import type { TrackItem } from '../types'
@@ -135,34 +134,18 @@ describe('QualitySection verdict first', () => {
     expect(screen.getByTestId('quality-bits-full')).toBeInTheDocument()
   })
 
-  it('makes the case for a fake lossless with the spectrum, one plain sentence and its evidence', async () => {
+  it('makes the case for a fake lossless with the spectrum and its evidence', async () => {
     renderSection({ ...clean, cutoffHz: 16000, hasKnee: true, fineStepDb: 43.2 }, '/m/a.flac')
     expect(await screen.findByTestId('spectrogram')).toBeInTheDocument()
     expect(screen.getByTestId('quality-badge')).toHaveTextContent(i18n.t('editor.qualityTranscode'))
-    expect(screen.getByTestId('quality-plain')).toHaveTextContent(
-      i18n.t('editor.qualityPlainTranscode', { cutoff: '16.0 kHz' }),
-    )
     expect(screen.getByTestId('quality-evidence')).toHaveTextContent('43 dB')
-  })
-
-  it.each<[Partial<SpectrumResult>, string]>([
-    [{ cutoffHz: 16000, processed: true }, 'editor.qualityPlainProcessed'],
-    [{ cutoffHz: 18000, hasKnee: undefined }, 'editor.qualityPlainWarn'],
-    [{ bitsUsage: 'padded16' }, 'editor.qualityPlainPadded'],
-    [{ sampleRateHz: 48000, resolution: 'upsampled' }, 'editor.qualityPlainUpsampled'],
-  ])('flags %o with its own plain sentence', async (over, key) => {
-    renderSection({ ...clean, fineStepDb: undefined, ...over }, '/m/a.m4a')
-    expect(await screen.findByTestId('quality-plain')).toHaveTextContent(
-      i18n.t(key, { cutoff: formatKHz(over.cutoffHz ?? 21000), rate: '48.0 kHz' }),
-    )
-    expect(screen.getByTestId('spectrogram')).toBeInTheDocument()
   })
 
   // The format facts only ride the clean file's verdict line, so a flagged file must not
   // pay for a properties probe nothing on screen will read.
   it('reads the format facts only for the clean verdict line that shows them', async () => {
     renderSection({ ...clean, cutoffHz: 16000, hasKnee: true, fineStepDb: 43.2 }, '/m/a.flac')
-    await screen.findByTestId('quality-plain')
+    await screen.findByTestId('quality-evidence')
     await new Promise((r) => setTimeout(r, 600))
     const api = (window as unknown as { api: { properties: ReturnType<typeof vi.fn> } }).api
     expect(api.properties).not.toHaveBeenCalled()
