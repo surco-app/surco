@@ -146,6 +146,67 @@ describe('DiscogsPanel search announcements', () => {
   })
 })
 
+// The sparkle marks were painted in accent or amber with their word only in a hover
+// tooltip, so a screen reader met a bare row and a colour-blind user saw two identical
+// marks. The words ride along as text: which result is suggested, and on the track,
+// whether the match is confident or still needs confirming.
+describe('DiscogsPanel suggestion marks', () => {
+  const results = [
+    { provider: 'discogs', id: 1, title: 'Uno' },
+    { provider: 'discogs', id: 2, title: 'Dos' },
+  ] as unknown as DiscogsBrowser['results']
+  const release = {
+    provider: 'discogs' as const,
+    id: 1,
+    title: 'Uno',
+    artists: [],
+    tracklist: [
+      { position: '1', title: 'Cara A' },
+      { position: '2', title: 'Cara B' },
+    ],
+  }
+
+  function renderMatched(matchTier: 'high' | 'review') {
+    render(
+      <DiscogsPanel
+        browser={browser({
+          results,
+          openKey: 'discogs:1',
+          suggestedKey: 'discogs:1',
+          release,
+        })}
+        matchedTrack={release.tracklist[1]}
+        matchTier={matchTier}
+        appliedTrack={undefined}
+        hasToken={true}
+        isMulti={false}
+        selectedTracks={undefined}
+        onApplyMatches={undefined}
+        selectTrack={vi.fn()}
+        searchInputRef={createRef<HTMLInputElement>()}
+        formatFilter={[]}
+        resultsWidth={315}
+        onResultsWidthChange={vi.fn()}
+      />,
+    )
+  }
+
+  it('names the suggested release in its row', () => {
+    renderMatched('high')
+    const [first, second] = screen.getAllByTestId('discogs-result')
+    expect(first).toHaveAccessibleName(/suggested/i)
+    expect(second).not.toHaveAccessibleName(/suggested/i)
+  })
+
+  it('tells a confident track match from one to confirm', () => {
+    renderMatched('high')
+    expect(screen.getByTestId('track-confidence')).toHaveAccessibleName('Suggested')
+    cleanup()
+    renderMatched('review')
+    expect(screen.getByTestId('track-confidence')).toHaveAccessibleName('Match to confirm')
+  })
+})
+
 describe('cursor de teclado', () => {
   const results = [
     { provider: 'discogs', id: 1, title: 'Uno', thumb: '' },

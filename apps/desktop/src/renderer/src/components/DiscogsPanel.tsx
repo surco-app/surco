@@ -157,6 +157,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     },
     [searchInputRef],
   )
+  const tierLabel = tr(matchTier === 'high' ? 'editor.matchSuggested' : 'match.toConfirm')
   function onResultsKeyDown(e: React.KeyboardEvent): void {
     const map = { ArrowDown: 1, j: 1, ArrowUp: -1, k: -1, Home: 'first', End: 'last' } as const
     const to = map[e.key as keyof typeof map]
@@ -383,8 +384,13 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                             "Suggested" label in the tooltip. Never a check — nothing is
                             applied until the user opens the release and picks a track. */}
                         {suggested && (
+                          // role="img" with the word as its name: the tooltip only answers a
+                          // pointer, and the name joins the row's so a screen reader hears
+                          // which release is suggested.
                           <span
                             data-testid="result-suggested"
+                            role="img"
+                            aria-label={tr('editor.matchSuggested')}
                             className="group/dot relative flex shrink-0 text-[var(--color-accent)]"
                           >
                             <Sparkles className="h-3 w-3" aria-hidden="true" />
@@ -483,9 +489,14 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                                   row without a suggestion keeps the duration aligned. */}
                               <span className="flex w-3 shrink-0 justify-center">
                                 {t === matchedTrack && matchTier && (
+                                  // Accent versus amber was the whole difference between the
+                                  // tiers, so the name and tooltip say which one it is, for a
+                                  // screen reader and for anyone who can't tell the colours apart.
                                   <span
                                     data-testid="track-confidence"
                                     data-confidence={matchTier}
+                                    role="img"
+                                    aria-label={tierLabel}
                                     className={`group/dot relative flex ${
                                       matchTier === 'high'
                                         ? 'text-[var(--color-accent)]'
@@ -493,11 +504,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                                     }`}
                                   >
                                     <Sparkles className="h-3 w-3" aria-hidden="true" />
-                                    <Tooltip
-                                      label={tr('editor.matchSuggested')}
-                                      align="end"
-                                      scope="dot"
-                                    />
+                                    <Tooltip label={tierLabel} align="end" scope="dot" />
                                   </span>
                                 )}
                               </span>

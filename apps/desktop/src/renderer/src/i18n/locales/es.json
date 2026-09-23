@@ -1201,7 +1201,8 @@
     "unassigned": "Sin asignar",
     "apply": "Aplicar a {{count}}",
     "suggested": "Coincidencia sugerida",
-    "applied": "Aplicado"
+    "applied": "Aplicado",
+    "toConfirm": "Coincidencia por confirmar"
   },
   "findReplace": {
     "title": "Buscar y reemplazar",
