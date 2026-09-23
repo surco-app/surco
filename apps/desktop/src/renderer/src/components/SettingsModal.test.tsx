@@ -210,6 +210,20 @@ describe('SettingsModal tablist', () => {
     expect(screen.getByTestId('settings-tab-stats')).toHaveFocus()
   })
 
+  // A tablist may only own tabs: the group headings and their wrappers sat in it as stray
+  // paragraphs and generics, so VoiceOver miscounted the tabs and read headings as items.
+  // Everything in the list that is not a tab (or the decorative pill) is presentational.
+  it('keeps the group headings and wrappers out of the tablist semantics', () => {
+    open()
+    const stray = Array.from(screen.getByRole('tablist').querySelectorAll('*')).filter(
+      (el) =>
+        !el.closest('[role="tab"]') &&
+        !el.closest('[aria-hidden="true"]') &&
+        !el.hasAttribute('role'),
+    )
+    expect(stray).toEqual([])
+  })
+
   // The sidebar groups the tabs under headings, but the arrow keys still walk the whole
   // list — a group boundary is a visual divider, not a stop. Down from the last tab of one
   // group lands on the first of the next.
