@@ -24,6 +24,7 @@ export function DeclickControls({ value, onChange }: Props): React.JSX.Element {
         value={value}
         onChange={onChange}
         testidPrefix="declick-mode"
+        label={tr('declick.title')}
         labelFor={(id) => tr(`declick.mode.${id}`)}
       />
       {value !== 'off' && (

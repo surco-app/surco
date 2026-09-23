@@ -224,3 +224,12 @@ describe('NormalizeControls hidden hints', () => {
     expect(screen.getByTestId('normalize-ceiling-caption')).toBeTruthy()
   })
 })
+
+// Same as the click-repair ladder: the mode buttons are bare words, and the editor shows
+// them with no settings label above, so the group has to carry what they choose.
+describe('NormalizeControls group name', () => {
+  it('names the mode picker after the normalization it sets', () => {
+    render(<NormalizeControls value={loudness} onChange={() => {}} />)
+    expect(screen.getByRole('group', { name: 'Loudness normalization' })).toBeInTheDocument()
+  })
+})
