@@ -388,6 +388,36 @@ describe('runProcessTrack — output conflict', () => {
     expect(result.outputPath).toBe('/out/Artist - Title.aiff')
   })
 
+  // The name is on disk AND a sibling job of the same run resolved to it. Overwrite is a
+  // consent to replace the file already there, once: with "apply to the rest" both jobs
+  // answer overwrite, and aiming both at the one path made the second rename land on the
+  // first. Two tracks went in, one came out, and the run counted two conversions.
+  it('never lets two jobs of one run overwrite the same file on disk', async () => {
+    const reservations = createOutputReservations(false)
+    const release: Array<() => void> = []
+    const deps = makeDeps({
+      existsSync: vi.fn((p: string) => p === '/out/Artist - Title.aiff'),
+      isPathReserved: reservations.isReserved,
+      reservePath: reservations.reserve,
+      releasePath: reservations.release,
+      confirmConflict: vi.fn(async () => 'overwrite' as const),
+      convertAudio: vi.fn(
+        () =>
+          new Promise<{ normalizeSkipped: boolean }>((resolve) =>
+            release.push(() => resolve({ normalizeSkipped: false })),
+          ),
+      ),
+    })
+
+    const first = runProcessTrack(job({ id: 'a' }), deps)
+    const second = runProcessTrack(job({ id: 'b', inputPath: '/in/other.wav' }), deps)
+    await vi.waitFor(() => expect(release).toHaveLength(2))
+    for (const done of release) done()
+    const outputs = [(await first).outputPath, (await second).outputPath]
+
+    expect(outputs).toEqual(['/out/Artist - Title.aiff', '/out/Artist - Title (2).aiff'])
+  })
+
   // The prompt is what the user consents on. A claim by another job in the run has no file
   // behind it yet, so a prompt reading "already exists in the destination folder" asked
   // about a file that was not there; the prompt is told which of the two it is facing.
