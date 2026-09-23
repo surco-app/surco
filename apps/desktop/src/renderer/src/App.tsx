@@ -1727,6 +1727,10 @@ export default function App(): React.JSX.Element {
       overlays.close()
       return
     }
+    if (trashOpen) {
+      setTrashOpen(false)
+      return
+    }
     // A maximized editor section is an overlay layer too: its own listener
     // restores it, and Escape must stop there — falling through would ALSO
     // clear the selection, unmounting the editor mid-review.
@@ -1737,7 +1741,7 @@ export default function App(): React.JSX.Element {
 
   // Any open modal/overlay also swallows the global shortcuts, or space/j/k/⌘⏎ would act
   // on the list behind the dialog (e.g. start a conversion behind the confirm prompt).
-  const overlayOpen = activeModal !== null
+  const overlayOpen = activeModal !== null || trashOpen
 
   useKeyboardShortcuts({
     isMac,

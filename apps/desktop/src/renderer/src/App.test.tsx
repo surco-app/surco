@@ -3334,6 +3334,25 @@ describe('App Originals panel', () => {
       formatBytes(2 * 1024 ** 3, i18n.language),
     )
   })
+  // Originals is a dialog, but it opened outside the modal registry, so nothing gated
+  // the global shortcuts or answered Escape: the arrows walked the list hidden behind it
+  // and the only way out was the close button.
+  it('closes on Escape and keeps track shortcuts off the list behind it', async () => {
+    setApi({ trashList: vi.fn().mockResolvedValue([]) })
+    await renderApp()
+    const [first, second] = await addTwoTracks()
+    fireEvent.click(first)
+    fireEvent.click(await screen.findByTestId('open-trash'))
+    await screen.findByTestId('trash-panel')
+
+    fireEvent.keyDown(window, { key: 'ArrowDown', cancelable: true })
+    expect(first).toHaveAttribute('aria-selected', 'true')
+    expect(second).toHaveAttribute('aria-selected', 'false')
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByTestId('trash-panel')).toBeNull()
+    expect(first).toHaveAttribute('aria-selected', 'true')
+  })
 })
 
 describe('App list header', () => {
