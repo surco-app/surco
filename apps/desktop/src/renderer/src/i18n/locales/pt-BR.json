@@ -603,7 +603,9 @@
     "replaceMusic": "Substituir por {{format}} + Apple Music",
     "requiredEmpty": "Obrigatório: preencha antes de converter",
     "coverMixed": "As faixas selecionadas têm capas diferentes",
-    "coverLowRes": "Baixa resolução"
+    "coverLowRes": "Baixa resolução",
+    "coverPosition": "Imagem {{position}} de {{total}}",
+    "coverPositionNone": "Nenhuma das {{total}} imagens escolhida"
   },
   "fields": {
     "groupFilled_one": "{{count}} preenchido",
