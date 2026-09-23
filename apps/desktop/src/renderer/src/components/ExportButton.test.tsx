@@ -105,10 +105,46 @@ describe('ExportButton', () => {
     render(<ExportButton {...baseProps} incomplete={false} destination="engineDj" />)
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     expect(screen.getByTestId('process-destination-engineDj')).toHaveAttribute(
-      'aria-current',
+      'aria-checked',
       'true',
     )
-    expect(screen.getByTestId('process-destination-folder')).not.toHaveAttribute('aria-current')
+    expect(screen.getByTestId('process-destination-folder')).toHaveAttribute(
+      'aria-checked',
+      'false',
+    )
+  })
+
+  // The chevron opened a plain stack of buttons: no announced popup, focus left behind on
+  // the chevron, no arrows and no Escape, so from the keyboard the menu was a trap of Tab
+  // presses. It has to behave like the app's other menus (TrackContextMenu).
+  it('runs the format menu as a keyboard menu of radio items', () => {
+    render(<ExportButton {...baseProps} incomplete={false} outputFormat="flac" />)
+    const toggle = screen.getByTestId('process-format-toggle')
+    expect(toggle).toHaveAttribute('aria-haspopup', 'menu')
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    toggle.focus()
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('menu')).toBeInTheDocument()
+    const flac = screen.getByTestId('process-format-flac')
+    expect(flac).toHaveAttribute('role', 'menuitemradio')
+    expect(flac).toHaveAttribute('aria-checked', 'true')
+    expect(flac).toHaveFocus()
+    fireEvent.keyDown(flac, { key: 'ArrowDown' })
+    expect(flac).not.toHaveFocus()
+    expect(screen.getByRole('menu')).toContainElement(document.activeElement as HTMLElement)
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Escape' })
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(toggle).toHaveFocus()
+  })
+
+  // Picking an item closes the menu; without handing focus back, it fell to <body>.
+  it('returns focus to the chevron after a pick', () => {
+    render(<ExportButton {...baseProps} incomplete={false} />)
+    const toggle = screen.getByTestId('process-format-toggle')
+    fireEvent.click(toggle)
+    fireEvent.click(screen.getByTestId('process-format-mp3'))
+    expect(toggle).toHaveFocus()
   })
 
   // Music can't ingest FLAC, so with FLAC picked the Apple Music destination must grey
