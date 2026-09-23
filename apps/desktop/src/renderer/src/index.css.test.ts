@@ -92,3 +92,37 @@ describe('selected-row progress affordances', () => {
     })
   }
 })
+
+// The focus ring is the only thing that shows a keyboard user where they are on every
+// button, and it was the accent at 32% over the panel: 1.8:1 in dark and 1.6:1 in light,
+// a glow you had to hunt for. WCAG 1.4.11 wants 3:1 for a focus indicator against what
+// surrounds it, so the ring is measured as it lands on the surfaces controls sit on,
+// with any color-mix blended over that surface the way the browser paints it.
+describe('focus ring contrast (WCAG 1.4.11)', () => {
+  const ring = css.match(/--ring:\s*([^;]+);/)?.[1] ?? ''
+  const mix = ring.match(/color-mix\(in srgb, var\(--color-accent\) (\d+)%, transparent\)/)
+  const alpha = mix ? Number(mix[1]) / 100 : 1
+
+  function blend(fg: string, bg: string, a: number): string {
+    const f = parseInt(fg.slice(1), 16)
+    const b = parseInt(bg.slice(1), 16)
+    const ch = [16, 8, 0].map((s) => Math.round(((f >> s) & 255) * a + ((b >> s) & 255) * (1 - a)))
+    return `#${ch.map((v) => v.toString(16).padStart(2, '0')).join('')}`
+  }
+
+  it('paints the ring in the accent', () => {
+    expect(ring).toContain('var(--color-accent)')
+  })
+
+  for (const [theme, t] of [
+    ['dark', dark],
+    ['light', light],
+  ] as const) {
+    for (const surface of ['color-panel', 'color-panel-2']) {
+      it(`${theme} ring reaches 3:1 on ${surface}`, () => {
+        const painted = blend(t['color-accent'], t[surface], alpha)
+        expect(contrast(painted, t[surface])).toBeGreaterThanOrEqual(3)
+      })
+    }
+  }
+})
