@@ -343,7 +343,10 @@ export function QualityFilterBar({
   const rowClass =
     'flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-panel-2)]'
   const divider = (
-    <hr
+    // A hidden div, not an <hr>: a listbox may own only options, and the divider is
+    // decoration, so it stays out of the accessibility tree.
+    <div
+      aria-hidden="true"
       data-testid="quality-filter-separator"
       className="my-1 border-0 border-t border-[var(--color-line)]"
     />
@@ -440,6 +443,8 @@ export function QualityFilterBar({
             <div
               ref={listRef}
               role="listbox"
+              // Several buckets (one per axis) can be on at once.
+              aria-multiselectable="true"
               data-testid="quality-filter-listbox"
               aria-label={tr('sidebar.filter.label')}
               onKeyDown={onListKeyDown}

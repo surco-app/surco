@@ -336,6 +336,19 @@ describe('QualityFilterBar', () => {
     expect(trigger).toHaveAccessibleName(/Filter/)
   })
 
+  // Several buckets can be on at once, so the listbox shows several selected options; a
+  // listbox that doesn't declare itself multi-select tells assistive tech only one can be.
+  // The dividers are decoration, and a listbox may hold only options, so they stay out
+  // of the accessibility tree.
+  it('declares the bucket menu multi-select and keeps its dividers out of it', () => {
+    renderBar()
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByRole('listbox')).toHaveAttribute('aria-multiselectable', 'true')
+    for (const divider of screen.getAllByTestId('quality-filter-separator')) {
+      expect(divider).toHaveAttribute('aria-hidden', 'true')
+    }
+  })
+
   // The x/total position indicator the user relies on must stay visible beside the
   // collapsed control, not fold away into a chip that no longer exists.
   it('keeps the x/total position counter visible next to the dropdown', () => {
