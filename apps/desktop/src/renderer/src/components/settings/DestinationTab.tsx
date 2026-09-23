@@ -2,22 +2,16 @@ import { AlertTriangle } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { BACKUP_POLICIES, type BackupPolicy } from '../../../../shared/backupPolicy'
-import {
-  type DestinationPlan,
-  LOCATIONS,
-  planFromSettings,
-  planToSettings,
-  withLocation,
-} from '../../lib/destination'
+import { DESTINATIONS, fromDestination, toDestination } from '../../lib/destination'
 import { isMacOS } from '../../lib/platform'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
-import { DjSoftwarePicker } from '../DjSoftwarePicker'
+import { DestinationPicker } from '../DestinationPicker'
 import { EngineLibraryFields } from '../EngineLibraryFields'
-import { LocationPicker } from '../LocationPicker'
 import { OutputFolderField } from '../OutputFolderField'
 import { PathField } from '../PathField'
 import { SegmentedControl } from '../SegmentedControl'
+import { CheckboxRow } from './CheckboxRow'
 import { SettingsField, SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
 
 // Apple Music automation only exists on macOS, so the destination is meaningless on
@@ -92,9 +86,10 @@ interface Props {
   onChangeRekordboxDbPath: () => void
 }
 
-// What the DJ plays with and where the converted file is saved. Split from the
+// Where a conversion ends up: the output folder, the destination radio (folder /
+// Apple Music / Engine DJ / overwrite) and Engine DJ's own fields. Split from the
 // Conversion tab, which keeps everything that defines the file itself — the format
-// chosen there still gates the choices here (FLAC keeps Apple Music out).
+// chosen there still gates the choices here (FLAC pins the folder).
 export function DestinationTab({
   synced,
   local,
@@ -120,202 +115,61 @@ export function DestinationTab({
   // 'never' dims the limits rather than hiding them: they still govern what is already
   // stored, and a control that vanishes reads as having discarded it.
   const backupOff = synced.backupPolicy === 'never'
-  const plan = planFromSettings(synced, synced.outputFormat === 'flac')
-  function applyPlan(next: DestinationPlan): void {
-    const flags = planToSettings(next)
-    patch('addToAppleMusic', flags.addToAppleMusic)
-    patch('keepOutputCopy', flags.keepOutputCopy)
-    patch('overwriteOriginal', flags.overwriteOriginal)
-    patch('addToEngineDj', flags.addToEngineDj)
-    patch('convertBesideOriginal', flags.convertBesideOriginal)
+  // FLAC can't go to Apple Music, so the destination is pinned to the output folder
+  // while it's the format. Otherwise the stored booleans map onto the single radio choice.
+  const flacOnly = synced.outputFormat === 'flac'
+  const destination = toDestination(
+    synced.addToAppleMusic,
+    flacOnly,
+    synced.overwriteOriginal,
+    synced.addToEngineDj,
+    synced.convertBesideOriginal,
+  )
+  function chooseDestination(d: (typeof DESTINATIONS)[number]): void {
+    const next = fromDestination(d)
+    patch('addToAppleMusic', next.addToAppleMusic)
+    patch('keepOutputCopy', next.keepOutputCopy)
+    patch('overwriteOriginal', next.overwriteOriginal)
+    patch('addToEngineDj', next.addToEngineDj)
+    patch('convertBesideOriginal', next.convertBesideOriginal)
   }
+  // The folder is a detail OF the "Output folder" choice, so it renders under that
+  // radio (via the picker's details slot) instead of floating above the group like an
+  // unrelated global path — under Apple Music or overwrite there is no folder copy for
+  // it to describe.
+  const folderDetail = (
+    <OutputFolderField
+      value={local.outputDir}
+      onChange={onOutputDirChange}
+      testid="settings-output"
+    />
+  )
+  // Engine DJ's fields nest under its radio exactly like the output folder does — the
+  // two destination details read as one pattern instead of one inline and one trailing
+  // the whole group.
+  const engineDetail = (
+    <EngineLibraryFields
+      libraryDir={local.engineLibraryDir}
+      onLibraryDirChange={onChangeEngineDir}
+      playlist={synced.engineDjPlaylist}
+      onPlaylistChange={(name) => patch('engineDjPlaylist', name)}
+      testidPrefix="settings-engine"
+    />
+  )
+
   return (
     <>
-      <SettingsField label={tr('settings.djSoftware')}>
-        <DjSoftwarePicker
-          plan={plan}
-          onPlanChange={applyPlan}
-          mac={isMac}
-          flac={synced.outputFormat === 'flac'}
-          syncTraktor={synced.syncTraktor}
-          onSyncTraktorChange={(on) => patch('syncTraktor', on)}
-          traktorAvailable={!!local.traktorNmlPath}
-          traktorDetail={
-            <>
-              <PathField
-                value={local.traktorNmlPath}
-                onChange={onChangeTraktorNmlPath}
-                testid="settings-traktor-nml"
-                emptyLabel={tr('settings.traktorNmlPathEmpty')}
-                ariaLabel={tr('settings.traktorNmlPath')}
-              />
-              {!local.traktorNmlPath && detectedNmlPath && (
-                <div
-                  data-testid="settings-traktor-nml-detected"
-                  className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] px-3 py-2"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm">{detectedNmlPath}</p>
-                    <SettingsHint>{tr('settings.traktorNmlPathDetectedHint')}</SettingsHint>
-                  </div>
-                  <button
-                    type="button"
-                    data-testid="settings-traktor-nml-use-detected"
-                    onClick={onAcceptDetectedNmlPath}
-                    className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
-                  >
-                    {tr('settings.traktorNmlPathUseDetected')}
-                  </button>
-                </div>
-              )}
-              {/* One signed row, not a question plus a size. Splitting the sign from the
-                  magnitude cost four controls for one number — a question to pick the
-                  direction, an unsigned row to pick the size, a slider, and a sentence to read
-                  the result back — and made the least-used setting in Output the largest. A
-                  button labelled "-25 ms" carries the whole decision, and "No adjustment" is
-                  the middle of the row rather than an answer of its own.
-
-                  Always rendered, never conditionally mounted: a control that appears and
-                  disappears leaves the user unable to tell whether the setting exists at all.
-                  Without a collection it is disabled and the hint says what is missing. */}
-              <div className="mt-6">
-                <SettingsLabel>{tr('settings.traktorCueOffset')}</SettingsLabel>
-                <p className="mt-1 text-sm text-fg-muted">{tr('settings.traktorCueQuestion')}</p>
-
-                {/* Radios, not a row of signed buttons: the DJ answers what he HEARS and Surco
-                    derives the sign. The previous row asked him to know which way a negative
-                    number moves a cue, and he guessed wrong. */}
-                <div className="mt-3 flex flex-col gap-0.5">
-                  {CUE_CHOICES.map(({ id, labelKey, noteKey }) => {
-                    const chosen = direction === id
-                    return (
-                      // A real radio input rather than a button wearing the role: it brings
-                      // arrow-key navigation and the group semantics for free, and the visible
-                      // dot is drawn beside it with the input itself kept off-screen but
-                      // focusable, so the ring still follows the keyboard.
-                      <label
-                        key={id}
-                        className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 hover:bg-[var(--color-panel-2)]/30 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--color-accent)]"
-                      >
-                        <input
-                          type="radio"
-                          name="settings-cue-direction"
-                          data-testid={`settings-cue-dir-${id}`}
-                          checked={chosen}
-                          onChange={() =>
-                            patch(
-                              'traktorCueOffsetMs',
-                              id === 'none'
-                                ? '0'
-                                : String(CUE_SIGN[id] * (magnitude || CUE_DEFAULT_MS)),
-                            )
-                          }
-                          className="peer sr-only"
-                        />
-                        <span
-                          aria-hidden="true"
-                          className={`size-[15px] shrink-0 rounded-full border ${
-                            chosen
-                              ? 'border-[5px] border-[var(--color-accent)]'
-                              : 'border-[1.5px] border-[var(--color-line-strong)]'
-                          }`}
-                        />
-                        <span className="text-sm text-fg">
-                          {tr(labelKey)}
-                          <span className="text-fg-muted"> · {tr(noteKey)}</span>
-                        </span>
-                      </label>
-                    )
-                  })}
-                </div>
-
-                {/* Always the magnitude, never the stored sign: a "-51" beside a choice that
-                    already says "early" is the double negative this redesign removes. Stepping
-                    keeps the chosen direction, so the amount can never cross zero and flip it
-                    under a DJ who was only making the correction smaller. */}
-                <div className="mt-3 flex items-center gap-2 border-t border-[var(--color-line)] pt-3">
-                  <span className="flex-1 text-sm text-fg-muted">
-                    {tr('settings.traktorCueAmount')}
-                  </span>
-                  <button
-                    type="button"
-                    data-testid="settings-cue-amount-down"
-                    aria-label={tr('settings.traktorCueAmountDown')}
-                    disabled={direction === 'none' || magnitude <= 1}
-                    onClick={() => patch('traktorCueOffsetMs', String(stored - Math.sign(stored)))}
-                    className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-panel-2)]/40 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    −
-                  </button>
-                  <span
-                    data-testid="settings-cue-amount"
-                    className="min-w-14 text-center text-sm tabular-nums text-fg"
-                  >
-                    {magnitude} ms
-                  </span>
-                  <button
-                    type="button"
-                    data-testid="settings-cue-amount-up"
-                    aria-label={tr('settings.traktorCueAmountUp')}
-                    disabled={direction === 'none' || magnitude >= CUE_MAX_MS}
-                    onClick={() => patch('traktorCueOffsetMs', String(stored + Math.sign(stored)))}
-                    className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-panel-2)]/40 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    +
-                  </button>
-                </div>
-
-                <SettingsHint className="mt-2">{tr('settings.traktorCueOffsetHint')}</SettingsHint>
-              </div>
-            </>
-          }
-          syncRekordbox={synced.syncRekordbox}
-          onSyncRekordboxChange={(on) => patch('syncRekordbox', on)}
-          rekordboxAvailable={!!rekordboxCollection}
-          rekordboxDetail={
-            <>
-              <SettingsLabel>{tr('settings.rekordboxDbPath')}</SettingsLabel>
-              <div className="mt-2">
-                <PathField
-                  value={rekordboxCollection}
-                  onChange={onChangeRekordboxDbPath}
-                  testid="settings-rekordbox-db"
-                  emptyLabel={tr('settings.traktorNmlPathEmpty')}
-                />
-              </div>
-              <SettingsHint className="mt-2">{tr('settings.rekordboxDbPathHint')}</SettingsHint>
-            </>
-          }
-          engineDetail={
-            <EngineLibraryFields
-              libraryDir={local.engineLibraryDir}
-              onLibraryDirChange={onChangeEngineDir}
-              playlist={synced.engineDjPlaylist}
-              onPlaylistChange={(name) => patch('engineDjPlaylist', name)}
-              testidPrefix="settings-engine"
-            />
-          }
-          testidPrefix="settings"
+      <SettingsField label={tr('settings.destination')}>
+        <DestinationPicker
+          destinations={DESTINATIONS.filter((d) => isMac || d !== 'appleMusic')}
+          value={destination}
+          onChange={chooseDestination}
+          flacOnly={flacOnly}
+          testidPrefix="settings-destination"
+          radioName="destination"
+          details={{ folder: folderDetail, engineDj: engineDetail }}
         />
       </SettingsField>
-      <SettingsSection>
-        <SettingsField label={tr('settings.location')}>
-          <LocationPicker
-            locations={LOCATIONS}
-            value={plan.location}
-            onChange={(location) => applyPlan(withLocation(plan, location))}
-            testidPrefix="settings-location"
-            radioName="location"
-            folderDetail={
-              <OutputFolderField
-                value={local.outputDir}
-                onChange={onOutputDirChange}
-                testid="settings-output"
-              />
-            }
-          />
-        </SettingsField>
-      </SettingsSection>
       {/* Not a detail of the overwrite radio, which is where this started: Originals also
           fills from a format change and from a delete on a volume with no OS Trash, and
           hanging the setting off one destination left the other two paths ignoring it
@@ -407,6 +261,186 @@ export function DestinationTab({
             ? tr('settings.originalBackupLimitsKept')
             : tr('settings.originalBackupLimitsHint')}
         </SettingsHint>
+      </SettingsSection>
+
+      {/* Independent of the destination radio above: Traktor sync patches cue points
+          into collection.nml as a side effect of conversion, wherever the file ends up —
+          it isn't itself a place the converted file goes. Empty path means the feature
+          is off (see settings.ts), so this is the only control that turns it on. */}
+      <SettingsSection eyebrow={tr('settings.traktorSync')}>
+        {/* The switch, and the only one. Emptying the path used to be what turned the
+            sync off — an invisible side effect nobody guesses, and the opposite of how
+            the rest of this screen works. Disabled rather than hidden while no collection
+            is set, so the feature never looks like it does not exist; the hint below says
+            what is missing. */}
+        <CheckboxRow
+          testid="settings-sync-traktor"
+          checked={synced.syncTraktor}
+          disabled={!local.traktorNmlPath}
+          onChange={(v) => patch('syncTraktor', v)}
+          label={tr('settings.syncTraktor')}
+        />
+        <SettingsHint className="mt-2 mb-4">
+          {local.traktorNmlPath ? tr('settings.syncTraktorHint') : tr('settings.syncTraktorIdle')}
+        </SettingsHint>
+        {/* No htmlFor: the value below is a read-only display, not a form control, so
+            there is nothing for a label to focus. */}
+        <SettingsLabel>{tr('settings.traktorNmlPath')}</SettingsLabel>
+        <div className="mt-2">
+          <PathField
+            value={local.traktorNmlPath}
+            onChange={onChangeTraktorNmlPath}
+            testid="settings-traktor-nml"
+            emptyLabel={tr('settings.traktorNmlPathEmpty')}
+          />
+        </div>
+        <SettingsHint className="mt-2">{tr('settings.traktorNmlPathHint')}</SettingsHint>
+        {/* Never applied without this explicit click — autodetection only proposes,
+            it must never silently pick a version folder or write to it. */}
+        {!local.traktorNmlPath && detectedNmlPath && (
+          <div
+            data-testid="settings-traktor-nml-detected"
+            className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] px-3 py-2"
+          >
+            <div className="min-w-0">
+              <p className="truncate text-sm">{detectedNmlPath}</p>
+              <SettingsHint>{tr('settings.traktorNmlPathDetectedHint')}</SettingsHint>
+            </div>
+            <button
+              type="button"
+              data-testid="settings-traktor-nml-use-detected"
+              onClick={onAcceptDetectedNmlPath}
+              className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+            >
+              {tr('settings.traktorNmlPathUseDetected')}
+            </button>
+          </div>
+        )}
+        {/* One signed row, not a question plus a size. Splitting the sign from the
+            magnitude cost four controls for one number — a question to pick the
+            direction, an unsigned row to pick the size, a slider, and a sentence to read
+            the result back — and made the least-used setting in Output the largest. A
+            button labelled "-25 ms" carries the whole decision, and "No adjustment" is
+            the middle of the row rather than an answer of its own.
+
+            Always rendered, never conditionally mounted: a control that appears and
+            disappears leaves the user unable to tell whether the setting exists at all.
+            Without a collection it is disabled and the hint says what is missing. */}
+        <div className="mt-6">
+          <SettingsLabel>{tr('settings.traktorCueOffset')}</SettingsLabel>
+          <p className="mt-1 text-sm text-fg-muted">{tr('settings.traktorCueQuestion')}</p>
+
+          {/* Radios, not a row of signed buttons: the DJ answers what he HEARS and Surco
+              derives the sign. The previous row asked him to know which way a negative
+              number moves a cue, and he guessed wrong. */}
+          <div className="mt-3 flex flex-col gap-0.5">
+            {CUE_CHOICES.map(({ id, labelKey, noteKey }) => {
+              const chosen = direction === id
+              return (
+                // A real radio input rather than a button wearing the role: it brings
+                // arrow-key navigation and the group semantics for free, and the visible
+                // dot is drawn beside it with the input itself kept off-screen but
+                // focusable, so the ring still follows the keyboard.
+                <label
+                  key={id}
+                  className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 hover:bg-[var(--color-panel-2)]/30 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--color-accent)]"
+                >
+                  <input
+                    type="radio"
+                    name="settings-cue-direction"
+                    data-testid={`settings-cue-dir-${id}`}
+                    checked={chosen}
+                    onChange={() =>
+                      patch(
+                        'traktorCueOffsetMs',
+                        id === 'none' ? '0' : String(CUE_SIGN[id] * (magnitude || CUE_DEFAULT_MS)),
+                      )
+                    }
+                    className="peer sr-only"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className={`size-[15px] shrink-0 rounded-full border ${
+                      chosen
+                        ? 'border-[5px] border-[var(--color-accent)]'
+                        : 'border-[1.5px] border-[var(--color-line-strong)]'
+                    }`}
+                  />
+                  <span className="text-sm text-fg">
+                    {tr(labelKey)}
+                    <span className="text-fg-muted"> · {tr(noteKey)}</span>
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+
+          {/* Always the magnitude, never the stored sign: a "-51" beside a choice that
+              already says "early" is the double negative this redesign removes. Stepping
+              keeps the chosen direction, so the amount can never cross zero and flip it
+              under a DJ who was only making the correction smaller. */}
+          <div className="mt-3 flex items-center gap-2 border-t border-[var(--color-line)] pt-3">
+            <span className="flex-1 text-sm text-fg-muted">{tr('settings.traktorCueAmount')}</span>
+            <button
+              type="button"
+              data-testid="settings-cue-amount-down"
+              aria-label={tr('settings.traktorCueAmountDown')}
+              disabled={direction === 'none' || magnitude <= 1}
+              onClick={() => patch('traktorCueOffsetMs', String(stored - Math.sign(stored)))}
+              className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-panel-2)]/40 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              −
+            </button>
+            <span
+              data-testid="settings-cue-amount"
+              className="min-w-14 text-center text-sm tabular-nums text-fg"
+            >
+              {magnitude} ms
+            </span>
+            <button
+              type="button"
+              data-testid="settings-cue-amount-up"
+              aria-label={tr('settings.traktorCueAmountUp')}
+              disabled={direction === 'none' || magnitude >= CUE_MAX_MS}
+              onClick={() => patch('traktorCueOffsetMs', String(stored + Math.sign(stored)))}
+              className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-panel-2)]/40 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              +
+            </button>
+          </div>
+
+          <SettingsHint className="mt-2">{tr('settings.traktorCueOffsetHint')}</SettingsHint>
+        </div>
+      </SettingsSection>
+      {/* rekordbox keeps its collection in one fixed place per platform, so there is
+          nothing to point at and the toggle is the whole setup — the path below is shown
+          only so the user can see which collection is being written to. */}
+      <SettingsSection eyebrow={tr('settings.rekordboxSync')}>
+        <CheckboxRow
+          testid="settings-sync-rekordbox"
+          checked={synced.syncRekordbox}
+          disabled={!rekordboxCollection}
+          onChange={(v) => patch('syncRekordbox', v)}
+          label={tr('settings.syncRekordbox')}
+        />
+        <SettingsHint className="mt-2">
+          {rekordboxCollection
+            ? tr('settings.syncRekordboxHint')
+            : tr('settings.syncRekordboxIdle')}
+        </SettingsHint>
+        {rekordboxCollection && (
+          <>
+            <SettingsLabel className="mt-4">{tr('settings.rekordboxDbPath')}</SettingsLabel>
+            <div className="mt-2">
+              <PathField
+                value={rekordboxCollection}
+                onChange={onChangeRekordboxDbPath}
+                testid="settings-rekordbox-db"
+              />
+            </div>
+            <SettingsHint className="mt-2">{tr('settings.rekordboxDbPathHint')}</SettingsHint>
+          </>
+        )}
       </SettingsSection>
     </>
   )

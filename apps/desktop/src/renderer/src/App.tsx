@@ -72,7 +72,7 @@ import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { buildCommands, type Command, runCommand } from './lib/commands'
 import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { deriveTagPatches } from './lib/deriveTags'
-import type { DestinationPlan } from './lib/destination'
+import type { Destination } from './lib/destination'
 import { createDragDepth } from './lib/dragDepth'
 import { DEFAULT_REQUIRED_FIELDS } from './lib/fields'
 import { pushImportNotice } from './lib/importNotices'
@@ -1272,7 +1272,7 @@ export default function App(): React.JSX.Element {
       id: string,
       format?: FormatSetting,
       normalize?: NormalizeConfig,
-      destination?: DestinationPlan,
+      destination?: Destination,
       declick?: DeclickMode,
       // Runs the moment the conversion actually starts — immediately when it fires straight
       // through, or on confirm when an in-place overwrite asks first. process-current uses it
