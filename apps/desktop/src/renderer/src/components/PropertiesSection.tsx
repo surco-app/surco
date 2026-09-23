@@ -25,7 +25,7 @@ export function PropertiesSection({ item, open, onToggle }: Props): React.JSX.El
   // The query is cached per path, so this is one cheap probe per file either way.
   const { data: properties, isError: propertiesError } = useTrackProperties(item.inputPath, true)
   const summary = properties
-    ? [...audioSummaryParts(properties, tr), formatFileSize(properties.sizeBytes)]
+    ? [...audioSummaryParts(properties, item.inputPath, tr), formatFileSize(properties.sizeBytes)]
         .filter(Boolean)
         .join(' · ')
     : ''

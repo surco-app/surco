@@ -286,7 +286,9 @@ export function QualitySection({
     item.inputPath,
     settled && showSpectrum && open && healthy,
   )
-  const formatSummary = properties ? audioSummaryParts(properties, tr).join(' · ') : ''
+  const formatSummary = properties
+    ? audioSummaryParts(properties, item.inputPath, tr).join(' · ')
+    : ''
   return (
     <div className="mt-5 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
