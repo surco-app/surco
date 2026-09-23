@@ -50,6 +50,7 @@ interface Params {
   // first; Bandcamp, when enabled, is the fallback for what Discogs doesn't carry.
   searchProvidersRef: { readonly current: SearchProviderId[] }
   importFieldsRef: { readonly current: MetaTextKey[] }
+  genrePresetsRef: { readonly current: string[] }
   // Live view of the title-cleanup settings (the Naming pattern). Read at probe time so
   // editing the pattern applies to the next probe without restarting the sweep.
   matchCleanupRef: { readonly current: MatchCleanup }
@@ -90,6 +91,7 @@ export function useAutoMatch({
   libraryIndexRef,
   searchProvidersRef,
   importFieldsRef,
+  genrePresetsRef,
   matchCleanupRef,
   editingRef,
   reportActivity,
@@ -182,6 +184,7 @@ export function useAutoMatch({
         m.track,
         keepCoverArg(live),
         importFieldsRef.current,
+        genrePresetsRef.current,
       )
       // Re-check ownership against the release's canonical title/artist — the editor's second
       // attempt, run here for the whole crate so the filter agrees without opening each row.
@@ -215,6 +218,7 @@ export function useAutoMatch({
       tracksRef,
       libraryIndexRef,
       importFieldsRef,
+      genrePresetsRef,
       matchCleanupRef,
       editingRef,
       reportActivity,
