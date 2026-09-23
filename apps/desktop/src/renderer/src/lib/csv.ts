@@ -23,12 +23,19 @@ function orderAsIn(value: string, tags: string[]): string[] {
   return [...tags].sort((a, b) => value.indexOf(a) - value.indexOf(b))
 }
 
+// "electronic" from a provider and "Electronic" from the user's presets are one tag.
+function sameTag(a: string, b: string): boolean {
+  return a.toLowerCase() === b.toLowerCase()
+}
+
 export function csvHas(value: string, item: string, whole: readonly string[] = []): boolean {
-  return splitCsv(value, whole).includes(item)
+  return splitCsv(value, whole).some((p) => sameTag(p, item))
 }
 
 export function toggleCsv(value: string, item: string, whole: readonly string[] = []): string {
   const parts = splitCsv(value, whole)
-  const next = parts.includes(item) ? parts.filter((p) => p !== item) : [...parts, item]
+  const next = parts.some((p) => sameTag(p, item))
+    ? parts.filter((p) => !sameTag(p, item))
+    : [...parts, item]
   return next.join(', ')
 }

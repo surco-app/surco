@@ -12,6 +12,12 @@ describe('csvHas', () => {
     expect(csvHas('Bases, Cantaditas', 'Bases')).toBe(true)
     expect(csvHas('Bases, Cantaditas', 'Base')).toBe(false)
   })
+
+  // A provider writes "electronic" where the user's preset says "Electronic": they are the
+  // same genre, so the preset chip has to read as on rather than offer a second copy.
+  it('ignores case, so a provider genre lights the preset chip', () => {
+    expect(csvHas('electronic, funk', 'Electronic')).toBe(true)
+  })
 })
 
 describe('toggleCsv', () => {
@@ -21,6 +27,10 @@ describe('toggleCsv', () => {
 
   it('removes a tag when present', () => {
     expect(toggleCsv('Bases, Cantaditas', 'Bases')).toBe('Cantaditas')
+  })
+
+  it('removes a tag written in another case instead of adding a duplicate', () => {
+    expect(toggleCsv('electronic, funk', 'Electronic')).toBe('funk')
   })
 
   it('adds to an empty value', () => {
