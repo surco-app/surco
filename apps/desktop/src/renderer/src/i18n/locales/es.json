@@ -1,5 +1,6 @@
 {
   "common": {
+    "trackActions": "Acciones de la pista",
     "trackList": "Pistas",
     "cancel": "Cancelar",
     "save": "Guardar",
