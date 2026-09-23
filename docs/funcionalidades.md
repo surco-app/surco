@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 2026-09-18** (v0.99.0). Levantado por primera vez el
+**Última revisión: 2026-09-23** (v0.100.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -527,17 +527,21 @@ que es exactamente por qué el resultado solo se ofrece como sugerencia»*
 
 ## 8. Metadatos
 
-28 campos, con una única definición por campo que declara de dónde se lee y con
-qué nombre se escribe en cada contenedor (`tagFields.ts:31-163`). Un test impide
-que un campo nuevo quede ilegible o inescribible.
+35 campos, con una única definición por campo que declara de dónde se lee y con
+qué nombre se escribe en cada contenedor (`shared/tagFields.ts:52-231`). Un test
+impide que un campo nuevo quede ilegible o inescribible. A esos se suman los
+campos propios del usuario (abajo).
 
-**El grouping se edita por etiqueta y por pista cuando hay varias seleccionadas.**
-En el editor de varias pistas el resto de campos escriben un valor sobre toda la
-selección, pero el grouping es una lista de etiquetas separadas por comas y
-estamparlo borraba las de cada pista. Cada etiqueta (las guardadas en Ajustes más
-las que ya lleva alguna pista) es una pastilla con tres estados, en todas / en
-algunas / en ninguna; un clic la añade a las que no la tienen o la quita de todas
-sin tocar las demás (`lib/bulkEdit.ts`, `GroupingBulkField.tsx`). Un plegado «Por
+**El grouping y el género se editan por etiqueta y por pista cuando hay varias
+seleccionadas.** En el editor de varias pistas el resto de campos escriben un valor
+sobre toda la selección, pero grouping y género son listas de etiquetas separadas
+por comas y estamparlas borraba las de cada pista. Cada etiqueta (las guardadas en
+Ajustes más las que ya lleva alguna pista) es una pastilla con tres estados, en
+todas / en algunas / en ninguna; un clic la añade a las que no la tienen o la quita
+de todas sin tocar las demás (`lib/bulkEdit.ts:42-46`, `TagListBulkField.tsx`). Los
+géneros de Discogs que llevan coma dentro, como «Folk, World, & Country», no se
+parten (`bulkEdit.ts:46`). Al aplicar Discogs, Género sigue recibiendo solo el
+principal. Un plegado «Por
 pista · N» lista cada pista con sus propias pastillas, y las activas se ordenan
 delante para que el recorte «+N» no las esconda.
 
@@ -547,9 +551,28 @@ la edición de Discogs, mood, energía, **estilo, país, tipo de medio y URL de 
 edición**— viajan como descripciones TXXX en ID3 y como átomos freeform `----` en
 MP4, bajo los nombres que escribe mp3tag para que una colección etiquetada con esa
 herramienta y otra etiquetada aquí coincidan en vez de duplicarse
-(`tags.ts:549-566`, `:700-716`, `:748`). Una sola lista para ambos contenedores:
+(`tags.ts:659-681`, rama MP4 en `:840-857`). Una sola lista para ambos contenedores:
 los cuatro de coleccionista estaban en `TAG_FIELDS` pero en ninguna rama de
 `writeTags`, así que desaparecían de todo fichero que termina la pasada de TagLib.
+
+**Créditos, totales y procedencia, ocultos por defecto.** Artista original,
+letrista y director (TOPE/TEXT/TPE3 en ID3, ORIGARTIST/LYRICIST/CONDUCTOR en
+Vorbis, freeform en MP4, con los nombres de mp3tag), total de pistas y de discos,
+copyright y codificado por (`shared/tagFields.ts:66-90`, `:150-182`, `tags.ts:684-693`).
+Los totales viajan como «3/12» en ID3 y MP4 y como TRACKTOTAL/DISCTOTAL en Vorbis;
+antes Surco los borraba al leer el «n/N». Copyright y codificado por nombran a
+quien hizo el fichero antes que el usuario: mientras sigan ocultos, convertir los
+vacía (`lib/hygiene.ts:97-101`), para que el estudio y el ripeador del dueño
+anterior no viajen con la pista. Discogs no rellena ninguno de estos campos.
+
+**Campos propios.** En Ajustes → Campos el usuario añade campos con nombre y clave,
+que se editan como los demás: editor, varias pistas, buscar y reemplazar, `{clave}`
+en nombre de archivo y renombrar, y campo obligatorio. Se escriben con la clave en
+mayúsculas (TXXX en ID3, comentario Vorbis, freeform en MP4; `tags.ts:675-679`) y
+se leen sin distinguir mayúsculas, así que un valor que ya escribió otro programa
+aparece aunque el campo se cree después de cargar las pistas
+(`shared/customFields.ts:60`, `:99`). Al convertir se borran las variantes de la
+misma clave con otra capitalización para no duplicarla (`strayTags`, `:83`).
 
 También se borran los espejos TXXX que ffmpeg deja junto a COMM y POPM, que hacían
 que mp3tag listara un segundo «COMMENT» y un segundo «RATING WMP»
@@ -662,6 +685,9 @@ Actualizada 2026-09-02: dos celdas daban por perdido lo que hoy se escribe.
 | Rating | Sí | Sí | Sí | Sí | **No** (`tags.ts:711-714`) |
 | Nº de catálogo | Sí | Sí | Sí | Sí | **Sí** (freeform) |
 | Estilo, país, tipo de medio, URL Discogs | Sí | Sí | Sí | Sí | **Sí** (freeform) |
+| Artista original, letrista, director, codificado por | Sí | Sí | Sí | Sí | **Sí** (freeform) |
+| Total de pistas y de discos | Sí | Sí | Sí | Sí | Sí |
+| Campos propios | Sí | Sí | Sí | Sí | **Sí** (freeform) |
 | Año original | Sí | Sí | Sí | Sí | **No** |
 | Posición vinilo «A2» | Sí | Sí | Sí | Sí | **No** (solo dígitos) |
 | Cues de Traktor | Sí | Sí | **Sí** | Sí | **No** |
@@ -1114,7 +1140,8 @@ Recopilado de los cinco informes. Cada punto está verificado.
    en cualquier cruce entre esos cuatro. **No en ALAC/M4A**, que no tiene ID3
    donde escribirlos.
 2. **Apple Music:** solo macOS, nunca FLAC. Clave, sello, catálogo y remixer no
-   llegan a la biblioteca. No se transfiere rating ni se crean playlists.
+   llegan a la biblioteca, ni los campos propios. No se transfiere rating ni se
+   crean playlists.
 3. **Engine DJ:** no lleva cue points ni beatgrid. Exige Engine cerrado.
 4. **Exportar a rekordbox/Serato/Traktor/M3U8:** ninguno de los cuatro ficheros
     puente lleva cues, rating ni carátula. Esto es la **exportación**, y no debe
@@ -1139,8 +1166,9 @@ Recopilado de los cinco informes. Cada punto está verificado.
     `buildEngineDatabase` existe y está probado, pero solo lo llaman los tests.
 13. **El beatgrid fue eliminado** de la app y se descarta activamente al leer
     sesiones antiguas.
-14. **Los ajustes de calidad no se aplican** cuando el fichero ya está en el
-    formato de destino.
+14. **En el mismo formato, los ajustes de calidad solo se aplican si el fichero
+    no los cumple**; si ya los cumple, solo se actualizan las etiquetas. Un MP3
+    nunca se recodifica a MP3.
 15. **El limitador no es transparente por encima de 3 dB de overshoot.** Por
     debajo no se oye; por encima la pérdida de pegada es real y la app lo dice.
 16. **El muro poco profundo sobre un suelo ruidoso no se acusa**: se reporta el
