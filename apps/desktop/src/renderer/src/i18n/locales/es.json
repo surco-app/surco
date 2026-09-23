@@ -399,7 +399,7 @@
     "qualityGood": "Buena calidad",
     "qualitySuspect": "Dudosa",
     "qualityBad": "Mala calidad",
-    "qualityProcessed": "Reprocesado",
+    "qualityProcessed": "Posible reprocesado",
     "qualityTranscode": "Fuente con pérdidas",
     "analyzing": "Analizando espectro…",
     "sectionForm": "Metadatos",

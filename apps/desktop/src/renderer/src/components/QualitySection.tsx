@@ -27,17 +27,18 @@ import { Spectrogram } from './Spectrogram'
 import { SpectrumLoading } from './SpectrumLoading'
 import { Tooltip } from './Tooltip'
 
-// The verdict pill's tone through the shared SectionPill grammar: a genuine go/no-go
-// on the audio, so it earns real colour — good is the one place green means "clean",
-// warn asks for a look, danger rejects. (Status facts like library membership stay
-// neutral, so these colours never have to compete with a plain fact.)
+// The verdict pill's tone through the shared SectionPill grammar: good is the one place
+// green means "clean", warn asks for a look, danger rejects. Red is kept for what is
+// measured and serious (a bad cut, and the transcode below); a detector's suspicion is
+// amber. (Status facts like library membership stay neutral, so these colours never have
+// to compete with a plain fact.)
 const qualityBadge: Record<Verdict, { tone: 'good' | 'warn' | 'danger'; label: string }> = {
   good: { tone: 'good', label: 'editor.qualityGood' },
   warn: { tone: 'warn', label: 'editor.qualitySuspect' },
   bad: { tone: 'danger', label: 'editor.qualityBad' },
-  // Regenerated highs are still a reject (red), but the spectrogram looks full,
-  // so the badge names the manipulation rather than calling it dull.
-  processed: { tone: 'danger', label: 'editor.qualityProcessed' },
+  // The spectrogram looks full, so the badge names the suspected manipulation rather than
+  // calling it dull.
+  processed: { tone: 'warn', label: 'editor.qualityProcessed' },
 }
 
 // The caption under the spectrogram is where the verdict gets justified: each band
@@ -183,7 +184,7 @@ export function QualitySection({
       return {
         key: 'editor.qualityEvidenceTeeth',
         why: 'editor.qualityEvidenceTeethWhy',
-        tone: 'danger' as const,
+        tone: 'warn' as const,
         params: {
           cutoff,
           teeth: spectrum.teethCount,
@@ -195,7 +196,7 @@ export function QualitySection({
       return {
         key: 'editor.qualityEvidenceHump',
         why: 'editor.qualityEvidenceHumpWhy',
-        tone: 'danger' as const,
+        tone: 'warn' as const,
         params: { cutoff, peak: formatKHz(spectrum.humpPeakHz) },
       }
     if (spectrum.flatShelf)
@@ -309,7 +310,7 @@ export function QualitySection({
               </SectionPill>
             )}
             {spectrum?.bitsUsage === 'padded16' && (
-              <SectionPill tone="danger" testid="quality-bits-pill">
+              <SectionPill tone="neutral" testid="quality-bits-pill">
                 {tr('editor.qualityBitsPill')}
               </SectionPill>
             )}
@@ -360,14 +361,14 @@ export function QualitySection({
                   )
                 )}
                 {/* Orthogonal to the codec verdict: the bandwidth claim, not the
-                    fidelity. Shown amber so a green "good" badge over an upsampled
-                    file doesn't read as a clean bill of hi-res. A file that declares a
+                    fidelity. Stated beside a green "good" badge so it doesn't read as
+                    a clean bill of hi-res. A file that declares a
                     high rate always gets an answer here — confirmed, denied, or an honest
                     "couldn't tell" — because saying nothing left a real hi-res file looking
                     exactly like one nobody analysed. A plain 44.1 kHz file makes no claim to
                     check, so it stays silent rather than gaining a line that says nothing. */}
                 {spectrum.upsampled || spectrum.resolution === 'upsampled' ? (
-                  <p data-testid="quality-upsampled" className="mt-2 text-xs text-warn">
+                  <p data-testid="quality-upsampled" className="mt-2 text-xs text-fg-dim">
                     {tr('editor.qualityUpsampled')}
                   </p>
                 ) : spectrum.resolution === 'hires' ? (
@@ -391,8 +392,9 @@ export function QualitySection({
                 {spectrum.bitsUsage === 'padded16' ? (
                   <div
                     data-testid="quality-bits-padded"
+                    data-tone="neutral"
                     className="mt-2 border-l-2 pl-2.5 text-xs"
-                    style={{ borderColor: 'var(--color-danger)' }}
+                    style={{ borderColor: EVIDENCE_BORDER.neutral }}
                   >
                     <p className="text-fg-dim">{tr('editor.qualityBitsPadded')}</p>
                     {showHints && (
