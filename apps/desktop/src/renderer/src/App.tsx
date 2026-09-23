@@ -230,7 +230,7 @@ export default function App(): React.JSX.Element {
   }, [refreshTrash])
   // Persisted settings (initial load, modal-open refresh, theme application,
   // optimistic save) live in the hook; App only decides the launch modal.
-  const settingsOpen = activeModal?.type === 'settings' || activeModal?.type === 'stats'
+  const settingsOpen = activeModal?.type === 'settings'
   const { settings, setSettings, saveSettings, setThemePreview } = useSettings({
     settingsOpen,
     // Fired async after the first read lands, so closing over the hook defined right
@@ -1603,7 +1603,6 @@ export default function App(): React.JSX.Element {
       askTrashSuspects: onTrashSuspects,
       askTrashSelected: onTrashSelected,
       openSettings,
-      openStats: overlays.openStats,
       openFindReplace: overlays.openFindReplace,
       openStripNumbering: overlays.openStripNumbering,
       openExport: overlays.openExport,

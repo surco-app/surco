@@ -773,7 +773,8 @@
       "layout": "Sections",
       "artwork": "Pochette",
       "fields": "Champs",
-      "shortcuts": "Raccourcis"
+      "shortcuts": "Raccourcis",
+      "stats": "Statistiques"
     },
     "tabGroups": {
       "editing": "Édition",

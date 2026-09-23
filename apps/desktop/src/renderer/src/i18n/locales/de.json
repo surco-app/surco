@@ -773,7 +773,8 @@
       "layout": "Abschnitte",
       "artwork": "Cover",
       "fields": "Felder",
-      "shortcuts": "Kürzel"
+      "shortcuts": "Kürzel",
+      "stats": "Statistiken"
     },
     "tabGroups": {
       "editing": "Bearbeitung",

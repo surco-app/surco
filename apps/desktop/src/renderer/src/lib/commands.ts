@@ -206,8 +206,7 @@ export interface CommandDeps {
   // Sends the selected tracks' files to the OS Trash after a confirm — the palette/toolbar
   // counterpart of the context menu's "Move to Trash".
   askTrashSelected: () => void
-  openSettings: (tab?: 'general' | 'shortcuts') => void
-  openStats: () => void
+  openSettings: (tab?: 'general' | 'stats' | 'naming' | 'shortcuts') => void
   openFindReplace: () => void
   openExport: () => void
   openRename: () => void
@@ -317,7 +316,6 @@ export function buildCommands(deps: CommandDeps): Command[] {
     askTrashSuspects,
     askTrashSelected,
     openSettings,
-    openStats,
     openFindReplace,
     openExport,
     openRename,
@@ -799,7 +797,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       title: tr('commands.stats'),
       hint: hintFor('stats'),
       enabled: true,
-      run: openStats,
+      run: () => openSettings('stats'),
     },
     {
       id: 'activity',
