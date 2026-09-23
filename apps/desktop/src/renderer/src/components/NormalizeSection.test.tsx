@@ -396,6 +396,20 @@ describe('NormalizeSection plan line', () => {
     expect(note.textContent).toContain('-1.0')
   })
 
+  it('warns that holding an MP3 under the ceiling can leave it short of the target loudness', async () => {
+    renderSection(
+      track(),
+      1,
+      { ...measuredLoud, integratedLufs: -18.2, truePeakDb: -6.5 },
+      { ...cfg, mode: 'loudness', targetLufs: -13, truePeakDb: -1 },
+      undefined,
+      undefined,
+      'mp3',
+    )
+    const note = await screen.findByTestId('normalize-plan-mp3')
+    expect(note.textContent).toContain('-13.0 LUFS')
+  })
+
   it('adds no MP3 note for a lossless output', async () => {
     renderSection(track(), 1, measuredLoud, { ...cfg, mode: 'loudness', targetLufs: -13 })
     await screen.findByTestId('normalize-plan')
@@ -409,6 +423,12 @@ describe('NormalizeSection plan line', () => {
     renderSection(track(), 1, measuredLoud, { ...cfg, mode: 'loudness', targetLufs: -13 })
     const note = await screen.findByTestId('normalize-plan-limiter')
     expect(note.textContent).toContain('-1.0')
+  })
+
+  it('warns that holding a limited render under the ceiling can leave it short of the target loudness', async () => {
+    renderSection(track(), 1, measuredLoud, { ...cfg, mode: 'loudness', targetLufs: -13 })
+    const note = await screen.findByTestId('normalize-plan-limiter')
+    expect(note.textContent).toContain('-13.0 LUFS')
   })
 
   it('adds no limiter note when a constant gain is enough', async () => {
