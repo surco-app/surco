@@ -256,6 +256,27 @@ describe('useConfirmFlows clean up previous files', () => {
     expect(opened[0].message).toContain('network volume')
   })
 
+  // Windows hands the renderer backslash paths; splitting on '/' alone listed the whole
+  // route as the file's name in the dialog and in the failure toast.
+  it('names Windows files by their base name', async () => {
+    installApi({
+      trashFile: vi.fn<Api['trashFile']>().mockRejectedValue(new Error('EPERM')),
+      keepsTrash: vi.fn().mockResolvedValue(true),
+    })
+    const reportTrashFailure = vi.fn()
+    const a = track('a', { status: 'done' })
+    const { flows, opened } = setup([a], { reportTrashFailure })
+    await flows.askCleanUp(a, {
+      originalPath: 'C:\\Music\\a.wav',
+      superseded: [],
+      staleMusicCopy: null,
+    })
+    expect(opened[0].items?.[0]).toContain('a.wav')
+    expect(opened[0].items?.[0]).not.toContain('Music')
+    opened[0].onConfirm()
+    await waitFor(() => expect(reportTrashFailure).toHaveBeenCalledWith('a.wav'))
+  })
+
   // The user confirmed a destructive dialog; a silent failure would read as done.
   it('reports a file that could not be moved out loud', async () => {
     installApi({

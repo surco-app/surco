@@ -3,6 +3,7 @@ import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrashEntry } from '../../../shared/types'
+import { baseName } from '../lib/baseName'
 import {
   countByReason,
   daysLeft,
@@ -40,11 +41,6 @@ export function formatBytes(bytes: number, lng: string): string {
 function folderOf(path: string): string {
   const cut = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'))
   return cut > 0 ? path.slice(0, cut) : path
-}
-
-function baseName(path: string): string {
-  const cut = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'))
-  return cut >= 0 ? path.slice(cut + 1) : path
 }
 
 const FILTER_ICONS: Record<TrashFilter, typeof Archive> = {
