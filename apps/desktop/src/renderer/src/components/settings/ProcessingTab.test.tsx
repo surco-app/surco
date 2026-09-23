@@ -80,4 +80,18 @@ describe('ProcessingTab', () => {
     fireEvent.click(screen.getByTestId('normalize-mode-loudness'))
     expect(patch).toHaveBeenCalledWith('normalize', expect.objectContaining({ mode: 'loudness' }))
   })
+
+  // Traktor cues ride the re-encode into MP3, AIFF, FLAC and WAV; only ALAC has nowhere to
+  // keep them, and "Same as source" never resolves to ALAC. A warning on every format
+  // teaches the DJ to ignore it, the same rule the editor's sections follow.
+  it('warns about dropped cues only when the default format drops them', () => {
+    const loudness = { mode: 'loudness' as const, targetLufs: -14, truePeakDb: -1, peakDb: -1 }
+    renderTab({ normalize: loudness, outputFormat: 'alac' })
+    expect(screen.getByTestId('normalize-cue-warning')).toBeInTheDocument()
+    for (const outputFormat of ['source', 'aiff', 'mp3', 'wav', 'flac'] as const) {
+      cleanup()
+      renderTab({ normalize: loudness, outputFormat })
+      expect(screen.queryByTestId('normalize-cue-warning')).not.toBeInTheDocument()
+    }
+  })
 })

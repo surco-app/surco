@@ -8,7 +8,8 @@ interface Props {
   value: NormalizeConfig
   onChange: (next: NormalizeConfig) => void
   // The editor's section shows the warning itself, below its waveform, so it can
-  // silence this inline copy; Settings keeps the default.
+  // silence this inline copy; Settings shows it only for a default format that loses
+  // the cues.
   showCueWarning?: boolean
   showHints?: boolean
 }
@@ -272,7 +273,9 @@ export function NormalizeControls({
       )}
 
       {showCueWarning && value.mode !== 'none' && (
-        <p className="mt-3 text-xs text-warn">{tr('normalize.cueWarning')}</p>
+        <p data-testid="normalize-cue-warning" className="mt-3 text-xs text-warn">
+          {tr('normalize.cueWarning')}
+        </p>
       )}
     </div>
   )
