@@ -18,7 +18,7 @@ export interface ExportLabelState {
   replaces?: boolean
   // Whether the pending output keeps the source's format. Only then can an in-place or
   // stale export be a tag update; across formats it is a real conversion.
-  sameFormat: boolean
+  sameFormat?: boolean
 }
 
 // Which label the convert split-button wears, as an i18n key plus its params. The

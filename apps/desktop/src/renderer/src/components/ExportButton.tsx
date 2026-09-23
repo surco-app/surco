@@ -32,7 +32,7 @@ interface ExportButtonProps {
   inPlace: boolean
   // True when the chosen format is the source's own. Only then is an in-place or stale
   // export a tag update, so the button offers "Update tags" instead of a conversion.
-  sameFormat: boolean
+  sameFormat?: boolean
   // When set, the button converts the whole selection in the chosen format and labels
   // itself "Convert all (N)" instead of the single-track convert; the format menu works
   // the same, it just applies to every selected track.
@@ -78,7 +78,7 @@ export function ExportButton({
   incomplete,
   incompleteReason,
   inPlace,
-  sameFormat,
+  sameFormat = false,
   count,
   quiet,
   destination,

@@ -267,7 +267,6 @@ export function ConvertFooter({
                 incomplete={incomplete}
                 incompleteReason={incompleteReason}
                 inPlace={false}
-                sameFormat={false}
                 destination={destination}
                 destinations={destinations}
                 count={isMulti ? selectedCount : undefined}
