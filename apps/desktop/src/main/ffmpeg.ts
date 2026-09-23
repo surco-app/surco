@@ -10,6 +10,7 @@ import { declickFilter } from '../shared/declick'
 import { errorWithKey } from '../shared/errorKeys'
 import { forcedInputArgs } from '../shared/inputFormat'
 import { formatRatingTag, starsToRating, starsToWmpRating } from '../shared/rating'
+import { MANAGED_ALIASES, TAG_FIELDS } from '../shared/tagFields'
 import { trimFilter } from '../shared/trim'
 import type {
   BpmResult,
@@ -88,7 +89,6 @@ import { rekordboxRepointFor } from './rekordboxRepointFor'
 import { renameWithRetry, rescuePath } from './renameRetry'
 import { getSettings } from './settings'
 import { createSharedScan } from './sharedScan'
-import { MANAGED_ALIASES, TAG_FIELDS } from './tagFields'
 import { readTagFormats } from './tagFormats'
 import {
   type CueShift,

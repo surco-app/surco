@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { METADATA_KEYS } from '../shared/metadata'
+import { METADATA_KEYS } from './metadata'
 import { MANAGED_ALIASES, TAG_FIELDS } from './tagFields'
 
 describe('TAG_FIELDS', () => {

@@ -1,5 +1,5 @@
-import { ratingTagToStars } from '../shared/rating'
-import type { MetaTextKey } from '../shared/types'
+import { ratingTagToStars } from './rating'
+import type { MetaTextKey } from './types'
 
 // The per-field tag mapping shared by the reader (tagsFromProbe) and the writer
 // (metadataArgs): the ffprobe aliases a field is read from and the muxer name(s) it is
