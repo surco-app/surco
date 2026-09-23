@@ -622,7 +622,9 @@
     "coverPositionNone": "None of the {{total}} images picked",
     "searching": "Searching…",
     "resultsCount_one": "{{count}} result",
-    "resultsCount_other": "{{count}} results"
+    "resultsCount_other": "{{count}} results",
+    "searchingProvider": "Searching {{provider}}…",
+    "suggestedStatus": "Suggested: {{title}}"
   },
   "fields": {
     "groupFilled_one": "{{count}} filled",

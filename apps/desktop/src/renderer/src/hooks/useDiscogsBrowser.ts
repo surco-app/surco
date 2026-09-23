@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { type UseQueryResult, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { searchHintsOf } from '../../../shared/metadata'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
@@ -12,7 +12,7 @@ import type { TrackItem } from '../types'
 // Search fires this long after typing stops; Enter and the button fire at once.
 const DEBOUNCE_MS = 500
 
-// A stable empty array for when searchQuery.data is undefined (no search run yet, or
+// A stable empty array for when no search has answered yet (no search run yet, or
 // the query key changed and React Query hasn't refetched). `?? []` would allocate a
 // fresh array every render, which the results/providerCounts memos below depend on —
 // churning their identity even with no search in flight, and defeating DiscogsPanel's
@@ -23,6 +23,28 @@ const EMPTY_RESULTS: SearchResult[] = []
 // `providers = ['discogs']` in the signature below would re-allocate on every call
 // that omits the argument, same failure mode as EMPTY_RESULTS above.
 const DEFAULT_PROVIDERS: SearchProviderId[] = ['discogs']
+const EMPTY_PROVIDERS: SearchProviderId[] = []
+
+const resultKey = (r: SearchResult): string => `${r.provider}:${r.id}`
+
+// Folds the per-provider search queries into what the panel reads. Module-level so its
+// reference is stable and React Query only re-runs it when a query's state changes.
+function combineSearches(queries: UseQueryResult<SearchResult[]>[]) {
+  const settled =
+    queries.length > 0 && queries.every((q) => !q.isFetching && (q.isSuccess || q.isError))
+  return {
+    arrived: queries.flatMap((q) => (q.data ? [q.data] : [])),
+    fetching: queries.map((q) => q.isFetching),
+    settled,
+    // One source failing (e.g. Bandcamp's unofficial endpoint) must not sink the search;
+    // only every source failing is an error.
+    allFailed: settled && queries.every((q) => q.isError),
+    firstError: queries.find((q) => q.isError)?.error ?? null,
+    refetchAll: () => {
+      for (const q of queries) void q.refetch()
+    },
+  }
+}
 
 export interface DiscogsBrowser {
   query: string
@@ -47,6 +69,12 @@ export interface DiscogsBrowser {
   // null when no probe matched. The panel badges that row "Suggested" in place — kept apart
   // from openKey so the badge stays on the probe's pick after the user opens another row.
   suggestedKey: string | null
+  // The enabled catalogs whose answer is still out while others already filled the list, so
+  // the panel can say what is still coming instead of the list looking final.
+  pendingProviders: SearchProviderId[]
+  // Whether the pointer or keyboard focus is inside the result list. While it is, a late
+  // answer is appended below instead of re-ranking rows the user may be reaching for.
+  setListEngaged: (engaged: boolean) => void
   // Whether the expanded row's tracklist is still loading, so its row shows a skeleton.
   loading: boolean
   busy: boolean
@@ -180,50 +208,73 @@ export function useDiscogsBrowser(
     setQuery(item.query)
   }, [item.query])
 
-  const searchQuery = useQuery({
-    // The ignore words belong in the key even though the stripping happens in the main
-    // process: the term the user sees doesn't change when they add a word in Settings,
-    // and with staleTime Infinity the same key would keep serving the pre-setting miss —
-    // the exact search the setting was added to fix.
-    queryKey: ['search', searchTerm, providers, cleanup.ignoreWords ?? []],
-    queryFn: async () => {
-      // A pasted release id/URL loads that release directly instead of searching (Discogs
-      // only — it's the one source with id-addressable releases).
-      const id = parseReleaseId(searchTerm)
-      if (id !== null) {
-        const rel = await loadRelease({ provider: 'discogs', id, title: '' })
-        const result = resultFromRelease(rel)
-        return { results: [result], direct: result as SearchResult | null }
-      }
-      // The hint title is the same undressed title the scorer uses (matchTargetOf), so
-      // the precise artist+title searches see the bare track name, not the Naming
-      // pattern's "(A2) …" dressing.
-      const target = matchTargetOf(item, cleanup)
-      const hints = { ...searchHintsOf(item.meta), title: target.title || item.meta.title }
-      // Query the enabled providers in parallel. One source failing (e.g. Bandcamp's
-      // unofficial endpoint) must not sink the whole search, so surface an error only when
-      // every provider failed — a partial failure still shows what did come back.
-      const settled = await Promise.allSettled(
-        providers.map((p) => window.api.search(searchTerm, p, 'high', hints)),
-      )
-      const ok = settled
-        .filter((s): s is PromiseFulfilledResult<SearchResult[]> => s.status === 'fulfilled')
-        .map((s) => s.value)
-      if (ok.length === 0) {
-        const failed = settled.find((s): s is PromiseRejectedResult => s.status === 'rejected')
-        throw failed ? failed.reason : new Error('search failed')
-      }
-      // Merge and re-rank by how well each row matches the file, so the likeliest release —
-      // from whichever provider — leads, instead of one source always sitting on top.
-      const results = preRankResults(ok.flat(), {
-        title: target.title,
-        artist: item.meta.artist,
-      })
-      return { results, direct: null as SearchResult | null }
-    },
-    enabled: searchTerm.trim() !== '',
+  // A pasted release id/URL loads that release directly instead of searching (Discogs only,
+  // the one source with id-addressable releases). Otherwise each enabled provider is its own
+  // query, so a fast source fills the list while a slow one is still walking its ladder.
+  // The ignore words belong in every key even though the stripping happens in the main
+  // process: the term the user sees doesn't change when they add a word in Settings, and
+  // with staleTime Infinity the same key would keep serving the pre-setting miss.
+  const directId = parseReleaseId(searchTerm)
+  const sources: (SearchProviderId | 'direct')[] = directId !== null ? ['direct'] : providers
+  const searchQueries = useQueries({
+    queries: sources.map((source) => ({
+      queryKey: ['search', searchTerm, source, cleanup.ignoreWords ?? []],
+      queryFn: async (): Promise<SearchResult[]> => {
+        if (source === 'direct') {
+          const rel = await loadRelease({ provider: 'discogs', id: directId as number, title: '' })
+          return [resultFromRelease(rel)]
+        }
+        // The hint title is the same undressed title the scorer uses (matchTargetOf), so
+        // the precise artist+title searches see the bare track name, not the Naming
+        // pattern's "(A2) …" dressing.
+        const target = matchTargetOf(item, cleanup)
+        const hints = { ...searchHintsOf(item.meta), title: target.title || item.meta.title }
+        return window.api.search(searchTerm, source, 'high', hints)
+      },
+      enabled: searchTerm.trim() !== '',
+    })),
+    combine: combineSearches,
   })
-  const allResults = searchQuery.data?.results ?? EMPTY_RESULTS
+  const { arrived, fetching, settled, allFailed, firstError, refetchAll } = searchQueries
+
+  // Reset per search; read when the list settles to decide whether the rows may move.
+  const listEngaged = useRef(false)
+  const userOpened = useRef(false)
+  const shownOrder = useRef<{ term: string; keys: string[] }>({ term: '', keys: [] })
+  const setListEngaged = useCallback((engaged: boolean) => {
+    listEngaged.current = engaged
+  }, [])
+
+  // Each answer is ranked by how well its rows match the file, and rows already on screen
+  // keep their place: a late answer is appended below them. Once every source has answered
+  // and the user is neither in the list nor has opened a row, the whole list is ranked as
+  // one, so the likeliest release leads exactly as it did when the panel waited for all.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the arrived answers and the settle are the triggers; the file's title/artist are read at rank time, like the probe, so editing a tag doesn't reshuffle the list.
+  const allResults = useMemo(() => {
+    if (arrived.length === 0) return EMPTY_RESULTS
+    const ranked = preRankResults(arrived.flat(), {
+      title: matchTargetOf(item, cleanup).title,
+      artist: item.meta.artist,
+    })
+    const previous = shownOrder.current.term === searchTerm ? shownOrder.current.keys : []
+    const rankAll = settled && !listEngaged.current && !userOpened.current
+    const ordered = rankAll
+      ? ranked
+      : [
+          ...previous.flatMap((k) => ranked.filter((r) => resultKey(r) === k)),
+          ...ranked.filter((r) => !previous.includes(resultKey(r))),
+        ]
+    shownOrder.current = { term: searchTerm, keys: ordered.map(resultKey) }
+    return ordered
+  }, [arrived, settled, searchTerm])
+  const direct = directId !== null && settled ? (allResults[0] ?? null) : null
+  const pendingProviders = useMemo(
+    () =>
+      directId === null && arrived.length > 0
+        ? providers.filter((_, i) => fetching[i])
+        : EMPTY_PROVIDERS,
+    [directId, arrived, providers, fetching],
+  )
   const providerCounts = useMemo(
     () => providerCountsOf(allResults, providers),
     [allResults, providers],
@@ -245,16 +296,15 @@ export function useDiscogsBrowser(
     })
   }, [allResults, providerFilter, maxResults])
 
-  const { refetch: refetchSearch } = searchQuery
   const doSearch = useCallback(() => {
     if (!query.trim()) return
     // Re-running the search with the same term must refetch explicitly: the term (and
     // so the query key) doesn't change, and a failed search — a 429 from the limiter,
     // a network blip — would otherwise be stuck in error until the text is edited.
-    if (query === searchTerm) void refetchSearch()
+    if (query === searchTerm) refetchAll()
     else setSearchTerm(query)
     if (query !== item.query) onQueryCommitted?.(query)
-  }, [query, searchTerm, refetchSearch, item.query, onQueryCommitted])
+  }, [query, searchTerm, refetchAll, item.query, onQueryCommitted])
 
   // A new search closes whatever was open before its results land, so the panel never
   // shows a release left over from the previous query.
@@ -263,18 +313,19 @@ export function useDiscogsBrowser(
     setOpenResult(null)
     setSuggested(null)
     setProviderFilter('all')
+    userOpened.current = false
   }, [searchTerm])
 
-  // Once results arrive, open the first that confidently holds the file's track (or
-  // the directly-loaded release), so the user lands on the right album. A newer search
-  // supersedes an in-flight probe via the cleanup flag; editing the file's tags does
-  // not re-run it — it points once per search.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the resolved search data; item.meta/duration are read at probe time, not triggers — depending on them would re-probe on every keystroke.
+  // Once every source has answered, open the first result that confidently holds the
+  // file's track (or the directly-loaded release), so the user lands on the right album.
+  // It waits for all of them so the pick weighs every catalog, and a row the user already
+  // opened by hand stays open: the pick is then only flagged. A newer search supersedes an
+  // in-flight probe via the cleanup flag; editing the file's tags does not re-run it.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the settled result list; item.meta/duration are read at probe time, not triggers — depending on them would re-probe on every keystroke.
   useEffect(() => {
-    const data = searchQuery.data
-    if (!data) return
-    if (data.direct !== null) {
-      setOpenResult(data.direct)
+    if (!settled || allFailed) return
+    if (direct !== null) {
+      setOpenResult(direct)
       return
     }
     if (!item.meta.title.trim()) return
@@ -282,14 +333,14 @@ export function useDiscogsBrowser(
     setAutoProbing(true)
     ;(async () => {
       const m = await probeReleases(
-        data.results,
+        allResults,
         matchTargetOf(item, cleanup),
         // 'review' is enough here: the probe only opens (highlights) the release for
         // the user's own click, it never writes anything.
         { loadRelease, accepts: (tier) => tier !== 'low', cancelled: () => cancelled },
       )
       if (!cancelled && m) {
-        setOpenResult(m.result)
+        setOpenResult((current) => current ?? m.result)
         setSuggested(m.result)
       }
     })().finally(() => {
@@ -303,7 +354,7 @@ export function useDiscogsBrowser(
       // button until the editor remounts.
       setAutoProbing(false)
     }
-  }, [searchQuery.data, loadRelease])
+  }, [settled, allFailed, direct, loadRelease])
 
   const releaseQuery = useQuery({
     queryKey: releaseKey(openResult),
@@ -314,6 +365,7 @@ export function useDiscogsBrowser(
 
   // A click previews (expands) a result; clicking the open one collapses it again.
   const previewRelease = useCallback((result: SearchResult) => {
+    userOpened.current = true
     setOpenResult((current) =>
       current && current.provider === result.provider && current.id === result.id ? null : result,
     )
@@ -322,21 +374,22 @@ export function useDiscogsBrowser(
   const openKey = openResult ? `${openResult.provider}:${openResult.id}` : null
   const suggestedKey = suggested ? `${suggested.provider}:${suggested.id}` : null
   const loading = releaseQuery.isFetching
-  const busy = searchQuery.isFetching || autoProbing || releaseQuery.isFetching
+  const searching = fetching.some(Boolean)
+  const busy = searching || autoProbing || releaseQuery.isFetching
   // A typed query whose search hasn't settled yet, including the debounce window before the
   // request even starts (query committed-to-be ≠ the term that's actually running). Not while
   // a search has errored — there's no verdict coming, so the badge must commit, not spin.
-  const resolving = query.trim() !== '' && !searchQuery.isError && (busy || searchTerm !== query)
+  const resolving = query.trim() !== '' && !allFailed && (busy || searchTerm !== query)
   // A search that ran and settled with nothing to show — the searched-but-empty case, kept
   // distinct from the never-searched-yet idle state so the panel can say "no matches" instead
   // of the "choose an album" hint. Also true when a provider filter empties an otherwise
   // non-empty result set.
-  const noResults = searchQuery.isSuccess && results.length === 0
+  const noResults = settled && !allFailed && results.length === 0
   // A refused token or a rate limit is thrown by the main process, which has no
   // i18next instance to phrase it — those arrive stamped with a key and are resolved
   // here; anything else keeps the provider's own wording.
-  const error = searchQuery.isError
-    ? mainErrorMessage(searchQuery.error, tr, tr('editor.searchError'))
+  const error = allFailed
+    ? mainErrorMessage(firstError, tr, tr('editor.searchError'))
     : releaseQuery.isError
       ? mainErrorMessage(releaseQuery.error, tr, tr('editor.releaseError'))
       : ''
@@ -357,6 +410,8 @@ export function useDiscogsBrowser(
       release,
       openKey,
       suggestedKey,
+      pendingProviders,
+      setListEngaged,
       loading,
       busy,
       resolving,
@@ -374,6 +429,8 @@ export function useDiscogsBrowser(
       release,
       openKey,
       suggestedKey,
+      pendingProviders,
+      setListEngaged,
       loading,
       busy,
       resolving,
