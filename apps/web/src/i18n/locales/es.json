@@ -310,8 +310,8 @@
     "lede": "Una paleta de comandos y atajos para todo el flujo: añade, etiqueta, analiza y procesa pista tras pista sin soltar el teclado, y reasigna los que quieras.",
     "items": [
       "Añadir archivos",
-      "Procesar pista",
-      "Procesar todas",
+      "Convertir pista",
+      "Convertir todas",
       "Reproducir / pausa",
       "Navegar pistas",
       "Buscar en Discogs"
@@ -782,7 +782,7 @@
           "Ojo: convertir todas solo convierte y renombra con los metadatos que ya tienen, nunca va a Discogs por su cuenta. Si quieres datos frescos antes, usa primero «Auto-emparejar» (⌘⇧D) en la barra de herramientas."
         ],
         "points": [
-          "Procesa la cola entera de una; cancélala desde el progreso de la barra o con la paleta de comandos.",
+          "Convierte la cola entera de una; cancélala desde el progreso de la barra o con la paleta de comandos.",
           "Si has filtrado la lista, el lote convierte solo lo que ves.",
           "Las conversiones van en paralelo, aprovechando los núcleos del equipo; en el mismo formato son casi instantáneas.",
           "Solo usa los metadatos actuales: no descarga nada de Discogs en el lote.",
