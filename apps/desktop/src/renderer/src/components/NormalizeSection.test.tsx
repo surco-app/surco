@@ -207,6 +207,15 @@ describe('NormalizeSection layout', () => {
     expect(screen.getByTestId('normalize-row-sentence')).toHaveTextContent('Levels to -14 LUFS')
   })
 
+  // The folded header always carried the true-peak ceiling next to the target; the
+  // sentence that replaced the bare figures must not lose it.
+  it('keeps the true-peak ceiling beside the loudness target', () => {
+    renderWith({ open: false, value: loud })
+    expect(screen.getByTestId('normalize-row-sentence')).toHaveTextContent(
+      `Levels to -14 LUFS · ${loud.truePeakDb} dBTP`,
+    )
+  })
+
   // "Where it is now and where it will land" is the whole decision; once the measurement
   // the plan card already runs has landed, the row says both.
   it('says where the track sounds now and where it will come out once measured', async () => {

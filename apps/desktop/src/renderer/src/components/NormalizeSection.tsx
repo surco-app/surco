@@ -107,12 +107,14 @@ export function NormalizeSection({
         help={tr('normalize.editorHint')}
         summary={
           value.mode === 'loudness'
-            ? !isMulti && planLoudness
-              ? tr('normalize.row.measured', {
-                  now: planLoudness.integratedLufs.toFixed(1),
-                  target: value.targetLufs,
-                })
-              : tr('normalize.row.target', { target: value.targetLufs })
+            ? `${
+                !isMulti && planLoudness
+                  ? tr('normalize.row.measured', {
+                      now: planLoudness.integratedLufs.toFixed(1),
+                      target: value.targetLufs,
+                    })
+                  : tr('normalize.row.target', { target: value.targetLufs })
+              } · ${value.truePeakDb} dBTP`
             : value.mode === 'peak'
               ? tr('normalize.row.peak', { db: value.peakDb })
               : tr('normalize.row.none')
