@@ -25,7 +25,7 @@ import { DestinationTab } from './settings/DestinationTab'
 import { EditorTab } from './settings/EditorTab'
 import { GeneralTab } from './settings/GeneralTab'
 import { LayoutTab } from './settings/LayoutTab'
-import { NamingTab, TitleFormatSettings } from './settings/NamingTab'
+import { NamingTab } from './settings/NamingTab'
 import { ProcessingTab } from './settings/ProcessingTab'
 import { SearchTab } from './settings/SearchTab'
 import { SettingsAdvancedProvider } from './settings/SettingsPrimitives'
@@ -329,19 +329,16 @@ export function SettingsModal({
                   <LayoutTab synced={synced} patch={patch} />
                 </>
               )}
-              {tab === 'tags' && (
-                <>
-                  <FieldsEditor
-                    visibleFields={synced.visibleFields}
-                    requiredFields={synced.requiredFields}
-                    importFields={synced.importFields}
-                    onChangeVisible={(fields) => patch('visibleFields', fields)}
-                    onChangeRequired={(fields) => patch('requiredFields', fields)}
-                    onChangeImport={(fields) => patch('importFields', fields)}
-                  />
-                  <TitleFormatSettings synced={synced} patch={patch} />
-                  <ArtworkTab synced={synced} patch={patch} />
-                </>
+              {tab === 'artwork' && <ArtworkTab synced={synced} patch={patch} />}
+              {tab === 'fields' && (
+                <FieldsEditor
+                  visibleFields={synced.visibleFields}
+                  requiredFields={synced.requiredFields}
+                  importFields={synced.importFields}
+                  onChangeVisible={(fields) => patch('visibleFields', fields)}
+                  onChangeRequired={(fields) => patch('requiredFields', fields)}
+                  onChangeImport={(fields) => patch('importFields', fields)}
+                />
               )}
               {tab === 'shortcuts' && (
                 <ShortcutsTab

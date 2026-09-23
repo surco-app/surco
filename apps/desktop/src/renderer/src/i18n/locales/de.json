@@ -770,7 +770,8 @@
       "destination": "Ausgabe",
       "naming": "Benennung",
       "editor": "Editor",
-      "tags": "Tags",
+      "artwork": "Cover",
+      "fields": "Felder",
       "shortcuts": "Kürzel"
     },
     "tabGroups": {
