@@ -73,12 +73,14 @@ describe('SectionHeader folded row', () => {
     return { onToggle }
   }
 
-  it('reads as the sentence alone while folded, with no switch, pill or help note', () => {
+  // The pills say what the sentence already says, so they wait for the section to open;
+  // the help note says something the sentence does not, and was always on the header.
+  it('reads as the sentence and its help note while folded, with no switch or pill', () => {
     header()
     expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent('Removes 3.6 s')
     expect(screen.queryByRole('switch')).not.toBeInTheDocument()
     expect(screen.queryByTestId('pill')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('section-help')).not.toBeInTheDocument()
+    expect(screen.getByTestId('section-help')).toBeInTheDocument()
   })
 
   it('keeps the extras once open', () => {
