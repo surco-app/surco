@@ -1,5 +1,56 @@
 [
   {
+    "version": "1.0",
+    "date": "23 de septiembre de 2026",
+    "title": "Surco 1.0: estable",
+    "items": [
+      {
+        "text": "Surco 1.0 cierra una etapa. A partir de esta versión no llegan funciones nuevas: cada actualización se dedica a que todo lo que Surco ya hace funcione bien, en Mac y en Windows, con Traktor, rekordbox, Engine DJ y Apple Music.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "La sección Calidad solo dice lo que mide. El rojo queda para los archivos que vienen de una fuente con pérdidas o tienen mala calidad; lo que es solo una sospecha sale en ámbar y dice «posible»; los bits rellenados y el audio reescalado ya no se marcan como un defecto, porque suenan igual. Los textos son más cortos y con «Explicaciones en línea» apagado queda una línea por hallazgo.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "Los masters de club con los agudos muy limitados ya no salen como «Reprocesado», y los veredictos dejan de cambiar por recortar un segundo de silencio: en un barrido de casi 600 pistas, las alarmas que cambiaban así pasaron de 9 a 1, sin ninguna nueva en los archivos limpios.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "Al igualar el volumen, el archivo final respeta de verdad el techo de picos que pides, en MP3 y también en AIFF, WAV y FLAC. Para cumplirlo, una pista puede quedar unas décimas por debajo del volumen objetivo, y el plan de la pista te lo avisa.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "«Convertir todo» y convertir varias pistas a la vez respetan el formato de cada una: con un MP3 abierto, tus FLAC y WAV ya no salen convertidos a MP3.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "Si dos pistas del mismo lote van a acabar con el mismo nombre, cada una se guarda por separado. Antes una podía quedar encima de la otra.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "Traktor: los hotcues que solo tenías en Traktor se conservan al convertir, y la pista original conserva sus cues aunque la conversión vaya a otra carpeta. Con la sincronización de Traktor activa, «Mostrar las carátulas de los FLAC en el Finder» se desactiva para que Traktor no pierda esas pistas.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "El volumen y la reparación de clicks que ajustas en cada pista se conservan al cerrar y volver a abrir Surco.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "Los problemas con tu colección de rekordbox, o al comprobar tu biblioteca de Apple Music o Engine DJ, ahora se avisan en pantalla en vez de quedarse en el registro. La colección de rekordbox que eliges en Ajustes se guarda, y los errores salen en tu idioma.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "El editor se lee de un vistazo: recorte, clicks y volumen dicen en una frase lo que pasará al convertir; ⌘I muestra la información del archivo; y tras convertir, un solo enlace limpia los archivos anteriores. Las mismas palabras en toda la app: Convertir, Volumen, Dudosa, Por confirmar.",
+        "in": "1.0.0"
+      },
+      {
+        "text": "Auto-emparejar funciona sin token de Discogs si solo usas Bandcamp o Deezer, y cada pista emparejada dice de qué fuente vino.",
+        "in": "1.0.0"
+      }
+    ]
+  },
+  {
     "version": "0.100",
     "date": "23 de septiembre de 2026",
     "title": "Tus propios campos y más etiquetas",
