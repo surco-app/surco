@@ -10,6 +10,19 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k }),
 }))
 
+const overflow = vi.hoisted(() => ({ visibleCount: Number.POSITIVE_INFINITY }))
+vi.mock('../hooks/useChipOverflow', () => ({
+  useChipOverflow: (suggestions: string[]) => ({
+    containerRef: { current: null },
+    measureRef: { current: null },
+    visibleCount: Math.min(overflow.visibleCount, suggestions.length),
+  }),
+}))
+
+afterEach(() => {
+  overflow.visibleCount = Number.POSITIVE_INFINITY
+})
+
 describe('SuggestionChips', () => {
   it('draws a tag some tracks carry as partial, distinct from on and off', () => {
     render(
@@ -49,5 +62,23 @@ describe('SuggestionChips', () => {
     fireEvent.click(screen.getByTestId('chip-a1-Bases'))
     expect(onPick).toHaveBeenCalledWith('Bases')
     expect(screen.getByTestId('field-suggestions-a1')).toBeInTheDocument()
+  })
+
+  // The "+N" chip unmounts when pressed; without moving focus a keyboard user was
+  // dropped on the document body and had to tab back from the top of the editor.
+  it('hands focus to the first revealed chip when "+N" expands the row', () => {
+    overflow.visibleCount = 1
+    render(
+      <SuggestionChips
+        suggestions={['Bases', 'Cantaditas', 'Cierre']}
+        isOn={() => false}
+        onPick={() => {}}
+      />,
+    )
+    const more = screen.getByTestId('chip-more')
+    more.focus()
+    fireEvent.click(more)
+    expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
+    expect(screen.getByTestId('chip-Cantaditas')).toHaveFocus()
   })
 })
