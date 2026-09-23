@@ -1340,7 +1340,10 @@
     "appleMusicPlaylists": "Reading Apple Music playlists",
     "appleMusicPlaylistTracks": "Reading the playlist",
     "playlistCount_one": "{{count}} playlist",
-    "playlistCount_other": "{{count}} playlists"
+    "playlistCount_other": "{{count}} playlists",
+    "statusRunning": "Running",
+    "statusDone": "Done",
+    "statusError": "Failed"
   },
   "applePlaylist": {
     "title": "Import from Apple Music",

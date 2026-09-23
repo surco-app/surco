@@ -1340,7 +1340,10 @@
     "appleMusicPlaylists": "Lendo playlists do Apple Music",
     "appleMusicPlaylistTracks": "Lendo a playlist",
     "playlistCount_one": "{{count}} playlist",
-    "playlistCount_other": "{{count}} playlists"
+    "playlistCount_other": "{{count}} playlists",
+    "statusRunning": "Em andamento",
+    "statusDone": "Concluído",
+    "statusError": "Falhou"
   },
   "applePlaylist": {
     "title": "Importar do Apple Music",
