@@ -67,5 +67,11 @@ export function findReplaceTrack(
     const next = replaceInValue(meta[field] ?? '', find, replace, opts)
     if (next !== meta[field]) out[field] = next
   }
+  const custom = meta.custom ?? {}
+  const changed = Object.entries(custom).flatMap(([key, value]) => {
+    const next = replaceInValue(value, find, replace, opts)
+    return next === value ? [] : [[key, next] as const]
+  })
+  if (changed.length > 0) out.custom = { ...custom, ...Object.fromEntries(changed) }
   return out
 }

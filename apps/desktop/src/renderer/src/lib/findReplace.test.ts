@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { emptyMetadata } from '../../../shared/metadata'
 import type { TrackMetadata } from '../../../shared/types'
 import { findReplaceTrack, isValidRegex, replaceInValue } from './findReplace'
 
@@ -62,6 +63,19 @@ describe('isValidRegex', () => {
 })
 
 describe('findReplaceTrack', () => {
+  // The cleanup pass reaches the user's own text fields too, and hands back the whole set
+  // so applying it cannot drop the custom fields the search did not touch.
+  it('replaces inside custom fields and keeps the untouched ones', () => {
+    const meta: TrackMetadata = {
+      ...emptyMetadata(),
+      title: 'Song',
+      custom: { vinylCondition: 'VG+ (promo)', shop: 'Discogs' },
+    }
+    expect(findReplaceTrack(meta, ' (promo)', '')).toEqual({
+      custom: { vinylCondition: 'VG+', shop: 'Discogs' },
+    })
+  })
+
   it('returns only the text fields that changed, leaving the rest out', () => {
     const m = meta({ title: 'Snap (Original Mix)', artist: 'Kumara', year: '2000' })
     expect(findReplaceTrack(m, 'Original Mix', 'Radio Edit')).toEqual({
