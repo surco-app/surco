@@ -18,6 +18,7 @@ import {
   TagTypes,
   type XiphComment,
 } from 'node-taglib-sharp'
+import { customTagName } from '../shared/customFields'
 import {
   ratingToStars,
   starsToRating,
@@ -844,6 +845,8 @@ export function writeTags(
       const apple = f.tag as Mpeg4AppleTag
       for (const [name, value] of extendedFields(meta)) setItunesText(apple, name, value)
       for (const [, name, value] of creditFields(meta)) setItunesText(apple, name, value)
+      for (const [key, value] of Object.entries(meta.custom ?? {}))
+        setItunesText(apple, customTagName(key), value)
       for (const name of foreignRemoved) apple.setItunesStrings('com.apple.iTunes', name)
       f.save()
       return
@@ -893,6 +896,8 @@ export function writeTags(
     // catalog number, Discogs ids, the DJ's mood/energy judgement and the collector fields
     // off the release. Shared with the m4a branch above so neither container can drift.
     for (const [name, value] of extendedFields(meta)) setUserText(id3, name, value)
+    for (const [key, value] of Object.entries(meta.custom ?? {}))
+      setUserText(id3, customTagName(key), value)
     for (const [frameId, , value] of creditFields(meta)) {
       id3.removeFrames(frameId)
       if (!value.trim()) continue
