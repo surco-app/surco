@@ -86,29 +86,3 @@ describe('GeneralTab beta channel', () => {
     expect(hint.textContent).toMatch(/bugs|errores/i)
   })
 })
-
-// Appearance and language are what people open General for; the settings folder, the
-// backup, the cache, the log and the beta channel are for the day something goes wrong,
-// so they fold under Advanced instead of pushing the everyday two off the first screen.
-describe('GeneralTab advanced', () => {
-  it('leads with appearance and language and folds the maintenance tools', () => {
-    renderTab()
-
-    expect(screen.getByTestId('settings-theme-dark')).toBeVisible()
-    expect(screen.getByTestId('settings-language-es')).toBeVisible()
-    for (const id of [
-      'settings-config-dir',
-      'settings-export',
-      'settings-cache-clear',
-      'settings-log-reveal',
-      'settings-beta-updates',
-    ]) {
-      expect(screen.getByTestId(id)).not.toBeVisible()
-    }
-
-    fireEvent.click(screen.getByTestId('settings-advanced-general'))
-
-    expect(screen.getByTestId('settings-config-dir')).toBeVisible()
-    expect(screen.getByTestId('settings-beta-updates')).toBeVisible()
-  })
-})

@@ -1,7 +1,4 @@
-import { ChevronRight } from 'lucide-react'
 import type React from 'react'
-import { createContext, useContext, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import { SECTION_SUBHEAD } from '../SectionSubhead'
 import { CheckboxRow } from './CheckboxRow'
 
@@ -180,81 +177,5 @@ export function SettingsCheckboxField({
         </SettingsHint>
       )}
     </div>
-  )
-}
-
-const AdvancedOpenContext = createContext<{
-  open: ReadonlySet<string>
-  setOpen: (id: string, open: boolean) => void
-} | null>(null)
-
-export function SettingsAdvancedProvider({
-  children,
-}: {
-  children: React.ReactNode
-}): React.JSX.Element {
-  const [open, setOpenIds] = useState<ReadonlySet<string>>(() => new Set())
-  const setOpen = (id: string, next: boolean): void =>
-    setOpenIds((cur) => {
-      if (cur.has(id) === next) return cur
-      const copy = new Set(cur)
-      if (next) copy.add(id)
-      else copy.delete(id)
-      return copy
-    })
-  return (
-    <AdvancedOpenContext.Provider value={{ open, setOpen }}>
-      {children}
-    </AdvancedOpenContext.Provider>
-  )
-}
-
-export function AdvancedDisclosure({
-  id,
-  children,
-}: {
-  id: string
-  children: React.ReactNode
-}): React.JSX.Element {
-  const { t: tr } = useTranslation()
-  const shared = useContext(AdvancedOpenContext)
-  const [localOpen, setLocalOpen] = useState(false)
-  const open = shared ? shared.open.has(id) : localOpen
-  const setOpen = (next: boolean): void => {
-    if (shared) shared.setOpen(id, next)
-    else setLocalOpen(next)
-  }
-  const bodyId = `settings-advanced-${id}-body`
-  return (
-    <section
-      className="mt-6 border-t border-[var(--color-line)] pt-4"
-      onInvalidCapture={(e) => {
-        if (open) return
-        setOpen(true)
-        const field = e.target as HTMLInputElement
-        requestAnimationFrame(() => field.reportValidity?.())
-      }}
-    >
-      <button
-        type="button"
-        data-testid={`settings-advanced-${id}`}
-        aria-expanded={open}
-        aria-controls={bodyId}
-        onClick={() => setOpen(!open)}
-        className="press -ml-1 flex items-center gap-1.5 rounded-md px-1 py-1 text-sm font-medium text-fg-muted hover:text-fg"
-      >
-        <ChevronRight
-          className={`h-4 w-4 transition-transform duration-150 motion-reduce:transition-none ${
-            open ? 'rotate-90' : ''
-          }`}
-          strokeWidth={1.8}
-          aria-hidden="true"
-        />
-        {tr('settings.advanced')}
-      </button>
-      <div id={bodyId} hidden={!open} className="mt-4">
-        {children}
-      </div>
-    </section>
   )
 }

@@ -985,23 +985,3 @@ describe('SettingsModal backup', () => {
     expect(onSettingsReplaced).not.toHaveBeenCalled()
   })
 })
-
-describe('SettingsModal advanced folds', () => {
-  // Checking a tab and coming back must not re-fold what the user just opened: the fold
-  // is remembered for as long as the modal is up, and only there (no stored setting).
-  it('keeps a tab’s Advanced open after visiting another tab', () => {
-    render(
-      <SettingsModal
-        settings={settings}
-        onClose={() => {}}
-        onSave={() => {}}
-        onPreviewTheme={() => {}}
-        onSettingsReplaced={() => {}}
-      />,
-    )
-    fireEvent.click(screen.getByTestId('settings-advanced-general'))
-    fireEvent.click(screen.getByTestId('settings-tab-search'))
-    fireEvent.click(screen.getByTestId('settings-tab-general'))
-    expect(screen.getByTestId('settings-advanced-general')).toHaveAttribute('aria-expanded', 'true')
-  })
-})
