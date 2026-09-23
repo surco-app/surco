@@ -3,7 +3,7 @@ import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatExtension } from '../../../../shared/format'
 import type { CustomField, TrackMetadata } from '../../../../shared/types'
-import { FIELD_DEFS } from '../../lib/fields'
+import { labeledFields } from '../../lib/fields'
 import { renderOutputName, renderTitle } from '../../lib/outputName'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
@@ -60,11 +60,6 @@ const SAMPLE_META: TrackMetadata = {
   discogsUrl: 'discogs.com/release/2406512',
 }
 
-// Every metadata field is a legal {token}, including rating — it lives outside
-// FIELD_DEFS (the editor draws it as the stars row, not a text field), so it's
-// appended here rather than added to the registry.
-const TOKEN_KEYS = [...FIELD_DEFS.map((f) => f.key), 'rating']
-
 // One pattern editor — label, format input with the editor-style ⋯ token menu, and
 // a live preview — shared by the file name and the title format so both teach the
 // same tokens the same way. The menu reuses FieldInsertMenu with each field's
@@ -98,10 +93,14 @@ function FormatField({
   // Alphabetical by the LOCALIZED label: with 22 fields, the menu is a lookup list,
   // and scanning it only works when the order matches the language on screen (the
   // editor's insert menu instead mirrors the form's own field order).
+  // Every field is a legal {token}, including rating — it lives outside FIELD_DEFS (the
+  // editor draws it as the stars row, not a text field), so it's appended here.
   const sources = [
-    ...TOKEN_KEYS.map((key) => ({ key, label: tr(`fields.${key}`), value: `{${key}}` })),
-    ...customFields.map((f) => ({ key: f.key, label: f.label, value: `{${f.key}}` })),
-  ].sort((a, b) => a.label.localeCompare(b.label, i18n.language))
+    ...labeledFields(customFields, tr),
+    { key: 'rating', label: tr('fields.rating') },
+  ]
+    .map((f) => ({ ...f, value: `{${f.key}}` }))
+    .sort((a, b) => a.label.localeCompare(b.label, i18n.language))
 
   return (
     <>

@@ -115,6 +115,18 @@ export {
   IMPORTABLE_FIELDS,
 } from '../../../shared/defaults'
 
+// Every field the form can show, Surco's and the user's own, with the name the user reads:
+// the translated label, or the one the user gave a custom field.
+export function labeledFields(
+  customFields: readonly CustomField[],
+  tr: (key: string) => string,
+): { key: string; label: string }[] {
+  return [
+    ...FIELD_DEFS.map((d) => ({ key: d.key as string, label: tr(`fields.${d.key}`) })),
+    ...customFields.map((f) => ({ key: f.key, label: f.label })),
+  ]
+}
+
 export function missingRequired(meta: TrackMetadata, requiredFields: string[]): string[] {
   return requiredFields.filter((key) => !fieldValue(meta, key).trim())
 }
