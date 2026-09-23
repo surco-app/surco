@@ -23,7 +23,11 @@ vi.mock('./Field', () => ({
   ),
 }))
 vi.mock('./CoverPicker', () => ({ CoverPicker: () => <div data-testid="cover" /> }))
-vi.mock('./StarRating', () => ({ StarRating: () => <div data-testid="stars" /> }))
+vi.mock('./StarRating', () => ({
+  StarRating: ({ labelledBy }: { labelledBy?: string }) => (
+    <fieldset data-testid="stars" aria-labelledby={labelledBy} />
+  ),
+}))
 vi.mock('./TagListBulkField', () => ({
   TagListBulkField: ({ presets }: { presets: string[] }) => (
     <div data-testid="grouping-bulk">{presets.join(',')}</div>
@@ -106,5 +110,12 @@ describe('MetadataForm', () => {
     renderForm([spec('compilation')])
     expect(screen.getByTestId('field-compilation')).not.toBePartiallyChecked()
     expect(screen.getByTestId('field-compilation')).not.toBeChecked()
+  })
+
+  // The stars are only meaningful next to the "Rating" caption the form draws; the caption
+  // has to be their group's name, or a screen reader reads bare star counts.
+  it('names the star group by the rating caption', () => {
+    renderForm([])
+    expect(screen.getByRole('group', { name: 'fields.rating' })).toBe(screen.getByTestId('stars'))
   })
 })

@@ -52,4 +52,24 @@ describe('StarRating', () => {
     fireEvent.mouseEnter(screen.getByTestId('star-4'))
     expect(screen.getByTestId('star-4').className).not.toContain('star-punch')
   })
+
+  // Five buttons named "1 stars".."5 stars" floated free of any label: a screen reader
+  // heard a run of star counts with nothing saying what they rate. They form one group
+  // named by the form's "Rating" caption, and the singular reads as a singular.
+  it('groups the stars under the label it is given', () => {
+    render(
+      <>
+        <span id="rating-label">Rating</span>
+        <StarRating value="" onChange={() => {}} labelledBy="rating-label" />
+      </>,
+    )
+    const group = screen.getByRole('group', { name: 'Rating' })
+    expect(group).toContainElement(screen.getByTestId('star-1'))
+  })
+
+  it('names one star in the singular and the rest in the plural', () => {
+    render(<StarRating value="" onChange={() => {}} />)
+    expect(screen.getByTestId('star-1')).toHaveAccessibleName('1 star')
+    expect(screen.getByTestId('star-2')).toHaveAccessibleName('2 stars')
+  })
 })
