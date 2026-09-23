@@ -97,6 +97,7 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
               type="button"
               data-testid={`shortcut-reset-${def.id}`}
               onClick={() => resetRow(def.id)}
+              aria-label={tr('settings.shortcuts.reset')}
               className="press text-sm text-fg-faint hover:text-fg"
             >
               ↺
