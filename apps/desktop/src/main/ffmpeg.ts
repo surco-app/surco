@@ -1637,8 +1637,9 @@ export function toNmlLocation(path: string): { volume: string; dir: string; file
 // FILE that shares the INPUT's folder but was actually written elsewhere: a
 // path nothing lives at. Traktor would mark the track missing and the DJ loses
 // its playlist membership and play count. Leaving newFile unset keeps the
-// ENTRY pointed at the file Traktor still knows, cues updated in place — worse
-// than a rename that actually lands, but strictly better than a dangling one.
+// ENTRY pointed at the file Traktor still knows, with that file's own cues: the
+// output location below is what lets applyPatches send the shifted tree only to
+// an ENTRY that describes the converted file.
 function recordConversionPatch(
   input: string,
   output: string,

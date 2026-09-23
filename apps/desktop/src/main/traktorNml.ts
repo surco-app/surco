@@ -357,24 +357,70 @@ function pathTaken(entries: NmlEntry[], patch: NmlPatch, self: NmlEntry): boolea
   return entries.some((e) => e !== self && key(e.volume, e.dir, e.file) === target)
 }
 
+const outputKey = (patch: NmlPatch): string | undefined =>
+  patch.outputVolume && patch.outputDir && patch.outputFile
+    ? key(patch.outputVolume, patch.outputDir, patch.outputFile)
+    : undefined
+
+// What the patch may do to the entry it matched. The cue tree was read back from the
+// converted file, shifted by its trim and calibration, so it only belongs on an entry that
+// describes that file: one at the output's own location, or one the patch repoints there.
+// An entry left pointing at a source that stayed where it was keeps its own cues, since
+// that audio did not change.
+function patchFor(entries: NmlEntry[], patch: NmlPatch, entry: NmlEntry): NmlPatch {
+  const repoints = patch.newFile !== undefined && !pathTaken(entries, patch, entry)
+  const safe = repoints ? patch : { ...patch, newFile: undefined }
+  const output = outputKey(patch)
+  if (repoints || output === undefined || output === key(entry.volume, entry.dir, entry.file))
+    return safe
+  return { ...safe, cueTree: undefined }
+}
+
+// The converted file's own entry, when the collection already has one apart from the
+// source's: the patch matches the source, so this is the only way its cues reach it.
+function producedOutputs(patches: NmlPatch[]): Map<string, NmlPatch> {
+  const out = new Map<string, NmlPatch>()
+  for (const patch of patches) {
+    const output = outputKey(patch)
+    if (!output || !patch.cueTree || output === key(patch.volume, patch.dir, patch.file)) continue
+    if (!out.has(output)) out.set(output, patch)
+  }
+  return out
+}
+
+function rewriteEntry(
+  block: string,
+  entry: NmlEntry,
+  entries: NmlEntry[],
+  patch: NmlPatch | undefined,
+  produced: NmlPatch | undefined,
+): string {
+  let out = patch ? patchEntry(block, patchFor(entries, patch, entry)) : block
+  if (produced?.cueTree && produced !== patch)
+    out = replaceCues(out, produced.cueTree, produced.bpm)
+  return out
+}
+
 export function applyPatches(nml: string, patches: NmlPatch[]): string {
   const entries = findEntries(nml)
   const index = indexPatches(patches)
   const coexisting = coexistingOutputs(entries, patches)
+  const produced = producedOutputs(patches)
   let out = nml
   for (let i = entries.length - 1; i >= 0; i--) {
     const entry = entries[i]
     const block = out.slice(entry.start, entry.end)
-    const patch = matchPatch(entry, index)
+    const at = key(entry.volume, entry.dir, entry.file)
     // The converted file's own ENTRY is not the one the patch matches (that is the
     // source's), so the detach is keyed on the entry's location rather than on a match.
-    let patched = coexisting.has(key(entry.volume, entry.dir, entry.file))
-      ? detachSharedIdentity(block)
-      : block
-    if (patch) {
-      const safe = pathTaken(entries, patch, entry) ? { ...patch, newFile: undefined } : patch
-      patched = patchEntry(patched, safe)
-    }
+    const detached = coexisting.has(at) ? detachSharedIdentity(block) : block
+    const patched = rewriteEntry(
+      detached,
+      entry,
+      entries,
+      matchPatch(entry, index),
+      produced.get(at),
+    )
     if (patched === block) continue
     out = out.slice(0, entry.start) + patched + out.slice(entry.end)
   }
@@ -394,15 +440,18 @@ export function applyPatches(nml: string, patches: NmlPatch[]): string {
 export function matchedPatchCount(nml: string, patches: NmlPatch[]): number {
   const entries = findEntries(nml)
   const index = indexPatches(patches)
+  const produced = producedOutputs(patches)
   const matched = new Set<NmlPatch>()
   for (const entry of entries) {
     const patch = matchPatch(entry, index)
-    if (!patch) continue
-    // Same suppression applyPatches makes, or the count would claim a rename that the
-    // write itself declines to make.
-    const safe = pathTaken(entries, patch, entry) ? { ...patch, newFile: undefined } : patch
+    const output = produced.get(key(entry.volume, entry.dir, entry.file))
+    if (!patch && !output) continue
+    // Same rewrite applyPatches makes, or the count would claim a rename or a cue write
+    // that the write itself declines to make.
     const block = nml.slice(entry.start, entry.end)
-    if (patchEntry(block, safe) !== block) matched.add(patch)
+    if (patch && patchEntry(block, patchFor(entries, patch, entry)) !== block) matched.add(patch)
+    if (output && rewriteEntry(block, entry, entries, undefined, output) !== block)
+      matched.add(output)
   }
   return matched.size
 }
