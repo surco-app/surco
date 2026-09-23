@@ -25,13 +25,13 @@ export interface TagField {
   // differently and both matter. Unlike an alias — which is read from and actively
   // cleared on write — every name here gets the value.
   vorbisAlso?: string[]
-  // For a total ("of N") field: the aliases whose "n/N" value carries it in its second
-  // half, read when the field's own aliases are empty. ID3 and MP4 keep the total inside
-  // the number ("3/12"); Vorbis gives it a comment of its own (TRACKTOTAL).
-  totalFrom?: string[]
-  // For a number field: the total field written after a slash on ID3 and MP4 ("3/12"),
-  // the only place those containers have for it. Vorbis writes the total on its own.
+  // For a number field: its total field, kept after a slash on ID3 and MP4 ("3/12"), the
+  // only place those containers have for it. Vorbis gives the total a comment of its own
+  // (TRACKTOTAL), so the total field reads the number's "n/N" only when its own is empty.
   withTotal?: MetaTextKey
+  // Names who made the file before the user had it. While the user keeps such a field
+  // hidden the editor sends it empty, so a conversion clears the previous owner's value.
+  provenance?: true
   // Normalizes the raw probed string into the stored value: dropping a "3/12" track total,
   // the compilation flag, the rating stars. Identity when omitted.
   parse?: (raw: string) => string
@@ -72,7 +72,6 @@ export const TAG_FIELDS: TagField[] = [
   {
     key: 'trackTotal',
     aliases: ['tracktotal', 'totaltracks'],
-    totalFrom: ['track', 'tracknumber', 'tracknum'],
     vorbis: 'TRACKTOTAL',
   },
   {
@@ -85,7 +84,6 @@ export const TAG_FIELDS: TagField[] = [
   {
     key: 'discTotal',
     aliases: ['disctotal', 'totaldiscs'],
-    totalFrom: ['disc', 'tpos', 'disc_number', 'discnumber'],
     vorbis: 'DISCTOTAL',
   },
   // ffmpeg maps these to the real ID3 frames DJ software and Music read (TBPM/TKEY/TPE4);
@@ -173,12 +171,14 @@ export const TAG_FIELDS: TagField[] = [
     aliases: ['copyright', 'tcop', 'tcr', 'cprt'],
     id3: 'copyright',
     vorbis: 'COPYRIGHT',
+    provenance: true,
   },
   {
     key: 'encodedBy',
     aliases: ['encoded_by', 'encodedby', 'tenc', 'ten'],
     id3: 'encoded_by',
     vorbis: 'ENCODEDBY',
+    provenance: true,
   },
   // TORY, not TDOR: the ID3 targets are pinned to v2.3, where TDOR doesn't exist. TDOR is
   // its v2.4 successor and ORIGINALYEAR the Picard-convention Vorbis comment, both read.
