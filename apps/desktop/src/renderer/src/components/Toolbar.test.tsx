@@ -254,6 +254,21 @@ describe('Toolbar', () => {
     expect(badge.className).not.toContain('text-[9px]')
   })
 
+  // The palette button shows only its shortcut, "⌘ K", while its name was "Command
+  // palette": a voice control user saying what they see ("click Command K") hit nothing
+  // (WCAG 2.5.3). The name has to start with the visible keys.
+  it('names the palette button starting with the keys it shows', () => {
+    renderBar({ isMac: true })
+    expect(screen.getByTestId('open-palette')).toHaveAccessibleName(
+      `⌘K ${i18n.t('header.palette')}`,
+    )
+    cleanup()
+    renderBar({ isMac: false })
+    expect(screen.getByTestId('open-palette')).toHaveAccessibleName(
+      `Ctrl K ${i18n.t('header.palette')}`,
+    )
+  })
+
   // The dot is the only always-visible signal that background work is running while
   // the activity panel is closed.
   it('marks the activity button while background work runs', () => {
