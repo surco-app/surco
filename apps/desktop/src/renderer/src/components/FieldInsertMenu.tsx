@@ -140,9 +140,19 @@ export function FieldInsertMenu({
     })
   }
 
+  // Every key the menu handles stops here, as in TrackContextMenu: the editor's global
+  // shortcuts listen on the window, and an arrow meant for the menu must not also step
+  // the track list. Tab closes the menu back onto its field instead of walking on through
+  // the form with the menu left hanging open.
   function onMenuKeyDown(e: React.KeyboardEvent): void {
-    if (e.key === 'Escape') {
+    if (e.key === 'Escape' || e.key === 'Tab') {
+      e.preventDefault()
+      e.stopPropagation()
       close()
+      return
+    }
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.stopPropagation()
       return
     }
     const items = Array.from(
@@ -157,6 +167,7 @@ export function FieldInsertMenu({
     else if (e.key === 'End') next = items.length - 1
     if (next === -1) return
     e.preventDefault()
+    e.stopPropagation()
     items[next].focus()
   }
 
@@ -192,6 +203,8 @@ export function FieldInsertMenu({
             type="button"
             data-testid="field-insert-backdrop"
             aria-label={tr('common.close')}
+            // A pointer-only click catcher: keyboard users close with Escape or Tab.
+            tabIndex={-1}
             onClick={close}
             className="fixed inset-0 z-40 cursor-default"
           />
