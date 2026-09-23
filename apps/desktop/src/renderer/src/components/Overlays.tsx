@@ -142,7 +142,12 @@ export function Overlays({
       {activeModal?.type === 'help' && <HelpModal onClose={close} />}
       {activeModal?.type === 'loudnessHelp' && <LoudnessHelpModal onClose={close} />}
       {activeModal?.type === 'findReplace' && (
-        <FindReplaceModal tracks={bulkTracks} onApply={deriveTracksUndoable} onClose={close} />
+        <FindReplaceModal
+          tracks={bulkTracks}
+          customFields={settings?.customFields ?? []}
+          onApply={deriveTracksUndoable}
+          onClose={close}
+        />
       )}
       {activeModal?.type === 'stripNumbering' && (
         <StripNumberingModal tracks={bulkTracks} onApply={deriveTracksUndoable} onClose={close} />
