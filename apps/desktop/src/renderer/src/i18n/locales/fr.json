@@ -1114,6 +1114,8 @@
     "revealLog": "Afficher le journal"
   },
   "palette": {
+    "resultCount_one": "{{count}} résultat",
+    "resultCount_other": "{{count}} résultats",
     "placeholder": "Cherche des morceaux ou lance une commande…",
     "tracks": "Morceaux",
     "empty": "Aucun résultat",
