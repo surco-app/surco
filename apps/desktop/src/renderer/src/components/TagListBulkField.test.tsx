@@ -209,4 +209,15 @@ describe('TagListBulkField', () => {
     expect(within(row).getByTestId('chip-a1-Bases')).toBeInTheDocument()
     expect(within(row).queryByTestId('chip-a2-Bases')).toBeNull()
   })
+
+  // aria-expanded says the toggle opens something; aria-controls says what, so assistive
+  // tech can take the user straight to the rows it revealed.
+  it('points the per-track toggle at the rows it opens', () => {
+    renderField()
+    openRows()
+    const toggle = screen.getByTestId('grouping-per-track-toggle')
+    const body = document.getElementById(toggle.getAttribute('aria-controls') ?? '')
+    expect(body).not.toBeNull()
+    expect(within(body as HTMLElement).getByTestId('grouping-track-a1')).toBeInTheDocument()
+  })
 })

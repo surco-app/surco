@@ -31,9 +31,11 @@ function prefersReducedMotion(): boolean {
 interface Props {
   open: boolean
   children: React.ReactNode
+  // Referenced by the header's aria-controls.
+  id?: string
 }
 
-export function SectionBody({ open, children }: Props): React.JSX.Element | null {
+export function SectionBody({ open, children, id }: Props): React.JSX.Element | null {
   // Mounted spans the visible life of the body: true while open, and kept true through the
   // close transition so the collapse animates, then flipped off on transitionend.
   const [mounted, setMounted] = useState(open)
@@ -128,6 +130,7 @@ export function SectionBody({ open, children }: Props): React.JSX.Element | null
 
   return (
     <div
+      id={id}
       data-testid="section-body"
       data-open={open}
       // Closing, the children outlive the fold by the length of the tween. `inert` keeps

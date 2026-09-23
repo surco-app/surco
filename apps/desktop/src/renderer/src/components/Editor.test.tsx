@@ -2341,6 +2341,19 @@ describe('Editor star rating', () => {
   })
 })
 
+// aria-expanded says the Metadata header opens something; aria-controls says what, so a
+// screen reader can jump from the header straight into the fields it revealed.
+describe('Editor metadata section wiring', () => {
+  it('points the Metadata header at the body holding the fields', () => {
+    renderEditor({ id: 'a', meta: { title: 'Song' } }, 'wav', { visibleFields: ['title'] })
+    const body = screen.getByTestId('field-title').closest('[data-testid="section-body"]')
+    expect(body?.id).toBeTruthy()
+    const header = document.querySelector(`[aria-controls="${body?.id}"]`)
+    expect(header).toHaveAttribute('aria-expanded', 'true')
+    expect(header).toHaveAccessibleName('Metadata')
+  })
+})
+
 describe('Editor required-field gate', () => {
   // The convert button used to fail late: it stayed enabled with empty required
   // fields and only surfaced the error after the click. Disabling it until the
