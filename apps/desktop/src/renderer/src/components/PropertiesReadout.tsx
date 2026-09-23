@@ -106,7 +106,7 @@ export function PropertiesReadout({
     },
   ].filter((g) => g.rows.length > 0)
   return (
-    <div data-testid="properties-readout" className="mt-4 space-y-3">
+    <div data-testid="properties-readout" className="mt-4 space-y-3 @container">
       {groups.map((group) => {
         // The wide rows sit at the end of each group, so any leftover cell can only be
         // the last SHORT row when the shorts come out odd. Stretch that one to the full
@@ -119,14 +119,16 @@ export function PropertiesReadout({
             {/* Two-up grid: the short fixed facts pack two per row so the panel is half as
               tall, while a wide row (file name, folder, tag list) keeps the full width.
               The 1px gaps over the line-coloured backing draw the separators — both the
-              row rules and the seam between the two columns — without per-cell borders. */}
-            <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-[var(--color-line)]">
+              row rules and the seam between the two columns — without per-cell borders.
+              Below 30rem of section width it drops to one column: two-up there left each
+              value a few letters ("1…", "Jan 25, 202…") beside its label. */}
+            <dl className="grid grid-cols-1 gap-px @[30rem]:grid-cols-2 overflow-hidden rounded-lg bg-[var(--color-line)]">
               {group.rows.map((r) => (
                 <div
                   key={r.id}
                   data-testid={`property-${r.id}`}
                   className={`flex items-center justify-between gap-3 bg-[var(--color-field)] px-3 py-2 ${
-                    r.wide || r.id === lastShortId ? 'col-span-2' : ''
+                    r.wide || r.id === lastShortId ? '@[30rem]:col-span-2' : ''
                   }`}
                 >
                   <dt className="shrink-0 text-xs text-fg-dim">{r.label}</dt>
