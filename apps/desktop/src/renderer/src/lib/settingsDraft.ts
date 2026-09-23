@@ -171,15 +171,12 @@ export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Part
   // A blank or garbage box means no adjustment: the conversion already lands cues where
   // they were, so "I could not read this" and "leave them alone" are the same answer.
   const cueOffset = Number(traktorCueOffsetMs)
-  const token = local.token.trim()
+  const { token: rawToken, autoMatch, ...localRest } = local
+  const token = rawToken.trim()
   return {
     ...rest,
+    ...localRest,
     discogsToken: token,
-    outputDir: local.outputDir,
-    engineLibraryDir: local.engineLibraryDir,
-    traktorNmlPath: local.traktorNmlPath,
-    rekordboxDbPath: local.rekordboxDbPath,
-    betaUpdates: local.betaUpdates,
     engineDjPlaylist: engineDjPlaylist.trim() || DEFAULT_ENGINE_DJ_PLAYLIST,
     filenameFormat: filenameFormat.trim() || DEFAULT_FILENAME_FORMAT,
     groupingPresets: splitPresets(grouping),
@@ -190,7 +187,7 @@ export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Part
     // Gated on the same rule the toggle, the wizard and the main process apply — a lax
     // token-only gate here once dropped a Bandcamp-only save the UI had just allowed.
     autoMatch:
-      local.autoMatch &&
+      autoMatch &&
       autoMatchAvailable({ searchProviders: synced.searchProviders, discogsToken: token }),
   }
 }
