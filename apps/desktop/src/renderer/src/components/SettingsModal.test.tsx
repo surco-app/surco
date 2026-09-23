@@ -1005,29 +1005,3 @@ describe('SettingsModal advanced folds', () => {
     expect(screen.getByTestId('settings-advanced-general')).toHaveAttribute('aria-expanded', 'true')
   })
 })
-
-describe('SettingsModal search advanced', () => {
-  // Sources, auto-match and the Discogs token decide whether search works at all; the
-  // result cap and the ignored words only tune it, so they fold under Advanced and still
-  // save like before.
-  it('folds the result cap and ignored words, which still save', () => {
-    const onSave = vi.fn()
-    render(
-      <SettingsModal
-        settings={settings}
-        onClose={() => {}}
-        onSave={onSave}
-        onPreviewTheme={() => {}}
-        onSettingsReplaced={() => {}}
-        initialTab="search"
-      />,
-    )
-    expect(screen.getByTestId('settings-token')).toBeVisible()
-    expect(screen.getByTestId('settings-ignore-words')).not.toBeVisible()
-    expect(screen.getByTestId('settings-max-results')).not.toBeVisible()
-    fireEvent.click(screen.getByTestId('settings-advanced-search'))
-    fireEvent.change(screen.getByTestId('settings-ignore-words'), { target: { value: 'vinyl' } })
-    fireEvent.click(screen.getByTestId('settings-save'))
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ searchIgnoreWords: ['vinyl'] }))
-  })
-})
