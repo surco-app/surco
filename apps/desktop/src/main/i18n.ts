@@ -45,6 +45,7 @@ interface MenuStrings {
   upToDate: string
   updatesDevOnly: string
   conflictExists: string
+  conflictReserved: string
   conflictOverwrite: string
   conflictKeepBoth: string
   conflictSkip: string
@@ -126,6 +127,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     upToDate: 'Ya tienes la última versión de Surco.',
     updatesDevOnly: 'Las actualizaciones solo están disponibles en la app instalada.',
     conflictExists: 'Ya existe un archivo con ese nombre en la carpeta de destino.',
+    conflictReserved:
+      'Otra pista de esta conversión se va a guardar con este mismo nombre y aún no está escrita. Con Sobrescribir o Conservar ambos, esta se guarda con un número añadido al nombre.',
     conflictOverwrite: 'Sobrescribir',
     conflictKeepBoth: 'Conservar ambos',
     conflictSkip: 'Saltar',
@@ -210,6 +213,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     upToDate: "You're on the latest version of Surco.",
     updatesDevOnly: 'Updates are only available in the installed app.',
     conflictExists: 'A file with this name already exists in the destination folder.',
+    conflictReserved:
+      'Another track in this conversion is being saved under this same name and has not been written yet. Overwrite or Keep both saves this one with a number added to its name.',
     conflictOverwrite: 'Overwrite',
     conflictKeepBoth: 'Keep both',
     conflictSkip: 'Skip',
@@ -294,6 +299,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     upToDate: 'Du hast bereits die neueste Version von Surco.',
     updatesDevOnly: 'Updates sind nur in der installierten App verfügbar.',
     conflictExists: 'Im Zielordner existiert bereits eine Datei mit diesem Namen.',
+    conflictReserved:
+      'Ein anderer Track dieser Konvertierung wird unter demselben Namen gespeichert und ist noch nicht geschrieben. Mit Überschreiben oder Beide behalten wird dieser mit einer angehängten Nummer gespeichert.',
     conflictOverwrite: 'Überschreiben',
     conflictKeepBoth: 'Beide behalten',
     conflictSkip: 'Überspringen',
@@ -378,6 +385,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     upToDate: 'Tu as déjà la dernière version de Surco.',
     updatesDevOnly: "Les mises à jour ne sont disponibles que dans l'app installée.",
     conflictExists: 'Un fichier du même nom existe déjà dans le dossier de destination.',
+    conflictReserved:
+      "Un autre morceau de cette conversion va être enregistré sous ce même nom et n'est pas encore écrit. Avec Écraser ou Conserver les deux, celui-ci est enregistré avec un numéro ajouté à son nom.",
     conflictOverwrite: 'Écraser',
     conflictKeepBoth: 'Conserver les deux',
     conflictSkip: 'Ignorer',
@@ -463,6 +472,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     upToDate: 'Você já tem a versão mais recente do Surco.',
     updatesDevOnly: 'As atualizações só estão disponíveis no app instalado.',
     conflictExists: 'Já existe um arquivo com esse nome na pasta de destino.',
+    conflictReserved:
+      'Outra faixa desta conversão vai ser salva com esse mesmo nome e ainda não foi gravada. Com Sobrescrever ou Manter ambos, esta é salva com um número adicionado ao nome.',
     conflictOverwrite: 'Sobrescrever',
     conflictKeepBoth: 'Manter ambos',
     conflictSkip: 'Pular',

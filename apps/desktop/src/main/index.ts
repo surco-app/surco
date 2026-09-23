@@ -1053,7 +1053,7 @@ function registerIpc(): void {
       rm,
       // The conflict prompt is the one Electron-bound branch: build the same warning
       // box as before and map its buttons back to the decision runProcessTrack expects.
-      confirmConflict: (outputName) =>
+      confirmConflict: (outputName, reservedOnly) =>
         // A prior conflict in this run may already have answered for the rest — resolve
         // reuses that without prompting again. Cleared at process:batch-begin, never
         // spanning two runs. Otherwise it shows the box and remembers the choice only when
@@ -1064,7 +1064,7 @@ function registerIpc(): void {
           const opts = {
             type: 'warning' as const,
             message: outputName,
-            detail: t('conflictExists'),
+            detail: t(reservedOnly ? 'conflictReserved' : 'conflictExists'),
             buttons: [t('conflictOverwrite'), t('conflictKeepBoth'), t('conflictSkip')],
             defaultId: 1,
             cancelId: 2,
