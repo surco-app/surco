@@ -3093,16 +3093,18 @@ describe('Editor Apple Music library badge', () => {
     expect(screen.queryByTestId('apple-music-status')).toBeNull()
   })
 
-  // Rendering the badge before the "Fill from filename" button keeps that button
-  // anchored at the header's edge when the badge mounts.
-  it('renders the badge before the fill-from-filename button', () => {
+  // The library check resolves after the header has drawn, so a badge sharing the button row
+  // shoved "Fill from filename" sideways (and, in a narrow editor, onto a second line) the
+  // moment it mounted. On its own status line under the title, it can't move the buttons.
+  it('shows the badge on a status line of its own, outside the header buttons', () => {
     setApi('darwin')
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       libraryIndex: owned,
     })
     const badge = screen.getByTestId('apple-music-status')
     const derive = screen.getByTestId('derive-btn')
-    expect(badge.compareDocumentPosition(derive) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByTestId('form-status')).toContainElement(badge)
+    expect(screen.getByTestId('form-status')).not.toContainElement(derive)
   })
 
   // Off macOS there is no Apple Music library, so the badge stays hidden rather than

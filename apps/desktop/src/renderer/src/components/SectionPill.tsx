@@ -8,8 +8,9 @@ import type React from 'react'
 //     opening the section, but it isn't asking for anything.
 //   · accent  — the ACTIVE setting, shown only while the section is folded (open, the
 //     control right below says the same thing, so the badge would be the second telling).
-//   · good    — a genuine positive VERDICT (audio quality is clean). Reserved for a real
-//     "you're good" — status facts are neutral, so green never cries wolf.
+//   · good    — a genuine positive: audio quality is clean, or the track is already in
+//     the library it is headed for. Reserved for a real "you're good", so green never
+//     cries wolf.
 //   · warn    — a verdict that wants a look before converting (quality "Review").
 //   · danger  — a problem verdict (a fake-lossless transcode).
 //
