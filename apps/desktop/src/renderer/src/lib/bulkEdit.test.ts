@@ -121,6 +121,11 @@ describe('tagListTags', () => {
       'Cierre',
     ])
   })
+
+  it('does not offer a second chip for a tag the presets already have in another case', () => {
+    const tracks = [track({ genre: 'electronic, funk' }), track({ genre: 'Funk' })]
+    expect(tagListTags(['Electronic'], tracks, GENRE_TAGS)).toEqual(['Electronic', 'funk'])
+  })
 })
 
 // Genre is separated by commas like grouping, so the two fields read the same. Discogs

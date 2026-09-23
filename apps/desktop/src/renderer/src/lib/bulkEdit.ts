@@ -68,9 +68,9 @@ export function toggleTagListAll(
 }
 
 export function tagListTags(presets: string[], tracks: TrackItem[], list: TagList): string[] {
-  const seen = new Set(presets)
+  const seen = new Set(presets.map((tag) => tag.toLowerCase()))
   const extra = tracks
     .flatMap((t) => splitCsv(t.meta[list.key] ?? '', list.whole))
-    .filter((tag) => (seen.has(tag) ? false : seen.add(tag)))
+    .filter((tag) => (seen.has(tag.toLowerCase()) ? false : seen.add(tag.toLowerCase())))
   return [...presets, ...extra]
 }
