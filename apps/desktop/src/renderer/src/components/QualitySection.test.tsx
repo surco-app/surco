@@ -965,3 +965,20 @@ describe('bit depth verdict and corrected-rate plan', () => {
     expect(screen.queryByTestId('quality-convert-plan')).not.toBeInTheDocument()
   })
 })
+
+// The analysis takes seconds and its outcome lands as a pill and an image, neither of
+// which a screen reader announces: the user heard nothing start and nothing finish. One
+// live region, mounted from the first frame so its changes are actually announced, says
+// both.
+describe('QualitySection announcements', () => {
+  it('announces that the analysis started and then its verdict with the cutoff', async () => {
+    renderSection({ image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false }, '/m/a.m4a')
+    const status = screen.getByTestId('quality-status')
+    expect(status).toHaveAttribute('role', 'status')
+    expect(status).toHaveTextContent(i18n.t('editor.analyzing'))
+    await screen.findByTestId('quality-badge')
+    expect(screen.getByTestId('quality-status')).toBe(status)
+    expect(status).toHaveTextContent(i18n.t('editor.qualityBad'))
+    expect(status).toHaveTextContent(i18n.t('editor.spectrumCutoff', { cutoff: '16.0 kHz' }))
+  })
+})
