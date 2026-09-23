@@ -12,12 +12,13 @@ interface Props {
 }
 
 // The audio the conversion applies before writing the file: click repair, then loudness
-// normalization, in the order the pipeline runs them.
+// normalization. Split from the Format tab (which defines the container/encoder) so each
+// has room — the order here matches the order the pipeline runs them in.
 export function ProcessingTab({ synced, patch }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   return (
     <>
-      <SettingsSection>
+      <SettingsSection first>
         <SettingsLabel>{tr('declick.title')}</SettingsLabel>
         <SettingsHint className="mt-2 mb-3">{tr('declick.hint')}</SettingsHint>
         <DeclickControls value={synced.declick} onChange={(d) => patch('declick', d)} />

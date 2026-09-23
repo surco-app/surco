@@ -489,12 +489,12 @@
     "outputName": "Nom du fichier",
     "outputNameHintInPlace": "Même format que la source : le fichier original est mis à jour sur place et renommé — aucune copie n'est écrite dans le dossier de sortie.",
     "overwriteTitle": "Écrase l'original",
-    "overwriteHint": "Réécrit le fichier source sur place, en gardant son nom. Aucune copie dans le dossier de sortie. Désactive-le dans Réglages → Destination.",
+    "overwriteHint": "Réécrit le fichier source sur place, en gardant son nom. Aucune copie dans le dossier de sortie. Désactive-le dans Réglages → Sortie.",
     "overwriteAlacHint": "ALAC ne remplace jamais l'original : la source peut contenir de l'audio avec perte, donc un nouveau fichier est écrit dans le dossier de sortie et l'original est conservé.",
-    "overwriteLossyHint": "Remplace l'original sans perte par un MP3 320 kbps sur place — le master est perdu et irrécupérable. Désactive-le dans Réglages → Destination.",
+    "overwriteLossyHint": "Remplace l'original sans perte par un MP3 320 kbps sur place — le master est perdu et irrécupérable. Désactive-le dans Réglages → Sortie.",
     "regenerate": "Régénérer le nom du fichier depuis les métadonnées",
     "regenerateAll_other": "Régénérer {{count}} noms de fichiers depuis les métadonnées",
-    "regenerateHint": "Reconstruit le nom du fichier à partir des métadonnées ci-dessus selon ton modèle de Réglages → Sortie",
+    "regenerateHint": "Reconstruit le nom du fichier à partir des métadonnées ci-dessus selon ton modèle de Réglages → Noms",
     "regenerateCustom": "Personnaliser le modèle de nom pour ce morceau…",
     "convertNoMusic": "Convertir en {{format}}",
     "withTargets": "{{label}} → {{targets}}",
@@ -765,8 +765,10 @@
     "tabs": {
       "general": "Général",
       "search": "Recherche",
-      "output": "Sortie",
-      "destination": "Destination",
+      "conversion": "Format",
+      "processing": "Traitement",
+      "destination": "Sortie",
+      "naming": "Noms",
       "editor": "Éditeur",
       "tags": "Tags",
       "shortcuts": "Raccourcis"
@@ -1134,7 +1136,7 @@
       },
       "appleMusic": {
         "q": "Que fait « Ajouter à Apple Music » ?",
-        "a": "Quand c'est activé (macOS uniquement), Surco importe automatiquement chaque morceau converti dans ta bibliothèque Apple Music juste après la conversion, pour que tes fichiers fraîchement tagués y arrivent sans glisser-déposer manuel.\n\nPendant l'édition, Surco vérifie aussi si un morceau est déjà dans ta bibliothèque et affiche un petit badge, pour éviter les doublons. Tu peux désactiver l'ajout automatique quand tu veux dans Réglages → Destination."
+        "a": "Quand c'est activé (macOS uniquement), Surco importe automatiquement chaque morceau converti dans ta bibliothèque Apple Music juste après la conversion, pour que tes fichiers fraîchement tagués y arrivent sans glisser-déposer manuel.\n\nPendant l'édition, Surco vérifie aussi si un morceau est déjà dans ta bibliothèque et affiche un petit badge, pour éviter les doublons. Tu peux désactiver l'ajout automatique quand tu veux dans Réglages → Sortie."
       },
       "windows": {
         "q": "Quelque chose change-t-il sous Windows ?",

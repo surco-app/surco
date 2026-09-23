@@ -489,12 +489,12 @@
     "outputName": "Nome do arquivo",
     "outputNameHintInPlace": "Mesmo formato do original: atualiza o arquivo original no lugar e o renomeia — nenhuma cópia é criada na pasta de saída.",
     "overwriteTitle": "Sobrescreve o original",
-    "overwriteHint": "Reescreve o arquivo de origem no lugar, mantendo o nome. Nenhuma cópia vai para a pasta de saída. Desative em Ajustes → Destino.",
+    "overwriteHint": "Reescreve o arquivo de origem no lugar, mantendo o nome. Nenhuma cópia vai para a pasta de saída. Desative em Ajustes → Saída.",
     "overwriteAlacHint": "ALAC nunca substitui o original: o arquivo de origem pode conter áudio com perdas, então um arquivo novo é criado na pasta de saída e o original é mantido.",
-    "overwriteLossyHint": "Substitui o original sem perdas por um MP3 de 320 kbps no lugar — o master se perde e não pode ser recuperado. Desative em Ajustes → Destino.",
+    "overwriteLossyHint": "Substitui o original sem perdas por um MP3 de 320 kbps no lugar — o master se perde e não pode ser recuperado. Desative em Ajustes → Saída.",
     "regenerate": "Regenerar nome do arquivo com os metadados",
     "regenerateAll_other": "Regenerar {{count}} nomes de arquivo com os metadados",
-    "regenerateHint": "Reconstruir o nome do arquivo com os metadados acima usando seu padrão de Ajustes → Saída",
+    "regenerateHint": "Reconstruir o nome do arquivo com os metadados acima usando seu padrão de Ajustes → Nomes",
     "regenerateCustom": "Personalizar o padrão do nome para esta faixa…",
     "convertNoMusic": "Converter para {{format}}",
     "withTargets": "{{label}} → {{targets}}",
@@ -765,8 +765,10 @@
     "tabs": {
       "general": "Geral",
       "search": "Busca",
-      "output": "Saída",
-      "destination": "Destino",
+      "conversion": "Formato",
+      "processing": "Processamento",
+      "destination": "Saída",
+      "naming": "Nomes",
       "editor": "Editor",
       "tags": "Tags",
       "shortcuts": "Atalhos"
@@ -1134,7 +1136,7 @@
       },
       "appleMusic": {
         "q": "O que faz “Adicionar ao Apple Music”?",
-        "a": "Quando ativado (somente no macOS), o Surco importa automaticamente cada faixa convertida para a sua biblioteca do Apple Music logo após a conversão, então seus arquivos recém-etiquetados chegam lá sem arrastar nada à mão.\n\nEnquanto você edita, o Surco também verifica se uma faixa já está na sua biblioteca e mostra um pequeno selo, para você não criar duplicatas. Dá para desativar a adição automática quando quiser em Ajustes → Destino."
+        "a": "Quando ativado (somente no macOS), o Surco importa automaticamente cada faixa convertida para a sua biblioteca do Apple Music logo após a conversão, então seus arquivos recém-etiquetados chegam lá sem arrastar nada à mão.\n\nEnquanto você edita, o Surco também verifica se uma faixa já está na sua biblioteca e mostra um pequeno selo, para você não criar duplicatas. Dá para desativar a adição automática quando quiser em Ajustes → Saída."
       },
       "windows": {
         "q": "Tem algo diferente no Windows?",

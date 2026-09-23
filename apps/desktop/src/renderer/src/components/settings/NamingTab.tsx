@@ -187,7 +187,7 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
 
   return (
     <>
-      <SettingsSection>
+      <SettingsSection first>
         <FormatField
           id="settings-filename-format"
           label={tr('settings.filenameFormat')}

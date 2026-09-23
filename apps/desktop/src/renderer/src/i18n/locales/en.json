@@ -489,12 +489,12 @@
     "outputName": "File name",
     "outputNameHintInPlace": "Same format as the source: this updates the original file in place and renames it — no copy is written to the output folder.",
     "overwriteTitle": "Overwrites the original",
-    "overwriteHint": "This rewrites the source file in place, keeping its name. No copy goes to the output folder. Turn this off in Settings → Destination.",
+    "overwriteHint": "This rewrites the source file in place, keeping its name. No copy goes to the output folder. Turn this off in Settings → Output.",
     "overwriteAlacHint": "ALAC never replaces the original: the source may hold lossy audio, so a new file is written to the output folder and the original is kept.",
-    "overwriteLossyHint": "This replaces the lossless original with a 320 kbps MP3 in place — the master is lost and can't be recovered. Turn this off in Settings → Destination.",
+    "overwriteLossyHint": "This replaces the lossless original with a 320 kbps MP3 in place — the master is lost and can't be recovered. Turn this off in Settings → Output.",
     "regenerate": "Regenerate filename from metadata",
     "regenerateAll_other": "Regenerate {{count}} file names from metadata",
-    "regenerateHint": "Rebuild the file name from the metadata above using your naming pattern in Settings → Output",
+    "regenerateHint": "Rebuild the file name from the metadata above using your Settings → Naming pattern",
     "regenerateCustom": "Customize the filename pattern for this track…",
     "convertNoMusic": "Convert to {{format}}",
     "withTargets": "{{label}} → {{targets}}",
@@ -765,8 +765,10 @@
     "tabs": {
       "general": "General",
       "search": "Search",
-      "output": "Output",
-      "destination": "Destination",
+      "conversion": "Format",
+      "processing": "Processing",
+      "destination": "Output",
+      "naming": "Naming",
       "editor": "Editor",
       "tags": "Tags",
       "shortcuts": "Shortcuts"
@@ -1134,7 +1136,7 @@
       },
       "appleMusic": {
         "q": "What does “Add to Apple Music” do?",
-        "a": "When enabled (macOS only), Surco automatically imports each converted track into your Apple Music library right after converting it, so your freshly tagged files land there without a manual drag-and-drop.\n\nWhile editing, Surco also checks whether a track is already in your library and shows a small badge, so you don't create duplicates. You can turn auto-add off anytime in Settings → Destination."
+        "a": "When enabled (macOS only), Surco automatically imports each converted track into your Apple Music library right after converting it, so your freshly tagged files land there without a manual drag-and-drop.\n\nWhile editing, Surco also checks whether a track is already in your library and shows a small badge, so you don't create duplicates. You can turn auto-add off anytime in Settings → Output."
       },
       "windows": {
         "q": "Is anything different on Windows?",
