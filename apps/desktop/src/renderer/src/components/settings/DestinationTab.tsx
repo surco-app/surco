@@ -428,19 +428,16 @@ export function DestinationTab({
             ? tr('settings.syncRekordboxHint')
             : tr('settings.syncRekordboxIdle')}
         </SettingsHint>
-        {rekordboxCollection && (
-          <>
-            <SettingsLabel className="mt-4">{tr('settings.rekordboxDbPath')}</SettingsLabel>
-            <div className="mt-2">
-              <PathField
-                value={rekordboxCollection}
-                onChange={onChangeRekordboxDbPath}
-                testid="settings-rekordbox-db"
-              />
-            </div>
-            <SettingsHint className="mt-2">{tr('settings.rekordboxDbPathHint')}</SettingsHint>
-          </>
-        )}
+        <SettingsLabel className="mt-4">{tr('settings.rekordboxDbPath')}</SettingsLabel>
+        <div className="mt-2">
+          <PathField
+            value={rekordboxCollection}
+            onChange={onChangeRekordboxDbPath}
+            testid="settings-rekordbox-db"
+            emptyLabel={tr('settings.traktorNmlPathEmpty')}
+          />
+        </div>
+        <SettingsHint className="mt-2">{tr('settings.rekordboxDbPathHint')}</SettingsHint>
       </SettingsSection>
     </>
   )
