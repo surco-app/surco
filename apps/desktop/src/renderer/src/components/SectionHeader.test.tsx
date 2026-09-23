@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import type React from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import '../i18n'
 import { SectionHeader } from './SectionHeader'
 
@@ -56,30 +56,26 @@ describe('SectionHeader folded summary', () => {
 
 describe('SectionHeader folded row', () => {
   function header(over: Partial<React.ComponentProps<typeof SectionHeader>> = {}) {
-    const onToggle = vi.fn()
     render(
       <SectionHeader
         title="TRIM"
         open={false}
-        onToggle={onToggle}
+        onToggle={() => {}}
         summary="Removes 3.6 s of silence at the end"
         summaryTestId="trim-row-sentence"
         help="What trim does"
         right={<span data-testid="pill">pill</span>}
-        foldedRow
         {...over}
       />,
     )
-    return { onToggle }
   }
 
-  // The pills say what the sentence already says, so they wait for the section to open;
-  // the help note says something the sentence does not, and was always on the header.
-  it('reads as the sentence and its help note while folded, with no switch or pill', () => {
+  // A folded section is read in one glance: the sentence says what it will do, the pill
+  // carries the figure, and the help note says what the section is for.
+  it('reads as the sentence, its pill and its help note while folded', () => {
     header()
     expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent('Removes 3.6 s')
-    expect(screen.queryByRole('switch')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('pill')).not.toBeInTheDocument()
+    expect(screen.getByTestId('pill')).toBeInTheDocument()
     expect(screen.getByTestId('section-help')).toBeInTheDocument()
   })
 

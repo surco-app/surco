@@ -157,26 +157,25 @@ async function withPreview(
 }
 
 describe('DeclickSection', () => {
-  it('reads the folded row as the repair mode in words, with no switch since the mode is the state', () => {
+  it('reads the folded row as the repair mode in words', () => {
     const { rerender } = render(section({ value: 'standard', open: false }))
     expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent('Standard repair')
-    expect(screen.queryByTestId('declick-switch')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('declick-active-badge')).not.toBeInTheDocument()
     rerender(section({ value: 'off', open: false }))
     expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent('Off')
-    expect(screen.queryByTestId('declick-switch')).not.toBeInTheDocument()
   })
 
   // The estimate is a full scan; the folded row must never start one just to fill a
-  // sentence. It joins the row only once the open section has measured it.
-  it('adds the click estimate to the folded row only once it has been measured', async () => {
+  // pill. The pill joins the folded row only once the open section has measured it, and
+  // the sentence stays the mode alone so the figure is said once.
+  it('pills the click estimate on the folded row only once it has been measured', async () => {
     const { rerender } = render(section({ value: 'off', open: false }))
-    expect(screen.getByTestId('declick-row-sentence')).not.toHaveTextContent('clicks')
+    expect(screen.queryByTestId('declick-estimate-pill')).not.toBeInTheDocument()
     expect(window.api.clicks).not.toHaveBeenCalled()
     rerender(section({ value: 'off', open: true }))
     await screen.findByTestId('declick-estimate-pill', undefined, { timeout: 3000 })
     rerender(section({ value: 'off', open: false }))
-    expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent('Off · ~23 clicks')
+    expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent(/^Off$/)
+    expect(screen.getByTestId('declick-estimate-pill')).toHaveTextContent('~23 clicks')
   })
 
   it('pills the click estimate on the header once measured', async () => {

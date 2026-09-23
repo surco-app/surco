@@ -32,7 +32,6 @@ interface SectionHeaderProps {
   // wires itself to the shared maximized-section store, so the Editor's overlay and every
   // header stay one state.
   maximizable?: boolean
-  foldedRow?: boolean
 }
 
 export function SectionHeader({
@@ -46,12 +45,10 @@ export function SectionHeader({
   help,
   sectionId,
   maximizable,
-  foldedRow,
 }: SectionHeaderProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { maximized, setMaximized } = useMaximizedSection()
   const isMaximized = sectionId !== undefined && maximized === sectionId
-  const row = !open && foldedRow === true
   return (
     <div className="flex items-center justify-between gap-3">
       {/* The button stretches across the free width (and pads a few px vertically)
@@ -97,7 +94,7 @@ export function SectionHeader({
           <Tooltip label={help} />
         </span>
       )}
-      {!row && right}
+      {right}
       {maximizable === true && sectionId !== undefined && (
         <button
           type="button"

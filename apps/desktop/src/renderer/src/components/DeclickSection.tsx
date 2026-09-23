@@ -185,6 +185,12 @@ export function DeclickSection({
   // analysed, and a wave that simply stops marking would read as a clean tail — so the
   // unscanned tail says so rather than lying by omission.
   const unscanned = clicks && durationSec > clicks.scannedSec + 1
+  const estimate =
+    !isMulti && typeof count === 'number'
+      ? count > 0
+        ? tr('declick.estimatePill', { count })
+        : tr('declick.estimateNonePill')
+      : undefined
 
   return (
     <div data-testid="editor-declick" className="mt-5 border-t border-[var(--color-line)] pt-5">
@@ -196,19 +202,13 @@ export function DeclickSection({
         // clicks-found strip reads far better with the whole window to mark them in.
         sectionId="declick"
         maximizable
-        summary={[
-          tr(`declick.row.${value}`),
-          ...(!isMulti && typeof count === 'number'
-            ? [count > 0 ? tr('declick.estimatePill', { count }) : tr('declick.estimateNonePill')]
-            : []),
-        ].join(' · ')}
+        summary={tr(`declick.row.${value}`)}
         summaryTestId="declick-row-sentence"
         summaryMuted={value === 'off'}
-        foldedRow
         right={
-          !isMulti && typeof count === 'number' ? (
+          estimate ? (
             <SectionPill tone="neutral" testid="declick-estimate-pill" numeric>
-              {count > 0 ? tr('declick.estimatePill', { count }) : tr('declick.estimateNonePill')}
+              {estimate}
             </SectionPill>
           ) : undefined
         }
