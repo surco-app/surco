@@ -25,15 +25,17 @@ export function formatFileSize(bytes: number): string {
   return `${(mb / 1024).toFixed(2)} GB`
 }
 
-// A glanceable digest of the rip's shape (container · kHz · bits · channel mode); each
+// A glanceable digest of the rip's shape (format · kHz · bits · channel mode); each
 // part drops out when the probe could not read it, so a lossy file just shows fewer
-// fields rather than blanks.
+// fields rather than blanks. The format is the path's extension, the name the verdict
+// uses, not ffprobe's container family (which calls an ALAC .m4a "MOV").
 export function audioSummaryParts(
   p: TrackProperties,
+  inputPath: string,
   tr: (key: string, params?: Record<string, unknown>) => string,
 ): string[] {
   return [
-    p.container.toUpperCase(),
+    fileExtension(inputPath),
     p.sampleRateHz ? formatKHz(p.sampleRateHz) : '',
     p.bitDepth !== null ? tr('editor.propBitDepthValue', { bits: p.bitDepth }) : '',
     p.channels

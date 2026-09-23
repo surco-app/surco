@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { fileExtension, formatFileSize } from './properties'
+import type { TrackProperties } from '../../../shared/types'
+import { audioSummaryParts, fileExtension, formatFileSize } from './properties'
 
 describe('fileExtension', () => {
   it('reads the real extension off the source path, uppercased', () => {
@@ -45,5 +46,27 @@ describe('formatFileSize', () => {
     // A failed stat leaves the row blank rather than printing "NaN B".
     expect(formatFileSize(Number.NaN)).toBe('')
     expect(formatFileSize(-1)).toBe('')
+  })
+})
+
+describe('audioSummaryParts', () => {
+  const alac: TrackProperties = {
+    container: 'mov',
+    codec: 'alac',
+    sampleRateHz: 44100,
+    bitDepth: 16,
+    channels: 2,
+    bitrateKbps: 900,
+    sizeBytes: 30_000_000,
+    createdMs: null,
+    modifiedMs: null,
+    tagFormats: [],
+  }
+  const tr = (key: string): string => key
+
+  // ffprobe names the container family, so an ALAC .m4a read as "MOV" beside a verdict
+  // that calls the same file M4A. The format is the file's extension everywhere.
+  it('names the format by the file extension, not the probed container family', () => {
+    expect(audioSummaryParts(alac, '/music/Track.m4a', tr)[0]).toBe('M4A')
   })
 })
