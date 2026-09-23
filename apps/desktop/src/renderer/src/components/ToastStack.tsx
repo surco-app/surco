@@ -130,14 +130,26 @@ function ToastCard({
     copiedTimer.current = setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS)
   }
 
-  // A duration arms a one-shot timer; re-running only when the id changes keeps a re-render
-  // (e.g. a language switch) from restarting the countdown of an already-aged toast. A
-  // leaving card is already dismissed, so it must not re-arm and expire a second time.
+  // WCAG 2.2.1: the clock stops while the pointer rests on the card or the focus is inside
+  // it, so a slow reader or a keyboard user heading for the action never loses the toast.
+  const [hovered, setHovered] = useState(false)
+  const [focused, setFocused] = useState(false)
+  const paused = hovered || focused
+  const remaining = useRef(toast.duration ?? 0)
+
+  // A duration arms a one-shot timer for whatever time is left; re-running only when the id
+  // or the pause changes keeps a re-render (e.g. a language switch) from restarting the
+  // countdown of an already-aged toast. A leaving card is already dismissed, so it must not
+  // re-arm and expire a second time.
   useEffect(() => {
-    if (!toast.duration || leaving) return
-    const handle = setTimeout(() => onExpire(toast.id), toast.duration)
-    return () => clearTimeout(handle)
-  }, [toast.id, toast.duration, leaving, onExpire])
+    if (!toast.duration || leaving || paused) return
+    const started = Date.now()
+    const handle = setTimeout(() => onExpire(toast.id), remaining.current)
+    return () => {
+      clearTimeout(handle)
+      remaining.current -= Date.now() - started
+    }
+  }, [toast.id, toast.duration, leaving, paused, onExpire])
 
   const danger = toast.tone === 'danger'
   // Single-line toasts read best vertically centred; only a long, scrollable error message
@@ -148,6 +160,12 @@ function ToastCard({
       role={danger ? 'alert' : 'status'}
       aria-hidden={leaving || undefined}
       data-testid={toast.testid}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false)
+      }}
       className={`${leaving ? 'animate-toast-leave pointer-events-none' : 'animate-pop'} relative flex max-w-md overflow-hidden ${align} gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-3 pl-4 pr-3 shadow-lg`}
     >
       <span
@@ -197,7 +215,10 @@ function ToastCard({
           aria-hidden="true"
           data-testid={toast.testid ? `${toast.testid}-countdown` : undefined}
           className="animate-toast-countdown absolute inset-x-0 bottom-0 h-0.5 bg-[var(--color-accent)]/60"
-          style={{ animationDuration: `${toast.duration}ms` }}
+          style={{
+            animationDuration: `${toast.duration}ms`,
+            animationPlayState: paused ? 'paused' : 'running',
+          }}
         />
       )}
     </div>
