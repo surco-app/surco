@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { EMPTY_FILTER, type FilterSelection, type qualityCounts } from '../lib/triage'
-import '../i18n'
 import { createRef } from 'react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import i18n from '../i18n'
+import { EMPTY_FILTER, type FilterSelection, type qualityCounts } from '../lib/triage'
 import { QualityFilterBar } from './QualityFilterBar'
 
 afterEach(cleanup)
@@ -326,6 +326,29 @@ describe('QualityFilterBar', () => {
     expect(screen.getAllByTestId('quality-filter-separator')).toHaveLength(4)
   })
 
+  // The trigger shows the active filter ("Unconverted 12") but its name was a fixed
+  // "Filter", so a screen reader never heard which view the list was in, and voice
+  // control could not target it by the words on screen.
+  it('names the filter trigger with the filter it shows', () => {
+    renderBar({ value: sel({ conversion: 'unconverted' }), tally: tally({ unconverted: 12 }) })
+    const trigger = screen.getByTestId('quality-filter-trigger')
+    expect(trigger).toHaveAccessibleName(/Unconverted/)
+    expect(trigger).toHaveAccessibleName(/Filter/)
+  })
+
+  // Several buckets can be on at once, so the listbox shows several selected options; a
+  // listbox that doesn't declare itself multi-select tells assistive tech only one can be.
+  // The dividers are decoration, and a listbox may hold only options, so they stay out
+  // of the accessibility tree.
+  it('declares the bucket menu multi-select and keeps its dividers out of it', () => {
+    renderBar()
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByRole('listbox')).toHaveAttribute('aria-multiselectable', 'true')
+    for (const divider of screen.getAllByTestId('quality-filter-separator')) {
+      expect(divider).toHaveAttribute('aria-hidden', 'true')
+    }
+  })
+
   // The x/total position indicator the user relies on must stay visible beside the
   // collapsed control, not fold away into a chip that no longer exists.
   it('keeps the x/total position counter visible next to the dropdown', () => {
@@ -353,6 +376,15 @@ describe('QualityFilterBar', () => {
     renderBar({ selectedPosition: 250, visibleCount: 498, onRevealSelected })
     fireEvent.click(screen.getByTestId('track-position'))
     expect(onRevealSelected).toHaveBeenCalledOnce()
+  })
+
+  // Announced as bare digits, "250/498" said neither what the numbers were nor that
+  // pressing it scrolls back to the track: the button's purpose lived only in a tooltip.
+  it('names the position counter as the way back to the selected track', () => {
+    renderBar({ selectedPosition: 250, visibleCount: 498 })
+    expect(screen.getByTestId('track-position')).toHaveAccessibleName(
+      i18n.t('sidebar.positionReveal', { current: 250, total: 498 }),
+    )
   })
 
   // During a multi-select the size of the selection is what the DJ cares about, so the

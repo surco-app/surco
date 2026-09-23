@@ -1373,7 +1373,7 @@ describe('Editor multi-select', () => {
       metaA: { artist: 'Kumara' },
     })
     const btn = screen.getByTestId('process-btn')
-    expect(btn).toBeDisabled()
+    expect(btn).toHaveAttribute('aria-disabled', 'true')
     fireEvent.click(btn)
     expect(onProcessAll).not.toHaveBeenCalled()
   })
@@ -1384,7 +1384,7 @@ describe('Editor multi-select', () => {
       metaA: { artist: 'Kumara' },
       metaB: { artist: 'Cortina' },
     })
-    expect(screen.getByTestId('process-btn')).toBeEnabled()
+    expect(screen.getByTestId('process-btn')).not.toHaveAttribute('aria-disabled')
   })
 
   // The disabled button must explain itself: the tooltip names the fields still
@@ -1509,7 +1509,7 @@ describe('Editor multi-select', () => {
       metaA: { artist: 'Kumara' },
     })
     const btn = screen.getByTestId('process-btn')
-    expect(btn).toBeDisabled()
+    expect(btn).toHaveAttribute('aria-disabled', 'true')
     fireEvent.click(btn)
     expect(onProcessAll).not.toHaveBeenCalled()
   })
@@ -2347,7 +2347,7 @@ describe('Editor required-field gate', () => {
   // fields are filled turns a dead-end error into clear, upfront guidance.
   it('disables both convert buttons while a required field is empty', () => {
     renderEditor({ id: 'a', meta: { artist: '' } }, 'wav', { requiredFields: ['artist'] })
-    expect(screen.getByTestId('process-btn')).toBeDisabled()
+    expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByTestId('process-format-toggle')).toBeDisabled()
   })
 
@@ -2355,7 +2355,7 @@ describe('Editor required-field gate', () => {
     renderEditor({ id: 'a', meta: { artist: 'Alex Ponce' } }, 'wav', {
       requiredFields: ['artist'],
     })
-    expect(screen.getByTestId('process-btn')).toBeEnabled()
+    expect(screen.getByTestId('process-btn')).not.toHaveAttribute('aria-disabled')
   })
 
   // The disabled button needs a reason: flag the empty required field as invalid

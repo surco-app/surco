@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import '../i18n'
+import i18n from '../i18n'
 import { ExportButton } from './ExportButton'
 
 afterEach(cleanup)
@@ -47,13 +47,35 @@ describe('ExportButton', () => {
           incompleteReason="Missing required fields: Year, Genre"
         />,
       )
-      expect(screen.getByTestId('process-btn')).toBeDisabled()
+      expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
       hover(screen.getByTestId('process-btn-wrap'))
       act(() => vi.advanceTimersByTime(400))
       expect(screen.getByRole('tooltip')).toHaveTextContent('Missing required fields: Year, Genre')
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  // A natively disabled button drops out of the Tab order, and the reason lived in a hover
+  // tooltip on a wrapper nothing can focus: a keyboard or screen reader user never learnt
+  // why Convert was unavailable, or that it was there at all. It stays focusable, refuses
+  // to convert, and carries the reason as its description.
+  it('keeps a blocked convert focusable, inert, and described by its reason', () => {
+    const onProcess = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete
+        incompleteReason="Missing required fields: Year, Genre"
+        onProcess={onProcess}
+      />,
+    )
+    const btn = screen.getByTestId('process-btn')
+    expect(btn).not.toBeDisabled()
+    expect(btn).toHaveAttribute('aria-disabled', 'true')
+    expect(btn).toHaveAccessibleDescription('Missing required fields: Year, Genre')
+    fireEvent.click(btn)
+    expect(onProcess).not.toHaveBeenCalled()
   })
 
   // The chevron menu now carries both halves of the button's promise ("Convert to
@@ -83,10 +105,46 @@ describe('ExportButton', () => {
     render(<ExportButton {...baseProps} incomplete={false} destination="engineDj" />)
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     expect(screen.getByTestId('process-destination-engineDj')).toHaveAttribute(
-      'aria-current',
+      'aria-checked',
       'true',
     )
-    expect(screen.getByTestId('process-destination-folder')).not.toHaveAttribute('aria-current')
+    expect(screen.getByTestId('process-destination-folder')).toHaveAttribute(
+      'aria-checked',
+      'false',
+    )
+  })
+
+  // The chevron opened a plain stack of buttons: no announced popup, focus left behind on
+  // the chevron, no arrows and no Escape, so from the keyboard the menu was a trap of Tab
+  // presses. It has to behave like the app's other menus (TrackContextMenu).
+  it('runs the format menu as a keyboard menu of radio items', () => {
+    render(<ExportButton {...baseProps} incomplete={false} outputFormat="flac" />)
+    const toggle = screen.getByTestId('process-format-toggle')
+    expect(toggle).toHaveAttribute('aria-haspopup', 'menu')
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    toggle.focus()
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('menu')).toBeInTheDocument()
+    const flac = screen.getByTestId('process-format-flac')
+    expect(flac).toHaveAttribute('role', 'menuitemradio')
+    expect(flac).toHaveAttribute('aria-checked', 'true')
+    expect(flac).toHaveFocus()
+    fireEvent.keyDown(flac, { key: 'ArrowDown' })
+    expect(flac).not.toHaveFocus()
+    expect(screen.getByRole('menu')).toContainElement(document.activeElement as HTMLElement)
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Escape' })
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(toggle).toHaveFocus()
+  })
+
+  // Picking an item closes the menu; without handing focus back, it fell to <body>.
+  it('returns focus to the chevron after a pick', () => {
+    render(<ExportButton {...baseProps} incomplete={false} />)
+    const toggle = screen.getByTestId('process-format-toggle')
+    fireEvent.click(toggle)
+    fireEvent.click(screen.getByTestId('process-format-mp3'))
+    expect(toggle).toHaveFocus()
   })
 
   // Music can't ingest FLAC, so with FLAC picked the Apple Music destination must grey
@@ -133,6 +191,53 @@ describe('ExportButton', () => {
     fireEvent.click(btn)
     expect(onCancel).toHaveBeenCalledOnce()
     expect(onProcess).not.toHaveBeenCalled()
+  })
+
+  // The live bar cancels on press, but its name was only the stage ("Converting to
+  // AIFF…") and "Cancel" appeared on mouse hover alone: a keyboard or screen reader user
+  // pressed it not knowing it would stop the job. The name must say so, keep the visible
+  // stage in it, and the "Cancel" swap must also show when the keyboard focus is there.
+  it('names the live bar as a cancel control and shows "Cancel" on keyboard focus too', () => {
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        status="processing"
+        stage="converting"
+        onCancel={vi.fn()}
+      />,
+    )
+    const btn = screen.getByTestId('process-btn')
+    expect(btn).toHaveAccessibleName(
+      i18n.t('export.cancelWhile', {
+        stage: `Converting to AIFF… ${i18n.t('trackList.progress', { percent: 55 })}`,
+      }),
+    )
+    expect(btn).toHaveAccessibleName(/Converting to AIFF…/)
+    expect(screen.getByText(i18n.t('common.cancel')).className).toContain(
+      'group-focus-within:inline',
+    )
+  })
+
+  // The fill is a bare aria-hidden span, so a screen reader heard the stage but never how
+  // far along it was. A button flattens any role inside it, so the amount is in its name.
+  it('speaks the progress of the converting button, live or inert', () => {
+    const percent = i18n.t('trackList.progress', { percent: 55 })
+    const { unmount } = render(
+      <ExportButton {...baseProps} incomplete={false} status="processing" stage="converting" />,
+    )
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName(new RegExp(percent))
+    unmount()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        status="processing"
+        stage="converting"
+        onCancel={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName(new RegExp(percent))
   })
 
   // Without a cancel handler the processing button stays the inert progress bar it was —

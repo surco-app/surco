@@ -1,6 +1,6 @@
 import { Check, ChevronDown } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FORMAT_SETTINGS, OUTPUT_FORMATS } from '../../../shared/outputFormats'
 import type { FormatSetting, OutputFormat, ProcessStage } from '../../../shared/types'
@@ -11,6 +11,14 @@ import type { TrackItem } from '../types'
 import { Tooltip } from './Tooltip'
 
 export const FORMATS = OUTPUT_FORMATS
+
+// The menu's reachable items in order: a disabled pick (Apple Music under FLAC) can't take
+// focus, so the arrows skip it rather than stall on it.
+function menuItemsOf(menu: HTMLElement | null): HTMLElement[] {
+  return Array.from(
+    menu?.querySelectorAll<HTMLElement>('[role="menuitemradio"]:not(:disabled)') ?? [],
+  )
+}
 
 interface ExportButtonProps {
   status: TrackItem['status']
@@ -96,6 +104,14 @@ export function ExportButton({
   // A track missing required tags cannot be converted, so the gate covers the
   // main action and the format menu alike.
   const blocked = processing || incomplete
+  // Missing tags block the convert softly: aria-disabled instead of disabled keeps the
+  // button in the Tab order, so the keyboard can reach it and hear why it won't run.
+  const softBlocked = incomplete && !processing
+  const reasonId = useId()
+  const formatHeadingId = useId()
+  const destinationHeadingId = useId()
+  const toggleRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) return
@@ -105,6 +121,39 @@ export function ExportButton({
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
   }, [open])
+
+  // The same keyboard contract as TrackContextMenu: opening lands focus on the checked
+  // item, and closing hands it back to the chevron. Only when focus was left with nowhere
+  // to go, though: a click outside that closed the menu keeps the focus it just set.
+  useEffect(() => {
+    if (!open) return
+    const items = menuItemsOf(menuRef.current)
+    ;(items.find((el) => el.getAttribute('aria-checked') === 'true') ?? items[0])?.focus()
+    return () => {
+      const at = document.activeElement
+      if (!at || at === document.body) toggleRef.current?.focus()
+    }
+  }, [open])
+
+  function onMenuKeyDown(e: React.KeyboardEvent): void {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      e.stopPropagation()
+      setOpen(false)
+      return
+    }
+    const items = menuItemsOf(menuRef.current)
+    const idx = items.indexOf(document.activeElement as HTMLElement)
+    let next = -1
+    if (e.key === 'ArrowDown') next = idx < items.length - 1 ? idx + 1 : 0
+    else if (e.key === 'ArrowUp') next = idx > 0 ? idx - 1 : items.length - 1
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = items.length - 1
+    if (next === -1 || items.length === 0) return
+    e.preventDefault()
+    e.stopPropagation()
+    items[next].focus()
+  }
 
   // 'source' names no real format, so its display text is the translated setting label
   // ("Same as source") rather than the uppercased extension every real format shows.
@@ -137,6 +186,11 @@ export function ExportButton({
   const label = liveStage
     ? tr(`trackList.stage.${liveStage}`, { format: formatLabel })
     : tr(labelSpec.key, labelSpec.options)
+  // The fill is decorative, and a button flattens any role nested in it, so how far the
+  // export has come is spoken as part of the button's name instead of a progressbar.
+  const progressText = liveStage
+    ? tr('trackList.progress', { percent: Math.round(STAGE_PROGRESS[liveStage] * 100) })
+    : ''
 
   function pick(format: FormatSetting): void {
     setOpen(false)
@@ -162,18 +216,27 @@ export function ExportButton({
         data-testid="process-btn"
         // While converting, a click cancels (when cancellable) rather than firing a second
         // convert; the same button is the progress bar and its own stop control.
-        onClick={cancellable ? onCancel : () => onProcess(outputFormat)}
-        // Cancellable keeps the button live during the convert; otherwise the old block
-        // (missing tags, or a non-cancellable processing state) still disables it.
-        disabled={blocked && !cancellable}
+        onClick={cancellable ? onCancel : softBlocked ? undefined : () => onProcess(outputFormat)}
+        // Cancellable keeps the button live during the convert; a non-cancellable processing
+        // state still disables it outright, and missing tags only mark it aria-disabled.
+        disabled={processing && !cancellable}
+        aria-disabled={softBlocked || undefined}
+        aria-describedby={softBlocked && incompleteReason ? reasonId : undefined}
+        // The visible text is the stage, but pressing cancels: the name says both, keeping
+        // the visible words first so voice control still finds it by what it shows.
+        aria-label={
+          cancellable
+            ? tr('export.cancelWhile', { stage: `${label} ${progressText}`.trim() })
+            : undefined
+        }
         className={
           quiet
-            ? 'press flex-1 rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50'
+            ? 'press flex-1 rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50'
             : liveStage
               ? // The dimmed track + accent fill replace the usual disabled fade: the
                 // button reads as a progress bar, not as a greyed-out control.
                 'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 py-2.5 text-sm font-medium text-[var(--color-on-accent)] disabled:pointer-events-none'
-              : 'press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50'
+              : 'press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50'
         }
       >
         {liveStage && (
@@ -184,12 +247,19 @@ export function ExportButton({
             style={{ width: `${STAGE_PROGRESS[liveStage] * 100}%` }}
           />
         )}
-        {/* Converting: the stage names progress by default, and a hover swaps in "Cancel"
-            so the click's effect is legible before it's made. Without a cancel handler the
-            stage label just stays. */}
-        <span className={`relative ${cancellable ? 'group-hover:hidden' : ''}`}>{label}</span>
+        {/* Converting: the stage names progress by default, and a hover or keyboard focus
+            swaps in "Cancel" so the press's effect is legible before it's made. Without a
+            cancel handler the stage label just stays. */}
+        <span
+          className={`relative ${cancellable ? 'group-hover:hidden group-focus-within:hidden' : ''}`}
+        >
+          {label}
+        </span>
+        {progressText && <span className="sr-only">{progressText}</span>}
         {cancellable && (
-          <span className="relative hidden group-hover:inline">{tr('common.cancel')}</span>
+          <span className="relative hidden group-hover:inline group-focus-within:inline">
+            {tr('common.cancel')}
+          </span>
         )}
       </button>
       <button
@@ -197,6 +267,8 @@ export function ExportButton({
         data-testid="process-format-toggle"
         aria-label={tr('editor.chooseFormat')}
         aria-expanded={open}
+        ref={toggleRef}
+        aria-haspopup="menu"
         onClick={() => setOpen((v) => !v)}
         disabled={blocked}
         className={
@@ -215,50 +287,73 @@ export function ExportButton({
         />
       </button>
       {incomplete && incompleteReason && <Tooltip label={incompleteReason} />}
+      {softBlocked && incompleteReason && (
+        <span id={reasonId} className="sr-only">
+          {incompleteReason}
+        </span>
+      )}
       {open && (
-        <div className="absolute right-0 bottom-full mb-2 w-56 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-lg">
-          <p className="px-3 pt-1 pb-0.5 text-[11px] font-medium tracking-wide text-fg-dim uppercase">
-            {tr('editor.menuFormat')}
-          </p>
-          {/* "Same as source" only means something over several files at once — a single
+        <div
+          ref={menuRef}
+          role="menu"
+          aria-label={tr('editor.chooseFormat')}
+          onKeyDown={onMenuKeyDown}
+          className="absolute right-0 bottom-full mb-2 w-56 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-lg"
+        >
+          <fieldset aria-labelledby={formatHeadingId} className="min-w-0">
+            <p
+              id={formatHeadingId}
+              className="px-3 pt-1 pb-0.5 text-[11px] font-medium tracking-wide text-fg-dim uppercase"
+            >
+              {tr('editor.menuFormat')}
+            </p>
+            {/* "Same as source" only means something over several files at once — a single
               track's own format IS its own format, so resolving it there is equivalent
               and more informative. Offered only when converting a selection (count set). */}
-          {(count !== undefined ? FORMAT_SETTINGS : FORMATS).map((id) => (
-            <button
-              key={id}
-              type="button"
-              data-testid={`process-format-${id}`}
-              aria-current={id === outputFormat ? 'true' : undefined}
-              onClick={() => pick(id)}
-              className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] ${
-                id === outputFormat ? 'font-medium text-[var(--color-accent)]' : ''
-              }`}
+            {(count !== undefined ? FORMAT_SETTINGS : FORMATS).map((id) => (
+              <button
+                key={id}
+                type="button"
+                data-testid={`process-format-${id}`}
+                role="menuitemradio"
+                aria-checked={id === outputFormat}
+                onClick={() => pick(id)}
+                className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] ${
+                  id === outputFormat ? 'font-medium text-[var(--color-accent)]' : ''
+                }`}
+              >
+                {tr(`settings.formats.${id}`)}
+                {id === exportedFormat && (
+                  <Check className="h-3.5 w-3.5 text-good" strokeWidth={2.5} aria-hidden="true" />
+                )}
+              </button>
+            ))}
+          </fieldset>
+          <fieldset aria-labelledby={destinationHeadingId} className="min-w-0">
+            <p
+              id={destinationHeadingId}
+              className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-[11px] font-medium tracking-wide text-fg-dim uppercase"
             >
-              {tr(`settings.formats.${id}`)}
-              {id === exportedFormat && (
-                <Check className="h-3.5 w-3.5 text-good" strokeWidth={2.5} aria-hidden="true" />
-              )}
-            </button>
-          ))}
-          <p className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-[11px] font-medium tracking-wide text-fg-dim uppercase">
-            {tr('editor.menuDestination')}
-          </p>
-          {destinations.map((d) => (
-            <button
-              key={d}
-              type="button"
-              data-testid={`process-destination-${d}`}
-              aria-current={d === destination ? 'true' : undefined}
-              // Music can't ingest FLAC — the same pin the Settings radio applies.
-              disabled={d === 'appleMusic' && outputFormat === 'flac'}
-              onClick={() => pickDestination(d)}
-              className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent ${
-                d === destination ? 'font-medium text-[var(--color-accent)]' : ''
-              }`}
-            >
-              {tr(`settings.destinations.${d}`)}
-            </button>
-          ))}
+              {tr('editor.menuDestination')}
+            </p>
+            {destinations.map((d) => (
+              <button
+                key={d}
+                type="button"
+                data-testid={`process-destination-${d}`}
+                role="menuitemradio"
+                aria-checked={d === destination}
+                // Music can't ingest FLAC — the same pin the Settings radio applies.
+                disabled={d === 'appleMusic' && outputFormat === 'flac'}
+                onClick={() => pickDestination(d)}
+                className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent ${
+                  d === destination ? 'font-medium text-[var(--color-accent)]' : ''
+                }`}
+              >
+                {tr(`settings.destinations.${d}`)}
+              </button>
+            ))}
+          </fieldset>
         </div>
       )}
     </div>

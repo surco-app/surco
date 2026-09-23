@@ -24,7 +24,8 @@
     "seratoHint": "No Serato: coloque o arquivo salvo na sua pasta _Serato_/Subcrates e reinicie o Serato — suas faixas aparecem na barra lateral.",
     "m3uHint": "Uma playlist comum para todo o resto — players, som do carro, outras ferramentas.",
     "unconverted": "{{count}} faixa(s) ainda sem converter — serão exportadas como os arquivos originais.",
-    "failed": "Falha ao exportar: {{error}}"
+    "failed": "Falha ao exportar: {{error}}",
+    "cancelWhile": "{{stage}} Pressione para cancelar"
   },
   "header": {
     "add": "Adicionar arquivos",
@@ -53,7 +54,9 @@
     "autoMatchLabel": "Associar",
     "addToken": "Adicionar token",
     "autoMatchingCount": "Auto-associando… {{done}}/{{total}}",
-    "clearAll": "Limpar a lista"
+    "clearAll": "Limpar a lista",
+    "cancelAutoMatch": "Parar a correspondência automática: as faixas já correspondidas mantêm as tags",
+    "cancelAnalyze": "Parar a análise: as faixas já analisadas mantêm o veredito"
   },
   "sidebar": {
     "dropHint": "Arraste suas faixas para cá.",
@@ -79,7 +82,8 @@
       "silence": "Silêncio a cortar",
       "clipping": "Clipping",
       "trashSuspects_one": "Mover o arquivo duvidoso para a Lixeira",
-      "trashSuspects_other": "Mover os {{count}} arquivos duvidosos para a Lixeira"
+      "trashSuspects_other": "Mover os {{count}} arquivos duvidosos para a Lixeira",
+      "current": "Filtro: {{filter}} {{count}}"
     },
     "search": {
       "placeholder": "Buscar faixas",
@@ -99,7 +103,8 @@
     },
     "position": "Faixa {{current}} de {{total}}",
     "selectedCount_one": "{{count}} selecionada",
-    "selectedCount_other": "{{count}} selecionadas"
+    "selectedCount_other": "{{count}} selecionadas",
+    "positionReveal": "Faixa {{current}} de {{total}}: rolar até ela"
   },
   "empty": {
     "title": "Arraste suas faixas para cá",
@@ -362,7 +367,8 @@
       "remove": "Remover da lista",
       "trash": "Mover para a Lixeira",
       "trashWin": "Mover para a Lixeira"
-    }
+    },
+    "progress": "{{percent}}% concluído"
   },
   "editor": {
     "searchPlaceholder": "Busque nas suas fontes ou cole um release id do Discogs…",
@@ -1338,7 +1344,10 @@
     "appleMusicPlaylists": "Lendo playlists do Apple Music",
     "appleMusicPlaylistTracks": "Lendo a playlist",
     "playlistCount_one": "{{count}} playlist",
-    "playlistCount_other": "{{count}} playlists"
+    "playlistCount_other": "{{count}} playlists",
+    "statusRunning": "Em andamento",
+    "statusDone": "Concluído",
+    "statusError": "Falhou"
   },
   "applePlaylist": {
     "title": "Importar do Apple Music",

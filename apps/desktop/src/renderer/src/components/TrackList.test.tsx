@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // TrackContextMenu reads window.api at render; install a stub before importing it.
@@ -331,6 +331,16 @@ describe('TrackList', () => {
   // A track converted via the Export menu carries its own chosen format; the
   // stage label must show that, not the Settings default, or it lies about what
   // the user picked.
+  // The bar is a bare coloured span, so a screen reader heard the stage but never how far
+  // the conversion had come. The option flattens any role inside it, so the amount is
+  // spoken as text rather than as a nested progressbar.
+  it('speaks how far a processing track has come', () => {
+    renderList([track({ id: 'busy', status: 'processing', stage: 'converting' })])
+    expect(screen.getByRole('option')).toHaveTextContent(
+      i18n.t('trackList.progress', { percent: 55 }),
+    )
+  })
+
   it('labels the stage with the track’s own format over the default', () => {
     renderList([track({ id: 'busy', status: 'processing', stage: 'converting', format: 'mp3' })])
     expect(screen.getByTestId('track-stage')).toHaveTextContent(/MP3/)
@@ -828,5 +838,130 @@ describe('TrackList hover overlays', () => {
     ]
     expect(overlays).toHaveLength(4)
     for (const button of overlays) expect(button).toHaveAttribute('tabindex', '-1')
+  })
+})
+
+describe('TrackList keyboard selection', () => {
+  // Shift+↓ used to fall through to plain "next", collapsing the multi-selection the user
+  // was building: the keyboard had no way to select a range. It must extend from the anchor
+  // to the row below the focused one, exactly like a Shift-click there, and carry the focus
+  // along so the next press keeps growing the range.
+  it('extends the selection from the focused row with Shift and the arrows', () => {
+    const { onSelect } = renderList(
+      [track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })],
+      'a',
+    )
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.keyDown(rows[1], { key: 'ArrowDown', shiftKey: true })
+    expect(onSelect).toHaveBeenCalledWith('c', { shift: true })
+    fireEvent.keyDown(rows[1], { key: 'ArrowUp', shiftKey: true })
+    expect(onSelect).toHaveBeenLastCalledWith('a', { shift: true })
+  })
+
+  // The global handler maps ↓ to "next" and would move the selection a second time,
+  // collapsing the range the row just extended.
+  it('claims the Shift-arrow press so the global next/prev does not also run', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' })], 'a')
+    const event = new KeyboardEvent('keydown', {
+      key: 'ArrowDown',
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    })
+    screen.getAllByTestId('track-row')[0].dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(true)
+  })
+
+  it('stays put at the ends of the list', () => {
+    const { onSelect } = renderList([track({ id: 'a' }), track({ id: 'b' })], 'a')
+    fireEvent.keyDown(screen.getAllByTestId('track-row')[1], { key: 'ArrowDown', shiftKey: true })
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
+  // Plain Space plays the track, so toggling one row in or out of a multi-selection from
+  // the keyboard needs its own chord: ⌘Space / Ctrl+Space, the file-manager convention.
+  it('toggles the focused row in or out of the selection with Cmd/Ctrl+Space', () => {
+    const { onSelect } = renderList([track({ id: 'a' }), track({ id: 'b' })], 'a')
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.keyDown(rows[1], { key: ' ', metaKey: true })
+    expect(onSelect).toHaveBeenCalledWith('b', { meta: true })
+    fireEvent.keyDown(rows[1], { key: ' ', ctrlKey: true })
+    expect(onSelect).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('TrackList error badge', () => {
+  // A failed conversion and unapplied changes were the same hollow ring told apart only by
+  // red versus amber, which a colour-blind user cannot separate. The error has to carry a
+  // glyph of its own, and the pending ring must stay a plain ring.
+  it('marks a failed conversion with an alert glyph, not just a red ring', () => {
+    const edited = track({ id: 'b', status: 'done', meta: { title: 'New title' } })
+    renderList([
+      track({ id: 'a', status: 'error' }),
+      {
+        ...edited,
+        processedSignature: trackSignature({ ...edited, meta: { ...edited.meta, title: 'Old' } }),
+      },
+    ])
+    const [error, stale] = screen.getAllByTestId('track-status-badge')
+    expect(error).toHaveAttribute('data-tone', 'danger')
+    expect(within(error).getByTestId('track-status-error-glyph')).toBeInTheDocument()
+    expect(within(stale).queryByTestId('track-status-error-glyph')).not.toBeInTheDocument()
+  })
+})
+
+describe('TrackList row state for screen readers', () => {
+  // The row's marks are aria-hidden glyphs whose words live only in a hover tooltip, so a
+  // screen reader user heard the title and artist and nothing about a failed conversion, a
+  // doubtful rip, an unread tag or an applied auto-match. The words must be in the name.
+  it('names the conversion, quality, tag-read and auto-match state in the row', () => {
+    renderList([
+      track({
+        id: 'a',
+        status: 'error',
+        metaReadFailed: true,
+        autoMatched: true,
+        inputPath: '/music/a.m4a',
+        spectrum: { image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false },
+      }),
+    ])
+    const name = screen.getByRole('option').textContent
+    expect(name).toContain(i18n.t('trackList.status.error'))
+    expect(name).toContain(i18n.t('editor.qualityBad'))
+    expect(name).toContain(i18n.t('trackList.metaReadFailed'))
+    expect(name).toContain(i18n.t('trackList.autoMatched'))
+  })
+})
+
+describe('TrackList review spark', () => {
+  // A button inside the row's option button is invalid HTML: screen readers flatten the
+  // inner control into the option's name and the accept action is lost. It must be a
+  // sibling of the row, like play and remove.
+  it('keeps the accept-review button outside the row button', () => {
+    renderList([track({ id: 'a', matchReview: true, matchConfidence: 0.7 })])
+    const row = screen.getByTestId('track-row')
+    const spark = screen.getByTestId('track-match-review')
+    expect(row).not.toContainElement(spark)
+    expect(row.parentElement).toContainElement(spark)
+  })
+
+  // The spark glyph is 12px, half the 24px minimum target (WCAG 2.5.8), so accepting a
+  // suggestion took a precise aim. The button grows its hit area, not the glyph.
+  it('gives the accept-review button a 24px hit area around the small glyph', () => {
+    renderList([track({ id: 'a', matchReview: true, matchConfidence: 0.7 })])
+    const spark = screen.getByTestId('track-match-review')
+    expect(spark.className).toMatch(/\bh-6\b/)
+    expect(spark.className).toMatch(/\bw-6\b/)
+  })
+})
+
+describe('TrackList current row', () => {
+  // Several rows can be selected, but only one is open in the editor. Sighted users see it
+  // by its solid fill; a screen reader needs aria-current to tell it from the others.
+  it('marks only the row open in the editor as current', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' })], 'b', ['a', 'b'])
+    const rows = screen.getAllByTestId('track-row')
+    expect(rows[0]).not.toHaveAttribute('aria-current')
+    expect(rows[1]).toHaveAttribute('aria-current', 'true')
   })
 })

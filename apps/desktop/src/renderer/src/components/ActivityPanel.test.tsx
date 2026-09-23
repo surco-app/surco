@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import type React from 'react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import i18n from '../i18n'
 import type { PanelGeometry } from '../lib/panelGeometry'
-import '../i18n'
 import { ActivityPanel } from './ActivityPanel'
 
 // jsdom implements neither PointerEvent nor pointer capture. Aliasing PointerEvent to
@@ -135,5 +136,84 @@ describe('ActivityPanel timer alignment', () => {
     )
     expect(screen.getAllByTestId('activity-chevron-slot')).toHaveLength(3)
     expect(screen.getAllByTestId('activity-url-slot')).toHaveLength(3)
+  })
+})
+
+describe('ActivityPanel accessibility', () => {
+  function renderRows(rows: React.ComponentProps<typeof ActivityPanel>['rows']): void {
+    render(
+      <ActivityPanel
+        rows={rows}
+        onClear={vi.fn()}
+        onClose={vi.fn()}
+        onCopy={vi.fn()}
+        geometry={{ pos: { x: 0, y: 0 }, size: { width: 320, height: 360 } }}
+        onGeometryChange={vi.fn()}
+      />,
+    )
+  }
+
+  // The floating card is a landmark a screen reader user should be able to jump to and
+  // recognise, not an anonymous div at the end of the page.
+  it('is a named region', () => {
+    renderRows([])
+    expect(screen.getByRole('region', { name: i18n.t('activity.title') })).toBe(
+      screen.getByTestId('activity-panel'),
+    )
+  })
+
+  // The spinner, check and alert were aria-hidden glyphs with no words: whether a step
+  // was still running, done or failed was visible only as an icon.
+  it('speaks each step as running, done or failed', () => {
+    renderRows([
+      { id: 'a', kind: 'discogs', status: 'running', label: 'Searching Discogs' },
+      { id: 'b', kind: 'discogs', status: 'done', label: 'Loading release' },
+      { id: 'c', kind: 'cover', status: 'error', label: 'Downloading cover' },
+    ])
+    const rows = screen.getAllByTestId('activity-row')
+    expect(rows[0]).toHaveAccessibleName(new RegExp(i18n.t('activity.statusRunning')))
+    expect(rows[1]).toHaveAccessibleName(new RegExp(i18n.t('activity.statusDone')))
+    expect(rows[2]).toHaveAccessibleName(new RegExp(i18n.t('activity.statusError')))
+  })
+
+  // The rows fold their steps and details away; without aria-expanded nothing said a
+  // row could open or whether it already had.
+  it('marks the expandable rows as collapsed or expanded', () => {
+    renderRows([
+      {
+        id: 'g',
+        kind: 'discogs',
+        status: 'done',
+        label: 'Searching Discogs',
+        children: [{ id: 'g1', kind: 'discogs', status: 'done', label: 'Page 1', detail: 'GET' }],
+      },
+      { id: 'p', kind: 'match', status: 'done', label: 'No match' },
+    ])
+    const [group, plain] = screen.getAllByTestId('activity-row')
+    expect(group).toHaveAttribute('aria-expanded', 'false')
+    expect(plain).not.toHaveAttribute('aria-expanded')
+    fireEvent.click(group)
+    expect(group).toHaveAttribute('aria-expanded', 'true')
+    const child = screen.getByTestId('activity-child')
+    expect(child).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(child)
+    expect(child).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  // The open-in-browser button only faded in on mouse hover, so a keyboard user tabbing
+  // onto it pressed an invisible control.
+  it('shows the open-in-browser button when the keyboard reaches it', () => {
+    renderRows([
+      {
+        id: 'l',
+        kind: 'discogs',
+        status: 'done',
+        label: 'Loading release',
+        url: 'https://www.discogs.com/release/1',
+      },
+    ])
+    const open = screen.getByTestId('activity-open-url')
+    expect(open.className).toContain('focus-visible:opacity-100')
+    expect(open.className).toContain('group-focus-within:opacity-100')
   })
 })

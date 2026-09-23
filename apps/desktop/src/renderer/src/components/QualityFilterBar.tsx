@@ -343,7 +343,10 @@ export function QualityFilterBar({
   const rowClass =
     'flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-panel-2)]'
   const divider = (
-    <hr
+    // A hidden div, not an <hr>: a listbox may own only options, and the divider is
+    // decoration, so it stays out of the accessibility tree.
+    <div
+      aria-hidden="true"
       data-testid="quality-filter-separator"
       className="my-1 border-0 border-t border-[var(--color-line)]"
     />
@@ -412,7 +415,9 @@ export function QualityFilterBar({
           data-testid="quality-filter-trigger"
           aria-haspopup="listbox"
           aria-expanded={open}
-          aria-label={tr('sidebar.filter.label')}
+          // Carries the filter and count it shows: a fixed "Filter" hid which view the list
+          // is in and didn't match the words on screen.
+          aria-label={tr('sidebar.filter.current', { filter: trigger.label, count: trigger.count })}
           onClick={() => setOpen((v) => !v)}
           className="flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs font-medium text-fg-dim outline-none focus:border-[var(--color-accent)]"
         >
@@ -438,6 +443,8 @@ export function QualityFilterBar({
             <div
               ref={listRef}
               role="listbox"
+              // Several buckets (one per axis) can be on at once.
+              aria-multiselectable="true"
               data-testid="quality-filter-listbox"
               aria-label={tr('sidebar.filter.label')}
               onKeyDown={onListKeyDown}
@@ -496,6 +503,11 @@ export function QualityFilterBar({
             type="button"
             data-testid="track-position"
             onClick={onRevealSelected}
+            // Bare digits say neither what they count nor that a press scrolls back to it.
+            aria-label={tr('sidebar.positionReveal', {
+              current: selectedPosition,
+              total: visibleCount,
+            })}
             className="press relative ml-auto self-center rounded pr-0.5 pl-1 text-xs tabular-nums text-fg-faint outline-none hover:text-fg"
           >
             {`${selectedPosition}/${visibleCount}`}
