@@ -756,6 +756,23 @@ describe('TrackList quality badge', () => {
     expect(screen.getByTestId('track-quality')).toHaveAttribute('data-quality', 'transcoded')
   })
 
+  it('shows a possible reprocessing as an amber suspicion, never as the red of a measured defect', () => {
+    renderList([
+      track({
+        id: 'a',
+        inputPath: '/music/a.flac',
+        spectrum: { ...spectrum(16000), processed: true },
+      }),
+      track({ id: 'b', inputPath: '/music/b.flac', spectrum: spectrum(16000) }),
+    ])
+    const [processed, transcoded] = screen.getAllByTestId('track-quality')
+    expect(processed).toHaveAttribute('data-quality', 'processed')
+    expect(processed).toHaveAttribute('data-tone', 'warn')
+    expect(transcoded).toHaveAttribute('data-tone', 'danger')
+    const stripes = screen.getAllByTestId('track-quality-stripe')
+    expect(stripes.map((s) => s.getAttribute('data-tone'))).toEqual(['warn', 'danger'])
+  })
+
   it('flags a moderate shortfall in amber', () => {
     renderList([track({ id: 'a', inputPath: '/music/a.m4a', spectrum: spectrum(18000) })])
     expect(screen.getByTestId('track-quality')).toHaveAttribute('data-quality', 'warn')
