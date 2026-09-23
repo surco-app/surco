@@ -137,6 +137,11 @@ export function ExportButton({
   const label = liveStage
     ? tr(`trackList.stage.${liveStage}`, { format: formatLabel })
     : tr(labelSpec.key, labelSpec.options)
+  // The fill is decorative, and a button flattens any role nested in it, so how far the
+  // export has come is spoken as part of the button's name instead of a progressbar.
+  const progressText = liveStage
+    ? tr('trackList.progress', { percent: Math.round(STAGE_PROGRESS[liveStage] * 100) })
+    : ''
 
   function pick(format: FormatSetting): void {
     setOpen(false)
@@ -168,7 +173,11 @@ export function ExportButton({
         disabled={blocked && !cancellable}
         // The visible text is the stage, but pressing cancels: the name says both, keeping
         // the visible words first so voice control still finds it by what it shows.
-        aria-label={cancellable ? tr('export.cancelWhile', { stage: label }) : undefined}
+        aria-label={
+          cancellable
+            ? tr('export.cancelWhile', { stage: `${label} ${progressText}`.trim() })
+            : undefined
+        }
         className={
           quiet
             ? 'press flex-1 rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50'
@@ -195,6 +204,7 @@ export function ExportButton({
         >
           {label}
         </span>
+        {progressText && <span className="sr-only">{progressText}</span>}
         {cancellable && (
           <span className="relative hidden group-hover:inline group-focus-within:inline">
             {tr('common.cancel')}
