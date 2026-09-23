@@ -1,5 +1,6 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
+import { losesTraktorCues } from '../../../../shared/outputFormats'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { DeclickControls } from '../DeclickControls'
@@ -30,6 +31,7 @@ export function ProcessingTab({ synced, patch }: Props): React.JSX.Element {
         <NormalizeControls
           value={synced.normalize}
           onChange={(n) => patch('normalize', n)}
+          showCueWarning={synced.outputFormat !== 'source' && losesTraktorCues(synced.outputFormat)}
           showHints={synced.showEditorHints}
         />
       </SettingsSection>
