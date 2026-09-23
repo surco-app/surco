@@ -70,7 +70,7 @@ export function SectionHeader({
           aria-label={title}
           aria-expanded={open}
           aria-controls={bodyId}
-          className="-my-1.5 flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left text-xs font-medium uppercase tracking-wide text-fg-dim hover:text-fg-muted"
+          className="-my-1.5 flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left text-[13px] font-semibold text-fg-muted hover:text-fg"
         >
           <ChevronRight
             aria-hidden="true"
@@ -80,8 +80,8 @@ export function SectionHeader({
           {!open && summary && (
             <span
               data-testid={summaryTestId}
-              className={`ml-auto min-w-0 truncate pl-3 font-normal tracking-normal normal-case tabular-nums ${
-                summaryMuted ? 'text-fg-faint' : ''
+              className={`ml-auto min-w-0 truncate pl-3 text-xs font-normal tabular-nums ${
+                summaryMuted ? 'text-fg-faint' : 'text-fg-dim'
               }`}
             >
               {summary}

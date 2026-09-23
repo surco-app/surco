@@ -243,7 +243,7 @@ export function SettingsModal({
             {group.heading && (
               <p
                 role="presentation"
-                className="mt-3 mb-1 px-3 text-[10px] font-medium uppercase tracking-wider text-fg-faint"
+                className="mt-3 mb-1 px-3 text-[11px] font-medium text-fg-faint"
               >
                 {tr(`settings.tabGroups.${group.heading}`)}
               </p>

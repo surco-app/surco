@@ -111,7 +111,7 @@ function Legend({
         className="h-1.5 w-1.5 shrink-0 rounded-full"
         style={{ background: color }}
       />
-      <span className="font-medium uppercase tracking-wider text-fg-dim">{label}</span>
+      <span className="font-medium text-fg-dim">{label}</span>
       {loudness && (
         <span className="truncate tabular-nums text-fg-dim">
           {`${formatDb(loudness.integratedLufs)} LUFS · ${formatDb(loudness.truePeakDb)} dBTP`}
@@ -799,9 +799,7 @@ export function WaveformSolo({
                 className="h-1.5 w-1.5 shrink-0 rounded-full"
                 style={{ background: AFTER_COLOR }}
               />
-              <span className="font-medium uppercase tracking-wider text-fg-dim">
-                {tr('editor.waveformPreview')}
-              </span>
+              <span className="font-medium text-fg-dim">{tr('editor.waveformPreview')}</span>
               <span className="truncate tabular-nums text-fg-dim">
                 {predicted
                   ? `${formatDb(predicted.lufs)} LUFS · ${formatDb(predicted.truePeakDb)} dBTP`
