@@ -35,7 +35,9 @@
     "stats": "Estadísticas",
     "activity": "Actividad",
     "trash": "Originales de Surco",
+    "selectAll": "Seleccionar todo",
     "revealSelected": "Ir a la pista seleccionada",
+    "fillFromName": "Rellenar todo desde el nombre",
     "importingCount": "Leyendo {{done}}/{{total}}",
     "analyzeQuality": "Analizar la calidad de todas las pistas",
     "analyzingCount": "Analizando calidad… {{done}}/{{total}}",
@@ -48,7 +50,8 @@
     "autoMatchNoToken": "Añade un token de Discogs en Ajustes para auto-emparejar",
     "autoMatchLabel": "Emparejar",
     "addToken": "Añadir token",
-    "autoMatchingCount": "Auto-emparejando… {{done}}/{{total}}"
+    "autoMatchingCount": "Auto-emparejando… {{done}}/{{total}}",
+    "clearAll": "Vaciar la lista"
   },
   "sidebar": {
     "dropHint": "Arrastra aquí tus pistas.",

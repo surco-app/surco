@@ -3114,13 +3114,14 @@ describe('App Originals panel', () => {
 })
 
 describe('App list header', () => {
-  // The header keeps what fills and narrows the list; the list-wide tools live in the
-  // Tracks and File menus, the palette and their shortcuts instead of a row of icons.
-  it('leaves select all, fill, find, clear and trash to the menus', async () => {
+  // The menus gained these entries, but the list header is where the user has always found
+  // the list-wide tools, one click away and next to the rows they act on.
+  it('keeps select all, go to selected, fill, find, clear and trash in the header', async () => {
     await renderApp()
     await addTwoTracks()
-    expect(screen.getByTestId('add-files')).toBeInTheDocument()
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
     for (const id of [
+      'add-files',
       'select-all',
       'reveal-selected',
       'fill-all',
@@ -3128,8 +3129,22 @@ describe('App list header', () => {
       'clear-all',
       'trash-selected',
     ]) {
-      expect(screen.queryByTestId(id)).toBeNull()
+      expect(screen.getByTestId(id)).toBeInTheDocument()
     }
+    fireEvent.click(screen.getByTestId('select-all'))
+    for (const row of screen.getAllByTestId('track-row')) {
+      expect(row).toHaveAttribute('aria-selected', 'true')
+    }
+  })
+
+  // The button sends the selection to the OS Trash; with nothing selected a click did
+  // nothing at all, which reads as a broken button rather than an empty selection.
+  it('disables the trash button while nothing is selected', async () => {
+    await renderApp()
+    await addTwoTracks()
+    expect(screen.getByTestId('trash-selected')).toBeEnabled()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    await waitFor(() => expect(screen.getByTestId('trash-selected')).toBeDisabled())
   })
 
   // From the menu the selection goes to the OS Trash after a confirm; with nothing

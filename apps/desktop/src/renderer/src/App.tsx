@@ -1117,13 +1117,15 @@ export default function App(): React.JSX.Element {
   // useStableCallback: one identity for the child's memo, the latest closure for the
   // call — so an inline-style body can still read current state.
   const onAdd = useStableCallback(() => void pickFiles())
-  // The bulk actions (fill, empty) act on the visible (filtered) rows — never the whole
-  // list behind an active filter, and never scoped to the selection: they mirror what's on
-  // screen, so a click can't touch rows the user filtered out of view. Removing only a few
-  // rows is the right-click menu's "Remove from list".
+  const onSelectAllTracks = useStableCallback(selectAll)
+  // The toolbar bulk actions (fill, empty) act on the visible (filtered) rows — never the
+  // whole list behind an active filter, and never scoped to the selection: the toolbar mirrors
+  // what's on screen, so a click can't touch rows the user filtered out of view. Removing only
+  // a few rows is the right-click menu's "Remove from list".
   const onFillAll = useStableCallback(() =>
     askFillAll(bulkTracksRef.current, { fromSelection: selectedTracks.length > 1 }),
   )
+  const onFindReplace = useStableCallback(overlays.openFindReplace)
   const onAnalyzeAll = useStableCallback(() => analyzeAllQuality())
   const onAutoMatchAll = useStableCallback(() => enqueueAutoMatch(bulkTracks))
   const onOpenExport = useStableCallback(overlays.openExport)
@@ -1132,7 +1134,7 @@ export default function App(): React.JSX.Element {
   // them through the same confirmed trash flow as the right-click menu, so a filter narrows what
   // it deletes and a failure per file is still surfaced.
   const onTrashSuspects = useStableCallback(() => askTrash(suspectTracks(visibleTracksRef.current)))
-  // The menu/palette "Move the selection to Trash": the same confirmed flow as the
+  // The toolbar/palette "Move the selection to Trash": the same confirmed flow as the
   // context menu, over the multi-selection or the single selected row.
   const onTrashSelected = useStableCallback(() => askTrash(editScope(selectedTracks, selected)))
   const onOpenPalette = useStableCallback(overlays.openPalette)
@@ -1790,11 +1792,17 @@ export default function App(): React.JSX.Element {
                         toggleSortDir={toggleSortDir}
                         tracks={tracks}
                         visibleTracks={visibleTracks}
+                        selectedId={selectedId}
                         selectedIds={selectedIds}
                         selectedPosition={selectedPosition}
                         onAdd={onAdd}
                         onImportApplePlaylist={isMac ? overlays.openApplePlaylist : undefined}
+                        onSelectAllTracks={onSelectAllTracks}
                         scrollToSelected={scrollToSelected}
+                        onFillAll={onFillAll}
+                        onFindReplace={onFindReplace}
+                        onClearAll={onClearAll}
+                        onTrashSelected={onTrashSelected}
                         onTrashSuspects={onTrashSuspects}
                       />
                       {visibleTracks.length === 0 ? (
