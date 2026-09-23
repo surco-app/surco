@@ -49,6 +49,12 @@ describe('sitemap', () => {
     }
   })
 
+  // Google ignores changefreq and priority and only trusts lastmod while it stays
+  // accurate; dates typed by hand froze in August while the pages kept shipping weekly.
+  it('carries no hand-maintained dates or hints', () => {
+    expect(sitemap).not.toMatch(/<lastmod>|<changefreq>|<priority>/)
+  })
+
   it('points every entry at the canonical host', () => {
     for (const loc of locs(sitemap)) expect(loc.startsWith(`${SITE}/`)).toBe(true)
   })
