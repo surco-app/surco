@@ -1,9 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
-// First-visit language detection for the marketing site. With no saved choice, an
-// English-preferring browser landing on the Spanish default (`/`) is sent to `/en`
-// once. We never redirect away from `/en` (so shared English links are respected) and
-// never override a manual choice the header switch persisted via rememberLanguage.
+// First-visit language suggestion for the marketing site. With no saved choice, an
+// English-preferring browser on a Spanish page is offered the English one. It is an
+// offer, not a redirect: search crawlers render with an English browser, and sending
+// them to /en made every Spanish page look like a redirect. A manual choice persisted
+// via rememberLanguage (switching, or dismissing the offer) silences it for good.
 const KEY = 'surco_lang'
 
 export function rememberLanguage(lang: 'es' | 'en'): void {
@@ -14,17 +15,27 @@ export function rememberLanguage(lang: 'es' | 'en'): void {
   }
 }
 
-export function useAutoLanguage(): void {
+export function suggestsEnglish(saved: string | null, pathname: string, language: string): boolean {
+  if (saved) return false
+  const onSpanish = !pathname.startsWith('/en')
+  const prefersEn = !language.toLowerCase().startsWith('es')
+  return onSpanish && prefersEn
+}
+
+export function useAutoLanguage(): [boolean, () => void] {
+  const [suggest, setSuggest] = useState(false)
   useEffect(() => {
+    let saved: string | null
     try {
-      if (localStorage.getItem(KEY)) return
+      saved = localStorage.getItem(KEY)
     } catch {
       return
     }
-    const onDefault = !window.location.pathname.startsWith('/en')
-    const prefersEn = !navigator.language.toLowerCase().startsWith('es')
-    if (onDefault && prefersEn) {
-      window.location.replace(`/en${window.location.hash}`)
-    }
+    setSuggest(suggestsEnglish(saved, window.location.pathname, navigator.language))
   }, [])
+  const dismiss = () => {
+    rememberLanguage('es')
+    setSuggest(false)
+  }
+  return [suggest, dismiss]
 }
