@@ -13,6 +13,7 @@ import type React from 'react'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatTime } from '../lib/duration'
+import { prefersReducedMotion } from '../lib/motion'
 import type { TrackItem } from '../types'
 import { MarqueeText } from './MarqueeText'
 import { Tooltip } from './Tooltip'
@@ -205,7 +206,9 @@ export function Player({
     const next = el.scrollHeight
     const prev = sectionHeightRef.current
     sectionHeightRef.current = next
-    if (prev === undefined || prev === next) return
+    // Reduced motion has .player-section's transition off, so no transitionend would ever
+    // release a pinned height: swap in one step instead of tweening.
+    if (prev === undefined || prev === next || prefersReducedMotion()) return
     el.style.height = `${prev}px`
     void el.scrollHeight
     el.style.height = `${next}px`
@@ -306,7 +309,7 @@ export function Player({
           Hidden by the toggle, the whole strip is unmounted so its full-file decode never
           runs — the point of the preference. The wrapper clips and animates the height as
           the two layouts swap (see useLayoutEffect). */}
-      <div ref={sectionRef} className="player-section overflow-hidden">
+      <div ref={sectionRef} data-testid="player-section" className="player-section overflow-hidden">
         {showWaveform ? (
           <Waveform
             key={track.inputPath}

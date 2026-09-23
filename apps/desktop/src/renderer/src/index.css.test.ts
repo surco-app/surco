@@ -199,3 +199,39 @@ describe('trim handle focus indicator (WCAG 1.4.11)', () => {
     })
   }
 })
+
+// Motion someone has asked the OS to reduce kept running: every spinner and pulse (they
+// are Tailwind utilities, spread over components that each forgot), the player's height
+// tween that Player.tsx promised was neutralised here, the press scale on nearly every
+// button, and the toast countdown sliding its bar across. Each has to appear inside a
+// reduced-motion block, and the countdown still has to tell time, by fading instead.
+describe('reduced motion', () => {
+  const reduced = [...css.matchAll(/@media \(prefers-reduced-motion: reduce\) \{/g)]
+    .map((m) => {
+      let depth = 0
+      for (let i = (m.index ?? 0) + m[0].length - 1; i < css.length; i++) {
+        if (css[i] === '{') depth++
+        if (css[i] === '}' && --depth === 0) return css.slice(m.index, i + 1)
+      }
+      return ''
+    })
+    .join('\n')
+
+  for (const selector of [
+    '.animate-spin',
+    '.animate-pulse',
+    '.player-section',
+    '.press',
+    '.animate-toast-countdown',
+  ]) {
+    it(`holds ${selector} still`, () => {
+      expect(reduced).toContain(selector)
+    })
+  }
+
+  it('drains the toast countdown by fading rather than sliding', () => {
+    expect(reduced).toMatch(/\.animate-toast-countdown\s*\{[^}]*toast-countdown-fade/)
+    const frames = css.slice(css.indexOf('@keyframes toast-countdown-fade'))
+    expect(frames.slice(0, frames.indexOf('}\n}'))).toContain('opacity')
+  })
+})

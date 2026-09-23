@@ -685,9 +685,9 @@ textarea {
    win. What the setting is actually asking us to drop is MOVEMENT: the travel and the
    scaling, which is what provokes vestibular symptoms.
    So the entrances keep their fade and lose their journey — each one re-declared as its
-   opacity half, matching what .donate-pop already did by hand. Transitions are left alone:
-   they carry colour and opacity almost everywhere here, and the few that move (the seek
-   bar's height, the player's) are small, deliberate and user-initiated. */
+   opacity half, matching what .donate-pop already did by hand. Transitions are mostly left
+   alone: they carry colour and opacity almost everywhere here. The ones that move a box
+   (the player's height tween, the press scale on nearly every button) are dropped below. */
 @media (prefers-reduced-motion: reduce) {
   /* .donate-pop is deliberately absent: it declares its own reduced-motion fallback further
      up, and listing it here too would win on source order and silently override whatever
@@ -706,10 +706,40 @@ textarea {
   }
 
   /* Continuous, non-essential motion stops outright: a spinning disc or a drifting scan band
-     has no state to communicate that its static form doesn't. */
+     has no state to communicate that its static form doesn't. The spinner and pulse are
+     Tailwind utilities used across many components, so they are stopped here once rather
+     than each call site remembering motion-safe. A still loader glyph still says "busy". */
   .spectrum-scan,
-  .animate-top-progress {
+  .animate-top-progress,
+  .animate-spin,
+  .animate-pulse {
     animation: none;
+  }
+
+  /* Movement, not state: the player swaps its layouts in one step (Player.tsx also skips
+     the scripted tween, which would otherwise wait forever for a transitionend) and a
+     pressed button no longer shrinks. */
+  .player-section,
+  .press {
+    transition: none;
+  }
+  .press:active:not(:disabled) {
+    transform: none;
+  }
+
+  /* The countdown still has to tell the time left, so it drains by fading in place instead
+     of sliding its bar across; the inline duration and the forwards fill carry over. */
+  .animate-toast-countdown {
+    animation-name: toast-countdown-fade;
+  }
+}
+
+@keyframes toast-countdown-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 

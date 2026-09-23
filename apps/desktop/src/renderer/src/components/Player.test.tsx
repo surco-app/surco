@@ -30,6 +30,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 // Every render needs a QueryClient in context for the waveform's useQuery; a fresh
@@ -312,6 +313,24 @@ describe('Player', () => {
     for (const key of ['ArrowLeft', 'ArrowRight', 'Home', 'End']) {
       expect(fireEvent.keyDown(bar, { key })).toBe(false)
     }
+  })
+
+  // The height tween between the two layouts is script-driven, so the reduced-motion CSS
+  // cannot stop it, and with the transition off no transitionend ever arrives to release
+  // the pinned height. Under reduced motion the card swaps layouts in one step and keeps
+  // its natural height.
+  it('swaps layouts without pinning a tweened height under reduced motion', () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+    }))
+    let height = 100
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(() => {
+      height += 50
+      return height
+    })
+    const { rerender } = renderUI(<Player {...props({ showWaveform: true })} />)
+    rerender(<Player {...props({ showWaveform: false })} />)
+    expect(screen.getByTestId('player-section').style.height).toBe('')
   })
 
   it('renders the waveform when shown', async () => {
