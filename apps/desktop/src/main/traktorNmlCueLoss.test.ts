@@ -158,4 +158,34 @@ describe('el parche de cues del NML frente a la colección real', () => {
       out.indexOf('<CUE_V2'),
     )
   })
+
+  // Sin árbol en el fichero el desplazamiento sólo puede llegar a la colección, pero sólo a
+  // la ENTRY que describe el fichero convertido: la del origen que se quedó donde estaba
+  // sigue describiendo un audio que nadie recortó.
+  it('no desplaza los cues de la ENTRY del origen cuando la conversión fue a otra parte', () => {
+    const out = applyPatches(ENTRY_WITH_EXTRA_CUES, [
+      {
+        volume: 'Macintosh HD',
+        dir: '/:Musica/:',
+        file: 'uno.aiff',
+        cueShift: { shiftMs: 2000 },
+        outputVolume: 'Macintosh HD',
+        outputDir: '/:Salida/:',
+        outputFile: 'uno.aiff',
+      },
+    ])
+
+    expect(out).toContain('NAME="Intro" DISPL_ORDER="0" TYPE="0" START="1000.000000"')
+  })
+
+  it('desplaza todos los cues de la colección, rejilla incluida, cuando el fichero no trae árbol', () => {
+    const out = applyPatches(ENTRY_WITH_EXTRA_CUES, [
+      { volume: 'Macintosh HD', dir: '/:Musica/:', file: 'uno.aiff', cueShift: { shiftMs: 2000 } },
+    ])
+
+    expect(out).toContain('NAME="Break" DISPL_ORDER="0" TYPE="0" START="43000.000000"')
+    expect(out).toContain('NAME="Intro" DISPL_ORDER="0" TYPE="0" START="0.000000"')
+    expect(out).toMatch(/NAME="AutoGrid"[^>]*TYPE="4"/)
+    expect(out).not.toContain('START="143.380000"')
+  })
 })

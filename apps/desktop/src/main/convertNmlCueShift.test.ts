@@ -61,12 +61,15 @@ function id3WithCue(tree: Uint8Array): Buffer {
 }
 
 let src: string
+let bare: string
 
 beforeAll(() => {
   const wav = join(dir, 's.wav')
   src = join(dir, 's.mp3')
+  bare = join(dir, 'bare.mp3')
   execFileSync(FF, ['-y', '-v', 'error', '-f', 'lavfi', '-i', 'sine=f=440:d=20', wav])
   execFileSync(FF, ['-y', '-v', 'error', '-i', wav, '-c:a', 'libmp3lame', '-b:a', '320k', src])
+  execFileSync(FF, ['-y', '-v', 'error', '-i', wav, '-c:a', 'libmp3lame', '-b:a', '320k', bare])
   writeFileSync(
     src,
     Buffer.concat([
@@ -93,5 +96,35 @@ describe('the collection patch a conversion records', () => {
 
     expect(out).toContain('NAME="Intro" DISPL_ORDER="0" TYPE="0" START="9949.000000"')
     expect(out).toContain('NAME="Break" DISPL_ORDER="0" TYPE="0" START="44949.000000"')
+  })
+
+  // A file Traktor never wrote its cues into is the common case: the DJ set them in the
+  // collection only. The trim moves the audio all the same, so a hotcue left where it was
+  // now points two seconds into the wrong part of the track.
+  it('moves the collection cues when the file carries none of its own', async () => {
+    beginNmlBatch()
+    await convertAudio(
+      bare,
+      bare,
+      'mp3',
+      meta,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { startSec: 2 },
+    )
+    const patches = endNmlBatch()
+    const nml = `<NML VERSION="20"><COLLECTION ENTRIES="1">
+<ENTRY TITLE="T"><LOCATION DIR="${patches[0]?.dir}" FILE="bare.mp3" VOLUME="${patches[0]?.volume}"></LOCATION><CUE_V2 NAME="Drop" DISPL_ORDER="0" TYPE="0" START="10000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="1"></CUE_V2></ENTRY>
+</COLLECTION></NML>`
+
+    expect(applyPatches(nml, patches)).toContain(
+      'NAME="Drop" DISPL_ORDER="0" TYPE="0" START="7949.000000"',
+    )
   })
 })
