@@ -80,7 +80,9 @@ export function ToastStack({
     // container gap: a gap would survive the row collapse and leave an 8px jump the
     // moment the card unmounts. Padding above the topmost card falls outside anything
     // visible, so the stack sits exactly where it always has.
-    <div aria-live="polite" className="fixed bottom-5 right-5 z-50 flex flex-col">
+    // data-above-modals keeps the stack live while a dialog makes the rest of the app
+    // inert: a toast's action (Undo) has to stay pressable with a modal open.
+    <div aria-live="polite" data-above-modals className="fixed bottom-5 right-5 z-50 flex flex-col">
       {cards.map(({ toast, leaving }) => (
         // The card's exit only fades it — the SPACE it held used to vanish at unmount,
         // jumping every surviving toast a full card height in one frame. The grid row

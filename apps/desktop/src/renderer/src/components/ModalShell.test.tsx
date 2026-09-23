@@ -4,8 +4,47 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import { ModalShell } from './ModalShell'
+import { ToastStack } from './ToastStack'
 
 afterEach(cleanup)
+
+describe('ModalShell background', () => {
+  // aria-modal alone leaves the app behind reachable to VoiceOver's cursor and to a mouse
+  // click through a gap: the rest of the window goes inert while the dialog is up. The
+  // toasts stay live (an "Undo" must still be pressable) and so does the shell's own
+  // backdrop, which is how a click outside closes it. Closing hands everything back.
+  it('makes the rest of the app inert while open, except the toasts, and restores it', () => {
+    const shell = (
+      <ModalShell onClose={() => {}} backdropTestId="shell-backdrop" className="w-80">
+        <button type="button">inside</button>
+      </ModalShell>
+    )
+    const { container, rerender } = render(
+      <div>
+        <button type="button" data-testid="behind">
+          behind
+        </button>
+        <ToastStack toasts={[]} onExpire={vi.fn()} onClose={vi.fn()} />
+        {shell}
+      </div>,
+    )
+    const toasts = container.querySelector('[aria-live]') as HTMLElement
+    expect(screen.getByTestId('behind')).toHaveAttribute('inert')
+    expect(toasts).not.toHaveAttribute('inert')
+    expect(screen.getByTestId('shell-backdrop')).not.toHaveAttribute('inert')
+    expect(screen.getByRole('dialog')).not.toHaveAttribute('inert')
+
+    rerender(
+      <div>
+        <button type="button" data-testid="behind">
+          behind
+        </button>
+        <ToastStack toasts={[]} onExpire={vi.fn()} onClose={vi.fn()} />
+      </div>,
+    )
+    expect(screen.getByTestId('behind')).not.toHaveAttribute('inert')
+  })
+})
 
 describe('ModalShell', () => {
   it('names the dialog from the heading it wraps', () => {
