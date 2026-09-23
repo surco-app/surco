@@ -31,7 +31,7 @@ export function PropertiesSection({ item, open, onToggle }: Props): React.JSX.El
       ].join(' · ')
     : ''
   return (
-    <div className="mt-5 border-t border-[var(--color-line)] pt-5">
+    <div className="mt-6 border-t border-[var(--color-line)] pt-6">
       <SectionHeader
         sectionId="properties"
         title={tr('editor.propertiesTitle')}

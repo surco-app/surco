@@ -98,7 +98,7 @@ export function NormalizeSection({
       compareRef.current?.scrollIntoView?.({ block: 'nearest', behavior: scrollBehavior() })
   }, [compare])
   return (
-    <div data-testid="editor-normalize" className="mt-5 border-t border-[var(--color-line)] pt-5">
+    <div data-testid="editor-normalize" className="mt-6 border-t border-[var(--color-line)] pt-6">
       <SectionHeader
         title={tr('normalize.title')}
         open={open}

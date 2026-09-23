@@ -316,7 +316,7 @@ export function QualitySection({
             .join(', ')
         : ''
   return (
-    <div className="mt-5 border-t border-[var(--color-line)] pt-5">
+    <div className="mt-6 border-t border-[var(--color-line)] pt-6">
       <p data-testid="quality-status" role="status" className="sr-only">
         {announcement}
       </p>
