@@ -1,5 +1,6 @@
 import {
   Check,
+  CircleAlert,
   CircleCheck,
   type LucideIcon,
   Music,
@@ -78,7 +79,6 @@ const badgeBase =
 const badgeTone = {
   attention: 'border-warn',
   busy: 'animate-pulse border-[var(--color-accent)]',
-  danger: 'border-danger',
 } as const
 
 function ToneBadge({ tone }: { tone: keyof typeof badgeTone }): React.JSX.Element {
@@ -113,7 +113,23 @@ function StatusBadge({
   // idle is the default for nearly every imported row, so a constant dot says nothing; a clean
   // corner now reads as "not converted yet" and lets the live states stand out.
   if (track.status === 'idle') return null
-  return <ToneBadge tone={track.status === 'processing' ? 'busy' : 'danger'} />
+  if (track.status === 'processing') return <ToneBadge tone="busy" />
+  // A failure gets its own glyph, not just a red ring: the ring alone differed from the
+  // amber "unapplied changes" one only by colour, which colour-blind users can't separate.
+  return (
+    <span
+      data-testid="track-status-badge"
+      data-tone="danger"
+      className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--color-panel)] ring-2 ring-[var(--color-panel)]"
+    >
+      <CircleAlert
+        data-testid="track-status-error-glyph"
+        aria-hidden
+        className="h-3.5 w-3.5 text-danger"
+        strokeWidth={2.5}
+      />
+    </span>
+  )
 }
 
 // The verdicts that actually render a glyph — every TrackQuality except 'unanalyzed',
