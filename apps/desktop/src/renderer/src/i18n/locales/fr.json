@@ -753,7 +753,8 @@
       "gain": "Elle bougera de {{gain}} dB jusqu'à {{lufs}} LUFS avec un gain constant. Ses crêtes resteront à {{peak}} dBTP : le plafond n'agit pas.",
       "gainSub": "Rien n'est limité ni compressé ; la dynamique reste intacte.",
       "peak": "Elle bougera de {{gain}} dB : son échantillon le plus fort sera exactement à {{peak}} dBFS.",
-      "peakSub": "Gain constant, sans limiteur. Elle jouera à environ {{lufs}} LUFS."
+      "peakSub": "Gain constant, sans limiteur. Elle jouera à environ {{lufs}} LUFS.",
+      "mp3Ceiling": "L'encodage MP3 fait un peu monter les crêtes : Surco mesure donc le MP3 et, s'il dépasse {{ceiling}} dBTP, le réencode avec les crêtes tenues plus bas."
     },
     "hideHints": "Masquer ces explications (réactivables dans Réglages → Éditeur)",
     "row": {

@@ -149,7 +149,12 @@ export function NormalizeSection({
             showHints={showHints}
           />
           {!isMulti && showHints && (
-            <NormalizePlan normalize={value} loudness={planLoudness} onDismiss={onHideHints} />
+            <NormalizePlan
+              normalize={value}
+              loudness={planLoudness}
+              format={format}
+              onDismiss={onHideHints}
+            />
           )}
           {!isMulti && !compare && (
             <WaveformSolo
