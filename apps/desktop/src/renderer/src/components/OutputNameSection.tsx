@@ -43,7 +43,7 @@ export function OutputNameSection({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   return (
-    <div className="mt-5 border-t border-[var(--color-line)] pt-5">
+    <div className="mt-6 border-t border-[var(--color-line)] pt-6">
       <SectionHeader
         sectionId="output"
         title={tr('editor.outputName')}

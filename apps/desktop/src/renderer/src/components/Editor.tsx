@@ -960,7 +960,7 @@ export const Editor = memo(function Editor({
       />
 
       <div data-shortcut-scope="editor" className="flex min-w-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 overflow-y-auto p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto p-7">
           {/* The pinned metadata form opens the "File" phase; the mapped sections
               below label "Audio" and "Output" as the group changes down the list. */}
           <SectionGroupHeading
@@ -1324,7 +1324,7 @@ export const Editor = memo(function Editor({
                       ? tr('editor.groupOutput')
                       : tr('editor.groupMetadata')
                 // The heading owns the group's top separator, so the section right
-                // under it drops its own `mt-6 border-t pt-5` (targeted at its root
+                // under it drops its own `mt-6 border-t pt-6` (targeted at its root
                 // div) — otherwise two hairlines stack a few pixels apart.
                 return [
                   <SectionGroupHeading
