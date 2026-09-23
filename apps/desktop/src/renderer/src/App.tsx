@@ -19,6 +19,7 @@ import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
   DeclickMode,
   FormatSetting,
+  MetaTextKey,
   NormalizeConfig,
   OutputFormat,
   SearchProviderId,
@@ -305,7 +306,7 @@ export default function App(): React.JSX.Element {
   // providers above: the sweep applies matches in the background, so it must read the
   // current choice at apply time rather than one captured when the sweep started.
   const importFields = normalizeImportFields(settings?.importFields)
-  const importFieldsRef = useRef<(keyof TrackMetadata)[]>(importFields)
+  const importFieldsRef = useRef<MetaTextKey[]>(importFields)
   importFieldsRef.current = importFields
   // Live title-cleanup settings for the sweep's scorer (the Naming pattern and the
   // user's junk phrases), read at probe time like the providers above.

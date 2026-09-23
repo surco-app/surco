@@ -1,4 +1,10 @@
-import type { BpmResult, KeyNotation, KeyResult, TrackMetadata } from '../../../shared/types'
+import type {
+  BpmResult,
+  KeyNotation,
+  KeyResult,
+  MetaTextKey,
+  TrackMetadata,
+} from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { BULK_FIELDS, commonValue, GENRE_TAGS, GROUPING_TAGS, type TagList } from './bulkEdit'
 import { FIELD_DEFS } from './fields'
@@ -16,7 +22,7 @@ export interface InsertSource {
 // open track and write through setField — so the form itself renders a single tree
 // instead of forking on every field.
 export interface FieldSpec {
-  key: keyof TrackMetadata
+  key: MetaTextKey
   label: string
   value: string
   onChange: (v: string) => void
@@ -43,7 +49,7 @@ export interface FieldSpec {
 // values (year, BPM, key, track numbers, ISRC, the Discogs id) stay out: they'd
 // swallow a pasted title whole. So do the chip-driven genre/grouping and the
 // compilation checkbox.
-const INSERT_TARGET_FIELDS: ReadonlySet<keyof TrackMetadata> = new Set([
+const INSERT_TARGET_FIELDS: ReadonlySet<MetaTextKey> = new Set([
   'title',
   'artist',
   'albumArtist',
@@ -80,8 +86,8 @@ export interface BuildFieldSpecsParams {
   // fresh one every render defeats that memo and re-renders every field on every
   // keystroke. The maps are built once in Editor.tsx (see fieldOnChangeByKey) and
   // reused across renders since setField/onChangeAllMeta are themselves stable.
-  singleOnChange: ReadonlyMap<keyof TrackMetadata, (v: string) => void>
-  bulkOnChange: ReadonlyMap<keyof TrackMetadata, (v: string) => void>
+  singleOnChange: ReadonlyMap<MetaTextKey, (v: string) => void>
+  bulkOnChange: ReadonlyMap<MetaTextKey, (v: string) => void>
   onChangeTracksMeta?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
 }
 
@@ -92,7 +98,7 @@ export interface BuildFieldSpecsParams {
 // selection) but still honours the user's visible-fields setting, so hidden fields
 // don't reappear just because several tracks are selected.
 // The fields whose chips add a tag rather than replace the value.
-function tagListFor(key: keyof TrackMetadata): TagList | undefined {
+function tagListFor(key: MetaTextKey): TagList | undefined {
   if (key === 'grouping') return GROUPING_TAGS
   if (key === 'genre') return GENRE_TAGS
   return undefined

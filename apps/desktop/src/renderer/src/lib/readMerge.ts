@@ -1,4 +1,4 @@
-import type { TrackMetadata } from '../../../shared/types'
+import type { MetaTextKey, TrackMetadata } from '../../../shared/types'
 
 // A slow metadata read (cloud/network folder) can resolve after the user has already
 // typed into the freshly dropped row. The read fills the form, but any field whose live
@@ -10,16 +10,12 @@ export function mergeReadMeta(
   read: TrackMetadata,
 ): TrackMetadata {
   const merged: TrackMetadata = { ...read }
-  for (const key of Object.keys(live) as (keyof TrackMetadata)[]) {
+  for (const key of Object.keys(live) as MetaTextKey[]) {
     if (live[key] !== imported[key]) copyField(merged, live, key)
   }
   return merged
 }
 
-function copyField<K extends keyof TrackMetadata>(
-  into: TrackMetadata,
-  from: TrackMetadata,
-  key: K,
-): void {
+function copyField<K extends MetaTextKey>(into: TrackMetadata, from: TrackMetadata, key: K): void {
   into[key] = from[key]
 }

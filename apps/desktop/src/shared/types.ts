@@ -411,6 +411,11 @@ export interface TrackMetadata {
   discogsUrl?: string
 }
 
+// The metadata fields that hold one text value each: every field of TrackMetadata today.
+// Code that reads or writes a field as a string names its key with this, so a field of
+// another shape can join TrackMetadata without every such site reading it as text.
+export type MetaTextKey = keyof TrackMetadata
+
 // One track's editable state, persisted alongside the session paths so a crash or
 // forced quit never loses metadata the user staged but hadn't converted yet. Keyed
 // by the track's source path in the session file and overlaid onto the fresh file
