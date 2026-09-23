@@ -86,3 +86,22 @@ export function customJob(
     .map((t) => t.name)
   return { custom: customValues(meta, live, fields), strayTags }
 }
+
+// A field's value by key: a managed field's own text, else the custom field of that key.
+export function fieldValue(meta: TrackMetadata, key: string): string {
+  const own = (meta as unknown as Record<string, unknown>)[key]
+  if (typeof own === 'string') return own
+  return meta.custom?.[key] ?? ''
+}
+
+// The track's metadata with every custom field resolved, for anything that reads fields
+// by key off a track: the user's edit, else the tag the file keeps (minus one marked for
+// removal), else empty.
+export function effectiveMeta(
+  track: { meta: TrackMetadata; foreignTags?: ForeignTag[]; foreignRemoved?: string[] },
+  fields: readonly CustomField[],
+): TrackMetadata {
+  if (fields.length === 0) return track.meta
+  const live = (track.foreignTags ?? []).filter((t) => !track.foreignRemoved?.includes(t.name))
+  return { ...track.meta, custom: customValues(track.meta, live, fields) }
+}

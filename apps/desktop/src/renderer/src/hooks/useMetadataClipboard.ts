@@ -1,4 +1,6 @@
 import { useTranslation } from 'react-i18next'
+import { effectiveMeta } from '../../../shared/customFields'
+import type { CustomField } from '../../../shared/types'
 import { revokeDisplacedCovers } from '../lib/coverUrl'
 import { renderOutputName } from '../lib/outputName'
 import type { CopiedTags, TrackItem } from '../types'
@@ -15,6 +17,7 @@ interface Params {
   // The editor's track, whose Settings-pattern name the copy-filename action renders.
   selected: TrackItem | null
   filenameFormat: string
+  customFields: readonly CustomField[]
   recordMetaUndo: (ids: string[], opts?: { cover?: boolean }) => void
   updateTracksMeta: (ids: string[], meta: CopiedTags['meta']) => void
   patchTracks: (ids: string[], patch: Partial<TrackItem>) => void
@@ -40,6 +43,7 @@ export function useMetadataClipboard({
   selectedIds,
   selected,
   filenameFormat,
+  customFields,
   recordMetaUndo,
   updateTracksMeta,
   patchTracks,
@@ -89,7 +93,7 @@ export function useMetadataClipboard({
   // the last segment — the file name, not its directory, is what you search for.
   const onCopyFilename = useStableCallback(() => {
     if (!selected) return
-    const name = renderOutputName(filenameFormat, selected.meta)
+    const name = renderOutputName(filenameFormat, effectiveMeta(selected, customFields))
     if (name) {
       void window.api.copyText(name.split('/').pop() ?? name)
       setNotice(tr('notices.copiedFilename'))

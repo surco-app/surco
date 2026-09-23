@@ -1,3 +1,4 @@
+import { fieldValue } from '../../../shared/customFields'
 import type { MetaTextKey, TrackMetadata } from '../../../shared/types'
 
 interface FieldDef {
@@ -115,7 +116,7 @@ export {
 } from '../../../shared/defaults'
 
 export function missingRequired(meta: TrackMetadata, requiredFields: string[]): string[] {
-  return requiredFields.filter((key) => !meta[key as MetaTextKey]?.trim())
+  return requiredFields.filter((key) => !fieldValue(meta, key).trim())
 }
 
 export function moveItem<T>(arr: T[], index: number, delta: number): T[] {

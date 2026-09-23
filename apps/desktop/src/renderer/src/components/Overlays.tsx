@@ -1,5 +1,6 @@
 import type React from 'react'
 import { lazy, Suspense } from 'react'
+import { effectiveMeta } from '../../../shared/customFields'
 import { formatExtension } from '../../../shared/format'
 import type { FormatSetting, Settings, ThemePref, TrackMetadata } from '../../../shared/types'
 import type { ActiveModal } from '../hooks/useOverlays'
@@ -148,7 +149,7 @@ export function Overlays({
       )}
       {activeModal?.type === 'rename' && selected && (
         <RenameModal
-          meta={selected.meta}
+          meta={effectiveMeta(selected, settings?.customFields ?? [])}
           initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
           extension={formatExtension(
             (editorFormatRef.current !== 'source' ? editorFormatRef.current : undefined) ??

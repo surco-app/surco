@@ -3,6 +3,8 @@ import {
   customKeyProblem,
   customTagName,
   customValues,
+  effectiveMeta,
+  fieldValue,
   isCustomTag,
   suggestCustomKey,
 } from './customFields'
@@ -86,5 +88,38 @@ describe('customValues', () => {
 describe('customTagName', () => {
   it('writes the key upper-cased', () => {
     expect(customTagName('vinylCondition')).toBe('VINYLCONDITION')
+  })
+})
+
+// Filename patterns and the required check name a field by key, so a custom field has to
+// answer through the same lookup as a managed one.
+describe('fieldValue', () => {
+  const meta = { title: 'Song', custom: { vinylCondition: 'VG+' } } as unknown as TrackMetadata
+
+  it('reads a managed field and a custom field by key', () => {
+    expect(fieldValue(meta, 'title')).toBe('Song')
+    expect(fieldValue(meta, 'vinylCondition')).toBe('VG+')
+    expect(fieldValue(meta, 'nothing')).toBe('')
+  })
+})
+
+// A track's custom values are not stored until the user edits them, so anything reading
+// fields off a track resolves them first, from the file where the user has not.
+describe('effectiveMeta', () => {
+  it('fills the custom fields from the file tags the track still keeps', () => {
+    const track = {
+      meta: { title: 'Song' } as TrackMetadata,
+      foreignTags: [
+        { name: 'VINYLCONDITION', value: 'NM' },
+        { name: 'SHOP', value: 'X' },
+      ],
+      foreignRemoved: ['SHOP'],
+    }
+    expect(effectiveMeta(track, [vinyl]).custom).toEqual({ vinylCondition: 'NM' })
+  })
+
+  it('leaves the metadata as it is when there are no custom fields', () => {
+    const meta = { title: 'Song' } as TrackMetadata
+    expect(effectiveMeta({ meta }, [])).toBe(meta)
   })
 })
