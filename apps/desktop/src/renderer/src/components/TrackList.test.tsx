@@ -979,6 +979,13 @@ describe('TrackList backup mark', () => {
     expect(marks[0]).toHaveTextContent(/backup/i)
   })
 
+  // The mark is an undo arrow, which reads as "revert now"; its label has to say the click
+  // leads back to the original (the ellipsis: a panel opens first) so it doesn't surprise.
+  it('names the mark as the way back to the original', () => {
+    renderListWithBackups([track({ id: 'a' })], { '/music/a.wav': Date.now() })
+    expect(screen.getByTestId('track-backup')).toHaveTextContent(/back to the original…/i)
+  })
+
   it('opens the backup when its mark is clicked, instead of only selecting the row', () => {
     const { onOpenBackup, onSelect } = renderListWithBackups([track({ id: 'a' })], {
       '/music/a.wav': Date.now(),
