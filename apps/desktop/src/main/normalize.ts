@@ -172,6 +172,10 @@ export function limitedLoudnormFilter(
     : `${gain},${limiter}`
 }
 
+export function limitsPeaks(filter: string): boolean {
+  return filter.includes('alimiter=')
+}
+
 // Peak mode: a single decode to find the loudest sample.
 export function volumedetectArgs(input: string, prefilter?: string): string[] {
   return [
