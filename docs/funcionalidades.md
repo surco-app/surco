@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 2026-09-23** (v0.100.0). Levantado por primera vez el
+**Última revisión: 23 de septiembre de 2026** (v1.0.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -31,17 +31,40 @@ salida equivalente (`ffmpeg.test.ts:678-713`).
 
 ### Copia sin recodificar
 
-Si el fichero ya está en el formato de destino y no hay filtros activos, el audio
-no se toca: se copian los bytes y solo se reescriben las etiquetas
-(`ffmpeg.ts:769-860`). En APFS es un clon copy-on-write, instantáneo a cualquier
-tamaño (`ffmpeg.ts:1164-1168`).
+Si el fichero ya está en el formato de destino, no hay filtros activos y los
+ajustes de calidad no cambiarían su audio, el audio no se toca: se copian los
+bytes y solo se reescriben las etiquetas (`planConversion`, `ffmpeg.ts:1003-1151`).
+En APFS es un clon copy-on-write, instantáneo a cualquier tamaño.
 
-Consecuencia deliberada: **los ajustes de calidad no se aplican en ese caso**.
-Recodificar un fichero que ya está en el formato solo puede degradarlo
-(`ffmpeg.ts:755-762`, test `ffmpeg.test.ts:484-500`).
+**En WAV, FLAC y AIFF los ajustes de calidad sí se aplican si cambian el audio.**
+Una profundidad o frecuencia fijada que el fichero no cumple, o «Corregido» sobre
+un relleno 16-en-24 probado, recodifican; si el resultado sería idéntico al
+origen, se copia (`keepsSource`, `ffmpeg.ts:1096-1107`). **Un MP3 a MP3 se copia
+siempre**, diga lo que diga el bitrate: recodificar con pérdidas solo degrada
+(`ffmpeg.ts:1044-1046`).
 
-Fuerzan recodificación: normalizar, declick, recorte, el botón de re-encode, y
-cualquier salida ALAC.
+La misma regla decide la etiqueta del botón: «Actualizar etiquetas» solo cuando la
+exportación va a copiar el audio; si algo lo cambia, dice «Convertir»
+(`shared/audioProcessing.ts:11-21`, compartida por main y renderer).
+
+Fuerzan recodificación: normalizar, declick, recorte, los ajustes de calidad que
+cambian el audio, y cualquier salida ALAC.
+
+### «Convertir todo» respeta el formato de cada pista
+
+Convertir varias pistas, o todas, solo impone un formato y un destino si el
+usuario los eligió a mano en el menú del botón. Si no, cada pista resuelve el suyo
+con los ajustes (`resolveJobFormat`, `shared/format.ts:63-89`): antes el formato
+de la pista abierta en el editor se aplicaba al lote entero, y con un MP3 abierto
+los FLAC y WAV de la cola salían en MP3.
+
+### Dos salidas con el mismo nombre no se pisan
+
+Si dos pistas del mismo lote van a acabar en la misma ruta, la segunda se aparta
+con un nombre libre aunque el usuario haya elegido sobrescribir: la ruta ya la
+reservó otra tarea de la tanda y su renombrado caería encima del primero
+(`processTrack.ts:248-263`). El diálogo de conflicto distingue ese caso del de un
+fichero que ya existe en disco.
 
 ### ALAC nunca sobrescribe el original
 
@@ -58,11 +81,15 @@ renderiza un fichero nuevo, incluso en modo sobrescribir
 | Ajuste | Opciones | Por defecto |
 |---|---|---|
 | Bitrate MP3 | 320/256/192/160/128 CBR, V0, V2 | 320 |
-| Profundidad | origen / 16 / 24 | origen |
+| Profundidad | origen / 16 / 24 / corregido | **corregido** |
 | Frecuencia | origen / 44100 / 48000 / corregido | origen |
 | Compresión FLAC | 0 / 5 / 8 | 5 |
 
-Todo por defecto a máxima fidelidad (`ffmpeg.ts:654-661`).
+Todo por defecto a máxima fidelidad (`settings.ts:94-100`): la frecuencia y la
+profundidad del origen, salvo un relleno 16-en-24 probado, que «Corregido» guarda
+como 16 bits. Quien tenía guardado «origen» se migra una vez a «corregido»
+(`migrateBitDepth`, `settings.ts:321-330`), porque «origen» hacía antes lo que hoy
+hace «corregido».
 
 **El ensanchamiento silencioso 16→24.** Sin fijar `-sample_fmt`, los encoders
 FLAC/ALAC eligen su formato más ancho en cuanto el decode o un filtro les entrega
@@ -79,18 +106,19 @@ ancho que reproduce el equipo de DJ real (los CDJ rechazan WAV de 32 bits float)
 ancha (`ffmpeg.ts:816-819`). Un 16→16 sin filtros pasa tal cual: el dither solo
 añadiría ruido.
 
-**«Origen» es la anchura real, no la declarada.** Si la sonda de bits (§4.7)
-prueba que un 24 bits es relleno de 16, la profundidad «origen» escribe 16 bits
-de verdad, y sin dither: los bits que se tiran son ceros, la truncación es sin
-pérdidas (`ffmpeg.ts:913-926`). Un pipeline float, una normalización o un
+**«Corregido» escribe la anchura real; «origen» conserva el contenedor.** Si la
+sonda de bits (§4.7) da un 24 bits por relleno de 16, la profundidad «corregido»
+escribe 16 bits de verdad, y sin dither propio (`ffmpeg.ts:1064-1077`). «Igual que
+el origen» mantiene los 24 bits declarados, relleno incluido: promete la
+profundidad exacta del fichero. Un pipeline float, una normalización o un
 resample siguen ganándose su dither.
 
 **Frecuencia «corregido»: una política por fichero, no un valor fijo.** Solo las
 pistas que Surco mide como upsampleadas desde 44.1 kHz (mismo detector que el
 veredicto, §4.3) se reescriben a 44.1; hi-res confirmado, no verificable y 44.1
 nativo salen intactos. Se resuelve una sola vez por conversión
-(`ffmpeg.ts:1303-1319`) con una sonda ligera (`measureResolution`,
-`ffmpeg.ts:1932`), y la tarjeta «Al convertir» del análisis de calidad avisa en
+(`ffmpeg.ts:1818-1830`) con una sonda ligera (`measureResolution`,
+`ffmpeg.ts:2568`), y la tarjeta «Al convertir» del análisis de calidad avisa en
 la propia pista antes de tocar nada. Solo aplica a recodificaciones, como la
 profundidad.
 
@@ -154,6 +182,20 @@ en vez de quedarse corto, aplica la ganancia completa y limita solo los picos.
 el factor true-peak de la ITU-R BS.1770 — para cazar los picos inter-muestra
 (`normalize.ts:161-174`).
 
+**El fichero escrito se mide contra el techo, en todos los formatos.** El filtro
+deja los picos bajo el techo, pero el fichero final puede pasarlo: el encoder MP3
+los devuelve por encima (0,3 dB a 320 kbps y hasta 1,7 a 128 en la pista de
+referencia), y el limitador, que trabaja a 4× y vuelve a la frecuencia del
+fichero, reconstruye picos entre muestras de hasta 1 dB en ráfagas afiladas. En
+modo loudness Surco mide el true peak del fichero ya codificado y, si pasa del
+techo, lo vuelve a generar con el techo más bajo (si hay limitador) o con menos
+ganancia (si solo había ganancia constante), hasta tres veces, verificando cada
+pasada (`holdUnderCeiling`, `ffmpeg.ts:1622-1671`, llamado en `:1942-1962`).
+Precio honesto: **la pista puede quedar unas décimas por debajo del objetivo**, y
+la tarjeta del plan lo dice (`NormalizePlan.tsx:84-105`, claves
+`normalize.plan.mp3Ceiling` y `limiterCeiling`). Si tras tres pasadas sigue por
+encima, se registra en el log; no se promete un techo absoluto sin excepción.
+
 **Lo que se puede prometer del limitador tiene un límite.** Por debajo de 3 dB de
 overshoot solo rebaja las puntas de los transitorios más afilados y no se oye; por
 encima, la pérdida de pegada es real y la app lo dice en vez de prometer una
@@ -189,13 +231,19 @@ menos de pegada en los golpes más fuertes, que es el trato real de un objetivo
 alto (`NormalizePlan.tsx:45-46`, claves `limitedSubLight` y `limitedSub`).
 
 La predicción es un espejo deliberado del cálculo real del proceso principal —
-mismos clamps, misma prueba de alcanzabilidad (`lib/quality.ts:195-228`).
+mismos clamps, misma prueba de alcanzabilidad (`lib/quality.ts:210-243`). No
+prevé la corrección del techo del párrafo anterior, que depende del fichero
+codificado; por eso la tarjeta avisa de que puede quedar por debajo. Con el
+limitador activo, la previsión deja de estimar rango, dinámica y balance: el
+limitador retiene los pasajes fuertes y ninguna cifra única describe el cambio.
 
 **El lote convierte cada pista con su propio dial.** La normalización y el
 declick que el editor deja puestos fila a fila llegan a la conversión de esa
 pista, no aplanados al valor del lote (`lib/reapply.ts`). El aviso de recodificar
 un MP3 con pérdidas resuelve por el mismo par, para que la conversión y la
-predicción que la anuncia no puedan divergir.
+predicción que la anuncia no puedan divergir. Ese dial por pista (volumen y
+reparación de clics) se guarda con la sesión y sobrevive a cerrar y reabrir la
+app (`main/session.ts`, `lib/sessionEdits.ts`).
 
 **Explicaciones en línea** (`showEditorHints`, activado por defecto):
 `shared/types.ts:231`, `main/settings.ts:78`. Se apagan desde Ajustes → Editor
@@ -206,7 +254,7 @@ ajuste (`NormalizePlan.tsx:59-70`).
 
 ## 4. Análisis de calidad
 
-Tres detectores independientes que se combinan (`ffmpeg.ts:1878-1918`).
+Tres detectores independientes que se combinan (`buildSpectrum`, `ffmpeg.ts:3033-3094`).
 
 ### 4.1 Transcodificación (fake lossless)
 
@@ -243,6 +291,18 @@ de una longitud honesta, y solo lo pagan los que la cabecera no puede decir
 | Acantilado de banda fina | **28 dB** dentro de un kilohercio (`cutoff.ts:76`) | 35,7 dB en el más flojo de 40 encodes reales, contra 19,5 en el máster limpio más empinado |
 | Recuperación | 2 dB | Un lowpass de códec nunca rebota; un notch resonante sí |
 
+**Margen contra el temblor de la medida.** Recortar menos de dos segundos de una
+pista desliza todas las ventanas y el mismo audio lee algo distinto. Medido sobre
+los 283 ficheros que marcó una biblioteca lossless de 6000, cada uno leído en ocho
+rejillas de 0 a 2 s: 12 salían «reprocesado» o «con pérdidas» en unas y limpios en
+otras. Hoy una alarma solo se levanta si la lectura que la decide supera su umbral
+por más de lo que esa lectura tiembla; dentro del margen gana el veredicto que no
+acusa (`cutoff.ts:99-116`): joroba 2,4 dB, rodilla gruesa 2,7, escalón fino 4,5,
+diente de sierra 0,5, y 0,75 dB para la rodilla FFT de `hfShelf`
+(`hfShelf.ts:124-127`). En el barrido de ~600 pistas, las alarmas que cambiaban
+al recortar un segundo pasaron de 9 a 1, sin ninguna nueva en ficheros limpios.
+Los umbrales de la tabla son la base; el umbral efectivo es base más margen.
+
 **Una rodilla gruesa no basta.** Solo se cree si las bandas de 500 Hz confirman el
 muro (`cutoff.ts:215-217`, `:266-269`). Las de 1 kHz son demasiado gruesas para
 distinguir un muro de códec del siseo: promediar un agudo dithery en cubos de
@@ -265,10 +325,11 @@ calificados (`cutoff.test.ts:153-184`).
 
 Una pasada aparte de `hfShelf` caza el muro que el resto difumina: un muro de
 16 kHz (un MP3 de 128–160 re-empaquetado como FLAC) se leía como un taper suave
-de 5 dB y pasaba como bueno (`hfShelf.ts:105-112`). **Solo corre en ficheros
-nativos a 44.1 kHz** (`ffmpeg.ts:2100`), y su rodilla también queda condicionada a
-la confirmación de banda fina (`ffmpeg.ts:2167-2168`). Reporta el borde donde
-ACABA el contenido (`hfShelf.ts:155`): devolver el borde inferior de la última
+de 5 dB y pasaba como bueno (`hfShelf.ts:101-107`). **Solo corre en ficheros
+nativos a 44.1 kHz** (`analyzeShelf`, `ffmpeg.ts:2951-2956`), y su rodilla también
+queda condicionada a la confirmación de banda fina y a que no haya estante plano
+(`ffmpeg.ts:3056-3059`). Reporta el borde donde ACABA el contenido
+(`hfShelf.ts:160`): devolver el borde inferior de la última
 banda sonora leía una banda de menos, y como este pase solo corre a 44.1, la
 misma canción salía «Fuente con pérdidas» en su copia 44.1 y «Good quality» en
 la de 48 (dos copias gemelas reales, corregido el 2026-09-04).
@@ -281,9 +342,16 @@ de caída a 21 kHz sobre ruido blanco plano — su propio rolloff IIR —, errab
 
 ### 4.2 Altos regenerados (enhancer)
 
-Tres firmas distintas: joroba sintética, sierra de banda fina (SBR/HE-AAC) y
-estante plano. Esta última es el umbral más ajustado de todo el sistema: 1.3 dB
-de rango, con ~0.5 dB de margen a cada lado (`hfShelf.ts:30`).
+Dos firmas dan veredicto: joroba y sierra de banda fina (SBR/HE-AAC).
+Las dos salen como **«Posible reprocesado»**, en ámbar: es una sospecha medida,
+no una prueba (`QualitySection.tsx:37-44`).
+
+**El estante plano ya no da veredicto.** La octava alta plana (1,3 dB de rango,
+`hfShelf.ts:30`) saltaba en masters de club muy limitados y en los barridos no
+confirmó ni un solo fichero reprocesado. Hoy es una observación neutra y «no
+concluyente»: «Agudos planos entre 17 y 22 kHz, típico de un limitador o de una
+restauración» (`qualityEvidenceShelf`, `ffmpeg.ts:3049-3050`). Solo el pase de
+códec marca `processed`.
 
 **La sierra exige tres dientes seguidos** por encima de 16,5 kHz, sumando 3 dB o
 más, con cada banda a no más de 55 dB bajo el plateau de 9–11 kHz
@@ -317,9 +385,14 @@ que nadie había analizado:
 | `upsampled` | La energía se derrumba sobre el muro: contenido de 44.1 kHz en un envase hi-res. |
 | `unknown` | Una sonda no se pudo leer, o no hay nada que leer arriba. Se dice en voz alta en vez de disfrazarlo de aprobado. |
 
-La UI enseña las tres primeras respuestas relevantes (`QualitySection.tsx:347-366`,
-claves `qualityUpsampled`, `qualityHiRes`, `qualityResolutionUnknown`); un fichero
-`native` sigue en silencio, porque no afirma nada que verificar.
+La UI enseña las tres respuestas relevantes como una línea neutra, sin color ni
+badge: un upsample no es un defecto, suena igual (`QualitySection.tsx:249-257`,
+`:379-386`, claves `qualityUpsampled`, `qualityHiRes`,
+`qualityResolutionUnknown`). El texto dice lo medido y nada más: «Sin contenido
+por encima de 22 kHz: probablemente reescalado desde 44.1 kHz». Un fichero
+`native` sigue en silencio, porque no afirma nada que verificar. Si el pase de
+corte falla, un fichero de 44.1 sigue siendo `native` y uno de más frecuencia
+queda `unknown`, nunca aprobado (`ffmpeg.ts:3076-3079`).
 
 **Guarda de suelo.** El test de muro compara las dos sondas ENTRE SÍ, lo que asume
 que hay algo arriba que comparar: en un 192 kHz cuyo contenido muere a 20 kHz las
@@ -350,32 +423,53 @@ se detecta**.
 
 Bandas absolutas, no relativas a Nyquist: ~20.5 kHz es lossless, ~18.5–19 la
 clase 192 kbps, ~16 el clásico 128 re-empaquetado. Calificar contra Nyquist
-penalizaba a los ficheros de 48 kHz por el mismo audio (`lib/quality.ts:1-8`).
+penalizaba a los ficheros de 48 kHz por el mismo audio (`lib/quality.ts:4-11`).
+
+**Colores del badge del editor** (`QualitySection.tsx:37-44`, `:322-334`):
+
+| Badge | Color | Cuándo |
+|---|---|---|
+| Buena calidad | verde | sin corte de códec bajo ~19,5 kHz, o contenedor con pérdidas |
+| Dudosa | ámbar | rodilla entre 18 y 19,5 kHz en un contenedor no lossy |
+| Posible reprocesado | ámbar | joroba o sierra medidas (§4.2) |
+| Mala calidad | **rojo** | rodilla por debajo de 18 kHz |
+| Fuente con pérdidas | **rojo** | contenedor lossless con corte de códec (abajo) |
+| Bits rellenados | neutro | relleno 16-en-24 probado (§4.7); no es un defecto |
+
+El rojo queda para lo medido y serio. **Discrepancia pendiente:** la fila de la
+lista pinta todavía «Posible reprocesado» con el octógono y la franja rojos
+(`TrackList.tsx:129-153`); solo el editor y el informe PNG lo tratan como ámbar.
+No escribir en la web que el reprocesado sale en ámbar «en toda la app» hasta que
+la fila se alinee.
 
 El badge «Fuente con pérdidas» (`qualityTranscode`) exige cuatro cosas a la vez:
 contenedor lossless, rodilla confirmada, no procesado, y corte por debajo de
-19,5 kHz (`lib/quality.ts:70-79`). `.m4a` está excluido a propósito porque puede
+19,5 kHz (`lib/quality.ts:71-80`). `.m4a` está excluido a propósito porque puede
 llevar ALAC o AAC — no aparece ni en la lista lossless ni en la lossy
-(`lib/quality.ts:47`, `:57`).
+(`lib/quality.ts:48`, `:58`).
 
 **Un contenedor con pérdidas no se gradúa nunca como defecto.** Un MP3 sale
-siempre `good` (`lib/quality.ts:38`): su corte es el formato, no una tara.
+siempre `good` (`lib/quality.ts:39`): su corte es el formato, no una tara.
 Medirlo contra la línea lossless ponía «Revisar» sobre 320 sanos y enseñaba al
 usuario a desconfiar de ficheros que eran exactamente lo que decían ser
-(`lib/quality.ts:22-28`). Lo que recibe es una leyenda, no un veredicto: «Corte de
-códec en ~X, normal en este formato. Por debajo de ~19 kHz apunta a un bitrate
-más bajo» (`qualityCaptionLossy`, `QualitySection.tsx:134-139`).
+(`lib/quality.ts:23-29`). Lo que recibe es una línea neutra junto al badge verde,
+no un veredicto: «Corte del códec en ~X, normal en un archivo con pérdida»
+(`qualityEvidenceLossy`, `QualitySection.tsx:156-161`, `:220-225`).
 
 Cuidado al redactar la web: **«Fuente con pérdidas» es el badge del fake lossless,
 no el del MP3 sano.** El MP3 sano sale verde.
 
-**El veredicto enseña la medida que lo sostiene.** Bajo la etiqueta va una frase
-con los números medidos y otra que explica por qué esa forma delata al culpable:
-hasta dónde llega la energía, cuánto cae en un kilohercio, cuántos dientes de
-sierra suben donde un espectro natural solo baja, o dónde está el valle que un
-upscaler tapó con una joroba (`QualitySection.tsx:164-222`, claves
-`qualityEvidence*`). Cada detector trae la suya, incluido el caso sano, que
-argumenta que es un fundido y no un acantilado de códec.
+**El veredicto enseña la medida que lo sostiene, y nada más.** Bajo la etiqueta
+va una sola línea con lo medido: dónde está el corte, cuántas subidas hay entre
+qué frecuencias, dónde está el valle y hasta dónde sube la joroba, o la caída
+máxima por kHz del caso sano (`QualitySection.tsx:183-240`, claves
+`qualityEvidence*`). Desde v1.0 los textos se reescribieron para afirmar solo lo
+que el detector mide: desaparecieron las líneas de «por qué» y frases como «donde
+un espectro natural solo baja», «relleno sintético» o «agudos sintéticos». Las
+sospechas dicen «posibles agudos regenerados». Con «Explicaciones en línea»
+apagado queda una línea por hallazgo: se ocultan la línea tranquilizadora del caso
+sano y las líneas didácticas de los bits (`QualitySection.tsx:241-243`, `:400-415`).
+El informe PNG usa las mismas líneas que la sección.
 
 ### 4.5 Métricas de loudness
 
@@ -395,22 +489,27 @@ pintaban de rojo entero mientras Audacity mostraba marcas dispersas
 ### 4.7 Profundidad de bits declarada
 
 Un contenedor sin pérdidas que declara 24 bits se comprueba contra sus propias
-muestras (`analyzeBitsUsage`, `ffmpeg.ts:1978`): se decodifica un minuto a
-`s24le` crudo — sin downmix ni resample, que fabricarían bytes bajos falsos — y
-se cuenta cuántas muestras con contenido usan el byte bajo. La separación medida
-es total: el relleno 16→24 da exactamente 0% y cualquier cadena real de 24 bits
-(interpolación, dither, ruido analógico) da más del 99%; la franja intermedia,
-nunca observada, y un escaneo sin contenido (silencio digital) responden
-«unknown» en voz alta, para que un fichero elegible sin lectura limpia nunca se
-confunda con uno al que el check ni aplica (`ffmpeg.ts:1962-1970`). Solo aplica
+muestras (`analyzeBitsUsage`, `ffmpeg.ts:2624`): se decodifica **el primer
+minuto** a `s24le` crudo (sin downmix ni resample, que fabricarían bytes bajos
+falsos) y se cuenta cuántas muestras con contenido usan el byte bajo. Relleno
+es un uso de hasta el 0,05 %, no «cero en todas las muestras»; real es un 50 % o
+más; en medio, o con menos de 100 000 muestras con contenido, responde «unknown»
+(`ffmpeg.ts:2596-2616`, `:2663-2669`). En una biblioteca de 54 ficheros elegibles
+la separación fue total (0,0 % contra 99,5 %+), pero la franja intermedia existe:
+un WAV de 24 bits con audio de 16 desplazado en ganancia midió 7 %. Solo se mira
+el primer minuto: un fundido final calculado a más anchura no entra en la cuenta. Solo aplica
 a declaraciones enteras de 24 bits: MP3 y float no tienen anchura fija que
 verificar.
 
-En la UI: etiqueta «Padded depth» junto al badge de calidad, nota con la prueba
-aritmética (las líneas didácticas obedecen el toggle de explicaciones) y la
-línea positiva «los 24 bits declarados son reales: N%» y la de «no se pudo
-verificar» solo con las explicaciones activas (claves `qualityBits*`). El resultado viaja en el análisis
-cacheado (namespace v23) y alimenta la profundidad «origen» del convert (§2).
+En la UI: pastilla **neutra** «Bits rellenados» junto al badge de calidad (no es
+un defecto: suena igual) y una línea «Declara 24 bits, pero el audio es de 16 bits
+rellenado». Con explicaciones activas se añaden el porqué («casi ninguna muestra
+usa el byte bajo en el primer minuto») y lo que hará «Corregido»; la línea «El
+byte bajo se usa en el N % del primer minuto: no hay relleno» y la de «no se pudo
+verificar» solo salen con explicaciones (`QualitySection.tsx:330-334`, `:392-415`,
+claves `qualityBits*`). El resultado viaja en el análisis cacheado (namespace
+`spectrogram-mono-v30`, `audioIpc.ts:69`) y alimenta la profundidad «corregido»
+del convert (§2).
 
 ### 4.8 Lo que NO detecta
 
@@ -669,7 +768,10 @@ Meterlo en un átomo freeform escribiría bytes que no lee nadie, ni el propio S
 - **Carátulas en el Finder para FLAC** (opcional, solo macOS): Finder y QuickLook
   nunca leen el bloque PICTURE de FLAC. Anteponer un tag ID3 con la carátula es
   la única forma de conseguir miniatura sin romper la reproducción. Es
-  técnicamente off-spec, y por eso es opt-in (`flacFinderCover.ts:6-13`).
+  técnicamente off-spec, y por eso es opt-in (`flacFinderCover.ts:6-13`). **Con la
+  sincronización de Traktor activa no se aplica**: Traktor no reconoce un FLAC que
+  empieza por ID3 y quita su entrada de la colección al guardar
+  (`ffmpeg.ts:2126-2128`); Ajustes → Carátula lo muestra desactivado.
 - **APIC y GEOB son el mismo tipo para TagLib**, así que reemplazar la carátula
   con el setter genérico borraría los cues de Traktor. Se quita solo APIC
   (`tags.ts:519-524`).
@@ -677,6 +779,8 @@ Meterlo en un átomo freeform escribiría bytes que no lee nadie, ni el propio S
 ### 8.5 Matriz de pérdidas
 
 Actualizada 2026-09-02: dos celdas daban por perdido lo que hoy se escribe.
+Revisada el 2026-09-23 para v1.0: `tags.ts` y `tagFields.ts` no cambiaron desde
+v0.100.0, así que la tabla sigue en vigor.
 
 | Campo | MP3 | AIFF | WAV | FLAC | M4A/ALAC |
 |---|---|---|---|---|---|
@@ -703,12 +807,18 @@ Actualizada 2026-09-02: dos celdas daban por perdido lo que hoy se escribe.
 | Duraciones de pista | Sí | Sí | Sí |
 | Créditos de composición | Sí | No | No |
 | Búsqueda por ISRC | No | No | **Sí** |
-| Requiere token | Opcional | No | No |
+| Requiere token | Opcional (obligatorio para auto-emparejar) | No | No |
 
 **Discogs** funciona sin configurar nada con una clave compartida (60 req/min
 entre todos los usuarios); un token propio da su propio cupo. Las credenciales
 compartidas van en el binario y son extraíbles: el código las trata como públicas
 (`discogs.ts:12-14`).
+
+**Auto-emparejar pide token propio solo si Discogs es una de las fuentes**, para no
+agotar el cupo compartido con un barrido de importación entera; con solo Bandcamp
+y/o Deezer funciona sin token (`shared/autoMatch.ts:8-11`). El tooltip de la pista
+auto-emparejada nombra la fuente real de la que vino, y el buscador dice «Busca en
+tus fuentes o pega un ID de release de Discogs…» en vez de nombrar solo Discogs.
 
 **Bandcamp no tiene API pública.** Se usa el mismo endpoint de autocompletado que
 su buscador y se parsea el JSON incrustado en la página. Ambos son no oficiales y
@@ -751,7 +861,7 @@ puntuaba a cero con ventana fija (`release.ts:117-124`).
 
 **Guarda de corroboración:** una coincidencia solo se aplica sin supervisión si
 hay evidencia independiente del título — duraciones en ambos lados, el artista
-coincidiendo, o el número de catálogo. Sin eso baja a «revisar», porque un
+coincidiendo, o el número de catálogo. Sin eso queda «Por confirmar», porque un
 release sin duraciones puntúa 1.0 solo por el título y los títulos de una palabra
 existen en decenas de discos no relacionados (`release.ts:290-298`).
 
@@ -893,8 +1003,8 @@ celdas por perdidas que hoy se conservan):
 | MP3/AIFF → MP3/AIFF | **Sí** |
 | MP3/AIFF → FLAC | **Sí** (re-armado a basE91) |
 | FLAC → FLAC | **Sí** |
-| **FLAC → MP3/AIFF** | **Sí** (`ffmpeg.ts:1436-1443`) |
-| **Cualquiera → WAV** | **Sí** (`ffmpeg.ts:1400-1409`, `:1487-1490`) |
+| **FLAC → MP3/AIFF** | **Sí** (`ffmpeg.ts:2044-2053`, `:2068-2083`) |
+| **Cualquiera → WAV** | **Sí** (`ffmpeg.ts:1977-2002`, `:2009-2019`) |
 | Cualquiera → **ALAC/M4A** | **No**, a propósito |
 | Con «limpiar metadatos» | **No**, a propósito |
 
@@ -910,8 +1020,13 @@ entera y comprueba que la posición del cue sobrevive
 *«el bug que reportó djotas era una sola celda vacía; enumerar la matriz entera es
 lo que convierte "arreglamos el que reportaron" en "los comprobamos todos"»*.
 
+Revisada el 2026-09-23 para v1.0: las celdas del fichero no cambian. Lo nuevo va
+en la colección (sync del `.nml`, abajo): los hotcues que solo tiene Traktor se
+conservan, y la entrada del original no pierde los suyos cuando la conversión va a
+otra carpeta.
+
 M4A queda fuera porque no tiene ID3 donde escribir, la misma razón por la que la
-ruta ALAC no lleva cues (`ffmpeg.ts:1401-1402`, test `convertCues.test.ts:713-720`).
+ruta ALAC no lleva cues (`ffmpeg.ts:2012-2013`, test `convertCues.test.ts:713-720`).
 
 **Cues de Mixed In Key.** MIK guarda su JSON en base64 dentro de un GEOB
 llamado `CuePoints`; Surco lo traduce al árbol binario de Traktor
@@ -929,7 +1044,25 @@ el recorrido consumiera el buffer exacto hacía que todos leyeran «sin cues»
 
 Apagado por defecto. Cuando se configura la ruta de la colección, actualiza el
 `.nml` real: repunta la ruta si cambió la extensión, reescribe las miniaturas que
-Traktor tiene cacheadas para que redibuje la carátula, y reemplaza los `CUE_V2`.
+Traktor tiene cacheadas para que redibuje la carátula, y escribe los `CUE_V2`
+del fichero convertido.
+
+**Los cues que solo tiene la colección se conservan** (actualizado para v1.0). La
+entrada recibe los cues del fichero y, detrás, los suyos propios que el fichero no
+lleva, movidos igual que se movió el audio: gana el fichero en un slot de hotcue
+que usan los dos, y un cue de memoria se reconoce como del fichero si cae a menos
+de 1 ms de uno del mismo tipo (`collectionOnlyCues`, `traktorNml.ts:277-312`).
+Antes se tiraban los hotcues que solo vivían en Traktor.
+
+**Si el fichero no lleva cues propios, se desplazan los de la colección** con el
+recorte y la calibración (`shiftEntryCues`, `traktorNml.ts:365`).
+
+**La entrada original conserva sus cues si la conversión va a otra carpeta.** El
+árbol leído del convertido solo se escribe en una entrada que describe ese
+fichero: la de la ruta de salida o la que el parche repunta allí. Una entrada que
+sigue apuntando al original, cuyo audio no cambió, se queda con los suyos
+(`patchFor`, `traktorNml.ts:432-440`); si la colección ya tenía una entrada para
+el convertido, recibe ahí sus cues.
 
 **El `COVERARTID` se conserva tal cual lo escribió Traktor.** Borrarlo solo
 devolvía la entrada a la misma caché vieja; lo que hace redibujar la portada es
@@ -989,7 +1122,12 @@ por nombre completo, nunca por subcadena, porque el bundle trae `rekordboxAgent`
 
 **Nunca lanza:** la conversión ya terminó en disco cuando esto corre, así que cada fallo
 devuelve un motivo que el panel de actividad cuenta — omitido por rekordbox abierto, por
-copia fallida, por colección de solo lectura, ilegible o no escribible.
+copia fallida, por colección de solo lectura, ilegible o no escribible. **Y se avisa en
+pantalla**: una colección que no pudo seguir a la tanda (solo lectura, ilegible, escritura
+o copia fallidas) y las pistas que se quedaron en el fichero antiguo por ambigüedad se
+cuentan en un aviso tras la tanda, en el idioma del usuario (`rekordboxFlush.ts`, claves
+`rekordboxIssue.*`). Antes solo iban al registro y la colección se quedaba en el fichero
+viejo como si todo hubiera ido bien. La colección elegida en Ajustes se guarda.
 
 **Ambigüedad resuelta a la contra:** un mismo fichero con dos entradas (el caso de un
 `~/Music/Music` que es enlace simbólico) devuelve un veredicto de ambigüedad y **no elige
@@ -1054,6 +1192,10 @@ nombres cubre casos reales de rips («DJ F.R.A.N.K.» ↔ «DJ. Frank», «A Sev
 El propio código lo califica: **es un indicio, no una garantía**
 (`appleMusicLibrary.ts:288`).
 
+Si la biblioteca de Apple Music o de Engine DJ no se puede leer, un aviso lo dice
+(las pistas no se marcan como incluidas) y se reintenta al volver a la ventana
+(`useLibraryMembership.ts`, claves `libraryCheckFailed*`).
+
 ---
 
 ## 12. La aplicación
@@ -1066,7 +1208,8 @@ escritura atómica.
 Dos comportamientos según lo que esté en juego: una sesión de solo rutas caduca a
 los 6 segundos porque no se pierde nada; **una sesión con ediciones sin aplicar
 no caduca nunca**, porque esas ediciones no existen en ningún otro sitio
-(`useSessionPersistence.ts:61-64`).
+(`useSessionPersistence.ts:61-64`). Desde v1.0 la sesión guarda también el volumen
+y la reparación de clics de cada pista (`main/session.ts`, `lib/sessionEdits.ts`).
 
 ### Reproductor
 
@@ -1103,8 +1246,21 @@ comparación»* (`useDeclickAb.ts:60-67`).
 
 ### Otros
 
-- **37 comandos con atajo rebindable**, con detección de conflictos que bloquea
-  el guardado (`shared/shortcutDefaults.ts:16`).
+- **49 comandos con atajo rebindable**, con detección de conflictos que bloquea
+  el guardado (`shared/shortcutDefaults.ts:24`). Entre ellos ⌘I, que abre la ventana
+  Info con la ficha técnica del archivo (también desde la paleta, el menú de la pista
+  y el menú Archivo).
+- **Errores traducidos:** los errores del proceso principal y los títulos de sus
+  diálogos salen en el idioma del usuario, no en castellano fijo (`main/i18n.ts`).
+- **El editor dice qué hará al convertir.** Recorte, clics y volumen plegados
+  muestran una frase con lo que pasará en la conversión, más su pastilla (corte
+  total, estimación de clics, modo y techo). Tras convertir, un solo enlace ofrece
+  limpiar a la vez el original, los ficheros sustituidos y la copia vieja de Apple
+  Music. El botón dice «Convertir N pistas» («Convertir 1 pista»), y el vocabulario
+  es único en toda la app: Convertir, Actualizar etiquetas (solo cuando se copian
+  los bytes), Volumen, Dudosa, Por confirmar (emparejamiento sin corroborar),
+  Emparejar y Agrupación. Seleccionar todo, rellenar, vaciar y papelera viven
+  también en el menú Pistas.
 - **Cinco idiomas** en la app: español, inglés, alemán, francés y portugués de
   Brasil. Por defecto sigue el idioma del sistema.
 - **Plataformas:** macOS (Apple Silicon e Intel, notarizado), Windows (NSIS) y
@@ -1166,9 +1322,10 @@ Recopilado de los cinco informes. Cada punto está verificado.
     `buildEngineDatabase` existe y está probado, pero solo lo llaman los tests.
 13. **El beatgrid fue eliminado** de la app y se descarta activamente al leer
     sesiones antiguas.
-14. **En el mismo formato, los ajustes de calidad solo se aplican si el fichero
-    no los cumple**; si ya los cumple, solo se actualizan las etiquetas. Un MP3
-    nunca se recodifica a MP3.
+14. **En el mismo formato, los ajustes de calidad solo recodifican si cambian el
+    audio** (WAV, FLAC, AIFF); si el resultado sería idéntico, solo se actualizan
+    las etiquetas. Un MP3 nunca se recodifica a MP3 salvo por un filtro (volumen,
+    clics, recorte), y ALAC siempre se recodifica.
 15. **El limitador no es transparente por encima de 3 dB de overshoot.** Por
     debajo no se oye; por encima la pérdida de pegada es real y la app lo dice.
 16. **El muro poco profundo sobre un suelo ruidoso no se acusa**: se reporta el
@@ -1179,3 +1336,29 @@ Recopilado de los cinco informes. Cada punto está verificado.
     de 16 también lo llena.
 19. **«Corregido» no recupera calidad**: solo quita el relleno probado de un
     upsample; nunca toca lo genuino ni lo dudoso, y solo actúa al recodificar.
+20. **«Reprocesado» no es una certeza.** El badge dice «Posible reprocesado», en
+    ámbar: joroba o sierra medidas, no la prueba de un enhancer. El estante plano
+    de agudos no acusa de nada: es «no concluyente» (típico de un limitador).
+    Rojo solo son «Fuente con pérdidas» y «Mala calidad».
+21. **No decir «relleno sintético», «agudos sintéticos» ni «donde un espectro
+    natural solo baja»** como veredicto: son interpretaciones que la app retiró.
+    Lo que se puede decir es lo medido (dónde cae, cuántas subidas, dónde está el
+    valle).
+22. **Bits: no decir «cero en todas las muestras» ni «prueba aritmética».** El
+    relleno es un uso del byte bajo de hasta el 0,05 % en **el primer minuto**, no
+    en todo el fichero. «Bits rellenados» y «reescalado desde 44.1» son neutros,
+    no defectos: suenan igual.
+23. **«24 bits reales» no es una certeza de captura** (ver 18): la línea dice que
+    el byte bajo se usa en el N % del primer minuto, nada más; un fundido o un
+    resampleo lo llenan igual.
+24. **Un veredicto cerca del umbral no alarma**: dentro del margen de temblor
+    medido gana el veredicto que no acusa. No prometer «detecta todos los fakes»:
+    un fake que queda dentro del margen sale limpio.
+25. **El techo de true peak se verifica en el fichero escrito, pero a cambio la
+    pista puede quedar unas décimas por debajo del objetivo.** No prometer que
+    llega exacta al LUFS pedido con el techo respetado. Solo en modo loudness, y
+    con tres pasadas como máximo.
+26. **Auto-emparejar necesita token de Discogs solo si Discogs es fuente.** No
+    escribir que auto-emparejar exige token siempre.
+27. **Finder covers y Traktor son excluyentes**: con la sincronización de Traktor
+    activa, la carátula de Finder en FLAC no se aplica.
