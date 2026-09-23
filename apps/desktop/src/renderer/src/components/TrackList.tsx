@@ -122,15 +122,23 @@ type RowVerdict = Exclude<TrackQuality, 'unanalyzed'>
 
 // The quality verdict reads as a distinct severity glyph, not a second colored dot, so it
 // can't be mistaken for the round conversion-status light on the cover corner (both share the
-// green/amber/red palette). good stays a quiet check — positive confirmation without
-// shouting — while warn/bad escalate by both shape and color. transcoded (fake lossless)
-// shares bad's red octagon: it's the same "reject" severity, distinguished by its "Fake
-// lossless" tooltip rather than a new colour, so the row palette stays green/amber/red.
+// green/amber/red palette). good stays a quiet check; red is kept for the measured defects
+// (bad, transcoded) and a possible reprocessing is a suspicion, so it takes amber.
+type RowTone = 'good' | 'warn' | 'danger'
+
+const qualityTone: Record<RowVerdict, RowTone> = {
+  good: 'good',
+  warn: 'warn',
+  bad: 'danger',
+  processed: 'warn',
+  transcoded: 'danger',
+}
+
 const qualityIcon: Record<RowVerdict, { Icon: LucideIcon; className: string }> = {
   good: { Icon: CircleCheck, className: 'text-good/70' },
   warn: { Icon: TriangleAlert, className: 'text-warn' },
   bad: { Icon: OctagonAlert, className: 'text-danger' },
-  processed: { Icon: OctagonAlert, className: 'text-danger' },
+  processed: { Icon: TriangleAlert, className: 'text-warn' },
   transcoded: { Icon: OctagonAlert, className: 'text-danger' },
 }
 
@@ -142,15 +150,12 @@ const qualityLabel: Record<RowVerdict, string> = {
   transcoded: 'editor.qualityTranscode',
 }
 
-// The same verdict as a colour stripe down the row's left edge — ambient, scannable severity
-// you read without parsing the small glyph at the right (which stays, for its shape and
-// tooltip). good is deliberately absent: a clean file needs no mark, so only warn/bad/reject
-// paint a stripe and a page of good rows stays calm. transcoded/processed share bad's red.
-const qualityStripe: Partial<Record<RowVerdict, string>> = {
+// The same verdict as a colour stripe down the row's left edge: ambient, scannable severity
+// you read without parsing the small glyph at the right. good is deliberately absent: a clean
+// file needs no mark, so a page of good rows stays calm.
+const stripeClass: Record<Exclude<RowTone, 'good'>, string> = {
   warn: 'bg-warn',
-  bad: 'bg-danger',
-  processed: 'bg-danger',
-  transcoded: 'bg-danger',
+  danger: 'bg-danger',
 }
 
 function QualityMark({
@@ -162,7 +167,12 @@ function QualityMark({
 }): React.JSX.Element {
   const { Icon, className } = qualityIcon[verdict]
   return (
-    <span data-testid="track-quality" data-quality={verdict} className="group/dot relative flex">
+    <span
+      data-testid="track-quality"
+      data-quality={verdict}
+      data-tone={qualityTone[verdict]}
+      className="group/dot relative flex"
+    >
       <Icon aria-hidden className={`h-3 w-3 ${className}`} />
       <Tooltip label={label} align="end" scope="dot" />
     </span>
@@ -371,10 +381,12 @@ const TrackRow = memo(function TrackRow({
         {/* Severity stripe at the left edge: ambient, scannable — a page of rows shows which
             ones want attention before you read a single glyph. Hidden on the primary row,
             whose solid-accent fill already owns that edge. */}
-        {!primary && quality !== 'unanalyzed' && qualityStripe[quality] && (
+        {!primary && quality !== 'unanalyzed' && qualityTone[quality] !== 'good' && (
           <span
             aria-hidden="true"
-            className={`absolute top-1/2 left-0 h-6 w-[3px] -translate-y-1/2 rounded-r-full ${qualityStripe[quality]}`}
+            data-testid="track-quality-stripe"
+            data-tone={qualityTone[quality]}
+            className={`absolute top-1/2 left-0 h-6 w-[3px] -translate-y-1/2 rounded-r-full ${stripeClass[qualityTone[quality] as Exclude<RowTone, 'good'>]}`}
           />
         )}
         {/* The cover doubles as the scan target — DJs recognise a track by its art faster
