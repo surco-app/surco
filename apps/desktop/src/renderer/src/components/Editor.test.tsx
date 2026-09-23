@@ -2358,14 +2358,18 @@ describe('Editor required-field gate', () => {
     expect(screen.getByTestId('process-btn')).toBeEnabled()
   })
 
-  // The disabled button needs a reason: flag the empty required field as invalid
-  // straight away, not only after a (now impossible) failed convert attempt.
-  it('marks an empty required field as invalid before any convert attempt', () => {
+  // The disabled button needs a reason: flag the empty required field straight away,
+  // not only after a (now impossible) failed convert attempt. It is required, not
+  // wrong, so it is announced as required and described, never as an invalid entry.
+  it('marks an empty required field before any convert attempt', () => {
     renderEditor({ id: 'a', status: 'idle', meta: { artist: '' } }, 'wav', {
       requiredFields: ['artist'],
       visibleFields: ['artist'],
     })
-    expect(screen.getByTestId('field-artist')).toHaveAttribute('aria-invalid', 'true')
+    const field = screen.getByTestId('field-artist')
+    expect(screen.getByTestId('field-required-artist')).toBeInTheDocument()
+    expect(field).toHaveAttribute('aria-required', 'true')
+    expect(field).toHaveAccessibleDescription('Required: fill it in before converting')
   })
 })
 
