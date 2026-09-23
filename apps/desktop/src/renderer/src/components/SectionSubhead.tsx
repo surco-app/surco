@@ -7,8 +7,9 @@ import type React from 'react'
 // must draw from a single source so the family never drifts apart again.
 export const SECTION_SUBHEAD = 'text-[10px] font-medium uppercase tracking-wider text-fg-dim'
 
-// Renders the caption as a text span; callers pass className for the layout-specific
-// wrapping (a flex row with a stepper, a grid col-span) that differs per site.
+// Renders the caption as an h4, one level under the section's own h3 header, so it shows
+// in a screen reader's outline; callers pass className for the layout-specific wrapping (a
+// flex row with a stepper, a grid col-span) that differs per site.
 export function SectionSubhead({
   children,
   className = '',
@@ -16,5 +17,5 @@ export function SectionSubhead({
   children: React.ReactNode
   className?: string
 }): React.JSX.Element {
-  return <span className={`${SECTION_SUBHEAD} ${className}`}>{children}</span>
+  return <h4 className={`${SECTION_SUBHEAD} ${className}`}>{children}</h4>
 }

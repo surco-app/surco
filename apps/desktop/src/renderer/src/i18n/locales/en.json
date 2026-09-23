@@ -396,7 +396,8 @@
     "coverRemove": "Remove artwork",
     "coverPrev": "Previous image",
     "coverNext": "Next image",
-    "ratingStars": "{{count}} stars",
+    "ratingStars_one": "{{count}} star",
+    "ratingStars_other": "{{count}} stars",
     "propertiesTitle": "Properties",
     "propertiesGroupAudio": "Audio",
     "propertiesGroupFile": "File",
@@ -610,7 +611,15 @@
     "loudnessRangeNoise": "Good: -45 dB or lower.",
     "loudnessFixNoise": "Not fixable here: Surco does not denoise. It comes from the source or the capture.",
     "loudnessAfterHeader": "now → after converting",
-    "replaceMusic": "Replace with {{format}} + Apple Music"
+    "replaceMusic": "Replace with {{format}} + Apple Music",
+    "requiredEmpty": "Required: fill it in before converting",
+    "coverMixed": "The selected tracks have different artwork",
+    "coverLowRes": "Low resolution",
+    "coverPosition": "Image {{position}} of {{total}}",
+    "coverPositionNone": "None of the {{total}} images picked",
+    "searching": "Searching…",
+    "resultsCount_one": "{{count}} result",
+    "resultsCount_other": "{{count}} results"
   },
   "fields": {
     "groupFilled_one": "{{count}} filled",
@@ -650,7 +659,14 @@
     "country": "Country",
     "mediaType": "Media type",
     "discogsUrl": "Discogs URL",
-    "suggestionsMore": "Show {{count}} more"
+    "suggestionsMore": "Show {{count}} more",
+    "rowAutoFill": "Fill {{name}} automatically",
+    "rowRequired": "{{name}} required",
+    "rowMoveUp": "Move {{name}} up",
+    "rowMoveDown": "Move {{name}} down",
+    "rowHide": "Hide {{name}}",
+    "rowShow": "Show {{name}}",
+    "rowToken": "Internal name {{token}}"
   },
   "declick": {
     "cueWarning": "ALAC does not keep Traktor cues or the beatgrid: converting loses them.",
@@ -1200,7 +1216,8 @@
     "unassigned": "Unassigned",
     "apply": "Apply to {{count}}",
     "suggested": "Suggested match",
-    "applied": "Applied"
+    "applied": "Applied",
+    "toConfirm": "Match to confirm"
   },
   "findReplace": {
     "title": "Find & Replace",

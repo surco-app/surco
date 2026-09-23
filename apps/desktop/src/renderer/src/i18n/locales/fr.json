@@ -396,7 +396,8 @@
     "coverRemove": "Retirer la pochette",
     "coverPrev": "Image précédente",
     "coverNext": "Image suivante",
-    "ratingStars": "{{count}} étoiles",
+    "ratingStars_one": "{{count}} étoile",
+    "ratingStars_other": "{{count}} étoiles",
     "propertiesTitle": "Propriétés",
     "propertiesGroupAudio": "Audio",
     "propertiesGroupFile": "Fichier",
@@ -610,7 +611,15 @@
     "loudnessRangeNoise": "Bon : -45 dB ou moins.",
     "loudnessFixNoise": "Non corrigible ici : Surco ne débruite pas. Cela vient de la source ou de la captation.",
     "loudnessAfterHeader": "avant → après conversion",
-    "replaceMusic": "Remplacer par {{format}} + Apple Music"
+    "replaceMusic": "Remplacer par {{format}} + Apple Music",
+    "requiredEmpty": "Obligatoire : à remplir avant la conversion",
+    "coverMixed": "Les pistes sélectionnées ont des pochettes différentes",
+    "coverLowRes": "Basse résolution",
+    "coverPosition": "Image {{position}} sur {{total}}",
+    "coverPositionNone": "Aucune des {{total}} images choisie",
+    "searching": "Recherche en cours…",
+    "resultsCount_one": "{{count}} résultat",
+    "resultsCount_other": "{{count}} résultats"
   },
   "fields": {
     "groupFilled_one": "{{count}} rempli",
@@ -650,7 +659,14 @@
     "country": "Pays",
     "mediaType": "Type de support",
     "discogsUrl": "URL Discogs",
-    "suggestionsMore": "Afficher {{count}} de plus"
+    "suggestionsMore": "Afficher {{count}} de plus",
+    "rowAutoFill": "Remplir {{name}} automatiquement",
+    "rowRequired": "{{name}} obligatoire",
+    "rowMoveUp": "Monter {{name}}",
+    "rowMoveDown": "Descendre {{name}}",
+    "rowHide": "Masquer {{name}}",
+    "rowShow": "Afficher {{name}}",
+    "rowToken": "Nom interne {{token}}"
   },
   "declick": {
     "cueWarning": "ALAC ne conserve ni les cues ni le beatgrid de Traktor : la conversion les perd.",
@@ -1200,7 +1216,8 @@
     "unassigned": "Non assigné",
     "apply": "Appliquer à {{count}}",
     "suggested": "Correspondance suggérée",
-    "applied": "Appliqué"
+    "applied": "Appliqué",
+    "toConfirm": "Correspondance à confirmer"
   },
   "findReplace": {
     "title": "Rechercher et remplacer",

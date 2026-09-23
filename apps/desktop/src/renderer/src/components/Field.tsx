@@ -1,5 +1,6 @@
 import type React from 'react'
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useId, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { TagList } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
@@ -18,7 +19,12 @@ interface FieldProps {
   value: string
   onChange: (v: string) => void
   wide?: boolean
+  required?: boolean
+  // Required and still empty: drawn as the amber dot, read out as a description.
   invalid?: boolean
+  // The selection's tracks disagree: described in words, since the placeholder saying so
+  // is dropped by screen readers once the field has focus.
+  mixed?: boolean
   placeholder?: string
   suggestions?: string[]
   tagList?: TagList
@@ -39,7 +45,9 @@ export const Field = memo(function Field({
   value,
   onChange,
   wide,
+  required,
   invalid,
+  mixed,
   placeholder,
   suggestions,
   tagList,
@@ -49,6 +57,12 @@ export const Field = memo(function Field({
   formatResult,
 }: FieldProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
+  const { t: tr } = useTranslation()
+  const inputId = useId()
+  const requiredNoteId = useId()
+  const mixedNoteId = useId()
+  const describedBy =
+    [invalid && requiredNoteId, mixed && mixedNoteId].filter(Boolean).join(' ') || undefined
   // The text the input shows while the user types, kept local so a keystroke doesn't
   // touch the global track array (and its O(n) pipeline) until they pause or leave.
   const [draft, setDraft] = useState(value)
@@ -114,8 +128,13 @@ export const Field = memo(function Field({
     insertSources !== undefined &&
     (insertable.length > 0 || draft.trim() !== '' || !!cleanResult || !!formatResult)
   return (
-    <label className={`group block ${wide ? 'col-span-1 @[26rem]:col-span-2' : ''}`}>
-      <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-fg-dim">
+    // A wrapping <label> would fold the { } menu button and every chip into the input's
+    // accessible name, so the label points at the input by id and the rest sits beside it.
+    <div className={`group block ${wide ? 'col-span-1 @[26rem]:col-span-2' : ''}`}>
+      <label
+        htmlFor={inputId}
+        className="mb-1 flex items-center gap-1.5 text-xs font-medium text-fg-dim"
+      >
         {label}
         {/* A required field that's still empty isn't an error the user made — it's a
             calm "you'll need this before converting" cue. Reserve danger-red for true
@@ -127,12 +146,16 @@ export const Field = memo(function Field({
             className="h-1.5 w-1.5 rounded-full bg-warn"
           />
         )}
-      </span>
+      </label>
       <span className="relative block">
         <input
           ref={inputRef}
+          id={inputId}
           data-testid={`field-${name}`}
-          aria-invalid={invalid}
+          // Empty-but-required is not a wrong entry, so it isn't aria-invalid: the field
+          // says it is required and, while empty, describes why the dot is there.
+          aria-required={required || undefined}
+          aria-describedby={describedBy}
           value={draft}
           placeholder={placeholder}
           onChange={(e) => onType(e.target.value)}
@@ -159,6 +182,16 @@ export const Field = memo(function Field({
           />
         )}
       </span>
+      {invalid && (
+        <span id={requiredNoteId} className="sr-only">
+          {tr('editor.requiredEmpty')}
+        </span>
+      )}
+      {mixed && (
+        <span id={mixedNoteId} className="sr-only">
+          {tr('editor.multipleValues')}
+        </span>
+      )}
       {/* Detecting the audio suggestion (BPM/Key): a placeholder chip in the exact shape
           of the real one, so the detected value swaps in without popping into empty space.
           Drops out the moment a real suggestion arrives (or the probe fails → no chip). */}
@@ -180,6 +213,6 @@ export const Field = memo(function Field({
           }
         />
       )}
-    </label>
+    </div>
   )
 })

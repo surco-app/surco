@@ -90,8 +90,7 @@ describe('DiscogsPanel empty states', () => {
   it('shows the no-results placeholder when a search settled with zero rows', () => {
     renderPanel(browser({ query: 'zzz no such album', noResults: true }))
 
-    expect(screen.getByTestId('discogs-no-results')).toBeInTheDocument()
-    expect(screen.getByText(/no albums matched/i)).toBeInTheDocument()
+    expect(screen.getByTestId('discogs-no-results')).toHaveTextContent(/no albums matched/i)
     expect(screen.queryByText(/choose an album/i)).not.toBeInTheDocument()
   })
 
@@ -102,6 +101,109 @@ describe('DiscogsPanel empty states', () => {
 
     expect(screen.getByText(/choose an album/i)).toBeInTheDocument()
     expect(screen.queryByTestId('discogs-no-results')).not.toBeInTheDocument()
+  })
+})
+
+// A screen reader user pressing Enter in the search box heard nothing afterwards: the
+// spinner is an icon, the skeleton is hidden and the rows just appear. A status region,
+// mounted empty before any search so assistive tech is already listening, says each step,
+// and an error interrupts as an alert.
+describe('DiscogsPanel search announcements', () => {
+  const results = [
+    { provider: 'discogs', id: 1, title: 'Uno' },
+    { provider: 'discogs', id: 2, title: 'Dos' },
+  ] as unknown as DiscogsBrowser['results']
+
+  it('keeps an empty status region mounted before any search', () => {
+    renderPanel(browser({}))
+    const status = screen.getByTestId('discogs-status')
+    expect(status).toHaveAttribute('role', 'status')
+    expect(status).toBeEmptyDOMElement()
+  })
+
+  it('says it is searching, then how many results arrived', () => {
+    const { rerender } = renderPanel(browser({ query: 'uno', busy: true }))
+    const status = screen.getByTestId('discogs-status')
+    expect(status).toHaveTextContent('Searching…')
+    rerender(panel(browser({ query: 'uno', results })))
+    expect(screen.getByTestId('discogs-status')).toBe(status)
+    expect(status).toHaveTextContent('2 results')
+  })
+
+  it('says a search came up empty', () => {
+    renderPanel(browser({ query: 'zzz', noResults: true }))
+    expect(screen.getByTestId('discogs-status')).toHaveTextContent(/no albums matched/i)
+  })
+
+  it('does not call opening a release a search', () => {
+    renderPanel(browser({ query: 'uno', results, busy: true, loading: true }))
+    expect(screen.getByTestId('discogs-status')).toHaveTextContent('2 results')
+  })
+
+  it('announces a failed search as an alert', () => {
+    renderPanel(browser({ query: 'uno', error: 'Discogs refused the token' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Discogs refused the token')
+  })
+})
+
+// The sparkle marks were painted in accent or amber with their word only in a hover
+// tooltip, so a screen reader met a bare row and a colour-blind user saw two identical
+// marks. The words ride along as text: which result is suggested, and on the track,
+// whether the match is confident or still needs confirming.
+describe('DiscogsPanel suggestion marks', () => {
+  const results = [
+    { provider: 'discogs', id: 1, title: 'Uno' },
+    { provider: 'discogs', id: 2, title: 'Dos' },
+  ] as unknown as DiscogsBrowser['results']
+  const release = {
+    provider: 'discogs' as const,
+    id: 1,
+    title: 'Uno',
+    artists: [],
+    tracklist: [
+      { position: '1', title: 'Cara A' },
+      { position: '2', title: 'Cara B' },
+    ],
+  }
+
+  function renderMatched(matchTier: 'high' | 'review') {
+    render(
+      <DiscogsPanel
+        browser={browser({
+          results,
+          openKey: 'discogs:1',
+          suggestedKey: 'discogs:1',
+          release,
+        })}
+        matchedTrack={release.tracklist[1]}
+        matchTier={matchTier}
+        appliedTrack={undefined}
+        hasToken={true}
+        isMulti={false}
+        selectedTracks={undefined}
+        onApplyMatches={undefined}
+        selectTrack={vi.fn()}
+        searchInputRef={createRef<HTMLInputElement>()}
+        formatFilter={[]}
+        resultsWidth={315}
+        onResultsWidthChange={vi.fn()}
+      />,
+    )
+  }
+
+  it('names the suggested release in its row', () => {
+    renderMatched('high')
+    const [first, second] = screen.getAllByTestId('discogs-result')
+    expect(first).toHaveAccessibleName(/suggested/i)
+    expect(second).not.toHaveAccessibleName(/suggested/i)
+  })
+
+  it('tells a confident track match from one to confirm', () => {
+    renderMatched('high')
+    expect(screen.getByTestId('track-confidence')).toHaveAccessibleName('Suggested')
+    cleanup()
+    renderMatched('review')
+    expect(screen.getByTestId('track-confidence')).toHaveAccessibleName('Match to confirm')
   })
 })
 

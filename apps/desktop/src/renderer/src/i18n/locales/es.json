@@ -396,7 +396,8 @@
     "coverRemove": "Quitar carátula",
     "coverPrev": "Imagen anterior",
     "coverNext": "Imagen siguiente",
-    "ratingStars": "{{count}} estrellas",
+    "ratingStars_one": "{{count}} estrella",
+    "ratingStars_other": "{{count}} estrellas",
     "propertiesTitle": "Propiedades",
     "propertiesGroupAudio": "Audio",
     "propertiesGroupFile": "Archivo",
@@ -610,7 +611,15 @@
     "loudnessRangeNoise": "Bueno: -45 dB o menos.",
     "loudnessFixNoise": "No se puede corregir aquí: Surco no elimina ruido. Viene del origen o de la captura.",
     "loudnessAfterHeader": "ahora → tras convertir",
-    "replaceMusic": "Sustituir por {{format}} + Apple Music"
+    "replaceMusic": "Sustituir por {{format}} + Apple Music",
+    "requiredEmpty": "Obligatorio: rellénalo antes de convertir",
+    "coverMixed": "Las pistas seleccionadas tienen carátulas distintas",
+    "coverLowRes": "Baja resolución",
+    "coverPosition": "Imagen {{position}} de {{total}}",
+    "coverPositionNone": "Ninguna de las {{total}} imágenes elegida",
+    "searching": "Buscando…",
+    "resultsCount_one": "{{count}} resultado",
+    "resultsCount_other": "{{count}} resultados"
   },
   "fields": {
     "groupFilled_one": "{{count}} con datos",
@@ -650,7 +659,14 @@
     "country": "País",
     "mediaType": "Tipo de medio",
     "discogsUrl": "URL de Discogs",
-    "suggestionsMore": "Mostrar {{count}} más"
+    "suggestionsMore": "Mostrar {{count}} más",
+    "rowAutoFill": "Rellenar {{name}} automáticamente",
+    "rowRequired": "{{name}} obligatorio",
+    "rowMoveUp": "Subir {{name}}",
+    "rowMoveDown": "Bajar {{name}}",
+    "rowHide": "Ocultar {{name}}",
+    "rowShow": "Mostrar {{name}}",
+    "rowToken": "Nombre interno {{token}}"
   },
   "declick": {
     "cueWarning": "ALAC no guarda los cues ni el beatgrid de Traktor: se pierden al convertir.",
@@ -1200,7 +1216,8 @@
     "unassigned": "Sin asignar",
     "apply": "Aplicar a {{count}}",
     "suggested": "Coincidencia sugerida",
-    "applied": "Aplicado"
+    "applied": "Aplicado",
+    "toConfirm": "Coincidencia por confirmar"
   },
   "findReplace": {
     "title": "Buscar y reemplazar",

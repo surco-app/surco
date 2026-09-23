@@ -4,7 +4,9 @@ import { cleanup, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import '../i18n'
+import { SectionGroupHeading } from './SectionGroupHeading'
 import { SectionHeader } from './SectionHeader'
+import { SectionSubhead } from './SectionSubhead'
 
 afterEach(cleanup)
 
@@ -83,5 +85,27 @@ describe('SectionHeader folded row', () => {
     header({ open: true })
     expect(screen.getByTestId('pill')).toBeInTheDocument()
     expect(screen.getByTestId('section-help')).toBeInTheDocument()
+  })
+})
+
+// The editor is a long single scroll of phases, sections and captions that only looked
+// like headings, so a screen reader's heading list (the way its users skim a page) was
+// empty and every section had to be found by tabbing. Phase, section and caption now sit
+// at levels 2, 3 and 4, so the outline mirrors what the eye sees.
+describe('editor heading outline', () => {
+  it('makes each section toggle a level-3 heading named by its title', () => {
+    render(<SectionHeader title="TRIM" open={false} onToggle={() => {}} summary="Off" />)
+    const heading = screen.getByRole('heading', { level: 3, name: /^TRIM/ })
+    expect(heading).toContainElement(screen.getByRole('button', { name: 'TRIM' }))
+  })
+
+  it('makes each phase label a level-2 heading', () => {
+    render(<SectionGroupHeading label="Audio" testid="group-audio" />)
+    expect(screen.getByRole('heading', { level: 2, name: 'Audio' })).toBeInTheDocument()
+  })
+
+  it('makes each caption inside a section a level-4 heading', () => {
+    render(<SectionSubhead>Loudness</SectionSubhead>)
+    expect(screen.getByRole('heading', { level: 4, name: 'Loudness' })).toBeInTheDocument()
   })
 })

@@ -9,7 +9,7 @@ import {
   X,
 } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Release } from '../../../shared/types'
 import { useWindowFocus } from '../hooks/useWindowFocus'
@@ -99,6 +99,11 @@ export function CoverPicker({
       ? selectedTracks[0].coverUrl
       : undefined
   const displayCover = isMulti ? sharedCover : item.coverUrl
+  // Tracks that carry different artwork show the same empty well as tracks with none, so
+  // the pick button says so: picking one replaces every track's own cover.
+  const coversDiffer =
+    isMulti && !!selectedTracks?.some((t) => t.coverUrl !== selectedTracks[0].coverUrl)
+  const coversDifferId = useId()
   const [coverDragging, setCoverDragging] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   // The artwork the file arrived with: its embedded cover, not whatever coverUrl
@@ -183,17 +188,19 @@ export function CoverPicker({
     if (pasted) applyCover(pasted.coverUrl, pasted.coverPath)
   }
 
-  // Cmd/Ctrl+C and Cmd/Ctrl+V act only while the cover well is hovered, so the cover's
-  // own click (which opens the lightbox) is untouched and a normal copy/paste over an
-  // input elsewhere is never hijacked. The listener reads the latest handlers through
-  // a ref, so it subscribes once instead of on every render.
+  // Cmd/Ctrl+C and Cmd/Ctrl+V act only while the cover well is hovered or holds keyboard
+  // focus, so the cover's own click (which opens the lightbox) is untouched and a normal
+  // copy/paste over an input elsewhere is never hijacked. The listener reads the latest
+  // handlers through a ref, so it subscribes once instead of on every render.
   const hoverRef = useRef(false)
+  const wellRef = useRef<HTMLDivElement>(null)
   const actionsRef = useRef({ copy: onCoverCopy, paste: onCoverPaste })
   actionsRef.current = { copy: onCoverCopy, paste: onCoverPaste }
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {
-      if (!hoverRef.current || !(e.metaKey || e.ctrlKey)) return
+      if (!(e.metaKey || e.ctrlKey)) return
       const el = document.activeElement as HTMLElement | null
+      if (!hoverRef.current && !(el && wellRef.current?.contains(el))) return
       if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable))
         return
       const k = e.key.toLowerCase()
@@ -209,7 +216,18 @@ export function CoverPicker({
     return () => document.removeEventListener('keydown', onKey)
   }, [])
 
+  // Remove sits in the bar of the cover it takes away, so it unmounts under the keyboard
+  // focus; once the empty well replaces the artwork, focus lands on its pick button.
+  const pickRef = useRef<HTMLButtonElement>(null)
+  const focusPickRef = useRef(false)
+  useEffect(() => {
+    if (displayCover || !focusPickRef.current) return
+    focusPickRef.current = false
+    pickRef.current?.focus()
+  }, [displayCover])
+
   function onCoverRemove(): void {
+    focusPickRef.current = true
     onChange({ coverUrl: undefined, coverPath: undefined, coverRemoved: true })
   }
 
@@ -337,6 +355,7 @@ export function CoverPicker({
     // Dragging an image is a pointer-only convenience; artwork is also set from a Discogs release.
     // biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control
     <div
+      ref={wellRef}
       data-testid="cover-dropzone"
       onMouseEnter={() => {
         hoverRef.current = true
@@ -404,8 +423,10 @@ export function CoverPicker({
       ) : (
         <div className="group relative w-40">
           <button
+            ref={pickRef}
             type="button"
             data-testid="cover-pick"
+            aria-describedby={coversDiffer ? coversDifferId : undefined}
             onClick={() => coverInputRef.current?.click()}
             className={`flex h-40 w-40 flex-col items-center justify-center gap-2 rounded-xl bg-[var(--color-field)] p-2 text-center text-xs outline outline-1 -outline-offset-1 transition-colors ${
               coverDragging
@@ -416,6 +437,11 @@ export function CoverPicker({
             <ImageIcon className="h-7 w-7" strokeWidth={1.5} aria-hidden="true" />
             {coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
           </button>
+          {coversDiffer && (
+            <span id={coversDifferId} className="sr-only">
+              {tr('editor.coverMixed')}
+            </span>
+          )}
           {coverActions}
         </div>
       )}
@@ -433,14 +459,29 @@ export function CoverPicker({
           >
             <ChevronLeft className="h-3 w-3" aria-hidden="true" />
           </button>
-          <span data-testid="cover-image-count" className="text-[11px] tabular-nums text-fg-dim">
-            {(() => {
-              const pos = coverChoices.findIndex((c) => c.uri === displayCover) + 1
-              // 0 (not '–') when no cover is selected, e.g. just after deleting one: the
-              // arrows still step into the choices, so "0/4" reads as "none of 4 picked".
-              return `${pos}/${coverChoices.length}`
-            })()}
-          </span>
+          {(() => {
+            const pos = coverChoices.findIndex((c) => c.uri === displayCover) + 1
+            const total = coverChoices.length
+            // 0 (not '–') when no cover is selected, e.g. just after deleting one: the
+            // arrows still step into the choices, so "0/4" reads as "none of 4 picked".
+            // Read aloud, "2/4" is "two slash four", so assistive tech gets the words.
+            return (
+              <>
+                <span
+                  data-testid="cover-image-count"
+                  aria-hidden="true"
+                  className="text-[11px] tabular-nums text-fg-dim"
+                >
+                  {`${pos}/${total}`}
+                </span>
+                <span className="sr-only">
+                  {pos === 0
+                    ? tr('editor.coverPositionNone', { total })
+                    : tr('editor.coverPosition', { position: pos, total })}
+                </span>
+              </>
+            )
+          })()}
           <button
             type="button"
             data-testid="cover-next"
@@ -487,6 +528,10 @@ export function CoverPicker({
           <span className="tabular-nums text-fg-dim">
             {coverDims.w} × {coverDims.h} px
           </span>
+          {/* The dot's amber is the only visual cue, so a low-res cover is also named. */}
+          {isLowResCover(coverDims.w, coverDims.h) && (
+            <span className="sr-only">{tr('editor.coverLowRes')}</span>
+          )}
         </div>
       )}
     </div>

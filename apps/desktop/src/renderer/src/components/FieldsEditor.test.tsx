@@ -48,6 +48,14 @@ describe('FieldsEditor', () => {
     expect(screen.getByText('{title}')).toBeInTheDocument()
   })
 
+  // The {key} token is what templates and tag tools call the field, but it lived only in
+  // a hover tooltip on plain text that neither the keyboard nor a screen reader reaches.
+  it('gives the internal field name to assistive tech without a hover', () => {
+    setup()
+    const row = screen.getByTestId('field-row-artist')
+    expect(within(row).getByText('Internal name {artist}')).toBeInTheDocument()
+  })
+
   // Arrow buttons move one step at a time; with 21 fields, dragging a row straight
   // to its place is the natural gesture. The drag starts from the grip handle so
   // the row's buttons stay plain clicks.
@@ -96,8 +104,60 @@ describe('FieldsEditor', () => {
   it('reorders a visible field down', () => {
     const { onChangeVisible } = setup()
     const row = screen.getByTestId('field-row-title')
-    fireEvent.click(within(row).getByLabelText('Move down'))
+    fireEvent.click(within(row).getByLabelText('Move Title down'))
     expect(onChangeVisible).toHaveBeenCalledWith(['artist', 'title', 'album'])
+  })
+
+  // Moving a field to the top or bottom disables the arrow that moved it, and a disabled
+  // button drops keyboard focus to the body: the user lost their place in a long list.
+  // Focus goes to the other arrow of the same row, which is still usable.
+  it('keeps focus in the row when an arrow moves the field to either end', () => {
+    const props = {
+      requiredFields: [],
+      importFields: [],
+      customFields: [],
+      onChangeVisible: vi.fn(),
+      onChangeRequired: vi.fn(),
+      onChangeImport: vi.fn(),
+      onChangeCustom: vi.fn(),
+    }
+    const { rerender } = render(
+      <FieldsEditor visibleFields={['title', 'artist', 'album']} {...props} />,
+    )
+    const up = within(screen.getByTestId('field-row-artist')).getByLabelText('Move Artist up')
+    up.focus()
+    fireEvent.click(up)
+    rerender(<FieldsEditor visibleFields={['artist', 'title', 'album']} {...props} />)
+    expect(
+      within(screen.getByTestId('field-row-artist')).getByLabelText('Move Artist down'),
+    ).toHaveFocus()
+
+    const down = within(screen.getByTestId('field-row-title')).getByLabelText('Move Title down')
+    down.focus()
+    fireEvent.click(down)
+    rerender(<FieldsEditor visibleFields={['artist', 'album', 'title']} {...props} />)
+    expect(
+      within(screen.getByTestId('field-row-title')).getByLabelText('Move Title up'),
+    ).toHaveFocus()
+  })
+
+  // Thirty rows of identical "Auto, Required, Move up, Move down, Hide" buttons are
+  // indistinguishable in a screen reader's list of controls, and out of the row's visual
+  // context "Hide" doesn't say what it hides. Each name carries its field, as Delete does.
+  it('names every row control after the field it acts on', () => {
+    setup({ visibleFields: ['title', 'artist', 'album'], importFields: [] })
+    const row = within(screen.getByTestId('field-row-artist'))
+    expect(row.getByRole('button', { name: 'Fill Artist automatically' })).toBeInTheDocument()
+    expect(row.getByRole('button', { name: 'Artist required' })).toBeInTheDocument()
+    expect(row.getByRole('button', { name: 'Move Artist up' })).toBeInTheDocument()
+    expect(row.getByRole('button', { name: 'Move Artist down' })).toBeInTheDocument()
+    expect(row.getByRole('button', { name: 'Hide Artist' })).toBeInTheDocument()
+  })
+
+  it('names the Show button of a hidden row after its field', () => {
+    setup({ visibleFields: ['title'] })
+    const row = within(screen.getByTestId('hidden-field-artist'))
+    expect(row.getByRole('button', { name: 'Show Artist' })).toBeInTheDocument()
   })
 
   // The auto-organize button reorders the shown fields into group order in one click,
@@ -124,6 +184,15 @@ describe('FieldsEditor', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent('Reorder shown fields by group')
   })
 
+  // What auto-organize does was only in its tooltip, so a screen reader met a bare
+  // "Auto-organize" button; the same sentence is its description.
+  it('describes what auto-organize does to assistive tech', () => {
+    setup()
+    expect(screen.getByTestId('auto-organize-fields')).toHaveAccessibleDescription(
+      'Reorder shown fields by group',
+    )
+  })
+
   // Reordering a list that scrolls (and may already be tidy) gives no visible sign it ran,
   // so the button confirms in place: it flips to a done label, then reverts on its own.
   it('confirms in the button after auto-organizing, then reverts', () => {
@@ -139,6 +208,18 @@ describe('FieldsEditor', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  // The in-button "Organized" flip is only seen: the button keeps focus and a screen
+  // reader doesn't re-read its label, so the reorder looked like it did nothing. A live
+  // status region, present from the start so it is listened to, says it out loud.
+  it('announces the reorder through a status region', () => {
+    setup({ visibleFields: ['bpm', 'title'], requiredFields: [] })
+    const status = screen.getByTestId('auto-organize-status')
+    expect(status).toHaveAttribute('role', 'status')
+    expect(status).toBeEmptyDOMElement()
+    fireEvent.click(screen.getByTestId('auto-organize-fields'))
+    expect(status).toHaveTextContent('Organized')
   })
 
   // Unlike the visible list — whose order the user curates because it IS the
@@ -345,6 +426,18 @@ describe('custom fields', () => {
     expect(screen.getByTestId('custom-field-add')).toBeDisabled()
     expect(screen.getByTestId('custom-field-hint')).toHaveTextContent(/already/i)
     expect(onChangeCustom).not.toHaveBeenCalled()
+  })
+
+  // The red border and aria-invalid said "wrong" without saying why: the reason sat in
+  // a paragraph below that nothing tied to the field, and appeared silently. It has to be
+  // the field's description and be announced the moment it shows up.
+  it('ties the key error to the key field and announces it', () => {
+    setup()
+    fireEvent.change(screen.getByTestId('custom-field-name'), { target: { value: 'Estilo' } })
+    fireEvent.change(screen.getByTestId('custom-field-key'), { target: { value: 'style' } })
+    const hint = screen.getByTestId('custom-field-hint')
+    expect(hint).toHaveAttribute('role', 'alert')
+    expect(screen.getByTestId('custom-field-key')).toHaveAccessibleDescription(hint.textContent)
   })
 
   it('deletes a custom field from the settings, the shown and the required lists', () => {

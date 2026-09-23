@@ -31,7 +31,11 @@ export interface FieldSpec {
   onChange: (v: string) => void
   placeholder?: string
   wide?: boolean
+  required?: boolean
   invalid?: boolean
+  // A selection whose tracks disagree on this field: the value shows blank, so the Field
+  // says so in words where the placeholder alone would not reach a screen reader.
+  mixed?: boolean
   suggestions?: string[]
   tagList?: TagList
   // True while an audio-derived suggestion (BPM/Key) is still being detected: no chip
@@ -151,12 +155,13 @@ export function buildFieldSpecs({
             list && onChangeTracksMeta
               ? { list, tracks: selectedTracks, onChangeTracks: onChangeTracksMeta }
               : undefined
+          const mixed = shared === undefined && !perTrack
           return {
             key,
             label: tr(`fields.${key}`),
             value: shared ?? '',
-            placeholder:
-              shared === undefined && !perTrack ? tr('editor.multipleValues') : undefined,
+            placeholder: mixed ? tr('editor.multipleValues') : undefined,
+            mixed,
             onChange: bulkOnChange.get(key) ?? (() => {}),
             suggestions:
               key === 'genre' ? genreChips : key === 'grouping' ? groupingPresets : undefined,
@@ -174,6 +179,7 @@ export function buildFieldSpecs({
               label: f.label,
               value: shared ?? '',
               placeholder: shared === undefined ? tr('editor.multipleValues') : undefined,
+              mixed: shared === undefined,
               onChange: customBulkOnChange.get(f.key) ?? (() => {}),
             }
           }),
@@ -192,6 +198,7 @@ export function buildFieldSpecs({
               label: field.label,
               value,
               onChange: customOnChange.get(key) ?? (() => {}),
+              required: requiredFields.includes(key),
               invalid: requiredFields.includes(key) && !value.trim(),
             },
           ]
@@ -209,6 +216,7 @@ export function buildFieldSpecs({
             cleanResult: !isMulti && def.key === 'album' ? albumCleanResult : undefined,
             formatResult: !isMulti && def.key === 'title' ? titleFormatResult : undefined,
             wide: def.wide,
+            required: requiredFields.includes(def.key),
             invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),
             suggestions:
               def.key === 'genre'

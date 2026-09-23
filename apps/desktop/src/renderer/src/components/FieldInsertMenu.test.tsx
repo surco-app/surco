@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { useRef, useState } from 'react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
 
@@ -134,6 +134,43 @@ describe('FieldInsertMenu', () => {
     openMenu()
     fireEvent.click(screen.getByTestId('field-insert-backdrop'))
     expect(screen.queryByTestId('field-insert-menu')).toBeNull()
+  })
+
+  // Tab used to walk out of the open menu onto the invisible full-screen backdrop and
+  // on through the form with the menu still hanging open. Tab closes it and hands focus
+  // back to the field, and the backdrop (a pointer-only click catcher) is out of the Tab
+  // order altogether.
+  it('closes on Tab and returns focus to the field', () => {
+    render(<Harness />)
+    openMenu()
+    fireEvent.keyDown(screen.getByTestId('field-insert-option-year'), { key: 'Tab' })
+    expect(screen.queryByTestId('field-insert-menu')).toBeNull()
+    expect(host()).toHaveFocus()
+  })
+
+  it('keeps the backdrop out of the Tab order', () => {
+    render(<Harness />)
+    openMenu()
+    expect(screen.getByTestId('field-insert-backdrop')).toHaveAttribute('tabindex', '-1')
+  })
+
+  // The editor's global shortcuts listen for arrows and Escape on the window; a key the
+  // menu already handled must stop here, or ArrowDown also stepped the track list.
+  it('keeps the keys it handles from reaching the global shortcuts', () => {
+    const onWindowKey = vi.fn()
+    window.addEventListener('keydown', onWindowKey)
+    try {
+      render(<Harness />)
+      openMenu()
+      const menu = screen.getByTestId('field-insert-menu')
+      for (const key of ['ArrowDown', 'ArrowUp', 'Home', 'End', 'Enter', ' ', 'Escape']) {
+        if (!screen.queryByTestId('field-insert-menu')) openMenu()
+        fireEvent.keyDown(screen.queryByTestId('field-insert-menu') ?? menu, { key })
+      }
+      expect(onWindowKey).not.toHaveBeenCalled()
+    } finally {
+      window.removeEventListener('keydown', onWindowKey)
+    }
   })
 })
 
