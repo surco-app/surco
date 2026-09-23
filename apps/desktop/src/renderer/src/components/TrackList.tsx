@@ -351,6 +351,9 @@ const TrackRow = memo(function TrackRow({
         data-shortcut-scope="track-list"
         role="option"
         aria-selected={selected}
+        // Several rows can be selected; this marks the one open in the editor, the fact
+        // the solid fill carries for sighted users.
+        aria-current={primary || undefined}
         // The rows are real DOM (content-visibility, not windowing), but a screen reader
         // still benefits from an explicit "row 12 of 500" as filters shrink the set.
         aria-setsize={setSize}

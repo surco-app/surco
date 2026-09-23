@@ -954,3 +954,14 @@ describe('TrackList review spark', () => {
     expect(spark.className).toMatch(/\bw-6\b/)
   })
 })
+
+describe('TrackList current row', () => {
+  // Several rows can be selected, but only one is open in the editor. Sighted users see it
+  // by its solid fill; a screen reader needs aria-current to tell it from the others.
+  it('marks only the row open in the editor as current', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' })], 'b', ['a', 'b'])
+    const rows = screen.getAllByTestId('track-row')
+    expect(rows[0]).not.toHaveAttribute('aria-current')
+    expect(rows[1]).toHaveAttribute('aria-current', 'true')
+  })
+})
