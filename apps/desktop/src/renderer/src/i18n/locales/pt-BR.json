@@ -770,7 +770,8 @@
       "destination": "Saída",
       "naming": "Nomes",
       "editor": "Editor",
-      "tags": "Tags",
+      "artwork": "Capa",
+      "fields": "Campos",
       "shortcuts": "Atalhos"
     },
     "tabGroups": {

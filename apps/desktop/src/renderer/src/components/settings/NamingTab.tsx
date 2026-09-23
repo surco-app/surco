@@ -136,12 +136,12 @@ interface Props {
   patch: PatchSynced
 }
 
-export function TitleFormatSettings({ synced, patch }: Props): React.JSX.Element {
+export function NamingTab({ synced, patch }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
 
   return (
     <>
-      <SettingsSection>
+      <SettingsSection first>
         <FormatField
           id="settings-title-format"
           label={tr('settings.titleFormat')}
@@ -163,31 +163,6 @@ export function TitleFormatSettings({ synced, patch }: Props): React.JSX.Element
       </SettingsSection>
 
       <SettingsSection>
-        <SettingsGroup>
-          <SettingsCheckboxField
-            testid="settings-trim"
-            checked={synced.trimWhitespace}
-            onChange={(v) => patch('trimWhitespace', v)}
-            label={tr('settings.trimWhitespace')}
-          />
-          <SettingsCheckboxField
-            testid="settings-zeropad"
-            checked={synced.zeroPadTrack}
-            onChange={(v) => patch('zeroPadTrack', v)}
-            label={tr('settings.zeroPadTrack')}
-          />
-        </SettingsGroup>
-      </SettingsSection>
-    </>
-  )
-}
-
-export function NamingTab({ synced, patch }: Props): React.JSX.Element {
-  const { t: tr } = useTranslation()
-
-  return (
-    <>
-      <SettingsSection first>
         <FormatField
           id="settings-filename-format"
           label={tr('settings.filenameFormat')}
@@ -210,13 +185,27 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
       </SettingsSection>
 
       <SettingsSection>
-        <SettingsCheckboxField
-          testid="settings-auto-apply-filename"
-          checked={synced.autoApplyFilename}
-          onChange={(v) => patch('autoApplyFilename', v)}
-          label={tr('settings.autoApplyFilename')}
-          hint={tr('settings.autoApplyFilenameHint')}
-        />
+        <SettingsGroup>
+          <SettingsCheckboxField
+            testid="settings-auto-apply-filename"
+            checked={synced.autoApplyFilename}
+            onChange={(v) => patch('autoApplyFilename', v)}
+            label={tr('settings.autoApplyFilename')}
+            hint={tr('settings.autoApplyFilenameHint')}
+          />
+          <SettingsCheckboxField
+            testid="settings-trim"
+            checked={synced.trimWhitespace}
+            onChange={(v) => patch('trimWhitespace', v)}
+            label={tr('settings.trimWhitespace')}
+          />
+          <SettingsCheckboxField
+            testid="settings-zeropad"
+            checked={synced.zeroPadTrack}
+            onChange={(v) => patch('zeroPadTrack', v)}
+            label={tr('settings.zeroPadTrack')}
+          />
+        </SettingsGroup>
       </SettingsSection>
     </>
   )

@@ -1,14 +1,15 @@
 import {
   AudioWaveform,
   FolderOutput,
+  Image,
   Keyboard,
+  List,
   type LucideIcon,
   RefreshCw,
   Search,
   SlidersHorizontal,
   SquarePen,
   Tag,
-  Tags,
 } from 'lucide-react'
 import type { LocalDraft, SyncedDraft } from './settingsDraft'
 
@@ -23,7 +24,8 @@ export type SettingsTab =
   | 'destination'
   | 'naming'
   | 'editor'
-  | 'tags'
+  | 'fields'
+  | 'artwork'
   | 'shortcuts'
 
 // The tabs, grouped for the sidebar so twelve entries scan as four short runs instead of
@@ -34,7 +36,7 @@ export type SettingsTab =
 // never drift apart.
 export const SETTINGS_TAB_GROUPS: { heading: string | null; tabs: SettingsTab[] }[] = [
   { heading: null, tabs: ['general', 'search'] },
-  { heading: 'editing', tabs: ['editor', 'tags'] },
+  { heading: 'editing', tabs: ['editor', 'fields', 'artwork'] },
   { heading: 'output', tabs: ['conversion', 'processing', 'naming', 'destination'] },
   { heading: 'app', tabs: ['shortcuts'] },
 ]
@@ -51,7 +53,8 @@ export const SETTINGS_TAB_ICONS: Record<SettingsTab, LucideIcon> = {
   destination: FolderOutput,
   naming: Tag,
   editor: SquarePen,
-  tags: Tags,
+  fields: List,
+  artwork: Image,
   shortcuts: Keyboard,
 }
 

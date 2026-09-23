@@ -770,7 +770,8 @@
       "destination": "Output",
       "naming": "Naming",
       "editor": "Editor",
-      "tags": "Tags",
+      "artwork": "Artwork",
+      "fields": "Fields",
       "shortcuts": "Shortcuts"
     },
     "tabGroups": {

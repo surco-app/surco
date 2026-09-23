@@ -770,7 +770,8 @@
       "destination": "Destino",
       "naming": "Nombres",
       "editor": "Editor",
-      "tags": "Etiquetas",
+      "artwork": "Carátula",
+      "fields": "Campos",
       "shortcuts": "Atajos"
     },
     "tabGroups": {
