@@ -753,7 +753,9 @@ describe('TrimSection', () => {
     expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.699, endSec: 90.3 })
   })
 
-  it('states the staged cut in words with no switch, since the cut itself is the state', () => {
+  // The badge with the total cut was on the folded header before the sentence came; it
+  // stays beside it, the total at a glance next to the per-side detail.
+  it('states the staged cut in words beside its total, with no switch', () => {
     const { rerender } = render(
       section({ value: { startSec: 9.7, endSec: 90.3 }, open: false, durationSec: 100 }),
     )
@@ -761,7 +763,7 @@ describe('TrimSection', () => {
       'Removes 9.7 s at the start and 9.7 s at the end',
     )
     expect(screen.queryByTestId('trim-switch')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('trim-active-badge')).not.toBeInTheDocument()
+    expect(screen.getByTestId('trim-active-badge')).toHaveTextContent('−19.4 s')
     rerender(section({ value: { endSec: 96.4 }, open: false, durationSec: 100 }))
     expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent(
       'Removes 3.6 s of silence at the end',
@@ -783,6 +785,9 @@ describe('TrimSection', () => {
     rerender(section({ open: false }))
     expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent(
       '9.9 s of silence at the start and 9.9 s at the end',
+    )
+    expect(screen.getByTestId('trim-detected-pill')).toHaveTextContent(
+      '9.9 s from the start · 9.9 s from the end',
     )
     expect(screen.queryByTestId('trim-switch')).not.toBeInTheDocument()
   })

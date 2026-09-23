@@ -1066,9 +1066,14 @@ export function TrimSection({
         summary={rowSentence}
         summaryTestId="trim-row-sentence"
         summaryMuted={!value}
-        foldedRow
         right={
-          !value && detected ? (
+          value ? (
+            !open ? (
+              <SectionPill tone="accent" testid="trim-active-badge">
+                {`−${cutSeconds(rowStart + rowEnd)}`}
+              </SectionPill>
+            ) : undefined
+          ) : detected ? (
             <SectionPill tone="neutral" testid="trim-detected-pill">
               {detected}
             </SectionPill>
