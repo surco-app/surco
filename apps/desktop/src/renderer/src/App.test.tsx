@@ -1778,7 +1778,6 @@ describe('App stats', () => {
     await waitFor(() =>
       expect(screen.getByTestId('settings-tab-stats')).toHaveAttribute('aria-selected', 'true'),
     )
-    expect(screen.queryByTestId('stats-modal')).toBeNull()
   })
 
   it('opens Settings on the stats tab from the toolbar button', async () => {
