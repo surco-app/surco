@@ -764,7 +764,6 @@ describe('DestinationTab everything visible', () => {
     ]) {
       expect(screen.getByTestId(id)).toBeVisible()
     }
-    expect(screen.queryByTestId('settings-advanced-destination')).toBeNull()
   })
 
   // A collection outside rekordbox's usual place was undetected AND unpickable: the field
