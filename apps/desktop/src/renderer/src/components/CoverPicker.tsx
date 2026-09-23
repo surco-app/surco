@@ -183,17 +183,19 @@ export function CoverPicker({
     if (pasted) applyCover(pasted.coverUrl, pasted.coverPath)
   }
 
-  // Cmd/Ctrl+C and Cmd/Ctrl+V act only while the cover well is hovered, so the cover's
-  // own click (which opens the lightbox) is untouched and a normal copy/paste over an
-  // input elsewhere is never hijacked. The listener reads the latest handlers through
-  // a ref, so it subscribes once instead of on every render.
+  // Cmd/Ctrl+C and Cmd/Ctrl+V act only while the cover well is hovered or holds keyboard
+  // focus, so the cover's own click (which opens the lightbox) is untouched and a normal
+  // copy/paste over an input elsewhere is never hijacked. The listener reads the latest
+  // handlers through a ref, so it subscribes once instead of on every render.
   const hoverRef = useRef(false)
+  const wellRef = useRef<HTMLDivElement>(null)
   const actionsRef = useRef({ copy: onCoverCopy, paste: onCoverPaste })
   actionsRef.current = { copy: onCoverCopy, paste: onCoverPaste }
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {
-      if (!hoverRef.current || !(e.metaKey || e.ctrlKey)) return
+      if (!(e.metaKey || e.ctrlKey)) return
       const el = document.activeElement as HTMLElement | null
+      if (!hoverRef.current && !(el && wellRef.current?.contains(el))) return
       if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable))
         return
       const k = e.key.toLowerCase()
@@ -337,6 +339,7 @@ export function CoverPicker({
     // Dragging an image is a pointer-only convenience; artwork is also set from a Discogs release.
     // biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control
     <div
+      ref={wellRef}
       data-testid="cover-dropzone"
       onMouseEnter={() => {
         hoverRef.current = true
