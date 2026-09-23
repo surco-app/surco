@@ -297,7 +297,6 @@ export interface Settings {
   // Without it, "add if missing" would resurrect the source on every launch for a user
   // who deliberately unticked it. Synced, so a second Mac doesn't redo the migration.
   deezerProviderMigrated: boolean
-  outputCopyMigrated: boolean
   conversionCount: number
   // Lifetime activity tally behind the Stats tab, next to conversionCount. Bumped
   // only in the main process (stats:record fire-and-forget), so near-simultaneous
