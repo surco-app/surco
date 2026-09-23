@@ -336,7 +336,7 @@
     "importApplePlaylist": "Importer depuis Apple Music…"
   },
   "trackList": {
-    "backup": "Copie de sauvegarde de l'original, {{when}}",
+    "backup": "Revenir à l'original… (copie du {{when}})",
     "label": "Morceaux",
     "noArtist": "Sans artiste",
     "autoMatched": "Auto-associé",

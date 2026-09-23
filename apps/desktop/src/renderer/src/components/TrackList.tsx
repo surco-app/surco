@@ -2,13 +2,13 @@ import {
   Check,
   CircleAlert,
   CircleCheck,
-  History,
   type LucideIcon,
   Music,
   OctagonAlert,
   Play,
   Sparkles,
   TriangleAlert,
+  Undo2,
   X,
 } from 'lucide-react'
 import type React from 'react'
@@ -558,7 +558,7 @@ const TrackRow = memo(function TrackRow({
                   data-backup-mark
                   className="group/dot relative flex shrink-0 items-center text-fg-faint"
                 >
-                  <History className="h-3 w-3" aria-hidden="true" />
+                  <Undo2 className="h-3 w-3" aria-hidden="true" />
                   <Tooltip label={backupLabel} align="end" scope="dot" />
                   <span className="sr-only">{backupLabel}</span>
                 </span>
