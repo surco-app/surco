@@ -38,6 +38,15 @@ export function isTypingTarget(
   )
 }
 
+// Space is how the keyboard presses a button, so a button the user tabbed to keeps it.
+// :focus-visible tells that apart from the focus a mouse click leaves behind, where Space
+// has to keep auditioning. The track row is a button too, but as a list option its Space
+// is the player's.
+export function pressesOnSpace(el: Element | null): boolean {
+  if (!el?.matches) return false
+  return el.matches('button:not([role="option"]), [role="button"]') && el.matches(':focus-visible')
+}
+
 // Los ámbitos de atajos activos, del más cercano al foco hacia fuera. Se lee del DOM y no
 // de estado en React a propósito — así no puede desincronizarse de lo que el usuario ve
 // enfocado.

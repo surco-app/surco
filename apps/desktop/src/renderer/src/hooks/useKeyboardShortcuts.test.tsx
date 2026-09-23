@@ -182,3 +182,60 @@ describe('useKeyboardShortcuts inside a nested scope', () => {
     editor.remove()
   })
 })
+
+// Space is how a keyboard user presses a button. With play bound to bare Space and
+// preventDefaulted here, every tabbed-to button only answered to Enter, and pressing
+// Space on "Remove" started the player instead. A mouse click also leaves the focus on
+// the button, though, and a DJ who clicks a filter and then hits Space to audition
+// expects the track to play, so only a keyboard-visible focus takes the key back.
+describe('useKeyboardShortcuts Space on a focused button', () => {
+  function focusButton(role: string | null, keyboardFocus: boolean): HTMLButtonElement {
+    const button = document.createElement('button')
+    if (role) button.setAttribute('role', role)
+    document.body.appendChild(button)
+    button.focus()
+    const matches = button.matches.bind(button)
+    Object.defineProperty(button, 'matches', {
+      value: (selector: string) =>
+        selector === ':focus-visible' ? keyboardFocus : matches(selector),
+    })
+    return button
+  }
+
+  it('leaves Space to a button reached by keyboard', () => {
+    const { play } = setup(false)
+    const button = focusButton(null, true)
+    const e = new KeyboardEvent('keydown', { key: ' ', cancelable: true })
+    window.dispatchEvent(e)
+    expect(play).not.toHaveBeenCalled()
+    expect(e.defaultPrevented).toBe(false)
+    button.remove()
+  })
+
+  it('still plays when the button only holds focus from a mouse click', () => {
+    const { play } = setup(false)
+    const button = focusButton(null, false)
+    press({ key: ' ', cancelable: true })
+    expect(play).toHaveBeenCalledTimes(1)
+    button.remove()
+  })
+
+  it('still plays from a track row, which is a button acting as a list option', () => {
+    const { play } = setup(false)
+    const row = focusButton('option', true)
+    press({ key: ' ', cancelable: true })
+    expect(play).toHaveBeenCalledTimes(1)
+    row.remove()
+  })
+
+  it('keeps Space off a claiming section when a button reached by keyboard holds it', () => {
+    setup(false)
+    const claimed = vi.fn()
+    const release = claimKeys({ play: claimed })
+    const button = focusButton(null, true)
+    press({ key: ' ', cancelable: true })
+    expect(claimed).not.toHaveBeenCalled()
+    release()
+    button.remove()
+  })
+})
