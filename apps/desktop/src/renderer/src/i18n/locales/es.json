@@ -133,7 +133,8 @@
     "bandcampPageUnreadable": "No se ha podido leer esa página de Bandcamp.",
     "bandcampUrlBlocked": "Esa dirección de Bandcamp no está permitida, así que no se ha abierto.",
     "deezerUnavailable": "Deezer no ha respondido bien. Prueba otra vez en un momento.",
-    "discogsUnavailable": "Discogs no ha respondido bien. Prueba otra vez en un momento."
+    "discogsUnavailable": "Discogs no ha respondido bien. Prueba otra vez en un momento.",
+    "pathNotAllowed": "Surco no ha abierto ese archivo: no es una de las pistas que ha cargado."
   },
   "rekordboxIssue": {
     "read-only": "La colección de rekordbox no se ha actualizado: el archivo es de solo lectura.",

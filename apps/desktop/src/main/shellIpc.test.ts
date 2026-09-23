@@ -52,14 +52,14 @@ describe('registerShellIpc — path allowlist', () => {
     registerShellIpc(fakeMediaAccess(['/music/allowed.wav']))
     const result = await handlerFor('shell:open')({}, '/etc/passwd')
     expect(openPath).not.toHaveBeenCalled()
-    expect(result).toMatch(/not allowed|no permitid/i)
+    expect(result).toMatch(/^SURCO_ERR:pathNotAllowed/)
   })
 
   it('refuses to trash a path the app never handed to the renderer', async () => {
     registerShellIpc(fakeMediaAccess(['/music/allowed.wav']))
-    await expect(
-      handlerFor('shell:trash')({}, '/Users/me/Desktop/important.docx'),
-    ).rejects.toThrow()
+    await expect(handlerFor('shell:trash')({}, '/Users/me/Desktop/important.docx')).rejects.toThrow(
+      /^SURCO_ERR:pathNotAllowed/,
+    )
     expect(trashItem).not.toHaveBeenCalled()
   })
 
