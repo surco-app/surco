@@ -57,6 +57,7 @@ export function Select({
   } | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const backdropRef = useRef<HTMLButtonElement>(null)
   const selected = options.find((o) => o.value === value)
 
   useEffect(() => {
@@ -155,6 +156,15 @@ export function Select({
       data-testid={`${testid}-listbox`}
       aria-label={label}
       onKeyDown={onListKeyDown}
+      // Tab (or any move of the focus to another control) closes the menu, like a native
+      // select; the focus stays where the user sent it. The trigger and the backdrop are
+      // left to their own clicks, which close and hand the focus back to the trigger.
+      onBlur={(e) => {
+        const to = e.relatedTarget
+        if (!to || e.currentTarget.contains(to)) return
+        if (to === triggerRef.current || to === backdropRef.current) return
+        setOpen(false)
+      }}
       // Full-width: fixed and body-portaled, sized to content (min the trigger width) and
       // capped to the room on the side it opens toward so a long tracklist scrolls.
       // Otherwise: absolute, right-aligned and at least the trigger width.
@@ -204,7 +214,9 @@ export function Select({
         data-testid={testid}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={label}
+        // The label alone hid the visible value from VoiceOver; a native select announces
+        // both, so this one does too.
+        aria-label={selected ? `${label}: ${selected.label}` : label}
         onClick={toggle}
         className={`flex h-8 min-w-0 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs text-fg-dim outline-none focus:border-[var(--color-accent)] ${fullWidth ? 'w-full' : ''}`}
       >
@@ -214,8 +226,12 @@ export function Select({
       </button>
       {open && (
         <>
+          {/* Out of the Tab order: a Shift+Tab from the first option landed on this
+              invisible full-window button and kept the menu open behind it. */}
           <button
+            ref={backdropRef}
             type="button"
+            tabIndex={-1}
             data-testid={`${testid}-backdrop`}
             aria-label={tr('common.close')}
             onClick={close}
