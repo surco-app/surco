@@ -1,4 +1,5 @@
 import type React from 'react'
+import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Release } from '../../../shared/types'
 import { buildFieldSpecs, type FieldSpec } from '../lib/fieldSpecs'
@@ -98,12 +99,15 @@ export function MetadataForm({
   fields,
 }: MetadataFormProps): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const ratingLabelId = useId()
   return (
     <div className="mt-4 @container">
       {!isMulti && (
         <div className="mb-4 flex items-center gap-3">
-          <span className="text-xs font-medium text-fg-dim">{tr('fields.rating')}</span>
-          <StarRating value={item.meta.rating ?? ''} onChange={onRate} />
+          <span id={ratingLabelId} className="text-xs font-medium text-fg-dim">
+            {tr('fields.rating')}
+          </span>
+          <StarRating value={item.meta.rating ?? ''} onChange={onRate} labelledBy={ratingLabelId} />
         </div>
       )}
       <div className="flex flex-col gap-5 @[26rem]:flex-row @[26rem]:gap-6">
