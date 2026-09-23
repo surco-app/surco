@@ -12,6 +12,7 @@ import {
   normalizeEditorSections,
 } from '../../../shared/editorSections'
 import type {
+  CustomField,
   DeclickMode,
   FormatSetting,
   KeyNotation,
@@ -51,6 +52,7 @@ interface ResolvedSettings {
   groupingPresets: string[]
   genrePresets: string[]
   visibleFields: string[]
+  customFields: CustomField[]
   requiredFields: string[]
   importFields: MetaTextKey[]
   discogsFormats: string[]
@@ -89,6 +91,7 @@ const DEFAULTS: ResolvedSettings = {
   groupingPresets: [],
   genrePresets: [],
   visibleFields: DEFAULT_FIELDS,
+  customFields: [],
   requiredFields: DEFAULT_REQUIRED_FIELDS,
   importFields: DEFAULT_IMPORT_FIELDS,
   discogsFormats: [],
@@ -125,6 +128,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     groupingPresets: settings.groupingPresets ?? DEFAULTS.groupingPresets,
     genrePresets: settings.genrePresets ?? DEFAULTS.genrePresets,
     visibleFields: settings.visibleFields ?? DEFAULTS.visibleFields,
+    customFields: settings.customFields ?? DEFAULTS.customFields,
     requiredFields: settings.requiredFields ?? DEFAULTS.requiredFields,
     importFields: normalizeImportFields(settings.importFields),
     discogsFormats: settings.discogsFormats ?? DEFAULTS.discogsFormats,

@@ -162,6 +162,7 @@ function renderEditor(
     filenameFormat?: string
     titleFormat?: string
     editorSections?: Settings['editorSections']
+    customFields?: Settings['customFields']
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
@@ -239,6 +240,7 @@ function renderEditor(
       genrePresets: props.genrePresets ?? [],
       groupingPresets: [],
       visibleFields: props.visibleFields ?? [],
+      customFields: props.customFields ?? [],
       requiredFields: props.requiredFields ?? [],
       discogsFormats: props.discogsFormats ?? [],
       discogsMaxResults: 25,
@@ -1663,6 +1665,33 @@ describe('Editor export control', () => {
       ],
     })
     expect(screen.getByTestId('foreign-tags-toggle')).toBeInTheDocument()
+  })
+
+  // A tag the user made into a field of their own leaves Other Metadata for the form: it
+  // shows there with the value the file carries, and an edit goes to that field.
+  it('shows a custom field with the file value and keeps its tag out of Other Metadata', () => {
+    const { onChange } = renderEditor(
+      { id: 'a', foreignTags: [{ name: 'VINYLCONDITION', value: 'NM' }] },
+      'wav',
+      {
+        visibleFields: ['title', 'vinylCondition'],
+        customFields: [{ key: 'vinylCondition', label: 'Estado del vinilo' }],
+        editorSections: [
+          { id: 'form', open: true },
+          { id: 'otherTags', open: true },
+          { id: 'properties', open: false },
+          { id: 'quality', open: false },
+          { id: 'normalize', open: false },
+          { id: 'output', open: false },
+        ],
+      },
+    )
+    const field = screen.getByTestId('field-vinylCondition')
+    expect(field).toHaveValue('NM')
+    expect(screen.queryByTestId('foreign-tags-toggle')).not.toBeInTheDocument()
+    fireEvent.change(field, { target: { value: 'VG+' } })
+    fireEvent.blur(field)
+    expect(onChange.mock.calls.at(-1)?.[0].meta.custom).toEqual({ vinylCondition: 'VG+' })
   })
 
   // The inspector returns null with no foreign tags, so the section shows nothing rather

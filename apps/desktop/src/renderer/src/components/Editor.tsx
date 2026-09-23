@@ -3,6 +3,7 @@ import type React from 'react'
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { customValues, isCustomTag } from '../../../shared/customFields'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
@@ -237,6 +238,7 @@ export const Editor = memo(function Editor({
     groupingPresets,
     genrePresets,
     visibleFields,
+    customFields,
     requiredFields,
     importFields,
     discogsFormats,
@@ -610,6 +612,9 @@ export const Editor = memo(function Editor({
     // foreign tags the clear was meant to drop.
     onChange({ meta: { ...item.meta, [key]: value } })
   })
+  const setCustom = useStableCallback((key: string, value: string): void => {
+    onChange({ meta: { ...item.meta, custom: { ...item.meta.custom, [key]: value } } })
+  })
 
   // What the per-field insert menu can offer: every visible text field of THIS
   // track. Bulk edits hold no single per-field value to insert, and compilation
@@ -774,6 +779,21 @@ export const Editor = memo(function Editor({
     () => new Map(FIELD_DEFS.map((def) => [def.key, (v: string) => setField(def.key, v)])),
     [setField],
   )
+  const customOnChange = useMemo(
+    () => new Map(customFields.map((f) => [f.key, (v: string) => setCustom(f.key, v)])),
+    [customFields, setCustom],
+  )
+  // The file's own value backs a custom field the user has not edited, except one marked
+  // for removal in the inspector: that tag is on its way out of the file.
+  const customValueMap = useMemo(
+    () =>
+      customValues(
+        item.meta,
+        (item.foreignTags ?? []).filter((t) => !item.foreignRemoved?.includes(t.name)),
+        customFields,
+      ),
+    [item.meta, item.foreignTags, item.foreignRemoved, customFields],
+  )
   const bulkOnChange = useMemo(
     () => new Map(BULK_FIELDS.map((key) => [key, (v: string) => onChangeAllMeta?.({ [key]: v })])),
     [onChangeAllMeta],
@@ -802,6 +822,9 @@ export const Editor = memo(function Editor({
         tr,
         singleOnChange,
         bulkOnChange,
+        customFields,
+        customValues: customValueMap,
+        customOnChange,
         onChangeTracksMeta,
       }),
     [
@@ -821,6 +844,9 @@ export const Editor = memo(function Editor({
       tr,
       singleOnChange,
       bulkOnChange,
+      customFields,
+      customValueMap,
+      customOnChange,
       onChangeTracksMeta,
     ],
   )
@@ -1076,7 +1102,9 @@ export const Editor = memo(function Editor({
                         !isMulti && (
                           <ForeignTagsInspector
                             key={id}
-                            foreignTags={item.foreignTags ?? []}
+                            foreignTags={(item.foreignTags ?? []).filter(
+                              (t) => !isCustomTag(t.name, customFields),
+                            )}
                             foreignRemoved={item.foreignRemoved ?? []}
                             onToggleRemove={(name) => {
                               const current = item.foreignRemoved ?? []

@@ -3,28 +3,37 @@ import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
+import type { CustomField } from '../../../shared/types'
 import { FIELD_DEFS } from '../lib/fields'
 import { FieldsEditor } from './FieldsEditor'
 
 afterEach(cleanup)
 
 function setup(
-  over: { visibleFields?: string[]; requiredFields?: string[]; importFields?: string[] } = {},
+  over: {
+    visibleFields?: string[]
+    requiredFields?: string[]
+    importFields?: string[]
+    customFields?: CustomField[]
+  } = {},
 ) {
   const onChangeVisible = vi.fn()
   const onChangeRequired = vi.fn()
   const onChangeImport = vi.fn()
+  const onChangeCustom = vi.fn()
   render(
     <FieldsEditor
       visibleFields={over.visibleFields ?? ['title', 'artist', 'album']}
       requiredFields={over.requiredFields ?? ['title']}
       importFields={over.importFields ?? ['title']}
+      customFields={over.customFields ?? []}
       onChangeVisible={onChangeVisible}
       onChangeRequired={onChangeRequired}
       onChangeImport={onChangeImport}
+      onChangeCustom={onChangeCustom}
     />,
   )
-  return { onChangeVisible, onChangeRequired, onChangeImport }
+  return { onChangeVisible, onChangeRequired, onChangeImport, onChangeCustom }
 }
 
 describe('FieldsEditor', () => {
@@ -276,5 +285,58 @@ describe('auto-fill toggle', () => {
     expect(notes).toHaveLength(2)
     expect(notes[0]).toHaveTextContent(/fill/i)
     expect(notes[1]).toHaveTextContent(/convert/i)
+  })
+})
+
+// The user's own fields live in the same list as Surco's: shown or hidden, under the name
+// the user gave them, added from a row at the bottom with a key that names them in
+// filename patterns and, upper-cased, in the file.
+describe('custom fields', () => {
+  const vinyl = { key: 'vinylCondition', label: 'Estado del vinilo' }
+
+  it('lists a shown custom field under its own name, with its key as the token', () => {
+    setup({ visibleFields: ['title', 'vinylCondition'], customFields: [vinyl] })
+    const row = screen.getByTestId('field-row-vinylCondition')
+    fireEvent.focusIn(within(row).getByText('Estado del vinilo'))
+    expect(screen.getByText('{vinylCondition}')).toBeInTheDocument()
+  })
+
+  it('lists a hidden custom field among the hidden ones', () => {
+    setup({ visibleFields: ['title'], customFields: [vinyl] })
+    expect(screen.getByTestId('hidden-field-vinylCondition')).toHaveTextContent('Estado del vinilo')
+  })
+
+  it('adds a field with the key it proposes from the name, shown at once', () => {
+    const { onChangeCustom, onChangeVisible } = setup({ visibleFields: ['title'] })
+    fireEvent.change(screen.getByTestId('custom-field-name'), {
+      target: { value: 'Estado del vinilo' },
+    })
+    expect(screen.getByTestId('custom-field-key')).toHaveValue('estadoDelVinilo')
+    fireEvent.click(screen.getByTestId('custom-field-add'))
+    expect(onChangeCustom).toHaveBeenCalledWith([
+      { key: 'estadoDelVinilo', label: 'Estado del vinilo' },
+    ])
+    expect(onChangeVisible).toHaveBeenCalledWith(['title', 'estadoDelVinilo'])
+  })
+
+  it('refuses a key another field already uses and says so', () => {
+    const { onChangeCustom } = setup()
+    fireEvent.change(screen.getByTestId('custom-field-name'), { target: { value: 'Estilo' } })
+    fireEvent.change(screen.getByTestId('custom-field-key'), { target: { value: 'style' } })
+    expect(screen.getByTestId('custom-field-add')).toBeDisabled()
+    expect(screen.getByTestId('custom-field-hint')).toHaveTextContent(/already/i)
+    expect(onChangeCustom).not.toHaveBeenCalled()
+  })
+
+  it('deletes a custom field from the settings, the shown and the required lists', () => {
+    const { onChangeCustom, onChangeVisible, onChangeRequired } = setup({
+      visibleFields: ['title', 'vinylCondition'],
+      requiredFields: ['title', 'vinylCondition'],
+      customFields: [vinyl],
+    })
+    fireEvent.click(screen.getByTestId('field-delete-vinylCondition'))
+    expect(onChangeCustom).toHaveBeenCalledWith([])
+    expect(onChangeVisible).toHaveBeenCalledWith(['title'])
+    expect(onChangeRequired).toHaveBeenCalledWith(['title'])
   })
 })

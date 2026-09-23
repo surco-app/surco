@@ -213,6 +213,9 @@ export interface Settings {
   trimWhitespace: boolean
   zeroPadTrack: boolean
   visibleFields: string[]
+  // The user's own fields (Settings → Fields). Optional so settings saved before they
+  // existed load unchanged; absent reads as none.
+  customFields?: CustomField[]
   requiredFields: string[]
   // Which fields applying a Discogs release is allowed to fill. Separate from
   // visibleFields on purpose: hiding an input is about the form, not about whether a
@@ -542,6 +545,14 @@ export interface CoverRead {
 // Un tag que el fichero lleva pero que la app no gestiona (SERATO_MARKERS_V2, TRAKTOR4,
 // MUSICBRAINZ_*, REPLAYGAIN_*…). El inspector los muestra y permite borrarlos. El valor
 // puede venir truncado por ffprobe en blobs enormes; se muestra tal cual (solo lectura).
+// A field the user added in Settings → Fields: the name shown in the editor and the key
+// that names it everywhere else ({vinylCondition} in a filename pattern) and, upper-cased,
+// in the file.
+export interface CustomField {
+  key: string
+  label: string
+}
+
 export interface ForeignTag {
   name: string
   value: string
