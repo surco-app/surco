@@ -563,7 +563,7 @@ describe('QualitySection shareable report', () => {
 // pedagogy the normalize plan card brought: a "my FLAC is not lossy" dispute
 // should arrive with the measured evidence already on screen.
 describe('verdict evidence', () => {
-  it('argues a transcode with the measured wall: the size of the drop in decibels', async () => {
+  it('argues a transcode with the measured cut, in one short line', async () => {
     renderSection(
       {
         image: '',
@@ -576,17 +576,15 @@ describe('verdict evidence', () => {
       '/m/a.flac',
     )
     const evidence = await screen.findByTestId('quality-evidence')
-    expect(evidence).toHaveTextContent('drops 43 dB within one kilohertz')
-    expect(evidence).toHaveTextContent('16.0 kHz')
-    // The didactic why-line rides along while hints are on.
-    expect(evidence).toHaveTextContent(i18n.t('editor.qualityEvidenceWallWhy'))
-    // The evidence replaces the old caption; both would say "cut at 16 kHz" twice.
+    expect(evidence).toHaveTextContent(
+      i18n.t('editor.qualityEvidenceTranscode', { cutoff: '16.0 kHz' }),
+    )
     expect(
-      screen.queryByText(i18n.t('editor.qualityCaptionTranscode', { cutoff: '16.0 kHz' })),
-    ).not.toBeInTheDocument()
+      screen.getAllByText(i18n.t('editor.qualityEvidenceTranscode', { cutoff: '16.0 kHz' })),
+    ).toHaveLength(1)
   })
 
-  it('argues a lossy-container cut with the same measured wall', async () => {
+  it('reports a lossy-container cut as normal for the format', async () => {
     renderSection(
       {
         image: '',
@@ -599,10 +597,12 @@ describe('verdict evidence', () => {
       '/m/a.mp3',
     )
     const evidence = await screen.findByTestId('quality-evidence')
-    expect(evidence).toHaveTextContent('drops 31 dB within one kilohertz')
+    expect(evidence).toHaveTextContent(
+      i18n.t('editor.qualityEvidenceLossy', { cutoff: '16.0 kHz' }),
+    )
   })
 
-  it('keeps the measured claim but drops the didactic why-line when hints are off', async () => {
+  it('keeps the measured claim when hints are off', async () => {
     renderSection(
       {
         image: '',
@@ -616,8 +616,9 @@ describe('verdict evidence', () => {
       false,
     )
     const evidence = await screen.findByTestId('quality-evidence')
-    expect(evidence).toHaveTextContent('drops 43 dB within one kilohertz')
-    expect(screen.queryByText(i18n.t('editor.qualityEvidenceWallWhy'))).not.toBeInTheDocument()
+    expect(evidence).toHaveTextContent(
+      i18n.t('editor.qualityEvidenceTranscode', { cutoff: '16.0 kHz' }),
+    )
   })
 
   it('counts the saw-tooth for a Reprocessed verdict: how many rises and where', async () => {
@@ -634,8 +635,9 @@ describe('verdict evidence', () => {
       '/m/a.flac',
     )
     const evidence = await screen.findByTestId('quality-evidence')
-    expect(evidence).toHaveTextContent('rise 3 times between 17.5 kHz and 20.0 kHz')
-    expect(evidence).toHaveTextContent('16.5 kHz')
+    expect(evidence).toHaveTextContent(
+      i18n.t('editor.qualityEvidenceTeeth', { teeth: 3, from: '17.5 kHz', to: '20.0 kHz' }),
+    )
   })
 
   it('names the hump peak over the valley for an enhancer verdict', async () => {
@@ -692,7 +694,22 @@ describe('verdict evidence', () => {
       fineStepDb: 4.5,
     })
     const evidence = await screen.findByTestId('quality-evidence')
-    expect(evidence).toHaveTextContent('5 dB')
+    expect(evidence).toHaveTextContent(i18n.t('editor.qualityEvidenceGood', { drop: 5 }))
+  })
+
+  // A knee-free spectrum can still carry a step as steep as a codec wall; saying "no codec
+  // cut" beside a codec-sized drop would contradict the number it cites.
+  it('drops the no-codec-cut line when the measured step reaches the codec-wall size', async () => {
+    renderSection({
+      image: '',
+      cutoffHz: 21000,
+      sampleRateHz: 44100,
+      processed: false,
+      hasKnee: false,
+      fineStepDb: 28,
+    })
+    await screen.findByTestId('quality-badge')
+    expect(screen.queryByTestId('quality-evidence')).not.toBeInTheDocument()
   })
 
   it('keeps the plain good verdict silent when hints are off', async () => {
@@ -739,11 +756,8 @@ describe('verdict evidence', () => {
     'editor.qualityEvidenceGood',
     'editor.qualityEvidenceTranscode',
     'editor.qualityEvidenceLossy',
-    'editor.qualityEvidenceWallWhy',
     'editor.qualityEvidenceTeeth',
-    'editor.qualityEvidenceTeethWhy',
     'editor.qualityEvidenceHump',
-    'editor.qualityEvidenceHumpWhy',
     'editor.qualityEvidenceShelf',
   ])('keeps %s a measurement: no bitrate guess, no listening advice', (key) => {
     for (const lng of ['en', 'es']) {
@@ -756,7 +770,7 @@ describe('verdict evidence', () => {
 })
 
 // The bit-depth verdict and the corrected-rate plan, both argued with the
-// measurement: the padding proof is arithmetic (every low byte zero), and the
+// measurement: the padding reading is the low-byte share of the first minute, and the
 // on-convert card says what the policy will do to THIS file before it happens.
 describe('bit depth verdict and corrected-rate plan', () => {
   const base = {
@@ -767,10 +781,17 @@ describe('bit depth verdict and corrected-rate plan', () => {
     hasKnee: false,
   }
 
-  it('flags a padded 16-in-24 container with its pill and the arithmetic proof', async () => {
+  // The scan reads only the first minute and allows up to 0.05% of low-byte samples (a
+  // fade), so "zero in every sample" was false: the line says what was measured.
+  it('flags a padded 16-in-24 container with its pill and the measured reading', async () => {
     renderSection({ ...base, bitsUsage: 'padded16', bitsLowPct: 0 }, '/m/a.flac')
     const note = await screen.findByTestId('quality-bits-padded')
-    expect(note).toHaveTextContent('low 8 bits are zero')
+    expect(note).toHaveTextContent(i18n.t('editor.qualityBitsPadded'))
+    for (const lng of ['en', 'es']) {
+      const t = i18n.getFixedT(lng)
+      expect(t('editor.qualityBitsPadded')).not.toMatch(/every sample|todas las muestras/)
+      expect(t('editor.qualityBitsPaddedWhy')).toMatch(/first minute|primer minuto/)
+    }
     expect(screen.getByTestId('quality-bits-pill')).toHaveTextContent(
       i18n.t('editor.qualityBitsPill'),
     )
@@ -781,7 +802,7 @@ describe('bit depth verdict and corrected-rate plan', () => {
   it('keeps the padding proof but drops the didactic lines when hints are off', async () => {
     renderSection({ ...base, bitsUsage: 'padded16', bitsLowPct: 0 }, '/m/a.flac', false)
     const note = await screen.findByTestId('quality-bits-padded')
-    expect(note).toHaveTextContent('low 8 bits are zero')
+    expect(note).toHaveTextContent(i18n.t('editor.qualityBitsPadded'))
     expect(screen.queryByText(i18n.t('editor.qualityBitsPaddedWhy'))).not.toBeInTheDocument()
   })
 

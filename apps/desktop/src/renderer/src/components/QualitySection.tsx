@@ -2,6 +2,7 @@ import { ImageDown, TriangleAlert } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { CODEC_WALL_FINE_STEP_DB } from '../../../shared/spectrum'
 import type { NormalizeConfig, OutputSampleRate } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useSpectrogram } from '../hooks/useSpectrogram'
@@ -169,10 +170,9 @@ export function QualitySection({
             : qualityCaption[verdict]
       : null
   // The same verdict, argued with the numbers the detectors decided on. Each
-  // processed branch carries its own signature; the wall cases cite the measured
-  // fine step. A cached analysis without the fields falls back to the
-  // un-numbered captions below, and the didactic why-line obeys the same
-  // inline-explanations toggle as the other sections' teaching text.
+  // processed branch carries its own signature, and the good line cites the measured
+  // fine step. A cached analysis without the fields falls back to the un-numbered
+  // captions below.
   const evidence = (() => {
     if (!spectrum || spectrum.cutoffHz === null) return null
     const cutoff = formatKHz(spectrum.cutoffHz)
@@ -183,10 +183,8 @@ export function QualitySection({
     )
       return {
         key: 'editor.qualityEvidenceTeeth',
-        why: 'editor.qualityEvidenceTeethWhy',
         tone: 'warn' as const,
         params: {
-          cutoff,
           teeth: spectrum.teethCount,
           from: formatKHz(spectrum.teethFromHz),
           to: formatKHz(spectrum.teethToHz),
@@ -195,14 +193,12 @@ export function QualitySection({
     if (spectrum.humpPeakHz !== undefined)
       return {
         key: 'editor.qualityEvidenceHump',
-        why: 'editor.qualityEvidenceHumpWhy',
         tone: 'warn' as const,
         params: { cutoff, peak: formatKHz(spectrum.humpPeakHz) },
       }
     if (spectrum.flatShelf)
       return {
         key: 'editor.qualityEvidenceShelf',
-        why: null,
         tone: 'neutral' as const,
         params: {},
       }
@@ -211,27 +207,30 @@ export function QualitySection({
     if (transcoded)
       return {
         key: 'editor.qualityEvidenceTranscode',
-        why: 'editor.qualityEvidenceWallWhy',
         tone: 'danger' as const,
-        params: { cutoff, drop },
+        params: { cutoff },
       }
     if (lossyCut)
       return {
         key: 'editor.qualityEvidenceLossy',
-        why: 'editor.qualityEvidenceWallWhy',
         tone: 'warn' as const,
-        params: { cutoff, drop },
+        params: { cutoff },
       }
     // The good verdict earns its badge only while hints are on: it is
     // reassurance, not a warning, and hints-off users already trust the badge.
     // A knee at or past the good line still reads good but its step is a wall,
-    // so the fade claim would lie; only a knee-free spectrum gets the line.
-    if (showHints && spectrum.hasKnee !== true && captionKey === 'editor.qualityCaptionGood')
+    // so the no-cut claim would lie; only a knee-free spectrum whose steepest step
+    // stays under the codec-wall size gets the line.
+    if (
+      showHints &&
+      spectrum.hasKnee !== true &&
+      drop < CODEC_WALL_FINE_STEP_DB &&
+      captionKey === 'editor.qualityCaptionGood'
+    )
       return {
         key: 'editor.qualityEvidenceGood',
-        why: null,
         tone: 'good' as const,
-        params: { cutoff, drop },
+        params: { drop },
       }
     return null
   })()
@@ -347,9 +346,6 @@ export function QualitySection({
                     style={{ borderColor: EVIDENCE_BORDER[evidence.tone] }}
                   >
                     <p className="text-fg-dim">{tr(evidence.key, evidence.params)}</p>
-                    {showHints && evidence.why && (
-                      <p className="mt-1 text-fg-muted">{tr(evidence.why)}</p>
-                    )}
                   </div>
                 ) : (
                   spectrum.cutoffHz !== null &&
@@ -373,9 +369,7 @@ export function QualitySection({
                   </p>
                 ) : spectrum.resolution === 'hires' ? (
                   <p data-testid="quality-hires" className="mt-2 text-xs text-fg-dim">
-                    {tr('editor.qualityHiRes', {
-                      rate: formatKHz(spectrum.sampleRateHz),
-                    })}
+                    {tr('editor.qualityHiRes')}
                   </p>
                 ) : spectrum.resolution === 'unknown' ? (
                   <p data-testid="quality-resolution-unknown" className="mt-2 text-xs text-fg-dim">
