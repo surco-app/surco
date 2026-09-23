@@ -21,6 +21,8 @@ function browser(overrides: Partial<DiscogsBrowser>): DiscogsBrowser {
     release: null,
     openKey: null,
     suggestedKey: null,
+    pendingProviders: [],
+    setListEngaged: vi.fn(),
     loading: false,
     busy: false,
     resolving: false,
@@ -343,5 +345,56 @@ describe('pistas de una tarjeta plegada', () => {
         !el.closest('[inert]'),
     )
     expect(navegables).toHaveLength(results.length)
+  })
+})
+
+// Results now land provider by provider, so the list can look complete while a slower
+// catalog is still searching, and rows may be re-ranked once everything has answered.
+describe('DiscogsPanel progressive results', () => {
+  const rows = [
+    { provider: 'bandcamp', id: 9, title: 'Javier Fig - Fast Food / Slow Kids' },
+  ] as unknown as DiscogsBrowser['results']
+
+  it('says which catalog is still searching below the rows that already arrived', () => {
+    renderPanel(browser({ query: 'x', results: rows, busy: true, pendingProviders: ['discogs'] }))
+    expect(screen.getByTestId('discogs-pending')).toHaveTextContent('Searching Discogs…')
+  })
+
+  it('shows no pending line once every catalog has answered', () => {
+    renderPanel(browser({ query: 'x', results: rows }))
+    expect(screen.queryByTestId('discogs-pending')).toBeNull()
+  })
+
+  // The hook only re-ranks the list when nobody is in it, so the panel has to report both
+  // ways in: the pointer and the keyboard focus.
+  it('reports the pointer entering and leaving the result list', () => {
+    const setListEngaged = vi.fn()
+    renderPanel(browser({ query: 'x', results: rows, setListEngaged }))
+    const list = screen.getByTestId('discogs-results')
+
+    fireEvent.pointerEnter(list)
+    expect(setListEngaged).toHaveBeenLastCalledWith(true)
+    fireEvent.pointerLeave(list)
+    expect(setListEngaged).toHaveBeenLastCalledWith(false)
+  })
+
+  it('reports keyboard focus entering and leaving the result list', () => {
+    const setListEngaged = vi.fn()
+    renderPanel(browser({ query: 'x', results: rows, setListEngaged }))
+    const row = screen.getByTestId('discogs-result')
+
+    fireEvent.focus(row)
+    expect(setListEngaged).toHaveBeenLastCalledWith(true)
+    fireEvent.blur(row)
+    expect(setListEngaged).toHaveBeenLastCalledWith(false)
+  })
+
+  // When the user is in the list the suggestion is not moved to the top, so a screen reader
+  // user needs to hear which release it is rather than find a sparkle further down.
+  it('names the suggested release in the status once the search settled', () => {
+    renderPanel(browser({ query: 'x', results: rows, suggestedKey: 'bandcamp:9' }))
+    expect(screen.getByTestId('discogs-status')).toHaveTextContent(
+      '1 result. Suggested: Javier Fig - Fast Food / Slow Kids',
+    )
   })
 })

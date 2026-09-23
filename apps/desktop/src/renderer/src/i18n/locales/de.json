@@ -622,7 +622,9 @@
     "coverPositionNone": "Keines der {{total}} Bilder gewählt",
     "searching": "Suche läuft…",
     "resultsCount_one": "{{count}} Ergebnis",
-    "resultsCount_other": "{{count}} Ergebnisse"
+    "resultsCount_other": "{{count}} Ergebnisse",
+    "searchingProvider": "Suche in {{provider}}…",
+    "suggestedStatus": "Vorgeschlagen: {{title}}"
   },
   "fields": {
     "groupFilled_one": "{{count}} ausgefüllt",

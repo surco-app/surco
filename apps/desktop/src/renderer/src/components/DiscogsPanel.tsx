@@ -1,4 +1,4 @@
-import { ChevronRight, ListFilter, SearchX, Sparkles } from 'lucide-react'
+import { ChevronRight, ListFilter, Loader2, SearchX, Sparkles } from 'lucide-react'
 import type React from 'react'
 import { memo, useCallback, useEffect, useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
@@ -89,12 +89,17 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     release,
     openKey,
     suggestedKey,
+    pendingProviders,
+    setListEngaged,
     loading,
     busy,
     noResults,
     error,
     previewRelease,
   } = browser
+  const suggestedTitle = suggestedKey
+    ? results.find((r) => `${r.provider}:${r.id}` === suggestedKey)?.title
+    : undefined
   const discogs = useResizableWidth(
     resultsWidth ?? DEFAULT_RESULTS_WIDTH,
     300,
@@ -225,7 +230,12 @@ export const DiscogsPanel = memo(function DiscogsPanel({
               : noResults
                 ? tr('editor.noResults')
                 : results.length > 0
-                  ? tr('editor.resultsCount', { count: results.length })
+                  ? [
+                      tr('editor.resultsCount', { count: results.length }),
+                      suggestedTitle && tr('editor.suggestedStatus', { title: suggestedTitle }),
+                    ]
+                      .filter(Boolean)
+                      .join('. ')
                   : ''}
           </p>
           {error && (
@@ -279,10 +289,19 @@ export const DiscogsPanel = memo(function DiscogsPanel({
           )}
         </div>
 
+        {/* While the pointer or focus is in here the hook appends late answers below instead
+            of re-ranking, so the row the user is reaching for never moves under them. */}
         {/* biome-ignore lint/a11y/noStaticElementInteractions: keyboard roving for the result/track buttons inside; they keep their own native Enter/Space activation and Tab order */}
         <div
           ref={resultsRef}
+          data-testid="discogs-results"
           onKeyDown={onResultsKeyDown}
+          onPointerEnter={() => setListEngaged(true)}
+          onPointerLeave={() => setListEngaged(false)}
+          onFocus={() => setListEngaged(true)}
+          onBlur={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget)) setListEngaged(false)
+          }}
           className="min-h-0 flex-1 overflow-y-auto"
         >
           {busy && results.length === 0 ? (
@@ -522,6 +541,17 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                 </div>
               )
             })
+          )}
+          {results.length > 0 && pendingProviders.length > 0 && (
+            <div
+              data-testid="discogs-pending"
+              className="mx-1.5 mt-1.5 flex items-center gap-2 rounded-lg border border-dashed border-[var(--color-line-strong)] px-2.5 py-1.5 text-[11px] text-fg-dim"
+            >
+              <Loader2 className="h-3 w-3 shrink-0 animate-spin text-fg-faint" aria-hidden="true" />
+              {tr('editor.searchingProvider', {
+                provider: pendingProviders.map((p) => tr(`settings.provider.${p}`)).join(', '),
+              })}
+            </div>
           )}
         </div>
       </div>
