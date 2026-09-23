@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { customJob } from '../../../shared/customFields'
+import { customJob, effectiveMeta } from '../../../shared/customFields'
 import { DEFAULT_FIELDS } from '../../../shared/defaults'
 import { batchKeepMp3, hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
 import type { DeclickMode, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
@@ -197,7 +197,7 @@ export function useTrackProcessing({
         track = fresh
       }
       const missing = missingRequired(
-        track.meta,
+        effectiveMeta(track, settings?.customFields ?? []),
         settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
       )
       if (missing.length) {
@@ -514,7 +514,11 @@ export function useTrackProcessing({
       if (batching) return
       // Same completeness gate as the count/button: incomplete tracks aren't attempted (and
       // so aren't marked failed) — they stay flagged in the list for the user to finish.
-      const ids = eligibleForBatch(targets, settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS)
+      const ids = eligibleForBatch(
+        targets,
+        settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+        settings?.customFields,
+      )
       // Pin the settings that decide what a conversion DOES to the user's files: every
       // queued track converts under the settings the run started with, so a Settings
       // change mid-batch can't fork the run into another format or into unconfirmed

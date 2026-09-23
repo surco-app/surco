@@ -3,7 +3,7 @@ import type React from 'react'
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { customValues, isCustomTag } from '../../../shared/customFields'
+import { customValues, effectiveMeta, isCustomTag } from '../../../shared/customFields'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
@@ -645,7 +645,8 @@ export const Editor = memo(function Editor({
   const titleFormatResult =
     isMulti || !titleFormat.trim()
       ? undefined
-      : titleFormatPatches(titleFormat, [item])[0]?.meta.title
+      : titleFormatPatches(titleFormat, [{ ...item, meta: effectiveMeta(item, customFields) }])[0]
+          ?.meta.title
 
   // Fills tags from each file's own name (auto-detecting the common rip naming): the primary
   // track in single view, every selected track in multi. Merges, so only matched fields change.
@@ -726,8 +727,14 @@ export const Editor = memo(function Editor({
   // promises N conversions, and eligibleForBatch would silently drop incomplete
   // tracks — with all N incomplete, the click ran an empty batch that looked dead.
   const missing = isMulti
-    ? [...new Set(multiTracks.flatMap((t) => missingRequired(t.meta, requiredFields)))]
-    : missingRequired(item.meta, requiredFields)
+    ? [
+        ...new Set(
+          multiTracks.flatMap((t) =>
+            missingRequired(effectiveMeta(t, customFields), requiredFields),
+          ),
+        ),
+      ]
+    : missingRequired(effectiveMeta(item, customFields), requiredFields)
   // A multi-select whose tracks disagree about what the convert MEANS: some supersede a
   // copy in the library, others are plain adds. One click cannot honestly do both, so the
   // batch is refused and the button says why rather than silently picking one for all of
@@ -752,7 +759,8 @@ export const Editor = memo(function Editor({
   // opt-in via the "Regenerate from metadata" button below — unless auto-apply is on, where
   // it derives live from the pattern (falling back to the file name for sparse metadata).
   const defaultOutputName =
-    (autoApplyFilename && renderOutputName(filenameFormat, item.meta)) || item.fileName
+    (autoApplyFilename && renderOutputName(filenameFormat, effectiveMeta(item, customFields))) ||
+    item.fileName
   // Exporting to the source's own format edits the original file in place (and
   // renames it on disk) rather than writing a copy to the output folder — warn the
   // user before they hit the button so the rename isn't a surprise. Overwrite mode

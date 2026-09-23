@@ -453,6 +453,7 @@ export function useConfirmFlows({
     const count = eligibleForBatch(
       targets,
       settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+      settings?.customFields,
     ).length
     // The lossy-reencode wording explains the quality-loss reason and wins whenever it
     // applies, overwrite or not — a plain "originals are replaced" dialog would leave
