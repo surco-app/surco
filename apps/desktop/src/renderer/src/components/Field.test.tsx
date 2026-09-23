@@ -256,3 +256,23 @@ describe('Field tag list chips', () => {
     expect(onChange).toHaveBeenCalledWith('Pop, Indie Pop')
   })
 })
+
+// The label used to wrap the input together with the { } menu button and the chips, so a
+// screen reader announced "Genre Pop Indie Pop" for the field: the name has to be the
+// label alone, and the chips stay separate controls.
+describe('Field accessible name', () => {
+  it('names the input by its label only, not by the chips and menu around it', () => {
+    render(
+      <Field
+        name="genre"
+        label="Genre"
+        value="Pop"
+        onChange={() => {}}
+        suggestions={['Pop', 'Indie Pop']}
+        tagList={GENRE_TAGS}
+        insertSources={[{ key: 'artist', label: 'Artist', value: 'Alex' }]}
+      />,
+    )
+    expect(screen.getByRole('textbox', { name: 'Genre' })).toBe(screen.getByTestId('field-genre'))
+  })
+})
