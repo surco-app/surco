@@ -276,3 +276,23 @@ describe('Field accessible name', () => {
     expect(screen.getByRole('textbox', { name: 'Genre' })).toBe(screen.getByTestId('field-genre'))
   })
 })
+
+// An empty required field is not a mistake the user made, so it must not be announced as
+// "invalid entry"; and the amber dot that marks it is purely visual. Assistive tech needs
+// the same two facts the dot gives: the field is required, and it still blocks converting.
+describe('Field required state', () => {
+  it('announces a required field as required, not as invalid', () => {
+    render(<Field name="artist" label="Artist" value="Alex" onChange={() => {}} required />)
+    const input = screen.getByTestId('field-artist')
+    expect(input).toHaveAttribute('aria-required', 'true')
+    expect(input).not.toHaveAttribute('aria-invalid')
+    expect(input).not.toHaveAccessibleDescription()
+  })
+
+  it('explains an empty required field in words, not only with the amber dot', () => {
+    render(<Field name="artist" label="Artist" value="" onChange={() => {}} required invalid />)
+    const input = screen.getByTestId('field-artist')
+    expect(input).not.toHaveAttribute('aria-invalid')
+    expect(input).toHaveAccessibleDescription('Required: fill it in before converting')
+  })
+})

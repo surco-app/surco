@@ -31,6 +31,7 @@ export interface FieldSpec {
   onChange: (v: string) => void
   placeholder?: string
   wide?: boolean
+  required?: boolean
   invalid?: boolean
   suggestions?: string[]
   tagList?: TagList
@@ -192,6 +193,7 @@ export function buildFieldSpecs({
               label: field.label,
               value,
               onChange: customOnChange.get(key) ?? (() => {}),
+              required: requiredFields.includes(key),
               invalid: requiredFields.includes(key) && !value.trim(),
             },
           ]
@@ -209,6 +211,7 @@ export function buildFieldSpecs({
             cleanResult: !isMulti && def.key === 'album' ? albumCleanResult : undefined,
             formatResult: !isMulti && def.key === 'title' ? titleFormatResult : undefined,
             wide: def.wide,
+            required: requiredFields.includes(def.key),
             invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),
             suggestions:
               def.key === 'genre'

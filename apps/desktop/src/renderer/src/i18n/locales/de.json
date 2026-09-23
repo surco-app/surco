@@ -600,7 +600,8 @@
     "loudnessRangeNoise": "Gut: -45 dB oder niedriger.",
     "loudnessFixNoise": "Hier nicht korrigierbar: Surco entrauscht nicht. Es stammt aus Quelle oder Aufnahme.",
     "loudnessAfterHeader": "jetzt → nach dem Konvertieren",
-    "replaceMusic": "Durch {{format}} ersetzen + Apple Music"
+    "replaceMusic": "Durch {{format}} ersetzen + Apple Music",
+    "requiredEmpty": "Pflichtfeld: vor dem Konvertieren ausfüllen"
   },
   "fields": {
     "groupFilled_one": "{{count}} ausgefüllt",

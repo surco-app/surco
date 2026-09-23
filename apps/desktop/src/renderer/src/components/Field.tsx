@@ -1,5 +1,6 @@
 import type React from 'react'
 import { memo, useEffect, useId, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { TagList } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
@@ -18,6 +19,8 @@ interface FieldProps {
   value: string
   onChange: (v: string) => void
   wide?: boolean
+  required?: boolean
+  // Required and still empty: drawn as the amber dot, read out as a description.
   invalid?: boolean
   placeholder?: string
   suggestions?: string[]
@@ -39,6 +42,7 @@ export const Field = memo(function Field({
   value,
   onChange,
   wide,
+  required,
   invalid,
   placeholder,
   suggestions,
@@ -49,7 +53,9 @@ export const Field = memo(function Field({
   formatResult,
 }: FieldProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
+  const { t: tr } = useTranslation()
   const inputId = useId()
+  const requiredNoteId = useId()
   // The text the input shows while the user types, kept local so a keystroke doesn't
   // touch the global track array (and its O(n) pipeline) until they pause or leave.
   const [draft, setDraft] = useState(value)
@@ -139,7 +145,10 @@ export const Field = memo(function Field({
           ref={inputRef}
           id={inputId}
           data-testid={`field-${name}`}
-          aria-invalid={invalid}
+          // Empty-but-required is not a wrong entry, so it isn't aria-invalid: the field
+          // says it is required and, while empty, describes why the dot is there.
+          aria-required={required || undefined}
+          aria-describedby={invalid ? requiredNoteId : undefined}
           value={draft}
           placeholder={placeholder}
           onChange={(e) => onType(e.target.value)}
@@ -166,6 +175,11 @@ export const Field = memo(function Field({
           />
         )}
       </span>
+      {invalid && (
+        <span id={requiredNoteId} className="sr-only">
+          {tr('editor.requiredEmpty')}
+        </span>
+      )}
       {/* Detecting the audio suggestion (BPM/Key): a placeholder chip in the exact shape
           of the real one, so the detected value swaps in without popping into empty space.
           Drops out the moment a real suggestion arrives (or the probe fails → no chip). */}

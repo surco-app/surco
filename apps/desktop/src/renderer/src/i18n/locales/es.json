@@ -600,7 +600,8 @@
     "loudnessRangeNoise": "Bueno: -45 dB o menos.",
     "loudnessFixNoise": "No se puede corregir aquí: Surco no elimina ruido. Viene del origen o de la captura.",
     "loudnessAfterHeader": "ahora → tras convertir",
-    "replaceMusic": "Sustituir por {{format}} + Apple Music"
+    "replaceMusic": "Sustituir por {{format}} + Apple Music",
+    "requiredEmpty": "Obligatorio: rellénalo antes de convertir"
   },
   "fields": {
     "groupFilled_one": "{{count}} con datos",
