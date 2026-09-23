@@ -150,11 +150,36 @@ describe('ExportButton', () => {
       />,
     )
     const btn = screen.getByTestId('process-btn')
-    expect(btn).toHaveAccessibleName(i18n.t('export.cancelWhile', { stage: 'Converting to AIFF…' }))
+    expect(btn).toHaveAccessibleName(
+      i18n.t('export.cancelWhile', {
+        stage: `Converting to AIFF… ${i18n.t('trackList.progress', { percent: 55 })}`,
+      }),
+    )
     expect(btn).toHaveAccessibleName(/Converting to AIFF…/)
     expect(screen.getByText(i18n.t('common.cancel')).className).toContain(
       'group-focus-within:inline',
     )
+  })
+
+  // The fill is a bare aria-hidden span, so a screen reader heard the stage but never how
+  // far along it was. A button flattens any role inside it, so the amount is in its name.
+  it('speaks the progress of the converting button, live or inert', () => {
+    const percent = i18n.t('trackList.progress', { percent: 55 })
+    const { unmount } = render(
+      <ExportButton {...baseProps} incomplete={false} status="processing" stage="converting" />,
+    )
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName(new RegExp(percent))
+    unmount()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        status="processing"
+        stage="converting"
+        onCancel={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName(new RegExp(percent))
   })
 
   // Without a cancel handler the processing button stays the inert progress bar it was —
