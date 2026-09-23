@@ -565,8 +565,6 @@
     "libraryCheckFailed": "No se ha podido leer tu biblioteca de Apple Music, así que las pistas no se marcan como ya incluidas. Surco lo vuelve a intentar al volver a la ventana.",
     "libraryCheckFailedEngine": "No se ha podido leer tu biblioteca de Engine DJ, así que las pistas no se marcan como ya incluidas. Surco lo vuelve a intentar al volver a la ventana.",
     "checkingLibrary": "Comprobando…",
-    "ambiguousLibraryCopies_one": "{{count}} copia casi idéntica: se añadirá una nueva",
-    "ambiguousLibraryCopies_other": "{{count}} copias casi idénticas: se añadirá una nueva",
     "convertAll": "Convertir ({{count}}) · {{format}}",
     "editingMultiple": "Editando {{count}} pistas",
     "multipleValues": "Varios valores",

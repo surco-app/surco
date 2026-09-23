@@ -565,8 +565,6 @@
     "libraryCheckFailed": "Deine Apple-Music-Mediathek konnte nicht gelesen werden, daher werden Tracks nicht als bereits enthalten markiert. Surco versucht es erneut, wenn du zum Fenster zurückkehrst.",
     "libraryCheckFailedEngine": "Deine Engine-DJ-Bibliothek konnte nicht gelesen werden, daher werden Tracks nicht als bereits enthalten markiert. Surco versucht es erneut, wenn du zum Fenster zurückkehrst.",
     "checkingLibrary": "Wird geprüft…",
-    "ambiguousLibraryCopies_one": "{{count}} fast identische Kopie: eine neue wird hinzugefügt",
-    "ambiguousLibraryCopies_other": "{{count}} fast identische Kopien: eine neue wird hinzugefügt",
     "convertAll": "Konvertieren ({{count}}) · {{format}}",
     "editingMultiple": "{{count}} Tracks werden bearbeitet",
     "multipleValues": "Mehrere Werte",
