@@ -944,4 +944,13 @@ describe('TrackList review spark', () => {
     expect(row).not.toContainElement(spark)
     expect(row.parentElement).toContainElement(spark)
   })
+
+  // The spark glyph is 12px, half the 24px minimum target (WCAG 2.5.8), so accepting a
+  // suggestion took a precise aim. The button grows its hit area, not the glyph.
+  it('gives the accept-review button a 24px hit area around the small glyph', () => {
+    renderList([track({ id: 'a', matchReview: true, matchConfidence: 0.7 })])
+    const spark = screen.getByTestId('track-match-review')
+    expect(spark.className).toMatch(/\bh-6\b/)
+    expect(spark.className).toMatch(/\bw-6\b/)
+  })
 })
