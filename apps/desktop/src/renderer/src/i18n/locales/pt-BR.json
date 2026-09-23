@@ -126,7 +126,14 @@
     "convertedOutputUnreadable": "O arquivo convertido saiu ilegível, então foi descartado e o original ficou intacto. Tente de novo com outros ajustes de conversão.",
     "convertedOutputTruncated": "O arquivo convertido saiu mais curto que o original, então foi descartado e o original ficou intacto. Tente de novo com outros ajustes de conversão.",
     "engineDjOpen": "Feche o Engine DJ antes de converter: ele está com a biblioteca aberta.",
-    "sourceTagsUnread": "As tags deste arquivo não puderam ser lidas, então ele não foi tocado: convertê-lo apagaria as que ele tem. Carregue-o de novo e tente outra vez."
+    "sourceTagsUnread": "As tags deste arquivo não puderam ser lidas, então ele não foi tocado: convertê-lo apagaria as que ele tem. Carregue-o de novo e tente outra vez.",
+    "coverDownloadFailed": "Não foi possível baixar a capa.",
+    "coverNotImage": "Esse endereço não leva a uma imagem.",
+    "bandcampUnavailable": "O Bandcamp não respondeu direito. Tente de novo daqui a pouco.",
+    "bandcampPageUnreadable": "Não foi possível ler essa página do Bandcamp.",
+    "bandcampUrlBlocked": "Esse endereço do Bandcamp não é permitido, então não foi aberto.",
+    "deezerUnavailable": "O Deezer não respondeu direito. Tente de novo daqui a pouco.",
+    "discogsUnavailable": "O Discogs não respondeu direito. Tente de novo daqui a pouco."
   },
   "trash": {
     "title": "Originais do Surco",

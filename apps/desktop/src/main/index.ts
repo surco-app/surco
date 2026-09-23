@@ -625,7 +625,7 @@ function registerIpc(): void {
 
   ipcMain.handle('dialog:pickConfigDir', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
-      title: 'Carpeta de configuración',
+      title: createMenuT(menuLocale())('dialogConfigDir'),
       properties: ['openDirectory', 'createDirectory'],
     })
     return canceled ? null : filePaths[0]
@@ -640,7 +640,7 @@ function registerIpc(): void {
         ? ['openFile', 'openDirectory', 'multiSelections']
         : ['openFile', 'multiSelections']
     const { canceled, filePaths } = await dialog.showOpenDialog({
-      title: 'Selecciona pistas',
+      title: createMenuT(menuLocale())('dialogPickTracks'),
       properties,
       filters: [
         {
@@ -714,7 +714,7 @@ function registerIpc(): void {
 
   ipcMain.handle('dialog:pickOutputDir', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
-      title: 'Carpeta de salida',
+      title: createMenuT(menuLocale())('dialogOutputDir'),
       properties: ['openDirectory', 'createDirectory'],
     })
     return canceled ? null : filePaths[0]
@@ -722,7 +722,7 @@ function registerIpc(): void {
 
   ipcMain.handle('dialog:pickEngineLibraryDir', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
-      title: 'Biblioteca de Engine DJ',
+      title: createMenuT(menuLocale())('dialogEngineLibrary'),
       properties: ['openDirectory', 'createDirectory'],
     })
     return canceled ? null : filePaths[0]
@@ -730,7 +730,7 @@ function registerIpc(): void {
 
   ipcMain.handle('dialog:pickTraktorNmlPath', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
-      title: 'Colección de Traktor',
+      title: createMenuT(menuLocale())('dialogTraktorCollection'),
       properties: ['openFile'],
       filters: [{ name: 'Traktor Collection', extensions: ['nml'] }],
     })
@@ -742,7 +742,7 @@ function registerIpc(): void {
   // something it would then refuse to open.
   ipcMain.handle('dialog:pickRekordboxDbPath', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
-      title: 'Colección de rekordbox',
+      title: createMenuT(menuLocale())('dialogRekordboxCollection'),
       properties: ['openFile'],
       filters: [{ name: 'rekordbox master.db', extensions: ['db'] }],
     })
@@ -771,7 +771,7 @@ function registerIpc(): void {
     findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
   )
 
-  registerExportIpc()
+  registerExportIpc(() => createMenuT(menuLocale()))
 
   // The Engine-library counterpart of applemusic:library: the title/artist/duration
   // snapshot the renderer matches the crate against when Engine DJ is the destination.
@@ -1102,7 +1102,7 @@ function registerIpc(): void {
     if (!prepared) return null
     try {
       const { canceled, filePath } = await dialog.showSaveDialog({
-        title: 'Exporta la carátula',
+        title: createMenuT(menuLocale())('dialogExportCover'),
         defaultPath: `${sanitizeFilename(job.name)}.jpg`,
         filters: [{ name: 'JPEG', extensions: ['jpg'] }],
       })
