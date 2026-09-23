@@ -214,7 +214,7 @@ export function Tooltip({
             className="animate-overlay pointer-events-none fixed z-50 w-max rounded-md bg-[var(--color-panel-2)] px-2 py-1 text-left text-xs font-normal text-fg shadow-md ring-1 ring-[var(--color-line-strong)]"
           >
             {label}
-            {hint && <span className="ml-2 text-fg-faint">{hint}</span>}
+            {hint && <span className="ml-2 text-fg-dim">{hint}</span>}
           </span>,
           document.body,
         )}
