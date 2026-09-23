@@ -513,6 +513,10 @@ export function CoverPicker({
           <span className="tabular-nums text-fg-dim">
             {coverDims.w} × {coverDims.h} px
           </span>
+          {/* The dot's amber is the only visual cue, so a low-res cover is also named. */}
+          {isLowResCover(coverDims.w, coverDims.h) && (
+            <span className="sr-only">{tr('editor.coverLowRes')}</span>
+          )}
         </div>
       )}
     </div>

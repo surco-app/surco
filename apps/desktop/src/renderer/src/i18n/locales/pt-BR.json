@@ -602,7 +602,8 @@
     "loudnessAfterHeader": "agora → após converter",
     "replaceMusic": "Substituir por {{format}} + Apple Music",
     "requiredEmpty": "Obrigatório: preencha antes de converter",
-    "coverMixed": "As faixas selecionadas têm capas diferentes"
+    "coverMixed": "As faixas selecionadas têm capas diferentes",
+    "coverLowRes": "Baixa resolução"
   },
   "fields": {
     "groupFilled_one": "{{count}} preenchido",
