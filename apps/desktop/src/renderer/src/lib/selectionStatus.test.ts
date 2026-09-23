@@ -78,13 +78,13 @@ describe('selectionStatus superseded files', () => {
       replacesPath: `/m/${id}-old.mp3`,
     })
 
-  it('collects every superseded file across the selection', () => {
+  it('collects every superseded file across the selection with the track that replaced it', () => {
     const a = replaced('a')
     const b = replaced('b')
 
-    expect(selectionStatus(a, [a, b], true).supersededPaths).toEqual([
-      '/m/a-old.mp3',
-      '/m/b-old.mp3',
+    expect(selectionStatus(a, [a, b], true).superseded).toEqual([
+      { trackId: 'a', path: '/m/a-old.mp3' },
+      { trackId: 'b', path: '/m/b-old.mp3' },
     ])
   })
 
@@ -95,7 +95,9 @@ describe('selectionStatus superseded files', () => {
     const done = replaced('a')
     const running = track({ id: 'b', status: 'processing', replacesPath: '/m/b-old.mp3' })
 
-    expect(selectionStatus(done, [done, running], true).supersededPaths).toEqual(['/m/a-old.mp3'])
+    expect(selectionStatus(done, [done, running], true).superseded).toEqual([
+      { trackId: 'a', path: '/m/a-old.mp3' },
+    ])
   })
 
   // Already trashed drops out, so the offer shrinks as files go and retires when none are
@@ -104,14 +106,16 @@ describe('selectionStatus superseded files', () => {
     const a = replaced('a')
     const gone = { ...replaced('b'), supersededTrashed: true }
 
-    expect(selectionStatus(a, [a, gone], true).supersededPaths).toEqual(['/m/a-old.mp3'])
+    expect(selectionStatus(a, [a, gone], true).superseded).toEqual([
+      { trackId: 'a', path: '/m/a-old.mp3' },
+    ])
   })
 
   // An ordinary batch supersedes nothing, so there is no offer at all.
   it('collects nothing when the batch replaced no copies', () => {
     const a = track({ id: 'a', status: 'done', outputPath: '/m/a.aiff' })
 
-    expect(selectionStatus(a, [a], true).supersededPaths).toEqual([])
+    expect(selectionStatus(a, [a], true).superseded).toEqual([])
   })
 
   // Single-select keeps its own per-track link (supersededFile), so the aggregate stays
@@ -119,6 +123,6 @@ describe('selectionStatus superseded files', () => {
   it('stays empty in single-select', () => {
     const a = replaced('a')
 
-    expect(selectionStatus(a, undefined, true).supersededPaths).toEqual([])
+    expect(selectionStatus(a, undefined, true).superseded).toEqual([])
   })
 })

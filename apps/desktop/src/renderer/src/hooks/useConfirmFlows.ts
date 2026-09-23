@@ -13,14 +13,19 @@ import { deriveTagPatches } from '../lib/deriveTags'
 import type { Destination } from '../lib/destination'
 import { DEFAULT_REQUIRED_FIELDS } from '../lib/fields'
 import { declickFor, declickForJob, normalizeFor, normalizeForJob } from '../lib/reapply'
+import type { SupersededFile } from '../lib/selectionStatus'
 import { hasStagedEdits } from '../lib/sessionEdits'
 import type { TrackItem } from '../types'
 import type { ConfirmModal } from './useOverlays'
 
 export interface CleanupOffer {
   originalPath: string | null
-  supersededPaths: string[]
+  superseded: SupersededFile[]
   staleMusicCopy: StaleLibraryCopy | null
+}
+
+export function cleanupCount(offer: CleanupOffer): number {
+  return (offer.originalPath ? 1 : 0) + offer.superseded.length + (offer.staleMusicCopy ? 1 : 0)
 }
 
 // Whether a track's own filters (normalize, trim, declick) will actually reach the
@@ -197,10 +202,9 @@ export function useConfirmFlows({
   // a second trash would fail on a missing file. Each row is marked only once its own file
   // is gone, so a partial failure leaves the rest of the offer standing.
   async function askCleanUp(track: TrackItem, offer: CleanupOffer): Promise<void> {
-    const { originalPath, supersededPaths, staleMusicCopy } = offer
-    const files = [...(originalPath ? [originalPath] : []), ...supersededPaths]
-    const count = files.length + (staleMusicCopy ? 1 : 0)
-    if (count === 0) return
+    const { originalPath, superseded, staleMusicCopy } = offer
+    const files = [...(originalPath ? [originalPath] : []), ...superseded.map((s) => s.path)]
+    const count = cleanupCount(offer)
     const isWin = window.api.platform === 'win32'
     const baseName = (path: string): string => path.slice(path.lastIndexOf('/') + 1)
     // A network volume may have no Trash, and the OS then deletes outright. Measured 15/09
@@ -210,7 +214,7 @@ export function useConfirmFlows({
     const message = tr(isWin ? 'confirm.cleanUpMessageWin' : 'confirm.cleanUpMessage', { count })
     const items = [
       ...(originalPath ? [tr('confirm.cleanUpOriginal', { name: baseName(originalPath) })] : []),
-      ...supersededPaths.map((path) => tr('confirm.cleanUpSuperseded', { name: baseName(path) })),
+      ...superseded.map(({ path }) => tr('confirm.cleanUpSuperseded', { name: baseName(path) })),
       ...(staleMusicCopy ? [tr('confirm.cleanUpMusicCopy', { copy: staleMusicCopy.label })] : []),
     ]
     const trash = (path: string, patch: Partial<TrackItem>, id: string): void => {
@@ -222,10 +226,9 @@ export function useConfirmFlows({
     const trashFiles = (alreadyGone: string | undefined): void => {
       if (originalPath && originalPath !== alreadyGone)
         trash(originalPath, { originalTrashed: true }, track.id)
-      for (const path of supersededPaths) {
+      for (const { path, trackId } of superseded) {
         if (path === alreadyGone) continue
-        const owner = tracksRef.current.find((t) => t.replacesPath === path) ?? track
-        trash(path, { supersededTrashed: true }, owner.id)
+        trash(path, { supersededTrashed: true }, trackId)
       }
     }
     openConfirm({

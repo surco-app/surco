@@ -1,5 +1,12 @@
 import type { TrackItem } from '../types'
 
+// A stranded file and the track whose replacement stranded it, so trashing it marks
+// that track and no other.
+export interface SupersededFile {
+  trackId: string
+  path: string
+}
+
 // The post-convert footer's aggregate view of the selection. In single-track mode the
 // values mirror the one open track; in multi-select the done block shows once every
 // selected track is converted, reveal opens the first output, and the Apple Music
@@ -15,7 +22,7 @@ export interface SelectionStatus {
   // The files a multi-select batch of replacements left stranded: out of Apple Music,
   // with rekordbox following their successors. Empty in single-select, where the footer
   // offers the one file through supersededFile instead.
-  supersededPaths: string[]
+  superseded: SupersededFile[]
 }
 
 export function selectionStatus(
@@ -53,10 +60,10 @@ export function selectionStatus(
   // per-track link (supersededFile), so this stays empty there and the two offers can
   // never both appear. Unfinished and already-trashed tracks drop out for the same reasons
   // supersededFile applies per track.
-  const supersededPaths = isMulti
+  const superseded = isMulti
     ? multiTracks
         .filter((t) => t.status === 'done' && t.replacesPath && !t.supersededTrashed)
-        .map((t) => t.replacesPath as string)
+        .map((t) => ({ trackId: t.id, path: t.replacesPath as string }))
     : []
   return {
     showDone,
@@ -66,6 +73,6 @@ export function selectionStatus(
     musicAdding,
     musicAdded,
     musicError,
-    supersededPaths,
+    superseded,
   }
 }
