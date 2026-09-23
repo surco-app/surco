@@ -64,6 +64,16 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   const STEPS: readonly Step[] =
     djLibraries.length > 0 ? [...BASE_STEPS, 'djLibraries'] : BASE_STEPS
 
+  // Each step change lands the focus on the new step's heading: Back unmounts on the first
+  // step and the focus fell to body, outside the trap, and a focused heading is also what
+  // makes VoiceOver announce the step. The mount keeps the trap's own initial focus.
+  const shownStep = useRef(step)
+  useEffect(() => {
+    if (shownStep.current === step) return
+    shownStep.current = step
+    dialogRef.current?.querySelector<HTMLElement>('#onboarding-step-title')?.focus()
+  }, [step])
+
   const isLast = step === STEPS.length - 1
   const discogsOn = synced.searchProviders.includes('discogs')
 
@@ -123,7 +133,11 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                   strokeWidth={1.75}
                   className="mb-5 h-12 w-12 text-[var(--color-accent)]"
                 />
-                <h2 id="onboarding-step-title" className="text-lg font-semibold text-balance">
+                <h2
+                  id="onboarding-step-title"
+                  tabIndex={-1}
+                  className="focus-visible:shadow-none text-lg font-semibold text-balance"
+                >
                   {tr('onboarding.welcomeTitle')}
                 </h2>
                 <p className="mt-2 max-w-sm text-sm text-pretty text-fg-dim">
@@ -134,7 +148,11 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
             {STEPS[step] === 'search' && (
               <>
-                <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
+                <h2
+                  id="onboarding-step-title"
+                  tabIndex={-1}
+                  className="focus-visible:shadow-none mb-1 text-lg font-semibold"
+                >
                   {tr('settings.searchProviders')}
                 </h2>
                 <p className="mb-4 text-sm text-fg-dim">{tr('settings.searchProvidersHint')}</p>
@@ -169,7 +187,11 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
             {STEPS[step] === 'format' && (
               <>
-                <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
+                <h2
+                  id="onboarding-step-title"
+                  tabIndex={-1}
+                  className="focus-visible:shadow-none mb-1 text-lg font-semibold"
+                >
                   {tr('settings.outputFormat')}
                 </h2>
                 <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.formatBody')}</p>
@@ -225,7 +247,11 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
             {STEPS[step] === 'audio' && (
               <>
-                <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
+                <h2
+                  id="onboarding-step-title"
+                  tabIndex={-1}
+                  className="focus-visible:shadow-none mb-1 text-lg font-semibold"
+                >
                   {tr('onboarding.audioTitle')}
                 </h2>
                 <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.audioBody')}</p>
@@ -276,7 +302,11 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
             {STEPS[step] === 'djLibraries' && (
               <>
-                <h2 id="onboarding-step-title" className="mb-1 text-lg font-semibold">
+                <h2
+                  id="onboarding-step-title"
+                  tabIndex={-1}
+                  className="focus-visible:shadow-none mb-1 text-lg font-semibold"
+                >
                   {tr('onboarding.djLibrariesTitle')}
                 </h2>
                 <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.djLibrariesBody')}</p>
