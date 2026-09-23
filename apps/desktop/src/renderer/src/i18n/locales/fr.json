@@ -46,7 +46,7 @@
     "convertAll_other": "Convertir {{count}} pistes",
     "cancelConvert": "Annuler la conversion : les morceaux en file sont ignorés, ceux en cours se terminent",
     "cancelImport": "Arrêter la lecture : ce qui est déjà lu reste, le reste est abandonné",
-    "autoMatch": "Auto-associer tous les morceaux sur Discogs",
+    "autoMatch": "Auto-associer tous les morceaux",
     "autoMatchNoToken": "Ajoute un token Discogs dans les Réglages pour auto-associer",
     "autoMatchLabel": "Associer",
     "addToken": "Ajouter un token",
@@ -251,7 +251,7 @@
     "listPageUp": "Monter d'une page",
     "listPageDown": "Descendre d'une page",
     "focusList": "Aller à la liste des morceaux",
-    "focusMatches": "Aller aux résultats Discogs",
+    "focusMatches": "Aller aux résultats de recherche",
     "focusEditor": "Aller à l'éditeur",
     "focusColumnPrev": "Aller à la colonne précédente",
     "focusColumnNext": "Aller à la colonne suivante",
@@ -284,7 +284,7 @@
     "analyzeQuality": "Analyser la qualité de tous les morceaux",
     "trashSuspects": "Mettre les fichiers douteux à la corbeille",
     "trashSelected": "Mettre la sélection à la corbeille",
-    "autoMatch": "Auto-associer tous les morceaux sur Discogs",
+    "autoMatch": "Auto-associer tous les morceaux",
     "acceptReview": "Accepter la correspondance suggérée",
     "export": "Exporter vers un logiciel DJ",
     "stats": "Statistiques",
@@ -335,7 +335,7 @@
       "revealWin": "Afficher dans l'Explorateur",
       "open": "Ouvrir le fichier",
       "copyPath": "Copier le chemin du fichier",
-      "search": "Rechercher sur Discogs",
+      "search": "Rechercher dans tes sources",
       "searchWeb": "Rechercher sur Google",
       "startOver": "Repartir de zéro",
       "copyMeta": "Copier toutes les métadonnées",
@@ -346,7 +346,7 @@
     }
   },
   "editor": {
-    "searchPlaceholder": "Rechercher sur Discogs ou coller un id de release…",
+    "searchPlaceholder": "Rechercher dans tes sources ou coller un id de release Discogs…",
     "searchClear": "Effacer la recherche",
     "tokenTip": "La recherche fonctionne sans rien configurer. Ajoute ton propre token Discogs dans les <0>Réglages</0> pour une limite plus élevée et privée.",
     "chooseTrack": "Choisis le morceau à appliquer",
@@ -788,7 +788,7 @@
       "reset": "Rétablir la valeur par défaut",
       "resetAll": "Tout réinitialiser ({{count}})",
       "conflict": "Deux commandes partagent un raccourci. Résous-le pour enregistrer.",
-      "fixedNav": "Toujours actives (non modifiables) : ↑↓ ou j / k parcourent la liste des morceaux et les résultats Discogs, Début / Fin vont aux extrémités, et Page haut / bas avancent d'une page.",
+      "fixedNav": "Toujours actives (non modifiables) : ↑↓ ou j / k parcourent la liste des morceaux et les résultats de recherche, Début / Fin vont aux extrémités, et Page haut / bas avancent d'une page.",
       "groupTrim": "Éditeur de silences",
       "groupTrimHint": "Quand la section de rognage est ouverte",
       "groupTrackList": "Liste des morceaux",
@@ -870,7 +870,7 @@
     "tokenWhy": "Optionnel. La recherche utilise des identifiants partagés qui peuvent flancher aux heures de pointe ; ton propre token la garde rapide.",
     "tokenHelp": "Génères-en un gratuitement sur",
     "autoMatch": "Auto-associer à l'import",
-    "autoMatchHint": "À l'import, cherche dans tes sources et applique les correspondances fiables. Discogs d'abord, Bandcamp en secours. Désactivé par défaut.",
+    "autoMatchHint": "À l'import, cherche dans tes sources et applique les correspondances fiables. Discogs d'abord, tes autres sources en secours. Désactivé par défaut.",
     "autoMatchNeedsToken": "Discogs fait partie de tes sources : ajoute son token pour auto-associer.",
     "autoMatchNeedsSource": "Active au moins une source de recherche pour auto-associer.",
     "discogsFormats": "N'afficher que ces formats",
@@ -880,7 +880,7 @@
     "searchIgnoreWords": "Mots à ignorer dans les recherches",
     "searchIgnoreWordsHint": "Mots ou expressions séparés par des virgules (signatures de rip, filigranes) retirés des titres lors de la recherche et de l'appariement. Vos tags ne sont jamais modifiés.",
     "searchProviders": "Sources de recherche",
-    "searchProvidersHint": "Les catalogues où l'éditeur cherche. Discogs est un catalogue soigné ; Bandcamp ajoute les sorties autoproduites.",
+    "searchProvidersHint": "Les catalogues où l'éditeur cherche. Discogs est un catalogue soigné, Bandcamp ajoute les sorties autoproduites et Deezer couvre les sorties numériques commerciales.",
     "provider": {
       "discogs": "Discogs",
       "bandcamp": "Bandcamp",
@@ -990,7 +990,7 @@
     "groupingHint": "Affichés comme boutons rapides à l'édition d'un morceau.",
     "genre": "Genres (séparés par des virgules)",
     "genrePlaceholder": "Hard Dance, Techno",
-    "genreHint": "Affichés comme boutons rapides à côté de ceux de Discogs.",
+    "genreHint": "Affichés comme boutons rapides à côté de ceux de la release choisie.",
     "trimWhitespace": "Supprimer les espaces superflus",
     "zeroPadTrack": "N° de piste avec zéro devant (03)",
     "coverMaxSize": "Taille maximale de la pochette",
@@ -1104,7 +1104,7 @@
     "audioBody": "Surco n'affiche que les sections de l'éditeur dont ton flux a besoin. Choisis ce qui te convient — modifiable à tout moment dans les Réglages.",
     "intent": {
       "metadata": "Corriger les métadonnées",
-      "metadataBody": "Tags, pochette et l'appariement Discogs — toujours actif. C'est à ça que sert Surco.",
+      "metadataBody": "Tags, pochette et l'appariement avec Discogs, Bandcamp et Deezer. Toujours actif : c'est à ça que sert Surco.",
       "restore": "Restaurer les rips de vinyle",
       "restoreBody": "Couper les silences et réparer les clics et craquements des enregistrements de vinyle.",
       "level": "Égaliser le loudness",
@@ -1148,7 +1148,7 @@
       },
       "windows": {
         "q": "Quelque chose change-t-il sous Windows ?",
-        "a": "Presque tout fonctionne exactement pareil : la conversion, le tagging, la recherche sur Discogs et Bandcamp, l'analyse de qualité et l'export vers rekordbox, Traktor, Serato et Engine DJ.\n\nLa seule chose qui n'existe pas sous Windows, c'est l'intégration Apple Music. Surco pilote l'app Musique d'Apple via AppleScript, un pont d'automatisation qui n'existe que sur macOS — l'app Apple Music pour Windows n'offre rien d'équivalent —, donc la destination, les boutons et le badge de bibliothèque Apple Music n'apparaissent tout simplement pas.\n\nUne particularité à connaître sur les WAV : Surco enregistre les tags des WAV dans le chunk ID3 standard, que les apps de DJ et les éditeurs de tags comme Mp3tag lisent sans problème, mais que l'Explorateur Windows ne peut pas afficher — un WAV converti peut sembler sans tags dans un dossier alors qu'ils sont tous là. Avec le MP3 ou le FLAC, l'Explorateur les affiche normalement."
+        "a": "Presque tout fonctionne exactement pareil : la conversion, le tagging, la recherche sur Discogs, Bandcamp et Deezer, l'analyse de qualité et l'export vers rekordbox, Traktor, Serato et Engine DJ.\n\nLa seule chose qui n'existe pas sous Windows, c'est l'intégration Apple Music. Surco pilote l'app Musique d'Apple via AppleScript, un pont d'automatisation qui n'existe que sur macOS — l'app Apple Music pour Windows n'offre rien d'équivalent —, donc la destination, les boutons et le badge de bibliothèque Apple Music n'apparaissent tout simplement pas.\n\nUne particularité à connaître sur les WAV : Surco enregistre les tags des WAV dans le chunk ID3 standard, que les apps de DJ et les éditeurs de tags comme Mp3tag lisent sans problème, mais que l'Explorateur Windows ne peut pas afficher — un WAV converti peut sembler sans tags dans un dossier alors qu'ils sont tous là. Avec le MP3 ou le FLAC, l'Explorateur les affiche normalement."
       }
     }
   },
