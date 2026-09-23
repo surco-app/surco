@@ -217,6 +217,8 @@ interface RowProps {
   // Plain ⌫/Supr on the focused row — the keyboard ✕. Separate from onRemove because
   // the list must also hop selection/focus to a surviving neighbour (see TrackList).
   onRemoveKey: (id: string) => void
+  // Shift+↑/↓ on the focused row: extends the range to its neighbour in that direction.
+  onExtendKey: (id: string, delta: 1 | -1) => void
   onPrefetch: (id: string) => void
   onOpenMenu: (track: TrackItem, x: number, y: number) => void
   // Starts the native drag-out for this row (all selected files when it's part of the
@@ -246,6 +248,7 @@ const TrackRow = memo(function TrackRow({
   onRemove,
   onAcceptReview,
   onRemoveKey,
+  onExtendKey,
   onPrefetch,
   onOpenMenu,
   onDragOut,
@@ -340,6 +343,22 @@ const TrackRow = memo(function TrackRow({
             const r = e.currentTarget.getBoundingClientRect()
             if (!selected) onSelect(t.id, {})
             onOpenMenu(t, r.left, r.bottom)
+            return
+          }
+          // Shift+↑/↓ grows the range from the anchor, the keyboard twin of a Shift-click.
+          // Claimed here even at the list's ends, or the global ↑/↓ would run "next"/"prev"
+          // and collapse the range the user is building.
+          const plainShift = e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey
+          if (plainShift && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+            e.preventDefault()
+            onExtendKey(t.id, e.key === 'ArrowDown' ? 1 : -1)
+            return
+          }
+          // Plain Space plays, so ⌘Space / Ctrl+Space toggles the focused row in or out of
+          // the selection without dropping the rest, like a ⌘-click.
+          if (e.key === ' ' && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
+            e.preventDefault()
+            onSelect(t.id, { meta: true })
             return
           }
           // Bare key only: ⌘⌫ belongs to the global remove command, and the list is a
@@ -639,6 +658,15 @@ export const TrackList = memo(function TrackList({
       rowRegistry?.current?.get(neighbor.id)?.focus()
     }
   })
+  // The moving end of a keyboard range is the focused row, not the anchor: the anchor stays
+  // the editor's track (as with a Shift-click), and the focus hops to the new end so the
+  // next Shift+↑/↓ keeps growing or shrinking the same range.
+  const extendViaKeyboard = useStableCallback((id: string, delta: 1 | -1): void => {
+    const to = tracks[tracks.findIndex((t) => t.id === id) + delta]
+    if (!to) return
+    onSelect(to.id, { shift: true })
+    rowRegistry?.current?.get(to.id)?.focus()
+  })
   // Stable so the memoized rows don't all re-render when the menu opens/closes.
   const openMenu = useCallback(
     (track: TrackItem, x: number, y: number) => setMenu({ track, x, y }),
@@ -716,6 +744,7 @@ export const TrackList = memo(function TrackList({
             onRemove={onRemove}
             onAcceptReview={onAcceptReview}
             onRemoveKey={removeViaKeyboard}
+            onExtendKey={extendViaKeyboard}
             onPrefetch={onPrefetch}
             onOpenMenu={openMenu}
             onDragOut={startDragOut}

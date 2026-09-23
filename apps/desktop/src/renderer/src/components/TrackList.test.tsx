@@ -831,6 +831,55 @@ describe('TrackList hover overlays', () => {
   })
 })
 
+describe('TrackList keyboard selection', () => {
+  // Shift+↓ used to fall through to plain "next", collapsing the multi-selection the user
+  // was building: the keyboard had no way to select a range. It must extend from the anchor
+  // to the row below the focused one, exactly like a Shift-click there, and carry the focus
+  // along so the next press keeps growing the range.
+  it('extends the selection from the focused row with Shift and the arrows', () => {
+    const { onSelect } = renderList(
+      [track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })],
+      'a',
+    )
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.keyDown(rows[1], { key: 'ArrowDown', shiftKey: true })
+    expect(onSelect).toHaveBeenCalledWith('c', { shift: true })
+    fireEvent.keyDown(rows[1], { key: 'ArrowUp', shiftKey: true })
+    expect(onSelect).toHaveBeenLastCalledWith('a', { shift: true })
+  })
+
+  // The global handler maps ↓ to "next" and would move the selection a second time,
+  // collapsing the range the row just extended.
+  it('claims the Shift-arrow press so the global next/prev does not also run', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' })], 'a')
+    const event = new KeyboardEvent('keydown', {
+      key: 'ArrowDown',
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    })
+    screen.getAllByTestId('track-row')[0].dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(true)
+  })
+
+  it('stays put at the ends of the list', () => {
+    const { onSelect } = renderList([track({ id: 'a' }), track({ id: 'b' })], 'a')
+    fireEvent.keyDown(screen.getAllByTestId('track-row')[1], { key: 'ArrowDown', shiftKey: true })
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
+  // Plain Space plays the track, so toggling one row in or out of a multi-selection from
+  // the keyboard needs its own chord: ⌘Space / Ctrl+Space, the file-manager convention.
+  it('toggles the focused row in or out of the selection with Cmd/Ctrl+Space', () => {
+    const { onSelect } = renderList([track({ id: 'a' }), track({ id: 'b' })], 'a')
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.keyDown(rows[1], { key: ' ', metaKey: true })
+    expect(onSelect).toHaveBeenCalledWith('b', { meta: true })
+    fireEvent.keyDown(rows[1], { key: ' ', ctrlKey: true })
+    expect(onSelect).toHaveBeenCalledTimes(2)
+  })
+})
+
 describe('TrackList review spark', () => {
   // A button inside the row's option button is invalid HTML: screen readers flatten the
   // inner control into the option's name and the accept action is lost. It must be a
