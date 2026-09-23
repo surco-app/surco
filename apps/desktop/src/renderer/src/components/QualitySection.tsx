@@ -1,4 +1,4 @@
-import { CircleCheck, ImageDown, TriangleAlert } from 'lucide-react'
+import { ImageDown, TriangleAlert } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -6,9 +6,7 @@ import type { NormalizeConfig, OutputSampleRate } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useSpectrogram } from '../hooks/useSpectrogram'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
-import { useTrackProperties } from '../hooks/useTrackProperties'
 import { cleanIpcError, errorKeyOf } from '../lib/ipcError'
-import { audioSummaryParts } from '../lib/properties'
 import {
   formatKHz,
   GOOD_CUTOFF_HZ,
@@ -59,9 +57,9 @@ interface Props {
   // will land. Owned by the Normalize section; read here because the figures it predicts
   // are the ones this table measures.
   normalize: NormalizeConfig
-  onShowLoudnessHelp: () => void
   open: boolean
   onToggle: () => void
+  onShowLoudnessHelp: () => void
   showHints?: boolean
   // The output sample-rate policy, read so the 'corrected' mode can announce on
   // the verdict itself what the next conversion will do to THIS file.
@@ -77,9 +75,9 @@ export function QualitySection({
   showSpectrum,
   showLoudness,
   normalize,
-  onShowLoudnessHelp,
   open,
   onToggle,
+  onShowLoudnessHelp,
   showHints = true,
   outputSampleRate = 'source',
 }: Props): React.JSX.Element {
@@ -98,7 +96,6 @@ export function QualitySection({
   // the cache still renders instantly — a disabled query keeps returning its cached data.
   const spectrumQuery = useSpectrogram(item.inputPath, settled && showSpectrum && open)
   const spectrum = spectrumQuery.data
-  const { data: loudness } = useTrackLoudness(item.inputPath, settled && showLoudness && open)
   const analyzeFailed = spectrumQuery.isError
   // Show the scanning frame the instant the section opens, not only once the query reports
   // fetching: for the first tick after open the query hasn't started, so `isFetching` is
@@ -116,6 +113,7 @@ export function QualitySection({
     spectrumQuery.error instanceof Error
       ? errorKeyOf(cleanIpcError(spectrumQuery.error.message))
       : null
+  const { data: loudness } = useTrackLoudness(item.inputPath, settled && showLoudness && open)
   // The container decides which scale the cutoff is read on, so it is resolved before the
   // verdict: lossy files are exempt (their lowpass is the format), lossless ones are graded.
   const ext = item.inputPath.split('.').pop()?.toLowerCase() ?? ''
@@ -270,16 +268,6 @@ export function QualitySection({
       setSavingReport(false)
     }
   }
-  const upsampledFlag = spectrum?.upsampled === true || spectrum?.resolution === 'upsampled'
-  const padded = spectrum?.bitsUsage === 'padded16'
-  const healthy = verdict === 'good' && !transcoded && !padded && !upsampledFlag
-  const { data: properties } = useTrackProperties(
-    item.inputPath,
-    settled && showSpectrum && open && healthy,
-  )
-  const formatSummary = properties
-    ? audioSummaryParts(properties, item.inputPath, tr).join(' · ')
-    : ''
   return (
     <div className="mt-5 border-t border-[var(--color-line)] pt-5">
       <SectionHeader
@@ -313,7 +301,7 @@ export function QualitySection({
                 {tr(transcoded ? 'editor.qualityTranscode' : qualityBadge[verdict].label)}
               </SectionPill>
             )}
-            {padded && (
+            {spectrum?.bitsUsage === 'padded16' && (
               <SectionPill tone="danger" testid="quality-bits-pill">
                 {tr('editor.qualityBitsPill')}
               </SectionPill>
@@ -337,20 +325,6 @@ export function QualitySection({
               </div>
             ) : spectrum ? (
               <>
-                {healthy && (
-                  <div
-                    data-testid="quality-verdict"
-                    className="mb-3 flex items-center gap-2 text-xs"
-                  >
-                    <CircleCheck className="h-3.5 w-3.5 shrink-0 text-good" aria-hidden="true" />
-                    <span className="min-w-0 truncate">
-                      <span className="font-medium text-good">{tr(qualityBadge.good.label)}</span>
-                      {formatSummary && (
-                        <span className="text-fg-dim tabular-nums"> · {formatSummary}</span>
-                      )}
-                    </span>
-                  </div>
-                )}
                 <Spectrogram spectrum={spectrum} transcoded={transcoded} />
                 {/* Only when the verdict needs justifying: a full-band good file is
                     already said twice (green badge, cutoff chip), so its caption
@@ -384,7 +358,7 @@ export function QualitySection({
                     "couldn't tell" — because saying nothing left a real hi-res file looking
                     exactly like one nobody analysed. A plain 44.1 kHz file makes no claim to
                     check, so it stays silent rather than gaining a line that says nothing. */}
-                {upsampledFlag ? (
+                {spectrum.upsampled || spectrum.resolution === 'upsampled' ? (
                   <p data-testid="quality-upsampled" className="mt-2 text-xs text-warn">
                     {tr('editor.qualityUpsampled')}
                   </p>
@@ -406,7 +380,7 @@ export function QualitySection({
                     is what keeps that absence from reading as a broken analysis.
                     Only the didactic why-line rides the hints toggle; a confirmed
                     real depth is reassurance and shows only with hints. */}
-                {padded ? (
+                {spectrum.bitsUsage === 'padded16' ? (
                   <div
                     data-testid="quality-bits-padded"
                     className="mt-2 border-l-2 pl-2.5 text-xs"

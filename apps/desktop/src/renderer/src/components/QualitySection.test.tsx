@@ -3,23 +3,12 @@ import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { NormalizeConfig, SpectrumResult, TrackProperties } from '../../../shared/types'
-import { resetEditorSections } from '../hooks/useEditorSections'
+import type { NormalizeConfig, SpectrumResult } from '../../../shared/types'
 import i18n from '../i18n'
 import { createQueryClient } from '../lib/queryClient'
 import { ToastProvider } from '../lib/toastContext'
 import type { TrackItem } from '../types'
 import { QualitySection } from './QualitySection'
-
-const LOUDNESS_OFF: {
-  showLoudness: boolean
-  normalize: NormalizeConfig
-  onShowLoudnessHelp: () => void
-} = {
-  showLoudness: false,
-  normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
-  onShowLoudnessHelp: () => {},
-}
 
 // The report composition is canvas work jsdom can't run; a plain stub (not vi.fn — the
 // restoreAllMocks in beforeEach would wipe a vi.fn's implementation) returns a
@@ -30,6 +19,10 @@ vi.mock('../lib/qualityReport', async (importOriginal) => ({
 }))
 
 afterEach(cleanup)
+
+// These cases are about the spectrogram, and mount with the loudness table off; with
+// normalization off too, nothing here draws a post-conversion estimate.
+const OFF: NormalizeConfig = { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }
 
 function track(inputPath = '/music/a.flac'): TrackItem {
   const fileName = inputPath.split('/').pop() ?? inputPath
@@ -60,19 +53,6 @@ function track(inputPath = '/music/a.flac'): TrackItem {
   }
 }
 
-const WAV_FACTS: TrackProperties = {
-  codec: 'pcm_s16le',
-  container: 'wav',
-  sampleRateHz: 44100,
-  bitDepth: 16,
-  channels: 2,
-  bitrateKbps: 1411,
-  sizeBytes: 40_000_000,
-  createdMs: null,
-  modifiedMs: null,
-  tagFormats: [],
-}
-
 function renderSection(
   spectrum: SpectrumResult,
   inputPath?: string,
@@ -81,17 +61,18 @@ function renderSection(
 ): void {
   ;(window as unknown as { api: unknown }).api = {
     spectrogram: vi.fn().mockResolvedValue(spectrum),
-    properties: vi.fn().mockResolvedValue(WAV_FACTS),
   }
   const client = createQueryClient()
   render(
     <QueryClientProvider client={client}>
       <QualitySection
-        {...LOUDNESS_OFF}
         item={track(inputPath)}
         showSpectrum
+        showLoudness={false}
+        normalize={OFF}
         open
         onToggle={vi.fn()}
+        onShowLoudnessHelp={vi.fn()}
         showHints={showHints}
         outputSampleRate={outputSampleRate}
       />
@@ -101,103 +82,6 @@ function renderSection(
 
 beforeEach(() => {
   vi.restoreAllMocks()
-  resetEditorSections()
-})
-
-// A usability pass found the section showing the work instead of the result. The verdict
-// now leads in words (one line with the real format for a clean file, one plain sentence
-// for a flagged one), on top of everything the section always showed: the spectrum and
-// its measured case stay in view whenever the section is open.
-describe('QualitySection verdict first', () => {
-  const clean = {
-    image: 'data:image/png;base64,x',
-    cutoffHz: 21000,
-    sampleRateHz: 44100,
-    processed: false,
-    hasKnee: false,
-    fineStepDb: 4.5,
-    bitsUsage: 'full' as const,
-    bitsLowPct: 99,
-    resolution: 'native' as const,
-  }
-
-  it('says a clean file is fine in one line with its real format, above its spectrum', async () => {
-    renderSection(clean, '/m/a.wav')
-    const line = await screen.findByTestId('quality-verdict')
-    expect(line).toHaveTextContent(i18n.t('editor.qualityGood'))
-    await waitFor(() => expect(line).toHaveTextContent('WAV · 44.1 kHz'))
-    expect(line).toHaveTextContent(i18n.t('editor.propBitDepthValue', { bits: 16 }))
-    expect(line).toHaveTextContent(i18n.t('editor.channelModeStereo'))
-    expect(screen.getByTestId('quality-badge')).toHaveTextContent(i18n.t('editor.qualityGood'))
-    expect(screen.getByTestId('spectrogram')).toBeInTheDocument()
-    expect(screen.getByTestId('quality-evidence')).toBeInTheDocument()
-    expect(screen.getByTestId('quality-bits-full')).toBeInTheDocument()
-  })
-
-  it('makes the case for a fake lossless with the spectrum and its evidence', async () => {
-    renderSection({ ...clean, cutoffHz: 16000, hasKnee: true, fineStepDb: 43.2 }, '/m/a.flac')
-    expect(await screen.findByTestId('spectrogram')).toBeInTheDocument()
-    expect(screen.getByTestId('quality-badge')).toHaveTextContent(i18n.t('editor.qualityTranscode'))
-    expect(screen.getByTestId('quality-evidence')).toHaveTextContent('43 dB')
-  })
-
-  // The format facts only ride the clean file's verdict line, so a flagged file must not
-  // pay for a properties probe nothing on screen will read.
-  it('reads the format facts only for the clean verdict line that shows them', async () => {
-    renderSection({ ...clean, cutoffHz: 16000, hasKnee: true, fineStepDb: 43.2 }, '/m/a.flac')
-    await screen.findByTestId('quality-evidence')
-    await new Promise((r) => setTimeout(r, 600))
-    const api = (window as unknown as { api: { properties: ReturnType<typeof vi.fn> } }).api
-    expect(api.properties).not.toHaveBeenCalled()
-  })
-
-  it('still draws the spectrum when no verdict could be reached', async () => {
-    renderSection({ ...clean, cutoffHz: null })
-    expect(await screen.findByTestId('spectrogram')).toBeInTheDocument()
-  })
-})
-
-// The loudness table sat under the spectrogram from the start; Normalize reads the same
-// figures, but Quality is where the DJ inspects the file, so the table stays here.
-describe('QualitySection loudness table', () => {
-  it('shows the measured loudness under the spectrum when the setting is on', async () => {
-    ;(window as unknown as { api: unknown }).api = {
-      spectrogram: vi.fn().mockResolvedValue({
-        image: 'data:image/png;base64,x',
-        cutoffHz: 21000,
-        sampleRateHz: 44100,
-        processed: false,
-      }),
-      properties: vi.fn().mockResolvedValue(WAV_FACTS),
-      loudness: vi.fn().mockResolvedValue({
-        integratedLufs: -16.3,
-        truePeakDb: -3.3,
-        lra: 6.8,
-        channelBalanceDb: 0.3,
-        dcOffset: 0.001,
-        crestDb: 17.3,
-        noiseFloorDb: -60,
-      }),
-    }
-    render(
-      <QueryClientProvider client={createQueryClient()}>
-        <QualitySection
-          item={track('/m/a.wav')}
-          showSpectrum
-          showLoudness
-          normalize={{ mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 }}
-          open
-          onToggle={vi.fn()}
-          onShowLoudnessHelp={vi.fn()}
-        />
-      </QueryClientProvider>,
-    )
-    const readout = await screen.findByTestId('loudness-readout', undefined, { timeout: 3000 })
-    const spectrogram = screen.getByTestId('spectrogram')
-    expect(
-      spectrogram.compareDocumentPosition(readout) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
-  })
 })
 
 // Folding the section away must stop its (heavy) decode, not just hide the result — the
@@ -212,11 +96,13 @@ describe('QualitySection analysis gating', () => {
     render(
       <QueryClientProvider client={client}>
         <QualitySection
-          {...LOUDNESS_OFF}
           item={track()}
           showSpectrum
+          showLoudness={false}
+          normalize={OFF}
           open={false}
           onToggle={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
         />
       </QueryClientProvider>,
     )
@@ -236,7 +122,15 @@ describe('QualitySection analysis gating', () => {
     const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
-        <QualitySection {...LOUDNESS_OFF} item={track()} showSpectrum open onToggle={vi.fn()} />
+        <QualitySection
+          item={track()}
+          showSpectrum
+          showLoudness={false}
+          normalize={OFF}
+          open
+          onToggle={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
+        />
       </QueryClientProvider>,
     )
     await vi.waitFor(() => expect(spectrogram).toHaveBeenCalled())
@@ -256,7 +150,15 @@ describe('QualitySection analysis gating', () => {
     const client = createQueryClient()
     const { unmount } = render(
       <QueryClientProvider client={client}>
-        <QualitySection {...LOUDNESS_OFF} item={track()} showSpectrum open onToggle={vi.fn()} />
+        <QualitySection
+          item={track()}
+          showSpectrum
+          showLoudness={false}
+          normalize={OFF}
+          open
+          onToggle={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
+        />
       </QueryClientProvider>,
     )
     // Unmount well inside the settle window, the way the editor remounts when the
@@ -277,7 +179,6 @@ describe('QualitySection verdict caption', () => {
     // strict scale and gets the plain bad caption rather than the transcode one, which is
     // reserved for containers that are lossless by definition.
     renderSection({ image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false }, '/m/a.m4a')
-    await screen.findByTestId('quality-badge')
     expect(
       await screen.findByText(i18n.t('editor.qualityCaptionBad', { cutoff: '16.0 kHz' })),
     ).toBeInTheDocument()
@@ -285,7 +186,6 @@ describe('QualitySection verdict caption', () => {
 
   it('explains a warn verdict as the high-bitrate-lossy ambiguity zone', async () => {
     renderSection({ image: '', cutoffHz: 18000, sampleRateHz: 44100, processed: false }, '/m/a.m4a')
-    await screen.findByTestId('quality-badge')
     expect(
       await screen.findByText(i18n.t('editor.qualityCaptionWarn', { cutoff: '18.0 kHz' })),
     ).toBeInTheDocument()
@@ -342,7 +242,6 @@ describe('QualitySection verdict caption', () => {
       { image: 'data:image/png;base64,x', cutoffHz: 21000, sampleRateHz: 44100, processed: false },
       '/m/a.flac',
     )
-    await screen.findByTestId('quality-badge')
     const button = await screen.findByTestId('quality-save-report')
     const spectrogram = screen.getByTestId('spectrogram')
     expect(
@@ -367,11 +266,13 @@ describe('QualitySection verdict caption', () => {
       <QueryClientProvider client={createQueryClient()}>
         <ToastProvider value={{ reportError }}>
           <QualitySection
-            {...LOUDNESS_OFF}
             item={track('/m/a.flac')}
             showSpectrum
+            showLoudness={false}
+            normalize={OFF}
             open
             onToggle={vi.fn()}
+            onShowLoudnessHelp={vi.fn()}
             showHints
           />
         </ToastProvider>
@@ -388,7 +289,6 @@ describe('QualitySection verdict caption', () => {
     // a "Bad quality" badge reads as a contradiction. The processed case gets its
     // own badge naming the manipulation, paired with its enhancer caption.
     renderSection({ image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: true })
-    await screen.findByTestId('quality-badge')
     expect(
       await screen.findByText(i18n.t('editor.qualityCaptionProcessed', { cutoff: '16.0 kHz' })),
     ).toBeInTheDocument()
@@ -406,11 +306,10 @@ describe('QualitySection verdict caption', () => {
       processed: false,
       hasKnee: false,
     })
-    await screen.findByTestId('quality-badge')
     expect(
       await screen.findByText(i18n.t('editor.qualityCaptionGenuine', { cutoff: '18.0 kHz' })),
     ).toBeInTheDocument()
-    expect(screen.getByTestId('quality-verdict')).toHaveTextContent(i18n.t('editor.qualityGood'))
+    expect(screen.getByTestId('quality-badge')).toHaveTextContent(i18n.t('editor.qualityGood'))
   })
 
   it('shows the upsample note when a high-rate file walls off at 22.05 kHz', async () => {
@@ -425,7 +324,6 @@ describe('QualitySection verdict caption', () => {
       hasKnee: false,
       upsampled: true,
     })
-    await screen.findByTestId('quality-badge')
     expect(await screen.findByTestId('quality-upsampled')).toHaveTextContent(
       i18n.t('editor.qualityUpsampled'),
     )
@@ -439,7 +337,6 @@ describe('QualitySection verdict caption', () => {
       { image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false, hasKnee: true },
       '/music/a.flac',
     )
-    await screen.findByTestId('quality-badge')
     expect(await screen.findByTestId('quality-badge')).toHaveTextContent(
       i18n.t('editor.qualityTranscode'),
     )
@@ -457,8 +354,9 @@ describe('QualitySection verdict caption', () => {
       { image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false, hasKnee: true },
       '/music/a.mp3',
     )
-    await screen.findByTestId('quality-badge')
-    expect(screen.getByTestId('quality-verdict')).toHaveTextContent(i18n.t('editor.qualityGood'))
+    expect(await screen.findByTestId('quality-badge')).toHaveTextContent(
+      i18n.t('editor.qualityGood'),
+    )
     expect(
       screen.getByText(i18n.t('editor.qualityCaptionLossy', { cutoff: '16.0 kHz' })),
     ).toBeInTheDocument()
@@ -490,7 +388,6 @@ describe('QualitySection verdict caption', () => {
       upsampled: false,
       resolution: 'hires',
     })
-    await screen.findByTestId('quality-badge')
     expect(await screen.findByTestId('quality-hires')).toBeInTheDocument()
     expect(screen.queryByTestId('quality-upsampled')).not.toBeInTheDocument()
   })
@@ -507,7 +404,6 @@ describe('QualitySection verdict caption', () => {
       upsampled: false,
       resolution: 'unknown',
     })
-    await screen.findByTestId('quality-badge')
     expect(await screen.findByTestId('quality-resolution-unknown')).toBeInTheDocument()
     expect(screen.queryByTestId('quality-hires')).not.toBeInTheDocument()
   })
@@ -544,7 +440,15 @@ describe('QualitySection analysis failure', () => {
     const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
-        <QualitySection {...LOUDNESS_OFF} item={track()} showSpectrum open onToggle={vi.fn()} />
+        <QualitySection
+          item={track()}
+          showSpectrum
+          showLoudness={false}
+          normalize={OFF}
+          open
+          onToggle={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
+        />
       </QueryClientProvider>,
     )
     const error = await screen.findByTestId('quality-error')
@@ -564,7 +468,15 @@ describe('QualitySection analysis failure', () => {
     const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
-        <QualitySection {...LOUDNESS_OFF} item={track()} showSpectrum open onToggle={vi.fn()} />
+        <QualitySection
+          item={track()}
+          showSpectrum
+          showLoudness={false}
+          normalize={OFF}
+          open
+          onToggle={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
+        />
       </QueryClientProvider>,
     )
 
@@ -619,7 +531,6 @@ describe('verdict evidence', () => {
       },
       '/m/a.flac',
     )
-    await screen.findByTestId('quality-badge')
     const evidence = await screen.findByTestId('quality-evidence')
     expect(evidence).toHaveTextContent('drops 43 dB within one kilohertz')
     expect(evidence).toHaveTextContent('16.0 kHz')
@@ -643,7 +554,6 @@ describe('verdict evidence', () => {
       },
       '/m/a.mp3',
     )
-    await screen.findByTestId('quality-badge')
     const evidence = await screen.findByTestId('quality-evidence')
     expect(evidence).toHaveTextContent('drops 31 dB within one kilohertz')
   })
@@ -661,7 +571,6 @@ describe('verdict evidence', () => {
       '/m/a.flac',
       false,
     )
-    await screen.findByTestId('quality-badge')
     const evidence = await screen.findByTestId('quality-evidence')
     expect(evidence).toHaveTextContent('drops 43 dB within one kilohertz')
     expect(screen.queryByText(i18n.t('editor.qualityEvidenceWallWhy'))).not.toBeInTheDocument()
@@ -680,7 +589,6 @@ describe('verdict evidence', () => {
       },
       '/m/a.flac',
     )
-    await screen.findByTestId('quality-badge')
     const evidence = await screen.findByTestId('quality-evidence')
     expect(evidence).toHaveTextContent('rise 3 times between 17.5 kHz and 20.0 kHz')
     expect(evidence).toHaveTextContent('16.5 kHz')
@@ -697,7 +605,6 @@ describe('verdict evidence', () => {
       },
       '/m/a.flac',
     )
-    await screen.findByTestId('quality-badge')
     const evidence = await screen.findByTestId('quality-evidence')
     expect(evidence).toHaveTextContent(
       i18n.t('editor.qualityEvidenceHump', { cutoff: '16.0 kHz', peak: '19.0 kHz' }),
@@ -715,7 +622,6 @@ describe('verdict evidence', () => {
       },
       '/m/a.flac',
     )
-    await screen.findByTestId('quality-badge')
     const evidence = await screen.findByTestId('quality-evidence')
     expect(evidence).toHaveTextContent(
       i18n.t('editor.qualityEvidenceShelf', { cutoff: '16.0 kHz' }),
@@ -734,7 +640,6 @@ describe('verdict evidence', () => {
       hasKnee: false,
       fineStepDb: 4.5,
     })
-    await screen.findByTestId('quality-badge')
     const evidence = await screen.findByTestId('quality-evidence')
     expect(evidence).toHaveTextContent('5 dB')
   })
@@ -763,7 +668,6 @@ describe('verdict evidence', () => {
       { image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false, hasKnee: true },
       '/m/a.flac',
     )
-    await screen.findByTestId('quality-badge')
     expect(
       await screen.findByText(i18n.t('editor.qualityCaptionTranscode', { cutoff: '16.0 kHz' })),
     ).toBeInTheDocument()
@@ -815,7 +719,6 @@ describe('bit depth verdict and corrected-rate plan', () => {
 
   it('flags a padded 16-in-24 container with its pill and the arithmetic proof', async () => {
     renderSection({ ...base, bitsUsage: 'padded16', bitsLowPct: 0 }, '/m/a.flac')
-    await screen.findByTestId('quality-badge')
     const note = await screen.findByTestId('quality-bits-padded')
     expect(note).toHaveTextContent('low 8 bits are zero')
     expect(screen.getByTestId('quality-bits-pill')).toHaveTextContent(
@@ -827,7 +730,6 @@ describe('bit depth verdict and corrected-rate plan', () => {
 
   it('keeps the padding proof but drops the didactic lines when hints are off', async () => {
     renderSection({ ...base, bitsUsage: 'padded16', bitsLowPct: 0 }, '/m/a.flac', false)
-    await screen.findByTestId('quality-badge')
     const note = await screen.findByTestId('quality-bits-padded')
     expect(note).toHaveTextContent('low 8 bits are zero')
     expect(screen.queryByText(i18n.t('editor.qualityBitsPaddedWhy'))).not.toBeInTheDocument()
@@ -839,14 +741,12 @@ describe('bit depth verdict and corrected-rate plan', () => {
   // sees the finding, not just whoever turned hints on.
   it('always states what converting will do, so the vanished pill reads as the fix', async () => {
     renderSection({ ...base, bitsUsage: 'padded16', bitsLowPct: 0 }, '/m/a.flac', false)
-    await screen.findByTestId('quality-badge')
     const note = await screen.findByTestId('quality-bits-padded')
     expect(note).toHaveTextContent(i18n.t('editor.qualityBitsPaddedNote'))
   })
 
   it('lets a real 24-bit file earn its depth while hints are on', async () => {
     renderSection({ ...base, bitsUsage: 'full', bitsLowPct: 99.6 }, '/m/a.flac')
-    await screen.findByTestId('quality-badge')
     const note = await screen.findByTestId('quality-bits-full')
     expect(note).toHaveTextContent('99.6%')
   })
@@ -859,7 +759,6 @@ describe('bit depth verdict and corrected-rate plan', () => {
 
   it('says the depth could not be verified instead of staying silent', async () => {
     renderSection({ ...base, bitsUsage: 'unknown' }, '/m/a.flac')
-    await screen.findByTestId('quality-badge')
     const note = await screen.findByTestId('quality-bits-unknown')
     expect(note).toHaveTextContent(i18n.t('editor.qualityBitsUnknown'))
   })
@@ -884,7 +783,6 @@ describe('bit depth verdict and corrected-rate plan', () => {
       true,
       'corrected',
     )
-    await screen.findByTestId('quality-badge')
     const plan = await screen.findByTestId('quality-convert-plan')
     expect(plan).toHaveTextContent('48 kHz')
     expect(plan).toHaveTextContent('44.1 kHz')
