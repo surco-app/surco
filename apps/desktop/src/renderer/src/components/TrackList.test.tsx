@@ -880,6 +880,29 @@ describe('TrackList keyboard selection', () => {
   })
 })
 
+describe('TrackList row state for screen readers', () => {
+  // The row's marks are aria-hidden glyphs whose words live only in a hover tooltip, so a
+  // screen reader user heard the title and artist and nothing about a failed conversion, a
+  // doubtful rip, an unread tag or an applied auto-match. The words must be in the name.
+  it('names the conversion, quality, tag-read and auto-match state in the row', () => {
+    renderList([
+      track({
+        id: 'a',
+        status: 'error',
+        metaReadFailed: true,
+        autoMatched: true,
+        inputPath: '/music/a.m4a',
+        spectrum: { image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false },
+      }),
+    ])
+    const name = screen.getByRole('option').textContent
+    expect(name).toContain(i18n.t('trackList.status.error'))
+    expect(name).toContain(i18n.t('editor.qualityBad'))
+    expect(name).toContain(i18n.t('trackList.metaReadFailed'))
+    expect(name).toContain(i18n.t('trackList.autoMatched'))
+  })
+})
+
 describe('TrackList review spark', () => {
   // A button inside the row's option button is invalid HTML: screen readers flatten the
   // inner control into the option's name and the accept action is lost. It must be a
