@@ -25,7 +25,12 @@
     "openMenu": "Abrir menú",
     "closeMenu": "Cerrar menú",
     "cambios": "Novedades",
-    "donar": "Donar"
+    "donar": "Donar",
+    "languageOffer": {
+      "text": "Esta página también está en español.",
+      "switch": "Leer en español",
+      "dismiss": "Cerrar"
+    }
   },
   "available": "macOS · Windows · Linux",
   "betaNote": "Surco está en beta. Sin cuenta, sin suscripción.",
