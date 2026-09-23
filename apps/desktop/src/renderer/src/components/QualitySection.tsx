@@ -376,13 +376,11 @@ export function QualitySection({
                     {tr('editor.qualityResolutionUnknown')}
                   </p>
                 ) : null}
-                {/* The bit-depth verdict, argued the arithmetic way: which bytes
-                    actually carry signal. Padding is a finding, so its proof and
-                    what converting will do about it always show: the result loses
-                    the pill because the padding is gone, and saying so beforehand
-                    is what keeps that absence from reading as a broken analysis.
-                    Only the didactic why-line rides the hints toggle; a confirmed
-                    real depth is reassurance and shows only with hints. */}
+                {/* The bit-depth verdict: which bytes actually carry signal in the
+                    scanned minute. Padding is a finding, so its one line always shows;
+                    the reading behind it and what converting will do ride the hints
+                    toggle, as do a confirmed real depth (reassurance) and an unverified
+                    one (no finding to state). */}
                 {spectrum.bitsUsage === 'padded16' ? (
                   <div
                     data-testid="quality-bits-padded"
@@ -392,9 +390,11 @@ export function QualitySection({
                   >
                     <p className="text-fg-dim">{tr('editor.qualityBitsPadded')}</p>
                     {showHints && (
-                      <p className="mt-1 text-fg-muted">{tr('editor.qualityBitsPaddedWhy')}</p>
+                      <>
+                        <p className="mt-1 text-fg-muted">{tr('editor.qualityBitsPaddedWhy')}</p>
+                        <p className="mt-1 text-fg-muted">{tr('editor.qualityBitsPaddedNote')}</p>
+                      </>
                     )}
-                    <p className="mt-1 text-fg-muted">{tr('editor.qualityBitsPaddedNote')}</p>
                   </div>
                 ) : spectrum.bitsUsage === 'full' && showHints ? (
                   <p data-testid="quality-bits-full" className="mt-2 text-xs text-fg-dim">
