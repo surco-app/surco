@@ -112,6 +112,19 @@ describe('AlbumMatchRows', () => {
     )
   })
 
+  // The button's flip to "Applied" is only seen: focus stays on it and a screen reader
+  // doesn't re-read a label that changed under it, so the apply sounded like nothing.
+  // A status region, mounted empty before the click so it is listened to, says it.
+  it('announces the apply through a status region', async () => {
+    renderRows([track('short', 'radio edit', 181)])
+    await screen.findAllByTestId('match-row')
+    const status = screen.getByTestId('match-status')
+    expect(status).toHaveAttribute('role', 'status')
+    expect(status).toBeEmptyDOMElement()
+    fireEvent.click(screen.getByTestId('match-apply'))
+    expect(status).toHaveTextContent('Applied')
+  })
+
   it('applies the matched track title to each file when confirmed', async () => {
     const { onApply } = renderRows([
       track('short', 'radio edit', 181),

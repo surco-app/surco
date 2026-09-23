@@ -173,6 +173,11 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
           tr('match.apply', { count: matchedCount })
         )}
       </button>
+      {/* The flip to "Applied" is only seen; mounted empty from the start so assistive
+          tech is already listening, this says the apply happened. */}
+      <span data-testid="match-status" role="status" className="sr-only">
+        {justApplied ? tr('match.applied') : ''}
+      </span>
     </div>
   )
 }
