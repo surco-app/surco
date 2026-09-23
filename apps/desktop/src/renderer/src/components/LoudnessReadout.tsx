@@ -79,8 +79,15 @@ export function LoudnessReadout({
   // row still read "no change". How far it moves depends on each channel's own peak, which
   // the single-figure measurement here cannot know, so the row drops out rather than
   // printing a claim the converted file contradicts.
-  const balanceEstimate =
-    normalize.mode === 'peak' && normalize.peakPerChannel === true ? null : unchanged
+  const perChannel = normalize.mode === 'peak' && normalize.peakPerChannel === true
+  const balanceEstimate = perChannel ? null : unchanged
+  const crestEstimate = predicted?.limited ? null : unchanged
+  const dcEstimate = (dc: number): string | null => {
+    if (!predicted) return null
+    if (normalize.removeDcOffset) return formatPercent(0)
+    if (predicted.gainDb === null || perChannel) return null
+    return formatPercent(dc * 10 ** (predicted.gainDb / 20))
+  }
   // One flat list — Loudness and Signal used to be separate labelled groups stacked in two
   // grids; merged, they fill one two-column table, each row dropping out when its figure is
   // immeasurable (null).
@@ -118,7 +125,7 @@ export function LoudnessReadout({
         `${formatDb(loud.crestDb)} dB`,
         gradeCrest(loud.crestDb),
         tr('editor.loudnessCrestHint'),
-        unchanged,
+        crestEstimate,
       ),
     loud.channelBalanceDb !== null &&
       cell(
@@ -136,9 +143,7 @@ export function LoudnessReadout({
         formatPercent(loud.dcOffset),
         gradeDcOffset(loud.dcOffset),
         tr('editor.loudnessDcHint'),
-        // Centring is its own checkbox, independent of the mode: the offset only lands
-        // at zero when it is ticked, and rides through untouched otherwise.
-        predicted && normalize.removeDcOffset ? formatPercent(0) : unchanged,
+        dcEstimate(loud.dcOffset),
       ),
     loud.noiseFloorDb !== null &&
       cell(
