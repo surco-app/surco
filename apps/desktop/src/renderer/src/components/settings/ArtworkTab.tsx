@@ -70,7 +70,12 @@ export function ArtworkTab({ synced, patch }: Props): React.JSX.Element {
               checked={synced.flacFinderCovers}
               onChange={(v) => patch('flacFinderCovers', v)}
               label={tr('settings.flacFinderCovers')}
-              hint={tr('settings.flacFinderCoversHint')}
+              hint={
+                synced.syncTraktor
+                  ? tr('settings.flacFinderCoversTraktor')
+                  : tr('settings.flacFinderCoversHint')
+              }
+              disabled={synced.syncTraktor}
             />
           )}
         </SettingsGroup>

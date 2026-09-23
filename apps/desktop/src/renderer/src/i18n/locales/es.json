@@ -1004,6 +1004,7 @@
     "replaceLowResHint": "Si está desactivado, siempre se conserva la carátula del archivo; una de baja resolución solo se avisa, nunca se cambia por la del lanzamiento.",
     "flacFinderCovers": "Mostrar las carátulas de los FLAC en el Finder",
     "flacFinderCoversHint": "El Finder no sabe leer la carátula que llevan los FLAC, así que les pone un icono genérico. Esta opción lo evita en los archivos convertidos y la reproducción no se ve afectada, pero deja el FLAC fuera de norma: Traktor no acepta esos archivos y los quita de su colección. Déjala apagada si sincronizas con Traktor.",
+    "flacFinderCoversTraktor": "Desactivada mientras sincronizas con Traktor: Traktor no acepta un FLAC que empiece por esta cabecera y lo quita de su colección.",
     "showSpectrum": "Análisis de calidad de audio",
     "showSpectrumHint": "Muestra el espectro y la comprobación de calidad al editar una pista. Si lo desactivas, el análisis se omite por completo.",
     "autoAnalyze": "Analizar todo al importar",

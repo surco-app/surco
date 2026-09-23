@@ -2039,7 +2039,10 @@ export async function convertAudio(
     // so the encode never carries a picture across unless one is being applied. Returns
     // null on a file with no art, the same "nothing to show" case as before, which
     // leaves the FLAC standard.
-    if (finderCovers && ext === '.flac' && !removeCover) {
+    //
+    // Never with Traktor sync on: Traktor does not recognise a FLAC that starts with ID3
+    // and drops its ENTRY from the collection the next time it saves.
+    if (finderCovers && ext === '.flac' && !removeCover && !getSettings().syncTraktor) {
       const headerCover = coverPath ?? (await extractCoverFile(input))
       if (headerCover) {
         await runInWorker({ type: 'prependFlacId3', file: tmp, meta, coverPath: headerCover })
