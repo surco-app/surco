@@ -402,6 +402,26 @@ describe('NormalizeSection plan line', () => {
     expect(screen.queryByTestId('normalize-plan-mp3')).not.toBeInTheDocument()
   })
 
+  // The limiter holds sample peaks, and the file can still come out a little over the
+  // ceiling between them, so a limited lossless render is measured and redone lower too.
+  // Without the note, "held at -1.0 dBTP" reads as a figure the limiter alone guarantees.
+  it('says a limited lossless render is checked against the ceiling after encoding', async () => {
+    renderSection(track(), 1, measuredLoud, { ...cfg, mode: 'loudness', targetLufs: -13 })
+    const note = await screen.findByTestId('normalize-plan-limiter')
+    expect(note.textContent).toContain('-1.0')
+  })
+
+  it('adds no limiter note when a constant gain is enough', async () => {
+    renderSection(
+      track(),
+      1,
+      { ...measuredLoud, integratedLufs: -18.2, truePeakDb: -6.5 },
+      { ...cfg, mode: 'loudness', targetLufs: -13 },
+    )
+    await screen.findByTestId('normalize-plan')
+    expect(screen.queryByTestId('normalize-plan-limiter')).not.toBeInTheDocument()
+  })
+
   it('describes peak mode by where the loudest sample lands', async () => {
     renderSection(track(), 1, measuredLoud, { ...cfg, mode: 'peak' })
     const plan = await screen.findByTestId('normalize-plan')

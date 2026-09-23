@@ -91,6 +91,16 @@ export function NormalizePlan({
           })}
         </p>
       )}
+      {format !== 'mp3' && predicted.limited && normalize.mode === 'loudness' && (
+        <p
+          data-testid="normalize-plan-limiter"
+          className="mt-0.5 text-[11px] text-fg-muted tabular-nums"
+        >
+          {tr('normalize.plan.limiterCeiling', {
+            ceiling: formatDb(Math.min(0, Math.max(-9, normalize.truePeakDb))),
+          })}
+        </p>
+      )}
     </div>
   )
 }
