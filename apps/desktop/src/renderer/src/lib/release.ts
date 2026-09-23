@@ -507,6 +507,7 @@ export function buildReleaseMeta(
   track: ReleaseTrack | undefined,
   cover: { url?: string; path?: string; keep?: boolean } = {},
   importFields?: readonly MetaTextKey[],
+  genrePresets: readonly string[] = [],
 ): ReleaseMetaPatch {
   const albumArtist = joinArtists(rel.artists)
   // Discogs classifies twice: a broad genre ("Electronic") and finer styles ("House",
@@ -514,7 +515,8 @@ export function buildReleaseMeta(
   // left collectors normalizing by hand. They now land in their own fields — except
   // when a release carries only styles, where the genre still takes one rather than
   // leaving the field a DJ already relies on empty.
-  const genre = (rel.genres?.length ? rel.genres : (rel.styles ?? []))[0] ?? ''
+  const found = (rel.genres?.length ? rel.genres : (rel.styles ?? []))[0] ?? ''
+  const genre = genrePresets.find((p) => p.toLowerCase() === found.toLowerCase()) ?? found
   const style = (rel.styles ?? []).join(', ')
   const country = rel.country?.trim() ?? ''
   // Flattened the way Discogs itself prints it: the medium first, then its qualifiers.
