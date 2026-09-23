@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.100",
+    "date": "23 de septiembre de 2026",
+    "title": "Tus propios campos y más etiquetas",
+    "items": [
+      {
+        "text": "Crea tus propios campos de etiqueta en Ajustes → Campos: les pones un nombre y una clave, y los editas como cualquier otro, también en varias pistas a la vez. Puedes usarlos en el nombre de archivo, en renombrar, en buscar y reemplazar y como campo obligatorio, y se guardan en el archivo en todos los formatos. Si otro programa ya escribió esa clave, Surco muestra su valor.",
+        "in": "0.100.0"
+      },
+      {
+        "text": "Nuevos campos, ocultos por defecto para no llenar el editor: artista original, letrista, director, total de pistas y de discos, copyright y codificado por. Actívalos en Ajustes → Campos. Surco ya no borra el total de pistas o de discos que pusieron otros programas.",
+        "in": "0.100.0"
+      },
+      {
+        "text": "Género admite varias etiquetas, como Grouping: «Pop, Indie Pop» se ve como dos etiquetas que activas o quitas de un clic, también en varias pistas a la vez. Los géneros de Discogs que llevan coma, como «Folk, World, & Country», se quedan enteros.",
+        "in": "0.100.0"
+      }
+    ]
+  },
+  {
     "version": "0.99",
     "date": "18 de septiembre de 2026",
     "title": "Normaliza más rápido y actualiza sin perder etiquetas",
