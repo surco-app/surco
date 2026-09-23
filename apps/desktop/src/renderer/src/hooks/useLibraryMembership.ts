@@ -26,10 +26,14 @@ const REFRESH_AFTER_MS = 5 * 60_000
 // doesn't re-dump the library. Keying the query on the source keeps the two libraries'
 // snapshots apart, so flipping the destination never shows one library's verdicts
 // under the other's name.
+//
+// failed tells a dump that errored apart from one still loading: both leave the index
+// null, and without the flag a Music that refused to answer looked exactly like a check
+// still on its way. A refocus retries a failed dump the same way it refreshes a stale one.
 export function useLibraryMembership(
   trackCount: number,
   source: LibrarySource,
-): AppleMusicIndex | null {
+): { index: AppleMusicIndex | null; failed: boolean } {
   const queryClient = useQueryClient()
   const queryKey = ['library-membership', source]
   // The previous session's persisted dump, read from disk in one IPC — Apple Music
@@ -42,7 +46,7 @@ export function useLibraryMembership(
     enabled: source === 'appleMusic' && trackCount > 0,
     staleTime: Number.POSITIVE_INFINITY,
   })
-  const { data } = useQuery({
+  const { data, isError } = useQuery({
     queryKey,
     queryFn: () =>
       source === 'engineDj' ? window.api.loadEngineLibrary() : window.api.loadAppleMusicLibrary(),
@@ -57,9 +61,10 @@ export function useLibraryMembership(
   useWindowFocus((focused) => {
     if (!focused || source === null) return
     const state = queryClient.getQueryState(queryKey)
-    if (state?.data && Date.now() - state.dataUpdatedAt > REFRESH_AFTER_MS) {
+    const stale = state?.data && Date.now() - state.dataUpdatedAt > REFRESH_AFTER_MS
+    if (stale || state?.status === 'error') {
       void queryClient.invalidateQueries({ queryKey })
     }
   })
-  return data ?? null
+  return { index: data ?? null, failed: isError }
 }

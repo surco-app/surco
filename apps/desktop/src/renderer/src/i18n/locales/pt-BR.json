@@ -547,6 +547,8 @@
     "inLibraryEngine": "Na biblioteca",
     "notInLibrary": "Fora da biblioteca",
     "notInLibraryEngine": "Fora da biblioteca",
+    "libraryCheckFailed": "Não foi possível ler sua biblioteca do Apple Music, então as faixas não são marcadas como já incluídas. O Surco tenta de novo quando você volta para a janela.",
+    "libraryCheckFailedEngine": "Não foi possível ler sua biblioteca do Engine DJ, então as faixas não são marcadas como já incluídas. O Surco tenta de novo quando você volta para a janela.",
     "checkingLibrary": "Verificando…",
     "ambiguousLibraryCopies_one": "{{count}} cópia quase idêntica: uma nova será adicionada",
     "ambiguousLibraryCopies_other": "{{count}} cópias quase idênticas: uma nova será adicionada",
