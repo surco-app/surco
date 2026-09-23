@@ -7,3 +7,8 @@ export function prefersReducedMotion(): boolean {
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
   )
 }
+
+// For scrollTo / scrollIntoView: glide by default, jump when motion is to be reduced.
+export function scrollBehavior(): ScrollBehavior {
+  return prefersReducedMotion() ? 'auto' : 'smooth'
+}

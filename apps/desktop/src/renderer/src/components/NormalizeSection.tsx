@@ -7,6 +7,7 @@ import type { NormalizeConfig, OutputFormat } from '../../../shared/types'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 
+import { scrollBehavior } from '../lib/motion'
 import type { TrackItem } from '../types'
 import { NormalizeControls } from './NormalizeControls'
 import { NormalizePlan } from './NormalizePlan'
@@ -93,7 +94,8 @@ export function NormalizeSection({
       mounted.current = true
       return
     }
-    if (compare) compareRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' })
+    if (compare)
+      compareRef.current?.scrollIntoView?.({ block: 'nearest', behavior: scrollBehavior() })
   }, [compare])
   return (
     <div data-testid="editor-normalize" className="mt-5 border-t border-[var(--color-line)] pt-5">

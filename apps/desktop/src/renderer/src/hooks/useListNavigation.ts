@@ -1,5 +1,6 @@
 import type { RefObject } from 'react'
 import { jumpIndex, moveIndex, pageSize } from '../lib/keymap'
+import { scrollBehavior } from '../lib/motion'
 import { pageScrollTop } from '../lib/scroll'
 import type { Selection } from '../lib/selection'
 import type { TrackItem } from '../types'
@@ -81,7 +82,7 @@ export function useListNavigation({
       scrollTop: container.scrollTop,
     })
     // Ease into the new page rather than snapping, so the eye can follow the jump.
-    if (top !== null) container.scrollTo({ top, behavior: 'smooth' })
+    if (top !== null) container.scrollTo({ top, behavior: scrollBehavior() })
   }
 
   function moveSelection(delta: number): void {
@@ -134,7 +135,7 @@ export function useListNavigation({
     if (rowTop >= headerH && rowBottom <= visibleBottom) return
     const band = visibleBottom - headerH
     const top = container.scrollTop + rowTop - headerH - Math.max(0, (band - rRect.height) / 2)
-    container.scrollTo({ top, behavior: 'smooth' })
+    container.scrollTo({ top, behavior: scrollBehavior() })
   }
 
   // When a track finishes: in continuous mode advance to the next visible track —
