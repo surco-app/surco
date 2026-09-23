@@ -67,6 +67,73 @@ describe('ConvertFooter state swap', () => {
     rerender(footer(true))
     expect(screen.getByTestId('footer-state').className).toContain('animate-footer-swap')
   })
+
+  // The swap replaces the button the keyboard user pressed, so focus fell to <body> the
+  // moment the conversion finished and the next Tab started over from the window's top.
+  // It has to land on the new state's convert button instead.
+  it('keeps keyboard focus in the footer when convert flips to done', () => {
+    const { rerender } = render(footer(false))
+    screen.getByTestId('process-btn').focus()
+    rerender(footer(true))
+    expect(screen.getByTestId('process-btn')).toHaveFocus()
+  })
+
+  // Focus that was elsewhere (the metadata form) must stay there: the footer only restores
+  // what its own swap took away.
+  it('leaves focus alone when it was outside the footer', () => {
+    const { rerender } = render(
+      <>
+        <input data-testid="elsewhere" />
+        {footer(false)}
+      </>,
+    )
+    screen.getByTestId('elsewhere').focus()
+    rerender(
+      <>
+        <input data-testid="elsewhere" />
+        {footer(true)}
+      </>,
+    )
+    expect(screen.getByTestId('elsewhere')).toHaveFocus()
+  })
+})
+
+// The outcome of a conversion only showed up as coloured text in the footer; a screen reader
+// user who pressed Convert heard nothing when it finished or failed. Success is a polite
+// status, a failure an assertive alert.
+describe('ConvertFooter announcements', () => {
+  it('announces a finished conversion as a status', () => {
+    render(footer(true))
+    expect(screen.getByRole('status')).toBe(screen.getByTestId('export-success'))
+  })
+
+  it('announces a failed conversion as an alert', () => {
+    render(
+      <ConvertFooter
+        {...footer(false).props}
+        item={
+          {
+            id: 't1',
+            status: 'error',
+            error: 'Disk full',
+            inputPath: '/a.wav',
+            meta: {},
+          } as TrackItem
+        }
+      />,
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent('Disk full')
+  })
+
+  it('announces a failed Apple Music add as an alert', () => {
+    render(
+      <ConvertFooter
+        {...footer(true).props}
+        status={{ ...status(true), musicError: 'Music is not running' }}
+      />,
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent('Music is not running')
+  })
 })
 
 // Reported 14/09 with a screenshot in French: the row of footer buttons shares its width

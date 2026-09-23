@@ -24,7 +24,8 @@
     "seratoHint": "In Serato: Leg die gespeicherte Datei in deinen Ordner _Serato_/Subcrates und starte Serato neu — deine Tracks erscheinen in der Seitenleiste.",
     "m3uHint": "Eine einfache Playlist für alles andere — Player, Autoradios, andere Bibliothekstools.",
     "unconverted": "{{count}} Track(s) sind noch nicht konvertiert — sie werden als Originaldateien exportiert.",
-    "failed": "Export fehlgeschlagen: {{error}}"
+    "failed": "Export fehlgeschlagen: {{error}}",
+    "cancelWhile": "{{stage}} Zum Abbrechen drücken"
   },
   "header": {
     "add": "Dateien hinzufügen",
@@ -53,7 +54,9 @@
     "autoMatchLabel": "Abgleichen",
     "addToken": "Token hinzufügen",
     "autoMatchingCount": "Gleiche automatisch ab… {{done}}/{{total}}",
-    "clearAll": "Liste leeren"
+    "clearAll": "Liste leeren",
+    "cancelAutoMatch": "Automatisches Zuordnen stoppen: bereits zugeordnete Tracks behalten ihre Tags",
+    "cancelAnalyze": "Analyse stoppen: bereits analysierte Tracks behalten ihr Ergebnis"
   },
   "sidebar": {
     "dropHint": "Zieh deine Tracks hierher.",
@@ -79,7 +82,8 @@
       "silence": "Stille zum Kürzen",
       "clipping": "Clipping",
       "trashSuspects_one": "Die zweifelhafte Datei in den Papierkorb legen",
-      "trashSuspects_other": "Die {{count}} zweifelhaften Dateien in den Papierkorb legen"
+      "trashSuspects_other": "Die {{count}} zweifelhaften Dateien in den Papierkorb legen",
+      "current": "Filter: {{filter}} {{count}}"
     },
     "search": {
       "placeholder": "Tracks suchen",
@@ -99,7 +103,8 @@
     },
     "position": "Track {{current}} von {{total}}",
     "selectedCount_one": "{{count}} ausgewählt",
-    "selectedCount_other": "{{count}} ausgewählt"
+    "selectedCount_other": "{{count}} ausgewählt",
+    "positionReveal": "Track {{current}} von {{total}}: dorthin scrollen"
   },
   "empty": {
     "title": "Zieh deine Tracks hierher",
@@ -362,7 +367,8 @@
       "remove": "Aus der Liste entfernen",
       "trash": "In den Papierkorb legen",
       "trashWin": "In den Papierkorb verschieben"
-    }
+    },
+    "progress": "{{percent}} % abgeschlossen"
   },
   "editor": {
     "searchPlaceholder": "Deine Quellen durchsuchen oder eine Discogs-Release-ID einfügen…",
@@ -1338,7 +1344,10 @@
     "appleMusicPlaylists": "Apple-Music-Playlists werden gelesen",
     "appleMusicPlaylistTracks": "Playlist wird gelesen",
     "playlistCount_one": "{{count}} Playlist",
-    "playlistCount_other": "{{count}} Playlists"
+    "playlistCount_other": "{{count}} Playlists",
+    "statusRunning": "Läuft",
+    "statusDone": "Fertig",
+    "statusError": "Fehlgeschlagen"
   },
   "applePlaylist": {
     "title": "Aus Apple Music importieren",

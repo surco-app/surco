@@ -24,7 +24,8 @@
     "seratoHint": "In Serato: drop the saved file into your _Serato_/Subcrates folder, then restart Serato — your tracks show up in the sidebar.",
     "m3uHint": "A plain playlist for everything else — players, car units, other library tools.",
     "unconverted": "{{count}} track(s) aren’t converted yet — they’ll be exported as their original files.",
-    "failed": "Export failed: {{error}}"
+    "failed": "Export failed: {{error}}",
+    "cancelWhile": "{{stage}} Press to cancel"
   },
   "header": {
     "add": "Add files",
@@ -53,7 +54,9 @@
     "autoMatchLabel": "Match",
     "addToken": "Add token",
     "autoMatchingCount": "Auto-matching… {{done}}/{{total}}",
-    "clearAll": "Clear the list"
+    "clearAll": "Clear the list",
+    "cancelAutoMatch": "Stop auto-matching: tracks already matched keep their tags",
+    "cancelAnalyze": "Stop analyzing: tracks already analyzed keep their verdict"
   },
   "sidebar": {
     "dropHint": "Drag your tracks here.",
@@ -79,7 +82,8 @@
       "silence": "Silence to trim",
       "clipping": "Clipping",
       "trashSuspects_one": "Move the doubtful file to Trash",
-      "trashSuspects_other": "Move the {{count}} doubtful files to Trash"
+      "trashSuspects_other": "Move the {{count}} doubtful files to Trash",
+      "current": "Filter: {{filter}} {{count}}"
     },
     "search": {
       "placeholder": "Search tracks",
@@ -99,7 +103,8 @@
     },
     "position": "Track {{current}} of {{total}}",
     "selectedCount_one": "{{count}} selected",
-    "selectedCount_other": "{{count}} selected"
+    "selectedCount_other": "{{count}} selected",
+    "positionReveal": "Track {{current}} of {{total}}: scroll to it"
   },
   "empty": {
     "title": "Drop your tracks here",
@@ -362,7 +367,8 @@
       "remove": "Remove from list",
       "trash": "Move to Trash",
       "trashWin": "Move to Recycle Bin"
-    }
+    },
+    "progress": "{{percent}}% complete"
   },
   "editor": {
     "searchPlaceholder": "Search your sources or paste a Discogs release id…",
@@ -1338,7 +1344,10 @@
     "appleMusicPlaylists": "Reading Apple Music playlists",
     "appleMusicPlaylistTracks": "Reading the playlist",
     "playlistCount_one": "{{count}} playlist",
-    "playlistCount_other": "{{count}} playlists"
+    "playlistCount_other": "{{count}} playlists",
+    "statusRunning": "Running",
+    "statusDone": "Done",
+    "statusError": "Failed"
   },
   "applePlaylist": {
     "title": "Import from Apple Music",

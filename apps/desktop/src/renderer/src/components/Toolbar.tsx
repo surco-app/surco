@@ -119,6 +119,31 @@ export const Toolbar = memo(function Toolbar({
       className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-20"
       style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
+      {/* The sweeps' counters, spoken. Outside the buttons because a button flattens what
+          it holds into its own name (the cancel action), and always mounted, empty while
+          idle, because a live region born together with its text is often never read. */}
+      <div className="sr-only">
+        <span role="status">
+          {batching
+            ? tr('header.convertingCount', { done: batchProgress.done, total: batchProgress.total })
+            : ''}
+        </span>
+        <span role="status">
+          {importing
+            ? tr('header.importingCount', { done: importing.done, total: importing.total })
+            : ''}
+        </span>
+        <span role="status">
+          {matching
+            ? tr('header.autoMatchingCount', { done: matching.done, total: matching.total })
+            : ''}
+        </span>
+        <span role="status">
+          {analysis
+            ? tr('header.analyzingCount', { done: analysis.done, total: analysis.total })
+            : ''}
+        </span>
+      </div>
       {trackCount > 0 ? (
         // Converting the list is the app's whole point, so it leads the header whenever
         // there is a list, one track included, so the button never comes and goes.
@@ -147,16 +172,9 @@ export const Toolbar = memo(function Toolbar({
             {batching ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                {/* The digits alone are silent to a screen reader, and the button's own
-                    name is the cancel action — so the count needs its own status region. */}
-                <span
-                  role="status"
-                  aria-label={tr('header.convertingCount', {
-                    done: batchProgress.done,
-                    total: batchProgress.total,
-                  })}
-                  className="tabular-nums"
-                >
+                {/* Spoken by the status regions at the top of the header, not here: the
+                    button's own name is the cancel action. */}
+                <span className="tabular-nums">
                   {tr('header.convertingCount', {
                     done: batchProgress.done,
                     total: batchProgress.total,
@@ -233,15 +251,7 @@ export const Toolbar = memo(function Toolbar({
                 glyph already; this is the import's, echoing the Add files button it
                 follows from. */}
             <FilePlus className="h-4 w-4" aria-hidden="true" />
-            {/* A status region like the batch pill's: the visible counter alone is silent
-                to a screen reader, and the button's own name is the cancel action. */}
-            <span
-              role="status"
-              aria-label={tr('header.importingCount', {
-                done: importing.done,
-                total: importing.total,
-              })}
-            >
+            <span>
               {tr('header.importingCount', { done: importing.done, total: importing.total })}
             </span>
             <Tooltip label={tr('header.cancelImport')} align="end" />
@@ -259,7 +269,14 @@ export const Toolbar = memo(function Toolbar({
               // When auto-match is on but the token is missing, the button isn't a dead
               // disabled control — it's the fix, so it stays enabled and routes to Settings.
               disabled={!matching && !needsToken && (!canAutoMatch || autoMatchable === 0)}
-              aria-label={needsToken ? tr('header.autoMatchNoToken') : tr('header.autoMatch')}
+              // Mid-run a press cancels, so the name has to say that and not offer the start.
+              aria-label={
+                matching
+                  ? tr('header.cancelAutoMatch')
+                  : needsToken
+                    ? tr('header.autoMatchNoToken')
+                    : tr('header.autoMatch')
+              }
               className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-medium hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
                 matching
                   ? 'min-w-[3.25rem] border border-[var(--color-accent)] text-[var(--color-accent)]'
@@ -273,15 +290,7 @@ export const Toolbar = memo(function Toolbar({
                 aria-hidden="true"
               />
               {matching && (
-                <span
-                  data-testid="auto-match-progress"
-                  role="status"
-                  aria-label={tr('header.autoMatchingCount', {
-                    done: matching.done,
-                    total: matching.total,
-                  })}
-                  className="text-xs tabular-nums"
-                >
+                <span data-testid="auto-match-progress" className="text-xs tabular-nums">
                   {matching.done}/{matching.total}
                 </span>
               )}
@@ -306,7 +315,7 @@ export const Toolbar = memo(function Toolbar({
               data-testid="analyze-quality"
               onClick={analysis ? onCancelAnalyze : onAnalyzeAll}
               disabled={!analysis && allAnalyzed}
-              aria-label={tr('header.analyzeQuality')}
+              aria-label={analysis ? tr('header.cancelAnalyze') : tr('header.analyzeQuality')}
               className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
                 analysis
                   ? 'min-w-[3.25rem] border border-[var(--color-accent)] text-[var(--color-accent)]'
@@ -318,15 +327,7 @@ export const Toolbar = memo(function Toolbar({
                 aria-hidden="true"
               />
               {analysis && (
-                <span
-                  data-testid="analyze-progress"
-                  role="status"
-                  aria-label={tr('header.analyzingCount', {
-                    done: analysis.done,
-                    total: analysis.total,
-                  })}
-                  className="text-xs tabular-nums"
-                >
+                <span data-testid="analyze-progress" className="text-xs tabular-nums">
                   {analysis.done}/{analysis.total}
                 </span>
               )}
@@ -348,7 +349,8 @@ export const Toolbar = memo(function Toolbar({
           data-testid="open-palette"
           onClick={onPalette}
           className="press flex h-8 items-center gap-1 rounded-lg px-2.5 text-[11px] font-medium text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
-          aria-label={tr('header.palette')}
+          // Starts with the keys it shows, so voice control finds it by what is on screen.
+          aria-label={`${isMac ? '⌘K' : 'Ctrl K'} ${tr('header.palette')}`}
         >
           <kbd className="font-sans">{isMac ? '⌘' : 'Ctrl'}</kbd>
           <kbd className="font-sans">K</kbd>
@@ -394,7 +396,7 @@ export const Toolbar = memo(function Toolbar({
           {trashCount > 0 && (
             <span
               data-testid="trash-count"
-              className="absolute -top-0.5 -right-0.5 min-w-[14px] rounded-full bg-[var(--color-accent)] px-1 text-center font-mono text-[9px] leading-[14px] text-[var(--color-on-accent)] tabular-nums"
+              className="absolute -top-0.5 -right-0.5 min-w-[14px] rounded-full bg-[var(--color-accent)] px-1 text-center font-mono text-[10px] leading-[14px] text-[var(--color-on-accent)] tabular-nums"
             >
               {trashCount > 99 ? '99+' : trashCount}
             </span>

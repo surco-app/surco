@@ -24,7 +24,8 @@
     "seratoHint": "En Serato: pon el fichero guardado en tu carpeta _Serato_/Subcrates y reinicia Serato — tus pistas aparecen en la barra lateral.",
     "m3uHint": "Una lista de reproducción estándar para todo lo demás — reproductores, equipos de coche, otras herramientas.",
     "unconverted": "{{count}} pista(s) aún sin convertir — se exportarán como sus archivos originales.",
-    "failed": "Error al exportar: {{error}}"
+    "failed": "Error al exportar: {{error}}",
+    "cancelWhile": "{{stage}} Pulsa para cancelar"
   },
   "header": {
     "add": "Añadir archivos",
@@ -53,7 +54,9 @@
     "autoMatchLabel": "Emparejar",
     "addToken": "Añadir token",
     "autoMatchingCount": "Auto-emparejando… {{done}}/{{total}}",
-    "clearAll": "Vaciar la lista"
+    "clearAll": "Vaciar la lista",
+    "cancelAutoMatch": "Detener el emparejado: las pistas ya emparejadas conservan sus etiquetas",
+    "cancelAnalyze": "Detener el análisis: las pistas ya analizadas conservan su veredicto"
   },
   "sidebar": {
     "dropHint": "Arrastra aquí tus pistas.",
@@ -79,7 +82,8 @@
       "silence": "Silencio por recortar",
       "clipping": "Clipping",
       "trashSuspects_one": "Mover el archivo dudoso a la papelera",
-      "trashSuspects_other": "Mover los {{count}} archivos dudosos a la papelera"
+      "trashSuspects_other": "Mover los {{count}} archivos dudosos a la papelera",
+      "current": "Filtro: {{filter}} {{count}}"
     },
     "search": {
       "placeholder": "Buscar pistas",
@@ -99,7 +103,8 @@
     },
     "position": "Pista {{current}} de {{total}}",
     "selectedCount_one": "{{count}} seleccionada",
-    "selectedCount_other": "{{count}} seleccionadas"
+    "selectedCount_other": "{{count}} seleccionadas",
+    "positionReveal": "Pista {{current}} de {{total}}: desplazarse hasta ella"
   },
   "empty": {
     "title": "Suelta tus pistas aquí",
@@ -362,7 +367,8 @@
       "remove": "Quitar de la lista",
       "trash": "Mover a la papelera",
       "trashWin": "Mover a la papelera de reciclaje"
-    }
+    },
+    "progress": "{{percent}} % completado"
   },
   "editor": {
     "searchPlaceholder": "Busca en tus fuentes o pega un ID de release de Discogs…",
@@ -1338,7 +1344,10 @@
     "appleMusicPlaylists": "Leyendo playlists de Apple Music",
     "appleMusicPlaylistTracks": "Leyendo la playlist",
     "playlistCount_one": "{{count}} playlist",
-    "playlistCount_other": "{{count}} playlists"
+    "playlistCount_other": "{{count}} playlists",
+    "statusRunning": "En curso",
+    "statusDone": "Hecho",
+    "statusError": "Fallido"
   },
   "applePlaylist": {
     "title": "Importar de Apple Music",

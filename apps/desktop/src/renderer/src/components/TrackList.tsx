@@ -1,5 +1,6 @@
 import {
   Check,
+  CircleAlert,
   CircleCheck,
   type LucideIcon,
   Music,
@@ -78,7 +79,6 @@ const badgeBase =
 const badgeTone = {
   attention: 'border-warn',
   busy: 'animate-pulse border-[var(--color-accent)]',
-  danger: 'border-danger',
 } as const
 
 function ToneBadge({ tone }: { tone: keyof typeof badgeTone }): React.JSX.Element {
@@ -113,7 +113,23 @@ function StatusBadge({
   // idle is the default for nearly every imported row, so a constant dot says nothing; a clean
   // corner now reads as "not converted yet" and lets the live states stand out.
   if (track.status === 'idle') return null
-  return <ToneBadge tone={track.status === 'processing' ? 'busy' : 'danger'} />
+  if (track.status === 'processing') return <ToneBadge tone="busy" />
+  // A failure gets its own glyph, not just a red ring: the ring alone differed from the
+  // amber "unapplied changes" one only by colour, which colour-blind users can't separate.
+  return (
+    <span
+      data-testid="track-status-badge"
+      data-tone="danger"
+      className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--color-panel)] ring-2 ring-[var(--color-panel)]"
+    >
+      <CircleAlert
+        data-testid="track-status-error-glyph"
+        aria-hidden
+        className="h-3.5 w-3.5 text-danger"
+        strokeWidth={2.5}
+      />
+    </span>
+  )
 }
 
 // The verdicts that actually render a glyph — every TrackQuality except 'unanalyzed',
@@ -175,6 +191,7 @@ function QualityMark({
     >
       <Icon aria-hidden className={`h-3 w-3 ${className}`} />
       <Tooltip label={label} align="end" scope="dot" />
+      <span className="sr-only">{label}</span>
     </span>
   )
 }
@@ -217,6 +234,8 @@ interface RowProps {
   // Plain ⌫/Supr on the focused row — the keyboard ✕. Separate from onRemove because
   // the list must also hop selection/focus to a surviving neighbour (see TrackList).
   onRemoveKey: (id: string) => void
+  // Shift+↑/↓ on the focused row: extends the range to its neighbour in that direction.
+  onExtendKey: (id: string, delta: 1 | -1) => void
   onPrefetch: (id: string) => void
   onOpenMenu: (track: TrackItem, x: number, y: number) => void
   // Starts the native drag-out for this row (all selected files when it's part of the
@@ -246,6 +265,7 @@ const TrackRow = memo(function TrackRow({
   onRemove,
   onAcceptReview,
   onRemoveKey,
+  onExtendKey,
   onPrefetch,
   onOpenMenu,
   onDragOut,
@@ -265,6 +285,15 @@ const TrackRow = memo(function TrackRow({
   // and sort, so the pill, the filter chip and the sort order all agree.
   const format = sourceFormat(t)
   const rowRef = useRef<HTMLDivElement>(null)
+  // Shared by each mark's hover tooltip and its sr-only twin, so what a screen reader
+  // hears is the same sentence the pointer reveals.
+  const statusLabel = tr(stale ? 'trackList.status.stale' : `trackList.status.${t.status}`)
+  const autoMatchLabel = matchTooltip(
+    t.matchProvider
+      ? tr('trackList.autoMatchedFrom', { source: tr(`settings.provider.${t.matchProvider}`) })
+      : tr('trackList.autoMatched'),
+    t.matchConfidence,
+  )
   // Report this row entering/leaving the scroll pane so App can run auto-match for
   // what's on screen, through the list's single shared observer.
   useEffect(() => {
@@ -322,6 +351,9 @@ const TrackRow = memo(function TrackRow({
         data-shortcut-scope="track-list"
         role="option"
         aria-selected={selected}
+        // Several rows can be selected; this marks the one open in the editor, the fact
+        // the solid fill carries for sighted users.
+        aria-current={primary || undefined}
         // The rows are real DOM (content-visibility, not windowing), but a screen reader
         // still benefits from an explicit "row 12 of 500" as filters shrink the set.
         aria-setsize={setSize}
@@ -340,6 +372,22 @@ const TrackRow = memo(function TrackRow({
             const r = e.currentTarget.getBoundingClientRect()
             if (!selected) onSelect(t.id, {})
             onOpenMenu(t, r.left, r.bottom)
+            return
+          }
+          // Shift+↑/↓ grows the range from the anchor, the keyboard twin of a Shift-click.
+          // Claimed here even at the list's ends, or the global ↑/↓ would run "next"/"prev"
+          // and collapse the range the user is building.
+          const plainShift = e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey
+          if (plainShift && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+            e.preventDefault()
+            onExtendKey(t.id, e.key === 'ArrowDown' ? 1 : -1)
+            return
+          }
+          // Plain Space plays, so ⌘Space / Ctrl+Space toggles the focused row in or out of
+          // the selection without dropping the rest, like a ⌘-click.
+          if (e.key === ' ' && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
+            e.preventDefault()
+            onSelect(t.id, { meta: true })
             return
           }
           // Bare key only: ⌘⌫ belongs to the global remove command, and the list is a
@@ -414,11 +462,10 @@ const TrackRow = memo(function TrackRow({
             </span>
           )}
           <StatusBadge track={t} stale={stale} />
-          <Tooltip
-            label={tr(stale ? 'trackList.status.stale' : `trackList.status.${t.status}`)}
-            align="start"
-            scope="dot"
-          />
+          <Tooltip label={statusLabel} align="start" scope="dot" />
+          {/* The badge is an unlabelled shape and the tooltip only shows on hover, so the
+              state is spoken from here. Idle draws no badge and stays silent too. */}
+          {(stale || t.status !== 'idle') && <span className="sr-only">{statusLabel}</span>}
         </span>
         {/* The row tooltip (frozen listLabel — not the editable meta.title — so it matches
             what the row shows) is scoped to the text itself, not this flex-1 layout slot:
@@ -450,6 +497,11 @@ const TrackRow = memo(function TrackRow({
                   style={{ width: `${STAGE_PROGRESS[t.stage] * 100}%` }}
                 />
               </span>
+              {/* Text, not role="progressbar": an option's children are presentational,
+                  so a nested role would be flattened away and the amount never spoken. */}
+              <span className="sr-only">
+                {tr('trackList.progress', { percent: Math.round(STAGE_PROGRESS[t.stage] * 100) })}
+              </span>
             </span>
           ) : (
             <span className="flex items-center gap-2">
@@ -469,6 +521,7 @@ const TrackRow = memo(function TrackRow({
                 >
                   <TriangleAlert className="h-3 w-3" aria-hidden="true" />
                   <Tooltip label={tr('trackList.metaReadFailed')} align="end" scope="dot" />
+                  <span className="sr-only">{tr('trackList.metaReadFailed')}</span>
                 </span>
               )}
               {/* Both indicators reserve a fixed-width slot even when absent, so the FLAC
@@ -482,44 +535,10 @@ const TrackRow = memo(function TrackRow({
                     className="group/dot relative flex items-center text-[var(--color-accent)]"
                   >
                     <Sparkles className="h-3 w-3" aria-hidden="true" />
-                    <Tooltip
-                      label={matchTooltip(
-                        t.matchProvider
-                          ? tr('trackList.autoMatchedFrom', {
-                              source: tr(`settings.provider.${t.matchProvider}`),
-                            })
-                          : tr('trackList.autoMatched'),
-                        t.matchConfidence,
-                      )}
-                      align="end"
-                      scope="dot"
-                    />
+                    <Tooltip label={autoMatchLabel} align="end" scope="dot" />
+                    <span className="sr-only">{autoMatchLabel}</span>
                   </span>
-                ) : (
-                  // A review-tier suggestion the user hasn't acted on yet: amber, distinct from
-                  // the applied accent sparkle, and gone the moment the track is actually matched.
-                  t.matchReview &&
-                  !t.matched && (
-                    <button
-                      type="button"
-                      data-testid="track-match-review"
-                      data-confidence="review"
-                      aria-label={tr('commands.acceptReview')}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onAcceptReview(t.id)
-                      }}
-                      className="group/dot press relative flex items-center text-warn"
-                    >
-                      <Sparkles className="h-3 w-3" aria-hidden="true" />
-                      <Tooltip
-                        label={matchTooltip(tr('commands.acceptReview'), t.matchConfidence)}
-                        align="end"
-                        scope="dot"
-                      />
-                    </button>
-                  )
-                )}
+                ) : null}
               </span>
               <span className="flex w-3 shrink-0 justify-center">
                 {quality !== 'unanalyzed' ? (
@@ -561,6 +580,36 @@ const TrackRow = memo(function TrackRow({
           )}
         </span>
       </button>
+      {/* A review-tier suggestion the user hasn't acted on yet: amber, distinct from the
+          applied accent sparkle, and gone the moment the track is actually matched. A
+          sibling of the row button, not a child, since a button inside the option button
+          is invalid and folds the action into the row's name. It is placed over the empty
+          sparkle slot of the artist line: that slot ends 120px from the right edge (the row
+          padding plus the duration, pill and verdict slots with their gaps), and its centre
+          sits 13px up from the bottom. The button is a 24px target (WCAG 2.5.8) centred
+          there, so the 12px glyph lands where the slot would have drawn it. Shown under the
+          same conditions as that line. */}
+      {!t.loadingMeta &&
+        !(t.status === 'processing' && t.stage) &&
+        !t.autoMatched &&
+        t.matchReview &&
+        !t.matched && (
+          <button
+            type="button"
+            data-testid="track-match-review"
+            data-confidence="review"
+            aria-label={tr('commands.acceptReview')}
+            onClick={() => onAcceptReview(t.id)}
+            className="group/dot press absolute right-[114px] bottom-px flex h-6 w-6 items-center justify-center text-warn"
+          >
+            <Sparkles className="h-3 w-3" aria-hidden="true" />
+            <Tooltip
+              label={matchTooltip(tr('commands.acceptReview'), t.matchConfidence)}
+              align="end"
+              scope="dot"
+            />
+          </button>
+        )}
       {/* A ▶ overlay over the cover makes play discoverable — double-click and Space are
           the only other ways in, and neither shows itself. A sibling of the row button
           (not a child) so it stays a valid nested-button-free control, like remove.
@@ -634,6 +683,15 @@ export const TrackList = memo(function TrackList({
       onSelect(neighbor.id, {})
       rowRegistry?.current?.get(neighbor.id)?.focus()
     }
+  })
+  // The moving end of a keyboard range is the focused row, not the anchor: the anchor stays
+  // the editor's track (as with a Shift-click), and the focus hops to the new end so the
+  // next Shift+↑/↓ keeps growing or shrinking the same range.
+  const extendViaKeyboard = useStableCallback((id: string, delta: 1 | -1): void => {
+    const to = tracks[tracks.findIndex((t) => t.id === id) + delta]
+    if (!to) return
+    onSelect(to.id, { shift: true })
+    rowRegistry?.current?.get(to.id)?.focus()
   })
   // Stable so the memoized rows don't all re-render when the menu opens/closes.
   const openMenu = useCallback(
@@ -712,6 +770,7 @@ export const TrackList = memo(function TrackList({
             onRemove={onRemove}
             onAcceptReview={onAcceptReview}
             onRemoveKey={removeViaKeyboard}
+            onExtendKey={extendViaKeyboard}
             onPrefetch={onPrefetch}
             onOpenMenu={openMenu}
             onDragOut={startDragOut}

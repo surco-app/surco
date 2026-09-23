@@ -163,10 +163,10 @@ export function TrackListHeader({
           <button
             type="button"
             data-testid="track-sort-direction"
+            // A toggle: the name holds still and aria-pressed says whether it's on. A label
+            // that swapped with the state read back as the opposite of the order shown.
             aria-pressed={sortDir === 'desc'}
-            aria-label={tr(
-              sortDir === 'asc' ? 'sidebar.sort.ascending' : 'sidebar.sort.descending',
-            )}
+            aria-label={tr('sidebar.sort.descending')}
             onClick={toggleSortDir}
             className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-field)] text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)]"
           >

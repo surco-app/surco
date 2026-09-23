@@ -1,6 +1,6 @@
 import { SlidersVertical } from 'lucide-react'
 import type React from 'react'
-import { useRef } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { FormatSetting, NormalizeConfig, OutputFormat } from '../../../shared/types'
 import { type CleanupOffer, cleanupCount } from '../hooks/useConfirmFlows'
@@ -138,15 +138,31 @@ export function ConvertFooter({
   // survive re-renders but not that remount, which is exactly the boundary wanted.
   const prevShowDone = useRef(showDone)
   const swapped = useRef(false)
+  const footerRef = useRef<HTMLDivElement>(null)
+  // The swap unmounts the button a keyboard user just pressed and focus drops to <body>.
+  // Whether focus was in here is read before the commit replaces the block, while the old
+  // button still holds it, so only focus the footer itself owned is handed back.
+  const refocus = useRef(false)
   if (prevShowDone.current !== showDone) {
     swapped.current = true
     prevShowDone.current = showDone
+    refocus.current = footerRef.current?.contains(document.activeElement) ?? false
   }
+  useLayoutEffect(() => {
+    if (!refocus.current) return
+    refocus.current = false
+    footerRef.current?.querySelector<HTMLButtonElement>('[data-testid="process-btn"]')?.focus()
+  })
   return (
-    <div className="border-t border-[var(--color-line)] bg-[var(--color-ink)] px-6 py-3.5">
+    <div
+      ref={footerRef}
+      className="border-t border-[var(--color-line)] bg-[var(--color-ink)] px-6 py-3.5"
+    >
       {item.status === 'error' && (
         <div className="mb-2 flex items-center justify-between gap-3">
-          <p className="truncate text-xs text-danger">{item.error}</p>
+          <p role="alert" className="truncate text-xs text-danger">
+            {item.error}
+          </p>
           <button
             type="button"
             data-testid="report-error"
@@ -186,7 +202,11 @@ export function ConvertFooter({
           // chevron re-picks the format without converting on the spot.
           <>
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-              <p data-testid="export-success" className="text-xs font-medium text-good">
+              <p
+                data-testid="export-success"
+                role="status"
+                className="text-xs font-medium text-good"
+              >
                 {inMusicLibraryOnly
                   ? isMulti
                     ? tr('editor.addedToAppleMusicCount', { count: selectedCount })
@@ -276,7 +296,11 @@ export function ConvertFooter({
                 onSelectDestination={onSelectDestination}
               />
             </div>
-            {musicError && <p className="text-xs text-danger">{musicError}</p>}
+            {musicError && (
+              <p role="alert" className="text-xs text-danger">
+                {musicError}
+              </p>
+            )}
           </>
         ) : (
           <ExportButton
