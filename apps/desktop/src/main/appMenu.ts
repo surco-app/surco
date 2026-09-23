@@ -91,6 +91,12 @@ export function appMenuTemplate({
         keymapItem(t('stats'), 'stats'),
         { label: t('activity'), click: () => run('activity') },
         { type: 'separator' },
+        // Replacing Electron's default View menu dropped its zoom items, and with them the
+        // only way to enlarge the interface; the roles restore ⌘+ / ⌘- / ⌘0 everywhere.
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
         { role: 'togglefullscreen' },
       ],
     },
