@@ -93,7 +93,11 @@ export interface ProcessTrackDeps {
   rm: (path: string, opts: { recursive: boolean; force: boolean }) => Promise<void>
   // Shown only on a real output collision; returns the user's choice. Encapsulates the
   // Electron message box so the branches below stay unit-testable.
-  confirmConflict: (outputName: string) => Promise<'overwrite' | 'keepBoth' | 'skip'>
+  // reservedOnly: nothing is on disk under that name yet, only another job's claim on it.
+  confirmConflict: (
+    outputName: string,
+    reservedOnly: boolean,
+  ) => Promise<'overwrite' | 'keepBoth' | 'skip'>
   // Closes the race a concurrent batch opens: two jobs resolving to the same output
   // name both see existsSync() === false until one of them finishes writing, so a
   // path claimed by an in-flight job counts as taken even before it exists on disk.
@@ -231,7 +235,7 @@ export async function runProcessTrack(
         deps.isPathReserved(outputPath),
       )
     ) {
-      const choice = await deps.confirmConflict(basename(outputPath))
+      const choice = await deps.confirmConflict(basename(outputPath), !deps.existsSync(outputPath))
       if (choice === 'skip') return { outputPath: '', inPlace, skipped: true }
       // Stepping aside to a "(n)" name means the conversion no longer lands on the
       // source's own path, so this stopped being an in-place export: leaving inPlace

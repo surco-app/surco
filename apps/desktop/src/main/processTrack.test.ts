@@ -355,7 +355,7 @@ describe('runProcessTrack — output conflict', () => {
     deps.confirmConflict = vi.fn(async () => 'keepBoth' as const)
     const result = await runProcessTrack(job(), deps)
 
-    expect(deps.confirmConflict).toHaveBeenCalledWith('Artist - Title.aiff')
+    expect(deps.confirmConflict).toHaveBeenCalledWith('Artist - Title.aiff', true)
     expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
   })
 
@@ -388,6 +388,21 @@ describe('runProcessTrack — output conflict', () => {
     expect(result.outputPath).toBe('/out/Artist - Title.aiff')
   })
 
+  // The prompt is what the user consents on. A claim by another job in the run has no file
+  // behind it yet, so a prompt reading "already exists in the destination folder" asked
+  // about a file that was not there; the prompt is told which of the two it is facing.
+  it('tells the prompt whether the name is a file on disk or only a claim by another job', async () => {
+    const onDisk = makeDeps({ existsSync: vi.fn((p: string) => p === '/out/Artist - Title.aiff') })
+    await runProcessTrack(job(), onDisk)
+    expect(onDisk.confirmConflict).toHaveBeenCalledWith('Artist - Title.aiff', false)
+
+    const claimed = makeDeps({
+      isPathReserved: vi.fn((p: string) => p === '/out/Artist - Title.aiff'),
+    })
+    await runProcessTrack(job(), claimed)
+    expect(claimed.confirmConflict).toHaveBeenCalledWith('Artist - Title.aiff', true)
+  })
+
   // The two halves wired together, against the real registry instead of a fake: the
   // guards above prove runProcessTrack reacts to a reservation, and outputReservations'
   // own tests prove it folds case, but only this says the batch is actually safe. Two
@@ -409,7 +424,7 @@ describe('runProcessTrack — output conflict', () => {
 
     const result = await runProcessTrack(job(), deps)
 
-    expect(deps.confirmConflict).toHaveBeenCalledWith('Artist - Title.aiff')
+    expect(deps.confirmConflict).toHaveBeenCalledWith('Artist - Title.aiff', true)
     expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
   })
 
@@ -435,7 +450,7 @@ describe('runProcessTrack — output conflict', () => {
       deps,
     )
 
-    expect(deps.confirmConflict).toHaveBeenCalledWith('Artist - Title.aiff')
+    expect(deps.confirmConflict).toHaveBeenCalledWith('Artist - Title.aiff', true)
     expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
   })
 
@@ -736,7 +751,7 @@ describe('runProcessTrack — in-place rewrite', () => {
     deps.confirmConflict = vi.fn(async () => 'skip' as const)
     const result = await runProcessTrack(job(), deps)
 
-    expect(deps.confirmConflict).toHaveBeenCalledWith('Artist - Title.aiff')
+    expect(deps.confirmConflict).toHaveBeenCalledWith('Artist - Title.aiff', false)
     expect(deps.convertAudio).not.toHaveBeenCalled()
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
     expect(result.skipped).toBe(true)
