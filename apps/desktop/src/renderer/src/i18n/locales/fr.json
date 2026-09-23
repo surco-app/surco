@@ -1201,7 +1201,8 @@
     "unassigned": "Non assigné",
     "apply": "Appliquer à {{count}}",
     "suggested": "Correspondance suggérée",
-    "applied": "Appliqué"
+    "applied": "Appliqué",
+    "toConfirm": "Correspondance à confirmer"
   },
   "findReplace": {
     "title": "Rechercher et remplacer",

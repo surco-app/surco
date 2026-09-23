@@ -138,11 +138,16 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
                     data-testid={`match-confidence-${a.id}`}
                     data-confidence={tier}
                     role="img"
-                    aria-label={tr('match.suggested')}
+                    // Green and amber were the only difference between the tiers, so the
+                    // name (and its tooltip) says which one this is.
+                    aria-label={tr(tier === 'high' ? 'match.suggested' : 'match.toConfirm')}
                     className={`group relative ${tier === 'high' ? 'text-good' : 'text-warn'}`}
                   >
                     <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                    <Tooltip label={tr('match.suggested')} align="end" />
+                    <Tooltip
+                      label={tr(tier === 'high' ? 'match.suggested' : 'match.toConfirm')}
+                      align="end"
+                    />
                   </span>
                 )}
               </span>

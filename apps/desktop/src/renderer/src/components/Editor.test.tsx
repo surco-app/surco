@@ -2804,7 +2804,10 @@ describe('Editor track preselection', () => {
     await loadTracklist({ autoOpens: true })
     const badge = await screen.findByTestId('track-confidence')
     expect(badge).toHaveTextContent('')
-    expect(await hoverForTooltip(badge)).toHaveTextContent(i18n.t('editor.matchSuggested'))
+    // The tooltip names the tier, since the sparkle's colour is all that separates them.
+    const tierLabel =
+      badge.dataset.confidence === 'high' ? 'editor.matchSuggested' : 'match.toConfirm'
+    expect(await hoverForTooltip(badge)).toHaveTextContent(i18n.t(tierLabel))
   })
 
   it('flags a partial-title preselection for review', async () => {

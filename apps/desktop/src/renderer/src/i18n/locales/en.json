@@ -1201,7 +1201,8 @@
     "unassigned": "Unassigned",
     "apply": "Apply to {{count}}",
     "suggested": "Suggested match",
-    "applied": "Applied"
+    "applied": "Applied",
+    "toConfirm": "Match to confirm"
   },
   "findReplace": {
     "title": "Find & Replace",

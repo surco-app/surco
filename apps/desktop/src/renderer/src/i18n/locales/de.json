@@ -1201,7 +1201,8 @@
     "unassigned": "Nicht zugewiesen",
     "apply": "Auf {{count}} anwenden",
     "suggested": "Vorgeschlagener Treffer",
-    "applied": "Angewendet"
+    "applied": "Angewendet",
+    "toConfirm": "Treffer zu bestätigen"
   },
   "findReplace": {
     "title": "Suchen & Ersetzen",
