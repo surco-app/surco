@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import type { Chord } from '../../../shared/shortcuts'
 import { type Command, runCommand } from '../lib/commands'
-import { activeScope, isTypingTarget, keyToCommandId } from '../lib/keymap'
+import { activeScope, isTypingTarget, keyToCommandId, pressesOnSpace } from '../lib/keymap'
 import { isClaimable, runKeyClaim } from '../lib/spaceClaim'
 import { useLatest } from './useLatest'
 
@@ -55,6 +55,7 @@ export function useKeyboardShortcuts(params: Params): void {
         p.onStepTrack(e.key === 'ArrowDown' ? 1 : -1)
         return
       }
+      if (e.key === ' ' && pressesOnSpace(document.activeElement)) return
       const typing = isTypingTarget(document.activeElement)
       const id = keyToCommandId(e, typing, p.bindings, p.isMac, activeScope(document.activeElement))
       if (!id) return
