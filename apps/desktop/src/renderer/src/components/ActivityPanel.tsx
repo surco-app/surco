@@ -68,14 +68,37 @@ const KIND_ICON: Record<ActivityKind, typeof Disc3> = {
   match: Sparkles,
 }
 
+const STATUS_LABEL: Record<ActivityRow['status'], string> = {
+  running: 'activity.statusRunning',
+  done: 'activity.statusDone',
+  error: 'activity.statusError',
+}
+
+// The glyph is decorative, so the state is also spoken: without the sr-only word a row's
+// name said what the step was but never whether it was running, done or had failed.
 function StatusIcon({ status }: { status: ActivityRow['status'] }): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const word = <span className="sr-only">{tr(STATUS_LABEL[status])}</span>
   if (status === 'running')
     return (
-      <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-fg-muted" aria-hidden="true" />
+      <>
+        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-fg-muted" aria-hidden="true" />
+        {word}
+      </>
     )
   if (status === 'error')
-    return <AlertCircle className="h-3.5 w-3.5 shrink-0 text-danger" aria-hidden="true" />
-  return <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-good" aria-hidden="true" />
+    return (
+      <>
+        <AlertCircle className="h-3.5 w-3.5 shrink-0 text-danger" aria-hidden="true" />
+        {word}
+      </>
+    )
+  return (
+    <>
+      <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-good" aria-hidden="true" />
+      {word}
+    </>
+  )
 }
 
 // Opens a release/cover URL in the user's browser. window.open is routed to the OS
@@ -128,6 +151,7 @@ function ChildRow({ row }: { row: ActivityRow }): React.JSX.Element {
         type="button"
         data-testid="activity-child"
         disabled={!expandable}
+        aria-expanded={expandable ? open : undefined}
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center gap-2 py-1 pl-9 text-left enabled:hover:bg-[var(--color-panel-2)] disabled:cursor-default"
       >
@@ -177,6 +201,7 @@ function Row({ row }: { row: ActivityRow }): React.JSX.Element {
           type="button"
           data-testid="activity-row"
           disabled={!expandable}
+          aria-expanded={expandable ? open : undefined}
           onClick={() => setOpen((v) => !v)}
           className="flex min-w-0 flex-1 items-center gap-2 px-3 py-1.5 text-left disabled:cursor-default"
         >
@@ -214,7 +239,7 @@ function Row({ row }: { row: ActivityRow }): React.JSX.Element {
               data-testid="activity-open-url"
               aria-label={tr('activity.openInBrowser')}
               onClick={() => row.url && openUrl(row.url)}
-              className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-muted opacity-0 hover:bg-[var(--color-line-strong)] hover:text-fg group-hover:opacity-100"
+              className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-muted opacity-0 hover:bg-[var(--color-line-strong)] hover:text-fg group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
             >
               <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
@@ -339,8 +364,10 @@ export function ActivityPanel({
   )
 
   return (
-    <div
+    // A named <section> is a region landmark, so a screen reader can jump to the card.
+    <section
       data-testid="activity-panel"
+      aria-label={tr('activity.title')}
       className="fixed z-50 flex flex-col overflow-hidden rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-2xl"
       style={{ left: pos.x, top: pos.y, width: size.width, height: size.height }}
     >
@@ -406,6 +433,6 @@ export function ActivityPanel({
             'linear-gradient(135deg, transparent 50%, var(--color-line-strong) 50%, var(--color-line-strong) 60%, transparent 60%, transparent 75%, var(--color-line-strong) 75%, var(--color-line-strong) 85%, transparent 85%)',
         }}
       />
-    </div>
+    </section>
   )
 }

@@ -1340,7 +1340,10 @@
     "appleMusicPlaylists": "Apple-Music-Playlists werden gelesen",
     "appleMusicPlaylistTracks": "Playlist wird gelesen",
     "playlistCount_one": "{{count}} Playlist",
-    "playlistCount_other": "{{count}} Playlists"
+    "playlistCount_other": "{{count}} Playlists",
+    "statusRunning": "Läuft",
+    "statusDone": "Fertig",
+    "statusError": "Fehlgeschlagen"
   },
   "applePlaylist": {
     "title": "Aus Apple Music importieren",
