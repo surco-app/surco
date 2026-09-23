@@ -151,26 +151,23 @@ describe('control border contrast (WCAG 1.4.11)', () => {
   })
 })
 
-// The section header pills print their label in the tone colour over a wash of that same
-// colour at low opacity. In the light palette the wash lifted the ground just enough to
-// sink the label under AA: warn measured 3.72:1, good 4.49, accent 4.46. The check blends
-// the wash at the opacity SectionPill actually uses, over the panel the headers sit on, so
-// a palette edit or a heavier wash can't slide them back under the line.
+// The section header pills are a dot and a label on the bare panel, no wash. Warn and
+// danger print the label itself in the tone colour so a problem reads before the dot is
+// found, which makes those two colours body text on the panel: they have to clear AA there,
+// in both themes, or the one pill that asks for attention is the hardest to read.
 describe('section pill label contrast (WCAG 1.4.3 AA)', () => {
   const pill = readFileSync(
     fileURLToPath(new URL('./components/SectionPill.tsx', import.meta.url)),
     'utf8',
   )
-  for (const tone of ['accent', 'good', 'warn', 'danger']) {
-    const wash = pill.match(new RegExp(`bg-\\[var\\(--color-${tone}\\)\\]/(\\d+)`))
+  for (const tone of ['warn', 'danger']) {
     for (const [theme, t] of [
       ['dark', dark],
       ['light', light],
     ] as const) {
-      it(`${theme} ${tone} pill label reaches 4.5:1 on its wash`, () => {
-        expect(wash).not.toBeNull()
-        const ground = blend(t[`color-${tone}`], t['color-panel'], Number(wash?.[1]) / 100)
-        expect(contrast(t[`color-${tone}`], ground)).toBeGreaterThanOrEqual(4.5)
+      it(`${theme} ${tone} pill label reaches 4.5:1 on the panel`, () => {
+        expect(pill).toContain(`${tone}: 'text-[var(--color-${tone})]'`)
+        expect(contrast(t[`color-${tone}`], t['color-panel'])).toBeGreaterThanOrEqual(4.5)
       })
     }
   }

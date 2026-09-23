@@ -16,12 +16,34 @@ import type React from 'react'
 // Keeping all five in one primitive is what stops the header pills drifting into four
 // hand-rolled colour treatments where a plain fact shouts as loud as a warning. The
 // testid stays a prop so every existing selector keeps working.
-const TONES = {
-  accent: 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]',
-  neutral: 'bg-[var(--color-panel-2)] text-fg-muted',
-  good: 'bg-[var(--color-good)]/15 text-[var(--color-good)]',
-  warn: 'bg-[var(--color-warn)]/15 text-[var(--color-warn)]',
-  danger: 'bg-[var(--color-danger)]/15 text-[var(--color-danger)]',
+//
+// Drawn as a status line, not a filled capsule: a small dot in the tone's colour and the
+// words beside it, the way macOS lists mark a state. The tinted backgrounds turned every
+// header into a row of chips competing with the real controls around them. Neutral carries
+// no dot, since a measured figure has no severity to mark; warn and danger also colour
+// their words, so a problem still reads before the eye finds the dot.
+const DOTS = {
+  accent: 'bg-[var(--color-accent)]',
+  neutral: '',
+  good: 'bg-[var(--color-good)]',
+  warn: 'bg-[var(--color-warn)]',
+  danger: 'bg-[var(--color-danger)]',
+} as const
+
+const TEXT = {
+  accent: 'text-fg-muted',
+  neutral: 'text-fg-dim',
+  good: 'text-fg-muted',
+  warn: 'text-[var(--color-warn)]',
+  danger: 'text-[var(--color-danger)]',
+} as const
+
+const ICON = {
+  accent: 'text-[var(--color-accent)]',
+  neutral: 'text-fg-dim',
+  good: 'text-[var(--color-good)]',
+  warn: 'text-[var(--color-warn)]',
+  danger: 'text-[var(--color-danger)]',
 } as const
 
 export function SectionPill({
@@ -31,13 +53,13 @@ export function SectionPill({
   icon,
   children,
 }: {
-  tone: keyof typeof TONES
+  tone: keyof typeof DOTS
   testid: string
   // Figures line up column-wise as they tick (a loudness readout, a BPM) instead of
   // shuffling their own width.
   numeric?: boolean
-  // A leading glyph (the Apple Music disc) that carries the pill's subject without a
-  // second colour — the tone still means severity, the icon means what it's about.
+  // A leading glyph that carries the pill's subject in place of the dot, coloured by the
+  // tone — the tone still means severity, the icon means what it's about.
   icon?: React.ReactNode
   children: React.ReactNode
 }): React.JSX.Element {
@@ -45,11 +67,17 @@ export function SectionPill({
     <span
       data-testid={testid}
       data-tone={tone}
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${TONES[tone]} ${
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium ${TEXT[tone]} ${
         numeric ? 'tabular-nums' : ''
       }`}
     >
-      {icon}
+      {icon ? (
+        <span className={`flex ${ICON[tone]}`}>{icon}</span>
+      ) : (
+        tone !== 'neutral' && (
+          <span aria-hidden="true" className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOTS[tone]}`} />
+        )
+      )}
       {children}
     </span>
   )
