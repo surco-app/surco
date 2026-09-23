@@ -101,7 +101,8 @@
     },
     "position": "Pista {{current}} de {{total}}",
     "selectedCount_one": "{{count}} seleccionada",
-    "selectedCount_other": "{{count}} seleccionadas"
+    "selectedCount_other": "{{count}} seleccionadas",
+    "positionReveal": "Pista {{current}} de {{total}}: desplazarse hasta ella"
   },
   "empty": {
     "title": "Suelta tus pistas aquí",

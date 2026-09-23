@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { EMPTY_FILTER, type FilterSelection, type qualityCounts } from '../lib/triage'
-import '../i18n'
 import { createRef } from 'react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import i18n from '../i18n'
+import { EMPTY_FILTER, type FilterSelection, type qualityCounts } from '../lib/triage'
 import { QualityFilterBar } from './QualityFilterBar'
 
 afterEach(cleanup)
@@ -376,6 +376,15 @@ describe('QualityFilterBar', () => {
     renderBar({ selectedPosition: 250, visibleCount: 498, onRevealSelected })
     fireEvent.click(screen.getByTestId('track-position'))
     expect(onRevealSelected).toHaveBeenCalledOnce()
+  })
+
+  // Announced as bare digits, "250/498" said neither what the numbers were nor that
+  // pressing it scrolls back to the track: the button's purpose lived only in a tooltip.
+  it('names the position counter as the way back to the selected track', () => {
+    renderBar({ selectedPosition: 250, visibleCount: 498 })
+    expect(screen.getByTestId('track-position')).toHaveAccessibleName(
+      i18n.t('sidebar.positionReveal', { current: 250, total: 498 }),
+    )
   })
 
   // During a multi-select the size of the selection is what the DJ cares about, so the

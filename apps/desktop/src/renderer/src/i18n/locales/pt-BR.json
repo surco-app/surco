@@ -101,7 +101,8 @@
     },
     "position": "Faixa {{current}} de {{total}}",
     "selectedCount_one": "{{count}} selecionada",
-    "selectedCount_other": "{{count}} selecionadas"
+    "selectedCount_other": "{{count}} selecionadas",
+    "positionReveal": "Faixa {{current}} de {{total}}: rolar até ela"
   },
   "empty": {
     "title": "Arraste suas faixas para cá",
