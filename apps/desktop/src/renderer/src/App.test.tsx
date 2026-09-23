@@ -3259,6 +3259,38 @@ describe('drop target', () => {
     await waitFor(() => expect(screen.queryByTestId('drop-ghosts')).toBeNull())
   })
 
+  // The artwork well handles its own drop and stops it there, so the window never heard
+  // the drag was over: the column stayed boxed in accent blue until the next drag, a
+  // frame around the tracks that nobody could explain.
+  it('clears the mark when the drop lands on the artwork', async () => {
+    setApi({ pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']) })
+    await renderApp()
+    await addOneTrack()
+    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const well = await screen.findByTestId('cover-dropzone')
+
+    fireEvent.dragEnter(root)
+    fireEvent.dragEnter(well)
+    fireEvent.drop(well, { dataTransfer: { files: [], types: [], getData: () => '' } })
+
+    await waitFor(() => expect(screen.getByTestId('sidebar')).not.toHaveAttribute('data-drop-over'))
+  })
+
+  it('clears the mark when a drag crosses the artwork and leaves the window', async () => {
+    setApi({ pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']) })
+    await renderApp()
+    await addOneTrack()
+    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const well = await screen.findByTestId('cover-dropzone')
+
+    fireEvent.dragEnter(root)
+    fireEvent.dragEnter(well)
+    fireEvent.dragLeave(well)
+    fireEvent.dragLeave(root)
+
+    await waitFor(() => expect(screen.getByTestId('sidebar')).not.toHaveAttribute('data-drop-over'))
+  })
+
   // The ghost rows stand for "tracks go here", not for how many are coming: the count is
   // unknown until the folder is expanded, and promising five when forty arrive would be a
   // worse lie than promising nothing.
