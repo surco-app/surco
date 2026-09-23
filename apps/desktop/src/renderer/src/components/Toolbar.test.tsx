@@ -40,8 +40,6 @@ function renderBar(over: Partial<Props> = {}): Props {
     onStats: vi.fn(),
     onActivity: vi.fn(),
     activityRunning: false,
-    onTrash: vi.fn(),
-    trashCount: 0,
     onSettings: vi.fn(),
     ...over,
   }
@@ -245,13 +243,14 @@ describe('Toolbar', () => {
     expect(props.onActivity).toHaveBeenCalledOnce()
   })
 
-  // The badge's 9px digits were below the smallest size the app uses anywhere else and
-  // blurred into the pill at normal viewing distance; 10px is the floor.
-  it('draws the originals count at a readable size', () => {
-    renderBar({ trashCount: 7 })
-    const badge = screen.getByTestId('trash-count')
-    expect(badge.className).toContain('text-[10px]')
-    expect(badge.className).not.toContain('text-[9px]')
+  // The backups icon counted every copy Surco keeps, so it climbed with each conversion
+  // and never came down until they expired: a user who updated one track twice read it
+  // as the file going to the trash. The backups live on the track rows, the palette and
+  // the View menu now; the bar has no icon and nothing counting up.
+  it('has no backups button or running count', () => {
+    renderBar()
+    expect(screen.queryByTestId('open-trash')).toBeNull()
+    expect(screen.queryByTestId('trash-count')).toBeNull()
   })
 
   // The palette button shows only its shortcut, "⌘ K", while its name was "Command

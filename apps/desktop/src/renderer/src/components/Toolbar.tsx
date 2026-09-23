@@ -1,6 +1,5 @@
 import {
   Activity,
-  Archive,
   ArrowRightLeft,
   ChartColumn,
   FilePlus,
@@ -68,10 +67,6 @@ interface Props {
   // True while any background work (search, cover download, conversion) is in flight,
   // for the dot on the activity button — the same signal the panel's rows show.
   activityRunning: boolean
-  onTrash: () => void
-  // How many originals Surco's trash holds, for the badge: a user who just replaced a
-  // crate sees at a glance that the old files are still there.
-  trashCount: number
   onSettings: () => void
 }
 
@@ -109,8 +104,6 @@ export const Toolbar = memo(function Toolbar({
   onStats,
   onActivity,
   activityRunning,
-  onTrash,
-  trashCount,
   onSettings,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -384,24 +377,6 @@ export const Toolbar = memo(function Toolbar({
             />
           )}
           <Tooltip label={tr('header.activity')} align="end" />
-        </button>
-        <button
-          type="button"
-          data-testid="open-trash"
-          onClick={onTrash}
-          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
-          aria-label={tr('header.trash')}
-        >
-          <Archive className="h-4 w-4" aria-hidden="true" />
-          {trashCount > 0 && (
-            <span
-              data-testid="trash-count"
-              className="absolute -top-0.5 -right-0.5 min-w-[14px] rounded-full bg-[var(--color-accent)] px-1 text-center font-mono text-[10px] leading-[14px] text-[var(--color-on-accent)] tabular-nums"
-            >
-              {trashCount > 99 ? '99+' : trashCount}
-            </span>
-          )}
-          <Tooltip label={tr('header.trash')} align="end" />
         </button>
         <button
           type="button"

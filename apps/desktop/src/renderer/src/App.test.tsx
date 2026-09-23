@@ -3349,7 +3349,7 @@ describe('App Originals panel', () => {
       trashList: vi.fn().mockResolvedValue([]),
     })
     await renderApp()
-    fireEvent.click(await screen.findByTestId('open-trash'))
+    act(() => menuListener?.('backups'))
 
     const { default: i18n } = await import('./i18n')
     const { formatBytes } = await import('./components/TrashPanel')
@@ -3366,7 +3366,7 @@ describe('App Originals panel', () => {
     await renderApp()
     const [first, second] = await addTwoTracks()
     fireEvent.click(first)
-    fireEvent.click(await screen.findByTestId('open-trash'))
+    act(() => menuListener?.('backups'))
     await screen.findByTestId('trash-panel')
 
     fireEvent.keyDown(window, { key: 'ArrowDown', cancelable: true })
