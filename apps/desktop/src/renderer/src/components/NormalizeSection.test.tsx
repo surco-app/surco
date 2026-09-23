@@ -207,6 +207,14 @@ describe('NormalizeSection layout', () => {
     expect(screen.getByTestId('normalize-row-sentence')).toHaveTextContent('Levels to -14 LUFS')
   })
 
+  // The mode badge sat on the folded header before the sentence came, and stays beside it.
+  it('badges the active mode while folded', () => {
+    renderWith({ open: false, value: loud })
+    expect(screen.getByTestId('normalize-active-badge')).toHaveTextContent(
+      i18n.t('normalize.mode.loudness'),
+    )
+  })
+
   // The folded header always carried the true-peak ceiling next to the target; the
   // sentence that replaced the bare figures must not lose it.
   it('keeps the true-peak ceiling beside the loudness target', () => {
