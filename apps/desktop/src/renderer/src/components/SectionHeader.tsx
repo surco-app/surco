@@ -54,33 +54,36 @@ export function SectionHeader({
       {/* The button stretches across the free width (and pads a few px vertically)
           so the whole header row folds the section, not just the title's letters;
           the right-slot actions stay outside it. aria-label pins the accessible
-          name to the title alone — the summary is state, not name. */}
-      <button
-        type="button"
-        // The section jumps (⌘[ / ⌘]) move focus header to header, so each one has to be
-        // findable from outside React without a ref registry to keep in sync.
-        data-section-header={sectionId}
-        onClick={onToggle}
-        aria-label={title}
-        aria-expanded={open}
-        className="-my-1.5 flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left text-xs font-medium uppercase tracking-wide text-fg-dim hover:text-fg-muted"
-      >
-        <ChevronRight
-          aria-hidden="true"
-          className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`}
-        />
-        <span className="shrink-0">{title}</span>
-        {!open && summary && (
-          <span
-            data-testid={summaryTestId}
-            className={`ml-auto min-w-0 truncate pl-3 font-normal tracking-normal normal-case tabular-nums ${
-              summaryMuted ? 'text-fg-faint' : ''
-            }`}
-          >
-            {summary}
-          </span>
-        )}
-      </button>
+          name to the title alone — the summary is state, not name. The h3 puts each
+          section in a screen reader's heading list; it takes the button's flex slot. */}
+      <h3 className="flex min-w-0 flex-1">
+        <button
+          type="button"
+          // The section jumps (⌘[ / ⌘]) move focus header to header, so each one has to be
+          // findable from outside React without a ref registry to keep in sync.
+          data-section-header={sectionId}
+          onClick={onToggle}
+          aria-label={title}
+          aria-expanded={open}
+          className="-my-1.5 flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left text-xs font-medium uppercase tracking-wide text-fg-dim hover:text-fg-muted"
+        >
+          <ChevronRight
+            aria-hidden="true"
+            className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`}
+          />
+          <span className="shrink-0">{title}</span>
+          {!open && summary && (
+            <span
+              data-testid={summaryTestId}
+              className={`ml-auto min-w-0 truncate pl-3 font-normal tracking-normal normal-case tabular-nums ${
+                summaryMuted ? 'text-fg-faint' : ''
+              }`}
+            >
+              {summary}
+            </span>
+          )}
+        </button>
+      </h3>
       {help && (
         <span
           data-testid="section-help"
