@@ -830,3 +830,16 @@ describe('TrackList hover overlays', () => {
     for (const button of overlays) expect(button).toHaveAttribute('tabindex', '-1')
   })
 })
+
+describe('TrackList review spark', () => {
+  // A button inside the row's option button is invalid HTML: screen readers flatten the
+  // inner control into the option's name and the accept action is lost. It must be a
+  // sibling of the row, like play and remove.
+  it('keeps the accept-review button outside the row button', () => {
+    renderList([track({ id: 'a', matchReview: true, matchConfidence: 0.7 })])
+    const row = screen.getByTestId('track-row')
+    const spark = screen.getByTestId('track-match-review')
+    expect(row).not.toContainElement(spark)
+    expect(row.parentElement).toContainElement(spark)
+  })
+})
