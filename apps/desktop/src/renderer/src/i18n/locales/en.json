@@ -645,7 +645,13 @@
     "country": "Country",
     "mediaType": "Media type",
     "discogsUrl": "Discogs URL",
-    "suggestionsMore": "Show {{count}} more"
+    "suggestionsMore": "Show {{count}} more",
+    "rowAutoFill": "Fill {{name}} automatically",
+    "rowRequired": "{{name}} required",
+    "rowMoveUp": "Move {{name}} up",
+    "rowMoveDown": "Move {{name}} down",
+    "rowHide": "Hide {{name}}",
+    "rowShow": "Show {{name}}"
   },
   "declick": {
     "cueWarning": "ALAC does not keep Traktor cues or the beatgrid: converting loses them.",

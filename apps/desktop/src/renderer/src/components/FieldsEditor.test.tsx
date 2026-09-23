@@ -96,8 +96,27 @@ describe('FieldsEditor', () => {
   it('reorders a visible field down', () => {
     const { onChangeVisible } = setup()
     const row = screen.getByTestId('field-row-title')
-    fireEvent.click(within(row).getByLabelText('Move down'))
+    fireEvent.click(within(row).getByLabelText('Move Title down'))
     expect(onChangeVisible).toHaveBeenCalledWith(['artist', 'title', 'album'])
+  })
+
+  // Thirty rows of identical "Auto, Required, Move up, Move down, Hide" buttons are
+  // indistinguishable in a screen reader's list of controls, and out of the row's visual
+  // context "Hide" doesn't say what it hides. Each name carries its field, as Delete does.
+  it('names every row control after the field it acts on', () => {
+    setup({ visibleFields: ['title', 'artist', 'album'], importFields: [] })
+    const row = within(screen.getByTestId('field-row-artist'))
+    expect(row.getByRole('button', { name: 'Fill Artist automatically' })).toBeInTheDocument()
+    expect(row.getByRole('button', { name: 'Artist required' })).toBeInTheDocument()
+    expect(row.getByRole('button', { name: 'Move Artist up' })).toBeInTheDocument()
+    expect(row.getByRole('button', { name: 'Move Artist down' })).toBeInTheDocument()
+    expect(row.getByRole('button', { name: 'Hide Artist' })).toBeInTheDocument()
+  })
+
+  it('names the Show button of a hidden row after its field', () => {
+    setup({ visibleFields: ['title'] })
+    const row = within(screen.getByTestId('hidden-field-artist'))
+    expect(row.getByRole('button', { name: 'Show Artist' })).toBeInTheDocument()
   })
 
   // The auto-organize button reorders the shown fields into group order in one click,
