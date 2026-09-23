@@ -4,7 +4,7 @@ import type { Release, SearchHints, SearchPriority, SearchResult } from '../shar
 import { activity } from './activity'
 import { discogsLimiterFor } from './discogsLimiter'
 import { REQUEST_TIMEOUT_MS, USER_AGENT } from './http'
-import { cacheIfUsable, createLookupCacheStore } from './lookupCacheStore'
+import { cachedSearch, cacheIfUsable, createLookupCacheStore } from './lookupCacheStore'
 import { buildSearchCandidates } from './searchQuery'
 
 const BASE = 'https://api.discogs.com'
@@ -109,7 +109,7 @@ async function runSearch(
 ): Promise<SearchResult[]> {
   const perPage = opts.perPage ?? 20
   const key = searchKey(cacheId, opts.format, perPage)
-  const cached = cacheStore.getSearch(key)
+  const cached = cachedSearch(cacheStore, key)
   if (cached) return cached
   // Pacing lives with the request itself: the token is taken here, after the cache
   // miss, so a repeat of any already-fetched shape (free-text, structured, tracklist)

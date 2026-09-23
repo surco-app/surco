@@ -3,7 +3,7 @@ import type { Release, SearchHints, SearchPriority, SearchResult } from '../shar
 import { activity } from './activity'
 import { deezerLimiter } from './deezerLimiter'
 import { REQUEST_TIMEOUT_MS, USER_AGENT } from './http'
-import { cacheIfUsable, createLookupCacheStore } from './lookupCacheStore'
+import { cachedSearch, cacheIfUsable, createLookupCacheStore } from './lookupCacheStore'
 import { buildSearchCandidates } from './searchQuery'
 
 const BASE = 'https://api.deezer.com'
@@ -88,7 +88,7 @@ const cacheStore = createLookupCacheStore<SearchResult[], Release>('deezer-looku
 
 async function searchOnce(text: string, priority?: SearchPriority): Promise<SearchResult[]> {
   const key = `q:${text.trim().toLowerCase()}`
-  const cached = cacheStore.getSearch(key)
+  const cached = cachedSearch(cacheStore, key)
   if (cached) return cached
   const data = await api<{ data?: DeezerTrackHit[] }>(
     `${BASE}/search?q=${encodeURIComponent(text)}&limit=25`,

@@ -13,6 +13,7 @@ const { bandcampCacheDir } = vi.hoisted(() => {
 vi.mock('electron', () => ({ app: { getPath: () => bandcampCacheDir, on: () => {} } }))
 
 import { search } from './bandcamp'
+import { EMPTY_SEARCH_TTL_MS } from './lookupCacheStore'
 
 function mockSearch(results: unknown[]): ReturnType<typeof vi.fn> {
   const fn = vi.fn(async () => ({
@@ -41,7 +42,10 @@ const HIT = {
   art_id: 1,
 }
 
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => {
+  vi.restoreAllMocks()
+  vi.useRealTimers()
+})
 
 // searchOnce caches with `cacheStore.setSearch(key, results)` unconditionally and reads
 // back with `if (cached) return cached` — and `[]` is truthy. lookupCacheStore has no TTL
@@ -52,12 +56,14 @@ afterEach(() => vi.restoreAllMocks())
 // hitting the network again"); that fix only namespaced the key, leaving the hazard.
 describe('an empty Bandcamp answer must not poison the query forever', () => {
   it('retries the network after a 200 whose payload carried no results', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
     const drift = mockShapeDrift()
     expect(await search('artist title')).toEqual([])
     expect(drift.mock.calls.length).toBeGreaterThan(0)
 
     // The endpoint recovers and now answers with a real hit for the same query.
     const good = mockSearch([HIT])
+    vi.advanceTimersByTime(EMPTY_SEARCH_TTL_MS)
     const results = await search('artist title')
 
     // Currently the cached [] short-circuits: fetch is never called and the DJ's track
@@ -69,11 +75,13 @@ describe('an empty Bandcamp answer must not poison the query forever', () => {
   it('retries the network after every hit was filtered out as unusable', async () => {
     // A 200 with real results that mapResult all reject (no item_url_path), so the
     // filter empties the array — an empty cache entry from a perfectly healthy request.
+    vi.useFakeTimers({ toFake: ['Date'] })
     const filtered = mockSearch([{ type: 't', id: 7, name: 'No URL', art_id: 1 }])
     expect(await search('other query')).toEqual([])
     expect(filtered.mock.calls.length).toBeGreaterThan(0)
 
     const good = mockSearch([{ ...HIT, id: 99 }])
+    vi.advanceTimersByTime(EMPTY_SEARCH_TTL_MS)
     const results = await search('other query')
 
     expect(good.mock.calls.length).toBeGreaterThan(0)
