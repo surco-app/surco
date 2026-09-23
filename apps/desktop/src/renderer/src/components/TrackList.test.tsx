@@ -331,6 +331,16 @@ describe('TrackList', () => {
   // A track converted via the Export menu carries its own chosen format; the
   // stage label must show that, not the Settings default, or it lies about what
   // the user picked.
+  // The bar is a bare coloured span, so a screen reader heard the stage but never how far
+  // the conversion had come. The option flattens any role inside it, so the amount is
+  // spoken as text rather than as a nested progressbar.
+  it('speaks how far a processing track has come', () => {
+    renderList([track({ id: 'busy', status: 'processing', stage: 'converting' })])
+    expect(screen.getByRole('option')).toHaveTextContent(
+      i18n.t('trackList.progress', { percent: 55 }),
+    )
+  })
+
   it('labels the stage with the track’s own format over the default', () => {
     renderList([track({ id: 'busy', status: 'processing', stage: 'converting', format: 'mp3' })])
     expect(screen.getByTestId('track-stage')).toHaveTextContent(/MP3/)
