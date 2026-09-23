@@ -40,6 +40,18 @@ function renderTab(over: Partial<LocalDraft> = {}) {
   return patchLocal
 }
 
+// The theme and language rows are segmented choices under a visible label; the label has
+// to name the group too, or VoiceOver reads "Dark, toggle button" with no idea of what.
+it('names the theme and language choices after their labels', () => {
+  renderTab()
+  expect(screen.getByRole('group', { name: i18n.t('settings.theme') })).toContainElement(
+    screen.getByTestId('settings-theme-dark'),
+  )
+  expect(screen.getByRole('group', { name: i18n.t('settings.language') })).toContainElement(
+    screen.getByTestId('settings-language-es'),
+  )
+})
+
 // Added after a run of regressions that reached users straight from a release: the
 // tester who finds them needs the builds before everyone else does, and the rest of the
 // users need to never see one by accident.

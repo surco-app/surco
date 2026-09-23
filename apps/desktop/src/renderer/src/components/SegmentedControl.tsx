@@ -10,6 +10,9 @@ interface Props<T extends string> {
   labelFor: (option: T) => string
   // Extra container classes (margins) — the pill styling itself is fixed.
   className?: string
+  // What the row chooses (usually the visible label above it), so a screen reader names
+  // the group before reading its options.
+  label?: string
 }
 
 // The option row used for normalization mode, theme, output format and key notation
@@ -33,6 +36,7 @@ export function SegmentedControl<T extends string>({
   testidPrefix,
   labelFor,
   className,
+  label,
 }: Props<T>): React.JSX.Element {
   const overlayRef = useRef<HTMLDivElement>(null)
   // null = no real measurement yet. A control can mount before it has geometry (a
@@ -87,7 +91,10 @@ export function SegmentedControl<T extends string>({
     if (clip) setSettled(true)
   }, [clip])
   return (
+    // biome-ignore lint/a11y/useSemanticElements: a fieldset brings its own min-width and legend layout to an inline pill row; the ARIA group role names it without either
     <div
+      role="group"
+      aria-label={label}
       // self-start: several callers stack settings in a flex column, whose default
       // stretch would pull the track to the panel's full width now that it paints a box.
       className={`relative inline-flex gap-0.5 self-start rounded-[9px] border border-[var(--color-line)] bg-[var(--color-field)] p-[3px] ${className ?? ''}`}

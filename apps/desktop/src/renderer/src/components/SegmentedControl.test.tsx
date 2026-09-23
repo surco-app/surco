@@ -20,6 +20,26 @@ function renderControl(value = 'b'): { onChange: ReturnType<typeof vi.fn> } {
   return { onChange }
 }
 
+describe('SegmentedControl grouping', () => {
+  // Three pressed/unpressed buttons in a row gave VoiceOver no hint they were one choice;
+  // a named group says what is being chosen before the options ("Theme, group, Dark").
+  it('groups its options under the given name', () => {
+    render(
+      <SegmentedControl
+        options={['a', 'b'] as const}
+        value="a"
+        onChange={vi.fn()}
+        testidPrefix="seg"
+        labelFor={(id) => id}
+        label="Theme"
+      />,
+    )
+    expect(screen.getByRole('group', { name: 'Theme' })).toContainElement(
+      screen.getByTestId('seg-b'),
+    )
+  })
+})
+
 describe('SegmentedControl sliding highlight', () => {
   // The raised segment is a separate overlay clipped to the active option, so it can
   // TRAVEL between segments instead of teleporting — the visual claim that the row is
