@@ -9,7 +9,7 @@ import {
   Wand2,
 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   type CustomKeyProblem,
@@ -108,13 +108,15 @@ export function FieldsEditor({
         {tr('settings.customFieldDelete')}
       </button>
     ) : null
-  // A row's name with its {key} hint, the hint kept off the Delete button beside it.
+  // A row's name with its {key} hint, the hint kept off the Delete button beside it. The
+  // tooltip only answers a pointer, so the token is also there in words for a screen reader.
   const nameCell = (key: string): React.JSX.Element => (
     <>
       <span>
         {labelOf(key)}
         <Tooltip label={`{${key}}`} />
       </span>
+      <span className="sr-only">{tr('fields.rowToken', { token: `{${key}}` })}</span>
       {deleteButton(key)}
     </>
   )
@@ -134,8 +136,9 @@ export function FieldsEditor({
         data-testid={`field-auto-${key}`}
         aria-pressed={on}
         // The word lives in the column heading, so the cell carries no text of its own —
-        // which leaves a screen reader nothing to announce unless the label says it.
-        aria-label={tr('settings.autoFill')}
+        // which leaves a screen reader nothing to announce unless the label says it. The
+        // field goes in the name too, or thirty rows of "Auto" can't be told apart.
+        aria-label={tr('fields.rowAutoFill', { name: labelOf(key) })}
         onClick={() =>
           onChangeImport(on ? importFields.filter((k) => k !== key) : [...importFields, key])
         }
@@ -158,8 +161,26 @@ export function FieldsEditor({
   // The arrow buttons remain as the keyboard-accessible path.
   const [dragKey, setDragKey] = useState<string | null>(null)
   const [dropKey, setDropKey] = useState<string | null>(null)
+  const organizeHintId = useId()
   const organizedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(organizedTimer.current), [])
+  // An arrow that moves its field to either end disables itself, and a disabled button
+  // drops keyboard focus to the body; once the list re-renders, focus moves to the same
+  // row's other arrow so the user keeps their place.
+  const listRef = useRef<HTMLDivElement>(null)
+  const refocusArrow = useRef<string | null>(null)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the reordered list is the trigger to refocus, not a value read in the body.
+  useEffect(() => {
+    if (refocusArrow.current === null) return
+    listRef.current?.querySelector<HTMLElement>(`[data-arrow="${refocusArrow.current}"]`)?.focus()
+    refocusArrow.current = null
+  }, [visibleFields])
+  function move(i: number, delta: -1 | 1): void {
+    const to = i + delta
+    if (to === 0) refocusArrow.current = `down-${visibleFields[i]}`
+    else if (to === visibleFields.length - 1) refocusArrow.current = `up-${visibleFields[i]}`
+    onChangeVisible(moveItem(visibleFields, i, delta))
+  }
   function autoOrganize(): void {
     onChangeVisible(sortFieldsByGroup(visibleFields))
     setOrganized(true)
@@ -179,6 +200,7 @@ export function FieldsEditor({
           <button
             type="button"
             data-testid="auto-organize-fields"
+            aria-describedby={organizeHintId}
             onClick={autoOrganize}
             className={`flex items-center gap-1 rounded px-2 py-0.5 text-xs transition-colors ${
               organized
@@ -194,6 +216,14 @@ export function FieldsEditor({
             {tr(organized ? 'settings.autoOrganized' : 'settings.autoOrganize')}
             <Tooltip label={tr('settings.autoOrganizeHint')} />
           </button>
+          <span id={organizeHintId} className="sr-only">
+            {tr('settings.autoOrganizeHint')}
+          </span>
+          {/* The button's own flip is only seen; this region, mounted empty from the
+              start so assistive tech is already listening, says the reorder happened. */}
+          <span data-testid="auto-organize-status" role="status" className="sr-only">
+            {organized ? tr('settings.autoOrganized') : ''}
+          </span>
         </div>
         {/* Column headings, laid out on the row's own grid so each label resolves to the
             same track as the buttons under it — no measured offsets, and nothing to drift
@@ -224,7 +254,7 @@ export function FieldsEditor({
           <span />
           <span />
         </div>
-        <div className="space-y-1.5">
+        <div ref={listRef} className="space-y-1.5">
           {visibleFields.map((key, i) => (
             // biome-ignore lint/a11y/noStaticElementInteractions: the drag handlers are a pointer-only enhancement — the arrow buttons inside remain the keyboard-accessible way to reorder.
             <div
@@ -279,7 +309,7 @@ export function FieldsEditor({
                       : [...requiredFields, key],
                   )
                 }
-                aria-label={tr('settings.required')}
+                aria-label={tr('fields.rowRequired', { name: labelOf(key) })}
                 className={`${TOGGLE_BOX} ${requiredFields.includes(key) ? TOGGLE_ON : TOGGLE_OFF}`}
               >
                 {requiredFields.includes(key) ? (
@@ -290,25 +320,28 @@ export function FieldsEditor({
               </button>
               <button
                 type="button"
-                onClick={() => onChangeVisible(moveItem(visibleFields, i, -1))}
+                data-arrow={`up-${key}`}
+                onClick={() => move(i, -1)}
                 disabled={i === 0}
                 className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
-                aria-label={tr('settings.moveUp')}
+                aria-label={tr('fields.rowMoveUp', { name: labelOf(key) })}
               >
                 <ChevronUp className="h-4 w-4" aria-hidden="true" />
               </button>
               <button
                 type="button"
-                onClick={() => onChangeVisible(moveItem(visibleFields, i, 1))}
+                data-arrow={`down-${key}`}
+                onClick={() => move(i, 1)}
                 disabled={i === visibleFields.length - 1}
                 className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
-                aria-label={tr('settings.moveDown')}
+                aria-label={tr('fields.rowMoveDown', { name: labelOf(key) })}
               >
                 <ChevronDown className="h-4 w-4" aria-hidden="true" />
               </button>
               <button
                 type="button"
                 onClick={() => hide(key)}
+                aria-label={tr('fields.rowHide', { name: labelOf(key) })}
                 className="ml-1 rounded px-2 py-0.5 text-xs text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
               >
                 {tr('settings.hide')}
@@ -346,6 +379,7 @@ export function FieldsEditor({
               <button
                 type="button"
                 onClick={() => onChangeVisible([...visibleFields, key])}
+                aria-label={tr('fields.rowShow', { name: labelOf(key) })}
                 className="rounded px-2 py-0.5 text-xs text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
               >
                 {tr('settings.show')}
@@ -390,6 +424,7 @@ function AddCustomField({
   const problem = key ? customKeyProblem(key, customFields) : null
   const blocked = !label.trim() || !key || problem !== null
   const error = problem && tr(PROBLEM_MESSAGE[problem])
+  const errorId = useId()
   const add = (): void => {
     if (blocked) return
     onAdd({ key, label: label.trim() })
@@ -432,6 +467,7 @@ function AddCustomField({
               if (e.key === 'Enter') add()
             }}
             aria-invalid={problem !== null}
+            aria-describedby={error ? errorId : undefined}
             className={`h-8 rounded-lg border bg-[var(--color-field)] px-2.5 font-mono text-sm outline-none ${
               problem
                 ? 'border-[var(--color-danger)]'
@@ -450,7 +486,14 @@ function AddCustomField({
         </button>
       </div>
       {error && (
-        <p data-testid="custom-field-hint" className="text-xs text-[var(--color-danger)]">
+        // The key field points here for the reason it's invalid; alert says it aloud the
+        // moment a typed key collides, without the user having to go looking for it.
+        <p
+          id={errorId}
+          data-testid="custom-field-hint"
+          role="alert"
+          className="text-xs text-[var(--color-danger)]"
+        >
           {error}
         </p>
       )}

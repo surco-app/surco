@@ -1,6 +1,6 @@
 import { Copy, Disc3, Eraser, Globe, RefreshCw, Scissors, Tag, Type } from 'lucide-react'
 import type React from 'react'
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { tagsOnly } from '../../../shared/audioProcessing'
@@ -287,6 +287,7 @@ export const Editor = memo(function Editor({
     return () => window.removeEventListener('keydown', onKey)
   }, [maximized, setMaximized])
   const formOpen = sectionOpen.form
+  const formBodyId = useId()
   const propertiesOpen = sectionOpen.properties
   const spectrumOpen = sectionOpen.quality
   const outputOpen = sectionOpen.output
@@ -974,6 +975,7 @@ export const Editor = memo(function Editor({
             }
             open={formOpen}
             onToggle={() => setSectionOpen('form', !formOpen)}
+            bodyId={formBodyId}
             // Folded, the header still says whose tags these are; multi-select's
             // title already counts the selection, so no digest is added there.
             summary={
@@ -1058,7 +1060,7 @@ export const Editor = memo(function Editor({
               </div>
             }
           />
-          <SectionBody open={formOpen}>
+          <SectionBody open={formOpen} id={formBodyId}>
             {/* Capture focus entering/leaving the field grid so the sweep knows which row is
                 under edit. Blur only clears when focus leaves the grid entirely (relatedTarget
                 outside) — moving between two fields must not flash the guard off, which would

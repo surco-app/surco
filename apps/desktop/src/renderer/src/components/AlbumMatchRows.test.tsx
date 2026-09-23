@@ -7,6 +7,18 @@ import type { Release, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
 
+const tierOverride = vi.hoisted(() => ({ tier: undefined as 'high' | 'review' | undefined }))
+vi.mock('../lib/release', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/release')>()
+  return {
+    ...actual,
+    confidenceTier: (c: number) => tierOverride.tier ?? actual.confidenceTier(c),
+  }
+})
+afterEach(() => {
+  tierOverride.tier = undefined
+})
+
 afterEach(cleanup)
 
 beforeEach(() => {
@@ -82,6 +94,35 @@ describe('AlbumMatchRows', () => {
   it('announces the suggested-match badge to screen readers', async () => {
     renderRows([track('short', 'radio edit', 181)])
     expect(await screen.findByTestId('match-confidence-short')).toHaveAccessibleName()
+  })
+
+  // Both tiers were named "Suggested match", with only green versus amber to tell a
+  // confident pick from one worth checking; the name has to carry the difference.
+  it('names a confident match and one to confirm differently', async () => {
+    tierOverride.tier = 'high'
+    renderRows([track('short', 'radio edit', 181)])
+    expect(await screen.findByTestId('match-confidence-short')).toHaveAccessibleName(
+      'Suggested match',
+    )
+    cleanup()
+    tierOverride.tier = 'review'
+    renderRows([track('short', 'radio edit', 181)])
+    expect(await screen.findByTestId('match-confidence-short')).toHaveAccessibleName(
+      'Match to confirm',
+    )
+  })
+
+  // The button's flip to "Applied" is only seen: focus stays on it and a screen reader
+  // doesn't re-read a label that changed under it, so the apply sounded like nothing.
+  // A status region, mounted empty before the click so it is listened to, says it.
+  it('announces the apply through a status region', async () => {
+    renderRows([track('short', 'radio edit', 181)])
+    await screen.findAllByTestId('match-row')
+    const status = screen.getByTestId('match-status')
+    expect(status).toHaveAttribute('role', 'status')
+    expect(status).toBeEmptyDOMElement()
+    fireEvent.click(screen.getByTestId('match-apply'))
+    expect(status).toHaveTextContent('Applied')
   })
 
   it('applies the matched track title to each file when confirmed', async () => {

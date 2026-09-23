@@ -2341,6 +2341,19 @@ describe('Editor star rating', () => {
   })
 })
 
+// aria-expanded says the Metadata header opens something; aria-controls says what, so a
+// screen reader can jump from the header straight into the fields it revealed.
+describe('Editor metadata section wiring', () => {
+  it('points the Metadata header at the body holding the fields', () => {
+    renderEditor({ id: 'a', meta: { title: 'Song' } }, 'wav', { visibleFields: ['title'] })
+    const body = screen.getByTestId('field-title').closest('[data-testid="section-body"]')
+    expect(body?.id).toBeTruthy()
+    const header = document.querySelector(`[aria-controls="${body?.id}"]`)
+    expect(header).toHaveAttribute('aria-expanded', 'true')
+    expect(header).toHaveAccessibleName('Metadata')
+  })
+})
+
 describe('Editor required-field gate', () => {
   // The convert button used to fail late: it stayed enabled with empty required
   // fields and only surfaced the error after the click. Disabling it until the
@@ -2358,14 +2371,18 @@ describe('Editor required-field gate', () => {
     expect(screen.getByTestId('process-btn')).not.toHaveAttribute('aria-disabled')
   })
 
-  // The disabled button needs a reason: flag the empty required field as invalid
-  // straight away, not only after a (now impossible) failed convert attempt.
-  it('marks an empty required field as invalid before any convert attempt', () => {
+  // The disabled button needs a reason: flag the empty required field straight away,
+  // not only after a (now impossible) failed convert attempt. It is required, not
+  // wrong, so it is announced as required and described, never as an invalid entry.
+  it('marks an empty required field before any convert attempt', () => {
     renderEditor({ id: 'a', status: 'idle', meta: { artist: '' } }, 'wav', {
       requiredFields: ['artist'],
       visibleFields: ['artist'],
     })
-    expect(screen.getByTestId('field-artist')).toHaveAttribute('aria-invalid', 'true')
+    const field = screen.getByTestId('field-artist')
+    expect(screen.getByTestId('field-required-artist')).toBeInTheDocument()
+    expect(field).toHaveAttribute('aria-required', 'true')
+    expect(field).toHaveAccessibleDescription('Required: fill it in before converting')
   })
 })
 
@@ -2787,7 +2804,10 @@ describe('Editor track preselection', () => {
     await loadTracklist({ autoOpens: true })
     const badge = await screen.findByTestId('track-confidence')
     expect(badge).toHaveTextContent('')
-    expect(await hoverForTooltip(badge)).toHaveTextContent(i18n.t('editor.matchSuggested'))
+    // The tooltip names the tier, since the sparkle's colour is all that separates them.
+    const tierLabel =
+      badge.dataset.confidence === 'high' ? 'editor.matchSuggested' : 'match.toConfirm'
+    expect(await hoverForTooltip(badge)).toHaveTextContent(i18n.t(tierLabel))
   })
 
   it('flags a partial-title preselection for review', async () => {

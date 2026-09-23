@@ -9,9 +9,13 @@ import { useTranslation } from 'react-i18next'
 export function StarRating({
   value,
   onChange,
+  labelledBy,
 }: {
   value: string
   onChange: (v: string) => void
+  // The id of the caption the stars sit beside: the group's name, so the star counts
+  // are read as a rating and not as five unrelated buttons.
+  labelledBy?: string
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const stars = Number(value) || 0
@@ -27,9 +31,9 @@ export function StarRating({
   return (
     // The leave handler only clears the visual hover preview; the stars are the
     // controls. Resetting per-button would misfire as the pointer crosses between them.
-    // biome-ignore lint/a11y/noStaticElementInteractions: hover-preview reset, not a control
-    <span
+    <fieldset
       data-testid="star-rating"
+      aria-labelledby={labelledBy}
       className="flex items-center gap-0.5"
       onMouseLeave={() => setHovered(0)}
     >
@@ -63,6 +67,6 @@ export function StarRating({
           </button>
         )
       })}
-    </span>
+    </fieldset>
   )
 }

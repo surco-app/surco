@@ -396,7 +396,8 @@
     "coverRemove": "Cover entfernen",
     "coverPrev": "Vorheriges Bild",
     "coverNext": "Nächstes Bild",
-    "ratingStars": "{{count}} Sterne",
+    "ratingStars_one": "{{count}} Stern",
+    "ratingStars_other": "{{count}} Sterne",
     "propertiesTitle": "Eigenschaften",
     "propertiesGroupAudio": "Audio",
     "propertiesGroupFile": "Datei",
@@ -610,7 +611,15 @@
     "loudnessRangeNoise": "Gut: -45 dB oder niedriger.",
     "loudnessFixNoise": "Hier nicht korrigierbar: Surco entrauscht nicht. Es stammt aus Quelle oder Aufnahme.",
     "loudnessAfterHeader": "jetzt → nach dem Konvertieren",
-    "replaceMusic": "Durch {{format}} ersetzen + Apple Music"
+    "replaceMusic": "Durch {{format}} ersetzen + Apple Music",
+    "requiredEmpty": "Pflichtfeld: vor dem Konvertieren ausfüllen",
+    "coverMixed": "Die ausgewählten Titel haben unterschiedliche Cover",
+    "coverLowRes": "Niedrige Auflösung",
+    "coverPosition": "Bild {{position}} von {{total}}",
+    "coverPositionNone": "Keines der {{total}} Bilder gewählt",
+    "searching": "Suche läuft…",
+    "resultsCount_one": "{{count}} Ergebnis",
+    "resultsCount_other": "{{count}} Ergebnisse"
   },
   "fields": {
     "groupFilled_one": "{{count}} ausgefüllt",
@@ -650,7 +659,14 @@
     "country": "Land",
     "mediaType": "Medientyp",
     "discogsUrl": "Discogs-URL",
-    "suggestionsMore": "{{count}} weitere anzeigen"
+    "suggestionsMore": "{{count}} weitere anzeigen",
+    "rowAutoFill": "{{name}} automatisch füllen",
+    "rowRequired": "{{name}} als Pflichtfeld",
+    "rowMoveUp": "{{name}} nach oben",
+    "rowMoveDown": "{{name}} nach unten",
+    "rowHide": "{{name}} ausblenden",
+    "rowShow": "{{name}} anzeigen",
+    "rowToken": "Interner Name {{token}}"
   },
   "declick": {
     "cueWarning": "ALAC speichert keine Traktor-Cues und kein Beatgrid: Beim Konvertieren gehen sie verloren.",
@@ -1200,7 +1216,8 @@
     "unassigned": "Nicht zugewiesen",
     "apply": "Auf {{count}} anwenden",
     "suggested": "Vorgeschlagener Treffer",
-    "applied": "Angewendet"
+    "applied": "Angewendet",
+    "toConfirm": "Treffer zu bestätigen"
   },
   "findReplace": {
     "title": "Suchen & Ersetzen",

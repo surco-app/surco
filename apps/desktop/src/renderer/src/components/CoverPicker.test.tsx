@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
@@ -94,6 +94,35 @@ describe('CoverPicker copy/paste', () => {
     })
   })
 
+  // A keyboard user never hovers, so the shortcut was mouse-only: with focus on the
+  // cover itself (or its action bar) Cmd+C must lift the artwork just the same.
+  it('copies with Cmd+C while keyboard focus is inside the cover well', () => {
+    renderPicker({ coverUrl: 'http://img/cover.jpg' })
+    screen.getByTestId('cover-zoom').focus()
+    fireEvent.keyDown(document, { key: 'c', metaKey: true })
+    expect(api.copyCoverImage).toHaveBeenCalledWith({
+      coverUrl: 'http://img/cover.jpg',
+      coverPath: undefined,
+    })
+  })
+
+  it('pastes with Cmd+V while keyboard focus is on the empty well', async () => {
+    api.pasteCoverImage.mockResolvedValue({
+      coverUrl: 'data:image/png;base64,AAAA',
+      coverPath: '/tmp/paste/cover.png',
+    })
+    const { onChange } = renderPicker()
+    screen.getByTestId('cover-pick').focus()
+    fireEvent.keyDown(document, { key: 'v', metaKey: true })
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith({
+        coverUrl: 'data:image/png;base64,AAAA',
+        coverPath: '/tmp/paste/cover.png',
+        coverRemoved: false,
+      }),
+    )
+  })
+
   // Gating on hover keeps the shortcut from hijacking a normal Cmd+C the user means
   // for selected text elsewhere in the app.
   it('ignores Cmd+C when the pointer is not over the cover', () => {
@@ -174,6 +203,60 @@ describe('CoverPicker copy/paste', () => {
 // The action bar fades in on hover, but its buttons are Tab stops, "Remove" among them:
 // a keyboard user landed on invisible buttons and could delete the artwork without ever
 // seeing what they pressed. Focus inside the well has to reveal the bar as hover does.
+describe('CoverPicker remove keeps focus', () => {
+  // "Remove" lives in the bar of a cover that the click takes away, so the button
+  // unmounts under the keyboard user's focus and drops them on the body. The empty well
+  // that replaces it is the natural next step: pick or paste new artwork.
+  it('moves focus to the empty well once the artwork is removed', () => {
+    const onChange = vi.fn()
+    const props = {
+      isMulti: false,
+      selectedTracks: undefined,
+      release: null,
+      coverDims: null,
+      setCoverDims: vi.fn(),
+      onChange,
+    }
+    const { rerender } = render(
+      <CoverPicker item={item({ coverUrl: 'http://img/cover.jpg' })} {...props} />,
+    )
+    const remove = screen.getByTestId('cover-remove')
+    remove.focus()
+    fireEvent.click(remove)
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ coverRemoved: true }))
+    rerender(<CoverPicker item={item({ coverRemoved: true })} {...props} />)
+    expect(screen.getByTestId('cover-pick')).toHaveFocus()
+  })
+})
+
+describe('CoverPicker resolution readout', () => {
+  function renderWithDims(w: number, h: number): void {
+    render(
+      <CoverPicker
+        item={item({ coverUrl: 'http://img/cover.jpg' })}
+        isMulti={false}
+        selectedTracks={undefined}
+        release={null}
+        coverDims={{ w, h }}
+        setCoverDims={vi.fn()}
+        onChange={vi.fn()}
+      />,
+    )
+  }
+
+  // The amber dot is the only sign the artwork is too small for a DJ library, and a color
+  // alone reaches neither a screen reader nor someone who can't tell amber from green.
+  it('names a low-resolution cover in words next to its size', () => {
+    renderWithDims(255, 255)
+    expect(within(screen.getByTestId('cover-resolution')).getByText('Low resolution')).toBeTruthy()
+  })
+
+  it('adds no warning to a cover that is large enough', () => {
+    renderWithDims(600, 600)
+    expect(within(screen.getByTestId('cover-resolution')).queryByText('Low resolution')).toBeNull()
+  })
+})
+
 describe('CoverPicker action bar under keyboard focus', () => {
   it('reveals the bar when one of its buttons takes focus', () => {
     renderPicker({ coverUrl: 'http://img/cover.jpg' })
@@ -326,6 +409,20 @@ describe('CoverPicker drag and counter', () => {
   it('shows 0/N in the counter when no cover is selected', () => {
     renderWithRelease({ coverUrl: undefined })
     expect(screen.getByTestId('cover-image-count')).toHaveTextContent('0/2')
+  })
+
+  // "2/4" read aloud is "two slash four", which says nothing about what is being counted
+  // between the previous and next image buttons; the counter needs its words.
+  it('reads the counter as the image position among the choices', () => {
+    renderWithRelease({ coverUrl: 'http://a/2.jpg' })
+    expect(within(screen.getByTestId('cover-image-picker')).getByText('Image 2 of 2')).toBeTruthy()
+  })
+
+  it('reads the counter as none picked when no cover is selected', () => {
+    renderWithRelease({ coverUrl: undefined })
+    expect(
+      within(screen.getByTestId('cover-image-picker')).getByText('None of the 2 images picked'),
+    ).toBeTruthy()
   })
 
   // Discogs often returns the same image under several entries (a primary plus secondaries
@@ -487,5 +584,23 @@ describe('CoverPicker multi-select', () => {
     expect(screen.getByTestId('cover-image-count')).toHaveTextContent('1/2')
     fireEvent.click(screen.getByTestId('cover-next'))
     expect(onApplyCoverAll).toHaveBeenLastCalledWith('http://a/2.jpg', undefined)
+  })
+
+  // With tracks that carry different artwork the well shows the same empty box as a
+  // selection with none at all, so "add artwork" hid that picking one replaces every
+  // track's own cover. The difference has to be said, not left to an empty picture.
+  it('says the selected tracks have different artwork when they disagree', () => {
+    renderMulti([
+      item({ coverUrl: 'blob:one' }),
+      item({ inputPath: '/music/b.flac', coverUrl: 'blob:two' }),
+    ])
+    expect(screen.getByTestId('cover-pick')).toHaveAccessibleDescription(
+      'The selected tracks have different artwork',
+    )
+  })
+
+  it('says nothing extra when none of the selected tracks has artwork', () => {
+    renderMulti([item(), item({ inputPath: '/music/b.flac' })])
+    expect(screen.getByTestId('cover-pick')).not.toHaveAccessibleDescription()
   })
 })

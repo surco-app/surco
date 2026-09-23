@@ -1,4 +1,5 @@
 import type React from 'react'
+import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Release } from '../../../shared/types'
 import { buildFieldSpecs, type FieldSpec } from '../lib/fieldSpecs'
@@ -14,8 +15,8 @@ export type { FieldSpec }
 export { buildFieldSpecs }
 
 // One field: the compilation checkbox writes the exact '1' the TCMP/COMPILATION tag needs
-// (a yes/no fact, not free text; in a mixed selection value '' shows unticked and ticking
-// stamps '1' on every track); every other field is a text Field. Pulled out so both the
+// (a yes/no fact, not free text; in a mixed selection the box shows indeterminate and
+// ticking stamps '1' on every track); every other field is a text Field. Pulled out so both the
 // group render and any future caller draw a field the same way.
 function renderField(f: FieldSpec): React.JSX.Element {
   if (f.perTrack) {
@@ -35,6 +36,10 @@ function renderField(f: FieldSpec): React.JSX.Element {
         <input
           type="checkbox"
           data-testid="field-compilation"
+          // indeterminate exists only as a DOM property, so it is set through the ref.
+          ref={(el) => {
+            if (el) el.indeterminate = !!f.mixed
+          }}
           checked={f.value === '1'}
           onChange={(e) => f.onChange(e.target.checked ? '1' : '')}
           className="h-4 w-4 accent-[var(--color-accent)]"
@@ -54,7 +59,9 @@ function renderField(f: FieldSpec): React.JSX.Element {
       cleanResult={f.cleanResult}
       formatResult={f.formatResult}
       wide={f.wide}
+      required={f.required}
       invalid={f.invalid}
+      mixed={f.mixed}
       suggestions={f.suggestions}
       tagList={f.tagList}
       suggesting={f.suggesting}
@@ -92,12 +99,15 @@ export function MetadataForm({
   fields,
 }: MetadataFormProps): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const ratingLabelId = useId()
   return (
     <div className="mt-4 @container">
       {!isMulti && (
         <div className="mb-4 flex items-center gap-3">
-          <span className="text-xs font-medium text-fg-dim">{tr('fields.rating')}</span>
-          <StarRating value={item.meta.rating ?? ''} onChange={onRate} />
+          <span id={ratingLabelId} className="text-xs font-medium text-fg-dim">
+            {tr('fields.rating')}
+          </span>
+          <StarRating value={item.meta.rating ?? ''} onChange={onRate} labelledBy={ratingLabelId} />
         </div>
       )}
       <div className="flex flex-col gap-5 @[26rem]:flex-row @[26rem]:gap-6">

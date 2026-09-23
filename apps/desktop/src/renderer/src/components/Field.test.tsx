@@ -256,3 +256,53 @@ describe('Field tag list chips', () => {
     expect(onChange).toHaveBeenCalledWith('Pop, Indie Pop')
   })
 })
+
+// The label used to wrap the input together with the { } menu button and the chips, so a
+// screen reader announced "Genre Pop Indie Pop" for the field: the name has to be the
+// label alone, and the chips stay separate controls.
+describe('Field accessible name', () => {
+  it('names the input by its label only, not by the chips and menu around it', () => {
+    render(
+      <Field
+        name="genre"
+        label="Genre"
+        value="Pop"
+        onChange={() => {}}
+        suggestions={['Pop', 'Indie Pop']}
+        tagList={GENRE_TAGS}
+        insertSources={[{ key: 'artist', label: 'Artist', value: 'Alex' }]}
+      />,
+    )
+    expect(screen.getByRole('textbox', { name: 'Genre' })).toBe(screen.getByTestId('field-genre'))
+  })
+})
+
+// An empty required field is not a mistake the user made, so it must not be announced as
+// "invalid entry"; and the amber dot that marks it is purely visual. Assistive tech needs
+// the same two facts the dot gives: the field is required, and it still blocks converting.
+describe('Field required state', () => {
+  it('announces a required field as required, not as invalid', () => {
+    render(<Field name="artist" label="Artist" value="Alex" onChange={() => {}} required />)
+    const input = screen.getByTestId('field-artist')
+    expect(input).toHaveAttribute('aria-required', 'true')
+    expect(input).not.toHaveAttribute('aria-invalid')
+    expect(input).not.toHaveAccessibleDescription()
+  })
+
+  it('explains an empty required field in words, not only with the amber dot', () => {
+    render(<Field name="artist" label="Artist" value="" onChange={() => {}} required invalid />)
+    const input = screen.getByTestId('field-artist')
+    expect(input).not.toHaveAttribute('aria-invalid')
+    expect(input).toHaveAccessibleDescription('Required: fill it in before converting')
+  })
+})
+
+// Across a selection, "Multiple values" was only the placeholder, which a screen reader
+// drops as soon as the field is focused, so an empty field read as "no value on any track"
+// and typing into it looked harmless while it overwrites every track's own value.
+describe('Field mixed values', () => {
+  it('describes a field whose tracks disagree as holding multiple values', () => {
+    render(<Field name="genre" label="Genre" value="" onChange={() => {}} mixed />)
+    expect(screen.getByTestId('field-genre')).toHaveAccessibleDescription('Multiple values')
+  })
+})

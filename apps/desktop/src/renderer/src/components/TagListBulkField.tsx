@@ -1,6 +1,6 @@
 import { ChevronRight } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrackMetadata } from '../../../shared/types'
 import { type TagList, tagListState, tagListTags, toggleTagListAll } from '../lib/bulkEdit'
@@ -66,23 +66,33 @@ export function TagListBulkField({
   if (order.selection !== selection) setOrder(tagOrder(selection, tags, tracks, list))
   const summaryTags = sortedAs(tags, order.summary)
   const varying = tags.filter((tag) => tagListState(tracks, list, tag) === 'some').length
+  // Every row repeats the same chips, so each row is a group named by what it edits: the
+  // summary by the field's label, a track's row by its number and title. min-w-0 undoes a
+  // fieldset's min-content floor, which would stop the chip row and titles from shrinking.
+  const baseId = useId()
   return (
     <div className="block" data-testid={`${list.key}-bulk`}>
-      <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-fg-dim">
-        {label}
-        <span className="font-normal text-fg-faint">· {tr('editor.groupingAllTracks')}</span>
-      </span>
-      <SuggestionChips
-        suggestions={summaryTags}
-        isOn={(tag) => tagListState(tracks, list, tag) === 'all'}
-        isPartial={(tag) => tagListState(tracks, list, tag) === 'some'}
-        onPick={(tag) => onChangeTracks(toggleTagListAll(tracks, list, tag))}
-      />
+      <fieldset aria-labelledby={`${baseId}-label`} className="min-w-0">
+        <span
+          id={`${baseId}-label`}
+          className="mb-1 flex items-center gap-1.5 text-xs font-medium text-fg-dim"
+        >
+          {label}
+          <span className="font-normal text-fg-faint">· {tr('editor.groupingAllTracks')}</span>
+        </span>
+        <SuggestionChips
+          suggestions={summaryTags}
+          isOn={(tag) => tagListState(tracks, list, tag) === 'all'}
+          isPartial={(tag) => tagListState(tracks, list, tag) === 'some'}
+          onPick={(tag) => onChangeTracks(toggleTagListAll(tracks, list, tag))}
+        />
+      </fieldset>
       <div className="mt-2.5 ml-[5px] border-l-2 border-[var(--color-line-strong)] pl-2.5">
         <button
           type="button"
           data-testid={`${list.key}-per-track-toggle`}
           aria-expanded={open}
+          aria-controls={`${baseId}-rows`}
           onClick={() => setOpen((v) => !v)}
           className="flex w-full items-center gap-1.5 py-0.5 text-[11px] text-fg-muted transition-colors hover:text-fg"
         >
@@ -98,10 +108,11 @@ export function TagListBulkField({
           </span>
         </button>
         {open && (
-          <div className="mt-1.5 flex flex-col gap-[7px]">
+          <div id={`${baseId}-rows`} className="mt-1.5 flex flex-col gap-[7px]">
             {tracks.map((t) => (
-              <div key={t.id} className="min-w-0">
+              <fieldset key={t.id} aria-labelledby={`${baseId}-${t.id}`} className="min-w-0">
                 <div
+                  id={`${baseId}-${t.id}`}
                   data-testid={`${list.key}-track-${t.id}`}
                   className="flex min-w-0 items-center gap-1.5 text-[10px] text-fg-faint"
                 >
@@ -126,7 +137,7 @@ export function TagListBulkField({
                     ])
                   }
                 />
-              </div>
+              </fieldset>
             ))}
           </div>
         )}

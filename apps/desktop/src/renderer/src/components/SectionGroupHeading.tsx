@@ -28,10 +28,11 @@ export function SectionGroupHeading({
       {/* The phase label leads, then a hairline runs from its side out to the panel edge.
           It replaces the full-width top rule that used to cross the whole panel: one short
           line beside the word instead of a heavy band above it, so a column of phases reads
-          as a sequence of labels, not a stack of dividers. */}
-      <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.14em] text-fg-dim">
+          as a sequence of labels, not a stack of dividers. An h2, so the phases head the
+          editor's outline for a screen reader, above each section's h3. */}
+      <h2 className="shrink-0 text-[10px] font-bold uppercase tracking-[0.14em] text-fg-dim">
         {label}
-      </span>
+      </h2>
       <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-line)]" />
     </div>
   )

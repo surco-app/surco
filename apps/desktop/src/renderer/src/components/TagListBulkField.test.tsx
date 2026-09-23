@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
 import { GROUPING_TAGS } from '../lib/bulkEdit'
@@ -194,5 +194,30 @@ describe('TagListBulkField', () => {
     expect(summaryOrder()).toEqual(['Cantaditas', 'Discazos', 'Bases'])
     rerender([b1])
     expect(summaryOrder()).toEqual(['Bases', 'Cantaditas'])
+  })
+
+  // Every track row repeats the same chips ("Bases", "Cantaditas"), so out of their
+  // visual row a screen reader heard a dozen identical toggles with no track attached.
+  // Each row is a group named by its track, and the summary one by the field's label.
+  it('groups each row of chips under the name of the track it edits', () => {
+    renderField()
+    expect(
+      within(screen.getByRole('group', { name: /^Grouping/ })).getByTestId('chip-Bases'),
+    ).toBeInTheDocument()
+    openRows()
+    const row = screen.getByRole('group', { name: /All I Want/ })
+    expect(within(row).getByTestId('chip-a1-Bases')).toBeInTheDocument()
+    expect(within(row).queryByTestId('chip-a2-Bases')).toBeNull()
+  })
+
+  // aria-expanded says the toggle opens something; aria-controls says what, so assistive
+  // tech can take the user straight to the rows it revealed.
+  it('points the per-track toggle at the rows it opens', () => {
+    renderField()
+    openRows()
+    const toggle = screen.getByTestId('grouping-per-track-toggle')
+    const body = document.getElementById(toggle.getAttribute('aria-controls') ?? '')
+    expect(body).not.toBeNull()
+    expect(within(body as HTMLElement).getByTestId('grouping-track-a1')).toBeInTheDocument()
   })
 })
