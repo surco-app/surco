@@ -353,6 +353,30 @@ describe('TrackList', () => {
     expect(screen.getByTestId('track-duration')).toHaveTextContent('4:47')
   })
 
+  // Six fixed columns on the artist line left the artist ~68px of a 290px sidebar
+  // ("DJ Miguel…"). The duration moves up beside the title, the way Mail puts the time
+  // beside the sender, and the format pill sits under it as one trailing column.
+  it('puts the duration on the title line and the format under it', () => {
+    renderList([
+      track({
+        id: 'a',
+        inputPath: '/music/a.mp3',
+        fileName: 'a',
+        duration: 287,
+        meta: { title: 'Dance 4 Me', artist: 'DJ Miguel' } as TrackMetadata,
+      }),
+    ])
+    expect(screen.getByTestId('track-title-line')).toContainElement(
+      screen.getByTestId('track-duration'),
+    )
+    expect(screen.getByTestId('track-detail-line')).toContainElement(
+      screen.getByTestId('track-format'),
+    )
+    expect(screen.getByTestId('track-detail-line')).not.toContainElement(
+      screen.getByTestId('track-duration'),
+    )
+  })
+
   it('omits the duration until it has been probed', () => {
     renderList([track({ id: 'a' })])
     expect(screen.queryByTestId('track-duration')).toBeNull()
@@ -719,10 +743,10 @@ describe('TrackList format pill', () => {
     expect(screen.queryByTestId('track-format')).toBeNull()
   })
 
-  // The trailing indicators (sparkle, verdict, pill, duration) read as columns the
-  // eye scans down. The pill and duration render inside fixed-width slots that stay
-  // put whether the row has them or not — otherwise a FLAC pill next to an MP3 one,
-  // or a missing duration, shifts every icon to its left row by row.
+  // The duration and the pill under it read as one trailing column the eye scans down.
+  // Both render inside fixed-width slots that stay put whether the row has them or not —
+  // otherwise a FLAC pill next to an MP3 one, or a missing duration, shifts the column
+  // row by row.
   it('reserves the pill and duration slots so the indicator columns never shift', () => {
     renderList([
       track({ id: 'flac', inputPath: '/music/a.flac', fileName: 'a', duration: 189 }),
@@ -791,6 +815,16 @@ describe('TrackList quality badge', () => {
   it('marks a clean track as good', () => {
     renderList([track({ id: 'a', spectrum: spectrum(21000) })])
     expect(screen.getByTestId('track-quality')).toHaveAttribute('data-quality', 'good')
+  })
+
+  // The row marks exceptions only: a green check on every healthy track spent the artist's
+  // width to say nothing needed doing. The verdict is still spoken, so a screen reader
+  // user hears the same triage the stripe and the red/amber marks give sighted users.
+  it('draws no mark for a clean track but still speaks its verdict', () => {
+    renderList([track({ id: 'a', spectrum: spectrum(21000) })])
+    const mark = screen.getByTestId('track-quality')
+    expect(mark.querySelector('svg')).toBeNull()
+    expect(mark).toHaveTextContent(i18n.t('editor.qualityGood'))
   })
 
   it('shows no badge until the track has been analyzed', () => {

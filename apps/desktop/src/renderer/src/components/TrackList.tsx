@@ -1,7 +1,6 @@
 import {
   Check,
   CircleAlert,
-  CircleCheck,
   type LucideIcon,
   Music,
   OctagonAlert,
@@ -155,8 +154,7 @@ const qualityTone: Record<RowVerdict, RowTone> = {
   transcoded: 'danger',
 }
 
-const qualityIcon: Record<RowVerdict, { Icon: LucideIcon; className: string }> = {
-  good: { Icon: CircleCheck, className: 'text-good/70' },
+const qualityIcon: Record<Exclude<RowVerdict, 'good'>, { Icon: LucideIcon; className: string }> = {
   warn: { Icon: TriangleAlert, className: 'text-warn' },
   bad: { Icon: OctagonAlert, className: 'text-danger' },
   processed: { Icon: TriangleAlert, className: 'text-warn' },
@@ -186,13 +184,24 @@ function QualityMark({
   verdict: RowVerdict
   label: string
 }): React.JSX.Element {
+  if (verdict === 'good')
+    return (
+      <span
+        data-testid="track-quality"
+        data-quality={verdict}
+        data-tone={qualityTone[verdict]}
+        className="sr-only"
+      >
+        {label}
+      </span>
+    )
   const { Icon, className } = qualityIcon[verdict]
   return (
     <span
       data-testid="track-quality"
       data-quality={verdict}
       data-tone={qualityTone[verdict]}
-      className="group/dot relative flex"
+      className="group/dot relative flex shrink-0"
     >
       <Icon aria-hidden className={`h-3 w-3 ${className}`} />
       <Tooltip label={label} align="end" scope="dot" />
@@ -303,6 +312,7 @@ const TrackRow = memo(function TrackRow({
           }).format(backupAt),
         })
   const rowRef = useRef<HTMLDivElement>(null)
+  const reviewPending = !t.autoMatched && t.matchReview && !t.matched
   // Shared by each mark's hover tooltip and its sr-only twin, so what a screen reader
   // hears is the same sentence the pointer reveals.
   const statusLabel = tr(stale ? 'trackList.status.stale' : `trackList.status.${t.status}`)
@@ -501,9 +511,24 @@ const TrackRow = memo(function TrackRow({
             title and a fit artist don't overlap, and the vertical gap between the stacked
             lines belongs to neither. */}
         <span data-fit className="relative min-w-0 flex-1">
-          <span className="relative block w-fit max-w-full truncate text-sm font-medium text-fg">
-            <Tooltip label={rowTooltip(t, tr)} />
-            {t.listLabel}
+          {/* The duration rides the title line, the way Mail puts the time beside the
+              sender: on the artist line it was one of six fixed columns that left the
+              artist a few letters. */}
+          <span data-testid="track-title-line" className="flex items-center gap-2">
+            <span className="relative block min-w-0 flex-1 truncate">
+              <span className="relative block w-fit max-w-full truncate text-sm font-medium text-fg">
+                <Tooltip label={rowTooltip(t, tr)} />
+                {t.listLabel}
+              </span>
+            </span>
+            <span
+              data-testid="track-duration-slot"
+              className="w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim"
+            >
+              {t.duration !== undefined && (
+                <span data-testid="track-duration">{formatTime(t.duration)}</span>
+              )}
+            </span>
           </span>
           {t.loadingMeta ? (
             <span
@@ -530,7 +555,7 @@ const TrackRow = memo(function TrackRow({
               </span>
             </span>
           ) : (
-            <span className="flex items-center gap-2">
+            <span data-testid="track-detail-line" className="flex items-center gap-2">
               <span className="relative block min-w-0 flex-1 truncate text-xs text-fg-dim">
                 <span className="relative block w-fit max-w-full truncate">
                   <Tooltip label={rowTooltip(t, tr)} />
@@ -538,8 +563,7 @@ const TrackRow = memo(function TrackRow({
                 </span>
               </span>
               {/* A failed tag read leaves the row showing only its file-name parse; the mark
-                  tells that apart from a file that genuinely carries no tags. Lives in the
-                  flexible artist area so the reserved indicator columns don't shift. */}
+                  tells that apart from a file that genuinely carries no tags. */}
               {t.metaReadFailed && (
                 <span
                   data-testid="track-meta-failed"
@@ -550,8 +574,6 @@ const TrackRow = memo(function TrackRow({
                   <span className="sr-only">{tr('trackList.metaReadFailed')}</span>
                 </span>
               )}
-              {/* Only on rows with a backup, and leftmost, so the reserved slots to its
-                  right stay aligned down the list whether or not a row carries it. */}
               {backupAt !== undefined && (
                 <span
                   data-testid="track-backup"
@@ -563,41 +585,36 @@ const TrackRow = memo(function TrackRow({
                   <span className="sr-only">{backupLabel}</span>
                 </span>
               )}
-              {/* Both indicators reserve a fixed-width slot even when absent, so the FLAC
-                  badge and duration line up in the same column down every row instead of
-                  shifting whenever a track lacks a sparkle or a quality verdict. */}
-              <span className="flex w-3 shrink-0 justify-center">
-                {t.autoMatched ? (
+              {/* Marks only what is there, packed against the pill: a slot reserved for an
+                  absent mark spent the artist's width on nothing. */}
+              {quality !== 'unanalyzed' ? (
+                <QualityMark verdict={quality} label={tr(qualityLabel[quality])} />
+              ) : (
+                t.analyzing && (
                   <span
-                    data-testid="track-automatched"
-                    data-confidence="high"
-                    className="group/dot relative flex items-center text-[var(--color-accent)]"
+                    data-testid="track-quality-loading"
+                    className="group/dot relative h-2 w-2 shrink-0 animate-pulse rounded-full bg-current text-fg-faint ring-2 ring-current/20"
                   >
-                    <Sparkles className="h-3 w-3" aria-hidden="true" />
-                    <Tooltip label={autoMatchLabel} align="end" scope="dot" />
-                    <span className="sr-only">{autoMatchLabel}</span>
+                    <Tooltip label={tr('editor.analyzing')} align="end" scope="dot" />
                   </span>
-                ) : null}
-              </span>
-              <span className="flex w-3 shrink-0 justify-center">
-                {quality !== 'unanalyzed' ? (
-                  <QualityMark verdict={quality} label={tr(qualityLabel[quality])} />
-                ) : (
-                  t.analyzing && (
-                    <span
-                      data-testid="track-quality-loading"
-                      className="group/dot relative h-2 w-2 animate-pulse rounded-full bg-current text-fg-faint ring-2 ring-current/20"
-                    >
-                      <Tooltip label={tr('editor.analyzing')} align="end" scope="dot" />
-                    </span>
-                  )
-                )}
-              </span>
-              {/* Same slot discipline as the sparkle/verdict columns above: the pill
-                  and the duration get fixed-width slots so a wide FLAC pill next to
-                  an MP3 one — or a row still missing either value — never shifts the
-                  columns to its left. */}
-              <span data-testid="track-format-slot" className="flex w-10 shrink-0 justify-center">
+                )
+              )}
+              {t.autoMatched ? (
+                <span
+                  data-testid="track-automatched"
+                  data-confidence="high"
+                  className="group/dot relative flex shrink-0 items-center text-[var(--color-accent)]"
+                >
+                  <Sparkles className="h-3 w-3" aria-hidden="true" />
+                  <Tooltip label={autoMatchLabel} align="end" scope="dot" />
+                  <span className="sr-only">{autoMatchLabel}</span>
+                </span>
+              ) : (
+                reviewPending && <span className="w-3 shrink-0" />
+              )}
+              {/* A fixed slot, right-aligned under the duration, so the two read as one
+                  trailing column and the review sparkle's place never moves. */}
+              <span data-testid="track-format-slot" className="flex w-[34px] shrink-0 justify-end">
                 {format && (
                   <span
                     data-testid="track-format"
@@ -605,14 +622,6 @@ const TrackRow = memo(function TrackRow({
                   >
                     {format}
                   </span>
-                )}
-              </span>
-              <span
-                data-testid="track-duration-slot"
-                className="w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim"
-              >
-                {t.duration !== undefined && (
-                  <span data-testid="track-duration">{formatTime(t.duration)}</span>
                 )}
               </span>
             </span>
@@ -623,32 +632,28 @@ const TrackRow = memo(function TrackRow({
           applied accent sparkle, and gone the moment the track is actually matched. A
           sibling of the row button, not a child, since a button inside the option button
           is invalid and folds the action into the row's name. It is placed over the empty
-          sparkle slot of the artist line: that slot ends 120px from the right edge (the row
-          padding plus the duration, pill and verdict slots with their gaps), and its centre
-          sits 13px up from the bottom. The button is a 24px target (WCAG 2.5.8) centred
-          there, so the 12px glyph lands where the slot would have drawn it. Shown under the
-          same conditions as that line. */}
-      {!t.loadingMeta &&
-        !(t.status === 'processing' && t.stage) &&
-        !t.autoMatched &&
-        t.matchReview &&
-        !t.matched && (
-          <button
-            type="button"
-            data-testid="track-match-review"
-            data-confidence="review"
-            aria-label={tr('commands.acceptReview')}
-            onClick={() => onAcceptReview(t.id)}
-            className="group/dot press absolute right-[114px] bottom-px flex h-6 w-6 items-center justify-center text-warn"
-          >
-            <Sparkles className="h-3 w-3" aria-hidden="true" />
-            <Tooltip
-              label={matchTooltip(tr('commands.acceptReview'), t.matchConfidence)}
-              align="end"
-              scope="dot"
-            />
-          </button>
-        )}
+          slot the artist line keeps for it beside the pill: that slot ends 52px from the
+          right edge (the row padding plus the pill slot and its gap), and its centre sits
+          13px up from the bottom. The button is a 24px target (WCAG 2.5.8) centred there,
+          so the 12px glyph lands where the slot would have drawn it. Shown under the same
+          conditions as that line. */}
+      {!t.loadingMeta && !(t.status === 'processing' && t.stage) && reviewPending && (
+        <button
+          type="button"
+          data-testid="track-match-review"
+          data-confidence="review"
+          aria-label={tr('commands.acceptReview')}
+          onClick={() => onAcceptReview(t.id)}
+          className="group/dot press absolute right-[46px] bottom-px flex h-6 w-6 items-center justify-center text-warn"
+        >
+          <Sparkles className="h-3 w-3" aria-hidden="true" />
+          <Tooltip
+            label={matchTooltip(tr('commands.acceptReview'), t.matchConfidence)}
+            align="end"
+            scope="dot"
+          />
+        </button>
+      )}
       {/* A ▶ overlay over the cover makes play discoverable — double-click and Space are
           the only other ways in, and neither shows itself. A sibling of the row button
           (not a child) so it stays a valid nested-button-free control, like remove.
