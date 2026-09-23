@@ -93,4 +93,18 @@ describe('MetadataForm', () => {
     expect(screen.queryByTestId('field-grouping')).toBeNull()
     expect(screen.getByTestId('grouping-bulk').parentElement?.className).toContain('col-span-2')
   })
+
+  // A selection where only some tracks are compilations showed a plain empty box, which
+  // reads as "none of them is"; ticking it then stamps every track. The box has to say
+  // "mixed" the way the text fields say "multiple values".
+  it('shows the compilation box as mixed when the selection disagrees', () => {
+    renderForm([{ ...spec('compilation'), mixed: true }])
+    expect(screen.getByTestId('field-compilation')).toBePartiallyChecked()
+  })
+
+  it('shows the compilation box as a plain unticked box when no track is one', () => {
+    renderForm([spec('compilation')])
+    expect(screen.getByTestId('field-compilation')).not.toBePartiallyChecked()
+    expect(screen.getByTestId('field-compilation')).not.toBeChecked()
+  })
 })
