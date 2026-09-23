@@ -48,6 +48,14 @@ describe('FieldsEditor', () => {
     expect(screen.getByText('{title}')).toBeInTheDocument()
   })
 
+  // The {key} token is what templates and tag tools call the field, but it lived only in
+  // a hover tooltip on plain text that neither the keyboard nor a screen reader reaches.
+  it('gives the internal field name to assistive tech without a hover', () => {
+    setup()
+    const row = screen.getByTestId('field-row-artist')
+    expect(within(row).getByText('Internal name {artist}')).toBeInTheDocument()
+  })
+
   // Arrow buttons move one step at a time; with 21 fields, dragging a row straight
   // to its place is the natural gesture. The drag starts from the grip handle so
   // the row's buttons stay plain clicks.
@@ -174,6 +182,15 @@ describe('FieldsEditor', () => {
     expect(btn).not.toHaveAttribute('title')
     fireEvent.focusIn(btn)
     expect(screen.getByRole('tooltip')).toHaveTextContent('Reorder shown fields by group')
+  })
+
+  // What auto-organize does was only in its tooltip, so a screen reader met a bare
+  // "Auto-organize" button; the same sentence is its description.
+  it('describes what auto-organize does to assistive tech', () => {
+    setup()
+    expect(screen.getByTestId('auto-organize-fields')).toHaveAccessibleDescription(
+      'Reorder shown fields by group',
+    )
   })
 
   // Reordering a list that scrolls (and may already be tidy) gives no visible sign it ran,
