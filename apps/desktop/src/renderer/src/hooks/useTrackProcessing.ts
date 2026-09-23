@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { customJob, effectiveMeta } from '../../../shared/customFields'
+import { effectiveMeta, strayTags } from '../../../shared/customFields'
 import { DEFAULT_FIELDS } from '../../../shared/defaults'
 import { batchKeepMp3, hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
 import type { DeclickMode, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
@@ -16,7 +16,7 @@ import { mapWithConcurrency } from '../lib/concurrency'
 import { coverSourceOf } from '../lib/coverSource'
 import { type Destination, fromDestination } from '../lib/destination'
 import { exportedPatch } from '../lib/export'
-import { DEFAULT_REQUIRED_FIELDS, missingRequired } from '../lib/fields'
+import { DEFAULT_REQUIRED_FIELDS, missingRequiredOf } from '../lib/fields'
 import { clearHiddenProvenance, sanitizeMeta } from '../lib/hygiene'
 import { cleanIpcError, isFileInUseMessage, mainErrorMessage } from '../lib/ipcError'
 import { renderOutputName } from '../lib/outputName'
@@ -196,9 +196,10 @@ export function useTrackProcessing({
         }
         track = fresh
       }
-      const missing = missingRequired(
-        effectiveMeta(track, settings?.customFields ?? []),
+      const missing = missingRequiredOf(
+        track,
         settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+        settings?.customFields ?? [],
       )
       if (missing.length) {
         const names = missing.map((k) => tr(`fields.${k}`)).join(', ')
@@ -253,14 +254,9 @@ export function useTrackProcessing({
         musicError: undefined,
       })
       const customFields = settings?.customFields ?? []
-      const { custom, strayTags } = customJob(
-        track.meta,
-        track.foreignTags ?? [],
-        track.foreignRemoved ?? [],
-        customFields,
-      )
+      const stray = strayTags(track, customFields)
       const meta = clearHiddenProvenance(
-        sanitizeMeta(customFields.length > 0 ? { ...track.meta, custom } : track.meta, {
+        sanitizeMeta(effectiveMeta(track, customFields), {
           trim: settings?.trimWhitespace ?? true,
           zeroPad: settings?.zeroPadTrack ?? true,
         }),
@@ -308,9 +304,7 @@ export function useTrackProcessing({
           removeCover: track.coverRemoved,
           clearExtras: track.metaCleared,
           foreignRemoved:
-            strayTags.length > 0
-              ? [...(track.foreignRemoved ?? []), ...strayTags]
-              : track.foreignRemoved,
+            stray.length > 0 ? [...(track.foreignRemoved ?? []), ...stray] : track.foreignRemoved,
           metaUnread: track.metaReadFailed || undefined,
           format: jobFormat,
           normalize: normalizeForJob(track, normalizeFor(track, normalizeOverride)),

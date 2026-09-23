@@ -1,5 +1,5 @@
-import { fieldValue } from '../../../shared/customFields'
-import type { MetaTextKey, TrackMetadata } from '../../../shared/types'
+import { effectiveMeta, fieldValue } from '../../../shared/customFields'
+import type { CustomField, MetaTextKey, TrackMetadata } from '../../../shared/types'
 
 interface FieldDef {
   key: MetaTextKey
@@ -117,6 +117,20 @@ export {
 
 export function missingRequired(meta: TrackMetadata, requiredFields: string[]): string[] {
   return requiredFields.filter((key) => !fieldValue(meta, key).trim())
+}
+
+// The same check off a track, resolving its custom fields only when one of them is required:
+// the gate runs over whole lists on every change, and most never require a custom field.
+export function missingRequiredOf(
+  track: Parameters<typeof effectiveMeta>[0],
+  requiredFields: string[],
+  customFields: readonly CustomField[],
+): string[] {
+  const needsCustom = customFields.some((f) => requiredFields.includes(f.key))
+  return missingRequired(
+    needsCustom ? effectiveMeta(track, customFields) : track.meta,
+    requiredFields,
+  )
 }
 
 export function moveItem<T>(arr: T[], index: number, delta: number): T[] {
