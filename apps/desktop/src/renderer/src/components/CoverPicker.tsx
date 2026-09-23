@@ -211,7 +211,18 @@ export function CoverPicker({
     return () => document.removeEventListener('keydown', onKey)
   }, [])
 
+  // Remove sits in the bar of the cover it takes away, so it unmounts under the keyboard
+  // focus; once the empty well replaces the artwork, focus lands on its pick button.
+  const pickRef = useRef<HTMLButtonElement>(null)
+  const focusPickRef = useRef(false)
+  useEffect(() => {
+    if (displayCover || !focusPickRef.current) return
+    focusPickRef.current = false
+    pickRef.current?.focus()
+  }, [displayCover])
+
   function onCoverRemove(): void {
+    focusPickRef.current = true
     onChange({ coverUrl: undefined, coverPath: undefined, coverRemoved: true })
   }
 
@@ -407,6 +418,7 @@ export function CoverPicker({
       ) : (
         <div className="group relative w-40">
           <button
+            ref={pickRef}
             type="button"
             data-testid="cover-pick"
             onClick={() => coverInputRef.current?.click()}
