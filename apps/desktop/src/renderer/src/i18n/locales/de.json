@@ -247,6 +247,7 @@
     "waveform": "Wellenform",
     "waveformHelp": "Die Wellenform anzeigen. Ausblenden überspringt die Wellenform-Analyse — nützlich bei großen Dateien oder Netzlaufwerken.",
     "seek": "Spulen",
+    "seekValue": "{{current}} von {{total}}",
     "volume": "Lautstärke",
     "unmute": "Ton einschalten",
     "reveal": "Den laufenden Track in der Liste zeigen",

@@ -247,6 +247,7 @@
     "waveform": "Forme d'onde",
     "waveformHelp": "Afficher la forme d'onde. La masquer évite son analyse — utile pour les gros fichiers ou les disques réseau.",
     "seek": "Se déplacer",
+    "seekValue": "{{current}} sur {{total}}",
     "volume": "Volume",
     "unmute": "Réactiver le son",
     "reveal": "Afficher le morceau en cours dans la liste",
