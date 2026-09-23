@@ -3,6 +3,7 @@ import type React from 'react'
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { tagsOnly } from '../../../shared/audioProcessing'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
@@ -39,6 +40,7 @@ import { renderOutputName, titleFormatPatches } from '../lib/outputName'
 import { isMacOS } from '../lib/platform'
 import { splitPosition } from '../lib/position'
 import { isLowResCover } from '../lib/quality'
+import { jobAudio } from '../lib/reapply'
 import {
   bestMatch,
   buildReleaseMeta,
@@ -751,6 +753,12 @@ export const Editor = memo(function Editor({
   // quality-losing case worth a sharper warning before the user commits to it.
   const lossyOverwrite =
     picked.overwriteOriginal && format === 'mp3' && !formatMatchesInput('mp3', item.inputPath)
+  const tagsOnlyExport =
+    !isMulti &&
+    tagsOnly(
+      formatMatchesInput(format, item.inputPath),
+      jobAudio(item, normalizeCfg, declickCfg, { normalize, declick }),
+    )
 
   // One onChange per possible key, built once (setField/onChangeAllMeta never
   // change identity) and reused by every fieldSpecs rebuild below. Field.tsx is
@@ -1302,6 +1310,7 @@ export const Editor = memo(function Editor({
           incomplete={incomplete}
           incompleteReason={incompleteReason}
           willEditInPlace={willEditInPlace}
+          tagsOnly={tagsOnlyExport}
           addToAppleMusic={picked.addToAppleMusic}
           addToEngineDj={picked.addToEngineDj}
           destination={destination}

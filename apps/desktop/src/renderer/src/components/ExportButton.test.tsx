@@ -16,7 +16,6 @@ const baseProps = {
   withAppleMusic: false,
   withEngineDj: false,
   inPlace: false,
-  sameFormat: false,
   destination: 'folder' as const,
   destinations: ['folder', 'appleMusic', 'engineDj', 'beside'] as const,
   onProcess: () => {},

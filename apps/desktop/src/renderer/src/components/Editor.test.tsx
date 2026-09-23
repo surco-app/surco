@@ -1868,6 +1868,33 @@ describe('Editor export control', () => {
     expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
   })
 
+  // A staged normalize, click repair or trim re-renders the audio even when the format
+  // matches, so the job is a re-encode and "Update tags" would undersell what it does.
+  it.each<[string, Parameters<typeof renderEditor>]>([
+    [
+      'normalize',
+      [
+        { id: 'a', inputPath: '/music/a.wav' },
+        'wav',
+        { normalize: { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 } },
+      ],
+    ],
+    ['declick', [{ id: 'a', inputPath: '/music/a.wav' }, 'wav', { declick: 'standard' }]],
+    ['trim', [{ id: 'a', inputPath: '/music/a.wav', trim: { startSec: 2 } }, 'wav']],
+  ])('labels a same-format export with a staged %s as a conversion', (_, args) => {
+    renderEditor(...args)
+    const button = screen.getByTestId('process-btn')
+    expect(button).toHaveTextContent('WAV')
+    expect(button).not.toHaveTextContent('Update tags')
+  })
+
+  // "Same as source" keeps the file's own format, so with nothing staged it is a tag
+  // update like picking that format by hand.
+  it('labels a "Same as source" export with nothing staged "Update tags"', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.flac' }, 'source')
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+  })
+
   // Overwrite mode edits the original's path whatever the format, but a WAV overwritten
   // as AIFF is re-encoded: the button must promise the conversion, not a tag update.
   it('labels an overwrite into another format as a conversion', () => {

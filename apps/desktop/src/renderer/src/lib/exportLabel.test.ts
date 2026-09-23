@@ -9,7 +9,7 @@ const base: ExportLabelState = {
   withAppleMusic: false,
   withEngineDj: false,
   format: 'AIFF',
-  sameFormat: true,
+  tagsOnly: true,
 }
 
 describe('exportButtonLabel', () => {
@@ -68,7 +68,7 @@ describe('exportButtonLabel', () => {
         withAppleMusic: true,
         withEngineDj: false,
         format: 'AIFF',
-        sameFormat: true,
+        tagsOnly: true,
         replaces: true,
       }),
     ).toEqual({ key: 'editor.replaceMusic', options: { format: 'AIFF' } })
@@ -86,7 +86,7 @@ describe('exportButtonLabel', () => {
         withAppleMusic: true,
         withEngineDj: false,
         format: 'AIFF',
-        sameFormat: true,
+        tagsOnly: true,
         replaces: true,
       }),
     ).toEqual({ key: 'editor.updateMusic' })
@@ -103,7 +103,7 @@ describe('exportButtonLabel', () => {
         withAppleMusic: true,
         withEngineDj: false,
         format: 'AIFF',
-        sameFormat: true,
+        tagsOnly: true,
       }),
     ).toEqual({ key: 'editor.convert', options: { format: 'AIFF' } })
   })
@@ -112,9 +112,9 @@ describe('exportButtonLabel', () => {
   // full conversion that happens to land on the original's path, and so is re-running a
   // done WAV→AIFF track: naming either a tag update undersells what the click does.
   it.each([
-    [{ ...base, inPlace: true, sameFormat: false }, 'editor.convertNoMusic'],
-    [{ ...base, inPlace: true, sameFormat: false, withAppleMusic: true }, 'editor.convert'],
-    [{ ...base, stale: true, sameFormat: false }, 'editor.convertNoMusic'],
+    [{ ...base, inPlace: true, tagsOnly: false }, 'editor.convertNoMusic'],
+    [{ ...base, inPlace: true, tagsOnly: false, withAppleMusic: true }, 'editor.convert'],
+    [{ ...base, stale: true, tagsOnly: false }, 'editor.convertNoMusic'],
   ])('labels %o as a conversion, not a tag update', (state, key) => {
     expect(exportButtonLabel(state)).toEqual({ key, options: { format: 'AIFF' } })
   })

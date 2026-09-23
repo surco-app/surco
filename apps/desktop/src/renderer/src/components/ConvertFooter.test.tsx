@@ -35,6 +35,7 @@ function footer(showDone: boolean): React.JSX.Element {
       done={showDone}
       incomplete={false}
       willEditInPlace={false}
+      tagsOnly={false}
       addToAppleMusic={false}
       addToEngineDj={false}
       destination={'beside' as Destination}

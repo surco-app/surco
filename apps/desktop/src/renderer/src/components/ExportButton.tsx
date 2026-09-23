@@ -30,9 +30,10 @@ interface ExportButtonProps {
   // True when the export writes over the original (the source's own format, or overwrite
   // mode) and renames it rather than writing a separate copy.
   inPlace: boolean
-  // True when the chosen format is the source's own. Only then is an in-place or stale
-  // export a tag update, so the button offers "Update tags" instead of a conversion.
-  sameFormat?: boolean
+  // True when the export keeps the source's format with no filter re-rendering the audio.
+  // Only then is an in-place or stale export a tag update, so the button offers "Update
+  // tags" instead of a conversion.
+  tagsOnly?: boolean
   // When set, the button converts the whole selection in the chosen format and labels
   // itself "Convert all (N)" instead of the single-track convert; the format menu works
   // the same, it just applies to every selected track.
@@ -78,7 +79,7 @@ export function ExportButton({
   incomplete,
   incompleteReason,
   inPlace,
-  sameFormat = false,
+  tagsOnly = false,
   count,
   quiet,
   destination,
@@ -115,7 +116,7 @@ export function ExportButton({
     quiet,
     count,
     inPlace,
-    sameFormat,
+    tagsOnly,
     stale,
     replaces,
     done,

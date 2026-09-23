@@ -1,4 +1,5 @@
-import type { DeclickMode, NormalizeConfig } from '../../../shared/types'
+import type { AudioProcessing } from '../../../shared/audioProcessing'
+import type { DeclickMode, NormalizeConfig, Settings } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { isDeclickStale, isNormalizeStale } from './dirty'
 
@@ -83,4 +84,17 @@ export function declickForJob(
   if (!readsItsOwnExport(track)) return current
   if (current && isDeclickStale(track, current)) return current
   return 'off'
+}
+
+export function jobAudio(
+  track: TrackItem,
+  normalize: NormalizeConfig | undefined,
+  declick: DeclickMode | undefined,
+  fallback: Pick<Settings, 'normalize' | 'declick'> | null,
+): AudioProcessing {
+  return {
+    normalize: normalizeForJob(track, normalizeFor(track, normalize, fallback?.normalize)),
+    declick: declickForJob(track, declickFor(track, declick, fallback?.declick)),
+    trim: track.trim,
+  }
 }
