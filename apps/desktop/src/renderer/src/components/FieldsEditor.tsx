@@ -9,7 +9,7 @@ import {
   Wand2,
 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   type CustomKeyProblem,
@@ -390,6 +390,7 @@ function AddCustomField({
   const problem = key ? customKeyProblem(key, customFields) : null
   const blocked = !label.trim() || !key || problem !== null
   const error = problem && tr(PROBLEM_MESSAGE[problem])
+  const errorId = useId()
   const add = (): void => {
     if (blocked) return
     onAdd({ key, label: label.trim() })
@@ -432,6 +433,7 @@ function AddCustomField({
               if (e.key === 'Enter') add()
             }}
             aria-invalid={problem !== null}
+            aria-describedby={error ? errorId : undefined}
             className={`h-8 rounded-lg border bg-[var(--color-field)] px-2.5 font-mono text-sm outline-none ${
               problem
                 ? 'border-[var(--color-danger)]'
@@ -450,7 +452,14 @@ function AddCustomField({
         </button>
       </div>
       {error && (
-        <p data-testid="custom-field-hint" className="text-xs text-[var(--color-danger)]">
+        // The key field points here for the reason it's invalid; alert says it aloud the
+        // moment a typed key collides, without the user having to go looking for it.
+        <p
+          id={errorId}
+          data-testid="custom-field-hint"
+          role="alert"
+          className="text-xs text-[var(--color-danger)]"
+        >
           {error}
         </p>
       )}

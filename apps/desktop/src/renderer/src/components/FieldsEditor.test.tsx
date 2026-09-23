@@ -347,6 +347,18 @@ describe('custom fields', () => {
     expect(onChangeCustom).not.toHaveBeenCalled()
   })
 
+  // The red border and aria-invalid said "wrong" without saying why: the reason sat in
+  // a paragraph below that nothing tied to the field, and appeared silently. It has to be
+  // the field's description and be announced the moment it shows up.
+  it('ties the key error to the key field and announces it', () => {
+    setup()
+    fireEvent.change(screen.getByTestId('custom-field-name'), { target: { value: 'Estilo' } })
+    fireEvent.change(screen.getByTestId('custom-field-key'), { target: { value: 'style' } })
+    const hint = screen.getByTestId('custom-field-hint')
+    expect(hint).toHaveAttribute('role', 'alert')
+    expect(screen.getByTestId('custom-field-key')).toHaveAccessibleDescription(hint.textContent)
+  })
+
   it('deletes a custom field from the settings, the shown and the required lists', () => {
     const { onChangeCustom, onChangeVisible, onChangeRequired } = setup({
       visibleFields: ['title', 'vinylCondition'],
