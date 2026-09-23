@@ -31,6 +31,14 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05)
 }
 
+// A translucent colour as the browser paints it over an opaque surface.
+function blend(fg: string, bg: string, a: number): string {
+  const f = parseInt(fg.slice(1), 16)
+  const b = parseInt(bg.slice(1), 16)
+  const ch = [16, 8, 0].map((s) => Math.round(((f >> s) & 255) * a + ((b >> s) & 255) * (1 - a)))
+  return `#${ch.map((v) => v.toString(16).padStart(2, '0')).join('')}`
+}
+
 describe('theme text contrast (WCAG 1.4.3 AA)', () => {
   for (const [theme, t] of [
     ['dark', dark],
@@ -103,13 +111,6 @@ describe('focus ring contrast (WCAG 1.4.11)', () => {
   const mix = ring.match(/color-mix\(in srgb, var\(--color-accent\) (\d+)%, transparent\)/)
   const alpha = mix ? Number(mix[1]) / 100 : 1
 
-  function blend(fg: string, bg: string, a: number): string {
-    const f = parseInt(fg.slice(1), 16)
-    const b = parseInt(bg.slice(1), 16)
-    const ch = [16, 8, 0].map((s) => Math.round(((f >> s) & 255) * a + ((b >> s) & 255) * (1 - a)))
-    return `#${ch.map((v) => v.toString(16).padStart(2, '0')).join('')}`
-  }
-
   it('paints the ring in the accent', () => {
     expect(ring).toContain('var(--color-accent)')
   })
@@ -125,4 +126,122 @@ describe('focus ring contrast (WCAG 1.4.11)', () => {
       })
     }
   }
+})
+
+// The border is what tells a text field or a slider track apart from the panel around it,
+// and --color-line (a separator) measured 1.22:1 in dark and 1.27:1 in light; even
+// --color-line-strong only reached 1.46 and 1.58. WCAG 1.4.11 wants 3:1 for the boundary
+// that identifies a control, so fields and tracks get their own token, measured on every
+// surface they sit on, while the faint line stays for the separators it was made for.
+describe('control border contrast (WCAG 1.4.11)', () => {
+  for (const [theme, t] of [
+    ['dark', dark],
+    ['light', light],
+  ] as const) {
+    for (const surface of ['color-panel', 'color-panel-2', 'color-field']) {
+      it(`${theme} input border reaches 3:1 on ${surface}`, () => {
+        expect(contrast(t['color-input-border'], t[surface])).toBeGreaterThanOrEqual(3)
+      })
+    }
+  }
+
+  it('draws the volume and fade slider track in the control border', () => {
+    const track = css.slice(css.indexOf('.player-volume-range::-webkit-slider-runnable-track'))
+    expect(track.slice(0, track.indexOf('}'))).toContain('var(--color-input-border)')
+  })
+})
+
+// The section header pills print their label in the tone colour over a wash of that same
+// colour at low opacity. In the light palette the wash lifted the ground just enough to
+// sink the label under AA: warn measured 3.72:1, good 4.49, accent 4.46. The check blends
+// the wash at the opacity SectionPill actually uses, over the panel the headers sit on, so
+// a palette edit or a heavier wash can't slide them back under the line.
+describe('section pill label contrast (WCAG 1.4.3 AA)', () => {
+  const pill = readFileSync(
+    fileURLToPath(new URL('./components/SectionPill.tsx', import.meta.url)),
+    'utf8',
+  )
+  for (const tone of ['accent', 'good', 'warn', 'danger']) {
+    const wash = pill.match(new RegExp(`bg-\\[var\\(--color-${tone}\\)\\]/(\\d+)`))
+    for (const [theme, t] of [
+      ['dark', dark],
+      ['light', light],
+    ] as const) {
+      it(`${theme} ${tone} pill label reaches 4.5:1 on its wash`, () => {
+        expect(wash).not.toBeNull()
+        const ground = blend(t[`color-${tone}`], t['color-panel'], Number(wash?.[1]) / 100)
+        expect(contrast(t[`color-${tone}`], ground)).toBeGreaterThanOrEqual(4.5)
+      })
+    }
+  }
+})
+
+// The trim handle opts out of the global ring (a box around a 12px-wide strip read as a
+// stray rectangle) and used to show focus only as a soft glow on a 1px line: nothing a
+// keyboard user could find at a glance. Focus now rings the grip with a solid 2px accent
+// band, kept off the grip by a 2px moat of the lane colour so it reads as a ring and not
+// as a fatter grip, and that band has to clear 3:1 against the lane it is drawn on.
+describe('trim handle focus indicator (WCAG 1.4.11)', () => {
+  const rule = css.slice(css.indexOf('.trim-handle[data-focused] .trim-grip'))
+  const body = rule.slice(0, rule.indexOf('}'))
+
+  it('rings the grip with a solid 2px accent band outside a lane-coloured gap', () => {
+    expect(body).toContain('0 0 0 2px var(--color-field)')
+    expect(body).toContain('0 0 0 4px var(--color-accent)')
+  })
+
+  for (const [theme, t] of [
+    ['dark', dark],
+    ['light', light],
+  ] as const) {
+    it(`${theme} ring reaches 3:1 on the lane`, () => {
+      expect(contrast(t['color-accent'], t['color-field'])).toBeGreaterThanOrEqual(3)
+    })
+  }
+})
+
+// Motion someone has asked the OS to reduce kept running: every spinner and pulse (they
+// are Tailwind utilities, spread over components that each forgot), the player's height
+// tween that Player.tsx promised was neutralised here, the press scale on nearly every
+// button, and the toast countdown sliding its bar across. Each has to appear inside a
+// reduced-motion block, and the countdown still has to tell time, by fading instead.
+describe('reduced motion', () => {
+  const reduced = [...css.matchAll(/@media \(prefers-reduced-motion: reduce\) \{/g)]
+    .map((m) => {
+      let depth = 0
+      for (let i = (m.index ?? 0) + m[0].length - 1; i < css.length; i++) {
+        if (css[i] === '{') depth++
+        if (css[i] === '}' && --depth === 0) return css.slice(m.index, i + 1)
+      }
+      return ''
+    })
+    .join('\n')
+
+  for (const selector of [
+    '.animate-spin',
+    '.animate-pulse',
+    '.player-section',
+    '.press',
+    '.animate-toast-countdown',
+  ]) {
+    it(`holds ${selector} still`, () => {
+      expect(reduced).toContain(selector)
+    })
+  }
+
+  it('drains the toast countdown by fading rather than sliding', () => {
+    expect(reduced).toMatch(/\.animate-toast-countdown\s*\{[^}]*toast-countdown-fade/)
+    const frames = css.slice(css.indexOf('@keyframes toast-countdown-fade'))
+    expect(frames.slice(0, frames.indexOf('}\n}'))).toContain('opacity')
+  })
+})
+
+// The zoom ruler's time labels were 9px, the smallest text in the app, sitting on the
+// busiest ground in it; 10px is the least that reads there.
+describe('waveform ruler labels', () => {
+  it('sets the label no smaller than 10px', () => {
+    const rule = css.slice(css.indexOf('.wave-label {'))
+    const size = rule.slice(0, rule.indexOf('}')).match(/font-size:\s*(\d+)px/)
+    expect(Number(size?.[1])).toBeGreaterThanOrEqual(10)
+  })
 })

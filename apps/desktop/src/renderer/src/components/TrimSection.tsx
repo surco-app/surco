@@ -322,7 +322,7 @@ function Lane({
             data-testid={`trim-cut-time-${side}`}
             type="text"
             inputMode="decimal"
-            aria-label={tr(side === 'start' ? 'trim.handleStart' : 'trim.handleEnd')}
+            aria-label={tr(side === 'start' ? 'trim.handleStartTime' : 'trim.handleEndTime')}
             value={timeText ?? `${cut.toFixed(3)}`}
             onChange={(e) => setTimeText(e.target.value)}
             onBlur={commitTime}
@@ -343,7 +343,7 @@ function Lane({
                 onKeyStep(e.shiftKey ? -COARSE_STEP_SEC : -fineStepSec)
               }
             }}
-            className="h-7 w-16 shrink-0 rounded-md border border-[var(--color-line)] bg-transparent px-1.5 text-center text-[10px] tabular-nums text-fg-muted outline-none focus:border-accent focus:text-fg"
+            className="h-7 w-16 shrink-0 rounded-md border border-[var(--color-input-border)] bg-transparent px-1.5 text-center text-[10px] tabular-nums text-fg-muted outline-none focus:border-accent focus:text-fg"
           />
           <button
             type="button"
@@ -460,17 +460,18 @@ function Lane({
               aria-valuemin={0}
               aria-valuemax={Number(durationSec.toFixed(2))}
               aria-valuenow={Number(cut.toFixed(2))}
+              aria-valuetext={`${cut.toFixed(3)} s`}
               tabIndex={0}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
-              // Keyboard focus lights the handle's own line and dot instead of drawing
-              // a box around it: an outline on a strip this thin and tall read as a
-              // stray rectangle, and the arrows (which need the handle focused) made it
-              // a constant sight. The glow is the snap's, so focus and snap speak the
-              // same visual language. outline-none alone leaves the global focus-visible
-              // ring (a box-shadow, not an outline) boxing the 12px-wide strip, so the
-              // shadow-none kills that too.
-              className="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-ew-resize touch-none outline-none focus-visible:shadow-none"
+              // Keyboard focus rings the handle's own grip instead of drawing a box
+              // around the whole handle: an outline on a strip this thin and tall read as
+              // a stray rectangle, and the arrows (which need the handle focused) made it
+              // a constant sight. The ring itself lives in index.css (.trim-handle
+              // [data-focused] .trim-grip). outline-none alone leaves the global
+              // focus-visible ring (a box-shadow, not an outline) boxing the 12px-wide
+              // strip, so the shadow-none kills that too.
+              className="trim-handle group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-ew-resize touch-none outline-none focus-visible:shadow-none"
               style={{ left: `${Math.max(0, Math.min(100, pct(cut)))}%` }}
               // The arrows a focused slider owes anyone driving it by keyboard or with a
               // screen reader. The section's own per-side keys (claimed, focus-free) are
@@ -496,18 +497,19 @@ function Lane({
             >
               {/* Focus SHARPENS the line rather than haloing it: the snap's wide, spread
                 glow, worn as a persistent state, smeared across the wave until the line
-                itself was lost in it. Focus instead widens the line a hair and gives it
-                a tight, spreadless glow — the line stays a crisp line, just brighter. */}
+                itself was lost in it. Focus widens the line to 2px, and the grip below
+                takes a solid ring: the tight glow it used to wear on a 1px line was too
+                faint to find at a glance. */}
               <span
                 aria-hidden="true"
                 data-testid={snapped ? `trim-snapped-${side}` : undefined}
-                className={`absolute inset-y-0 left-1/2 w-px bg-accent group-data-[focused]:shadow-[0_0_4px_var(--color-accent)] ${
+                className={`absolute inset-y-0 left-1/2 w-px bg-accent group-data-[focused]:w-0.5 ${
                   snapped ? 'shadow-[0_0_8px_2px_var(--color-accent)]' : ''
                 }`}
               />
               <span
                 aria-hidden="true"
-                className={`absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent group-data-[focused]:scale-125 group-data-[focused]:shadow-[0_0_4px_var(--color-accent)] ${
+                className={`trim-grip absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent ${
                   snapped ? 'scale-150 shadow-[0_0_8px_var(--color-accent)]' : ''
                 }`}
               />

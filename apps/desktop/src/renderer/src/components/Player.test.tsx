@@ -30,6 +30,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 // Every render needs a QueryClient in context for the waveform's useQuery; a fresh
@@ -274,6 +275,64 @@ describe('Player', () => {
     expect(onScrub).toHaveBeenCalledWith(50)
   })
 
+  // The bar was a <button> reading e.clientX: Enter or Space on it fires a click at
+  // clientX 0, so a keyboard user trying to seek threw the track back to 0:00. As a
+  // slider it states where the track is and moves by keys, never by a phantom click.
+  it('exposes the compact progress bar as a slider that states the position', () => {
+    renderUI(<Player {...props({ showWaveform: false, currentTime: 83, duration: 245 })} />)
+    const bar = screen.getByRole('slider', { name: 'Seek' })
+    expect(bar).toHaveAttribute('data-testid', 'player-seek')
+    expect(bar).toHaveAttribute('tabindex', '0')
+    expect(bar).toHaveAttribute('aria-valuemin', '0')
+    expect(bar).toHaveAttribute('aria-valuemax', '245')
+    expect(bar).toHaveAttribute('aria-valuenow', '83')
+    expect(bar).toHaveAttribute('aria-valuetext', '1:23 of 4:05')
+  })
+
+  // Same 5 s step as the global seek commands, so the arrows mean one thing everywhere,
+  // and Shift takes the coarse step the trim and click-repair scrubbers take with it.
+  it('steps the position with the arrow keys and jumps with Home and End', () => {
+    const onScrub = vi.fn()
+    renderUI(
+      <Player {...props({ showWaveform: false, currentTime: 83, duration: 245, onScrub })} />,
+    )
+    const bar = screen.getByTestId('player-seek')
+    fireEvent.keyDown(bar, { key: 'ArrowRight' })
+    fireEvent.keyDown(bar, { key: 'ArrowLeft' })
+    fireEvent.keyDown(bar, { key: 'ArrowRight', shiftKey: true })
+    fireEvent.keyDown(bar, { key: 'Home' })
+    fireEvent.keyDown(bar, { key: 'End' })
+    expect(onScrub.mock.calls.map((c) => c[0])).toEqual([88, 78, 113, 0, 245])
+  })
+
+  // The arrows it owns must not also reach the global keymap, or one press would seek
+  // twice (or, for Home/End, also jump the track list).
+  it('keeps the keys it handles from reaching the global shortcuts', () => {
+    renderUI(<Player {...props({ showWaveform: false, currentTime: 83, duration: 245 })} />)
+    const bar = screen.getByTestId('player-seek')
+    for (const key of ['ArrowLeft', 'ArrowRight', 'Home', 'End']) {
+      expect(fireEvent.keyDown(bar, { key })).toBe(false)
+    }
+  })
+
+  // The height tween between the two layouts is script-driven, so the reduced-motion CSS
+  // cannot stop it, and with the transition off no transitionend ever arrives to release
+  // the pinned height. Under reduced motion the card swaps layouts in one step and keeps
+  // its natural height.
+  it('swaps layouts without pinning a tweened height under reduced motion', () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+    }))
+    let height = 100
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(() => {
+      height += 50
+      return height
+    })
+    const { rerender } = renderUI(<Player {...props({ showWaveform: true })} />)
+    rerender(<Player {...props({ showWaveform: false })} />)
+    expect(screen.getByTestId('player-section').style.height).toBe('')
+  })
+
   it('renders the waveform when shown', async () => {
     renderUI(<Player {...props({ showWaveform: true })} />)
     expect(await screen.findByTestId('waveform')).toBeInTheDocument()
@@ -371,6 +430,13 @@ describe('Player', () => {
     expect(screen.getByTestId('player-volume')).toHaveTextContent('70%')
   })
 
+  // The range runs 0 to 1, so a screen reader announced "0.7": the same percentage the
+  // sighted user reads beside the slider has to be what it says.
+  it('reads the volume out as the percentage shown beside it', () => {
+    renderUI(<Player {...props({ volume: 0.7 })} />)
+    expect(screen.getByTestId('player-volume-slider')).toHaveAttribute('aria-valuetext', '70%')
+  })
+
   // Volume sits on the transport row, not on the title's line — sharing that line is what
   // squeezed a long title into an ellipsis.
   it('keeps the volume out of the title block', () => {
@@ -395,6 +461,19 @@ describe('Player', () => {
   it('marks the speaker as pressed while muted', () => {
     renderUI(<Player {...props({ volume: 0 })} />)
     expect(screen.getByTestId('player-volume-button')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  // The speaker was called "Volume" when live and "Unmute" when muted, on top of
+  // aria-pressed: a muted speaker read "Unmute, pressed", which says the state twice and
+  // contradicts itself. One name for the toggle, the state in aria-pressed alone.
+  it('keeps one name on the mute toggle in both states', () => {
+    const { rerender } = renderUI(<Player {...props({ volume: 0.8 })} />)
+    const speaker = screen.getByTestId('player-volume-button')
+    expect(speaker).toHaveAccessibleName('Mute')
+    expect(speaker).toHaveAttribute('aria-pressed', 'false')
+    rerender(<Player {...props({ volume: 0 })} />)
+    expect(speaker).toHaveAccessibleName('Mute')
+    expect(speaker).toHaveAttribute('aria-pressed', 'true')
   })
 })
 

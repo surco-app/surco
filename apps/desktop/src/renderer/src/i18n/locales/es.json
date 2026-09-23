@@ -254,8 +254,10 @@
     "waveform": "Forma de onda",
     "waveformHelp": "Mostrar la forma de onda. Ocultarla evita su análisis, útil para archivos grandes o discos de red.",
     "seek": "Ir a posición",
+    "seekValue": "{{current}} de {{total}}",
     "volume": "Volumen",
-    "unmute": "Activar sonido",
+    "volumeValue": "{{pct}} %",
+    "mute": "Silenciar",
     "reveal": "Mostrar la pista en reproducción en la lista",
     "close": "Cerrar reproductor"
   },
@@ -680,6 +682,7 @@
     "pause": "Pausar",
     "hearingRepaired": "Escuchando: reparada",
     "hearingOriginal": "Escuchando: original",
+    "abLabel": "Escuchar la versión reparada",
     "abHint": "Alterna entre la pista original y la reparada sin cortar el audio, para que oigas si la reparación ha quitado los clics — y si ha apagado la música.",
     "nextClick": "Siguiente clic",
     "appliesToSelection": "Este ajuste se aplica a las {{count}} pistas seleccionadas.",
@@ -717,6 +720,8 @@
     "planCues": "Recodifica el audio. Los cues y el beatgrid de Traktor se mueven con el corte, así que todo sigue cayendo en el mismo golpe (se conservan en MP3, AIFF, FLAC y WAV; solo ALAC los pierde).",
     "handleStart": "Inicio del recorte",
     "handleEnd": "Final del recorte",
+    "handleStartTime": "Tiempo del inicio del recorte",
+    "handleEndTime": "Tiempo del final del recorte",
     "auditionStart": "Escuchar el inicio",
     "auditionEnd": "Escuchar el final",
     "row": {
@@ -734,6 +739,7 @@
     "title": "Igualar volumen",
     "hint": "Desactivado por defecto. Iguala cada pista a un volumen o pico objetivo.",
     "editorHint": "Iguala cada pista a un volumen o pico objetivo.",
+    "fadeValue": "Después al {{pct}} %",
     "mode": {
       "none": "Ninguna",
       "loudness": "Volumen",

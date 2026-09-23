@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { LoudnessResult, NormalizeConfig } from '../../../shared/types'
 import '../i18n'
@@ -120,5 +120,31 @@ describe('LoudnessReadout estimates that ride the gain', () => {
     render(<LoudnessReadout loudness={loud} normalize={club} onShowHelp={vi.fn()} />)
     expect(screen.queryByTestId('loudness-estimate-range')).not.toBeInTheDocument()
     expect(screen.queryByTestId('loudness-estimate-balance')).not.toBeInTheDocument()
+  })
+})
+
+// The verdict was colour alone (the dot and the figure) and its explanation sits in a
+// hover tooltip no keyboard or screen reader reaches: a colour-blind user saw three
+// identical dots, and assistive tech read a bare number with no judgement. Each cell now
+// names its grade in text and draws each grade in its own shape.
+describe('LoudnessReadout verdict without colour', () => {
+  const mixed: LoudnessResult = { ...loud, integratedLufs: -12, truePeakDb: -0.5, lra: 2 }
+
+  it('names the grade of every cell in text', () => {
+    render(<LoudnessReadout loudness={mixed} normalize={off} onShowHelp={vi.fn()} />)
+    expect(within(screen.getByTestId('loudness-pill-lufs')).getByText('Good')).toBeInTheDocument()
+    expect(within(screen.getByTestId('loudness-pill-peak')).getByText('So-so')).toBeInTheDocument()
+    expect(
+      within(screen.getByTestId('loudness-pill-range')).getByText('Out of range'),
+    ).toBeInTheDocument()
+  })
+
+  it('draws each grade in a different shape', () => {
+    render(<LoudnessReadout loudness={mixed} normalize={off} onShowHelp={vi.fn()} />)
+    const shapes = ['lufs', 'peak', 'range'].map((id) =>
+      screen.getByTestId(`loudness-grade-mark-${id}`).getAttribute('data-shape'),
+    )
+    expect(shapes.every(Boolean)).toBe(true)
+    expect(new Set(shapes).size).toBe(3)
   })
 })

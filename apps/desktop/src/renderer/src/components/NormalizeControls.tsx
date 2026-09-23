@@ -2,6 +2,7 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig, NormalizeMode } from '../../../shared/types'
+import { scrollBehavior } from '../lib/motion'
 import { SegmentedControl } from './SegmentedControl'
 
 interface Props {
@@ -68,7 +69,7 @@ function NumberField({
           if (Number.isFinite(n)) onChange(n)
         }}
         onBlur={() => setDraft(String(value))}
-        className="w-24 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm tabular-nums outline-none focus:border-[var(--color-accent)]"
+        className="w-24 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm tabular-nums outline-none focus:border-[var(--color-accent)]"
       />
     </label>
   )
@@ -101,7 +102,7 @@ export function NormalizeControls({
       return
     }
     if (value.mode !== 'none')
-      detailRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' })
+      detailRef.current?.scrollIntoView?.({ block: 'nearest', behavior: scrollBehavior() })
   }, [value.mode])
   const loudnessIsCustom = !LOUDNESS_PRESETS.some(
     (p) => p.lufs === value.targetLufs && p.tp === value.truePeakDb,

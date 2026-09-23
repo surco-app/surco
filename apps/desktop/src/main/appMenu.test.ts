@@ -87,6 +87,15 @@ describe('appMenuTemplate', () => {
     ])
   })
 
+  // A custom View menu replaces Electron's default one, and with it went ⌘+ / ⌘- / ⌘0:
+  // someone who needs larger text had no way to zoom the interface. The standard roles
+  // bring the items and their accelerators back, with the labels the OS localises.
+  it('lets the user zoom the interface from the View menu', () => {
+    const { template } = build()
+    const roles = menu(template, 'View').map((i) => i.role)
+    expect(roles).toEqual(expect.arrayContaining(['resetZoom', 'zoomIn', 'zoomOut']))
+  })
+
   it('names the Tracks menu and its items in every shipped language', () => {
     for (const locale of ['es', 'de', 'fr', 'pt-BR']) {
       const t = createMenuT(locale)
