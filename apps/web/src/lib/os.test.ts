@@ -6,7 +6,10 @@ describe('detectOS', () => {
     vi.unstubAllGlobals()
   })
 
-  const withUA = (userAgent: string) => vi.stubGlobal('navigator', { userAgent })
+  const withUA = (userAgent: string) => {
+    vi.stubGlobal('window', {})
+    vi.stubGlobal('navigator', { userAgent })
+  }
 
   it('reads Windows', () => {
     withUA('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
@@ -45,6 +48,16 @@ describe('detectOS', () => {
   // asset list (.blockmap, latest.yml) instead of an installer.
   it('reports unknown when there is no navigator', () => {
     vi.stubGlobal('navigator', undefined)
+    expect(detectOS()).toBe('unknown')
+  })
+
+  // Node 21 and later define navigator as a real global with a userAgent of their own
+  // ("Node.js/26"), so a check on navigator alone sent the prerender down to 'other' and the
+  // static HTML shipped the generic "view downloads" link again. No window is what marks
+  // the prerender.
+  it('reports unknown in the prerender even though Node defines a navigator', () => {
+    vi.stubGlobal('window', undefined)
+    vi.stubGlobal('navigator', { userAgent: 'Node.js/26' })
     expect(detectOS()).toBe('unknown')
   })
 })

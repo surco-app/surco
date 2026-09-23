@@ -45,7 +45,7 @@ export default function DownloadButton({
   note?: string
 }) {
   const { t } = useTranslation()
-  // Starts 'unknown' in the prerender (no navigator) and resolves on mount, so the
+  // Starts 'unknown' in the prerender (no window) and resolves on mount, so the
   // static HTML carries a pending CTA rather than the generic fallback link.
   const [os, setOs] = useState(detectOS)
   useEffect(() => {

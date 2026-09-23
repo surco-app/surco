@@ -3,7 +3,7 @@
 // up src/**/*.test.ts, so nothing that stays inside a .tsx component is reachable.
 
 // 'other' is a real platform with no Surco build (a phone); 'unknown' is detection that
-// hasn't run yet — the prerender, where there is no userAgent. They must render
+// hasn't run yet — the prerender, where there is no browser window. They must render
 // differently: shipping the 'other' fallback link in the static HTML made it the CTA
 // every visitor saw before hydration, pointing at a raw GitHub asset list.
 export type OS = 'mac' | 'windows' | 'linux' | 'other' | 'unknown'
@@ -14,8 +14,9 @@ export type OS = 'mac' | 'windows' | 'linux' | 'other' | 'unknown'
 // downloads a file it cannot run. Neither has a Surco build, so both land on 'other',
 // which shows the generic "view downloads" link instead of a broken install.
 export function detectOS(): OS {
-  // Node defines `navigator` as a real global, so `typeof navigator` alone doesn't tell
-  // a prerender from a browser — the userAgent is what's actually absent there.
+  // Node 21 and later define `navigator` as a real global with a userAgent of their own
+  // ("Node.js/26"), so neither tells a prerender from a browser; the missing window does.
+  if (typeof window === 'undefined') return 'unknown'
   const ua = typeof navigator === 'undefined' ? undefined : navigator?.userAgent
   if (!ua) return 'unknown'
   if (/Android|iPhone|iPad|iPod/i.test(ua)) return 'other'

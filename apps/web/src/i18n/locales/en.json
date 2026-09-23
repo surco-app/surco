@@ -51,12 +51,12 @@
             "d": "AIFF, WAV, FLAC, ALAC or MP3. It also reads M4A, AAC, OGG and OPUS, which always transcode."
           },
           {
-            "t": "No re-encode if it matches",
-            "d": "Copies the bytes as they are; on MP3 and AIFF over APFS it is an instant clone at any size."
+            "t": "No re-encode when it isn't needed",
+            "d": "A file already in the format is copied byte for byte unless your quality settings or an audio filter change its audio; on MP3 and AIFF over APFS it is an instant clone at any size."
           },
           {
             "t": "Quality your way",
-            "d": "MP3 bitrate, bit depth and sample rate, or the source's own, which is the default."
+            "d": "MP3 bitrate, bit depth and sample rate. By default the source's are kept, except 16-bit audio padded to 24, which is saved as true 16-bit with no loss."
           },
           {
             "t": "No silent widening",
@@ -470,7 +470,7 @@
       },
       {
         "q": "Which formats does it support?",
-        "a": "It converts between lossless AIFF, WAV, FLAC and ALAC and MP3, any to any. The quality is yours to pick: MP3 bitrate (320 down to 128 kbps, or VBR V0/V2), bit depth and sample rate. By default the source's are kept. It also reads M4A, AAC, OGG and OPUS."
+        "a": "It converts between lossless AIFF, WAV, FLAC and ALAC and MP3, any to any. The quality is yours to pick: MP3 bitrate (320 down to 128 kbps, or VBR V0/V2), bit depth and sample rate. By default the source's are kept, except 16-bit audio padded to 24, which is saved as true 16-bit with no loss. It also reads M4A, AAC, OGG and OPUS."
       },
       {
         "q": "What about broken WAV files?",
@@ -742,8 +742,8 @@
         "id": "convertir",
         "title": "Convert the track",
         "body": [
-          "The button at the bottom of the editor converts the selected track, and tells you which format it's about to write before you click. The dropdown to its right picks the format: AIFF, WAV, FLAC or ALAC lossless, MP3, or “Same as source”. If the track is already in that format, Surco copies it as-is, instantly, without re-encoding.",
-          "Quality is set in Settings → Conversion: MP3 bitrate (320 down to 128 kbps, or VBR V0/V2), bit depth, sample rate and FLAC compression. By default the original's are kept, with no needless re-encoding. In Settings → Destination you decide where it goes: an output folder, your Apple Music library, your Engine DJ (Denon) library, next to the original (same-format exports take a “(2)” name and the source is untouched), or overwrite the original in place, which Surco confirms with you first. If you want, turn on normalization (loudness or peak, with streaming, club or broadcast presets) to even out the volume. When it's done, “Show file” takes you to the result in Finder or Explorer."
+          "The button at the bottom of the editor converts the selected track, and tells you which format it's about to write before you click. The dropdown to its right picks the format: AIFF, WAV, FLAC or ALAC lossless, MP3, or “Same as source”. If the track is already in that format, Surco copies it as-is, instantly, without re-encoding, unless your quality settings or an audio filter change its audio.",
+          "Quality is set in Settings → Conversion: MP3 bitrate (320 down to 128 kbps, or VBR V0/V2), bit depth, sample rate and FLAC compression. By default the original's are kept, except the bit depth: “Corrected” saves a 16-bit file padded to 24 as true 16-bit, with no loss. In Settings → Destination you decide where it goes: an output folder, your Apple Music library, your Engine DJ (Denon) library, next to the original (same-format exports take a “(2)” name and the source is untouched), or overwrite the original in place, which Surco confirms with you first. If you want, turn on normalization (loudness or peak, with streaming, club or broadcast presets) to even out the volume. When it's done, “Show file” takes you to the result in Finder or Explorer."
         ],
         "points": [
           "Formats: AIFF, WAV, FLAC and ALAC (lossless) and MP3. 320 down to 128 kbps, or VBR V0/V2.",
@@ -763,7 +763,7 @@
         "title": "Tag without re-encoding",
         "body": [
           "Sometimes you don't want to convert anything: you want your files left exactly as they are, just with the metadata and cover art properly set. That's what “Same as source” is for: every file comes out in its own format, so a mixed batch of WAV, FLAC and MP3 gets tagged end to end without any of them changing format.",
-          "With the audio filters off, the audio isn't touched at all: the bytes are copied straight across and only the tags are rewritten. It's instant however large the file is, and there's no possible quality loss, because there's no re-encoding."
+          "With the audio filters off, the audio isn't touched: the bytes are copied straight across and only the tags are rewritten. It's instant however large the file is, and there's no possible quality loss, because there's no re-encoding. The one exception is a lossless file your quality settings change: with “Corrected”, 16-bit audio padded to 24 is rewritten as true 16-bit, losslessly too."
         ],
         "points": [
           "Pick it in Settings → Format or from the welcome wizard, and also in the convert button's dropdown when you have several tracks selected.",
