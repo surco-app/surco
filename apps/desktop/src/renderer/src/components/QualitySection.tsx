@@ -49,6 +49,13 @@ const qualityCaption: Record<Verdict, string> = {
   processed: 'editor.qualityCaptionProcessed',
 }
 
+const EVIDENCE_BORDER = {
+  good: 'var(--color-good)',
+  warn: 'var(--color-warn)',
+  danger: 'var(--color-danger)',
+  neutral: 'var(--color-line-strong)',
+} as const
+
 interface Props {
   item: TrackItem
   showSpectrum: boolean
@@ -194,9 +201,9 @@ export function QualitySection({
     if (spectrum.flatShelf)
       return {
         key: 'editor.qualityEvidenceShelf',
-        why: 'editor.qualityEvidenceShelfWhy',
-        tone: 'danger' as const,
-        params: { cutoff },
+        why: null,
+        tone: 'neutral' as const,
+        params: {},
       }
     if (spectrum.fineStepDb === undefined) return null
     const drop = Math.round(spectrum.fineStepDb)
@@ -334,8 +341,9 @@ export function QualitySection({
                 {evidence ? (
                   <div
                     data-testid="quality-evidence"
+                    data-tone={evidence.tone}
                     className="mt-2 border-l-2 pl-2.5 text-xs"
-                    style={{ borderColor: `var(--color-${evidence.tone})` }}
+                    style={{ borderColor: EVIDENCE_BORDER[evidence.tone] }}
                   >
                     <p className="text-fg-dim">{tr(evidence.key, evidence.params)}</p>
                     {showHints && evidence.why && (

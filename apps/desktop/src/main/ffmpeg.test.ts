@@ -1630,9 +1630,10 @@ describe('buildSpectrum', () => {
     expect(res.upsampled).toBe(true)
   })
 
-  it('flags a flat HF shelf the codec pass missed, and draws the cutoff at the shelf elbow', async () => {
-    // The codec pass sees a flat synthetic shelf as reaching Nyquist (good); the
-    // shelf probe catches it and reports the real ceiling, which must win the verdict.
+  // Measured over the library sweeps, the flat shelf produced no confirmed reprocessed
+  // file and fired on limited club masters, so it can no longer pass a verdict: it is
+  // kept as an inconclusive observation, and the codec pass alone draws the line.
+  it('keeps a flat HF shelf as an observation, never a processed verdict or a moved cutoff', async () => {
     const res = await buildSpectrum(
       '/in.flac',
       deps({
@@ -1645,8 +1646,9 @@ describe('buildSpectrum', () => {
         shelf: vi.fn(async () => ({ shelfCutoffHz: 16000, kneeCutoffHz: null })),
       }),
     )
-    expect(res.processed).toBe(true)
-    expect(res.cutoffHz).toBe(16000)
+    expect(res.processed).toBe(false)
+    expect(res.cutoffHz).toBe(22050)
+    expect(res.flatShelf).toBe(true)
   })
 
   // The captions argue the verdict with measured numbers, so the numbers the
@@ -1689,10 +1691,10 @@ describe('buildSpectrum', () => {
     expect(res.humpPeakHz).toBe(19000)
   })
 
-  it('marks a shelf-decided verdict as flatShelf, and never when the codec pass already ruled', async () => {
-    // The flat-shelf caption must only ever describe a verdict the shelf probe
-    // produced; when the codec pass found the manipulation itself, its own
-    // teeth/hump evidence speaks and the shelf flag would mislabel it.
+  it('marks a seen shelf as flatShelf, and never when the codec pass already ruled', async () => {
+    // The flat-shelf line must only ever describe what the shelf probe saw on its
+    // own; when the codec pass found the manipulation itself, its own teeth/hump
+    // evidence speaks and the shelf flag would mislabel it.
     const shelfDecided = await buildSpectrum(
       '/in.flac',
       deps({
@@ -1822,9 +1824,9 @@ describe('buildSpectrum', () => {
     expect(res.cutoffHz).toBe(19000)
   })
 
-  it('ignores the FFT knee once a shelf already marked the file reprocessed', async () => {
-    // A flat shelf is its own verdict (reprocessed); the FFT knee must not override the
-    // shelf elbow or flip the file off the processed path.
+  // The shelf and the FFT knee read the same bands: a flat top is not a codec wall, and
+  // letting the knee through here would turn an inconclusive shelf into a red lossy verdict.
+  it('ignores the FFT knee when a shelf is seen, and still passes no processed verdict', async () => {
     const res = await buildSpectrum(
       '/in.flac',
       deps({
@@ -1837,9 +1839,9 @@ describe('buildSpectrum', () => {
         shelf: vi.fn(async () => ({ shelfCutoffHz: 16000, kneeCutoffHz: 15000 })),
       }),
     )
-    expect(res.processed).toBe(true)
+    expect(res.processed).toBe(false)
     expect(res.hasKnee).toBe(false)
-    expect(res.cutoffHz).toBe(16000)
+    expect(res.cutoffHz).toBe(22050)
   })
 
   it('still returns the image and codec verdict when the shelf probe fails', async () => {
