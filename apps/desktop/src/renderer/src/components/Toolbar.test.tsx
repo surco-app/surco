@@ -245,6 +245,15 @@ describe('Toolbar', () => {
     expect(props.onActivity).toHaveBeenCalledOnce()
   })
 
+  // The badge's 9px digits were below the smallest size the app uses anywhere else and
+  // blurred into the pill at normal viewing distance; 10px is the floor.
+  it('draws the originals count at a readable size', () => {
+    renderBar({ trashCount: 7 })
+    const badge = screen.getByTestId('trash-count')
+    expect(badge.className).toContain('text-[10px]')
+    expect(badge.className).not.toContain('text-[9px]')
+  })
+
   // The dot is the only always-visible signal that background work is running while
   // the activity panel is closed.
   it('marks the activity button while background work runs', () => {
