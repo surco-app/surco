@@ -69,6 +69,9 @@ function params(over: Partial<BuildFieldSpecsParams> = {}): BuildFieldSpecsParam
     tr,
     singleOnChange: singleOnChangeFrom(vi.fn()),
     bulkOnChange: bulkOnChangeFrom(vi.fn()),
+    customFields: [],
+    customValues: {},
+    customOnChange: new Map(),
     ...over,
   }
 }
@@ -162,6 +165,26 @@ describe('buildFieldSpecs (single mode)', () => {
     expect(specs.find((s) => s.key === 'genre')?.tagList).toBe(GENRE_TAGS)
     expect(specs.find((s) => s.key === 'grouping')?.tagList).toBe(GROUPING_TAGS)
     expect(specs.find((s) => s.key === 'bpm')?.tagList).toBeUndefined()
+  })
+
+  // A field the user added in Settings → Fields sits in the form where they put it, under
+  // the name they gave it, holding what the file carries, and an edit reaches it by key.
+  it('builds a custom field from its settings entry, value and writer', () => {
+    const write = vi.fn()
+    const specs = buildFieldSpecs(
+      params({
+        visibleFields: ['title', 'vinylCondition'],
+        requiredFields: ['vinylCondition'],
+        customFields: [{ key: 'vinylCondition', label: 'Estado del vinilo' }],
+        customValues: { vinylCondition: '' },
+        customOnChange: new Map([['vinylCondition', write]]),
+      }),
+    )
+    expect(specs.map((s) => s.key)).toEqual(['title', 'vinylCondition'])
+    const custom = specs[1]
+    expect(custom).toMatchObject({ label: 'Estado del vinilo', value: '', invalid: true })
+    custom.onChange('VG+')
+    expect(write).toHaveBeenCalledWith('VG+')
   })
 
   it('offers the musical key name when that notation is selected', () => {

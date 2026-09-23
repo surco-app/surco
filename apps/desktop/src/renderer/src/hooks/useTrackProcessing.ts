@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { customJob } from '../../../shared/customFields'
 import { DEFAULT_FIELDS } from '../../../shared/defaults'
 import { batchKeepMp3, hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
 import type { DeclickMode, FormatSetting, NormalizeConfig, Settings } from '../../../shared/types'
@@ -251,8 +252,15 @@ export function useTrackProcessing({
         musicStatus: undefined,
         musicError: undefined,
       })
+      const customFields = settings?.customFields ?? []
+      const { custom, strayTags } = customJob(
+        track.meta,
+        track.foreignTags ?? [],
+        track.foreignRemoved ?? [],
+        customFields,
+      )
       const meta = clearHiddenProvenance(
-        sanitizeMeta(track.meta, {
+        sanitizeMeta(customFields.length > 0 ? { ...track.meta, custom } : track.meta, {
           trim: settings?.trimWhitespace ?? true,
           zeroPad: settings?.zeroPadTrack ?? true,
         }),
@@ -299,7 +307,10 @@ export function useTrackProcessing({
           ...coverSourceOf(track),
           removeCover: track.coverRemoved,
           clearExtras: track.metaCleared,
-          foreignRemoved: track.foreignRemoved,
+          foreignRemoved:
+            strayTags.length > 0
+              ? [...(track.foreignRemoved ?? []), ...strayTags]
+              : track.foreignRemoved,
           metaUnread: track.metaReadFailed || undefined,
           format: jobFormat,
           normalize: normalizeForJob(track, normalizeFor(track, normalizeOverride)),

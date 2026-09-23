@@ -579,6 +579,39 @@ describe('useTrackProcessing', () => {
     expect(onConversion).not.toHaveBeenCalled()
   })
 
+  // A custom field is written like any field Surco knows: its value rides the job even
+  // when the user never touched it, since a conversion into another container would
+  // otherwise leave it behind. A copy of the tag under other casing goes, or the file
+  // would carry the field twice.
+  it('sends each custom field value and drops the tag spelled another way', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' })
+    setApi({ processTrack })
+    const tagged = track({
+      id: 'a',
+      foreignTags: [
+        { name: 'VinylCondition', value: 'NM' },
+        { name: 'PURCHASEDFROM', value: 'Shop' },
+      ],
+    })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [tagged],
+          settings: {
+            customFields: [{ key: 'vinylCondition', label: 'Estado del vinilo' }],
+          } as unknown as Settings,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    const job = processTrack.mock.lastCall?.[0]
+    expect(job.meta.custom).toEqual({ vinylCondition: 'NM' })
+    expect(job.foreignRemoved).toEqual(['VinylCondition'])
+  })
+
   // The conversion is where "hidden means cleared" has to hold: the previous owner's
   // copyright goes out empty unless the user has chosen to show the field.
   it('sends the copyright empty while the field is hidden and as edited once shown', async () => {

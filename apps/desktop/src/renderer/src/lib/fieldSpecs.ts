@@ -1,5 +1,6 @@
 import type {
   BpmResult,
+  CustomField,
   KeyNotation,
   KeyResult,
   MetaTextKey,
@@ -22,7 +23,8 @@ export interface InsertSource {
 // open track and write through setField — so the form itself renders a single tree
 // instead of forking on every field.
 export interface FieldSpec {
-  key: MetaTextKey
+  // A managed field's key, or the key of one of the user's own fields.
+  key: MetaTextKey | string
   label: string
   value: string
   onChange: (v: string) => void
@@ -88,6 +90,11 @@ export interface BuildFieldSpecsParams {
   // reused across renders since setField/onChangeAllMeta are themselves stable.
   singleOnChange: ReadonlyMap<MetaTextKey, (v: string) => void>
   bulkOnChange: ReadonlyMap<MetaTextKey, (v: string) => void>
+  // The user's own fields: their settings entries, the value each holds on this track and
+  // a stable writer per key, built once like singleOnChange.
+  customFields: readonly CustomField[]
+  customValues: Record<string, string>
+  customOnChange: ReadonlyMap<string, (v: string) => void>
   onChangeTracksMeta?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
 }
 
@@ -102,6 +109,29 @@ function tagListFor(key: MetaTextKey): TagList | undefined {
   if (key === 'grouping') return GROUPING_TAGS
   if (key === 'genre') return GENRE_TAGS
   return undefined
+}
+
+// A field the user added: no groups, chips or menus of its own, just its name, its value
+// and its writer. A key that no longer names one (a field deleted in Settings) is skipped.
+function customSpecFor(
+  p: Pick<
+    BuildFieldSpecsParams,
+    'customFields' | 'customValues' | 'customOnChange' | 'requiredFields'
+  >,
+  key: string,
+): FieldSpec[] {
+  const field = p.customFields.find((f) => f.key === key)
+  if (!field) return []
+  const value = p.customValues[key] ?? ''
+  return [
+    {
+      key,
+      label: field.label,
+      value,
+      onChange: p.customOnChange.get(key) ?? (() => {}),
+      invalid: p.requiredFields.includes(key) && !value.trim(),
+    },
+  ]
 }
 
 export function buildFieldSpecs({
@@ -121,8 +151,12 @@ export function buildFieldSpecs({
   tr,
   singleOnChange,
   bulkOnChange,
+  customFields,
+  customValues,
+  customOnChange,
   onChangeTracksMeta,
 }: BuildFieldSpecsParams): FieldSpec[] {
+  const custom = { customFields, customValues, customOnChange, requiredFields }
   return isMulti && selectedTracks
     ? BULK_FIELDS.filter((key) => visibleFields.includes(key)).map((key) => {
         const shared = commonValue(selectedTracks, key)
@@ -145,7 +179,7 @@ export function buildFieldSpecs({
       })
     : visibleFields.flatMap((key) => {
         const def = FIELD_DEFS.find((d) => d.key === key)
-        if (!def) return []
+        if (!def) return customSpecFor(custom, key)
         return [
           {
             key: def.key,
