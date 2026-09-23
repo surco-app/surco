@@ -92,6 +92,7 @@ export function TagListBulkField({
           type="button"
           data-testid={`${list.key}-per-track-toggle`}
           aria-expanded={open}
+          aria-controls={`${baseId}-rows`}
           onClick={() => setOpen((v) => !v)}
           className="flex w-full items-center gap-1.5 py-0.5 text-[11px] text-fg-muted transition-colors hover:text-fg"
         >
@@ -107,7 +108,7 @@ export function TagListBulkField({
           </span>
         </button>
         {open && (
-          <div className="mt-1.5 flex flex-col gap-[7px]">
+          <div id={`${baseId}-rows`} className="mt-1.5 flex flex-col gap-[7px]">
             {tracks.map((t) => (
               <fieldset key={t.id} aria-labelledby={`${baseId}-${t.id}`} className="min-w-0">
                 <div

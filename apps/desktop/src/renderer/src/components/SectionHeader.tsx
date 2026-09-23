@@ -32,6 +32,9 @@ interface SectionHeaderProps {
   // wires itself to the shared maximized-section store, so the Editor's overlay and every
   // header stay one state.
   maximizable?: boolean
+  // The id of the SectionBody this header folds, so aria-controls can say which region
+  // the expanded state belongs to.
+  bodyId?: string
 }
 
 export function SectionHeader({
@@ -45,6 +48,7 @@ export function SectionHeader({
   help,
   sectionId,
   maximizable,
+  bodyId,
 }: SectionHeaderProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { maximized, setMaximized } = useMaximizedSection()
@@ -65,6 +69,7 @@ export function SectionHeader({
           onClick={onToggle}
           aria-label={title}
           aria-expanded={open}
+          aria-controls={bodyId}
           className="-my-1.5 flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left text-xs font-medium uppercase tracking-wide text-fg-dim hover:text-fg-muted"
         >
           <ChevronRight
