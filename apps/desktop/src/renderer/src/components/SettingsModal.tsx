@@ -236,9 +236,15 @@ export function SettingsModal({
           />
         )}
         {SETTINGS_TAB_GROUPS.map((group) => (
-          <div key={group.heading ?? 'main'} className="flex flex-col gap-0.5">
+          // A tablist may only own tabs, so the group wrapper and its heading are
+          // presentational: the heading stays a visual divider and the arrows (and a
+          // screen reader's tab count) walk one flat list.
+          <div key={group.heading ?? 'main'} role="presentation" className="flex flex-col gap-0.5">
             {group.heading && (
-              <p className="mt-3 mb-1 px-3 text-[10px] font-medium uppercase tracking-wider text-fg-faint">
+              <p
+                role="presentation"
+                className="mt-3 mb-1 px-3 text-[10px] font-medium uppercase tracking-wider text-fg-faint"
+              >
                 {tr(`settings.tabGroups.${group.heading}`)}
               </p>
             )}
