@@ -611,21 +611,28 @@ describe('verdict evidence', () => {
     )
   })
 
-  it('describes the dead-flat shelf for a shelf-decided verdict', async () => {
+  // The shelf fired on limited club masters and confirmed no reprocessed file, so it is
+  // stated as what was seen, in a neutral tone, under a verdict it no longer decides.
+  it('states a flat shelf as a neutral, inconclusive observation', async () => {
     renderSection(
       {
         image: '',
-        cutoffHz: 16000,
+        cutoffHz: 22050,
         sampleRateHz: 44100,
-        processed: true,
+        processed: false,
+        hasKnee: false,
         flatShelf: true,
       },
       '/m/a.flac',
+      false,
     )
     const evidence = await screen.findByTestId('quality-evidence')
-    expect(evidence).toHaveTextContent(
-      i18n.t('editor.qualityEvidenceShelf', { cutoff: '16.0 kHz' }),
-    )
+    expect(evidence).toHaveTextContent(i18n.t('editor.qualityEvidenceShelf'))
+    expect(evidence).toHaveAttribute('data-tone', 'neutral')
+    expect(screen.getByTestId('quality-badge')).toHaveTextContent(i18n.t('editor.qualityGood'))
+    for (const lng of ['en', 'es']) {
+      expect(i18n.getFixedT(lng)('editor.qualityEvidenceShelf')).not.toMatch(/synthetic|sintétic/i)
+    }
   })
 
   it('lets a full-band good verdict earn its badge while hints are on', async () => {
@@ -694,7 +701,6 @@ describe('verdict evidence', () => {
     'editor.qualityEvidenceHump',
     'editor.qualityEvidenceHumpWhy',
     'editor.qualityEvidenceShelf',
-    'editor.qualityEvidenceShelfWhy',
   ])('keeps %s a measurement: no bitrate guess, no listening advice', (key) => {
     for (const lng of ['en', 'es']) {
       const text = i18n.getFixedT(lng)(key, EVIDENCE_PARAMS)

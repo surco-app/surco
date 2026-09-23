@@ -2972,8 +2972,8 @@ interface SpectrumBuild {
   teethFromHz?: number
   teethToHz?: number
   humpPeakHz?: number
-  // True when the shelf probe (not the codec pass) produced the processed
-  // verdict; the caption then describes the dead-flat top octave it found.
+  // True when the shelf probe saw a flat top octave the codec pass did not rule on;
+  // shown as an inconclusive observation, never a verdict.
   flatShelf?: boolean
   bitsUsage?: 'full' | 'padded16' | 'unknown'
   bitsLowPct?: number
@@ -3002,29 +3002,30 @@ export async function buildSpectrum(input: string, deps: SpectrumDeps): Promise<
   // is logged (below) but neither discards the image nor blocks caching the rest.
   const shelf = shelfR.status === 'fulfilled' ? shelfR.value : null
   const shelfCutoffHz = shelf?.shelfCutoffHz ?? null
-  // A flat shelf is reprocessed (its own verdict), so the FFT knee only adds a signal
-  // when nothing else already explains the spectrum: a real codec wall the biquad pass
-  // smeared below its knee threshold.
-  const processed = (cutoff?.processed ?? false) || shelfCutoffHz !== null
-  // ...and only when the codec pass's fine bands back it: the FFT knee reads the same
-  // audio on a coarser grid and takes a mastering rolloff for a wall just as readily.
-  // A codec pass that measured no fine bands (or failed) leaves the knee unchecked.
+  // Only the codec pass passes a processed verdict. The flat shelf fired on limited club
+  // masters and confirmed no reprocessed file over the sweeps, so it stays an observation.
+  const processed = cutoff?.processed ?? false
+  // The FFT knee only adds a signal when nothing else already explains the spectrum: a
+  // real codec wall the biquad pass smeared below its knee threshold. A seen shelf rules
+  // it out, since both read the same bands and a flat top is not a wall. And only when
+  // the codec pass's fine bands back it: the FFT knee reads the same audio on a coarser
+  // grid and takes a mastering rolloff for a wall just as readily. A codec pass that
+  // measured no fine bands (or failed) leaves the knee unchecked.
   const kneeCutoffHz =
-    !processed && cutoff?.fineWall !== false ? (shelf?.kneeCutoffHz ?? null) : null
+    !processed && shelfCutoffHz === null && cutoff?.fineWall !== false
+      ? (shelf?.kneeCutoffHz ?? null)
+      : null
   return {
     image: imageR.value,
-    // Prefer the codec pass's own cutoff when it found manipulation; otherwise fall
-    // back to the shelf elbow, since the codec pass reads a flat shelf as reaching
-    // Nyquist and would draw the line there, then to the FFT knee (the real wall the
-    // biquad smeared past). Null only when the codec pass failed and nothing else fired.
+    // Prefer the codec pass's own cutoff when it found manipulation; otherwise the FFT
+    // knee (the real wall the biquad smeared past). Null only when the codec pass failed
+    // and the knee did not fire.
     cutoffHz:
       cutoff?.processed === true
         ? cutoff.cutoffHz
-        : shelfCutoffHz !== null
-          ? shelfCutoffHz
-          : kneeCutoffHz !== null
-            ? Math.min(kneeCutoffHz, cutoff?.cutoffHz ?? kneeCutoffHz)
-            : (cutoff?.cutoffHz ?? null),
+        : kneeCutoffHz !== null
+          ? Math.min(kneeCutoffHz, cutoff?.cutoffHz ?? kneeCutoffHz)
+          : (cutoff?.cutoffHz ?? null),
     sampleRateHz,
     imageTopHz: spectrogramTopHz(sampleRateHz),
     processed,
