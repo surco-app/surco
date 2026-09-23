@@ -3,7 +3,7 @@ import type React from 'react'
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { effectiveMeta, isCustomTag } from '../../../shared/customFields'
+import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFields'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import { emptyMetadata } from '../../../shared/metadata'
@@ -32,7 +32,7 @@ import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
 import { buildFieldSpecs } from '../lib/fieldSpecs'
-import { FIELD_DEFS, missingRequired, missingRequiredOf } from '../lib/fields'
+import { FIELD_DEFS, labeledFields, missingRequired, missingRequiredOf } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { librarySourceOf } from '../lib/librarySource'
 import { renderOutputName, titleFormatPatches } from '../lib/outputName'
@@ -627,23 +627,10 @@ export const Editor = memo(function Editor({
     () =>
       isMulti
         ? []
-        : [
-            ...FIELD_DEFS.filter(
-              (d) => visibleFields.includes(d.key) && d.key !== 'compilation',
-            ).map((d) => ({
-              key: d.key as string,
-              label: tr(`fields.${d.key}`),
-              value: item.meta[d.key] ?? '',
-            })),
-            ...customFields
-              .filter((f) => visibleFields.includes(f.key))
-              .map((f) => ({
-                key: f.key,
-                label: f.label,
-                value: resolvedMeta.custom?.[f.key] ?? '',
-              })),
-          ],
-    [isMulti, visibleFields, item.meta, resolvedMeta, customFields, tr],
+        : labeledFields(customFields, tr)
+            .filter((f) => visibleFields.includes(f.key) && f.key !== 'compilation')
+            .map((f) => ({ ...f, value: fieldValue(resolvedMeta, f.key) })),
+    [isMulti, visibleFields, resolvedMeta, customFields, tr],
   )
 
   // "Without version" proposal for the album menu: strip the mix/label parenthetical

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { effectiveMeta } from '../../../shared/customFields'
 import type { CustomField, MetaTextKey, TrackMetadata } from '../../../shared/types'
+import { labeledFields } from '../lib/fields'
 import { findReplaceTrack, isValidRegex } from '../lib/findReplace'
 import type { TrackItem } from '../types'
 import { ModalShell } from './ModalShell'
@@ -67,6 +68,7 @@ export function FindReplaceModal({
   // One row per field that changes, custom fields included one by one: a patch carries the
   // whole custom set, so the rows come from comparing it with what the track held.
   const changes = useMemo(() => {
+    const labels = new Map(labeledFields(customFields, tr).map((f) => [f.key, f.label]))
     return patches.flatMap((p) => {
       const before = resolved.get(p.id)
       return Object.entries(p.meta).flatMap(([field, after]) =>
@@ -76,7 +78,7 @@ export function FindReplaceModal({
               .map(([key, value]) => ({
                 id: p.id,
                 field: key,
-                label: customFields.find((f) => f.key === key)?.label ?? key,
+                label: labels.get(key) ?? key,
                 before: before?.custom?.[key] ?? '',
                 after: value,
               }))
@@ -84,7 +86,7 @@ export function FindReplaceModal({
               {
                 id: p.id,
                 field,
-                label: tr(`fields.${field}`),
+                label: labels.get(field) ?? field,
                 before: before?.[field as MetaTextKey] ?? '',
                 after: after as string,
               },

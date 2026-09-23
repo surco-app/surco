@@ -11,9 +11,13 @@ import {
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { customKeyProblem, suggestCustomKey } from '../../../shared/customFields'
+import {
+  type CustomKeyProblem,
+  customKeyProblem,
+  suggestCustomKey,
+} from '../../../shared/customFields'
 import type { CustomField, MetaTextKey } from '../../../shared/types'
-import { FIELD_DEFS, IMPORTABLE_FIELDS, moveItem, sortFieldsByGroup } from '../lib/fields'
+import { IMPORTABLE_FIELDS, labeledFields, moveItem, sortFieldsByGroup } from '../lib/fields'
 import {
   COLUMN_HEAD,
   COLUMN_HEAD_CELL,
@@ -76,17 +80,24 @@ export function FieldsEditor({
   onChangeCustom,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const customOf = (key: string): CustomField | undefined => customFields.find((f) => f.key === key)
-  const labelOf = (key: string): string => customOf(key)?.label ?? tr(`fields.${key}`)
-  // Deleting a custom field drops it from every list that names it, so no stale key is
-  // left behind in the shown or required fields.
-  const deleteCustom = (key: string): void => {
-    onChangeCustom(customFields.filter((f) => f.key !== key))
+  const fields = labeledFields(customFields, tr)
+  const labelOf = (key: string): string => fields.find((f) => f.key === key)?.label ?? key
+  const hidden = fields
+    .filter((f) => !visibleFields.includes(f.key))
+    .sort((a, b) => a.label.localeCompare(b.label))
+  // Required implies shown, so hiding a field drops it from required too.
+  const hide = (key: string): void => {
     onChangeVisible(visibleFields.filter((k) => k !== key))
     onChangeRequired(requiredFields.filter((k) => k !== key))
   }
+  // Deleting a custom field also drops it from every list that names it, so no stale key
+  // is left behind in the shown or required fields.
+  const deleteCustom = (key: string): void => {
+    onChangeCustom(customFields.filter((f) => f.key !== key))
+    hide(key)
+  }
   const deleteButton = (key: string): React.JSX.Element | null =>
-    customOf(key) ? (
+    customFields.some((f) => f.key === key) ? (
       <button
         type="button"
         data-testid={`field-delete-${key}`}
@@ -97,6 +108,16 @@ export function FieldsEditor({
         {tr('settings.customFieldDelete')}
       </button>
     ) : null
+  // A row's name with its {key} hint, the hint kept off the Delete button beside it.
+  const nameCell = (key: string): React.JSX.Element => (
+    <>
+      <span>
+        {labelOf(key)}
+        <Tooltip label={`{${key}}`} />
+      </span>
+      {deleteButton(key)}
+    </>
+  )
   // The auto-fill toggle, shown on both the visible and hidden lists. Rendered only for a
   // field a release can actually carry: offering it on bpm/key/mood would be a switch that
   // never does anything. A hidden field keeps its toggle — it isn't shown in the form, but
@@ -244,11 +265,7 @@ export function FieldsEditor({
                   className="h-4 w-4 cursor-grab text-fg-dim"
                   aria-hidden="true"
                 />
-                <span>
-                  {labelOf(key)}
-                  <Tooltip label={`{${key}}`} />
-                </span>
-                {deleteButton(key)}
+                {nameCell(key)}
               </span>
               {autoToggle(key)}
               <button
@@ -291,10 +308,7 @@ export function FieldsEditor({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  onChangeVisible(visibleFields.filter((k) => k !== key))
-                  onChangeRequired(requiredFields.filter((k) => k !== key))
-                }}
+                onClick={() => hide(key)}
                 className="ml-1 rounded px-2 py-0.5 text-xs text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
               >
                 {tr('settings.hide')}
@@ -311,44 +325,36 @@ export function FieldsEditor({
         <div className="space-y-1.5">
           {/* The visible list keeps the user's order (it IS the editor's order); the
               hidden list has none of its own, so it sorts by label for scanning. */}
-          {[...FIELD_DEFS.map((d) => d.key as string), ...customFields.map((f) => f.key)]
-            .filter((key) => !visibleFields.includes(key))
-            .sort((a, b) => labelOf(a).localeCompare(labelOf(b)))
-            .map((key) => (
-              <div
-                key={key}
-                data-testid={`hidden-field-${key}`}
-                // The row grid, not one of its own: both lists sit under the same column
-                // headings, so a hidden field's Auto mark has to land in the Auto column.
-                // On a narrower grid of its own it drifted under Required instead, reading
-                // as if the field were required. The empty spans hold the tracks a hidden
-                // row has no control for (required, both arrows).
-                className={`${ROW_GRID} rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2`}
+          {hidden.map(({ key }) => (
+            <div
+              key={key}
+              data-testid={`hidden-field-${key}`}
+              // The row grid, not one of its own: both lists sit under the same column
+              // headings, so a hidden field's Auto mark has to land in the Auto column.
+              // On a narrower grid of its own it drifted under Required instead, reading
+              // as if the field were required. The empty spans hold the tracks a hidden
+              // row has no control for (required, both arrows).
+              className={`${ROW_GRID} rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-1.5 pl-3 pr-2`}
+            >
+              <span className="flex items-center gap-1.5 text-sm text-fg-muted">
+                {nameCell(key)}
+              </span>
+              {autoToggle(key)}
+              <span />
+              <span />
+              <span />
+              <button
+                type="button"
+                onClick={() => onChangeVisible([...visibleFields, key])}
+                className="rounded px-2 py-0.5 text-xs text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
               >
-                <span className="flex items-center gap-1.5 text-sm text-fg-muted">
-                  <span>
-                    {labelOf(key)}
-                    <Tooltip label={`{${key}}`} />
-                  </span>
-                  {deleteButton(key)}
-                </span>
-                {autoToggle(key)}
-                <span />
-                <span />
-                <span />
-                <button
-                  type="button"
-                  onClick={() => onChangeVisible([...visibleFields, key])}
-                  className="rounded px-2 py-0.5 text-xs text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
-                >
-                  {tr('settings.show')}
-                </button>
-              </div>
-            ))}
-          {FIELD_DEFS.every((d) => visibleFields.includes(d.key)) &&
-            customFields.every((f) => visibleFields.includes(f.key)) && (
-              <p className="text-xs text-fg-faint">{tr('settings.allVisible')}</p>
-            )}
+                {tr('settings.show')}
+              </button>
+            </div>
+          ))}
+          {hidden.length === 0 && (
+            <p className="text-xs text-fg-faint">{tr('settings.allVisible')}</p>
+          )}
         </div>
       </div>
 
@@ -361,6 +367,11 @@ export function FieldsEditor({
       />
     </div>
   )
+}
+
+const PROBLEM_MESSAGE: Record<CustomKeyProblem, string> = {
+  invalid: 'settings.customFieldInvalid',
+  taken: 'settings.customFieldTaken',
 }
 
 // The row that adds one of the user's own fields: the name the editor shows and the key
@@ -378,12 +389,7 @@ function AddCustomField({
   const key = typedKey ?? suggestCustomKey(label)
   const problem = key ? customKeyProblem(key, customFields) : null
   const blocked = !label.trim() || !key || problem !== null
-  const error =
-    problem === 'invalid'
-      ? tr('settings.customFieldInvalid')
-      : problem === 'taken'
-        ? tr('settings.customFieldTaken')
-        : null
+  const error = problem && tr(PROBLEM_MESSAGE[problem])
   const add = (): void => {
     if (blocked) return
     onAdd({ key, label: label.trim() })
