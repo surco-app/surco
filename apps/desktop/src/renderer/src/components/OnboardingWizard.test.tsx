@@ -114,6 +114,22 @@ describe('OnboardingWizard keyboard', () => {
   })
 })
 
+describe('OnboardingWizard step focus', () => {
+  // Going back to the first step unmounts Back, the button that held the focus: it fell to
+  // body, outside the focus trap. Landing on the new step's heading keeps it in the dialog
+  // and makes VoiceOver read which step the user is on.
+  it('moves the focus to the new step heading on every step change, back to the first too', () => {
+    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    fireEvent.click(screen.getByTestId('onboarding-next'))
+    expect(document.activeElement).toBe(screen.getByRole('heading', { level: 2 }))
+    expect(document.activeElement).not.toHaveTextContent(i18n.t('onboarding.welcomeTitle'))
+    fireEvent.click(screen.getByTestId('onboarding-back'))
+    expect(document.activeElement).toBe(
+      screen.getByRole('heading', { level: 2, name: i18n.t('onboarding.welcomeTitle') }),
+    )
+  })
+})
+
 describe('OnboardingWizard destination', () => {
   function openFormatStep(onFinish: (patch: Partial<Settings>) => void = () => {}) {
     render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
