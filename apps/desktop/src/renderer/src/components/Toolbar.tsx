@@ -395,7 +395,7 @@ export const Toolbar = memo(function Toolbar({
           {trashCount > 0 && (
             <span
               data-testid="trash-count"
-              className="absolute -top-0.5 -right-0.5 min-w-[14px] rounded-full bg-[var(--color-accent)] px-1 text-center font-mono text-[9px] leading-[14px] text-[var(--color-on-accent)] tabular-nums"
+              className="absolute -top-0.5 -right-0.5 min-w-[14px] rounded-full bg-[var(--color-accent)] px-1 text-center font-mono text-[10px] leading-[14px] text-[var(--color-on-accent)] tabular-nums"
             >
               {trashCount > 99 ? '99+' : trashCount}
             </span>
