@@ -77,6 +77,22 @@ describe('Toolbar', () => {
     expect(running.onCancelAutoMatch).toHaveBeenCalledOnce()
   })
 
+  // Mid-run a press cancels, but the name still offered to start the sweep: a screen
+  // reader user heard "Analyze quality of all tracks" and stopped a 500-track run.
+  it('names the sweep buttons as cancel controls while they run', () => {
+    renderBar()
+    expect(screen.getByTestId('auto-match')).toHaveAccessibleName(i18n.t('header.autoMatch'))
+    expect(screen.getByTestId('analyze-quality')).toHaveAccessibleName(
+      i18n.t('header.analyzeQuality'),
+    )
+    cleanup()
+    renderBar({ matching: { done: 1, total: 4 }, analysis: { done: 2, total: 10 } })
+    expect(screen.getByTestId('auto-match')).toHaveAccessibleName(i18n.t('header.cancelAutoMatch'))
+    expect(screen.getByTestId('analyze-quality')).toHaveAccessibleName(
+      i18n.t('header.cancelAnalyze'),
+    )
+  })
+
   // A sweep with nothing to do must not be startable: no token means Discogs can't be
   // queried at all, and an all-analyzed list has nothing left to measure.
   it('disables the sweeps when they have nothing to work on', () => {

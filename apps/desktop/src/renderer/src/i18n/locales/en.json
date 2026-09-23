@@ -52,7 +52,9 @@
     "autoMatchLabel": "Match",
     "addToken": "Add token",
     "autoMatchingCount": "Auto-matching… {{done}}/{{total}}",
-    "clearAll": "Clear the list"
+    "clearAll": "Clear the list",
+    "cancelAutoMatch": "Stop auto-matching: tracks already matched keep their tags",
+    "cancelAnalyze": "Stop analyzing: tracks already analyzed keep their verdict"
   },
   "sidebar": {
     "dropHint": "Drag your tracks here.",

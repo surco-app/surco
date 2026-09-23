@@ -52,7 +52,9 @@
     "autoMatchLabel": "Associar",
     "addToken": "Adicionar token",
     "autoMatchingCount": "Auto-associando… {{done}}/{{total}}",
-    "clearAll": "Limpar a lista"
+    "clearAll": "Limpar a lista",
+    "cancelAutoMatch": "Parar a correspondência automática: as faixas já correspondidas mantêm as tags",
+    "cancelAnalyze": "Parar a análise: as faixas já analisadas mantêm o veredito"
   },
   "sidebar": {
     "dropHint": "Arraste suas faixas para cá.",
