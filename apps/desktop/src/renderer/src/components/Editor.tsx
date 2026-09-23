@@ -128,10 +128,11 @@ interface Props {
   // default. Null means nothing was picked by hand: a seeded format is resolved against
   // this track alone, so passing it on would force it onto every track of a batch.
   onFormatChange?: (format: FormatSetting | null) => void
-  // Reports the destination chosen in the split-button menu, mirroring onFormatChange:
-  // App pins it in a ref so every convert entry point sends this track where the
-  // button says, not where Settings points.
-  onDestinationChange?: (destination: Destination) => void
+  // Reports the destination the split-button says, so every single-track convert entry
+  // point sends this track where the button says, not where Settings points. byHand marks
+  // a menu pick: only that one speaks for a batch, since a seed is resolved against this
+  // track alone.
+  onDestinationChange?: (destination: Destination, byHand?: boolean) => void
   // Reports the per-track normalization override so the keyboard convert shortcuts
   // and "convert all" apply it too, mirroring onFormatChange.
   onNormalizeChange?: (normalize: NormalizeConfig) => void
@@ -1372,12 +1373,12 @@ export const Editor = memo(function Editor({
             // and the button label updates to say so.
             if (f === 'flac' && destination === 'appleMusic') {
               setDestination('folder')
-              onDestinationChange?.('folder')
+              onDestinationChange?.('folder', true)
             }
           }}
           onSelectDestination={(d) => {
             setDestination(d)
-            onDestinationChange?.(d)
+            onDestinationChange?.(d, true)
           }}
           onExportCollection={onExportCollection}
           // Single-select's menu never offers 'source' (format stays a real OutputFormat

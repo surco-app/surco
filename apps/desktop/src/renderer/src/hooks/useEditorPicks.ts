@@ -7,10 +7,11 @@ import { useStableCallback } from './useStableCallback'
 interface EditorPicks {
   formatRef: React.RefObject<FormatSetting | null>
   destinationRef: React.RefObject<Destination | null>
+  destinationPickRef: React.RefObject<Destination | null>
   normalizeRef: React.RefObject<NormalizeConfig | null>
   declickRef: React.RefObject<DeclickMode | null>
   onFormatChange: (format: FormatSetting | null) => void
-  onDestinationChange: (destination: Destination) => void
+  onDestinationChange: (destination: Destination, byHand?: boolean) => void
   onNormalizeChange: (n: NormalizeConfig) => void
   onDeclickChange: (d: DeclickMode) => void
   // Called when the selection empties: the picks belong to the track that was open, and a
@@ -36,14 +37,18 @@ export function useEditorPicks(
   // The format picked in the editor's split-button menu, for THIS track only.
   const formatRef = useRef<FormatSetting | null>(null)
   const destinationRef = useRef<Destination | null>(null)
+  // The destination only when the user picked it in the menu. A seeded one is resolved
+  // against the open track alone (a FLAC pins it to the folder), so a batch reads this.
+  const destinationPickRef = useRef<Destination | null>(null)
   const normalizeRef = useRef<NormalizeConfig | null>(null)
   const declickRef = useRef<DeclickMode | null>(null)
 
   const onFormatChange = useStableCallback((format: FormatSetting | null) => {
     formatRef.current = format
   })
-  const onDestinationChange = useStableCallback((destination: Destination) => {
+  const onDestinationChange = useStableCallback((destination: Destination, byHand = false) => {
     destinationRef.current = destination
+    destinationPickRef.current = byHand ? destination : null
   })
   const onNormalizeChange = useStableCallback((n: NormalizeConfig) => {
     normalizeRef.current = n
@@ -82,6 +87,7 @@ export function useEditorPicks(
   const reset = useStableCallback(() => {
     formatRef.current = null
     destinationRef.current = null
+    destinationPickRef.current = null
     normalizeRef.current = null
     declickRef.current = null
   })
@@ -89,6 +95,7 @@ export function useEditorPicks(
   return {
     formatRef,
     destinationRef,
+    destinationPickRef,
     normalizeRef,
     declickRef,
     onFormatChange,

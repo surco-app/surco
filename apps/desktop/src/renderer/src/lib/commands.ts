@@ -144,6 +144,7 @@ export interface CommandDeps {
   // The editor's split-button picks, read at run time so ⌘⏎ honors them.
   editorFormatRef: { readonly current: FormatSetting | null }
   editorDestinationRef: { readonly current: Destination | null }
+  editorDestinationPickRef: { readonly current: Destination | null }
   editorNormalizeRef: { readonly current: NormalizeConfig | null }
   editorDeclickRef: { readonly current: DeclickMode | null }
   // The sidebar's track-filter field — the `/` shortcut focuses this.
@@ -285,6 +286,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     cancelBatch,
     editorFormatRef,
     editorDestinationRef,
+    editorDestinationPickRef,
     editorNormalizeRef,
     editorDeclickRef,
     trackSearchRef,
@@ -612,7 +614,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
             bulkTracks,
             editorFormatRef.current ?? undefined,
             editorNormalizeRef.current ?? undefined,
-            editorDestinationRef.current ?? undefined,
+            editorDestinationPickRef.current ?? undefined,
             editorDeclickRef.current ?? undefined,
           )
       },

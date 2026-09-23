@@ -53,6 +53,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     cancelBatch: () => {},
     editorFormatRef: { current: null },
     editorDestinationRef: { current: null },
+    editorDestinationPickRef: { current: null },
     editorNormalizeRef: { current: null },
     editorDeclickRef: { current: null },
     trackSearchRef: { current: null },

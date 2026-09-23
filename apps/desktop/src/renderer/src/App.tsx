@@ -364,12 +364,13 @@ export default function App(): React.JSX.Element {
   // adding onto a tally the user already read and closed.
   const convertFailures = useRef<{ first: string; count: number } | null>(null)
   // The format picked in the editor's split-button menu, so the keyboard convert
-  // shortcuts export in it too. The editor reports its pick on every change AND its
-  // seed on mount (it remounts per track), so this mirror is right by construction;
-  // null only before any editor has mounted, falling back to the Settings default.
+  // shortcuts export in it too. The editor reports every pick and resets it to null on
+  // mount (it remounts per track), so null means nothing picked by hand: each track then
+  // resolves the Settings default on its own.
   const {
     formatRef: editorFormatRef,
     destinationRef: editorDestinationRef,
+    destinationPickRef: editorDestinationPickRef,
     normalizeRef: editorNormalizeRef,
     declickRef: editorDeclickRef,
     onFormatChange,
@@ -1200,12 +1201,12 @@ export default function App(): React.JSX.Element {
         updateTrack(p.id, { ...p.patch, matched: true, matchProvider: provider })
     },
   )
-  const onProcessAllSelected = useStableCallback((format: FormatSetting) =>
+  const onProcessAllSelected = useStableCallback(() =>
     askConvertAll(
       selectedTracks,
-      format,
+      editorFormatRef.current ?? undefined,
       editorNormalizeRef.current ?? undefined,
-      editorDestinationRef.current ?? undefined,
+      editorDestinationPickRef.current ?? undefined,
       editorDeclickRef.current ?? undefined,
     ),
   )
@@ -1244,7 +1245,7 @@ export default function App(): React.JSX.Element {
       bulkTracksRef.current,
       editorFormatRef.current ?? undefined,
       editorNormalizeRef.current ?? undefined,
-      editorDestinationRef.current ?? undefined,
+      editorDestinationPickRef.current ?? undefined,
       editorDeclickRef.current ?? undefined,
     ),
   )
@@ -1611,6 +1612,7 @@ export default function App(): React.JSX.Element {
       cancelBatch,
       editorFormatRef,
       editorDestinationRef,
+      editorDestinationPickRef,
       editorNormalizeRef,
       editorDeclickRef,
       trackSearchRef,

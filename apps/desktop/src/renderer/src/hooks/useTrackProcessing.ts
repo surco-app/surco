@@ -171,6 +171,7 @@ export function useTrackProcessing({
       destinationOverride?: Destination,
       declickOverride?: DeclickMode,
       keepMp3?: boolean,
+      formatChosen?: boolean,
     ): Promise<BatchOutcome> => {
       let track = tracksRef.current.find((t) => t.id === id)
       // A track removed after being queued was a user decision, not a failure — count
@@ -232,14 +233,15 @@ export function useTrackProcessing({
       // the setting applies keep. processAll pins the batch decision via the parameter.
       const keep = keepMp3 ?? (formatOverride === undefined && (settings?.keepMp3Sources ?? false))
       // An imported track keeps its own format unless the user picked one by hand, which
-      // is exactly what formatOverride carries (see the comment above).
+      // is what formatOverride carries (see the comment above) except in a batch: that
+      // pins the setting as an override too, so it says whether the pick was by hand.
       const jobFormat = resolveJobFormat(
         pickedFormat,
         track.inputPath,
         'aiff',
         keep,
         track.fromAppleMusic,
-        formatOverride !== undefined,
+        formatChosen ?? formatOverride !== undefined,
       )
       // Re-processing an edited (stale) track resets the Apple Music state too, since
       // the file it referred to is being rewritten — the user may want to add it again.
@@ -558,6 +560,7 @@ export function useTrackProcessing({
             destinationOverride,
             declickOverride,
             pinnedKeep,
+            formatOverride !== undefined,
           )
           done += 1
           setBatchProgress({ done, total: ids.length })
