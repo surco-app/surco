@@ -28,7 +28,13 @@ vi.mock('electron', () => {
 import { rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
-import { createLookupCacheStore, SAVE_DEBOUNCE_MS } from './lookupCacheStore'
+import {
+  cachedSearch,
+  cacheIfUsable,
+  createLookupCacheStore,
+  EMPTY_SEARCH_TTL_MS,
+  SAVE_DEBOUNCE_MS,
+} from './lookupCacheStore'
 
 const cacheFile = (name: string): string => join(app.getPath('userData'), `${name}.json`)
 
@@ -179,5 +185,55 @@ describe('createLookupCacheStore', () => {
     await vi.runAllTimersAsync()
     expect(store.getSearch('a')).toBe(1)
     rmdirSync(cacheFile('test-provider'))
+  })
+})
+
+// A provider search that found nothing is ambiguous (a genuine miss, a drifted payload, a
+// rate limit answered with an empty body), so it must never be pinned on disk. But the
+// same misses are asked again within minutes: the background sweep runs a track's whole
+// search ladder, then the editor runs it again when the user opens that track, and a
+// catalog that lacks the artist answers every rung with [] — eight serial Discogs calls
+// through a 50/min limiter that the sweep is draining, so the panel sat on its skeleton
+// for seconds. Remembering the miss briefly, in memory only, keeps both promises.
+describe('empty search memo', () => {
+  it('serves an empty answer again within the session instead of going back out', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const store = createLookupCacheStore<number[], never>('test-provider')
+    cacheIfUsable(store, 'unknown artist', [])
+
+    vi.advanceTimersByTime(EMPTY_SEARCH_TTL_MS - 1)
+
+    expect(cachedSearch(store, 'unknown artist')).toEqual([])
+  })
+
+  it('forgets the empty answer once it expires so a transient miss gets retried', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const store = createLookupCacheStore<number[], never>('test-provider')
+    cacheIfUsable(store, 'unknown artist', [])
+
+    vi.advanceTimersByTime(EMPTY_SEARCH_TTL_MS)
+
+    expect(cachedSearch(store, 'unknown artist')).toBeUndefined()
+  })
+
+  it('never writes the empty answer to disk, so a relaunch asks again', async () => {
+    vi.useFakeTimers()
+    const store = createLookupCacheStore<number[], never>('test-provider')
+    cacheIfUsable(store, 'unknown artist', [])
+    cacheIfUsable(store, 'known artist', [1])
+    await vi.runAllTimersAsync()
+
+    const restarted = createLookupCacheStore<number[], never>('test-provider')
+    expect(cachedSearch(restarted, 'unknown artist')).toBeUndefined()
+    expect(cachedSearch(restarted, 'known artist')).toEqual([1])
+  })
+
+  it('lets a later real answer for the same key replace the remembered miss', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const store = createLookupCacheStore<number[], never>('test-provider')
+    cacheIfUsable(store, 'artist', [])
+    cacheIfUsable(store, 'artist', [7])
+
+    expect(cachedSearch(store, 'artist')).toEqual([7])
   })
 })
