@@ -68,7 +68,7 @@ function NumberField({
           if (Number.isFinite(n)) onChange(n)
         }}
         onBlur={() => setDraft(String(value))}
-        className="w-24 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm tabular-nums outline-none focus:border-[var(--color-accent)]"
+        className="w-24 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm tabular-nums outline-none focus:border-[var(--color-accent)]"
       />
     </label>
   )

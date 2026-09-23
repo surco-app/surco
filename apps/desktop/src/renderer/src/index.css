@@ -11,6 +11,10 @@
   --color-field: #14141b;
   --color-line: rgba(192, 202, 245, 0.09);
   --color-line-strong: rgba(192, 202, 245, 0.16);
+  /* The boundary of a control (a text field, a slider track): the line tint made opaque and
+     strong enough to reach 3:1 on panel, panel-2 and field, which 1.4.11 asks of whatever
+     identifies a control. --color-line stays for separators, where faint is the point. */
+  --color-input-border: #707692;
   --color-accent: #7aa2f7;
   --color-accent-hover: #89b4ff;
   --color-accent-soft: #283457;
@@ -51,6 +55,7 @@
   --color-field: #f4f5f8;
   --color-line: rgba(20, 22, 38, 0.12);
   --color-line-strong: rgba(20, 22, 38, 0.22);
+  --color-input-border: #81838d;
   --color-accent: #2959aa;
   --color-accent-hover: #21498f;
   --color-accent-soft: #d4def0;
@@ -384,7 +389,7 @@ textarea {
 .player-volume-range::-webkit-slider-runnable-track {
   height: 3px;
   border-radius: 9999px;
-  background: var(--color-line-strong);
+  background: var(--color-input-border);
 }
 .player-volume-range::-webkit-slider-thumb {
   -webkit-appearance: none;

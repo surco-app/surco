@@ -126,3 +126,26 @@ describe('focus ring contrast (WCAG 1.4.11)', () => {
     }
   }
 })
+
+// The border is what tells a text field or a slider track apart from the panel around it,
+// and --color-line (a separator) measured 1.22:1 in dark and 1.27:1 in light; even
+// --color-line-strong only reached 1.46 and 1.58. WCAG 1.4.11 wants 3:1 for the boundary
+// that identifies a control, so fields and tracks get their own token, measured on every
+// surface they sit on, while the faint line stays for the separators it was made for.
+describe('control border contrast (WCAG 1.4.11)', () => {
+  for (const [theme, t] of [
+    ['dark', dark],
+    ['light', light],
+  ] as const) {
+    for (const surface of ['color-panel', 'color-panel-2', 'color-field']) {
+      it(`${theme} input border reaches 3:1 on ${surface}`, () => {
+        expect(contrast(t['color-input-border'], t[surface])).toBeGreaterThanOrEqual(3)
+      })
+    }
+  }
+
+  it('draws the volume and fade slider track in the control border', () => {
+    const track = css.slice(css.indexOf('.player-volume-range::-webkit-slider-runnable-track'))
+    expect(track.slice(0, track.indexOf('}'))).toContain('var(--color-input-border)')
+  })
+})
