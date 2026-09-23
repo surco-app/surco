@@ -150,6 +150,7 @@ export function Overlays({
       {activeModal?.type === 'rename' && selected && (
         <RenameModal
           meta={effectiveMeta(selected, settings?.customFields ?? [])}
+          customFields={settings?.customFields ?? []}
           initialFormat={settings?.filenameFormat ?? '{artist} - {title}'}
           extension={formatExtension(
             (editorFormatRef.current !== 'source' ? editorFormatRef.current : undefined) ??

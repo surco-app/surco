@@ -1,7 +1,7 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { TrackMetadata } from '../../../shared/types'
+import type { CustomField, TrackMetadata } from '../../../shared/types'
 import { FIELD_DEFS } from '../lib/fields'
 import { insertToken } from '../lib/insertToken'
 import { renderOutputName } from '../lib/outputName'
@@ -12,6 +12,7 @@ interface Props {
   meta: TrackMetadata
   initialFormat: string
   extension: string
+  customFields: readonly CustomField[]
   onApply: (outputName: string) => void
   onClose: () => void
 }
@@ -24,6 +25,7 @@ export function RenameModal({
   meta,
   initialFormat,
   extension,
+  customFields,
   onApply,
   onClose,
 }: Props): React.JSX.Element {
@@ -84,7 +86,10 @@ export function RenameModal({
       />
       <p className="mt-2.5 mb-1.5 text-xs text-fg-dim">{tr('settings.insertToken')}</p>
       <div className="flex flex-wrap gap-1.5">
-        {FIELD_DEFS.map((f) => (
+        {[
+          ...FIELD_DEFS.map((f) => ({ key: f.key as string, label: tr(`fields.${f.key}`) })),
+          ...customFields,
+        ].map((f) => (
           <button
             key={f.key}
             type="button"
@@ -92,7 +97,7 @@ export function RenameModal({
             onClick={() => addToken(f.key)}
             className="press group relative rounded-full border border-[var(--color-line-strong)] px-2.5 py-0.5 text-[11px] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
           >
-            {tr(`fields.${f.key}`)}
+            {f.label}
             <Tooltip label={`{${f.key}}`} />
           </button>
         ))}
