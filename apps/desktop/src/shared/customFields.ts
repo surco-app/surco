@@ -62,29 +62,28 @@ export function customValues(
   foreignTags: readonly ForeignTag[],
   fields: readonly CustomField[],
 ): Record<string, string> {
+  const byTag = new Map(foreignTags.map((t) => [t.name.toUpperCase(), t.value]))
   const values: Record<string, string> = {}
-  for (const field of fields) {
-    const edited = meta.custom?.[field.key]
-    const tag = customTagName(field.key)
-    values[field.key] = edited ?? foreignTags.find((t) => t.name.toUpperCase() === tag)?.value ?? ''
-  }
+  for (const field of fields)
+    values[field.key] = meta.custom?.[field.key] ?? byTag.get(customTagName(field.key)) ?? ''
   return values
 }
 
-// What a conversion job carries for the user's own fields: every field's value, so a
-// conversion into another container keeps them too, and the tags that spell a field's
-// name another way ("VinylCondition"), cleared so the file does not hold it twice.
-export function customJob(
-  meta: TrackMetadata,
-  foreignTags: readonly ForeignTag[],
-  foreignRemoved: readonly string[],
-  fields: readonly CustomField[],
-): { custom: Record<string, string>; strayTags: string[] } {
-  const live = foreignTags.filter((t) => !foreignRemoved.includes(t.name))
-  const strayTags = live
+type TaggedTrack = { meta: TrackMetadata; foreignTags?: ForeignTag[]; foreignRemoved?: string[] }
+
+// The file's own tags a track still keeps: every foreign tag but the ones the user marked
+// for removal in the inspector, which are on their way out of the file.
+function liveTags(track: TaggedTrack): ForeignTag[] {
+  const removed = new Set(track.foreignRemoved)
+  return (track.foreignTags ?? []).filter((t) => !removed.has(t.name))
+}
+
+// The tags that spell a custom field's name another way ("VinylCondition"): a conversion
+// clears them, since it writes the field upper-cased and the file would hold it twice.
+export function strayTags(track: TaggedTrack, fields: readonly CustomField[]): string[] {
+  return liveTags(track)
     .filter((t) => isCustomTag(t.name, fields) && t.name !== t.name.toUpperCase())
     .map((t) => t.name)
-  return { custom: customValues(meta, live, fields), strayTags }
 }
 
 // A field's value by key: a managed field's own text, else the custom field of that key.
@@ -97,11 +96,7 @@ export function fieldValue(meta: TrackMetadata, key: string): string {
 // The track's metadata with every custom field resolved, for anything that reads fields
 // by key off a track: the user's edit, else the tag the file keeps (minus one marked for
 // removal), else empty.
-export function effectiveMeta(
-  track: { meta: TrackMetadata; foreignTags?: ForeignTag[]; foreignRemoved?: string[] },
-  fields: readonly CustomField[],
-): TrackMetadata {
+export function effectiveMeta(track: TaggedTrack, fields: readonly CustomField[]): TrackMetadata {
   if (fields.length === 0) return track.meta
-  const live = (track.foreignTags ?? []).filter((t) => !track.foreignRemoved?.includes(t.name))
-  return { ...track.meta, custom: customValues(track.meta, live, fields) }
+  return { ...track.meta, custom: customValues(track.meta, liveTags(track), fields) }
 }

@@ -1,8 +1,7 @@
-import { effectiveMeta } from '../../../shared/customFields'
 import type { CustomField } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { isStale } from './dirty'
-import { missingRequired } from './fields'
+import { missingRequiredOf } from './fields'
 
 // A track is convertible when it has not been processed yet (idle), a previous attempt
 // failed (error), or it was edited after converting (stale — the file no longer matches the
@@ -20,10 +19,7 @@ export function canProcessTrack(
   requiredFields: string[],
   customFields: readonly CustomField[] = [],
 ): boolean {
-  return (
-    isConvertible(track) &&
-    missingRequired(effectiveMeta(track, customFields), requiredFields).length === 0
-  )
+  return isConvertible(track) && missingRequiredOf(track, requiredFields, customFields).length === 0
 }
 
 // The tracks "Convert all"/"Convert (N)" will actually process: convertible by state and
