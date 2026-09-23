@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import '../i18n'
+import i18n from '../i18n'
 import type { Command } from '../lib/commands'
 import type { TrackItem } from '../types'
 import { CommandPalette } from './CommandPalette'
@@ -73,6 +73,35 @@ describe('CommandPalette', () => {
     expect(headers).toEqual(['Metadata', 'Convert & export', 'Application'])
     const items = screen.getAllByTestId('palette-item').map((el) => el.textContent)
     expect(items).toEqual(['fill-all', 'export', 'help'])
+  })
+
+  // A bare header paragraph inside a listbox is noise a screen reader reads as a stray
+  // item; as a named group, VoiceOver says "Metadata, group" and each option sits inside.
+  it('wraps each section in a group named by its header', () => {
+    render(
+      <CommandPalette
+        commands={[cmd({ id: 'fill-all', group: 'tags' }), cmd({ id: 'help', group: 'app' })]}
+        onClose={() => {}}
+      />,
+    )
+    const group = screen.getByRole('group', { name: i18n.t('palette.groups.tags') })
+    expect(group).toContainElement(screen.getAllByTestId('palette-item')[0])
+    expect(screen.getByRole('listbox')).toContainElement(group)
+  })
+
+  // Filtering happens as the user types with the focus in the field, so a screen reader
+  // user never hears whether the query left one command, twenty or none.
+  it('announces how many results a query leaves', () => {
+    render(
+      <CommandPalette
+        commands={[cmd({ id: 'clear-meta', title: 'Clear metadata' }), cmd({ id: 'help' })]}
+        onClose={() => {}}
+      />,
+    )
+    fireEvent.change(screen.getByTestId('palette-input'), { target: { value: 'clear' } })
+    const count = screen.getByTestId('palette-count')
+    expect(count).toHaveAttribute('aria-live', 'polite')
+    expect(count).toHaveTextContent(i18n.t('palette.resultCount', { count: 1 }))
   })
 
   // Raycast's own split: sections organize the BROWSE view, but a typed query is a

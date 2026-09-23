@@ -1114,6 +1114,8 @@
     "revealLog": "Mostrar registro"
   },
   "palette": {
+    "resultCount_one": "{{count}} resultado",
+    "resultCount_other": "{{count}} resultados",
     "placeholder": "Busque faixas ou execute um comando…",
     "tracks": "Faixas",
     "empty": "Sem resultados",

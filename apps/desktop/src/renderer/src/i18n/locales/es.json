@@ -1114,6 +1114,8 @@
     "revealLog": "Ver el registro"
   },
   "palette": {
+    "resultCount_one": "{{count}} resultado",
+    "resultCount_other": "{{count}} resultados",
     "placeholder": "Busca pistas o ejecuta una acción…",
     "tracks": "Pistas",
     "empty": "Sin resultados",

@@ -1114,6 +1114,8 @@
     "revealLog": "Show log file"
   },
   "palette": {
+    "resultCount_one": "{{count}} result",
+    "resultCount_other": "{{count}} results",
     "placeholder": "Search tracks or run a command…",
     "tracks": "Tracks",
     "empty": "No results",

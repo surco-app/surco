@@ -1114,6 +1114,8 @@
     "revealLog": "Protokoll anzeigen"
   },
   "palette": {
+    "resultCount_one": "{{count}} Ergebnis",
+    "resultCount_other": "{{count}} Ergebnisse",
     "placeholder": "Tracks suchen oder einen Befehl ausführen…",
     "tracks": "Tracks",
     "empty": "Keine Ergebnisse",

@@ -52,6 +52,17 @@ export function CommandPalette({
     ...trackResults,
   ]
   const activeId = results[active] ? `palette-option-${results[active].id}` : undefined
+  // Consecutive results split into sections at each header, so every labelled section can
+  // be a named group inside the listbox; a run with no header (a query's flat matches)
+  // stays ungrouped. Each entry keeps its flat index for the arrow/Enter navigation.
+  const sections: { group?: string; items: { c: Command; i: number }[] }[] = []
+  results.forEach((c, i) => {
+    const header = (browsing || c.group === 'tracks') && results[i - 1]?.group !== c.group
+    if (header || sections.length === 0) {
+      sections.push({ group: header ? c.group : undefined, items: [] })
+    }
+    sections[sections.length - 1].items.push({ c, i })
+  })
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -99,6 +110,11 @@ export function CommandPalette({
       instant
       className="w-[560px] overflow-hidden rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)]"
     >
+      {/* Filtering happens with the focus in the field, so the result count is spoken as it
+          changes; empty while browsing, where no query has narrowed anything. */}
+      <p data-testid="palette-count" aria-live="polite" className="sr-only">
+        {browsing ? '' : t('palette.resultCount', { count: results.length })}
+      </p>
       <input
         ref={inputRef}
         data-testid="palette-input"
@@ -128,39 +144,49 @@ export function CommandPalette({
         {results.length === 0 && (
           <p className="px-3 py-6 text-center text-xs text-fg-dim">{t('palette.empty')}</p>
         )}
-        {results.map((c, i) => (
-          <div key={c.id}>
-            {(browsing || c.group === 'tracks') && results[i - 1]?.group !== c.group && (
+        {sections.map(({ group, items }) => {
+          const options = items.map(({ c, i }) => (
+            <div key={c.id}>
+              {/* biome-ignore lint/a11y/useKeyWithClickEvents: options are operated from the combobox input's keydown (arrows + Enter) via aria-activedescendant, not per-row */}
+              {/* biome-ignore lint/a11y/useFocusableInteractive: options use virtual focus via aria-activedescendant, so they are intentionally not tab stops */}
+              <div
+                role="option"
+                id={`palette-option-${c.id}`}
+                data-testid="palette-item"
+                aria-selected={i === active}
+                aria-disabled={!c.enabled}
+                onClick={() => runAt(i)}
+                onMouseMove={() => setActive(i)}
+                // The row taking the highlight paints it immediately; the ones losing it keep
+                // the fade. Arrowing is a keyboard action repeated all day — a transition on
+                // the incoming row leaves the blue trailing a step behind the cursor — while
+                // hover is mouse-paced and reads better eased.
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm ${
+                  c.enabled ? 'cursor-pointer' : 'opacity-30'
+                } ${i === active ? 'bg-[var(--color-accent-soft)] transition-none' : 'transition-colors'}`}
+              >
+                <span>{c.title}</span>
+                {c.hint && <span className="ml-4 shrink-0 text-xs text-fg-dim">{c.hint}</span>}
+              </div>
+            </div>
+          ))
+          if (!group) return <div key={items[0].c.id}>{options}</div>
+          const headerId = `palette-group-${group}`
+          return (
+            // biome-ignore lint/a11y/useSemanticElements: a fieldset is a form control group; inside a listbox the ARIA group role is the one that holds options
+            <div key={headerId} role="group" aria-labelledby={headerId}>
               <p
+                id={headerId}
+                role="presentation"
                 data-testid="palette-group-header"
                 className="px-3 pt-2 pb-1 text-[0.625rem] font-medium uppercase tracking-wide text-fg-dim"
               >
-                {c.group === 'tracks' ? t('palette.tracks') : t(`palette.groups.${c.group}`)}
+                {group === 'tracks' ? t('palette.tracks') : t(`palette.groups.${group}`)}
               </p>
-            )}
-            {/* biome-ignore lint/a11y/useKeyWithClickEvents: options are operated from the combobox input's keydown (arrows + Enter) via aria-activedescendant, not per-row */}
-            {/* biome-ignore lint/a11y/useFocusableInteractive: options use virtual focus via aria-activedescendant, so they are intentionally not tab stops */}
-            <div
-              role="option"
-              id={`palette-option-${c.id}`}
-              data-testid="palette-item"
-              aria-selected={i === active}
-              aria-disabled={!c.enabled}
-              onClick={() => runAt(i)}
-              onMouseMove={() => setActive(i)}
-              // The row taking the highlight paints it immediately; the ones losing it keep
-              // the fade. Arrowing is a keyboard action repeated all day — a transition on
-              // the incoming row leaves the blue trailing a step behind the cursor — while
-              // hover is mouse-paced and reads better eased.
-              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm ${
-                c.enabled ? 'cursor-pointer' : 'opacity-30'
-              } ${i === active ? 'bg-[var(--color-accent-soft)] transition-none' : 'transition-colors'}`}
-            >
-              <span>{c.title}</span>
-              {c.hint && <span className="ml-4 shrink-0 text-xs text-fg-dim">{c.hint}</span>}
+              {options}
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </ModalShell>
   )
