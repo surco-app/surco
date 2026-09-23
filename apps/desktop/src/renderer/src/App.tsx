@@ -12,6 +12,7 @@ import {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import { autoMatchAvailable } from '../../shared/autoMatch'
+import { trashLimits } from '../../shared/backupPolicy'
 import { normalizeImportFields } from '../../shared/defaults'
 import { emptyMetadata } from '../../shared/metadata'
 import { resolveBindings } from '../../shared/shortcutDefaults'
@@ -2042,8 +2043,9 @@ export default function App(): React.JSX.Element {
             {trashOpen && (
               <TrashPanel
                 entries={trashEntries}
-                retentionDays={settings?.backupRetentionDays ?? TRASH_RETENTION_DAYS}
-                maxBytes={settings ? settings.backupMaxGb * 1024 ** 3 : TRASH_MAX_BYTES}
+                {...(settings
+                  ? trashLimits(settings)
+                  : { retentionDays: TRASH_RETENTION_DAYS, maxBytes: TRASH_MAX_BYTES })}
                 onRestore={(entry) => void onRestoreFromTrash(entry)}
                 onRemove={(entry) => void onRemoveFromTrash(entry)}
                 onEmpty={() => void onEmptyTrash()}

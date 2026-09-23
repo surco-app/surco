@@ -26,6 +26,7 @@ import {
 } from 'electron'
 import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
+import { trashLimits } from '../shared/backupPolicy'
 import {
   isRecoveryUrl,
   MEDIA_SCHEME,
@@ -166,10 +167,9 @@ const tmpManifest = createTmpManifest(join(app.getPath('userData'), 'pending-tmp
 // Surco's own trash: every original a conversion replaces or renames away, and every
 // delete on a volume with no OS Trash, kept for a while (see surcoTrash.ts). Local disk
 // on purpose, like the manifest above: the one place a bad write can be undone from.
-const surcoTrash = createSurcoTrash(join(app.getPath('userData'), 'trash'), () => {
-  const s = getSettings()
-  return { retentionDays: s.backupRetentionDays, maxBytes: s.backupMaxGb * 1024 ** 3 }
-})
+const surcoTrash = createSurcoTrash(join(app.getPath('userData'), 'trash'), () =>
+  trashLimits(getSettings()),
+)
 configureOriginalKeeper((path, reason, outputPath) => surcoTrash.stash(path, reason, outputPath))
 configureOriginalRestorer(async (entry) => {
   await surcoTrash.restore(entry.id)
