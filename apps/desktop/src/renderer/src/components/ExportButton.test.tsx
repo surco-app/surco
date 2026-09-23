@@ -47,13 +47,35 @@ describe('ExportButton', () => {
           incompleteReason="Missing required fields: Year, Genre"
         />,
       )
-      expect(screen.getByTestId('process-btn')).toBeDisabled()
+      expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
       hover(screen.getByTestId('process-btn-wrap'))
       act(() => vi.advanceTimersByTime(400))
       expect(screen.getByRole('tooltip')).toHaveTextContent('Missing required fields: Year, Genre')
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  // A natively disabled button drops out of the Tab order, and the reason lived in a hover
+  // tooltip on a wrapper nothing can focus: a keyboard or screen reader user never learnt
+  // why Convert was unavailable, or that it was there at all. It stays focusable, refuses
+  // to convert, and carries the reason as its description.
+  it('keeps a blocked convert focusable, inert, and described by its reason', () => {
+    const onProcess = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete
+        incompleteReason="Missing required fields: Year, Genre"
+        onProcess={onProcess}
+      />,
+    )
+    const btn = screen.getByTestId('process-btn')
+    expect(btn).not.toBeDisabled()
+    expect(btn).toHaveAttribute('aria-disabled', 'true')
+    expect(btn).toHaveAccessibleDescription('Missing required fields: Year, Genre')
+    fireEvent.click(btn)
+    expect(onProcess).not.toHaveBeenCalled()
   })
 
   // The chevron menu now carries both halves of the button's promise ("Convert to

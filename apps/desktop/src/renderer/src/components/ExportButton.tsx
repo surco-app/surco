@@ -1,6 +1,6 @@
 import { Check, ChevronDown } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FORMAT_SETTINGS, OUTPUT_FORMATS } from '../../../shared/outputFormats'
 import type { FormatSetting, OutputFormat, ProcessStage } from '../../../shared/types'
@@ -96,6 +96,10 @@ export function ExportButton({
   // A track missing required tags cannot be converted, so the gate covers the
   // main action and the format menu alike.
   const blocked = processing || incomplete
+  // Missing tags block the convert softly: aria-disabled instead of disabled keeps the
+  // button in the Tab order, so the keyboard can reach it and hear why it won't run.
+  const softBlocked = incomplete && !processing
+  const reasonId = useId()
 
   useEffect(() => {
     if (!open) return
@@ -167,10 +171,12 @@ export function ExportButton({
         data-testid="process-btn"
         // While converting, a click cancels (when cancellable) rather than firing a second
         // convert; the same button is the progress bar and its own stop control.
-        onClick={cancellable ? onCancel : () => onProcess(outputFormat)}
-        // Cancellable keeps the button live during the convert; otherwise the old block
-        // (missing tags, or a non-cancellable processing state) still disables it.
-        disabled={blocked && !cancellable}
+        onClick={cancellable ? onCancel : softBlocked ? undefined : () => onProcess(outputFormat)}
+        // Cancellable keeps the button live during the convert; a non-cancellable processing
+        // state still disables it outright, and missing tags only mark it aria-disabled.
+        disabled={processing && !cancellable}
+        aria-disabled={softBlocked || undefined}
+        aria-describedby={softBlocked && incompleteReason ? reasonId : undefined}
         // The visible text is the stage, but pressing cancels: the name says both, keeping
         // the visible words first so voice control still finds it by what it shows.
         aria-label={
@@ -180,12 +186,12 @@ export function ExportButton({
         }
         className={
           quiet
-            ? 'press flex-1 rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50'
+            ? 'press flex-1 rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50'
             : liveStage
               ? // The dimmed track + accent fill replace the usual disabled fade: the
                 // button reads as a progress bar, not as a greyed-out control.
                 'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 py-2.5 text-sm font-medium text-[var(--color-on-accent)] disabled:pointer-events-none'
-              : 'press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50'
+              : 'press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50'
         }
       >
         {liveStage && (
@@ -234,6 +240,11 @@ export function ExportButton({
         />
       </button>
       {incomplete && incompleteReason && <Tooltip label={incompleteReason} />}
+      {softBlocked && incompleteReason && (
+        <span id={reasonId} className="sr-only">
+          {incompleteReason}
+        </span>
+      )}
       {open && (
         <div className="absolute right-0 bottom-full mb-2 w-56 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-lg">
           <p className="px-3 pt-1 pb-0.5 text-[11px] font-medium tracking-wide text-fg-dim uppercase">
