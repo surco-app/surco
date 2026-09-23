@@ -66,9 +66,9 @@ export function SuggestionChips({
               chipsExpanded ? 'shrink-0' : 'min-w-0 truncate'
             } ${
               state === 'on'
-                ? 'border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)]'
+                ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-fg'
                 : state === 'some'
-                  ? 'border-[color-mix(in_srgb,var(--color-accent)_45%,transparent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
+                  ? 'border-dashed border-[color-mix(in_srgb,var(--color-accent)_60%,transparent)] text-[var(--color-accent)]'
                   : dim
                     ? 'border-[var(--color-line)] text-fg-faint hover:bg-[var(--color-panel-2)]'
                     : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-panel-2)]'
