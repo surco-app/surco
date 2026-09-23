@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { prefersReducedMotion } from './motion'
+import { prefersReducedMotion, scrollBehavior } from './motion'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -31,5 +31,19 @@ describe('prefersReducedMotion', () => {
   it('treats a missing matchMedia as no request', () => {
     vi.stubGlobal('matchMedia', undefined)
     expect(prefersReducedMotion()).toBe(false)
+  })
+})
+
+// Every scripted scroll in the app was hard-coded smooth, gliding the list or the editor
+// for someone who asked for no motion. The behaviour is chosen per scroll from the request.
+describe('scrollBehavior', () => {
+  it('jumps under reduced motion', () => {
+    stubMotion(true)
+    expect(scrollBehavior()).toBe('auto')
+  })
+
+  it('glides when motion is allowed', () => {
+    stubMotion(false)
+    expect(scrollBehavior()).toBe('smooth')
   })
 })

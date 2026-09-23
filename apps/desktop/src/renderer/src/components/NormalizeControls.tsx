@@ -2,6 +2,7 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NormalizeConfig, NormalizeMode } from '../../../shared/types'
+import { scrollBehavior } from '../lib/motion'
 import { SegmentedControl } from './SegmentedControl'
 
 interface Props {
@@ -101,7 +102,7 @@ export function NormalizeControls({
       return
     }
     if (value.mode !== 'none')
-      detailRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' })
+      detailRef.current?.scrollIntoView?.({ block: 'nearest', behavior: scrollBehavior() })
   }, [value.mode])
   const loudnessIsCustom = !LOUDNESS_PRESETS.some(
     (p) => p.lufs === value.targetLufs && p.tp === value.truePeakDb,
