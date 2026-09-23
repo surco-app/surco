@@ -91,6 +91,8 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     openInfo: () => {},
     openActivity: () => {},
     openBackups: () => {},
+    openTrackBackup: () => {},
+    hasBackup: () => false,
     openHelp: () => {},
     openOnboarding: () => {},
     toggleLanguage: () => {},
@@ -377,6 +379,26 @@ describe('buildCommands backups', () => {
     expect(command.enabled).toBe(true)
     command.run()
     expect(openBackups).toHaveBeenCalledOnce()
+  })
+})
+
+// The palette twin of the row's backup mark, for the selected track: enabled only when
+// that track has a backup, so typing "backup" never offers a panel with nothing for it.
+describe('buildCommands track backup', () => {
+  it("opens the selected track's backup only when it has one", () => {
+    const openTrackBackup = vi.fn()
+    const a = track({ id: 'a' })
+    const on = commandById(
+      makeDeps({ selected: a, hasBackup: () => true, openTrackBackup }),
+      'track-backup',
+    )
+    expect(on.enabled).toBe(true)
+    on.run()
+    expect(openTrackBackup).toHaveBeenCalledWith(a)
+    expect(
+      commandById(makeDeps({ selected: a, hasBackup: () => false }), 'track-backup').enabled,
+    ).toBe(false)
+    expect(commandById(makeDeps({ selected: null }), 'track-backup').enabled).toBe(false)
   })
 })
 

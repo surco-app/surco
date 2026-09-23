@@ -314,6 +314,7 @@
     "stats": "Statistiques",
     "activity": "Afficher l'activité",
     "backups": "Ouvrir les copies de sauvegarde",
+    "trackBackup": "Restaurer la copie de sauvegarde de ce morceau",
     "toggleLanguage": "Changer de langue",
     "toggleTheme": "Changer de thème (système / clair / sombre)",
     "confetti": "Lancer des confettis 🎉",
@@ -357,6 +358,7 @@
       "engineDj": "Ajout à Engine DJ…"
     },
     "context": {
+      "backup": "Restaurer la copie de sauvegarde…",
       "info": "Informations",
       "reveal": "Afficher dans le Finder",
       "revealWin": "Afficher dans l'Explorateur",

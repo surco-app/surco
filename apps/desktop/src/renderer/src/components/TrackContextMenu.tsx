@@ -21,6 +21,10 @@ interface Props {
   onRemove: (id: string) => void
   onTrash: (track: TrackItem) => void
   onInfo: (track: TrackItem) => void
+  // Whether Surco keeps a backup of this track's file, and what opens it. The entry only
+  // shows for a track that has one: the keyboard's way to the row's backup mark.
+  hasBackup?: boolean
+  onOpenBackup?: (track: TrackItem) => void
 }
 
 function MenuItem({
@@ -72,6 +76,8 @@ export function TrackContextMenu({
   onRemove,
   onTrash,
   onInfo,
+  hasBackup = false,
+  onOpenBackup,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const menuRef = useRef<HTMLDivElement>(null)
@@ -213,6 +219,16 @@ export function TrackContextMenu({
           onClick={() => run(() => onCopyPath(track))}
         />
         <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
+        {hasBackup && onOpenBackup && (
+          <>
+            <MenuItem
+              testid="track-menu-backup"
+              label={tr('trackList.context.backup')}
+              onClick={() => run(() => onOpenBackup(track))}
+            />
+            <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
+          </>
+        )}
         <MenuItem
           testid="track-menu-remove"
           label={tr('trackList.context.remove')}
