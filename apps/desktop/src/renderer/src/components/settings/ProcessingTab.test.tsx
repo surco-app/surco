@@ -66,7 +66,7 @@ function renderTab(over: Partial<SyncedDraft> = {}): ReturnType<typeof vi.fn> {
   return patch
 }
 
-// The Output tab's audio steps: click repair and loudness
+// The audio-processing steps split out of the Format tab: click repair and loudness
 // normalization, both staged through the same draft patch the modal saves.
 describe('ProcessingTab', () => {
   it('stages the click-repair mode', () => {

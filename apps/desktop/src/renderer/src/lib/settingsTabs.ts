@@ -1,4 +1,5 @@
 import {
+  AudioWaveform,
   FolderOutput,
   Keyboard,
   type LucideIcon,
@@ -6,6 +7,7 @@ import {
   Search,
   SlidersHorizontal,
   SquarePen,
+  Tag,
   Tags,
 } from 'lucide-react'
 import type { LocalDraft, SyncedDraft } from './settingsDraft'
@@ -16,8 +18,10 @@ import type { LocalDraft, SyncedDraft } from './settingsDraft'
 export type SettingsTab =
   | 'general'
   | 'search'
-  | 'output'
+  | 'conversion'
+  | 'processing'
   | 'destination'
+  | 'naming'
   | 'editor'
   | 'tags'
   | 'shortcuts'
@@ -31,7 +35,7 @@ export type SettingsTab =
 export const SETTINGS_TAB_GROUPS: { heading: string | null; tabs: SettingsTab[] }[] = [
   { heading: null, tabs: ['general', 'search'] },
   { heading: 'editing', tabs: ['editor', 'tags'] },
-  { heading: 'output', tabs: ['output', 'destination'] },
+  { heading: 'output', tabs: ['conversion', 'processing', 'naming', 'destination'] },
   { heading: 'app', tabs: ['shortcuts'] },
 ]
 
@@ -42,8 +46,10 @@ export const SETTINGS_TABS: SettingsTab[] = SETTINGS_TAB_GROUPS.flatMap((g) => g
 export const SETTINGS_TAB_ICONS: Record<SettingsTab, LucideIcon> = {
   general: SlidersHorizontal,
   search: Search,
-  output: RefreshCw,
+  conversion: RefreshCw,
+  processing: AudioWaveform,
   destination: FolderOutput,
+  naming: Tag,
   editor: SquarePen,
   tags: Tags,
   shortcuts: Keyboard,

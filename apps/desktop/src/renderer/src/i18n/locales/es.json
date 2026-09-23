@@ -494,7 +494,7 @@
     "overwriteLossyHint": "Sustituye el original sin pérdida por un MP3 de 320 kbps en su sitio — el máster se pierde y no se puede recuperar. Desactívalo en Ajustes → Destino.",
     "regenerate": "Regenerar nombre del archivo con los metadatos",
     "regenerateAll_other": "Regenerar {{count}} nombres de archivo con los metadatos",
-    "regenerateHint": "Reconstruir el nombre del archivo con los metadatos de arriba usando tu patrón de Ajustes → Salida",
+    "regenerateHint": "Reconstruir el nombre del archivo con los metadatos de arriba usando tu patrón de Ajustes → Nombres",
     "regenerateCustom": "Personalizar el patrón del nombre para esta pista…",
     "convertNoMusic": "Convertir a {{format}}",
     "withTargets": "{{label}} → {{targets}}",
@@ -765,8 +765,10 @@
     "tabs": {
       "general": "General",
       "search": "Búsqueda",
-      "output": "Salida",
+      "conversion": "Formato",
+      "processing": "Procesado",
       "destination": "Destino",
+      "naming": "Nombres",
       "editor": "Editor",
       "tags": "Etiquetas",
       "shortcuts": "Atajos"

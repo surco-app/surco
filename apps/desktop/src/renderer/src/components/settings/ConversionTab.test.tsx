@@ -9,7 +9,7 @@ import type { SyncedDraft } from '../../lib/settingsDraft'
 // ConversionTab reads window.api.platform at module scope (isMacOS), so the bridge
 // must exist before the module loads — hence the dynamic import below.
 ;(window as unknown as { api: unknown }).api = { platform: 'darwin' }
-const { ConversionTab, EncoderAdvancedSettings } = await import('./ConversionTab')
+const { ConversionTab } = await import('./ConversionTab')
 
 afterEach(cleanup)
 
@@ -66,12 +66,7 @@ const synced: SyncedDraft = {
 
 function renderTab(over: Partial<SyncedDraft> = {}) {
   const patch = vi.fn()
-  render(
-    <>
-      <ConversionTab synced={{ ...synced, ...over }} patch={patch} />
-      <EncoderAdvancedSettings synced={{ ...synced, ...over }} patch={patch} />
-    </>,
-  )
+  render(<ConversionTab synced={{ ...synced, ...over }} patch={patch} />)
   return patch
 }
 
