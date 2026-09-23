@@ -296,3 +296,13 @@ describe('Field required state', () => {
     expect(input).toHaveAccessibleDescription('Required: fill it in before converting')
   })
 })
+
+// Across a selection, "Multiple values" was only the placeholder, which a screen reader
+// drops as soon as the field is focused, so an empty field read as "no value on any track"
+// and typing into it looked harmless while it overwrites every track's own value.
+describe('Field mixed values', () => {
+  it('describes a field whose tracks disagree as holding multiple values', () => {
+    render(<Field name="genre" label="Genre" value="" onChange={() => {}} mixed />)
+    expect(screen.getByTestId('field-genre')).toHaveAccessibleDescription('Multiple values')
+  })
+})

@@ -265,6 +265,22 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(genre?.placeholder).toBe('editor.multipleValues')
   })
 
+  // The placeholder vanishes from a screen reader's view once the field has focus and is
+  // never read as the field's state, so the spec flags the disagreement for the Field to
+  // describe in words; an empty value must not read as "these tracks have no genre".
+  it('flags the field as mixed when the selection disagrees, and only then', () => {
+    const build = (genres: string[]) =>
+      buildFieldSpecs(
+        params({
+          isMulti: true,
+          selectedTracks: genres.map((g, i) => track(String(i), { genre: g })),
+          visibleFields: ['genre'],
+        }),
+      ).find((s) => s.key === 'genre')
+    expect(build(['Techno', 'House'])?.mixed).toBe(true)
+    expect(build(['Techno', 'Techno'])?.mixed).toBeFalsy()
+  })
+
   // WHY: grouping is the one release-level field that legitimately differs inside a
   // release (vocal cuts vs. beats), so the bulk form hands it the tracks themselves
   // instead of a shared blank that a chip click would stamp on every one.
@@ -326,7 +342,11 @@ describe('buildFieldSpecs (bulk mode)', () => {
         }),
       ).find((s) => s.key === 'vinylCondition')
     expect(build([a, b])).toMatchObject({ label: 'Estado del vinilo', value: 'NM' })
-    expect(build([a, c])).toMatchObject({ value: '', placeholder: 'editor.multipleValues' })
+    expect(build([a, c])).toMatchObject({
+      value: '',
+      placeholder: 'editor.multipleValues',
+      mixed: true,
+    })
     build([a, b])?.onChange('VG+')
     expect(write).toHaveBeenCalledWith('VG+')
   })

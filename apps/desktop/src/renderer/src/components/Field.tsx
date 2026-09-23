@@ -22,6 +22,9 @@ interface FieldProps {
   required?: boolean
   // Required and still empty: drawn as the amber dot, read out as a description.
   invalid?: boolean
+  // The selection's tracks disagree: described in words, since the placeholder saying so
+  // is dropped by screen readers once the field has focus.
+  mixed?: boolean
   placeholder?: string
   suggestions?: string[]
   tagList?: TagList
@@ -44,6 +47,7 @@ export const Field = memo(function Field({
   wide,
   required,
   invalid,
+  mixed,
   placeholder,
   suggestions,
   tagList,
@@ -56,6 +60,9 @@ export const Field = memo(function Field({
   const { t: tr } = useTranslation()
   const inputId = useId()
   const requiredNoteId = useId()
+  const mixedNoteId = useId()
+  const describedBy =
+    [invalid && requiredNoteId, mixed && mixedNoteId].filter(Boolean).join(' ') || undefined
   // The text the input shows while the user types, kept local so a keystroke doesn't
   // touch the global track array (and its O(n) pipeline) until they pause or leave.
   const [draft, setDraft] = useState(value)
@@ -148,7 +155,7 @@ export const Field = memo(function Field({
           // Empty-but-required is not a wrong entry, so it isn't aria-invalid: the field
           // says it is required and, while empty, describes why the dot is there.
           aria-required={required || undefined}
-          aria-describedby={invalid ? requiredNoteId : undefined}
+          aria-describedby={describedBy}
           value={draft}
           placeholder={placeholder}
           onChange={(e) => onType(e.target.value)}
@@ -178,6 +185,11 @@ export const Field = memo(function Field({
       {invalid && (
         <span id={requiredNoteId} className="sr-only">
           {tr('editor.requiredEmpty')}
+        </span>
+      )}
+      {mixed && (
+        <span id={mixedNoteId} className="sr-only">
+          {tr('editor.multipleValues')}
         </span>
       )}
       {/* Detecting the audio suggestion (BPM/Key): a placeholder chip in the exact shape
