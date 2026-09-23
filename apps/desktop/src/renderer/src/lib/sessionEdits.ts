@@ -8,12 +8,18 @@ import { trackSignature } from './dirty'
 // the file itself (the embedded-art data: thumb) stay out — a blob-covered track
 // keeps its coverPath and main mints a fresh preview at load.
 //
-// Only tracks whose state diverges from what some file already carries are included:
-// a clean track restores identically from the file itself, and the map being empty
-// is how the reopen offer knows expiring costs nothing (with staged edits it waits
-// for an explicit answer instead).
+// Only tracks whose state diverges from what some file already carries are included,
+// plus those with a loudness or click-repair dial of their own (kept out of the disk
+// signature so turning one never flips a converted track stale): a clean track restores
+// identically from the file itself, and the map being empty is how the reopen offer
+// knows expiring costs nothing (with staged edits it waits for an explicit answer
+// instead).
 export function sessionEdits(tracks: TrackItem[]): Record<string, SessionEdit> {
-  return Object.fromEntries(tracks.filter(hasStagedEdits).map((t) => [t.inputPath, sessionEdit(t)]))
+  return Object.fromEntries(
+    tracks
+      .filter((t) => hasStagedEdits(t) || t.normalize !== undefined || t.declick !== undefined)
+      .map((t) => [t.inputPath, sessionEdit(t)]),
+  )
 }
 
 // Whether the track's live state has diverged from what the file on disk carries —
@@ -42,5 +48,7 @@ function sessionEdit(track: TrackItem): SessionEdit {
   if (track.matchConfidence !== undefined) edit.matchConfidence = track.matchConfidence
   if (track.matchProvider) edit.matchProvider = track.matchProvider
   if (track.trim) edit.trim = track.trim
+  if (track.normalize) edit.normalize = track.normalize
+  if (track.declick) edit.declick = track.declick
   return edit
 }

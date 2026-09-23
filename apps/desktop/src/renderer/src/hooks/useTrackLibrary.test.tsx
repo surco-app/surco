@@ -730,6 +730,38 @@ describe('useTrackLibrary foreign tags', () => {
   // after a reopen the same track said "Convert to AIFF + Apple Music" — an ADD, which
   // would leave a second copy of the song in the library. The row had lost the persistent
   // ID that says which copy it belongs to.
+  it('restores the per-track loudness and click repair', async () => {
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '' },
+        duration: 180,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    const normalize = { mode: 'loudness' as const, targetLufs: -9, truePeakDb: -1, peakDb: -0.3 }
+    await act(() =>
+      result.current.addPaths(['/m/a.wav'], {
+        '/m/a.wav': { meta: { title: 'Restored' } as never, normalize, declick: 'strong' },
+      }),
+    )
+
+    expect(result.current.tracks[0]?.normalize).toEqual(normalize)
+    expect(result.current.tracks[0]?.declick).toBe('strong')
+  })
+
   it('restores which library copy a track belongs to', async () => {
     setApi({
       readMeta: vi.fn().mockResolvedValue({
