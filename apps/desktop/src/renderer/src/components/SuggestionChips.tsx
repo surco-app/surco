@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useChipOverflow } from '../hooks/useChipOverflow'
 
@@ -24,10 +24,19 @@ export function SuggestionChips({
 }: SuggestionChipsProps): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [chipsExpanded, setChipsExpanded] = useState(false)
+  const firstRevealedRef = useRef<HTMLButtonElement>(null)
+  const revealFromRef = useRef<number | null>(null)
   const { containerRef, measureRef, visibleCount } = useChipOverflow(
     suggestions,
     !chipsExpanded && suggestions.length > 0,
   )
+  // Pressing "+N" unmounts it, so focus would fall to the body. Land it on the first chip
+  // the expansion revealed, which is where the keyboard user was heading anyway.
+  useEffect(() => {
+    if (!chipsExpanded || revealFromRef.current === null) return
+    revealFromRef.current = null
+    firstRevealedRef.current?.focus()
+  }, [chipsExpanded])
   return (
     <span
       ref={containerRef}
@@ -40,11 +49,12 @@ export function SuggestionChips({
         chipsExpanded ? 'flex-wrap' : 'flex-nowrap overflow-hidden'
       }`}
     >
-      {(chipsExpanded ? suggestions : suggestions.slice(0, visibleCount)).map((s) => {
+      {(chipsExpanded ? suggestions : suggestions.slice(0, visibleCount)).map((s, i) => {
         const state = isOn(s) ? 'on' : isPartial?.(s) ? 'some' : 'off'
         return (
           <button
             key={s}
+            ref={i === revealFromRef.current ? firstRevealedRef : undefined}
             type="button"
             data-testid={scope ? `chip-${scope}-${s}` : `chip-${s}`}
             data-state={state}
@@ -72,7 +82,10 @@ export function SuggestionChips({
         <button
           type="button"
           data-testid="chip-more"
-          onClick={() => setChipsExpanded(true)}
+          onClick={() => {
+            revealFromRef.current = visibleCount
+            setChipsExpanded(true)
+          }}
           aria-label={tr('fields.suggestionsMore', {
             count: suggestions.length - visibleCount,
           })}
