@@ -25,7 +25,7 @@ export interface InsertSource {
 // instead of forking on every field.
 export interface FieldSpec {
   // A managed field's key, or the key of one of the user's own fields.
-  key: MetaTextKey | string
+  key: string
   label: string
   value: string
   onChange: (v: string) => void
@@ -101,12 +101,6 @@ export interface BuildFieldSpecsParams {
   onChangeTracksMeta?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
 }
 
-// The bulk and single forms render the same tree; only where a field's value comes
-// from and where an edit goes differ, so each mode reduces to a list of specs the
-// form maps over.
-// Bulk mode starts from BULK_FIELDS (only release-level fields make sense across a
-// selection) but still honours the user's visible-fields setting, so hidden fields
-// don't reappear just because several tracks are selected.
 // The fields whose chips add a tag rather than replace the value.
 function tagListFor(key: MetaTextKey): TagList | undefined {
   if (key === 'grouping') return GROUPING_TAGS
@@ -114,29 +108,12 @@ function tagListFor(key: MetaTextKey): TagList | undefined {
   return undefined
 }
 
-// A field the user added: no groups, chips or menus of its own, just its name, its value
-// and its writer. A key that no longer names one (a field deleted in Settings) is skipped.
-function customSpecFor(
-  p: Pick<
-    BuildFieldSpecsParams,
-    'customFields' | 'customValues' | 'customOnChange' | 'requiredFields'
-  >,
-  key: string,
-): FieldSpec[] {
-  const field = p.customFields.find((f) => f.key === key)
-  if (!field) return []
-  const value = p.customValues[key] ?? ''
-  return [
-    {
-      key,
-      label: field.label,
-      value,
-      onChange: p.customOnChange.get(key) ?? (() => {}),
-      invalid: p.requiredFields.includes(key) && !value.trim(),
-    },
-  ]
-}
-
+// The bulk and single forms render the same tree; only where a field's value comes
+// from and where an edit goes differ, so each mode reduces to a list of specs the
+// form maps over.
+// Bulk mode starts from BULK_FIELDS (only release-level fields make sense across a
+// selection) but still honours the user's visible-fields setting, so hidden fields
+// don't reappear just because several tracks are selected.
 export function buildFieldSpecs({
   isMulti,
   selectedTracks,
@@ -160,7 +137,11 @@ export function buildFieldSpecs({
   customBulkOnChange,
   onChangeTracksMeta,
 }: BuildFieldSpecsParams): FieldSpec[] {
-  const custom = { customFields, customValues, customOnChange, requiredFields }
+  // Each selected track's custom values, resolved once for every custom field below.
+  const selectedCustom =
+    isMulti && selectedTracks && customFields.length > 0
+      ? selectedTracks.map((t) => effectiveMeta(t, customFields).custom ?? {})
+      : []
   return isMulti && selectedTracks
     ? [
         ...BULK_FIELDS.filter((key) => visibleFields.includes(key)).map((key) => {
@@ -186,9 +167,7 @@ export function buildFieldSpecs({
         ...customFields
           .filter((f) => visibleFields.includes(f.key))
           .map((f) => {
-            const values = selectedTracks.map(
-              (t) => effectiveMeta(t, customFields).custom?.[f.key] ?? '',
-            )
+            const values = selectedCustom.map((c) => c[f.key] ?? '')
             const shared = values.every((v) => v === values[0]) ? values[0] : undefined
             return {
               key: f.key,
@@ -201,7 +180,22 @@ export function buildFieldSpecs({
       ]
     : visibleFields.flatMap((key) => {
         const def = FIELD_DEFS.find((d) => d.key === key)
-        if (!def) return customSpecFor(custom, key)
+        if (!def) {
+          // A field the user added: no chips or menus of its own, just its name, value and
+          // writer. A key that names none (a field deleted in Settings) is skipped.
+          const field = customFields.find((f) => f.key === key)
+          if (!field) return []
+          const value = customValues[key] ?? ''
+          return [
+            {
+              key,
+              label: field.label,
+              value,
+              onChange: customOnChange.get(key) ?? (() => {}),
+              invalid: requiredFields.includes(key) && !value.trim(),
+            },
+          ]
+        }
         return [
           {
             key: def.key,

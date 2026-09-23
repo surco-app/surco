@@ -144,7 +144,7 @@ export function Overlays({
       {activeModal?.type === 'findReplace' && (
         <FindReplaceModal
           tracks={bulkTracks}
-          customFields={settings?.customFields ?? []}
+          customFields={settings?.customFields}
           onApply={deriveTracksUndoable}
           onClose={close}
         />
