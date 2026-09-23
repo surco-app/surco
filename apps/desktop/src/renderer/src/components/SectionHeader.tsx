@@ -84,7 +84,7 @@ export function SectionHeader({
           </span>
         )}
       </button>
-      {help && !row && (
+      {help && (
         <span
           data-testid="section-help"
           role="note"
