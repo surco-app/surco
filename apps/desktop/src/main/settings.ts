@@ -92,7 +92,8 @@ export const defaults: Settings = {
   // Off by default: the Finder-covers ID3 header is off-spec for FLAC, so it's opt-in.
   flacFinderCovers: false,
   mp3Quality: '320',
-  // Max fidelity by default: preserve the source's own bit depth and sample rate.
+  // Max fidelity by default: the source's sample rate, and its bit depth unless that
+  // is proven to be 16-bit audio padded into 24.
   outputBitDepth: 'corrected',
   outputSampleRate: 'source',
   // ffmpeg's own FLAC default; higher only shrinks files slower, the audio is identical.
