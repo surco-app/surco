@@ -307,15 +307,22 @@ export function shouldAddToAppleMusic(
 // path), but it's written to a temp location and removed after the add. Requires the
 // add to actually happen — when it can't (setting off, non-macOS, FLAC) the file must
 // stay, so this returns false and the conversion keeps its output-folder copy. Never
-// true for an in-place rewrite: that file is the user's own source, never deleted.
+// true for an in-place rewrite: that file is the user's own source, never deleted. Nor
+// when Engine DJ registers the conversion: its library points at the output copy.
 export function isAppleMusicOnly(
   addToAppleMusic: boolean,
   keepOutputCopy: boolean,
+  addToEngineDj: boolean,
   platform: NodeJS.Platform,
   format: OutputFormat,
   inPlace: boolean,
 ): boolean {
-  return shouldAddToAppleMusic(addToAppleMusic, platform, format) && !keepOutputCopy && !inPlace
+  return (
+    shouldAddToAppleMusic(addToAppleMusic, platform, format) &&
+    !keepOutputCopy &&
+    !addToEngineDj &&
+    !inPlace
+  )
 }
 
 // Dumps the whole library's name+artist+duration+persistent ID in one osascript so the

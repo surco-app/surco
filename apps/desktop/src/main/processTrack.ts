@@ -197,7 +197,8 @@ export async function runProcessTrack(
     // anything there), hand it over, then remove it below.
     const musicOnly = isAppleMusicOnly(
       addToAppleMusic,
-      keepOutputCopy || addToEngineDj,
+      keepOutputCopy,
+      addToEngineDj,
       deps.platform,
       format,
       inPlace,
