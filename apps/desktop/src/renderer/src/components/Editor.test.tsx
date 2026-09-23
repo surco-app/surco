@@ -782,15 +782,15 @@ describe('Editor loudness estimates', () => {
   })
 
   // The heart of the request, and where it was wrong: the reporter expected dynamics to
-  // move when the peak does. Both modes apply a CONSTANT gain and Surco has no
-  // compressor, so peak and RMS shift together and their difference cannot change.
-  // Printing a shifted figure there would be a number the converted file contradicts.
+  // move when the peak does. A target reachable with a CONSTANT gain moves peak and RMS
+  // together, and Surco has no compressor, so their difference cannot change. Printing a
+  // shifted figure there would be a number the converted file contradicts.
   it('marks the gain-invariant figures as unchanged instead of inventing a shift', async () => {
     seedLoudness(measured)
     renderEditor({ id: 'a' }, 'wav', {
       showLoudness: true,
       editorSections: NORMALIZE_OPEN,
-      normalize: club,
+      normalize: { ...club, targetLufs: -12 },
     })
     await screen.findByTestId('loudness-estimate-lufs')
     for (const id of ['range', 'balance']) {
@@ -825,7 +825,7 @@ describe('Editor loudness estimates', () => {
     renderEditor({ id: 'a' }, 'wav', {
       showLoudness: true,
       editorSections: NORMALIZE_OPEN,
-      normalize: { ...club, peakPerChannel: true },
+      normalize: { ...club, targetLufs: -12, peakPerChannel: true },
     })
     await screen.findByTestId('loudness-estimate-lufs')
     expect(screen.getByTestId('loudness-estimate-balance')).toHaveTextContent(
