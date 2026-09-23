@@ -175,6 +175,7 @@ function QualityMark({
     >
       <Icon aria-hidden className={`h-3 w-3 ${className}`} />
       <Tooltip label={label} align="end" scope="dot" />
+      <span className="sr-only">{label}</span>
     </span>
   )
 }
@@ -268,6 +269,15 @@ const TrackRow = memo(function TrackRow({
   // and sort, so the pill, the filter chip and the sort order all agree.
   const format = sourceFormat(t)
   const rowRef = useRef<HTMLDivElement>(null)
+  // Shared by each mark's hover tooltip and its sr-only twin, so what a screen reader
+  // hears is the same sentence the pointer reveals.
+  const statusLabel = tr(stale ? 'trackList.status.stale' : `trackList.status.${t.status}`)
+  const autoMatchLabel = matchTooltip(
+    t.matchProvider
+      ? tr('trackList.autoMatchedFrom', { source: tr(`settings.provider.${t.matchProvider}`) })
+      : tr('trackList.autoMatched'),
+    t.matchConfidence,
+  )
   // Report this row entering/leaving the scroll pane so App can run auto-match for
   // what's on screen, through the list's single shared observer.
   useEffect(() => {
@@ -433,11 +443,10 @@ const TrackRow = memo(function TrackRow({
             </span>
           )}
           <StatusBadge track={t} stale={stale} />
-          <Tooltip
-            label={tr(stale ? 'trackList.status.stale' : `trackList.status.${t.status}`)}
-            align="start"
-            scope="dot"
-          />
+          <Tooltip label={statusLabel} align="start" scope="dot" />
+          {/* The badge is an unlabelled shape and the tooltip only shows on hover, so the
+              state is spoken from here. Idle draws no badge and stays silent too. */}
+          {(stale || t.status !== 'idle') && <span className="sr-only">{statusLabel}</span>}
         </span>
         {/* The row tooltip (frozen listLabel — not the editable meta.title — so it matches
             what the row shows) is scoped to the text itself, not this flex-1 layout slot:
@@ -488,6 +497,7 @@ const TrackRow = memo(function TrackRow({
                 >
                   <TriangleAlert className="h-3 w-3" aria-hidden="true" />
                   <Tooltip label={tr('trackList.metaReadFailed')} align="end" scope="dot" />
+                  <span className="sr-only">{tr('trackList.metaReadFailed')}</span>
                 </span>
               )}
               {/* Both indicators reserve a fixed-width slot even when absent, so the FLAC
@@ -501,18 +511,8 @@ const TrackRow = memo(function TrackRow({
                     className="group/dot relative flex items-center text-[var(--color-accent)]"
                   >
                     <Sparkles className="h-3 w-3" aria-hidden="true" />
-                    <Tooltip
-                      label={matchTooltip(
-                        t.matchProvider
-                          ? tr('trackList.autoMatchedFrom', {
-                              source: tr(`settings.provider.${t.matchProvider}`),
-                            })
-                          : tr('trackList.autoMatched'),
-                        t.matchConfidence,
-                      )}
-                      align="end"
-                      scope="dot"
-                    />
+                    <Tooltip label={autoMatchLabel} align="end" scope="dot" />
+                    <span className="sr-only">{autoMatchLabel}</span>
                   </span>
                 ) : null}
               </span>
