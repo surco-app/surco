@@ -214,7 +214,24 @@ export const DiscogsPanel = memo(function DiscogsPanel({
               />
             </p>
           )}
-          {error && <p className="px-1.5 pt-2 text-xs text-danger">{error}</p>}
+          {/* Nothing about a search is audible otherwise: the spinner is an icon, the
+              skeleton is hidden and rows just appear. Mounted empty from the start so
+              assistive tech is already listening when the first search runs. Opening a
+              release also sets busy, but that is not a search, so it says nothing. */}
+          <p data-testid="discogs-status" role="status" className="sr-only">
+            {busy && !loading
+              ? tr('editor.searching')
+              : noResults
+                ? tr('editor.noResults')
+                : results.length > 0
+                  ? tr('editor.resultsCount', { count: results.length })
+                  : ''}
+          </p>
+          {error && (
+            <p role="alert" className="px-1.5 pt-2 text-xs text-danger">
+              {error}
+            </p>
+          )}
           {(showProviderFilter || formatFilter.length > 0) && (
             <div className="flex items-center gap-2 px-1.5 pt-2">
               {showProviderFilter && (

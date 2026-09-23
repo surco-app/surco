@@ -606,7 +606,10 @@
     "coverMixed": "The selected tracks have different artwork",
     "coverLowRes": "Low resolution",
     "coverPosition": "Image {{position}} of {{total}}",
-    "coverPositionNone": "None of the {{total}} images picked"
+    "coverPositionNone": "None of the {{total}} images picked",
+    "searching": "Searching…",
+    "resultsCount_one": "{{count}} result",
+    "resultsCount_other": "{{count}} results"
   },
   "fields": {
     "groupFilled_one": "{{count}} filled",

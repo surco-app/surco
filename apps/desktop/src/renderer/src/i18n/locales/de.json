@@ -606,7 +606,10 @@
     "coverMixed": "Die ausgewählten Titel haben unterschiedliche Cover",
     "coverLowRes": "Niedrige Auflösung",
     "coverPosition": "Bild {{position}} von {{total}}",
-    "coverPositionNone": "Keines der {{total}} Bilder gewählt"
+    "coverPositionNone": "Keines der {{total}} Bilder gewählt",
+    "searching": "Suche läuft…",
+    "resultsCount_one": "{{count}} Ergebnis",
+    "resultsCount_other": "{{count}} Ergebnisse"
   },
   "fields": {
     "groupFilled_one": "{{count}} ausgefüllt",

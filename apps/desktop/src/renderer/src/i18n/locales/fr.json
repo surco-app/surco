@@ -606,7 +606,10 @@
     "coverMixed": "Les pistes sélectionnées ont des pochettes différentes",
     "coverLowRes": "Basse résolution",
     "coverPosition": "Image {{position}} sur {{total}}",
-    "coverPositionNone": "Aucune des {{total}} images choisie"
+    "coverPositionNone": "Aucune des {{total}} images choisie",
+    "searching": "Recherche en cours…",
+    "resultsCount_one": "{{count}} résultat",
+    "resultsCount_other": "{{count}} résultats"
   },
   "fields": {
     "groupFilled_one": "{{count}} rempli",
