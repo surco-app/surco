@@ -14,8 +14,8 @@ export type { FieldSpec }
 export { buildFieldSpecs }
 
 // One field: the compilation checkbox writes the exact '1' the TCMP/COMPILATION tag needs
-// (a yes/no fact, not free text; in a mixed selection value '' shows unticked and ticking
-// stamps '1' on every track); every other field is a text Field. Pulled out so both the
+// (a yes/no fact, not free text; in a mixed selection the box shows indeterminate and
+// ticking stamps '1' on every track); every other field is a text Field. Pulled out so both the
 // group render and any future caller draw a field the same way.
 function renderField(f: FieldSpec): React.JSX.Element {
   if (f.perTrack) {
@@ -35,6 +35,10 @@ function renderField(f: FieldSpec): React.JSX.Element {
         <input
           type="checkbox"
           data-testid="field-compilation"
+          // indeterminate exists only as a DOM property, so it is set through the ref.
+          ref={(el) => {
+            if (el) el.indeterminate = !!f.mixed
+          }}
           checked={f.value === '1'}
           onChange={(e) => f.onChange(e.target.checked ? '1' : '')}
           className="h-4 w-4 accent-[var(--color-accent)]"
