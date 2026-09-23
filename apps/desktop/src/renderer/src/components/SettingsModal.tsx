@@ -11,7 +11,12 @@ import {
   pickSynced,
   type SyncedDraft,
 } from '../lib/settingsDraft'
-import { SETTINGS_TAB_ICONS, SETTINGS_TABS, type SettingsTab } from '../lib/settingsTabs'
+import {
+  SETTINGS_TAB_GROUPS,
+  SETTINGS_TAB_ICONS,
+  SETTINGS_TABS,
+  type SettingsTab,
+} from '../lib/settingsTabs'
 import { FieldsEditor } from './FieldsEditor'
 import { ModalShell } from './ModalShell'
 import { ArtworkTab } from './settings/ArtworkTab'
@@ -227,38 +232,50 @@ export function SettingsModal({
             style={{ transform: `translateY(${pill.top}px)`, height: pill.height }}
           />
         )}
-        {SETTINGS_TABS.map((id, idx) => {
-          const Icon = SETTINGS_TAB_ICONS[id]
-          return (
-            <button
-              key={id}
-              ref={(el) => {
-                tabRefs.current[id] = el
-              }}
-              type="button"
-              role="tab"
-              id={`settings-tab-${id}`}
-              data-testid={`settings-tab-${id}`}
-              aria-selected={tab === id}
-              aria-controls="settings-tabpanel"
-              tabIndex={tab === id ? 0 : -1}
-              onClick={() => setTab(id)}
-              onKeyDown={(e) => onTabKeyDown(e, idx)}
-              // The button paints no background of its own — the sliding pill behind
-              // it does (accent-soft, not field, so it reads against the panel-2
-              // sidebar in light too). Text color shares the pill's 200ms so the two
-              // arrive together.
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors duration-200 ${
-                tab === id
-                  ? 'font-medium text-[var(--color-accent)]'
-                  : 'text-fg-muted hover:bg-[var(--color-panel)] hover:text-fg'
-              }`}
-            >
-              <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
-              {tr(`settings.tabs.${id}`)}
-            </button>
-          )
-        })}
+        {SETTINGS_TAB_GROUPS.map((group) => (
+          <div key={group.heading ?? 'main'} className="flex flex-col gap-0.5">
+            {group.heading && (
+              <p className="mt-3 mb-1 px-3 text-[10px] font-medium uppercase tracking-wider text-fg-faint">
+                {tr(`settings.tabGroups.${group.heading}`)}
+              </p>
+            )}
+            {group.tabs.map((id) => {
+              const Icon = SETTINGS_TAB_ICONS[id]
+              // The keyboard handler walks the flat SETTINGS_TABS order, so the button
+              // reports its index there, not its position within the group.
+              const idx = SETTINGS_TABS.indexOf(id)
+              return (
+                <button
+                  key={id}
+                  ref={(el) => {
+                    tabRefs.current[id] = el
+                  }}
+                  type="button"
+                  role="tab"
+                  id={`settings-tab-${id}`}
+                  data-testid={`settings-tab-${id}`}
+                  aria-selected={tab === id}
+                  aria-controls="settings-tabpanel"
+                  tabIndex={tab === id ? 0 : -1}
+                  onClick={() => setTab(id)}
+                  onKeyDown={(e) => onTabKeyDown(e, idx)}
+                  // The button paints no background of its own — the sliding pill behind
+                  // it does (accent-soft, not field, so it reads against the panel-2
+                  // sidebar in light too). Text color shares the pill's 200ms so the two
+                  // arrive together.
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors duration-200 ${
+                    tab === id
+                      ? 'font-medium text-[var(--color-accent)]'
+                      : 'text-fg-muted hover:bg-[var(--color-panel)] hover:text-fg'
+                  }`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
+                  {tr(`settings.tabs.${id}`)}
+                </button>
+              )
+            })}
+          </div>
+        ))}
       </div>
 
       <SettingsAdvancedProvider>
