@@ -44,6 +44,6 @@ describe('reportVerdictColor', () => {
     expect(reportVerdictColor('good')).toBe('#9ece6a')
     expect(reportVerdictColor('warn')).toBe('#e0af68')
     expect(reportVerdictColor('bad')).toBe('#f7768e')
-    expect(reportVerdictColor('processed')).toBe('#f7768e')
+    expect(reportVerdictColor('processed')).toBe('#e0af68')
   })
 })

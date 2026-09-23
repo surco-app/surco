@@ -426,6 +426,50 @@ describe('QualitySection verdict caption', () => {
   })
 })
 
+// Red is alarming, so it is kept for the two verdicts that are measured and serious: a
+// lossy source inside a lossless container, and a bad-quality cut. Everything the
+// detectors only suspect is amber, and the padded-depth fact is neutral.
+describe('verdict colours', () => {
+  it.each([
+    [{ cutoffHz: 16000, hasKnee: true }, '/m/a.flac', 'danger'],
+    [{ cutoffHz: 16000, hasKnee: true }, '/m/a.m4a', 'danger'],
+    [{ cutoffHz: 18500, hasKnee: true }, '/m/a.m4a', 'warn'],
+    [{ cutoffHz: 16000, processed: true }, '/m/a.flac', 'warn'],
+  ])('paints %o in %s as %s', async (fields, path, tone) => {
+    renderSection({ image: '', sampleRateHz: 44100, processed: false, ...fields }, path)
+    expect(await screen.findByTestId('quality-badge')).toHaveAttribute('data-tone', tone)
+  })
+
+  it('names a regenerated-highs verdict as a possibility, not a fact', () => {
+    expect(i18n.t('editor.qualityProcessed')).toBe('Possibly reprocessed')
+  })
+
+  it('argues regenerated highs in amber, matching the pill', async () => {
+    renderSection(
+      { image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: true, humpPeakHz: 19000 },
+      '/m/a.flac',
+    )
+    expect(await screen.findByTestId('quality-evidence')).toHaveAttribute('data-tone', 'warn')
+  })
+
+  it('states padded depth as a neutral fact, pill and block alike', async () => {
+    renderSection(
+      {
+        image: '',
+        cutoffHz: 21000,
+        sampleRateHz: 44100,
+        processed: false,
+        hasKnee: false,
+        bitsUsage: 'padded16',
+        bitsLowPct: 0,
+      },
+      '/m/a.flac',
+    )
+    expect(await screen.findByTestId('quality-bits-pill')).toHaveAttribute('data-tone', 'neutral')
+    expect(screen.getByTestId('quality-bits-padded')).toHaveAttribute('data-tone', 'neutral')
+  })
+})
+
 describe('QualitySection analysis failure', () => {
   afterEach(cleanup)
 

@@ -25,7 +25,7 @@ const REPORT_RAMP: Ramp = spectrumRampTable(
 
 export function reportVerdictColor(verdict: Verdict): string {
   if (verdict === 'good') return REPORT.good
-  if (verdict === 'warn') return REPORT.warn
+  if (verdict === 'warn' || verdict === 'processed') return REPORT.warn
   return REPORT.danger
 }
 
@@ -77,7 +77,7 @@ interface QualityReportInput {
   cutoffLabel: string | null
   // The verdict's justification paragraph, wrapped under the image.
   caption: string
-  // The amber upsample note, when the analysis flagged one.
+  // The upsample note, when the analysis flagged one.
   upsampledNote?: string
   footer: string
 }
@@ -219,7 +219,6 @@ export async function renderQualityReport(input: QualityReportInput): Promise<st
     ctx.fillText(line, PAD, y)
     y += 24
   }
-  ctx.fillStyle = REPORT.warn
   for (const line of noteLines) {
     ctx.fillText(line, PAD, y)
     y += 24
