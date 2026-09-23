@@ -1,8 +1,6 @@
-import { execFileSync } from 'node:child_process'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import ffmpegStatic from 'ffmpeg-static'
 import {
   Id3v2FrameIdentifiers,
   type Id3v2Tag,
@@ -19,38 +17,13 @@ vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 import type { TrackMetadata } from '../shared/types'
 import { convertAudio, readTags } from './ffmpeg'
+import { EXTS, encodeSine } from './sineTone.fixture'
 import { UPDATE_FORMAT, type UpdateExt } from './updateContract'
 
-const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-provenance-fields-'))
-
-const CODEC: Record<UpdateExt, string[]> = {
-  flac: ['-c:a', 'flac'],
-  mp3: ['-c:a', 'libmp3lame', '-b:a', '320k'],
-  aiff: ['-c:a', 'pcm_s16be'],
-  wav: ['-c:a', 'pcm_s16le'],
-  m4a: ['-c:a', 'alac'],
-}
-const EXTS = Object.keys(CODEC) as UpdateExt[]
 
 const OWNED = { copyright: '(P) 2026 MQD Records', encodedBy: 'A. Ripper' }
 const BLANK = { copyright: '', encodedBy: '' }
-
-function encode(name: string, ext: UpdateExt): string {
-  const file = join(dir, `${name}.${ext}`)
-  execFileSync(FF, [
-    '-y',
-    '-loglevel',
-    'error',
-    '-f',
-    'lavfi',
-    '-i',
-    'sine=frequency=440:duration=1',
-    ...CODEC[ext],
-    file,
-  ])
-  return file
-}
 
 // The copyright through TagLib's own property (TCOP, COPYRIGHT, cprt), the encoder
 // credit as TagScanner and mp3tag write it: TENC on ID3, ENCODEDBY elsewhere.
@@ -87,13 +60,13 @@ function provenanceOf(tags: TrackMetadata): Partial<TrackMetadata> {
 // them, which is what the editor sends while the user keeps the fields hidden.
 describe.each(EXTS)('copyright and encoded-by on a %s', (ext) => {
   it('reads what another tagger wrote', async () => {
-    const file = encode(`read-${ext}`, ext)
+    const file = encodeSine(dir, `read-${ext}`, ext)
     tagLikeTagScanner(file, ext)
     expect(provenanceOf(await readTags(file))).toEqual(OWNED)
   })
 
   it('keeps them when updating in the same format with the values in the editor', async () => {
-    const src = encode(`keep-src-${ext}`, ext)
+    const src = encodeSine(dir, `keep-src-${ext}`, ext)
     tagLikeTagScanner(src, ext)
     const out = join(dir, `keep-out-${ext}.${ext}`)
     await convertAudio(src, out, UPDATE_FORMAT[ext], await readTags(src))
@@ -101,14 +74,14 @@ describe.each(EXTS)('copyright and encoded-by on a %s', (ext) => {
   })
 
   it('writes them when converting from another format', async () => {
-    const src = encode(`convert-src-${ext}`, ext === 'wav' ? 'flac' : 'wav')
+    const src = encodeSine(dir, `convert-src-${ext}`, ext === 'wav' ? 'flac' : 'wav')
     const out = join(dir, `convert-out-${ext}.${ext}`)
     await convertAudio(src, out, UPDATE_FORMAT[ext], { ...(await readTags(src)), ...OWNED })
     expect(provenanceOf(await readTags(out))).toEqual(OWNED)
   })
 
   it('clears the previous owner values when the editor sends them empty', async () => {
-    const src = encode(`clear-src-${ext}`, ext === 'wav' ? 'flac' : 'wav')
+    const src = encodeSine(dir, `clear-src-${ext}`, ext === 'wav' ? 'flac' : 'wav')
     tagLikeTagScanner(src, ext === 'wav' ? 'flac' : 'wav')
     const out = join(dir, `clear-out-${ext}.${ext}`)
     await convertAudio(src, out, UPDATE_FORMAT[ext], { ...(await readTags(src)), ...BLANK })
