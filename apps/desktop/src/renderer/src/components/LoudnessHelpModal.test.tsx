@@ -27,4 +27,18 @@ describe('LoudnessHelpModal', () => {
       expect(screen.getByTestId(`loudness-help-fix-${m}`).className).toContain('block')
     }
   })
+
+  // The readout tells the grades apart by shape as well as colour (round, triangle,
+  // square) so a colour-blind reader can still see the verdict. The legend that explains
+  // them kept three identical dots, which is the one place the shapes had to match.
+  it('draws each grade in the legend with the shape the readout uses', async () => {
+    const { GRADE_MARK } = await import('./LoudnessReadout')
+    render(<LoudnessHelpModal onClose={vi.fn()} />)
+    for (const grade of ['good', 'warn', 'bad'] as const) {
+      expect(screen.getByTestId(`loudness-help-grade-${grade}`)).toHaveAttribute(
+        'data-shape',
+        GRADE_MARK[grade].shape,
+      )
+    }
+  })
 })

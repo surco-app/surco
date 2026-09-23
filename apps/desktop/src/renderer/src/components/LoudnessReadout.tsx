@@ -23,7 +23,7 @@ import { Tooltip } from './Tooltip'
 // colour so the verdict reads at a glance. Colour is never the only carrier: each grade
 // also has its own shape (round, a warning triangle, a square), so the verdict survives
 // colour blindness, and its name rides along in text for screen readers.
-const GRADE_MARK: Record<Grade, { shape: string; className: string }> = {
+export const GRADE_MARK: Record<Grade, { shape: string; className: string }> = {
   good: { shape: 'circle', className: 'h-1.5 w-1.5 rounded-full bg-good' },
   warn: {
     shape: 'triangle',
@@ -31,7 +31,7 @@ const GRADE_MARK: Record<Grade, { shape: string; className: string }> = {
   },
   bad: { shape: 'square', className: 'h-1.5 w-1.5 rounded-[1px] bg-danger' },
 }
-const GRADE_NAME: Record<Grade, string> = {
+export const GRADE_NAME: Record<Grade, string> = {
   good: 'editor.loudnessGradeGood',
   warn: 'editor.loudnessGradeWarn',
   bad: 'editor.loudnessGradeBad',
