@@ -313,6 +313,8 @@ const TrackRow = memo(function TrackRow({
         })
   const rowRef = useRef<HTMLDivElement>(null)
   const reviewPending = !t.autoMatched && t.matchReview && !t.matched
+  const stage = t.status === 'processing' ? t.stage : undefined
+  const converting = stage !== undefined
   // Shared by each mark's hover tooltip and its sr-only twin, so what a screen reader
   // hears is the same sentence the pointer reveals.
   const statusLabel = tr(stale ? 'trackList.status.stale' : `trackList.status.${t.status}`)
@@ -475,8 +477,18 @@ const TrackRow = memo(function TrackRow({
         )}
         {/* The cover doubles as the scan target — DJs recognise a track by its art faster
             than by its name — so the leading slot shows the artwork with the processing
-            status demoted to a small ringed dot on its corner. */}
+            status demoted to a small ringed dot on its corner. While a conversion runs the
+            cover rounds into a disc and a ring closes round it phase by phase, the way the
+            App Store draws a download, instead of a bar under the stage text. */}
         <span data-testid="track-status" className="group/dot relative shrink-0">
+          {converting && (
+            <span
+              data-testid="track-progress-ring"
+              aria-hidden="true"
+              className="progress-ring"
+              style={{ '--progress': STAGE_PROGRESS[stage] } as React.CSSProperties}
+            />
+          )}
           {t.embeddedCover ? (
             <img
               data-testid="track-cover"
@@ -487,17 +499,21 @@ const TrackRow = memo(function TrackRow({
               // which, combined with content-visibility below, lands mid-scroll and janks.
               loading="lazy"
               decoding="async"
-              className="h-8 w-8 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
+              className={`h-8 w-8 object-cover outline outline-1 -outline-offset-1 outline-white/10 transition-[border-radius] duration-300 ${
+                converting ? 'rounded-full' : 'rounded-md'
+              }`}
             />
           ) : (
             <span
               data-testid="track-cover-placeholder"
-              className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-white/10"
+              className={`flex h-8 w-8 items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-white/10 transition-[border-radius] duration-300 ${
+                converting ? 'rounded-full' : 'rounded-md'
+              }`}
             >
               <Music className="h-3.5 w-3.5 text-fg-faint" aria-hidden="true" />
             </span>
           )}
-          <StatusBadge track={t} stale={stale} />
+          {!converting && <StatusBadge track={t} stale={stale} />}
           <Tooltip label={statusLabel} align="start" scope="dot" />
           {/* The badge is an unlabelled shape and the tooltip only shows on hover, so the
               state is spoken from here. Idle draws no badge and stays silent too. */}
@@ -535,23 +551,17 @@ const TrackRow = memo(function TrackRow({
               data-testid="track-loading"
               className="mt-2 block h-2.5 w-28 animate-pulse rounded bg-[var(--color-panel-2)]"
             />
-          ) : t.status === 'processing' && t.stage ? (
-            <span data-testid="track-stage" className="mt-1 block">
+          ) : converting ? (
+            <span data-testid="track-stage" className="mt-0.5 block">
               <span className="block truncate text-xs text-[var(--color-accent)]">
-                {tr(`trackList.stage.${t.stage}`, {
+                {tr(`trackList.stage.${stage}`, {
                   format: (t.format ?? outputFormat).toUpperCase(),
                 })}
-              </span>
-              <span className="mt-1 block h-1 overflow-hidden rounded-full bg-[var(--color-panel-2)]">
-                <span
-                  className="progress-sweep block h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-500"
-                  style={{ width: `${STAGE_PROGRESS[t.stage] * 100}%` }}
-                />
               </span>
               {/* Text, not role="progressbar": an option's children are presentational,
                   so a nested role would be flattened away and the amount never spoken. */}
               <span className="sr-only">
-                {tr('trackList.progress', { percent: Math.round(STAGE_PROGRESS[t.stage] * 100) })}
+                {tr('trackList.progress', { percent: Math.round(STAGE_PROGRESS[stage] * 100) })}
               </span>
             </span>
           ) : (
@@ -640,7 +650,7 @@ const TrackRow = memo(function TrackRow({
           17px up from the bottom. The button is a 24px target (WCAG 2.5.8) centred there,
           so the 12px glyph lands where the slot would have drawn it. Shown under the same
           conditions as that line. */}
-      {!t.loadingMeta && !(t.status === 'processing' && t.stage) && reviewPending && (
+      {!t.loadingMeta && !converting && reviewPending && (
         <button
           type="button"
           data-testid="track-match-review"
