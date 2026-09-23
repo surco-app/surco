@@ -48,7 +48,14 @@ describe('loudness help copy', () => {
   it('points the fixable ones at the setting that fixes them', () => {
     expect(editor.loudnessFixDc).toMatch(/DC offset/i)
     expect(editor.loudnessFixLufs).toMatch(/normalization/i)
-    expect(editor.loudnessFixBalance).toMatch(/per-channel/i)
+  })
+
+  // Same reasoning as the DC checkbox below: the balance note names the per-channel box by
+  // the label it actually carries, in every language.
+  it('names the per-channel checkbox exactly as the checkbox reads, in every language', () => {
+    for (const locale of [es, en, de, fr, ptBR]) {
+      expect(locale.editor.loudnessFixBalance).toContain(locale.normalize.peakPerChannel)
+    }
   })
 
   // The help sends the DJ looking for a checkbox by name; if that name is not the one the

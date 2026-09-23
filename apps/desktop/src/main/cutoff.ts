@@ -1,3 +1,5 @@
+import { CODEC_WALL_FINE_STEP_DB } from '../shared/spectrum'
+
 // Detects the lowpass of a lossy codec — the telltale of an MP3/AAC re-encoded
 // as a higher quality file. We probe the energy in successive high-frequency
 // bands and look for the lowpass itself: a drop that never recovers. Real music
@@ -80,7 +82,7 @@ const KNEE_RECOVERY_DB = 2
 // 320's lowpass lands a band lower. What this gives up is the shallow wall over a
 // noisy floor (a 90s dance master with -79 dB highs cut to a -104 floor measures
 // 24), which stays reported as a cutoff without the accusation.
-const KNEE_FINE_STEP_DB = 28
+const KNEE_FINE_STEP_DB = CODEC_WALL_FINE_STEP_DB
 // The 9–11 kHz bands are the reference plateau the rest of the curve is read
 // against: every real track keeps solid energy there, so it normalizes quiet
 // masters and loud ones alike.
