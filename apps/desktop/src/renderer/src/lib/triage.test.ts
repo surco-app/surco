@@ -91,7 +91,7 @@ describe('tracksToAnalyze', () => {
   it('picks only tracks without a spectrum that are not already in flight', () => {
     const tracks = [
       t('done', {
-        spectrum: { image: '', cutoffHz: 20000, sampleRateHz: 44100, processed: false },
+        spectrum: { cutoffHz: 20000, sampleRateHz: 44100, processed: false },
       }),
       t('flying'),
       t('fresh'),
@@ -102,7 +102,7 @@ describe('tracksToAnalyze', () => {
 
   it('returns nothing once every track is analyzed', () => {
     const tracks = [
-      t('a', { spectrum: { image: '', cutoffHz: 20000, sampleRateHz: 44100, processed: false } }),
+      t('a', { spectrum: { cutoffHz: 20000, sampleRateHz: 44100, processed: false } }),
     ]
     expect(tracksToAnalyze(tracks, new Set())).toEqual([])
   })
@@ -113,7 +113,7 @@ describe('matchesFilter / qualityCounts', () => {
     ({
       id,
       status,
-      spectrum: cutoffHz === undefined ? undefined : { image: '', cutoffHz, sampleRateHz: 44100 },
+      spectrum: cutoffHz === undefined ? undefined : { cutoffHz, sampleRateHz: 44100 },
     }) as TrackItem
   // 'good' is the only track already converted; the rest are still pending conversion.
   const tracks = [
@@ -139,7 +139,7 @@ describe('matchesFilter / qualityCounts', () => {
       {
         id: 'faked',
         status: 'idle',
-        spectrum: { image: '', cutoffHz: 20000, sampleRateHz: 44100, processed: true },
+        spectrum: { cutoffHz: 20000, sampleRateHz: 44100, processed: true },
       } as TrackItem,
     ]
     expect(by(faked, { quality: 'suspect' }).map((x) => x.id)).toEqual(['faked'])
@@ -322,7 +322,7 @@ describe('filterWithSticky', () => {
         id,
         status: 'idle',
         inLibrary,
-        spectrum: { image: '', cutoffHz, sampleRateHz: 44100 },
+        spectrum: { cutoffHz, sampleRateHz: 44100 },
       }) as TrackItem
     const sticky = new Set<string>()
     // 'a' is unanalyzed (null cutoff) and not in the library, so it's pinned…
@@ -585,10 +585,7 @@ describe('suspectTracks', () => {
     ({
       id,
       status: 'idle',
-      spectrum:
-        cutoffHz === undefined
-          ? undefined
-          : { image: '', cutoffHz, sampleRateHz: 44100, processed },
+      spectrum: cutoffHz === undefined ? undefined : { cutoffHz, sampleRateHz: 44100, processed },
     }) as TrackItem
 
   // The one-click "trash the fakes" action must delete exactly what the suspect filter

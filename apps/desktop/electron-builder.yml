@@ -94,6 +94,43 @@ mac:
   # packages only its own (these lists concatenate with the top-level files).
   files:
     - '!**/node_modules/better-sqlite3-multiple-ciphers/prebuilds/{linux*,win32*}'
+  # Chromium's own strings in the languages Surco ships (plus their regional and
+  # grammatical-gender variants); the other ~45 .lproj folders are ~40 MB nothing reads.
+  # Mac only: electron-builder matches names exactly, and Windows/Linux name their .pak
+  # files differently (en-US, pt-BR), so the same list there would delete en-US.
+  electronLanguages:
+    - en
+    - en_FEMININE
+    - en_MASCULINE
+    - en_NEUTER
+    - en_GB
+    - en_GB_FEMININE
+    - en_GB_MASCULINE
+    - en_GB_NEUTER
+    - es
+    - es_FEMININE
+    - es_MASCULINE
+    - es_NEUTER
+    - es_419
+    - es_419_FEMININE
+    - es_419_MASCULINE
+    - es_419_NEUTER
+    - de
+    - de_FEMININE
+    - de_MASCULINE
+    - de_NEUTER
+    - fr
+    - fr_FEMININE
+    - fr_MASCULINE
+    - fr_NEUTER
+    - pt_BR
+    - pt_BR_FEMININE
+    - pt_BR_MASCULINE
+    - pt_BR_NEUTER
+    - pt_PT
+    - pt_PT_FEMININE
+    - pt_PT_MASCULINE
+    - pt_PT_NEUTER
   hardenedRuntime: true
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist

@@ -11,7 +11,7 @@ vi.mock('electron', () => {
 })
 
 import { existsSync, mkdtempSync, rmSync } from 'node:fs'
-import { utimes, writeFile } from 'node:fs/promises'
+import { readdir, stat, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app } from 'electron'
@@ -240,20 +240,70 @@ describe('analysisCacheStats', () => {
 })
 
 describe('pruneAnalysisCache', () => {
-  // A huge library would otherwise grow the cache without bound; pruning keeps the
-  // newest entries and drops the oldest once over the cap.
-  it('keeps the cap of most-recent entries and deletes the oldest', async () => {
+  beforeEach(() => {
+    rmSync(join(app.getPath('userData'), 'analysis-cache'), { recursive: true, force: true })
+  })
+
+  const cacheDir = (): string => join(app.getPath('userData'), 'analysis-cache')
+
+  async function entryAged(file: string, secondsAgo: number): Promise<string> {
+    const before = new Set(await readdir(cacheDir()).catch(() => []))
+    await cachedAnalysis('demo', file, vi.fn().mockResolvedValue({ v: 1 }))
+    const name = (await readdir(cacheDir())).find((n) => !before.has(n)) as string
+    const when = (Date.now() - secondsAgo * 1000) / 1000
+    await utimes(join(cacheDir(), name), when, when)
+    return join(cacheDir(), name)
+  }
+
+  // The cap is a disk budget, not a file count: a track writes up to nine entries of
+  // wildly different sizes (a 15 KB tag read next to a 400 KB channel scan), so a count
+  // cap sized for "N tracks" held a fraction of that once the heavy probes ran.
+  it('deletes the oldest entries until the cache fits the byte budget', async () => {
     const files = await Promise.all([makeFile(), makeFile(), makeFile()])
-    for (const f of files) {
-      await cachedAnalysis('demo', f, vi.fn().mockResolvedValue({ v: 1 }))
-    }
+    const newest = await entryAged(files[0], 10)
+    await entryAged(files[1], 30)
+    await entryAged(files[2], 20)
+    const oneEntry = (await stat(newest)).size
 
-    await pruneAnalysisCache(1)
+    await pruneAnalysisCache(oneEntry)
 
-    // Only the single newest entry survives, so two of the three recompute.
     const recompute = vi.fn().mockResolvedValue({ v: 2 })
-    for (const f of files) await cachedAnalysis('demo', f, recompute)
+    expect(await cachedAnalysis('demo', files[0], recompute)).toEqual({ v: 1 })
+    expect(recompute).not.toHaveBeenCalled()
+    await cachedAnalysis('demo', files[1], recompute)
+    await cachedAnalysis('demo', files[2], recompute)
     expect(recompute).toHaveBeenCalledTimes(2)
+  })
+
+  // Reading an entry is what makes it worth keeping. Ordering by write time alone
+  // evicted a library's tag reads first (written at import, read on every reopen), so
+  // each launch re-read every file off the NAS; a hit must count as recent use.
+  it('keeps an entry that was read recently over one written more recently', async () => {
+    const [used, unused] = await Promise.all([makeFile(), makeFile()])
+    const usedEntry = await entryAged(used, 100)
+    await entryAged(unused, 50)
+    await cachedAnalysis('demo', used, vi.fn())
+    const oneEntry = (await stat(usedEntry)).size
+
+    await pruneAnalysisCache(oneEntry)
+
+    const recompute = vi.fn().mockResolvedValue({ v: 2 })
+    expect(await cachedAnalysis('demo', used, recompute)).toEqual({ v: 1 })
+    expect(recompute).not.toHaveBeenCalled()
+  })
+
+  // The list's hydration reads entries through peek, never through cachedAnalysis, so
+  // peek has to count as use too or a library that is only reopened ages out anyway.
+  it('counts a peek as recent use', async () => {
+    const [peeked, unused] = await Promise.all([makeFile(), makeFile()])
+    const peekedEntry = await entryAged(peeked, 100)
+    await entryAged(unused, 50)
+    await peekAnalysis('demo', peeked)
+
+    await pruneAnalysisCache((await stat(peekedEntry)).size)
+
+    expect(await peekAnalysis('demo', peeked)).toEqual({ v: 1 })
+    expect(await peekAnalysis('demo', unused)).toBeNull()
   })
 
   // A 0.70.0 spectrogram entry could persist a decode error carrying the child's
@@ -267,7 +317,7 @@ describe('pruneAnalysisCache', () => {
     const dir = join(app.getPath('userData'), 'analysis-cache')
     await writeFile(join(dir, 'poisoned.json'), `"${'x'.repeat(2048)}"`)
 
-    await pruneAnalysisCache(1000, 1024)
+    await pruneAnalysisCache(1024 * 1024, 1024)
 
     expect(existsSync(join(dir, 'poisoned.json'))).toBe(false)
     const recompute = vi.fn().mockResolvedValue({ v: 2 })

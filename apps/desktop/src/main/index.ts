@@ -1295,8 +1295,10 @@ app.whenReady().then(() => {
       })
     })
   }
-  // Bound the on-disk analysis cache once at launch, before any new entries land.
+  // Bound the on-disk analysis cache at launch, before any new entries land, and again
+  // every half hour: an "analyze all" over a big library writes gigabytes in one session.
   void pruneAnalysisCache()
+  setInterval(() => void pruneAnalysisCache(), 30 * 60 * 1000)
   // Deletes any .tmp-* conversions left behind by a crash or force-quit in the
   // previous run, before any new conversion can add to the manifest.
   tmpManifest.sweepOrphans()

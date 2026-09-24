@@ -40,6 +40,12 @@ export function waveformScanOptions(inputPath: string) {
   return analysisOptions('waveformScan', inputPath, () => window.api.waveformScan(inputPath))
 }
 
+// Where the list finds a track's clipping fact once the scan above is gone: the query
+// client files every scan's verdict here, and a reopened library hydrates only this.
+export function scanVerdictKey(inputPath: string) {
+  return ['scanVerdict', inputPath] as const
+}
+
 export function useWaveformScan(
   inputPath: string,
   enabled: boolean,
