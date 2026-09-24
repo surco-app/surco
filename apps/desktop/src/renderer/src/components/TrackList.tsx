@@ -225,7 +225,7 @@ function matchTooltip(label: string, confidence: number | undefined): string {
 // placeholder the row itself shows.
 function rowTooltip(t: TrackItem, tr: (key: string) => string): string {
   const artist = t.meta.artist || tr('trackList.noArtist')
-  return `${t.listLabel} — ${artist}`
+  return `${t.listLabel} · ${artist}`
 }
 
 interface RowProps {
