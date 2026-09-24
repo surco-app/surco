@@ -145,9 +145,9 @@ interface ConfirmFlows {
 // onConfirm into the data layer; App only routes the resulting modal through useOverlays.
 // The overwrite prompt says what happens to the original under the backup policy: kept
 // as a backup, kept only when the audio changes, or gone for good. Main fills the policy
-// in on load ('always' by default), so a missing one only means settings not loaded yet.
+// in on load ('audioChanges' by default), so a missing one only means settings not loaded yet.
 function inPlaceMessageKey(settings: Settings | null): string {
-  const policy = settings?.backupPolicy ?? 'always'
+  const policy = settings?.backupPolicy ?? 'audioChanges'
   if (policy === 'never') return 'confirm.convertInPlaceMessage'
   if (policy === 'audioChanges') return 'confirm.convertInPlaceMessageAudioBackup'
   return 'confirm.convertInPlaceMessageBackup'
