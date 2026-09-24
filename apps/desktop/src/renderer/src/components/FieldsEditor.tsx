@@ -25,7 +25,7 @@ import {
   TOGGLE_OFF,
   TOGGLE_ON,
 } from '../lib/settingsRows'
-import { SegmentedControl } from './SegmentedControl'
+import { Select } from './Select'
 import { Tooltip } from './Tooltip'
 
 // How long the auto-organize button holds its "done" confirmation before reverting.
@@ -46,6 +46,7 @@ const ROW_GRID = 'grid grid-cols-[1fr_4.75rem_4.75rem_1.75rem_1.75rem_5.5rem] it
 const SEPARATORS = { comma: ', ', semicolon: '; ', slash: '/' } as const
 type SeparatorOption = keyof typeof SEPARATORS | 'custom'
 const SEPARATOR_OPTIONS: readonly SeparatorOption[] = ['comma', 'semicolon', 'slash', 'custom']
+const SEPARATOR_EXAMPLE = ['Pop', 'House']
 type TagListKey = 'genre' | 'grouping'
 
 function separatorOption(separator: string): SeparatorOption {
@@ -141,6 +142,7 @@ export function FieldsEditor({
       </span>
       <span className="sr-only">{tr('fields.rowToken', { token: `{${key}}` })}</span>
       {deleteButton(key)}
+      {separatorPicker(key)}
     </>
   )
   const separatorPicker = (key: string): React.JSX.Element | null => {
@@ -148,21 +150,27 @@ export function FieldsEditor({
     const separator = separators[key]
     const option = otherOpen[key] ? 'custom' : separatorOption(separator)
     return (
-      <span
-        data-testid={`field-separator-${key}`}
-        className="col-span-full flex items-center gap-2 pt-1.5 pl-[22px] text-xs text-fg-dim"
-      >
-        {tr('settings.separator')}
-        <SegmentedControl
-          options={SEPARATOR_OPTIONS}
+      <span className="ml-auto flex items-center gap-1.5 text-xs text-fg-faint">
+        {tr('settings.separatorJoinedBy')}
+        <Select
           value={option}
+          options={SEPARATOR_OPTIONS.map((o) =>
+            o === 'custom'
+              ? { value: o, label: tr('settings.separatorCustom') }
+              : {
+                  value: o,
+                  label: SEPARATORS[o].trim(),
+                  hint: SEPARATOR_EXAMPLE.join(SEPARATORS[o]),
+                },
+          )}
           onChange={(next) => {
-            setOtherOpen((open) => ({ ...open, [key]: next === 'custom' }))
-            if (next !== 'custom') onChangeSeparator(key, SEPARATORS[next])
+            const picked = next as SeparatorOption
+            setOtherOpen((open) => ({ ...open, [key]: picked === 'custom' }))
+            if (picked !== 'custom') onChangeSeparator(key, SEPARATORS[picked])
           }}
-          testidPrefix={`field-separator-${key}`}
-          labelFor={(o) => (o === 'custom' ? tr('settings.separatorCustom') : SEPARATORS[o].trim())}
           label={tr('settings.separatorLabel', { name: labelOf(key) })}
+          testid={`field-separator-${key}`}
+          compact
         />
         {option === 'custom' && (
           <input
@@ -171,7 +179,7 @@ export function FieldsEditor({
             maxLength={3}
             onChange={(e) => onChangeSeparator(key, e.target.value)}
             aria-label={tr('settings.separatorCustomLabel', { name: labelOf(key) })}
-            className="w-12 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-1.5 py-1.5 text-center font-mono text-sm text-fg"
+            className="h-6 w-10 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-1 text-center font-mono text-xs text-fg"
           />
         )}
       </span>
@@ -401,7 +409,6 @@ export function FieldsEditor({
               >
                 {tr('settings.hide')}
               </button>
-              {separatorPicker(key)}
             </div>
           ))}
         </div>
