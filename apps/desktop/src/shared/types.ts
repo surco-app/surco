@@ -727,8 +727,8 @@ export interface AppleMusicTrackMeta {
   // Absent when the file already carries its own art, which is what gets shown then.
   //
   // Both halves travel, like every other cover source in the app: the path is what a
-  // conversion embeds, and the data URL is what the sandboxed renderer can actually
-  // display — it cannot load a file:// image.
+  // conversion embeds, and the URL (to its copy in the thumbnail store) is what the
+  // sandboxed renderer can actually display — it cannot load a file:// image.
   coverPath?: string
   coverUrl?: string
 }

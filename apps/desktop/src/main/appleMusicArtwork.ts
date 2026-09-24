@@ -3,6 +3,7 @@ import { mkdir, readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { app } from 'electron'
+import { coverThumbUrlForBytes } from './coverThumbs'
 
 // Which imported tracks still need their cover, and fetching it from Apple Music.
 //
@@ -37,7 +38,7 @@ export async function artworkDir(): Promise<string> {
 // that was never created.
 export async function fetchAppleMusicArtwork(
   jobs: { persistentId: string; outPath: string }[],
-): Promise<{ path: string; dataUrl: string }[]> {
+): Promise<{ path: string; url: string }[]> {
   // The raw data of a few hundred covers can outgrow execFile's 1 MB default; the pictures
   // themselves land in files, but osascript's own output still has to fit.
   await promisify(execFile)('osascript', ['-e', buildArtworkScript(jobs)], {
@@ -50,15 +51,15 @@ export async function fetchAppleMusicArtwork(
         // cover would show a broken image instead of the empty slot it replaced.
         if ((await stat(outPath)).size === 0) return null
         // The sandboxed renderer cannot load a file:// image, so the picture travels as a
-        // data URL too — the path is only what a later conversion embeds.
-        const bytes = await readFile(outPath)
-        return { path: outPath, dataUrl: `data:image/jpeg;base64,${bytes.toString('base64')}` }
+        // short URL to its copy in the thumbnail store (see coverThumbs.ts) — the path is
+        // only what a later conversion embeds.
+        return { path: outPath, url: await coverThumbUrlForBytes(await readFile(outPath)) }
       } catch {
         return null
       }
     }),
   )
-  return landed.filter((cover): cover is { path: string; dataUrl: string } => cover !== null)
+  return landed.filter((cover): cover is { path: string; url: string } => cover !== null)
 }
 
 // Fetches each track's picture into its own file.
