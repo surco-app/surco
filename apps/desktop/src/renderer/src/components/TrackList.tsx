@@ -68,6 +68,14 @@ export type MenuState = { track: TrackItem; x: number; y: number }
 // each row's first paint mid-scroll. Past it, skipping off-screen work wins again.
 const DEFER_PAINT_MIN_ROWS = 150
 
+// Two-finger swipe to remove, the way Mail deletes. A trackpad sends the swipe as wheel
+// events with deltaX and keeps sending momentum after the fingers lift, so the row settles
+// once the events stop: past half its width (never under two actions' width) it is removed,
+// past half the action it stays open on Remove, anything less springs back.
+const SWIPE_ACTION_PX = 84
+const SWIPE_REMOVE_MIN_PX = SWIPE_ACTION_PX * 2
+const SWIPE_SETTLE_MS = 160
+
 // A hollow ring, not a filled dot: the conversion state shares the amber/red palette with
 // the quality stripe/glyph on the same row, so a solid coin read as a second alarm. As a
 // thin outline it still carries its colour but sits back a weight, keeping the two axes —
@@ -336,6 +344,30 @@ const TrackRow = memo(function TrackRow({
           }).format(backupAt),
         })
   const rowRef = useRef<HTMLDivElement>(null)
+  const [swipe, setSwipe] = useState(0)
+  const swipeRef = useRef(0)
+  const settleRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  useEffect(() => () => clearTimeout(settleRef.current), [])
+  const moveSwipe = (px: number): void => {
+    swipeRef.current = px
+    setSwipe(px)
+  }
+  const onSwipeWheel = (e: React.WheelEvent): void => {
+    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
+    const width = rowRef.current?.offsetWidth ?? 0
+    const removeAt = Math.max(SWIPE_REMOVE_MIN_PX, width / 2)
+    moveSwipe(Math.min(Math.max(swipeRef.current + e.deltaX, 0), Math.max(width, removeAt * 2)))
+    clearTimeout(settleRef.current)
+    settleRef.current = setTimeout(() => {
+      const reached = swipeRef.current
+      moveSwipe(reached >= removeAt || reached < SWIPE_ACTION_PX / 2 ? 0 : SWIPE_ACTION_PX)
+      if (reached >= removeAt) onRemove(t.id)
+    }, SWIPE_SETTLE_MS)
+  }
+  const closeSwipe = (): void => {
+    clearTimeout(settleRef.current)
+    moveSwipe(0)
+  }
   const reviewPending = !t.autoMatched && t.matchReview && !t.matched
   const stage = t.status === 'processing' ? t.stage : undefined
   const converting = stage !== undefined
@@ -380,6 +412,8 @@ const TrackRow = memo(function TrackRow({
         deferPaint ? '[content-visibility:auto] [contain-intrinsic-size:auto_52px]' : ''
       }`}
       draggable
+      onWheel={onSwipeWheel}
+      onMouseLeave={closeSwipe}
       onDragStart={(e) => {
         // Hand the OS the untouched source file(s) so the row can be dropped onto Spek
         // or any app. An actual drag suppresses the click, so select and drag-out
@@ -397,6 +431,7 @@ const TrackRow = memo(function TrackRow({
           else rowRegistry.current.delete(t.id)
         }}
         data-testid="track-row"
+        style={swipe > 0 ? { transform: `translateX(-${swipe}px)` } : undefined}
         // El ámbito vive en la fila y no en un contenedor de la lista porque solo aquí se
         // maneja esta tecla: capturarla sobre el resto de controles la dejaría muerta en
         // vez de caer a su comando global.
@@ -558,7 +593,7 @@ const TrackRow = memo(function TrackRow({
             </span>
             <span
               data-testid="track-duration-slot"
-              className="w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim transition-opacity group-hover:opacity-0"
+              className="w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim"
             >
               {t.duration !== undefined && (
                 <span data-testid="track-duration">{formatTime(t.duration)}</span>
@@ -630,10 +665,7 @@ const TrackRow = memo(function TrackRow({
               {/* A fixed slot, right-aligned under the duration, so the two read as one
                   trailing column and the review sparkle's place never moves. Wide enough for
                   the pill with its shape, so a tinted FLAC and a bare MP3 end on the same edge. */}
-              <span
-                data-testid="track-format-slot"
-                className="flex w-[46px] shrink-0 justify-end transition-opacity group-hover:opacity-0"
-              >
+              <span data-testid="track-format-slot" className="flex w-[46px] shrink-0 justify-end">
                 {quality !== 'unanalyzed' ? (
                   <QualityPill
                     verdict={quality}
@@ -676,7 +708,7 @@ const TrackRow = memo(function TrackRow({
           17px up from the bottom. The button is a 24px target (WCAG 2.5.8) centred there,
           so the 12px glyph lands where the slot would have drawn it. Shown under the same
           conditions as that line. */}
-      {!t.loadingMeta && !converting && reviewPending && (
+      {!t.loadingMeta && !converting && reviewPending && swipe === 0 && (
         <button
           type="button"
           data-testid="track-match-review"
@@ -695,35 +727,39 @@ const TrackRow = memo(function TrackRow({
       )}
       {/* A ▶ overlay over the cover makes play discoverable — double-click and Space are
           the only other ways in, and neither shows itself. A sibling of the row button
-          (not a child) so it stays a valid nested-button-free control, like remove.
-          Neither is a Tab stop: they are invisible until hovered, and the row itself
-          already answers Space and Backspace. */}
-      <button
-        type="button"
-        aria-label={tr('player.play')}
-        tabIndex={-1}
-        onClick={() => onActivate(t)}
-        // No backdrop-blur here: with one of these per row, Chromium promotes every
-        // overlay to a render surface even at opacity-0, and dozens of backdrop-filter
-        // layers inside the scroller are a known compositor jank source. A slightly
-        // denser plain fill keeps the glyph readable over any cover.
-        className="absolute top-1/2 left-3 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md bg-black/65 text-white opacity-0 transition-opacity pointer-events-none hover:bg-black/75 group-hover:pointer-events-auto group-hover:opacity-100"
-      >
-        <Play className="h-4 w-4 fill-current" aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        aria-label={tr('trackList.remove')}
-        tabIndex={-1}
-        onClick={() => onRemove(t.id)}
-        // Takes the place of the duration and format column, which fade out on hover the way
-        // Mail swaps a row's date for its actions: floating over them, the X covered the
-        // numbers and its ringed disc was the loudest thing in the row. A bare glyph in the
-        // freed column needs no backdrop, so the per-row backdrop-blur rule above holds too.
-        className="absolute top-1/2 right-2.5 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-fg-dim opacity-0 transition-opacity pointer-events-none hover:bg-[var(--color-line-strong)] hover:text-fg group-hover:pointer-events-auto group-hover:opacity-100"
-      >
-        <X className="h-3.5 w-3.5" aria-hidden="true" />
-      </button>
+          (not a child) so it stays a valid nested-button-free control, like Remove.
+          Not a Tab stop: it is invisible until hovered, and the row itself already
+          answers Space. Gone while the row is swiped aside, since the cover moved. */}
+      {swipe === 0 && (
+        <button
+          type="button"
+          aria-label={tr('player.play')}
+          tabIndex={-1}
+          onClick={() => onActivate(t)}
+          // No backdrop-blur here: with one of these per row, Chromium promotes every
+          // overlay to a render surface even at opacity-0, and dozens of backdrop-filter
+          // layers inside the scroller are a known compositor jank source. A slightly
+          // denser plain fill keeps the glyph readable over any cover.
+          className="absolute top-1/2 left-3 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md bg-black/65 text-white opacity-0 transition-opacity pointer-events-none hover:bg-black/75 group-hover:pointer-events-auto group-hover:opacity-100"
+        >
+          <Play className="h-4 w-4 fill-current" aria-hidden="true" />
+        </button>
+      )}
+      {/* What the swipe uncovers, in the strip the row slid out of. Grey, not Mail's red:
+          it takes the track off the list and leaves the file alone. Not a Tab stop, like
+          play: ⌫/Supr on the row is the keyboard's way to the same thing. */}
+      {swipe > 0 && (
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={() => onRemove(t.id)}
+          style={{ width: swipe }}
+          className="absolute inset-y-0 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-fg-dim)] text-[11px] font-semibold whitespace-nowrap text-[var(--color-ink)]"
+        >
+          <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          {tr('trackList.remove')}
+        </button>
+      )}
     </div>
   )
 })
