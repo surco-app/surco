@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 24 de septiembre de 2026** (v1.1.0). Levantado por primera vez el
+**Última revisión: 24 de septiembre de 2026** (v1.2.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -842,7 +842,20 @@ un ISRC que simplemente no tiene (`deezer.ts:10-13`).
 Los nombres de ficheros descargados traen ruido que hunde la búsqueda. Surco
 construye una lista ordenada de consultas y se queda con la primera que devuelve
 algo: campos estructurados, luego búsqueda dentro de tracklists, luego recorte de
-palabras finales, luego texto libre (`discogs.ts:216-276`).
+palabras finales, luego texto libre (`discogs.ts:253-330`).
+
+**Descargas de sello y promo.** Cuando la etiqueta pone el sello como artista y el
+título trae «Acto - Pista» («HH Traxx» / «Francesco Donadoni - Funky Roll»), tras las
+búsquedas precisas con la etiqueta tal cual se repiten las mismas con el acto y la
+pista que nombra el título, saltando un «Preview - » de Bandcamp delante
+(`discogs.ts:306-316`, `shared/searchClean.ts:174-177`). Va después, así que un
+fichero bien etiquetado se resuelve igual que antes.
+
+**Orden de resultados.** Un disco acreditado al artista del fichero («Artista - …»)
+sube por delante de otro que solo lo nombra más adelante, como un remix o un bootleg
+que lleva el nombre entero del original (`release.ts:407-413`). Las respuestas de cada
+fuente entran en su puesto según llegan, sin reordenar al final, y la que llega tarde
+a una lista ya visible se marca un momento.
 
 Diez limpiadores distintos, cada uno con su razón (`shared/searchClean.ts`). El
 detalle del cuidado: el patrón de código de catálogo es deliberadamente estrecho
@@ -874,6 +887,14 @@ hay evidencia independiente del título — duraciones en ambos lados, el artist
 coincidiendo, o el número de catálogo. Sin eso queda «Por confirmar», porque un
 release sin duraciones puntúa 1.0 solo por el título y los títulos de una palabra
 existen en decenas de discos no relacionados (`release.ts:290-298`).
+
+**Bandcamp, con listón propio.** Discogs va siempre primero por ser la fuente
+curada; Bandcamp solo se prueba si Discogs no encuentra nada y el fichero tiene
+duración. Para aplicarse sola, una coincidencia de Bandcamp necesita un 92 %
+(`autoMatch.ts:320-324`). Por debajo, o si no llega a ese listón, se propone como
+«Por confirmar» solo si el artista coincide; sin artista es ruido (resubidas,
+sesiones con el nombre de la pista) y se descarta. Una sugerencia de Discogs manda
+sobre una de Bandcamp (`autoMatch.ts:361-378`).
 
 **Contradicción de título:** tres rips distintos colapsando sobre una misma
 entrada de «Rocket Man» fue el bug que motivó esta guarda (`assign.ts:44-48`).
