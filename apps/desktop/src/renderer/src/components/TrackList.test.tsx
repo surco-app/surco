@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // TrackContextMenu reads window.api at render; install a stub before importing it.
@@ -615,8 +615,12 @@ describe('TrackList', () => {
   })
 
   it('removes a track without selecting it when the remove control is clicked', () => {
+    vi.useFakeTimers()
     const { onSelect, onRemove } = renderList([track({ id: 'a' }), track({ id: 'b' })])
-    fireEvent.click(screen.getAllByLabelText('Remove')[0])
+    fireEvent.wheel(screen.getAllByTestId('track-row')[0].parentElement as Element, { deltaX: 70 })
+    act(() => vi.advanceTimersByTime(500))
+    vi.useRealTimers()
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }))
     expect(onRemove).toHaveBeenCalledWith('a')
     expect(onSelect).not.toHaveBeenCalled()
   })
@@ -836,22 +840,28 @@ describe('TrackList quality badge', () => {
 
   // A clean track must look different from one that was never analyzed: artexjay scanned
   // whole albums by this mark to confirm they were fine, and with the good verdict drawn as
-  // nothing, "good" and "not analyzed yet" read the same. The mark is quiet, not absent, and
-  // it answers hover with the same verdict a screen reader hears.
-  it('draws a visible mark for a clean track and names its verdict on hover', () => {
-    renderList([track({ id: 'a', spectrum: spectrum(21000) })])
+  // nothing, "good" and "not analyzed yet" read the same. The verdict tints the format pill,
+  // so a clean track's pill is the one that carries a verdict, and it answers hover with the
+  // same verdict a screen reader hears.
+  it('tints the format pill of a clean track and names its verdict on hover', () => {
+    renderList([
+      track({ id: 'a', inputPath: '/music/a.flac', spectrum: spectrum(21000) }),
+      track({ id: 'b', inputPath: '/music/b.flac' }),
+    ])
+    const [clean, unanalyzed] = screen.getAllByTestId('track-format')
     const mark = screen.getByTestId('track-quality')
-    expect(mark.querySelector('svg')).not.toBeNull()
+    expect(mark).toHaveAttribute('data-tone', 'good')
+    expect(mark).toContainElement(clean)
+    expect(mark).not.toContainElement(unanalyzed)
     expect(mark).toHaveTextContent(i18n.t('editor.qualityGood'))
     fireEvent.focusIn(mark)
     expect(screen.getByRole('tooltip')).toHaveTextContent(i18n.t('editor.qualityGood'))
   })
 
-  // Scanning down the list only works if the verdict sits in the same place on every row:
-  // packed against the format pill, it slid left whenever a backup, tag-read or sparkle mark
-  // joined it. A fixed slot right before the pill keeps the marks in one column, and a row
-  // with no verdict yet keeps the slot empty instead of closing the gap.
-  it('keeps the verdict in a fixed slot right before the format, whatever else the row marks', () => {
+  // artexjay 24/09: the verdict moved into the format pill to hand its own 12px slot back to
+  // the artist. Scanning down the list still needs it in one column, so it rides the format
+  // slot at the row's end whatever other marks the row carries.
+  it('carries the verdict inside the format slot, whatever else the row marks', () => {
     renderList([
       track({ id: 'a', inputPath: '/music/a.flac', spectrum: spectrum(21000) }),
       track({
@@ -864,18 +874,43 @@ describe('TrackList quality badge', () => {
       track({ id: 'c', inputPath: '/music/c.flac' }),
       track({ id: 'd', inputPath: '/music/d.flac', analyzing: true }),
     ])
-    const slots = screen.getAllByTestId('track-quality-slot')
+    expect(screen.queryByTestId('track-quality-slot')).not.toBeInTheDocument()
+    const slots = screen.getAllByTestId('track-format-slot')
     expect(slots).toHaveLength(4)
-    for (const slot of slots) {
-      expect(slot.nextElementSibling).toHaveAttribute('data-testid', 'track-format-slot')
-    }
     expect(within(slots[0]).getByTestId('track-quality')).toHaveAttribute('data-quality', 'good')
     expect(within(slots[1]).getByTestId('track-quality')).toHaveAttribute(
       'data-quality',
       'transcoded',
     )
-    expect(slots[2]).toBeEmptyDOMElement()
-    expect(within(slots[3]).getByTestId('track-quality-loading')).toBeInTheDocument()
+    expect(within(slots[2]).queryByTestId('track-quality')).not.toBeInTheDocument()
+    expect(within(slots[2]).getByTestId('track-format')).toHaveTextContent('FLAC')
+    expect(within(slots[3]).getByTestId('track-quality-loading')).toHaveTextContent('FLAC')
+  })
+
+  // Colour alone can't tell amber from red for a colour-blind user, so the two verdicts that
+  // ask for attention keep their shape inside the pill. A clean pill goes without, so a good
+  // album doesn't fill with symbols.
+  it('keeps a shape inside the pill only for the verdicts that ask for attention', () => {
+    renderList([
+      track({ id: 'a', inputPath: '/music/a.flac', spectrum: spectrum(21000) }),
+      track({
+        id: 'b',
+        inputPath: '/music/b.flac',
+        spectrum: { ...spectrum(16000), processed: true },
+      }),
+      track({ id: 'c', inputPath: '/music/c.flac', spectrum: spectrum(16000) }),
+    ])
+    const [good, processed, transcoded] = screen.getAllByTestId('track-quality')
+    expect(good.querySelector('svg')).toBeNull()
+    expect(processed.querySelector('svg')).not.toBeNull()
+    expect(transcoded.querySelector('svg')).not.toBeNull()
+  })
+
+  // With no extension there is no format to tint, but an analysed file still owes its
+  // verdict: the pill falls back to the bare shape, good included.
+  it('draws the bare shape when the file has no format to tint', () => {
+    renderList([track({ id: 'a', inputPath: '/music/a', spectrum: spectrum(21000) })])
+    expect(screen.getByTestId('track-quality').querySelector('svg')).not.toBeNull()
   })
 
   it('shows no badge until the track has been analyzed', () => {
@@ -909,20 +944,79 @@ describe('TrackList quality badge', () => {
   })
 })
 
-// Play and remove sit over every row at opacity 0 until the pointer hovers it. They were
-// still Tab stops, so a keyboard user walked through two invisible buttons per track,
-// a thousand of them in a 500-track crate, with no ring to show where the focus went.
-// The row already answers Space (play) and Backspace (remove), so the overlays stay
-// pointer-only.
+// Play sits over every row at opacity 0 until the pointer hovers it. It was still a Tab
+// stop, so a keyboard user walked through an invisible button per track with no ring to
+// show where the focus went. The row already answers Space (play), so it stays pointer-only.
 describe('TrackList hover overlays', () => {
-  it('keeps play and remove out of the Tab order on every row', () => {
+  it('keeps play out of the Tab order on every row', () => {
     renderList([track({ id: 'a' }), track({ id: 'b' })], 'a')
-    const overlays = [
-      ...screen.getAllByRole('button', { name: i18n.t('player.play') }),
-      ...screen.getAllByRole('button', { name: i18n.t('trackList.remove') }),
-    ]
-    expect(overlays).toHaveLength(4)
+    const overlays = screen.getAllByRole('button', { name: i18n.t('player.play') })
+    expect(overlays).toHaveLength(2)
     for (const button of overlays) expect(button).toHaveAttribute('tabindex', '-1')
+  })
+})
+
+// The hover X used to take the place of the duration and the format pill, so the quality
+// verdict vanished right when the pointer was on the row. Removing moved to a two-finger
+// swipe, the way Mail deletes: a short one reveals Remove, a full one removes outright.
+// ⌫/Supr and the context menu still remove for a mouse with no horizontal scroll.
+describe('TrackList swipe to remove', () => {
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => vi.useRealTimers())
+
+  const swipe = (deltaX: number, deltaY = 0) => {
+    fireEvent.wheel(screen.getByTestId('track-row').parentElement as Element, { deltaX, deltaY })
+    act(() => vi.advanceTimersByTime(500))
+  }
+
+  it('keeps the duration and the format in place when the pointer is on the row', () => {
+    renderList([track({ id: 'a', inputPath: '/music/a.flac', duration: 200 })])
+    expect(screen.queryByRole('button', { name: i18n.t('trackList.remove') })).toBeNull()
+    expect(screen.getByTestId('track-format-slot').className).not.toContain('group-hover:opacity-0')
+    expect(screen.getByTestId('track-duration-slot').className).not.toContain(
+      'group-hover:opacity-0',
+    )
+  })
+
+  it('reveals Remove on a short swipe and removes the track from it', () => {
+    const { onRemove } = renderList([track({ id: 'a' })])
+    swipe(70)
+    expect(onRemove).not.toHaveBeenCalled()
+    const remove = screen.getByRole('button', { name: i18n.t('trackList.remove') })
+    expect(remove).toHaveAttribute('tabindex', '-1')
+    fireEvent.click(remove)
+    expect(onRemove).toHaveBeenCalledWith('a')
+  })
+
+  it('removes the track outright on a full swipe', () => {
+    const { onRemove } = renderList([track({ id: 'a' })])
+    swipe(400)
+    expect(onRemove).toHaveBeenCalledWith('a')
+  })
+
+  it('closes again on a swipe back or a nudge too small to mean it', () => {
+    renderList([track({ id: 'a' })])
+    swipe(70)
+    swipe(-70)
+    expect(screen.queryByRole('button', { name: i18n.t('trackList.remove') })).toBeNull()
+    swipe(20)
+    expect(screen.queryByRole('button', { name: i18n.t('trackList.remove') })).toBeNull()
+  })
+
+  // A trackpad scroll is never perfectly vertical; the list must not start sliding rows
+  // sideways while the user is just scrolling it.
+  it('ignores a mostly vertical scroll', () => {
+    const { onRemove } = renderList([track({ id: 'a' })])
+    swipe(300, 600)
+    expect(onRemove).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: i18n.t('trackList.remove') })).toBeNull()
+  })
+
+  it('closes when the pointer leaves the row', () => {
+    renderList([track({ id: 'a' })])
+    swipe(70)
+    fireEvent.mouseLeave(screen.getByTestId('track-row').parentElement as Element)
+    expect(screen.queryByRole('button', { name: i18n.t('trackList.remove') })).toBeNull()
   })
 })
 
