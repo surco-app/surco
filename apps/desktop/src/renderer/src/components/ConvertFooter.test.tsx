@@ -24,7 +24,11 @@ function status(showDone: boolean): SelectionStatus {
   } as SelectionStatus
 }
 
-function footer(showDone: boolean, incompleteReason?: string): React.JSX.Element {
+function footer(
+  showDone: boolean,
+  incompleteReason?: string,
+  incompleteSummary?: string,
+): React.JSX.Element {
   return (
     <ConvertFooter
       item={{ id: 't1', status: 'idle', inputPath: '/a.wav', meta: {} } as TrackItem}
@@ -35,6 +39,7 @@ function footer(showDone: boolean, incompleteReason?: string): React.JSX.Element
       done={showDone}
       incomplete={incompleteReason !== undefined}
       incompleteReason={incompleteReason}
+      incompleteSummary={incompleteSummary}
       willEditInPlace={false}
       tagsOnly={false}
       addToAppleMusic={false}
@@ -159,11 +164,16 @@ describe('ConvertFooter blocked by missing fields', () => {
   // A required field left empty dims the main button, and dimmed with no word beside it the
   // button read as broken: the reason lived only in a hover tooltip. It is said in the footer,
   // in the attention colour the field's own dot uses.
-  it('says under what is missing right where the dimmed button is', () => {
-    render(footer(false, 'Missing required fields: Grouping'))
-    expect(screen.getByTestId('footer-incomplete')).toHaveTextContent(
-      'Missing required fields: Grouping',
+  // The full reason can list every required field; the footer line carries the short form.
+  it('says the short form of what is missing right where the dimmed button is', () => {
+    render(
+      footer(
+        false,
+        'Missing required fields: Title, Artist, Year, Genre, Grouping, Album',
+        '6 required fields missing',
+      ),
     )
+    expect(screen.getByTestId('footer-incomplete')).toHaveTextContent('6 required fields missing')
   })
 
   it('says nothing when the track is ready to convert', () => {
