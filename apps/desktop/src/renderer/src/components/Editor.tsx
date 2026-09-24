@@ -37,6 +37,7 @@ import { buildFieldSpecs } from '../lib/fieldSpecs'
 import { FIELD_DEFS, labeledFields, missingRequired, missingRequiredOf } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { librarySourceOf } from '../lib/librarySource'
+import { missingSummary } from '../lib/missingSummary'
 import { renderOutputName, titleFormatPatches } from '../lib/outputName'
 import { isMacOS } from '../lib/platform'
 import { splitPosition } from '../lib/position'
@@ -1344,6 +1345,14 @@ export const Editor = memo(function Editor({
           done={done}
           incomplete={incomplete}
           incompleteReason={incompleteReason}
+          incompleteSummary={
+            missing.length
+              ? missingSummary(
+                  missing.map((key) => tr(`fields.${key}`)),
+                  tr,
+                )
+              : incompleteReason
+          }
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}
           addToAppleMusic={picked.addToAppleMusic}
