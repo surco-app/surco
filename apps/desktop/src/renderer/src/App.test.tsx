@@ -1074,12 +1074,13 @@ describe('App multi-select removal', () => {
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
 
-    // The ✕ is a sibling of the row button, not a child: both hang off the row wrapper.
-    fireEvent.click(within(rows[0].parentElement as HTMLElement).getByLabelText('Remove'))
+    // A full two-finger swipe is the row's ✕ now; it removes the moment the swipe settles.
+    fireEvent.wheel(rows[0].parentElement as HTMLElement, { deltaX: 400 })
 
     // Nothing goes until it is confirmed.
+    const ok = await screen.findByTestId('confirm-ok')
     expect(screen.getAllByTestId('track-row')).toHaveLength(3)
-    fireEvent.click(await screen.findByTestId('confirm-ok'))
+    fireEvent.click(ok)
     // Both selected rows go; the unselected third stays.
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
   })
@@ -1098,7 +1099,7 @@ describe('App multi-select removal', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     const rows = screen.getAllByTestId('track-row')
 
-    fireEvent.click(within(rows[0].parentElement as HTMLElement).getByLabelText('Remove'))
+    fireEvent.wheel(rows[0].parentElement as HTMLElement, { deltaX: 400 })
 
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     expect(screen.queryByTestId('confirm-ok')).toBeNull()
