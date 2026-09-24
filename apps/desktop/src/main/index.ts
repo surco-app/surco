@@ -75,7 +75,7 @@ import { getProvider } from './providers'
 import { createQuitGuard } from './quitGuard'
 import { beginRekordboxBatch, endRekordboxBatch, redirectRekordboxRepoint } from './rekordboxBatch'
 import { flushRekordboxSync } from './rekordboxFlush'
-import { repointTrack } from './rekordboxLibrary'
+import { repointTracks } from './rekordboxLibrary'
 import { findRekordboxCollection } from './rekordboxPath'
 import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
 import { createSessionBackup } from './rekordboxSessionBackup'
@@ -855,12 +855,12 @@ function registerIpc(): void {
       endBatch: endRekordboxBatch,
       ensureClosed: () => ensureRekordboxClosed(win),
       track: activity.track.bind(activity),
-      repointTrack: (collectionPath, repoint) =>
-        repointTrack(collectionPath, {
-          ...repoint,
-          realPath: (p) => realpathSync(p),
-          sessionBackup: (path) => rekordboxSessionBackup.ensure(path),
-        }),
+      repointTracks: (collectionPath, repoints) =>
+        repointTracks(
+          collectionPath,
+          repoints.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
+          { sessionBackup: (path) => rekordboxSessionBackup.ensure(path) },
+        ),
       showBlockedDialog: () => {
         const t = createMenuT(menuLocale())
         const opts = { type: 'warning' as const, message: t('rekordboxSyncBlocked') }

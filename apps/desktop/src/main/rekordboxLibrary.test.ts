@@ -1,10 +1,11 @@
-import { chmod, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises'
+import { chmod, copyFile, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as rekordboxDb from './rekordboxDb'
 import { openRekordboxDb, REKORDBOX_KEY } from './rekordboxDb'
-import { repointTrack } from './rekordboxLibrary'
+import { repointTrack, repointTracks } from './rekordboxLibrary'
 
 // The probe shells out to pgrep/tasklist; pinned so the suite never depends on whether
 // rekordbox happens to be open on the machine running it.
@@ -285,6 +286,103 @@ describe('repointTrack', () => {
     })
 
     expect(result).toEqual({ written: false, reason: 'write-failed' })
+    expect(await readFile(dbPath)).toEqual(before)
+  })
+})
+
+// Adds a second and third track the collection knows, for the runs below.
+function addTrack(path: string, id: string, file: string): void {
+  const db = openRekordboxDb(path)
+  if (!db) throw new Error('could not reopen the collection')
+  db.prepare(
+    `INSERT INTO djmdContent (ID, FolderPath, FileNameL, FileType, FileSize, OrgFolderPath)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run(id, file, file.split('/').pop(), 1, 1000, file)
+  db.close()
+}
+
+describe('repointTracks', () => {
+  const MP3_B = '/Volumes/Public/Music/Acid/03 Beta.mp3'
+  const MP3_C = '/Volumes/Public/Music/Acid/04 Gamma.mp3'
+
+  async function outputs(...names: string[]): Promise<string[]> {
+    const paths = names.map((n) => join(audioDir, n))
+    for (const p of paths) await writeFile(p, Buffer.alloc(5000))
+    return paths
+  }
+
+  // Each track used to copy the whole collection (the user's is 56 MB) and open it twice
+  // through the cipher's key derivation, so a run of hundreds of tracks spent minutes on
+  // the main process at the end of the batch. A run is one decision: one check that
+  // rekordbox is closed, one read, one backup, one more check, one write.
+  it('reads, backs up and writes the collection once for a whole run', async () => {
+    addTrack(dbPath, '900002', MP3_B)
+    addTrack(dbPath, '900003', MP3_C)
+    const [a, b, c] = await outputs('a.wav', 'b.wav', 'c.wav')
+    vi.mocked(isRekordboxRunning).mockClear()
+    const opens = vi.spyOn(rekordboxDb, 'openRekordboxDb')
+    const backup = vi.fn(async (from: string, to: string) => copyFile(from, to))
+
+    const results = await repointTracks(
+      dbPath,
+      [
+        { from: MP3, to: a },
+        { from: MP3_B, to: b },
+        { from: MP3_C, to: c },
+      ],
+      { backup },
+    )
+
+    expect(results.map((r) => r.written)).toEqual([true, true, true])
+    expect(opens).toHaveBeenCalledTimes(2)
+    expect(backup).toHaveBeenCalledTimes(1)
+    expect(isRekordboxRunning).toHaveBeenCalledTimes(2)
+    expect([readRow(dbPath).FolderPath, readRow(dbPath, '900003').FolderPath]).toEqual([a, c])
+  })
+
+  // The flush reports per track and stops at the first failure that concerns the whole
+  // collection, so every track keeps its own outcome, in the order it was given.
+  it('reports each track its own outcome, in order', async () => {
+    addTrack(dbPath, '900003', MP3_C)
+    const [a, c] = await outputs('a.wav', 'c.wav')
+
+    const results = await repointTracks(dbPath, [
+      { from: MP3, to: a },
+      { from: '/Volumes/Public/Music/never-imported.mp3', to: join(audioDir, 'x.wav') },
+      { from: '/Volumes/Public/Music/also-never.mp3', to: a },
+      { from: MP3_C, to: c },
+    ])
+
+    expect(results.map((r) => (r.written ? 'written' : r.reason))).toEqual([
+      'written',
+      'output-missing',
+      'no-match',
+      'written',
+    ])
+  })
+
+  // One backup now stands behind the whole run, so a write that dies must put back the
+  // whole run: a track can never be reported written from a collection that was restored.
+  it('writes none of the run when one of its writes fails', async () => {
+    addTrack(dbPath, '900002', MP3_B)
+    const [a, b] = await outputs('a.wav', 'b.wav')
+    const before = await readFile(dbPath)
+
+    const results = await repointTracks(dbPath, [
+      { from: MP3, to: a },
+      {
+        from: MP3_B,
+        to: b,
+        onWrite: () => {
+          throw new Error('disk went away')
+        },
+      },
+    ])
+
+    expect(results).toEqual([
+      { written: false, reason: 'write-failed' },
+      { written: false, reason: 'write-failed' },
+    ])
     expect(await readFile(dbPath)).toEqual(before)
   })
 })
