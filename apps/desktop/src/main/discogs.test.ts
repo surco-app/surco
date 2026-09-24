@@ -595,3 +595,42 @@ describe('failures the user reads', () => {
     )
   })
 })
+
+// The editor's panel, the auto-match sweep and the hover prefetch can all ask for the same
+// track at once. The cache only fills when a request finishes, so each of them used to walk
+// the whole paced query ladder on its own: the same search two or three times over, each
+// one queued behind the others for a request it did not need to make.
+describe('identical requests in flight', () => {
+  it('shares one search between callers asking for it at the same time', async () => {
+    const fetchMock = mockFetch([{ id: 1 }])
+
+    const [a, b] = await Promise.all([
+      search('in flight shared', 'tok', 'low'),
+      search('in flight shared', 'tok', 'low'),
+    ])
+
+    expect(a).toEqual(b)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  // The editor's own search must never wait in the background queue: a low-priority request
+  // already in flight is not shared with a high-priority caller.
+  it('does not make a high-priority caller wait on a low-priority request', async () => {
+    const fetchMock = mockFetch([{ id: 1 }])
+
+    await Promise.all([
+      search('in flight priority', 'tok', 'low'),
+      search('in flight priority', 'tok', 'high'),
+    ])
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('shares one release load between callers asking for it at the same time', async () => {
+    const fetchMock = mockRelease({ id: 4242, title: 'Shared', tracklist: [] })
+
+    await Promise.all([getRelease(4242, 'tok', 'low'), getRelease(4242, 'tok', 'low')])
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})

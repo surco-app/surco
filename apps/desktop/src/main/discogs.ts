@@ -96,6 +96,29 @@ export function hasCachedSearch(query: string, opts: SearchOpts = {}): boolean {
   return cacheStore.hasSearch(searchKey(query, opts.format, opts.perPage ?? 20))
 }
 
+// Requests in flight, by what they fetch. The cache only fills once a request finishes, so
+// the editor's panel, the auto-match sweep and the hover prefetch asking for the same track
+// at once each used to make the same paced request on their own. A later caller joins the
+// one already running, unless it is high priority and that one is not: the editor's own
+// search must never wait in the background queue.
+const inFlight = new Map<string, { promise: Promise<unknown>; priority?: SearchPriority }>()
+
+function shareInFlight<T>(
+  key: string,
+  priority: SearchPriority | undefined,
+  run: () => Promise<T>,
+): Promise<T> {
+  const current = inFlight.get(key)
+  if (current && (current.priority === 'high' || priority !== 'high')) {
+    return current.promise as Promise<T>
+  }
+  const promise = run().finally(() => {
+    if (inFlight.get(key)?.promise === promise) inFlight.delete(key)
+  })
+  inFlight.set(key, { promise, priority })
+  return promise
+}
+
 // Runs one /database/search request and normalizes it, sharing the cache and provider
 // stamping across the two query shapes (free-text q= and the structured artist/title
 // fields). `queryParams` is the shape-specific slice of the URL; `cacheId` is its cache
@@ -111,6 +134,19 @@ async function runSearch(
   const key = searchKey(cacheId, opts.format, perPage)
   const cached = cachedSearch(cacheStore, key)
   if (cached) return cached
+  return shareInFlight(`search ${key}`, priority, () =>
+    fetchSearch(queryParams, key, perPage, token, opts, priority),
+  )
+}
+
+async function fetchSearch(
+  queryParams: string,
+  key: string,
+  perPage: number,
+  token: string,
+  opts: SearchOpts,
+  priority?: SearchPriority,
+): Promise<SearchResult[]> {
   // Pacing lives with the request itself: the token is taken here, after the cache
   // miss, so a repeat of any already-fetched shape (free-text, structured, tracklist)
   // never queues behind the limiter for a call it won't make.
@@ -295,6 +331,10 @@ export async function getRelease(
 ): Promise<Release> {
   const cached = cacheStore.getRelease(id)
   if (cached) return cached
+  return shareInFlight(`release ${id}`, priority, () => loadRelease(id, token, priority))
+}
+
+function loadRelease(id: number, token: string, priority?: SearchPriority): Promise<Release> {
   return activity.track(
     'discogs',
     'activity.loadDiscogsRelease',
