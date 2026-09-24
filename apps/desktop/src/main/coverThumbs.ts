@@ -26,7 +26,10 @@ let pruning: Promise<void> = Promise.resolve()
 
 export async function coverThumbUrlFor(dataUrl: string): Promise<string> {
   if (!dataUrl.startsWith('data:')) return dataUrl
-  const bytes = Buffer.from(dataUrl.slice(dataUrl.indexOf(',') + 1), 'base64')
+  return coverThumbUrlForBytes(Buffer.from(dataUrl.slice(dataUrl.indexOf(',') + 1), 'base64'))
+}
+
+export async function coverThumbUrlForBytes(bytes: Buffer): Promise<string> {
   const id = `${createHash('sha1').update(bytes).digest('hex')}.jpg`
   const path = join(dir(), id)
   await pruning

@@ -18,7 +18,7 @@ export interface AttachArtworkDeps {
   // whose artwork vanished between the listing and the fetch simply has none.
   fetchArtwork: (
     jobs: { persistentId: string; outPath: string }[],
-  ) => Promise<{ path: string; dataUrl: string }[]>
+  ) => Promise<{ path: string; url: string }[]>
   outDir: () => Promise<string>
 }
 
@@ -43,9 +43,7 @@ export async function attachMissingArtwork(
       persistentId: t.persistentId,
       outPath: join(dir, `${t.persistentId}.jpg`),
     }))
-    const written = new Map(
-      (await deps.fetchArtwork(jobs)).map((cover) => [cover.path, cover.dataUrl]),
-    )
+    const written = new Map((await deps.fetchArtwork(jobs)).map((cover) => [cover.path, cover.url]))
     // An import that reported no meta map at all still has to survive: the covers are an
     // addition to it, not something it can be assumed to already hold.
     const meta = { ...tracks.meta }
@@ -53,9 +51,9 @@ export async function attachMissingArtwork(
       const outPath = join(dir, `${track.persistentId}.jpg`)
       // Only a cover that really landed: handing on a path Music never wrote would show a
       // broken image instead of the empty slot it replaced.
-      const dataUrl = written.get(outPath)
-      if (!dataUrl) continue
-      meta[track.path] = { ...(meta[track.path] ?? {}), coverPath: outPath, coverUrl: dataUrl }
+      const url = written.get(outPath)
+      if (!url) continue
+      meta[track.path] = { ...(meta[track.path] ?? {}), coverPath: outPath, coverUrl: url }
     }
     return { ...tracks, meta }
   } catch {
