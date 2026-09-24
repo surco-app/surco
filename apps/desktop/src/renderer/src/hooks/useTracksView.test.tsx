@@ -291,6 +291,22 @@ describe('useTracksView', () => {
     expect(buildSpy).not.toHaveBeenCalled()
   })
 
+  // The patch reads one slot, but finding that slot must not cost a pass over the whole
+  // cache either: a big crate holds tens of thousands of queries and a sweep fires tens of
+  // thousands of events, so indexing the cache per event is quadratic over the sweep.
+  it('patches a probe event without walking the whole query cache', () => {
+    const client = new QueryClient()
+    const tracks = ['a', 'b', 'c'].map((id) => track(id))
+    setup(tracks, client)
+    const getAllSpy = vi.spyOn(client.getQueryCache(), 'getAll')
+
+    act(() => {
+      client.setQueryData(['spectrogram', '/music/b.wav'], spectrum)
+    })
+
+    expect(getAllSpy).not.toHaveBeenCalled()
+  })
+
   // The counterpart: a real change to the track set (an import, a removal, a reorder) does
   // need a fresh positional snapshot, so the full rebuild must run for that. Only a probe
   // event on an unchanged set is spared it.
