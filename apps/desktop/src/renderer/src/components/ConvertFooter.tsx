@@ -28,8 +28,8 @@ interface ConvertFooterProps {
   // Why the convert is blocked (the empty required fields), surfaced as the button's
   // tooltip. In multi it covers the whole selection; undefined when nothing is missing.
   incompleteReason?: string
-  // The same block said in one short line for the footer (a count past two missing fields),
-  // since the full reason can list every required field.
+  // The same block said short enough for the main button's face (a count past two missing
+  // fields), since the full reason can list every required field.
   incompleteSummary?: string
   willEditInPlace: boolean
   tagsOnly: boolean
@@ -197,18 +197,6 @@ export function ConvertFooter({
             <Tooltip label={tr('normalize.title')} />
           </button>
         )}
-        {/* The dimmed button says nothing on its own, so what blocks it is said here, in the
-            attention colour of the field's own dot. aria-hidden because the button already
-            carries the same sentence as its description; this is its visible twin. */}
-        {!showDone && incomplete && incompleteSummary && (
-          <p
-            data-testid="footer-incomplete"
-            aria-hidden="true"
-            className="truncate text-center text-xs text-warn"
-          >
-            {incompleteSummary}
-          </p>
-        )}
         {showDone ? (
           // Two lines, ordered by what matters after an export. The first is
           // about the file just written: the confirmation plus its low-stakes
@@ -331,6 +319,7 @@ export function ConvertFooter({
             withEngineDj={addToEngineDj}
             incomplete={incomplete}
             incompleteReason={incompleteReason}
+            blockedLabel={incompleteSummary}
             inPlace={!isMulti && willEditInPlace}
             tagsOnly={tagsOnly}
             destination={destination}

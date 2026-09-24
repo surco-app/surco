@@ -161,11 +161,9 @@ describe('ConvertFooter buttons stay on one line', () => {
 })
 
 describe('ConvertFooter blocked by missing fields', () => {
-  // A required field left empty dims the main button, and dimmed with no word beside it the
-  // button read as broken: the reason lived only in a hover tooltip. It is said in the footer,
-  // in the attention colour the field's own dot uses.
-  // The full reason can list every required field; the footer line carries the short form.
-  it('says the short form of what is missing right where the dimmed button is', () => {
+  // The full reason can list every required field; the main button carries the short form
+  // on its face, so the footer stays one control tall.
+  it('puts the short form of what is missing on the main button', () => {
     render(
       footer(
         false,
@@ -173,11 +171,11 @@ describe('ConvertFooter blocked by missing fields', () => {
         '6 required fields missing',
       ),
     )
-    expect(screen.getByTestId('footer-incomplete')).toHaveTextContent('6 required fields missing')
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('6 required fields missing')
   })
 
-  it('says nothing when the track is ready to convert', () => {
+  it('keeps the action on the button when the track is ready to convert', () => {
     render(footer(false))
-    expect(screen.queryByTestId('footer-incomplete')).not.toBeInTheDocument()
+    expect(screen.getByTestId('process-btn')).not.toHaveTextContent('missing')
   })
 })
