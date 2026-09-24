@@ -1051,6 +1051,16 @@ describe('TrackList swipe to remove', () => {
     expect(onSwipeRemove).toHaveBeenCalledWith('a')
   })
 
+  // Full height, the grey touched the rows above and below and read as glued to them (seen
+  // in the app 24/09). It sits inset from the row's top and bottom edges as well as its side.
+  it('keeps the Remove button off the rows above and below', () => {
+    renderList([track({ id: 'a' })])
+    swipe(70)
+    const remove = screen.getByRole('button', { name: i18n.t('trackList.remove') })
+    expect(remove.className).not.toMatch(/\binset-y-0\b/)
+    expect(remove.className).toMatch(/\binset-y-1\b/)
+  })
+
   // Crossing the threshold moves the row from half way to the edge in one event, which read
   // as a jump (Vicent 24/09: "da un salto hasta el final, no va fino"). The row's position and
   // the grey's width ease into place, on the selected row too, whose fill must not ease.
