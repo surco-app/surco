@@ -1,6 +1,14 @@
 import { Check, CircleAlert, Music, Play, TriangleAlert, Undo2, X } from 'lucide-react'
 import type React from 'react'
-import { memo, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
+import {
+  memo,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import { matchChord } from '../../../shared/shortcutDefaults'
 import { type Chord, eventToChord } from '../../../shared/shortcuts'
@@ -236,9 +244,9 @@ interface RowProps {
   // Whether this row holds the listbox's single tab stop (roving tabindex): the primary
   // row, or the first row while nothing is selected yet.
   tabbable: boolean
-  // aria-setsize/posinset for the option, so a screen reader announces "row N of M".
-  setSize: number
-  posInSet: number
+  // Whether the list is long enough to skip painting off-screen rows (DEFER_PAINT_MIN_ROWS).
+  // A flag rather than the list's length, so a row only re-renders when it flips.
+  deferPaint: boolean
   outputFormat: OutputFormat
   onSelect: (id: string, mods: ClickMods) => void
   onActivate: (track: TrackItem) => void
@@ -277,8 +285,7 @@ const TrackRow = memo(function TrackRow({
   selected,
   primary,
   tabbable,
-  setSize,
-  posInSet,
+  deferPaint,
   outputFormat,
   onSelect,
   onActivate,
@@ -357,9 +364,7 @@ const TrackRow = memo(function TrackRow({
       // first-paint cost of each row into the scroll itself and reads as jank, while
       // painting the whole small list once keeps scrolling on already-rasterized content.
       className={`group relative ${
-        setSize >= DEFER_PAINT_MIN_ROWS
-          ? '[content-visibility:auto] [contain-intrinsic-size:auto_52px]'
-          : ''
+        deferPaint ? '[content-visibility:auto] [contain-intrinsic-size:auto_52px]' : ''
       }`}
       draggable
       onDragStart={(e) => {
@@ -388,10 +393,7 @@ const TrackRow = memo(function TrackRow({
         // Several rows can be selected; this marks the one open in the editor, the fact
         // the solid fill carries for sighted users.
         aria-current={primary || undefined}
-        // The rows are real DOM (content-visibility, not windowing), but a screen reader
-        // still benefits from an explicit "row 12 of 500" as filters shrink the set.
-        aria-setsize={setSize}
-        aria-posinset={posInSet}
+        // aria-setsize/aria-posinset are written by TrackList, not here: see its layout effect.
         // Roving tabindex: only the tab-stop row is reachable by Tab; the rest are driven
         // by the global ↑/↓ (and j/k) handler that focuses them as the selection moves.
         tabIndex={tabbable ? 0 : -1}
@@ -815,10 +817,23 @@ export const TrackList = memo(function TrackList({
     [scrollRootRef],
   )
   useEffect(() => () => rowObserver.current?.disconnect(), [])
+  // The rows are real DOM (content-visibility, not windowing), but a screen reader still
+  // benefits from an explicit "row 12 of 500" as filters shrink the set. Written straight
+  // onto the options rather than passed as props: the size changes with every import batch,
+  // and as a prop it re-rendered every memoized row on each one.
+  const listRef = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const options = listRef.current?.querySelectorAll('[role="option"]') ?? []
+    options.forEach((option, i) => {
+      option.setAttribute('aria-setsize', String(tracks.length))
+      option.setAttribute('aria-posinset', String(i + 1))
+    })
+  }, [tracks])
   const { t: tr } = useTranslation()
   return (
     <>
       <div
+        ref={listRef}
         role="listbox"
         aria-label={tr('trackList.label')}
         aria-multiselectable="true"
@@ -834,8 +849,7 @@ export const TrackList = memo(function TrackList({
             // The selection owns the single tab stop; with nothing selected the first row
             // holds it so the list stays reachable by Tab.
             tabbable={t.id === selectedId || (selectedId === null && i === 0)}
-            setSize={tracks.length}
-            posInSet={i + 1}
+            deferPaint={tracks.length >= DEFER_PAINT_MIN_ROWS}
             outputFormat={outputFormat}
             onSelect={onSelect}
             onActivate={onActivate}

@@ -21,6 +21,7 @@ import type React from 'react'
 import { useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ActivityKind } from '../../../shared/types'
+import { type ActivityStore, useActivityRows } from '../hooks/useActivityLog'
 import { type ActivityRow, activityFeedText } from '../lib/activityLog'
 import { MIN_HEIGHT, MIN_WIDTH, type PanelGeometry } from '../lib/panelGeometry'
 
@@ -270,6 +271,15 @@ function Row({ row }: { row: ActivityRow }): React.JSX.Element {
 // conversion) as a live, human-readable feed, with the technical detail one click
 // away. Dragged by its header; geometry persists in localStorage (parsed and clamped
 // by panelGeometry). Rendered inside the window, not a separate OS window.
+
+// The panel fed straight from the activity store, so the rows' updates re-render the panel
+// alone, and only while it is open.
+export function LiveActivityPanel({
+  store,
+  ...props
+}: Omit<Props, 'rows'> & { store: ActivityStore }): React.JSX.Element {
+  return <ActivityPanel rows={useActivityRows(store)} {...props} />
+}
 
 export function ActivityPanel({
   rows,
