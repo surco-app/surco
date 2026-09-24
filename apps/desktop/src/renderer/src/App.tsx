@@ -1862,7 +1862,7 @@ export default function App(): React.JSX.Element {
                 // Clips its own children: the player enters on translateY(100%), so without
                 // this it is briefly drawn a card's height below the column and the page
                 // grows a scrollbar that flashes and disappears.
-                className="drop-column relative flex min-h-0 shrink-0 flex-col overflow-hidden bg-[var(--color-panel)]"
+                className="drop-column relative flex min-h-0 shrink-0 flex-col overflow-hidden bg-[var(--color-ink)]"
               >
                 <div ref={listScrollRef} className="min-h-0 flex-1 overflow-y-auto">
                   {tracks.length === 0 ? (
