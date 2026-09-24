@@ -775,7 +775,7 @@ const TrackRow = memo(function TrackRow({
           tabIndex={-1}
           onClick={() => onSwipeRemove(t.id)}
           style={{ width: Math.max(swipe - SWIPE_GAP_PX, 0) }}
-          className="absolute inset-y-1 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-fg-dim)] transition-[width] ease-out text-[11px] font-semibold whitespace-nowrap text-[var(--color-ink)]"
+          className="absolute inset-y-1 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-swipe-action)] transition-[width] ease-out text-[11px] font-semibold whitespace-nowrap text-[var(--color-on-swipe-action)]"
         >
           <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           {tr('trackList.remove')}

@@ -72,6 +72,26 @@ describe('filled-surface label contrast (WCAG 1.4.3 AA)', () => {
   }
 })
 
+// The fill a swipe uncovers behind a row. It began as --color-fg-dim, a text colour, and as a
+// large fill it read heavy and lilac and was not Tokyo Night at all (Vicent 24/09). It is the
+// palette's terminal_black in dark and its Day twin in light. The label must read on it in
+// both themes, and the fill must stand apart from the list it slides out of.
+describe('swipe action colours', () => {
+  for (const [theme, t] of [
+    ['dark', dark],
+    ['light', light],
+  ] as const) {
+    it(`${theme} label reaches 4.5:1 on the swipe action fill`, () => {
+      expect(contrast(t['color-on-swipe-action'], t['color-swipe-action'])).toBeGreaterThanOrEqual(
+        4.5,
+      )
+    })
+    it(`${theme} swipe action fill stands apart from the list ground`, () => {
+      expect(contrast(t['color-swipe-action'], t['color-ink'])).toBeGreaterThanOrEqual(1.5)
+    })
+  }
+})
+
 // Conversion progress on the selected row. The stage label and its sweep bar paint in
 // --color-accent, which in the light palette is the SAME hex as --color-row-selected
 // (#2959aa): the one row the DJ is watching — the track open in the editor — loses its

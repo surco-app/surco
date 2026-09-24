@@ -38,6 +38,10 @@
      saturated fill. Near-white text on top clears AA; the focus ring still clears 3:1. */
   --color-row-selected: #34487e;
   --color-on-row-selected: #e9edff;
+  /* What a swipe uncovers behind a row: Tokyo Night's terminal_black, a quiet slate that
+     says "take it off the list" without the red of deleting a file. */
+  --color-swipe-action: #414868;
+  --color-on-swipe-action: #c0caf5;
   --color-scrollbar: rgba(192, 202, 245, 0.13);
   --color-scrollbar-hover: rgba(192, 202, 245, 0.24);
 }
@@ -72,6 +76,9 @@
      la fila, que se pinta en accent, siga viéndose encima. */
   --color-row-selected: #bccdee;
   --color-on-row-selected: #1b2440;
+  /* El terminal_black de Tokyo Night Day, el gemelo del oscuro. */
+  --color-swipe-action: #a1a6c5;
+  --color-on-swipe-action: #2c3043;
   --color-scrollbar: rgba(20, 22, 38, 0.18);
   --color-scrollbar-hover: rgba(20, 22, 38, 0.3);
 }
