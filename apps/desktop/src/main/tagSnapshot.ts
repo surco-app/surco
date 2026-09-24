@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { closeSync, fstatSync, openSync, readSync } from 'node:fs'
 import { extname } from 'node:path'
 import {
   type ByteVector,
@@ -52,7 +52,7 @@ export function snapshotTags(file: string): string[] {
     f.dispose()
   }
   if (ext === '.wav') lines.push(...riffInfo(file))
-  if (ext === '.flac' && readFileSync(file).subarray(0, 3).toString('latin1') === 'ID3')
+  if (ext === '.flac' && readAt(file, 0, 3).toString('latin1') === 'ID3')
     lines.push('flac id3-prefix present')
   return lines.sort()
 }
@@ -136,27 +136,49 @@ function describeApple(f: TagFile): string[] {
   })
 }
 
-// The RIFF INFO sub-chunks, read off the chunk tree: TagLib's RiffListTag hands values
-// back by id but never lists the ids it holds.
-function riffInfo(file: string): string[] {
-  const d = readFileSync(file)
-  const lines: string[] = []
-  let i = 12
-  while (i + 8 <= d.length) {
-    const id = d.toString('latin1', i, i + 4)
-    const size = d.readUInt32LE(i + 4)
-    if (id === 'LIST' && d.toString('latin1', i + 8, i + 12) === 'INFO') {
-      let j = i + 12
-      const end = i + 8 + size
-      while (j + 8 <= end) {
-        const sub = d.toString('latin1', j, j + 4)
-        const subSize = d.readUInt32LE(j + 4)
-        const text = d.toString('utf8', j + 8, j + 8 + subSize).replace(/\0+$/, '')
-        lines.push(`riff ${sub}=${text}`)
-        j += 8 + subSize + (subSize % 2)
-      }
-    }
-    i += 8 + size + (size % 2)
+// The bytes at [position, position + length) of a file, read in place: the snapshot runs
+// on the main process for every conversion's input and output, so reading whole files to
+// look at a few header bytes stalled the app for a full read each time.
+function readAt(file: string, position: number, length: number): Buffer {
+  const fd = openSync(file, 'r')
+  try {
+    const buf = Buffer.alloc(length)
+    return buf.subarray(0, readSync(fd, buf, 0, length, position))
+  } finally {
+    closeSync(fd)
   }
-  return lines
+}
+
+// The RIFF INFO sub-chunks, read off the chunk tree: TagLib's RiffListTag hands values
+// back by id but never lists the ids it holds. Walks the chunk headers in place and
+// reads only the INFO list's body, never the audio.
+function riffInfo(file: string): string[] {
+  const fd = openSync(file, 'r')
+  try {
+    const fileSize = fstatSync(fd).size
+    const header = Buffer.alloc(12)
+    const lines: string[] = []
+    let i = 12
+    while (i + 8 <= fileSize) {
+      readSync(fd, header, 0, 12, i)
+      const id = header.toString('latin1', 0, 4)
+      const size = header.readUInt32LE(4)
+      if (id === 'LIST' && header.toString('latin1', 8, 12) === 'INFO') {
+        const body = Buffer.alloc(Math.max(0, Math.min(size, fileSize - i - 8) - 4))
+        readSync(fd, body, 0, body.length, i + 12)
+        let j = 0
+        while (j + 8 <= body.length) {
+          const sub = body.toString('latin1', j, j + 4)
+          const subSize = body.readUInt32LE(j + 4)
+          const text = body.toString('utf8', j + 8, j + 8 + subSize).replace(/\0+$/, '')
+          lines.push(`riff ${sub}=${text}`)
+          j += 8 + subSize + (subSize % 2)
+        }
+      }
+      i += 8 + size + (size % 2)
+    }
+    return lines
+  } finally {
+    closeSync(fd)
+  }
 }

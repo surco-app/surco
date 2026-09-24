@@ -1,5 +1,12 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync } from 'node:fs'
+import {
+  appendFileSync,
+  mkdtempSync,
+  readFileSync,
+  statSync,
+  truncateSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -79,6 +86,34 @@ describe('snapshotTags', () => {
     const lines = snapshotTags(file)
     expect(lines).toContain('riff IART=A')
     expect(lines).toContain('riff IPRD=B')
+  })
+
+  // Every conversion snapshots its input and output on the main process, often on a NAS.
+  // Reading the whole file to look at a few header bytes froze the app for the length of
+  // a full read per snapshot; past 2 GiB Node refuses the read outright. These files are
+  // sparse, so they cost no disk, and only the tag and chunk headers may be read.
+  it('reads a WAV INFO chunk without reading the audio', () => {
+    const file = encode('big.wav', ['-c:a', 'pcm_s16le'], ['-metadata', 'artist=A'])
+    const junkSize = 3 * 1024 ** 3
+    const header = Buffer.alloc(8)
+    header.write('junk', 0, 'latin1')
+    header.writeUInt32LE(junkSize, 4)
+    appendFileSync(file, header)
+    truncateSync(file, statSync(file).size + junkSize)
+
+    expect(snapshotTags(file)).toContain('riff IART=A')
+  })
+
+  it('spots an ID3 header in front of a FLAC without reading the audio', () => {
+    const flac = readFileSync(encode('plain.flac', ['-c:a', 'flac'], ['-metadata', 'title=T']))
+    const file = join(dir, 'big.flac')
+    writeFileSync(
+      file,
+      Buffer.concat([Buffer.from('ID3\x04\x00\x00\x00\x00\x00\x00', 'latin1'), flac]),
+    )
+    truncateSync(file, 3 * 1024 ** 3)
+
+    expect(snapshotTags(file)).toContain('flac id3-prefix present')
   })
 
   it('reports what a second snapshot added and removed', () => {
