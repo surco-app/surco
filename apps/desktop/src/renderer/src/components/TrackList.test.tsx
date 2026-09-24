@@ -234,12 +234,12 @@ describe('TrackList', () => {
     ])
     const titleTrigger = screen.getByText('Frozen Name')
     fireEvent.focusIn(titleTrigger)
-    expect(screen.getByRole('tooltip')).toHaveTextContent('Frozen Name — Boards of Canada')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Frozen Name · Boards of Canada')
     fireEvent.focusOut(titleTrigger)
 
     const artistTrigger = screen.getByText('Boards of Canada')
     fireEvent.focusIn(artistTrigger)
-    expect(screen.getByRole('tooltip')).toHaveTextContent('Frozen Name — Boards of Canada')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Frozen Name · Boards of Canada')
   })
 
   it('drags a row out to external apps using its source file and cover', () => {
