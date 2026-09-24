@@ -80,6 +80,8 @@ export const defaults: Settings = {
   // their own (the field shows a localized example as a placeholder).
   groupingPresets: [],
   genrePresets: [],
+  genreSeparator: ', ',
+  groupingSeparator: ', ',
   trimWhitespace: true,
   zeroPadTrack: true,
   visibleFields: DEFAULT_FIELDS,

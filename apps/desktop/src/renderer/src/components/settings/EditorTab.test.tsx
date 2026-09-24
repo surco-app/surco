@@ -31,6 +31,8 @@ const synced: SyncedDraft = {
   autoApplyFilename: false,
   grouping: '',
   genre: '',
+  genreSeparator: ', ',
+  groupingSeparator: ', ',
   trimWhitespace: true,
   zeroPadTrack: true,
   visibleFields: [],

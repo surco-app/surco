@@ -344,6 +344,10 @@ export function SettingsModal({
                 onChangeRequired={(fields) => patch('requiredFields', fields)}
                 onChangeImport={(fields) => patch('importFields', fields)}
                 onChangeCustom={(fields) => patch('customFields', fields)}
+                separators={{ genre: synced.genreSeparator, grouping: synced.groupingSeparator }}
+                onChangeSeparator={(key, separator) =>
+                  patch(key === 'genre' ? 'genreSeparator' : 'groupingSeparator', separator)
+                }
               />
             )}
             {tab === 'shortcuts' && (

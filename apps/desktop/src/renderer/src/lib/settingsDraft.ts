@@ -3,6 +3,7 @@ import type { BackupPolicy } from '../../../shared/backupPolicy'
 import { normalizeImportFields } from '../../../shared/defaults'
 import { normalizeEditorSections } from '../../../shared/editorSections'
 import type { CustomField, Settings } from '../../../shared/types'
+import { DEFAULT_SEPARATOR } from './csv'
 
 // The synced staged fields in their editable forms (presets as comma text, the cover cap
 // as a string), derived from Settings in one place so the modal's seeding and the
@@ -28,6 +29,8 @@ export interface SyncedDraft {
   autoApplyFilename: boolean
   grouping: string
   genre: string
+  genreSeparator: string
+  groupingSeparator: string
   trimWhitespace: boolean
   zeroPadTrack: boolean
   visibleFields: string[]
@@ -112,6 +115,8 @@ export function pickSynced(s: Settings): SyncedDraft {
     autoApplyFilename: s.autoApplyFilename,
     grouping: s.groupingPresets.join(', '),
     genre: s.genrePresets.join(', '),
+    genreSeparator: s.genreSeparator,
+    groupingSeparator: s.groupingSeparator,
     trimWhitespace: s.trimWhitespace,
     zeroPadTrack: s.zeroPadTrack,
     visibleFields: s.visibleFields,
@@ -162,6 +167,8 @@ export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Part
   const {
     grouping,
     genre,
+    genreSeparator,
+    groupingSeparator,
     coverMaxSize,
     traktorCueOffsetMs,
     filenameFormat,
@@ -183,6 +190,8 @@ export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Part
     filenameFormat: filenameFormat.trim() || DEFAULT_FILENAME_FORMAT,
     groupingPresets: splitPresets(grouping),
     genrePresets: splitPresets(genre),
+    genreSeparator: genreSeparator.trim() ? genreSeparator : DEFAULT_SEPARATOR,
+    groupingSeparator: groupingSeparator.trim() ? groupingSeparator : DEFAULT_SEPARATOR,
     searchIgnoreWords: splitPresets(searchIgnoreWords),
     coverMaxSize: Number.isFinite(max) && max >= 0 ? max : DEFAULT_COVER_MAX_SIZE,
     traktorCueOffsetMs: Number.isFinite(cueOffset) ? cueOffset : 0,

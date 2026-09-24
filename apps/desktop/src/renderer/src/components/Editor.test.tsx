@@ -152,6 +152,7 @@ function renderEditor(
     requiredFields?: string[]
     visibleFields?: string[]
     genrePresets?: string[]
+    genreSeparator?: string
     showLoudness?: boolean
     showSpectrum?: boolean
     normalize?: NormalizeConfig
@@ -241,6 +242,7 @@ function renderEditor(
       filenameFormat: props.filenameFormat ?? '{artist} - {title}',
       titleFormat: props.titleFormat ?? '',
       genrePresets: props.genrePresets ?? [],
+      ...(props.genreSeparator ? { genreSeparator: props.genreSeparator } : {}),
       groupingPresets: [],
       visibleFields: props.visibleFields ?? [],
       customFields: props.customFields ?? [],
@@ -984,6 +986,20 @@ describe('Editor genre presets', () => {
       expect.objectContaining({ meta: expect.objectContaining({ genre: 'Hard Dance' }) }),
     )
   })
+
+  // Plex reads "Hard Dance, Techno" as one genre and splits on ";", so a user who tags for
+  // Plex picks ";" and every chip has to add with it.
+  it('adds a genre with the separator chosen in settings', () => {
+    const { onChange } = renderEditor({ id: 'a', meta: { genre: 'Hard Dance' } }, 'wav', {
+      visibleFields: ['genre'],
+      genrePresets: ['Hard Dance', 'Techno'],
+      genreSeparator: '; ',
+    })
+    fireEvent.click(screen.getByTestId('chip-Techno'))
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ meta: expect.objectContaining({ genre: 'Hard Dance; Techno' }) }),
+    )
+  })
 })
 
 describe('Editor Discogs loading skeleton', () => {
@@ -1230,6 +1246,7 @@ describe('Editor multi-select', () => {
       metaA?: Partial<TrackMetadata>
       metaB?: Partial<TrackMetadata>
       groupingPresets?: string[]
+      groupingSeparator?: string
       customFields?: Settings['customFields']
     } = {},
   ) {
@@ -1285,6 +1302,7 @@ describe('Editor multi-select', () => {
       {
         addToAppleMusic: opts.music ?? false,
         groupingPresets: opts.groupingPresets ?? [],
+        ...(opts.groupingSeparator ? { groupingSeparator: opts.groupingSeparator } : {}),
         customFields: opts.customFields ?? [],
         visibleFields: opts.visibleFields ?? ['title', 'album'],
         requiredFields: opts.requiredFields ?? ['title'],
@@ -1309,6 +1327,20 @@ describe('Editor multi-select', () => {
     fireEvent.click(screen.getByTestId('chip-b-Vocals'))
     expect(onChangeTracksMeta).toHaveBeenCalledWith([{ id: 'b', meta: { grouping: 'Vocals' } }])
     expect(onChangeAllMeta).not.toHaveBeenCalled()
+  })
+
+  it('adds a grouping tag on a track row with the separator chosen in settings', () => {
+    const { onChangeTracksMeta } = renderMulti({
+      visibleFields: ['grouping'],
+      groupingPresets: ['Bases', 'Vocals'],
+      groupingSeparator: '/',
+      metaB: { grouping: 'Bases' },
+    })
+    fireEvent.click(screen.getByTestId('grouping-per-track-toggle'))
+    fireEvent.click(screen.getByTestId('chip-b-Vocals'))
+    expect(onChangeTracksMeta).toHaveBeenCalledWith([
+      { id: 'b', meta: { grouping: 'Bases/Vocals' } },
+    ])
   })
 
   // A custom field edited across a selection lands in every selected track, each through

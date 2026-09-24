@@ -55,3 +55,32 @@ describe('tags that contain commas', () => {
     expect(toggleCsv('Pop, Folk, World, & Country', 'Folk, World, & Country', whole)).toBe('Pop')
   })
 })
+
+// Plex splits a genre tag on ";" and reads "Pop, Indie Pop" as one genre, so the user picks
+// the separator each field is written with. Reading splits on that one only: splitting on
+// every candidate would cut genres that carry a slash, like "Hip Hop/Rap".
+describe('a chosen separator', () => {
+  it('joins with it', () => {
+    expect(toggleCsv('Pop', 'Indie Pop', [], '; ')).toBe('Pop; Indie Pop')
+  })
+
+  it('splits on it with or without the space', () => {
+    expect(splitCsv('Pop;Indie Pop; Dance', [], '; ')).toEqual(['Pop', 'Indie Pop', 'Dance'])
+  })
+
+  it('keeps the other separators inside a tag', () => {
+    expect(splitCsv('Hip Hop/Rap; Pop, Rock', [], '; ')).toEqual(['Hip Hop/Rap', 'Pop, Rock'])
+  })
+
+  it('keeps a whole name whole when it sits beside the chosen separator', () => {
+    expect(splitCsv('Folk, World, & Country;Pop', ['Folk, World, & Country'], '; ')).toEqual([
+      'Folk, World, & Country',
+      'Pop',
+    ])
+  })
+
+  it('finds and removes a tag by it', () => {
+    expect(csvHas('Album;Remix', 'Remix', [], ';')).toBe(true)
+    expect(toggleCsv('Album;Remix', 'Remix', [], ';')).toBe('Album')
+  })
+})

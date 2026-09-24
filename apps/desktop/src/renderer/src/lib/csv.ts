@@ -1,17 +1,30 @@
 // Grouping is a single Apple Music text field, but smart playlists match it with
-// "contains", so we store several tags as a comma-separated list. These helpers
-// keep that list normalized while users toggle tags on and off.
-// `whole` names tags that contain a comma themselves and must never be split.
-export function splitCsv(value: string, whole: readonly string[] = []): string[] {
+// "contains", so we store several tags as a list in one text. These helpers keep that
+// list normalized while users toggle tags on and off.
+// `whole` names tags that contain the separator themselves and must never be split.
+// `separator` is what joins the tags ("; " for Plex); reading splits on it without its
+// spaces, so "Pop;Indie Pop" and "Pop; Indie Pop" are the same two tags.
+export const DEFAULT_SEPARATOR = ', '
+
+function splitOn(separator: string): string {
+  return separator.trim() || separator
+}
+
+export function splitCsv(
+  value: string,
+  whole: readonly string[] = [],
+  separator: string = DEFAULT_SEPARATOR,
+): string[] {
+  const on = splitOn(separator)
   const kept: string[] = []
   let rest = value
   for (const name of whole) {
     if (!rest.includes(name)) continue
     kept.push(name)
-    rest = rest.split(name).join(',')
+    rest = rest.split(name).join(on)
   }
   const parts = rest
-    .split(',')
+    .split(on)
     .map((s) => s.trim())
     .filter(Boolean)
   return kept.length ? orderAsIn(value, [...kept, ...parts]) : parts
@@ -28,14 +41,24 @@ function sameTag(a: string, b: string): boolean {
   return a.toLowerCase() === b.toLowerCase()
 }
 
-export function csvHas(value: string, item: string, whole: readonly string[] = []): boolean {
-  return splitCsv(value, whole).some((p) => sameTag(p, item))
+export function csvHas(
+  value: string,
+  item: string,
+  whole: readonly string[] = [],
+  separator: string = DEFAULT_SEPARATOR,
+): boolean {
+  return splitCsv(value, whole, separator).some((p) => sameTag(p, item))
 }
 
-export function toggleCsv(value: string, item: string, whole: readonly string[] = []): string {
-  const parts = splitCsv(value, whole)
+export function toggleCsv(
+  value: string,
+  item: string,
+  whole: readonly string[] = [],
+  separator: string = DEFAULT_SEPARATOR,
+): string {
+  const parts = splitCsv(value, whole, separator)
   const next = parts.some((p) => sameTag(p, item))
     ? parts.filter((p) => !sameTag(p, item))
     : [...parts, item]
-  return next.join(', ')
+  return next.join(separator)
 }

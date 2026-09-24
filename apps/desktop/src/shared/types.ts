@@ -210,6 +210,10 @@ export interface Settings {
   autoApplyFilename: boolean
   groupingPresets: string[]
   genrePresets: string[]
+  // What joins several tags in the one Genre or Grouping text: ", " by default, "; " for
+  // Plex, which splits a genre only there. Reading splits on it and nothing else.
+  genreSeparator: string
+  groupingSeparator: string
   trimWhitespace: boolean
   zeroPadTrack: boolean
   visibleFields: string[]
