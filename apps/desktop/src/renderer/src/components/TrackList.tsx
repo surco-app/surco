@@ -1,4 +1,4 @@
-import { Check, CircleAlert, Music, Play, Sparkles, TriangleAlert, Undo2, X } from 'lucide-react'
+import { Check, CircleAlert, Music, Play, TriangleAlert, Undo2, X } from 'lucide-react'
 import type React from 'react'
 import { memo, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -199,6 +199,18 @@ function QualityMark({
       <Tooltip label={label} align="end" scope="dot" />
       <span className="sr-only">{label}</span>
     </span>
+  )
+}
+
+// The match sparkle as one solid four-point star, the same family and optical weight as the
+// quality shapes beside it. An applied auto-match is the normal state of most rows after a
+// sweep, so it takes the muted text colour; only the review one keeps a colour of its own,
+// because that is the one asking the user to act.
+function Spark(): React.JSX.Element {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 12 12" className="h-3 w-3" fill="currentColor">
+      <path d="M6 .6Q6.7 5.3 11.4 6 6.7 6.7 6 11.4 5.3 6.7.6 6 5.3 5.3 6 .6Z" />
+    </svg>
   )
 }
 
@@ -591,9 +603,9 @@ const TrackRow = memo(function TrackRow({
                 <span
                   data-testid="track-automatched"
                   data-confidence="high"
-                  className="group/dot relative flex shrink-0 items-center text-[var(--color-accent)]"
+                  className="group/dot relative flex shrink-0 items-center text-fg-dim"
                 >
-                  <Sparkles className="h-3 w-3" aria-hidden="true" />
+                  <Spark />
                   <Tooltip label={autoMatchLabel} align="end" scope="dot" />
                   <span className="sr-only">{autoMatchLabel}</span>
                 </span>
@@ -657,7 +669,7 @@ const TrackRow = memo(function TrackRow({
           onClick={() => onAcceptReview(t.id)}
           className="group/dot press absolute right-[66px] bottom-[5px] flex h-6 w-6 items-center justify-center text-warn"
         >
-          <Sparkles className="h-3 w-3" aria-hidden="true" />
+          <Spark />
           <Tooltip
             label={matchTooltip(tr('commands.acceptReview'), t.matchConfidence)}
             align="end"
