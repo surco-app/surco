@@ -441,7 +441,7 @@
     "qualityCaptionBad": "Teto em ~{{cutoff}}, marca de uma fonte com perdas.",
     "qualityCaptionProcessed": "Possíveis agudos regenerados sobre um corte em ~{{cutoff}}.",
     "qualityUpsampled": "Sem conteúdo acima de 22 kHz: provavelmente reamostrado de 44,1 kHz.",
-    "qualityHiRes": "Há conteúdo acima de 22 kHz: não vem de 44,1 kHz.",
+    "qualityHiRes": "Hi-res genuíno: há conteúdo real acima de 22 kHz, então este arquivo em {{rate}} não foi reamostrado da qualidade de CD (44,1 kHz).",
     "qualityResolutionUnknown": "Não foi possível verificar se é alta resolução real.",
     "qualityBitsPill": "Bits preenchidos",
     "qualityBitsPadded": "Declara 24 bits, mas o áudio é de 16 bits preenchido.",

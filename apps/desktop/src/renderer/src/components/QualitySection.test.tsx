@@ -396,6 +396,21 @@ describe('QualitySection verdict caption', () => {
     expect(screen.queryByTestId('quality-upsampled')).not.toBeInTheDocument()
   })
 
+  // artexjay 24/09: "it does not come from 44.1 kHz" only denied, and a denial read like a
+  // defect to someone who is not an audio engineer. The line has to confirm what the file is.
+  it('names the verified rate so the hi-res line reads as a confirmation', async () => {
+    renderSection({
+      image: '',
+      cutoffHz: 22050,
+      sampleRateHz: 96000,
+      processed: false,
+      hasKnee: false,
+      upsampled: false,
+      resolution: 'hires',
+    })
+    expect(await screen.findByTestId('quality-hires')).toHaveTextContent('96 kHz')
+  })
+
   // The honest third state: an unreadable probe proves nothing either way, and dressing that
   // up as a pass would be inventing a verdict nobody measured.
   it('says the rate could not be verified rather than implying it passed', async () => {
@@ -610,7 +625,10 @@ describe('QualitySection shareable report', () => {
       },
       '/m/a.flac',
     )
-    expect(input.notes).toEqual([i18n.t('editor.qualityHiRes'), i18n.t('editor.qualityBitsPadded')])
+    expect(input.notes).toEqual([
+      i18n.t('editor.qualityHiRes', { rate: '96 kHz' }),
+      i18n.t('editor.qualityBitsPadded'),
+    ])
   })
 
   it('offers no report while there is no verdict to share', async () => {

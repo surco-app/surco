@@ -441,7 +441,7 @@
     "qualityCaptionBad": "Ceiling at ~{{cutoff}}, the mark of a lossy source.",
     "qualityCaptionProcessed": "Possibly regenerated highs over a cut at ~{{cutoff}}.",
     "qualityUpsampled": "No content above 22 kHz: probably upsampled from 44.1 kHz.",
-    "qualityHiRes": "There is content above 22 kHz: it does not come from 44.1 kHz.",
+    "qualityHiRes": "Genuine hi-res: real content above 22 kHz, so this {{rate}} file was not upsampled from CD quality (44.1 kHz).",
     "qualityResolutionUnknown": "Could not check whether this is real high resolution.",
     "qualityBitsPill": "Padded depth",
     "qualityBitsPadded": "Declared 24-bit, but the audio is padded 16-bit.",
