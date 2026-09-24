@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.2",
+    "date": "24 de septiembre de 2026",
+    "title": "Búsqueda más certera",
+    "items": [
+      {
+        "text": "Las descargas de sello y de promo que llevan el sello como artista y el nombre real en el título, como «Francesco Donadoni - Funky Roll», ya se encuentran: Surco busca por el artista y la pista que dice el título, aunque delante lleve «Preview».",
+        "in": "1.2.0"
+      },
+      {
+        "text": "Entre los resultados, un disco a nombre del artista de tu archivo va por delante de otro que solo lo menciona. Cada resultado entra directamente en su puesto según llega, sin que la lista se reordene al final, y el que llega tarde se marca un momento para que lo veas.",
+        "in": "1.2.0"
+      },
+      {
+        "text": "Cuando Discogs no encuentra la pista, una coincidencia de Bandcamp del mismo artista se te propone para que la confirmes, en vez de descartarse sin avisar.",
+        "in": "1.2.0"
+      },
+      {
+        "text": "Surco va más ágil con bibliotecas grandes: la lista responde antes al importar y al editar, la misma búsqueda no se repite, y tras convertir muchas pistas a la vez rekordbox y Engine DJ se actualizan de una sola vez. La descarga también pesa menos.",
+        "in": "1.2.0"
+      }
+    ]
+  },
+  {
     "version": "1.1",
     "date": "24 de septiembre de 2026",
     "title": "Una interfaz más tranquila",
