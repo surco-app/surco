@@ -481,8 +481,11 @@ export default function App(): React.JSX.Element {
         discogsPrefetched.current.delete(track.id)
         viewCache.current.delete(track.id)
         forgetAutoMatch(track.id)
-        removeAnalysisQueries(queryClient, track.inputPath)
       }
+      removeAnalysisQueries(
+        queryClient,
+        removed.map((t) => t.inputPath),
+      )
       // Also take them out of the quality sweep's queue: nothing else retires a queued
       // track short of measuring it, so without this the sweep keeps counting (and
       // decoding) rows that are no longer in the list.
@@ -502,10 +505,11 @@ export default function App(): React.JSX.Element {
       viewCache.current.clear()
       resetAutoMatch()
       forgetAnalysisTracks(cleared.map((t) => t.id))
-      for (const t of cleared) {
-        removeAnalysisQueries(queryClient, t.inputPath)
-        revokeCoverUrl(t.coverUrl)
-      }
+      removeAnalysisQueries(
+        queryClient,
+        cleared.map((t) => t.inputPath),
+      )
+      for (const t of cleared) revokeCoverUrl(t.coverUrl)
     },
     onMetaLoaded: (t) => {
       // With auto-match on, every imported track is probed whether or not its row is on
@@ -797,7 +801,7 @@ export default function App(): React.JSX.Element {
   // relies on a stable onRemove) and re-rendering every row on every edit.
   const menuTargets = useStableCallback((id: string): TrackItem[] =>
     selectedIds.includes(id) && selectedIds.length > 1
-      ? tracks.filter((t) => selectedIds.includes(t.id))
+      ? tracks.filter((t) => selectedIdSet.has(t.id))
       : tracks.filter((t) => t.id === id),
   )
 
@@ -995,10 +999,10 @@ export default function App(): React.JSX.Element {
   // that case is what lets the memoized Editor skip those renders entirely.
   const prevSelectedTracks = useRef<TrackItem[]>([])
   const selectedTracks = useMemo(() => {
-    const next = tracks.filter((t) => selectedIds.includes(t.id))
+    const next = tracks.filter((t) => selectedIdSet.has(t.id))
     if (!sameTracks(prevSelectedTracks.current, next)) prevSelectedTracks.current = next
     return prevSelectedTracks.current
-  }, [tracks, selectedIds])
+  }, [tracks, selectedIdSet])
   // The floating player (audio element, visibility, follow-selection playback)
   // lives in the hook; App renders the <audio> element and the card.
   const {

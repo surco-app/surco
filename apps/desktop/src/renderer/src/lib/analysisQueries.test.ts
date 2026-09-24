@@ -156,11 +156,27 @@ describe('removeAnalysisQueries', () => {
       client.setQueryData([key, '/m/b.wav'], { fact: key })
     }
 
-    removeAnalysisQueries(client, '/m/a.wav')
+    removeAnalysisQueries(client, ['/m/a.wav'])
 
     for (const key of ['properties', 'loudness', 'spectrogram', 'bpm', 'key', 'waveform']) {
       expect(client.getQueryData([key, '/m/a.wav'])).toBeUndefined()
       expect(client.getQueryData([key, '/m/b.wav'])).toEqual({ fact: key })
     }
+  })
+  // Clearing a big list evicts thousands of paths at once. Each removeQueries call scans
+  // the whole cache, so evicting family by family and path by path is quadratic and
+  // freezes the window; the whole removal must cost a single pass.
+  it('evicts many paths in a single pass over the cache', () => {
+    const client = new QueryClient()
+    const paths = ['/m/a.wav', '/m/b.wav', '/m/c.wav']
+    for (const path of paths) client.setQueryData(['spectrogram', path], { fact: path })
+    client.setQueryData(['spectrogram', '/m/kept.wav'], { fact: 'kept' })
+    const findAllSpy = vi.spyOn(client.getQueryCache(), 'findAll')
+
+    removeAnalysisQueries(client, paths)
+
+    expect(findAllSpy).toHaveBeenCalledTimes(1)
+    for (const path of paths) expect(client.getQueryData(['spectrogram', path])).toBeUndefined()
+    expect(client.getQueryData(['spectrogram', '/m/kept.wav'])).toEqual({ fact: 'kept' })
   })
 })

@@ -19,14 +19,12 @@ export interface CacheSnapshot {
 // incremental patch all agree on which name feeds which snapshot field.
 export const SNAPSHOT_FAMILIES = ['spectrogram', 'waveform', 'waveformScan'] as const
 
-// A cache lookup by key hash off a once-per-call index of the whole cache. Building the
-// index costs one pass over the cache; each lookup is then O(1). The old form called
-// find()/getQueryData() per key, and each of those scans the cache linearly, so a whole
-// snapshot was O(N × cacheSize) — hundreds of thousands of comparisons on a big library.
+// A cache lookup by key hash straight into the cache's own hash map, O(1) per key. find()
+// scans the cache linearly, and indexing the whole cache per call costs a pass over it on
+// every probe event, which over a sweep of a big library is quadratic.
 export function cacheLookup(client: QueryClient): (key: readonly unknown[]) => Query | undefined {
-  const byHash = new Map<string, Query>()
-  for (const q of client.getQueryCache().getAll()) byHash.set(q.queryHash, q as Query)
-  return (queryKey) => byHash.get(hashKey(queryKey))
+  const cache = client.getQueryCache()
+  return (queryKey) => cache.get(hashKey(queryKey)) as Query | undefined
 }
 
 // Reads one track's slot across all three families out of the cache index. Shared by the full
