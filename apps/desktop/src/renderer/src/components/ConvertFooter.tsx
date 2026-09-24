@@ -28,6 +28,9 @@ interface ConvertFooterProps {
   // Why the convert is blocked (the empty required fields), surfaced as the button's
   // tooltip. In multi it covers the whole selection; undefined when nothing is missing.
   incompleteReason?: string
+  // The same block said in one short line for the footer (a count past two missing fields),
+  // since the full reason can list every required field.
+  incompleteSummary?: string
   willEditInPlace: boolean
   tagsOnly: boolean
   addToAppleMusic: boolean
@@ -82,6 +85,7 @@ export function ConvertFooter({
   done,
   incomplete,
   incompleteReason,
+  incompleteSummary,
   willEditInPlace,
   tagsOnly,
   addToAppleMusic,
@@ -196,13 +200,13 @@ export function ConvertFooter({
         {/* The dimmed button says nothing on its own, so what blocks it is said here, in the
             attention colour of the field's own dot. aria-hidden because the button already
             carries the same sentence as its description; this is its visible twin. */}
-        {!showDone && incomplete && incompleteReason && (
+        {!showDone && incomplete && incompleteSummary && (
           <p
             data-testid="footer-incomplete"
             aria-hidden="true"
-            className="text-center text-xs text-warn"
+            className="truncate text-center text-xs text-warn"
           >
-            {incompleteReason}
+            {incompleteSummary}
           </p>
         )}
         {showDone ? (
