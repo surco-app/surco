@@ -35,12 +35,16 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { errorKeyOf } from '../shared/errorKeys'
 import type { TrackMetadata } from '../shared/types'
 import { buildEngineDatabase } from './engine'
-import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
+import { addToEngineLibrary, dumpEngineLibrary, setEngineWriteGatherMs } from './engineLibrary'
 import { isEngineDjRunning } from './engineProcess'
 
 // The real probe shells out to pgrep/tasklist; tests pin it so they never depend on
 // what happens to be running on the machine (Engine DJ itself, for instance).
 vi.mock('./engineProcess', () => ({ isEngineDjRunning: vi.fn(async () => false) }))
+
+// The writer waits a moment before each rewrite to gather the tracks still finishing; the
+// suite writes immediately unless a test is about that wait.
+beforeEach(() => setEngineWriteGatherMs(0))
 const meta = (over: Partial<TrackMetadata> = {}): TrackMetadata => ({
   title: 'One',
   artist: 'A',
@@ -691,5 +695,43 @@ describe('dumpEngineLibrary — memoized by mtime', () => {
     )
 
     expect(await dumpEngineLibrary(lib)).toEqual([{ title: 'Appeared', artist: 'A' }])
+  })
+})
+
+describe('addToEngineLibrary — gathering a run', () => {
+  // Every write rewrites the whole m.db (sql.js loads the file and exports it again), on
+  // the main process. A batch's conversions finish a few seconds apart, so each one used to
+  // arrive after the previous write and rewrite the library alone: hundreds of full
+  // rewrites for one run. Waiting a moment first lets the tracks finishing close together
+  // share one.
+  it('writes tracks that finish a moment apart in one rewrite', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'surco-engine-gather-'))
+    const lib = join(root, 'Engine Library')
+    await addToEngineLibrary(
+      lib,
+      await makeFile(root, 'first.aiff'),
+      meta({ title: 'First' }),
+      'Surco',
+    )
+    const files = await Promise.all(['g1.aiff', 'g2.aiff', 'g3.aiff'].map((n) => makeFile(root, n)))
+    setEngineWriteGatherMs(300)
+    readFileCalls.count = 0
+
+    const adds: Promise<void>[] = []
+    for (const [i, f] of files.entries()) {
+      adds.push(addToEngineLibrary(lib, f, meta({ title: `G${i + 1}` }), 'Surco'))
+      await new Promise((r) => setTimeout(r, 60))
+    }
+    await Promise.all(adds)
+
+    expect(readFileCalls.count).toBe(1)
+    const db = await open(join(lib, 'Database2', 'm.db'))
+    expect(rows(db, 'SELECT title FROM Track ORDER BY title').map((r) => r.title)).toEqual([
+      'First',
+      'G1',
+      'G2',
+      'G3',
+    ])
+    db.close()
   })
 })
