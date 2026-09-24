@@ -122,6 +122,17 @@ interface PendingAdd {
 let pending: PendingAdd[] = []
 let draining = false
 
+// How long the writer waits before a rewrite, so the tracks of a run that finish a moment
+// apart share it. A batch's conversions land seconds apart, each after the previous write
+// was done, so without the wait every track rewrote the whole library alone. Each add
+// still waits for its own write and still fails with it: a conversion is never reported
+// done while its Engine row is missing.
+let gatherMs = 2000
+
+export function setEngineWriteGatherMs(ms: number): void {
+  gatherMs = ms
+}
+
 export function addToEngineLibrary(
   libraryDir: string,
   filePath: string,
@@ -138,6 +149,7 @@ export function addToEngineLibrary(
 async function drain(): Promise<void> {
   draining = true
   try {
+    if (gatherMs > 0) await new Promise((resolve) => setTimeout(resolve, gatherMs))
     while (pending.length) {
       const batch = pending
       pending = []

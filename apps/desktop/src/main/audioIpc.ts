@@ -14,6 +14,7 @@ import { activity } from './activity'
 import { cachedAnalysis, LOUDNESS_NAMESPACE, peekAnalysis } from './analysisCache'
 import { analysisCancels, isAbortError } from './analysisCancel'
 import { analysisLimiter } from './analysisLimiter'
+import { coverThumbUrlFor } from './coverThumbs'
 import {
   analyzeBitsUsage,
   analyzeCutoff,
@@ -127,9 +128,21 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   // Import reads tags, duration and cover together so a big drop spawns two processes
   // per track (one ffprobe + one ffmpeg) instead of four across three separate calls.
   // readMeta swallows a probe failure into an empty result, so it never rejects.
-  ipcMain.handle('audio:meta', (_e, inputPath: string) => readMeta(inputPath))
+  // The embedded cover crosses as a short URL to its copy on disk (see coverThumbs.ts),
+  // never as the base64 the renderer used to keep in every track's state.
+  ipcMain.handle('audio:meta', async (_e, inputPath: string) => {
+    const meta = await readMeta(inputPath)
+    if (!meta.cover) return meta
+    return {
+      ...meta,
+      cover: { ...meta.cover, thumbUrl: await coverThumbUrlFor(meta.cover.thumbUrl) },
+    }
+  })
 
-  ipcMain.handle('audio:cover', (_e, inputPath: string) => extractCover(inputPath))
+  ipcMain.handle('audio:cover', async (_e, inputPath: string) => {
+    const cover = await extractCover(inputPath)
+    return cover && { ...cover, thumbUrl: await coverThumbUrlFor(cover.thumbUrl) }
+  })
   ipcMain.handle('audio:coverFull', (_e, inputPath: string) => extractCoverDataUrl(inputPath))
 
   handleAudio(
