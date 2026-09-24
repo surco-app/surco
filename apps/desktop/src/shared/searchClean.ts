@@ -163,6 +163,19 @@ export function dropEchoedVersion(s: string): string {
   return echoesTitle && allCovered ? squeeze(m[1]) : s
 }
 
+// Label and promo downloads tag the LABEL as the artist and fold the act into the title
+// ("HH Traxx" / "Francesco Donadoni - Funky Roll"), often behind a Bandcamp "Preview - "
+// stamp, so every search pinned to the tag's artist misses. Returns the act and the track
+// the title names, or null for a title that carries no "Act - Track" of its own. Only
+// Discogs' artist-pinned searches use it: as free text, "Tito Dj I got It" returned twenty
+// unrelated DJ compilations. What gets scored and written is still the tag.
+const PREVIEW_STAMP = /^\s*preview\s+-\s+/i
+
+export function embeddedArtistTitle(title: string): { artist: string; title: string } | null {
+  const m = title.replace(PREVIEW_STAMP, '').match(/^(.+?)\s+-\s+(.+)$/)
+  return m ? { artist: squeeze(m[1]), title: squeeze(m[2]) } : null
+}
+
 export function cleanMatchTitle(title: string): string {
   const afterTrackNumber = title.match(/\s-\s\d{1,3}\s+(.+)$/)
   return dropOriginalMarker(cleanQuery(afterTrackNumber ? afterTrackNumber[1] : title))

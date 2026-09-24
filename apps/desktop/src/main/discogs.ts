@@ -1,5 +1,10 @@
 import { errorWithKey } from '../shared/errorKeys'
-import { dropOriginalMarker, dropPresentsAlias, trailingWordDrops } from '../shared/searchClean'
+import {
+  dropOriginalMarker,
+  dropPresentsAlias,
+  embeddedArtistTitle,
+  trailingWordDrops,
+} from '../shared/searchClean'
 import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
 import { activity } from './activity'
 import { discogsLimiterFor } from './discogsLimiter'
@@ -298,6 +303,18 @@ export async function search(
           const relaxed = keep(await searchTracklist(artist, shorter, token, opts, priority))
           if (relaxed.length) return relaxed
         }
+      }
+      // A label-as-artist tag with "Act - Track" in the title ("HH Traxx" / "Francesco
+      // Donadoni - Funky Roll"): the same precise searches on the act and track it names.
+      // After the ones above, so a well-tagged file resolves exactly as it did.
+      const embedded = title ? embeddedArtistTitle(title) : null
+      if (embedded) {
+        const act = dropPresentsAlias(embedded.artist)
+        const track = dropOriginalMarker(embedded.title)
+        const byAct = keep(await searchStructured(act, track, token, opts, priority))
+        if (byAct.length) return byAct
+        const byActTrack = keep(await searchTracklist(act, track, token, opts, priority))
+        if (byActTrack.length) return byActTrack
       }
       let results: SearchResult[] = []
       // The catalog-number candidate keeps its place in the candidate order but runs on
