@@ -35,6 +35,9 @@ interface ExportButtonProps {
   // The reason the convert is blocked (the empty required fields), shown as a tooltip on
   // the disabled button so it explains itself. Only meaningful while incomplete.
   incompleteReason?: string
+  // A short form of that reason shown as the button's own text while it is blocked, so the
+  // footer needs no second line to say it. The action stays in the button's name.
+  blockedLabel?: string
   // True when the export writes over the original (the source's own format, or overwrite
   // mode) and renames it rather than writing a separate copy.
   inPlace: boolean
@@ -86,6 +89,7 @@ export function ExportButton({
   withEngineDj,
   incomplete,
   incompleteReason,
+  blockedLabel,
   inPlace,
   tagsOnly = false,
   count,
@@ -186,6 +190,7 @@ export function ExportButton({
   const label = liveStage
     ? tr(`trackList.stage.${liveStage}`, { format: formatLabel })
     : tr(labelSpec.key, labelSpec.options)
+  const shownBlocked = softBlocked && blockedLabel ? blockedLabel : undefined
   // The fill is decorative, and a button flattens any role nested in it, so how far the
   // export has come is spoken as part of the button's name instead of a progressbar.
   const progressText = liveStage
@@ -227,7 +232,9 @@ export function ExportButton({
         aria-label={
           cancellable
             ? tr('export.cancelWhile', { stage: `${label} ${progressText}`.trim() })
-            : undefined
+            : shownBlocked
+              ? `${shownBlocked} · ${label}`
+              : undefined
         }
         className={
           quiet
@@ -253,7 +260,7 @@ export function ExportButton({
         <span
           className={`relative ${cancellable ? 'group-hover:hidden group-focus-within:hidden' : ''}`}
         >
-          {label}
+          {shownBlocked ?? label}
         </span>
         {progressText && <span className="sr-only">{progressText}</span>}
         {cancellable && (

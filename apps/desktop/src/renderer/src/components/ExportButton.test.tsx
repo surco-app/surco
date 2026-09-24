@@ -56,6 +56,24 @@ describe('ExportButton', () => {
     }
   })
 
+  // What blocks the convert is said on the button itself, not on a line above it: the
+  // button cannot run anyway, so its face is free, and the footer stays one control tall.
+  // The action it will run once unblocked stays in its name, after the visible words, so
+  // voice control still finds it by what is on screen.
+  it('shows what blocks it on its face and keeps the action in its name', () => {
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete
+        incompleteReason="Missing required fields: Title, Artist, Year"
+        blockedLabel="3 required fields missing"
+      />,
+    )
+    const btn = screen.getByTestId('process-btn')
+    expect(btn).toHaveTextContent('3 required fields missing')
+    expect(btn).toHaveAccessibleName(/^3 required fields missing · Convert/)
+  })
+
   // A natively disabled button drops out of the Tab order, and the reason lived in a hover
   // tooltip on a wrapper nothing can focus: a keyboard or screen reader user never learnt
   // why Convert was unavailable, or that it was there at all. It stays focusable, refuses
