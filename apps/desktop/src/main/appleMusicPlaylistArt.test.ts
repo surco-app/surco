@@ -17,7 +17,7 @@ function deps(over: Partial<Parameters<typeof attachMissingArtwork>[1]> = {}) {
   return {
     hasEmbedded: vi.fn(async (p: string) => p.endsWith('.mp3')),
     fetchArtwork: vi.fn(async (jobs: { persistentId: string; outPath: string }[]) =>
-      jobs.map((j) => ({ path: j.outPath, dataUrl: `data:image/jpeg;base64,${j.persistentId}` })),
+      jobs.map((j) => ({ path: j.outPath, url: `data:image/jpeg;base64,${j.persistentId}` })),
     ),
     outDir: async () => '/tmp/art',
     ...over,
