@@ -18,6 +18,9 @@ interface SelectOption {
   // Optional example shown after the label in the menu only, such as what a separator
   // writes ("Pop; House"), so a terse label still says what picking it does.
   hint?: string
+  // What the trigger shows instead of the label, for a menu in a row too narrow for it;
+  // empty leaves the chevron alone. The accessible name keeps the full label.
+  short?: string
 }
 
 interface Props {
@@ -229,7 +232,11 @@ export function Select({
         className={`flex min-w-0 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs text-fg-dim outline-none focus:border-[var(--color-accent)] ${compact ? 'h-6' : 'h-8'} ${fullWidth ? 'w-full' : ''}`}
       >
         {selected?.icon && <selected.icon aria-hidden="true" className="size-3.5 shrink-0" />}
-        <span className="min-w-0 flex-1 truncate text-left">{selected?.label}</span>
+        {(selected?.short ?? selected?.label) && (
+          <span className="min-w-0 flex-1 truncate text-left">
+            {selected?.short ?? selected?.label}
+          </span>
+        )}
         <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
       </button>
       {open && (
