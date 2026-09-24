@@ -74,9 +74,10 @@ const DEFER_PAINT_MIN_ROWS = 150
 // Two-finger swipe to remove, the way Mail deletes. A trackpad sends the swipe as wheel
 // events with deltaX and keeps sending momentum after the fingers lift, so the row settles
 // once the events stop: past half its width (never under two actions' width) it is removed,
-// past half the action it stays open on Remove, anything less springs back. Past the action
-// the row resists, sliding at a fraction of the fingers' pace, so a full swipe never throws
-// it off the list; the thresholds read the swipe itself, not how far the row moved.
+// past half the action it stays open on Remove, anything less springs back. What the row does
+// on screen says which of those letting go will do: past the action it resists while the swipe
+// is undecided, and once it would remove, the grey fills the row to its edge and no further.
+// The thresholds read the swipe itself, not how far the row moved.
 const SWIPE_GAP_PX = 6
 const SWIPE_ACTION_PX = 84 + SWIPE_GAP_PX
 const SWIPE_REMOVE_MIN_PX = SWIPE_ACTION_PX * 2
@@ -355,16 +356,24 @@ const TrackRow = memo(function TrackRow({
   const swipeRef = useRef(0)
   const settleRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(settleRef.current), [])
+  const swipeBounds = (): { width: number; removeAt: number } => {
+    const width = rowRef.current?.offsetWidth ?? 0
+    return { width, removeAt: Math.max(SWIPE_REMOVE_MIN_PX, width / 2) }
+  }
   const moveSwipe = (px: number): void => {
     swipeRef.current = px
+    const { width, removeAt } = swipeBounds()
     setSwipe(
-      px <= SWIPE_ACTION_PX ? px : SWIPE_ACTION_PX + (px - SWIPE_ACTION_PX) * SWIPE_RESISTANCE,
+      px >= removeAt
+        ? Math.max(width, removeAt)
+        : px <= SWIPE_ACTION_PX
+          ? px
+          : SWIPE_ACTION_PX + (px - SWIPE_ACTION_PX) * SWIPE_RESISTANCE,
     )
   }
   const onSwipeWheel = (e: React.WheelEvent): void => {
     if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
-    const width = rowRef.current?.offsetWidth ?? 0
-    const removeAt = Math.max(SWIPE_REMOVE_MIN_PX, width / 2)
+    const { removeAt } = swipeBounds()
     moveSwipe(Math.min(Math.max(swipeRef.current + e.deltaX, 0), removeAt * 1.5))
     clearTimeout(settleRef.current)
     settleRef.current = setTimeout(() => {
