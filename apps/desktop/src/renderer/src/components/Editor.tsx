@@ -29,7 +29,7 @@ import { useStableCallback } from '../hooks/useStableCallback'
 import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
 import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
-import { BULK_FIELDS } from '../lib/bulkEdit'
+import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
@@ -231,6 +231,8 @@ export const Editor = memo(function Editor({
     titleFormat,
     groupingPresets,
     genrePresets,
+    genreSeparator,
+    groupingSeparator,
     visibleFields,
     customFields,
     requiredFields,
@@ -745,6 +747,11 @@ export const Editor = memo(function Editor({
   // so a shared name (the user's "Electronic" vs a provider's "electronic") shows a single
   // pill in the user's casing.
   const genreChips = useMemo(() => buildGenreChips(genrePresets, release), [genrePresets, release])
+  const genreTags = useMemo(() => ({ ...GENRE_TAGS, separator: genreSeparator }), [genreSeparator])
+  const groupingTags = useMemo(
+    () => ({ ...GROUPING_TAGS, separator: groupingSeparator }),
+    [groupingSeparator],
+  )
   // Default to the file's own name so converting keeps it; the metadata-derived name is
   // opt-in via the "Regenerate from metadata" button below — unless auto-apply is on, where
   // it derives live from the pattern (falling back to the file name for sparse metadata).
@@ -824,6 +831,8 @@ export const Editor = memo(function Editor({
         item,
         genreChips,
         groupingPresets,
+        genreTags,
+        groupingTags,
         detectedBpm,
         detectedKey,
         keyNotation,
@@ -847,6 +856,8 @@ export const Editor = memo(function Editor({
       item.meta,
       genreChips,
       groupingPresets,
+      genreTags,
+      groupingTags,
       detectedBpm,
       detectedKey,
       keyNotation,

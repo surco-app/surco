@@ -57,6 +57,8 @@ const settings: Settings = {
   autoApplyFilename: false,
   groupingPresets: [],
   genrePresets: [],
+  genreSeparator: ', ',
+  groupingSeparator: ', ',
   trimWhitespace: true,
   zeroPadTrack: true,
   visibleFields: [],
@@ -670,6 +672,23 @@ describe('SettingsModal stats', () => {
 })
 
 describe('SettingsModal shortcuts', () => {
+  it('saves the separator picked for Genre in the Fields tab', () => {
+    const onSave = vi.fn()
+    render(
+      <SettingsModal
+        settings={{ ...settings, visibleFields: ['genre'] }}
+        onClose={() => {}}
+        onSave={onSave}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+        initialTab="fields"
+      />,
+    )
+    fireEvent.click(screen.getByTestId('field-separator-genre-semicolon'))
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ genreSeparator: '; ' }))
+  })
+
   function openShortcuts(onSave: (p: Partial<Settings>) => void = () => {}) {
     render(
       <SettingsModal

@@ -15,12 +15,14 @@ function setup(
     requiredFields?: string[]
     importFields?: string[]
     customFields?: CustomField[]
+    separators?: { genre: string; grouping: string }
   } = {},
 ) {
   const onChangeVisible = vi.fn()
   const onChangeRequired = vi.fn()
   const onChangeImport = vi.fn()
   const onChangeCustom = vi.fn()
+  const onChangeSeparator = vi.fn()
   render(
     <FieldsEditor
       visibleFields={over.visibleFields ?? ['title', 'artist', 'album']}
@@ -31,9 +33,11 @@ function setup(
       onChangeRequired={onChangeRequired}
       onChangeImport={onChangeImport}
       onChangeCustom={onChangeCustom}
+      separators={over.separators}
+      onChangeSeparator={onChangeSeparator}
     />,
   )
-  return { onChangeVisible, onChangeRequired, onChangeImport, onChangeCustom }
+  return { onChangeVisible, onChangeRequired, onChangeImport, onChangeCustom, onChangeSeparator }
 }
 
 describe('FieldsEditor', () => {
@@ -450,5 +454,63 @@ describe('custom fields', () => {
     expect(onChangeCustom).toHaveBeenCalledWith([])
     expect(onChangeVisible).toHaveBeenCalledWith(['title'])
     expect(onChangeRequired).toHaveBeenCalledWith(['title'])
+  })
+})
+
+// Plex splits a genre only on ";" and reads "Pop, Indie Pop" as one genre, while a Grouping
+// read by Apple Music smart playlists is fine with commas: each field picks its own.
+describe('FieldsEditor tag separators', () => {
+  const separators = { genre: ', ', grouping: ', ' }
+
+  it('offers a separator on the Genre and Grouping rows only', () => {
+    setup({ visibleFields: ['title', 'genre', 'grouping'], separators })
+    expect(screen.getByTestId('field-separator-genre')).toBeInTheDocument()
+    expect(screen.getByTestId('field-separator-grouping')).toBeInTheDocument()
+    expect(screen.queryByTestId('field-separator-title')).not.toBeInTheDocument()
+  })
+
+  it('marks the current separator and switches the field to another one', () => {
+    const { onChangeSeparator } = setup({ visibleFields: ['genre'], separators })
+    expect(screen.getByTestId('field-separator-genre-comma')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    fireEvent.click(screen.getByTestId('field-separator-genre-semicolon'))
+    expect(onChangeSeparator).toHaveBeenCalledWith('genre', '; ')
+  })
+
+  it('takes a separator of the user own from Other', () => {
+    const { onChangeSeparator } = setup({ visibleFields: ['grouping'], separators })
+    expect(screen.queryByTestId('field-separator-grouping-input')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('field-separator-grouping-custom'))
+    fireEvent.change(screen.getByTestId('field-separator-grouping-input'), {
+      target: { value: ' | ' },
+    })
+    expect(onChangeSeparator).toHaveBeenCalledWith('grouping', ' | ')
+  })
+
+  it('shows a separator of the user own under Other with its text', () => {
+    setup({ visibleFields: ['grouping'], separators: { genre: ', ', grouping: ' | ' } })
+    expect(screen.getByTestId('field-separator-grouping-custom')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByTestId('field-separator-grouping-input')).toHaveValue(' | ')
+  })
+
+  it('leaves the separators out where the caller does not manage them', () => {
+    render(
+      <FieldsEditor
+        visibleFields={['genre']}
+        requiredFields={[]}
+        importFields={[]}
+        customFields={[]}
+        onChangeVisible={vi.fn()}
+        onChangeRequired={vi.fn()}
+        onChangeImport={vi.fn()}
+        onChangeCustom={vi.fn()}
+      />,
+    )
+    expect(screen.queryByTestId('field-separator-genre')).not.toBeInTheDocument()
   })
 })

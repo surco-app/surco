@@ -25,6 +25,7 @@ import {
   TOGGLE_OFF,
   TOGGLE_ON,
 } from '../lib/settingsRows'
+import { SegmentedControl } from './SegmentedControl'
 import { Tooltip } from './Tooltip'
 
 // How long the auto-organize button holds its "done" confirmation before reverting.
@@ -39,6 +40,20 @@ const ORGANIZED_FEEDBACK_MS = 1500
 // (empty) rather than the row's and land the labels in the wrong place — 143px off, as an
 // auto-sized first attempt did. Hide's track fits the longest translation.
 const ROW_GRID = 'grid grid-cols-[1fr_4.75rem_4.75rem_1.75rem_1.75rem_5.5rem] items-center gap-1'
+
+// What can join the tags of Genre and Grouping: the three a tag reader expects, or the
+// user's own typed under Other.
+const SEPARATORS = { comma: ', ', semicolon: '; ', slash: '/' } as const
+type SeparatorOption = keyof typeof SEPARATORS | 'custom'
+const SEPARATOR_OPTIONS: readonly SeparatorOption[] = ['comma', 'semicolon', 'slash', 'custom']
+type TagListKey = 'genre' | 'grouping'
+
+function separatorOption(separator: string): SeparatorOption {
+  const found = (Object.keys(SEPARATORS) as (keyof typeof SEPARATORS)[]).find(
+    (option) => SEPARATORS[option].trim() === separator.trim(),
+  )
+  return found ?? 'custom'
+}
 
 // Moves fromKey to toKey's slot: dragging down lands it after the target, dragging up
 // before it — how every list DnD reads, so the row stays where the user dropped it.
@@ -64,6 +79,10 @@ interface Props {
   onChangeRequired: (next: string[]) => void
   onChangeImport: (next: string[]) => void
   onChangeCustom: (next: CustomField[]) => void
+  // What joins the tags of Genre and Grouping. Settings passes both; the onboarding wizard
+  // leaves them out and its rows show none.
+  separators?: Record<TagListKey, string>
+  onChangeSeparator?: (key: TagListKey, separator: string) => void
 }
 
 // The editor's field list: which tags show (and in what order) and which must be filled
@@ -78,8 +97,12 @@ export function FieldsEditor({
   onChangeRequired,
   onChangeImport,
   onChangeCustom,
+  separators,
+  onChangeSeparator,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  // Other stays picked while its box is empty, before the user has typed a separator.
+  const [otherOpen, setOtherOpen] = useState<Partial<Record<TagListKey, boolean>>>({})
   const fields = labeledFields(customFields, tr)
   const labelOf = (key: string): string => fields.find((f) => f.key === key)?.label ?? key
   const hidden = fields
@@ -120,6 +143,36 @@ export function FieldsEditor({
       {deleteButton(key)}
     </>
   )
+  const separatorPicker = (key: string): React.JSX.Element | null => {
+    if (!separators || !onChangeSeparator || (key !== 'genre' && key !== 'grouping')) return null
+    const separator = separators[key]
+    const option = otherOpen[key] ? 'custom' : separatorOption(separator)
+    return (
+      <span data-testid={`field-separator-${key}`} className="ml-auto flex items-center gap-1.5">
+        {option === 'custom' && (
+          <input
+            data-testid={`field-separator-${key}-input`}
+            value={separatorOption(separator) === 'custom' ? separator : ''}
+            maxLength={3}
+            onChange={(e) => onChangeSeparator(key, e.target.value)}
+            aria-label={tr('settings.separatorCustomLabel', { name: labelOf(key) })}
+            className="w-12 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-1.5 py-0.5 text-center font-mono text-sm text-fg"
+          />
+        )}
+        <SegmentedControl
+          options={SEPARATOR_OPTIONS}
+          value={option}
+          onChange={(next) => {
+            setOtherOpen((open) => ({ ...open, [key]: next === 'custom' }))
+            if (next !== 'custom') onChangeSeparator(key, SEPARATORS[next])
+          }}
+          testidPrefix={`field-separator-${key}`}
+          labelFor={(o) => (o === 'custom' ? tr('settings.separatorCustom') : SEPARATORS[o].trim())}
+          label={tr('settings.separatorLabel', { name: labelOf(key) })}
+        />
+      </span>
+    )
+  }
   // The auto-fill toggle, shown on both the visible and hidden lists. Rendered only for a
   // field a release can actually carry: offering it on bpm/key/mood would be a switch that
   // never does anything. A hidden field keeps its toggle — it isn't shown in the form, but
@@ -294,6 +347,7 @@ export function FieldsEditor({
                   aria-hidden="true"
                 />
                 {nameCell(key)}
+                {separatorPicker(key)}
               </span>
               {autoToggle(key)}
               <button

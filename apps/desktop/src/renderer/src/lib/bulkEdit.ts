@@ -33,11 +33,12 @@ export function commonValue(tracks: TrackItem[], key: MetaTextKey): string | und
   return tracks.every((t) => (t.meta[key] ?? '') === first) ? first : undefined
 }
 
-// A text field that holds several comma-separated tags, and the tag names that contain a
-// comma themselves and must stay whole.
+// A text field that holds several tags, the tag names that contain a comma themselves and
+// must stay whole, and what joins the tags (a comma when unset).
 export interface TagList {
   key: 'grouping' | 'genre'
   whole?: readonly string[]
+  separator?: string
 }
 
 export const GROUPING_TAGS: TagList = { key: 'grouping' }
@@ -49,7 +50,9 @@ export const GENRE_TAGS: TagList = { key: 'genre', whole: ['Folk, World, & Count
 export type TagListState = 'all' | 'some' | 'none'
 
 export function tagListState(tracks: TrackItem[], list: TagList, tag: string): TagListState {
-  const count = tracks.filter((t) => csvHas(t.meta[list.key] ?? '', tag, list.whole)).length
+  const count = tracks.filter((t) =>
+    csvHas(t.meta[list.key] ?? '', tag, list.whole, list.separator),
+  ).length
   if (count === 0) return 'none'
   return count === tracks.length ? 'all' : 'some'
 }
@@ -61,17 +64,17 @@ export function toggleTagListAll(
 ): { id: string; meta: Partial<TrackMetadata> }[] {
   const removing = tagListState(tracks, list, tag) === 'all'
   return tracks
-    .filter((t) => csvHas(t.meta[list.key] ?? '', tag, list.whole) === removing)
+    .filter((t) => csvHas(t.meta[list.key] ?? '', tag, list.whole, list.separator) === removing)
     .map((t) => ({
       id: t.id,
-      meta: { [list.key]: toggleCsv(t.meta[list.key] ?? '', tag, list.whole) },
+      meta: { [list.key]: toggleCsv(t.meta[list.key] ?? '', tag, list.whole, list.separator) },
     }))
 }
 
 export function tagListTags(presets: string[], tracks: TrackItem[], list: TagList): string[] {
   const seen = new Set(presets.map((tag) => tag.toLowerCase()))
   const extra = tracks
-    .flatMap((t) => splitCsv(t.meta[list.key] ?? '', list.whole))
+    .flatMap((t) => splitCsv(t.meta[list.key] ?? '', list.whole, list.separator))
     .filter((tag) => (seen.has(tag.toLowerCase()) ? false : seen.add(tag.toLowerCase())))
   return [...presets, ...extra]
 }
