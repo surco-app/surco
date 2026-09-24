@@ -15,6 +15,14 @@ files:
   # path is empty and startDrag (which rejects an empty icon) throws — dragging a track
   # row out silently does nothing in packaged builds.
   - build/icon.png
+  # Build-time leftovers in production dependencies that nothing loads at runtime:
+  # dependency source maps and TypeScript sources, sql.js's asm/debug/browser/worker
+  # variants (engine.ts loads only sql-wasm.js and sql-wasm.wasm), and the SQLite C
+  # sources the encrypted-database addon was compiled from.
+  - '!**/node_modules/**/*.map'
+  - '!**/node_modules/node-taglib-sharp/src/**'
+  - '!**/node_modules/sql.js/dist/{sql-asm*,sql-wasm-debug*,sql-wasm-browser*,worker.*}'
+  - '!**/node_modules/better-sqlite3-multiple-ciphers/{deps,src}/**'
 asarUnpack:
   - node_modules/ffmpeg-static/**
   - node_modules/@ffprobe-installer/**
@@ -82,6 +90,10 @@ fileAssociations:
 afterPack: build/afterPack.cjs
 mac:
   category: public.app-category.music
+  # The encrypted-database addon ships prebuilt binaries for every OS; each platform
+  # packages only its own (these lists concatenate with the top-level files).
+  files:
+    - '!**/node_modules/better-sqlite3-multiple-ciphers/prebuilds/{linux*,win32*}'
   hardenedRuntime: true
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
@@ -99,6 +111,8 @@ mac:
   artifactName: ${productName}-${version}-${arch}.${ext}
 win:
   icon: build/icon.ico
+  files:
+    - '!**/node_modules/better-sqlite3-multiple-ciphers/prebuilds/{darwin*,linux*}'
   target:
     - nsis
   artifactName: ${productName}-${version}-Setup.${ext}
@@ -108,6 +122,8 @@ nsis:
   allowToChangeInstallationDirectory: true
 linux:
   icon: build/icon.png
+  files:
+    - '!**/node_modules/better-sqlite3-multiple-ciphers/prebuilds/{darwin*,win32*}'
   category: AudioVideo
   # AppImage only. It is the one Linux target electron-updater can update in place,
   # so a .deb/.rpm install would strand its users on the version they downloaded —
