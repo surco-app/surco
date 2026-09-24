@@ -527,6 +527,33 @@ describe('App auto-match', () => {
     expect(search).toHaveBeenCalled()
   })
 
+  // Hovering a track warms the Discogs search the editor is about to run. It has to warm the
+  // same search: without the artist and title the panel and the sweep send, it ran the
+  // free-text ladder under cache keys nobody then read, spending the rate limit twice.
+  it('warms the same Discogs search the editor runs for a hovered track', async () => {
+    const search = vi.fn().mockResolvedValue([])
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok' })),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+      readDuration: vi.fn().mockResolvedValue(180),
+      search,
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    await waitFor(() => expect(within(rows[0]).getByText('My Song')).toBeInTheDocument())
+
+    fireEvent.mouseEnter(rows[0])
+
+    await waitFor(() =>
+      expect(search).toHaveBeenCalledWith(
+        expect.any(String),
+        undefined,
+        'low',
+        expect.objectContaining({ artist: 'Artist', title: 'My Song' }),
+      ),
+    )
+  })
+
   // The toolbar sweep honours the active format filter: filter to MP3 and only the visible mp3
   // rows are probed, never the hidden wav. Otherwise a DJ narrowing to one format would still
   // fire Discogs calls (and write matches) for the tracks the filter is hiding.
