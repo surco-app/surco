@@ -1057,12 +1057,10 @@ describe('App multi-select removal', () => {
     await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
   })
 
-  // A row's ✕ acts on the whole selection when that row is part of it — so one click on a
-  // 12px target inside a 40-row selection discards all 40 rows and every staged edit on
-  // them. Removals are not undoable (useMetaUndo covers tag patches only), which makes this
-  // the one irreversible action in the list that used to fire bare — while Move to Trash,
-  // recoverable from the Finder, has always confirmed. The dialog goes where the loss is.
-  it('confirms before a row’s ✕ discards the whole selection it belongs to', async () => {
+  // The swipe is the row's own gesture, the way Mail's swipe deletes one message: it takes
+  // the swiped row and nothing else, and it never stops to ask. Vicent 24/09: "no debe salir
+  // el modal". The selection-wide removal with its confirm stays on ⌫ and the menu.
+  it('removes only the swiped row, without asking, even inside a selection', async () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
       readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
@@ -1074,22 +1072,13 @@ describe('App multi-select removal', () => {
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
 
-    // A full two-finger swipe is the row's ✕ now; it removes the moment the swipe settles.
     fireEvent.wheel(rows[0].parentElement as HTMLElement, { deltaX: 400 })
 
-    // Nothing goes until it is confirmed.
-    const ok = await screen.findByTestId('confirm-ok')
-    expect(screen.getAllByTestId('track-row')).toHaveLength(3)
-    fireEvent.click(ok)
-    // Both selected rows go; the unselected third stays.
-    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    expect(screen.queryByTestId('confirm-ok')).toBeNull()
   })
 
-  // The confirm must not become a tax on the ordinary gesture: removing a single row you
-  // are pointing at is a one-click, obviously-scoped action, and a dialog on every ✕ would
-  // train the user to dismiss it — which is exactly what would make the selection case above
-  // slip through. Only the expanded, lossy case asks.
-  it('removes a lone row on its ✕ without asking', async () => {
+  it('removes a lone swiped row without asking', async () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
       readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),

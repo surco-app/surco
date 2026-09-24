@@ -1954,6 +1954,7 @@ export default function App(): React.JSX.Element {
                           onSelect={onSelectTrack}
                           onActivate={toggleTrack}
                           onRemove={removeFromList}
+                          onSwipeRemove={removeTrack}
                           onAcceptReview={acceptReviewRow}
                           onPrefetch={handlePrefetch}
                           renderMenu={renderTrackMenu}
