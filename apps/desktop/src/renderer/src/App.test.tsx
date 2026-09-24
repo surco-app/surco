@@ -107,6 +107,8 @@ function settings(over: Partial<Settings> = {}): Settings {
     autoApplyFilename: false,
     groupingPresets: [],
     genrePresets: [],
+    genreSeparator: ', ',
+    groupingSeparator: ', ',
     trimWhitespace: true,
     zeroPadTrack: true,
     visibleFields: ['title', 'artist'],

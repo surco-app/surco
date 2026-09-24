@@ -50,6 +50,8 @@ const settings: Settings = {
   autoApplyFilename: false,
   groupingPresets: [],
   genrePresets: [],
+  genreSeparator: ', ',
+  groupingSeparator: ', ',
   trimWhitespace: true,
   zeroPadTrack: true,
   visibleFields: [],
