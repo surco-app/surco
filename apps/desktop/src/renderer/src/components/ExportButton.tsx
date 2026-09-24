@@ -209,9 +209,7 @@ export function ExportButton({
     <div
       data-testid="process-btn-wrap"
       ref={ref}
-      // The main action is a button, not a band: right-aligned at its own width like a macOS
-      // dialog's default button, so it no longer spans the footer as a bar of accent.
-      className={`group relative flex ${quiet ? 'flex-1' : 'ml-auto w-fit max-w-full'}`}
+      className={`group relative flex ${quiet ? 'flex-1' : ''}`}
     >
       <button
         type="button"
@@ -237,8 +235,8 @@ export function ExportButton({
             : liveStage
               ? // The dimmed track + accent fill replace the usual disabled fade: the
                 // button reads as a progress bar, not as a greyed-out control.
-                'press relative min-w-56 truncate overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 px-5 py-2 text-sm font-medium text-[var(--color-on-accent)] disabled:pointer-events-none'
-              : 'press min-w-56 truncate rounded-l-lg bg-[var(--color-accent)] px-5 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50'
+                'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 py-2.5 text-sm font-medium text-[var(--color-on-accent)] disabled:pointer-events-none'
+              : 'press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50'
         }
       >
         {liveStage && (
