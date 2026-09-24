@@ -1088,7 +1088,7 @@
     "shown": "Angezeigt",
     "hidden": "Ausgeblendet",
     "hide": "Ausblenden",
-    "separator": "Trennzeichen",
+    "separatorJoinedBy": "getrennt durch",
     "separatorCustom": "Andere",
     "separatorLabel": "Trennzeichen für {{name}}",
     "separatorCustomLabel": "Eigenes Trennzeichen für {{name}}",

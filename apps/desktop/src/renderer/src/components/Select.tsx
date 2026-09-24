@@ -15,6 +15,9 @@ interface SelectOption {
   // Optional leading glyph, so a menu (e.g. the track sort) reads at a glance like the
   // quality filter's buckets. Options without one stay text-only.
   icon?: LucideIcon
+  // Optional example shown after the label in the menu only, such as what a separator
+  // writes ("Pop; House"), so a terse label still says what picking it does.
+  hint?: string
 }
 
 interface Props {
@@ -28,6 +31,9 @@ interface Props {
   // mode the menu is portaled to the body so it can grow to its widest option without being
   // clipped by a scrolling ancestor (the Discogs column), rather than cramped to the field.
   fullWidth?: boolean
+  // A trigger the height of a line of text, for a menu that sits inside a list row
+  // without making the row taller.
+  compact?: boolean
 }
 
 // A themed replacement for the native <select>, whose dropdown is drawn by the OS
@@ -42,6 +48,7 @@ export function Select({
   label,
   testid,
   fullWidth = false,
+  compact = false,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -197,6 +204,7 @@ export function Select({
         >
           {o.icon && <o.icon aria-hidden="true" className="h-4 w-4 shrink-0" />}
           <span className="flex-1">{o.label}</span>
+          {o.hint && <span className="font-mono text-fg-faint">{o.hint}</span>}
           <Check
             aria-hidden="true"
             className={`size-3 shrink-0 ${o.value === value ? '' : 'invisible'}`}
@@ -218,7 +226,7 @@ export function Select({
         // both, so this one does too.
         aria-label={selected ? `${label}: ${selected.label}` : label}
         onClick={toggle}
-        className={`flex h-8 min-w-0 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs text-fg-dim outline-none focus:border-[var(--color-accent)] ${fullWidth ? 'w-full' : ''}`}
+        className={`flex min-w-0 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs text-fg-dim outline-none focus:border-[var(--color-accent)] ${compact ? 'h-6' : 'h-8'} ${fullWidth ? 'w-full' : ''}`}
       >
         {selected?.icon && <selected.icon aria-hidden="true" className="size-3.5 shrink-0" />}
         <span className="min-w-0 flex-1 truncate text-left">{selected?.label}</span>
