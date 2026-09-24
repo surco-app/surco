@@ -127,8 +127,16 @@ const FINE_BAND_MAX_HZ = 21000
 // Only the region above the typical patch crossover counts; below it, real
 // content is loud enough to mask any patch border.
 const ROUGHNESS_START_HZ = 16500
-// Rises below this are measurement jitter, not structure.
-const ROUGHNESS_RISE_MIN_DB = 1
+// Rises below this are ripple, not structure. At 1 dB a lossless rip a user sent,
+// its highs held flat from 16 to 20.5 kHz, rippled into teeth of 1.6, 1.6 and 2.9 dB
+// and graded Reprocessed or clean depending on a trimmed tail. Across a 6046-file
+// lossless library the third-largest tooth of each of the 12 saw-tooth calls sat at
+// 1.6-2.2 dB in eight, 2.6 in one and 2.9 or more in three (Fuse's are 4-7 dB). At
+// 2 dB the 2.6 dB one, graded clean until then, became Reprocessed: a raised bar also
+// drops the sub-bar wobbles that were widening its spread. With a sure tooth having
+// to clear 2.75, the eight go, the three stay, and no file in the library is newly
+// accused.
+const ROUGHNESS_RISE_MIN_DB = 2.25
 // Total rise that marks a saw-tooth. Real files measured 0; synthetic 5–11.5.
 const ROUGHNESS_TOTAL_DB = 3
 // ...spread over at least this many separate rises. A saw-tooth is teeth in a
