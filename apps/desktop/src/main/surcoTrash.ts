@@ -32,7 +32,8 @@ export interface SurcoTrash {
   remove(id: string): Promise<void>
   empty(): Promise<void>
   // Drops what is older than the retention, then the oldest entries until the rest fits
-  // under the size cap. Returns what it dropped. Run once at launch.
+  // under the size cap. Returns what it dropped. Run at launch; stash makes the same
+  // room before each copy, so the cap also holds while the app stays open.
   sweep(now?: number): Promise<TrashEntry[]>
   dir: string
 }
@@ -94,7 +95,38 @@ export function createSurcoTrash(
   const newestFirst = (entries: TrashEntry[]): TrashEntry[] =>
     [...entries].sort((a, b) => b.trashedAt - a.trashedAt)
 
-  const stash: SurcoTrash['stash'] = async (path, reason, outputPath, trashedAt) => {
+  const discard = async (entry: TrashEntry): Promise<void> => {
+    await unlink(entry.storedPath).catch((err: NodeJS.ErrnoException) => {
+      if (err.code !== 'ENOENT') throw err
+    })
+  }
+
+  // Drops what is past the retention, then the oldest entries until the rest fits in
+  // `room` bytes.
+  const prune = async (now: number, room: number): Promise<TrashEntry[]> => {
+    const { retentionMs } = limits()
+    const entries = newestFirst(read())
+    const dropped: TrashEntry[] = []
+    let kept: TrashEntry[] = []
+    for (const entry of entries) {
+      if (now - entry.trashedAt > retentionMs) dropped.push(entry)
+      else kept.push(entry)
+    }
+    // Newest first, so the running total keeps the recent ones and drops from the
+    // old end once the room is used up.
+    let total = 0
+    kept = kept.filter((entry) => {
+      total += entry.bytes
+      if (total <= room) return true
+      dropped.push(entry)
+      return false
+    })
+    for (const entry of dropped) await discard(entry)
+    write(kept)
+    return dropped
+  }
+
+  const keep: SurcoTrash['stash'] = async (path, reason, outputPath, trashedAt) => {
     const info = await stat(path).catch(() => null)
     if (!info) return null
     await mkdir(items, { recursive: true })
@@ -115,10 +147,13 @@ export function createSurcoTrash(
     return entry
   }
 
-  const discard = async (entry: TrashEntry): Promise<void> => {
-    await unlink(entry.storedPath).catch((err: NodeJS.ErrnoException) => {
-      if (err.code !== 'ENOENT') throw err
-    })
+  // The room is made before the copy, not swept after it: the copy just taken is what a
+  // failed rename restores from, and a sweep behind it could discard exactly that one.
+  const stash: SurcoTrash['stash'] = async (path, reason, outputPath, trashedAt) => {
+    const info = await stat(path).catch(() => null)
+    if (!info) return null
+    await prune(Date.now(), limits().maxBytes - info.size)
+    return keep(path, reason, outputPath, trashedAt)
   }
 
   return {
@@ -131,7 +166,7 @@ export function createSurcoTrash(
       if (!entry) throw new Error(`no such trash entry: ${id}`)
       await mkdir(dirname(entry.originalPath), { recursive: true })
       const occupant = await stat(entry.originalPath).catch(() => null)
-      const displaced = occupant ? await stash(entry.originalPath, 'restored-over') : null
+      const displaced = occupant ? await keep(entry.originalPath, 'restored-over') : null
       await move(entry.storedPath, entry.originalPath)
       write(read().filter((e) => e.id !== id))
       return { restoredTo: entry.originalPath, displaced }
@@ -146,27 +181,6 @@ export function createSurcoTrash(
       for (const entry of read()) await discard(entry)
       write([])
     },
-    sweep: async (now = Date.now()) => {
-      const { retentionMs, maxBytes } = limits()
-      const entries = newestFirst(read())
-      const dropped: TrashEntry[] = []
-      let kept: TrashEntry[] = []
-      for (const entry of entries) {
-        if (now - entry.trashedAt > retentionMs) dropped.push(entry)
-        else kept.push(entry)
-      }
-      // Newest first, so the running total keeps the recent ones and drops from the
-      // old end once the cap is passed.
-      let total = 0
-      kept = kept.filter((entry) => {
-        total += entry.bytes
-        if (total <= maxBytes) return true
-        dropped.push(entry)
-        return false
-      })
-      for (const entry of dropped) await discard(entry)
-      write(kept)
-      return dropped
-    },
+    sweep: async (now = Date.now()) => prune(now, limits().maxBytes),
   }
 }

@@ -82,6 +82,16 @@ describe('restoring', () => {
     expect(left.map((e) => e.reason)).toEqual(['restored-over'])
   })
 
+  // Setting the occupant aside must not make room under the cap: the room would come
+  // out of the oldest entry, and that can be the very copy being restored.
+  it('restores a copy that the occupant alone would push past the cap', async () => {
+    const original = song('Track.aiff', 600)
+    const entry = await trash.stash(original, 'replaced')
+    writeFileSync(original, Buffer.alloc(600, 0x42))
+    await trash.restore(entry?.id as string)
+    expect(readFileSync(original)[0]).toBe(0x41)
+  })
+
   it('recreates a folder the user has deleted since', async () => {
     const original = song('Track.aiff')
     const entry = await trash.stash(original, 'replaced')
@@ -118,8 +128,8 @@ describe('removing and emptying', () => {
 describe('sweeping', () => {
   it('drops entries older than the retention', async () => {
     const now = Date.now()
-    const old = await trash.stash(song('Old.wav'), 'deleted', undefined, now - 31 * DAY)
     const fresh = await trash.stash(song('Fresh.wav'), 'deleted', undefined, now - 1 * DAY)
+    const old = await trash.stash(song('Old.wav'), 'deleted', undefined, now - 31 * DAY)
     const swept = await trash.sweep(now)
     expect(swept.map((e) => e.id)).toEqual([old?.id])
     expect((await trash.list()).map((e) => e.id)).toEqual([fresh?.id])
@@ -128,12 +138,24 @@ describe('sweeping', () => {
 
   it('drops the oldest entries until the total fits under the cap', async () => {
     const now = Date.now()
-    const first = await trash.stash(song('1.wav', 600), 'deleted', undefined, now - 3 * DAY)
-    const second = await trash.stash(song('2.wav', 600), 'deleted', undefined, now - 2 * DAY)
-    const third = await trash.stash(song('3.wav', 300), 'deleted', undefined, now - 1 * DAY)
+    const roomy = createSurcoTrash(join(root, 'trash'), { retentionDays: 30, maxBytes: 2000 })
+    const first = await roomy.stash(song('1.wav', 600), 'deleted', undefined, now - 3 * DAY)
+    const second = await roomy.stash(song('2.wav', 600), 'deleted', undefined, now - 2 * DAY)
+    const third = await roomy.stash(song('3.wav', 300), 'deleted', undefined, now - 1 * DAY)
     const swept = await trash.sweep(now)
     expect(swept.map((e) => e.id)).toEqual([first?.id])
     expect((await trash.list()).map((e) => e.id)).toEqual([third?.id, second?.id])
+  })
+
+  // The sweep runs at launch, and a DJ keeps the app open through a whole crate: a cap
+  // that only held at the next start let one session grow the copies past 10 GB. The
+  // room is made BEFORE the stash, not swept after it — the copy just taken is what a
+  // failed rename restores from, and a sweep behind it could discard exactly that one.
+  it('makes room under the cap before stashing, without waiting for a sweep', async () => {
+    const first = await trash.stash(song('1.wav', 600), 'replaced')
+    const second = await trash.stash(song('2.wav', 600), 'replaced')
+    expect((await trash.list()).map((e) => e.id)).toEqual([second?.id])
+    expect(existsSync(first?.storedPath as string)).toBe(false)
   })
 
   it('survives a stored file that vanished under it', async () => {
@@ -147,8 +169,8 @@ describe('sweeping', () => {
 
 describe('the manifest', () => {
   it('lists newest first and survives a reload from disk', async () => {
-    await trash.stash(song('A.wav'), 'deleted', undefined, 1000)
-    await trash.stash(song('B.wav'), 'deleted', undefined, 2000)
+    await trash.stash(song('A.wav'), 'deleted', undefined, Date.now() - 2000)
+    await trash.stash(song('B.wav'), 'deleted', undefined, Date.now() - 1000)
     const reopened = createSurcoTrash(join(root, 'trash'))
     expect((await reopened.list()).map((e) => e.name)).toEqual(['B.wav', 'A.wav'])
   })
