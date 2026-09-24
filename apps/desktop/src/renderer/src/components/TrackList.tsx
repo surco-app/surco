@@ -520,9 +520,12 @@ const TrackRow = memo(function TrackRow({
         className={`group/row relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left ${
           // A selected row paints its fill on the keystroke: ↑/↓ and j/k run through this
           // list constantly, and easing the fill in leaves the highlight a step behind the
-          // cursor. Only the unselected rows animate, where the transition belongs to the
-          // hover tint and its mouse pace suits it.
-          selected ? 'transition-none' : 'transition-colors'
+          // cursor. Only the unselected rows animate their colours, where the transition
+          // belongs to the hover tint and its mouse pace suits it. Every row eases its swipe
+          // position, so crossing the remove threshold slides to the edge instead of jumping.
+          selected
+            ? 'transition-[transform] ease-out'
+            : 'transition-[color,background-color,border-color,outline-color,transform] ease-out'
         } ${
           // The primary row (the one open in the editor) takes the selection fill, the way
           // Finder/Mail fill the active row. A multi-selected-but-not-primary row gets the
@@ -772,7 +775,7 @@ const TrackRow = memo(function TrackRow({
           tabIndex={-1}
           onClick={() => onSwipeRemove(t.id)}
           style={{ width: Math.max(swipe - SWIPE_GAP_PX, 0) }}
-          className="absolute inset-y-0 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-fg-dim)] text-[11px] font-semibold whitespace-nowrap text-[var(--color-ink)]"
+          className="absolute inset-y-0 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-fg-dim)] transition-[width] ease-out text-[11px] font-semibold whitespace-nowrap text-[var(--color-ink)]"
         >
           <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           {tr('trackList.remove')}
