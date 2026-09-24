@@ -239,28 +239,32 @@ export function useDiscogsBrowser(
     listEngaged.current = engaged
   }, [])
 
-  // Each answer is ranked by how well its rows match the file, and rows already on screen
-  // keep their place: a late answer is appended below them. Once every source has answered
-  // and the user is neither in the list nor has opened a row, the whole list is ranked as
-  // one, so the likeliest release leads exactly as it did when the panel waited for all.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the arrived answers and the settle are the triggers; the file's title/artist are read at rank time, like the probe, so editing a tag doesn't reshuffle the list.
+  // Each answer takes its ranked place as it lands, and rows already on screen never change
+  // their order: a new row goes in right after the best-ranked row above it, pushing the rest
+  // down. There is no reranking once every source has answered, which used to reshuffle the
+  // whole list seconds after the user had started reading it. While the user is in the list
+  // or has a row open, a late answer goes below instead, so nothing moves under the pointer.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the arrived answers are the trigger; the file's title/artist are read at rank time, like the probe, so editing a tag doesn't reshuffle the list.
   const allResults = useMemo(() => {
     if (arrived.length === 0) return EMPTY_RESULTS
     const ranked = preRankResults(arrived.flat(), {
       title: matchTargetOf(item, cleanup).title,
       artist: item.meta.artist,
     })
+    const rankedKeys = ranked.map(resultKey)
     const previous = shownOrder.current.term === searchTerm ? shownOrder.current.keys : []
-    const rankAll = settled && !listEngaged.current && !userOpened.current
-    const ordered = rankAll
-      ? ranked
-      : [
-          ...previous.flatMap((k) => ranked.filter((r) => resultKey(r) === k)),
-          ...ranked.filter((r) => !previous.includes(resultKey(r))),
-        ]
-    shownOrder.current = { term: searchTerm, keys: ordered.map(resultKey) }
-    return ordered
-  }, [arrived, settled, searchTerm])
+    const keys = previous.filter((k) => rankedKeys.includes(k))
+    const holdBelow = listEngaged.current || userOpened.current
+    for (const [i, k] of rankedKeys.entries()) {
+      if (keys.includes(k)) continue
+      const above = holdBelow ? undefined : rankedKeys.slice(0, i).findLast((x) => keys.includes(x))
+      if (holdBelow) keys.push(k)
+      else keys.splice(above === undefined ? 0 : keys.indexOf(above) + 1, 0, k)
+    }
+    shownOrder.current = { term: searchTerm, keys }
+    const byKey = new Map(ranked.map((r) => [resultKey(r), r]))
+    return keys.map((k) => byKey.get(k) as SearchResult)
+  }, [arrived, searchTerm])
   const direct = directId !== null && settled ? (allResults[0] ?? null) : null
   const pendingProviders = useMemo(
     () =>
