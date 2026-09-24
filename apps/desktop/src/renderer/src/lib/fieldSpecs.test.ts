@@ -351,6 +351,24 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(write).toHaveBeenCalledWith('VG+')
   })
 
+  // A user selects the album's tracks and wants every one tagged "of 12": the selection
+  // already knows the count, so the field offers it instead of making them count rows.
+  it('offers the selection size as the total tracks and writes it to every track', () => {
+    const onChangeAllMeta = vi.fn()
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [track('a'), track('b'), track('c')],
+        visibleFields: ['trackTotal'],
+        bulkOnChange: bulkOnChangeFrom(onChangeAllMeta),
+      }),
+    )
+    const total = specs.find((s) => s.key === 'trackTotal')
+    expect(total?.suggestions).toEqual(['3'])
+    total?.onChange('3')
+    expect(onChangeAllMeta).toHaveBeenCalledWith({ trackTotal: '3' })
+  })
+
   it('honours the visible-fields setting and drops non-bulk fields', () => {
     const specs = buildFieldSpecs(
       params({

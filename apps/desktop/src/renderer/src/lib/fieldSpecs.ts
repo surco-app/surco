@@ -164,7 +164,13 @@ export function buildFieldSpecs({
             mixed,
             onChange: bulkOnChange.get(key) ?? (() => {}),
             suggestions:
-              key === 'genre' ? genreChips : key === 'grouping' ? groupingPresets : undefined,
+              key === 'genre'
+                ? genreChips
+                : key === 'grouping'
+                  ? groupingPresets
+                  : key === 'trackTotal'
+                    ? [String(selectedTracks.length)]
+                    : undefined,
             tagList: list,
             perTrack,
           }
