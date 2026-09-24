@@ -76,24 +76,28 @@ describe('conversión y procedencia del origen', () => {
     ['flac', 'mp3'],
     ['mp3', 'wav'],
     ['flac', 'flac'],
-  ] as Array<[string, OutputFormat]>)('carries nothing of the previous owner: %s -> %s', async (from, to) => {
-    const src = seed(from)
-    // La guarda: si la semilla no lleva los campos, el test pasaría por no haber nada.
-    expect(Object.values(tagsOf(src)), 'la semilla no lleva los campos ajenos').toContain(
-      'DEL_ANTERIOR',
-    )
+  ] as Array<[string, OutputFormat]>)(
+    'carries nothing of the previous owner: %s -> %s',
+    async (from, to) => {
+      const src = seed(from)
+      // La guarda: si la semilla no lleva los campos, el test pasaría por no haber nada.
+      expect(Object.values(tagsOf(src)), 'la semilla no lleva los campos ajenos').toContain(
+        'DEL_ANTERIOR',
+      )
 
-    const dst = join(dir, `${from}-to-${to}.${to}`)
-    await convertAudio(src, dst, to, meta)
+      const dst = join(dir, `${from}-to-${to}.${to}`)
+      await convertAudio(src, dst, to, meta)
 
-    const after = tagsOf(dst)
-    const leftovers = Object.entries(after)
-      .filter(([, v]) => String(v) === 'DEL_ANTERIOR')
-      .map(([k]) => k)
-    expect(leftovers, `sobrevivieron: ${leftovers.join(', ')}`).toEqual([])
-    // Y lo que el usuario sí puso sigue ahí: la limpieza no puede llevarse su edición.
-    expect(Object.values(after)).toContain('Mia')
-  }, 120000)
+      const after = tagsOf(dst)
+      const leftovers = Object.entries(after)
+        .filter(([, v]) => String(v) === 'DEL_ANTERIOR')
+        .map(([k]) => k)
+      expect(leftovers, `sobrevivieron: ${leftovers.join(', ')}`).toEqual([])
+      // Y lo que el usuario sí puso sigue ahí: la limpieza no puede llevarse su edición.
+      expect(Object.values(after)).toContain('Mia')
+    },
+    120000,
+  )
 
   // El recorrido literal que describió djotas, y comprobado sobre los BYTES: ffprobe no
   // enseña todos los chunks del RIFF, así que un ITCH superviviente (el "Technician" que
@@ -102,9 +106,17 @@ describe('conversión y procedencia del origen', () => {
   it('WAV de otro -> FLAC -> WAV no conserva su estudio', async () => {
     const src = join(dir, 'ajeno.wav')
     execFileSync(FF, [
-      '-v', 'error', '-y', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1',
-      '-metadata', 'encoded_by=Cubase 12',
-      '-metadata', 'technician=Estudio Ajeno',
+      '-v',
+      'error',
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=1',
+      '-metadata',
+      'encoded_by=Cubase 12',
+      '-metadata',
+      'technician=Estudio Ajeno',
       src,
     ])
 
