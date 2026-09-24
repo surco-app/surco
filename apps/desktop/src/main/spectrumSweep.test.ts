@@ -147,7 +147,9 @@ const verdict = (r: Row): string =>
 it.skipIf(!stability)(
   'grades every flagged file again with the probes shifted by a trimmed second',
   async () => {
-    const files = readRows().filter(flagged).map((r) => r.path)
+    const files = readRows()
+      .filter(flagged)
+      .map((r) => r.path)
     const unstable: string[] = []
     const errors: string[] = []
     let graded = 0

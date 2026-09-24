@@ -332,9 +332,9 @@ describe('writeTags', () => {
       // The guard: without the fix this very call throws, so a green test here would be
       // meaningless if the fixture did not actually carry the broken frame.
       const before = TagFile.createFromPath(file)
-      const beforeUfid = (
-        before.getTag(TagTypes.Id3v2, false) as Id3v2Tag
-      ).frames.filter((f) => f.frameId.toString() === 'UFID')
+      const beforeUfid = (before.getTag(TagTypes.Id3v2, false) as Id3v2Tag).frames.filter(
+        (f) => f.frameId.toString() === 'UFID',
+      )
       expect(beforeUfid, 'the fixture no longer carries a UFID').toHaveLength(1)
       before.dispose()
 

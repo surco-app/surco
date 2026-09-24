@@ -296,16 +296,9 @@ describe('convertArgs', () => {
   // nothing overwrote them; unlike `comment` (managed, cleared on empty) they simply
   // carried through. Cleared always, not just on clearExtras: a normal convert produces
   // the user's file, and the previous owner's toolchain is not part of it.
-  it('clears the source owner\'s provenance fields on a normal convert', () => {
+  it("clears the source owner's provenance fields on a normal convert", () => {
     const args = convertArgs('/in.mp3', '/o.flac', { codec: 'flac' }, meta)
-    for (const field of [
-      'engineer',
-      'technician',
-      'software',
-      'originator',
-      'product',
-      'source',
-    ]) {
+    for (const field of ['engineer', 'technician', 'software', 'originator', 'product', 'source']) {
       expect(args, `${field} still rides through`).toContain(`${field}=`)
     }
     // Copyright and "encoded by" are fields now: an empty value clears them the same way,
