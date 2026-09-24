@@ -130,10 +130,14 @@ export const Field = memo(function Field({
   return (
     // A wrapping <label> would fold the { } menu button and every chip into the input's
     // accessible name, so the label points at the input by id and the rest sits beside it.
-    <div className={`group block ${wide ? 'col-span-1 @[26rem]:col-span-2' : ''}`}>
+    // From 18rem the field's parts join the form's two-track grid directly (contents), so every
+    // label shares one column and every input the other; the chips sit under their input.
+    <div
+      className={`group block @[18rem]:contents ${wide ? 'col-span-1 @[26rem]:col-span-2' : ''}`}
+    >
       <label
         htmlFor={inputId}
-        className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-fg-dim"
+        className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-fg-dim @[18rem]:col-start-1 @[18rem]:mb-0 @[18rem]:min-h-[34px] @[18rem]:max-w-32 @[18rem]:flex-row-reverse @[18rem]:justify-start @[18rem]:text-right"
       >
         {label}
         {/* A required field that's still empty isn't an error the user made — it's a
@@ -147,7 +151,7 @@ export const Field = memo(function Field({
           />
         )}
       </label>
-      <span className="relative block">
+      <span className="relative block @[18rem]:col-start-2">
         <input
           ref={inputRef}
           id={inputId}
@@ -196,7 +200,7 @@ export const Field = memo(function Field({
           of the real one, so the detected value swaps in without popping into empty space.
           Drops out the moment a real suggestion arrives (or the probe fails → no chip). */}
       {suggesting && !(suggestions && suggestions.length > 0) && (
-        <span className="mt-1.5 flex">
+        <span className="mt-1.5 flex @[18rem]:col-start-2 @[18rem]:mt-0">
           <span
             data-testid={`suggestion-loading-${name}`}
             aria-hidden="true"
@@ -205,19 +209,23 @@ export const Field = memo(function Field({
         </span>
       )}
       {suggestions && suggestions.length > 0 && (
-        <SuggestionChips
-          suggestions={suggestions}
-          isOn={(s) => (tagList ? csvHas(draft, s, tagList.whole, tagList.separator) : draft === s)}
-          onPick={(s) =>
-            commit(
-              tagList
-                ? toggleCsv(draft, s, tagList.whole, tagList.separator)
-                : draft === s
-                  ? ''
-                  : s,
-            )
-          }
-        />
+        <div className="@[18rem]:col-start-2 @[18rem]:-mt-1.5">
+          <SuggestionChips
+            suggestions={suggestions}
+            isOn={(s) =>
+              tagList ? csvHas(draft, s, tagList.whole, tagList.separator) : draft === s
+            }
+            onPick={(s) =>
+              commit(
+                tagList
+                  ? toggleCsv(draft, s, tagList.whole, tagList.separator)
+                  : draft === s
+                    ? ''
+                    : s,
+              )
+            }
+          />
+        </div>
       )}
     </div>
   )
