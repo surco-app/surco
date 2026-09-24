@@ -481,8 +481,11 @@ export default function App(): React.JSX.Element {
         discogsPrefetched.current.delete(track.id)
         viewCache.current.delete(track.id)
         forgetAutoMatch(track.id)
-        removeAnalysisQueries(queryClient, track.inputPath)
       }
+      removeAnalysisQueries(
+        queryClient,
+        removed.map((t) => t.inputPath),
+      )
       // Also take them out of the quality sweep's queue: nothing else retires a queued
       // track short of measuring it, so without this the sweep keeps counting (and
       // decoding) rows that are no longer in the list.
@@ -502,10 +505,11 @@ export default function App(): React.JSX.Element {
       viewCache.current.clear()
       resetAutoMatch()
       forgetAnalysisTracks(cleared.map((t) => t.id))
-      for (const t of cleared) {
-        removeAnalysisQueries(queryClient, t.inputPath)
-        revokeCoverUrl(t.coverUrl)
-      }
+      removeAnalysisQueries(
+        queryClient,
+        cleared.map((t) => t.inputPath),
+      )
+      for (const t of cleared) revokeCoverUrl(t.coverUrl)
     },
     onMetaLoaded: (t) => {
       // With auto-match on, every imported track is probed whether or not its row is on

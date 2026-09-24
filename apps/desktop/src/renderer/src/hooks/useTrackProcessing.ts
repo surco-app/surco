@@ -351,9 +351,9 @@ export function useTrackProcessing({
         // describe bytes that no longer exist — without eviction a re-export keeps
         // showing the old output as "after". An in-place export additionally rewrote
         // the source, so its (possibly different, when renamed) path is evicted too.
-        removeAnalysisQueries(queryClient, result.outputPath)
+        removeAnalysisQueries(queryClient, [result.outputPath])
         if (result.inPlace) {
-          removeAnalysisQueries(queryClient, track.inputPath)
+          removeAnalysisQueries(queryClient, [track.inputPath])
           // The row's frozen label and the file's own artwork describe the bytes this
           // export just overwrote, so re-read them from the file at its final (possibly
           // renamed) path. Awaited so a batch's rows settle in order, but never allowed
