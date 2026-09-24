@@ -634,3 +634,34 @@ describe('identical requests in flight', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })
+
+// Label and promo downloads tag the label as the artist and put "Act - Track" in the title.
+// Every precise search pinned to the label missed, and the free-text ladder behind them
+// either found nothing or homonyms. The act and track the title names get the same precise
+// searches, after the ones a well-tagged file resolves with, so those resolve as before.
+describe('search on a title that carries its own artist', () => {
+  it('runs the precise artist and title search on the act and track the title names', async () => {
+    const fetchMock = vi.fn(async (url: string) => ({
+      status: 200,
+      ok: true,
+      json: async () => ({
+        results: url.includes('artist=Francesco%20Donadoni&release_title=Funky%20Roll')
+          ? [{ id: 77, title: 'Francesco Donadoni - Funky Roll' }]
+          : [],
+      }),
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const results = await search(
+      'HH Traxx Francesco Donadoni - Funky Roll (Original mix)',
+      'tok',
+      'low',
+      {
+        artist: 'HH Traxx',
+        title: 'Francesco Donadoni - Funky Roll (Original mix)',
+      },
+    )
+
+    expect(results.map((r) => r.id)).toEqual([77])
+  })
+})
