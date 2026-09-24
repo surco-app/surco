@@ -24,6 +24,7 @@ import type {
   Settings,
 } from '../../../shared/types'
 import { seedEditorSections } from '../hooks/useEditorSections'
+import { DEFAULT_SEPARATOR } from './csv'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './fields'
 
 // The slice of Settings the editor tree reads, resolved: settings arrive null for the
@@ -51,6 +52,8 @@ interface ResolvedSettings {
   titleFormat: string
   groupingPresets: string[]
   genrePresets: string[]
+  genreSeparator: string
+  groupingSeparator: string
   visibleFields: string[]
   customFields: CustomField[]
   requiredFields: string[]
@@ -90,6 +93,8 @@ const DEFAULTS: ResolvedSettings = {
   titleFormat: '',
   groupingPresets: [],
   genrePresets: [],
+  genreSeparator: DEFAULT_SEPARATOR,
+  groupingSeparator: DEFAULT_SEPARATOR,
   visibleFields: DEFAULT_FIELDS,
   customFields: [],
   requiredFields: DEFAULT_REQUIRED_FIELDS,
@@ -127,6 +132,8 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     titleFormat: settings.titleFormat ?? DEFAULTS.titleFormat,
     groupingPresets: settings.groupingPresets ?? DEFAULTS.groupingPresets,
     genrePresets: settings.genrePresets ?? DEFAULTS.genrePresets,
+    genreSeparator: settings.genreSeparator ?? DEFAULTS.genreSeparator,
+    groupingSeparator: settings.groupingSeparator ?? DEFAULTS.groupingSeparator,
     visibleFields: settings.visibleFields ?? DEFAULTS.visibleFields,
     customFields: settings.customFields ?? DEFAULTS.customFields,
     requiredFields: settings.requiredFields ?? DEFAULTS.requiredFields,

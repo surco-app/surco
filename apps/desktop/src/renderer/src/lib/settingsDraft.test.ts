@@ -35,6 +35,8 @@ const settings: Settings = {
   autoApplyFilename: false,
   groupingPresets: ['House'],
   genrePresets: ['Techno'],
+  genreSeparator: ', ',
+  groupingSeparator: ', ',
   trimWhitespace: true,
   zeroPadTrack: true,
   visibleFields: [],
@@ -101,6 +103,14 @@ describe('pickSynced', () => {
 })
 
 describe('buildSettingsPatch', () => {
+  // An emptied Other box would join tags with nothing, gluing "PopIndie Pop" into one.
+  it('restores the comma when a separator is left blank', () => {
+    const draft = { ...pickSynced(settings), genreSeparator: '', groupingSeparator: ';' }
+    const patch = buildSettingsPatch(draft, local)
+    expect(patch.genreSeparator).toBe(', ')
+    expect(patch.groupingSeparator).toBe(';')
+  })
+
   // The ignore phrases persist as an array but edit as one comma-joined text field,
   // exactly like the presets — same seeding, same clean-up on save.
   it('round-trips the search ignore words as comma text', () => {

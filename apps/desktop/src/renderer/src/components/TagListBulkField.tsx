@@ -34,8 +34,8 @@ function tagOrder(selection: string, tags: string[], tracks: TrackItem[], list: 
         t.id,
         [...tags].sort(
           (a, b) =>
-            Number(csvHas(t.meta[list.key] ?? '', b, list.whole)) -
-            Number(csvHas(t.meta[list.key] ?? '', a, list.whole)),
+            Number(csvHas(t.meta[list.key] ?? '', b, list.whole, list.separator)) -
+            Number(csvHas(t.meta[list.key] ?? '', a, list.whole, list.separator)),
         ),
       ]),
     ),
@@ -127,12 +127,19 @@ export function TagListBulkField({
                   scope={t.id}
                   dim
                   suggestions={sortedAs(tags, order.rows[t.id])}
-                  isOn={(tag) => csvHas(t.meta[list.key] ?? '', tag, list.whole)}
+                  isOn={(tag) => csvHas(t.meta[list.key] ?? '', tag, list.whole, list.separator)}
                   onPick={(tag) =>
                     onChangeTracks([
                       {
                         id: t.id,
-                        meta: { [list.key]: toggleCsv(t.meta[list.key] ?? '', tag, list.whole) },
+                        meta: {
+                          [list.key]: toggleCsv(
+                            t.meta[list.key] ?? '',
+                            tag,
+                            list.whole,
+                            list.separator,
+                          ),
+                        },
                       },
                     ])
                   }

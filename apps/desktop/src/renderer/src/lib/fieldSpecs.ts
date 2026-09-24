@@ -8,7 +8,7 @@ import type {
   TrackMetadata,
 } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { BULK_FIELDS, commonValue, GENRE_TAGS, GROUPING_TAGS, type TagList } from './bulkEdit'
+import { BULK_FIELDS, commonValue, type TagList } from './bulkEdit'
 import { FIELD_DEFS } from './fields'
 
 // One value offered by a field's { } insert menu — another field's literal value, so
@@ -77,6 +77,10 @@ export interface BuildFieldSpecsParams {
   item: TrackItem
   genreChips: string[]
   groupingPresets: string[]
+  // Genre and Grouping's tag lists with the separators from settings, built once like the
+  // onChange maps below so the memoized fields keep a stable prop.
+  genreTags: TagList
+  groupingTags: TagList
   detectedBpm: BpmResult | null | undefined
   detectedKey: KeyResult | null | undefined
   keyNotation: KeyNotation
@@ -106,9 +110,13 @@ export interface BuildFieldSpecsParams {
 }
 
 // The fields whose chips add a tag rather than replace the value.
-function tagListFor(key: MetaTextKey): TagList | undefined {
-  if (key === 'grouping') return GROUPING_TAGS
-  if (key === 'genre') return GENRE_TAGS
+function tagListFor(
+  key: MetaTextKey,
+  genreTags: TagList,
+  groupingTags: TagList,
+): TagList | undefined {
+  if (key === 'grouping') return groupingTags
+  if (key === 'genre') return genreTags
   return undefined
 }
 
@@ -126,6 +134,8 @@ export function buildFieldSpecs({
   item,
   genreChips,
   groupingPresets,
+  genreTags,
+  groupingTags,
   detectedBpm,
   detectedKey,
   keyNotation,
@@ -150,7 +160,7 @@ export function buildFieldSpecs({
     ? [
         ...BULK_FIELDS.filter((key) => visibleFields.includes(key)).map((key) => {
           const shared = commonValue(selectedTracks, key)
-          const list = tagListFor(key)
+          const list = tagListFor(key, genreTags, groupingTags)
           const perTrack =
             list && onChangeTracksMeta
               ? { list, tracks: selectedTracks, onChangeTracks: onChangeTracksMeta }
@@ -237,7 +247,7 @@ export function buildFieldSpecs({
               !isMulti &&
               ((def.key === 'bpm' && detectedBpm === undefined) ||
                 (def.key === 'key' && detectedKey === undefined)),
-            tagList: tagListFor(def.key),
+            tagList: tagListFor(def.key, genreTags, groupingTags),
           },
         ]
       })

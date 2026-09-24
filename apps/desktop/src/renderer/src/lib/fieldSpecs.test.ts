@@ -60,6 +60,8 @@ function params(over: Partial<BuildFieldSpecsParams> = {}): BuildFieldSpecsParam
     item: track('a', { title: 'Song', genre: 'Techno' }),
     genreChips: ['Techno', 'House'],
     groupingPresets: ['Bases', 'Vocals'],
+    genreTags: GENRE_TAGS,
+    groupingTags: GROUPING_TAGS,
     detectedBpm: undefined,
     detectedKey: undefined,
     keyNotation: 'camelot',

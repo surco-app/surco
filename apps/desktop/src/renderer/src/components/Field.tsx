@@ -207,9 +207,15 @@ export const Field = memo(function Field({
       {suggestions && suggestions.length > 0 && (
         <SuggestionChips
           suggestions={suggestions}
-          isOn={(s) => (tagList ? csvHas(draft, s, tagList.whole) : draft === s)}
+          isOn={(s) => (tagList ? csvHas(draft, s, tagList.whole, tagList.separator) : draft === s)}
           onPick={(s) =>
-            commit(tagList ? toggleCsv(draft, s, tagList.whole) : draft === s ? '' : s)
+            commit(
+              tagList
+                ? toggleCsv(draft, s, tagList.whole, tagList.separator)
+                : draft === s
+                  ? ''
+                  : s,
+            )
           }
         />
       )}
