@@ -1006,7 +1006,7 @@ describe('TrackList row state for screen readers', () => {
         metaReadFailed: true,
         autoMatched: true,
         inputPath: '/music/a.m4a',
-        spectrum: { image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false },
+        spectrum: { cutoffHz: 16000, sampleRateHz: 44100, processed: false },
       }),
     ])
     const name = screen.getByRole('option').textContent

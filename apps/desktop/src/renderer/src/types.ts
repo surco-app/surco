@@ -8,7 +8,7 @@ import type {
   ReleaseTrack,
   SearchProviderId,
   SearchResult,
-  SpectrumResult,
+  SpectrumVerdict,
   TrackMetadata,
   TrimRange,
 } from '../../shared/types'
@@ -76,7 +76,7 @@ export interface TrackItem {
   // The spectrogram/cutoff verdict, not stored on the canonical track but merged in
   // from the React Query cache at the App boundary so the quality triage and the list
   // can read each track's verdict. Undefined until its analysis lands in the cache.
-  spectrum?: SpectrumResult
+  spectrum?: SpectrumVerdict
   // The retouch facts the attention filters read, merged from the shared waveform
   // cache exactly like `spectrum`: silence = the detection suggests a cut this track
   // hasn't staged; clipping = the decoder's true-clipping flags fired. Undefined

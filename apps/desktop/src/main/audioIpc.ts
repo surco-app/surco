@@ -3,7 +3,13 @@ import type { IpcMainInvokeEvent } from 'electron'
 import { ipcMain } from 'electron'
 import log from 'electron-log/main'
 import type { AudioAnalysisIpc } from '../shared/audioIpcContract'
-import type { DeclickMode, SpectrumResult, WaveformScan } from '../shared/types'
+import type {
+  DeclickMode,
+  ScanVerdict,
+  SpectrumResult,
+  SpectrumVerdict,
+  WaveformScan,
+} from '../shared/types'
 import { activity } from './activity'
 import { cachedAnalysis, LOUDNESS_NAMESPACE, peekAnalysis } from './analysisCache'
 import { analysisCancels, isAbortError } from './analysisCancel'
@@ -375,7 +381,11 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   // every row just because the list asked. Hydrates exactly the two families the list's
   // verdict dots and filter counts read (see tracksSnapshot.ts SNAPSHOT_FAMILIES /
   // useTracksView.ts on the renderer side): spectrogram (the quality verdict) and the
-  // channel scan (the clipping attention flag). Deliberately EXCLUDES waveform-v5: its
+  // channel scan (the clipping attention flag). The spectrogram goes without its image: the
+  // list never draws it, and at ~300 KB a track it made a big reopen clone gigabytes (the
+  // editor fetches the full entry when it opens the track), and the channel scan as its
+  // clipping fact alone (its per-channel lanes are ~400 KB a track and only the compare
+  // strip draws them). Deliberately EXCLUDES waveform-v5: its
   // peaks/rms payload is ~0.5 MB per track, feeds only the silence attention flag, and
   // that lazy probe already runs cheaply off the player/analyze-sweep paths — hydrating
   // it here would turn a big library's opening batch into a multi-MB read for a filter
@@ -388,20 +398,22 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
           peekAnalysis<SpectrumResult>(SPECTROGRAM_NAMESPACE, path),
           peekAnalysis<WaveformScan>(CHANNELSCAN_NAMESPACE, path),
         ])
-        const hit: { spectrogram?: SpectrumResult; waveformScan?: WaveformScan } = {}
+        const hit: { spectrogram?: SpectrumVerdict; scanVerdict?: ScanVerdict } = {}
         if (spectrogram) {
-          const { cutoffFailed: _cutoffFailed, ...entry } = spectrogram as SpectrumResult & {
-            cutoffFailed?: boolean
-          }
+          const {
+            cutoffFailed: _cutoffFailed,
+            image: _image,
+            ...entry
+          } = spectrogram as SpectrumResult & { cutoffFailed?: boolean }
           hit.spectrogram = entry
         }
-        if (waveformScan) hit.waveformScan = waveformScan
+        if (waveformScan) hit.scanVerdict = { clipping: waveformScan.clipped.some(Boolean) }
         return [path, hit] as const
       }),
     )
-    const result: Record<string, { spectrogram?: SpectrumResult; waveformScan?: WaveformScan }> = {}
+    const result: Record<string, { spectrogram?: SpectrumVerdict; scanVerdict?: ScanVerdict }> = {}
     for (const [path, hit] of entries) {
-      if (hit.spectrogram || hit.waveformScan) result[path] = hit
+      if (hit.spectrogram || hit.scanVerdict) result[path] = hit
     }
     return result
   })

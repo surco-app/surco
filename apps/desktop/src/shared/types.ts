@@ -861,6 +861,13 @@ export interface WaveformScan {
   channels?: { peaks: number[]; clipped: boolean[] }[]
 }
 
+// Everything the list reads off a channel scan: whether any bucket clipped. The lanes
+// behind it are ~400 KB a track and only the compare strip draws them, so the list's
+// clipping flag rides this apart and outlives the scan.
+export interface ScanVerdict {
+  clipping: boolean
+}
+
 export interface SpectrumResult {
   image: string
   // null when the cutoff analysis failed (e.g. ffmpeg errored) but the image
@@ -919,6 +926,11 @@ export interface SpectrumResult {
   // Share of content samples whose lowest byte is non-zero, 0-100.
   bitsLowPct?: number
 }
+
+// Everything the list reads off a spectrum: the whole result but the ~300 KB image,
+// which only the editor draws. Kept apart so the list's quality dot can outlive the
+// image and a reopened library never ships the images across IPC.
+export type SpectrumVerdict = Omit<SpectrumResult, 'image'>
 
 // One track in an Engine DJ export request. The renderer ships this serializable shape
 // across IPC; the main process resolves it to an absolute path on disk (for the relative
