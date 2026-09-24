@@ -1,6 +1,6 @@
 import { ChevronRight, ListFilter, SearchX, Sparkles } from 'lucide-react'
 import type React from 'react'
-import { memo, useCallback, useEffect, useRef } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type { ReleaseTrack, SearchProviderId } from '../../../shared/types'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
@@ -20,6 +20,9 @@ import { Tooltip } from './Tooltip'
 // brisk enough that six rows are all in within a quarter second.
 const STAGGERED_ROWS = 6
 const STAGGER_STEP_MS = 40
+
+const resultKeyOf = (r: { provider: string; id: number | string }): string =>
+  `${r.provider}:${r.id}`
 
 interface Props {
   browser: DiscogsBrowser
@@ -134,6 +137,42 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   // dives back into the first result. Handling j/k here (and preventing default) stops them
   // leaking to the global handler, which would otherwise move the track list behind this column.
   const resultsRef = useRef<HTMLDivElement>(null)
+  // A late answer takes its ranked place among the rows on screen (useDiscogsBrowser). The
+  // rows it lands above slide down from where they were instead of jumping, and the rows
+  // that just arrived are marked for a moment so they don't slip in unnoticed. A new search
+  // is a new list, not a late arrival: when none of its rows was on screen, nothing is marked.
+  const shownKeys = useRef<ReadonlySet<string>>(new Set())
+  const freshKeys = useMemo(() => {
+    const keys = results.map(resultKeyOf)
+    const shown = shownKeys.current
+    return keys.some((k) => shown.has(k))
+      ? new Set(keys.filter((k) => !shown.has(k)))
+      : new Set<string>()
+  }, [results])
+  const cardTops = useRef(new Map<string, number>())
+  const slidFor = useRef(results)
+  useLayoutEffect(() => {
+    const cards =
+      resultsRef.current?.querySelectorAll<HTMLElement>('[data-testid="result-card"]') ?? []
+    const listChanged = slidFor.current !== results
+    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const tops = new Map<string, number>()
+    for (const card of cards) {
+      const key = card.dataset.key ?? ''
+      const top = card.offsetTop
+      tops.set(key, top)
+      const was = cardTops.current.get(key)
+      if (listChanged && !still && was !== undefined && was !== top) {
+        card.animate?.([{ transform: `translateY(${was - top}px)` }, { transform: 'none' }], {
+          duration: 260,
+          easing: 'cubic-bezier(0.2, 0, 0, 1)',
+        })
+      }
+    }
+    cardTops.current = tops
+    slidFor.current = results
+    shownKeys.current = new Set(results.map(resultKeyOf))
+  })
   const moveResultFocus = useCallback(
     (to: -1 | 1 | 'first' | 'last'): void => {
       // Las pistas de una tarjeta plegada siguen montadas (para que la animación de cierre
@@ -321,7 +360,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
             <p className="px-3 pt-3 text-xs text-fg-faint">{tr('editor.chooseAlbumHint')}</p>
           ) : (
             results.map((r, i) => {
-              const rk = `${r.provider}:${r.id}`
+              const rk = resultKeyOf(r)
               const expanded = openKey === rk
               const suggested = suggestedKey === rk
               const loaded = expanded && !!release && !loading
@@ -331,7 +370,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
               const identity = resultIdentity(r)
               const pressing = resultPressing(r)
               return (
-                <div key={rk} data-testid="result-card" className="px-1.5 pt-0.5">
+                <div key={rk} data-testid="result-card" data-key={rk} className="px-1.5 pt-0.5">
                   {/* Result as a card, matching the track list's rows so both columns read as the
                       same component. The wide column earns the title a full two lines instead of a
                       hard cut, and the release line shows year · label · catalogue no · format ·
@@ -340,6 +379,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                   <button
                     type="button"
                     data-testid="discogs-result"
+                    data-fresh={freshKeys.has(rk) || undefined}
                     aria-expanded={expanded}
                     onClick={() => previewRelease(r)}
                     // Only the rows above the fold ramp in; past STAGGERED_ROWS the delay is
@@ -349,7 +389,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                     style={{
                       animationDelay: `${i < STAGGERED_ROWS ? i * STAGGER_STEP_MS : 0}ms`,
                     }}
-                    className={`press result-in group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors focus-visible:bg-[var(--color-accent-soft)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:outline-none ${
+                    className={`press result-in ${freshKeys.has(rk) ? 'result-new' : ''} group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors focus-visible:bg-[var(--color-accent-soft)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:outline-none ${
                       // The open card takes no fill: the tracklist unfolding under it already
                       // says which one is open, and the applied track keeps the column's only fill.
                       expanded ? '' : 'hover:bg-[var(--color-panel-2)]/85'
