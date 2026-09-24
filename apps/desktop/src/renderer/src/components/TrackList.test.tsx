@@ -499,8 +499,8 @@ describe('TrackList', () => {
   it('fills the selected row with no colour transition', () => {
     renderList([track({ id: 'a' }), track({ id: 'b' })], 'a', ['a'])
     const rows = screen.getAllByTestId('track-row')
-    expect(rows[0].className).toContain('transition-none')
-    expect(rows[1].className).toContain('transition-colors')
+    expect(rows[0].className).not.toMatch(/transition-(colors|\[[^\]]*background-color)/)
+    expect(rows[1].className).toMatch(/transition-\[[^\]]*background-color/)
   })
 
   // The list is a multi-select listbox of options, so a screen reader announces it as one
@@ -1049,6 +1049,21 @@ describe('TrackList swipe to remove', () => {
     expect(slidBy()).toBe(300)
     act(() => vi.advanceTimersByTime(500))
     expect(onSwipeRemove).toHaveBeenCalledWith('a')
+  })
+
+  // Crossing the threshold moves the row from half way to the edge in one event, which read
+  // as a jump (Vicent 24/09: "da un salto hasta el final, no va fino"). The row's position and
+  // the grey's width ease into place, on the selected row too, whose fill must not ease.
+  it('eases the row and the grey into place instead of jumping', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' })], 'b')
+    fireEvent.wheel(screen.getAllByTestId('track-row')[0].parentElement as Element, { deltaX: 70 })
+    act(() => vi.advanceTimersByTime(500))
+    for (const row of screen.getAllByTestId('track-row'))
+      expect(row.className).toMatch(/transition-\[[^\]]*transform/)
+    expect(screen.getAllByTestId('track-row')[1].className).not.toMatch(/background-color/)
+    expect(screen.getByRole('button', { name: i18n.t('trackList.remove') }).className).toMatch(
+      /transition-\[width\]/,
+    )
   })
 
   // A trackpad scroll is never perfectly vertical; the list must not start sliding rows
