@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useId } from 'react'
+import { Fragment, useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Release } from '../../../shared/types'
 import { buildFieldSpecs, type FieldSpec } from '../lib/fieldSpecs'
@@ -32,7 +32,7 @@ function renderField(f: FieldSpec): React.JSX.Element {
   }
   if (f.key === 'compilation') {
     return (
-      <label className="flex items-center gap-2 self-end pb-2">
+      <label className="flex items-center gap-2">
         <input
           type="checkbox"
           data-testid="field-compilation"
@@ -82,8 +82,8 @@ interface MetadataFormProps {
   fields: FieldSpec[]
 }
 
-// The metadata form body: the rating row (single-track only), the cover well and the
-// fields — a flat list in the user's own order, rendered inline in the editor's single
+// The metadata form body: the cover well with the rating under it (single-track only) and
+// the fields — a flat list in the user's own order, rendered inline in the editor's single
 // scroll (no inner scroller) so browsing never fights a second scroll region, fed
 // pre-resolved field specs.
 export function MetadataForm({
@@ -102,37 +102,56 @@ export function MetadataForm({
   const ratingLabelId = useId()
   return (
     <div className="mt-4 @container">
-      {!isMulti && (
-        <div className="mb-4 flex items-center gap-3">
-          <span id={ratingLabelId} className="text-xs font-medium text-fg-dim">
-            {tr('fields.rating')}
-          </span>
-          <StarRating value={item.meta.rating ?? ''} onChange={onRate} labelledBy={ratingLabelId} />
-        </div>
-      )}
       <div className="flex flex-col gap-5 @[26rem]:flex-row @[26rem]:gap-7">
-        <CoverPicker
-          item={item}
-          isMulti={isMulti}
-          selectedTracks={selectedTracks}
-          release={release}
-          coverDims={coverDims}
-          setCoverDims={setCoverDims}
-          onChange={onChange}
-          onApplyCoverAll={onApplyCoverAll}
-        />
-
-        <div className="grid min-w-0 flex-1 grid-cols-1 gap-x-4 gap-y-4 @[26rem]:grid-cols-2">
-          {fields.map((f) => (
-            <div
-              key={f.key}
-              className={
-                f.wide || f.perTrack || f.key === 'compilation' ? '@[26rem]:col-span-2' : ''
-              }
-            >
-              {renderField(f)}
+        {/* The artwork column: the cover and, under it, the rating, both facts about the
+            record rather than fields to type, so the fields column opens on the first one. */}
+        <div className="flex shrink-0 flex-col items-start gap-3 @[26rem]:items-center">
+          <CoverPicker
+            item={item}
+            isMulti={isMulti}
+            selectedTracks={selectedTracks}
+            release={release}
+            coverDims={coverDims}
+            setCoverDims={setCoverDims}
+            onChange={onChange}
+            onApplyCoverAll={onApplyCoverAll}
+          />
+          {!isMulti && (
+            <div className="flex items-center">
+              <span id={ratingLabelId} className="sr-only">
+                {tr('fields.rating')}
+              </span>
+              <StarRating
+                value={item.meta.rating ?? ''}
+                onChange={onRate}
+                labelledBy={ratingLabelId}
+              />
             </div>
-          ))}
+          )}
+        </div>
+
+        {/* One column in the user's order, labels to the left of their inputs the way a
+            macOS inspector lays out a form, so a value gets the column's full width instead of
+            half of it ("Head Horny's & Migu"). The label track is as wide as the longest
+            label, capped so a long custom name wraps instead of starving the inputs. Below
+            28rem an input beside its label is narrower than the value it holds, so the labels
+            go back on top and each input gets the column's full width. */}
+        <div className="@container min-w-0 flex-1">
+          <div className="grid grid-cols-1 gap-y-4 @[28rem]:grid-cols-[auto_minmax(0,1fr)] @[28rem]:gap-x-3 @[28rem]:gap-y-2">
+            {fields.map((f) =>
+              f.perTrack ? (
+                <div key={f.key} className="@[28rem]:col-span-2">
+                  {renderField(f)}
+                </div>
+              ) : f.key === 'compilation' ? (
+                <div key={f.key} className="flex @[28rem]:col-start-2">
+                  {renderField(f)}
+                </div>
+              ) : (
+                <Fragment key={f.key}>{renderField(f)}</Fragment>
+              ),
+            )}
+          </div>
         </div>
       </div>
     </div>

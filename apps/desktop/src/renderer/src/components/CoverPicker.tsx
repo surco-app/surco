@@ -391,7 +391,7 @@ export function CoverPicker({
         }}
       />
       {displayCover ? (
-        <div className="group relative w-24 shrink-0 @[26rem]:w-40">
+        <div className="group relative w-24 shrink-0 @[26rem]:w-32">
           {/* The button opens the artwork big; the img inside keeps its own drag-out
               gesture (an actual drag suppresses the click, so the two don't fight). */}
           <button
@@ -417,7 +417,7 @@ export function CoverPicker({
                 e.preventDefault()
                 window.api.startCoverDrag(coverDragPath.current)
               }}
-              className={`h-24 w-24 rounded-xl object-cover @[26rem]:h-40 @[26rem]:w-40 outline outline-1 -outline-offset-1 outline-white/10 ${
+              className={`h-24 w-24 rounded-xl object-cover @[26rem]:h-32 @[26rem]:w-32 outline outline-1 -outline-offset-1 outline-white/10 ${
                 coverDragging ? 'ring-2 ring-[var(--color-accent)]' : ''
               }`}
             />
@@ -425,7 +425,7 @@ export function CoverPicker({
           {coverActions}
         </div>
       ) : (
-        <div className="group relative w-24 shrink-0 @[26rem]:w-40">
+        <div className="group relative w-24 shrink-0 @[26rem]:w-32">
           <button
             ref={pickRef}
             type="button"
@@ -433,7 +433,7 @@ export function CoverPicker({
             aria-describedby={coversDiffer ? coversDifferId : undefined}
             onClick={() => coverInputRef.current?.click()}
             aria-label={coverDragging ? tr('editor.coverDropActive') : tr('editor.coverDrop')}
-            className={`flex h-24 w-24 flex-col items-center justify-center gap-2 rounded-xl bg-[var(--color-field)] p-2 text-center text-xs outline outline-1 -outline-offset-1 transition-colors @[26rem]:h-40 @[26rem]:w-40 ${
+            className={`flex h-24 w-24 flex-col items-center justify-center gap-2 rounded-xl bg-[var(--color-field)] p-2 text-center text-xs outline outline-1 -outline-offset-1 transition-colors @[26rem]:h-32 @[26rem]:w-32 ${
               coverDragging
                 ? 'text-[var(--color-accent)] outline-[var(--color-accent)]'
                 : 'text-fg-faint outline-white/10 hover:text-fg-dim'

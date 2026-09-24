@@ -183,6 +183,16 @@ describe('Toolbar', () => {
     expect(props.onConvertAll).toHaveBeenCalled()
   })
 
+  // On macOS a toolbar's main action sits at the trailing edge. At the leading edge it sat
+  // beside the traffic lights, across the window from the editor footer's own action, so
+  // the eye crossed the whole window to compare the two. Last in the header, it closes the
+  // row of controls the way the footer button closes the editor.
+  it('places the convert-the-list action last in the header', () => {
+    renderBar()
+    const controls = screen.getAllByRole('button')
+    expect(controls[controls.length - 1]).toHaveAttribute('data-testid', 'convert-all')
+  })
+
   // The editor footer carries its own "Convert to AIFF" for the open track. Seen together
   // on one screen the two read as the same action, so this one names its scope: the count
   // is what says "the list", not "this track".

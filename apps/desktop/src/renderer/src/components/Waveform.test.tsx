@@ -104,6 +104,33 @@ describe('Waveform', () => {
     }
   })
 
+  // Auditioning means reading where you are at a glance. With both layers accent-blue the
+  // pending remainder was only a fainter blue, so at 0:00 the whole strip looked played.
+  // The remainder takes the neutral faint ink and only what has played carries the accent.
+  it('paints the pending remainder neutral and only the played part in the accent', async () => {
+    setWaveform(wave)
+    document.documentElement.style.setProperty('--color-accent', '#7aa2f7')
+    document.documentElement.style.setProperty('--color-fg-faint', '#8389ab')
+    try {
+      renderWithQuery(<Waveform inputPath="/m/a.wav" active={false} onScrub={vi.fn()} />)
+      await waitFor(() => {
+        expect(drawWaveform).toHaveBeenCalledWith(
+          screen.getByTestId('waveform-pending'),
+          wave.peaks,
+          expect.objectContaining({ color: 'rgba(131, 137, 171, 0.8)' }),
+        )
+        expect(drawWaveform).toHaveBeenCalledWith(
+          screen.getByTestId('waveform-played'),
+          wave.peaks,
+          expect.objectContaining({ color: 'rgba(122, 162, 247, 0.8)' }),
+        )
+      })
+    } finally {
+      document.documentElement.style.removeProperty('--color-accent')
+      document.documentElement.style.removeProperty('--color-fg-faint')
+    }
+  })
+
   it('scrubs against the playback duration before the peaks finish decoding', async () => {
     // The full-file decode takes seconds; a DJ must be able to seek the instant the
     // <audio> element reports a duration, so the strip uses that rather than waiting
