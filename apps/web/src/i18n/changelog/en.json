@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.2",
+    "date": "September 24, 2026",
+    "title": "Sharper search",
+    "items": [
+      {
+        "text": "Label and promo downloads that carry the label as the artist and the real name in the title, like “Francesco Donadoni - Funky Roll”, are now found: Surco searches for the artist and track the title names, even behind a “Preview” in front.",
+        "in": "1.2.0"
+      },
+      {
+        "text": "Among the results, a release credited to your file’s artist ranks above one that only mentions them. Each result drops straight into its place as it arrives instead of the list reshuffling at the end, and one that arrives late is marked for a moment so you notice it.",
+        "in": "1.2.0"
+      },
+      {
+        "text": "When Discogs can’t find a track, a Bandcamp match by the same artist is suggested for you to confirm instead of being dropped without a word.",
+        "in": "1.2.0"
+      },
+      {
+        "text": "Surco feels quicker with large libraries: the list responds sooner while importing and editing, the same search is never run twice, and after converting many tracks at once rekordbox and Engine DJ are updated in a single pass. The download is smaller too.",
+        "in": "1.2.0"
+      }
+    ]
+  },
+  {
     "version": "1.1",
     "date": "September 24, 2026",
     "title": "A calmer interface",
