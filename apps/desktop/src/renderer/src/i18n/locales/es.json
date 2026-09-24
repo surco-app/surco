@@ -441,7 +441,7 @@
     "qualityCaptionBad": "Techo en ~{{cutoff}}, propio de una fuente con pérdidas.",
     "qualityCaptionProcessed": "Posibles agudos regenerados sobre un corte en ~{{cutoff}}.",
     "qualityUpsampled": "Sin contenido por encima de 22 kHz: probablemente reescalado desde 44.1 kHz.",
-    "qualityHiRes": "Hay contenido por encima de 22 kHz: no viene de 44.1 kHz.",
+    "qualityHiRes": "Hi-res auténtico: hay contenido real por encima de 22 kHz, así que este fichero a {{rate}} no está reescalado desde calidad CD (44.1 kHz).",
     "qualityResolutionUnknown": "No se pudo comprobar si es alta resolución real.",
     "qualityBitsPill": "Bits rellenados",
     "qualityBitsPadded": "Declara 24 bits, pero el audio es de 16 bits rellenado.",

@@ -441,7 +441,7 @@
     "qualityCaptionBad": "Plafond à ~{{cutoff}}, la marque d'une source avec perte.",
     "qualityCaptionProcessed": "Aigus possiblement régénérés au-dessus d'une coupure à ~{{cutoff}}.",
     "qualityUpsampled": "Aucun contenu au-dessus de 22 kHz : probablement suréchantillonné depuis 44,1 kHz.",
-    "qualityHiRes": "Il y a du contenu au-dessus de 22 kHz : il ne vient pas du 44,1 kHz.",
+    "qualityHiRes": "Vraie haute résolution : il y a du contenu réel au-dessus de 22 kHz, ce fichier à {{rate}} n'est donc pas suréchantillonné depuis la qualité CD (44,1 kHz).",
     "qualityResolutionUnknown": "Impossible de vérifier s'il s'agit de vraie haute résolution.",
     "qualityBitsPill": "Bits de remplissage",
     "qualityBitsPadded": "Déclaré en 24 bits, mais l'audio est du 16 bits rembourré.",
