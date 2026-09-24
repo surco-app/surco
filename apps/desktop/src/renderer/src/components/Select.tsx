@@ -37,6 +37,9 @@ interface Props {
   // A trigger the height of a line of text, for a menu that sits inside a list row
   // without making the row taller.
   compact?: boolean
+  // Text and a chevron with no box, for a filter or sort in a column header, where the
+  // header is chrome around the list rather than a form. The hover tint shows it is a control.
+  bare?: boolean
 }
 
 // A themed replacement for the native <select>, whose dropdown is drawn by the OS
@@ -52,6 +55,7 @@ export function Select({
   testid,
   fullWidth = false,
   compact = false,
+  bare = false,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -229,7 +233,7 @@ export function Select({
         // both, so this one does too.
         aria-label={selected ? `${label}: ${selected.label}` : label}
         onClick={toggle}
-        className={`flex min-w-0 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs text-fg-dim outline-none focus:border-[var(--color-accent)] ${compact ? 'h-6' : 'h-8'} ${fullWidth ? 'w-full' : ''}`}
+        className={`flex min-w-0 items-center gap-1.5 rounded-md pr-1.5 pl-2 text-xs text-fg-dim outline-none ${bare ? 'hover:bg-[var(--color-panel-2)] hover:text-fg' : 'border border-[var(--color-line)] bg-[var(--color-field)] focus:border-[var(--color-accent)]'} ${compact ? 'h-6' : 'h-8'} ${fullWidth ? 'w-full' : ''}`}
       >
         {selected?.icon && <selected.icon aria-hidden="true" className="size-3.5 shrink-0" />}
         {(selected?.short ?? selected?.label) && (

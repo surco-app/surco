@@ -148,6 +148,7 @@ export function TrackListHeader({
       >
         <Select
           testid="track-sort"
+          bare
           value={sortBy}
           onChange={(v) => setSortBy(v as TrackSort)}
           label={tr('sidebar.sort.label')}
@@ -168,7 +169,7 @@ export function TrackListHeader({
             aria-pressed={sortDir === 'desc'}
             aria-label={tr('sidebar.sort.descending')}
             onClick={toggleSortDir}
-            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-field)] text-fg-dim outline-none hover:text-fg focus:border-[var(--color-accent)]"
+            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-dim outline-none hover:bg-[var(--color-panel-2)] hover:text-fg"
           >
             {sortDir === 'asc' ? (
               <ArrowDownNarrowWide className="h-4 w-4" aria-hidden="true" />
