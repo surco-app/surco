@@ -24,6 +24,7 @@ import type {
   MetaTextKey,
   NormalizeConfig,
   OutputFormat,
+  SearchHints,
   SearchProviderId,
   ThemePref,
   TrackMetadata,
@@ -70,7 +71,12 @@ import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries, seedCachedAnalyses } from './lib/analysisQueries'
 import type { AppleMusicIndex } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
-import { acceptReviewPatch, type MatchCleanup, tracksToAutoMatch } from './lib/autoMatch'
+import {
+  acceptReviewPatch,
+  type MatchCleanup,
+  searchHintsFor,
+  tracksToAutoMatch,
+} from './lib/autoMatch'
 import { baseName } from './lib/baseName'
 import { canProcessTrack, eligibleForBatch } from './lib/batch'
 import { buildCommands, type Command, runCommand } from './lib/commands'
@@ -139,9 +145,10 @@ const DEFAULT_SEARCH_PROVIDERS: SearchProviderId[] = ['discogs']
 // Warms the main-process Discogs caches for a hovered track: the search the editor
 // runs on open, plus the top release behind it. Both are cached by the main
 // process, so opening the track (and clicking that release) then hits no network.
-async function warmSearch(query: string): Promise<void> {
+async function warmSearch(query: string, hints: SearchHints): Promise<void> {
   // Background warming yields to the editor's own search, so it acquires at low priority.
-  const results = await window.api.search(query, undefined, 'low')
+  // Same hints as the editor's search (searchHintsFor), or it warms a search nobody reads.
+  const results = await window.api.search(query, undefined, 'low', hints)
   if (results[0]) await window.api.getRelease(results[0].id, undefined, 'low')
 }
 
@@ -698,7 +705,9 @@ export default function App(): React.JSX.Element {
           !discogsPrefetched.current.has(id)
         ) {
           discogsPrefetched.current.add(id)
-          warmSearch(track.query).catch(() => discogsPrefetched.current.delete(id))
+          warmSearch(track.query, searchHintsFor(track, matchCleanupRef.current)).catch(() =>
+            discogsPrefetched.current.delete(id),
+          )
         }
       }, PREFETCH_HOVER_MS)
     },

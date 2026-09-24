@@ -1,8 +1,7 @@
 import { type UseQueryResult, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { searchHintsOf } from '../../../shared/metadata'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
-import { type MatchCleanup, matchTargetOf, probeReleases } from '../lib/autoMatch'
+import { type MatchCleanup, matchTargetOf, probeReleases, searchHintsFor } from '../lib/autoMatch'
 import { fetchRelease } from '../lib/fetchRelease'
 import { mainErrorMessage } from '../lib/ipcError'
 import { preRankResults, providerCountsOf, releaseKey, resultFromRelease } from '../lib/release'
@@ -224,12 +223,7 @@ export function useDiscogsBrowser(
           const rel = await loadRelease({ provider: 'discogs', id: directId as number, title: '' })
           return [resultFromRelease(rel)]
         }
-        // The hint title is the same undressed title the scorer uses (matchTargetOf), so
-        // the precise artist+title searches see the bare track name, not the Naming
-        // pattern's "(A2) …" dressing.
-        const target = matchTargetOf(item, cleanup)
-        const hints = { ...searchHintsOf(item.meta), title: target.title || item.meta.title }
-        return window.api.search(searchTerm, source, 'high', hints)
+        return window.api.search(searchTerm, source, 'high', searchHintsFor(item, cleanup))
       },
       enabled: searchTerm.trim() !== '',
     })),
