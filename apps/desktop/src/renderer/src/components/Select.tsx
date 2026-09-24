@@ -37,6 +37,9 @@ interface Props {
   // A trigger the height of a line of text, for a menu that sits inside a list row
   // without making the row taller.
   compact?: boolean
+  // Repeats the label as a title at the top of the open menu, for a menu whose options
+  // are too terse to say what they choose.
+  heading?: boolean
 }
 
 // A themed replacement for the native <select>, whose dropdown is drawn by the OS
@@ -52,6 +55,7 @@ export function Select({
   testid,
   fullWidth = false,
   compact = false,
+  heading = false,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -195,6 +199,11 @@ export function Select({
           : undefined
       }
     >
+      {heading && (
+        <div aria-hidden="true" className="px-2 pt-1 pb-1.5 text-[11px] text-fg-faint">
+          {label}
+        </div>
+      )}
       {options.map((o) => (
         <button
           key={o.value}
@@ -206,8 +215,14 @@ export function Select({
           className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-panel-2)]"
         >
           {o.icon && <o.icon aria-hidden="true" className="h-4 w-4 shrink-0" />}
-          <span className="flex-1">{o.label}</span>
-          {o.hint && <span className="font-mono text-fg-faint">{o.hint}</span>}
+          {o.hint ? (
+            <>
+              <span className="w-3 shrink-0">{o.label}</span>
+              <span className="flex-1 font-mono text-fg-faint">{o.hint}</span>
+            </>
+          ) : (
+            <span className="flex-1">{o.label}</span>
+          )}
           <Check
             aria-hidden="true"
             className={`size-3 shrink-0 ${o.value === value ? '' : 'invisible'}`}
