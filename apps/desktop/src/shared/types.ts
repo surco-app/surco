@@ -861,6 +861,13 @@ export interface WaveformScan {
   channels?: { peaks: number[]; clipped: boolean[] }[]
 }
 
+// Everything the list reads off a channel scan: whether any bucket clipped. The lanes
+// behind it are ~400 KB a track and only the compare strip draws them, so the list's
+// clipping flag rides this apart and outlives the scan.
+export interface ScanVerdict {
+  clipping: boolean
+}
+
 export interface SpectrumResult {
   image: string
   // null when the cutoff analysis failed (e.g. ffmpeg errored) but the image

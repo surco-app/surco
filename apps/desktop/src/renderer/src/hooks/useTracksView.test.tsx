@@ -13,7 +13,7 @@ import type { TrackItem } from '../types'
 import * as snapshot from './tracksSnapshot'
 import { spectrogramOptions } from './useSpectrogram'
 import { useTracksView, type ViewCacheEntry } from './useTracksView'
-import { waveformOptions } from './useWaveform'
+import { waveformOptions, waveformScanOptions } from './useWaveform'
 
 function setApi(): void {
   ;(window as unknown as { api: unknown }).api = {
@@ -146,7 +146,7 @@ describe('useTracksView', () => {
   // silence flags a suggested cut the track hasn't staged (a staged trim clears it —
   // that's the "already retouched" signal), clipping follows the decoder's flags.
   it('derives silence and clipping facts from a cached waveform', () => {
-    const client = new QueryClient()
+    const client = createQueryClient()
     // 100 s: 10 s of surface noise, music with a clipped stretch, clean tail cut.
     const peaks = Array.from({ length: 200 }, (_, i) => (i >= 20 ? 0.5 : 0.0005))
     const clipped = peaks.map((_, i) => i === 100)
@@ -170,7 +170,7 @@ describe('useTracksView', () => {
   // missing from the memo's deps, the fold never re-ran and the fact never reached the
   // list. The user analyzed a crate and the clipping filter stayed empty.
   it('picks up clipping when the scan probe lands after the wave', () => {
-    const client = new QueryClient()
+    const client = createQueryClient()
     const peaks = Array.from({ length: 200 }, () => 0.5)
     const clipped = peaks.map((_, i) => i === 100)
     // Only the wave so far, which is the state right after fetchQuery(waveformOptions).
@@ -268,6 +268,36 @@ describe('useTracksView', () => {
     expect(client.getQueryData(['spectrogram', '/music/a.wav'])).toBeUndefined()
     expect(result.current.tracksView[0].spectrum?.cutoffHz).toBe(spectrum.cutoffHz)
     vi.useRealTimers()
+  })
+
+  it('keeps a clipping flag on the list after its channel scan is collected', async () => {
+    vi.useFakeTimers()
+    const client = createQueryClient()
+    const { result } = setup([track('a')], client)
+    ;(window as unknown as { api: { waveformScan: () => Promise<unknown> } }).api = {
+      ...(window as unknown as { api: object }).api,
+      waveformScan: async () => ({ clipped: [false, true] }),
+    }
+    await act(async () => {
+      await client.fetchQuery(waveformScanOptions('/music/a.wav'))
+    })
+
+    act(() => {
+      vi.advanceTimersByTime(HEAVY_PROBE_GC_MS + 1_000)
+    })
+
+    expect(client.getQueryData(['waveformScan', '/music/a.wav'])).toBeUndefined()
+    expect(result.current.tracksView[0].audioIssues?.clipping).toBe(true)
+    vi.useRealTimers()
+  })
+
+  it('shows a hydrated clipping verdict that carries no channel lanes', () => {
+    const client = new QueryClient()
+    client.setQueryData(['scanVerdict', '/music/a.wav'], { clipping: true })
+
+    const { result } = setup([track('a')], client)
+
+    expect(result.current.tracksView[0].audioIssues?.clipping).toBe(true)
   })
 
   // A reopened library hydrates verdicts only, never the images, so a verdict on its own

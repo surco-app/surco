@@ -585,10 +585,7 @@ describe('suspectTracks', () => {
     ({
       id,
       status: 'idle',
-      spectrum:
-        cutoffHz === undefined
-          ? undefined
-          : { cutoffHz, sampleRateHz: 44100, processed },
+      spectrum: cutoffHz === undefined ? undefined : { cutoffHz, sampleRateHz: 44100, processed },
     }) as TrackItem
 
   // The one-click "trash the fakes" action must delete exactly what the suspect filter

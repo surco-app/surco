@@ -217,18 +217,22 @@ describe('audio:cached-batch', () => {
     })
   })
 
-  // The channel-scan clip flags feed the attention filter's clipping bucket — the
-  // second (and only other) family the list actually reads.
-  it('returns the cached channel scan for a warm entry', async () => {
+  // The channel scan feeds the attention filter's clipping bucket — the second (and
+  // only other) family the list reads — and the list needs one boolean of it. The scan
+  // itself carries per-channel lanes, ~400 KB a track, that only the compare strip draws.
+  it('returns the cached channel scan as its clipping fact alone', async () => {
     const file = await makeFile()
-    await cachedAnalysis('channelscan-v1', file, async () => ({ clipped: [false, true] }))
+    await cachedAnalysis('channelscan-v1', file, async () => ({
+      clipped: [false, true],
+      channels: [{ peaks: [0.5, 1], clipped: [false, true] }],
+    }))
 
     const result = (await handlerFor('audio:cached-batch')({}, [file])) as Record<
       string,
-      { spectrogram?: unknown; waveformScan?: unknown }
+      { spectrogram?: unknown; scanVerdict?: unknown }
     >
 
-    expect(result[file].waveformScan).toEqual({ clipped: [false, true] })
+    expect(result[file]).toEqual({ scanVerdict: { clipping: true } })
   })
 
   // A cold path (never analyzed) is simply absent from the response — never an entry

@@ -53,12 +53,12 @@ describe('seedCachedAnalyses', () => {
   // instant the batch IPC resolves, with no per-track probe IPC ever firing for a warm hit.
   // The spectrum lands as a verdict only: the hydration carries no image, and filing an
   // image-less entry under the editor's spectrogram key would show it a blank panel.
-  it('seeds the spectrum verdict and waveformScan query data for a cache hit', async () => {
+  it('seeds the spectrum and channel scan verdicts for a cache hit', async () => {
     const client = new QueryClient()
     setApi({
       loadCachedAnalyses: vi.fn().mockResolvedValue({
         '/m/a.wav': { spectrogram: { cutoffHz: 20000, sampleRateHz: 44100 } },
-        '/m/b.wav': { waveformScan: { clipped: [true] } },
+        '/m/b.wav': { scanVerdict: { clipping: true } },
       }),
     })
 
@@ -69,7 +69,8 @@ describe('seedCachedAnalyses', () => {
       sampleRateHz: 44100,
     })
     expect(client.getQueryData(['spectrogram', '/m/a.wav'])).toBeUndefined()
-    expect(client.getQueryData(['waveformScan', '/m/b.wav'])).toEqual({ clipped: [true] })
+    expect(client.getQueryData(['scanVerdict', '/m/b.wav'])).toEqual({ clipping: true })
+    expect(client.getQueryData(['waveformScan', '/m/b.wav'])).toBeUndefined()
   })
 
   // A path with no cached entry either family must be left untouched — no placeholder,
@@ -81,7 +82,7 @@ describe('seedCachedAnalyses', () => {
     await seedCachedAnalyses(client, ['/m/a.wav'])
 
     expect(client.getQueryData(['spectrumVerdict', '/m/a.wav'])).toBeUndefined()
-    expect(client.getQueryData(['waveformScan', '/m/a.wav'])).toBeUndefined()
+    expect(client.getQueryData(['scanVerdict', '/m/a.wav'])).toBeUndefined()
   })
 
   // A track already probed this session (e.g. an instant re-drop, or a hover prefetch
@@ -156,6 +157,8 @@ describe('removeAnalysisQueries', () => {
       'bpm',
       'key',
       'waveform',
+      'waveformScan',
+      'scanVerdict',
     ]
     for (const key of keys) {
       client.setQueryData([key, '/m/a.wav'], { fact: key })
