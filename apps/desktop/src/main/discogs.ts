@@ -1,5 +1,10 @@
 import { errorWithKey } from '../shared/errorKeys'
-import { dropOriginalMarker, dropPresentsAlias, trailingWordDrops } from '../shared/searchClean'
+import {
+  dropOriginalMarker,
+  dropPresentsAlias,
+  embeddedArtistTitle,
+  trailingWordDrops,
+} from '../shared/searchClean'
 import type { Release, SearchHints, SearchPriority, SearchResult } from '../shared/types'
 import { activity } from './activity'
 import { discogsLimiterFor } from './discogsLimiter'
@@ -96,6 +101,29 @@ export function hasCachedSearch(query: string, opts: SearchOpts = {}): boolean {
   return cacheStore.hasSearch(searchKey(query, opts.format, opts.perPage ?? 20))
 }
 
+// Requests in flight, by what they fetch. The cache only fills once a request finishes, so
+// the editor's panel, the auto-match sweep and the hover prefetch asking for the same track
+// at once each used to make the same paced request on their own. A later caller joins the
+// one already running, unless it is high priority and that one is not: the editor's own
+// search must never wait in the background queue.
+const inFlight = new Map<string, { promise: Promise<unknown>; priority?: SearchPriority }>()
+
+function shareInFlight<T>(
+  key: string,
+  priority: SearchPriority | undefined,
+  run: () => Promise<T>,
+): Promise<T> {
+  const current = inFlight.get(key)
+  if (current && (current.priority === 'high' || priority !== 'high')) {
+    return current.promise as Promise<T>
+  }
+  const promise = run().finally(() => {
+    if (inFlight.get(key)?.promise === promise) inFlight.delete(key)
+  })
+  inFlight.set(key, { promise, priority })
+  return promise
+}
+
 // Runs one /database/search request and normalizes it, sharing the cache and provider
 // stamping across the two query shapes (free-text q= and the structured artist/title
 // fields). `queryParams` is the shape-specific slice of the URL; `cacheId` is its cache
@@ -111,6 +139,19 @@ async function runSearch(
   const key = searchKey(cacheId, opts.format, perPage)
   const cached = cachedSearch(cacheStore, key)
   if (cached) return cached
+  return shareInFlight(`search ${key}`, priority, () =>
+    fetchSearch(queryParams, key, perPage, token, opts, priority),
+  )
+}
+
+async function fetchSearch(
+  queryParams: string,
+  key: string,
+  perPage: number,
+  token: string,
+  opts: SearchOpts,
+  priority?: SearchPriority,
+): Promise<SearchResult[]> {
   // Pacing lives with the request itself: the token is taken here, after the cache
   // miss, so a repeat of any already-fetched shape (free-text, structured, tracklist)
   // never queues behind the limiter for a call it won't make.
@@ -263,6 +304,18 @@ export async function search(
           if (relaxed.length) return relaxed
         }
       }
+      // A label-as-artist tag with "Act - Track" in the title ("HH Traxx" / "Francesco
+      // Donadoni - Funky Roll"): the same precise searches on the act and track it names.
+      // After the ones above, so a well-tagged file resolves exactly as it did.
+      const embedded = title ? embeddedArtistTitle(title) : null
+      if (embedded) {
+        const act = dropPresentsAlias(embedded.artist)
+        const track = dropOriginalMarker(embedded.title)
+        const byAct = keep(await searchStructured(act, track, token, opts, priority))
+        if (byAct.length) return byAct
+        const byActTrack = keep(await searchTracklist(act, track, token, opts, priority))
+        if (byActTrack.length) return byActTrack
+      }
       let results: SearchResult[] = []
       // The catalog-number candidate keeps its place in the candidate order but runs on
       // the structured catno field instead of q= — same fallback turn, precise results.
@@ -295,6 +348,10 @@ export async function getRelease(
 ): Promise<Release> {
   const cached = cacheStore.getRelease(id)
   if (cached) return cached
+  return shareInFlight(`release ${id}`, priority, () => loadRelease(id, token, priority))
+}
+
+function loadRelease(id: number, token: string, priority?: SearchPriority): Promise<Release> {
   return activity.track(
     'discogs',
     'activity.loadDiscogsRelease',

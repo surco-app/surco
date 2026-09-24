@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   cleanMatchTitle,
   dropLeadingCatalog,
+  embeddedArtistTitle,
   stripIgnoredWords,
   trailingWordDrops,
 } from './searchClean'
@@ -114,5 +115,30 @@ describe('trailingWordDrops', () => {
   // ("Song (Club" ) — strip it whole before slicing words.
   it('sheds a parenthetical before dropping words', () => {
     expect(trailingWordDrops('Acid Rain (Club Mix) Vicente')).toEqual(['Acid Rain', 'Acid'])
+  })
+})
+
+// Label and promo downloads tag the LABEL as the artist and fold the act into the title
+// ("HH Traxx" / "Francesco Donadoni - Funky Roll"), often behind a Bandcamp "Preview - "
+// stamp. Every search pinned to that artist then misses; the act and track the title
+// names are what the catalogs file it under.
+describe('embeddedArtistTitle', () => {
+  it('reads the act and the track out of a title that carries both', () => {
+    expect(embeddedArtistTitle('Francesco Donadoni - Funky Roll (Original mix)')).toEqual({
+      artist: 'Francesco Donadoni',
+      title: 'Funky Roll (Original mix)',
+    })
+  })
+
+  it('looks past a Bandcamp preview stamp in front', () => {
+    expect(embeddedArtistTitle('Preview - Tito Dj - I got It')).toEqual({
+      artist: 'Tito Dj',
+      title: 'I got It',
+    })
+  })
+
+  it('finds nothing in a plain title', () => {
+    expect(embeddedArtistTitle('Funky Roll (Original mix)')).toBeNull()
+    expect(embeddedArtistTitle('Preview')).toBeNull()
   })
 })

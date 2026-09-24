@@ -1,5 +1,4 @@
 import { useCallback, useRef, useState } from 'react'
-import { searchHintsOf } from '../../../shared/metadata'
 import type {
   MetaTextKey,
   SearchHints,
@@ -16,6 +15,7 @@ import {
   matchTargetOf,
   type ProbedCandidate,
   type SearchApi,
+  searchHintsFor,
   tracksToAutoMatch,
 } from '../lib/autoMatch'
 import { mapWithConcurrency } from '../lib/concurrency'
@@ -143,9 +143,7 @@ export function useAutoMatch({
       const m = await autoMatchRelease(
         t.query,
         target,
-        // The hint title rides the same undressed title the scorer uses, so the precise
-        // artist+title searches see "Sueño Latino", not the pattern-dressed tag.
-        searchApiAt(priority, { ...searchHintsOf(t.meta), title: target.title || t.meta.title }),
+        searchApiAt(priority, searchHintsFor(t, matchCleanupRef.current)),
         MAX_AUTO_PROBE,
         (c) => probes.push(c),
       )
