@@ -104,6 +104,25 @@ describe('Select', () => {
     expect(screen.getByTestId('sep')).not.toHaveTextContent('Pop; House')
   })
 
+  // A menu inside a narrow list row can show a shorter trigger than its option label,
+  // while a screen reader still hears the full one.
+  it('shows the short trigger label when the chosen option has one', () => {
+    render(
+      <Select
+        value="custom"
+        options={[
+          { value: 'comma', label: ',' },
+          { value: 'custom', label: 'Other', short: '' },
+        ]}
+        onChange={vi.fn()}
+        label="Genre separator"
+        testid="sep"
+      />,
+    )
+    expect(screen.getByTestId('sep')).not.toHaveTextContent('Other')
+    expect(screen.getByTestId('sep')).toHaveAccessibleName('Genre separator: Other')
+  })
+
   it('reports the picked value and closes', () => {
     const onChange = renderSelect()
     fireEvent.click(screen.getByTestId('sort'))
