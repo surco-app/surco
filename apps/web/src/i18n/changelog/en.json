@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.1",
+    "date": "September 24, 2026",
+    "title": "A calmer interface",
+    "items": [
+      {
+        "text": "Surco has a calmer look: the library reads as a sidebar, the header groups its icons and leaves the main action at the end, column headers and list tools lose their boxes, and scrollbars only show while you scroll. On the wave, only what has already played is blue, and the spectrogram tones its colour down so it stops pulling your eye.",
+        "in": "1.1.0"
+      },
+      {
+        "text": "The metadata form is a single column, in the order you choose, with each field’s label beside it when it fits. The rating moves under the cover, and the cover takes less room so the fields get more width.",
+        "in": "1.1.0"
+      },
+      {
+        "text": "When required fields are missing, the main button says so on its own face, for example “Missing Artist and Title”, instead of sitting dimmed with no explanation.",
+        "in": "1.1.0"
+      },
+      {
+        "text": "Genre and Grouping each choose what joins their tags: comma, semicolon, slash or a separator you type yourself, from a menu beside the field name in Settings › Fields.",
+        "in": "1.1.0"
+      },
+      {
+        "text": "With several tracks selected, Total tracks suggests how many there are, so you fill it in with one click.",
+        "in": "1.1.0"
+      },
+      {
+        "text": "Good-quality tracks carry their mark in the list again, a quiet dot always in the same spot before the format, so the quality of the whole column reads at a glance.",
+        "in": "1.1.0"
+      },
+      {
+        "text": "Tracks with very flat highs no longer change their quality verdict when you trim a little silence.",
+        "in": "1.1.0"
+      }
+    ]
+  },
+  {
     "version": "1.0",
     "date": "September 23, 2026",
     "title": "Surco 1.0: stable",
