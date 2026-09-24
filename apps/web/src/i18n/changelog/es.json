@@ -19,6 +19,18 @@
       {
         "text": "Surco va más ágil con bibliotecas grandes: la lista responde antes al importar y al editar, la misma búsqueda no se repite, y tras convertir muchas pistas a la vez rekordbox y Engine DJ se actualizan de una sola vez. La descarga también pesa menos.",
         "in": "1.2.0"
+      },
+      {
+        "text": "Para quitar una pista de la lista, deslízala hacia un lado con dos dedos en el trackpad: sale al momento, sin preguntar, y la pastilla del formato ya no se aparta para dejar sitio a una X al pasar el ratón.",
+        "in": "1.2.1"
+      },
+      {
+        "text": "La pastilla del formato se tiñe con el veredicto de calidad, así que el nombre del artista recupera todo su espacio en la fila.",
+        "in": "1.2.1"
+      },
+      {
+        "text": "Originales es más prudente con tu disco: por defecto solo guarda copia cuando el audio se vuelve a codificar, respeta su límite de tamaño mientras Surco sigue abierto y deja siempre 5 GB libres.",
+        "in": "1.2.1"
       }
     ]
   },

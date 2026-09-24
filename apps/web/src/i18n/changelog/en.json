@@ -19,6 +19,18 @@
       {
         "text": "Surco feels quicker with large libraries: the list responds sooner while importing and editing, the same search is never run twice, and after converting many tracks at once rekordbox and Engine DJ are updated in a single pass. The download is smaller too.",
         "in": "1.2.0"
+      },
+      {
+        "text": "To remove a track from the list, swipe it aside with two fingers on the trackpad: it goes straight away, without asking, and the format pill no longer shifts over to make room for an X on hover.",
+        "in": "1.2.1"
+      },
+      {
+        "text": "The format pill is tinted with the quality verdict, so the artist name gets its full width back in the row.",
+        "in": "1.2.1"
+      },
+      {
+        "text": "Originals is gentler on your disk: by default it only keeps a copy when the audio is re-encoded, stays under its size limit while Surco is open and always leaves 5 GB free.",
+        "in": "1.2.1"
       }
     ]
   },
@@ -67,7 +79,7 @@
         "in": "1.0.0"
       },
       {
-        "text": "The Quality section only says what it measures. Red is kept for files that come from a lossy source or have bad quality; anything that is only a suspicion shows in amber and says “possible”; padded bits and upsampled audio are no longer flagged as a defect, because they sound the same. The lines are shorter, and with \u201cInline explanations\u201d off there is one line per finding.",
+        "text": "The Quality section only says what it measures. Red is kept for files that come from a lossy source or have bad quality; anything that is only a suspicion shows in amber and says “possible”; padded bits and upsampled audio are no longer flagged as a defect, because they sound the same. The lines are shorter, and with \u201cInline explanations” off there is one line per finding.",
         "in": "1.0.0"
       },
       {
