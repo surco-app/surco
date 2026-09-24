@@ -1088,6 +1088,7 @@
     "shown": "Mostrados",
     "hidden": "Ocultos",
     "hide": "Ocultar",
+    "separator": "Separador",
     "separatorCustom": "Otro",
     "separatorLabel": "Separador de {{name}}",
     "separatorCustomLabel": "Separador propio de {{name}}",

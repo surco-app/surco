@@ -148,17 +148,11 @@ export function FieldsEditor({
     const separator = separators[key]
     const option = otherOpen[key] ? 'custom' : separatorOption(separator)
     return (
-      <span data-testid={`field-separator-${key}`} className="ml-auto flex items-center gap-1.5">
-        {option === 'custom' && (
-          <input
-            data-testid={`field-separator-${key}-input`}
-            value={separatorOption(separator) === 'custom' ? separator : ''}
-            maxLength={3}
-            onChange={(e) => onChangeSeparator(key, e.target.value)}
-            aria-label={tr('settings.separatorCustomLabel', { name: labelOf(key) })}
-            className="w-12 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-1.5 py-0.5 text-center font-mono text-sm text-fg"
-          />
-        )}
+      <span
+        data-testid={`field-separator-${key}`}
+        className="col-span-full flex items-center gap-2 pt-1.5 pl-[22px] text-xs text-fg-dim"
+      >
+        {tr('settings.separator')}
         <SegmentedControl
           options={SEPARATOR_OPTIONS}
           value={option}
@@ -170,6 +164,16 @@ export function FieldsEditor({
           labelFor={(o) => (o === 'custom' ? tr('settings.separatorCustom') : SEPARATORS[o].trim())}
           label={tr('settings.separatorLabel', { name: labelOf(key) })}
         />
+        {option === 'custom' && (
+          <input
+            data-testid={`field-separator-${key}-input`}
+            value={separatorOption(separator) === 'custom' ? separator : ''}
+            maxLength={3}
+            onChange={(e) => onChangeSeparator(key, e.target.value)}
+            aria-label={tr('settings.separatorCustomLabel', { name: labelOf(key) })}
+            className="w-12 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-1.5 py-1.5 text-center font-mono text-sm text-fg"
+          />
+        )}
       </span>
     )
   }
@@ -347,7 +351,6 @@ export function FieldsEditor({
                   aria-hidden="true"
                 />
                 {nameCell(key)}
-                {separatorPicker(key)}
               </span>
               {autoToggle(key)}
               <button
@@ -398,6 +401,7 @@ export function FieldsEditor({
               >
                 {tr('settings.hide')}
               </button>
+              {separatorPicker(key)}
             </div>
           ))}
         </div>
