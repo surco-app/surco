@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
-import { copyFile, mkdir, rename, stat, unlink } from 'node:fs/promises'
+import { copyFile, mkdir, rename, stat, statfs, unlink } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
-import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../shared/trash'
+import { TRASH_MAX_BYTES, TRASH_MIN_FREE_BYTES, TRASH_RETENTION_DAYS } from '../shared/trash'
 import type { TrashEntry, TrashReason } from '../shared/types'
 
 // Surco's own trash: the originals a conversion replaced, kept for a while so a bad
@@ -58,9 +58,16 @@ async function move(from: string, to: string): Promise<void> {
 // next restart — indistinguishable, to the user, from a setting that does not work.
 export type TrashLimits = { retentionDays?: number; maxBytes?: number }
 
+async function diskFree(dir: string): Promise<number> {
+  await mkdir(dir, { recursive: true })
+  const fs = await statfs(dir)
+  return fs.bavail * fs.bsize
+}
+
 export function createSurcoTrash(
   dir: string,
   opts: TrashLimits | (() => TrashLimits) = {},
+  freeBytes: () => Promise<number> = () => diskFree(dir),
 ): SurcoTrash {
   const limits = (): { retentionMs: number; maxBytes: number } => {
     const o = typeof opts === 'function' ? opts() : opts
@@ -149,10 +156,15 @@ export function createSurcoTrash(
 
   // The room is made before the copy, not swept after it: the copy just taken is what a
   // failed rename restores from, and a sweep behind it could discard exactly that one.
+  // The disk bounds it as well as the cap. A file that fits in neither even with the
+  // trash emptied gets no copy, and nothing is dropped to make room it would not use.
   const stash: SurcoTrash['stash'] = async (path, reason, outputPath, trashedAt) => {
     const info = await stat(path).catch(() => null)
     if (!info) return null
-    await prune(Date.now(), limits().maxBytes - info.size)
+    const held = read().reduce((sum, entry) => sum + entry.bytes, 0)
+    const budget = Math.min(limits().maxBytes, held + (await freeBytes()) - TRASH_MIN_FREE_BYTES)
+    if (info.size > budget) return null
+    await prune(Date.now(), budget - info.size)
     return keep(path, reason, outputPath, trashedAt)
   }
 

@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSy
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { TRASH_MIN_FREE_BYTES } from '../shared/trash'
 import { createSurcoTrash, type SurcoTrash } from './surcoTrash'
 
 const DAY = 24 * 60 * 60 * 1000
@@ -181,6 +182,36 @@ describe('the manifest', () => {
     const t = createSurcoTrash(join(root, 'trash'))
     expect(await t.list()).toEqual([])
     expect(statSync(join(root, 'trash')).isDirectory()).toBe(true)
+  })
+})
+
+// The cap is the user's number and knows nothing of the disk: 10 GB of copies on a disk
+// with 3 GB left fills it, and a full system disk breaks far more than Surco. The copies
+// are a net, so they give way first — down to no copy at all.
+describe('the free space on the disk', () => {
+  it('drops old copies so the disk keeps its last few gigabytes free', async () => {
+    let free = TRASH_MIN_FREE_BYTES + 1000
+    const tight = createSurcoTrash(
+      join(root, 'tight'),
+      { retentionDays: 30, maxBytes: 1000 },
+      async () => free,
+    )
+    const first = await tight.stash(song('1.wav', 300), 'replaced')
+    free = TRASH_MIN_FREE_BYTES + 100
+    const second = await tight.stash(song('2.wav', 300), 'replaced')
+    expect((await tight.list()).map((e) => e.id)).toEqual([second?.id])
+    expect(existsSync(first?.storedPath as string)).toBe(false)
+  })
+
+  it('keeps no copy at all when even an empty trash would not fit it', async () => {
+    const full = createSurcoTrash(
+      join(root, 'full'),
+      { retentionDays: 30, maxBytes: 1000 },
+      async () => TRASH_MIN_FREE_BYTES + 500,
+    )
+    const original = song('Big.wav', 600)
+    expect(await full.stash(original, 'replaced')).toBeNull()
+    expect(existsSync(original)).toBe(true)
   })
 })
 
