@@ -165,13 +165,38 @@ export function filterWithSticky(
 // name (both available before tags are read), plus the core artist/title/album tags, so
 // typing a name narrows a big crate. Case-insensitive substring; a blank query keeps all.
 export function matchesSearch(track: TrackItem, query: string): boolean {
+  return searchMatcher(query)(track)
+}
+
+// Each track's folded search fields, kept for as long as the track object is: the list's
+// views keep their identity while a track is unchanged, so a keystroke folds the query and
+// nothing else.
+const foldedFields = new WeakMap<TrackItem, string[]>()
+
+function searchFields(track: TrackItem): string[] {
+  let fields = foldedFields.get(track)
+  if (!fields) {
+    fields = [
+      track.listLabel,
+      track.fileName,
+      track.meta?.title,
+      track.meta?.artist,
+      track.meta?.album,
+    ]
+      .filter((field): field is string => Boolean(field))
+      .map(foldText)
+    foldedFields.set(track, fields)
+  }
+  return fields
+}
+
+// The search as a filter predicate, with the query folded once for the whole list.
+export function searchMatcher(query: string): (track: TrackItem) => boolean {
   // Fold both sides so an accent-free query ("cancion") finds an accented title
   // ("canción") — the same canonical key the Discogs scorer compares on.
   const q = foldText(query)
-  if (!q) return true
-  return [track.listLabel, track.fileName, track.meta?.title, track.meta?.artist, track.meta?.album]
-    .filter((field): field is string => Boolean(field))
-    .some((field) => foldText(field).includes(q))
+  if (!q) return () => true
+  return (track) => searchFields(track).some((field) => field.includes(q))
 }
 
 // The list sort modes: the drop order ('import'), or by name, artist, length or source
