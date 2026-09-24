@@ -65,7 +65,7 @@ const DEFER_PAINT_MIN_ROWS = 150
 // thin outline it still carries its colour but sits back a weight, keeping the two axes —
 // conversion (this corner) and quality (the left stripe) — from competing.
 const badgeBase =
-  'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 bg-[var(--color-panel)] ring-2 ring-[var(--color-panel)]'
+  'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 bg-[var(--color-ink)] ring-2 ring-[var(--color-ink)]'
 
 // Amber is kept for what needs the user (here, changes not yet applied); a running
 // conversion needs nothing from them, so it pulses in the accent instead.
@@ -99,7 +99,7 @@ function StatusBadge({
   // keeps contrast on the accent in both the light and dark themes.
   if (track.status === 'done')
     return (
-      <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--color-accent)] ring-2 ring-[var(--color-panel)]">
+      <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--color-accent)] ring-2 ring-[var(--color-ink)]">
         <Check aria-hidden className="h-2.5 w-2.5 text-[var(--color-ink)]" strokeWidth={3} />
       </span>
     )
@@ -113,7 +113,7 @@ function StatusBadge({
     <span
       data-testid="track-status-badge"
       data-tone="danger"
-      className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--color-panel)] ring-2 ring-[var(--color-panel)]"
+      className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--color-ink)] ring-2 ring-[var(--color-ink)]"
     >
       <CircleAlert
         data-testid="track-status-error-glyph"
