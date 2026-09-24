@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { TrackMetadata } from '../../../shared/types'
 import { HEAVY_PROBE_GC_MS } from '../lib/analysisQueries'
+import * as appleMusicLibrary from '../lib/appleMusicLibrary'
 import * as duplicates from '../lib/duplicates'
 import { createQueryClient } from '../lib/queryClient'
 import type { TrackItem } from '../types'
@@ -373,6 +374,42 @@ describe('useTracksView', () => {
     })
 
     expect(getAllSpy).not.toHaveBeenCalled()
+  })
+
+  // Every keystroke in the editor and every progress tick mints a new tracks array over the
+  // same files. The snapshot only depends on which file sits at which position, so rebuilding
+  // it (a cache lookup per track per family) on those ticks is O(N) spent on nothing.
+  it('keeps the snapshot when an edit changes a track but not the set of files', () => {
+    const client = new QueryClient()
+    const a = track('a')
+    const b = track('b')
+    const { rerender } = setup([a, b], client)
+    const buildSpy = vi.spyOn(snapshot, 'buildCacheSnapshot')
+
+    rerender({ tracks: [{ ...a, meta: { ...a.meta, title: 'Edited' } }, b] })
+
+    expect(buildSpy).not.toHaveBeenCalled()
+  })
+
+  // The "already in your library" match folds artist and title for every track it checks, so
+  // a tick that changed one row must not re-match the other N-1: their cached views stand.
+  it('matches only the changed track against the library on a re-render', async () => {
+    const client = new QueryClient()
+    client.setQueryData(
+      ['library-membership', 'engineDj'],
+      [{ title: 'Strobe', artist: 'deadmau5', durationSec: 600, persistentId: 'P1' }],
+    )
+    const a = track('a', { title: 'Strobe', artist: 'deadmau5' })
+    const b = track('b', { title: 'Ghosts', artist: 'deadmau5' })
+    const { result, rerender } = setup([a, b], client, 'engineDj')
+    await vi.waitFor(() => expect(result.current.libraryIndex).not.toBeNull())
+    expect(result.current.tracksView[0].inLibrary).toBe(true)
+    const matchSpy = vi.spyOn(appleMusicLibrary, 'isInLibrary')
+
+    rerender({ tracks: [a, { ...b, meta: { ...b.meta, comment: 'edited' } }] })
+
+    expect(matchSpy).toHaveBeenCalledTimes(1)
+    expect(result.current.tracksView[0].inLibrary).toBe(true)
   })
 
   // The counterpart: a real change to the track set (an import, a removal, a reorder) does
