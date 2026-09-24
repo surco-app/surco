@@ -24,7 +24,7 @@ function status(showDone: boolean): SelectionStatus {
   } as SelectionStatus
 }
 
-function footer(showDone: boolean): React.JSX.Element {
+function footer(showDone: boolean, incompleteReason?: string): React.JSX.Element {
   return (
     <ConvertFooter
       item={{ id: 't1', status: 'idle', inputPath: '/a.wav', meta: {} } as TrackItem}
@@ -33,7 +33,8 @@ function footer(showDone: boolean): React.JSX.Element {
       status={status(showDone)}
       stale={false}
       done={showDone}
-      incomplete={false}
+      incomplete={incompleteReason !== undefined}
+      incompleteReason={incompleteReason}
       willEditInPlace={false}
       tagsOnly={false}
       addToAppleMusic={false}
@@ -151,5 +152,22 @@ describe('ConvertFooter buttons stay on one line', () => {
   it('truncates the export label rather than widening the row', () => {
     render(footer(true))
     expect(screen.getByTestId('export-collection').className).toContain('truncate')
+  })
+})
+
+describe('ConvertFooter blocked by missing fields', () => {
+  // A required field left empty dims the main button, and dimmed with no word beside it the
+  // button read as broken: the reason lived only in a hover tooltip. It is said in the footer,
+  // in the attention colour the field's own dot uses.
+  it('says under what is missing right where the dimmed button is', () => {
+    render(footer(false, 'Missing required fields: Grouping'))
+    expect(screen.getByTestId('footer-incomplete')).toHaveTextContent(
+      'Missing required fields: Grouping',
+    )
+  })
+
+  it('says nothing when the track is ready to convert', () => {
+    render(footer(false))
+    expect(screen.queryByTestId('footer-incomplete')).not.toBeInTheDocument()
   })
 })

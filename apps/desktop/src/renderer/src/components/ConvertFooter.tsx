@@ -193,6 +193,18 @@ export function ConvertFooter({
             <Tooltip label={tr('normalize.title')} />
           </button>
         )}
+        {/* The dimmed button says nothing on its own, so what blocks it is said here, in the
+            attention colour of the field's own dot. aria-hidden because the button already
+            carries the same sentence as its description; this is its visible twin. */}
+        {!showDone && incomplete && incompleteReason && (
+          <p
+            data-testid="footer-incomplete"
+            aria-hidden="true"
+            className="text-center text-xs text-warn"
+          >
+            {incompleteReason}
+          </p>
+        )}
         {showDone ? (
           // Two lines, ordered by what matters after an export. The first is
           // about the file just written: the confirmation plus its low-stakes
