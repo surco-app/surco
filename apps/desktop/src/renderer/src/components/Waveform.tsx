@@ -55,17 +55,21 @@ export function Waveform({
   useEffect(() => {
     if (!wave) return
     const draw = (): void => {
-      const [r, g, b] = parseColor(
-        getComputedStyle(document.documentElement).getPropertyValue('--color-accent'),
-      )
-      // Both layers get the identical envelope: the played/pending contrast comes
-      // from CSS (opacity + clip-path), never from a second draw pass.
-      for (const ref of [canvasRef, playedCanvasRef]) {
+      const tokens = getComputedStyle(document.documentElement)
+      const rgba = (token: string): string => {
+        const [r, g, b] = parseColor(tokens.getPropertyValue(token))
+        return `rgba(${r}, ${g}, ${b}, 0.8)`
+      }
+      // Both layers get the identical envelope; only the ink differs. The pending remainder
+      // is the neutral faint ink and the played part the accent, so where the playhead has
+      // been reads at a glance instead of as a fainter blue beside a stronger one.
+      const layers = [
+        [canvasRef, '--color-fg-faint'],
+        [playedCanvasRef, '--color-accent'],
+      ] as const
+      for (const [ref, token] of layers) {
         if (ref.current) {
-          drawWaveform(ref.current, wave.peaks, {
-            color: `rgba(${r}, ${g}, ${b}, 0.8)`,
-            rms: wave.rms,
-          })
+          drawWaveform(ref.current, wave.peaks, { color: rgba(token), rms: wave.rms })
         }
       }
     }
@@ -118,15 +122,16 @@ export function Waveform({
       onPointerLeave={() => setHoverRatio(null)}
     >
       {/* The wave is two stacked copies of the same raster, each drawn once: the dimmed
-          base is the pending remainder (the ground colour rides the wrapper so the fade
-          doesn't wash it), and the full-strength copy above clips to the played fraction.
+          base is the pending remainder in neutral ink (the ground colour rides the wrapper so
+          the fade doesn't wash it), and the full-strength copy above clips to the played fraction.
           Progress then reads peripherally — SoundCloud/Serato's played/pending contrast —
           and each ~4 Hz tick just moves an inline clip-path, never a canvas repaint. */}
       <canvas
         ref={canvasRef}
+        data-testid="waveform-pending"
         width={CANVAS_W}
         height={CANVAS_H}
-        className="block h-12 w-full opacity-35"
+        className="block h-12 w-full opacity-60"
       />
       <canvas
         ref={playedCanvasRef}
