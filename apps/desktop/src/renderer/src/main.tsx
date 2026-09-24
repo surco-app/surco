@@ -5,10 +5,12 @@ import App from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { installGlobalErrorLogging } from './lib/logGlobalErrors'
 import { createQueryClient } from './lib/queryClient'
+import { installScrollingMark } from './lib/scrollingMark'
 import './i18n'
 import './index.css'
 
 installGlobalErrorLogging(window, window.api.logError)
+installScrollingMark(document)
 
 const rootElement = document.getElementById('root')
 if (!rootElement) throw new Error('Root element not found')
