@@ -49,7 +49,9 @@ export interface FlushRekordboxDeps {
   // Closes this run's begin/end pair and returns what it accumulated — empty when this
   // end was nested inside a still-open outer batch, which flushes later.
   endBatch: () => RekordboxRepoint[]
-  repointTrack: (collectionPath: string, repoint: RekordboxRepoint) => Promise<RepointResult>
+  // The whole run in one pass over the collection, with an outcome per track in the order
+  // given (see repointTracks).
+  repointTracks: (collectionPath: string, repoints: RekordboxRepoint[]) => Promise<RepointResult[]>
   // Puts the repoint in the Activity panel as its own step. Reported 15/09: the panel
   // showed the conversion and the Apple Music add and said nothing about rekordbox, so a
   // collection that was never updated looked exactly like one that was.
@@ -120,8 +122,9 @@ async function runRepoints(
   let written = 0
   const skipped: SkippedRepoint[] = []
 
-  for (const repoint of repoints) {
-    const result = await deps.repointTrack(deps.collectionPath, repoint)
+  const results = await deps.repointTracks(deps.collectionPath, repoints)
+  for (const [i, repoint] of repoints.entries()) {
+    const result = results[i]
     if (result.written) {
       written += 1
       continue

@@ -6,23 +6,35 @@ import type { RepointResult } from './rekordboxLibrary'
 const ONE: RekordboxRepoint = { from: '/m/one.mp3', to: '/m/one.wav' }
 const TWO: RekordboxRepoint = { from: '/m/two.mp3', to: '/m/two.wav' }
 
+// The collection answers per track; the flush hands it the whole run at once.
+function perTrack(
+  answer: (collectionPath: string, repoint: RekordboxRepoint) => Promise<RepointResult>,
+) {
+  return vi.fn((collectionPath: string, repoints: RekordboxRepoint[]) =>
+    Promise.all(repoints.map((r) => answer(collectionPath, r))),
+  )
+}
+
 function deps(over: Partial<Parameters<typeof flushRekordboxSync>[0]> = {}) {
   return {
     track: vi.fn((_kind, _labelKey, task) => task()),
     collectionPath: '/coll/master.db',
     endBatch: () => [ONE],
-    repointTrack: vi.fn(async (): Promise<RepointResult> => ({ written: true, id: '1' })),
+    repointTracks: perTrack(async (): Promise<RepointResult> => ({ written: true, id: '1' })),
     ...over,
   }
 }
 
 describe('flushRekordboxSync', () => {
-  it('repoints every track the batch recorded', async () => {
+  // One call for the whole run: the collection is read, backed up and written once, not
+  // once per track (see repointTracks).
+  it('repoints every track the batch recorded, in one pass over the collection', async () => {
     const d = deps({ endBatch: () => [ONE, TWO] })
 
     const result = await flushRekordboxSync(d)
 
-    expect(d.repointTrack).toHaveBeenCalledTimes(2)
+    expect(d.repointTracks).toHaveBeenCalledOnce()
+    expect(d.repointTracks).toHaveBeenCalledWith('/coll/master.db', [ONE, TWO])
     expect(result).toEqual({ written: 2, skipped: [] })
   })
 
@@ -33,7 +45,7 @@ describe('flushRekordboxSync', () => {
 
     const result = await flushRekordboxSync(d)
 
-    expect(d.repointTrack).not.toHaveBeenCalled()
+    expect(d.repointTracks).not.toHaveBeenCalled()
     expect(result).toEqual({ written: 0, skipped: [] })
   })
 
@@ -44,7 +56,7 @@ describe('flushRekordboxSync', () => {
 
     const result = await flushRekordboxSync(d)
 
-    expect(d.repointTrack).not.toHaveBeenCalled()
+    expect(d.repointTracks).not.toHaveBeenCalled()
     expect(result).toEqual({ written: 0, skipped: [] })
   })
 
@@ -53,7 +65,7 @@ describe('flushRekordboxSync', () => {
   it('does not report a track the collection never had', async () => {
     const d = deps({
       endBatch: () => [ONE, TWO],
-      repointTrack: vi.fn(
+      repointTracks: perTrack(
         async (_p: string, o: { from: string }): Promise<RepointResult> =>
           o.from === ONE.from ? { written: true, id: '1' } : { written: false, reason: 'no-match' },
       ),
@@ -69,7 +81,7 @@ describe('flushRekordboxSync', () => {
   it('reports the tracks it refused to repoint, with the reason', async () => {
     const d = deps({
       endBatch: () => [ONE, TWO],
-      repointTrack: vi.fn(
+      repointTracks: perTrack(
         async (_p: string, o: { from: string }): Promise<RepointResult> =>
           o.from === ONE.from
             ? { written: false, reason: 'ambiguous', ids: ['a', 'b'] }
@@ -91,7 +103,7 @@ describe('flushRekordboxSync', () => {
   it('stops the whole flush when rekordbox is open', async () => {
     const d = deps({
       endBatch: () => [ONE, TWO],
-      repointTrack: vi.fn(
+      repointTracks: perTrack(
         async (): Promise<RepointResult> => ({
           written: false,
           reason: 'rekordbox-running',
@@ -101,7 +113,7 @@ describe('flushRekordboxSync', () => {
 
     const result = await flushRekordboxSync(d)
 
-    expect(d.repointTrack).toHaveBeenCalledTimes(1)
+    expect(d.repointTracks).toHaveBeenCalledTimes(1)
     expect(result).toEqual({ written: 0, blocked: 'rekordbox-running', skipped: [] })
   })
 
@@ -110,7 +122,7 @@ describe('flushRekordboxSync', () => {
   it('stops the whole flush when the collection is read-only', async () => {
     const d = deps({
       endBatch: () => [ONE, TWO],
-      repointTrack: vi.fn(
+      repointTracks: perTrack(
         async (): Promise<RepointResult> => ({
           written: false,
           reason: 'read-only',
@@ -120,7 +132,7 @@ describe('flushRekordboxSync', () => {
 
     const result = await flushRekordboxSync(d)
 
-    expect(d.repointTrack).toHaveBeenCalledTimes(1)
+    expect(d.repointTracks).toHaveBeenCalledTimes(1)
     expect(result).toEqual({ written: 0, blocked: 'read-only', skipped: [] })
   })
 
@@ -129,7 +141,7 @@ describe('flushRekordboxSync', () => {
   it('stops the whole flush when the collection cannot be written', async () => {
     const d = deps({
       endBatch: () => [ONE, TWO],
-      repointTrack: vi.fn(
+      repointTracks: perTrack(
         async (): Promise<RepointResult> => ({
           written: false,
           reason: 'backup-failed',
@@ -139,7 +151,7 @@ describe('flushRekordboxSync', () => {
 
     const result = await flushRekordboxSync(d)
 
-    expect(d.repointTrack).toHaveBeenCalledTimes(1)
+    expect(d.repointTracks).toHaveBeenCalledTimes(1)
     expect(result).toEqual({ written: 0, blocked: 'backup-failed', skipped: [] })
   })
 })
@@ -154,7 +166,7 @@ describe('flushRekordboxSync telling the user it was blocked', () => {
   it('warns when rekordbox being open stopped the whole flush', async () => {
     const showBlockedDialog = vi.fn()
     const d = deps({
-      repointTrack: vi.fn(
+      repointTracks: perTrack(
         async (): Promise<RepointResult> => ({ written: false, reason: 'rekordbox-running' }),
       ),
       showBlockedDialog,
@@ -171,7 +183,7 @@ describe('flushRekordboxSync telling the user it was blocked', () => {
   it('stays silent for a blocked reason the user cannot act on', async () => {
     const showBlockedDialog = vi.fn()
     const d = deps({
-      repointTrack: vi.fn(
+      repointTracks: perTrack(
         async (): Promise<RepointResult> => ({ written: false, reason: 'read-only' }),
       ),
       showBlockedDialog,
@@ -205,7 +217,7 @@ describe('flushRekordboxSync closing rekordbox first', () => {
     await flushRekordboxSync(d)
 
     expect(ensureClosed).toHaveBeenCalledOnce()
-    expect(d.repointTrack).toHaveBeenCalledTimes(2)
+    expect(d.repointTracks).toHaveBeenCalledWith('/coll/master.db', [ONE, TWO])
   })
 
   // Declining must leave the collection alone: rekordbox holds master.db open, and
@@ -215,7 +227,7 @@ describe('flushRekordboxSync closing rekordbox first', () => {
 
     const result = await flushRekordboxSync(d)
 
-    expect(d.repointTrack).not.toHaveBeenCalled()
+    expect(d.repointTracks).not.toHaveBeenCalled()
     expect(result).toEqual({ written: 0, blocked: 'rekordbox-running', skipped: [] })
   })
 
@@ -300,7 +312,7 @@ describe('flushRekordboxSync reporting itself in Activity', () => {
       return task()
     })
     const d = deps({
-      repointTrack: vi.fn(
+      repointTracks: perTrack(
         async (): Promise<RepointResult> => ({ written: false, reason: 'no-match' }),
       ),
       track,
@@ -332,7 +344,7 @@ describe('flushRekordboxSync reporting what it could not do', () => {
     const reportIssue = vi.fn()
     await flushRekordboxSync(
       deps({
-        repointTrack: vi.fn(
+        repointTracks: perTrack(
           async (): Promise<RepointResult> => ({ written: false, reason: 'read-only' }),
         ),
         reportIssue,
@@ -347,7 +359,7 @@ describe('flushRekordboxSync reporting what it could not do', () => {
     await flushRekordboxSync(
       deps({
         endBatch: () => [ONE, TWO],
-        repointTrack: vi.fn(
+        repointTracks: perTrack(
           async (_p: string, o: { from: string }): Promise<RepointResult> =>
             o.from === ONE.from
               ? { written: false, reason: 'ambiguous', ids: ['1', '2'] }
@@ -364,7 +376,7 @@ describe('flushRekordboxSync reporting what it could not do', () => {
     const reportIssue = vi.fn()
     await flushRekordboxSync(
       deps({
-        repointTrack: vi.fn(
+        repointTracks: perTrack(
           async (): Promise<RepointResult> => ({ written: false, reason: 'rekordbox-running' }),
         ),
         reportIssue,
@@ -379,7 +391,7 @@ describe('flushRekordboxSync reporting what it could not do', () => {
     await flushRekordboxSync(
       deps({
         endBatch: () => [ONE, TWO],
-        repointTrack: vi.fn(
+        repointTracks: perTrack(
           async (_p: string, o: { from: string }): Promise<RepointResult> =>
             o.from === ONE.from
               ? { written: true, id: '1' }
