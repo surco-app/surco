@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 23 de septiembre de 2026** (v1.0.0). Levantado por primera vez el
+**Última revisión: 24 de septiembre de 2026** (v1.1.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -267,7 +267,7 @@ cuerpo (`PROBE_SECONDS`, `fftBands.ts:12-39`). Eran de 0,75 s, que bastan para u
 muro de códec porque está en todas las tramas, pero dos lecturas que van sobre las
 mismas bandas no lo están: el contenido por encima de 22,05 kHz que decide el
 hi-res llega a ráfagas (en un máster de 48 kHz real la banda de 23,5 kHz oscilaba
-60 dB a lo largo de la pista) y las subidas de 1 dB que cuenta la sierra son del
+60 dB a lo largo de la pista) y las subidas de pocos dB que cuenta la sierra son del
 tamaño del propio ruido de muestreo. Dónde cayera la rejilla decidía el veredicto:
 deslizarla menos de un segundo movía la lectura del muro de 3,7 a 17,5 dB a través
 de su umbral de 12, y un rip de CD alternaba limpio y «reprocesado» cada 0,2 s de
@@ -355,7 +355,11 @@ códec marca `processed`.
 
 **La sierra exige tres dientes seguidos** por encima de 16,5 kHz, sumando 3 dB o
 más, con cada banda a no más de 55 dB bajo el plateau de 9–11 kHz
-(`ROUGHNESS_FLOOR_BELOW_PLATEAU_DB`, `cutoff.ts:146`, `:256`). El veredicto no
+(`ROUGHNESS_FLOOR_BELOW_PLATEAU_DB`, `cutoff.ts:179`). Un diente cuenta desde 2,25 dB
+(`ROUGHNESS_RISE_MIN_DB`, `cutoff.ts:130-139`): con 1 dB, el rizado de un rip
+lossless con los agudos planos de 16 a 20,5 kHz formaba dientes de 1,6 y 2,9 dB y
+el veredicto cambiaba al recortar la cola; en una biblioteca lossless de 6046
+ficheros, ese umbral quita ocho de las doce sierras y no acusa ninguno nuevo. El veredicto no
 puede depender del nivel al que se reproduce el espectro: un remaster de 2010
 llevaba los mismos dos armónicos que su reedición de 2008, y solo el remaster
 salía acusado porque estar 8 dB más alto subía ambos bultos por encima del suelo
@@ -633,8 +637,8 @@ campos propios del usuario (abajo).
 
 **El grouping y el género se editan por etiqueta y por pista cuando hay varias
 seleccionadas.** En el editor de varias pistas el resto de campos escriben un valor
-sobre toda la selección, pero grouping y género son listas de etiquetas separadas
-por comas y estamparlas borraba las de cada pista. Cada etiqueta (las guardadas en
+sobre toda la selección, pero grouping y género son listas de etiquetas y
+estamparlas borraba las de cada pista. Cada etiqueta (las guardadas en
 Ajustes más las que ya lleva alguna pista) es una pastilla con tres estados, en
 todas / en algunas / en ninguna; un clic la añade a las que no la tienen o la quita
 de todas sin tocar las demás (`lib/bulkEdit.ts:42-46`, `TagListBulkField.tsx`). Los
@@ -643,6 +647,12 @@ parten (`bulkEdit.ts:46`). Al aplicar Discogs, Género sigue recibiendo solo el
 principal. Un plegado «Por
 pista · N» lista cada pista con sus propias pastillas, y las activas se ordenan
 delante para que el recorte «+N» no las esconda.
+
+**Cada lista elige su separador.** Género y Grouping se unen por separado con coma
+(por defecto), punto y coma, barra o un separador propio de hasta tres caracteres,
+elegido en Ajustes → Campos junto al nombre del campo (`FieldsEditor.tsx`,
+`settings.ts:83-84`). Las etiquetas se leen partiendo solo por el separador elegido
+(`lib/csv.ts:13-18`, `Editor.tsx:751-754`).
 
 **Los campos de coleccionista llegan a todos los contenedores.** Ocho pares que
 ninguna familia de etiquetas tiene en una caja propia —número de catálogo, ID de
