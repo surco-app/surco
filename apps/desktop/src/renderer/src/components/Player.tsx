@@ -223,7 +223,10 @@ export function Player({
   return (
     <div
       data-testid="player"
-      className="group/player relative shrink-0 animate-player-in overflow-hidden border-t border-[var(--color-line-strong)] bg-[var(--color-panel-2)] shadow-[0_-1px_0_var(--color-line),0_-8px_20px_-12px_rgba(0,0,0,0.35)]"
+      // The sidebar's own ground with a hairline over it, not a lighter card with a drop
+      // shadow: the player is the foot of the library column, and the lifted slab was the
+      // heaviest thing in it. The wave is the one part that needs to stand out, and does.
+      className="group/player relative shrink-0 animate-player-in overflow-hidden border-t border-[var(--color-line)] bg-[var(--color-ink)]"
     >
       {/* Dismissal belongs to the card, so it sits in the card's own top-right corner the
           way any closable panel does — not in the transport, where an exit sat one stray
