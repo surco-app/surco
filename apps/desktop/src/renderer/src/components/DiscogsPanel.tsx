@@ -248,6 +248,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
               {showProviderFilter && (
                 <Select
                   testid="provider-filter"
+                  bare
                   label={tr('editor.providerFilter')}
                   value={providerFilter}
                   onChange={(v) => setProviderFilter(v as typeof providerFilter)}

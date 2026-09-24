@@ -57,7 +57,9 @@ export function SearchInput({
         onKeyDown={onKeyDown}
         aria-label={ariaLabel}
         placeholder={placeholder}
-        className="h-8 w-full rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pl-7 pr-7 text-xs outline-none focus:border-[var(--color-accent)]"
+        // A soft fill and no border, like a macOS search field: the header is chrome around the
+        // list, and a bordered box read as one more form control to fill in.
+        className="h-8 w-full rounded-lg bg-[var(--color-panel-2)]/60 pl-7 pr-7 text-xs outline-none placeholder:text-fg-faint"
       />
       {value && (
         <button
