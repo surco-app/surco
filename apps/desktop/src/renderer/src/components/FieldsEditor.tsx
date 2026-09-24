@@ -161,29 +161,27 @@ export function FieldsEditor({
             className="h-6 w-9 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-1 text-center font-mono text-xs text-fg"
           />
         )}
-        <span className="relative">
-          <Select
-            value={option}
-            options={SEPARATOR_OPTIONS.map((o) =>
-              o === 'custom'
-                ? { value: o, label: tr('settings.separatorCustom'), short: '' }
-                : {
-                    value: o,
-                    label: SEPARATORS[o].trim(),
-                    hint: SEPARATOR_EXAMPLE.join(SEPARATORS[o]),
-                  },
-            )}
-            onChange={(next) => {
-              const picked = next as SeparatorOption
-              setOtherOpen((open) => ({ ...open, [key]: picked === 'custom' }))
-              if (picked !== 'custom') onChangeSeparator(key, SEPARATORS[picked])
-            }}
-            label={tr('settings.separatorLabel', { name: labelOf(key) })}
-            testid={`field-separator-${key}`}
-            compact
-          />
-          <Tooltip label={tr('settings.separatorLabel', { name: labelOf(key) })} />
-        </span>
+        <Select
+          value={option}
+          options={SEPARATOR_OPTIONS.map((o) =>
+            o === 'custom'
+              ? { value: o, label: tr('settings.separatorCustom'), short: '' }
+              : {
+                  value: o,
+                  label: SEPARATORS[o].trim(),
+                  hint: SEPARATOR_EXAMPLE.join(SEPARATORS[o]),
+                },
+          )}
+          onChange={(next) => {
+            const picked = next as SeparatorOption
+            setOtherOpen((open) => ({ ...open, [key]: picked === 'custom' }))
+            if (picked !== 'custom') onChangeSeparator(key, SEPARATORS[picked])
+          }}
+          label={tr('settings.separatorLabel', { name: labelOf(key) })}
+          testid={`field-separator-${key}`}
+          compact
+          heading
+        />
       </span>
     )
   }
