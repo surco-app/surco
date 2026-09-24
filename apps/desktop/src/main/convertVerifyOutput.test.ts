@@ -242,18 +242,16 @@ describe('assertDecodable', () => {
     )
     const declared = /Duration:\s*(\d+):(\d\d):(\d\d(?:\.\d+)?)/.exec(banner)
     expect(declared, 'no declared duration in the banner').not.toBeNull()
-    const header =
-      Number(declared?.[1]) * 3600 + Number(declared?.[2]) * 60 + Number(declared?.[3])
+    const header = Number(declared?.[1]) * 3600 + Number(declared?.[2]) * 60 + Number(declared?.[3])
     const delivered = Number(
       /time=(\d+):(\d\d):(\d\d(?:\.\d+)?)/
         .exec(banner)
         ?.slice(1)
         .reduce((acc, part, i) => acc + Number(part) * [3600, 60, 1][i], 0) ?? 0,
     )
-    expect(
-      delivered,
-      'the fixture no longer overshoots the 10% the check tolerates',
-    ).toBeLessThan(header * 0.9)
+    expect(delivered, 'the fixture no longer overshoots the 10% the check tolerates').toBeLessThan(
+      header * 0.9,
+    )
 
     await expect(assertDecodable(estimatedDuration)).resolves.toBeUndefined()
   })

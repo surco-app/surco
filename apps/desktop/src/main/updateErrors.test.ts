@@ -48,7 +48,9 @@ describe('classifyUpdateError', () => {
   // toast a red error at the user. It fixes itself minutes later: retry, don't shout.
   it('classifies a not-yet-uploaded channel file as transient', () => {
     const err = Object.assign(
-      new Error('Cannot find latest-mac.yml in the latest release artifacts (https://…): HttpError: 404'),
+      new Error(
+        'Cannot find latest-mac.yml in the latest release artifacts (https://…): HttpError: 404',
+      ),
       { code: 'ERR_UPDATER_CHANNEL_FILE_NOT_FOUND' },
     )
     expect(classifyUpdateError(err)).toEqual({ kind: 'transient', status: null })
