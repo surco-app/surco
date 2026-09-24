@@ -988,6 +988,20 @@ describe('TrackList swipe to remove', () => {
     expect(onRemove).toHaveBeenCalledWith('a')
   })
 
+  // Flush against the row, the button read as part of it (seen in the app 24/09); Mail keeps
+  // a gap between the slid row and its action, so the action is a thing of its own.
+  it('leaves a gap between the slid row and the Remove button', () => {
+    renderList([track({ id: 'a' })])
+    swipe(70)
+    const slid = Number.parseFloat(
+      screen.getByTestId('track-row').style.transform.replace(/[^\d.]/g, ''),
+    )
+    const width = Number.parseFloat(
+      screen.getByRole('button', { name: i18n.t('trackList.remove') }).style.width,
+    )
+    expect(slid - width).toBeGreaterThanOrEqual(6)
+  })
+
   it('removes the track outright on a full swipe', () => {
     const { onRemove } = renderList([track({ id: 'a' })])
     swipe(400)
@@ -1001,6 +1015,21 @@ describe('TrackList swipe to remove', () => {
     expect(screen.queryByRole('button', { name: i18n.t('trackList.remove') })).toBeNull()
     swipe(20)
     expect(screen.queryByRole('button', { name: i18n.t('trackList.remove') })).toBeNull()
+  })
+
+  // Following the fingers one to one, a full swipe slid the row off the list and the grey
+  // button filled the whole row (seen in the app 24/09). Past the action the row resists, so
+  // it only ever slides part of the way while the swipe still counts in full.
+  it('slides the row only part of the way on a full swipe and still removes it', () => {
+    const { onRemove } = renderList([track({ id: 'a' })])
+    const wrapper = screen.getByTestId('track-row').parentElement as Element
+    for (let i = 0; i < 8; i++) fireEvent.wheel(wrapper, { deltaX: 50 })
+    const slid = Number.parseFloat(
+      screen.getByTestId('track-row').style.transform.replace(/[^\d.]/g, ''),
+    )
+    expect(slid).toBeLessThan(180)
+    act(() => vi.advanceTimersByTime(500))
+    expect(onRemove).toHaveBeenCalledWith('a')
   })
 
   // A trackpad scroll is never perfectly vertical; the list must not start sliding rows

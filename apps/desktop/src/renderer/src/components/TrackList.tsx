@@ -71,10 +71,14 @@ const DEFER_PAINT_MIN_ROWS = 150
 // Two-finger swipe to remove, the way Mail deletes. A trackpad sends the swipe as wheel
 // events with deltaX and keeps sending momentum after the fingers lift, so the row settles
 // once the events stop: past half its width (never under two actions' width) it is removed,
-// past half the action it stays open on Remove, anything less springs back.
-const SWIPE_ACTION_PX = 84
+// past half the action it stays open on Remove, anything less springs back. Past the action
+// the row resists, sliding at a fraction of the fingers' pace, so a full swipe never throws
+// it off the list; the thresholds read the swipe itself, not how far the row moved.
+const SWIPE_GAP_PX = 6
+const SWIPE_ACTION_PX = 84 + SWIPE_GAP_PX
 const SWIPE_REMOVE_MIN_PX = SWIPE_ACTION_PX * 2
 const SWIPE_SETTLE_MS = 160
+const SWIPE_RESISTANCE = 0.35
 
 // A hollow ring, not a filled dot: the conversion state shares the amber/red palette with
 // the quality stripe/glyph on the same row, so a solid coin read as a second alarm. As a
@@ -350,13 +354,15 @@ const TrackRow = memo(function TrackRow({
   useEffect(() => () => clearTimeout(settleRef.current), [])
   const moveSwipe = (px: number): void => {
     swipeRef.current = px
-    setSwipe(px)
+    setSwipe(
+      px <= SWIPE_ACTION_PX ? px : SWIPE_ACTION_PX + (px - SWIPE_ACTION_PX) * SWIPE_RESISTANCE,
+    )
   }
   const onSwipeWheel = (e: React.WheelEvent): void => {
     if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
     const width = rowRef.current?.offsetWidth ?? 0
     const removeAt = Math.max(SWIPE_REMOVE_MIN_PX, width / 2)
-    moveSwipe(Math.min(Math.max(swipeRef.current + e.deltaX, 0), Math.max(width, removeAt * 2)))
+    moveSwipe(Math.min(Math.max(swipeRef.current + e.deltaX, 0), removeAt * 1.5))
     clearTimeout(settleRef.current)
     settleRef.current = setTimeout(() => {
       const reached = swipeRef.current
@@ -753,7 +759,7 @@ const TrackRow = memo(function TrackRow({
           type="button"
           tabIndex={-1}
           onClick={() => onRemove(t.id)}
-          style={{ width: swipe }}
+          style={{ width: Math.max(swipe - SWIPE_GAP_PX, 0) }}
           className="absolute inset-y-0 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-fg-dim)] text-[11px] font-semibold whitespace-nowrap text-[var(--color-ink)]"
         >
           <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
