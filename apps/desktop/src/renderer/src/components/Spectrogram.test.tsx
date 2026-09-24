@@ -174,6 +174,6 @@ describe('Spectrogram duotone filter identity', () => {
     const id = document.querySelector('filter')?.getAttribute('id') ?? ''
     expect(id).not.toBe('')
     expect(id).toMatch(/^[A-Za-z][\w-]*$/)
-    expect(screen.getByTestId('spectrogram')).toHaveStyle({ filter: `url(#${id})` })
+    expect(screen.getByTestId('spectrogram').style.filter.startsWith(`url(#${id})`)).toBe(true)
   })
 })

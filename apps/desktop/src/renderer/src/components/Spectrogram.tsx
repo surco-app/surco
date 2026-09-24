@@ -78,7 +78,10 @@ export function Spectrogram({
         // browser refetch the whole page.
         src={spectrum.image || undefined}
         alt={tr('editor.spectrumAlt')}
-        style={{ filter: `url(#${filterId})` }}
+        // The ramp's accent at full chroma made a hundred pixels of solid blue the loudest thing
+        // in the editor. Muting it after the ramp keeps every stop's lightness, which is what
+        // the eye reads the wall and the cutoff by, and lets the main action lead the screen.
+        style={{ filter: `url(#${filterId}) saturate(0.7)` }}
         className={`block w-full object-fill ${tall ? 'h-full' : 'h-80'}`}
       />
       {topHz > 0 &&
