@@ -110,7 +110,7 @@ export function Waveform({
   return (
     <div
       data-testid="waveform"
-      className="relative cursor-pointer bg-black/15"
+      className="relative cursor-pointer"
       onPointerDown={(e) => {
         e.currentTarget.setPointerCapture(e.pointerId)
         scrubFrom(e.clientX, e.currentTarget)
@@ -122,8 +122,8 @@ export function Waveform({
       onPointerLeave={() => setHoverRatio(null)}
     >
       {/* The wave is two stacked copies of the same raster, each drawn once: the dimmed
-          base is the pending remainder in neutral ink (the ground colour rides the wrapper so
-          the fade doesn't wash it), and the full-strength copy above clips to the played fraction.
+          base is the pending remainder in neutral ink, drawn straight on the player's ground,
+          and the full-strength copy above clips to the played fraction.
           Progress then reads peripherally — SoundCloud/Serato's played/pending contrast —
           and each ~4 Hz tick just moves an inline clip-path, never a canvas repaint. */}
       <canvas
