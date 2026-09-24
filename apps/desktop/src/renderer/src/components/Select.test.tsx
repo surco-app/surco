@@ -84,6 +84,26 @@ describe('Select', () => {
     expect(iconed.lastElementChild?.tagName.toLowerCase()).toBe('svg')
   })
 
+  // A bare ";" in a menu says little; the separator menu shows what each choice writes.
+  it('shows an option hint beside its label', () => {
+    render(
+      <Select
+        value="semicolon"
+        options={[
+          { value: 'comma', label: ',', hint: 'Pop, House' },
+          { value: 'semicolon', label: ';', hint: 'Pop; House' },
+        ]}
+        onChange={vi.fn()}
+        label="Genre separator"
+        testid="sep"
+      />,
+    )
+    fireEvent.click(screen.getByTestId('sep'))
+    expect(screen.getByTestId('sep-option-comma')).toHaveTextContent('Pop, House')
+    expect(screen.getByTestId('sep')).toHaveTextContent(';')
+    expect(screen.getByTestId('sep')).not.toHaveTextContent('Pop; House')
+  })
+
   it('reports the picked value and closes', () => {
     const onChange = renderSelect()
     fireEvent.click(screen.getByTestId('sort'))

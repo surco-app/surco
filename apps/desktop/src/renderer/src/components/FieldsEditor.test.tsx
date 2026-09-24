@@ -469,20 +469,32 @@ describe('FieldsEditor tag separators', () => {
     expect(screen.queryByTestId('field-separator-title')).not.toBeInTheDocument()
   })
 
-  it('marks the current separator and switches the field to another one', () => {
-    const { onChangeSeparator } = setup({ visibleFields: ['genre'], separators })
-    expect(screen.getByTestId('field-separator-genre-comma')).toHaveAttribute(
-      'aria-pressed',
-      'true',
+  // The row stays one line: the separator is a small menu beside the name, not a second
+  // line of buttons under it.
+  it('sits beside the field name on the row line', () => {
+    setup({ visibleFields: ['genre'], separators })
+    const row = screen.getByTestId('field-row-genre')
+    expect(within(row).getByText('Genre').parentElement).toContainElement(
+      screen.getByTestId('field-separator-genre'),
     )
-    fireEvent.click(screen.getByTestId('field-separator-genre-semicolon'))
+  })
+
+  it('names the current separator and switches the field to another one', () => {
+    const { onChangeSeparator } = setup({ visibleFields: ['genre'], separators })
+    expect(screen.getByTestId('field-separator-genre')).toHaveTextContent(',')
+    fireEvent.click(screen.getByTestId('field-separator-genre'))
+    expect(screen.getByTestId('field-separator-genre-option-semicolon')).toHaveTextContent(
+      'Pop; House',
+    )
+    fireEvent.click(screen.getByTestId('field-separator-genre-option-semicolon'))
     expect(onChangeSeparator).toHaveBeenCalledWith('genre', '; ')
   })
 
   it('takes a separator of the user own from Other', () => {
     const { onChangeSeparator } = setup({ visibleFields: ['grouping'], separators })
     expect(screen.queryByTestId('field-separator-grouping-input')).not.toBeInTheDocument()
-    fireEvent.click(screen.getByTestId('field-separator-grouping-custom'))
+    fireEvent.click(screen.getByTestId('field-separator-grouping'))
+    fireEvent.click(screen.getByTestId('field-separator-grouping-option-custom'))
     fireEvent.change(screen.getByTestId('field-separator-grouping-input'), {
       target: { value: ' | ' },
     })
@@ -491,10 +503,7 @@ describe('FieldsEditor tag separators', () => {
 
   it('shows a separator of the user own under Other with its text', () => {
     setup({ visibleFields: ['grouping'], separators: { genre: ', ', grouping: ' | ' } })
-    expect(screen.getByTestId('field-separator-grouping-custom')).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
+    expect(screen.getByTestId('field-separator-grouping')).toHaveTextContent('Other')
     expect(screen.getByTestId('field-separator-grouping-input')).toHaveValue(' | ')
   })
 

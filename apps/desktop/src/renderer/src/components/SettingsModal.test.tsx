@@ -684,7 +684,8 @@ describe('SettingsModal shortcuts', () => {
         initialTab="fields"
       />,
     )
-    fireEvent.click(screen.getByTestId('field-separator-genre-semicolon'))
+    fireEvent.click(screen.getByTestId('field-separator-genre'))
+    fireEvent.click(screen.getByTestId('field-separator-genre-option-semicolon'))
     fireEvent.click(screen.getByTestId('settings-save'))
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ genreSeparator: '; ' }))
   })
