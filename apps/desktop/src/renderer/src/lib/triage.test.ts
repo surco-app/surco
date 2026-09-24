@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { SpectrumResult, TrackMetadata } from '../../../shared/types'
 import type { TrackItem, TrackStatus } from '../types'
+import * as normalizeText from './normalizeText'
 import {
   EMPTY_FILTER,
   type FilterSelection,
@@ -9,6 +10,7 @@ import {
   matchesFilter,
   matchesSearch,
   qualityCounts,
+  searchMatcher,
   sortTracks,
   sourceFormat,
   suspectTracks,
@@ -370,6 +372,28 @@ describe('matchesSearch', () => {
     expect(matchesSearch(track, 'floorplan')).toBe(true)
     expect(matchesSearch(track, 'grow')).toBe(true)
     expect(matchesSearch(track, 'paradise')).toBe(true)
+  })
+
+  // The search re-runs on every keystroke and every list change, over the whole crate. The
+  // folding (an NFD pass and four regexes) is the cost, so a track's fields are folded once
+  // for as long as the track is unchanged, and the query once per search, not once per row.
+  it('folds an unchanged track once across searches, and the query once per search', () => {
+    const tracks = [
+      t({ listLabel: 'Back Now Yall', meta: { artist: 'MK' } }),
+      t({ listLabel: 'Never Grow Old', meta: { artist: 'Floorplan' } }),
+    ]
+    tracks.filter(searchMatcher('now'))
+    const fold = vi.spyOn(normalizeText, 'foldText')
+
+    const found = tracks.filter(searchMatcher('floor'))
+
+    expect(found).toEqual([tracks[1]])
+    expect(fold).toHaveBeenCalledTimes(1)
+    fold.mockRestore()
+  })
+
+  it('does not match a query that spans two fields', () => {
+    expect(matchesSearch(t({ meta: { artist: 'Floor', title: 'Plan' } }), 'floor plan')).toBe(false)
   })
 })
 

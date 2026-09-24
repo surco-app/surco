@@ -109,8 +109,8 @@ import {
   EMPTY_FILTER,
   filterWithSticky,
   formatBuckets,
-  matchesSearch,
   qualityCounts,
+  searchMatcher,
   sortTracks,
   suspectTracks,
   type TrackSort,
@@ -1091,8 +1091,8 @@ export default function App(): React.JSX.Element {
       stickyIds.current = new Set()
     }
     const next = sortTracks(
-      filterWithSticky(tracksView, filterSelection, stickyIds.current).filter((t) =>
-        matchesSearch(t, deferredSearch),
+      filterWithSticky(tracksView, filterSelection, stickyIds.current).filter(
+        searchMatcher(deferredSearch),
       ),
       sortBy,
       sortDir,
