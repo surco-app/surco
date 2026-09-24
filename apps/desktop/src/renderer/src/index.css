@@ -624,17 +624,18 @@ textarea {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-/* The thumb is invisible at rest and shows only while the pointer is over its pane, the way
-   macOS draws overlay scrollbars: a bar parked beside every pane was chrome with nothing to
-   say until you reach for it. The wheel, the trackpad and the keys scroll regardless, and
-   the gutter above stays reserved, so the thumb appearing shifts nothing. */
+/* The thumb is invisible at rest and shows only while its pane is scrolling (data-scrolling,
+   set by lib/scrollingMark), the way macOS draws overlay scrollbars: a bar parked beside every
+   pane was chrome with nothing to say until you move. A :hover rule could not do this, since
+   Chromium keeps a custom thumb painted after the pointer leaves. Hovering the thumb itself
+   still shows it, so it can be grabbed; the gutter above stays reserved, so nothing shifts. */
 ::-webkit-scrollbar-thumb {
   background: transparent;
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
-:hover::-webkit-scrollbar-thumb {
+[data-scrolling]::-webkit-scrollbar-thumb {
   background: var(--color-scrollbar);
   background-clip: padding-box;
 }
