@@ -349,10 +349,10 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                     style={{
                       animationDelay: `${i < STAGGERED_ROWS ? i * STAGGER_STEP_MS : 0}ms`,
                     }}
-                    className={`press result-in group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors focus:bg-[var(--color-accent-soft)] focus:shadow-[inset_0_0_0_1px_var(--color-accent)] focus:outline-none ${
-                      expanded
-                        ? 'bg-[var(--color-accent-soft)]/85'
-                        : 'hover:bg-[var(--color-panel-2)]/85'
+                    className={`press result-in group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors focus-visible:bg-[var(--color-accent-soft)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:outline-none ${
+                      // The open card takes no fill: the tracklist unfolding under it already
+                      // says which one is open, and the applied track keeps the column's only fill.
+                      expanded ? '' : 'hover:bg-[var(--color-panel-2)]/85'
                     }`}
                   >
                     {r.thumb ? (
@@ -469,7 +469,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                                 t === appliedTrack || t === matchedTrack ? 'true' : undefined
                               }
                               onClick={() => selectTrack(t)}
-                              className={`flex w-full items-center gap-3 rounded-lg py-1.5 pr-3 pl-4 text-left focus:bg-[var(--color-accent-soft)] focus:shadow-[inset_0_0_0_1px_var(--color-accent)] focus:outline-none ${
+                              className={`flex w-full items-center gap-3 rounded-lg py-1.5 pr-3 pl-4 text-left focus-visible:bg-[var(--color-accent-soft)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:outline-none ${
                                 // Same selection fill and rounded shape as the library row, so the
                                 // applied track reads with equal weight in both columns (was a faint
                                 // tint that looked second-class next to the filled library row).
