@@ -245,8 +245,8 @@ describe('waveform ruler labels', () => {
 
 // A bar parked beside every pane was chrome the user never asked for: the list, the results
 // and the editor each drew one at rest. Like macOS with overlay scrollbars, the thumb stays
-// invisible until the pointer is over its pane, and scrolling itself never depended on it.
-// The gutter stays reserved, so the thumb appearing moves nothing.
+// invisible until its pane scrolls, and scrolling itself never depended on it. The gutter
+// stays reserved, so the thumb appearing moves nothing.
 describe('scrollbars', () => {
   const rule = (selector: string): string => {
     const start = css.indexOf(`${selector} {`)
@@ -257,7 +257,7 @@ describe('scrollbars', () => {
     expect(rule('::-webkit-scrollbar-thumb')).toContain('background: transparent')
   })
 
-  it('shows the thumb once the pointer is over its pane', () => {
-    expect(rule(':hover::-webkit-scrollbar-thumb')).toContain('var(--color-scrollbar)')
+  it('shows the thumb while its pane is scrolling', () => {
+    expect(rule('[data-scrolling]::-webkit-scrollbar-thumb')).toContain('var(--color-scrollbar)')
   })
 })
