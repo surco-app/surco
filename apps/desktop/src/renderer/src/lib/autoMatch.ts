@@ -1,8 +1,10 @@
+import { searchHintsOf } from '../../../shared/metadata'
 import { cleanMatchTitle, stripIgnoredWords } from '../../../shared/searchClean'
 import type {
   MetaTextKey,
   Release,
   ReleaseTrack,
+  SearchHints,
   SearchProviderId,
   SearchResult,
 } from '../../../shared/types'
@@ -48,6 +50,18 @@ export function tracksToAutoMatch(tracks: TrackItem[]): TrackItem[] {
 export interface MatchCleanup {
   titleFormat?: string
   ignoreWords?: string[]
+}
+
+// The artist and title hints every Discogs search for a track carries: the sweep, the
+// editor's panel and the hover prefetch all build them here, so they ask for the very same
+// search and share its cache and its request in flight. The title is the undressed one the
+// scorer uses, so the precise artist+title searches see the bare track name, not the
+// Naming pattern's "(A2) …" dressing.
+export function searchHintsFor(track: TrackItem, cleanup: MatchCleanup = {}): SearchHints {
+  return {
+    ...searchHintsOf(track.meta),
+    title: matchTargetOf(track, cleanup).title || track.meta.title,
+  }
 }
 
 // What the sweep reads off a track to score release candidates against it.
