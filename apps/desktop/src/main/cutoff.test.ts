@@ -426,6 +426,42 @@ describe('detectCutoff fine-band roughness', () => {
     expect(detectCutoff(coarse, NYQUIST, oneSpike).processed).toBe(false)
   })
 
+  it('does not read a flat top end rippling by a decibel and a half as a run of patches', () => {
+    // A lossless rip measured off the real file a user sent: the highs hold level from
+    // 16 to 20.5 kHz, 5 dB under the plateau, and ripple by 1.6, 1.6 and 2.9 dB on the
+    // way. Graded Reprocessed untrimmed and clean with its tail cut, because the two
+    // small ripples sat exactly on the bar for a sure tooth and a trim moved them
+    // 0.2 dB: 11 of 41 grid positions flagged it. Ripple of that size is the music;
+    // the enhancer fixtures still called a saw-tooth grow teeth of 4-7 dB.
+    const coarse = fftBand([
+      -59.48, -62.25, -63.62, -64.52, -65.56, -65.97, -67.3, -67.63, -67.29, -66.06, -67.23, -65.83,
+      -72.31,
+    ])
+    const flatRipple = fine([
+      -65.45, -65.89, -66.47, -66.24, -66.78, -67.99, -67.9, -67.69, -66.13, -67.48, -65.84, -66.01,
+      -67.16, -68.49, -66.07, -65.56, -75.35,
+    ])
+    expect(detectCutoff(coarse, NYQUIST, flatRipple).processed).toBe(false)
+  })
+
+  it('does not turn a track it graded clean into Reprocessed by raising the tooth bar', () => {
+    // A lossless master from a 6000-file library, measured off the real file: teeth of
+    // 0.8, 2.6, 5.9 and 3.1 dB. It graded clean while a 0.8 dB wobble could still join
+    // the run and widen its spread past the evenness rule; lifting the bar to 2 dB drops
+    // that wobble, leaves three even-enough teeth, and was the one file in the library
+    // the fix above would have newly accused. Its smallest tooth must stay under the
+    // bar for a sure one.
+    const coarse = fftBand([
+      -56.02, -59.54, -59.25, -61.28, -63.33, -63.71, -66.32, -67.22, -65.12, -67.65, -65.5, -69.58,
+      -83.87,
+    ])
+    const unevenRun = fine([
+      -62.93, -63.55, -64.07, -63.62, -66.66, -67.52, -67.32, -65.27, -64.46, -68.69, -66.08,
+      -69.43, -63.53, -71.42, -68.35, -72.92, -85.83,
+    ])
+    expect(detectCutoff(coarse, NYQUIST, unevenRun).processed).toBe(false)
+  })
+
   it('behaves exactly as before when no fine bands are supplied', () => {
     expect(detectCutoff(SBR_COARSE, NYQUIST)).toEqual({
       cutoffHz: NYQUIST,
