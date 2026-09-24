@@ -485,6 +485,7 @@ describe('FieldsEditor tag separators', () => {
     const { onChangeSeparator } = setup({ visibleFields: ['genre'], separators })
     expect(screen.getByTestId('field-separator-genre')).toHaveTextContent(',')
     fireEvent.click(screen.getByTestId('field-separator-genre'))
+    expect(screen.getByTestId('field-separator-genre-listbox')).toHaveTextContent('Genre separator')
     expect(screen.getByTestId('field-separator-genre-option-semicolon')).toHaveTextContent(
       'Pop; House',
     )

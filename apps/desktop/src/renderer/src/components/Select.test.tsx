@@ -123,6 +123,23 @@ describe('Select', () => {
     expect(screen.getByTestId('sep')).toHaveAccessibleName('Genre separator: Other')
   })
 
+  // A terse menu (a separator's ",", ";", "/") needs its question on it: the heading says
+  // what is being picked without a tooltip floating beside the open menu.
+  it('heads the open menu with its label when asked to', () => {
+    render(
+      <Select
+        value="comma"
+        options={[{ value: 'comma', label: ',' }]}
+        onChange={vi.fn()}
+        label="Genre separator"
+        testid="sep"
+        heading
+      />,
+    )
+    fireEvent.click(screen.getByTestId('sep'))
+    expect(screen.getByTestId('sep-listbox')).toHaveTextContent('Genre separator')
+  })
+
   it('reports the picked value and closes', () => {
     const onChange = renderSelect()
     fireEvent.click(screen.getByTestId('sort'))
