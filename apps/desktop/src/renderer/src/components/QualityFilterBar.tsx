@@ -419,7 +419,7 @@ export function QualityFilterBar({
           // is in and didn't match the words on screen.
           aria-label={tr('sidebar.filter.current', { filter: trigger.label, count: trigger.count })}
           onClick={() => setOpen((v) => !v)}
-          className="flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs font-medium text-fg-dim outline-none focus:border-[var(--color-accent)]"
+          className="flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md pr-1.5 pl-2 text-xs font-medium text-fg-dim outline-none hover:bg-[var(--color-panel-2)] hover:text-fg"
         >
           <span className="relative shrink-0">
             <trigger.Icon className="h-4 w-4" aria-hidden="true" />
@@ -483,7 +483,7 @@ export function QualityFilterBar({
           data-testid="trash-suspects"
           aria-label={tr('sidebar.filter.trashSuspects', { count: tally.suspect })}
           onClick={onTrashSuspects}
-          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] bg-[var(--color-field)] text-fg-dim outline-none hover:border-warn hover:text-warn focus:border-[var(--color-accent)]"
+          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-dim outline-none hover:bg-[var(--color-panel-2)] hover:text-warn"
         >
           <Trash2 className="h-4 w-4" aria-hidden="true" />
           <Tooltip label={tr('sidebar.filter.trashSuspects', { count: tally.suspect })} />

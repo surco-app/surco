@@ -220,14 +220,18 @@ describe('cursor de teclado', () => {
     expect(screen.getByTestId('matches-column')).toBeInTheDocument()
   })
 
-  it('marca visiblemente la tarjeta enfocada', () => {
+  // Solo el cursor de teclado se pinta: con `focus:` la tarjeta que acababas de pulsar con el
+  // ratón se quedaba azul, y junto a la pista aplicada y la fila de la lista eran tres bloques
+  // azules en pantalla sin que ninguno dijera cuál era la selección.
+  it('marca visiblemente la tarjeta enfocada con el teclado, y no la pulsada con el ratón', () => {
     renderPanel(browser({ results }))
     const first = screen.getAllByTestId('discogs-result')[0]
     first.focus()
     expect(first).toHaveFocus()
-    expect(first.className).toContain('focus:bg-[var(--color-accent-soft)]')
-    expect(first.className).toContain('focus:shadow-[inset_0_0_0_1px_var(--color-accent)]')
-    expect(first.className).toContain('focus:outline-none')
+    expect(first.className).toContain('focus-visible:bg-[var(--color-accent-soft)]')
+    expect(first.className).toContain('focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)]')
+    expect(first.className).toContain('focus-visible:outline-none')
+    expect(first.className).not.toMatch(/(^|\s)focus:bg-/)
   })
 
   // La garantía de la decisión "foco ≠ despliegue": moverse por los resultados no puede
@@ -258,9 +262,9 @@ describe('cursor de teclado', () => {
     const track = screen.getAllByTestId('discogs-track')[0]
     track.focus()
     expect(track).toHaveFocus()
-    expect(track.className).toContain('focus:bg-[var(--color-accent-soft)]')
-    expect(track.className).toContain('focus:shadow-[inset_0_0_0_1px_var(--color-accent)]')
-    expect(track.className).toContain('focus:outline-none')
+    expect(track.className).toContain('focus-visible:bg-[var(--color-accent-soft)]')
+    expect(track.className).toContain('focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)]')
+    expect(track.className).toContain('focus-visible:outline-none')
   })
 })
 
