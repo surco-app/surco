@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
-import { copyFile, mkdir, rename, stat, unlink } from 'node:fs/promises'
+import { copyFile, mkdir, rename, stat, statfs, unlink } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
-import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../shared/trash'
+import { TRASH_MAX_BYTES, TRASH_MIN_FREE_BYTES, TRASH_RETENTION_DAYS } from '../shared/trash'
 import type { TrashEntry, TrashReason } from '../shared/types'
 
 // Surco's own trash: the originals a conversion replaced, kept for a while so a bad
@@ -32,7 +32,8 @@ export interface SurcoTrash {
   remove(id: string): Promise<void>
   empty(): Promise<void>
   // Drops what is older than the retention, then the oldest entries until the rest fits
-  // under the size cap. Returns what it dropped. Run once at launch.
+  // under the size cap. Returns what it dropped. Run at launch; stash makes the same
+  // room before each copy, so the cap also holds while the app stays open.
   sweep(now?: number): Promise<TrashEntry[]>
   dir: string
 }
@@ -57,9 +58,16 @@ async function move(from: string, to: string): Promise<void> {
 // next restart — indistinguishable, to the user, from a setting that does not work.
 export type TrashLimits = { retentionDays?: number; maxBytes?: number }
 
+async function diskFree(dir: string): Promise<number> {
+  await mkdir(dir, { recursive: true })
+  const fs = await statfs(dir)
+  return fs.bavail * fs.bsize
+}
+
 export function createSurcoTrash(
   dir: string,
   opts: TrashLimits | (() => TrashLimits) = {},
+  freeBytes: () => Promise<number> = () => diskFree(dir),
 ): SurcoTrash {
   const limits = (): { retentionMs: number; maxBytes: number } => {
     const o = typeof opts === 'function' ? opts() : opts
@@ -94,7 +102,38 @@ export function createSurcoTrash(
   const newestFirst = (entries: TrashEntry[]): TrashEntry[] =>
     [...entries].sort((a, b) => b.trashedAt - a.trashedAt)
 
-  const stash: SurcoTrash['stash'] = async (path, reason, outputPath, trashedAt) => {
+  const discard = async (entry: TrashEntry): Promise<void> => {
+    await unlink(entry.storedPath).catch((err: NodeJS.ErrnoException) => {
+      if (err.code !== 'ENOENT') throw err
+    })
+  }
+
+  // Drops what is past the retention, then the oldest entries until the rest fits in
+  // `room` bytes.
+  const prune = async (now: number, room: number): Promise<TrashEntry[]> => {
+    const { retentionMs } = limits()
+    const entries = newestFirst(read())
+    const dropped: TrashEntry[] = []
+    let kept: TrashEntry[] = []
+    for (const entry of entries) {
+      if (now - entry.trashedAt > retentionMs) dropped.push(entry)
+      else kept.push(entry)
+    }
+    // Newest first, so the running total keeps the recent ones and drops from the
+    // old end once the room is used up.
+    let total = 0
+    kept = kept.filter((entry) => {
+      total += entry.bytes
+      if (total <= room) return true
+      dropped.push(entry)
+      return false
+    })
+    for (const entry of dropped) await discard(entry)
+    write(kept)
+    return dropped
+  }
+
+  const keep: SurcoTrash['stash'] = async (path, reason, outputPath, trashedAt) => {
     const info = await stat(path).catch(() => null)
     if (!info) return null
     await mkdir(items, { recursive: true })
@@ -115,10 +154,18 @@ export function createSurcoTrash(
     return entry
   }
 
-  const discard = async (entry: TrashEntry): Promise<void> => {
-    await unlink(entry.storedPath).catch((err: NodeJS.ErrnoException) => {
-      if (err.code !== 'ENOENT') throw err
-    })
+  // The room is made before the copy, not swept after it: the copy just taken is what a
+  // failed rename restores from, and a sweep behind it could discard exactly that one.
+  // The disk bounds it as well as the cap. A file that fits in neither even with the
+  // trash emptied gets no copy, and nothing is dropped to make room it would not use.
+  const stash: SurcoTrash['stash'] = async (path, reason, outputPath, trashedAt) => {
+    const info = await stat(path).catch(() => null)
+    if (!info) return null
+    const held = read().reduce((sum, entry) => sum + entry.bytes, 0)
+    const budget = Math.min(limits().maxBytes, held + (await freeBytes()) - TRASH_MIN_FREE_BYTES)
+    if (info.size > budget) return null
+    await prune(Date.now(), budget - info.size)
+    return keep(path, reason, outputPath, trashedAt)
   }
 
   return {
@@ -131,7 +178,7 @@ export function createSurcoTrash(
       if (!entry) throw new Error(`no such trash entry: ${id}`)
       await mkdir(dirname(entry.originalPath), { recursive: true })
       const occupant = await stat(entry.originalPath).catch(() => null)
-      const displaced = occupant ? await stash(entry.originalPath, 'restored-over') : null
+      const displaced = occupant ? await keep(entry.originalPath, 'restored-over') : null
       await move(entry.storedPath, entry.originalPath)
       write(read().filter((e) => e.id !== id))
       return { restoredTo: entry.originalPath, displaced }
@@ -146,27 +193,6 @@ export function createSurcoTrash(
       for (const entry of read()) await discard(entry)
       write([])
     },
-    sweep: async (now = Date.now()) => {
-      const { retentionMs, maxBytes } = limits()
-      const entries = newestFirst(read())
-      const dropped: TrashEntry[] = []
-      let kept: TrashEntry[] = []
-      for (const entry of entries) {
-        if (now - entry.trashedAt > retentionMs) dropped.push(entry)
-        else kept.push(entry)
-      }
-      // Newest first, so the running total keeps the recent ones and drops from the
-      // old end once the cap is passed.
-      let total = 0
-      kept = kept.filter((entry) => {
-        total += entry.bytes
-        if (total <= maxBytes) return true
-        dropped.push(entry)
-        return false
-      })
-      for (const entry of dropped) await discard(entry)
-      write(kept)
-      return dropped
-    },
+    sweep: async (now = Date.now()) => prune(now, limits().maxBytes),
   }
 }

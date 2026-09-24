@@ -67,6 +67,7 @@ const settings: Settings = {
   commandUsage: {},
   hasSeenOnboarding: true,
   deezerProviderMigrated: true,
+  backupPolicyMigrated: true,
   conversionCount: 0,
   stats: {
     imported: 0,
