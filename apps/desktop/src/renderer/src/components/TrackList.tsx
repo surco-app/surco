@@ -134,7 +134,7 @@ function StatusBadge({
 }
 
 // The verdicts that actually render a glyph — every TrackQuality except 'unanalyzed',
-// which the row leaves blank (guarded before QualityMark is reached).
+// which the row leaves blank (guarded before QualityPill is reached).
 type RowVerdict = Exclude<TrackQuality, 'unanalyzed'>
 
 // The quality verdict reads as a distinct severity glyph, not a second colored dot, so it
@@ -164,10 +164,10 @@ const qualityShape: Record<RowTone, React.JSX.Element> = {
   danger: <rect x="2" y="2" width="8" height="8" rx="1.8" />,
 }
 
-const qualityColor: Record<RowTone, string> = {
-  good: 'text-good/85',
-  warn: 'text-warn',
-  danger: 'text-danger',
+const qualityPill: Record<RowTone, string> = {
+  good: 'bg-good/15 text-good',
+  warn: 'bg-warn/20 text-warn',
+  danger: 'bg-danger/20 text-danger',
 }
 
 const qualityLabel: Record<RowVerdict, string> = {
@@ -186,11 +186,17 @@ const stripeClass: Record<Exclude<RowTone, 'good'>, string> = {
   danger: 'bg-danger',
 }
 
-function QualityMark({
+// The verdict tints the format pill instead of taking a slot of its own, so the artist keeps
+// that width (artexjay 24/09). Amber and red keep their shape inside the pill, since colour
+// alone can't separate them for a colour-blind user; a clean pill goes bare so a good album
+// doesn't fill with symbols. Without a format to tint, the shape stands alone, good included.
+function QualityPill({
   verdict,
+  format,
   label,
 }: {
   verdict: RowVerdict
+  format: string | undefined
   label: string
 }): React.JSX.Element {
   const tone = qualityTone[verdict]
@@ -199,11 +205,18 @@ function QualityMark({
       data-testid="track-quality"
       data-quality={verdict}
       data-tone={tone}
-      className={`group/dot relative flex h-3 w-3 items-center justify-center ${qualityColor[tone]}`}
+      className={`group/dot relative flex h-4 items-center gap-[3px] rounded px-[5px] ${qualityPill[tone]}`}
     >
-      <svg aria-hidden="true" viewBox="0 0 12 12" className="h-3 w-3" fill="currentColor">
-        {qualityShape[tone]}
-      </svg>
+      {(tone !== 'good' || !format) && (
+        <svg aria-hidden="true" viewBox="0 0 12 12" className="h-2 w-2" fill="currentColor">
+          {qualityShape[tone]}
+        </svg>
+      )}
+      {format && (
+        <span data-testid="track-format" className="text-[10px] font-semibold leading-4">
+          {format}
+        </span>
+      )}
       <Tooltip label={label} align="end" scope="dot" />
       <span className="sr-only">{label}</span>
     </span>
@@ -614,39 +627,40 @@ const TrackRow = memo(function TrackRow({
               ) : (
                 reviewPending && <span className="w-3 shrink-0" />
               )}
-              {/* The verdict's own fixed slot, right before the pill, so the marks line up in
-                  one column down the list; an unanalyzed row leaves it empty. */}
-              <span
-                data-testid="track-quality-slot"
-                className="flex h-3 w-3 shrink-0 items-center justify-center"
-              >
-                {quality !== 'unanalyzed' ? (
-                  <QualityMark verdict={quality} label={tr(qualityLabel[quality])} />
-                ) : (
-                  t.analyzing && (
-                    <span
-                      data-testid="track-quality-loading"
-                      className="group/dot relative flex h-3 w-3 items-center justify-center text-fg-faint"
-                    >
-                      <span className="h-2 w-2 animate-pulse rounded-full ring-[1.5px] ring-current ring-inset" />
-                      <Tooltip label={tr('editor.analyzing')} align="end" scope="dot" />
-                    </span>
-                  )
-                )}
-              </span>
               {/* A fixed slot, right-aligned under the duration, so the two read as one
-                  trailing column and the review sparkle's place never moves. */}
+                  trailing column and the review sparkle's place never moves. Wide enough for
+                  the pill with its shape, so a tinted FLAC and a bare MP3 end on the same edge. */}
               <span
                 data-testid="track-format-slot"
-                className="flex w-[34px] shrink-0 justify-end transition-opacity group-hover:opacity-0"
+                className="flex w-[46px] shrink-0 justify-end transition-opacity group-hover:opacity-0"
               >
-                {format && (
+                {quality !== 'unanalyzed' ? (
+                  <QualityPill
+                    verdict={quality}
+                    format={format}
+                    label={tr(qualityLabel[quality])}
+                  />
+                ) : t.analyzing ? (
                   <span
-                    data-testid="track-format"
-                    className="text-[10px] font-medium leading-4 text-fg-dim"
+                    data-testid="track-quality-loading"
+                    className="group/dot relative flex h-4 animate-pulse items-center rounded px-[5px] text-fg-faint ring-1 ring-current ring-inset"
                   >
-                    {format}
+                    {format ? (
+                      <span className="text-[10px] font-semibold leading-4">{format}</span>
+                    ) : (
+                      <span className="h-2 w-2 rounded-full ring-[1.5px] ring-current ring-inset" />
+                    )}
+                    <Tooltip label={tr('editor.analyzing')} align="end" scope="dot" />
                   </span>
+                ) : (
+                  format && (
+                    <span
+                      data-testid="track-format"
+                      className="text-[10px] font-medium leading-4 text-fg-dim"
+                    >
+                      {format}
+                    </span>
+                  )
                 )}
               </span>
             </span>
@@ -657,8 +671,8 @@ const TrackRow = memo(function TrackRow({
           applied accent sparkle, and gone the moment the track is actually matched. A
           sibling of the row button, not a child, since a button inside the option button
           is invalid and folds the action into the row's name. It is placed over the empty
-          slot the artist line keeps for it before the verdict: that slot ends 72px from the
-          right edge (the row padding, the pill slot, the verdict slot and their gaps), and its centre sits
+          slot the artist line keeps for it before the pill: that slot ends 64px from the
+          right edge (the row padding, the 46px pill slot and its gap), and its centre sits
           17px up from the bottom. The button is a 24px target (WCAG 2.5.8) centred there,
           so the 12px glyph lands where the slot would have drawn it. Shown under the same
           conditions as that line. */}
@@ -669,7 +683,7 @@ const TrackRow = memo(function TrackRow({
           data-confidence="review"
           aria-label={tr('commands.acceptReview')}
           onClick={() => onAcceptReview(t.id)}
-          className="group/dot press absolute right-[66px] bottom-[5px] flex h-6 w-6 items-center justify-center text-warn"
+          className="group/dot press absolute right-[58px] bottom-[5px] flex h-6 w-6 items-center justify-center text-warn"
         >
           <Spark />
           <Tooltip

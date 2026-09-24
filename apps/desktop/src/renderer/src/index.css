@@ -695,11 +695,15 @@ textarea {
    On the selected row they flip to the on-selection colour so the shape still reads; the
    colour cue they'd normally give is redundant here — the row is already the one in focus. */
 .is-primary [data-testid="track-quality"],
+.is-primary [data-testid="track-quality"] [data-testid="track-format"],
 .is-primary [data-testid="track-quality-loading"],
 .is-primary [data-testid="track-automatched"],
 .is-primary [data-testid="track-match-review"],
 .is-primary [data-testid="track-backup"] {
   color: var(--color-on-row-selected);
+}
+.is-primary [data-testid="track-quality"] {
+  background: color-mix(in srgb, var(--color-on-row-selected) 18%, transparent);
 }
 /* Conversion progress is the same story and the one that costs most: the stage label and its
    sweep bar are accent-coloured, and accent on the selection fill measures 1.00 in light (the
