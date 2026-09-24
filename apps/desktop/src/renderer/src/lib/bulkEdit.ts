@@ -19,6 +19,7 @@ export const BULK_FIELDS: MetaTextKey[] = [
   'publisher',
   'catalogNumber',
   'discNumber',
+  'trackTotal',
 ]
 
 // The value every selected track shares for a field, or undefined when they disagree.

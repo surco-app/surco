@@ -1441,6 +1441,12 @@ describe('Editor multi-select', () => {
     expect(onChangeAllMeta).toHaveBeenCalledWith({ album: 'New Album' })
   })
 
+  it('tags every selected track with the selection size as its total tracks in one click', () => {
+    const { onChangeAllMeta } = renderMulti({ visibleFields: ['title', 'trackTotal'] })
+    fireEvent.click(screen.getByTestId('chip-2'))
+    expect(onChangeAllMeta).toHaveBeenCalledWith({ trackTotal: '2' })
+  })
+
   it('derives tags for every selected track from its own file name in one click', () => {
     const { onDeriveTags } = renderMulti()
     fireEvent.click(screen.getByTestId('derive-btn'))
