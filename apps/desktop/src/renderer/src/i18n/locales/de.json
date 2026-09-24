@@ -1354,6 +1354,7 @@
     "autoMatchAppliedDetail": "{{release}} → {{track}}\nKonfidenz: {{confidence}} % · Dauer {{duration}} · Künstler {{artist}} · Katalognr. {{catno}}\nAutomatisch angewendet: hohe Konfidenz, durch ein vom Titel unabhängiges Signal bestätigt.\nGeprüfte Kandidaten:\n{{candidates}}",
     "autoMatchReviewLowDetail": "{{release}} → {{track}}\nKonfidenz: {{confidence}} % · Dauer {{duration}} · Künstler {{artist}} · Katalognr. {{catno}}\nZu bestätigen: Konfidenz unter der Schwelle für automatisches Anwenden (85 %).\nGeprüfte Kandidaten:\n{{candidates}}",
     "autoMatchReviewUncorroboratedDetail": "{{release}} → {{track}}\nKonfidenz: {{confidence}} % · Dauer {{duration}} · Künstler {{artist}} · Katalognr. {{catno}}\nZu bestätigen: nur der Titel stimmt überein; kein unabhängiges Signal (Dauer, Künstler, Katalognr.) bestätigt ihn.\nGeprüfte Kandidaten:\n{{candidates}}",
+    "autoMatchReviewUncuratedDetail": "{{release}} → {{track}}\nKonfidenz: {{confidence}} % · Dauer {{duration}} · Künstler {{artist}} · Katalognr. {{catno}}\nZu bestätigen: stammt von {{source}}, das nicht kuratiert ist, und automatisches Anwenden erfordert {{bar}} %.\nGeprüfte Kandidaten:\n{{candidates}}",
     "autoMatchNoneDetail": "Kein Kandidat erreichte die nötige Konfidenz.\nGeprüfte Kandidaten:\n{{candidates}}",
     "autoMatchNoCandidates": "Die Suche lieferte keine Kandidaten zum Prüfen.",
     "probeClicks": "Klicks werden gezählt",

@@ -1354,6 +1354,7 @@
     "autoMatchAppliedDetail": "{{release}} → {{track}}\nConfiance : {{confidence}} % · durée {{duration}} · artiste {{artist}} · nº de catalogue {{catno}}\nAppliqué automatiquement : confiance élevée corroborée par un signal indépendant du titre.\nCandidats sondés :\n{{candidates}}",
     "autoMatchReviewLowDetail": "{{release}} → {{track}}\nConfiance : {{confidence}} % · durée {{duration}} · artiste {{artist}} · nº de catalogue {{catno}}\nÀ confirmer : la confiance n'atteint pas le seuil d'application automatique (85 %).\nCandidats sondés :\n{{candidates}}",
     "autoMatchReviewUncorroboratedDetail": "{{release}} → {{track}}\nConfiance : {{confidence}} % · durée {{duration}} · artiste {{artist}} · nº de catalogue {{catno}}\nÀ confirmer : seul le titre correspond ; aucun signal indépendant (durée, artiste, nº de catalogue) ne le corrobore.\nCandidats sondés :\n{{candidates}}",
+    "autoMatchReviewUncuratedDetail": "{{release}} → {{track}}\nConfiance : {{confidence}} % · durée {{duration}} · artiste {{artist}} · nº de catalogue {{catno}}\nÀ confirmer : provient de {{source}}, qui n'est pas curé, et l'application automatique exige {{bar}} %.\nCandidats sondés :\n{{candidates}}",
     "autoMatchNoneDetail": "Aucun candidat n'a atteint la confiance minimale.\nCandidats sondés :\n{{candidates}}",
     "autoMatchNoCandidates": "La recherche n'a renvoyé aucun candidat à sonder.",
     "probeClicks": "Comptage des clics",
