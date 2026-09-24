@@ -507,7 +507,7 @@ describe('FieldsEditor tag separators', () => {
   it('shows a separator of the user own under Other with its text', () => {
     setup({ visibleFields: ['grouping'], separators: { genre: ', ', grouping: ' | ' } })
     expect(screen.getByTestId('field-separator-grouping')).toHaveAccessibleName(
-      'Grouping separator: Other',
+      'Grouping separator: Other…',
     )
     expect(screen.getByTestId('field-separator-grouping-input')).toHaveValue(' | ')
   })
