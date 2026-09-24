@@ -1,14 +1,14 @@
 import { hashKey, type Query, type QueryClient } from '@tanstack/react-query'
-import type { SpectrumResult, WaveformResult, WaveformScan } from '../../../shared/types'
+import type { SpectrumVerdict, WaveformResult, WaveformScan } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { spectrogramOptions } from './useSpectrogram'
+import { spectrogramOptions, spectrumVerdictKey } from './useSpectrogram'
 import { waveformOptions, waveformScanOptions } from './useWaveform'
 
 // The three probe families the list reads, one entry per track, positionally aligned with
 // `tracks`. Spectrum carries `fetching` too: a row with an analysis in flight shows a
 // placeholder where its verdict dot will land, which the other two have no equivalent of.
 export interface CacheSnapshot {
-  spectra: { data: SpectrumResult | undefined; fetching: boolean }[]
+  spectra: { data: SpectrumVerdict | undefined; fetching: boolean }[]
   waves: (WaveformResult | null | undefined)[]
   // The clip/channel scan lives in its own probe since the split, so the clipping
   // attention fact reads from here rather than off the peaks wave.
@@ -17,7 +17,12 @@ export interface CacheSnapshot {
 
 // The query-family names, in one place so the build, the per-track slot read and the
 // incremental patch all agree on which name feeds which snapshot field.
-export const SNAPSHOT_FAMILIES = ['spectrogram', 'waveform', 'waveformScan'] as const
+export const SNAPSHOT_FAMILIES = [
+  'spectrogram',
+  'spectrumVerdict',
+  'waveform',
+  'waveformScan',
+] as const
 
 // A cache lookup by key hash straight into the cache's own hash map, O(1) per key. find()
 // scans the cache linearly, and indexing the whole cache per call costs a pass over it on
@@ -33,9 +38,14 @@ export function cacheLookup(client: QueryClient): (key: readonly unknown[]) => Q
 // N, a probe patch reads 1 — the assertion that a sweep tick doesn't walk the whole list.
 function readSlot(inputPath: string, at: (key: readonly unknown[]) => Query | undefined) {
   const q = at(spectrogramOptions(inputPath).queryKey)
+  // The full entry while it lives, the verdict once the image has been collected (or
+  // when all a reopened library hydrated was the verdict).
+  const data = (q?.state.data ?? at(spectrumVerdictKey(inputPath))?.state.data) as
+    | SpectrumVerdict
+    | undefined
   return {
     spectrum: {
-      data: q?.state.data as SpectrumResult | undefined,
+      data,
       fetching: q?.state.fetchStatus === 'fetching',
     },
     wave: at(waveformOptions(inputPath).queryKey)?.state.data as WaveformResult | null | undefined,

@@ -336,12 +336,12 @@ describe('buildCommands trash-suspects gate', () => {
   const suspect = (id: string) =>
     track({
       id,
-      spectrum: { image: '', cutoffHz: 16000, sampleRateHz: 44100 },
+      spectrum: { cutoffHz: 16000, sampleRateHz: 44100, processed: false },
     } as Partial<TrackItem>)
   const clean = (id: string) =>
     track({
       id,
-      spectrum: { image: '', cutoffHz: 21000, sampleRateHz: 44100 },
+      spectrum: { cutoffHz: 21000, sampleRateHz: 44100, processed: false },
     } as Partial<TrackItem>)
 
   // The action deletes files, so it must stay disabled unless the visible list actually holds a

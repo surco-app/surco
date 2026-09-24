@@ -16,7 +16,7 @@ import type {
   SearchProviderId,
   SessionData,
   SessionEdit,
-  SpectrumResult,
+  SpectrumVerdict,
   TrackProperties,
   TrashEntry,
   WaveformResult,
@@ -147,7 +147,7 @@ const api: Api = {
     invokeAudio('audio:spectrogram', path, priority),
   loadCachedAnalyses: (
     paths: string[],
-  ): Promise<Record<string, { spectrogram?: SpectrumResult; waveformScan?: WaveformScan }>> =>
+  ): Promise<Record<string, { spectrogram?: SpectrumVerdict; waveformScan?: WaveformScan }>> =>
     invokeAudio('audio:cached-batch', paths),
   loudness: (path: string, priority: 'high' | 'low' = 'low'): Promise<LoudnessResult | null> =>
     invokeAudio('audio:loudness', path, priority),
