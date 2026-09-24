@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.1",
+    "date": "24 de septiembre de 2026",
+    "title": "Una interfaz más tranquila",
+    "items": [
+      {
+        "text": "Surco tiene una cara más tranquila: la biblioteca se ve como una barra lateral, la cabecera agrupa sus iconos y deja la acción principal al final, los encabezados de columna y las herramientas de la lista pierden sus cajas, y las barras de desplazamiento solo aparecen mientras te desplazas. En la onda solo va en azul lo que ya ha sonado, y el espectrograma baja el color para no robarte la atención.",
+        "in": "1.1.0"
+      },
+      {
+        "text": "El formulario de metadatos es una sola columna, en el orden que eliges, con la etiqueta de cada campo a su lado cuando cabe. La valoración pasa bajo la carátula, y la carátula ocupa menos para que los campos tengan más ancho.",
+        "in": "1.1.0"
+      },
+      {
+        "text": "Si faltan campos obligatorios, el botón principal lo dice en su propia cara, por ejemplo «Faltan Artista y Título», en vez de quedarse apagado sin explicación.",
+        "in": "1.1.0"
+      },
+      {
+        "text": "Género y Grouping eligen cada uno cómo se unen sus etiquetas: coma, punto y coma, barra u otro separador que escribas, desde un menú junto al nombre del campo en Ajustes › Campos.",
+        "in": "1.1.0"
+      },
+      {
+        "text": "Con varias pistas seleccionadas, Total de pistas te propone cuántas son, para rellenarlo de un clic.",
+        "in": "1.1.0"
+      },
+      {
+        "text": "Las pistas de buena calidad vuelven a llevar su marca en la lista, un punto discreto siempre en el mismo sitio antes del formato, así la calidad de toda la columna se lee de un vistazo.",
+        "in": "1.1.0"
+      },
+      {
+        "text": "Las pistas con los agudos muy planos ya no cambian de veredicto de calidad por recortar un poco de silencio.",
+        "in": "1.1.0"
+      }
+    ]
+  },
+  {
     "version": "1.0",
     "date": "23 de septiembre de 2026",
     "title": "Surco 1.0: estable",
