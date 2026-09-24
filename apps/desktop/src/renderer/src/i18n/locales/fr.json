@@ -1088,7 +1088,6 @@
     "shown": "Affichés",
     "hidden": "Masqués",
     "hide": "Masquer",
-    "separatorJoinedBy": "séparés par",
     "separatorCustom": "Autre",
     "separatorLabel": "Séparateur de {{name}}",
     "separatorCustomLabel": "Séparateur personnalisé de {{name}}",

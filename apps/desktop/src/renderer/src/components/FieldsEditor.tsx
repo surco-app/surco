@@ -150,28 +150,7 @@ export function FieldsEditor({
     const separator = separators[key]
     const option = otherOpen[key] ? 'custom' : separatorOption(separator)
     return (
-      <span className="ml-auto flex items-center gap-1.5 text-xs text-fg-faint">
-        {tr('settings.separatorJoinedBy')}
-        <Select
-          value={option}
-          options={SEPARATOR_OPTIONS.map((o) =>
-            o === 'custom'
-              ? { value: o, label: tr('settings.separatorCustom') }
-              : {
-                  value: o,
-                  label: SEPARATORS[o].trim(),
-                  hint: SEPARATOR_EXAMPLE.join(SEPARATORS[o]),
-                },
-          )}
-          onChange={(next) => {
-            const picked = next as SeparatorOption
-            setOtherOpen((open) => ({ ...open, [key]: picked === 'custom' }))
-            if (picked !== 'custom') onChangeSeparator(key, SEPARATORS[picked])
-          }}
-          label={tr('settings.separatorLabel', { name: labelOf(key) })}
-          testid={`field-separator-${key}`}
-          compact
-        />
+      <span className="ml-auto flex items-center gap-1">
         {option === 'custom' && (
           <input
             data-testid={`field-separator-${key}-input`}
@@ -179,9 +158,32 @@ export function FieldsEditor({
             maxLength={3}
             onChange={(e) => onChangeSeparator(key, e.target.value)}
             aria-label={tr('settings.separatorCustomLabel', { name: labelOf(key) })}
-            className="h-6 w-10 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-1 text-center font-mono text-xs text-fg"
+            className="h-6 w-9 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-1 text-center font-mono text-xs text-fg"
           />
         )}
+        <span className="relative">
+          <Select
+            value={option}
+            options={SEPARATOR_OPTIONS.map((o) =>
+              o === 'custom'
+                ? { value: o, label: tr('settings.separatorCustom'), short: '' }
+                : {
+                    value: o,
+                    label: SEPARATORS[o].trim(),
+                    hint: SEPARATOR_EXAMPLE.join(SEPARATORS[o]),
+                  },
+            )}
+            onChange={(next) => {
+              const picked = next as SeparatorOption
+              setOtherOpen((open) => ({ ...open, [key]: picked === 'custom' }))
+              if (picked !== 'custom') onChangeSeparator(key, SEPARATORS[picked])
+            }}
+            label={tr('settings.separatorLabel', { name: labelOf(key) })}
+            testid={`field-separator-${key}`}
+            compact
+          />
+          <Tooltip label={tr('settings.separatorLabel', { name: labelOf(key) })} />
+        </span>
       </span>
     )
   }
