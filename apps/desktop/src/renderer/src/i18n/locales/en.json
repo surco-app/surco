@@ -1354,6 +1354,7 @@
     "autoMatchAppliedDetail": "{{release}} → {{track}}\nConfidence: {{confidence}} % · duration {{duration}} · artist {{artist}} · catalog # {{catno}}\nApplied automatically: high confidence corroborated by a signal independent of the title.\nCandidates probed:\n{{candidates}}",
     "autoMatchReviewLowDetail": "{{release}} → {{track}}\nConfidence: {{confidence}} % · duration {{duration}} · artist {{artist}} · catalog # {{catno}}\nTo confirm: confidence below the auto-apply bar (85 %).\nCandidates probed:\n{{candidates}}",
     "autoMatchReviewUncorroboratedDetail": "{{release}} → {{track}}\nConfidence: {{confidence}} % · duration {{duration}} · artist {{artist}} · catalog # {{catno}}\nTo confirm: only the title matches; no independent signal (duration, artist, catalog #) corroborates it.\nCandidates probed:\n{{candidates}}",
+    "autoMatchReviewUncuratedDetail": "{{release}} → {{track}}\nConfidence: {{confidence}} % · duration {{duration}} · artist {{artist}} · catalog # {{catno}}\nTo confirm: it comes from {{source}}, which is not curated, and applying it unattended takes {{bar}} %.\nCandidates probed:\n{{candidates}}",
     "autoMatchNoneDetail": "No candidate reached the minimum confidence.\nCandidates probed:\n{{candidates}}",
     "autoMatchNoCandidates": "The search returned no candidates to probe.",
     "probeClicks": "Counting clicks",
