@@ -66,12 +66,14 @@ import {
   buildSpectrum,
   cacheableSpectrum,
   detectTrackClicks,
+  extractCover,
   measureBpm,
   measureChannelScan,
   measureKey,
   measureLoudness,
   measureWaveform,
   probeProperties,
+  readMeta,
 } from './ffmpeg'
 
 function handlerFor(channel: string): (e: unknown, ...args: unknown[]) => unknown {
@@ -283,5 +285,40 @@ describe('audio:cached-batch', () => {
 
     expect(result[warm]).toBeDefined()
     expect(result[cold]).toBeUndefined()
+  })
+})
+
+// The import reads every track's embedded cover, and the thumbnail used to cross IPC and
+// sit in the renderer's state as a base64 data URL (~30 KB each). It now crosses as a
+// short URL to the copy on disk, which the list and the editor load like any image.
+describe('cover thumbnails over IPC', () => {
+  const thumb = `data:image/jpeg;base64,${Buffer.alloc(3000, 9).toString('base64')}`
+
+  it('hands the import a short URL for the embedded cover, not its bytes', async () => {
+    vi.mocked(readMeta).mockResolvedValue({
+      tags: {},
+      duration: 10,
+      cover: { thumbUrl: thumb, width: 600, height: 600 },
+      foreignTags: [],
+    } as unknown as Awaited<ReturnType<typeof readMeta>>)
+
+    const meta = (await handlerFor('audio:meta')({}, '/m/a.flac')) as {
+      cover: { thumbUrl: string; width: number }
+    }
+
+    expect(meta.cover.thumbUrl).toMatch(/^surco:\/\/cover\/[0-9a-f]{40}\.jpg$/)
+    expect(meta.cover.width).toBe(600)
+  })
+
+  it('does the same for a cover read on its own', async () => {
+    vi.mocked(extractCover).mockResolvedValue({
+      thumbUrl: thumb,
+      width: 600,
+      height: 600,
+    } as Awaited<ReturnType<typeof extractCover>>)
+
+    const cover = (await handlerFor('audio:cover')({}, '/m/a.flac')) as { thumbUrl: string }
+
+    expect(cover.thumbUrl).toMatch(/^surco:\/\/cover\//)
   })
 })
