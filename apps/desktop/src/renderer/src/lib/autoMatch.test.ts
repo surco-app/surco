@@ -233,9 +233,9 @@ describe('autoMatchRelease', () => {
     expect(confidenceTier(m?.confidence ?? 0)).toBe('high')
   })
 
-  // The review suggestion is curated-source only: Bandcamp's uncurated catalog never
-  // surfaces a borderline hit for review — only its high-confidence matches are applied.
-  it('never surfaces a review-tier suggestion from Bandcamp', async () => {
+  // Bandcamp's uncurated catalog is full of re-uploads and DJ sets carrying a track's name, so
+  // a borderline title hit there is noise unless the act agrees too (see below).
+  it('never surfaces a Bandcamp suggestion whose artist does not agree', async () => {
     const api = {
       search: vi.fn(async (_q: string, provider: SearchProviderId) =>
         provider === 'bandcamp' ? [searchResult(2)] : [],
@@ -441,6 +441,63 @@ describe('autoMatchRelease stored release id', () => {
     expect(m?.release.id).toBe(1)
     expect(m?.tier).toBe('high')
     expect(api.search).not.toHaveBeenCalled()
+  })
+})
+
+describe('autoMatchRelease Bandcamp suggestions', () => {
+  const byArtist = { title: 'My Song', durationSec: 200, artist: 'Javier Fig' }
+  const bandcampOnly = (tracklist: object[]) => ({
+    search: vi.fn(async (_q: string, provider: SearchProviderId) =>
+      provider === 'bandcamp' ? [searchResult(2)] : [],
+    ),
+    getRelease: vi.fn().mockResolvedValue(
+      release(2, {
+        provider: 'bandcamp',
+        artists: [{ name: 'Javier Fig' }],
+        tracklist,
+      } as Partial<Release>),
+    ),
+    providers: ['discogs', 'bandcamp'] as SearchProviderId[],
+  })
+
+  // "Javier Fig - U Got The Muv (Original Mix)" came back from Bandcamp at 84 %, the right
+  // release by the right act, and was dropped without a word: Bandcamp could neither apply
+  // it (it needs 92 %) nor suggest it. With the act agreeing it is flagged for a glance,
+  // never written unattended.
+  it('suggests a borderline Bandcamp match for review when the artist agrees', async () => {
+    const m = await autoMatchRelease('my song', byArtist, bandcampOnly([REVIEW]))
+
+    expect(m?.release.id).toBe(2)
+    expect(m?.tier).toBe('review')
+  })
+
+  // A 'high' score under the stricter Bandcamp floor is not applied either, and it is the
+  // likeliest to be right: it is suggested, as a review, never as a high to apply.
+  it('suggests, never applies, a Bandcamp match under its stricter floor', async () => {
+    const m = await autoMatchRelease(
+      'my song',
+      { ...byArtist, durationSec: 203.53 },
+      bandcampOnly([HIGH]),
+    )
+
+    expect(m?.release.id).toBe(2)
+    expect(m?.tier).toBe('review')
+  })
+
+  // The curated source keeps precedence: its suggestion stands over Bandcamp's.
+  it('keeps a Discogs suggestion over a Bandcamp one', async () => {
+    const api = {
+      search: vi.fn(async (_q: string, provider: SearchProviderId) => [
+        searchResult(provider === 'discogs' ? 1 : 2),
+      ]),
+      getRelease: vi.fn(async (r: { id: number }) =>
+        release(r.id, { artists: [{ name: 'Javier Fig' }], tracklist: [REVIEW] }),
+      ),
+      providers: ['discogs', 'bandcamp'] as SearchProviderId[],
+    }
+    const m = await autoMatchRelease('my song', byArtist, api)
+
+    expect(m?.release.id).toBe(1)
   })
 })
 
@@ -770,6 +827,26 @@ describe('matchActivityReport', () => {
       50,
     )
     expect(middling.detailKey).toBe('activity.autoMatchReviewLowDetail')
+  })
+
+  // A suggestion from an uncurated source is held back by that source's own, stricter bar,
+  // whatever its score. Saying "only the title matches" or "below 85 %" of an 88 % Bandcamp
+  // hit whose artist agrees would name a reason that is not the one.
+  it('names the stricter bar of an uncurated source as the reason to confirm', () => {
+    for (const confidence of [0.88, 0.84]) {
+      const r = matchActivityReport(
+        'My Song',
+        match({
+          release: release(9, { provider: 'bandcamp' as const }),
+          tier: 'review',
+          confidence,
+          signals: { durations: true, artistAgrees: true, catalogMatched: false },
+        }),
+        [],
+        50,
+      )
+      expect(r.detailKey).toBe('activity.autoMatchReviewUncuratedDetail')
+    }
   })
 
   it('links a Bandcamp match to its release page', () => {

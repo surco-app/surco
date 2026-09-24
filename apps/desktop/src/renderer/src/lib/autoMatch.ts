@@ -203,7 +203,9 @@ export async function probeReleases(
     // When set, the best 'review'-tier match seen while hunting for an accepted one is
     // returned as a fallback if nothing clears `accepts` — so the sweep can flag a
     // plausible-but-uncertain suggestion for the user without a second pass of release loads.
-    collectReview?: boolean
+    // A predicate narrows which candidates may be suggested; a 'high' one held back by
+    // `minConfidence` is then suggestable too, returned as 'review' so it is never applied.
+    collectReview?: boolean | ((candidate: ProbeMatch) => boolean)
     maxProbe?: number
     cancelled?: () => boolean
     // Called once per scored candidate, accepted or not — the raw trail behind the
@@ -258,12 +260,12 @@ export async function probeReleases(
       }
       // Remember the strongest review-tier hit in case nothing clears the bar — rank order
       // isn't confidence order, so the best review can sit behind a weaker one.
-      if (
-        opts.collectReview &&
-        candidate.tier === 'review' &&
-        (!review || candidate.confidence > review.confidence)
-      ) {
-        review = candidate
+      const suggestable =
+        typeof opts.collectReview === 'function'
+          ? candidate.tier !== 'low' && opts.collectReview(candidate)
+          : opts.collectReview && candidate.tier === 'review'
+      if (suggestable && (!review || candidate.confidence > review.confidence)) {
+        review = { ...candidate, tier: 'review' }
       }
     }
   }
@@ -370,9 +372,10 @@ export async function autoMatchRelease(
       loadRelease: api.getRelease,
       accepts: (tier) => tier === 'high',
       minConfidence: provider === 'discogs' ? undefined : FALLBACK_MIN_CONFIDENCE,
-      // Only the curated source may suggest a review-tier match: an uncurated catalog's
-      // borderline title hit is noise, never worth flagging for a human glance.
-      collectReview: provider === 'discogs',
+      // An uncurated catalog's borderline title hit is noise unless the act agrees too:
+      // "Javier Fig - U Got The Muv (Original Mix)" came back from Bandcamp at 84 %, the
+      // right release, and was dropped because Bandcamp could neither apply nor suggest it.
+      collectReview: provider === 'discogs' || ((m) => m.signals.artistAgrees),
       maxProbe,
       onProbe,
     })
@@ -443,11 +446,15 @@ export function matchActivityReport(
     kind: 'match',
     labelKey: applied ? 'activity.autoMatchApplied' : 'activity.autoMatchReview',
     labelParams: { track: trackTitle },
+    // A suggestion from an uncurated source is held back by that source's own stricter bar,
+    // whatever its score or its signals.
     detailKey: applied
       ? 'activity.autoMatchAppliedDetail'
-      : demoted
-        ? 'activity.autoMatchReviewUncorroboratedDetail'
-        : 'activity.autoMatchReviewLowDetail',
+      : m.release.provider !== 'discogs'
+        ? 'activity.autoMatchReviewUncuratedDetail'
+        : demoted
+          ? 'activity.autoMatchReviewUncorroboratedDetail'
+          : 'activity.autoMatchReviewLowDetail',
     detailParams: {
       release: m.result.title,
       track: [m.track.position, m.track.title].filter(Boolean).join('. '),
@@ -455,6 +462,8 @@ export function matchActivityReport(
       duration: mark(m.signals.durations),
       artist: mark(m.signals.artistAgrees),
       catno: mark(m.signals.catalogMatched),
+      source: PROVIDER_NAME[m.release.provider],
+      bar: pct(FALLBACK_MIN_CONFIDENCE),
       candidates,
     },
     ms,
