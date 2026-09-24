@@ -762,9 +762,9 @@ describe('progressive search', () => {
     expect(result.current.results.map((r) => r.provider)).toEqual(['bandcamp', 'discogs'])
   })
 
-  // Nobody is looking at rows that move while the list is left alone, so once every source
-  // has answered the best match goes back on top, exactly where today's search puts it.
-  it('ranks the full list once every provider answered if the list was left alone', async () => {
+  // Nobody is reaching for a row while the list is left alone, so a late answer that scores
+  // better takes its ranked place above the rows already shown, sliding them down.
+  it('puts a better late answer in its ranked place if the list was left alone', async () => {
     const discogs = slowDiscogs()
     const result = render('Some Album')
     act(() => result.current.doSearch())
@@ -776,7 +776,7 @@ describe('progressive search', () => {
     expect(result.current.results.map((r) => r.provider)).toEqual(['discogs', 'bandcamp'])
   })
 
-  it('ranks the full list when the user entered the list and left before it settled', async () => {
+  it('puts a late answer in its ranked place once the user has left the list', async () => {
     const discogs = slowDiscogs()
     const result = render('Some Album')
     act(() => result.current.doSearch())
@@ -788,6 +788,50 @@ describe('progressive search', () => {
 
     await waitFor(() => expect(result.current.pendingProviders).toEqual([]))
     expect(result.current.results.map((r) => r.provider)).toEqual(['discogs', 'bandcamp'])
+  })
+
+  // Every answer takes its ranked place as it lands, so there is nothing left to reshuffle
+  // when the slowest source finishes. Appending the fast answers and ranking the whole list
+  // only then moved every row the user was already reading, seconds after they started.
+  it('places each answer in its ranked position as it lands, before every source answered', async () => {
+    let resolveDiscogs: (r: SearchResult[]) => void = () => {}
+    const discogsPending = new Promise<SearchResult[]>((r) => {
+      resolveDiscogs = r
+    })
+    let resolveDeezer: (r: SearchResult[]) => void = () => {}
+    const deezerPending = new Promise<SearchResult[]>((r) => {
+      resolveDeezer = r
+    })
+    setApi({
+      search: vi.fn((_q: string, provider?: string) =>
+        provider === 'discogs'
+          ? discogsPending
+          : provider === 'deezer'
+            ? deezerPending
+            : Promise.resolve([bcResult]),
+      ),
+      getRelease: vi.fn().mockResolvedValue(release),
+    })
+    const result = renderHook(
+      () =>
+        useDiscogsBrowser(item({ query: 'some album', title: 'Some Album' }), tr, undefined, [
+          'discogs',
+          'bandcamp',
+          'deezer',
+        ]),
+      { wrapper: wrapper() },
+    ).result
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results).toHaveLength(1))
+
+    await act(async () =>
+      resolveDeezer([{ provider: 'deezer', id: 5, title: 'Some Artist - Some Album' }]),
+    )
+
+    await waitFor(() => expect(result.current.results).toHaveLength(2))
+    expect(result.current.pendingProviders).toEqual(['discogs'])
+    expect(result.current.results.map((r) => r.provider)).toEqual(['deezer', 'bandcamp'])
+    resolveDiscogs([])
   })
 
   // The probe still weighs every source before suggesting, but by then the user may have

@@ -84,6 +84,39 @@ describe('DiscogsPanel result entrance', () => {
   })
 })
 
+// A late answer takes its ranked place among rows already on screen. Without a mark it
+// slips in unnoticed between them; the row that just arrived says so for a moment.
+describe('DiscogsPanel late arrivals', () => {
+  const row = (id: number, provider: 'discogs' | 'bandcamp' = 'discogs') => ({
+    provider,
+    id,
+    title: `Album ${id}`,
+  })
+  const fresh = () =>
+    screen
+      .getAllByTestId('discogs-result')
+      .filter((b) => b.dataset.fresh === 'true')
+      .map((b) => b.textContent?.match(/Album \d+/)?.[0])
+
+  it('marks a row that joins a list already on screen', () => {
+    const { rerender } = renderPanel(browser({ query: 'x', results: [row(1), row(2)] }))
+    expect(fresh()).toEqual([])
+
+    rerender(panel(browser({ query: 'x', results: [row(1), row(9, 'bandcamp'), row(2)] })))
+
+    expect(fresh()).toEqual(['Album 9'])
+  })
+
+  // A new search is a new list, not a late arrival: nothing in it is marked.
+  it('marks nothing in the list a new search brings', () => {
+    const { rerender } = renderPanel(browser({ query: 'x', results: [row(1), row(2)] }))
+
+    rerender(panel(browser({ query: 'y', results: [row(7), row(8)] })))
+
+    expect(fresh()).toEqual([])
+  })
+})
+
 describe('DiscogsPanel empty states', () => {
   // Before this split, an empty result set always showed the "choose an album" hint, so a
   // search that genuinely matched nothing looked identical to never having searched — the

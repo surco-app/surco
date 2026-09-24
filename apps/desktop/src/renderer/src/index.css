@@ -805,6 +805,25 @@ textarea {
   animation: result-in 0.22s cubic-bezier(0.2, 0, 0, 1) both;
 }
 
+/* A result that joined a list already on screen (a late source answering) holds a soft
+   accent fill for a moment and lets it go, so it doesn't slip in unnoticed between rows the
+   user was already reading. Runs alongside .result-in, which only moves and fades it. */
+.result-new {
+  animation:
+    result-in 0.22s cubic-bezier(0.2, 0, 0, 1) both,
+    result-new 1.8s ease-out both;
+}
+
+@keyframes result-new {
+  0%,
+  35% {
+    background-color: var(--color-accent-soft);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
 /* The stagger is pure decoration, so reduced motion drops it whole. Killing the animation is
    enough on its own: the inline animation-delay each row carries has nothing left to delay,
    so no row is held invisible waiting for a turn that never comes. */
