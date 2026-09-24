@@ -63,10 +63,14 @@ const ANALYSIS_QUERY_KEYS = [
   'clicks',
 ] as const
 
-export function removeAnalysisQueries(client: QueryClient, inputPath: string): void {
-  for (const key of ANALYSIS_QUERY_KEYS) {
-    client.removeQueries({ queryKey: [key, inputPath] })
-  }
+// One predicate pass for the whole batch: every removeQueries call scans the entire cache,
+// so evicting per family and per path made clearing a big list quadratic.
+export function removeAnalysisQueries(client: QueryClient, inputPaths: readonly string[]): void {
+  const families = new Set<unknown>(ANALYSIS_QUERY_KEYS)
+  const paths = new Set<unknown>(inputPaths)
+  client.removeQueries({
+    predicate: ({ queryKey }) => families.has(queryKey[0]) && paths.has(queryKey[1]),
+  })
 }
 
 // The list's one-shot warm-up on import: one IPC round trip for the whole new batch,
