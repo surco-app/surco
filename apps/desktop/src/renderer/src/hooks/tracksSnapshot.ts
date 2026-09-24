@@ -1,8 +1,8 @@
 import { hashKey, type Query, type QueryClient } from '@tanstack/react-query'
-import type { SpectrumVerdict, WaveformResult, WaveformScan } from '../../../shared/types'
+import type { ScanVerdict, SpectrumVerdict, WaveformResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { spectrogramOptions, spectrumVerdictKey } from './useSpectrogram'
-import { waveformOptions, waveformScanOptions } from './useWaveform'
+import { scanVerdictKey, waveformOptions } from './useWaveform'
 
 // The three probe families the list reads, one entry per track, positionally aligned with
 // `tracks`. Spectrum carries `fetching` too: a row with an analysis in flight shows a
@@ -12,7 +12,7 @@ export interface CacheSnapshot {
   waves: (WaveformResult | null | undefined)[]
   // The clip/channel scan lives in its own probe since the split, so the clipping
   // attention fact reads from here rather than off the peaks wave.
-  scans: (WaveformScan | null | undefined)[]
+  scans: (ScanVerdict | undefined)[]
 }
 
 // The query-family names, in one place so the build, the per-track slot read and the
@@ -21,7 +21,7 @@ export const SNAPSHOT_FAMILIES = [
   'spectrogram',
   'spectrumVerdict',
   'waveform',
-  'waveformScan',
+  'scanVerdict',
 ] as const
 
 // A cache lookup by key hash straight into the cache's own hash map, O(1) per key. find()
@@ -49,10 +49,7 @@ function readSlot(inputPath: string, at: (key: readonly unknown[]) => Query | un
       fetching: q?.state.fetchStatus === 'fetching',
     },
     wave: at(waveformOptions(inputPath).queryKey)?.state.data as WaveformResult | null | undefined,
-    scan: at(waveformScanOptions(inputPath).queryKey)?.state.data as
-      | WaveformScan
-      | null
-      | undefined,
+    scan: at(scanVerdictKey(inputPath))?.state.data as ScanVerdict | undefined,
   }
 }
 

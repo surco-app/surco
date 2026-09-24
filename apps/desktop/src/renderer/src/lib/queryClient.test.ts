@@ -19,4 +19,28 @@ describe('createQueryClient', () => {
       sampleRateHz: 44100,
     })
   })
+
+  // Same for the channel scan: its per-channel lanes are ~400 KB a track and collectable,
+  // but the list's clipping flag is one boolean and must stay for the session.
+  it('files every channel scan verdict apart, as the clipping fact alone', () => {
+    const client = createQueryClient()
+
+    client.setQueryData(['waveformScan', '/m/a.wav'], {
+      clipped: [false, true],
+      channels: [{ peaks: [0.5, 1], clipped: [false, true] }],
+    })
+    client.setQueryData(['waveformScan', '/m/b.wav'], { clipped: [false, false] })
+
+    expect(client.getQueryData(['scanVerdict', '/m/a.wav'])).toEqual({ clipping: true })
+    expect(client.getQueryData(['scanVerdict', '/m/b.wav'])).toEqual({ clipping: false })
+  })
+
+  // A failed scan resolves null and claims nothing, so it files no verdict either.
+  it('files no scan verdict for a failed scan', () => {
+    const client = createQueryClient()
+
+    client.setQueryData(['waveformScan', '/m/a.wav'], null)
+
+    expect(client.getQueryData(['scanVerdict', '/m/a.wav'])).toBeUndefined()
+  })
 })

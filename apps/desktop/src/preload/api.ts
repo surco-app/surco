@@ -23,6 +23,7 @@ import type {
   ProcessResult,
   RekordboxSyncIssue,
   Release,
+  ScanVerdict,
   SearchHints,
   SearchPriority,
   SearchProviderId,
@@ -196,7 +197,7 @@ export interface Api {
   // audio:cached-batch for exactly which families and why only those two.
   loadCachedAnalyses: (
     paths: string[],
-  ) => Promise<Record<string, { spectrogram?: SpectrumVerdict; waveformScan?: WaveformScan }>>
+  ) => Promise<Record<string, { spectrogram?: SpectrumVerdict; scanVerdict?: ScanVerdict }>>
   loudness: (path: string, priority?: 'high' | 'low') => Promise<LoudnessResult | null>
   properties: (path: string) => Promise<TrackProperties | null>
   bpm: (path: string, priority?: 'high' | 'low') => Promise<BpmResult | null>

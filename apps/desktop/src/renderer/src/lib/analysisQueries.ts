@@ -61,6 +61,7 @@ const ANALYSIS_QUERY_KEYS = [
   'key',
   'waveform',
   'waveformScan',
+  'scanVerdict',
   'clicks',
 ] as const
 
@@ -99,8 +100,8 @@ export async function seedCachedAnalyses(client: QueryClient, paths: string[]): 
         if (hit.spectrogram && client.getQueryData(['spectrumVerdict', path]) === undefined) {
           client.setQueryData(['spectrumVerdict', path], hit.spectrogram)
         }
-        if (hit.waveformScan && client.getQueryData(['waveformScan', path]) === undefined) {
-          client.setQueryData(['waveformScan', path], hit.waveformScan)
+        if (hit.scanVerdict && client.getQueryData(['scanVerdict', path]) === undefined) {
+          client.setQueryData(['scanVerdict', path], hit.scanVerdict)
         }
       }
     }

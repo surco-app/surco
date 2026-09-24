@@ -6,6 +6,7 @@ import { useRef } from 'react'
 import { describe, expect, it } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { TrackMetadata } from '../../../shared/types'
+import { createQueryClient } from '../lib/queryClient'
 import type { TrackItem } from '../types'
 import { useTracksView, type ViewCacheEntry } from './useTracksView'
 
@@ -49,8 +50,8 @@ function setup(initialTracks: TrackItem[], client: QueryClient) {
 
 const spectrum = { image: 'data:image/png;base64,', cutoffHz: 16000, sampleRateHz: 44100 }
 
-// seedCachedAnalyses hydrates exactly the two families audio:cached-batch returns —
-// spectrogram and waveformScan — and its docstring states the purpose: "so the quality
+// seedCachedAnalyses hydrates exactly the two verdicts audio:cached-batch returns —
+// the spectrum's and the channel scan's — and its docstring states the purpose: "so the quality
 // dot AND CLIPPING FLAG can render before any probe runs". The waveform family is
 // deliberately excluded there (its ~0.5 MB peaks payload would make a big library's
 // opening batch multi-MB). But useTracksView assigns view.audioIssues only inside
@@ -61,11 +62,11 @@ const spectrum = { image: 'data:image/png;base64,', cutoffHz: 16000, sampleRateH
 describe('the clipping fact must survive a waveform-less hydration', () => {
   it('reports clipping from a hydrated scan when no waveform was hydrated', () => {
     const client = new QueryClient()
-    const clipped = Array.from({ length: 200 }, (_, i) => i === 100)
     // Exactly what seedCachedAnalyses writes for a reopened library: the two hydrated
-    // families and nothing else. No ['waveform', ...] entry — it is never in the batch.
-    client.setQueryData(['spectrogram', '/music/a.wav'], spectrum)
-    client.setQueryData(['waveformScan', '/music/a.wav'], { clipped })
+    // verdicts and nothing else. No ['waveform', ...] entry — it is never in the batch.
+    const { image: _image, ...verdict } = spectrum
+    client.setQueryData(['spectrumVerdict', '/music/a.wav'], verdict)
+    client.setQueryData(['scanVerdict', '/music/a.wav'], { clipping: true })
 
     const { result } = setup([track('a')], client)
 
@@ -76,7 +77,7 @@ describe('the clipping fact must survive a waveform-less hydration', () => {
   })
 
   it('reports clipping from a surviving scan after the waveform was garbage-collected', () => {
-    const client = new QueryClient()
+    const client = createQueryClient()
     const peaks = Array.from({ length: 200 }, () => 0.5)
     const clipped = peaks.map((_, i) => i === 100)
     client.setQueryData(['waveform', '/music/a.wav'], { peaks, durationSec: 100 })

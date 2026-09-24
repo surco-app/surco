@@ -2,6 +2,7 @@ import type {
   BpmResult,
   KeyResult,
   LoudnessResult,
+  ScanVerdict,
   SpectrumResult,
   SpectrumVerdict,
   TrackProperties,
@@ -26,7 +27,7 @@ export interface AudioAnalysisIpc {
   }
   'audio:cached-batch': {
     args: [paths: string[]]
-    result: Record<string, { spectrogram?: SpectrumVerdict; waveformScan?: WaveformScan }>
+    result: Record<string, { spectrogram?: SpectrumVerdict; scanVerdict?: ScanVerdict }>
   }
   'audio:loudness': {
     args: [inputPath: string, priority?: 'high' | 'low']

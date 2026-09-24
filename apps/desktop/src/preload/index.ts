@@ -11,6 +11,7 @@ import type {
   LoudnessResult,
   ProcessProgress,
   RekordboxSyncIssue,
+  ScanVerdict,
   SearchHints,
   SearchPriority,
   SearchProviderId,
@@ -147,7 +148,7 @@ const api: Api = {
     invokeAudio('audio:spectrogram', path, priority),
   loadCachedAnalyses: (
     paths: string[],
-  ): Promise<Record<string, { spectrogram?: SpectrumVerdict; waveformScan?: WaveformScan }>> =>
+  ): Promise<Record<string, { spectrogram?: SpectrumVerdict; scanVerdict?: ScanVerdict }>> =>
     invokeAudio('audio:cached-batch', paths),
   loudness: (path: string, priority: 'high' | 'low' = 'low'): Promise<LoudnessResult | null> =>
     invokeAudio('audio:loudness', path, priority),
