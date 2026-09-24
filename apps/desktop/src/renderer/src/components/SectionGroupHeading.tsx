@@ -11,9 +11,10 @@ import type React from 'react'
 // stacked a few pixels from each section's own hairlines, it read as too many lines. One
 // short line beside the word, and generous space below it, does the separating instead.
 //
-// The phase is the top of the editor's outline, so it is also its largest text: a step above
-// the 13px section headers and two above the 11px subheads. Without tracked capitals to set it
-// apart, size and full-strength colour are what keep "Audio" from reading as one more caption.
+// The phase is the top of the editor's outline, but not its loudest text: at 15px full-strength
+// it competed with the section it opens ("File" over "Metadata"). It is a quiet 12px dim label,
+// the way a macOS sidebar names its groups, and the trailing hairline plus the space around it
+// are what keep it apart from a section's own subheads.
 //
 // Rendered by Editor whenever the group changes down the user-ordered list, so a reordered
 // list still labels correctly.
@@ -34,7 +35,7 @@ export function SectionGroupHeading({
           line beside the word instead of a heavy band above it, so a column of phases reads
           as a sequence of labels, not a stack of dividers. An h2, so the phases head the
           editor's outline for a screen reader, above each section's h3. */}
-      <h2 className="shrink-0 text-[15px] font-semibold text-fg">{label}</h2>
+      <h2 className="shrink-0 text-xs font-semibold text-fg-dim">{label}</h2>
       <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-line)]" />
     </div>
   )
