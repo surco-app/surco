@@ -920,6 +920,11 @@ export interface SpectrumResult {
   bitsLowPct?: number
 }
 
+// Everything the list reads off a spectrum: the whole result but the ~300 KB image,
+// which only the editor draws. Kept apart so the list's quality dot can outlive the
+// image and a reopened library never ships the images across IPC.
+export type SpectrumVerdict = Omit<SpectrumResult, 'image'>
+
 // One track in an Engine DJ export request. The renderer ships this serializable shape
 // across IPC; the main process resolves it to an absolute path on disk (for the relative
 // path Engine stores and the file size) before writing the SQLite library.

@@ -17,6 +17,13 @@ export function spectrogramOptions(inputPath: string, priority: 'high' | 'low' =
     : analysisOptions('spectrogram', inputPath, probe)
 }
 
+// Where the list finds a track's verdict once the image-carrying entry above is gone: the
+// query client files every spectrogram's verdict here, and a reopened library hydrates
+// only this. The editor never reads it; it needs the image.
+export function spectrumVerdictKey(inputPath: string) {
+  return ['spectrumVerdict', inputPath] as const
+}
+
 // Computes the spectrogram (and the lossless-cutoff it implies) for one input. Keyed by
 // path so it analyses once per file and revisiting never re-runs ffmpeg. Disabled when
 // the Quality section is off in Settings. The cache it fills is shared: the hover

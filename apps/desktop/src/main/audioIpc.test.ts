@@ -111,11 +111,13 @@ describe('audio:cached-batch', () => {
   // only after clearing and re-adding files (user-reported lag). The fresh
   // handler must return the analysis whole, with only the cache's own
   // bookkeeping flag held back.
-  // One datum, two routes, one shape: the fresh handler and the cached-batch
-  // warm path must serve deep-equal objects. When their shapes diverged, fields
-  // existed only on the warm route and their UI lines appeared late or only
-  // after re-adding files — a bug class that reads as intermittent "lag".
-  it('serves the same object on the fresh route and the warm route', async () => {
+  // One datum, two routes, one shape: the cached-batch warm path must serve everything
+  // the fresh handler does except the image. When their shapes diverged, fields existed
+  // only on the warm route and their UI lines appeared late or only after re-adding
+  // files — a bug class that reads as intermittent "lag". The image is the one exception:
+  // the list the batch feeds never draws it, and at ~300 KB a track it made reopening a
+  // big library clone gigabytes across IPC.
+  it('serves the fresh analysis minus the image on the warm route', async () => {
     const file = await makeFile()
     vi.mocked(buildSpectrum).mockResolvedValue({
       image: 'data:image/png;base64,BBBB',
@@ -140,7 +142,8 @@ describe('audio:cached-batch', () => {
       { spectrogram?: unknown }
     >
 
-    expect(batch[file].spectrogram).toEqual(fresh)
+    const { image: _image, ...verdict } = fresh as Record<string, unknown>
+    expect(batch[file].spectrogram).toEqual(verdict)
   })
 
   // Every cachedAnalysis-backed handler ships the cached object whole. The
@@ -208,7 +211,6 @@ describe('audio:cached-batch', () => {
     >
 
     expect(result[file].spectrogram).toEqual({
-      image: 'data:image/png;base64,x',
       cutoffHz: 20000,
       sampleRateHz: 44100,
       processed: false,

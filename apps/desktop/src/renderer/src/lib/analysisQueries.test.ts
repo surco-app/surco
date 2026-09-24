@@ -51,22 +51,24 @@ describe('analysisOptions', () => {
 describe('seedCachedAnalyses', () => {
   // The whole point: a fresh import's rows show their quality dot and clipping flag the
   // instant the batch IPC resolves, with no per-track probe IPC ever firing for a warm hit.
-  it('seeds the spectrogram and waveformScan query data for a cache hit', async () => {
+  // The spectrum lands as a verdict only: the hydration carries no image, and filing an
+  // image-less entry under the editor's spectrogram key would show it a blank panel.
+  it('seeds the spectrum verdict and waveformScan query data for a cache hit', async () => {
     const client = new QueryClient()
     setApi({
       loadCachedAnalyses: vi.fn().mockResolvedValue({
-        '/m/a.wav': { spectrogram: { image: 'x', cutoffHz: 20000, sampleRateHz: 44100 } },
+        '/m/a.wav': { spectrogram: { cutoffHz: 20000, sampleRateHz: 44100 } },
         '/m/b.wav': { waveformScan: { clipped: [true] } },
       }),
     })
 
     await seedCachedAnalyses(client, ['/m/a.wav', '/m/b.wav'])
 
-    expect(client.getQueryData(['spectrogram', '/m/a.wav'])).toEqual({
-      image: 'x',
+    expect(client.getQueryData(['spectrumVerdict', '/m/a.wav'])).toEqual({
       cutoffHz: 20000,
       sampleRateHz: 44100,
     })
+    expect(client.getQueryData(['spectrogram', '/m/a.wav'])).toBeUndefined()
     expect(client.getQueryData(['waveformScan', '/m/b.wav'])).toEqual({ clipped: [true] })
   })
 
@@ -78,7 +80,7 @@ describe('seedCachedAnalyses', () => {
 
     await seedCachedAnalyses(client, ['/m/a.wav'])
 
-    expect(client.getQueryData(['spectrogram', '/m/a.wav'])).toBeUndefined()
+    expect(client.getQueryData(['spectrumVerdict', '/m/a.wav'])).toBeUndefined()
     expect(client.getQueryData(['waveformScan', '/m/a.wav'])).toBeUndefined()
   })
 
@@ -87,21 +89,16 @@ describe('seedCachedAnalyses', () => {
   // older than what just landed, and clobbering it would flash a stale verdict back in.
   it('does not overwrite a query key that already has data', async () => {
     const client = new QueryClient()
-    client.setQueryData(['spectrogram', '/m/a.wav'], {
-      image: 'fresh',
-      cutoffHz: 1,
-      sampleRateHz: 1,
-    })
+    client.setQueryData(['spectrumVerdict', '/m/a.wav'], { cutoffHz: 1, sampleRateHz: 1 })
     setApi({
       loadCachedAnalyses: vi.fn().mockResolvedValue({
-        '/m/a.wav': { spectrogram: { image: 'stale', cutoffHz: 2, sampleRateHz: 2 } },
+        '/m/a.wav': { spectrogram: { cutoffHz: 2, sampleRateHz: 2 } },
       }),
     })
 
     await seedCachedAnalyses(client, ['/m/a.wav'])
 
-    expect(client.getQueryData(['spectrogram', '/m/a.wav'])).toEqual({
-      image: 'fresh',
+    expect(client.getQueryData(['spectrumVerdict', '/m/a.wav'])).toEqual({
       cutoffHz: 1,
       sampleRateHz: 1,
     })
@@ -151,14 +148,23 @@ describe('removeAnalysisQueries', () => {
   // premise for one path — eviction must clear that path's facts and only that path's.
   it('drops every probe family for the path and leaves other paths alone', () => {
     const client = new QueryClient()
-    for (const key of ['properties', 'loudness', 'spectrogram', 'bpm', 'key', 'waveform']) {
+    const keys = [
+      'properties',
+      'loudness',
+      'spectrogram',
+      'spectrumVerdict',
+      'bpm',
+      'key',
+      'waveform',
+    ]
+    for (const key of keys) {
       client.setQueryData([key, '/m/a.wav'], { fact: key })
       client.setQueryData([key, '/m/b.wav'], { fact: key })
     }
 
     removeAnalysisQueries(client, ['/m/a.wav'])
 
-    for (const key of ['properties', 'loudness', 'spectrogram', 'bpm', 'key', 'waveform']) {
+    for (const key of keys) {
       expect(client.getQueryData([key, '/m/a.wav'])).toBeUndefined()
       expect(client.getQueryData([key, '/m/b.wav'])).toEqual({ fact: key })
     }

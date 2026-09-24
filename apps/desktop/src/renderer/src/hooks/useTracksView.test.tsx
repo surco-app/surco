@@ -8,8 +8,10 @@ import { emptyMetadata } from '../../../shared/metadata'
 import type { TrackMetadata } from '../../../shared/types'
 import { HEAVY_PROBE_GC_MS } from '../lib/analysisQueries'
 import * as duplicates from '../lib/duplicates'
+import { createQueryClient } from '../lib/queryClient'
 import type { TrackItem } from '../types'
 import * as snapshot from './tracksSnapshot'
+import { spectrogramOptions } from './useSpectrogram'
 import { useTracksView, type ViewCacheEntry } from './useTracksView'
 import { waveformOptions } from './useWaveform'
 
@@ -242,6 +244,42 @@ describe('useTracksView', () => {
     vi.advanceTimersByTime(HEAVY_PROBE_GC_MS + 1_000)
     expect(client.getQueryData(['waveform', '/music/a.wav'])).toBeUndefined()
     vi.useRealTimers()
+  })
+
+  // The flip side of letting the image go: the row's quality dot must not go with it. A
+  // track analysed in this session lost its verdict five minutes later, because the only
+  // copy of the verdict lived inside the collectable spectrogram entry.
+  it('keeps a quality verdict on the list after its spectrogram image is collected', async () => {
+    vi.useFakeTimers()
+    const client = createQueryClient()
+    const { result } = setup([track('a')], client)
+    ;(window as unknown as { api: { spectrogram: () => Promise<unknown> } }).api = {
+      ...(window as unknown as { api: object }).api,
+      spectrogram: async () => spectrum,
+    }
+    await act(async () => {
+      await client.fetchQuery(spectrogramOptions('/music/a.wav'))
+    })
+
+    act(() => {
+      vi.advanceTimersByTime(HEAVY_PROBE_GC_MS + 1_000)
+    })
+
+    expect(client.getQueryData(['spectrogram', '/music/a.wav'])).toBeUndefined()
+    expect(result.current.tracksView[0].spectrum?.cutoffHz).toBe(spectrum.cutoffHz)
+    vi.useRealTimers()
+  })
+
+  // A reopened library hydrates verdicts only, never the images, so a verdict on its own
+  // has to be enough for the dot.
+  it('shows a hydrated verdict that carries no image', () => {
+    const client = new QueryClient()
+    const { image: _image, ...verdict } = spectrum
+    client.setQueryData(['spectrumVerdict', '/music/a.wav'], verdict)
+
+    const { result } = setup([track('a')], client)
+
+    expect(result.current.tracksView[0].spectrum).toEqual(verdict)
   })
 
   // The merge's identity stability is what keeps a progress tick from re-running the whole

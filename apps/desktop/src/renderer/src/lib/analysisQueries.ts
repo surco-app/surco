@@ -56,6 +56,7 @@ const ANALYSIS_QUERY_KEYS = [
   'properties',
   'loudness',
   'spectrogram',
+  'spectrumVerdict',
   'bpm',
   'key',
   'waveform',
@@ -95,8 +96,8 @@ export async function seedCachedAnalyses(client: QueryClient, paths: string[]): 
       const chunk = paths.slice(i, i + SEED_CHUNK_SIZE)
       const batch = await window.api.loadCachedAnalyses(chunk)
       for (const [path, hit] of Object.entries(batch)) {
-        if (hit.spectrogram && client.getQueryData(['spectrogram', path]) === undefined) {
-          client.setQueryData(['spectrogram', path], hit.spectrogram)
+        if (hit.spectrogram && client.getQueryData(['spectrumVerdict', path]) === undefined) {
+          client.setQueryData(['spectrumVerdict', path], hit.spectrogram)
         }
         if (hit.waveformScan && client.getQueryData(['waveformScan', path]) === undefined) {
           client.setQueryData(['waveformScan', path], hit.waveformScan)
