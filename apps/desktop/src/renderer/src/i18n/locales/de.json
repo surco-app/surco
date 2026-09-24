@@ -441,7 +441,7 @@
     "qualityCaptionBad": "Obergrenze bei ~{{cutoff}}, das Kennzeichen einer verlustbehafteten Quelle.",
     "qualityCaptionProcessed": "Möglicherweise regenerierte Höhen über einem Schnitt bei ~{{cutoff}}.",
     "qualityUpsampled": "Kein Inhalt über 22 kHz: wahrscheinlich von 44,1 kHz hochgerechnet.",
-    "qualityHiRes": "Es gibt Inhalt über 22 kHz: stammt nicht von 44,1 kHz.",
+    "qualityHiRes": "Echtes Hi-Res: Es gibt echten Inhalt über 22 kHz, diese {{rate}}-Datei ist also nicht aus CD-Qualität (44,1 kHz) hochgerechnet.",
     "qualityResolutionUnknown": "Es ließ sich nicht prüfen, ob es echtes Hi-Res ist.",
     "qualityBitsPill": "Aufgefüllte Tiefe",
     "qualityBitsPadded": "Deklariert 24 Bit, aber es ist aufgefülltes 16-Bit-Audio.",

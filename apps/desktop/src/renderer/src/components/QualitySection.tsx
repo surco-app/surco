@@ -255,6 +255,10 @@ export function QualitySection({
         : spectrum.resolution === 'unknown'
           ? 'editor.qualityResolutionUnknown'
           : null
+  const resolutionText =
+    resolutionKey && spectrum
+      ? tr(resolutionKey, { rate: `${spectrum.sampleRateHz / 1000} kHz` })
+      : null
   // Composes the shareable PNG (the verdict's proof for a "is this file fake?" thread)
   // and hands it to the save dialog. Guarded against double-clicks while composing.
   const [savingReport, setSavingReport] = useState(false)
@@ -277,7 +281,7 @@ export function QualitySection({
         cutoffLabel: chip ? tr(chip.key, { cutoff: chip.cutoff }) : null,
         caption: caption ?? '',
         notes: [
-          resolutionKey && tr(resolutionKey),
+          resolutionText,
           spectrum.bitsUsage === 'padded16' && tr('editor.qualityBitsPadded'),
         ].filter((note): note is string => typeof note === 'string'),
         footer: tr('editor.reportFooter'),
@@ -405,7 +409,7 @@ export function QualitySection({
                     data-testid={RESOLUTION_TESTID[resolutionKey]}
                     className="mt-2 text-xs text-fg-dim"
                   >
-                    {tr(resolutionKey)}
+                    {resolutionText}
                   </p>
                 )}
                 {/* The bit-depth verdict: which bytes actually carry signal in the
