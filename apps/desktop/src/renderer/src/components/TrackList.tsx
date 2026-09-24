@@ -1,15 +1,4 @@
-import {
-  Check,
-  CircleAlert,
-  type LucideIcon,
-  Music,
-  OctagonAlert,
-  Play,
-  Sparkles,
-  TriangleAlert,
-  Undo2,
-  X,
-} from 'lucide-react'
+import { Check, CircleAlert, Music, Play, Sparkles, TriangleAlert, Undo2, X } from 'lucide-react'
 import type React from 'react'
 import { memo, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -154,11 +143,23 @@ const qualityTone: Record<RowVerdict, RowTone> = {
   transcoded: 'danger',
 }
 
-const qualityIcon: Record<Exclude<RowVerdict, 'good'>, { Icon: LucideIcon; className: string }> = {
-  warn: { Icon: TriangleAlert, className: 'text-warn' },
-  bad: { Icon: OctagonAlert, className: 'text-danger' },
-  processed: { Icon: TriangleAlert, className: 'text-warn' },
-  transcoded: { Icon: OctagonAlert, className: 'text-danger' },
+// Solid shapes, not outlined icons: two 12px outlines side by side (sparkle and verdict)
+// read as clutter. Each shape is sized to the same optical weight so a column of them
+// scans evenly, and the shape alone tells the verdicts apart for colour-blind users:
+// circle good, triangle suspicion, square measured defect. The colour sits on the wrapper
+// and the shape paints currentColor, so the primary row's recolour reaches it.
+const qualityShape: Record<RowTone, React.JSX.Element> = {
+  good: <circle cx="6" cy="6" r="3.5" />,
+  warn: (
+    <path d="M6 1.4 10.8 10H1.2Z" strokeLinejoin="round" strokeWidth="1.2" stroke="currentColor" />
+  ),
+  danger: <rect x="2" y="2" width="8" height="8" rx="1.8" />,
+}
+
+const qualityColor: Record<RowTone, string> = {
+  good: 'text-good/85',
+  warn: 'text-warn',
+  danger: 'text-danger',
 }
 
 const qualityLabel: Record<RowVerdict, string> = {
@@ -184,26 +185,17 @@ function QualityMark({
   verdict: RowVerdict
   label: string
 }): React.JSX.Element {
-  if (verdict === 'good')
-    return (
-      <span
-        data-testid="track-quality"
-        data-quality={verdict}
-        data-tone={qualityTone[verdict]}
-        className="sr-only"
-      >
-        {label}
-      </span>
-    )
-  const { Icon, className } = qualityIcon[verdict]
+  const tone = qualityTone[verdict]
   return (
     <span
       data-testid="track-quality"
       data-quality={verdict}
-      data-tone={qualityTone[verdict]}
-      className="group/dot relative flex shrink-0"
+      data-tone={tone}
+      className={`group/dot relative flex h-3 w-3 items-center justify-center ${qualityColor[tone]}`}
     >
-      <Icon aria-hidden className={`h-3 w-3 ${className}`} />
+      <svg aria-hidden="true" viewBox="0 0 12 12" className="h-3 w-3" fill="currentColor">
+        {qualityShape[tone]}
+      </svg>
       <Tooltip label={label} align="end" scope="dot" />
       <span className="sr-only">{label}</span>
     </span>
@@ -595,20 +587,6 @@ const TrackRow = memo(function TrackRow({
                   <span className="sr-only">{backupLabel}</span>
                 </span>
               )}
-              {/* Marks only what is there, packed against the pill: a slot reserved for an
-                  absent mark spent the artist's width on nothing. */}
-              {quality !== 'unanalyzed' ? (
-                <QualityMark verdict={quality} label={tr(qualityLabel[quality])} />
-              ) : (
-                t.analyzing && (
-                  <span
-                    data-testid="track-quality-loading"
-                    className="group/dot relative h-2 w-2 shrink-0 animate-pulse rounded-full bg-current text-fg-faint ring-2 ring-current/20"
-                  >
-                    <Tooltip label={tr('editor.analyzing')} align="end" scope="dot" />
-                  </span>
-                )
-              )}
               {t.autoMatched ? (
                 <span
                   data-testid="track-automatched"
@@ -622,6 +600,26 @@ const TrackRow = memo(function TrackRow({
               ) : (
                 reviewPending && <span className="w-3 shrink-0" />
               )}
+              {/* The verdict's own fixed slot, right before the pill, so the marks line up in
+                  one column down the list; an unanalyzed row leaves it empty. */}
+              <span
+                data-testid="track-quality-slot"
+                className="flex h-3 w-3 shrink-0 items-center justify-center"
+              >
+                {quality !== 'unanalyzed' ? (
+                  <QualityMark verdict={quality} label={tr(qualityLabel[quality])} />
+                ) : (
+                  t.analyzing && (
+                    <span
+                      data-testid="track-quality-loading"
+                      className="group/dot relative flex h-3 w-3 items-center justify-center text-fg-faint"
+                    >
+                      <span className="h-2 w-2 animate-pulse rounded-full ring-[1.5px] ring-current ring-inset" />
+                      <Tooltip label={tr('editor.analyzing')} align="end" scope="dot" />
+                    </span>
+                  )
+                )}
+              </span>
               {/* A fixed slot, right-aligned under the duration, so the two read as one
                   trailing column and the review sparkle's place never moves. */}
               <span
@@ -645,8 +643,8 @@ const TrackRow = memo(function TrackRow({
           applied accent sparkle, and gone the moment the track is actually matched. A
           sibling of the row button, not a child, since a button inside the option button
           is invalid and folds the action into the row's name. It is placed over the empty
-          slot the artist line keeps for it beside the pill: that slot ends 52px from the
-          right edge (the row padding plus the pill slot and its gap), and its centre sits
+          slot the artist line keeps for it before the verdict: that slot ends 72px from the
+          right edge (the row padding, the pill slot, the verdict slot and their gaps), and its centre sits
           17px up from the bottom. The button is a 24px target (WCAG 2.5.8) centred there,
           so the 12px glyph lands where the slot would have drawn it. Shown under the same
           conditions as that line. */}
@@ -657,7 +655,7 @@ const TrackRow = memo(function TrackRow({
           data-confidence="review"
           aria-label={tr('commands.acceptReview')}
           onClick={() => onAcceptReview(t.id)}
-          className="group/dot press absolute right-[46px] bottom-[5px] flex h-6 w-6 items-center justify-center text-warn"
+          className="group/dot press absolute right-[66px] bottom-[5px] flex h-6 w-6 items-center justify-center text-warn"
         >
           <Sparkles className="h-3 w-3" aria-hidden="true" />
           <Tooltip
