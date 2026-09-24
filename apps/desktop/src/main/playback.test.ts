@@ -3,7 +3,12 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
-import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
+import {
+  cleanupPlaybackTemps,
+  PLAYBACK_TEMPS_KEPT,
+  resolvePlayable,
+  resolveRecovered,
+} from './playback'
 
 function deps(over: Record<string, unknown> = {}) {
   let n = 0
@@ -13,6 +18,7 @@ function deps(over: Record<string, unknown> = {}) {
     stripPicture: vi.fn(async () => {}),
     hasUnreadablePicture: vi.fn(async () => false),
     tempPath: vi.fn((ext: string) => `/tmp/play-${n++}.${ext}`),
+    remove: vi.fn(),
     ...over,
   }
 }
@@ -183,5 +189,36 @@ describe('cleanupPlaybackTemps', () => {
     const remove = vi.fn()
     cleanupPlaybackTemps(remove)
     expect(remove).toHaveBeenCalledWith('/tmp/play-0.wav')
+  })
+})
+
+describe('playback temps during a session', () => {
+  // Auditioning a crate plays one AIFF after another, and each becomes a full-size WAV in
+  // the temp folder (~75 MB for seven minutes). Kept until quit, a long listening session
+  // filled the disk with transcodes of tracks nobody was playing any more.
+  it('deletes the transcodes of tracks not played recently', async () => {
+    cleanupPlaybackTemps(vi.fn())
+    const remove = vi.fn()
+    const d = deps({ remove })
+    for (let i = 0; i < PLAYBACK_TEMPS_KEPT + 1; i++) await resolvePlayable(`/crate-${i}.aiff`, d)
+
+    expect(remove).toHaveBeenCalledTimes(1)
+    expect(remove).toHaveBeenCalledWith('/tmp/play-0.wav')
+  })
+
+  // What counts is when a track was last played, not first: the one in the player is asked
+  // for again on every seek, and must never be the one whose file gets deleted.
+  it('keeps the transcode of a track still being played', async () => {
+    cleanupPlaybackTemps(vi.fn())
+    const remove = vi.fn()
+    const d = deps({ remove })
+    await resolvePlayable('/playing.aiff', d)
+    for (let i = 0; i < PLAYBACK_TEMPS_KEPT; i++) {
+      await resolvePlayable(`/other-${i}.aiff`, d)
+      await resolvePlayable('/playing.aiff', d)
+    }
+
+    expect(remove).toHaveBeenCalledTimes(1)
+    expect(remove).not.toHaveBeenCalledWith('/tmp/play-0.wav')
   })
 })

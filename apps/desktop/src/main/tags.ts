@@ -91,6 +91,48 @@ export function preservesCuesInPlace(ext: string): boolean {
   return ID3_IN_PLACE.has(ext.toLowerCase())
 }
 
+// One read through TagLib on a file of its own, opened and disposed around it. Any failure,
+// opening or reading, comes back as the fallback: these reads are best-effort extras.
+function withTagLibFile<T>(file: string, read: (f: TagFile) => T, fallback: T): T {
+  const taglib = lazyTagLibFile(file)
+  try {
+    return taglib.use(read, fallback)
+  } finally {
+    taglib.dispose()
+  }
+}
+
+// A TagLib handle opened on first use and shared by every read after it, for a caller that
+// may need several of the reads below: readMeta runs on the main process for every imported
+// file, and each open is a few dozen synchronous reads, often over a NAS. A read the caller
+// never makes never opens the file, and a file that failed to open is not retried.
+export function lazyTagLibFile(file: string): {
+  use<T>(read: (f: TagFile) => T, fallback: T): T
+  dispose(): void
+} {
+  let handle: TagFile | undefined
+  let failed = false
+  return {
+    use(read, fallback) {
+      if (failed) return fallback
+      try {
+        handle ??= TagFile.createFromPath(file)
+      } catch {
+        failed = true
+        return fallback
+      }
+      try {
+        return read(handle)
+      } catch {
+        return fallback
+      }
+    },
+    dispose() {
+      handle?.dispose()
+    },
+  }
+}
+
 // iTunes/Apple Music stores grouping in its own GRP1 frame, not the standard TIT1 that
 // Surco (and TagLib's `grouping` property) writes. TagLib doesn't recognise GRP1 — it comes
 // back as an UnknownFrame — and neither the bundled ffprobe nor ffmpeg surface it, so a file
@@ -100,34 +142,29 @@ export function preservesCuesInPlace(ext: string): boolean {
 // no GRP1, the file can't be opened, or the frame is malformed, so readMeta only uses it as a
 // fallback when the probe gave no grouping.
 export function readItunesGrouping(file: string): string {
-  try {
-    const f = TagFile.createFromPath(file)
-    try {
-      const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
-      const grp1 = id3?.frames.find((fr) => fr.frameId.toString() === 'GRP1')
-      // No GRP1: fall back to the standard TIT1 frame, which is where TagLib puts a
-      // grouping and where every non-iTunes tagger looks for one. A WAV keeps its
-      // grouping only in ID3 (RIFF INFO has no field for it), and ffmpeg's WAV demuxer
-      // reads INFO — so without this the probe and this fallback would both miss it.
-      if (!grp1) return id3?.grouping ?? ''
-      const bytes = (grp1 as Id3v2UnknownFrame).data.toByteArray()
-      if (bytes.length < 2) return ''
-      const encoding = bytes[0]
-      const text = Buffer.from(bytes.slice(1))
-      // 0 = Latin1, 1/2 = UTF-16 (with/without BOM), 3 = UTF-8. iTunes writes Latin1 or UTF-8.
-      const decoded =
-        encoding === 3
-          ? text.toString('utf8')
-          : encoding === 1 || encoding === 2
-            ? text.toString('utf16le')
-            : text.toString('latin1')
-      return decoded.replace(/\0+$/, '')
-    } finally {
-      f.dispose()
-    }
-  } catch {
-    return ''
-  }
+  return withTagLibFile(file, itunesGroupingOf, '')
+}
+
+export function itunesGroupingOf(f: TagFile): string {
+  const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+  const grp1 = id3?.frames.find((fr) => fr.frameId.toString() === 'GRP1')
+  // No GRP1: fall back to the standard TIT1 frame, which is where TagLib puts a
+  // grouping and where every non-iTunes tagger looks for one. A WAV keeps its
+  // grouping only in ID3 (RIFF INFO has no field for it), and ffmpeg's WAV demuxer
+  // reads INFO — so without this the probe and this fallback would both miss it.
+  if (!grp1) return id3?.grouping ?? ''
+  const bytes = (grp1 as Id3v2UnknownFrame).data.toByteArray()
+  if (bytes.length < 2) return ''
+  const encoding = bytes[0]
+  const text = Buffer.from(bytes.slice(1))
+  // 0 = Latin1, 1/2 = UTF-16 (with/without BOM), 3 = UTF-8. iTunes writes Latin1 or UTF-8.
+  const decoded =
+    encoding === 3
+      ? text.toString('utf8')
+      : encoding === 1 || encoding === 2
+        ? text.toString('utf16le')
+        : text.toString('latin1')
+  return decoded.replace(/\0+$/, '')
 }
 
 // What the probe cannot see, read through TagLib's own view of the file. ffmpeg's WAV
@@ -141,67 +178,61 @@ export function readItunesGrouping(file: string): string {
 // grouping and label, a WAV's artist and album, an M4A's BPM. The generic tag covers the
 // core fields on every container; the TXXX extras are ID3's alone.
 export function readTagLibExtras(file: string): Partial<TrackMetadata> {
-  try {
-    const f = TagFile.createFromPath(file)
-    try {
-      const tag = f.tag
-      const extras: Partial<TrackMetadata> = {
-        title: tag.title?.trim() || '',
-        artist: tag.performers?.join(', ').trim() || '',
-        album: tag.album?.trim() || '',
-        albumArtist: tag.albumArtists?.join(', ').trim() || '',
-        year: tag.year ? String(tag.year) : '',
-        genre: tag.genres?.join(', ').trim() || '',
-        grouping: tag.grouping?.trim() || '',
-        comment: tag.comment?.trim() || '',
-        trackNumber: tag.track ? String(tag.track) : '',
-        discNumber: tag.disc ? String(tag.disc) : '',
-        bpm: tag.beatsPerMinute ? String(tag.beatsPerMinute) : '',
-        key: tag.initialKey?.trim() || '',
-        publisher: tag.publisher?.trim() || '',
-        remixArtist: tag.remixedBy?.trim() || '',
-        mixName: tag.subtitle?.trim() || '',
-        composer: tag.composers?.join(', ').trim() || '',
-        isrc: tag.isrc?.trim() || '',
-        conductor: tag.conductor?.trim() || '',
-        copyright: tag.copyright?.trim() || '',
-        trackTotal: tag.trackCount ? String(tag.trackCount) : '',
-        discTotal: tag.discCount ? String(tag.discCount) : '',
-      }
-      const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
-      if (!id3) return extras
-      const text = (id: string): string => {
-        const frame = id3.frames.find((fr) => fr.frameId.toString() === id)
-        return frame ? (frame as Id3v2TextInformationFrame).text?.[0]?.trim() || '' : ''
-      }
-      // Takes the TXXX frames, not the tag — passing the tag throws, and the catch below
-      // would turn that into a silent "no extras at all" for every field here.
-      const txxx = id3.getFramesByClassType<Id3v2UserTextInformationFrame>(
-        Id3v2FrameClassType.UserTextInformationFrame,
-      )
-      const userText = (desc: string): string =>
-        Id3v2UserTextInformationFrame.findUserTextInformationFrame(txxx, desc)?.text?.[0]?.trim() ||
-        ''
-      return {
-        ...extras,
-        isrc: extras.isrc || text('TSRC'),
-        originalArtist: text('TOPE'),
-        lyricist: text('TEXT'),
-        conductor: extras.conductor || text('TPE3'),
-        encodedBy: text('TENC'),
-        catalogNumber: userText('CATALOGNUMBER'),
-        discogsReleaseId: userText('DISCOGS_RELEASE_ID'),
-        energy: userText('ENERGYLEVEL') || userText('ENERGY'),
-        style: userText('STYLE'),
-        country: userText('COUNTRY'),
-        mediaType: userText('MEDIATYPE'),
-        mood: userText('MOOD'),
-      }
-    } finally {
-      f.dispose()
-    }
-  } catch {
-    return {}
+  return withTagLibFile(file, tagLibExtrasOf, {})
+}
+
+export function tagLibExtrasOf(f: TagFile): Partial<TrackMetadata> {
+  const tag = f.tag
+  const extras: Partial<TrackMetadata> = {
+    title: tag.title?.trim() || '',
+    artist: tag.performers?.join(', ').trim() || '',
+    album: tag.album?.trim() || '',
+    albumArtist: tag.albumArtists?.join(', ').trim() || '',
+    year: tag.year ? String(tag.year) : '',
+    genre: tag.genres?.join(', ').trim() || '',
+    grouping: tag.grouping?.trim() || '',
+    comment: tag.comment?.trim() || '',
+    trackNumber: tag.track ? String(tag.track) : '',
+    discNumber: tag.disc ? String(tag.disc) : '',
+    bpm: tag.beatsPerMinute ? String(tag.beatsPerMinute) : '',
+    key: tag.initialKey?.trim() || '',
+    publisher: tag.publisher?.trim() || '',
+    remixArtist: tag.remixedBy?.trim() || '',
+    mixName: tag.subtitle?.trim() || '',
+    composer: tag.composers?.join(', ').trim() || '',
+    isrc: tag.isrc?.trim() || '',
+    conductor: tag.conductor?.trim() || '',
+    copyright: tag.copyright?.trim() || '',
+    trackTotal: tag.trackCount ? String(tag.trackCount) : '',
+    discTotal: tag.discCount ? String(tag.discCount) : '',
+  }
+  const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+  if (!id3) return extras
+  const text = (id: string): string => {
+    const frame = id3.frames.find((fr) => fr.frameId.toString() === id)
+    return frame ? (frame as Id3v2TextInformationFrame).text?.[0]?.trim() || '' : ''
+  }
+  // Takes the TXXX frames, not the tag — passing the tag throws, and lazyTagLibFile's catch
+  // would turn that into a silent "no extras at all" for every field here.
+  const txxx = id3.getFramesByClassType<Id3v2UserTextInformationFrame>(
+    Id3v2FrameClassType.UserTextInformationFrame,
+  )
+  const userText = (desc: string): string =>
+    Id3v2UserTextInformationFrame.findUserTextInformationFrame(txxx, desc)?.text?.[0]?.trim() || ''
+  return {
+    ...extras,
+    isrc: extras.isrc || text('TSRC'),
+    originalArtist: text('TOPE'),
+    lyricist: text('TEXT'),
+    conductor: extras.conductor || text('TPE3'),
+    encodedBy: text('TENC'),
+    catalogNumber: userText('CATALOGNUMBER'),
+    discogsReleaseId: userText('DISCOGS_RELEASE_ID'),
+    energy: userText('ENERGYLEVEL') || userText('ENERGY'),
+    style: userText('STYLE'),
+    country: userText('COUNTRY'),
+    mediaType: userText('MEDIATYPE'),
+    mood: userText('MOOD'),
   }
 }
 
@@ -213,25 +244,19 @@ export function readTagLibExtras(file: string): Partial<TrackMetadata> {
 // stars), so the star count must not depend on which frame happens to come first.
 // Best-effort — returns '' when there's no POPM, no ID3 tag, or the file can't be opened.
 export function readPopmRating(file: string): string {
-  try {
-    const f = TagFile.createFromPath(file)
-    try {
-      const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
-      if (!id3) return ''
-      const frames = id3.getFramesByClassType<Id3v2PopularimeterFrame>(
-        Id3v2FrameClassType.PopularimeterFrame,
-      )
-      if (!frames?.length) return ''
-      const byte =
-        Id3v2PopularimeterFrame.find(frames, TRAKTOR_RATING_USER)?.rating ?? frames[0].rating
-      const stars = ratingToStars(byte)
-      return stars > 0 ? String(stars) : ''
-    } finally {
-      f.dispose()
-    }
-  } catch {
-    return ''
-  }
+  return withTagLibFile(file, popmRatingOf, '')
+}
+
+export function popmRatingOf(f: TagFile): string {
+  const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+  if (!id3) return ''
+  const frames = id3.getFramesByClassType<Id3v2PopularimeterFrame>(
+    Id3v2FrameClassType.PopularimeterFrame,
+  )
+  if (!frames?.length) return ''
+  const byte = Id3v2PopularimeterFrame.find(frames, TRAKTOR_RATING_USER)?.rating ?? frames[0].rating
+  const stars = ratingToStars(byte)
+  return stars > 0 ? String(stars) : ''
 }
 
 // A trim moved the audio under the stored cues: shift every position back by

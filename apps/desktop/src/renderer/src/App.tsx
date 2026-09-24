@@ -29,7 +29,7 @@ import type {
   TrackMetadata,
   TrashEntry,
 } from '../../shared/types'
-import { ActivityPanel } from './components/ActivityPanel'
+import { LiveActivityPanel } from './components/ActivityPanel'
 import { Confetti } from './components/Confetti'
 import { EmptyDisc } from './components/EmptyDisc'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -109,8 +109,8 @@ import {
   EMPTY_FILTER,
   filterWithSticky,
   formatBuckets,
-  matchesSearch,
   qualityCounts,
+  searchMatcher,
   sortTracks,
   suspectTracks,
   type TrackSort,
@@ -221,7 +221,12 @@ export default function App(): React.JSX.Element {
   )
   // The activity log: always-accumulating feed of background work, shown in a
   // movable floating panel the user toggles.
-  const { rows: activityRows, clear: clearActivity, report: reportActivity } = useActivityLog()
+  const {
+    store: activityStore,
+    running: activityRunning,
+    clear: clearActivity,
+    report: reportActivity,
+  } = useActivityLog()
   const [activityOpen, setActivityOpen] = useState(false)
   // Surco's own trash (main/surcoTrash.ts): the list is read when the panel opens and
   // after every run that could have added to it.
@@ -1091,8 +1096,8 @@ export default function App(): React.JSX.Element {
       stickyIds.current = new Set()
     }
     const next = sortTracks(
-      filterWithSticky(tracksView, filterSelection, stickyIds.current).filter((t) =>
-        matchesSearch(t, deferredSearch),
+      filterWithSticky(tracksView, filterSelection, stickyIds.current).filter(
+        searchMatcher(deferredSearch),
       ),
       sortBy,
       sortDir,
@@ -1849,7 +1854,7 @@ export default function App(): React.JSX.Element {
                 onPalette={onOpenPalette}
                 onStats={onOpenStats}
                 onActivity={onToggleActivity}
-                activityRunning={activityRows.some((r) => r.status === 'running')}
+                activityRunning={activityRunning}
                 onSettings={onOpenSettings}
               />
             </div>
@@ -2160,8 +2165,8 @@ export default function App(): React.JSX.Element {
               />
             )}
             {activityOpen && (
-              <ActivityPanel
-                rows={activityRows}
+              <LiveActivityPanel
+                store={activityStore}
                 onClear={clearActivity}
                 onClose={() => setActivityOpen(false)}
                 onCopy={(text) => {

@@ -20,6 +20,7 @@ import type { Chord } from '../../../shared/shortcuts'
 import type { TrackMetadata } from '../../../shared/types'
 import i18n from '../i18n'
 import { trackSignature } from '../lib/dirty'
+import * as triage from '../lib/triage'
 import type { TrackItem } from '../types'
 import { TrackContextMenu } from './TrackContextMenu'
 import { TrackList } from './TrackList'
@@ -1102,3 +1103,50 @@ function renderListWithBackups(tracks: TrackItem[], backups: Record<string, numb
   )
   return { onSelect, onOpenBackup }
 }
+
+describe('TrackList row positions', () => {
+  const stable = {
+    selectedIds: new Set<string>(),
+    onSelect: vi.fn(),
+    onActivate: vi.fn(),
+    onRemove: vi.fn(),
+    onAcceptReview: vi.fn(),
+    onPrefetch: vi.fn(),
+    renderMenu: () => null,
+  }
+  const list = (tracks: TrackItem[]) => (
+    <TrackList
+      tracks={tracks}
+      selectedId={null}
+      outputFormat="aiff"
+      bindings={bindings}
+      {...stable}
+    />
+  )
+
+  // The rows are real DOM, not a window over the list, so a screen reader needs each one to
+  // say where it sits: "row 3 of 4", and 4 again for every row once a track is added.
+  it('announces each row as its position out of the whole list', () => {
+    const tracks = [track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })]
+    const { rerender } = render(list(tracks))
+
+    rerender(list([...tracks, track({ id: 'd' })]))
+
+    const rows = screen.getAllByTestId('track-row')
+    expect(rows.map((r) => r.getAttribute('aria-posinset'))).toEqual(['1', '2', '3', '4'])
+    expect(rows.map((r) => r.getAttribute('aria-setsize'))).toEqual(['4', '4', '4', '4'])
+  })
+
+  // An import lands folder by folder, one batch per directory, so a big library grows the
+  // list hundreds of times over. Re-rendering every row already listed on each batch made
+  // an import of N tracks cost on the order of N² row renders.
+  it('does not re-render the rows already listed when a track is appended', () => {
+    const tracks = [track({ id: 'a' }), track({ id: 'b' }), track({ id: 'c' })]
+    const { rerender } = render(list(tracks))
+    const rowRenders = vi.spyOn(triage, 'trackQuality')
+
+    rerender(list([...tracks, track({ id: 'd' })]))
+
+    expect(rowRenders).toHaveBeenCalledTimes(1)
+  })
+})
