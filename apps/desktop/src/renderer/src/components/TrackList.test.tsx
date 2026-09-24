@@ -80,6 +80,7 @@ function renderList(
   const onSelect = vi.fn()
   const onActivate = vi.fn()
   const onRemove = vi.fn()
+  const onSwipeRemove = vi.fn()
   const onAcceptReview = vi.fn()
   const onPrefetch = vi.fn()
   const onSearch = vi.fn()
@@ -99,6 +100,7 @@ function renderList(
       onSelect={onSelect}
       onActivate={onActivate}
       onRemove={onRemove}
+      onSwipeRemove={onSwipeRemove}
       onAcceptReview={onAcceptReview}
       onPrefetch={onPrefetch}
       // Composed here exactly as App composes it: the list owns when/where the menu
@@ -127,6 +129,7 @@ function renderList(
     onSelect,
     onActivate,
     onRemove,
+    onSwipeRemove,
     onAcceptReview,
     onPrefetch,
     onSearch,
@@ -616,12 +619,12 @@ describe('TrackList', () => {
 
   it('removes a track without selecting it when the remove control is clicked', () => {
     vi.useFakeTimers()
-    const { onSelect, onRemove } = renderList([track({ id: 'a' }), track({ id: 'b' })])
+    const { onSelect, onSwipeRemove } = renderList([track({ id: 'a' }), track({ id: 'b' })])
     fireEvent.wheel(screen.getAllByTestId('track-row')[0].parentElement as Element, { deltaX: 70 })
     act(() => vi.advanceTimersByTime(500))
     vi.useRealTimers()
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }))
-    expect(onRemove).toHaveBeenCalledWith('a')
+    expect(onSwipeRemove).toHaveBeenCalledWith('a')
     expect(onSelect).not.toHaveBeenCalled()
   })
 
@@ -979,13 +982,13 @@ describe('TrackList swipe to remove', () => {
   })
 
   it('reveals Remove on a short swipe and removes the track from it', () => {
-    const { onRemove } = renderList([track({ id: 'a' })])
+    const { onSwipeRemove } = renderList([track({ id: 'a' })])
     swipe(70)
-    expect(onRemove).not.toHaveBeenCalled()
+    expect(onSwipeRemove).not.toHaveBeenCalled()
     const remove = screen.getByRole('button', { name: i18n.t('trackList.remove') })
     expect(remove).toHaveAttribute('tabindex', '-1')
     fireEvent.click(remove)
-    expect(onRemove).toHaveBeenCalledWith('a')
+    expect(onSwipeRemove).toHaveBeenCalledWith('a')
   })
 
   // Flush against the row, the button read as part of it (seen in the app 24/09); Mail keeps
@@ -1003,9 +1006,9 @@ describe('TrackList swipe to remove', () => {
   })
 
   it('removes the track outright on a full swipe', () => {
-    const { onRemove } = renderList([track({ id: 'a' })])
+    const { onSwipeRemove } = renderList([track({ id: 'a' })])
     swipe(400)
-    expect(onRemove).toHaveBeenCalledWith('a')
+    expect(onSwipeRemove).toHaveBeenCalledWith('a')
   })
 
   it('closes again on a swipe back or a nudge too small to mean it', () => {
@@ -1021,7 +1024,7 @@ describe('TrackList swipe to remove', () => {
   // button filled the whole row (seen in the app 24/09). Past the action the row resists, so
   // it only ever slides part of the way while the swipe still counts in full.
   it('slides the row only part of the way on a full swipe and still removes it', () => {
-    const { onRemove } = renderList([track({ id: 'a' })])
+    const { onSwipeRemove } = renderList([track({ id: 'a' })])
     const wrapper = screen.getByTestId('track-row').parentElement as Element
     for (let i = 0; i < 8; i++) fireEvent.wheel(wrapper, { deltaX: 50 })
     const slid = Number.parseFloat(
@@ -1029,15 +1032,15 @@ describe('TrackList swipe to remove', () => {
     )
     expect(slid).toBeLessThan(180)
     act(() => vi.advanceTimersByTime(500))
-    expect(onRemove).toHaveBeenCalledWith('a')
+    expect(onSwipeRemove).toHaveBeenCalledWith('a')
   })
 
   // A trackpad scroll is never perfectly vertical; the list must not start sliding rows
   // sideways while the user is just scrolling it.
   it('ignores a mostly vertical scroll', () => {
-    const { onRemove } = renderList([track({ id: 'a' })])
+    const { onSwipeRemove } = renderList([track({ id: 'a' })])
     swipe(300, 600)
-    expect(onRemove).not.toHaveBeenCalled()
+    expect(onSwipeRemove).not.toHaveBeenCalled()
     expect(screen.queryByRole('button', { name: i18n.t('trackList.remove') })).toBeNull()
   })
 
@@ -1217,6 +1220,7 @@ function renderListWithBackups(tracks: TrackItem[], backups: Record<string, numb
       onSelect={onSelect}
       onActivate={vi.fn()}
       onRemove={vi.fn()}
+      onSwipeRemove={vi.fn()}
       onAcceptReview={vi.fn()}
       onPrefetch={vi.fn()}
       renderMenu={() => null}
@@ -1233,6 +1237,7 @@ describe('TrackList row positions', () => {
     onSelect: vi.fn(),
     onActivate: vi.fn(),
     onRemove: vi.fn(),
+    onSwipeRemove: vi.fn(),
     onAcceptReview: vi.fn(),
     onPrefetch: vi.fn(),
     renderMenu: () => null,

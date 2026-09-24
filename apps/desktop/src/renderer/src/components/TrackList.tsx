@@ -37,6 +37,9 @@ interface Props {
   // Double-clicking a row plays it: opens the floating player straight on that track.
   onActivate: (track: TrackItem) => void
   onRemove: (id: string) => void
+  // The swipe's removal: that one row, never the selection around it, and without asking,
+  // the way Mail's swipe deletes one message. ⌫ and the menu keep onRemove and its confirm.
+  onSwipeRemove: (id: string) => void
   // Applies the row's pending review-tier suggestion — the mouse half of the
   // accept-review command. The sweep stored the release for one-action acceptance
   // (useAutoMatch: "shortcut or click"), but the click never existed: the amber
@@ -275,7 +278,7 @@ interface RowProps {
   outputFormat: OutputFormat
   onSelect: (id: string, mods: ClickMods) => void
   onActivate: (track: TrackItem) => void
-  onRemove: (id: string) => void
+  onSwipeRemove: (id: string) => void
   // Applies the row's pending review-tier suggestion — the mouse half of the
   // accept-review command. The sweep stored the release for one-action acceptance
   // (useAutoMatch: "shortcut or click"), but the click never existed: the amber
@@ -303,7 +306,7 @@ interface RowProps {
 
 // Memoized so a progress event — which replaces only the updated track's object
 // while every other row keeps its identity — re-renders that one row instead of
-// the whole list. Relies on App passing stable onSelect/onRemove.
+// the whole list. Relies on App passing stable onSelect/onSwipeRemove.
 const TrackRow = memo(function TrackRow({
   track: t,
   bindings,
@@ -314,7 +317,7 @@ const TrackRow = memo(function TrackRow({
   outputFormat,
   onSelect,
   onActivate,
-  onRemove,
+  onSwipeRemove,
   onAcceptReview,
   onRemoveKey,
   onExtendKey,
@@ -367,7 +370,7 @@ const TrackRow = memo(function TrackRow({
     settleRef.current = setTimeout(() => {
       const reached = swipeRef.current
       moveSwipe(reached >= removeAt || reached < SWIPE_ACTION_PX / 2 ? 0 : SWIPE_ACTION_PX)
-      if (reached >= removeAt) onRemove(t.id)
+      if (reached >= removeAt) onSwipeRemove(t.id)
     }, SWIPE_SETTLE_MS)
   }
   const closeSwipe = (): void => {
@@ -758,7 +761,7 @@ const TrackRow = memo(function TrackRow({
         <button
           type="button"
           tabIndex={-1}
-          onClick={() => onRemove(t.id)}
+          onClick={() => onSwipeRemove(t.id)}
           style={{ width: Math.max(swipe - SWIPE_GAP_PX, 0) }}
           className="absolute inset-y-0 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-fg-dim)] text-[11px] font-semibold whitespace-nowrap text-[var(--color-ink)]"
         >
@@ -785,6 +788,7 @@ export const TrackList = memo(function TrackList({
   onSelect,
   onActivate,
   onRemove,
+  onSwipeRemove,
   onAcceptReview,
   onPrefetch,
   renderMenu,
@@ -909,7 +913,7 @@ export const TrackList = memo(function TrackList({
             outputFormat={outputFormat}
             onSelect={onSelect}
             onActivate={onActivate}
-            onRemove={onRemove}
+            onSwipeRemove={onSwipeRemove}
             onAcceptReview={onAcceptReview}
             onRemoveKey={removeViaKeyboard}
             onExtendKey={extendViaKeyboard}
