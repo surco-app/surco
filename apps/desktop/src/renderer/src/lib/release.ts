@@ -404,7 +404,13 @@ export function preRankResults(results: SearchResult[], target: TrackMatchTarget
     // it outweighs the title, which often isn't in the "Artist - Album" row at all. A
     // compilation is then docked so an equally-relevant proper release outranks it, without
     // dropping it (a track may only exist on a compilation, and the probe still scores it).
-    const score = 2 * fraction(target.artist) + fraction(target.title)
+    // The act credited in front of the " - " says whose release it is. A remix or bootleg by
+    // someone else carries the original's whole name after it ("Glen Horsborough - Kings Of
+    // Tomorrow - Finally (Remix)") and matched every word the real release did.
+    const credited = result.title.includes(' - ')
+      ? sameAct(target.artist ?? '', [{ name: result.title.slice(0, result.title.indexOf(' - ')) }])
+      : false
+    const score = 2 * fraction(target.artist) + fraction(target.title) + (credited ? 1 : 0)
     return score - (isCompilation(result) ? COMPILATION_PENALTY : 0)
   }
   // A pressing whose year matches the file's tag is the edition the file came from, so it

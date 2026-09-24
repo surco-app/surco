@@ -448,6 +448,26 @@ describe('preRankResults', () => {
     expect(ranked[0].id).toBe(2)
   })
 
+  // A remix or bootleg by someone else carries the original's whole name in its title
+  // ("Glen Horsborough - Kings Of Tomorrow - Finally (Remix)"), so it matched every word the
+  // real release did and the tie fell to the source: ten Bandcamp bootlegs above Deezer's
+  // "Kings of Tomorrow - Finally". The act credited in front of the " - " is what says whose
+  // release it is.
+  it('ranks the release credited to the file artist above one that only names them', () => {
+    const ranked = preRankResults(
+      [
+        {
+          provider: 'bandcamp',
+          id: 1,
+          title: 'Glen Horsborough - Kings Of Tomorrow - Finally (Remix)',
+        },
+        { provider: 'deezer', id: 2, title: 'Kings of Tomorrow - Finally' },
+      ],
+      { title: 'Finally', artist: 'Kings Of Tomorrow' },
+    )
+    expect(ranked.map((x) => x.id)).toEqual([2, 1])
+  })
+
   it('keeps the original order when no row matches better', () => {
     const ranked = preRankResults([r(1, 'A - X'), r(2, 'B - Y')], { title: 'Z', artist: 'Q' })
     expect(ranked.map((x) => x.id)).toEqual([1, 2])
