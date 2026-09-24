@@ -1,3 +1,5 @@
+import { dirname } from 'node:path'
+
 // convertAudio writes its temp file beside the user's own output — anywhere on
 // disk, in-place edits included, never in the OS tmpdir — so a crash or
 // force-quit mid-write leaves a `Song.tmp-a1b2c3d4.aiff` there forever with no
@@ -65,7 +67,11 @@ export function createTmpManifest(manifestPath: string, fs: FsAdapter): TmpManif
         } catch (e) {
           // ENOENT is the sweep succeeding by other means (user deleted it, or the
           // crash happened before ffmpeg created it): nothing to chase next time.
-          if ((e as NodeJS.ErrnoException)?.code !== 'ENOENT') kept.push(path)
+          // Unless the folder itself is missing: a NAS or external disk not mounted
+          // yet at launch answers ENOENT for every path under it, and dropping those
+          // left the temps in the share with no record anywhere.
+          if ((e as NodeJS.ErrnoException)?.code !== 'ENOENT' || !fs.existsSync(dirname(path)))
+            kept.push(path)
         }
       }
       if (paths.length) writePaths(manifestPath, fs, kept)
