@@ -797,7 +797,7 @@ export default function App(): React.JSX.Element {
   // relies on a stable onRemove) and re-rendering every row on every edit.
   const menuTargets = useStableCallback((id: string): TrackItem[] =>
     selectedIds.includes(id) && selectedIds.length > 1
-      ? tracks.filter((t) => selectedIds.includes(t.id))
+      ? tracks.filter((t) => selectedIdSet.has(t.id))
       : tracks.filter((t) => t.id === id),
   )
 
@@ -995,10 +995,10 @@ export default function App(): React.JSX.Element {
   // that case is what lets the memoized Editor skip those renders entirely.
   const prevSelectedTracks = useRef<TrackItem[]>([])
   const selectedTracks = useMemo(() => {
-    const next = tracks.filter((t) => selectedIds.includes(t.id))
+    const next = tracks.filter((t) => selectedIdSet.has(t.id))
     if (!sameTracks(prevSelectedTracks.current, next)) prevSelectedTracks.current = next
     return prevSelectedTracks.current
-  }, [tracks, selectedIds])
+  }, [tracks, selectedIdSet])
   // The floating player (audio element, visibility, follow-selection playback)
   // lives in the hook; App renders the <audio> element and the card.
   const {
