@@ -77,6 +77,9 @@ export function Select({
   const listRef = useRef<HTMLDivElement>(null)
   const backdropRef = useRef<HTMLButtonElement>(null)
   const selected = options.find((o) => o.value === value)
+  // In a menu with examples, an option without one lines its label up with them instead of
+  // starting in the narrow label column, so it reads as part of the same list.
+  const hinted = options.some((o) => o.hint)
 
   useEffect(() => {
     if (!open) return
@@ -204,7 +207,10 @@ export function Select({
       }
     >
       {heading && (
-        <div aria-hidden="true" className="whitespace-nowrap px-2 pt-1 pb-1.5 text-[11px] text-fg-faint">
+        <div
+          aria-hidden="true"
+          className="whitespace-nowrap px-2 pt-1 pb-1.5 text-[11px] text-fg-faint"
+        >
           {label}
         </div>
       )}
@@ -219,10 +225,12 @@ export function Select({
           className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-panel-2)]"
         >
           {o.icon && <o.icon aria-hidden="true" className="h-4 w-4 shrink-0" />}
-          {o.hint ? (
+          {hinted ? (
             <>
-              <span className="w-3 shrink-0">{o.label}</span>
-              <span className="flex-1 font-mono text-fg-faint">{o.hint}</span>
+              <span className="w-3 shrink-0">{o.hint && o.label}</span>
+              <span className={`flex-1 ${o.hint ? 'font-mono text-fg-faint' : ''}`}>
+                {o.hint ?? o.label}
+              </span>
             </>
           ) : (
             <span className="flex-1">{o.label}</span>
