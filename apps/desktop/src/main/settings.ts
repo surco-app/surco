@@ -42,10 +42,11 @@ export const defaults: Settings = {
   // opts into overwriting it.
   overwriteOriginal: false,
   convertBesideOriginal: false,
-  // Every in-place rewrite stays undoable unless the user says otherwise: four defects
-  // in one week (17/09/2026) cost users the file instead of a redo, and a default that
-  // quietly drops the net would bring that back.
-  backupPolicy: 'always',
+  // Every re-encode stays undoable unless the user says otherwise: four defects in one
+  // week (17/09/2026) cost users the file instead of a redo. Not 'always': a tag edit
+  // passes the audio through untouched, and a whole-file copy for each one filled a
+  // DJ's disk past the cap for a net that guarded almost nothing.
+  backupPolicy: 'audioChanges',
   // The values the app shipped with as constants, now the starting point of a setting.
   backupRetentionDays: TRASH_RETENTION_DAYS,
   backupMaxGb: TRASH_MAX_BYTES / 1024 ** 3,
@@ -120,6 +121,7 @@ export const defaults: Settings = {
   shortcutOverrides: {},
   hasSeenOnboarding: false,
   deezerProviderMigrated: false,
+  backupPolicyMigrated: false,
   conversionCount: 0,
   stats: {
     imported: 0,
@@ -489,4 +491,18 @@ export function migrateProviderDefaults(): void {
     ? cur.searchProviders
     : [...cur.searchProviders, 'deezer' as const]
   saveSettings({ searchProviders, deezerProviderMigrated: true })
+}
+
+// 'always' was the default until the tag-edit copies filled a user's disk, and settings
+// are saved whole, so every install that ever pressed Save carries it written out — the
+// new default would never reach them. A deliberate 'always' looks the same, so it moves
+// too; the marker (synced) keeps a later launch, or another Mac, from undoing it again
+// once the user puts it back.
+export function migrateBackupPolicy(): void {
+  const cur = getSettings()
+  if (cur.backupPolicyMigrated) return
+  saveSettings({
+    backupPolicy: cur.backupPolicy === 'always' ? 'audioChanges' : cur.backupPolicy,
+    backupPolicyMigrated: true,
+  })
 }
