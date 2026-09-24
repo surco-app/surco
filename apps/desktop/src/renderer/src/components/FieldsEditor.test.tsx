@@ -470,13 +470,15 @@ describe('FieldsEditor tag separators', () => {
   })
 
   // The row stays one line: the separator is a small menu beside the name, not a second
-  // line of buttons under it.
-  it('sits beside the field name on the row line', () => {
+  // line of buttons under it. The name column is ~177px, so the pill carries no words of
+  // its own ("unidos con" wrapped in Spanish and pushed Hide out in French).
+  it('sits beside the field name on the row line with no words of its own', () => {
     setup({ visibleFields: ['genre'], separators })
     const row = screen.getByTestId('field-row-genre')
     expect(within(row).getByText('Genre').parentElement).toContainElement(
       screen.getByTestId('field-separator-genre'),
     )
+    expect(within(row).queryByText('joined by')).not.toBeInTheDocument()
   })
 
   it('names the current separator and switches the field to another one', () => {
@@ -503,7 +505,9 @@ describe('FieldsEditor tag separators', () => {
 
   it('shows a separator of the user own under Other with its text', () => {
     setup({ visibleFields: ['grouping'], separators: { genre: ', ', grouping: ' | ' } })
-    expect(screen.getByTestId('field-separator-grouping')).toHaveTextContent('Other')
+    expect(screen.getByTestId('field-separator-grouping')).toHaveAccessibleName(
+      'Grouping separator: Other',
+    )
     expect(screen.getByTestId('field-separator-grouping-input')).toHaveValue(' | ')
   })
 
