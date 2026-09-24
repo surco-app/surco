@@ -1,15 +1,4 @@
-import {
-  Check,
-  CircleAlert,
-  type LucideIcon,
-  Music,
-  OctagonAlert,
-  Play,
-  Sparkles,
-  TriangleAlert,
-  Undo2,
-  X,
-} from 'lucide-react'
+import { Check, CircleAlert, Music, Play, TriangleAlert, Undo2, X } from 'lucide-react'
 import type React from 'react'
 import { memo, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -76,7 +65,7 @@ const DEFER_PAINT_MIN_ROWS = 150
 // thin outline it still carries its colour but sits back a weight, keeping the two axes —
 // conversion (this corner) and quality (the left stripe) — from competing.
 const badgeBase =
-  'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 bg-[var(--color-panel)] ring-2 ring-[var(--color-panel)]'
+  'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 bg-[var(--color-ink)] ring-2 ring-[var(--color-ink)]'
 
 // Amber is kept for what needs the user (here, changes not yet applied); a running
 // conversion needs nothing from them, so it pulses in the accent instead.
@@ -110,7 +99,7 @@ function StatusBadge({
   // keeps contrast on the accent in both the light and dark themes.
   if (track.status === 'done')
     return (
-      <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--color-accent)] ring-2 ring-[var(--color-panel)]">
+      <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--color-accent)] ring-2 ring-[var(--color-ink)]">
         <Check aria-hidden className="h-2.5 w-2.5 text-[var(--color-ink)]" strokeWidth={3} />
       </span>
     )
@@ -124,7 +113,7 @@ function StatusBadge({
     <span
       data-testid="track-status-badge"
       data-tone="danger"
-      className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--color-panel)] ring-2 ring-[var(--color-panel)]"
+      className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--color-ink)] ring-2 ring-[var(--color-ink)]"
     >
       <CircleAlert
         data-testid="track-status-error-glyph"
@@ -154,11 +143,23 @@ const qualityTone: Record<RowVerdict, RowTone> = {
   transcoded: 'danger',
 }
 
-const qualityIcon: Record<Exclude<RowVerdict, 'good'>, { Icon: LucideIcon; className: string }> = {
-  warn: { Icon: TriangleAlert, className: 'text-warn' },
-  bad: { Icon: OctagonAlert, className: 'text-danger' },
-  processed: { Icon: TriangleAlert, className: 'text-warn' },
-  transcoded: { Icon: OctagonAlert, className: 'text-danger' },
+// Solid shapes, not outlined icons: two 12px outlines side by side (sparkle and verdict)
+// read as clutter. Each shape is sized to the same optical weight so a column of them
+// scans evenly, and the shape alone tells the verdicts apart for colour-blind users:
+// circle good, triangle suspicion, square measured defect. The colour sits on the wrapper
+// and the shape paints currentColor, so the primary row's recolour reaches it.
+const qualityShape: Record<RowTone, React.JSX.Element> = {
+  good: <circle cx="6" cy="6" r="3.5" />,
+  warn: (
+    <path d="M6 1.4 10.8 10H1.2Z" strokeLinejoin="round" strokeWidth="1.2" stroke="currentColor" />
+  ),
+  danger: <rect x="2" y="2" width="8" height="8" rx="1.8" />,
+}
+
+const qualityColor: Record<RowTone, string> = {
+  good: 'text-good/85',
+  warn: 'text-warn',
+  danger: 'text-danger',
 }
 
 const qualityLabel: Record<RowVerdict, string> = {
@@ -184,29 +185,32 @@ function QualityMark({
   verdict: RowVerdict
   label: string
 }): React.JSX.Element {
-  if (verdict === 'good')
-    return (
-      <span
-        data-testid="track-quality"
-        data-quality={verdict}
-        data-tone={qualityTone[verdict]}
-        className="sr-only"
-      >
-        {label}
-      </span>
-    )
-  const { Icon, className } = qualityIcon[verdict]
+  const tone = qualityTone[verdict]
   return (
     <span
       data-testid="track-quality"
       data-quality={verdict}
-      data-tone={qualityTone[verdict]}
-      className="group/dot relative flex shrink-0"
+      data-tone={tone}
+      className={`group/dot relative flex h-3 w-3 items-center justify-center ${qualityColor[tone]}`}
     >
-      <Icon aria-hidden className={`h-3 w-3 ${className}`} />
+      <svg aria-hidden="true" viewBox="0 0 12 12" className="h-3 w-3" fill="currentColor">
+        {qualityShape[tone]}
+      </svg>
       <Tooltip label={label} align="end" scope="dot" />
       <span className="sr-only">{label}</span>
     </span>
+  )
+}
+
+// The match sparkle as one solid four-point star, the same family and optical weight as the
+// quality shapes beside it. An applied auto-match is the normal state of most rows after a
+// sweep, so it takes the muted text colour; only the review one keeps a colour of its own,
+// because that is the one asking the user to act.
+function Spark(): React.JSX.Element {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 12 12" className="h-3 w-3" fill="currentColor">
+      <path d="M6 .6Q6.7 5.3 11.4 6 6.7 6.7 6 11.4 5.3 6.7.6 6 5.3 5.3 6 .6Z" />
+    </svg>
   )
 }
 
@@ -221,7 +225,7 @@ function matchTooltip(label: string, confidence: number | undefined): string {
 // placeholder the row itself shows.
 function rowTooltip(t: TrackItem, tr: (key: string) => string): string {
   const artist = t.meta.artist || tr('trackList.noArtist')
-  return `${t.listLabel} — ${artist}`
+  return `${t.listLabel} · ${artist}`
 }
 
 interface RowProps {
@@ -595,33 +599,39 @@ const TrackRow = memo(function TrackRow({
                   <span className="sr-only">{backupLabel}</span>
                 </span>
               )}
-              {/* Marks only what is there, packed against the pill: a slot reserved for an
-                  absent mark spent the artist's width on nothing. */}
-              {quality !== 'unanalyzed' ? (
-                <QualityMark verdict={quality} label={tr(qualityLabel[quality])} />
-              ) : (
-                t.analyzing && (
-                  <span
-                    data-testid="track-quality-loading"
-                    className="group/dot relative h-2 w-2 shrink-0 animate-pulse rounded-full bg-current text-fg-faint ring-2 ring-current/20"
-                  >
-                    <Tooltip label={tr('editor.analyzing')} align="end" scope="dot" />
-                  </span>
-                )
-              )}
               {t.autoMatched ? (
                 <span
                   data-testid="track-automatched"
                   data-confidence="high"
-                  className="group/dot relative flex shrink-0 items-center text-[var(--color-accent)]"
+                  className="group/dot relative flex shrink-0 items-center text-fg-dim"
                 >
-                  <Sparkles className="h-3 w-3" aria-hidden="true" />
+                  <Spark />
                   <Tooltip label={autoMatchLabel} align="end" scope="dot" />
                   <span className="sr-only">{autoMatchLabel}</span>
                 </span>
               ) : (
                 reviewPending && <span className="w-3 shrink-0" />
               )}
+              {/* The verdict's own fixed slot, right before the pill, so the marks line up in
+                  one column down the list; an unanalyzed row leaves it empty. */}
+              <span
+                data-testid="track-quality-slot"
+                className="flex h-3 w-3 shrink-0 items-center justify-center"
+              >
+                {quality !== 'unanalyzed' ? (
+                  <QualityMark verdict={quality} label={tr(qualityLabel[quality])} />
+                ) : (
+                  t.analyzing && (
+                    <span
+                      data-testid="track-quality-loading"
+                      className="group/dot relative flex h-3 w-3 items-center justify-center text-fg-faint"
+                    >
+                      <span className="h-2 w-2 animate-pulse rounded-full ring-[1.5px] ring-current ring-inset" />
+                      <Tooltip label={tr('editor.analyzing')} align="end" scope="dot" />
+                    </span>
+                  )
+                )}
+              </span>
               {/* A fixed slot, right-aligned under the duration, so the two read as one
                   trailing column and the review sparkle's place never moves. */}
               <span
@@ -645,8 +655,8 @@ const TrackRow = memo(function TrackRow({
           applied accent sparkle, and gone the moment the track is actually matched. A
           sibling of the row button, not a child, since a button inside the option button
           is invalid and folds the action into the row's name. It is placed over the empty
-          slot the artist line keeps for it beside the pill: that slot ends 52px from the
-          right edge (the row padding plus the pill slot and its gap), and its centre sits
+          slot the artist line keeps for it before the verdict: that slot ends 72px from the
+          right edge (the row padding, the pill slot, the verdict slot and their gaps), and its centre sits
           17px up from the bottom. The button is a 24px target (WCAG 2.5.8) centred there,
           so the 12px glyph lands where the slot would have drawn it. Shown under the same
           conditions as that line. */}
@@ -657,9 +667,9 @@ const TrackRow = memo(function TrackRow({
           data-confidence="review"
           aria-label={tr('commands.acceptReview')}
           onClick={() => onAcceptReview(t.id)}
-          className="group/dot press absolute right-[46px] bottom-[5px] flex h-6 w-6 items-center justify-center text-warn"
+          className="group/dot press absolute right-[66px] bottom-[5px] flex h-6 w-6 items-center justify-center text-warn"
         >
-          <Sparkles className="h-3 w-3" aria-hidden="true" />
+          <Spark />
           <Tooltip
             label={matchTooltip(tr('commands.acceptReview'), t.matchConfidence)}
             align="end"

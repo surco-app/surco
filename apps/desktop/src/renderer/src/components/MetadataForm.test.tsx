@@ -112,6 +112,16 @@ describe('MetadataForm', () => {
     expect(screen.getByTestId('field-compilation')).not.toBeChecked()
   })
 
+  // The rating is a fact about the record, like its artwork, and above the form it cost a
+  // whole row before the first field. Under the cover it rides the artwork column, so the
+  // fields column opens straight on the first field the user edits.
+  it('keeps the rating in the artwork column, apart from the fields', () => {
+    renderForm([spec('title', 'In My Dreams')])
+    const artwork = screen.getByTestId('cover').parentElement
+    expect(artwork).toContainElement(screen.getByTestId('stars'))
+    expect(artwork).not.toContainElement(screen.getByTestId('field-title'))
+  })
+
   // The stars are only meaningful next to the "Rating" caption the form draws; the caption
   // has to be their group's name, or a screen reader reads bare star counts.
   it('names the star group by the rating caption', () => {

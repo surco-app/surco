@@ -137,62 +137,7 @@ export const Toolbar = memo(function Toolbar({
             : ''}
         </span>
       </div>
-      {trackCount > 0 ? (
-        // Converting the list is the app's whole point, so it leads the header whenever
-        // there is a list, one track included, so the button never comes and goes.
-        // Labelled rather than a bare glyph: it rewrites files, and an icon alone would
-        // be a button that doesn't say what it touches.
-        <div
-          className="ml-3 inline-flex items-center"
-          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-        >
-          <button
-            type="button"
-            data-testid="convert-all"
-            onClick={batching ? onCancelBatch : onConvertAll}
-            disabled={!batching && !canConvertAll}
-            aria-label={
-              batching
-                ? tr('header.cancelConvert')
-                : tr('header.convertAll', { count: convertibleCount })
-            }
-            className={`press group relative flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
-              batching
-                ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
-                : 'border-[var(--color-line-strong)] text-fg'
-            }`}
-          >
-            {batching ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                {/* Spoken by the status regions at the top of the header, not here: the
-                    button's own name is the cancel action. */}
-                <span className="tabular-nums">
-                  {tr('header.convertingCount', {
-                    done: batchProgress.done,
-                    total: batchProgress.total,
-                  })}
-                </span>
-              </>
-            ) : (
-              <>
-                <ArrowRightLeft className="h-4 w-4" aria-hidden="true" />
-                {tr('header.convertAll', { count: convertibleCount })}
-              </>
-            )}
-            <Tooltip
-              label={
-                batching
-                  ? tr('header.cancelConvert')
-                  : tr('header.convertAll', { count: convertibleCount })
-              }
-              hint={batching ? undefined : hintFor('process-all')}
-            />
-          </button>
-        </div>
-      ) : (
-        <div />
-      )}
+      <div />
       <div
         className="flex items-center gap-2"
         style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
@@ -389,6 +334,59 @@ export const Toolbar = memo(function Toolbar({
           <SettingsIcon className="h-4 w-4" aria-hidden="true" />
           <Tooltip label={tr('header.settings')} hint={hintFor('settings')} align="end" />
         </button>
+        {/* Converting the list is the app's whole point, so it closes the header whenever
+            there is a list, one track included, so the button never comes and goes: at the
+            trailing edge, where a macOS toolbar keeps its main action, on the same side as
+            the editor footer's action for the open track. Labelled rather than a bare
+            glyph: it rewrites files, and an icon alone would not say what it touches. */}
+        {trackCount > 0 && (
+          <>
+            <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
+            <button
+              type="button"
+              data-testid="convert-all"
+              onClick={batching ? onCancelBatch : onConvertAll}
+              disabled={!batching && !canConvertAll}
+              aria-label={
+                batching
+                  ? tr('header.cancelConvert')
+                  : tr('header.convertAll', { count: convertibleCount })
+              }
+              className={`press group relative flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium disabled:opacity-40 ${
+                batching
+                  ? 'border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]'
+                  : 'bg-[var(--color-accent-soft)] text-fg hover:bg-[var(--color-row-selected)] hover:text-[var(--color-on-row-selected)]'
+              }`}
+            >
+              {batching ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  {/* Spoken by the status regions at the top of the header, not here: the
+                    button's own name is the cancel action. */}
+                  <span className="tabular-nums">
+                    {tr('header.convertingCount', {
+                      done: batchProgress.done,
+                      total: batchProgress.total,
+                    })}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <ArrowRightLeft className="h-4 w-4" aria-hidden="true" />
+                  {tr('header.convertAll', { count: convertibleCount })}
+                </>
+              )}
+              <Tooltip
+                label={
+                  batching
+                    ? tr('header.cancelConvert')
+                    : tr('header.convertAll', { count: convertibleCount })
+                }
+                hint={batching ? undefined : hintFor('process-all')}
+              />
+            </button>
+          </>
+        )}
       </div>
     </header>
   )

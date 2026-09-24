@@ -234,12 +234,12 @@ describe('TrackList', () => {
     ])
     const titleTrigger = screen.getByText('Frozen Name')
     fireEvent.focusIn(titleTrigger)
-    expect(screen.getByRole('tooltip')).toHaveTextContent('Frozen Name — Boards of Canada')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Frozen Name · Boards of Canada')
     fireEvent.focusOut(titleTrigger)
 
     const artistTrigger = screen.getByText('Boards of Canada')
     fireEvent.focusIn(artistTrigger)
-    expect(screen.getByRole('tooltip')).toHaveTextContent('Frozen Name — Boards of Canada')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Frozen Name · Boards of Canada')
   })
 
   it('drags a row out to external apps using its source file and cover', () => {
@@ -833,14 +833,48 @@ describe('TrackList quality badge', () => {
     expect(screen.getByTestId('track-quality')).toHaveAttribute('data-quality', 'good')
   })
 
-  // The row marks exceptions only: a green check on every healthy track spent the artist's
-  // width to say nothing needed doing. The verdict is still spoken, so a screen reader
-  // user hears the same triage the stripe and the red/amber marks give sighted users.
-  it('draws no mark for a clean track but still speaks its verdict', () => {
+  // A clean track must look different from one that was never analyzed: artexjay scanned
+  // whole albums by this mark to confirm they were fine, and with the good verdict drawn as
+  // nothing, "good" and "not analyzed yet" read the same. The mark is quiet, not absent, and
+  // it answers hover with the same verdict a screen reader hears.
+  it('draws a visible mark for a clean track and names its verdict on hover', () => {
     renderList([track({ id: 'a', spectrum: spectrum(21000) })])
     const mark = screen.getByTestId('track-quality')
-    expect(mark.querySelector('svg')).toBeNull()
+    expect(mark.querySelector('svg')).not.toBeNull()
     expect(mark).toHaveTextContent(i18n.t('editor.qualityGood'))
+    fireEvent.focusIn(mark)
+    expect(screen.getByRole('tooltip')).toHaveTextContent(i18n.t('editor.qualityGood'))
+  })
+
+  // Scanning down the list only works if the verdict sits in the same place on every row:
+  // packed against the format pill, it slid left whenever a backup, tag-read or sparkle mark
+  // joined it. A fixed slot right before the pill keeps the marks in one column, and a row
+  // with no verdict yet keeps the slot empty instead of closing the gap.
+  it('keeps the verdict in a fixed slot right before the format, whatever else the row marks', () => {
+    renderList([
+      track({ id: 'a', inputPath: '/music/a.flac', spectrum: spectrum(21000) }),
+      track({
+        id: 'b',
+        inputPath: '/music/b.flac',
+        spectrum: spectrum(16000),
+        autoMatched: true,
+        metaReadFailed: true,
+      }),
+      track({ id: 'c', inputPath: '/music/c.flac' }),
+      track({ id: 'd', inputPath: '/music/d.flac', analyzing: true }),
+    ])
+    const slots = screen.getAllByTestId('track-quality-slot')
+    expect(slots).toHaveLength(4)
+    for (const slot of slots) {
+      expect(slot.nextElementSibling).toHaveAttribute('data-testid', 'track-format-slot')
+    }
+    expect(within(slots[0]).getByTestId('track-quality')).toHaveAttribute('data-quality', 'good')
+    expect(within(slots[1]).getByTestId('track-quality')).toHaveAttribute(
+      'data-quality',
+      'transcoded',
+    )
+    expect(slots[2]).toBeEmptyDOMElement()
+    expect(within(slots[3]).getByTestId('track-quality-loading')).toBeInTheDocument()
   })
 
   it('shows no badge until the track has been analyzed', () => {
