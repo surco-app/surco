@@ -128,6 +128,23 @@ describe('createTmpManifest', () => {
     expect(fs.written()).toEqual(['/scanned.tmp-1.aiff'])
   })
 
+  // A NAS or external disk that is not mounted yet when Surco launches (the app opens at
+  // login, the share mounts later) answers ENOENT for every path under it, exactly like
+  // a file that is gone. Taken at its word, the sweep dropped those entries for good and
+  // the temps stayed in the user's share, 21 MB each, with nothing left to find them.
+  it('keeps a path whose folder is not there, since its volume may just be unmounted', () => {
+    const fs = fakeFs(['/Volumes/NAS/Music/.Song.tmp-1.mp3', '/music/.gone.tmp-2.mp3'])
+    fs.existsSync = (p: string) => p !== '/Volumes/NAS/Music'
+    fs.unlinkSync = vi.fn(() => {
+      throw enoent()
+    })
+    const manifest = createTmpManifest('/manifest.json', fs)
+
+    manifest.sweepOrphans()
+
+    expect(fs.written()).toEqual(['/Volumes/NAS/Music/.Song.tmp-1.mp3'])
+  })
+
   it('tolerates a corrupt manifest file, sweeping nothing instead of throwing', () => {
     const fs = fakeFs()
     fs.readFileSync = () => '{not json'
