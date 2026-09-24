@@ -49,6 +49,7 @@ import {
   defaults,
   getConfigDir,
   getSettings,
+  migrateBackupPolicy,
   migrateProviderDefaults,
   recordConversion,
   recordStat,
@@ -81,6 +82,13 @@ describe('defaults for a fresh install', () => {
   // they had already stopped needing.
   it('keeps originals for a week, not a month', () => {
     expect(defaults.backupRetentionDays).toBe(7)
+  })
+
+  // A copy of the whole file for every tag edit filled a DJ's disk past the 10 GB cap:
+  // the audio in those passes through untouched, so the copy guards almost nothing. A
+  // re-encode is where the original samples can be lost, and that is what stays covered.
+  it('keeps a copy only when the conversion re-encodes the audio', () => {
+    expect(defaults.backupPolicy).toBe('audioChanges')
   })
 })
 
@@ -674,5 +682,48 @@ describe('migrateProviderDefaults', () => {
     const s = getSettings()
     expect(s.searchProviders.filter((p) => p === 'deezer')).toHaveLength(1)
     expect(s.deezerProviderMigrated).toBe(true)
+  })
+})
+
+describe('migrateBackupPolicy', () => {
+  const wipe = (): void => {
+    rmSync(join(app.getPath('userData'), 'settings.json'), { force: true })
+    rmSync(join(app.getPath('userData'), 'config-dir.json'), { force: true })
+  }
+  beforeEach(wipe)
+  afterEach(wipe)
+
+  // Settings are saved whole, so every install that ever pressed Save carries the old
+  // default written out as 'always' — the new one would never reach them, and they are
+  // exactly the users whose disks filled. A deliberate 'always' cannot be told apart
+  // from the default, so it moves too and is one click back.
+  it('moves an install saved under the old default onto the new one, once', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ backupPolicy: 'always' }),
+    )
+    migrateBackupPolicy()
+    const s = getSettings()
+    expect(s.backupPolicy).toBe('audioChanges')
+    expect(s.backupPolicyMigrated).toBe(true)
+  })
+
+  it('leaves a user who chose never alone', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ backupPolicy: 'never' }),
+    )
+    migrateBackupPolicy()
+    expect(getSettings().backupPolicy).toBe('never')
+  })
+
+  // The marker is what lets a user who puts 'always' back after the migration keep it.
+  it('does not undo an always chosen after the migration ran', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ backupPolicy: 'always', backupPolicyMigrated: true }),
+    )
+    migrateBackupPolicy()
+    expect(getSettings().backupPolicy).toBe('always')
   })
 })
