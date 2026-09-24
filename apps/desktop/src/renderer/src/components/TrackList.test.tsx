@@ -965,7 +965,10 @@ describe('TrackList hover overlays', () => {
 // ⌫/Supr and the context menu still remove for a mouse with no horizontal scroll.
 describe('TrackList swipe to remove', () => {
   beforeEach(() => vi.useFakeTimers())
-  afterEach(() => vi.useRealTimers())
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
 
   const swipe = (deltaX: number, deltaY = 0) => {
     fireEvent.wheel(screen.getByTestId('track-row').parentElement as Element, { deltaX, deltaY })
@@ -1020,17 +1023,30 @@ describe('TrackList swipe to remove', () => {
     expect(screen.queryByRole('button', { name: i18n.t('trackList.remove') })).toBeNull()
   })
 
-  // Following the fingers one to one, a full swipe slid the row off the list and the grey
-  // button filled the whole row (seen in the app 24/09). Past the action the row resists, so
-  // it only ever slides part of the way while the swipe still counts in full.
-  it('slides the row only part of the way on a full swipe and still removes it', () => {
-    const { onSwipeRemove } = renderList([track({ id: 'a' })])
+  // How far the row travels tells the user what letting go will do. One to one with the
+  // fingers it overshot the list (Vicent 24/09: "llegaba a más del final"); held back all the
+  // way, the grey never reached the end ("se queda a mitad"). So, like Mail: it resists while
+  // the swipe is undecided, and once letting go would remove, the grey fills the row exactly.
+  const slidBy = () =>
+    Number.parseFloat(screen.getByTestId('track-row').style.transform.replace(/[^\d.]/g, ''))
+  const swipeWithoutLetting = (total: number) => {
     const wrapper = screen.getByTestId('track-row').parentElement as Element
-    for (let i = 0; i < 8; i++) fireEvent.wheel(wrapper, { deltaX: 50 })
-    const slid = Number.parseFloat(
-      screen.getByTestId('track-row').style.transform.replace(/[^\d.]/g, ''),
-    )
-    expect(slid).toBeLessThan(180)
+    for (let i = 0; i < 8; i++) fireEvent.wheel(wrapper, { deltaX: total / 8 })
+  }
+
+  it('holds the row back while the swipe is still undecided', () => {
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(300)
+    renderList([track({ id: 'a' })])
+    swipeWithoutLetting(150)
+    expect(slidBy()).toBeGreaterThan(90)
+    expect(slidBy()).toBeLessThan(150)
+  })
+
+  it('fills the row to its edge and no further once letting go would remove', () => {
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(300)
+    const { onSwipeRemove } = renderList([track({ id: 'a' })])
+    swipeWithoutLetting(1000)
+    expect(slidBy()).toBe(300)
     act(() => vi.advanceTimersByTime(500))
     expect(onSwipeRemove).toHaveBeenCalledWith('a')
   })
