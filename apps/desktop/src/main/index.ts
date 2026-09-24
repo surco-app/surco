@@ -53,6 +53,7 @@ import { registerAudioIpc } from './audioIpc'
 import type { CoverSource } from './cover'
 import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
+import { coverThumbPathOf, pruneCoverThumbs } from './coverThumbs'
 import { installCrashGuards, wireRendererRecovery } from './crashGuards'
 import { parseDockFrames } from './dockFrames'
 import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
@@ -537,10 +538,13 @@ function genericDragIcon(): NativeImage {
   return trackDragIconCache
 }
 function trackDragIcon(coverUrl?: string): NativeImage {
-  if (coverUrl?.startsWith('data:')) {
-    const cover = nativeImage.createFromDataURL(coverUrl)
-    if (!cover.isEmpty()) return cover.resize({ width: 128, height: 128 })
-  }
+  const stored = coverUrl ? coverThumbPathOf(coverUrl) : null
+  const cover = stored
+    ? nativeImage.createFromPath(stored)
+    : coverUrl?.startsWith('data:')
+      ? nativeImage.createFromDataURL(coverUrl)
+      : null
+  if (cover && !cover.isEmpty()) return cover.resize({ width: 128, height: 128 })
   return genericDragIcon()
 }
 
@@ -1285,7 +1289,7 @@ app.whenReady().then(() => {
       "default-src 'self'",
       "script-src 'self'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://i.discogs.com https://img.discogs.com https://*.bcbits.com https://*.dzcdn.net",
+      "img-src 'self' data: blob: surco: https://i.discogs.com https://img.discogs.com https://*.bcbits.com https://*.dzcdn.net",
       "media-src 'self' blob: surco:",
       "connect-src 'self'",
     ].join('; ')
@@ -1298,6 +1302,8 @@ app.whenReady().then(() => {
   // Bound the on-disk analysis cache at launch, before any new entries land, and again
   // every half hour: an "analyze all" over a big library writes gigabytes in one session.
   void pruneAnalysisCache()
+  // Storing a thumbnail waits for this, so no URL handed out can be pruned afterwards.
+  void pruneCoverThumbs()
   setInterval(() => void pruneAnalysisCache(), 30 * 60 * 1000)
   // Deletes any .tmp-* conversions left behind by a crash or force-quit in the
   // previous run, before any new conversion can add to the manifest.
@@ -1310,6 +1316,16 @@ app.whenReady().then(() => {
   // slice (rather than net.fetch'ing the whole file:// URL, which ignores Range)
   // is what makes scrubbing work.
   protocol.handle(MEDIA_SCHEME, async (req) => {
+    // Embedded cover thumbnails (see coverThumbs.ts): content-named files in the app's own
+    // store, so no media allow-list applies; coverThumbPathOf admits nothing else.
+    const thumb = coverThumbPathOf(req.url)
+    if (thumb) {
+      try {
+        return new Response(await readFile(thumb), { headers: { 'Content-Type': 'image/jpeg' } })
+      } catch {
+        return new Response('Not found', { status: 404 })
+      }
+    }
     // Refuse any path the app never handed to the renderer, before resolvePlayable
     // can even probe or transcode it — this is what keeps surco:// from being an
     // arbitrary-file-read primitive.

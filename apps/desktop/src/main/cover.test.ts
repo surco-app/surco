@@ -18,6 +18,10 @@ vi.mock('node:fs/promises', () => ({
   unlink: (p: string) => unlink(p),
 }))
 vi.mock('./tmp', () => ({ tmpName: (prefix: string, ext: string) => `${prefix}.${ext}` }))
+vi.mock('./coverThumbs', () => ({
+  coverThumbPathOf: (url: string) =>
+    url.startsWith('surco://cover/') ? `/store/${url.slice('surco://cover/'.length)}` : null,
+}))
 
 import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
 
@@ -117,6 +121,16 @@ describe('prepareProcessedCover', () => {
     expect(processCover).toHaveBeenCalledWith(embedPath, opts)
     await prepared?.cleanup()
     expect(unlink).toHaveBeenCalledWith(embedPath)
+  })
+
+  // A cover pasted from another track is that track's embedded thumbnail, which now lives
+  // in the thumbnail store under a surco://cover URL. It is read from there, and the store's
+  // copy is never deleted: other tracks may still show it.
+  it('processes a stored cover thumbnail straight from the store', async () => {
+    const prepared = await prepareProcessedCover({ coverUrl: 'surco://cover/abc.jpg' }, opts)
+    expect(processCover).toHaveBeenCalledWith('/store/abc.jpg', opts)
+    await prepared?.cleanup()
+    expect(unlink).not.toHaveBeenCalledWith('/store/abc.jpg')
   })
 })
 
