@@ -46,6 +46,18 @@ describe('body text contrast (WCAG 1.4.3 AA)', () => {
     })
   }
 
+  // Selected text keeps its own colour on the blue highlight, so the copy a visitor is
+  // about to paste (the brew command, a changelog line) stays readable while selected.
+  it('keeps selected text at 4.5:1 on the selection highlight', () => {
+    const rule = css.match(/::selection\s*\{[^}]*\}/)?.[0] ?? ''
+    const bg = rule.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/)
+    const fg = rule.match(/color:\s*(#[0-9a-fA-F]{6})/)
+    expect(bg && fg, '::selection colours not found').toBeTruthy()
+    const tint = `#${[bg?.[1], bg?.[2], bg?.[3]].map((v) => Number(v).toString(16).padStart(2, '0')).join('')}`
+    const highlight = fade(tint, token('bg'), Number(bg?.[4]))
+    expect(contrast(fg?.[1] ?? '', highlight)).toBeGreaterThanOrEqual(4.5)
+  })
+
   // The safety note under the install command is the one line that tells the reader
   // re-exporting to the same format rewrites the original in place — the sentence that
   // stands between them and an overwritten master. It was dimmed with /80, which drops it
