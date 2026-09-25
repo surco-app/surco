@@ -95,6 +95,7 @@ export function acceptReviewPatch(
   track: TrackItem,
   importFields?: readonly MetaTextKey[],
   genrePresets?: readonly string[],
+  fullReleaseDate = false,
 ): Partial<TrackItem> | undefined {
   const rm = track.reviewMatch
   if (!rm) return undefined
@@ -105,6 +106,7 @@ export function acceptReviewPatch(
     keepCoverArg(track),
     importFields,
     genrePresets,
+    fullReleaseDate,
   )
   return {
     meta: patch.meta,

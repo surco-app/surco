@@ -115,6 +115,7 @@ describe('getRelease', () => {
       title: 'pa ti toa <3',
       artists: [{ name: 'Ana Mena' }, { name: 'Lola Indigo' }],
       year: 2026,
+      released: '2026-06-12',
       genres: ['Pop'],
       images: [{ uri: 'xl10', type: 'primary', resource_url: 'xl10' }],
     })

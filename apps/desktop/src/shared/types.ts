@@ -527,6 +527,9 @@ export interface Release {
   title: string
   artists: { name: string }[]
   year?: number
+  // The release date as the source gives it: "1997-01-20", or Discogs' zeroed
+  // "1997-01-00" / "1997-00-00" for the parts it does not know.
+  released?: string
   genres?: string[]
   styles?: string[]
   labels?: { name: string; catno: string }[]

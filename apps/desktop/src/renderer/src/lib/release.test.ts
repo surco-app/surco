@@ -958,6 +958,31 @@ describe('buildReleaseMeta', () => {
     expect(patch.coverPath).toBeUndefined()
   })
 
+  // artexjay (25/09/2026): Discogs dates a release to the day, and he wants that date in the
+  // Year field rather than the year alone. Opt-in, since most DJ software shows the year.
+  describe('with the full release date on', () => {
+    it('fills Year with the whole release date', () => {
+      const rel = release({ year: 1997, released: '1997-01-20' })
+      expect(buildReleaseMeta(meta(), rel, undefined, {}, undefined, [], true).meta.year).toBe(
+        '1997-01-20',
+      )
+    })
+
+    // Discogs zeroes what it does not know ("1997-01-00", "1997-00-00"); a made-up day is
+    // worse than no day, so a partial date falls back to the year.
+    it('falls back to the year when the release is dated only to the month', () => {
+      const rel = release({ year: 1997, released: '1997-01-00' })
+      expect(buildReleaseMeta(meta(), rel, undefined, {}, undefined, [], true).meta.year).toBe(
+        '1997',
+      )
+    })
+  })
+
+  it('keeps the year alone while the full release date is off', () => {
+    const rel = release({ year: 1997, released: '1997-01-20' })
+    expect(buildReleaseMeta(meta(), rel, undefined).meta.year).toBe('1997')
+  })
+
   // Applying a release records which one it was, so the id can be written to the
   // file tag and used in the filename pattern.
   it('fills the Discogs release id from the applied release', () => {

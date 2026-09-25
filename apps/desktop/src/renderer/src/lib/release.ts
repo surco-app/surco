@@ -1,4 +1,5 @@
 import { METADATA_KEYS } from '../../../shared/metadata'
+import { fullDateOf } from '../../../shared/tagFields'
 import type {
   MetaTextKey,
   Release,
@@ -514,6 +515,7 @@ export function buildReleaseMeta(
   cover: { url?: string; path?: string; keep?: boolean } = {},
   importFields?: readonly MetaTextKey[],
   genrePresets: readonly string[] = [],
+  fullReleaseDate = false,
 ): ReleaseMetaPatch {
   const albumArtist = joinArtists(rel.artists)
   // Discogs classifies twice: a broad genre ("Electronic") and finer styles ("House",
@@ -548,7 +550,9 @@ export function buildReleaseMeta(
     // artist (compilations) first, then the album artist — overwriting a wrong existing
     // value rather than keeping it. The current value stands only if Discogs has none.
     artist: trackArtist || albumArtist || current.artist,
-    year: rel.year ? String(rel.year) : current.year,
+    year:
+      (fullReleaseDate && fullDateOf(rel.released ?? '')) ||
+      (rel.year ? String(rel.year) : current.year),
     // Falls back like every other field below: a release with neither genres nor styles
     // knows nothing about the genre, so it must not blank one the DJ typed by hand. This
     // was the one field that overwrote unconditionally, wiping it with nothing to show.

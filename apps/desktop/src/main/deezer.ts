@@ -214,6 +214,7 @@ export function mapRelease(album: DeezerAlbum, tracks: DeezerAlbumTrack[]): Rele
     title: album.title,
     artists: albumArtists(album),
     year: parseYear(album.release_date),
+    released: album.release_date,
     genres: genres.length ? genres : undefined,
     images: cover ? [{ uri: cover, type: 'primary', resource_url: cover }] : undefined,
     tracklist: tracks.map((t, i) => ({

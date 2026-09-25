@@ -33,6 +33,7 @@ export interface SyncedDraft {
   groupingSeparator: string
   trimWhitespace: boolean
   zeroPadTrack: boolean
+  fullReleaseDate: boolean
   visibleFields: string[]
   customFields: CustomField[]
   requiredFields: string[]
@@ -119,6 +120,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     groupingSeparator: s.groupingSeparator,
     trimWhitespace: s.trimWhitespace,
     zeroPadTrack: s.zeroPadTrack,
+    fullReleaseDate: s.fullReleaseDate,
     visibleFields: s.visibleFields,
     customFields: s.customFields ?? [],
     requiredFields: s.requiredFields,

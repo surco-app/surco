@@ -1046,6 +1046,8 @@
     "genreHint": "Affichés comme boutons rapides à côté de ceux de la release choisie.",
     "trimWhitespace": "Supprimer les espaces superflus",
     "zeroPadTrack": "N° de piste avec zéro devant (03)",
+    "fullReleaseDate": "Date de sortie complète dans Année (2020-12-01)",
+    "fullReleaseDateHint": "Lors du remplissage depuis Discogs, Deezer ou Bandcamp. Si la source n'a pas le jour, seule l'année est gardée.",
     "coverMaxSize": "Taille maximale de la pochette",
     "coverMaxHint": "px (0 = sans limite)",
     "coverUpscale": "Agrandir les pochettes plus petites jusqu'à cette taille",

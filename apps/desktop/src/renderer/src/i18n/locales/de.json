@@ -1046,6 +1046,8 @@
     "genreHint": "Erscheinen als Schnellbuttons neben denen des gewählten Releases.",
     "trimWhitespace": "Überflüssige Leerzeichen entfernen",
     "zeroPadTrack": "Track-Nummer mit führender Null (03)",
+    "fullReleaseDate": "Vollständiges Veröffentlichungsdatum im Feld Jahr (2020-12-01)",
+    "fullReleaseDateHint": "Beim Ausfüllen aus Discogs, Deezer oder Bandcamp. Fehlt der Tag in der Quelle, bleibt nur das Jahr.",
     "coverMaxSize": "Maximale Covergröße",
     "coverMaxHint": "px (0 = keine Grenze)",
     "coverUpscale": "Kleinere Cover auf diese Größe vergrößern",
