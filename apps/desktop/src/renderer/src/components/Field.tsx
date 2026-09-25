@@ -3,6 +3,7 @@ import { memo, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TagList } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
+import type { FieldWidth } from '../lib/fields'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
 import { SuggestionChips } from './SuggestionChips'
 
@@ -13,11 +14,21 @@ import { SuggestionChips } from './SuggestionChips'
 // the field instant and runs that walk once per edit instead of once per keypress.
 const COMMIT_DEBOUNCE_MS = 200
 
+// Sized for the longest value each tag holds: "128.5" or "10A" in a short box, a hyphenated
+// ISRC in a medium one.
+const WIDTH_CLASS: Record<FieldWidth, string> = { short: 'w-[4.5rem]', medium: 'w-36' }
+
 interface FieldProps {
   name: string
   label: string
   value: string
   onChange: (v: string) => void
+  width?: FieldWidth
+  // Joined onto a row after another bounded field: the label sits beside the box instead of
+  // in the form's label column.
+  inline?: boolean
+  // The bounded fields that follow this one on its row.
+  trailing?: React.ReactNode
   required?: boolean
   // Required and still empty: drawn as the amber dot, read out as a description.
   invalid?: boolean
@@ -43,6 +54,9 @@ export const Field = memo(function Field({
   label,
   value,
   onChange,
+  width,
+  inline,
+  trailing,
   required,
   invalid,
   mixed,
@@ -125,29 +139,33 @@ export const Field = memo(function Field({
   const hasMenu =
     insertSources !== undefined &&
     (insertable.length > 0 || draft.trim() !== '' || !!cleanResult || !!formatResult)
-  return (
-    // A wrapping <label> would fold the { } menu button and every chip into the input's
-    // accessible name, so the label points at the input by id and the rest sits beside it.
-    // From 28rem the field's parts join the form's two-track grid directly (contents), so every
-    // label shares one column and every input the other; the chips sit under their input.
-    <div className="group block @[28rem]:contents">
-      <label
-        htmlFor={inputId}
-        className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-fg-dim @[28rem]:col-start-1 @[28rem]:mb-0 @[28rem]:min-h-[34px] @[28rem]:max-w-32 @[28rem]:flex-row-reverse @[28rem]:justify-start @[28rem]:text-right"
-      >
-        {label}
-        {/* A required field that's still empty isn't an error the user made — it's a
+  const labelEl = (
+    <label
+      htmlFor={inputId}
+      className={`flex items-center gap-1.5 text-xs font-medium text-fg-dim ${
+        inline
+          ? 'min-h-[34px] flex-row-reverse whitespace-nowrap'
+          : width
+            ? 'min-h-[34px] @[28rem]:col-start-1 @[28rem]:self-start @[28rem]:max-w-32 @[28rem]:flex-row-reverse @[28rem]:justify-start @[28rem]:text-right'
+            : 'mb-1.5 @[28rem]:col-start-1 @[28rem]:mb-0 @[28rem]:min-h-[34px] @[28rem]:max-w-32 @[28rem]:flex-row-reverse @[28rem]:justify-start @[28rem]:text-right'
+      }`}
+    >
+      {label}
+      {/* A required field that's still empty isn't an error the user made — it's a
             calm "you'll need this before converting" cue. Reserve danger-red for true
             mistakes and mark the gap with an amber dot, the app's own attention colour. */}
-        {invalid && (
-          <span
-            data-testid={`field-required-${name}`}
-            aria-hidden="true"
-            className="h-1.5 w-1.5 rounded-full bg-warn"
-          />
-        )}
-      </label>
-      <span className="relative block @[28rem]:col-start-2">
+      {invalid && (
+        <span
+          data-testid={`field-required-${name}`}
+          aria-hidden="true"
+          className="h-1.5 w-1.5 rounded-full bg-warn"
+        />
+      )}
+    </label>
+  )
+  const control = (
+    <>
+      <span className={`relative block ${width ? '' : '@[28rem]:col-start-2'}`}>
         <input
           ref={inputRef}
           id={inputId}
@@ -196,7 +214,7 @@ export const Field = memo(function Field({
           of the real one, so the detected value swaps in without popping into empty space.
           Drops out the moment a real suggestion arrives (or the probe fails → no chip). */}
       {suggesting && !(suggestions && suggestions.length > 0) && (
-        <span className="mt-1.5 flex @[28rem]:col-start-2 @[28rem]:mt-0">
+        <span className={`mt-1.5 flex ${width ? '' : '@[28rem]:col-start-2 @[28rem]:mt-0'}`}>
           <span
             data-testid={`suggestion-loading-${name}`}
             aria-hidden="true"
@@ -205,7 +223,7 @@ export const Field = memo(function Field({
         </span>
       )}
       {suggestions && suggestions.length > 0 && (
-        <div className="@[28rem]:col-start-2 @[28rem]:-mt-1.5">
+        <div className={width ? '' : '@[28rem]:col-start-2 @[28rem]:-mt-1.5'}>
           <SuggestionChips
             suggestions={suggestions}
             isOn={(s) =>
@@ -223,6 +241,48 @@ export const Field = memo(function Field({
           />
         </div>
       )}
+    </>
+  )
+  if (!width) {
+    return (
+      // A wrapping <label> would fold the { } menu button and every chip into the input's
+      // accessible name, so the label points at the input by id and the rest sits beside it.
+      // From 28rem the field's parts join the form's two-track grid directly (contents), so
+      // every label shares one column and every input the other; the chips sit under their
+      // input.
+      <div className="group block @[28rem]:contents">
+        {labelEl}
+        {control}
+      </div>
+    )
+  }
+  // A bounded field keeps its box and chips in one column of its own width, so a detected
+  // BPM chip stays under the BPM box when other short fields follow it on the row.
+  const column = (
+    <div
+      data-testid={`field-column-${name}`}
+      className={`relative flex shrink-0 flex-col ${WIDTH_CLASS[width]}`}
+    >
+      {control}
+    </div>
+  )
+  if (inline) {
+    return (
+      <div className="group flex items-start gap-2">
+        {labelEl}
+        {column}
+      </div>
+    )
+  }
+  // The first field of a row: its label takes the form's label column and the fields that
+  // follow it (trailing) line up beside its box, wrapping when the column runs out.
+  return (
+    <div className="group flex items-start gap-2 @[28rem]:contents">
+      {labelEl}
+      <div className="flex min-w-0 flex-wrap items-start gap-x-3 gap-y-2 @[28rem]:col-start-2">
+        {column}
+        {trailing}
+      </div>
     </div>
   )
 })
