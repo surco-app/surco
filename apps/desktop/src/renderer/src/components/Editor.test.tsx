@@ -3184,39 +3184,16 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in library')
   })
 
-  // The bug this guards: while Discogs is still searching, its match could yet prove the
-  // track owned, so the badge must NOT flash "not in library" only to correct itself a
-  // second later. It shows "Checking…" until the search settles.
-  it('shows a checking state while Discogs is still searching, not a premature negative', async () => {
+  // Reported 25/09: the badge waited on the whole Discogs cascade (tens of seconds) before
+  // saying anything, for the very tracks the user doesn't own. The library answer is
+  // local and instant, so it is shown at once; Discogs may still flip it to owned later.
+  it('answers from the library at once while Discogs is still searching', async () => {
     setApi()
-    // Hold the search open so the editor stays in its in-flight window for the assertion.
     let release_: () => void = () => {}
     const gate = new Promise<unknown[]>((res) => {
       release_ = () => res([{ id: 7, title: 'Some Album', cover_image: 'c.jpg' }])
     })
     ;(window as unknown as { api: { search: unknown } }).api.search = vi.fn(() => gate)
-    const owned = buildLibraryIndex([{ title: 'Track Two (Remix)', artist: 'The Artist' }])
-    renderEditor(
-      { id: 'a', meta: { title: 'track two remix', artist: 'Wrong Tag Artist' } },
-      'wav',
-      {
-        libraryIndex: owned,
-      },
-    )
-    fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
-    fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
-    // The search is in flight: the raw tags don't match, but the verdict isn't "no" yet.
-    await waitFor(() =>
-      expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Checking…'),
-    )
-    release_()
-  })
-
-  // The exact flicker the user reported: a track opens with a query, so the editor auto-runs
-  // a Discogs search after a debounce. During that debounce window — before the request even
-  // starts — the badge must already read "Checking…", never a momentary "not in library".
-  it('shows checking from the moment a track with a query opens, before the search even fires', () => {
-    setApi()
     const owned = buildLibraryIndex([{ title: 'Track Two (Remix)', artist: 'The Artist' }])
     renderEditor(
       {
@@ -3227,14 +3204,14 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
       'wav',
       { libraryIndex: owned },
     )
-    // Synchronous, right after mount: the 500ms debounce hasn't fired, so no request is in
-    // flight yet — but the verdict is still pending, so it must not read negative.
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Checking…')
+    fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
+    await waitFor(() => expect(window.api.search).toHaveBeenCalled())
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in library')
+    release_()
   })
 
-  // The other end of that state: once the search settles with no owning match, the badge
-  // commits to the negative — "Checking…" is only ever transient.
-  it('commits to the negative once the search settles without an owning match', async () => {
+  // Once the search settles with no owning match, the negative stays put.
+  it('stays negative once the search settles without an owning match', async () => {
     setApi()
     const owned = buildLibraryIndex([{ title: 'Something Else', artist: 'Nobody' }])
     renderEditor(
