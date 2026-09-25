@@ -38,7 +38,6 @@ const TOKYO_NIGHT = {
   magenta: '#bb9af7',
   green: '#9ece6a',
   yellow: '#e0af68',
-  orange: '#ff9e64',
   red: '#f7768e',
 } as const
 
@@ -109,4 +108,13 @@ describe('components paint only Tokyo Night colours', () => {
       expect([...foreign, ...tailwind]).toEqual([])
     })
   }
+
+  // canvas-confetti draws in its own neon rainbow unless it is handed colours, and no
+  // literal in the source would show it.
+  it('hands the donation confetti the palette instead of the library defaults', () => {
+    const code = readFileSync(join(root, 'components/DonateCompleted.tsx'), 'utf8')
+    const calls = [...code.matchAll(/confetti\(\{[^}]*\}[^)]*\)/g)].map((m) => m[0])
+    expect(calls.length).toBeGreaterThan(0)
+    for (const call of calls) expect(call).toMatch(/colors[:,]/)
+  })
 })
