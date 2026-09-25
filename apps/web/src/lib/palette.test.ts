@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
@@ -79,4 +80,33 @@ describe('Tokyo Night palette', () => {
     const foreign = [...hexes, ...rgbs].filter((c) => !palette.has(c) && !blends.has(c))
     expect([...foreign, ...(code.match(/\b(white|black)\b/g) ?? [])]).toEqual([])
   })
+})
+
+// The same rule for the components and the HTML shell: an inline style, an SVG or a
+// Tailwind class paints a Tokyo Night colour. Tailwind's white, black and default palette
+// are in none of them. Shadows are exempt for now: whether the site keeps them at all is a
+// pending flat-design decision, so their colour waits for it.
+describe('components paint only Tokyo Night colours', () => {
+  const root = fileURLToPath(new URL('..', import.meta.url))
+  const sources = (readdirSync(root, { recursive: true }) as string[])
+    .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
+    .map((f) => [f, join(root, f)])
+  sources.push(['index.html', fileURLToPath(new URL('../../index.html', import.meta.url))])
+
+  for (const [name, path] of sources) {
+    const code = readFileSync(path, 'utf8').replace(/^\s*\/\/.*$/gm, '')
+    it(`${name} uses only palette colours`, () => {
+      const hexes = [...code.matchAll(/['"`(\s]#([0-9a-fA-F]{6})\b/g)].map((m) => `#${m[1]}`)
+      const rgbs = [...code.matchAll(/rgba?\((\d+),\s*(\d+),\s*(\d+)/g)].map((m) =>
+        hex(m[1], m[2], m[3]),
+      )
+      const foreign = [...hexes, ...rgbs].filter((c) => !palette.has(c.toLowerCase()))
+      const tailwind = (
+        code.match(
+          /\b[a-z]+-(white|black|(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3})\b(\/\d+)?/g,
+        ) ?? []
+      ).filter((c) => !c.startsWith('shadow-'))
+      expect([...foreign, ...tailwind]).toEqual([])
+    })
+  }
 })

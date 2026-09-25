@@ -20,6 +20,9 @@
      while staying the dimmest tier below --color-muted. Tokyo Night's dark5 is
      still too dim (4.1:1), so it is blended 70% with fg_dark, as in the app. */
   --color-faint: #838bb2;
+  /* The dark laid over the spectrum images, behind their axis and badge: Tokyo
+     Night's deepest ground, where Tailwind's black used to be. Same as the app. */
+  --color-scrim: #0c0e14;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
   /* light-from-above edge highlight: composes with shadow-* utilities, so
      hover shadows keep the inset edge instead of replacing it */
