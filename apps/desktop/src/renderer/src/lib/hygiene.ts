@@ -86,6 +86,8 @@ export function sanitizeMeta(meta: TrackMetadata, opts: HygieneOptions): TrackMe
     const digits = clean.trackNumber.replace(/\D/g, '')
     if (digits) clean.trackNumber = digits.padStart(2, '0')
   }
+  const totalDigits = opts.zeroPad ? (clean.trackTotal ?? '').replace(/\D/g, '') : ''
+  if (totalDigits) clean.trackTotal = totalDigits.padStart(2, '0')
   return clean
 }
 
