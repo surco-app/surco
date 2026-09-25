@@ -26,7 +26,7 @@ function Spectrum({
   wall: number
 }) {
   return (
-    <div className="relative overflow-hidden rounded-lg border border-line bg-black">
+    <div className="relative overflow-hidden rounded-lg border border-line bg-scrim">
       <img
         src={src}
         alt={alt}
@@ -38,7 +38,7 @@ function Spectrum({
       />
       <div
         aria-hidden="true"
-        className="absolute inset-y-0 left-0 flex w-8 flex-col justify-between bg-gradient-to-r from-black/70 to-transparent py-1 pl-1 font-mono text-[8px] leading-none text-fg/55"
+        className="absolute inset-y-0 left-0 flex w-8 flex-col justify-between bg-gradient-to-r from-scrim/70 to-transparent py-1 pl-1 font-mono text-[8px] leading-none text-fg/55"
       >
         {AXIS.map((hz) => (
           <span key={hz}>{hz}</span>
@@ -74,7 +74,7 @@ function Spectrum({
             }}
           />
           <span
-            className="absolute right-1.5 rounded bg-black/60 px-1.5 py-px font-mono text-[10px] text-red"
+            className="absolute right-1.5 rounded bg-scrim/60 px-1.5 py-px font-mono text-[10px] text-red"
             style={{ top: `calc(${cutoff}% + 4px)`, opacity: wall }}
           >
             16.0 kHz
