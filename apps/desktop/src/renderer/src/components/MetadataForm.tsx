@@ -135,9 +135,10 @@ export function MetadataForm({
             half of it ("Head Horny's & Migu"). The label track is as wide as the longest
             label, capped so a long custom name wraps instead of starving the inputs. Below
             28rem an input beside its label is narrower than the value it holds, so the labels
-            go back on top and each input gets the column's full width. */}
+            go back on top and each input gets the column's full width. The column stops at
+            48rem: past that an input only moves its end further from its label. */}
         <div className="@container min-w-0 flex-1">
-          <div className="grid grid-cols-1 gap-y-4 @[28rem]:grid-cols-[auto_minmax(0,1fr)] @[28rem]:gap-x-3 @[28rem]:gap-y-2">
+          <div className="grid max-w-[48rem] grid-cols-1 gap-y-4 @[28rem]:grid-cols-[auto_minmax(0,1fr)] @[28rem]:gap-x-3 @[28rem]:gap-y-2">
             {fields.map((f) =>
               f.perTrack ? (
                 <div key={f.key} className="@[28rem]:col-span-2">
