@@ -306,3 +306,38 @@ describe('Field mixed values', () => {
     expect(screen.getByTestId('field-genre')).toHaveAccessibleDescription('Multiple values')
   })
 })
+
+describe('Field with a bounded width', () => {
+  // Short fields share a row, and the detected BPM chip belongs to the BPM box: if it sat in
+  // the row it would drift under whichever field came first and read as that field's value.
+  it("keeps a short field's chip under its own box, apart from the fields that follow it", () => {
+    render(
+      <Field
+        name="bpm"
+        label="BPM"
+        value=""
+        onChange={() => {}}
+        width="short"
+        suggestions={['128']}
+        trailing={<input data-testid="field-key" />}
+      />,
+    )
+    const column = screen.getByTestId('field-column-bpm')
+    expect(column).toContainElement(screen.getByTestId('field-bpm'))
+    expect(column).toContainElement(screen.getByTestId('chip-128'))
+    expect(column).not.toContainElement(screen.getByTestId('field-key'))
+    expect(column.className).toContain('w-[4.5rem]')
+    // When the row wraps onto a second line the grid cell grows, and a stretched label
+    // centred itself between the two lines instead of beside its own box.
+    expect(screen.getByText('BPM').className).toContain('@[28rem]:self-start')
+  })
+
+  // A field joined onto a row has no cell of its own in the form's label column, so its
+  // label has to stay beside its box and still name it.
+  it('keeps an inline field labelled by the caption beside it', () => {
+    render(<Field name="key" label="Key" value="4A" onChange={() => {}} width="short" inline />)
+    const input = screen.getByLabelText('Key')
+    expect(input).toBe(screen.getByTestId('field-key'))
+    expect(screen.getByText('Key').parentElement?.className).not.toContain('contents')
+  })
+})

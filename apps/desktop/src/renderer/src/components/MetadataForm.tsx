@@ -18,7 +18,10 @@ export { buildFieldSpecs }
 // (a yes/no fact, not free text; in a mixed selection the box shows indeterminate and
 // ticking stamps '1' on every track); every other field is a text Field. Pulled out so both the
 // group render and any future caller draw a field the same way.
-function renderField(f: FieldSpec): React.JSX.Element {
+function renderField(
+  f: FieldSpec,
+  row: { inline?: boolean; trailing?: React.ReactNode } = {},
+): React.JSX.Element {
   if (f.perTrack) {
     return (
       <TagListBulkField
@@ -55,6 +58,9 @@ function renderField(f: FieldSpec): React.JSX.Element {
       value={f.value}
       placeholder={f.placeholder}
       onChange={f.onChange}
+      width={f.width}
+      inline={row.inline}
+      trailing={row.trailing}
       insertSources={f.insertSources}
       cleanResult={f.cleanResult}
       formatResult={f.formatResult}
@@ -66,6 +72,18 @@ function renderField(f: FieldSpec): React.JSX.Element {
       suggesting={f.suggesting}
     />
   )
+}
+
+// Bounded fields that follow each other in the user's order share a row; any other field
+// stands alone. The order itself is never rearranged to pack more of them together.
+function toRows(fields: FieldSpec[]): FieldSpec[][] {
+  const rows: FieldSpec[][] = []
+  for (const f of fields) {
+    const last = rows.at(-1)
+    if (f.width && last?.[0].width) last.push(f)
+    else rows.push([f])
+  }
+  return rows
 }
 
 interface MetadataFormProps {
@@ -138,8 +156,16 @@ export function MetadataForm({
             48rem: past that an input only moves its end further from its label. */}
         <div className="@container min-w-0 flex-1">
           <div className="grid max-w-[48rem] grid-cols-1 gap-y-4 @[28rem]:grid-cols-[auto_minmax(0,1fr)] @[28rem]:gap-x-3 @[28rem]:gap-y-2">
-            {fields.map((f) =>
-              f.perTrack ? (
+            {toRows(fields).map(([f, ...rest]) =>
+              f.width ? (
+                <Fragment key={f.key}>
+                  {renderField(f, {
+                    trailing: rest.map((r) => (
+                      <Fragment key={r.key}>{renderField(r, { inline: true })}</Fragment>
+                    )),
+                  })}
+                </Fragment>
+              ) : f.perTrack ? (
                 <div key={f.key} className="@[28rem]:col-span-2">
                   {renderField(f)}
                 </div>

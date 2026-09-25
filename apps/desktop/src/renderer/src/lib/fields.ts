@@ -1,8 +1,14 @@
 import { effectiveMeta, fieldValue } from '../../../shared/customFields'
 import type { CustomField, MetaTextKey, TrackMetadata } from '../../../shared/types'
 
+// A field whose tag holds a bounded value gets a box sized to it: 'short' fits a year, a
+// BPM with a decimal, a Camelot key or a track number; 'medium' an ISRC or a Discogs id.
+// The rest are free text with no reliable limit and take the column's width.
+export type FieldWidth = 'short' | 'medium'
+
 interface FieldDef {
   key: MetaTextKey
+  width?: FieldWidth
 }
 
 export const FIELD_DEFS: FieldDef[] = [
@@ -10,17 +16,17 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'artist' },
   { key: 'albumArtist' },
   { key: 'album' },
-  { key: 'year' },
+  { key: 'year', width: 'short' },
   { key: 'genre' },
   { key: 'style' },
   { key: 'grouping' },
-  { key: 'trackNumber' },
+  { key: 'trackNumber', width: 'short' },
   { key: 'comment' },
-  { key: 'discNumber' },
-  { key: 'trackTotal' },
-  { key: 'discTotal' },
-  { key: 'bpm' },
-  { key: 'key' },
+  { key: 'discNumber', width: 'short' },
+  { key: 'trackTotal', width: 'short' },
+  { key: 'discTotal', width: 'short' },
+  { key: 'bpm', width: 'short' },
+  { key: 'key', width: 'short' },
   { key: 'remixArtist' },
   { key: 'mixName' },
   { key: 'composer' },
@@ -29,17 +35,17 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'conductor' },
   { key: 'copyright' },
   { key: 'encodedBy' },
-  { key: 'originalYear' },
-  { key: 'isrc' },
+  { key: 'originalYear', width: 'short' },
+  { key: 'isrc', width: 'medium' },
   { key: 'compilation' },
   { key: 'publisher' },
   { key: 'catalogNumber' },
-  { key: 'discogsReleaseId' },
+  { key: 'discogsReleaseId', width: 'medium' },
   { key: 'discogsUrl' },
   { key: 'country' },
   { key: 'mediaType' },
   { key: 'mood' },
-  { key: 'energy' },
+  { key: 'energy', width: 'short' },
 ]
 
 // Which section a field belongs to in the grouped form. The four groups sort the

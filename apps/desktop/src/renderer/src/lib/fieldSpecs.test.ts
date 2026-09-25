@@ -206,6 +206,36 @@ describe('buildFieldSpecs (single mode)', () => {
     expect(specs.find((s) => s.key === 'artist')?.formatResult).toBeUndefined()
   })
 
+  // A box as wide as the title told the user nothing about what fits in it and cost a whole
+  // row per four-digit year. The width comes from what the tag can hold, never from the
+  // value, so an empty field is as wide as a filled one and nothing jumps while typing.
+  // Free text with no reliable limit (catalog numbers, countries, media types) stays long.
+  it('sizes the fields with a bounded value by what their tag holds', () => {
+    const specs = buildFieldSpecs(
+      params({
+        visibleFields: [
+          'title',
+          'year',
+          'bpm',
+          'key',
+          'trackNumber',
+          'isrc',
+          'catalogNumber',
+          'country',
+        ],
+      }),
+    )
+    const width = (key: string) => specs.find((s) => s.key === key)?.width
+    expect(width('year')).toBe('short')
+    expect(width('bpm')).toBe('short')
+    expect(width('key')).toBe('short')
+    expect(width('trackNumber')).toBe('short')
+    expect(width('isrc')).toBe('medium')
+    expect(width('title')).toBeUndefined()
+    expect(width('catalogNumber')).toBeUndefined()
+    expect(width('country')).toBeUndefined()
+  })
+
   it('exposes insert sources on the free-text fields only, never on structured or chip-driven ones', () => {
     // The { } menu composes one field out of others and fixes text case — that
     // only makes sense where the value IS free text (title, artist, comment,
@@ -265,6 +295,23 @@ describe('buildFieldSpecs (bulk mode)', () => {
     const genre = specs.find((s) => s.key === 'genre')
     expect(genre?.value).toBe('')
     expect(genre?.placeholder).toBe('editor.multipleValues')
+  })
+
+  // "Multiple values" does not fit a box sized for four digits and got cut to "Multi". A
+  // short box says it with an ellipsis; the words still reach a screen reader through the
+  // mixed flag.
+  it('marks a short field whose selection disagrees with an ellipsis', () => {
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [track('a', { year: '2007' }), track('b', { year: '2008' })],
+        visibleFields: ['year'],
+      }),
+    )
+    const year = specs.find((s) => s.key === 'year')
+    expect(year?.width).toBe('short')
+    expect(year?.placeholder).toBe('…')
+    expect(year?.mixed).toBe(true)
   })
 
   // The placeholder vanishes from a screen reader's view once the field has focus and is
