@@ -14,14 +14,14 @@
   /* The boundary of a control (a text field, a slider track): the line tint made opaque and
      strong enough to reach 3:1 on panel, panel-2 and field, which 1.4.11 asks of whatever
      identifies a control. --color-line stays for separators, where faint is the point. */
-  --color-input-border: #707692;
+  --color-input-border: #737aa2;
   --color-accent: #7aa2f7;
-  --color-accent-hover: #89b4ff;
+  --color-accent-hover: #96b2f6;
   --color-accent-soft: #283457;
   --color-fg: #c0caf5;
   --color-fg-muted: #a9b1d6;
-  --color-fg-dim: #969cbd;
-  --color-fg-faint: #8389ab;
+  --color-fg-dim: #9aa5ce;
+  --color-fg-faint: #838bb2;
   --color-good: #9ece6a;
   --color-warn: #e0af68;
   --color-danger: #f7768e;
@@ -36,8 +36,8 @@
      button, four accent blues on one screen with nothing telling the eye which one leads.
      The row still reads as selected against the panel, and the primary action keeps the only
      saturated fill. Near-white text on top clears AA; the focus ring still clears 3:1. */
-  --color-row-selected: #34487e;
-  --color-on-row-selected: #e9edff;
+  --color-row-selected: #394b70;
+  --color-on-row-selected: #c0caf5;
   /* What a swipe uncovers behind a row: Tokyo Night's terminal_black, a quiet slate that
      says "take it off the list" without the red of deleting a file. */
   --color-swipe-action: #414868;
@@ -55,32 +55,32 @@
   color-scheme: light;
   --color-ink: #d6d8df;
   --color-panel: #e6e7ed;
-  --color-panel-2: #f1f2f6;
+  --color-panel-2: #f0f1f5;
   --color-field: #f4f5f8;
-  --color-line: rgba(20, 22, 38, 0.12);
-  --color-line-strong: rgba(20, 22, 38, 0.22);
-  --color-input-border: #81838d;
-  --color-accent: #2958a9;
-  --color-accent-hover: #21498f;
-  --color-accent-soft: #d4def0;
-  --color-fg: #2c3043;
-  --color-fg-muted: #424757;
-  --color-fg-dim: #565969;
-  --color-fg-faint: #62657a;
-  --color-good: #33625b;
-  --color-warn: #7c5212;
+  --color-line: rgba(52, 59, 88, 0.12);
+  --color-line-strong: rgba(52, 59, 88, 0.22);
+  --color-input-border: #707280;
+  --color-accent: #2959aa;
+  --color-accent-hover: #2c5296;
+  --color-accent-soft: #d6deec;
+  --color-fg: #343b58;
+  --color-fg-muted: #40434f;
+  --color-fg-dim: #565a69;
+  --color-fg-faint: #61646f;
+  --color-good: #33635c;
+  --color-warn: #785526;
   --color-danger: #8c4351;
   --color-on-accent: #ffffff;
   /* Un azul claro y tranquilo, por lo mismo que en oscuro: el relleno macizo competía con
      el botón principal. Lo bastante lejos de --color-accent para que el contorno de foco de
      la fila, que se pinta en accent, siga viéndose encima. */
-  --color-row-selected: #bccdee;
-  --color-on-row-selected: #1b2440;
-  /* El terminal_black de Tokyo Night Day, el gemelo del oscuro. */
-  --color-swipe-action: #a1a6c5;
-  --color-on-swipe-action: #2c3043;
-  --color-scrollbar: rgba(20, 22, 38, 0.18);
-  --color-scrollbar-hover: rgba(20, 22, 38, 0.3);
+  --color-row-selected: #c1cee5;
+  --color-on-row-selected: #343b58;
+  /* El gris de las barras de Tokyo Night Light: el gemelo claro del terminal_black. */
+  --color-swipe-action: #acb0bf;
+  --color-on-swipe-action: #343b58;
+  --color-scrollbar: rgba(52, 59, 88, 0.18);
+  --color-scrollbar-hover: rgba(52, 59, 88, 0.3);
 }
 
 html,

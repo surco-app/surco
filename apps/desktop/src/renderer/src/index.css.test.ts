@@ -74,7 +74,7 @@ describe('filled-surface label contrast (WCAG 1.4.3 AA)', () => {
 
 // The fill a swipe uncovers behind a row. It began as --color-fg-dim, a text colour, and as a
 // large fill it read heavy and lilac and was not Tokyo Night at all (Vicent 24/09). It is the
-// palette's terminal_black in dark and its Day twin in light. The label must read on it in
+// palette's terminal_black in dark and Tokyo Night Light's toolbar grey in light. The label must read on it in
 // both themes, and the fill must stand apart from the list it slides out of.
 describe('swipe action colours', () => {
   for (const [theme, t] of [
@@ -317,4 +317,95 @@ describe('scrollbars', () => {
   it('shows the thumb while its pane is scrolling', () => {
     expect(rule('[data-scrolling]::-webkit-scrollbar-thumb')).toContain('var(--color-scrollbar)')
   })
+})
+
+// Every theme colour is Tokyo Night: a colour of the palette as it ships, or a blend of two
+// of them (Vicent 25/09). The dark theme follows Tokyo Night Night, the light one Tokyo Night
+// Light, the VS Code theme. Light and Day are different palettes, and Day had slipped in once.
+// A blend stays a hex, not a color-mix(), because the canvases read these tokens as rgb.
+const TOKYO_NIGHT = {
+  dark: {
+    bg_dark: '#16161e',
+    bg: '#1a1b26',
+    bg_highlight: '#292e42',
+    input_background: '#14141b',
+    bg_visual: '#283457',
+    blue7: '#394b70',
+    terminal_black: '#414868',
+    dark5: '#737aa2',
+    markdown_text: '#9aa5ce',
+    fg_dark: '#a9b1d6',
+    fg: '#c0caf5',
+    blue: '#7aa2f7',
+    green: '#9ece6a',
+    yellow: '#e0af68',
+    red: '#f7768e',
+  },
+  light: {
+    activity_bar: '#d6d8df',
+    bg: '#e6e7ed',
+    field: '#f4f5f8',
+    toolbar: '#acb0bf',
+    description: '#707280',
+    comment: '#6c6e75',
+    markdown_text: '#40434f',
+    fg: '#343b58',
+    blue: '#2959aa',
+    green1: '#33635c',
+    yellow: '#8f5e15',
+    red: '#8c4351',
+    button_foreground: '#ffffff',
+  },
+} as const
+
+type Theme = keyof typeof TOKYO_NIGHT
+type Blend = [string, number, string]
+
+const BLENDS: Record<Theme, Record<string, Blend>> = {
+  dark: {
+    'color-accent-hover': ['blue', 60, 'fg'],
+    'color-fg-faint': ['dark5', 70, 'fg_dark'],
+  },
+  light: {
+    'color-panel-2': ['bg', 30, 'field'],
+    'color-accent-hover': ['blue', 75, 'fg'],
+    'color-accent-soft': ['blue', 15, 'field'],
+    'color-fg-dim': ['comment', 60, 'fg'],
+    'color-fg-faint': ['comment', 80, 'fg'],
+    'color-warn': ['yellow', 75, 'fg'],
+    'color-row-selected': ['blue', 25, 'field'],
+  },
+}
+
+function rgbTokens(block: string): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const m of block.matchAll(/--(color-[\w-]+):\s*rgba\((\d+),\s*(\d+),\s*(\d+),/g)) {
+    out[m[1]] =
+      `#${[m[2], m[3], m[4]].map((v) => Number(v).toString(16).padStart(2, '0')).join('')}`
+  }
+  return out
+}
+
+describe('Tokyo Night palette', () => {
+  const themes = { dark: css.slice(0, split), light: css.slice(split) }
+  for (const theme of ['dark', 'light'] as const) {
+    const palette: Record<string, string> = TOKYO_NIGHT[theme]
+    const colours = Object.values(palette)
+    const hexTokens = tokens(themes[theme])
+
+    for (const [token, hex] of Object.entries(hexTokens)) {
+      it(`${theme} ${token} is a Tokyo Night colour or a blend of two`, () => {
+        const mix = BLENDS[theme][token]
+        const expected = mix ? blend(palette[mix[0]], palette[mix[2]], mix[1] / 100) : hex
+        expect(hex.toLowerCase()).toBe(expected)
+        if (!mix) expect(colours).toContain(hex.toLowerCase())
+      })
+    }
+
+    for (const [token, rgb] of Object.entries(rgbTokens(themes[theme]))) {
+      it(`${theme} ${token} tints a Tokyo Night colour`, () => {
+        expect(colours).toContain(rgb)
+      })
+    }
+  }
 })
