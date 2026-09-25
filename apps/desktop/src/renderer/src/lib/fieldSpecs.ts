@@ -9,7 +9,7 @@ import type {
 } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { BULK_FIELDS, commonValue, type TagList } from './bulkEdit'
-import { FIELD_DEFS } from './fields'
+import { FIELD_DEFS, type FieldWidth } from './fields'
 
 // One value offered by a field's { } insert menu — another field's literal value, so
 // a comment can pull in the artist or title without retyping.
@@ -30,7 +30,7 @@ export interface FieldSpec {
   value: string
   onChange: (v: string) => void
   placeholder?: string
-  wide?: boolean
+  width?: FieldWidth
   required?: boolean
   invalid?: boolean
   // A selection whose tracks disagree on this field: the value shows blank, so the Field
@@ -166,11 +166,15 @@ export function buildFieldSpecs({
               ? { list, tracks: selectedTracks, onChangeTracks: onChangeTracksMeta }
               : undefined
           const mixed = shared === undefined && !perTrack
+          const width = FIELD_DEFS.find((d) => d.key === key)?.width
           return {
             key,
             label: tr(`fields.${key}`),
             value: shared ?? '',
-            placeholder: mixed ? tr('editor.multipleValues') : undefined,
+            // "Multiple values" does not fit a box sized for its value; the mixed flag
+            // still says it in words to a screen reader.
+            placeholder: mixed ? (width ? '…' : tr('editor.multipleValues')) : undefined,
+            width,
             mixed,
             onChange: bulkOnChange.get(key) ?? (() => {}),
             suggestions:
@@ -231,7 +235,7 @@ export function buildFieldSpecs({
               !isMulti && INSERT_TARGET_FIELDS.has(def.key) ? insertSources : undefined,
             cleanResult: !isMulti && def.key === 'album' ? albumCleanResult : undefined,
             formatResult: !isMulti && def.key === 'title' ? titleFormatResult : undefined,
-            wide: def.wide,
+            width: def.width,
             required: requiredFields.includes(def.key),
             invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),
             suggestions:
