@@ -47,6 +47,20 @@ describe('sanitizeMeta', () => {
     ).toBe('12')
   })
 
+  it('zero-pads the track total like the track number, so the pair reads 03/09 and not 03/9', () => {
+    const r = sanitizeMeta(meta({ trackNumber: '3', trackTotal: '9' }), {
+      trim: false,
+      zeroPad: true,
+    })
+    expect(r.trackTotal).toBe('09')
+  })
+
+  it('leaves an empty track total alone instead of padding it to 00', () => {
+    expect(sanitizeMeta(meta({ trackTotal: '' }), { trim: false, zeroPad: true }).trackTotal).toBe(
+      '',
+    )
+  })
+
   it('leaves an empty track number alone instead of padding it to 00', () => {
     expect(
       sanitizeMeta(meta({ trackNumber: '' }), { trim: false, zeroPad: true }).trackNumber,
