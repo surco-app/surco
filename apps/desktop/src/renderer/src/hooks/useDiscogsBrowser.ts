@@ -77,12 +77,6 @@ export interface DiscogsBrowser {
   // Whether the expanded row's tracklist is still loading, so its row shows a skeleton.
   loading: boolean
   busy: boolean
-  // Whether a search the editor auto-runs on open could still produce a verdict: a typed
-  // query whose search hasn't settled — the debounce is still pending or a request is in
-  // flight. The Apple Music badge reads this to show "checking" instead of flashing a
-  // premature "not in library" before Discogs has had its say. Distinct from `busy`, which
-  // only covers an in-flight request (and gates the Search button), not the debounce window.
-  resolving: boolean
   // A search that ran and settled with zero rows to show — distinct from the idle,
   // never-searched state so the panel can offer a "no matches" placeholder instead of the
   // "choose an album" hint.
@@ -374,10 +368,6 @@ export function useDiscogsBrowser(
   const loading = releaseQuery.isFetching
   const searching = fetching.some(Boolean)
   const busy = searching || autoProbing || releaseQuery.isFetching
-  // A typed query whose search hasn't settled yet, including the debounce window before the
-  // request even starts (query committed-to-be ≠ the term that's actually running). Not while
-  // a search has errored — there's no verdict coming, so the badge must commit, not spin.
-  const resolving = query.trim() !== '' && !allFailed && (busy || searchTerm !== query)
   // A search that ran and settled with nothing to show — the searched-but-empty case, kept
   // distinct from the never-searched-yet idle state so the panel can say "no matches" instead
   // of the "choose an album" hint. Also true when a provider filter empties an otherwise
@@ -412,7 +402,6 @@ export function useDiscogsBrowser(
       setListEngaged,
       loading,
       busy,
-      resolving,
       noResults,
       error,
       previewRelease,
@@ -431,7 +420,6 @@ export function useDiscogsBrowser(
       setListEngaged,
       loading,
       busy,
-      resolving,
       noResults,
       error,
       previewRelease,

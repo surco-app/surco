@@ -18,16 +18,13 @@ interface Params {
   // are often messier than the library's spelling, so this is what bridges a tag the library
   // can't recognise on its own. Undefined when no trusted release is open.
   suggestedMeta: { title: string; artist: string } | undefined
-  // A Discogs lookup still in flight: the verdict reads 'checking' rather than 'no', so a
-  // slow lookup never flashes "not owned" at a track that is.
-  discogsResolving: boolean
   // App's updateTrack. The Discogs-proven verdict is pinned onto the track so the LIST and
   // its filter read it too — the list has no open release and cannot recompute it.
   onChange: (patch: Partial<TrackItem>) => void
 }
 
 interface LibraryVerdict {
-  inLibrary: 'idle' | 'yes' | 'no' | 'checking'
+  inLibrary: 'idle' | 'yes' | 'no'
   // The library entry this track's add superseded — the old rip, still in the library under a
   // different persistent ID. The footer offers deleting it.
   staleMusicCopy: StaleLibraryCopy | null
@@ -51,7 +48,6 @@ export function useLibraryVerdict({
   libraryIndex,
   librarySource,
   suggestedMeta,
-  discogsResolving,
   onChange,
 }: Params): LibraryVerdict {
   // Whether the confident Discogs suggestion is what proves this track is owned — the raw
@@ -95,16 +91,11 @@ export function useLibraryVerdict({
   // filter agree with this badge. A track Surco itself added counts as owned even before
   // the snapshot lands — via its Apple Music persistent ID or its Engine add flag,
   // whichever library is active. 'idle' hides the badge when no library destination is
-  // chosen and until the snapshot arrives. 'checking' covers the gap that used to flicker
-  // "not in library": the raw tags don't match but Discogs is still resolving, so its
-  // match could still flip this to 'yes' — only once that work settles without a match do
-  // we commit to 'no'.
+  // chosen and until the snapshot arrives. The answer never waits on Discogs: the index is
+  // local and instant, while the search cascade can take tens of seconds, so an unmatched
+  // track reads 'no' at once and a later Discogs match flips it to 'yes'.
   // biome-ignore lint/correctness/useExhaustiveDependencies: ownTags is a fresh literal each render; its read surface (item.meta.title/artist, item.duration) is listed instead so an unrelated keystroke doesn't re-scan the library index.
-  const inLibrary: 'idle' | 'yes' | 'no' | 'checking' = useMemo(():
-    | 'idle'
-    | 'yes'
-    | 'no'
-    | 'checking' => {
+  const inLibrary: 'idle' | 'yes' | 'no' = useMemo((): 'idle' | 'yes' | 'no' => {
     if (!librarySource) return 'idle'
     const owned =
       librarySource === 'appleMusic'
@@ -114,7 +105,7 @@ export function useLibraryVerdict({
     if (!libraryIndex) return 'idle'
     if (isInLibrary(libraryIndex, ownTags)) return 'yes'
     if (resolvedViaDiscogs) return 'yes'
-    return discogsResolving ? 'checking' : 'no'
+    return 'no'
   }, [
     librarySource,
     item.musicPersistentId,
@@ -125,7 +116,6 @@ export function useLibraryVerdict({
     item.duration,
     libraryIndex,
     resolvedViaDiscogs,
-    discogsResolving,
   ])
 
   // The library entry this track's Apple Music add superseded: the snapshot still matches
