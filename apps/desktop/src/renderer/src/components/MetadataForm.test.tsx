@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen } from '@testing-library/react'
+import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GROUPING_TAGS } from '../lib/bulkEdit'
 import type { FieldSpec } from '../lib/fieldSpecs'
@@ -18,8 +19,21 @@ vi.mock('react-i18next', () => ({
 // The Field/CoverPicker/StarRating children pull in heavy deps and aren't under test here;
 // stub them to plain nodes so the test exercises only MetadataForm's grouping/fold logic.
 vi.mock('./Field', () => ({
-  Field: ({ name, value }: { name: string; value: string }) => (
-    <div data-testid={`field-${name}`}>{value}</div>
+  Field: ({
+    name,
+    value,
+    inline,
+    trailing,
+  }: {
+    name: string
+    value: string
+    inline?: boolean
+    trailing?: React.ReactNode
+  }) => (
+    <div data-testid={`field-${name}`} data-inline={inline ? 'true' : undefined}>
+      {value}
+      {trailing}
+    </div>
   ),
 }))
 vi.mock('./CoverPicker', () => ({ CoverPicker: () => <div data-testid="cover" /> }))
@@ -110,6 +124,43 @@ describe('MetadataForm', () => {
     renderForm([spec('compilation')])
     expect(screen.getByTestId('field-compilation')).not.toBePartiallyChecked()
     expect(screen.getByTestId('field-compilation')).not.toBeChecked()
+  })
+
+  // With the labels beside the inputs, every input stretched to the panel's far edge: on a
+  // 1270px panel "2007" sat in a 1000px box and the eye crossed the whole row to read it.
+  // The fields column stops at a readable measure however wide the user drags the panel.
+  it('caps the fields column at a readable width on a wide panel', () => {
+    renderForm([spec('title', 'Illusion'), spec('year', '2007')])
+    expect(screen.getByTestId('field-title').parentElement?.className).toContain('max-w-[48rem]')
+  })
+
+  // A year, a BPM and a key each took a full row in boxes as wide as the title. Bounded
+  // fields that follow each other in the user's order share one row instead; a longer field
+  // between them breaks the row, so the user's order is never rearranged to pack them.
+  it('joins consecutive bounded fields into one row, in the user order', () => {
+    renderForm([
+      spec('title', 'Illusion'),
+      { ...spec('year', '2007'), width: 'short' },
+      { ...spec('bpm', '145'), width: 'short' },
+      { ...spec('isrc'), width: 'medium' },
+      spec('genre', 'Electronic'),
+      { ...spec('key', '4A'), width: 'short' },
+    ])
+    const year = screen.getByTestId('field-year')
+    expect(year).not.toHaveAttribute('data-inline')
+    expect(year).toContainElement(screen.getByTestId('field-bpm'))
+    expect(year).toContainElement(screen.getByTestId('field-isrc'))
+    expect(screen.getByTestId('field-bpm')).toHaveAttribute('data-inline', 'true')
+    expect(year).not.toContainElement(screen.getByTestId('field-key'))
+    expect(screen.getByTestId('field-key')).not.toHaveAttribute('data-inline')
+    expect(screen.getAllByTestId(/^field-/).map((n) => n.getAttribute('data-testid'))).toEqual([
+      'field-title',
+      'field-year',
+      'field-bpm',
+      'field-isrc',
+      'field-genre',
+      'field-key',
+    ])
   })
 
   // The rating is a fact about the record, like its artwork, and above the form it cost a
