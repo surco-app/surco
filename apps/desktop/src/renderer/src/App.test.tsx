@@ -111,6 +111,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     groupingSeparator: ', ',
     trimWhitespace: true,
     zeroPadTrack: true,
+    fullReleaseDate: false,
     visibleFields: ['title', 'artist'],
     requiredFields: ['title', 'artist'],
     coverMaxSize: 1000,

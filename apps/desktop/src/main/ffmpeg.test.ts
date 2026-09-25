@@ -1138,18 +1138,22 @@ describe('coverArgs', () => {
 describe('tagsFromProbe', () => {
   // Reported 14/09/2026 with a screenshot: the Year box read
   // "2020-12-01T00:00:00+01:00". The WAV really does carry that in its `date` tag (read
-  // straight off the file), and the year field showed it verbatim. Writing already took
-  // the leading four digits — only the read did not, so the editor displayed a timestamp
-  // where a year belongs and any save wrote it back.
-  it('keeps only the year when the file dates a track with a full timestamp', () => {
+  // straight off the file), and the year field showed it verbatim. The time of day is
+  // never part of a release date; the date itself is kept for the user who asked for it
+  // (the IPC boundary cuts it to the year for everyone else).
+  it('keeps the date but drops the time when the file dates a track with a timestamp', () => {
     const m = tagsFromProbe({
       format: { tags: { date: '2020-12-01T00:00:00+01:00' } },
     })
-    expect(m.year).toBe('2020')
+    expect(m.year).toBe('2020-12-01')
   })
 
-  it('keeps only the year from a plain date', () => {
-    expect(tagsFromProbe({ format: { tags: { date: '2024-03-01' } } }).year).toBe('2024')
+  it('keeps a plain full date whole', () => {
+    expect(tagsFromProbe({ format: { tags: { date: '2024-03-01' } } }).year).toBe('2024-03-01')
+  })
+
+  it('keeps only the year from a partial date', () => {
+    expect(tagsFromProbe({ format: { tags: { date: '2024-03' } } }).year).toBe('2024')
   })
 
   // A bare year is the common case and must pass through untouched.

@@ -559,10 +559,10 @@ export async function extractCover(
 // so a big library paid 2-4 subprocess spawns per track on every launch. The cover
 // thumbnail is a ~384px JPEG data URL (tens of KB), well under the cache's per-entry cap.
 export async function readMeta(input: string): Promise<MetaRead> {
-  // v2: the year now drops a full date down to its year (see tagFields.ts). The namespace
-  // is part of the cache key, so without this bump every library already probed would keep
-  // serving the timestamp that was cached before the fix.
-  const result = await cachedAnalysis('readmeta-v2', input, () => readMetaUncached(input))
+  // v3: the year keeps a full release date and drops only the time (see tagFields.ts). The
+  // namespace is part of the cache key, so without this bump every library already probed
+  // would keep serving the bare year cached before.
+  const result = await cachedAnalysis('readmeta-v3', input, () => readMetaUncached(input))
   // Flagged, not just empty: the caller cannot otherwise tell this fallback from a file
   // that carries no tags, and the row would show a bare file name with no explanation.
   return (

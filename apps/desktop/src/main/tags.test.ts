@@ -36,6 +36,7 @@ import {
   readCueTree,
   readItunesGrouping,
   readPopmRating,
+  readTagLibExtras,
   shiftFlacCues,
   writeTags,
 } from './tags'
@@ -641,6 +642,16 @@ describe('writeTags', () => {
     writeTags(file, { ...meta, year: '2020-12-01' })
 
     expect(probedDate(file)).toBe('2020-12-01')
+  })
+
+  // ffprobe cannot see a WAV's "id3 " chunk, so TagLib is the only reader of its date.
+  it('reads a full release date back out of a WAV', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildWavSeed(dir)
+
+    writeTags(file, { ...meta, year: '2020-12-01' })
+
+    expect(readTagLibExtras(file).year).toBe('2020-12-01')
   })
 
   it("preserves Traktor's GEOB cue frame while overwriting metadata", () => {
