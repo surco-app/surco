@@ -400,7 +400,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                         src={r.thumb}
                         alt=""
                         loading="lazy"
-                        className="h-[30px] w-[30px] shrink-0 rounded-md object-cover outline outline-1 -outline-offset-1 outline-white/10"
+                        className="h-[30px] w-[30px] shrink-0 rounded-md object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10"
                       />
                     ) : (
                       <div className="h-[30px] w-[30px] shrink-0 rounded-md bg-[var(--color-panel-2)]" />

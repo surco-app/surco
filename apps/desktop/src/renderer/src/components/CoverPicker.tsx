@@ -48,12 +48,12 @@ function CoverActionButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className={`press pointer-events-auto rounded-lg p-1 text-white @[26rem]:p-1.5 transition-colors ${
+      className={`press pointer-events-auto rounded-lg p-1 text-on-scrim @[26rem]:p-1.5 transition-colors ${
         disabled
           ? 'cursor-not-allowed opacity-40'
           : danger
             ? 'hover:bg-danger/80'
-            : 'hover:bg-white/20'
+            : 'hover:bg-on-scrim/20'
       } ${className}`}
     >
       <Icon className="h-4 w-4" aria-hidden="true" />
@@ -242,7 +242,7 @@ export function CoverPicker({
   const coverActions = (
     // The scrim is decorative and lets pointer events through; only the buttons take
     // them, so the rest of the strip still passes clicks to the zoom/drag image beneath.
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center rounded-b-xl bg-gradient-to-t from-black/75 via-black/40 to-transparent px-1 pt-5 pb-1 @[26rem]:gap-1 @[26rem]:px-2 @[26rem]:pt-7 @[26rem]:pb-2 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center rounded-b-xl bg-gradient-to-t from-scrim/75 via-scrim/40 to-transparent px-1 pt-5 pb-1 @[26rem]:gap-1 @[26rem]:px-2 @[26rem]:pt-7 @[26rem]:pb-2 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
       {ownCover && (
         <CoverActionButton
           testid="cover-copy"
@@ -417,7 +417,7 @@ export function CoverPicker({
                 e.preventDefault()
                 window.api.startCoverDrag(coverDragPath.current)
               }}
-              className={`h-24 w-24 rounded-xl object-cover @[26rem]:h-32 @[26rem]:w-32 outline outline-1 -outline-offset-1 outline-white/10 ${
+              className={`h-24 w-24 rounded-xl object-cover @[26rem]:h-32 @[26rem]:w-32 outline outline-1 -outline-offset-1 outline-on-scrim/10 ${
                 coverDragging ? 'ring-2 ring-[var(--color-accent)]' : ''
               }`}
             />
@@ -436,7 +436,7 @@ export function CoverPicker({
             className={`flex h-24 w-24 flex-col items-center justify-center gap-2 rounded-xl bg-[var(--color-field)] p-2 text-center text-xs outline outline-1 -outline-offset-1 transition-colors @[26rem]:h-32 @[26rem]:w-32 ${
               coverDragging
                 ? 'text-[var(--color-accent)] outline-[var(--color-accent)]'
-                : 'text-fg-faint outline-white/10 hover:text-fg-dim'
+                : 'text-fg-faint outline-on-scrim/10 hover:text-fg-dim'
             }`}
           >
             <ImageIcon className="h-7 w-7" strokeWidth={1.5} aria-hidden="true" />
