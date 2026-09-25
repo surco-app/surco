@@ -58,7 +58,6 @@ function renderField(f: FieldSpec): React.JSX.Element {
       insertSources={f.insertSources}
       cleanResult={f.cleanResult}
       formatResult={f.formatResult}
-      wide={f.wide}
       required={f.required}
       invalid={f.invalid}
       mixed={f.mixed}

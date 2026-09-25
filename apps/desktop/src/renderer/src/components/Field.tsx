@@ -18,7 +18,6 @@ interface FieldProps {
   label: string
   value: string
   onChange: (v: string) => void
-  wide?: boolean
   required?: boolean
   // Required and still empty: drawn as the amber dot, read out as a description.
   invalid?: boolean
@@ -44,7 +43,6 @@ export const Field = memo(function Field({
   label,
   value,
   onChange,
-  wide,
   required,
   invalid,
   mixed,
@@ -132,9 +130,7 @@ export const Field = memo(function Field({
     // accessible name, so the label points at the input by id and the rest sits beside it.
     // From 28rem the field's parts join the form's two-track grid directly (contents), so every
     // label shares one column and every input the other; the chips sit under their input.
-    <div
-      className={`group block @[28rem]:contents ${wide ? 'col-span-1 @[26rem]:col-span-2' : ''}`}
-    >
+    <div className="group block @[28rem]:contents">
       <label
         htmlFor={inputId}
         className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-fg-dim @[28rem]:col-start-1 @[28rem]:mb-0 @[28rem]:min-h-[34px] @[28rem]:max-w-32 @[28rem]:flex-row-reverse @[28rem]:justify-start @[28rem]:text-right"
