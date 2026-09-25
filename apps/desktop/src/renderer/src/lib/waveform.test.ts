@@ -168,6 +168,18 @@ describe('drawWaveform column reduction', () => {
     expect(fills.some((f) => f.color === RED)).toBe(true)
   })
 
+  // The clip strikes take the theme's red: the fixed dark-theme rose read as a foreign
+  // pink on the light panels.
+  it('strikes clips in the colour it is handed', () => {
+    const { canvas, fills } = recordingCanvas(1200)
+    const peaks = new Array<number>(8192).fill(0.1)
+    const clipped = new Array<boolean>(8192).fill(false)
+    clipped[4001] = true
+    drawWaveform(canvas, peaks, { color: BLUE, clipped, clipColor: 'rgba(140, 67, 81, 0.95)' })
+    expect(fills.some((f) => f.color === 'rgba(140, 67, 81, 0.95)')).toBe(true)
+    expect(fills.some((f) => f.color === RED)).toBe(false)
+  })
+
   it('keeps the RMS body inside the peak outline it sits in', () => {
     // The two-layer draw only reads if the solid core stays under the translucent
     // envelope; a core merged by a rule that can exceed its own peak would paint

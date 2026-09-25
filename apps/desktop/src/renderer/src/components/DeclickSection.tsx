@@ -16,7 +16,7 @@ import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
 import { SectionSubhead } from './SectionSubhead'
 import { Tooltip } from './Tooltip'
-import { AFTER_COLOR, Strip, ZOOM_MAX, zoomLabel } from './WaveformCompare'
+import { Strip, useWaveColors, ZOOM_MAX, zoomLabel } from './WaveformCompare'
 import { ZoomStepper } from './ZoomStepper'
 
 const PLAYHEAD_FINE_STEP_SEC = 0.01
@@ -61,6 +61,7 @@ export function DeclickSection({
   trim,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const waveColor = useWaveColors().after
   const settled = useSettled(SELECTION_SETTLE_MS)
   const isMulti = selectedCount > 1
   const solo = open && !isMulti && settled
@@ -255,7 +256,7 @@ export function DeclickSection({
                 // A literal colour, never a CSS var: this is a canvas fillStyle, and a
                 // canvas silently ignores `var(...)` — leaving whatever fillStyle was set
                 // last, which is the clip red, so the whole wave painted red.
-                color={AFTER_COLOR}
+                color={waveColor}
                 inputPath={inputPath}
                 zoom={zoom}
                 onZoomChange={setZoom}
