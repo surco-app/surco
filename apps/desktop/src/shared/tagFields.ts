@@ -49,6 +49,11 @@ const dropTotal = (raw: string): string => raw.split('/')[0].trim()
 // something the file really holds, and the user can still read and correct it.
 const yearFromDate = (raw: string): string => raw.trim().match(/^\d{4}\b/)?.[0] ?? raw
 
+// A complete release date ("2020-12-01") at the start of a value, or '' when it carries
+// only a year or a partial date. The one shape every tag family agrees on for a full date.
+export const fullDateOf = (raw: string): string =>
+  raw.trim().match(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])/)?.[0] ?? ''
+
 export const TAG_FIELDS: TagField[] = [
   { key: 'title', aliases: ['title'], id3: 'title' },
   { key: 'artist', aliases: ['artist'], id3: 'artist' },

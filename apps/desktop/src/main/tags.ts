@@ -12,6 +12,7 @@ import {
   type Id3v2UnknownFrame,
   Id3v2UserTextInformationFrame,
   type Mpeg4AppleTag,
+  Mpeg4BoxType,
   Picture,
   PictureType,
   File as TagFile,
@@ -26,6 +27,7 @@ import {
   TRAKTOR_RATING_USER,
   WMP_RATING_USER,
 } from '../shared/rating'
+import { fullDateOf } from '../shared/tagFields'
 import type { TrackMetadata } from '../shared/types'
 import { decodeBase91, encodeBase91 } from './base91'
 import { mixedInKeyCuesToTraktorTree, parseMixedInKeyCues } from './mixedInKey'
@@ -882,6 +884,8 @@ export function writeTags(
       // only ever looks for POPM. Armoring it into a freeform atom would write bytes
       // nothing reads back — not even Surco itself.
       const apple = f.tag as Mpeg4AppleTag
+      const date = fullDateOf(meta.year)
+      if (date) apple.setQuickTimeString(Mpeg4BoxType.DAY, date)
       for (const [name, value] of extendedFields(meta)) setItunesText(apple, name, value)
       for (const [, name, value] of creditFields(meta)) setItunesText(apple, name, value)
       for (const name of foreignRemoved) apple.setItunesStrings('com.apple.iTunes', name)
@@ -894,6 +898,27 @@ export function writeTags(
     // and stays readable on the CDJ/rekordbox/Serato setups that mishandle v2.4 —
     // and, for WAV, in mp3tag, which ignores a v2.4 "id3 " chunk entirely.
     if (ID3_V23.has(extname(file).toLowerCase())) id3.version = 3
+    // The numeric year setter rewrites only the year, so a date the file already carried
+    // kept its old day and month beside the new year (TDAT in v2.3). The date frames are
+    // rebuilt from the field instead. By hand, because TagLib's own v2.3 rendering of a
+    // TDRC writes TDAT month-first, where the spec (and ffmpeg) put the day first.
+    for (const id of ['TYER', 'TDAT', 'TIME', 'TDRC'] as const)
+      id3.removeFrames(Id3v2FrameIdentifiers[id])
+    const date = fullDateOf(meta.year)
+    const year = toYear(meta.year)
+    const dateFrames: Array<[keyof typeof Id3v2FrameIdentifiers, string]> =
+      id3.version === 3
+        ? [
+            ['TYER', year ? String(year) : ''],
+            ['TDAT', date ? `${date.slice(8, 10)}${date.slice(5, 7)}` : ''],
+          ]
+        : [['TDRC', date || (year ? String(year) : '')]]
+    for (const [id, text] of dateFrames) {
+      if (!text) continue
+      const frame = Id3v2TextInformationFrame.fromIdentifier(Id3v2FrameIdentifiers[id])
+      frame.text = [text]
+      id3.addFrame(frame)
+    }
     // A malformed UFID kills the ENTIRE tag write, not just its own frame: TagLib's
     // parseFields splits the payload on the null delimiter and demands exactly two
     // fields, returning early — and leaving owner/identifier unset — when it gets
