@@ -26,7 +26,7 @@ import { SectionPill } from './SectionPill'
 import { SectionSubhead } from './SectionSubhead'
 import { Tooltip } from './Tooltip'
 import { TrimSkeleton } from './TrimSkeleton'
-import { AFTER_COLOR } from './WaveformCompare'
+import { useWaveColors } from './WaveformCompare'
 import { ZoomStepper } from './ZoomStepper'
 
 // A handle can never cross to within a second of the other: a trim that eats the
@@ -193,6 +193,7 @@ function Lane({
   overlayRef: React.RefObject<HTMLDivElement | null>
   tr: (key: string, opts?: Record<string, unknown>) => string
 }): React.JSX.Element {
+  const waveColor = useWaveColors().after
   const spanSec = Math.max(0.001, toSec - fromSec)
   // Edits as text and commits on blur/Enter, so a half-typed "40" never becomes a
   // 40-second cut mid-keystroke.
@@ -249,7 +250,7 @@ function Lane({
       // Sliced this way the stale peaks are drawn under the coordinates they belong to,
       // so the wave slides with the gesture and merely sharpens when the decode arrives.
       drawWaveform(canvas, win.peaks, {
-        color: AFTER_COLOR,
+        color: waveColor,
         rms: win.rms,
         window: {
           from: (fromSec - win.startSec) / win.durSec,
@@ -260,11 +261,11 @@ function Lane({
     }
     if (!wave || durationSec <= 0) return
     drawWaveform(canvas, wave.peaks, {
-      color: AFTER_COLOR,
+      color: waveColor,
       rms: wave.rms,
       window: { from: fromSec / durationSec, to: toSec / durationSec },
     })
-  }, [win, wave, fromSec, toSec, durationSec])
+  }, [win, wave, fromSec, toSec, durationSec, waveColor])
 
   // Lane-relative: 0% is fromSec, 100% is toSec.
   const pct = (sec: number): number => ((sec - fromSec) / spanSec) * 100
