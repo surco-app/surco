@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
@@ -325,18 +326,24 @@ describe('scrollbars', () => {
 // A blend stays a hex, not a color-mix(), because the canvases read these tokens as rgb.
 const TOKYO_NIGHT = {
   dark: {
+    bg_dark1: '#0c0e14',
     bg_dark: '#16161e',
     bg: '#1a1b26',
     bg_highlight: '#292e42',
     input_background: '#14141b',
     bg_visual: '#283457',
     blue7: '#394b70',
+    fg_gutter: '#3b4261',
+    blue0: '#3d59a1',
     terminal_black: '#414868',
     dark5: '#737aa2',
     markdown_text: '#9aa5ce',
     fg_dark: '#a9b1d6',
     fg: '#c0caf5',
     blue: '#7aa2f7',
+    cyan: '#7dcfff',
+    blue5: '#89ddff',
+    magenta: '#bb9af7',
     green: '#9ece6a',
     yellow: '#e0af68',
     red: '#f7768e',
@@ -421,4 +428,33 @@ describe('Tokyo Night palette', () => {
       .join('\n')
     expect(rules.match(/#[0-9a-f]{3,8}\b|rgba?\(|\bwhite\b/gi) ?? []).toEqual([])
   })
+})
+
+// The same rule for the components: a canvas, an SVG or a Tailwind class paints a Tokyo
+// Night colour too. Tailwind's white and black are not in either palette, and Tailwind's
+// blue-400 and slate-400 once drew every compare strip. The Dock icon is the app's mark and
+// keeps its own colours.
+describe('components paint only Tokyo Night colours', () => {
+  const root = fileURLToPath(new URL('.', import.meta.url))
+  const palette = new Set<string>([
+    ...Object.values(TOKYO_NIGHT.dark),
+    ...Object.values(TOKYO_NIGHT.light),
+  ])
+  const sources = (readdirSync(root, { recursive: true }) as string[]).filter(
+    (f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f) && !f.endsWith('dockIcon.ts'),
+  )
+
+  for (const file of sources) {
+    const code = readFileSync(join(root, file), 'utf8').replace(/^\s*\/\/.*$/gm, '')
+    it(`${file} uses only palette colours`, () => {
+      const hexes = [...code.matchAll(/['"`(\s]#([0-9a-fA-F]{6})\b/g)].map((m) => `#${m[1]}`)
+      const rgbs = [...code.matchAll(/rgba?\((\d+),\s*(\d+),\s*(\d+)/g)].map(
+        (m) =>
+          `#${[m[1], m[2], m[3]].map((v) => Number(v).toString(16).padStart(2, '0')).join('')}`,
+      )
+      const foreign = [...hexes, ...rgbs].filter((c) => !palette.has(c.toLowerCase()))
+      const tailwind = code.match(/\b[a-z]+-(white|black)\b(\/\d+)?/g) ?? []
+      expect([...foreign, ...tailwind]).toEqual([])
+    })
+  }
 })
