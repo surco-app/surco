@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { PAGES } from './nav'
 import { INDEXABLE_PATHS, SITE } from './sitemap'
 
 const sitemap = readFileSync(
@@ -53,6 +54,12 @@ describe('sitemap', () => {
   // accurate; dates typed by hand froze in August while the pages kept shipping weekly.
   it('carries no hand-maintained dates or hints', () => {
     expect(sitemap).not.toMatch(/<lastmod>|<changefreq>|<priority>/)
+  })
+
+  it('lists every page the header and footer link to', () => {
+    const indexable: readonly string[] = INDEXABLE_PATHS
+    const linked = Object.values(PAGES).flatMap((page) => [page.es, page.en])
+    expect(linked.filter((p) => !indexable.includes(p))).toEqual([])
   })
 
   it('points every entry at the canonical host', () => {

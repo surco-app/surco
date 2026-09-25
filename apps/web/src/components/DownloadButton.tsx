@@ -34,7 +34,7 @@ export default function DownloadButton({
   showMeta = true,
   note,
 }: {
-  // Which of the six placements this is, reported with the click. Several of them share
+  // Which of the eight placements this is, reported with the click. Several of them share
   // a page, so page_path alone cannot say which CTA earned the download.
   location: DownloadLocation
   showMeta?: boolean
