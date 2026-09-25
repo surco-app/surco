@@ -1,6 +1,6 @@
 import type { OS } from './os'
 
-// Where on the site the download button was clicked. The same component renders in six
+// Where on the site the download button was clicked. The same component renders in eight
 // places, several of them on one page, so page_path alone cannot say which CTA converts.
 export type DownloadLocation =
   | 'hero'
@@ -9,6 +9,8 @@ export type DownloadLocation =
   | 'guide'
   | 'changelog'
   | 'install'
+  | 'convert-hero'
+  | 'convert-closing'
 
 // Which donate link left for PayPal. 'donate-retry' is the odd one out and the reason
 // this is not just a boolean: it sits on the page PayPal returns a cancelled payment to,

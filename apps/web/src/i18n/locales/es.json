@@ -422,7 +422,9 @@
     "product": "Producto",
     "contactHeading": "Contacto",
     "copyright": "© 2026 Surco · getsurco.app",
-    "slogan": "tu música, en orden"
+    "slogan": "tu música, en orden",
+    "convertHeading": "Convertir",
+    "flacToAiff": "FLAC a AIFF"
   },
   "install": {
     "kicker": "Instalar",
@@ -1025,6 +1027,133 @@
       "cuesLabel": "Cue points",
       "intact": "sin tocar",
       "note": "rekordbox enlaza por pista, no por ruta: por eso las playlists y los cues siguen en su sitio. Revisa el beatgrid, que rekordbox recalcula al analizar el archivo nuevo."
+    }
+  },
+  "flacToAiff": {
+    "metaTitle": "Convertir FLAC a AIFF en Mac y Windows, sin perder etiquetas ni cues",
+    "metaDescription": "Convierte FLAC a AIFF sin pérdida y por lotes para rekordbox, Serato o CDJ. Surco conserva etiquetas, carátula y cues de Traktor, y detecta los FLAC falsos que en realidad son MP3.",
+    "h1a": "Convierte FLAC a AIFF",
+    "h1b": "sin perder una etiqueta.",
+    "lede": "Suelta una carpeta de FLAC y sácala en AIFF lista para rekordbox, Serato o CDJ antiguos. El audio sigue siendo sin pérdida, bit a bit, y las etiquetas, la carátula y los cues de Traktor pasan con él.",
+    "note": "macOS, Windows y Linux. Sin cuenta y sin suscripción.",
+    "example": {
+      "label": "Ejemplo de conversión",
+      "arrow": "sin pérdida, misma profundidad de bits y frecuencia",
+      "keeps": [
+        "Artista, título, álbum y el resto de etiquetas",
+        "Carátula",
+        "Cues y beatgrid de Traktor",
+        "Profundidad de bits y frecuencia"
+      ]
+    },
+    "carry": {
+      "kicker": "Qué pasa al otro lado",
+      "title": "Todo lo que lleva el FLAC acaba en el AIFF",
+      "lede": "Los conversores online te dan el audio y tiran el resto. Surco reescribe cada etiqueta en la forma que espera el AIFF.",
+      "head": {
+        "what": "En el FLAC",
+        "result": "En el AIFF",
+        "how": "Cómo"
+      },
+      "rows": [
+        {
+          "what": "Audio",
+          "result": "Idéntico bit a bit",
+          "how": "Los dos formatos son sin pérdida, así que las muestras son las mismas. Se conservan la profundidad de bits y la frecuencia."
+        },
+        {
+          "what": "Etiquetas",
+          "result": "Se conservan",
+          "how": "Los comentarios Vorbis pasan a etiquetas ID3, las que leen rekordbox, Serato y Traktor en un AIFF."
+        },
+        {
+          "what": "Carátula",
+          "result": "Se conserva",
+          "how": "La portada va incrustada en el AIFF."
+        },
+        {
+          "what": "Cues de Traktor",
+          "result": "Se conservan",
+          "how": "Surco lee el árbol de cues que Traktor guarda en el FLAC y lo vuelve a escribir donde Traktor lo busca en un AIFF."
+        },
+        {
+          "what": "Audio de 24 bits relleno",
+          "result": "Se guarda en 16 bits",
+          "how": "Un FLAC de «24 bits» que en realidad lleva 16 se guarda en 16 bits reales, sin pérdida."
+        }
+      ]
+    },
+    "why": {
+      "kicker": "Por qué AIFF",
+      "title": "Por qué los DJs pasan de FLAC a AIFF",
+      "items": [
+        {
+          "title": "Los reproductores antiguos no leen FLAC",
+          "text": "El CDJ-2000NXS y los Pioneer anteriores no leen FLAC desde USB. El AIFF suena en cualquier CDJ y en cualquier programa de DJ."
+        },
+        {
+          "title": "Carátulas que se ven",
+          "text": "El AIFF lleva etiquetas ID3, así que la portada y los comentarios salen igual en rekordbox, Serato y Traktor."
+        },
+        {
+          "title": "Mismo sonido, más espacio",
+          "text": "El AIFF va sin comprimir, así que los ficheros ocupan más que los FLAC. El sonido no cambia en nada."
+        }
+      ]
+    },
+    "steps": {
+      "kicker": "Cómo se hace",
+      "title": "De FLAC a AIFF en tres pasos",
+      "items": [
+        {
+          "title": "Suelta los ficheros",
+          "text": "Arrastra a Surco un FLAC, una selección o una carpeta entera."
+        },
+        {
+          "title": "Elige AIFF",
+          "text": "Escoge AIFF en el menú de formato junto al botón de convertir. La profundidad de bits y la frecuencia siguen a las del origen por defecto."
+        },
+        {
+          "title": "Convierte",
+          "text": "Los AIFF van a Música/Surco, o directos a Apple Music o Engine DJ. Los FLAC se quedan como estaban."
+        }
+      ],
+      "guide": "Paso a paso en la guía"
+    },
+    "quality": {
+      "kicker": "Antes de convertir",
+      "title": "¿Ese FLAC es de verdad sin pérdida?",
+      "lede": "Un MP3 convertido a FLAC pesa lo mismo y se ve igual en una lista de ficheros. El espectro lo delata: el sonido se corta en seco. Surco revisa cada pista antes de que la conviertas."
+    },
+    "faq": {
+      "kicker": "Preguntas",
+      "title": "Preguntas sobre FLAC a AIFF",
+      "items": [
+        {
+          "q": "¿Se pierde calidad al convertir FLAC a AIFF?",
+          "a": "No. Los dos son sin pérdida, así que el AIFF lleva exactamente las mismas muestras que el FLAC. Lo que cambia es el contenedor: el AIFF guarda el audio sin comprimir."
+        },
+        {
+          "q": "¿Por qué el AIFF ocupa más que el FLAC?",
+          "a": "El FLAC comprime el audio sin perder nada, como un zip. El AIFF no lo comprime, así que a 16 bits y 44,1 kHz ocupa unos 10 MB por minuto de audio estéreo."
+        },
+        {
+          "q": "¿Puedo convertir una carpeta entera de golpe?",
+          "a": "Sí. Suelta la carpeta y conviértelo todo de una vez."
+        },
+        {
+          "q": "¿Se conservan mis cues?",
+          "a": "Los de Traktor sí: Surco lleva los cues y el beatgrid a donde Traktor los lee en un AIFF. rekordbox guarda sus cues en su propia biblioteca; carga el AIFF con «Sustituir» y la misma fila de rekordbox pasa a apuntar al fichero nuevo, con sus cues y sus listas."
+        },
+        {
+          "q": "¿Funciona en Windows?",
+          "a": "Sí. Surco funciona en macOS (Apple Silicon e Intel), Windows y Linux."
+        }
+      ]
+    },
+    "outro": {
+      "title": "Pasa tus FLAC a AIFF",
+      "lede": "Surco además etiqueta desde Discogs, Bandcamp y Deezer y lo archiva todo en tu biblioteca."
     }
   }
 }

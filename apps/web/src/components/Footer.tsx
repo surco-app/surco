@@ -7,10 +7,11 @@ export default function Footer() {
   const featuresHref = PAGES.features[lang]
   const guideHref = PAGES.guide[lang]
   const changelogHref = PAGES.changelog[lang]
+  const flacToAiffHref = PAGES.flacToAiff[lang]
 
   return (
     <footer className="relative mt-10 border-t border-line/60">
-      <div className="mx-auto grid max-w-6xl gap-8 px-6 py-14 sm:grid-cols-2 lg:grid-cols-[1.8fr_1fr_1fr]">
+      <div className="mx-auto grid max-w-6xl gap-8 px-6 py-14 sm:grid-cols-2 lg:grid-cols-[1.8fr_1fr_1fr_1fr]">
         <div>
           <div className="flex items-center gap-2.5">
             <img src="/icon-128.webp" alt="Surco" width={128} height={128} className="h-9 w-9" />
@@ -51,6 +52,23 @@ export default function Footer() {
             <li>
               <a href={changelogHref} className="transition-colors hover:text-fg">
                 {t('nav.cambios')}
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="font-mono text-xs tracking-wider text-faint uppercase">
+            {t('footer.convertHeading')}
+          </h3>
+          <ul className="mt-4 space-y-2.5 text-sm text-muted">
+            <li>
+              <a
+                href={flacToAiffHref}
+                data-testid="footer-flac-to-aiff"
+                className="transition-colors hover:text-fg"
+              >
+                {t('footer.flacToAiff')}
               </a>
             </li>
           </ul>
