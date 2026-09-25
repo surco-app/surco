@@ -305,7 +305,7 @@ export function ExportButton({
           role="menu"
           aria-label={tr('editor.chooseFormat')}
           onKeyDown={onMenuKeyDown}
-          className="absolute right-0 bottom-full mb-2 w-56 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-lg"
+          className="absolute right-0 bottom-full mb-2 w-56 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]"
         >
           <fieldset aria-labelledby={formatHeadingId} className="min-w-0">
             <p

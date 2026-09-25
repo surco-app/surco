@@ -168,7 +168,7 @@ export function TrackContextMenu({
         data-testid="track-menu"
         onKeyDown={onMenuKeyDown}
         style={{ top: pos.y, left: pos.x }}
-        className="animate-pop absolute min-w-[210px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl"
+        className="animate-pop absolute min-w-[210px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
       >
         <MenuItem
           testid="track-menu-search"

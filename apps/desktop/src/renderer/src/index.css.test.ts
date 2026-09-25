@@ -458,3 +458,32 @@ describe('components paint only Tokyo Night colours', () => {
     })
   }
 })
+
+// Flat, the way macOS draws its content (Vicent 25/09): surfaces part by tone and a
+// hairline, never by glows or drop shadows. Only what floats over the content (menus,
+// popovers, the tooltip, toasts, the activity panel) lifts off it, and always by the same
+// soft shadow, so "this is on top and will go away" reads one way everywhere. Tailwind's
+// five sizes had drifted in one by one; an inset hairline is a border, not a shadow.
+describe('flat surfaces, one floating shadow', () => {
+  const root = fileURLToPath(new URL('.', import.meta.url))
+  const sources = (readdirSync(root, { recursive: true }) as string[]).filter(
+    (f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f),
+  )
+
+  it('defines the floating shadow in the scrim colour', () => {
+    expect(css).toMatch(
+      /--shadow-float:[^;]*color-mix\(in srgb, var\(--color-scrim\) \d+%, transparent\)/,
+    )
+  })
+
+  for (const file of sources) {
+    const code = readFileSync(join(root, file), 'utf8')
+    it(`${file} lifts only with the floating shadow`, () => {
+      const shadows =
+        code.match(
+          /\bshadow-(?:sm|md|lg|xl|2xl)\b|\bshadow-\[(?!inset|var\(--shadow-float\))[^\]]*\]/g,
+        ) ?? []
+      expect(shadows).toEqual([])
+    })
+  }
+})

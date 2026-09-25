@@ -155,9 +155,8 @@ export function Waveform({
             data-testid="waveform-playhead"
             // White, not accent: the wave itself is accent-blue, so a blue playhead
             // vanished into it. bg-fg reads against both the blue bars and the dark
-            // ground, and a soft glow lifts it off a busy stretch — the same white
-            // audition playhead the wave sections use.
-            className="absolute top-0 left-0 h-full w-0.5 -translate-x-1/2 bg-fg shadow-[0_0_3px_color-mix(in_srgb,var(--color-scrim)_60%,transparent)]"
+            // ground, the same white audition playhead the wave sections use.
+            className="absolute top-0 left-0 h-full w-0.5 -translate-x-1/2 bg-fg"
           />
         </div>
       )}
@@ -180,7 +179,7 @@ export function Waveform({
             // Dressed like the clock pill so the two speak the same language. Near
             // either edge it hangs inward from the ghost line instead of centring,
             // so the card's clipped corners never cut the number.
-            className={`absolute top-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums shadow-sm ring-1 ring-[var(--color-line)] backdrop-blur-sm ${
+            className={`absolute top-1 rounded-full bg-[var(--color-panel-2)]/85 px-1.5 py-px text-[10px] text-fg-dim leading-none tabular-nums ring-1 ring-[var(--color-line)] backdrop-blur-sm ${
               hoverRatio < 0.08 ? '' : hoverRatio > 0.92 ? '-translate-x-full' : '-translate-x-1/2'
             }`}
           >
