@@ -11,7 +11,7 @@ const REPORT = {
   panel: '#1a1b26',
   line: 'rgba(192, 202, 245, 0.16)',
   fg: '#c0caf5',
-  fgDim: '#969cbd',
+  fgDim: '#9aa5ce',
   accent: '#7aa2f7',
   good: '#9ece6a',
   warn: '#e0af68',

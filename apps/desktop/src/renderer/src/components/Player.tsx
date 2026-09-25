@@ -257,7 +257,7 @@ export function Player({
             snaps back to 0°. */}
         <span
           data-testid="player-vinyl"
-          className="player-vinyl relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full outline outline-1 -outline-offset-1 outline-white/15"
+          className="player-vinyl relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full outline outline-1 -outline-offset-1 outline-on-scrim/15"
           style={{ animationPlayState: !paused && !loading ? 'running' : 'paused' }}
         >
           {track.embeddedCover ? (
@@ -267,17 +267,17 @@ export function Player({
               alt=""
               // Same as the list covers: keep the base64 JPEG decode off the main thread.
               decoding="async"
-              className="h-5 w-5 rounded-full object-cover ring-1 ring-black/40"
+              className="h-5 w-5 rounded-full object-cover ring-1 ring-scrim/40"
             />
           ) : (
             <span
               data-testid="player-cover-placeholder"
-              className="h-5 w-5 rounded-full bg-[var(--color-accent)] ring-1 ring-black/40"
+              className="h-5 w-5 rounded-full bg-[var(--color-accent)] ring-1 ring-scrim/40"
             />
           )}
           <span
             aria-hidden="true"
-            className="absolute top-1/2 left-1/2 h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/80"
+            className="absolute top-1/2 left-1/2 h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-scrim/80"
           />
         </span>
 

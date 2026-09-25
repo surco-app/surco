@@ -1,7 +1,6 @@
 import type { NormalizeConfig } from '../../../shared/types'
 
-// Tokyo Night's danger red, hardcoded like the strips' blue/grey: the canvas raster
-// can't read CSS variables, and the strips don't retheme either.
+// Tokyo Night's dark red, for a caller that hands no clipColor of its own.
 const CLIP_COLOR = 'rgba(247, 118, 142, 0.95)'
 
 // The RMS core drawn over the peak outline, in the same hue but fully opaque: the
@@ -86,6 +85,7 @@ export function drawWaveform(
   peaks: number[],
   opts: {
     color?: string
+    clipColor?: string
     clear?: boolean
     clipDb?: number
     clipped?: boolean[]
@@ -111,8 +111,9 @@ export function drawWaveform(
   if (opts.clear !== false) ctx.clearRect(0, 0, w, h)
   const laneH = opts.lane ? h / opts.lane.count : h
   const mid = (opts.lane ? laneH * opts.lane.index : 0) + laneH / 2
-  const baseColor = opts.color ?? 'rgba(96, 165, 250, 0.8)'
+  const baseColor = opts.color ?? 'rgba(122, 162, 247, 0.8)'
   const coreColor = rmsColor(baseColor)
+  const clipColor = opts.clipColor ?? CLIP_COLOR
   const rms = opts.rms
   const limitLin = opts.limitDb !== undefined ? 10 ** (opts.limitDb / 20) : null
   const from = (opts.window?.from ?? 0) * peaks.length
@@ -159,7 +160,7 @@ export function drawWaveform(
       }
       if (isOver(nearest)) clipXs.push(x)
     }
-    strikeClips(ctx, clipXs, mid, halfH, 1)
+    strikeClips(ctx, clipXs, mid, halfH, 1, clipColor)
     return
   }
   // More buckets than pixels — the overview at any normal width, where 8192 buckets
@@ -201,7 +202,7 @@ export function drawWaveform(
       }
     }
     for (let col = 0; col < cols; col++) if (colClip[col]) clipXs.push(col)
-    strikeClips(ctx, clipXs, mid, halfH, 1)
+    strikeClips(ctx, clipXs, mid, halfH, 1, clipColor)
     return
   }
   const bw = Math.max(barW - 0.5, 0.5)
@@ -220,7 +221,7 @@ export function drawWaveform(
     }
     if (isOver(i)) clipXs.push(x)
   }
-  strikeClips(ctx, clipXs, mid, halfH, bw)
+  strikeClips(ctx, clipXs, mid, halfH, bw, clipColor)
 }
 
 // The clip lines struck over the drawn wave: one full-lane-height red line per
@@ -233,9 +234,10 @@ function strikeClips(
   mid: number,
   halfH: number,
   barW: number,
+  color: string,
 ): void {
   if (xs.length === 0) return
-  ctx.fillStyle = CLIP_COLOR
+  ctx.fillStyle = color
   const top = mid - halfH - 2
   const height = (halfH + 2) * 2
   const lineW = Math.max(barW, 1)

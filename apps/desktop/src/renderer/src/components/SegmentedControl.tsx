@@ -139,7 +139,7 @@ export function SegmentedControl<T extends string>({
         {options.map((id) => (
           <span
             key={id}
-            className="rounded-md bg-[var(--color-panel-2)] px-4 py-1.5 text-sm text-fg shadow-[0_1px_2px_rgba(0,0,0,0.3),inset_0_0_0_1px_var(--color-line-strong)]"
+            className="rounded-md bg-[var(--color-panel-2)] px-4 py-1.5 text-sm text-fg shadow-[0_1px_2px_color-mix(in_srgb,var(--color-scrim)_30%,transparent),inset_0_0_0_1px_var(--color-line-strong)]"
           >
             {labelFor(id)}
           </span>

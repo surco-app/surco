@@ -68,7 +68,7 @@ export function ModalShell({
         data-testid={backdropTestId}
         aria-label={tr('common.close')}
         onClick={onClose}
-        className={`${instant ? '' : 'animate-overlay '}absolute inset-0 bg-black/60 backdrop-blur-sm`}
+        className={`${instant ? '' : 'animate-overlay '}absolute inset-0 bg-scrim/60 backdrop-blur-sm`}
       />
       <div
         ref={dialogRef}
