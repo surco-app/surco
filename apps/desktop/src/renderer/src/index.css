@@ -56,6 +56,9 @@
   /* The palette's lightest colour, for a highlight laid over a dark surface: the vinyl's
      grooves and the progress sweep. */
   --sheen: var(--color-fg);
+  /* The one shadow in the app, for what floats over the content (menus, popovers, the
+     tooltip, toasts, the activity panel). Everything else is flat, as macOS draws it. */
+  --shadow-float: 0 10px 30px -8px color-mix(in srgb, var(--color-scrim) 45%, transparent);
 }
 
 :root[data-theme="light"] {

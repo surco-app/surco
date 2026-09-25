@@ -589,7 +589,7 @@ export function Strip({
               // whitespace-nowrap keeps the chip one line at the strip's edges: an
               // absolute element squeezed against its container's right edge wraps,
               // grows taller than the strip, and used to force a vertical scrollbar.
-              className={`pointer-events-none absolute top-1 whitespace-nowrap rounded border border-[var(--color-line)] bg-[var(--color-panel-2)] px-1.5 py-0.5 text-[10px] tabular-nums shadow-sm ${
+              className={`pointer-events-none absolute top-1 whitespace-nowrap rounded border border-[var(--color-line)] bg-[var(--color-panel-2)] px-1.5 py-0.5 text-[10px] tabular-nums ${
                 readout.over ? 'text-danger' : 'text-fg-muted'
               }`}
               style={{

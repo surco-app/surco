@@ -211,7 +211,7 @@ export function Tooltip({
             id={id}
             role="tooltip"
             style={{ left: pos.left, top: pos.top, transform: pos.transform, maxWidth: WIDTH }}
-            className="animate-overlay pointer-events-none fixed z-50 w-max rounded-md bg-[var(--color-panel-2)] px-2 py-1 text-left text-xs font-normal text-fg shadow-md ring-1 ring-[var(--color-line-strong)]"
+            className="animate-overlay pointer-events-none fixed z-50 w-max rounded-md bg-[var(--color-panel-2)] px-2 py-1 text-left text-xs font-normal text-fg shadow-[var(--shadow-float)] ring-1 ring-[var(--color-line-strong)]"
           >
             {label}
             {hint && <span className="ml-2 text-fg-dim">{hint}</span>}
