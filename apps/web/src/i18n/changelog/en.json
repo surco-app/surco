@@ -31,6 +31,14 @@
       {
         "text": "Originals is gentler on your disk: by default it only keeps a copy when the audio is re-encoded, stays under its size limit while Surco is open and always leaves 5 GB free.",
         "in": "1.2.1"
+      },
+      {
+        "text": "Surco has new colours, in light and dark mode: a softer palette and a flat look, where only what floats over the list casts a shadow.",
+        "in": "1.2.2"
+      },
+      {
+        "text": "The metadata form takes less room: short fields such as year or key are as wide as their value and share a row, and on a wide panel the fields no longer stretch to the edge.",
+        "in": "1.2.2"
       }
     ]
   },

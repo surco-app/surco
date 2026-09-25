@@ -31,6 +31,14 @@
       {
         "text": "Originales es más prudente con tu disco: por defecto solo guarda copia cuando el audio se vuelve a codificar, respeta su límite de tamaño mientras Surco sigue abierto y deja siempre 5 GB libres.",
         "in": "1.2.1"
+      },
+      {
+        "text": "Surco estrena colores, en modo claro y en oscuro: una paleta más suave y un aspecto plano, donde solo lo que flota sobre la lista lleva sombra.",
+        "in": "1.2.2"
+      },
+      {
+        "text": "El formulario de metadatos ocupa menos: los campos cortos, como el año o la tonalidad, miden lo que su valor y comparten fila, y en un panel ancho los campos no se estiran hasta el borde.",
+        "in": "1.2.2"
       }
     ]
   },
