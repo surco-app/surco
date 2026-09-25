@@ -39,6 +39,14 @@
       {
         "text": "El formulario de metadatos ocupa menos: los campos cortos, como el año o la tonalidad, miden lo que su valor y comparten fila, y en un panel ancho los campos no se estiran hasta el borde.",
         "in": "1.2.2"
+      },
+      {
+        "text": "Con «Año con fecha completa» en Ajustes, el año guarda la fecha entera, como 2020-12-01, cuando el archivo, Discogs, Deezer o Bandcamp la conocen; si solo saben el año, se queda el año. Al cambiar el año de un MP3 ya no se queda pegado el día y mes que tenía antes.",
+        "in": "1.2.3"
+      },
+      {
+        "text": "El total de pistas lleva el mismo cero delante que el número de pista, así que queda 01/09 en vez de 01/9, y ese cero ya no se pierde al actualizar un MP3.",
+        "in": "1.2.3"
       }
     ]
   },

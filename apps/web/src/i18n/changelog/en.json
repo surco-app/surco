@@ -39,6 +39,14 @@
       {
         "text": "The metadata form takes less room: short fields such as year or key are as wide as their value and share a row, and on a wide panel the fields no longer stretch to the edge.",
         "in": "1.2.2"
+      },
+      {
+        "text": "With “Year with full date” in Settings, Year keeps the whole date, such as 2020-12-01, when the file, Discogs, Deezer or Bandcamp knows it; when only the year is known, the year stays. Changing an MP3’s year no longer leaves its old day and month behind.",
+        "in": "1.2.3"
+      },
+      {
+        "text": "The track total gets the same leading zero as the track number, so it reads 01/09 instead of 01/9, and that zero is no longer lost when updating an MP3.",
+        "in": "1.2.3"
       }
     ]
   },
