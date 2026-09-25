@@ -697,20 +697,31 @@ textarea {
 .is-primary [data-testid="track-format"] {
   color: color-mix(in srgb, var(--color-on-row-selected) 85%, transparent);
 }
-/* The right-hand glyphs (quality verdict, match sparkles) carry their own accent/semantic
+/* The right-hand glyphs (match sparkles, backup mark) carry their own accent/semantic
    colour, which on the blue fill either vanishes (accent-on-blue) or clashes (amber-on-blue).
    On the selected row they flip to the on-selection colour so the shape still reads; the
    colour cue they'd normally give is redundant here — the row is already the one in focus. */
-.is-primary [data-testid="track-quality"],
-.is-primary [data-testid="track-quality"] [data-testid="track-format"],
 .is-primary [data-testid="track-quality-loading"],
 .is-primary [data-testid="track-automatched"],
 .is-primary [data-testid="track-match-review"],
 .is-primary [data-testid="track-backup"] {
   color: var(--color-on-row-selected);
 }
-.is-primary [data-testid="track-quality"] {
-  background: color-mix(in srgb, var(--color-on-row-selected) 18%, transparent);
+/* The quality verdict is the exception: it keeps its colour on the row the DJ has open
+   (artexjay 24/09). Its translucent tint over the blue fill would drop the dark danger label
+   to 2.70:1, so the tint lands on the panel colour instead, opaque, and the pill reads the
+   same selected or not. The percentages match qualityPill in TrackList. */
+.is-primary [data-testid="track-quality"] [data-testid="track-format"] {
+  color: inherit;
+}
+.is-primary [data-testid="track-quality"][data-tone="good"] {
+  background: color-mix(in srgb, var(--color-good) 15%, var(--color-panel));
+}
+.is-primary [data-testid="track-quality"][data-tone="warn"] {
+  background: color-mix(in srgb, var(--color-warn) 20%, var(--color-panel));
+}
+.is-primary [data-testid="track-quality"][data-tone="danger"] {
+  background: color-mix(in srgb, var(--color-danger) 20%, var(--color-panel));
 }
 /* Conversion progress is the same story and the one that costs most: the stage label and its
    sweep bar are accent-coloured, and accent on the selection fill measures 1.00 in light (the

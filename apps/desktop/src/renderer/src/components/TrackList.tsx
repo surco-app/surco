@@ -171,7 +171,7 @@ const qualityTone: Record<RowVerdict, RowTone> = {
 // read as clutter. Each shape is sized to the same optical weight so a column of them
 // scans evenly, and the shape alone tells the verdicts apart for colour-blind users:
 // circle good, triangle suspicion, square measured defect. The colour sits on the wrapper
-// and the shape paints currentColor, so the primary row's recolour reaches it.
+// and the shape paints currentColor, so it always matches the pill's label.
 const qualityShape: Record<RowTone, React.JSX.Element> = {
   good: <circle cx="6" cy="6" r="3.5" />,
   warn: (
