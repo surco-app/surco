@@ -891,6 +891,39 @@ describe('writeTags', () => {
     f.dispose()
   })
 
+  // The zero-padding setting pads the pair before it gets here; TagLib's numeric setters
+  // would rewrite it as "1/9", so every file this pass finishes (an Update, a WAV, a rated
+  // MP3) lost the padding the ffmpeg path keeps.
+  it('keeps a zero-padded track number and total verbatim in TRCK', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+
+    writeTags(file, { ...meta, trackNumber: '01', trackTotal: '09' })
+
+    const f = TagFile.createFromPath(file)
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
+    const trck = id3.frames.find(
+      (fr) => fr.frameId === Id3v2FrameIdentifiers.TRCK,
+    ) as Id3v2TextInformationFrame
+    expect(trck?.text).toEqual(['01/09'])
+    f.dispose()
+  })
+
+  it('keeps a zero-padded track number with no total verbatim in TRCK', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+
+    writeTags(file, { ...meta, trackNumber: '03', trackTotal: '' })
+
+    const f = TagFile.createFromPath(file)
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
+    const trck = id3.frames.find(
+      (fr) => fr.frameId === Id3v2FrameIdentifiers.TRCK,
+    ) as Id3v2TextInformationFrame
+    expect(trck?.text).toEqual(['03'])
+    f.dispose()
+  })
+
   it('keeps a plain numeric track number numeric', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
     const file = buildSeed(dir)

@@ -957,14 +957,17 @@ export function writeTags(
     // anyway, and what mp3tag and Traktor read. Energy has no standard frame at all;
     // TXXX "ENERGY" is Mixed In Key's key.
 
-    // A vinyl-position track number ("A2") is text the numeric tag.track setter
-    // above cannot hold — it wrote the bare digits. Rewrite the TRCK frame with the
-    // verbatim value so the side position survives, matching what the ffmpeg
-    // conversion path writes with `-metadata track=`.
-    if (/[A-Za-z]/.test(meta.trackNumber)) {
+    // A vinyl-position track number ("A2") or a zero-padded one ("01/09") is text the
+    // numeric tag.track and tag.trackCount setters above cannot hold — they wrote the
+    // bare digits. Rewrite the TRCK frame with the verbatim value so the side position
+    // and the padding survive, matching what the ffmpeg conversion path writes with
+    // `-metadata track=`.
+    const trackNumber = meta.trackNumber.trim()
+    if (trackNumber) {
+      const total = (meta.trackTotal ?? '').trim()
       id3.removeFrames(Id3v2FrameIdentifiers.TRCK)
       const trck = Id3v2TextInformationFrame.fromIdentifier(Id3v2FrameIdentifiers.TRCK)
-      trck.text = [meta.trackNumber]
+      trck.text = [total && /^\d+$/.test(trackNumber) ? `${trackNumber}/${total}` : trackNumber]
       id3.addFrame(trck)
     }
     // Same story for a fractional tempo ("150.55", what Traktor and Mixed In Key write):
