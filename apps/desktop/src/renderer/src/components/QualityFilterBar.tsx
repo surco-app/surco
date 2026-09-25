@@ -448,7 +448,7 @@ export function QualityFilterBar({
               data-testid="quality-filter-listbox"
               aria-label={tr('sidebar.filter.label')}
               onKeyDown={onListKeyDown}
-              className="animate-pop absolute left-0 z-50 mt-1 min-w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-xl"
+              className="animate-pop absolute left-0 z-50 mt-1 min-w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
             >
               {/* "All" leads as the reset, then the conversion buckets right under it (the
                   primary "what's left to convert" action), then the format axis, then the

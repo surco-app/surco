@@ -446,7 +446,7 @@ function Lane({
             />
           )}
           {/* The cut itself: a handle to drag, arrow keys to refine. The magnet's
-              glow stands in for the trackpad click an Electron app cannot fire. */}
+              growing grip stands in for the trackpad click an Electron app cannot fire. */}
           {cutOnScreen && (
             <div
               data-testid={`trim-handle-${side}`}
@@ -495,22 +495,19 @@ function Lane({
               onPointerUp={onRelease}
               onPointerCancel={onRelease}
             >
-              {/* Focus SHARPENS the line rather than haloing it: the snap's wide, spread
-                glow, worn as a persistent state, smeared across the wave until the line
-                itself was lost in it. Focus widens the line to 2px, and the grip below
-                takes a solid ring: the tight glow it used to wear on a 1px line was too
-                faint to find at a glance. */}
+              {/* Focus SHARPENS the line rather than haloing it: a glow worn as a
+                persistent state smeared across the wave until the line itself was lost
+                in it. Focus widens the line to 2px, and the grip below takes a solid
+                ring. A snap shows by the grip growing, with no glow: the app is flat. */}
               <span
                 aria-hidden="true"
                 data-testid={snapped ? `trim-snapped-${side}` : undefined}
-                className={`absolute inset-y-0 left-1/2 w-px bg-accent group-data-[focused]:w-0.5 ${
-                  snapped ? 'shadow-[0_0_8px_2px_var(--color-accent)]' : ''
-                }`}
+                className="absolute inset-y-0 left-1/2 w-px bg-accent group-data-[focused]:w-0.5"
               />
               <span
                 aria-hidden="true"
                 className={`trim-grip absolute top-1/2 left-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent ${
-                  snapped ? 'scale-150 shadow-[0_0_8px_var(--color-accent)]' : ''
+                  snapped ? 'scale-150' : ''
                 }`}
               />
             </div>
@@ -822,7 +819,7 @@ export function TrimSection({
   // The magnet: dragging near where the music actually starts (or ends) pulls the
   // handle onto it — landing the cut exactly on the wave is the whole gesture, and
   // trackpads have no haptics an Electron app can fire, so the snap plus the
-  // handle's glow stand in for the click under the finger. The catch window follows
+  // grip's growth stand in for the click under the finger. The catch window follows
   // the lane's span: the tighter the context, the more surgical the magnet.
   const [snapped, setSnapped] = useState(false)
   function withSnap(which: Side, sec: number): number {
