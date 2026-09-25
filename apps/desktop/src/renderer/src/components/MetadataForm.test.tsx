@@ -112,6 +112,14 @@ describe('MetadataForm', () => {
     expect(screen.getByTestId('field-compilation')).not.toBeChecked()
   })
 
+  // With the labels beside the inputs, every input stretched to the panel's far edge: on a
+  // 1270px panel "2007" sat in a 1000px box and the eye crossed the whole row to read it.
+  // The fields column stops at a readable measure however wide the user drags the panel.
+  it('caps the fields column at a readable width on a wide panel', () => {
+    renderForm([spec('title', 'Illusion'), spec('year', '2007')])
+    expect(screen.getByTestId('field-title').parentElement?.className).toContain('max-w-[48rem]')
+  })
+
   // The rating is a fact about the record, like its artwork, and above the form it cost a
   // whole row before the first field. Under the cover it rides the artwork column, so the
   // fields column opens straight on the first field the user edits.
