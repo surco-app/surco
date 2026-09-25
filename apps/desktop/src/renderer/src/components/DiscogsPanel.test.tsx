@@ -25,7 +25,6 @@ function browser(overrides: Partial<DiscogsBrowser>): DiscogsBrowser {
     setListEngaged: vi.fn(),
     loading: false,
     busy: false,
-    resolving: false,
     noResults: false,
     error: '',
     previewRelease: vi.fn(),
