@@ -50,6 +50,7 @@ function setup(
   editingRef: { current: string | null } = { current: null },
   importFields: MetaTextKey[] = [...DEFAULT_IMPORT_FIELDS],
   genrePresets: string[] = [],
+  fullReleaseDate = false,
 ): {
   result: { current: ReturnType<typeof useAutoMatch> }
   updateTrack: ReturnType<typeof vi.fn>
@@ -63,6 +64,7 @@ function setup(
   const searchProvidersRef: { current: SearchProviderId[] } = { current: ['discogs'] }
   const importFieldsRef = { current: importFields }
   const genrePresetsRef = { current: genrePresets }
+  const fullReleaseDateRef = { current: fullReleaseDate }
   const matchCleanupRef = { current: {} }
   const { result } = renderHook(() =>
     useAutoMatch({
@@ -72,6 +74,7 @@ function setup(
       searchProvidersRef,
       importFieldsRef,
       genrePresetsRef,
+      fullReleaseDateRef,
       matchCleanupRef,
       editingRef,
       reportActivity,
@@ -133,6 +136,23 @@ describe('useAutoMatch', () => {
     await waitFor(() => expect(updateTrack).toHaveBeenCalledTimes(1))
     const patch = updateTrack.mock.calls[0][1] as { meta: TrackMetadata }
     expect(patch.meta.genre).toBe('Electronic')
+  })
+
+  // The sweep dates the tracks it fills exactly as a pick in the editor would.
+  it('writes the whole release date when applying unattended with the full date on', async () => {
+    setApi({
+      getRelease: vi
+        .fn<Api['getRelease']>()
+        .mockResolvedValue({ ...release, year: 2001, released: '2001-03-12' }),
+    })
+    const tracks = [track('a')]
+    const { result, updateTrack } = setup(tracks, null, { current: null }, undefined, [], true)
+
+    act(() => result.current.enqueueAutoMatch(tracks))
+
+    await waitFor(() => expect(updateTrack).toHaveBeenCalledTimes(1))
+    const patch = updateTrack.mock.calls[0][1] as { meta: TrackMetadata }
+    expect(patch.meta.year).toBe('2001-03-12')
   })
 
   // A field buffers its text and only commits to the track array on pause/blur, so while

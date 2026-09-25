@@ -206,6 +206,7 @@ describe('getRelease', () => {
       title: 'Music Has The Right To Children',
       artists: [{ name: 'Boards of Canada' }],
       year: 1998,
+      released: '1998-04-20',
       genres: ['idm', 'electronic'],
       images: [
         {

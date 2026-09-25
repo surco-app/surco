@@ -1046,6 +1046,8 @@
     "genreHint": "Aparecem como botões rápidos junto aos do release escolhido.",
     "trimWhitespace": "Remover espaços extras",
     "zeroPadTrack": "Nº da faixa com zero à esquerda (03)",
+    "fullReleaseDate": "Data de lançamento completa em Ano (2020-12-01)",
+    "fullReleaseDateHint": "Ao preencher pelo Discogs, Deezer ou Bandcamp. Se a fonte não tiver o dia, fica só o ano.",
     "coverMaxSize": "Tamanho máximo da capa",
     "coverMaxHint": "px (0 = sem limite)",
     "coverUpscale": "Ampliar capas menores até este tamanho",

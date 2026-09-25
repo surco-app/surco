@@ -232,6 +232,7 @@ export const Editor = memo(function Editor({
     titleFormat,
     groupingPresets,
     genrePresets,
+    fullReleaseDate,
     genreSeparator,
     groupingSeparator,
     visibleFields,
@@ -556,6 +557,7 @@ export const Editor = memo(function Editor({
         },
         importFields,
         genrePresets,
+        fullReleaseDate,
       ),
       // Mark the track matched so the sweep leaves this deliberate pick alone, even when
       // the source (Bandcamp) writes no Discogs id to guard it.
