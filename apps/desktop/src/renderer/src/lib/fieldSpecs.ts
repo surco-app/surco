@@ -30,7 +30,6 @@ export interface FieldSpec {
   value: string
   onChange: (v: string) => void
   placeholder?: string
-  wide?: boolean
   required?: boolean
   invalid?: boolean
   // A selection whose tracks disagree on this field: the value shows blank, so the Field
@@ -231,7 +230,6 @@ export function buildFieldSpecs({
               !isMulti && INSERT_TARGET_FIELDS.has(def.key) ? insertSources : undefined,
             cleanResult: !isMulti && def.key === 'album' ? albumCleanResult : undefined,
             formatResult: !isMulti && def.key === 'title' ? titleFormatResult : undefined,
-            wide: def.wide,
             required: requiredFields.includes(def.key),
             invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),
             suggestions:

@@ -3,11 +3,10 @@ import type { CustomField, MetaTextKey, TrackMetadata } from '../../../shared/ty
 
 interface FieldDef {
   key: MetaTextKey
-  wide?: boolean
 }
 
 export const FIELD_DEFS: FieldDef[] = [
-  { key: 'title', wide: true },
+  { key: 'title' },
   { key: 'artist' },
   { key: 'albumArtist' },
   { key: 'album' },
@@ -16,7 +15,7 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'style' },
   { key: 'grouping' },
   { key: 'trackNumber' },
-  { key: 'comment', wide: true },
+  { key: 'comment' },
   { key: 'discNumber' },
   { key: 'trackTotal' },
   { key: 'discTotal' },
@@ -36,7 +35,7 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'publisher' },
   { key: 'catalogNumber' },
   { key: 'discogsReleaseId' },
-  { key: 'discogsUrl', wide: true },
+  { key: 'discogsUrl' },
   { key: 'country' },
   { key: 'mediaType' },
   { key: 'mood' },
