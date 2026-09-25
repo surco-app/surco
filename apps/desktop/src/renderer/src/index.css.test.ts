@@ -193,6 +193,43 @@ describe('section pill label contrast (WCAG 1.4.3 AA)', () => {
   }
 })
 
+// The quality pill used to flip to the on-selection colour on the primary row, so the one
+// track the DJ has open was the only one hiding its verdict (artexjay 24/09). Keeping the
+// verdict colour over the pill's own translucent tint doesn't work either: over the blue
+// fill the dark danger label drops to 2.70:1. The pill instead lays its tint over the panel
+// colour, opaque, so it reads on the selected row exactly as it does off it.
+describe('quality pill on the selected row', () => {
+  const trackList = readFileSync(
+    fileURLToPath(new URL('./components/TrackList.tsx', import.meta.url)),
+    'utf8',
+  )
+  const primaryBlock = css.slice(css.indexOf('.is-primary'))
+
+  it('keeps the verdict colour instead of flipping to the on-selection colour', () => {
+    expect(primaryBlock).not.toContain('.is-primary [data-testid="track-quality"],')
+  })
+
+  for (const tone of ['good', 'warn', 'danger']) {
+    const pct = Number(trackList.match(new RegExp(`bg-${tone}/(\\d+) text-${tone}`))?.[1])
+
+    it(`paints the ${tone} pill with its off-row tint over the panel`, () => {
+      expect(primaryBlock).toContain(
+        `.is-primary [data-testid="track-quality"][data-tone="${tone}"] {\n  background: color-mix(in srgb, var(--color-${tone}) ${pct}%, var(--color-panel));`,
+      )
+    })
+
+    for (const [theme, t] of [
+      ['dark', dark],
+      ['light', light],
+    ] as const) {
+      it(`${theme} ${tone} pill label reaches 4:1 on its opaque tint`, () => {
+        const fill = blend(t[`color-${tone}`], t['color-panel'], pct / 100)
+        expect(contrast(t[`color-${tone}`], fill)).toBeGreaterThanOrEqual(4)
+      })
+    }
+  }
+})
+
 // The trim handle opts out of the global ring (a box around a 12px-wide strip read as a
 // stray rectangle) and used to show focus only as a soft glow on a 1px line: nothing a
 // keyboard user could find at a glance. Focus now rings the grip with a solid 2px accent
