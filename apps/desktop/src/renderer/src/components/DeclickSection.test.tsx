@@ -8,7 +8,6 @@ import i18n from '../i18n'
 import { createQueryClient } from '../lib/queryClient'
 import { runKeyClaim } from '../lib/spaceClaim'
 import { DeclickSection } from './DeclickSection'
-import { AFTER_COLOR } from './WaveformCompare'
 
 afterEach(cleanup)
 
@@ -233,16 +232,6 @@ describe('DeclickSection', () => {
     })
     render(section())
     expect(await screen.findByTestId('declick-estimate-pill')).toHaveTextContent('No clicks')
-  })
-
-  // Shipped red: the wave's colour becomes a canvas fillStyle, and a canvas silently
-  // IGNORES `var(--color-accent)` — it keeps whatever fillStyle was set last, which was
-  // the clip red, so a perfectly clean track painted as though every sample clipped.
-  // CSS variables are invisible to canvas: the colour must always be a literal.
-  // (jsdom has no canvas, so this asserts the property rather than the pixels.)
-  it('hands the wave a literal colour, never a CSS variable canvas cannot read', () => {
-    expect(AFTER_COLOR).not.toContain('var(')
-    expect(AFTER_COLOR).toMatch(/^(#|rgb|hsl)/)
   })
 
   // The marks are the point of the wave: they say WHERE the damage is, which a count

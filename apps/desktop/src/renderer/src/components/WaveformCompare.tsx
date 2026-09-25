@@ -8,6 +8,7 @@ import type {
   WaveformResult,
   WaveformScan,
 } from '../../../shared/types'
+import { useThemeRgb } from '../hooks/useThemeRgb'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useWaveform, useWaveformScan } from '../hooks/useWaveform'
 import { useWaveformWindow, windowFor } from '../hooks/useWaveformWindow'
@@ -54,10 +55,13 @@ export function zoomLabel(zoom: number): string {
 }
 
 // The colour key the legends' dots repeat: the converted file keeps the player's
-// accent blue, the source goes muted so "louder than before" reads as blue fringes
-// growing past the grey in the overlaid view.
-export const AFTER_COLOR = 'rgba(96, 165, 250, 0.8)'
-const BEFORE_COLOR = 'rgba(148, 163, 184, 0.7)'
+// accent, the source goes to the faint ink so "louder than before" reads as accent fringes
+// growing past it in the overlaid view. Theme tokens, so both follow a theme switch.
+export function useWaveColors(): { after: string; before: string } {
+  const accent = useThemeRgb('--color-accent')
+  const faint = useThemeRgb('--color-fg-faint')
+  return { after: `rgba(${accent}, 0.8)`, before: `rgba(${faint}, 0.7)` }
+}
 
 type CompareView = 'side' | 'overlay'
 
@@ -183,6 +187,8 @@ export function Strip({
 }): React.JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const hiResRef = useRef<HTMLCanvasElement>(null)
+  const backgroundColor = useWaveColors().before
+  const clipColor = `rgba(${useThemeRgb('--color-danger')}, 0.95)`
   // The deep zoom's real detail: past ×8, re-decode the visible window of this
   // file at full fidelity and draw it on the viewport canvas below. Skipped for
   // the composed views (split lanes, preview-over-original) — those stay on the
@@ -227,7 +233,7 @@ export function Strip({
         return
       }
       if (background)
-        drawWaveform(canvas, background.peaks, { color: BEFORE_COLOR, rms: background.rms })
+        drawWaveform(canvas, background.peaks, { color: backgroundColor, rms: background.rms })
       // With no dB line dialed in, the red marks come from the decoder's true-clipping
       // flags — drawWaveform only consults them when clipDb/limitDb are absent.
       const lanes = split && wave.channels?.length === 2 ? wave.channels : null
@@ -237,6 +243,7 @@ export function Strip({
         lanes.forEach((lane, i) => {
           drawWaveform(canvas, lane.peaks, {
             color,
+            clipColor,
             clipDb,
             clipped: lane.clipped,
             marks,
@@ -247,6 +254,7 @@ export function Strip({
       } else {
         drawWaveform(canvas, wave.peaks, {
           color,
+          clipColor,
           clipDb,
           clipped: wave.clipped,
           limitDb,
@@ -260,7 +268,21 @@ export function Strip({
     return () => {
       if (frame !== 0) cancelAnimationFrame(frame)
     }
-  }, [wave, color, clipDb, limitDb, marks, split, background, raster, zoom, tall, hiResActive])
+  }, [
+    wave,
+    color,
+    backgroundColor,
+    clipColor,
+    clipDb,
+    limitDb,
+    marks,
+    split,
+    background,
+    raster,
+    zoom,
+    tall,
+    hiResActive,
+  ])
   // A zoom step re-anchors the scroller so the spot the user is working on stays
   // put: at the cursor for a pinch/wheel zoom (anchorRef, set by the handler
   // below), at the middle for a button step — zooming must never teleport the
@@ -410,6 +432,7 @@ export function Strip({
       sizeFor(panelPx)
       drawWaveform(canvas, hiRes.peaks, {
         color,
+        clipColor,
         clipDb,
         marks,
         rms: hiRes.rms,
@@ -432,10 +455,10 @@ export function Strip({
     // The cached window spans winSpan of the strip; at this zoom that is
     // (winSpan × zoom) panels wide — the bitmap must match, or the bars stretch.
     sizeFor(panelPx * winSpan * zoom)
-    drawWaveform(canvas, hiRes.peaks, { color, clipDb, marks, rms: hiRes.rms })
+    drawWaveform(canvas, hiRes.peaks, { color, clipColor, clipDb, marks, rms: hiRes.rms })
     canvas.style.left = `${winFrom * 100}%`
     canvas.style.width = `${winSpan * 100}%`
-  }, [hiResActive, hiRes, view, wave, color, clipDb, marks, tall, raster, zoom])
+  }, [hiResActive, hiRes, view, wave, color, clipColor, clipDb, marks, tall, raster, zoom])
   const readout = ((): { time: string; db: string; over: boolean } | null => {
     if (!hover || !wave || wave.peaks.length === 0) return null
     const idx = Math.min(wave.peaks.length - 1, Math.floor(hover.ratio * wave.peaks.length))
@@ -658,16 +681,18 @@ function OverlayStrip({
   const { t: tr } = useTranslation()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [fade, setFade] = useState(0.5)
+  const colors = useWaveColors()
+  const accent = useThemeRgb('--color-accent')
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !before.wave || !after.wave) return
-    drawWaveform(canvas, before.wave.peaks, { color: BEFORE_COLOR, rms: before.wave.rms })
+    drawWaveform(canvas, before.wave.peaks, { color: colors.before, rms: before.wave.rms })
     drawWaveform(canvas, after.wave.peaks, {
-      color: `rgba(96, 165, 250, ${(0.9 * fade).toFixed(3)})`,
+      color: `rgba(${accent}, ${(0.9 * fade).toFixed(3)})`,
       rms: after.wave.rms,
       clear: false,
     })
-  }, [before.wave, after.wave, fade])
+  }, [before.wave, after.wave, fade, colors.before, accent])
   return (
     <div data-testid="waveform-overlay">
       <div className="relative">
@@ -685,7 +710,7 @@ function OverlayStrip({
         <span
           aria-hidden="true"
           className="h-1.5 w-1.5 shrink-0 rounded-full"
-          style={{ background: BEFORE_COLOR }}
+          style={{ background: colors.before }}
         />
         <input
           type="range"
@@ -702,7 +727,7 @@ function OverlayStrip({
         <span
           aria-hidden="true"
           className="h-1.5 w-1.5 shrink-0 rounded-full"
-          style={{ background: AFTER_COLOR }}
+          style={{ background: colors.after }}
         />
       </div>
     </div>
@@ -732,6 +757,7 @@ export function WaveformSolo({
   trimShade?: { startFrac?: number; endFrac?: number }
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const colors = useWaveColors()
   const source = useStripData(inputPath, enabled)
   // Where the conversion will actually land, from the measurement already fetched
   // for the ORIGINAL row. The PREVIEW legend used to print the DIALS (target and
@@ -789,7 +815,7 @@ export function WaveformSolo({
           <div className="flex min-w-0 flex-col gap-1">
             <Legend
               testid="waveform-source"
-              color={BEFORE_COLOR}
+              color={colors.before}
               label={tr('editor.waveformSource')}
               loudness={source.loudness}
             />
@@ -800,7 +826,7 @@ export function WaveformSolo({
               <span
                 aria-hidden="true"
                 className="h-1.5 w-1.5 shrink-0 rounded-full"
-                style={{ background: AFTER_COLOR }}
+                style={{ background: colors.after }}
               />
               <span className="whitespace-nowrap font-medium text-fg-dim">
                 {tr('editor.waveformPreview')}
@@ -845,7 +871,7 @@ export function WaveformSolo({
           <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
             <Legend
               testid="waveform-source"
-              color={AFTER_COLOR}
+              color={colors.after}
               label={tr('editor.waveformSource')}
               loudness={source.loudness}
             />
@@ -901,7 +927,7 @@ export function WaveformSolo({
           wave={previewWave}
           loading={source.loading}
           loudness={source.loudness}
-          color={AFTER_COLOR}
+          color={colors.after}
           marks={marks}
           limitDb={preview.limitDb}
           background={source.wave}
@@ -913,7 +939,7 @@ export function WaveformSolo({
       ) : (
         <Strip
           {...source}
-          color={AFTER_COLOR}
+          color={colors.after}
           clipDb={clipDb}
           marks={marks}
           split={split}
@@ -942,6 +968,7 @@ export function WaveformCompare({
   clipDb?: number
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const colors = useWaveColors()
   const [view, setView] = useState<CompareView>('side')
   // Split L/R lanes for the side-by-side strips. Not offered overlaid: that view
   // already stacks two envelopes, and four lanes would be unreadable.
@@ -969,13 +996,13 @@ export function WaveformCompare({
         <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
           <Legend
             testid="waveform-before"
-            color={BEFORE_COLOR}
+            color={colors.before}
             label={tr('editor.waveformBefore')}
             loudness={before.loudness}
           />
           <Legend
             testid="waveform-after"
-            color={AFTER_COLOR}
+            color={colors.after}
             label={tr('editor.waveformAfter')}
             loudness={after.loudness}
           />
@@ -1004,8 +1031,8 @@ export function WaveformCompare({
       </div>
       {view === 'side' ? (
         <div data-testid="waveform-side" className="grid grid-cols-2 gap-2">
-          <Strip {...before} color={BEFORE_COLOR} clipDb={clipDb} split={split} />
-          <Strip {...after} color={AFTER_COLOR} clipDb={clipDb} split={split} />
+          <Strip {...before} color={colors.before} clipDb={clipDb} split={split} />
+          <Strip {...after} color={colors.after} clipDb={clipDb} split={split} />
         </div>
       ) : (
         <OverlayStrip before={before} after={after} />

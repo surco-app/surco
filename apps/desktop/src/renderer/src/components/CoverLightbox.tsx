@@ -57,7 +57,7 @@ export function CoverLightbox({ src, fullResFrom, nav, onClose }: Props): React.
         onLoad={(e) =>
           setDims({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
         }
-        className="max-h-[82vh] max-w-[90vw] rounded-xl object-contain outline outline-1 -outline-offset-1 outline-white/10"
+        className="max-h-[82vh] max-w-[90vw] rounded-xl object-contain outline outline-1 -outline-offset-1 outline-on-scrim/10"
       />
       <div className="flex items-center gap-2 text-xs tabular-nums text-fg-dim">
         {nav && (
@@ -78,7 +78,7 @@ export function CoverLightbox({ src, fullResFrom, nav, onClose }: Props): React.
             data-testid="cover-lightbox-prev"
             onClick={() => nav.onStep(-1)}
             aria-label={tr('editor.coverPrev')}
-            className="press absolute top-1/2 left-2 -translate-y-1/2 rounded-lg bg-black/60 p-1.5 text-white hover:bg-black/75"
+            className="press absolute top-1/2 left-2 -translate-y-1/2 rounded-lg bg-scrim/60 p-1.5 text-on-scrim hover:bg-scrim/75"
           >
             <ChevronLeft className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -87,7 +87,7 @@ export function CoverLightbox({ src, fullResFrom, nav, onClose }: Props): React.
             data-testid="cover-lightbox-next"
             onClick={() => nav.onStep(1)}
             aria-label={tr('editor.coverNext')}
-            className="press absolute top-1/2 right-2 -translate-y-1/2 rounded-lg bg-black/60 p-1.5 text-white hover:bg-black/75"
+            className="press absolute top-1/2 right-2 -translate-y-1/2 rounded-lg bg-scrim/60 p-1.5 text-on-scrim hover:bg-scrim/75"
           >
             <ChevronRight className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -98,7 +98,7 @@ export function CoverLightbox({ src, fullResFrom, nav, onClose }: Props): React.
         data-testid="cover-lightbox-close"
         onClick={onClose}
         aria-label={tr('common.close')}
-        className="press absolute top-2 right-2 rounded-lg bg-black/60 p-1.5 text-white hover:bg-black/75"
+        className="press absolute top-2 right-2 rounded-lg bg-scrim/60 p-1.5 text-on-scrim hover:bg-scrim/75"
       >
         <X className="h-4 w-4" aria-hidden="true" />
       </button>

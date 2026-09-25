@@ -574,14 +574,14 @@ const TrackRow = memo(function TrackRow({
               // which, combined with content-visibility below, lands mid-scroll and janks.
               loading="lazy"
               decoding="async"
-              className={`h-8 w-8 object-cover outline outline-1 -outline-offset-1 outline-white/10 transition-[border-radius] duration-300 ${
+              className={`h-8 w-8 object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-300 ${
                 converting ? 'rounded-full' : 'rounded-md'
               }`}
             />
           ) : (
             <span
               data-testid="track-cover-placeholder"
-              className={`flex h-8 w-8 items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-white/10 transition-[border-radius] duration-300 ${
+              className={`flex h-8 w-8 items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-300 ${
                 converting ? 'rounded-full' : 'rounded-md'
               }`}
             >
@@ -761,7 +761,7 @@ const TrackRow = memo(function TrackRow({
           // overlay to a render surface even at opacity-0, and dozens of backdrop-filter
           // layers inside the scroller are a known compositor jank source. A slightly
           // denser plain fill keeps the glyph readable over any cover.
-          className="absolute top-1/2 left-3 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md bg-black/65 text-white opacity-0 transition-opacity pointer-events-none hover:bg-black/75 group-hover:pointer-events-auto group-hover:opacity-100"
+          className="absolute top-1/2 left-3 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md bg-scrim/65 text-on-scrim opacity-0 transition-opacity pointer-events-none hover:bg-scrim/75 group-hover:pointer-events-auto group-hover:opacity-100"
         >
           <Play className="h-4 w-4 fill-current" aria-hidden="true" />
         </button>

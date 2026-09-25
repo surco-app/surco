@@ -109,7 +109,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   }
 
   return (
-    <div className="animate-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="animate-overlay fixed inset-0 z-50 flex items-center justify-center bg-scrim/60 backdrop-blur-sm">
       <div
         ref={dialogRef}
         role="dialog"
@@ -401,8 +401,9 @@ const PREVIEW_STREAKS = Array.from({ length: 64 }, (_, i) => ({
 
 // A faked spectrogram shown in the wizard's spectrum step: it teaches what the real
 // analysis looks like (energy fading toward the top, a cutoff line where a re-encoded
-// lossy file falls off) before the user has loaded a track. Blue to match the app's
-// cividis palette; the labels sit on the dark image, so it reads in both themes.
+// lossy file falls off) before the user has loaded a track. Tokyo Night's blues with its
+// yellow at the loud end, like the app's spectrogram; the labels sit on the dark image, so
+// it reads in both themes.
 function SpectrumPreview(): React.JSX.Element {
   const { t: tr } = useTranslation()
   const cutoffTop = (1 - PREVIEW_CUTOFF / PREVIEW_NYQUIST) * 100
@@ -419,16 +420,16 @@ function SpectrumPreview(): React.JSX.Element {
       >
         <defs>
           <linearGradient id="surco-spectrum-preview" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#0a1124" />
-            <stop offset="55%" stopColor="#1b3a6b" />
-            <stop offset="100%" stopColor="#3f6fb0" />
+            <stop offset="0%" stopColor="#0c0e14" />
+            <stop offset="55%" stopColor="#394b70" />
+            <stop offset="100%" stopColor="#3d59a1" />
           </linearGradient>
-          {/* Yellow low-frequency energy fading up into the blue, matching the app's
-              cividis spectrogram (navy at the top, yellow where the energy is loudest). */}
+          {/* Yellow low-frequency energy fading up into the blue, like the app's
+              spectrogram (dark at the top, yellow where the energy is loudest). */}
           <linearGradient id="surco-spectrum-energy" x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0%" stopColor="#ffe24d" stopOpacity="0.9" />
-            <stop offset="16%" stopColor="#e6d24e" stopOpacity="0.4" />
-            <stop offset="40%" stopColor="#e6d24e" stopOpacity="0" />
+            <stop offset="0%" stopColor="#e0af68" stopOpacity="0.9" />
+            <stop offset="16%" stopColor="#e0af68" stopOpacity="0.4" />
+            <stop offset="40%" stopColor="#e0af68" stopOpacity="0" />
           </linearGradient>
         </defs>
         <rect width="320" height="160" fill="url(#surco-spectrum-preview)" />
@@ -439,7 +440,7 @@ function SpectrumPreview(): React.JSX.Element {
             x2={s.x * 320}
             y1="0"
             y2="160"
-            stroke="#bcdcff"
+            stroke="#c0caf5"
             strokeWidth="1"
             opacity={s.o}
           />
@@ -447,22 +448,22 @@ function SpectrumPreview(): React.JSX.Element {
         {/* The loudest energy lives in the low frequencies at the bottom. */}
         <rect y="96" width="320" height="64" fill="url(#surco-spectrum-energy)" />
         {/* A lossy file re-encoded as lossless drops off above the cutoff. */}
-        <rect width="320" height={(cutoffTop / 100) * 160} fill="#0a1124" opacity="0.5" />
+        <rect width="320" height={(cutoffTop / 100) * 160} fill="#0c0e14" opacity="0.5" />
       </svg>
       {PREVIEW_FREQ_MARKS.map((f) => (
         <span
           key={f}
           style={{ top: `${(1 - f / PREVIEW_NYQUIST) * 100}%` }}
-          className="pointer-events-none absolute left-1 -translate-y-1/2 rounded bg-black/55 px-1 text-[10px] tabular-nums text-white"
+          className="pointer-events-none absolute left-1 -translate-y-1/2 rounded bg-scrim/55 px-1 text-[10px] tabular-nums text-on-scrim"
         >
           {f / 1000}k
         </span>
       ))}
       <div
         style={{ top: `${cutoffTop}%` }}
-        className="pointer-events-none absolute inset-x-0 border-t border-dashed border-white/70"
+        className="pointer-events-none absolute inset-x-0 border-t border-dashed border-on-scrim/70"
       >
-        <span className="absolute right-1 top-0.5 rounded bg-black/65 px-1 text-[10px] font-medium text-white">
+        <span className="absolute right-1 top-0.5 rounded bg-scrim/65 px-1 text-[10px] font-medium text-on-scrim">
           {tr('editor.spectrumCutoff', { cutoff: formatKHz(PREVIEW_CUTOFF) })}
         </span>
       </div>

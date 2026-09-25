@@ -16,7 +16,9 @@ vi.mock('../lib/waveform', async (importOriginal) => {
 })
 
 import { drawWaveform } from '../lib/waveform'
-import { AFTER_COLOR, Strip, WaveformCompare, WaveformSolo } from './WaveformCompare'
+import { Strip, WaveformCompare, WaveformSolo } from './WaveformCompare'
+
+const AFTER_COLOR = 'rgba(122, 162, 247, 0.8)'
 
 const wave: WaveformResult = {
   peaks: [0.1, 0.9, 0.4, 1],
@@ -212,6 +214,54 @@ describe('WaveformCompare', () => {
 
 // The pre-conversion view: the source's wave alone, with the same measured figures,
 // so the normalization controls are tuned against what the file actually looks like.
+// The strips were Tailwind's blue-400 and slate-400, outside Tokyo Night and fixed to the
+// dark theme, so the light theme drew a pale blue on pale panels. They take the theme's own
+// tokens now: the converted file in the accent, the source in the faint ink, clips in red.
+describe('wave colours follow the theme', () => {
+  const tokens = {
+    '--color-accent': '#2959aa',
+    '--color-fg-faint': '#61646f',
+    '--color-danger': '#8c4351',
+  }
+  beforeEach(() => {
+    for (const [k, v] of Object.entries(tokens)) document.documentElement.style.setProperty(k, v)
+  })
+  afterEach(() => {
+    for (const k of Object.keys(tokens)) document.documentElement.style.removeProperty(k)
+  })
+
+  it('paints the converted file in the accent and the source in the faint ink', async () => {
+    const waveform = vi.fn().mockResolvedValue(wave)
+    ;(window as unknown as { api: unknown }).api = { waveform, cancelAnalysis: vi.fn() }
+    vi.mocked(drawWaveform).mockClear()
+    renderWithQuery(<WaveformCompare inputPath="/m/a.wav" outputPath="/out/a.aiff" enabled />)
+    await waitFor(() => {
+      const colours = vi.mocked(drawWaveform).mock.calls.map((c) => c[2]?.color)
+      expect(colours).toContain('rgba(41, 89, 170, 0.8)')
+      expect(colours).toContain('rgba(97, 100, 111, 0.7)')
+    })
+  })
+
+  it('strikes clips in the theme red', async () => {
+    vi.mocked(drawWaveform).mockClear()
+    renderWithQuery(
+      <Strip
+        wave={{ ...wave, clipped: [false, false, false, true] }}
+        loading={false}
+        loudness={undefined}
+        color="rgba(41, 89, 170, 0.8)"
+      />,
+    )
+    await waitFor(() => {
+      expect(drawWaveform).toHaveBeenCalledWith(
+        expect.anything(),
+        wave.peaks,
+        expect.objectContaining({ clipColor: 'rgba(140, 67, 81, 0.95)' }),
+      )
+    })
+  })
+})
+
 describe('Strip base raster at high zoom', () => {
   // At a deep zoom the base canvas is stretched to zoom×100% of the panel. Rasterizing it
   // to that full width made a canvas tens of thousands of pixels wide (×32 → ~32k px) — a
