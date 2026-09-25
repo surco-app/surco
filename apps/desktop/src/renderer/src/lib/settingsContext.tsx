@@ -54,6 +54,7 @@ interface ResolvedSettings {
   genrePresets: string[]
   genreSeparator: string
   groupingSeparator: string
+  fullReleaseDate: boolean
   visibleFields: string[]
   customFields: CustomField[]
   requiredFields: string[]
@@ -95,6 +96,7 @@ const DEFAULTS: ResolvedSettings = {
   genrePresets: [],
   genreSeparator: DEFAULT_SEPARATOR,
   groupingSeparator: DEFAULT_SEPARATOR,
+  fullReleaseDate: false,
   visibleFields: DEFAULT_FIELDS,
   customFields: [],
   requiredFields: DEFAULT_REQUIRED_FIELDS,
@@ -134,6 +136,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     genrePresets: settings.genrePresets ?? DEFAULTS.genrePresets,
     genreSeparator: settings.genreSeparator ?? DEFAULTS.genreSeparator,
     groupingSeparator: settings.groupingSeparator ?? DEFAULTS.groupingSeparator,
+    fullReleaseDate: settings.fullReleaseDate ?? DEFAULTS.fullReleaseDate,
     visibleFields: settings.visibleFields ?? DEFAULTS.visibleFields,
     customFields: settings.customFields ?? DEFAULTS.customFields,
     requiredFields: settings.requiredFields ?? DEFAULTS.requiredFields,

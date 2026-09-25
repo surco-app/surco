@@ -609,6 +609,12 @@ describe('tracksToAutoMatch', () => {
 })
 
 describe('matchTargetOf', () => {
+  // A search result carries only its year, so the tie-break compares years.
+  it('compares the year of a track dated to the day', () => {
+    const t = { duration: 1, meta: { title: 'Song', year: '2001-03-12' } } as TrackItem
+    expect(matchTargetOf(t).year).toBe('2001')
+  })
+
   it('reads the title, duration, track number, artist, catalog number and year a probe scores against', () => {
     const t = {
       duration: 211,
@@ -729,6 +735,19 @@ describe('acceptReviewPatch', () => {
     expect(patch?.reviewMatch).toBeUndefined()
     // Which catalog filled the row, for the list's per-provider match filter.
     expect(patch?.matchProvider).toBe('discogs')
+  })
+
+  // Accepting from the list must date the track exactly as picking it in the editor would.
+  it('fills the whole release date when the full release date is on', () => {
+    const rel = release(1, { year: 2001, released: '2001-03-12' })
+    const t = track({
+      reviewMatch: {
+        release: rel,
+        track: { position: '1', title: 'One' },
+        result: searchResult(1),
+      },
+    })
+    expect(acceptReviewPatch(t, undefined, undefined, true)?.meta?.year).toBe('2001-03-12')
   })
 
   // No pending suggestion → nothing to accept, so the command that calls this stays a no-op

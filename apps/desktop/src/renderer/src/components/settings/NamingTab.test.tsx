@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../../shared/editorSections'
 import type { SyncedDraft } from '../../lib/settingsDraft'
@@ -35,6 +35,7 @@ const synced: SyncedDraft = {
   groupingSeparator: ', ',
   trimWhitespace: true,
   zeroPadTrack: true,
+  fullReleaseDate: false,
   visibleFields: [],
   customFields: [],
   importFields: [],
@@ -94,5 +95,13 @@ describe('NamingTab filename preview extension', () => {
   it('shows the AIFF fallback extension for "same as source"', () => {
     renderTab({ outputFormat: 'source' })
     expect(screen.getByTestId('settings-format-preview')).toHaveTextContent(/\.aiff$/)
+  })
+})
+
+describe('NamingTab full release date', () => {
+  it('stages the full release date toggle', () => {
+    const patch = renderTab()
+    fireEvent.click(screen.getByTestId('settings-full-release-date'))
+    expect(patch).toHaveBeenCalledWith('fullReleaseDate', true)
   })
 })

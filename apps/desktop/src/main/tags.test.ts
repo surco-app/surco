@@ -36,6 +36,7 @@ import {
   readCueTree,
   readItunesGrouping,
   readPopmRating,
+  readTagLibExtras,
   shiftFlacCues,
   writeTags,
 } from './tags'
@@ -145,6 +146,11 @@ const meta: TrackMetadata = {
 // Builds a tiny but valid MP3: an ID3v2.3 tag carrying a title plus a GEOB
 // "TRAKTOR4" frame (exactly how Traktor stores its cue points/beatgrid),
 // followed by silent MPEG-1 Layer III frames so TagLib can open it.
+function probedDate(file: string): string | undefined {
+  const out = execFileSync(FFMPEG, ['-v', 'error', '-i', file, '-f', 'ffmetadata', '-']).toString()
+  return out.match(/^date=(.*)$/m)?.[1]
+}
+
 function buildSeed(dir: string): string {
   const syncsafe = (n: number) =>
     Buffer.from([(n >> 21) & 0x7f, (n >> 14) & 0x7f, (n >> 7) & 0x7f, n & 0x7f])
@@ -582,6 +588,70 @@ describe('writeTags', () => {
     const f = TagFile.createFromPath(file)
     expect(f.tag.year).toBe(2024)
     f.dispose()
+  })
+
+  // ID3v2.3 splits a date over TYER (the year) and TDAT (DDMM). The numeric year setter
+  // only rewrites TYER, so a file that carried a date came out with the new year glued to
+  // the old day and month: every other tagger read back a date nobody ever entered.
+  it('drops the previous day and month when writing a bare year', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = join(dir, 'dated.mp3')
+    execFileSync(FFMPEG, [
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'anullsrc=r=44100',
+      '-t',
+      '0.3',
+      '-id3v2_version',
+      '3',
+      '-metadata',
+      'date=2019-05-04',
+      file,
+      '-y',
+    ])
+
+    writeTags(file, { ...meta, year: '2020' })
+
+    expect(probedDate(file)).toBe('2020')
+  })
+
+  it('writes a full release date into ID3v2.3 as TYER plus TDAT', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildSeed(dir)
+
+    writeTags(file, { ...meta, year: '2020-12-01' })
+
+    const f = TagFile.createFromPath(file)
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
+    const text = (id: string) =>
+      (id3.frames.filter((fr) => fr.frameId.toString() === id) as Id3v2TextInformationFrame[]).map(
+        (fr) => fr.text.join(''),
+      )
+    expect([text('TYER'), text('TDAT')]).toEqual([['2020'], ['0112']])
+    f.dispose()
+    expect(probedDate(file)).toBe('2020-12-01')
+  })
+
+  it('writes a full release date into the m4a day atom', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildM4aSeed(dir)
+
+    writeTags(file, { ...meta, year: '2020-12-01' })
+
+    expect(probedDate(file)).toBe('2020-12-01')
+  })
+
+  // ffprobe cannot see a WAV's "id3 " chunk, so TagLib is the only reader of its date.
+  it('reads a full release date back out of a WAV', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-'))
+    const file = buildWavSeed(dir)
+
+    writeTags(file, { ...meta, year: '2020-12-01' })
+
+    expect(readTagLibExtras(file).year).toBe('2020-12-01')
   })
 
   it("preserves Traktor's GEOB cue frame while overwriting metadata", () => {

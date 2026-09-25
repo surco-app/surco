@@ -51,6 +51,7 @@ interface Params {
   searchProvidersRef: { readonly current: SearchProviderId[] }
   importFieldsRef: { readonly current: MetaTextKey[] }
   genrePresetsRef: { readonly current: string[] }
+  fullReleaseDateRef: { readonly current: boolean }
   // Live view of the title-cleanup settings (the Naming pattern). Read at probe time so
   // editing the pattern applies to the next probe without restarting the sweep.
   matchCleanupRef: { readonly current: MatchCleanup }
@@ -92,6 +93,7 @@ export function useAutoMatch({
   searchProvidersRef,
   importFieldsRef,
   genrePresetsRef,
+  fullReleaseDateRef,
   matchCleanupRef,
   editingRef,
   reportActivity,
@@ -183,6 +185,7 @@ export function useAutoMatch({
         keepCoverArg(live),
         importFieldsRef.current,
         genrePresetsRef.current,
+        fullReleaseDateRef.current,
       )
       // Re-check ownership against the release's canonical title/artist — the editor's second
       // attempt, run here for the whole crate so the filter agrees without opening each row.
@@ -217,6 +220,7 @@ export function useAutoMatch({
       libraryIndexRef,
       importFieldsRef,
       genrePresetsRef,
+      fullReleaseDateRef,
       matchCleanupRef,
       editingRef,
       reportActivity,

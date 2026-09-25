@@ -183,6 +183,12 @@ function parseTags(html: string): string[] {
   return tags
 }
 
+// The same date as an ISO day, the shape the other sources give; the time is dropped.
+function parseReleased(date: string | undefined): string | undefined {
+  const time = date ? Date.parse(date) : Number.NaN
+  return Number.isNaN(time) ? undefined : new Date(time).toISOString().slice(0, 10)
+}
+
 export function parseRelease(html: string, url: string): Release {
   const data = extractTralbum(html)
   if (!data) throw errorWithKey('bandcampPageUnreadable', url)
@@ -195,6 +201,7 @@ export function parseRelease(html: string, url: string): Release {
     title: stripArtistPrefix(data.current?.title ?? '', artist),
     artists: artist ? [{ name: artist }] : [],
     year: parseYear(data.current?.release_date ?? data.album_release_date),
+    released: parseReleased(data.current?.release_date ?? data.album_release_date),
     genres: tags.length ? tags : undefined,
     images: cover ? [{ uri: cover, type: 'primary', resource_url: cover }] : undefined,
     tracklist: (data.trackinfo ?? []).map((t) => ({
