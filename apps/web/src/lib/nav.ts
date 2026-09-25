@@ -7,6 +7,7 @@ export const PAGES = {
   features: { es: '/funciones', en: '/en/features' },
   guide: { es: '/guia', en: '/en/guide' },
   changelog: { es: '/cambios', en: '/en/changelog' },
+  flacToAiff: { es: '/convertir/flac-a-aiff', en: '/en/convert/flac-to-aiff' },
 } as const
 
 export type Page = keyof typeof PAGES

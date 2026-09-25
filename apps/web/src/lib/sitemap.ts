@@ -15,4 +15,6 @@ export const INDEXABLE_PATHS = [
   '/en/guide',
   '/cambios',
   '/en/changelog',
+  '/convertir/flac-a-aiff',
+  '/en/convert/flac-to-aiff',
 ] as const

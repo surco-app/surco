@@ -25,7 +25,7 @@ describe('downloadEvent', () => {
     })
   })
 
-  // The same button sits in six places on the site, several of them on one page. Without
+  // The same button sits in eight places on the site, several of them on one page. Without
   // this the report can only say "someone downloaded from /", which cannot answer whether
   // the hero CTA or the closing section is doing the work.
   it('carries the section that was clicked and the detected OS', () => {

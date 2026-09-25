@@ -10,6 +10,7 @@ import Changelog from './components/Changelog'
 import DonateCancel from './components/DonateCancel'
 import DonateCompleted from './components/DonateCompleted'
 import Features from './components/Features'
+import FlacToAiff from './components/FlacToAiff'
 import GoogleAnalytics from './components/GoogleAnalytics'
 import Guide from './components/Guide'
 import { createI18n, type Language } from './i18n'
@@ -19,6 +20,10 @@ const PATHS: Record<Language, string> = { es: '/', en: '/en' }
 const FEATURE_PATHS: Record<Language, string> = { es: '/funciones', en: '/en/features' }
 const GUIDE_PATHS: Record<Language, string> = { es: '/guia', en: '/en/guide' }
 const CHANGELOG_PATHS: Record<Language, string> = { es: '/cambios', en: '/en/changelog' }
+const FLAC_TO_AIFF_PATHS: Record<Language, string> = {
+  es: '/convertir/flac-a-aiff',
+  en: '/en/convert/flac-to-aiff',
+}
 
 const I18N: Record<Language, i18n> = { es: createI18n('es'), en: createI18n('en') }
 
@@ -160,6 +165,49 @@ function LocalizedChangelog({ lng }: { lng: Language }) {
   )
 }
 
+function FlacToAiffHead({ lng }: { lng: Language }) {
+  const t = I18N[lng].getFixedT(lng)
+  const url = SITE + FLAC_TO_AIFF_PATHS[lng]
+  const faq = t('flacToAiff.faq.items', { returnObjects: true }) as { q: string; a: string }[]
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    inLanguage: t('meta.inLanguage'),
+    mainEntity: faq.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: { '@type': 'Answer', text: item.a },
+    })),
+  }
+  return (
+    <Head>
+      <html lang={t('meta.htmlLang')} />
+      <title>{t('flacToAiff.metaTitle')}</title>
+      <meta name="description" content={t('flacToAiff.metaDescription')} />
+      <link rel="canonical" href={url} />
+      <link rel="alternate" hrefLang="es" href={`${SITE}${FLAC_TO_AIFF_PATHS.es}`} />
+      <link rel="alternate" hrefLang="en" href={`${SITE}${FLAC_TO_AIFF_PATHS.en}`} />
+      <link rel="alternate" hrefLang="x-default" href={`${SITE}${FLAC_TO_AIFF_PATHS.es}`} />
+      <meta property="og:locale" content={t('meta.ogLocale')} />
+      <meta property="og:url" content={url} />
+      <meta property="og:title" content={t('flacToAiff.metaTitle')} />
+      <meta property="og:description" content={t('flacToAiff.metaDescription')} />
+      <meta name="twitter:title" content={t('flacToAiff.metaTitle')} />
+      <meta name="twitter:description" content={t('flacToAiff.metaDescription')} />
+      <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+    </Head>
+  )
+}
+
+function LocalizedFlacToAiff({ lng }: { lng: Language }) {
+  return (
+    <I18nextProvider i18n={I18N[lng]}>
+      <FlacToAiffHead lng={lng} />
+      <FlacToAiff />
+    </I18nextProvider>
+  )
+}
+
 function NoIndex({ children }: { children: ReactNode }) {
   return (
     <>
@@ -197,6 +245,16 @@ export const routes: RouteRecord[] = [
       { path: 'en/guide', element: <LocalizedGuide lng="en" />, entry: 'src/routes.tsx' },
       { path: 'cambios', element: <LocalizedChangelog lng="es" />, entry: 'src/routes.tsx' },
       { path: 'en/changelog', element: <LocalizedChangelog lng="en" />, entry: 'src/routes.tsx' },
+      {
+        path: 'convertir/flac-a-aiff',
+        element: <LocalizedFlacToAiff lng="es" />,
+        entry: 'src/routes.tsx',
+      },
+      {
+        path: 'en/convert/flac-to-aiff',
+        element: <LocalizedFlacToAiff lng="en" />,
+        entry: 'src/routes.tsx',
+      },
       // Transactional pages PayPal redirects to after the donate flow: their copy is
       // self-contained and language-detected on the client, so they don't need the
       // localized App shell.
