@@ -27,6 +27,10 @@ function useLang(): 'es' | 'en' {
   return lng
 }
 
+// The site's own accents, in the hex canvas-confetti needs; left alone it throws its
+// neon rainbow, which is no colour of the palette.
+const CONFETTI = ['#7aa2f7', '#7dcfff', '#bb9af7', '#9ece6a', '#e0af68', '#f7768e']
+
 export default function DonateCompleted() {
   const t = COPY[useLang()]
 
@@ -37,8 +41,20 @@ export default function DonateCompleted() {
     import('canvas-confetti').then(({ default: confetti }) => {
       if (cancelled) return
       const volley = (): void => {
-        confetti({ particleCount: 70, angle: 60, spread: 55, origin: { x: 0, y: 1 } })
-        confetti({ particleCount: 70, angle: 120, spread: 55, origin: { x: 1, y: 1 } })
+        confetti({
+          particleCount: 70,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 1 },
+          colors: CONFETTI,
+        })
+        confetti({
+          particleCount: 70,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 1 },
+          colors: CONFETTI,
+        })
       }
       volley()
       timers.push(setTimeout(volley, 350), setTimeout(volley, 700))
