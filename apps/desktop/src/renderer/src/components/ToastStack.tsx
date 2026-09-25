@@ -169,7 +169,7 @@ function ToastCard({
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false)
       }}
-      className={`${leaving ? 'animate-toast-leave pointer-events-none' : 'animate-pop'} relative flex max-w-md overflow-hidden ${align} gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-3 pl-4 pr-3 shadow-lg`}
+      className={`${leaving ? 'animate-toast-leave pointer-events-none' : 'animate-pop'} relative flex max-w-md overflow-hidden ${align} gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-3 pl-4 pr-3 shadow-[var(--shadow-float)]`}
     >
       <span
         data-testid={toast.testid ? `${toast.testid}-message` : undefined}

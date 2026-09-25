@@ -378,7 +378,7 @@ export function ActivityPanel({
     <section
       data-testid="activity-panel"
       aria-label={tr('activity.title')}
-      className="fixed z-50 flex flex-col overflow-hidden rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-2xl"
+      className="fixed z-50 flex flex-col overflow-hidden rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-[var(--shadow-float)]"
       style={{ left: pos.x, top: pos.y, width: size.width, height: size.height }}
     >
       <header
