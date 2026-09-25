@@ -107,6 +107,8 @@ export interface BuildFieldSpecsParams {
   // The same per key for a selection: writes the value into every selected track.
   customBulkOnChange: ReadonlyMap<string, (v: string) => void>
   onChangeTracksMeta?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
+  // Year holds a whole release date, which needs a wider box than a year.
+  fullReleaseDate: boolean
 }
 
 // The fields whose chips add a tag rather than replace the value.
@@ -150,7 +152,10 @@ export function buildFieldSpecs({
   customOnChange,
   customBulkOnChange,
   onChangeTracksMeta,
+  fullReleaseDate,
 }: BuildFieldSpecsParams): FieldSpec[] {
+  const widthOf = (key: MetaTextKey): FieldWidth | undefined =>
+    key === 'year' && fullReleaseDate ? 'medium' : FIELD_DEFS.find((d) => d.key === key)?.width
   // Each selected track's custom values, resolved once for every custom field below.
   const selectedCustom =
     isMulti && selectedTracks && customFields.length > 0
@@ -166,7 +171,7 @@ export function buildFieldSpecs({
               ? { list, tracks: selectedTracks, onChangeTracks: onChangeTracksMeta }
               : undefined
           const mixed = shared === undefined && !perTrack
-          const width = FIELD_DEFS.find((d) => d.key === key)?.width
+          const width = widthOf(key)
           return {
             key,
             label: tr(`fields.${key}`),
@@ -235,7 +240,7 @@ export function buildFieldSpecs({
               !isMulti && INSERT_TARGET_FIELDS.has(def.key) ? insertSources : undefined,
             cleanResult: !isMulti && def.key === 'album' ? albumCleanResult : undefined,
             formatResult: !isMulti && def.key === 'title' ? titleFormatResult : undefined,
-            width: def.width,
+            width: widthOf(def.key),
             required: requiredFields.includes(def.key),
             invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),
             suggestions:

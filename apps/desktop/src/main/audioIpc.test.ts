@@ -41,7 +41,7 @@ vi.mock('./ffmpeg', () => ({
   analyzeShelf: vi.fn(),
 }))
 vi.mock('./playback', () => ({ previewTempPath: vi.fn() }))
-vi.mock('./settings', () => ({ recordStat: vi.fn() }))
+vi.mock('./settings', () => ({ recordStat: vi.fn(), getSettings: vi.fn(() => ({})) }))
 vi.mock('./activity', () => ({
   activity: { track: (_kind: string, _label: string, fn: () => unknown) => fn() },
 }))
@@ -74,7 +74,9 @@ import {
   measureWaveform,
   probeProperties,
   readMeta,
+  readTags,
 } from './ffmpeg'
+import { getSettings } from './settings'
 
 function handlerFor(channel: string): (e: unknown, ...args: unknown[]) => unknown {
   const call = (ipcMain.handle as ReturnType<typeof vi.fn>).mock.calls.find(
@@ -320,5 +322,48 @@ describe('cover thumbnails over IPC', () => {
     const cover = (await handlerFor('audio:cover')({}, '/m/a.flac')) as { thumbUrl: string }
 
     expect(cover.thumbUrl).toMatch(/^surco:\/\/cover\//)
+  })
+})
+
+// A file can date its release to the day ("2020-12-01"). Only a user who turned on the
+// full release date sees it in the Year box; everyone else keeps the plain year they had,
+// the same year a save writes back.
+describe('release date over IPC', () => {
+  const dated = { year: '2020-12-01' } as Awaited<ReturnType<typeof readTags>>
+  const withFullDate = (on: boolean) =>
+    vi
+      .mocked(getSettings)
+      .mockReturnValue({ fullReleaseDate: on } as ReturnType<typeof getSettings>)
+
+  it('hands over only the year while the full release date is off', async () => {
+    withFullDate(false)
+    vi.mocked(readTags).mockResolvedValue({ ...dated })
+    vi.mocked(readMeta).mockResolvedValue({
+      tags: { ...dated },
+      duration: 10,
+      cover: null,
+      foreignTags: [],
+    } as unknown as Awaited<ReturnType<typeof readMeta>>)
+
+    const tags = (await handlerFor('audio:tags')({}, '/m/a.flac')) as { year: string }
+    const meta = (await handlerFor('audio:meta')({}, '/m/a.flac')) as { tags: { year: string } }
+
+    expect([tags.year, meta.tags.year]).toEqual(['2020', '2020'])
+  })
+
+  it('hands over the whole date once the full release date is on', async () => {
+    withFullDate(true)
+    vi.mocked(readTags).mockResolvedValue({ ...dated })
+    vi.mocked(readMeta).mockResolvedValue({
+      tags: { ...dated },
+      duration: 10,
+      cover: null,
+      foreignTags: [],
+    } as unknown as Awaited<ReturnType<typeof readMeta>>)
+
+    const tags = (await handlerFor('audio:tags')({}, '/m/a.flac')) as { year: string }
+    const meta = (await handlerFor('audio:meta')({}, '/m/a.flac')) as { tags: { year: string } }
+
+    expect([tags.year, meta.tags.year]).toEqual(['2020-12-01', '2020-12-01'])
   })
 })

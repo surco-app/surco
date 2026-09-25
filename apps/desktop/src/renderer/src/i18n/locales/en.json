@@ -1046,6 +1046,8 @@
     "genreHint": "Shown as quick buttons alongside the ones from the chosen release.",
     "trimWhitespace": "Trim extra whitespace",
     "zeroPadTrack": "Zero-pad track number (03)",
+    "fullReleaseDate": "Full release date in Year (2020-12-01)",
+    "fullReleaseDateHint": "When filling from Discogs, Deezer or Bandcamp. If the source has no day, the year alone is kept.",
     "coverMaxSize": "Maximum artwork size",
     "coverMaxHint": "px (0 = no limit)",
     "coverUpscale": "Upscale smaller artwork to this size",

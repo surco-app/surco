@@ -336,6 +336,9 @@ export default function App(): React.JSX.Element {
   const genrePresets = settings?.genrePresets ?? []
   const genrePresetsRef = useRef<string[]>(genrePresets)
   genrePresetsRef.current = genrePresets
+  const fullReleaseDate = settings?.fullReleaseDate ?? false
+  const fullReleaseDateRef = useRef(fullReleaseDate)
+  fullReleaseDateRef.current = fullReleaseDate
   // Live title-cleanup settings for the sweep's scorer (the Naming pattern and the
   // user's junk phrases), read at probe time like the providers above.
   const matchCleanupRef = useRef<MatchCleanup>({})
@@ -755,6 +758,7 @@ export default function App(): React.JSX.Element {
     searchProvidersRef,
     importFieldsRef,
     genrePresetsRef,
+    fullReleaseDateRef,
     matchCleanupRef,
     editingRef,
     reportActivity,
@@ -1615,7 +1619,7 @@ export default function App(): React.JSX.Element {
   // accept, so the command's enabled gate and this stay in agreement.
   const acceptReview = useStableCallback(() => {
     if (!selected) return
-    const patch = acceptReviewPatch(selected, importFields, genrePresets)
+    const patch = acceptReviewPatch(selected, importFields, genrePresets, fullReleaseDate)
     if (patch && selected.reviewMatch) {
       updateTrack(selected.id, patch)
       window.api.recordStat(matchStatKey(selected.reviewMatch.release.provider))
@@ -1627,7 +1631,7 @@ export default function App(): React.JSX.Element {
   const acceptReviewRow = useStableCallback((id: string) => {
     const t = tracksRef.current.find((x) => x.id === id)
     if (!t) return
-    const patch = acceptReviewPatch(t, importFields, genrePresets)
+    const patch = acceptReviewPatch(t, importFields, genrePresets, fullReleaseDate)
     if (patch && t.reviewMatch) {
       updateTrack(t.id, patch)
       window.api.recordStat(matchStatKey(t.reviewMatch.release.provider))

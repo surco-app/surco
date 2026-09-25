@@ -100,3 +100,11 @@ describe('buildRekordboxXml', () => {
     expect(xml).toContain('<TRACK Key="2">')
   })
 })
+
+// rekordbox's Year attribute is a number; a full release date would not parse there.
+describe('buildRekordboxXml with a full release date', () => {
+  it('writes only the year', () => {
+    const xml = buildRekordboxXml([track({ id: 'a', meta: { year: '2020-12-01' } })])
+    expect(xml).toContain('Year="2020"')
+  })
+})

@@ -54,6 +54,7 @@ const settings: Settings = {
   groupingSeparator: ', ',
   trimWhitespace: true,
   zeroPadTrack: true,
+  fullReleaseDate: false,
   visibleFields: [],
   requiredFields: [],
   coverMaxSize: 1200,

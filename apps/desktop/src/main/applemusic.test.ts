@@ -421,3 +421,12 @@ describe('isAppleMusicOnly', () => {
     expect(isAppleMusicOnly(true, false, false, 'darwin', 'aiff', true)).toBe(false)
   })
 })
+
+// Music's year property is an integer: "set year of theTrack to 2020-12-01" is not even
+// valid AppleScript, so the add would fail outright.
+describe('buildAddScript with a full release date', () => {
+  it('sets only the year', () => {
+    const script = buildAddScript('/x.aiff', { ...base, year: '2020-12-01' })
+    expect(script).toContain('set year of theTrack to 2020\n')
+  })
+})

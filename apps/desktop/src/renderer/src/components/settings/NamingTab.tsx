@@ -219,6 +219,13 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
             onChange={(v) => patch('zeroPadTrack', v)}
             label={tr('settings.zeroPadTrack')}
           />
+          <SettingsCheckboxField
+            testid="settings-full-release-date"
+            checked={synced.fullReleaseDate}
+            onChange={(v) => patch('fullReleaseDate', v)}
+            label={tr('settings.fullReleaseDate')}
+            hint={tr('settings.fullReleaseDateHint')}
+          />
         </SettingsGroup>
       </SettingsSection>
     </>

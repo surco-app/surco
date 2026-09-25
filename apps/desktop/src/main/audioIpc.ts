@@ -3,6 +3,7 @@ import type { IpcMainInvokeEvent } from 'electron'
 import { ipcMain } from 'electron'
 import log from 'electron-log/main'
 import type { AudioAnalysisIpc } from '../shared/audioIpcContract'
+import { yearFromDate } from '../shared/tagFields'
 import type {
   DeclickMode,
   ScanVerdict,
@@ -40,7 +41,7 @@ import {
   tagsFromProbe,
 } from './ffmpeg'
 import { previewTempPath } from './playback'
-import { recordStat } from './settings'
+import { getSettings, recordStat } from './settings'
 
 // Reports one quality probe to the activity log, grouped under its track so a sweep's
 // six probes per file fold onto a single "Analizando «file»" row rather than flooding
@@ -108,10 +109,17 @@ function handleAudio<K extends keyof AudioAnalysisIpc>(
   ipcMain.handle(channel, handler as (e: IpcMainInvokeEvent, ...args: unknown[]) => unknown)
 }
 
+// The file's own date is read whole; the Year box shows it whole only for the user who
+// turned on the full release date, and the plain year to everyone else.
+function withSettingsYear<T extends { year?: string }>(tags: T): T {
+  if (getSettings().fullReleaseDate || !tags.year) return tags
+  return { ...tags, year: yearFromDate(tags.year) }
+}
+
 export function registerAudioIpc(allowMedia: (path: string) => void): void {
   ipcMain.handle('audio:tags', async (_e, inputPath: string) => {
     try {
-      return await readTags(inputPath)
+      return withSettingsYear(await readTags(inputPath))
     } catch (err) {
       // A file ffmpeg can't read at all (a malformed header the repair pass couldn't
       // fix) shouldn't reject the whole metadata read — that rejection also discarded
@@ -131,7 +139,8 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   // The embedded cover crosses as a short URL to its copy on disk (see coverThumbs.ts),
   // never as the base64 the renderer used to keep in every track's state.
   ipcMain.handle('audio:meta', async (_e, inputPath: string) => {
-    const meta = await readMeta(inputPath)
+    const read = await readMeta(inputPath)
+    const meta = { ...read, tags: withSettingsYear(read.tags) }
     if (!meta.cover) return meta
     return {
       ...meta,

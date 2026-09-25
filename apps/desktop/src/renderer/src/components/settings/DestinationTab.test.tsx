@@ -39,6 +39,7 @@ const synced: SyncedDraft = {
   groupingSeparator: ', ',
   trimWhitespace: true,
   zeroPadTrack: true,
+  fullReleaseDate: false,
   visibleFields: [],
   customFields: [],
   importFields: [],

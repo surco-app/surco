@@ -1,4 +1,5 @@
 import { fieldValue } from '../../../shared/customFields'
+import { yearFromDate } from '../../../shared/tagFields'
 import type { TrackMetadata } from '../../../shared/types'
 import { cleanName } from './release'
 
@@ -11,6 +12,7 @@ import { cleanName } from './release'
 function tokenValue(meta: TrackMetadata, key: string): string {
   const value = fieldValue(meta, key)
   if (!value) return ''
+  if (key === 'year') return yearFromDate(value)
   return key === 'publisher' ? cleanName(value) : value
 }
 

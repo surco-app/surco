@@ -75,6 +75,7 @@ function params(over: Partial<BuildFieldSpecsParams> = {}): BuildFieldSpecsParam
     customValues: {},
     customOnChange: new Map(),
     customBulkOnChange: new Map(),
+    fullReleaseDate: false,
     ...over,
   }
 }
@@ -234,6 +235,21 @@ describe('buildFieldSpecs (single mode)', () => {
     expect(width('title')).toBeUndefined()
     expect(width('catalogNumber')).toBeUndefined()
     expect(width('country')).toBeUndefined()
+  })
+
+  // "2020-12-01" does not fit the box sized for "2020"; with the full release date on, the
+  // year field takes the width of the other bounded ten-character values.
+  it('widens the year field to fit a full release date', () => {
+    const single = buildFieldSpecs(params({ visibleFields: ['year'], fullReleaseDate: true }))
+    const bulk = buildFieldSpecs(
+      params({
+        visibleFields: ['year'],
+        fullReleaseDate: true,
+        isMulti: true,
+        selectedTracks: [track('a', {}), track('b', {})],
+      }),
+    )
+    expect([single[0]?.width, bulk[0]?.width]).toEqual(['medium', 'medium'])
   })
 
   it('exposes insert sources on the free-text fields only, never on structured or chip-driven ones', () => {
