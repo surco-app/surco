@@ -221,8 +221,12 @@ export function tagLibExtrasOf(f: TagFile): Partial<TrackMetadata> {
   )
   const userText = (desc: string): string =>
     Id3v2UserTextInformationFrame.findUserTextInformationFrame(txxx, desc)?.text?.[0]?.trim() || ''
+  // v2.3 splits a date into TYER and a day-first TDAT; v2.4 keeps it whole in TDRC.
+  const tdat = text('TDAT')
+  const split = /^\d{4}$/.test(tdat) ? `${text('TYER')}-${tdat.slice(2)}-${tdat.slice(0, 2)}` : ''
   return {
     ...extras,
+    year: fullDateOf(split) || fullDateOf(text('TDRC')) || extras.year,
     isrc: extras.isrc || text('TSRC'),
     originalArtist: text('TOPE'),
     lyricist: text('TEXT'),

@@ -47,7 +47,7 @@ const dropTotal = (raw: string): string => raw.split('/')[0].trim()
 //
 // A value that does not start with a year is kept as it is: blanking it would throw away
 // something the file really holds, and the user can still read and correct it.
-const yearFromDate = (raw: string): string => raw.trim().match(/^\d{4}\b/)?.[0] ?? raw
+export const yearFromDate = (raw: string): string => raw.trim().match(/^\d{4}\b/)?.[0] ?? raw
 
 // A complete release date ("2020-12-01") at the start of a value, or '' when it carries
 // only a year or a partial date. The one shape every tag family agrees on for a full date.
@@ -63,7 +63,12 @@ export const TAG_FIELDS: TagField[] = [
     aliases: ['album_artist', 'albumartist', 'album artist', 'albumartist2'],
     id3: 'album_artist',
   },
-  { key: 'year', aliases: ['date', 'year'], id3: 'date', parse: yearFromDate },
+  {
+    key: 'year',
+    aliases: ['date', 'year'],
+    id3: 'date',
+    parse: (raw) => fullDateOf(raw) || yearFromDate(raw),
+  },
   { key: 'genre', aliases: ['genre'], id3: 'genre' },
   { key: 'grouping', aliases: ['grouping', 'content_group', 'tit1', 'grp1'], id3: 'grouping' },
   { key: 'comment', aliases: ['comment'], id3: 'comment' },
