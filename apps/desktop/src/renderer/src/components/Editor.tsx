@@ -1,4 +1,4 @@
-import { Copy, Disc3, Eraser, Globe, RefreshCw, Scissors, Tag, Type } from 'lucide-react'
+import { Copy, Eraser, Globe, RefreshCw, Scissors, Tag, Type } from 'lucide-react'
 import type React from 'react'
 import { memo, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -270,7 +270,7 @@ export const Editor = memo(function Editor({
     discogsMaxResults,
     matchCleanup,
   )
-  const { release, resolving: discogsResolving } = browser
+  const { release } = browser
   // Section fold state lives in a module-level store (not per-track useState), so folding
   // a section away persists as the user browses the crate instead of resetting on every
   // track switch — and the gated analyses below stay quiet until the section is reopened.
@@ -526,7 +526,6 @@ export const Editor = memo(function Editor({
     libraryIndex,
     librarySource,
     suggestedMeta,
-    discogsResolving,
     onChange,
   })
 
@@ -955,8 +954,7 @@ export const Editor = memo(function Editor({
 
   // The library state rides the section's title line, beside the title: a line of its own
   // under the header hung there like a stray fragment of the body, open or folded.
-  const hasLibraryMarks =
-    !isMulti && (inLibrary === 'yes' || inLibrary === 'no' || inLibrary === 'checking')
+  const hasLibraryMarks = !isMulti && (inLibrary === 'yes' || inLibrary === 'no')
   const libraryMarks = (
     <>
       {!isMulti && inLibrary === 'yes' && (
@@ -967,15 +965,6 @@ export const Editor = memo(function Editor({
       {!isMulti && inLibrary === 'no' && (
         <SectionPill tone="neutral" testid="apple-music-status">
           {tr(librarySource === 'engineDj' ? 'editor.notInLibraryEngine' : 'editor.notInLibrary')}
-        </SectionPill>
-      )}
-      {!isMulti && inLibrary === 'checking' && (
-        <SectionPill
-          tone="neutral"
-          testid="apple-music-status"
-          icon={<Disc3 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
-        >
-          {tr('editor.checkingLibrary')}
         </SectionPill>
       )}
     </>

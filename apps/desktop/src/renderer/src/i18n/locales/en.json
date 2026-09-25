@@ -568,7 +568,6 @@
     "notInLibraryEngine": "Not in library",
     "libraryCheckFailed": "Couldn't read your Apple Music library, so tracks aren't marked as already in it. Surco tries again when you come back to the window.",
     "libraryCheckFailedEngine": "Couldn't read your Engine DJ library, so tracks aren't marked as already in it. Surco tries again when you come back to the window.",
-    "checkingLibrary": "Checking…",
     "convertAll": "Convert ({{count}}) · {{format}}",
     "editingMultiple": "Editing {{count}} tracks",
     "multipleValues": "Multiple values",

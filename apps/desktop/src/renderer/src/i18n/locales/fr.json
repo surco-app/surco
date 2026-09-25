@@ -568,7 +568,6 @@
     "notInLibraryEngine": "Absent de la bibliothèque",
     "libraryCheckFailed": "Impossible de lire ta bibliothèque Apple Music, les morceaux ne sont donc pas marqués comme déjà présents. Surco réessaie quand tu reviens sur la fenêtre.",
     "libraryCheckFailedEngine": "Impossible de lire ta bibliothèque Engine DJ, les morceaux ne sont donc pas marqués comme déjà présents. Surco réessaie quand tu reviens sur la fenêtre.",
-    "checkingLibrary": "Vérification…",
     "convertAll": "Convertir ({{count}}) · {{format}}",
     "editingMultiple": "Édition de {{count}} morceaux",
     "multipleValues": "Valeurs multiples",
