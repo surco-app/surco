@@ -848,6 +848,7 @@ export const Editor = memo(function Editor({
         customValues: customValueMap,
         customOnChange,
         customBulkOnChange,
+        fullReleaseDate,
         onChangeTracksMeta,
       }),
     [
@@ -874,6 +875,7 @@ export const Editor = memo(function Editor({
       customOnChange,
       customBulkOnChange,
       onChangeTracksMeta,
+      fullReleaseDate,
     ],
   )
 
