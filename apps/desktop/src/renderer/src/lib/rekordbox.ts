@@ -1,3 +1,4 @@
+import { yearFromDate } from '../../../shared/tagFields'
 import type { TrackItem } from '../types'
 import { escapeXml } from './xml'
 
@@ -47,7 +48,7 @@ export function buildRekordboxXml(tracks: TrackItem[]): string {
       ['AverageBpm', m.bpm],
       ['Tonality', m.key],
       ['TrackNumber', m.trackNumber],
-      ['Year', m.year],
+      ['Year', yearFromDate(m.year ?? '')],
       ['Location', trackLocation(path)],
     ]
     const rendered = attrs

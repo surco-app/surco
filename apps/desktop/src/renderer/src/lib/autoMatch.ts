@@ -1,5 +1,6 @@
 import { searchHintsOf } from '../../../shared/metadata'
 import { cleanMatchTitle, stripIgnoredWords } from '../../../shared/searchClean'
+import { yearFromDate } from '../../../shared/tagFields'
 import type {
   MetaTextKey,
   Release,
@@ -82,7 +83,7 @@ export function matchTargetOf(track: TrackItem, cleanup: MatchCleanup = {}): Tra
     trackNumber: track.meta.trackNumber || un?.fields.trackNumber,
     artist: track.meta.artist,
     catalogNumber: track.meta.catalogNumber,
-    year: track.meta.year,
+    year: track.meta.year && yearFromDate(track.meta.year),
     discogsReleaseId: track.meta.discogsReleaseId,
   }
 }

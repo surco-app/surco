@@ -357,3 +357,13 @@ describe('outputNamePatches', () => {
     expect(patches).toEqual([{ id: 'a', outputName: 'HH Traxx - Preview' }])
   })
 })
+
+// {year} names the year; a track dated to the day ("2020-12-01", the full release date
+// setting) must not grow a date into every file name and title built from the pattern.
+describe('{year} with a full release date', () => {
+  it('renders only the year', () => {
+    expect(renderOutputName('{artist} ({year})', meta({ artist: 'A', year: '2020-12-01' }))).toBe(
+      'A (2020)',
+    )
+  })
+})

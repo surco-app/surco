@@ -609,6 +609,12 @@ describe('tracksToAutoMatch', () => {
 })
 
 describe('matchTargetOf', () => {
+  // A search result carries only its year, so the tie-break compares years.
+  it('compares the year of a track dated to the day', () => {
+    const t = { duration: 1, meta: { title: 'Song', year: '2001-03-12' } } as TrackItem
+    expect(matchTargetOf(t).year).toBe('2001')
+  })
+
   it('reads the title, duration, track number, artist, catalog number and year a probe scores against', () => {
     const t = {
       duration: 211,
