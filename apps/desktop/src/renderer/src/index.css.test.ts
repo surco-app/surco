@@ -408,4 +408,17 @@ describe('Tokyo Night palette', () => {
       })
     }
   }
+
+  // White and near-black kept creeping into the rules below the tokens (the progress sweep,
+  // the vinyl grooves and disc). Outside the two token blocks a rule names a token, never a
+  // colour; masks are exempt because their black is an alpha channel, not a colour.
+  it('paints nothing outside the token blocks in a colour of its own', () => {
+    const rules = css
+      .slice(css.indexOf('\nhtml,'))
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .split('\n')
+      .filter((line) => !line.includes('mask'))
+      .join('\n')
+    expect(rules.match(/#[0-9a-f]{3,8}\b|rgba?\(|\bwhite\b/gi) ?? []).toEqual([])
+  })
 })
