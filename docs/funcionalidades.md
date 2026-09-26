@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 24 de septiembre de 2026** (v1.2.0). Levantado por primera vez el
+**Última revisión: 26 de septiembre de 2026** (v1.3.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -121,6 +121,13 @@ nativo salen intactos. Se resuelve una sola vez por conversión
 `ffmpeg.ts:2568`), y la tarjeta «Al convertir» del análisis de calidad avisa en
 la propia pista antes de tocar nada. Solo aplica a recodificaciones, como la
 profundidad.
+
+**El remuestreo no apaga los agudos.** Normalizar pasa por 192 kHz y vuelve, y una
+frecuencia fijada convierte una vez. El `aresample` por defecto de ffmpeg (32
+coeficientes, corte al 97 % de Nyquist) quitaba 1,8 dB a 20 kHz y 3,5 a 20,5 en
+cada fichero normalizado; todo remuestreo va ahora por `resampleTo`, con 128
+coeficientes y corte al 99,5 %, plano hasta 21 kHz (`normalize.ts:112-123`,
+`ffmpeg.ts:1876`).
 
 **Sin sellos del muxer:** `-fflags +bitexact` evita que cada muxer estampe su
 anuncio (ENCODER en FLAC, TSSE en MP3, ISFT en RIFF) que el usuario lee como
@@ -706,6 +713,17 @@ pasada la degradaba otra vez (`ffmpeg.ts:2176-2189`, `coverFitsAsIs` en `:2208`)
 campos cambió, cuántos quedaron intactos y cuáles cambiaron, con el nombre por el
 que el usuario los conoce (`tagChanges.ts`, `index.ts:94`).
 
+**Tildes compuestas.** Una letra con tilde que llega descompuesta (letra más acento
+suelto, NFD) se compone a NFC al leer etiquetas, al escribirlas, al sacar campos del
+nombre de archivo y al buscar (`shared/composeAccents.ts`, `ffmpeg.ts`,
+`lib/deriveTags.ts`, `providers/index.ts`): el borrado quita la letra entera y
+Traktor, rekordbox y los buscadores ven un solo carácter.
+
+**Nombres de archivo sin acentos** (Ajustes → Nombres, `asciiFileNames`, apagado por
+defecto): pliega las letras latinas acentuadas a su grafía simple solo en el nombre
+del fichero de salida, «Röyksopp» → «Royksopp» (`processTrack.ts:191`,
+`shared/foldAccents.ts:20`). Las etiquetas conservan los acentos.
+
 **Una lectura fallida nunca escribe.** Una pista cuya lectura de etiquetas falló al
 importar se relee antes de convertir; si sigue sin poder leerse, se rechaza con
 `sourceTagsUnread` en vez de escribir en blanco sobre lo que el fichero conserva
@@ -810,14 +828,15 @@ v0.100.0, así que la tabla sigue en vigor.
 
 ## 9. Proveedores externos
 
-| | Discogs | Bandcamp | Deezer |
-|---|---|---|---|
-| Sello y nº de catálogo | Sí | No | No |
-| Formato del lanzamiento | Sí | No | No |
-| Duraciones de pista | Sí | Sí | Sí |
-| Créditos de composición | Sí | No | No |
-| Búsqueda por ISRC | No | No | **Sí** |
-| Requiere token | Opcional (obligatorio para auto-emparejar) | No | No |
+| | Discogs | Bandcamp | Deezer | Beatport |
+|---|---|---|---|---|
+| Sello y nº de catálogo | Sí | No | No | Sí |
+| Formato del lanzamiento | Sí | No | No | No |
+| Duraciones de pista | Sí | Sí | Sí | Sí |
+| Créditos de composición | Sí | No | No | No |
+| BPM, tonalidad, mix e ISRC | No | No | No | **Sí** |
+| Búsqueda por ISRC | No | No | **Sí** | No |
+| Requiere token | Opcional (obligatorio para auto-emparejar) | No | No | **Cuenta de Beatport** (gratuita vale) |
 
 **Discogs** funciona sin configurar nada con una clave compartida (60 req/min
 entre todos los usuarios); un token propio da su propio cupo. Las credenciales
@@ -836,6 +855,18 @@ pueden cambiar sin aviso; el parseo es defensivo (`bandcamp.ts:8-11`).
 
 **Deezer** señala errores dentro de respuestas 200, y distingue cuota agotada de
 un ISRC que simplemente no tiene (`deezer.ts:10-13`).
+
+**Beatport** no tiene API abierta: Surco busca con la cuenta del usuario, que se
+conecta en Ajustes → Búsqueda. La contraseña se guarda cifrada con el llavero del
+sistema y solo en ese equipo; si el sistema no puede cifrar, no se guarda
+(`beatportCredentials.ts:9-13`). Sale **apagado** (`settings.ts:32`), y sin cuenta
+conectada queda fuera del auto-emparejado aunque esté marcado como fuente
+(`shared/autoMatch.ts:8-12`). Cada pista trae BPM, tonalidad (convertida a la
+notación elegida, `providers/index.ts:102`), mix e ISRC (`beatport.ts:150-157`); un
+campo fuera de la lista de importación no se toca. Entre versiones con el mismo
+título se preselecciona la que nombra el fichero, y el mix se añade al título
+salvo «Original Mix» (`lib/release.ts:225-229`). En la lista de resultados va
+detrás de Discogs, Bandcamp y Deezer (`release.ts:396-401`).
 
 ### La escalera de búsqueda
 
@@ -1391,5 +1422,7 @@ Recopilado de los cinco informes. Cada punto está verificado.
     con tres pasadas como máximo.
 26. **Auto-emparejar necesita token de Discogs solo si Discogs es fuente.** No
     escribir que auto-emparejar exige token siempre.
-27. **Finder covers y Traktor son excluyentes**: con la sincronización de Traktor
+27. **Beatport exige cuenta** (gratuita vale) y sale apagado. No venderlo como una
+    fuente que funciona sin configurar nada, como Bandcamp o Deezer.
+28. **Finder covers y Traktor son excluyentes**: con la sincronización de Traktor
     activa, la carátula de Finder en FLAC no se aplica.
