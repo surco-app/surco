@@ -44,6 +44,68 @@ export function SearchTab({
         />
       </SettingsSection>
 
+      <SettingsSection eyebrow={tr('settings.beatportSection')}>
+        {!beatportOn && (
+          <SettingsHint data-testid="settings-beatport-disabled" className="mb-4">
+            {tr('settings.beatportDisabledHint')}
+          </SettingsHint>
+        )}
+        <div className={beatportOn ? '' : 'opacity-50'}>
+          <SettingsHint className="mb-3">{tr('settings.beatportHint')}</SettingsHint>
+          <BeatportAccountField
+            username={local.beatportUsername}
+            disabled={!beatportOn}
+            onChange={onBeatportChange}
+          />
+        </div>
+      </SettingsSection>
+
+      <SettingsSection eyebrow={tr('settings.discogsSection')}>
+        {!discogsOn && (
+          <SettingsHint data-testid="settings-discogs-disabled" className="mb-4">
+            {tr('settings.discogsDisabledHint')}
+          </SettingsHint>
+        )}
+        <div className={discogsOn ? '' : 'opacity-50'}>
+          <div className="mb-5">
+            <DiscogsTokenField
+              value={local.token}
+              onChange={(value) => patchLocal('token', value)}
+              testid="settings-token"
+              disabled={!discogsOn}
+            />
+          </div>
+
+          <SettingsLabel className="mb-2">{tr('settings.discogsFormats')}</SettingsLabel>
+          <SettingsHint className="mb-3">{tr('settings.discogsFormatsHint')}</SettingsHint>
+          <div className="flex flex-wrap gap-x-5 gap-y-2" data-testid="settings-discogs-formats">
+            {DISCOGS_FORMATS.map((f) => (
+              <label
+                key={f}
+                className={`flex items-center gap-2 ${discogsOn ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+              >
+                <input
+                  data-testid={`settings-format-${f}`}
+                  type="checkbox"
+                  checked={synced.discogsFormats.includes(f)}
+                  disabled={!discogsOn}
+                  onChange={(e) =>
+                    patch(
+                      'discogsFormats',
+                      e.target.checked
+                        ? [...synced.discogsFormats, f]
+                        : synced.discogsFormats.filter((x) => x !== f),
+                    )
+                  }
+                  className="h-4 w-4 accent-[var(--color-accent)]"
+                />
+                <span className="text-sm">{tr(`settings.format.${f}`)}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      </SettingsSection>
+
       {/* Auto-match is a behaviour (when matches get applied), not a source, so it sits in
           its own section apart from the Discogs/Bandcamp source checkboxes. */}
       <SettingsSection>
@@ -96,68 +158,6 @@ export function SearchTab({
           placeholder="vinyl, rip"
           className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
         />
-      </SettingsSection>
-
-      <SettingsSection eyebrow={tr('settings.discogsSection')}>
-        {!discogsOn && (
-          <SettingsHint data-testid="settings-discogs-disabled" className="mb-4">
-            {tr('settings.discogsDisabledHint')}
-          </SettingsHint>
-        )}
-        <div className={discogsOn ? '' : 'opacity-50'}>
-          <div className="mb-5">
-            <DiscogsTokenField
-              value={local.token}
-              onChange={(value) => patchLocal('token', value)}
-              testid="settings-token"
-              disabled={!discogsOn}
-            />
-          </div>
-
-          <SettingsLabel className="mb-2">{tr('settings.discogsFormats')}</SettingsLabel>
-          <SettingsHint className="mb-3">{tr('settings.discogsFormatsHint')}</SettingsHint>
-          <div className="flex flex-wrap gap-x-5 gap-y-2" data-testid="settings-discogs-formats">
-            {DISCOGS_FORMATS.map((f) => (
-              <label
-                key={f}
-                className={`flex items-center gap-2 ${discogsOn ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-              >
-                <input
-                  data-testid={`settings-format-${f}`}
-                  type="checkbox"
-                  checked={synced.discogsFormats.includes(f)}
-                  disabled={!discogsOn}
-                  onChange={(e) =>
-                    patch(
-                      'discogsFormats',
-                      e.target.checked
-                        ? [...synced.discogsFormats, f]
-                        : synced.discogsFormats.filter((x) => x !== f),
-                    )
-                  }
-                  className="h-4 w-4 accent-[var(--color-accent)]"
-                />
-                <span className="text-sm">{tr(`settings.format.${f}`)}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      </SettingsSection>
-
-      <SettingsSection eyebrow={tr('settings.beatportSection')}>
-        {!beatportOn && (
-          <SettingsHint data-testid="settings-beatport-disabled" className="mb-4">
-            {tr('settings.beatportDisabledHint')}
-          </SettingsHint>
-        )}
-        <div className={beatportOn ? '' : 'opacity-50'}>
-          <SettingsHint className="mb-3">{tr('settings.beatportHint')}</SettingsHint>
-          <BeatportAccountField
-            username={local.beatportUsername}
-            disabled={!beatportOn}
-            onChange={onBeatportChange}
-          />
-        </div>
       </SettingsSection>
     </>
   )
