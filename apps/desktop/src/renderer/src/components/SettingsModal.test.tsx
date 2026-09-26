@@ -1090,13 +1090,17 @@ describe('SettingsModal Beatport card state', () => {
 
   it('flags the card red while no account is connected, so a ticked box is not mistaken for ready', () => {
     openSearch({ beatportUsername: '' })
-    expect(screen.getByTestId('beatport-status')).toHaveAttribute('data-state', 'disconnected')
-    expect(screen.getByTestId('beatport-status').textContent).not.toContain('settings.')
+    const status = screen.getByTestId('beatport-status')
+    expect(status).toHaveAttribute('data-state', 'disconnected')
+    expect(status.textContent).toBe('')
+    expect(status.getAttribute('aria-label')).not.toMatch(/^settings\./)
   })
 
   it('turns the flag green once an account is connected', () => {
     openSearch({ beatportUsername: 'dj' })
-    expect(screen.getByTestId('beatport-status')).toHaveAttribute('data-state', 'connected')
-    expect(screen.getByTestId('beatport-status').textContent).not.toContain('settings.')
+    const status = screen.getByTestId('beatport-status')
+    expect(status).toHaveAttribute('data-state', 'connected')
+    expect(status.textContent).toBe('')
+    expect(status.getAttribute('aria-label')).not.toMatch(/^settings\./)
   })
 })
