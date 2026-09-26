@@ -11,7 +11,7 @@ import {
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
-import { autoMatchAvailable } from '../../shared/autoMatch'
+import { autoMatchAvailable, usableProviders } from '../../shared/autoMatch'
 import { trashLimits } from '../../shared/backupPolicy'
 import { effectiveMeta } from '../../shared/customFields'
 import { normalizeImportFields } from '../../shared/defaults'
@@ -326,7 +326,7 @@ export default function App(): React.JSX.Element {
   hasTokenRef.current = !!settings?.discogsToken
   // Live providers for the background sweep, read at probe time (Settings → Search).
   const searchProvidersRef = useRef<SearchProviderId[]>(DEFAULT_SEARCH_PROVIDERS)
-  searchProvidersRef.current = settings?.searchProviders ?? DEFAULT_SEARCH_PROVIDERS
+  searchProvidersRef.current = settings ? usableProviders(settings) : DEFAULT_SEARCH_PROVIDERS
   // Which fields a release may fill (Settings → Search). A ref for the same reason as the
   // providers above: the sweep applies matches in the background, so it must read the
   // current choice at apply time rather than one captured when the sweep started.
