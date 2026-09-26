@@ -122,7 +122,9 @@ describe('loudnormFilter', () => {
       inputThresh: -24.79,
       targetOffset: -0.07,
     }
-    expect(loudnormFilter(loudness, m, 44100)).toMatch(/loudnorm=.*linear=true,aresample=44100$/)
+    expect(loudnormFilter(loudness, m, 44100)).toMatch(
+      /loudnorm=.*linear=true,aresample=44100:[^,]*$/,
+    )
     // No rate known → no resampler appended, rather than guessing.
     expect(loudnormFilter(loudness, m)).not.toContain('aresample')
   })
@@ -218,7 +220,7 @@ describe('limitedLoudnormFilter', () => {
     expect(f).toContain('level=disabled')
     // Oversamples 4× around the limiter (176.4k) and back, so inter-sample peaks are
     // caught and true peak doesn't creep above the ceiling.
-    expect(f).toMatch(/aresample=176400,alimiter=.*,aresample=44100$/)
+    expect(f).toMatch(/aresample=176400:[^,]*,alimiter=.*,aresample=44100:[^,]*$/)
   })
 
   // With no known source rate the resampler can't be built, so it falls back to a plain

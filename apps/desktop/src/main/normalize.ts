@@ -108,6 +108,19 @@ export function loudnormMeasuredFrom(
   return m
 }
 
+// Both loudness paths leave the source rate and come back to it (loudnorm only takes
+// 192 kHz, and ffmpeg inserts its own resampler in front of it). ffmpeg's default
+// resampler filter (32 taps, cutoff at 97% of Nyquist) rolls the top octave off on the
+// way: 1.8 dB gone at 20 kHz, 3.5 at 20.5, 6 at 21, from every normalized file. 128
+// taps with the cutoff at 99.5% keep the round trip flat to 21 kHz.
+const FLAT_RESAMPLE = 'filter_size=128:cutoff=0.995'
+
+const LOUDNORM_RATE = 192000
+
+function resampleTo(rate: number): string {
+  return `aresample=${rate}:${FLAT_RESAMPLE}`
+}
+
 // Second pass: the chosen target plus the first pass's measurements, in linear
 // mode so the whole track is shifted by a constant gain (dynamics preserved).
 // loudnorm oversamples to 192 kHz for true-peak limiting and emits its output at
@@ -137,7 +150,9 @@ export function loudnormFilter(
     `offset=${m.targetOffset}`,
     'linear=true',
   ].join(':')
-  return sampleRate && sampleRate > 0 ? `${filter},aresample=${sampleRate}` : filter
+  return sampleRate && sampleRate > 0
+    ? `${resampleTo(LOUDNORM_RATE)},${filter},${resampleTo(sampleRate)}`
+    : filter
 }
 
 // Whether a constant (linear) gain can reach the target without the louder peaks
@@ -168,7 +183,7 @@ export function limitedLoudnormFilter(
   const limit = 10 ** (truePeakDb / 20)
   const limiter = `alimiter=limit=${limit.toFixed(6)}:level=disabled`
   return sampleRate && sampleRate > 0
-    ? `${gain},aresample=${sampleRate * 4},${limiter},aresample=${sampleRate}`
+    ? `${gain},${resampleTo(sampleRate * 4)},${limiter},${resampleTo(sampleRate)}`
     : `${gain},${limiter}`
 }
 
