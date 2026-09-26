@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { deriveTagPatches, deriveTags, smartDeriveTags } from './deriveTags'
 
 describe('deriveTags', () => {
+  it('composes the accents a macOS file name stores decomposed, so they land in the tag as one letter', () => {
+    const tags = deriveTags('Mötörhead - Ace Of Spades.flac'.normalize('NFD'), '{artist} - {title}')
+    expect(tags.artist).toBe('Mötörhead'.normalize('NFC'))
+  })
+
   it('pulls artist and title out of a "{artist} - {title}" name', () => {
     expect(deriveTags('kumara - snap ya fingaz.flac', '{artist} - {title}')).toEqual({
       artist: 'kumara',

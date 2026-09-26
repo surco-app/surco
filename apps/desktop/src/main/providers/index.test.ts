@@ -32,6 +32,22 @@ import { DEFAULT_PROVIDER, getProvider } from './index'
 afterEach(() => vi.clearAllMocks())
 
 describe('getProvider', () => {
+  it('sends the query with composed accents, since Beatport misses "Rosalía" typed decomposed', async () => {
+    search.mockResolvedValue([])
+    await getProvider('discogs').search('Rosalía Despechá'.normalize('NFD'), 'high', {
+      artist: 'Rosalía'.normalize('NFD'),
+      title: 'Despechá'.normalize('NFD'),
+    })
+    expect(search).toHaveBeenCalledWith(
+      'Rosalía Despechá',
+      'tok',
+      'high',
+      { artist: 'Rosalía', title: 'Despechá' },
+      [],
+      0,
+    )
+  })
+
   it('defaults to Discogs when no provider id is given', () => {
     expect(DEFAULT_PROVIDER).toBe('discogs')
     expect(getProvider()).toBe(getProvider('discogs'))

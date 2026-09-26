@@ -19,12 +19,16 @@ function ignoreWordsOf(words: unknown): string[] {
   return Array.isArray(words) ? (words as string[]) : []
 }
 
+function cleanQuery(query: string, words: string[]): string {
+  return stripIgnoredWords(query.normalize('NFC'), words)
+}
+
 function cleanHints(hints: SearchHints | undefined, words: string[]): SearchHints | undefined {
-  if (!hints || words.length === 0) return hints
+  if (!hints) return hints
   return {
     ...hints,
-    title: hints.title === undefined ? undefined : stripIgnoredWords(hints.title, words),
-    artist: hints.artist === undefined ? undefined : stripIgnoredWords(hints.artist, words),
+    title: hints.title === undefined ? undefined : cleanQuery(hints.title, words),
+    artist: hints.artist === undefined ? undefined : cleanQuery(hints.artist, words),
   }
 }
 
@@ -49,7 +53,7 @@ const providers: Record<SearchProviderId, SearchProvider> = {
       const formats = Array.isArray(s.discogsFormats) ? s.discogsFormats : []
       const words = ignoreWordsOf(s.searchIgnoreWords)
       return discogs.search(
-        stripIgnoredWords(query, words),
+        cleanQuery(query, words),
         s.discogsToken,
         priority,
         cleanHints(hints, words),
@@ -68,7 +72,7 @@ const providers: Record<SearchProviderId, SearchProvider> = {
     // words are threaded here; the formats the Discogs path uses are not.
     search: (query, priority, hints) => {
       const words = ignoreWordsOf(getSettings().searchIgnoreWords)
-      return bandcamp.search(stripIgnoredWords(query, words), priority, cleanHints(hints, words))
+      return bandcamp.search(cleanQuery(query, words), priority, cleanHints(hints, words))
     },
     getRelease: (ref, priority) => bandcamp.getRelease(ref as string, priority),
   },
@@ -77,7 +81,7 @@ const providers: Record<SearchProviderId, SearchProvider> = {
     // words are threaded here.
     search: (query, priority, hints) => {
       const words = ignoreWordsOf(getSettings().searchIgnoreWords)
-      return deezer.search(stripIgnoredWords(query, words), priority, cleanHints(hints, words))
+      return deezer.search(cleanQuery(query, words), priority, cleanHints(hints, words))
     },
     getRelease: (ref, priority) => deezer.getRelease(ref as number, priority),
   },
