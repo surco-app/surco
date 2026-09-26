@@ -26,7 +26,7 @@ function stripExt(name: string): string {
 // whose name isn't a real metadata field, is left out — so a non-match or a stray token never
 // blanks an existing tag.
 export function deriveTags(fileName: string, pattern: string): Partial<TrackMetadata> {
-  const base = stripExt(fileName)
+  const base = stripExt(fileName.normalize('NFC'))
   const fields: string[] = []
   let regex = ''
   let last = 0

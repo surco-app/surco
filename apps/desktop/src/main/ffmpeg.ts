@@ -6,6 +6,7 @@ import { basename, dirname, extname, join } from 'node:path'
 import { promisify } from 'node:util'
 import log from 'electron-log/main'
 import { processesAudio } from '../shared/audioProcessing'
+import { composeMeta } from '../shared/composeAccents'
 import { customTagName } from '../shared/customFields'
 import { declickFilter } from '../shared/declick'
 import { errorWithKey } from '../shared/errorKeys'
@@ -396,7 +397,7 @@ export async function readTags(input: string): Promise<TrackMetadata> {
     ],
     { timeout: ANALYSIS_TIMEOUT_MS },
   )
-  return withTagLibExtras(input, tagsFromProbe(JSON.parse(stdout)))
+  return composeMeta(withTagLibExtras(input, tagsFromProbe(JSON.parse(stdout))))
 }
 
 // The containers ffprobe reads only partly (see readTagLibExtras): whatever the probe
@@ -563,17 +564,16 @@ export async function readMeta(input: string): Promise<MetaRead> {
   // namespace is part of the cache key, so without this bump every library already probed
   // would keep serving the bare year cached before.
   const result = await cachedAnalysis('readmeta-v3', input, () => readMetaUncached(input))
+  if (result) return { ...result, tags: composeMeta(result.tags) }
   // Flagged, not just empty: the caller cannot otherwise tell this fallback from a file
   // that carries no tags, and the row would show a bare file name with no explanation.
-  return (
-    result ?? {
-      tags: {} as TrackMetadata,
-      duration: null,
-      cover: null,
-      foreignTags: [],
-      failed: true,
-    }
-  )
+  return {
+    tags: {} as TrackMetadata,
+    duration: null,
+    cover: null,
+    foreignTags: [],
+    failed: true,
+  }
 }
 
 // The actual probe/decode work behind readMeta, split out so cachedAnalysis can tell a
@@ -1772,7 +1772,7 @@ export async function convertAudio(
   input: string,
   output: string,
   format: OutputFormat,
-  meta: TrackMetadata,
+  sourceMeta: TrackMetadata,
   coverPath?: string,
   normalize?: NormalizeConfig,
   removeCover?: boolean,
@@ -1806,6 +1806,7 @@ export async function convertAudio(
   // rekordbox indexes that path, not the one being converted.
   replacesPath?: string,
 ): Promise<{ normalizeSkipped: boolean; declickedSamples?: number }> {
+  const meta = composeMeta(sourceMeta)
   // We always write to a temp file and rename it over the target, so
   // re-processing a file that already lives in the output folder (input path ===
   // output path) overwrites it atomically instead of failing with ffmpeg's
