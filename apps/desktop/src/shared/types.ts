@@ -127,6 +127,8 @@ export interface Settings {
   // UI language; 'system' (the default) follows the OS locale.
   language: LanguagePref
   discogsToken: string
+  beatportUsername: string
+  beatportPassword: string
   // Restrict Discogs search results to these release-format buckets (from DISCOGS_FORMATS,
   // e.g. "Vinyl", "CD"). Empty (the default) shows every format. A single selection
   // filters server-side via the API's `format` param; several filter client-side.

@@ -60,6 +60,8 @@ export interface Api {
   saveLastSession: (paths: string[], edits: Record<string, SessionEdit>) => Promise<void>
   getSettings: () => Promise<Settings>
   saveSettings: (patch: Partial<Settings>) => Promise<Settings>
+  beatportConnect: (username: string, password: string) => Promise<Settings>
+  beatportDisconnect: () => Promise<Settings>
   // Fire-and-forget bump of one lifetime tally (Stats tab); main validates and persists.
   recordStat: (key: keyof LifetimeStats, by?: number) => void
   getConfigDir: () => Promise<string | null>

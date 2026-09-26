@@ -62,6 +62,9 @@ const api: Api = {
     ipcRenderer.invoke('session:set', paths, edits),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
+  beatportConnect: (username, password) =>
+    ipcRenderer.invoke('beatport:connect', username, password),
+  beatportDisconnect: () => ipcRenderer.invoke('beatport:disconnect'),
   recordStat: (key, by) => ipcRenderer.send('stats:record', key, by),
   getConfigDir: (): Promise<string | null> => ipcRenderer.invoke('settings:getConfigDir'),
   defaultConfigDir: (): Promise<string> => ipcRenderer.invoke('settings:defaultConfigDir'),

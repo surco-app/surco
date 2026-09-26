@@ -22,6 +22,8 @@ const settings: Settings = {
   theme: 'system',
   language: 'system',
   discogsToken: '',
+  beatportUsername: '',
+  beatportPassword: '',
   discogsFormats: [],
   discogsMaxResults: 10,
   searchProviders: ['discogs'],

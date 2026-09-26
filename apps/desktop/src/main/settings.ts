@@ -22,6 +22,8 @@ export const defaults: Settings = {
   // Follow the OS locale by default; the user can pin English or Spanish.
   language: 'system',
   discogsToken: '',
+  beatportUsername: '',
+  beatportPassword: '',
   // No format filter by default: search shows every Discogs release format.
   discogsFormats: [],
   discogsMaxResults: DEFAULT_DISCOGS_MAX_RESULTS,
@@ -165,6 +167,8 @@ const LOCAL_KEYS = [
   // A pixel position only means something on the screen it was saved on.
   'activityPanel',
   'resultsWidth',
+  'beatportUsername',
+  'beatportPassword',
 ] as const satisfies readonly (keyof Settings)[]
 
 // Repairs any stored value into a valid format: a synced settings.json can carry an
@@ -394,7 +398,13 @@ function writeAtomic(path: string, value: unknown): void {
 const INTERNAL_ONLY_KEYS = [
   'stats',
   'conversionCount',
+  'beatportUsername',
+  'beatportPassword',
 ] as const satisfies readonly (keyof Settings)[]
+
+export function settingsForRenderer(settings: Settings): Settings {
+  return { ...settings, beatportPassword: '' }
+}
 
 export function sanitizeSettingsPatch(patch: Partial<Settings>): Partial<Settings> {
   const clean = { ...patch }

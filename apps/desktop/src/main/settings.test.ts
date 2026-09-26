@@ -57,6 +57,7 @@ import {
   sanitizeSettingsPatch,
   saveSettings,
   setConfigDir,
+  settingsForRenderer,
 } from './settings'
 
 afterAll(() => rmSync(app.getPath('userData'), { recursive: true, force: true }))
@@ -221,6 +222,22 @@ describe('recordStat', () => {
 })
 
 describe('sanitizeSettingsPatch', () => {
+  it('a renderer save carrying an empty password leaves the stored one intact', () => {
+    saveSettings({ beatportUsername: 'dj', beatportPassword: 'ENCRYPTED' })
+    saveSettings(
+      sanitizeSettingsPatch({ theme: 'dark', beatportUsername: '', beatportPassword: '' }),
+    )
+    expect(getSettings().beatportUsername).toBe('dj')
+    expect(getSettings().beatportPassword).toBe('ENCRYPTED')
+  })
+
+  it('settingsForRenderer never hands the encrypted password to the renderer', () => {
+    saveSettings({ beatportUsername: 'dj', beatportPassword: 'ENCRYPTED' })
+    const shown = settingsForRenderer(getSettings())
+    expect(shown.beatportPassword).toBe('')
+    expect(shown.beatportUsername).toBe('dj')
+  })
+
   // stats and conversionCount are internal tallies bumped only by recordStat /
   // recordConversion — no legitimate renderer caller patches them through
   // settings:set. Left unguarded, that channel would let a compromised renderer
@@ -388,6 +405,15 @@ describe('configurable settings folder', () => {
   const read = (path: string): Record<string, unknown> => JSON.parse(readFileSync(path, 'utf-8'))
 
   afterEach(() => setConfigDir(null))
+
+  it('the Beatport account stays in the local file, never the synced folder', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))
+    setConfigDir(dir)
+    saveSettings({ beatportUsername: 'dj', beatportPassword: 'ENCRYPTED' })
+    expect(read(syncedFile(dir))).not.toHaveProperty('beatportUsername')
+    expect(read(syncedFile(dir))).not.toHaveProperty('beatportPassword')
+    expect(read(localFile()).beatportPassword).toBe('ENCRYPTED')
+  })
 
   it('seeds the chosen folder with current prefs and reads/writes through it', () => {
     saveSettings({ keyNotation: 'musical' })

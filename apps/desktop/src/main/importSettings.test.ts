@@ -35,4 +35,11 @@ describe('applyImportedSettings', () => {
     expect(() => applyImportedSettings('not an object')).toThrow()
     expect(() => applyImportedSettings(null)).toThrow()
   })
+
+  it("importing a backup keeps this machine's Beatport account", () => {
+    saveSettings({ beatportUsername: 'dj', beatportPassword: 'ENCRYPTED' })
+    applyImportedSettings({ theme: 'dark', beatportUsername: 'other', beatportPassword: 'OTHER' })
+    expect(getSettings().beatportUsername).toBe('dj')
+    expect(getSettings().beatportPassword).toBe('ENCRYPTED')
+  })
 })

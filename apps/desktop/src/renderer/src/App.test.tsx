@@ -79,6 +79,8 @@ function settings(over: Partial<Settings> = {}): Settings {
     theme: 'system',
     language: 'system',
     discogsToken: '',
+    beatportUsername: '',
+    beatportPassword: '',
     discogsFormats: [],
     discogsMaxResults: 10,
     searchProviders: ['discogs'],
