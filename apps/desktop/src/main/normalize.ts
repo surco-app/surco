@@ -108,8 +108,9 @@ export function loudnormMeasuredFrom(
   return m
 }
 
-// Both loudness paths leave the source rate and come back to it (loudnorm only takes
-// 192 kHz, and ffmpeg inserts its own resampler in front of it). ffmpeg's default
+// Every rate change Surco makes goes through this: both loudness paths leave the source
+// rate and come back to it (loudnorm only takes 192 kHz, and ffmpeg inserts its own
+// resampler in front of it), and a pinned output rate converts once. ffmpeg's default
 // resampler filter (32 taps, cutoff at 97% of Nyquist) rolls the top octave off on the
 // way: 1.8 dB gone at 20 kHz, 3.5 at 20.5, 6 at 21, from every normalized file. 128
 // taps with the cutoff at 99.5% keep the round trip flat to 21 kHz.
@@ -117,7 +118,7 @@ const FLAT_RESAMPLE = 'filter_size=128:cutoff=0.995'
 
 const LOUDNORM_RATE = 192000
 
-function resampleTo(rate: number): string {
+export function resampleTo(rate: number): string {
   return `aresample=${rate}:${FLAT_RESAMPLE}`
 }
 

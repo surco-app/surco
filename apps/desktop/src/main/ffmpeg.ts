@@ -83,6 +83,7 @@ import {
   peakChannelFilter,
   peakGainDb,
   reachesTargetLinearly,
+  resampleTo,
   volumedetectArgs,
   volumeFilter,
 } from './normalize'
@@ -1869,10 +1870,12 @@ export async function convertAudio(
   const { codec, dither, ext } = plan
   const copiedVerbatim = codec === 'copy' && preservesCuesInPlace(ext)
   // The trim runs first (every later stage works on the kept audio only), click
-  // repair next — the gains below were measured through both — and the dither
-  // stage last, right where the float chain is quantized back to 16 bits.
+  // repair next — the gains below were measured through both — then a pinned rate
+  // change, which -ar alone would leave to ffmpeg's dulling default resampler, and the
+  // dither stage last, right where the float chain is quantized back to 16 bits.
+  const rateAf = plan.sampleRateHz ? resampleTo(plan.sampleRateHz) : undefined
   const audioFilter =
-    [trimAf, declickAf, normalizeAf, dither ? DITHER_FILTER : undefined]
+    [trimAf, declickAf, normalizeAf, rateAf, dither ? DITHER_FILTER : undefined]
       .filter(Boolean)
       .join(',') || undefined
   const tmp = convertTmpPath(output, ext)
@@ -1968,7 +1971,7 @@ export async function convertAudio(
             String(
               (
                 await encode(
-                  [trimAf, declickAf, af, dither ? DITHER_FILTER : undefined]
+                  [trimAf, declickAf, af, rateAf, dither ? DITHER_FILTER : undefined]
                     .filter(Boolean)
                     .join(','),
                 )
