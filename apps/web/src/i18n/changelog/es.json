@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.3",
+    "date": "26 de septiembre de 2026",
+    "title": "Beatport en la búsqueda",
+    "items": [
+      {
+        "text": "Beatport se suma a las fuentes de búsqueda. Conecta tu cuenta en Ajustes → Búsqueda (una gratuita vale) y cada pista trae su BPM, su tonalidad en la notación que uses, el mix y el ISRC, además del sello, el número de catálogo y la carátula. Entre varias versiones con el mismo título, Surco elige la que nombra tu archivo, y el mix pasa al título salvo que sea «Original Mix». Viene apagado, y la contraseña se guarda cifrada y solo en tu ordenador.",
+        "in": "1.3.0"
+      },
+      {
+        "text": "Con «Nombres de archivo sin acentos» en Ajustes, los archivos se llaman «Royksopp» en vez de «Röyksopp»: útil para buscar en un NAS o para discos que fallan con las tildes. Las etiquetas conservan sus acentos.",
+        "in": "1.3.0"
+      },
+      {
+        "text": "Las letras con tilde que algunos archivos traen partidas en dos se guardan como una sola: borrar quita la letra entera, y Traktor, rekordbox y la búsqueda ven la misma palabra que escribes tú.",
+        "in": "1.3.0"
+      },
+      {
+        "text": "Normalizar el volumen o convertir a una frecuencia de muestreo fija ya no apaga lo más alto de los agudos.",
+        "in": "1.3.0"
+      }
+    ]
+  },
+  {
     "version": "1.2",
     "date": "24 de septiembre de 2026",
     "title": "Búsqueda más certera",

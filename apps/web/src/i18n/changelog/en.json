@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.3",
+    "date": "September 26, 2026",
+    "title": "Beatport in search",
+    "items": [
+      {
+        "text": "Beatport joins the search sources. Connect your account in Settings → Search (a free one will do) and each track brings its BPM, its key in the notation you use, the mix and the ISRC, along with the label, catalog number and artwork. Among several versions with the same title, Surco picks the one your file names, and the mix goes into the title unless it is “Original Mix”. It starts off, and your password is stored encrypted and only on your computer.",
+        "in": "1.3.0"
+      },
+      {
+        "text": "With “File names without accents” in Settings, files are named “Royksopp” instead of “Röyksopp”: handy for searching a NAS or for drives that trip over accents. The tags keep their accents.",
+        "in": "1.3.0"
+      },
+      {
+        "text": "Accented letters that some files carry split in two are now stored as one: backspace removes the whole letter, and Traktor, rekordbox and search see the same word you type.",
+        "in": "1.3.0"
+      },
+      {
+        "text": "Normalizing loudness or converting to a fixed sample rate no longer dulls the very top of the treble.",
+        "in": "1.3.0"
+      }
+    ]
+  },
+  {
     "version": "1.2",
     "date": "September 24, 2026",
     "title": "Sharper search",
