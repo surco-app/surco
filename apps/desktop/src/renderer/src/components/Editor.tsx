@@ -253,7 +253,7 @@ export const Editor = memo(function Editor({
     outputSampleRate,
     editorSections,
   } = useAppSettings()
-  const hasToken = discogsToken !== ''
+  const showTokenTip = discogsToken === '' && searchProviders.includes('discogs')
   const isMulti = (selectedTracks?.length ?? 0) > 1
   const { t: tr } = useTranslation()
   // A refined search is persisted on the track, so flipping away and back re-seeds
@@ -981,7 +981,7 @@ export const Editor = memo(function Editor({
         matchedTrack={matchedTrack}
         matchTier={matchTier}
         appliedTrack={appliedTrack}
-        hasToken={hasToken}
+        showTokenTip={showTokenTip}
         isMulti={isMulti}
         selectedTracks={selectedTracks}
         onApplyMatches={onApplyMatches}
