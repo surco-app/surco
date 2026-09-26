@@ -63,6 +63,7 @@ const ANALYSIS_QUERY_KEYS = [
   'waveformScan',
   'scanVerdict',
   'clicks',
+  'coverFull',
 ] as const
 
 // One predicate pass for the whole batch: every removeQueries call scans the entire cache,

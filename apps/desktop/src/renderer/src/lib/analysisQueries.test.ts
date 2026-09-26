@@ -172,6 +172,17 @@ describe('removeAnalysisQueries', () => {
       expect(client.getQueryData([key, '/m/b.wav'])).toEqual({ fact: key })
     }
   })
+
+  it('drops the full-size cover so the lightbox shows the artwork an update just wrote', () => {
+    const client = new QueryClient()
+    client.setQueryData(['coverFull', '/m/a.wav'], 'data:image/jpeg;base64,OLD')
+    client.setQueryData(['coverFull', '/m/b.wav'], 'data:image/jpeg;base64,OTHER')
+
+    removeAnalysisQueries(client, ['/m/a.wav'])
+
+    expect(client.getQueryData(['coverFull', '/m/a.wav'])).toBeUndefined()
+    expect(client.getQueryData(['coverFull', '/m/b.wav'])).toBe('data:image/jpeg;base64,OTHER')
+  })
   // Clearing a big list evicts thousands of paths at once. Each removeQueries call scans
   // the whole cache, so evicting family by family and path by path is quadratic and
   // freezes the window; the whole removal must cost a single pass.
