@@ -1302,7 +1302,7 @@ app.whenReady().then(() => {
       "default-src 'self'",
       "script-src 'self'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: surco: https://i.discogs.com https://img.discogs.com https://*.bcbits.com https://*.dzcdn.net",
+      "img-src 'self' data: blob: surco: https://i.discogs.com https://img.discogs.com https://*.bcbits.com https://*.dzcdn.net https://geo-media.beatport.com",
       "media-src 'self' blob: surco:",
       "connect-src 'self'",
     ].join('; ')
