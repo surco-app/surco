@@ -218,6 +218,16 @@ function artistMatch(target: string, artists: { name: string }[] | undefined): n
   return 0
 }
 
+export function trackDisplayTitle(track: ReleaseTrack): string {
+  return track.mixName ? `${track.title} (${track.mixName})` : track.title
+}
+
+function versionTitleSimilarity(target: string, track: ReleaseTrack): number {
+  const plain = titleSimilarity(target, track.title)
+  if (!track.mixName) return plain
+  return Math.max(plain, titleSimilarity(target, trackDisplayTitle(track)))
+}
+
 // Scores how strongly a tracklist entry matches the file, 0–1. Each signal
 // contributes its weight only when both sides carry it, and the weights are
 // renormalised over the signals actually present — so a release with no track
@@ -234,7 +244,7 @@ export function scoreTrack(
     weighted += weight * score
     total += weight
   }
-  if (normalize(target.title)) add(weights.title, titleSimilarity(target.title, track.title))
+  if (normalize(target.title)) add(weights.title, versionTitleSimilarity(target.title, track))
   if (target.durationSec !== undefined)
     add(weights.duration, durationProximity(target.durationSec, track.duration))
   if (target.trackNumber) add(weights.position, positionMatch(target.trackNumber, track.position))
@@ -570,6 +580,10 @@ export function buildReleaseMeta(
     publisher: publisher || current.publisher,
     catalogNumber: catalogNumber || current.catalogNumber,
     composer: composerOf(rel, track) || current.composer,
+    bpm: track?.bpm || current.bpm,
+    key: track?.key || current.key,
+    mixName: track?.mixName || current.mixName || '',
+    isrc: track?.isrc || current.isrc || '',
     // Provenance is Discogs-specific: a Bandcamp match must not stamp its id into the
     // Discogs field (it gates auto-match's "skip already-matched" and the release link),
     // so a non-Discogs apply leaves whatever was there untouched.
