@@ -549,17 +549,26 @@ export function useTrackLibrary({
       const { tags, duration, cover } = await window.api.readMeta(path)
       const { fileName } = parseFileName(path)
       const s = searchFromTags(parseFileName(path), tags)
-      enqueueMetaPatch(id, (t) => ({
-        ...t,
-        listLabel: s.title || fileName,
-        duration: duration ?? undefined,
-        embeddedCover: cover?.thumbUrl,
-        coverUrl: cover?.thumbUrl,
-        embeddedCoverDims:
-          cover && cover.width > 0 ? { w: cover.width, h: cover.height } : undefined,
-        coverRemoved: false,
-        metaCleared: false,
-      }))
+      enqueueMetaPatch(id, (t) => {
+        const refreshed: TrackItem = {
+          ...t,
+          listLabel: s.title || fileName,
+          duration: duration ?? undefined,
+          embeddedCover: cover?.thumbUrl,
+          coverUrl: cover?.thumbUrl,
+          embeddedCoverDims:
+            cover && cover.width > 0 ? { w: cover.width, h: cover.height } : undefined,
+          coverRemoved: false,
+          metaCleared: false,
+        }
+        const before = trackSignature(t)
+        const after = trackSignature(refreshed)
+        return {
+          ...refreshed,
+          ...(t.processedSignature === before && { processedSignature: after }),
+          ...(t.diskSignature === before && { diskSignature: after }),
+        }
+      })
     } catch {
       // Cosmetic: the row keeps the values it already had.
     }

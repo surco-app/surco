@@ -2,6 +2,7 @@
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
+import { isStale, trackSignature } from '../lib/dirty'
 import { NEW_TRACKS_PROMPT_TIMEOUT_MS, useTrackLibrary } from './useTrackLibrary'
 
 afterEach(() => {
@@ -1198,6 +1199,67 @@ describe('useTrackLibrary refresh after an in-place export', () => {
 
     expect(result.current.tracks[0].coverUrl).toBeUndefined()
     expect(result.current.tracks[0].coverRemoved).toBeFalsy()
+  })
+
+  it('does not ask to apply again a cover the export already wrote into the file', async () => {
+    const { result } = setupWith(
+      vi.fn().mockResolvedValue({
+        tags: { title: 'On Disk', artist: 'On Disk Artist' },
+        duration: 200,
+        cover: { thumbUrl: 'surco://cover/new.jpg', width: 600, height: 600 },
+        foreignTags: [],
+      }),
+    )
+    await act(() => result.current.addPaths(['/m/a.wav']))
+    const id = result.current.tracks[0].id
+    act(() => {
+      result.current.updateTrack(id, { coverUrl: 'https://i.discogs.com/release.jpg' })
+    })
+    const exported = trackSignature(result.current.tracks[0])
+    act(() => {
+      result.current.updateTrack(id, {
+        status: 'done',
+        processedSignature: exported,
+        diskSignature: exported,
+      })
+    })
+
+    await act(() => result.current.refreshTrackFromDisk(id, '/m/a.wav'))
+
+    expect(isStale(result.current.tracks[0])).toBe(false)
+    expect(result.current.tracks[0].diskSignature).toBe(trackSignature(result.current.tracks[0]))
+  })
+
+  it('keeps an edit typed during the export pending after the refresh', async () => {
+    const { result } = setupWith(
+      vi.fn().mockResolvedValue({
+        tags: { title: 'On Disk', artist: 'On Disk Artist' },
+        duration: 200,
+        cover: { thumbUrl: 'surco://cover/new.jpg', width: 600, height: 600 },
+        foreignTags: [],
+      }),
+    )
+    await act(() => result.current.addPaths(['/m/a.wav']))
+    const id = result.current.tracks[0].id
+    act(() => {
+      result.current.updateTrack(id, { coverUrl: 'https://i.discogs.com/release.jpg' })
+    })
+    const exported = trackSignature(result.current.tracks[0])
+    act(() => {
+      result.current.updateTrack(id, {
+        status: 'done',
+        processedSignature: exported,
+        diskSignature: exported,
+        meta: { ...result.current.tracks[0].meta, title: 'Typed While Converting' },
+      })
+    })
+
+    await act(() => result.current.refreshTrackFromDisk(id, '/m/a.wav'))
+
+    expect(isStale(result.current.tracks[0])).toBe(true)
+    expect(result.current.tracks[0].diskSignature).not.toBe(
+      trackSignature(result.current.tracks[0]),
+    )
   })
 
   // The refresh describes the file, nothing else: whatever the user has staged in the
