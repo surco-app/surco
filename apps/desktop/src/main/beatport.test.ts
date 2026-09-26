@@ -112,6 +112,17 @@ describe('the Beatport API client', () => {
     expect(session.invalidate).toHaveBeenCalledTimes(1)
   })
 
+  it('a dropped connection reads as Beatport unavailable, not a raw fetch error', async () => {
+    setBeatportSession(fakeSession())
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError('fetch failed')
+      }),
+    )
+    expect(await keyOf(search('offline query'))).toBe('beatportUnavailable')
+  })
+
   it('a second 401 is an error, not a loop', async () => {
     setBeatportSession(fakeSession())
     const fetch = stubFetch(() => new Response('', { status: 401 }))

@@ -31,6 +31,8 @@ async function api<T>(url: string, priority?: SearchPriority): Promise<T> {
     const res = await fetch(url, {
       headers: { 'User-Agent': USER_AGENT },
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    }).catch((err: unknown) => {
+      throw errorWithKey('deezerUnavailable', String(err))
     })
     if (!res.ok) throw errorWithKey('deezerUnavailable', String(res.status))
     const data = (await res.json()) as T & DeezerErrorBody

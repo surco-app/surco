@@ -343,6 +343,16 @@ describe('failures the user reads', () => {
     await expect(search('deezer down query')).rejects.toThrow(/^SURCO_ERR:deezerUnavailable/)
   })
 
+  it('stamps the same key when the connection drops, instead of a raw fetch error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError('fetch failed')
+      }),
+    )
+    await expect(search('deezer offline query')).rejects.toThrow(/^SURCO_ERR:deezerUnavailable/)
+  })
+
   it('stamps the same key when Deezer reports an error in the body', async () => {
     mockFetch([{ error: { code: 100 } }])
     await expect(search('deezer error body query')).rejects.toThrow(/^SURCO_ERR:deezerUnavailable/)
