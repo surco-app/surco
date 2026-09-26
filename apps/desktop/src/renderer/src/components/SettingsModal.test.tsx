@@ -1047,3 +1047,29 @@ describe('SettingsModal Beatport account', () => {
     )
   })
 })
+
+describe('SettingsModal search tab order', () => {
+  it('puts the account sections right under the sources, so ticking Beatport shows where to connect without scrolling', () => {
+    render(
+      <SettingsModal
+        settings={{ ...settings, searchProviders: ['discogs', 'beatport'] }}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-tab-search'))
+    const order = [
+      'settings-search-providers',
+      'beatport-username',
+      'settings-token',
+      'settings-auto-match',
+    ].map((id) => screen.getByTestId(id))
+    for (let i = 1; i < order.length; i++) {
+      expect(
+        order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    }
+  })
+})
