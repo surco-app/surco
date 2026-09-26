@@ -1088,13 +1088,15 @@ describe('SettingsModal Beatport card state', () => {
     fireEvent.click(screen.getByTestId('settings-tab-search'))
   }
 
-  it('says in the card title that Beatport is not connected yet, so a ticked box is not mistaken for ready', () => {
+  it('flags the card red while no account is connected, so a ticked box is not mistaken for ready', () => {
     openSearch({ beatportUsername: '' })
-    expect(screen.getByTestId('beatport-status')).toBeInTheDocument()
+    expect(screen.getByTestId('beatport-status')).toHaveAttribute('data-state', 'disconnected')
+    expect(screen.getByTestId('beatport-status').textContent).not.toContain('settings.')
   })
 
-  it('drops the warning once an account is connected', () => {
+  it('turns the flag green once an account is connected', () => {
     openSearch({ beatportUsername: 'dj' })
-    expect(screen.queryByTestId('beatport-status')).not.toBeInTheDocument()
+    expect(screen.getByTestId('beatport-status')).toHaveAttribute('data-state', 'connected')
+    expect(screen.getByTestId('beatport-status').textContent).not.toContain('settings.')
   })
 })

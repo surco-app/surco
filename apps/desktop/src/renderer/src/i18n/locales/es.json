@@ -925,6 +925,7 @@
     "discogsSection": "Discogs",
     "discogsDisabledHint": "Activa Discogs arriba para configurarlos.",
     "beatportSection": "Beatport",
+    "beatportConnected": "conectado",
     "beatportNotConnected": "sin conectar",
     "beatportDisabledHint": "Activa Beatport arriba para conectar tu cuenta.",
     "beatportHint": "Beatport no tiene API abierta: Surco busca con tu cuenta (una gratuita vale). La contraseña se guarda cifrada y solo en este ordenador.",
