@@ -7,6 +7,7 @@ import type {
   SearchResult,
 } from '../../shared/types'
 import * as bandcamp from '../bandcamp'
+import * as beatport from '../beatport'
 import * as deezer from '../deezer'
 import * as discogs from '../discogs'
 import { getSettings } from '../settings'
@@ -84,6 +85,13 @@ const providers: Record<SearchProviderId, SearchProvider> = {
       return deezer.search(cleanQuery(query, words), priority, cleanHints(hints, words))
     },
     getRelease: (ref, priority) => deezer.getRelease(ref as number, priority),
+  },
+  beatport: {
+    search: (query, priority, hints) => {
+      const words = ignoreWordsOf(getSettings().searchIgnoreWords)
+      return beatport.search(cleanQuery(query, words), priority, cleanHints(hints, words))
+    },
+    getRelease: (ref, priority) => beatport.getRelease(ref as number, priority),
   },
 }
 

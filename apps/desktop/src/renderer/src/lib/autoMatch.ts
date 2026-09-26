@@ -397,6 +397,7 @@ const PROVIDER_NAME: Record<SearchProviderId, string> = {
   discogs: 'Discogs',
   bandcamp: 'Bandcamp',
   deezer: 'Deezer',
+  beatport: 'Beatport',
 }
 
 function pct(confidence: number): number {

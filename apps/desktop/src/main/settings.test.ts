@@ -72,7 +72,7 @@ describe('defaults for a fresh install', () => {
   // A fresh install searches every source so a DJ reaches pressings (Discogs),
   // self-released / Bandcamp-exclusive material, and Deezer's commercial catalog in one
   // query, without first knowing any of them is an opt-in under Settings.
-  it('searches Discogs, Bandcamp and Deezer by default', () => {
+  it('searches Discogs, Bandcamp and Deezer by default, leaving Beatport off since it needs an account', () => {
     expect(defaults.searchProviders).toEqual(['discogs', 'bandcamp', 'deezer'])
   })
 

@@ -47,7 +47,7 @@ export interface ConversionQuality {
   flacCompression: FlacCompression
 }
 
-export type SearchProviderId = 'discogs' | 'bandcamp' | 'deezer'
+export type SearchProviderId = 'discogs' | 'bandcamp' | 'deezer' | 'beatport'
 
 // How a search request competes for the provider's rate-limited budget. 'high' is the track
 // the user is actively looking at (the editor's own search); 'low' is background work
@@ -519,6 +519,10 @@ export interface ReleaseTrack {
   duration?: string
   // Per-track credits ("Written-By", "Producer", …) — the source of the composer field.
   extraartists?: { name: string; role: string }[]
+  bpm?: string
+  key?: string
+  mixName?: string
+  isrc?: string
 }
 
 export interface Release {
@@ -767,6 +771,7 @@ export type ActivityKind =
   | 'discogs'
   | 'bandcamp'
   | 'deezer'
+  | 'beatport'
   | 'cover'
   | 'convert'
   | 'analyze'

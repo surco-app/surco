@@ -942,7 +942,8 @@
     "provider": {
       "discogs": "Discogs",
       "bandcamp": "Bandcamp",
-      "deezer": "Deezer"
+      "deezer": "Deezer",
+      "beatport": "Beatport"
     },
     "format": {
       "Vinyl": "Vinyle",
@@ -1328,6 +1329,8 @@
     "loadBandcampRelease": "Chargement de la release Bandcamp",
     "searchDeezer": "Recherche Deezer : {{query}}",
     "loadDeezerRelease": "Chargement de la release Deezer",
+    "searchBeatport": "Recherche Beatport : {{query}}",
+    "loadBeatportRelease": "Chargement de la release Beatport",
     "downloadCover": "Téléchargement de la pochette",
     "convert": "Conversion de {{track}}",
     "convertTagsChanged": "Tags : {{changed}} champs modifiés, {{kept}} intacts · {{fields}}",

@@ -27,7 +27,7 @@ export const defaults: Settings = {
   discogsMaxResults: DEFAULT_DISCOGS_MAX_RESULTS,
   // Search every offered source by default for the widest coverage (pressings plus
   // self-released and Bandcamp-exclusive material); any can be turned off in Settings.
-  searchProviders: [...SEARCH_PROVIDERS],
+  searchProviders: SEARCH_PROVIDERS.filter((p) => p !== 'beatport'),
   // The classic rip stamps everyone's files carry; whole-word matching keeps "rip" from
   // biting into a real title word ("Tripping"), and the list is the user's to edit.
   searchIgnoreWords: ['vinyl', 'rip'],

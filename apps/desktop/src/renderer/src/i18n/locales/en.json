@@ -942,7 +942,8 @@
     "provider": {
       "discogs": "Discogs",
       "bandcamp": "Bandcamp",
-      "deezer": "Deezer"
+      "deezer": "Deezer",
+      "beatport": "Beatport"
     },
     "format": {
       "Vinyl": "Vinyl",
@@ -1328,6 +1329,8 @@
     "loadBandcampRelease": "Loading Bandcamp release",
     "searchDeezer": "Searching Deezer: {{query}}",
     "loadDeezerRelease": "Loading Deezer release",
+    "searchBeatport": "Searching Beatport: {{query}}",
+    "loadBeatportRelease": "Loading Beatport release",
     "downloadCover": "Downloading cover",
     "convert": "Converting {{track}}",
     "convertTagsChanged": "Tags: {{changed}} fields changed, {{kept}} untouched · {{fields}}",
