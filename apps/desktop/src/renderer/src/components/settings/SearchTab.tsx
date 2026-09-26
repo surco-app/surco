@@ -48,14 +48,18 @@ export function SearchTab({
         eyebrow={
           <>
             {tr('settings.beatportSection')}
-            {!local.beatportUsername && (
-              <span
-                data-testid="beatport-status"
-                className="ml-1.5 font-normal text-[var(--color-warn)]"
-              >
-                · {tr('settings.beatportNotConnected')}
-              </span>
-            )}
+            <span
+              data-testid="beatport-status"
+              data-state={local.beatportUsername ? 'connected' : 'disconnected'}
+              className={`ml-2 inline-flex items-center gap-1.5 font-normal ${
+                local.beatportUsername ? 'text-[var(--color-good)]' : 'text-[var(--color-danger)]'
+              }`}
+            >
+              <span aria-hidden="true" className="h-2 w-2 rounded-full bg-current" />
+              {local.beatportUsername
+                ? tr('settings.beatportConnected')
+                : tr('settings.beatportNotConnected')}
+            </span>
           </>
         }
       >

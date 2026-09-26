@@ -925,6 +925,7 @@
     "discogsSection": "Discogs",
     "discogsDisabledHint": "Active Discogs ci-dessus pour configurer ces options.",
     "beatportSection": "Beatport",
+    "beatportConnected": "connecté",
     "beatportNotConnected": "non connecté",
     "beatportDisabledHint": "Active Beatport ci-dessus pour connecter ton compte.",
     "beatportHint": "Beatport n'a pas d'API ouverte : Surco cherche avec ton compte (un compte gratuit suffit). Le mot de passe est enregistré chiffré et uniquement sur cet ordinateur.",
