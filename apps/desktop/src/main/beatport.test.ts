@@ -103,7 +103,9 @@ describe('the Beatport API client', () => {
     const session = fakeSession()
     setBeatportSession(session)
     stubFetch((_url, auth) =>
-      auth === 'Bearer T1' ? new Response('', { status: 401 }) : Response.json({ tracks: searchHits }),
+      auth === 'Bearer T1'
+        ? new Response('', { status: 401 })
+        : Response.json({ tracks: searchHits }),
     )
     const rows = await search('rosalia 401 retry')
     expect(rows).toHaveLength(1)

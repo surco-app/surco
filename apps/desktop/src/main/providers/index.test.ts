@@ -1,28 +1,30 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SearchProviderId } from '../../shared/types'
 
-const { search, getRelease, getSettings, bcSearch, dzSearch, bpSearch, bpGetRelease } = vi.hoisted(() => ({
-  search: vi.fn(),
-  getRelease: vi.fn(),
-  getSettings: vi.fn(
-    (): {
-      discogsToken: string
-      discogsFormats: string[]
-      searchIgnoreWords: string[]
-      // Optional on purpose: an older settings.json predates the setting, and the seam
-      // has to cope with it missing.
-      discogsMaxResults?: number
-    } => ({
-      discogsToken: 'tok',
-      discogsFormats: [],
-      searchIgnoreWords: [],
-    }),
-  ),
-  bcSearch: vi.fn(),
-  dzSearch: vi.fn(),
-  bpSearch: vi.fn(),
-  bpGetRelease: vi.fn(),
-}))
+const { search, getRelease, getSettings, bcSearch, dzSearch, bpSearch, bpGetRelease } = vi.hoisted(
+  () => ({
+    search: vi.fn(),
+    getRelease: vi.fn(),
+    getSettings: vi.fn(
+      (): {
+        discogsToken: string
+        discogsFormats: string[]
+        searchIgnoreWords: string[]
+        // Optional on purpose: an older settings.json predates the setting, and the seam
+        // has to cope with it missing.
+        discogsMaxResults?: number
+      } => ({
+        discogsToken: 'tok',
+        discogsFormats: [],
+        searchIgnoreWords: [],
+      }),
+    ),
+    bcSearch: vi.fn(),
+    dzSearch: vi.fn(),
+    bpSearch: vi.fn(),
+    bpGetRelease: vi.fn(),
+  }),
+)
 
 vi.mock('../discogs', () => ({ search, getRelease }))
 vi.mock('../bandcamp', () => ({ search: bcSearch, getRelease: vi.fn() }))
