@@ -68,7 +68,7 @@ async function api<T>(path: string, priority?: SearchPriority): Promise<T> {
     })
     if (res.status === 401 && !refreshed) {
       refreshed = true
-      session.invalidate()
+      session.invalidate(token)
       continue
     }
     if (res.status === 429) {

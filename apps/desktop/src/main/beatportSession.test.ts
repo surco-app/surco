@@ -136,7 +136,7 @@ describe('Beatport session', () => {
       now: clock().now,
     })
     const first = await session.getAccessToken()
-    session.invalidate()
+    session.invalidate(first)
     expect(await session.getAccessToken()).not.toBe(first)
   })
 
@@ -200,5 +200,39 @@ describe('Beatport session', () => {
     })
     expect(await keyOf(session.getAccessToken())).toBe('beatportUnavailable')
     expect(await session.getAccessToken()).toBe('A1')
+  })
+
+  it('a late 401 carrying an old token does not throw away the one just renewed', async () => {
+    const bp = fakeBeatport({ refreshOk: true })
+    const session = createBeatportSession({
+      fetch: bp.fetch,
+      credentials: () => ({ username: 'u', password: 'p' }),
+      now: clock().now,
+    })
+    const stale = await session.getAccessToken()
+    session.invalidate(stale)
+    const renewed = await session.getAccessToken()
+    for (let i = 0; i < 9; i++) session.invalidate(stale)
+    expect(await session.getAccessToken()).toBe(renewed)
+    expect(bp.count('/v4/auth/o/token/')).toBe(2)
+  })
+
+  it('once the password is refused, a sweep stops asking Beatport for tokens at all', async () => {
+    const bp = fakeBeatport({ refreshOk: false })
+    const c = clock()
+    let password = 'p'
+    const session = createBeatportSession({
+      fetch: bp.fetch,
+      credentials: () => ({ username: 'u', password }),
+      now: c.now,
+    })
+    await session.getAccessToken()
+    password = 'changed-on-beatport'
+    c.advance(36_000_000)
+    await keyOf(session.getAccessToken())
+    const tokenCalls = bp.count('/v4/auth/o/token/')
+    for (let i = 0; i < 5; i++) await keyOf(session.getAccessToken())
+    expect(bp.count('/v4/auth/o/token/')).toBe(tokenCalls)
+    expect(bp.count('/v4/auth/login/')).toBe(2)
   })
 })

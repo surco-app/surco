@@ -18,7 +18,7 @@ export interface BeatportSessionDeps {
 
 export interface BeatportSession {
   getAccessToken(): Promise<string>
-  invalidate(): void
+  invalidate(staleAccess: string): void
   validate(credentials: BeatportCredentials): Promise<void>
   reset(): void
 }
@@ -133,6 +133,7 @@ export function createBeatportSession(deps: BeatportSessionDeps): BeatportSessio
   }
 
   const fresh = async (): Promise<string> => {
+    if (rejected) throw errorWithKey('beatportBadCredentials')
     if (token && token.expiresAt - EXPIRY_MARGIN_MS > deps.now()) return token.access
     if (token?.refresh) {
       const renewed = await renew(token.refresh)
@@ -143,12 +144,14 @@ export function createBeatportSession(deps: BeatportSessionDeps): BeatportSessio
     }
     const credentials = deps.credentials()
     if (!credentials) throw errorWithKey('beatportNotConnected')
-    if (rejected) throw errorWithKey('beatportBadCredentials')
     try {
       token = await login(credentials)
       return token.access
     } catch (err) {
-      if (errorKeyOf((err as Error).message) === 'beatportBadCredentials') rejected = true
+      if (errorKeyOf((err as Error).message) === 'beatportBadCredentials') {
+        rejected = true
+        token = undefined
+      }
       throw err
     }
   }
@@ -160,8 +163,8 @@ export function createBeatportSession(deps: BeatportSessionDeps): BeatportSessio
       })
       return inflight
     },
-    invalidate() {
-      if (token) token = { ...token, expiresAt: 0 }
+    invalidate(staleAccess) {
+      if (token?.access === staleAccess) token = { ...token, expiresAt: 0 }
     },
     async validate(credentials) {
       await login(credentials)
