@@ -16,6 +16,7 @@ const zeroStats = {
   discogsMatches: 0,
   bandcampMatches: 0,
   deezerMatches: 0,
+  beatportMatches: 0,
 }
 
 function withStats(over: Partial<Settings> = {}): Settings {
@@ -57,6 +58,7 @@ describe('StatsTab', () => {
             discogsMatches: 301,
             bandcampMatches: 17,
             deezerMatches: 44,
+            beatportMatches: 0,
           },
         })}
       />,
@@ -77,7 +79,13 @@ describe('StatsTab', () => {
       <StatsTab
         settings={withStats({
           conversionCount: 50,
-          stats: { ...zeroStats, discogsMatches: 30, bandcampMatches: 10, deezerMatches: 10 },
+          stats: {
+            ...zeroStats,
+            discogsMatches: 30,
+            bandcampMatches: 10,
+            deezerMatches: 10,
+            beatportMatches: 0,
+          },
         })}
       />,
     )

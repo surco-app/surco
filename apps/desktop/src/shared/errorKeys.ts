@@ -34,6 +34,11 @@ export const ERROR_KEYS = [
   'deezerUnavailable',
   'discogsUnavailable',
   'pathNotAllowed',
+  'beatportNotConnected',
+  'beatportBadCredentials',
+  'beatportUnavailable',
+  'beatportRateLimit',
+  'beatportNoSecureStorage',
 ] as const
 
 export type ErrorKey = (typeof ERROR_KEYS)[number]

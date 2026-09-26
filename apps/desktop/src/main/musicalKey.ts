@@ -120,3 +120,5 @@ export function detectKey(samples: Float32Array, sampleRate: number): KeyResult 
   if (best.confidence < MIN_CONFIDENCE) return null
   return best
 }
+
+export { MAJOR_CAMELOT, MAJOR_NAMES, MINOR_CAMELOT, MINOR_NAMES }

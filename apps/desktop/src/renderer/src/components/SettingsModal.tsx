@@ -312,7 +312,16 @@ export function SettingsModal({
               />
             )}
             {tab === 'search' && (
-              <SearchTab synced={synced} local={local} patch={patch} patchLocal={patchLocal} />
+              <SearchTab
+                synced={synced}
+                local={local}
+                patch={patch}
+                patchLocal={patchLocal}
+                onBeatportChange={(next) => {
+                  onSettingsReplaced(next)
+                  patchLocal('beatportUsername', next.beatportUsername)
+                }}
+              />
             )}
             {tab === 'conversion' && <ConversionTab synced={synced} patch={patch} />}
             {tab === 'processing' && <ProcessingTab synced={synced} patch={patch} />}

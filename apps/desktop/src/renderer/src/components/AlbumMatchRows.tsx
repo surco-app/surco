@@ -7,7 +7,12 @@ import { type Assignment, assignTracks, reassign } from '../lib/assign'
 import { matchTargetOf } from '../lib/autoMatch'
 import { keepCoverArg } from '../lib/coverSource'
 import { formatTime } from '../lib/duration'
-import { buildReleaseMeta, confidenceTier, type ReleaseMetaPatch } from '../lib/release'
+import {
+  buildReleaseMeta,
+  confidenceTier,
+  type ReleaseMetaPatch,
+  trackDisplayTitle,
+} from '../lib/release'
 import { useAppSettings } from '../lib/settingsContext'
 import { matchStatKey } from '../lib/stats'
 import type { TrackItem } from '../types'
@@ -17,7 +22,7 @@ import { Tooltip } from './Tooltip'
 // "A1 So Right (Original Mix) (7:17)" — position + title, with the listed duration so two
 // mixes of the same name stay tellable apart in the picker.
 function trackLabel(track: ReleaseTrack): string {
-  const head = [track.position, track.title].filter(Boolean).join(' ')
+  const head = [track.position, trackDisplayTitle(track)].filter(Boolean).join(' ')
   return track.duration ? `${head} (${track.duration})` : head
 }
 

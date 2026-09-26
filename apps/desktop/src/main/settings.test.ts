@@ -50,6 +50,7 @@ import {
   getConfigDir,
   getSettings,
   migrateBackupPolicy,
+  migrateImportFields,
   migrateProviderDefaults,
   recordConversion,
   recordStat,
@@ -57,6 +58,7 @@ import {
   sanitizeSettingsPatch,
   saveSettings,
   setConfigDir,
+  settingsForRenderer,
 } from './settings'
 
 afterAll(() => rmSync(app.getPath('userData'), { recursive: true, force: true }))
@@ -72,7 +74,7 @@ describe('defaults for a fresh install', () => {
   // A fresh install searches every source so a DJ reaches pressings (Discogs),
   // self-released / Bandcamp-exclusive material, and Deezer's commercial catalog in one
   // query, without first knowing any of them is an opt-in under Settings.
-  it('searches Discogs, Bandcamp and Deezer by default', () => {
+  it('searches Discogs, Bandcamp and Deezer by default, leaving Beatport off since it needs an account', () => {
     expect(defaults.searchProviders).toEqual(['discogs', 'bandcamp', 'deezer'])
   })
 
@@ -221,6 +223,22 @@ describe('recordStat', () => {
 })
 
 describe('sanitizeSettingsPatch', () => {
+  it('a renderer save carrying an empty password leaves the stored one intact', () => {
+    saveSettings({ beatportUsername: 'dj', beatportPassword: 'ENCRYPTED' })
+    saveSettings(
+      sanitizeSettingsPatch({ theme: 'dark', beatportUsername: '', beatportPassword: '' }),
+    )
+    expect(getSettings().beatportUsername).toBe('dj')
+    expect(getSettings().beatportPassword).toBe('ENCRYPTED')
+  })
+
+  it('settingsForRenderer never hands the encrypted password to the renderer', () => {
+    saveSettings({ beatportUsername: 'dj', beatportPassword: 'ENCRYPTED' })
+    const shown = settingsForRenderer(getSettings())
+    expect(shown.beatportPassword).toBe('')
+    expect(shown.beatportUsername).toBe('dj')
+  })
+
   // stats and conversionCount are internal tallies bumped only by recordStat /
   // recordConversion — no legitimate renderer caller patches them through
   // settings:set. Left unguarded, that channel would let a compromised renderer
@@ -234,6 +252,7 @@ describe('sanitizeSettingsPatch', () => {
       discogsMatches: 999,
       bandcampMatches: 999,
       deezerMatches: 999,
+      beatportMatches: 999,
     }
     expect(
       sanitizeSettingsPatch({ theme: 'dark', stats: forgedStats, conversionCount: 999 }),
@@ -388,6 +407,15 @@ describe('configurable settings folder', () => {
   const read = (path: string): Record<string, unknown> => JSON.parse(readFileSync(path, 'utf-8'))
 
   afterEach(() => setConfigDir(null))
+
+  it('the Beatport account stays in the local file, never the synced folder', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))
+    setConfigDir(dir)
+    saveSettings({ beatportUsername: 'dj', beatportPassword: 'ENCRYPTED' })
+    expect(read(syncedFile(dir))).not.toHaveProperty('beatportUsername')
+    expect(read(syncedFile(dir))).not.toHaveProperty('beatportPassword')
+    expect(read(localFile()).beatportPassword).toBe('ENCRYPTED')
+  })
 
   it('seeds the chosen folder with current prefs and reads/writes through it', () => {
     saveSettings({ keyNotation: 'musical' })
@@ -725,5 +753,50 @@ describe('migrateBackupPolicy', () => {
     )
     migrateBackupPolicy()
     expect(getSettings().backupPolicy).toBe('always')
+  })
+})
+
+describe('migrateImportFields', () => {
+  const wipe = (): void => {
+    rmSync(join(app.getPath('userData'), 'settings.json'), { force: true })
+    rmSync(join(app.getPath('userData'), 'config-dir.json'), { force: true })
+  }
+  beforeEach(wipe)
+  afterEach(wipe)
+
+  it('adds bpm, key, mix and isrc once to an import list saved before they could be imported', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ importFields: ['title', 'artist'] }),
+    )
+    migrateImportFields()
+    const s = getSettings()
+    expect(s.importFields).toEqual(['title', 'artist', 'bpm', 'key', 'mixName', 'isrc'])
+    expect(s.trackImportFieldsMigrated).toBe(true)
+  })
+
+  it('never re-adds a field the user opted out of after the migration ran', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ importFields: ['title'], trackImportFieldsMigrated: true }),
+    )
+    migrateImportFields()
+    expect(getSettings().importFields).toEqual(['title'])
+  })
+
+  it('respects an import list the user emptied on purpose, so Beatport never overwrites their bpm or key', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ importFields: [] }),
+    )
+    migrateImportFields()
+    expect(getSettings().importFields).toEqual([])
+    expect(getSettings().trackImportFieldsMigrated).toBe(true)
+  })
+
+  it('does not duplicate fields a fresh install already imports', () => {
+    migrateImportFields()
+    const fields = getSettings().importFields ?? []
+    expect(fields.filter((f) => f === 'bpm')).toHaveLength(1)
   })
 })

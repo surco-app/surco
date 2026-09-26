@@ -5,7 +5,12 @@ import { Trans, useTranslation } from 'react-i18next'
 import type { ReleaseTrack, SearchProviderId } from '../../../shared/types'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useOpenSettings } from '../lib/openSettingsContext'
-import { type ReleaseMetaPatch, resultIdentity, resultPressing } from '../lib/release'
+import {
+  type ReleaseMetaPatch,
+  resultIdentity,
+  resultPressing,
+  trackDisplayTitle,
+} from '../lib/release'
 import { contentDeficit } from '../lib/resize'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
@@ -525,7 +530,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                                 data-fit
                                 className="min-w-0 flex-1 truncate text-sm font-medium text-fg"
                               >
-                                {t.title}
+                                {trackDisplayTitle(t)}
                               </span>
                               {/* The suggestion mark mirrors the track list's match sparkle
                                   (not a tick: a check reads as "already applied", but the

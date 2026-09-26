@@ -47,7 +47,7 @@ export interface ConversionQuality {
   flacCompression: FlacCompression
 }
 
-export type SearchProviderId = 'discogs' | 'bandcamp' | 'deezer'
+export type SearchProviderId = 'discogs' | 'bandcamp' | 'deezer' | 'beatport'
 
 // How a search request competes for the provider's rate-limited budget. 'high' is the track
 // the user is actively looking at (the editor's own search); 'low' is background work
@@ -127,6 +127,8 @@ export interface Settings {
   // UI language; 'system' (the default) follows the OS locale.
   language: LanguagePref
   discogsToken: string
+  beatportUsername: string
+  beatportPassword: string
   // Restrict Discogs search results to these release-format buckets (from DISCOGS_FORMATS,
   // e.g. "Vinyl", "CD"). Empty (the default) shows every format. A single selection
   // filters server-side via the API's `format` param; several filter client-side.
@@ -309,6 +311,7 @@ export interface Settings {
   deezerProviderMigrated: boolean
   // One-shot marker for moving the old 'always' default onto 'audioChanges' (settings.ts).
   backupPolicyMigrated: boolean
+  trackImportFieldsMigrated: boolean
   conversionCount: number
   // Lifetime activity tally behind the Stats tab, next to conversionCount. Bumped
   // only in the main process (stats:record fire-and-forget), so near-simultaneous
@@ -336,6 +339,7 @@ export interface LifetimeStats {
   discogsMatches: number
   bandcampMatches: number
   deezerMatches: number
+  beatportMatches: number
 }
 
 // An entry in Surco's own trash (main/surcoTrash.ts): a file a conversion replaced or
@@ -519,6 +523,10 @@ export interface ReleaseTrack {
   duration?: string
   // Per-track credits ("Written-By", "Producer", …) — the source of the composer field.
   extraartists?: { name: string; role: string }[]
+  bpm?: string
+  key?: string
+  mixName?: string
+  isrc?: string
 }
 
 export interface Release {
@@ -767,6 +775,7 @@ export type ActivityKind =
   | 'discogs'
   | 'bandcamp'
   | 'deezer'
+  | 'beatport'
   | 'cover'
   | 'convert'
   | 'analyze'

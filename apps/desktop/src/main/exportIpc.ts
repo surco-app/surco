@@ -5,14 +5,15 @@ import { buildSeratoCrate } from '../shared/serato'
 import type { Settings } from '../shared/types'
 import { activity } from './activity'
 import type { createMenuT } from './i18n'
-import { defaults, getSettings, replaceSettings } from './settings'
+import { defaults, getSettings, replaceSettings, settingsForRenderer } from './settings'
 
 // The DJ-software export dialogs, split out of index.ts's registerIpc by domain (the
 // audioIpc.ts precedent): each picks a destination, writes the bytes the renderer
 // produced, and reports the write to the activity feed. None of them touch window or
 // session state, which is what makes the domain self-contained.
 export function serializeSettingsForExport(): string {
-  return JSON.stringify(getSettings(), null, 2)
+  const { beatportUsername: _user, beatportPassword: _password, ...exported } = getSettings()
+  return JSON.stringify(exported, null, 2)
 }
 
 export function applyImportedSettings(raw: unknown): Settings {
@@ -169,7 +170,7 @@ export function registerExportIpc(menuT: () => ReturnType<typeof createMenuT>): 
     if (canceled || filePaths.length === 0) return null
     try {
       const raw = JSON.parse(await readFile(filePaths[0], 'utf8'))
-      const settings = applyImportedSettings(raw)
+      const settings = settingsForRenderer(applyImportedSettings(raw))
       return { ok: true as const, settings }
     } catch (err) {
       return { ok: false as const, error: err instanceof Error ? err.message : String(err) }

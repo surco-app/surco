@@ -29,6 +29,8 @@ const settings: Settings = {
   theme: 'system',
   language: 'system',
   discogsToken: '',
+  beatportUsername: '',
+  beatportPassword: '',
   discogsFormats: [],
   discogsMaxResults: 10,
   searchProviders: ['discogs'],
@@ -91,6 +93,7 @@ const settings: Settings = {
   hasSeenOnboarding: true,
   deezerProviderMigrated: true,
   backupPolicyMigrated: true,
+  trackImportFieldsMigrated: true,
   conversionCount: 0,
   stats: {
     imported: 0,
@@ -99,6 +102,7 @@ const settings: Settings = {
     discogsMatches: 0,
     bandcampMatches: 0,
     deezerMatches: 0,
+    beatportMatches: 0,
   },
   donateNudgeDismissed: false,
   donateNudgeLastShown: '',
@@ -1016,5 +1020,30 @@ describe('SettingsModal backup', () => {
     fireEvent.click(screen.getByTestId('settings-import'))
     await Promise.resolve()
     expect(onSettingsReplaced).not.toHaveBeenCalled()
+  })
+})
+
+describe('SettingsModal Beatport account', () => {
+  it('connecting applies at once, so the app searches Beatport without waiting for Save', async () => {
+    const api = window.api as unknown as Record<string, unknown>
+    api.beatportConnect = vi.fn(async () => ({ ...settings, beatportUsername: 'dj' }))
+    const onSettingsReplaced = vi.fn()
+    render(
+      <SettingsModal
+        settings={{ ...settings, searchProviders: ['beatport'] }}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={onSettingsReplaced}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-tab-search'))
+    fireEvent.change(screen.getByTestId('beatport-username'), { target: { value: 'dj' } })
+    fireEvent.change(screen.getByTestId('beatport-password'), { target: { value: 'p' } })
+    fireEvent.click(screen.getByTestId('beatport-connect'))
+    expect(await screen.findByTestId('beatport-connected')).toHaveTextContent('dj')
+    expect(onSettingsReplaced).toHaveBeenCalledWith(
+      expect.objectContaining({ beatportUsername: 'dj' }),
+    )
   })
 })

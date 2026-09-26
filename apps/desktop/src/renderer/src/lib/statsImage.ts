@@ -24,6 +24,7 @@ const CELL_ORDER: (keyof LifetimeStats)[] = [
   'discogsMatches',
   'bandcampMatches',
   'deezerMatches',
+  'beatportMatches',
 ]
 
 interface StatsImageCell {

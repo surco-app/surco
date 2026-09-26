@@ -1,6 +1,7 @@
 import {
   Activity as ActivityIcon,
   AlertCircle,
+  AudioLines,
   CheckCircle2,
   ChevronRight,
   Copy,
@@ -58,6 +59,7 @@ const KIND_ICON: Record<ActivityKind, typeof Disc3> = {
   discogs: Disc3,
   bandcamp: Music,
   deezer: Radio,
+  beatport: AudioLines,
   cover: ImageIcon,
   convert: Disc3,
   analyze: ActivityIcon,

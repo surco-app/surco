@@ -27,4 +27,11 @@ describe('serializeSettingsForExport', () => {
     expect(parsed.theme).toBe('dark')
     expect(parsed.stats).toBeDefined()
   })
+
+  it('an export never carries the Beatport account, which only decrypts on this machine', () => {
+    saveSettings({ beatportUsername: 'dj', beatportPassword: 'ENCRYPTED' })
+    const parsed = JSON.parse(serializeSettingsForExport())
+    expect(parsed).not.toHaveProperty('beatportUsername')
+    expect(parsed).not.toHaveProperty('beatportPassword')
+  })
 })

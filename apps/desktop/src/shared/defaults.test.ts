@@ -20,7 +20,7 @@ describe('normalizeImportFields', () => {
   // version, or a typo in a hand-edited file. Dropping it keeps the list meaning exactly
   // "these metadata keys" rather than "these strings we hope are keys".
   it('drops names that are not importable fields', () => {
-    expect(normalizeImportFields(['album', 'nonsense', 'bpm'])).toEqual(['album'])
+    expect(normalizeImportFields(['album', 'nonsense', 'mood'])).toEqual(['album'])
   })
 
   // No preference stored (every install before this feature) must mean "import everything",

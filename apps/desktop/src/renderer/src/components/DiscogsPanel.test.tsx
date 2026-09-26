@@ -279,6 +279,24 @@ describe('cursor de teclado', () => {
     for (const c of cards) expect(c).toHaveAttribute('aria-expanded', 'false')
   })
 
+  it('names each Beatport version by its mix, since they share the title', () => {
+    const release = {
+      provider: 'discogs' as const,
+      id: 1,
+      title: 'DESPECHÁ',
+      artists: [],
+      tracklist: [
+        { position: '1', title: 'DESPECHÁ', mixName: 'Clean' },
+        { position: '2', title: 'DESPECHÁ', mixName: 'Intro' },
+      ],
+    }
+    renderPanel(browser({ results, openKey: 'discogs:1', release, loading: false }))
+    expect(screen.getAllByTestId('discogs-track').map((t) => t.textContent)).toEqual([
+      expect.stringContaining('DESPECHÁ (Clean)'),
+      expect.stringContaining('DESPECHÁ (Intro)'),
+    ])
+  })
+
   it('marca visiblemente la pista enfocada dentro de un release desplegado', () => {
     const release = {
       provider: 'discogs' as const,

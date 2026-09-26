@@ -50,6 +50,8 @@ import {
 } from './applemusic'
 import { appMenuTemplate } from './appMenu'
 import { registerAudioIpc } from './audioIpc'
+import { setBeatportSession } from './beatport'
+import { beatportSession, connectBeatport, disconnectBeatport } from './beatportCredentials'
 import type { CoverSource } from './cover'
 import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
@@ -86,12 +88,14 @@ import {
   getConfigDir,
   getSettings,
   migrateBackupPolicy,
+  migrateImportFields,
   migrateProviderDefaults,
   recordConversion,
   recordStat,
   sanitizeSettingsPatch,
   saveSettings,
   setConfigDir,
+  settingsForRenderer,
 } from './settings'
 import { registerShellIpc } from './shellIpc'
 import { createStickyConflict } from './stickyConflict'
@@ -573,7 +577,7 @@ function registerIpc(): void {
     syncDockAnimation()
   })
 
-  ipcMain.handle('settings:get', () => getSettings())
+  ipcMain.handle('settings:get', () => settingsForRenderer(getSettings()))
   ipcMain.handle('settings:set', (e, patch: Partial<Settings>) => {
     const next = saveSettings(sanitizeSettingsPatch(patch))
     // Rebinding a shortcut changes the menu accelerators, and pinning a language
@@ -583,8 +587,14 @@ function registerIpc(): void {
       const win = BrowserWindow.fromWebContents(e.sender)
       if (win) buildAppMenu(win)
     }
-    return next
+    return settingsForRenderer(next)
   })
+
+  setBeatportSession(beatportSession)
+  ipcMain.handle('beatport:connect', async (_e, username: string, password: string) =>
+    settingsForRenderer(await connectBeatport(username, password)),
+  )
+  ipcMain.handle('beatport:disconnect', () => settingsForRenderer(disconnectBeatport()))
 
   // Fire-and-forget lifetime-tally bumps from the renderer (imports, listens, match
   // applies). The key is allowlisted here — this channel takes renderer input, so an
@@ -597,6 +607,7 @@ function registerIpc(): void {
       'discogsMatches',
       'bandcampMatches',
       'deezerMatches',
+      'beatportMatches',
     ] satisfies (keyof Settings['stats'])[]
     if (typeof key === 'string' && keys.includes(key)) {
       recordStat(key as keyof Settings['stats'], typeof by === 'number' ? by : 1)
@@ -623,7 +634,9 @@ function registerIpc(): void {
   ipcMain.handle('settings:defaultConfigDir', () => defaultConfigDir())
   // Switching the settings folder takes effect immediately (no Save step): it moves
   // where settings.json lives, returning the settings now in effect from that folder.
-  ipcMain.handle('settings:setConfigDir', (_e, dir: string | null) => setConfigDir(dir))
+  ipcMain.handle('settings:setConfigDir', (_e, dir: string | null) =>
+    settingsForRenderer(setConfigDir(dir)),
+  )
 
   ipcMain.handle('cache:stats', () => analysisCacheStats())
   ipcMain.handle('cache:clear', () => clearAnalysisCache())
@@ -1290,7 +1303,7 @@ app.whenReady().then(() => {
       "default-src 'self'",
       "script-src 'self'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: surco: https://i.discogs.com https://img.discogs.com https://*.bcbits.com https://*.dzcdn.net",
+      "img-src 'self' data: blob: surco: https://i.discogs.com https://img.discogs.com https://*.bcbits.com https://*.dzcdn.net https://geo-media.beatport.com",
       "media-src 'self' blob: surco:",
       "connect-src 'self'",
     ].join('; ')
@@ -1368,6 +1381,7 @@ app.whenReady().then(() => {
   })
   migrateProviderDefaults()
   migrateBackupPolicy()
+  migrateImportFields()
   createWindow()
 
   // Downloads a newer version in the background, then tells the renderer so it can

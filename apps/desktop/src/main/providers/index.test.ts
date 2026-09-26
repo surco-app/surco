@@ -1,30 +1,35 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SearchProviderId } from '../../shared/types'
 
-const { search, getRelease, getSettings, bcSearch, dzSearch } = vi.hoisted(() => ({
-  search: vi.fn(),
-  getRelease: vi.fn(),
-  getSettings: vi.fn(
-    (): {
-      discogsToken: string
-      discogsFormats: string[]
-      searchIgnoreWords: string[]
-      // Optional on purpose: an older settings.json predates the setting, and the seam
-      // has to cope with it missing.
-      discogsMaxResults?: number
-    } => ({
-      discogsToken: 'tok',
-      discogsFormats: [],
-      searchIgnoreWords: [],
-    }),
-  ),
-  bcSearch: vi.fn(),
-  dzSearch: vi.fn(),
-}))
+const { search, getRelease, getSettings, bcSearch, dzSearch, bpSearch, bpGetRelease } = vi.hoisted(
+  () => ({
+    search: vi.fn(),
+    getRelease: vi.fn(),
+    getSettings: vi.fn(
+      (): {
+        discogsToken: string
+        discogsFormats: string[]
+        searchIgnoreWords: string[]
+        // Optional on purpose: an older settings.json predates the setting, and the seam
+        // has to cope with it missing.
+        discogsMaxResults?: number
+      } => ({
+        discogsToken: 'tok',
+        discogsFormats: [],
+        searchIgnoreWords: [],
+      }),
+    ),
+    bcSearch: vi.fn(),
+    dzSearch: vi.fn(),
+    bpSearch: vi.fn(),
+    bpGetRelease: vi.fn(),
+  }),
+)
 
 vi.mock('../discogs', () => ({ search, getRelease }))
 vi.mock('../bandcamp', () => ({ search: bcSearch, getRelease: vi.fn() }))
 vi.mock('../deezer', () => ({ search: dzSearch, getRelease: vi.fn() }))
+vi.mock('../beatport', () => ({ search: bpSearch, getRelease: bpGetRelease }))
 vi.mock('../settings', () => ({ getSettings }))
 
 import { DEFAULT_PROVIDER, getProvider } from './index'
@@ -32,6 +37,21 @@ import { DEFAULT_PROVIDER, getProvider } from './index'
 afterEach(() => vi.clearAllMocks())
 
 describe('getProvider', () => {
+  it("beatport releases reach the renderer with the key already in the user's notation", async () => {
+    getSettings.mockReturnValueOnce({ ...getSettings(), keyNotation: 'musical' } as never)
+    bpGetRelease.mockResolvedValue({ tracklist: [{ title: 'x', position: '1', key: 'Eb Minor' }] })
+    const rel = await getProvider('beatport').getRelease(1)
+    expect(rel.tracklist[0].key).toBe('Ebm')
+  })
+
+  it('routes Beatport searches to its client with the cleaned query and hints', async () => {
+    bpSearch.mockResolvedValue([{ id: 7 }])
+    const hints = { artist: 'ROSALÍA', title: 'DESPECHÁ' }
+    const out = await getProvider('beatport').search('ROSALÍA DESPECHÁ', 'high', hints)
+    expect(bpSearch).toHaveBeenCalledWith('ROSALÍA DESPECHÁ', 'high', hints)
+    expect(out).toEqual([{ id: 7 }])
+  })
+
   it('sends the query with composed accents, since Beatport misses "Rosalía" typed decomposed', async () => {
     search.mockResolvedValue([])
     await getProvider('discogs').search('Rosalía Despechá'.normalize('NFD'), 'high', {

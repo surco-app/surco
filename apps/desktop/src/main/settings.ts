@@ -22,12 +22,14 @@ export const defaults: Settings = {
   // Follow the OS locale by default; the user can pin English or Spanish.
   language: 'system',
   discogsToken: '',
+  beatportUsername: '',
+  beatportPassword: '',
   // No format filter by default: search shows every Discogs release format.
   discogsFormats: [],
   discogsMaxResults: DEFAULT_DISCOGS_MAX_RESULTS,
   // Search every offered source by default for the widest coverage (pressings plus
   // self-released and Bandcamp-exclusive material); any can be turned off in Settings.
-  searchProviders: [...SEARCH_PROVIDERS],
+  searchProviders: SEARCH_PROVIDERS.filter((p) => p !== 'beatport'),
   // The classic rip stamps everyone's files carry; whole-word matching keeps "rip" from
   // biting into a real title word ("Tripping"), and the list is the user's to edit.
   searchIgnoreWords: ['vinyl', 'rip'],
@@ -123,6 +125,7 @@ export const defaults: Settings = {
   hasSeenOnboarding: false,
   deezerProviderMigrated: false,
   backupPolicyMigrated: false,
+  trackImportFieldsMigrated: false,
   conversionCount: 0,
   stats: {
     imported: 0,
@@ -131,6 +134,7 @@ export const defaults: Settings = {
     discogsMatches: 0,
     bandcampMatches: 0,
     deezerMatches: 0,
+    beatportMatches: 0,
   },
   commandUsage: {},
   donateNudgeDismissed: false,
@@ -165,6 +169,8 @@ const LOCAL_KEYS = [
   // A pixel position only means something on the screen it was saved on.
   'activityPanel',
   'resultsWidth',
+  'beatportUsername',
+  'beatportPassword',
 ] as const satisfies readonly (keyof Settings)[]
 
 // Repairs any stored value into a valid format: a synced settings.json can carry an
@@ -394,7 +400,13 @@ function writeAtomic(path: string, value: unknown): void {
 const INTERNAL_ONLY_KEYS = [
   'stats',
   'conversionCount',
+  'beatportUsername',
+  'beatportPassword',
 ] as const satisfies readonly (keyof Settings)[]
+
+export function settingsForRenderer(settings: Settings): Settings {
+  return { ...settings, beatportPassword: '' }
+}
 
 export function sanitizeSettingsPatch(patch: Partial<Settings>): Partial<Settings> {
   const clean = { ...patch }
@@ -492,6 +504,20 @@ export function migrateProviderDefaults(): void {
     ? cur.searchProviders
     : [...cur.searchProviders, 'deezer' as const]
   saveSettings({ searchProviders, deezerProviderMigrated: true })
+}
+
+const TRACK_IMPORT_FIELDS = ['bpm', 'key', 'mixName', 'isrc']
+
+export function migrateImportFields(): void {
+  const cur = getSettings()
+  if (cur.trackImportFieldsMigrated) return
+  const stored = cur.importFields ?? []
+  saveSettings({
+    importFields: stored.length
+      ? [...stored, ...TRACK_IMPORT_FIELDS.filter((f) => !stored.includes(f))]
+      : stored,
+    trackImportFieldsMigrated: true,
+  })
 }
 
 // 'always' was the default until the tag-edit copies filled a user's disk, and settings

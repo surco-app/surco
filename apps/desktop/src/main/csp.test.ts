@@ -16,6 +16,7 @@ const PROVIDER_IMAGE_HOSTS = [
   'https://img.discogs.com',
   'https://*.bcbits.com',
   'https://*.dzcdn.net',
+  'https://geo-media.beatport.com',
 ]
 
 // Each extractor anchors on how its file quotes the directive (the HTML terminates it

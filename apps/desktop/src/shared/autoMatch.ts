@@ -5,7 +5,16 @@ import type { Settings } from './types'
 // all users — a personal token whenever Discogs is one of those sources, so a whole-import
 // sweep doesn't exhaust the shared budget. Bandcamp-only auto-match needs no token. The
 // single source of truth shared by the settings store, the App sweep gate and the UI.
-export function autoMatchAvailable(s: Pick<Settings, 'searchProviders' | 'discogsToken'>): boolean {
-  if (s.searchProviders.length === 0) return false
-  return !s.searchProviders.includes('discogs') || s.discogsToken.trim() !== ''
+export function usableProviders(
+  s: Pick<Settings, 'searchProviders'> & { beatportUsername?: string },
+): Settings['searchProviders'] {
+  return s.beatportUsername ? s.searchProviders : s.searchProviders.filter((p) => p !== 'beatport')
+}
+
+export function autoMatchAvailable(
+  s: Pick<Settings, 'searchProviders' | 'discogsToken'> & { beatportUsername?: string },
+): boolean {
+  const usable = usableProviders(s)
+  if (usable.length === 0) return false
+  return !usable.includes('discogs') || s.discogsToken.trim() !== ''
 }

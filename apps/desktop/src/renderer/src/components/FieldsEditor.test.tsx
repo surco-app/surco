@@ -296,13 +296,13 @@ describe('auto-fill toggle', () => {
     expect(screen.getByTestId('field-auto-title')).toHaveAccessibleName(/auto/i)
   })
 
-  // No provider supplies BPM, key, mood or a personal comment — they are the DJ's own
+  // No provider supplies mood or a personal comment — they are the DJ's own
   // work. A toggle there would promise an import that can never happen, so the button is
   // absent rather than present-but-dead.
   it('offers no toggle on a field no provider can fill', () => {
-    setup({ visibleFields: ['title', 'bpm', 'comment'], requiredFields: [] })
+    setup({ visibleFields: ['title', 'mood', 'comment'], requiredFields: [] })
     expect(screen.getByTestId('field-auto-title')).toBeInTheDocument()
-    expect(screen.queryByTestId('field-auto-bpm')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('field-auto-mood')).not.toBeInTheDocument()
     expect(screen.queryByTestId('field-auto-comment')).not.toBeInTheDocument()
   })
 

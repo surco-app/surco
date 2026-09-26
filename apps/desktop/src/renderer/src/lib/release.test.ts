@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_IMPORT_FIELDS } from '../../../shared/defaults'
 import { METADATA_KEYS } from '../../../shared/metadata'
 import { cleanMatchTitle } from '../../../shared/searchClean'
 import type { Release, ReleaseTrack, SearchResult, TrackMetadata } from '../../../shared/types'
@@ -25,6 +26,7 @@ import {
   scoreTrack,
   stepImageIndex,
   titleSimilarity,
+  trackDisplayTitle,
 } from './release'
 
 function release(over: Partial<Release> = {}): Release {
@@ -368,7 +370,43 @@ describe('titleSimilarity', () => {
   })
 })
 
+describe('trackDisplayTitle', () => {
+  it('shows the mix beside the title, or four Beatport versions read as one', () => {
+    expect(trackDisplayTitle({ position: '3', title: 'DESPECHÁ', mixName: 'Intro' })).toBe(
+      'DESPECHÁ (Intro)',
+    )
+    expect(trackDisplayTitle({ position: 'A1', title: 'Windowlicker' })).toBe('Windowlicker')
+  })
+})
+
 describe('bestMatch', () => {
+  describe('same-titled versions from Beatport', () => {
+    const versions: ReleaseTrack[] = [
+      { position: '1', title: 'DESPECHÁ', mixName: 'Clean', duration: '2:37' },
+      { position: '2', title: 'DESPECHÁ', mixName: 'Intro - Clean', duration: '2:42' },
+      { position: '3', title: 'DESPECHÁ', mixName: 'Intro', duration: '2:42' },
+      { position: '4', title: 'DESPECHÁ', mixName: 'Instrumental', duration: '2:37' },
+    ]
+
+    it('picks the version whose mix the file names among same-titled tracks', () => {
+      expect(
+        bestMatch(versions, { title: 'DESPECHÁ (Intro)', durationSec: 162 })?.track.mixName,
+      ).toBe('Intro')
+      expect(
+        bestMatch(versions, { title: 'Despechá (Instrumental)', durationSec: 157 })?.track.mixName,
+      ).toBe('Instrumental')
+    })
+
+    it('a plain title is not penalised for the Original Mix label Beatport adds', () => {
+      const plain = scoreTrack({ position: '1', title: 'W.I.P.' }, { title: 'W.I.P.' })
+      const labelled = scoreTrack(
+        { position: '1', title: 'W.I.P.', mixName: 'Original Mix' },
+        { title: 'W.I.P.' },
+      )
+      expect(labelled).toBe(plain)
+    })
+  })
+
   const tracks: ReleaseTrack[] = [
     { position: 'A1', title: 'Windowlicker' },
     { position: 'A2', title: 'Windowlicker (Acid Edit)' },
@@ -943,6 +981,50 @@ describe('resultIdentity / resultPressing', () => {
 describe('buildReleaseMeta', () => {
   const track: ReleaseTrack = { position: 'A1', title: 'Track One' }
 
+  describe('Beatport per-track data', () => {
+    const beatport = release({ provider: 'beatport', title: 'DESPECHÁ' })
+    const version: ReleaseTrack = {
+      position: '3',
+      title: 'DESPECHÁ',
+      bpm: '130',
+      key: '9B',
+      mixName: 'Intro',
+      isrc: 'USSM12207207',
+    }
+
+    it('a Beatport match fills bpm, key, mix and isrc, the data DJs come to Beatport for', () => {
+      const out = buildReleaseMeta(meta(), beatport, version).meta
+      expect([out.bpm, out.key, out.mixName, out.isrc]).toEqual([
+        '130',
+        '9B',
+        'Intro',
+        'USSM12207207',
+      ])
+    })
+
+    it('a track without those values keeps what the file had', () => {
+      const current = { ...meta(), bpm: '128', key: '8A', mixName: 'Extended Mix', isrc: 'X' }
+      const out = buildReleaseMeta(current, beatport, { position: '1', title: 'DESPECHÁ' }).meta
+      expect([out.bpm, out.key, out.mixName, out.isrc]).toEqual(['128', '8A', 'Extended Mix', 'X'])
+    })
+
+    it('the default import list lets Beatport fill bpm, key, mix and isrc, as the app always passes one', () => {
+      const out = buildReleaseMeta(meta(), beatport, version, {}, DEFAULT_IMPORT_FIELDS).meta
+      expect([out.bpm, out.key, out.mixName, out.isrc]).toEqual([
+        '130',
+        '9B',
+        'Intro',
+        'USSM12207207',
+      ])
+    })
+
+    it('a field left out of the import list is never touched by Beatport', () => {
+      const current = { ...meta(), bpm: '128' }
+      const fields = IMPORTABLE_FIELDS.filter((f) => f !== 'bpm')
+      expect(buildReleaseMeta(current, beatport, version, {}, fields).meta.bpm).toBe('128')
+    })
+  })
+
   it('overwrites album-level data and clears the cover path', () => {
     const rel = release({
       title: 'Homework',
@@ -1326,7 +1408,14 @@ describe('buildReleaseMeta', () => {
     const before = meta()
     // A multi-disc CD position ("2-3") rather than a vinyl side ("A1"): only that form
     // fills discNumber, and a side-lettered fixture would leave the field untested.
-    const after = buildReleaseMeta(before, full, { position: '2-3', title: 'Track One' }).meta
+    const after = buildReleaseMeta(before, full, {
+      position: '2-3',
+      title: 'Track One',
+      bpm: '124',
+      key: '8A',
+      mixName: 'Original Mix',
+      isrc: 'FRZ039700010',
+    }).meta
     const changed = METADATA_KEYS.filter((k) => (before[k] ?? '') !== (after[k] ?? ''))
     expect([...changed].sort()).toEqual([...IMPORTABLE_FIELDS].sort())
   })
