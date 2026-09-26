@@ -1279,3 +1279,16 @@ describe('runProcessTrack — replacing a library copy', () => {
     expect(deps.deleteAppleMusic).not.toHaveBeenCalled()
   })
 })
+
+describe('runProcessTrack: file names without accents', () => {
+  it('writes the plain spelling when the setting is on, so a NAS search for "royksopp" finds it', async () => {
+    const deps = makeDeps({ settings: settings({ asciiFileNames: true }) })
+    const result = await runProcessTrack(job({ outputName: 'Röyksopp - Fiësta' }), deps)
+    expect(result.outputPath).toBe('/out/Royksopp - Fiesta.aiff')
+  })
+
+  it('keeps the accents by default, since most users want the name exactly as tagged', async () => {
+    const result = await runProcessTrack(job({ outputName: 'Röyksopp - Fiësta' }), makeDeps())
+    expect(result.outputPath).toBe('/out/Röyksopp - Fiësta.aiff')
+  })
+})

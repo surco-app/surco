@@ -221,6 +221,7 @@ export interface Settings {
   // Year holds the whole release date ("2020-12-01") when a source gives one, instead
   // of the year alone. Off by default: most DJ software shows and sorts by the year.
   fullReleaseDate: boolean
+  asciiFileNames: boolean
   visibleFields: string[]
   // The user's own fields (Settings → Fields). Optional so settings saved before they
   // existed load unchanged; absent reads as none.

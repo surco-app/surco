@@ -2,6 +2,7 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import log from 'electron-log/main'
 import { errorWithKey } from '../shared/errorKeys'
+import { foldAccents } from '../shared/foldAccents'
 import { resolveJobFormat } from '../shared/format'
 import type {
   DeclickMode,
@@ -187,7 +188,7 @@ export async function runProcessTrack(
       !(job.overwriteOriginal ?? settings.overwriteOriginal)
     const resolved = resolveOutputTarget(
       job.inputPath,
-      sanitizeOutputName(job.outputName),
+      sanitizeOutputName(settings.asciiFileNames ? foldAccents(job.outputName) : job.outputName),
       format,
       settings.outputDir,
       job.overwriteOriginal ?? settings.overwriteOriginal,

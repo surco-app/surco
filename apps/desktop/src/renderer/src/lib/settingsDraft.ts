@@ -34,6 +34,7 @@ export interface SyncedDraft {
   trimWhitespace: boolean
   zeroPadTrack: boolean
   fullReleaseDate: boolean
+  asciiFileNames: boolean
   visibleFields: string[]
   customFields: CustomField[]
   requiredFields: string[]
@@ -123,6 +124,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     trimWhitespace: s.trimWhitespace,
     zeroPadTrack: s.zeroPadTrack,
     fullReleaseDate: s.fullReleaseDate,
+    asciiFileNames: s.asciiFileNames,
     visibleFields: s.visibleFields,
     customFields: s.customFields ?? [],
     requiredFields: s.requiredFields,

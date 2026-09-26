@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { foldAccents } from '../../../../shared/foldAccents'
 import { formatExtension } from '../../../../shared/format'
 import type { CustomField, TrackMetadata } from '../../../../shared/types'
 import { labeledFields } from '../../lib/fields'
@@ -149,6 +150,8 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
     ...SAMPLE_META,
     custom: Object.fromEntries(synced.customFields.map((f) => [f.key, f.label])),
   }
+  const renderedName = renderOutputName(synced.filenameFormat, sample)
+  const previewName = synced.asciiFileNames ? foldAccents(renderedName) : renderedName
   const { t: tr } = useTranslation()
 
   return (
@@ -189,7 +192,7 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
               </span>
             </p>
           }
-          preview={`${renderOutputName(synced.filenameFormat, sample) || '—'}.${formatExtension(
+          preview={`${previewName || '—'}.${formatExtension(
             synced.outputFormat === 'source' ? 'aiff' : synced.outputFormat,
           )}`}
           customFields={synced.customFields}
@@ -206,6 +209,13 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
             onChange={(v) => patch('autoApplyFilename', v)}
             label={tr('settings.autoApplyFilename')}
             hint={tr('settings.autoApplyFilenameHint')}
+          />
+          <SettingsCheckboxField
+            testid="settings-ascii-file-names"
+            checked={synced.asciiFileNames}
+            onChange={(v) => patch('asciiFileNames', v)}
+            label={tr('settings.asciiFileNames')}
+            hint={tr('settings.asciiFileNamesHint')}
           />
           <SettingsCheckboxField
             testid="settings-trim"

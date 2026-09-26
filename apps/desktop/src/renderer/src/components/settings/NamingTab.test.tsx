@@ -36,6 +36,7 @@ const synced: SyncedDraft = {
   trimWhitespace: true,
   zeroPadTrack: true,
   fullReleaseDate: false,
+  asciiFileNames: false,
   visibleFields: [],
   customFields: [],
   importFields: [],
@@ -103,5 +104,18 @@ describe('NamingTab full release date', () => {
     const patch = renderTab()
     fireEvent.click(screen.getByTestId('settings-full-release-date'))
     expect(patch).toHaveBeenCalledWith('fullReleaseDate', true)
+  })
+})
+
+describe('NamingTab file names without accents', () => {
+  it('stages the toggle', () => {
+    const patch = renderTab()
+    fireEvent.click(screen.getByTestId('settings-ascii-file-names'))
+    expect(patch).toHaveBeenCalledWith('asciiFileNames', true)
+  })
+
+  it('previews the plain spelling the file will get, so the name on disk is no surprise', () => {
+    renderTab({ filenameFormat: 'Röyksopp - {title}', asciiFileNames: true })
+    expect(screen.getByTestId('settings-format-preview')).toHaveTextContent(/^Royksopp - /)
   })
 })

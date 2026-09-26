@@ -1066,6 +1066,8 @@
     "zeroPadTrack": "Track-Nummer mit führender Null (03)",
     "fullReleaseDate": "Jahr mit vollständigem Datum",
     "fullReleaseDateHint": "Zeigt und speichert 2020-12-01 statt 2020, wenn die Datei oder Discogs, Deezer oder Bandcamp das ganze Datum hat.",
+    "asciiFileNames": "Dateinamen ohne Akzente",
+    "asciiFileNamesHint": "Schreibt „Royksopp“ statt „Röyksopp“. Praktisch für die Suche auf einem NAS und für Laufwerke, die mit Akzenten Probleme haben.",
     "coverMaxSize": "Maximale Covergröße",
     "coverMaxHint": "px (0 = keine Grenze)",
     "coverUpscale": "Kleinere Cover auf diese Größe vergrößern",
