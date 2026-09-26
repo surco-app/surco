@@ -139,6 +139,11 @@
     "bandcampPageUnreadable": "That Bandcamp page couldn't be read.",
     "bandcampUrlBlocked": "That Bandcamp address isn't allowed, so it wasn't opened.",
     "deezerUnavailable": "Deezer didn't answer properly. Try again in a moment.",
+    "beatportNotConnected": "Connect your Beatport account in Settings → Search.",
+    "beatportBadCredentials": "Beatport doesn't accept that username and password. Reconnect the account in Settings.",
+    "beatportUnavailable": "Beatport didn't answer properly. Try again in a moment.",
+    "beatportRateLimit": "Beatport is limiting searches. Wait a moment and try again.",
+    "beatportNoSecureStorage": "This system can't store the password encrypted, so it wasn't saved.",
     "discogsUnavailable": "Discogs didn't answer properly. Try again in a moment.",
     "pathNotAllowed": "Surco didn't open that file: it isn't one of the tracks it loaded."
   },

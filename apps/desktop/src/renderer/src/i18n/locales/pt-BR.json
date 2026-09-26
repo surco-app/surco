@@ -139,6 +139,11 @@
     "bandcampPageUnreadable": "Não foi possível ler essa página do Bandcamp.",
     "bandcampUrlBlocked": "Esse endereço do Bandcamp não é permitido, então não foi aberto.",
     "deezerUnavailable": "O Deezer não respondeu direito. Tente de novo daqui a pouco.",
+    "beatportNotConnected": "Conecte sua conta do Beatport em Ajustes → Busca.",
+    "beatportBadCredentials": "O Beatport não aceita esse usuário e senha. Conecte a conta de novo nos Ajustes.",
+    "beatportUnavailable": "O Beatport não respondeu direito. Tente de novo daqui a pouco.",
+    "beatportRateLimit": "O Beatport está limitando as buscas. Espere um pouco e tente de novo.",
+    "beatportNoSecureStorage": "Este sistema não permite salvar a senha criptografada, então ela não foi salva.",
     "discogsUnavailable": "O Discogs não respondeu direito. Tente de novo daqui a pouco.",
     "pathNotAllowed": "O Surco não abriu esse arquivo: ele não é uma das faixas carregadas."
   },
