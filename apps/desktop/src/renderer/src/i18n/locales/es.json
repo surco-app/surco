@@ -925,6 +925,7 @@
     "discogsSection": "Discogs",
     "discogsDisabledHint": "Activa Discogs arriba para configurarlos.",
     "beatportSection": "Beatport",
+    "beatportNotConnected": "sin conectar",
     "beatportDisabledHint": "Activa Beatport arriba para conectar tu cuenta.",
     "beatportHint": "Beatport no tiene API abierta: Surco busca con tu cuenta (una gratuita vale). La contraseña se guarda cifrada y solo en este ordenador.",
     "beatportUsername": "Usuario o email",
@@ -948,7 +949,7 @@
     "searchIgnoreWords": "Palabras a ignorar en las búsquedas",
     "searchIgnoreWordsHint": "Palabras o frases separadas por comas (firmas de rip, marcas de agua) que se quitan de los títulos al buscar y emparejar. Tus tags no se modifican.",
     "searchProviders": "Fuentes de búsqueda",
-    "searchProvidersHint": "Catálogos donde busca el editor. Discogs está curado, Bandcamp añade material autoeditado y Deezer cubre los lanzamientos digitales comerciales.",
+    "searchProvidersHint": "Catálogos donde busca el editor. Discogs está curado, Bandcamp añade material autoeditado, Deezer cubre los lanzamientos digitales comerciales y Beatport aporta BPM, tonalidad y mix.",
     "provider": {
       "discogs": "Discogs",
       "bandcamp": "Bandcamp",

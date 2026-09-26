@@ -44,7 +44,21 @@ export function SearchTab({
         />
       </SettingsSection>
 
-      <SettingsSection eyebrow={tr('settings.beatportSection')}>
+      <SettingsSection
+        eyebrow={
+          <>
+            {tr('settings.beatportSection')}
+            {!local.beatportUsername && (
+              <span
+                data-testid="beatport-status"
+                className="ml-1.5 font-normal text-[var(--color-warn)]"
+              >
+                · {tr('settings.beatportNotConnected')}
+              </span>
+            )}
+          </>
+        }
+      >
         {!beatportOn && (
           <SettingsHint data-testid="settings-beatport-disabled" className="mb-4">
             {tr('settings.beatportDisabledHint')}
