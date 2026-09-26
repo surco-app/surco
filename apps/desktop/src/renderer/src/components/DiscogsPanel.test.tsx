@@ -39,7 +39,7 @@ function panel(b: DiscogsBrowser) {
       matchedTrack={undefined}
       matchTier={undefined}
       appliedTrack={undefined}
-      hasToken={true}
+      showTokenTip={false}
       isMulti={false}
       selectedTracks={undefined}
       onApplyMatches={undefined}
@@ -212,7 +212,7 @@ describe('DiscogsPanel suggestion marks', () => {
         matchedTrack={release.tracklist[1]}
         matchTier={matchTier}
         appliedTrack={undefined}
-        hasToken={true}
+        showTokenTip={false}
         isMulti={false}
         selectedTracks={undefined}
         onApplyMatches={undefined}

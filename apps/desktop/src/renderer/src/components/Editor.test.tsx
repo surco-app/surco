@@ -170,6 +170,8 @@ function renderEditor(
     titleFormat?: string
     editorSections?: Settings['editorSections']
     customFields?: Settings['customFields']
+    discogsToken?: string
+    searchProviders?: Settings['searchProviders']
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
@@ -255,6 +257,8 @@ function renderEditor(
       normalize: props.normalize ?? { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
       ...(props.declick ? { declick: props.declick } : {}),
       ...(props.editorSections ? { editorSections: props.editorSections } : {}),
+      ...(props.discogsToken !== undefined ? { discogsToken: props.discogsToken } : {}),
+      ...(props.searchProviders ? { searchProviders: props.searchProviders } : {}),
     },
   )
   return {
@@ -3448,5 +3452,15 @@ describe('Editor section groups', () => {
     const trim = screen.getByTestId('editor-trim')
     expect(audio.compareDocumentPosition(trim) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(trim.compareDocumentPosition(audio) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
+  })
+})
+
+describe('Discogs token tip', () => {
+  it('asks for a Discogs token only while Discogs is one of the sources', () => {
+    renderEditor({ id: 'a' }, 'wav', { discogsToken: '', searchProviders: ['beatport'] })
+    expect(screen.queryByTestId('discogs-token-tip')).not.toBeInTheDocument()
+    cleanup()
+    renderEditor({ id: 'a' }, 'wav', { discogsToken: '', searchProviders: ['discogs'] })
+    expect(screen.getByTestId('discogs-token-tip')).toBeInTheDocument()
   })
 })

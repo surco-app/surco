@@ -65,6 +65,8 @@ async function api<T>(path: string, priority?: SearchPriority): Promise<T> {
     const res = await fetch(`${BEATPORT_API}${path}`, {
       headers: { 'User-Agent': USER_AGENT, Authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    }).catch((err: unknown) => {
+      throw errorWithKey('beatportUnavailable', String(err))
     })
     if (res.status === 401 && !refreshed) {
       refreshed = true

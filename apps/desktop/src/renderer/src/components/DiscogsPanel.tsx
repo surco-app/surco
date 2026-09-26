@@ -43,7 +43,7 @@ interface Props {
   // score is too weak to suggest anything (e.g. a rip whose length misses the printed
   // duration), while the badge stays the matcher's own verdict.
   appliedTrack: ReleaseTrack | undefined
-  hasToken: boolean
+  showTokenTip: boolean
   isMulti: boolean
   selectedTracks: TrackItem[] | undefined
   onApplyMatches:
@@ -74,7 +74,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   matchedTrack,
   matchTier,
   appliedTrack,
-  hasToken,
+  showTokenTip,
   isMulti,
   selectedTracks,
   onApplyMatches,
@@ -249,8 +249,8 @@ export const DiscogsPanel = memo(function DiscogsPanel({
               clearLabel={tr('editor.searchClear')}
             />
           </div>
-          {!hasToken && (
-            <p className="px-1.5 pt-2 text-xs text-fg-muted">
+          {showTokenTip && (
+            <p data-testid="discogs-token-tip" className="px-1.5 pt-2 text-xs text-fg-muted">
               <Trans
                 i18nKey="editor.tokenTip"
                 components={[
