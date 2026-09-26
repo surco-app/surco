@@ -784,6 +784,16 @@ describe('migrateImportFields', () => {
     expect(getSettings().importFields).toEqual(['title'])
   })
 
+  it('respects an import list the user emptied on purpose, so Beatport never overwrites their bpm or key', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ importFields: [] }),
+    )
+    migrateImportFields()
+    expect(getSettings().importFields).toEqual([])
+    expect(getSettings().trackImportFieldsMigrated).toBe(true)
+  })
+
   it('does not duplicate fields a fresh install already imports', () => {
     migrateImportFields()
     const fields = getSettings().importFields ?? []

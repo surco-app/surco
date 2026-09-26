@@ -506,11 +506,6 @@ export function migrateProviderDefaults(): void {
   saveSettings({ searchProviders, deezerProviderMigrated: true })
 }
 
-// 'always' was the default until the tag-edit copies filled a user's disk, and settings
-// are saved whole, so every install that ever pressed Save carries it written out — the
-// new default would never reach them. A deliberate 'always' looks the same, so it moves
-// too; the marker (synced) keeps a later launch, or another Mac, from undoing it again
-// once the user puts it back.
 const TRACK_IMPORT_FIELDS = ['bpm', 'key', 'mixName', 'isrc']
 
 export function migrateImportFields(): void {
@@ -518,11 +513,18 @@ export function migrateImportFields(): void {
   if (cur.trackImportFieldsMigrated) return
   const stored = cur.importFields ?? []
   saveSettings({
-    importFields: [...stored, ...TRACK_IMPORT_FIELDS.filter((f) => !stored.includes(f))],
+    importFields: stored.length
+      ? [...stored, ...TRACK_IMPORT_FIELDS.filter((f) => !stored.includes(f))]
+      : stored,
     trackImportFieldsMigrated: true,
   })
 }
 
+// 'always' was the default until the tag-edit copies filled a user's disk, and settings
+// are saved whole, so every install that ever pressed Save carries it written out — the
+// new default would never reach them. A deliberate 'always' looks the same, so it moves
+// too; the marker (synced) keeps a later launch, or another Mac, from undoing it again
+// once the user puts it back.
 export function migrateBackupPolicy(): void {
   const cur = getSettings()
   if (cur.backupPolicyMigrated) return
