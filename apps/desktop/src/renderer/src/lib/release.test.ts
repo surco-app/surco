@@ -992,6 +992,22 @@ describe('buildReleaseMeta', () => {
       isrc: 'USSM12207207',
     }
 
+    it('keeps the mix in the title, since DJ software lists versions by title', () => {
+      const out = buildReleaseMeta(meta(), beatport, version).meta
+      expect(out.title).toBe('DESPECHÁ (Intro)')
+      expect(out.mixName).toBe('Intro')
+    })
+
+    it('leaves Original Mix out of the title, where it would only add noise', () => {
+      const original = { ...version, mixName: 'Original Mix' }
+      expect(buildReleaseMeta(meta(), beatport, original).meta.title).toBe('DESPECHÁ')
+    })
+
+    it('does not repeat a mix the title already carries', () => {
+      const named = { ...version, title: 'DESPECHÁ (Intro)' }
+      expect(buildReleaseMeta(meta(), beatport, named).meta.title).toBe('DESPECHÁ (Intro)')
+    })
+
     it('a Beatport match fills bpm, key, mix and isrc, the data DJs come to Beatport for', () => {
       const out = buildReleaseMeta(meta(), beatport, version).meta
       expect([out.bpm, out.key, out.mixName, out.isrc]).toEqual([

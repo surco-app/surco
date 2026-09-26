@@ -222,6 +222,13 @@ export function trackDisplayTitle(track: ReleaseTrack): string {
   return track.mixName ? `${track.title} (${track.mixName})` : track.title
 }
 
+function titleWithMix(track: ReleaseTrack): string {
+  const mix = track.mixName?.trim()
+  if (!mix || /^original mix$/i.test(mix)) return track.title
+  if (normalize(track.title).includes(normalize(mix))) return track.title
+  return `${track.title} (${mix})`
+}
+
 function versionTitleSimilarity(target: string, track: ReleaseTrack): number {
   const plain = titleSimilarity(target, track.title)
   if (!track.mixName) return plain
@@ -556,7 +563,7 @@ export function buildReleaseMeta(
   const keepCover = cover.keep && !!cover.url
   const imported: TrackMetadata = {
     ...current,
-    title: track ? track.title : current.title,
+    title: track ? titleWithMix(track) : current.title,
     trackNumber: pos ? pos.track : current.trackNumber,
     discNumber: pos ? pos.disc : current.discNumber,
     album: rel.title,
