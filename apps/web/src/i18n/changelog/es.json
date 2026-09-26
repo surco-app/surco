@@ -19,6 +19,10 @@
       {
         "text": "Normalizar el volumen o convertir a una frecuencia de muestreo fija ya no apaga lo más alto de los agudos.",
         "in": "1.3.0"
+      },
+      {
+        "text": "La 1.3.0 se cerraba nada más abrirla con un error de JavaScript. Esta versión arranca con normalidad; si instalaste la 1.3.0, descarga esta desde la web.",
+        "in": "1.3.1"
       }
     ]
   },

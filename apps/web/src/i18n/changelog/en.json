@@ -19,6 +19,10 @@
       {
         "text": "Normalizing loudness or converting to a fixed sample rate no longer dulls the very top of the treble.",
         "in": "1.3.0"
+      },
+      {
+        "text": "Version 1.3.0 closed right after opening with a JavaScript error. This version starts normally; if you installed 1.3.0, download this one from the website.",
+        "in": "1.3.1"
       }
     ]
   },
