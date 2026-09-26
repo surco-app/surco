@@ -12,6 +12,7 @@ describe('statsImageCells', () => {
       discogsMatches: 301,
       bandcampMatches: 0,
       deezerMatches: 44,
+      beatportMatches: 0,
     })
     expect(cells).toEqual([
       { key: 'imported', value: 812 },
@@ -30,6 +31,7 @@ describe('statsImageCells', () => {
         discogsMatches: 0,
         bandcampMatches: 0,
         deezerMatches: 0,
+        beatportMatches: 0,
       }),
     ).toEqual([])
   })
@@ -45,6 +47,7 @@ describe('statsImageCells', () => {
       discogsMatches: 11091,
       bandcampMatches: 298,
       deezerMatches: 6,
+      beatportMatches: 0,
     })
     expect(cells.map((c) => c.key)).toEqual([
       'imported',
@@ -66,6 +69,7 @@ describe('statsImageCells', () => {
       discogsMatches: 30000,
       bandcampMatches: 20000,
       deezerMatches: 12,
+      beatportMatches: 0,
     })
     expect(cells.map((c) => c.key)).toContain('deezerMatches')
   })
@@ -80,6 +84,7 @@ describe('statsImageCells', () => {
       discogsMatches: 5,
       bandcampMatches: 0,
       deezerMatches: 1,
+      beatportMatches: 0,
     })
     expect(cells.map((c) => c.key)).toEqual(['imported', 'listened', 'analyzed', 'discogsMatches'])
   })
@@ -94,6 +99,7 @@ describe('statsImageCells', () => {
       discogsMatches: 700,
       bandcampMatches: 600,
       deezerMatches: 500,
+      beatportMatches: 0,
     })
     expect(cells).toHaveLength(4)
     expect(cells.map((c) => c.key)).toEqual(['imported', 'listened', 'analyzed', 'discogsMatches'])

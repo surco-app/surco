@@ -60,6 +60,10 @@ describe('matchStatKey', () => {
     expect(matchStatKey('bandcamp')).toBe('bandcampMatches')
   })
 
+  it('routes a Beatport match to its own tally', () => {
+    expect(matchStatKey('beatport')).toBe('beatportMatches')
+  })
+
   it('routes a Deezer match to its own tally', () => {
     expect(matchStatKey('deezer')).toBe('deezerMatches')
   })

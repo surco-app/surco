@@ -77,6 +77,7 @@ const local: LocalDraft = {
   rekordboxDbPath: '',
   betaUpdates: false,
   autoMatch: false,
+  beatportUsername: '',
 }
 
 function renderTab(over: Partial<SyncedDraft> = {}, localOver: Partial<LocalDraft> = {}) {

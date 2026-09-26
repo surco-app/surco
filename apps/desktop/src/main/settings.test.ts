@@ -251,6 +251,7 @@ describe('sanitizeSettingsPatch', () => {
       discogsMatches: 999,
       bandcampMatches: 999,
       deezerMatches: 999,
+      beatportMatches: 999,
     }
     expect(
       sanitizeSettingsPatch({ theme: 'dark', stats: forgedStats, conversionCount: 999 }),

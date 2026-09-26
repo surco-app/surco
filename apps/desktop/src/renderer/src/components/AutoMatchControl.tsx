@@ -13,16 +13,22 @@ export function AutoMatchControl({
   onChange,
   searchProviders,
   discogsToken,
+  beatportUsername,
   testid,
 }: {
   checked: boolean
   onChange: (checked: boolean) => void
   searchProviders: Settings['searchProviders']
   discogsToken: string
+  beatportUsername?: string
   testid: string
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const autoReady = autoMatchAvailable({ searchProviders, discogsToken })
+  const autoReady = autoMatchAvailable({ searchProviders, discogsToken, beatportUsername })
+  const onlyUnconnectedBeatport =
+    !beatportUsername &&
+    searchProviders.length > 0 &&
+    searchProviders.every((p) => p === 'beatport')
   return (
     <SettingsCheckboxField
       testid={testid}
@@ -35,7 +41,9 @@ export function AutoMatchControl({
           ? tr('settings.autoMatchNeedsSource')
           : autoReady
             ? tr('settings.autoMatchHint')
-            : tr('settings.autoMatchNeedsToken')
+            : onlyUnconnectedBeatport
+              ? tr('errors.beatportNotConnected')
+              : tr('settings.autoMatchNeedsToken')
       }
     />
   )

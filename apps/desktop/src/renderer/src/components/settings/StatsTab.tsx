@@ -34,6 +34,7 @@ const CELLS: { key: keyof LifetimeStats; icon: typeof FolderDown }[] = [
   { key: 'discogsMatches', icon: Disc3 },
   { key: 'bandcampMatches', icon: Store },
   { key: 'deezerMatches', icon: Radio },
+  { key: 'beatportMatches', icon: AudioLines },
 ]
 
 // Matches by source as one proportional bar, a segment per source with the raw counts
@@ -190,6 +191,12 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
                 label: tr('settings.stats.deezerMatches'),
                 count: stats.deezerMatches,
                 swatch: 'bg-[var(--color-good)]',
+              },
+              {
+                key: 'beatport',
+                label: tr('settings.stats.beatportMatches'),
+                count: stats.beatportMatches,
+                swatch: 'bg-[var(--color-warn)]',
               },
             ]}
           />

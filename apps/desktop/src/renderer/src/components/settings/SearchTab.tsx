@@ -1,9 +1,11 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { DISCOGS_FORMATS, DISCOGS_MAX_RESULTS_OPTIONS } from '../../../../shared/defaults'
+import type { Settings } from '../../../../shared/types'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchLocal, PatchSynced } from '../../lib/settingsTabs'
 import { AutoMatchControl } from '../AutoMatchControl'
+import { BeatportAccountField } from '../BeatportAccountField'
 import { DiscogsTokenField } from '../DiscogsTokenField'
 import { SearchProvidersControl } from '../SearchProvidersControl'
 import { Select } from '../Select'
@@ -14,13 +16,21 @@ interface Props {
   local: LocalDraft
   patch: PatchSynced
   patchLocal: PatchLocal
+  onBeatportChange: (next: Settings) => void
 }
 
-export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JSX.Element {
+export function SearchTab({
+  synced,
+  local,
+  patch,
+  patchLocal,
+  onBeatportChange,
+}: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // The token and format filter only act on Discogs results, so they're grouped under a
   // Discogs heading and disabled when Discogs isn't a chosen source.
   const discogsOn = synced.searchProviders.includes('discogs')
+  const beatportOn = synced.searchProviders.includes('beatport')
   return (
     <>
       <SettingsSection first>
@@ -42,6 +52,7 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
           onChange={(checked) => patchLocal('autoMatch', checked)}
           searchProviders={synced.searchProviders}
           discogsToken={local.token}
+          beatportUsername={local.beatportUsername}
           testid="settings-auto-match"
         />
       </SettingsSection>
@@ -130,6 +141,22 @@ export function SearchTab({ synced, local, patch, patchLocal }: Props): React.JS
               </label>
             ))}
           </div>
+        </div>
+      </SettingsSection>
+
+      <SettingsSection eyebrow={tr('settings.beatportSection')}>
+        {!beatportOn && (
+          <SettingsHint data-testid="settings-beatport-disabled" className="mb-4">
+            {tr('settings.beatportDisabledHint')}
+          </SettingsHint>
+        )}
+        <div className={beatportOn ? '' : 'opacity-50'}>
+          <SettingsHint className="mb-3">{tr('settings.beatportHint')}</SettingsHint>
+          <BeatportAccountField
+            username={local.beatportUsername}
+            disabled={!beatportOn}
+            onChange={onBeatportChange}
+          />
         </div>
       </SettingsSection>
     </>

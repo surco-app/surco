@@ -17,6 +17,20 @@ describe('autoMatchAvailable', () => {
     )
   })
 
+  it('an unconnected Beatport does not count as a source, since it cannot search', () => {
+    expect(autoMatchAvailable({ searchProviders: ['beatport'], discogsToken: '' })).toBe(false)
+    expect(
+      autoMatchAvailable({
+        searchProviders: ['beatport'],
+        discogsToken: '',
+        beatportUsername: 'dj',
+      }),
+    ).toBe(true)
+    expect(
+      autoMatchAvailable({ searchProviders: ['bandcamp', 'beatport'], discogsToken: '' }),
+    ).toBe(true)
+  })
+
   // Bandcamp has its own pacing and no token, so Bandcamp-only auto-match needs none.
   it('needs no token when only non-Discogs sources are enabled', () => {
     expect(autoMatchAvailable({ searchProviders: ['bandcamp'], discogsToken: '' })).toBe(true)

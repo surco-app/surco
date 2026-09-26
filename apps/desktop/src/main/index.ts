@@ -606,6 +606,7 @@ function registerIpc(): void {
       'discogsMatches',
       'bandcampMatches',
       'deezerMatches',
+      'beatportMatches',
     ] satisfies (keyof Settings['stats'])[]
     if (typeof key === 'string' && keys.includes(key)) {
       recordStat(key as keyof Settings['stats'], typeof by === 'number' ? by : 1)

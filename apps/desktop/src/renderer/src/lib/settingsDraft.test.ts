@@ -79,6 +79,7 @@ const settings: Settings = {
     discogsMatches: 0,
     bandcampMatches: 0,
     deezerMatches: 0,
+    beatportMatches: 0,
   },
   donateNudgeDismissed: false,
   donateNudgeLastShown: '',
@@ -93,6 +94,7 @@ const local: LocalDraft = {
   rekordboxDbPath: '',
   betaUpdates: false,
   autoMatch: false,
+  beatportUsername: '',
 }
 
 describe('pickSynced', () => {
@@ -107,6 +109,17 @@ describe('pickSynced', () => {
 })
 
 describe('buildSettingsPatch', () => {
+  it('keeps auto-match for a Beatport-only setup with a connected account', () => {
+    const draft = { ...pickSynced(settings), searchProviders: ['beatport' as const] }
+    const patch = buildSettingsPatch(draft, { ...local, autoMatch: true, beatportUsername: 'dj' })
+    expect(patch.autoMatch).toBe(true)
+  })
+
+  it('never writes the Beatport account through a Settings save', () => {
+    const patch = buildSettingsPatch(pickSynced(settings), { ...local, beatportUsername: 'dj' })
+    expect(patch).not.toHaveProperty('beatportUsername')
+  })
+
   // An emptied Other box would join tags with nothing, gluing "PopIndie Pop" into one.
   it('restores the comma when a separator is left blank', () => {
     const draft = { ...pickSynced(settings), genreSeparator: '', groupingSeparator: ';' }

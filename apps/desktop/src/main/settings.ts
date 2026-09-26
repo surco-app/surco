@@ -133,6 +133,7 @@ export const defaults: Settings = {
     discogsMatches: 0,
     bandcampMatches: 0,
     deezerMatches: 0,
+    beatportMatches: 0,
   },
   commandUsage: {},
   donateNudgeDismissed: false,

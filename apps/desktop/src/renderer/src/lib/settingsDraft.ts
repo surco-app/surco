@@ -73,6 +73,7 @@ export interface LocalDraft {
   rekordboxDbPath: string
   betaUpdates: boolean
   autoMatch: boolean
+  beatportUsername: string
 }
 
 // Machine-local fields (token, folders, auto-match) aren't moved by a config-dir
@@ -87,6 +88,7 @@ export function pickLocal(s: Settings): LocalDraft {
     rekordboxDbPath: s.rekordboxDbPath,
     betaUpdates: s.betaUpdates,
     autoMatch: s.autoMatch,
+    beatportUsername: s.beatportUsername,
   }
 }
 
@@ -182,7 +184,7 @@ export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Part
   // A blank or garbage box means no adjustment: the conversion already lands cues where
   // they were, so "I could not read this" and "leave them alone" are the same answer.
   const cueOffset = Number(traktorCueOffsetMs)
-  const { token: rawToken, autoMatch, ...localRest } = local
+  const { token: rawToken, autoMatch, beatportUsername, ...localRest } = local
   const token = rawToken.trim()
   return {
     ...rest,
@@ -201,7 +203,11 @@ export function buildSettingsPatch(synced: SyncedDraft, local: LocalDraft): Part
     // token-only gate here once dropped a Bandcamp-only save the UI had just allowed.
     autoMatch:
       autoMatch &&
-      autoMatchAvailable({ searchProviders: synced.searchProviders, discogsToken: token }),
+      autoMatchAvailable({
+        searchProviders: synced.searchProviders,
+        discogsToken: token,
+        beatportUsername,
+      }),
   }
 }
 

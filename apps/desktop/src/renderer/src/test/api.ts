@@ -81,6 +81,7 @@ export const testSettings: Settings = {
     discogsMatches: 0,
     bandcampMatches: 0,
     deezerMatches: 0,
+    beatportMatches: 0,
   },
   donateNudgeDismissed: false,
   donateNudgeLastShown: '',
