@@ -100,11 +100,11 @@
       {
         "kick": "tag",
         "title": "Tag",
-        "replaces": "instead of Discogs, Bandcamp and Deezer in a browser plus a tag editor",
+        "replaces": "instead of Discogs, Bandcamp, Deezer and Beatport in a browser plus a tag editor",
         "items": [
           {
-            "t": "Discogs, Bandcamp, Deezer",
-            "d": "Artist, album, year, BPM and key. Label and catalogue number come from Discogs only."
+            "t": "Discogs, Bandcamp, Deezer, Beatport",
+            "d": "Artist, album, year, BPM and key. Label and catalogue number come from Discogs and Beatport, and Beatport adds the mix and the ISRC."
           },
           {
             "t": "Matches a whole release",
@@ -672,16 +672,16 @@
       },
       {
         "id": "discogs",
-        "title": "Tag from Discogs, Bandcamp and Deezer",
+        "title": "Tag from Discogs, Bandcamp, Deezer and Beatport",
         "body": [
           "In the editor, search for the release by name or paste a Discogs release id directly and hit “Search” (or the / key). Surco lists the results with cover art, year, label, catalog number and format, so you can tell the exact pressing apart; expand one to see its tracklist.",
           "Click the matching track and Surco applies artist, album, year, genre, label, catalog number and cover art in one go. The closest one is flagged “Suggested”. Search works with nothing configured; add your own Discogs token in Settings and you get a higher, private and faster limit.",
-          "After self-released or exclusive material? Turn on Bandcamp too in Settings → Search: its results sit alongside the Discogs ones in the same list, each labelled with its source, and you pick them the same way. Bandcamp needs no account or token. And the commercial stuff (pop, urban, radio hits) that's on neither? That's what Deezer is on by default for: no account or token either, and it covers exactly the catalog Discogs and Bandcamp miss."
+          "After self-released or exclusive material? Turn on Bandcamp too in Settings → Search: its results sit alongside the Discogs ones in the same list, each labelled with its source, and you pick them the same way. Bandcamp needs no account or token. And the commercial stuff (pop, urban, radio hits) that's on neither? That's what Deezer is on by default for: no account or token either, and it covers exactly the catalog Discogs and Bandcamp miss. And if you play what Beatport sells, connect your account in Settings → Search (a free one will do): each track brings its BPM, its key in your notation, the mix and the ISRC, and among versions with the same title Surco picks the one your file names."
         ],
         "points": [
           "Search by text or paste a release id if you already know which one it is. If the file already carries one, Surco opens that record directly.",
           "If the first search comes up empty, Surco retries on its own: dropping the DJ prefix, trying the main artist, or searching by catalog number or title alone.",
-          "With the option on (plus your token if Discogs is one of your sources; Bandcamp and Deezer need none), Surco auto-matches tracks the moment you import them.",
+          "With the option on (plus your token if Discogs is one of your sources, or your account if Beatport is; Bandcamp and Deezer need none), Surco auto-matches tracks the moment you import them.",
           "Your own cover art is kept if you already have one; the Discogs one stays as an alternative, and you can have it replace only the low-resolution ones.",
           "Rip signatures or watermarks dirtying your titles? List them in Settings → Search, “vinyl” and “rip” come as standard, and they're ignored when searching and matching; your tags aren't touched.",
           "With several sources on, a filter narrows the results down to just one, and you can limit the Discogs ones to vinyl, CD, file or cassette.",

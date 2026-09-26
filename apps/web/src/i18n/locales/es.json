@@ -100,11 +100,11 @@
       {
         "kick": "etiquetar",
         "title": "Etiquetar",
-        "replaces": "en vez de Discogs, Bandcamp y Deezer en el navegador y un editor de tags",
+        "replaces": "en vez de Discogs, Bandcamp, Deezer y Beatport en el navegador y un editor de tags",
         "items": [
           {
-            "t": "Discogs, Bandcamp y Deezer",
-            "d": "Artista, álbum, año, BPM y tono. El sello y el catálogo solo los trae Discogs."
+            "t": "Discogs, Bandcamp, Deezer y Beatport",
+            "d": "Artista, álbum, año, BPM y tono. El sello y el catálogo vienen de Discogs y Beatport, y Beatport añade el mix y el ISRC."
           },
           {
             "t": "Empareja el disco entero",
@@ -672,16 +672,16 @@
       },
       {
         "id": "discogs",
-        "title": "Etiqueta desde Discogs, Bandcamp y Deezer",
+        "title": "Etiqueta desde Discogs, Bandcamp, Deezer y Beatport",
         "body": [
           "En el editor, busca el disco por nombre o pega directamente un release id de Discogs y pulsa «Buscar» (o la tecla /). Surco lista los resultados con carátula, año, sello, número de catálogo y formato, para que distingas la edición exacta; despliega uno para ver su tracklist.",
           "Haz clic en la pista que corresponda y Surco aplica artista, álbum, año, género, sello, catálogo y carátula de un golpe. La más parecida aparece marcada como «Sugerida». La búsqueda funciona sin configurar nada; si añades tu propio token de Discogs en Ajustes, tendrás un límite mayor, privado y más rápido.",
-          "¿Buscas autoeditados o exclusivos? Activa también Bandcamp en Ajustes → Búsqueda: sus resultados aparecen junto a los de Discogs en la misma lista, cada uno con una etiqueta de su origen, y lo eliges igual. Bandcamp no necesita cuenta ni token. ¿Y la música comercial (pop, urbano, éxitos de radio) que no está en ninguno de los dos? Para eso viene Deezer activado de serie: tampoco pide cuenta ni token, y cubre justo el catálogo que a Discogs y Bandcamp se les escapa."
+          "¿Buscas autoeditados o exclusivos? Activa también Bandcamp en Ajustes → Búsqueda: sus resultados aparecen junto a los de Discogs en la misma lista, cada uno con una etiqueta de su origen, y lo eliges igual. Bandcamp no necesita cuenta ni token. ¿Y la música comercial (pop, urbano, éxitos de radio) que no está en ninguno de los dos? Para eso viene Deezer activado de serie: tampoco pide cuenta ni token, y cubre justo el catálogo que a Discogs y Bandcamp se les escapa. Y si pinchas lo que vende Beatport, conecta tu cuenta en Ajustes → Búsqueda (una gratuita vale): cada pista trae su BPM, su tonalidad en tu notación, el mix y el ISRC, y entre versiones con el mismo título Surco elige la que nombra tu archivo."
         ],
         "points": [
           "Busca por texto o pega un release id si ya sabes cuál es. Si el archivo ya trae uno, Surco abre directamente esa ficha.",
           "Si la primera búsqueda no da nada, Surco reintenta solo: quita el prefijo del DJ, prueba con el artista principal o busca por catálogo o por título.",
-          "Con la opción activada (y tu token si Discogs es una de tus fuentes; con Bandcamp y Deezer no hace falta), Surco auto-empareja las pistas nada más importarlas.",
+          "Con la opción activada (y tu token si Discogs es una de tus fuentes, o tu cuenta si lo es Beatport; con Bandcamp y Deezer no hace falta), Surco auto-empareja las pistas nada más importarlas.",
           "Tu carátula se conserva si ya tienes una; la de Discogs queda como alternativa, y puedes activar que sustituya solo a las de baja resolución.",
           "¿Firmas de rip o marcas de agua ensuciando tus títulos? Lístalas en Ajustes → Búsqueda, trae «vinyl» y «rip» de serie, y se ignoran al buscar y emparejar; tus tags no se tocan.",
           "Con varias fuentes activas, un filtro reduce la lista de resultados a una sola, y puedes limitar los de Discogs a vinilo, CD, archivo o casete.",
