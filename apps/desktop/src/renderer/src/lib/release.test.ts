@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_IMPORT_FIELDS } from '../../../shared/defaults'
 import { METADATA_KEYS } from '../../../shared/metadata'
 import { cleanMatchTitle } from '../../../shared/searchClean'
 import type { Release, ReleaseTrack, SearchResult, TrackMetadata } from '../../../shared/types'
@@ -1007,6 +1008,16 @@ describe('buildReleaseMeta', () => {
       expect([out.bpm, out.key, out.mixName, out.isrc]).toEqual(['128', '8A', 'Extended Mix', 'X'])
     })
 
+    it('the default import list lets Beatport fill bpm, key, mix and isrc, as the app always passes one', () => {
+      const out = buildReleaseMeta(meta(), beatport, version, {}, DEFAULT_IMPORT_FIELDS).meta
+      expect([out.bpm, out.key, out.mixName, out.isrc]).toEqual([
+        '130',
+        '9B',
+        'Intro',
+        'USSM12207207',
+      ])
+    })
+
     it('a field left out of the import list is never touched by Beatport', () => {
       const current = { ...meta(), bpm: '128' }
       const fields = IMPORTABLE_FIELDS.filter((f) => f !== 'bpm')
@@ -1397,7 +1408,14 @@ describe('buildReleaseMeta', () => {
     const before = meta()
     // A multi-disc CD position ("2-3") rather than a vinyl side ("A1"): only that form
     // fills discNumber, and a side-lettered fixture would leave the field untested.
-    const after = buildReleaseMeta(before, full, { position: '2-3', title: 'Track One' }).meta
+    const after = buildReleaseMeta(before, full, {
+      position: '2-3',
+      title: 'Track One',
+      bpm: '124',
+      key: '8A',
+      mixName: 'Original Mix',
+      isrc: 'FRZ039700010',
+    }).meta
     const changed = METADATA_KEYS.filter((k) => (before[k] ?? '') !== (after[k] ?? ''))
     expect([...changed].sort()).toEqual([...IMPORTABLE_FIELDS].sort())
   })

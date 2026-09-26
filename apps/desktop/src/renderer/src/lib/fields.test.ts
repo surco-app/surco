@@ -63,8 +63,6 @@ describe('IMPORTABLE_FIELDS', () => {
   // Fields no provider supplies are the DJ's own work; listing them would promise an import
   // that never happens and, worse, let a user "enable" one and wonder why it stays empty.
   it('leaves out the fields no release carries', () => {
-    expect(IMPORTABLE_FIELDS).not.toContain('bpm')
-    expect(IMPORTABLE_FIELDS).not.toContain('key')
     expect(IMPORTABLE_FIELDS).not.toContain('mood')
     expect(IMPORTABLE_FIELDS).not.toContain('energy')
     expect(IMPORTABLE_FIELDS).not.toContain('comment')

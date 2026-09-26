@@ -50,6 +50,7 @@ import {
   getConfigDir,
   getSettings,
   migrateBackupPolicy,
+  migrateImportFields,
   migrateProviderDefaults,
   recordConversion,
   recordStat,
@@ -752,5 +753,40 @@ describe('migrateBackupPolicy', () => {
     )
     migrateBackupPolicy()
     expect(getSettings().backupPolicy).toBe('always')
+  })
+})
+
+describe('migrateImportFields', () => {
+  const wipe = (): void => {
+    rmSync(join(app.getPath('userData'), 'settings.json'), { force: true })
+    rmSync(join(app.getPath('userData'), 'config-dir.json'), { force: true })
+  }
+  beforeEach(wipe)
+  afterEach(wipe)
+
+  it('adds bpm, key, mix and isrc once to an import list saved before they could be imported', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ importFields: ['title', 'artist'] }),
+    )
+    migrateImportFields()
+    const s = getSettings()
+    expect(s.importFields).toEqual(['title', 'artist', 'bpm', 'key', 'mixName', 'isrc'])
+    expect(s.trackImportFieldsMigrated).toBe(true)
+  })
+
+  it('never re-adds a field the user opted out of after the migration ran', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ importFields: ['title'], trackImportFieldsMigrated: true }),
+    )
+    migrateImportFields()
+    expect(getSettings().importFields).toEqual(['title'])
+  })
+
+  it('does not duplicate fields a fresh install already imports', () => {
+    migrateImportFields()
+    const fields = getSettings().importFields ?? []
+    expect(fields.filter((f) => f === 'bpm')).toHaveLength(1)
   })
 })

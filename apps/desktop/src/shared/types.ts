@@ -311,6 +311,7 @@ export interface Settings {
   deezerProviderMigrated: boolean
   // One-shot marker for moving the old 'always' default onto 'audioChanges' (settings.ts).
   backupPolicyMigrated: boolean
+  trackImportFieldsMigrated: boolean
   conversionCount: number
   // Lifetime activity tally behind the Stats tab, next to conversionCount. Bumped
   // only in the main process (stats:record fire-and-forget), so near-simultaneous

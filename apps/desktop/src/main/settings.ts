@@ -125,6 +125,7 @@ export const defaults: Settings = {
   hasSeenOnboarding: false,
   deezerProviderMigrated: false,
   backupPolicyMigrated: false,
+  trackImportFieldsMigrated: false,
   conversionCount: 0,
   stats: {
     imported: 0,
@@ -510,6 +511,18 @@ export function migrateProviderDefaults(): void {
 // new default would never reach them. A deliberate 'always' looks the same, so it moves
 // too; the marker (synced) keeps a later launch, or another Mac, from undoing it again
 // once the user puts it back.
+const TRACK_IMPORT_FIELDS = ['bpm', 'key', 'mixName', 'isrc']
+
+export function migrateImportFields(): void {
+  const cur = getSettings()
+  if (cur.trackImportFieldsMigrated) return
+  const stored = cur.importFields ?? []
+  saveSettings({
+    importFields: [...stored, ...TRACK_IMPORT_FIELDS.filter((f) => !stored.includes(f))],
+    trackImportFieldsMigrated: true,
+  })
+}
+
 export function migrateBackupPolicy(): void {
   const cur = getSettings()
   if (cur.backupPolicyMigrated) return

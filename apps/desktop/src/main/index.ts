@@ -88,6 +88,7 @@ import {
   getConfigDir,
   getSettings,
   migrateBackupPolicy,
+  migrateImportFields,
   migrateProviderDefaults,
   recordConversion,
   recordStat,
@@ -1380,6 +1381,7 @@ app.whenReady().then(() => {
   })
   migrateProviderDefaults()
   migrateBackupPolicy()
+  migrateImportFields()
   createWindow()
 
   // Downloads a newer version in the background, then tells the renderer so it can
