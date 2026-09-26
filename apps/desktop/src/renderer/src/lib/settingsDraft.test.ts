@@ -42,6 +42,7 @@ const settings: Settings = {
   trimWhitespace: true,
   zeroPadTrack: true,
   fullReleaseDate: false,
+  asciiFileNames: false,
   visibleFields: [],
   requiredFields: [],
   coverMaxSize: 1200,
@@ -214,6 +215,11 @@ describe('buildSettingsPatch', () => {
     const draft = pickSynced({ ...settings, autoApplyFilename: true })
     expect(draft.autoApplyFilename).toBe(true)
     expect(buildSettingsPatch(draft, local).autoApplyFilename).toBe(true)
+  })
+
+  it('round-trips the file names without accents toggle, or Save would drop it', () => {
+    const draft = pickSynced({ ...settings, asciiFileNames: true })
+    expect(buildSettingsPatch(draft, local).asciiFileNames).toBe(true)
   })
 
   // The choice of which fields Discogs may fill has to survive the draft round-trip, or

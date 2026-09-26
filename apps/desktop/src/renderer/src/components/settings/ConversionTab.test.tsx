@@ -38,6 +38,7 @@ const synced: SyncedDraft = {
   trimWhitespace: true,
   zeroPadTrack: true,
   fullReleaseDate: false,
+  asciiFileNames: false,
   visibleFields: [],
   customFields: [],
   importFields: [],

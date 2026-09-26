@@ -88,6 +88,7 @@ export const defaults: Settings = {
   trimWhitespace: true,
   zeroPadTrack: true,
   fullReleaseDate: false,
+  asciiFileNames: false,
   visibleFields: DEFAULT_FIELDS,
   requiredFields: DEFAULT_REQUIRED_FIELDS,
   importFields: DEFAULT_IMPORT_FIELDS,

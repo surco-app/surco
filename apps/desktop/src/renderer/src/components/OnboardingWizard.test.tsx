@@ -61,6 +61,7 @@ const settings: Settings = {
   trimWhitespace: true,
   zeroPadTrack: true,
   fullReleaseDate: false,
+  asciiFileNames: false,
   visibleFields: [],
   requiredFields: [],
   coverMaxSize: 1200,

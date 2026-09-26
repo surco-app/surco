@@ -113,6 +113,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     groupingSeparator: ', ',
     trimWhitespace: true,
     zeroPadTrack: true,
+    asciiFileNames: false,
     fullReleaseDate: false,
     visibleFields: ['title', 'artist'],
     requiredFields: ['title', 'artist'],

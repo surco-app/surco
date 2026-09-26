@@ -1066,6 +1066,8 @@
     "zeroPadTrack": "Zero-pad track number (03)",
     "fullReleaseDate": "Year with full date",
     "fullReleaseDateHint": "Shows and saves 2020-12-01 instead of 2020 when the file or Discogs, Deezer or Bandcamp has the whole date.",
+    "asciiFileNames": "File names without accents",
+    "asciiFileNamesHint": "Writes “Royksopp” instead of “Röyksopp”. Handy for searching a NAS and for drives that trip over accented names.",
     "coverMaxSize": "Maximum artwork size",
     "coverMaxHint": "px (0 = no limit)",
     "coverUpscale": "Upscale smaller artwork to this size",
