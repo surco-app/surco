@@ -14,7 +14,6 @@ import { Readable } from 'node:stream'
 import {
   app,
   BrowserWindow,
-  clipboard,
   dialog,
   ipcMain,
   Menu,
@@ -52,6 +51,7 @@ import { appMenuTemplate } from './appMenu'
 import { registerAudioIpc } from './audioIpc'
 import { setBeatportSession } from './beatport'
 import { beatportSession, connectBeatport, disconnectBeatport } from './beatportCredentials'
+import { clipboardHasImage, readClipboardImage, writeClipboardImage } from './clipboardImage'
 import type { CoverSource } from './cover'
 import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
@@ -1220,7 +1220,7 @@ function registerIpc(): void {
     try {
       const img = nativeImage.createFromPath(prepared.path)
       if (img.isEmpty()) return false
-      clipboard.writeImage(img)
+      await writeClipboardImage(img.toPNG())
       return true
     } finally {
       await prepared.cleanup()
@@ -1231,7 +1231,9 @@ function registerIpc(): void {
   // (for the embed) plus a data URL (for the preview), mirroring a picked file. Null
   // when the clipboard holds no image, so the renderer leaves the artwork alone.
   ipcMain.handle('cover:pasteImage', async () => {
-    const img = clipboard.readImage()
+    const bytes = await readClipboardImage()
+    if (!bytes) return null
+    const img = nativeImage.createFromBuffer(bytes)
     if (img.isEmpty()) return null
     const dir = await mkdtemp(join(tmpdir(), 'surco-paste-'))
     const coverPath = join(dir, 'cover.png')
@@ -1240,7 +1242,7 @@ function registerIpc(): void {
   })
 
   // Lets the cover well show its paste affordance only when there's an image to paste.
-  ipcMain.handle('clipboard:hasImage', () => !clipboard.readImage().isEmpty())
+  ipcMain.handle('clipboard:hasImage', () => clipboardHasImage())
 
   registerShellIpc(mediaAccess)
   registerTrashIpc(surcoTrash, mediaAccess)
