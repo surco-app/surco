@@ -1073,3 +1073,28 @@ describe('SettingsModal search tab order', () => {
     }
   })
 })
+
+describe('SettingsModal Beatport card state', () => {
+  function openSearch(over: Partial<Settings>) {
+    render(
+      <SettingsModal
+        settings={{ ...settings, searchProviders: ['beatport'], ...over }}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-tab-search'))
+  }
+
+  it('says in the card title that Beatport is not connected yet, so a ticked box is not mistaken for ready', () => {
+    openSearch({ beatportUsername: '' })
+    expect(screen.getByTestId('beatport-status')).toBeInTheDocument()
+  })
+
+  it('drops the warning once an account is connected', () => {
+    openSearch({ beatportUsername: 'dj' })
+    expect(screen.queryByTestId('beatport-status')).not.toBeInTheDocument()
+  })
+})

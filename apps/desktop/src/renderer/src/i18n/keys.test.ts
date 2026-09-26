@@ -65,3 +65,11 @@ describe('locale parity', () => {
     }
   })
 })
+
+describe('search sources hint', () => {
+  it('names every source the checkboxes offer, Beatport included, in every language', () => {
+    for (const locale of [es, en, de, fr, ptBR]) {
+      expect(locale.settings.searchProvidersHint).toContain('Beatport')
+    }
+  })
+})

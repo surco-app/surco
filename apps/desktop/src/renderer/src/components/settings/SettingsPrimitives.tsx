@@ -71,7 +71,7 @@ export function SettingsSection({
   first = false,
   children,
 }: {
-  eyebrow?: string
+  eyebrow?: React.ReactNode
   first?: boolean
   children: React.ReactNode
 }): React.JSX.Element {
