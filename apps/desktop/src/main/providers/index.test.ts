@@ -35,6 +35,13 @@ import { DEFAULT_PROVIDER, getProvider } from './index'
 afterEach(() => vi.clearAllMocks())
 
 describe('getProvider', () => {
+  it("beatport releases reach the renderer with the key already in the user's notation", async () => {
+    getSettings.mockReturnValueOnce({ ...getSettings(), keyNotation: 'musical' } as never)
+    bpGetRelease.mockResolvedValue({ tracklist: [{ title: 'x', position: '1', key: 'Eb Minor' }] })
+    const rel = await getProvider('beatport').getRelease(1)
+    expect(rel.tracklist[0].key).toBe('Ebm')
+  })
+
   it('routes Beatport searches to its client with the cleaned query and hints', async () => {
     bpSearch.mockResolvedValue([{ id: 7 }])
     const hints = { artist: 'ROSALÍA', title: 'DESPECHÁ' }
