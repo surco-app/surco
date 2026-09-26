@@ -51,15 +51,16 @@ export function SearchTab({
             <span
               data-testid="beatport-status"
               data-state={local.beatportUsername ? 'connected' : 'disconnected'}
-              className={`ml-2 inline-flex items-center gap-1.5 font-normal ${
-                local.beatportUsername ? 'text-[var(--color-good)]' : 'text-[var(--color-danger)]'
+              role="img"
+              aria-label={
+                local.beatportUsername
+                  ? tr('settings.beatportConnected')
+                  : tr('settings.beatportNotConnected')
+              }
+              className={`ml-2 inline-block h-2 w-2 rounded-full align-middle ${
+                local.beatportUsername ? 'bg-[var(--color-good)]' : 'bg-[var(--color-danger)]'
               }`}
-            >
-              <span aria-hidden="true" className="h-2 w-2 rounded-full bg-current" />
-              {local.beatportUsername
-                ? tr('settings.beatportConnected')
-                : tr('settings.beatportNotConnected')}
-            </span>
+            />
           </>
         }
       >
