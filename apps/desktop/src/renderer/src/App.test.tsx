@@ -1877,6 +1877,15 @@ describe('App keyboard shortcuts', () => {
     fireEvent.keyDown(document.body, { key: 'Escape' })
     await waitFor(() => expect(screen.queryByTestId('palette-input')).toBeNull())
   })
+
+  // The palette button is a bare glyph, so its hover hint is the only place the bar shows
+  // its shortcut. ⌘K is a fixed menu accelerator outside the rebindable table, and the hint
+  // read only that table, so the tooltip said "Command palette" with no keys at all.
+  it('shows the palette shortcut in the palette button tooltip', async () => {
+    await renderApp()
+    fireEvent.focus(screen.getByTestId('open-palette'))
+    expect(screen.getByRole('tooltip')).toHaveTextContent(/(⌘|Ctrl\+)K/)
+  })
 })
 
 describe('App command palette', () => {

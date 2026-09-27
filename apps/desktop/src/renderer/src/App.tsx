@@ -1204,7 +1204,8 @@ export default function App(): React.JSX.Element {
     [settings?.shortcutOverrides],
   )
   const hintFor = useCallback(
-    (id: string): string => formatShortcut(bindings.get(id) ?? [], isMac),
+    (id: string): string =>
+      formatShortcut(id === 'palette' ? ['mod', 'k'] : (bindings.get(id) ?? []), isMac),
     [bindings],
   )
 
