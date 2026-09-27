@@ -14,7 +14,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="GPL-3.0" /></a>
 </p>
 
-Drop your tracks in. Surco finds the right metadata on Discogs and Bandcamp, checks that your files really are lossless, detects BPM and key, converts them, and hands everything to your DJ software or Apple Music.
+Drop your tracks in. Surco finds the right metadata on Discogs, Bandcamp, Deezer and Beatport, checks that your files really are lossless, detects BPM and key, converts them, and hands everything to your DJ software or Apple Music.
 
 <p align="center">
   <img src="apps/web/public/app-en-1024.webp" width="800" alt="Surco — track list, editor and Discogs search" />
@@ -22,7 +22,7 @@ Drop your tracks in. Surco finds the right metadata on Discogs and Bandcamp, che
 
 ## What it does
 
-- **Auto-tagging** — searches Discogs and Bandcamp and matches whole imports automatically: title, duration, artist and catalog number have to agree before anything is written, and uncertain matches are flagged for a one-click review instead of applied.
+- **Auto-tagging** — searches Discogs, Bandcamp, Deezer and Beatport and matches whole imports automatically: title, duration, artist and catalog number have to agree before anything is written, and uncertain matches are flagged for a one-click review instead of applied.
 - **Fake-lossless detection** — a spectrogram plus an automatic verdict that flags a 320 kbps re-encode sold as FLAC/WAV, upsampled audio and other quality lies. No more squinting at spectra.
 - **BPM & musical key** — detected locally, shown in Camelot or classic notation.
 - **Conversion** — AIFF, MP3 (320/V0), WAV, FLAC and ALAC, with optional loudness normalization (integrated LUFS target + true-peak limiter) or peak normalization.
