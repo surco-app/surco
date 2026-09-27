@@ -49,6 +49,7 @@ import {
   defaults,
   getConfigDir,
   getSettings,
+  migrateBackupLimits,
   migrateBackupPolicy,
   migrateImportFields,
   migrateProviderDefaults,
@@ -84,6 +85,12 @@ describe('defaults for a fresh install', () => {
   // they had already stopped needing.
   it('keeps originals for a week, not a month', () => {
     expect(defaults.backupRetentionDays).toBe(7)
+  })
+
+  // A week of copies from the conversions that re-encode fits in a couple of gigabytes;
+  // ten was room for a whole crate of AIFFs, disk the user saw spent on nothing.
+  it('caps originals at 2 GB, not 10', () => {
+    expect(defaults.backupMaxGb).toBe(2)
   })
 
   // A copy of the whole file for every tag edit filled a DJ's disk past the 10 GB cap:
@@ -753,6 +760,52 @@ describe('migrateBackupPolicy', () => {
     )
     migrateBackupPolicy()
     expect(getSettings().backupPolicy).toBe('always')
+  })
+})
+
+describe('migrateBackupLimits', () => {
+  const wipe = (): void => {
+    rmSync(join(app.getPath('userData'), 'settings.json'), { force: true })
+    rmSync(join(app.getPath('userData'), 'config-dir.json'), { force: true })
+  }
+  beforeEach(wipe)
+  afterEach(wipe)
+
+  // Settings are saved whole, so an install that pressed Save under the old defaults
+  // carries 30 days and 10 GB written out and would never see the smaller ones.
+  it('moves an install saved under the old limits onto the new ones, once', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ backupRetentionDays: 30, backupMaxGb: 10 }),
+    )
+    migrateBackupLimits()
+    const s = getSettings()
+    expect(s.backupRetentionDays).toBe(7)
+    expect(s.backupMaxGb).toBe(2)
+    expect(s.backupLimitsMigrated).toBe(true)
+  })
+
+  it('leaves limits the user set to something else alone', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ backupRetentionDays: 14, backupMaxGb: 5 }),
+    )
+    migrateBackupLimits()
+    const s = getSettings()
+    expect(s.backupRetentionDays).toBe(14)
+    expect(s.backupMaxGb).toBe(5)
+  })
+
+  // The marker is what lets a user who puts 30 days or 10 GB back keep them.
+  it('does not undo the old limits chosen again after the migration ran', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ backupRetentionDays: 30, backupMaxGb: 10, backupLimitsMigrated: true }),
+    )
+    migrateBackupLimits()
+    const s = getSettings()
+    expect(s.backupRetentionDays).toBe(30)
+    expect(s.backupMaxGb).toBe(10)
   })
 })
 

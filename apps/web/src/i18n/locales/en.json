@@ -254,7 +254,7 @@
           },
           {
             "t": "Backups",
-            "d": "Before rewriting an original it keeps a copy you restore from the track itself. By default only when the audio changes, for 7 days and up to 10 GB, always leaving 5 GB free on the disk."
+            "d": "Before rewriting an original it keeps a copy you restore from the track itself. By default only when the audio changes, for 7 days and up to 2 GB, always leaving 5 GB free on the disk."
           },
           {
             "t": "Trash, never a hard delete",
