@@ -91,17 +91,25 @@ describe('FieldsEditor', () => {
   // requiring it would block every conversion with no field to satisfy it.
   it('hiding a field removes it from both visible and required', () => {
     const { onChangeVisible, onChangeRequired } = setup()
-    const row = screen.getByTestId('field-row-title')
-    fireEvent.click(within(row).getByText('Hide'))
+    fireEvent.click(screen.getByTestId('field-hide-title'))
     expect(onChangeVisible).toHaveBeenCalledWith(['artist', 'album'])
     expect(onChangeRequired).toHaveBeenCalledWith([])
+  })
+
+  // Sections already toggles visibility with an eye; Fields spelled "Hide" on every row,
+  // twenty times down the list. The same eye in both tabs, its word in the name.
+  it('toggles visibility with the eye Sections uses, not a word on every row', () => {
+    setup({ visibleFields: ['title'], requiredFields: [] })
+    expect(within(screen.getByTestId('field-row-title')).queryByText('Hide')).toBeNull()
+    expect(within(screen.getByTestId('hidden-field-artist')).queryByText('Show')).toBeNull()
+    expect(screen.getByTestId('field-hide-title')).toHaveAccessibleName('Hide Title')
+    expect(screen.getByTestId('field-show-artist')).toHaveAccessibleName('Show Artist')
   })
 
   it('showing a hidden field appends it to the visible list', () => {
     const { onChangeVisible } = setup({ visibleFields: ['title'], requiredFields: [] })
     // 'artist' is not visible, so it appears in the hidden list with a Show button.
-    const hidden = screen.getByText('Artist').closest('div') as HTMLElement
-    fireEvent.click(within(hidden).getByText('Show'))
+    fireEvent.click(screen.getByTestId('field-show-artist'))
     expect(onChangeVisible).toHaveBeenCalledWith(['title', 'artist'])
   })
 

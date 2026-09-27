@@ -4,6 +4,8 @@ import {
   ChevronUp,
   CircleCheck,
   CircleDashed,
+  Eye,
+  EyeOff,
   GripVertical,
   Info,
   Wand2,
@@ -31,15 +33,15 @@ import { Tooltip } from './Tooltip'
 // How long the auto-organize button holds its "done" confirmation before reverting.
 const ORGANIZED_FEEDBACK_MS = 1500
 
-// The row's column track: name (takes the slack), the two toggles, the two arrows, Hide.
+// The row's column track: name (takes the slack), the two toggles, the two arrows, the eye.
 // A grid rather than a flex row because the toggles repeat down every row and read as
 // columns — and only declared tracks let a heading line up with them. Sizing a control by
 // its own text drifts per language (German's "Ausblenden" is twice the width of "Hide"),
 // which no hand-tuned heading offset can follow. Every track is therefore given an explicit
 // width: the heading is a separate grid, so an `auto` track would resolve from ITS contents
 // (empty) rather than the row's and land the labels in the wrong place — 143px off, as an
-// auto-sized first attempt did. Hide's track fits the longest translation.
-const ROW_GRID = 'grid grid-cols-[1fr_4.75rem_4.75rem_1.75rem_1.75rem_5.5rem] items-center gap-1'
+// auto-sized first attempt did.
+const ROW_GRID = 'grid grid-cols-[1fr_4.75rem_4.75rem_1.75rem_1.75rem_2.5rem] items-center gap-1'
 
 // What can join the tags of Genre and Grouping: the three a tag reader expects, or the
 // user's own typed under Other.
@@ -401,13 +403,16 @@ export function FieldsEditor({
               >
                 <ChevronDown className="h-4 w-4" aria-hidden="true" />
               </button>
+              {/* The eye Sections toggles visibility with, so both tabs say it the same way. */}
               <button
                 type="button"
+                data-testid={`field-hide-${key}`}
                 onClick={() => hide(key)}
                 aria-label={tr('fields.rowHide', { name: labelOf(key) })}
-                className="ml-1 rounded px-2 py-0.5 text-xs text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+                className={`${TOGGLE_BOX} ${TOGGLE_ON}`}
               >
-                {tr('settings.hide')}
+                <Eye className="h-4 w-4" aria-hidden="true" />
+                <Tooltip label={tr('settings.hide')} />
               </button>
             </div>
           ))}
@@ -439,11 +444,13 @@ export function FieldsEditor({
               <span />
               <button
                 type="button"
+                data-testid={`field-show-${key}`}
                 onClick={() => onChangeVisible([...visibleFields, key])}
                 aria-label={tr('fields.rowShow', { name: labelOf(key) })}
-                className="rounded px-2 py-0.5 text-xs text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
+                className={`${TOGGLE_BOX} ${TOGGLE_OFF}`}
               >
-                {tr('settings.show')}
+                <EyeOff className="h-4 w-4" aria-hidden="true" />
+                <Tooltip label={tr('settings.show')} />
               </button>
             </div>
           ))}
