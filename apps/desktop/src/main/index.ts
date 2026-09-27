@@ -87,6 +87,7 @@ import {
   defaultConfigDir,
   getConfigDir,
   getSettings,
+  migrateBackupLimits,
   migrateBackupPolicy,
   migrateImportFields,
   migrateProviderDefaults,
@@ -1383,6 +1384,7 @@ app.whenReady().then(() => {
   })
   migrateProviderDefaults()
   migrateBackupPolicy()
+  migrateBackupLimits()
   migrateImportFields()
   createWindow()
 

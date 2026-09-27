@@ -126,6 +126,7 @@ export const defaults: Settings = {
   hasSeenOnboarding: false,
   deezerProviderMigrated: false,
   backupPolicyMigrated: false,
+  backupLimitsMigrated: false,
   trackImportFieldsMigrated: false,
   conversionCount: 0,
   stats: {
@@ -532,5 +533,19 @@ export function migrateBackupPolicy(): void {
   saveSettings({
     backupPolicy: cur.backupPolicy === 'always' ? 'audioChanges' : cur.backupPolicy,
     backupPolicyMigrated: true,
+  })
+}
+
+// Same reason as migrateBackupPolicy: 30 days and 10 GB were the defaults, written out by
+// every Save, so the smaller ones would never reach those installs. Each limit moves only
+// if it still holds the old default; one the user changed to anything else stays.
+export function migrateBackupLimits(): void {
+  const cur = getSettings()
+  if (cur.backupLimitsMigrated) return
+  saveSettings({
+    backupRetentionDays:
+      cur.backupRetentionDays === 30 ? TRASH_RETENTION_DAYS : cur.backupRetentionDays,
+    backupMaxGb: cur.backupMaxGb === 10 ? TRASH_MAX_BYTES / 1024 ** 3 : cur.backupMaxGb,
+    backupLimitsMigrated: true,
   })
 }

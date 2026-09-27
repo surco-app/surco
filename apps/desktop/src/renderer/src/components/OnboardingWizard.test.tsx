@@ -91,6 +91,7 @@ const settings: Settings = {
   hasSeenOnboarding: false,
   deezerProviderMigrated: true,
   backupPolicyMigrated: true,
+  backupLimitsMigrated: true,
   trackImportFieldsMigrated: true,
   conversionCount: 0,
   stats: {
