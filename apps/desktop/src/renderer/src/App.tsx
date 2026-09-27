@@ -1840,7 +1840,6 @@ export default function App(): React.JSX.Element {
             <div className="relative">
               {progress && <TopProgressBar fraction={progress.fraction} />}
               <Toolbar
-                isMac={isMac}
                 hintFor={hintFor}
                 trackCount={tracks.length}
                 convertibleCount={eligibleCount}

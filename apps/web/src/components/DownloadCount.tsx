@@ -61,19 +61,10 @@ export default function DownloadCount() {
     }
   }, [])
 
-  // While the paginated releases fetch is in flight, hold the count's slot with a
-  // pulse placeholder so the version next to it doesn't get shoved sideways when
-  // the number lands.
-  if (!settled)
-    return (
-      <span
-        data-testid="download-count-loading"
-        aria-hidden="true"
-        className="inline-block h-3 w-32 animate-pulse rounded bg-line align-middle"
-      />
-    )
-
-  if (!count) return null
+  // Nothing while the paginated fetch is in flight: a grey pulse bar with no words read
+  // as a broken progress bar, and the count sits last on its line, so landing late
+  // shoves nothing aside.
+  if (!settled || !count) return null
 
   return (
     <span data-testid="download-count" className="inline-flex items-center gap-1.5">

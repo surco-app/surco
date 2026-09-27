@@ -1,4 +1,5 @@
 import type React from 'react'
+import { Tooltip } from './Tooltip'
 
 // The one pill a section header wears — every status the header shows routes through
 // here so colour means the SAME thing everywhere. The tone is the severity of what the
@@ -64,11 +65,14 @@ export function SectionPill({
   icon?: React.ReactNode
   children: React.ReactNode
 }): React.JSX.Element {
+  // Green is "nothing to do here", and the dot already says it: the words beside it only
+  // repeated the colour. They stay for a screen reader and on hover.
+  const dotOnly = tone === 'good' && !icon
   return (
     <span
       data-testid={testid}
       data-tone={tone}
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium ${TEXT[tone]} ${
+      className={`group relative inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium ${TEXT[tone]} ${
         numeric ? 'tabular-nums' : ''
       }`}
     >
@@ -79,7 +83,14 @@ export function SectionPill({
           <span aria-hidden="true" className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOTS[tone]}`} />
         )
       )}
-      {children}
+      {dotOnly ? (
+        <>
+          <span className="sr-only">{children}</span>
+          {typeof children === 'string' && <Tooltip label={children} scope="dot" />}
+        </>
+      ) : (
+        children
+      )}
     </span>
   )
 }

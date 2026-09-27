@@ -11,10 +11,10 @@ import Icon, { type GlyphName } from './Icon'
 // the audio work is the "and it also" and stays muted. Flattening them into three
 // equal bullets would say Surco is three tools, which is the confusion this fixes.
 //
-// One line each, not a titled block with its own paragraph: the rows sit below the
-// download button now, so their job is to confirm what the visitor just read rather
-// than to compete with the headline for the top of the column. The full sentences
-// still live in `note`, on the features page.
+// One line each, not a titled block with its own paragraph: the rows sit under the app
+// window now, three across, so their job is to confirm what the picture just showed
+// rather than to compete with the headline. The full sentences still live in `note`,
+// on the features page.
 const ANCHORS: { key: string; icon: GlyphName; lead?: boolean }[] = [
   { key: 'tag', icon: 'tag', lead: true },
   { key: 'audio', icon: 'spectrum' },
@@ -25,7 +25,7 @@ export default function HeroAnchors() {
   const { t } = useTranslation()
 
   return (
-    <ul className="mt-7 flex flex-col gap-3">
+    <ul className="mx-auto mt-10 grid max-w-5xl gap-4 text-left sm:grid-cols-3 sm:gap-8">
       {ANCHORS.map(({ key, icon, lead }) => (
         <li key={key} className="flex items-start gap-3">
           <Icon

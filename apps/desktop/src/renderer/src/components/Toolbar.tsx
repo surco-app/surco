@@ -5,6 +5,7 @@ import {
   FilePlus,
   Loader2,
   Radio,
+  Search,
   Settings as SettingsIcon,
   Sparkles,
 } from 'lucide-react'
@@ -15,7 +16,6 @@ import type { BatchSummary } from '../lib/batch'
 import { Tooltip } from './Tooltip'
 
 interface Props {
-  isMac: boolean
   // Formats a command's bound chord (e.g. "⌘⇧D") for the button tooltips, so a sweep's
   // shortcut is discoverable on hover. Passed in (rather than computed here) to keep the
   // binding table in App the single source of truth.
@@ -76,7 +76,6 @@ interface Props {
 // Memoized for the same contract as the Editor: App hands it stable handlers, so a
 // keystroke in a metadata field no longer re-renders the whole toolbar.
 export const Toolbar = memo(function Toolbar({
-  isMac,
   hintFor,
   trackCount,
   convertibleCount,
@@ -107,6 +106,10 @@ export const Toolbar = memo(function Toolbar({
   onSettings,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const convertLabel =
+    convertibleCount > 0
+      ? tr('header.convertAll', { count: convertibleCount })
+      : tr('header.convertNone')
   return (
     <header
       className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-20"
@@ -173,7 +176,7 @@ export const Toolbar = memo(function Toolbar({
           </span>
         )}
         {importing && (
-          // A live pill matching the auto-match/analyze sweeps (accent ring, spinning
+          // A live pill matching the auto-match/analyze sweeps (accent text, spinning
           // glyph, done/total), so a big drop reads as active work rather than a static
           // line — and clicking it cancels, like the batch pill beside it. This was the
           // one sweep with no way out: a folder dropped by mistake had to be waited out.
@@ -182,7 +185,7 @@ export const Toolbar = memo(function Toolbar({
             data-testid="import-progress"
             onClick={onCancelImport}
             aria-label={tr('header.cancelImport')}
-            className="press group relative flex h-8 items-center gap-1.5 rounded-lg border border-[var(--color-accent)] px-2.5 text-xs font-medium tabular-nums text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
+            className="press group relative flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium tabular-nums text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
           >
             {/* FilePlus, not the shared Loader2: mid-conversion, a dropped folder painted
                 two identical spinning capsules. The other sweeps identify themselves by
@@ -217,9 +220,9 @@ export const Toolbar = memo(function Toolbar({
               }
               className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-medium hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
                 matching
-                  ? 'min-w-[3.25rem] border border-[var(--color-accent)] text-[var(--color-accent)]'
+                  ? 'min-w-[3.25rem] text-[var(--color-accent)]'
                   : needsToken
-                    ? 'border border-[var(--color-warn)] text-[var(--color-warn)]'
+                    ? 'text-[var(--color-warn)]'
                     : 'text-fg-muted hover:text-fg'
               }`}
             >
@@ -256,7 +259,7 @@ export const Toolbar = memo(function Toolbar({
               aria-label={analysis ? tr('header.cancelAnalyze') : tr('header.analyzeQuality')}
               className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
                 analysis
-                  ? 'min-w-[3.25rem] border border-[var(--color-accent)] text-[var(--color-accent)]'
+                  ? 'min-w-[3.25rem] text-[var(--color-accent)]'
                   : 'w-8 text-fg-muted hover:text-fg'
               }`}
             >
@@ -286,12 +289,11 @@ export const Toolbar = memo(function Toolbar({
           type="button"
           data-testid="open-palette"
           onClick={onPalette}
-          className="press flex h-8 items-center gap-1 rounded-lg px-2.5 text-[11px] font-medium text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
-          // Starts with the keys it shows, so voice control finds it by what is on screen.
-          aria-label={`${isMac ? '⌘K' : 'Ctrl K'} ${tr('header.palette')}`}
+          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          aria-label={tr('header.palette')}
         >
-          <kbd className="font-sans">{isMac ? '⌘' : 'Ctrl'}</kbd>
-          <kbd className="font-sans">K</kbd>
+          <Search className="h-4 w-4" aria-hidden="true" />
+          <Tooltip label={tr('header.palette')} hint={hintFor('palette')} align="end" />
         </button>
         {/* Split the command launcher from the app-level views (stats, activity, settings)
             so the header reads as three groups (track actions, command, app) instead of one
@@ -348,15 +350,13 @@ export const Toolbar = memo(function Toolbar({
               data-testid="convert-all"
               onClick={batching ? onCancelBatch : onConvertAll}
               disabled={!batching && !canConvertAll}
-              aria-label={
-                batching
-                  ? tr('header.cancelConvert')
-                  : tr('header.convertAll', { count: convertibleCount })
-              }
+              aria-label={batching ? tr('header.cancelConvert') : convertLabel}
               className={`press group relative flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium disabled:opacity-40 ${
                 batching
-                  ? 'border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]'
-                  : 'bg-[var(--color-accent-soft)] text-fg hover:bg-[var(--color-row-selected)] hover:text-[var(--color-on-row-selected)]'
+                  ? 'text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]'
+                  : canConvertAll
+                    ? 'bg-[var(--color-accent-soft)] text-fg hover:bg-[var(--color-row-selected)] hover:text-[var(--color-on-row-selected)]'
+                    : 'text-fg-muted'
               }`}
             >
               {batching ? (
@@ -374,15 +374,11 @@ export const Toolbar = memo(function Toolbar({
               ) : (
                 <>
                   <ArrowRightLeft className="h-4 w-4" aria-hidden="true" />
-                  {tr('header.convertAll', { count: convertibleCount })}
+                  {convertLabel}
                 </>
               )}
               <Tooltip
-                label={
-                  batching
-                    ? tr('header.cancelConvert')
-                    : tr('header.convertAll', { count: convertibleCount })
-                }
+                label={batching ? tr('header.cancelConvert') : convertLabel}
                 hint={batching ? undefined : hintFor('process-all')}
               />
             </button>

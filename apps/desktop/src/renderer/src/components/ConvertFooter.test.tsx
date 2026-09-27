@@ -161,9 +161,10 @@ describe('ConvertFooter buttons stay on one line', () => {
 })
 
 describe('ConvertFooter blocked by missing fields', () => {
-  // The full reason can list every required field; the main button carries the short form
-  // on its face, so the footer stays one control tall.
-  it('puts the short form of what is missing on the main button', () => {
+  // The full reason can list every required field; its short form sits beside the main
+  // button on the same row, so the footer stays one control tall and the button keeps
+  // naming its action.
+  it('puts the short form of what is missing beside the main button', () => {
     render(
       footer(
         false,
@@ -171,7 +172,8 @@ describe('ConvertFooter blocked by missing fields', () => {
         '6 required fields missing',
       ),
     )
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('6 required fields missing')
+    expect(screen.getByTestId('process-blocked')).toHaveTextContent('6 required fields missing')
+    expect(screen.getByTestId('process-btn')).not.toHaveTextContent('missing')
   })
 
   it('keeps the action on the button when the track is ready to convert', () => {

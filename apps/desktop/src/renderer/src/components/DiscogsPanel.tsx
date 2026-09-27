@@ -478,25 +478,25 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                     </span>
                     <ChevronRight
                       aria-hidden="true"
-                      className={`h-3 w-3 shrink-0 text-fg-faint transition-transform ${expanded ? 'rotate-90' : ''}`}
+                      className={`h-3 w-3 shrink-0 text-fg-faint transition-transform ${
+                        expanded
+                          ? 'rotate-90'
+                          : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'
+                      }`}
                     />
                   </button>
                   <CollapsibleTracks open={expanded}>
                     <div className="flex flex-col gap-0.5 pb-1">
-                      {/* A phase band, not a lone caption: a field-coloured strip with rules
-                          top and bottom marks the shift from "search a release" (the cards
-                          above) to "pick the track to apply" (the numbered list below), and
-                          states the track count so the change of context is unmistakable. */}
-                      <div className="flex items-center justify-between gap-2 border-y border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1">
-                        <span className="text-[11px] font-semibold text-fg-dim">
-                          {isMulti ? tr('match.title') : tr('editor.chooseTrack')}
-                        </span>
-                        {release && (
-                          <span className="shrink-0 text-[10px] font-normal tracking-normal text-fg-faint tabular-nums">
-                            {tr('editor.chooseTrackCount', { count: release.tracklist.length })}
+                      {/* The album match gets a band because it is a different task
+                          (pairing several files); a single file's tracks need none, indented
+                          under the release they already read as its tracklist. */}
+                      {isMulti && (
+                        <div className="border-y border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1">
+                          <span className="text-[11px] font-semibold text-fg-dim">
+                            {tr('match.title')}
                           </span>
-                        )}
-                      </div>
+                        </div>
+                      )}
                       {loaded && release ? (
                         isMulti && selectedTracks && onApplyMatches ? (
                           <AlbumMatchRows

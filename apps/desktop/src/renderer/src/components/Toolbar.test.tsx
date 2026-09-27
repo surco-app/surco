@@ -12,7 +12,6 @@ type Props = React.ComponentProps<typeof Toolbar>
 
 function renderBar(over: Partial<Props> = {}): Props {
   const props: Props = {
-    isMac: true,
     hintFor: () => '',
     trackCount: 3,
     convertibleCount: 3,
@@ -263,19 +262,23 @@ describe('Toolbar', () => {
     expect(screen.queryByTestId('trash-count')).toBeNull()
   })
 
-  // The palette button shows only its shortcut, "⌘ K", while its name was "Command
-  // palette": a voice control user saying what they see ("click Command K") hit nothing
-  // (WCAG 2.5.3). The name has to start with the visible keys.
-  it('names the palette button starting with the keys it shows', () => {
-    renderBar({ isMac: true })
-    expect(screen.getByTestId('open-palette')).toHaveAccessibleName(
-      `⌘K ${i18n.t('header.palette')}`,
-    )
-    cleanup()
-    renderBar({ isMac: false })
-    expect(screen.getByTestId('open-palette')).toHaveAccessibleName(
-      `Ctrl K ${i18n.t('header.palette')}`,
-    )
+  // The palette button is a glyph like its neighbours, so its name says what it opens and
+  // the shortcut moves to the hover hint: "⌘ K" as text was the one word in a row of icons.
+  it('names the palette button for what it opens and keeps its shortcut on hover', () => {
+    renderBar({ hintFor: (id) => (id === 'palette' ? '⌘K' : '') })
+    const button = screen.getByTestId('open-palette')
+    expect(button).toHaveAccessibleName(i18n.t('header.palette'))
+    expect(button).not.toHaveTextContent('K')
+    fireEvent.focus(button)
+    expect(screen.getByRole('tooltip')).toHaveTextContent('⌘K')
+  })
+
+  // With nothing to convert the button still sits where the user expects it, but "Convert
+  // 0 tracks" spelled out a zero the list already shows: disabled, it just names the action.
+  it('drops the count when there is nothing to convert', () => {
+    renderBar({ canConvertAll: false, convertibleCount: 0 })
+    expect(screen.getByTestId('convert-all')).toHaveAccessibleName(i18n.t('header.convertNone'))
+    expect(screen.getByTestId('convert-all')).not.toHaveTextContent('0')
   })
 
   // The dot is the only always-visible signal that background work is running while

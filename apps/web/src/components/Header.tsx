@@ -4,7 +4,6 @@ import { DONATE_URL } from '../config'
 import { trackDonate } from '../lib/analytics'
 import { isCondensed } from '../lib/header'
 import { HEADER_SECTIONS, PAGES, type Page } from '../lib/nav'
-import { btnPrimary } from '../lib/ui'
 import { rememberLanguage, useAutoLanguage } from '../lib/useAutoLanguage'
 
 // `page` marks which standalone page renders the header; section links then
@@ -116,16 +115,10 @@ export default function Header({ page }: { page?: Page }) {
             width={128}
             height={128}
             className={`transition-all duration-300 ${
-              scrolled ? 'h-10 w-10' : 'h-11 w-11 sm:h-14 sm:w-14'
+              scrolled ? 'h-9 w-9' : 'h-9 w-9 sm:h-10 sm:w-10'
             }`}
           />
-          <span
-            className={`font-semibold leading-none tracking-tight transition-all duration-300 ${
-              scrolled ? 'text-2xl' : 'text-2xl sm:text-3xl'
-            }`}
-          >
-            Surco
-          </span>
+          <span className="text-xl font-semibold leading-none tracking-tight">Surco</span>
         </a>
         <div className="flex items-center gap-4 sm:gap-7">
           <nav className="hidden items-center gap-7 text-sm text-muted lg:flex">
@@ -143,19 +136,18 @@ export default function Header({ page }: { page?: Page }) {
             <a href={changelogHref} className="transition-colors hover:text-fg">
               {t('nav.cambios')}
             </a>
+            {/* A link like its neighbours: as a filled pill it was a second primary action
+                above the fold, as loud as the download it sat across from. */}
+            <a
+              href={DONATE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackDonate('header')}
+              className="transition-colors hover:text-fg"
+            >
+              {t('nav.donar')}
+            </a>
           </nav>
-          <a
-            href={DONATE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => trackDonate('header')}
-            className={`hidden gap-1.5 ${btnPrimary} px-3.5 py-2 text-xs sm:inline-flex`}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-            </svg>
-            {t('nav.donar')}
-          </a>
           <a
             href={otherHref}
             onClick={keepHash}

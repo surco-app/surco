@@ -211,158 +211,163 @@ export function ExportButton({
     // A disabled control fires no pointer events of its own, so the buttons go
     // pointer-events-none while blocked and this wrapper carries the hover — letting the
     // "why is this disabled" tooltip below appear over the greyed-out button.
-    <div
-      data-testid="process-btn-wrap"
-      ref={ref}
-      className={`group relative flex ${quiet ? 'flex-1' : ''}`}
-    >
-      <button
-        type="button"
-        data-testid="process-btn"
-        // While converting, a click cancels (when cancellable) rather than firing a second
-        // convert; the same button is the progress bar and its own stop control.
-        onClick={cancellable ? onCancel : softBlocked ? undefined : () => onProcess(outputFormat)}
-        // Cancellable keeps the button live during the convert; a non-cancellable processing
-        // state still disables it outright, and missing tags only mark it aria-disabled.
-        disabled={processing && !cancellable}
-        aria-disabled={softBlocked || undefined}
-        aria-describedby={softBlocked && incompleteReason ? reasonId : undefined}
-        // The visible text is the stage, but pressing cancels: the name says both, keeping
-        // the visible words first so voice control still finds it by what it shows.
-        aria-label={
-          cancellable
-            ? tr('export.cancelWhile', { stage: `${label} ${progressText}`.trim() })
-            : shownBlocked
-              ? `${shownBlocked} · ${label}`
+    <div className={`flex items-center gap-3 ${quiet ? 'flex-1' : ''}`}>
+      {shownBlocked && (
+        <span
+          data-testid="process-blocked"
+          className="flex shrink-0 items-center gap-1.5 text-xs text-fg-dim"
+        >
+          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[var(--color-warn)]" />
+          {shownBlocked}
+        </span>
+      )}
+      <div data-testid="process-btn-wrap" ref={ref} className="group relative flex flex-1">
+        <button
+          type="button"
+          data-testid="process-btn"
+          // While converting, a click cancels (when cancellable) rather than firing a second
+          // convert; the same button is the progress bar and its own stop control.
+          onClick={cancellable ? onCancel : softBlocked ? undefined : () => onProcess(outputFormat)}
+          // Cancellable keeps the button live during the convert; a non-cancellable processing
+          // state still disables it outright, and missing tags only mark it aria-disabled.
+          disabled={processing && !cancellable}
+          aria-disabled={softBlocked || undefined}
+          aria-describedby={softBlocked && incompleteReason ? reasonId : undefined}
+          // The visible text is the stage, but pressing cancels: the name says both, keeping
+          // the visible words first so voice control still finds it by what it shows.
+          aria-label={
+            cancellable
+              ? tr('export.cancelWhile', { stage: `${label} ${progressText}`.trim() })
               : undefined
-        }
-        className={
-          quiet
-            ? 'press flex-1 rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50'
-            : liveStage
-              ? // The dimmed track + accent fill replace the usual disabled fade: the
-                // button reads as a progress bar, not as a greyed-out control.
-                'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 py-2.5 text-sm font-medium text-[var(--color-on-accent)] disabled:pointer-events-none'
-              : 'press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50'
-        }
-      >
-        {liveStage && (
-          <span
-            data-testid="process-progress"
-            aria-hidden="true"
-            className="progress-sweep absolute inset-y-0 left-0 bg-[var(--color-accent)] transition-[width] duration-500"
-            style={{ width: `${STAGE_PROGRESS[liveStage] * 100}%` }}
-          />
-        )}
-        {/* Converting: the stage names progress by default, and a hover or keyboard focus
+          }
+          className={
+            quiet
+              ? 'press flex-1 rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50'
+              : liveStage
+                ? // The dimmed track + accent fill replace the usual disabled fade: the
+                  // button reads as a progress bar, not as a greyed-out control.
+                  'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 py-2.5 text-sm font-medium text-[var(--color-on-accent)] disabled:pointer-events-none'
+                : 'press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50'
+          }
+        >
+          {liveStage && (
+            <span
+              data-testid="process-progress"
+              aria-hidden="true"
+              className="progress-sweep absolute inset-y-0 left-0 bg-[var(--color-accent)] transition-[width] duration-500"
+              style={{ width: `${STAGE_PROGRESS[liveStage] * 100}%` }}
+            />
+          )}
+          {/* Converting: the stage names progress by default, and a hover or keyboard focus
             swaps in "Cancel" so the press's effect is legible before it's made. Without a
             cancel handler the stage label just stays. */}
-        <span
-          className={`relative ${cancellable ? 'group-hover:hidden group-focus-within:hidden' : ''}`}
+          <span
+            className={`relative ${cancellable ? 'group-hover:hidden group-focus-within:hidden' : ''}`}
+          >
+            {label}
+          </span>
+          {progressText && <span className="sr-only">{progressText}</span>}
+          {cancellable && (
+            <span className="relative hidden group-hover:inline group-focus-within:inline">
+              {tr('common.cancel')}
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          data-testid="process-format-toggle"
+          aria-label={tr('editor.chooseFormat')}
+          aria-expanded={open}
+          ref={toggleRef}
+          aria-haspopup="menu"
+          onClick={() => setOpen((v) => !v)}
+          disabled={blocked}
+          className={
+            quiet
+              ? 'press flex w-9 items-center justify-center rounded-r-lg border border-l-0 border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50'
+              : liveStage
+                ? // Matches the body's progress-bar look, or the split button would read
+                  // as half-faded while the fill keeps the body vivid.
+                  'press flex w-10 items-center justify-center rounded-r-lg border-l border-on-scrim/20 bg-[var(--color-accent)]/40 text-[var(--color-on-accent)] disabled:pointer-events-none'
+                : 'press flex w-10 items-center justify-center rounded-r-lg border-l border-on-scrim/20 bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50'
+          }
         >
-          {shownBlocked ?? label}
-        </span>
-        {progressText && <span className="sr-only">{progressText}</span>}
-        {cancellable && (
-          <span className="relative hidden group-hover:inline group-focus-within:inline">
-            {tr('common.cancel')}
+          <ChevronDown
+            aria-hidden="true"
+            className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
+          />
+        </button>
+        {incomplete && incompleteReason && <Tooltip label={incompleteReason} />}
+        {softBlocked && incompleteReason && (
+          <span id={reasonId} className="sr-only">
+            {incompleteReason}
           </span>
         )}
-      </button>
-      <button
-        type="button"
-        data-testid="process-format-toggle"
-        aria-label={tr('editor.chooseFormat')}
-        aria-expanded={open}
-        ref={toggleRef}
-        aria-haspopup="menu"
-        onClick={() => setOpen((v) => !v)}
-        disabled={blocked}
-        className={
-          quiet
-            ? 'press flex w-9 items-center justify-center rounded-r-lg border border-l-0 border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50'
-            : liveStage
-              ? // Matches the body's progress-bar look, or the split button would read
-                // as half-faded while the fill keeps the body vivid.
-                'press flex w-10 items-center justify-center rounded-r-lg border-l border-on-scrim/20 bg-[var(--color-accent)]/40 text-[var(--color-on-accent)] disabled:pointer-events-none'
-              : 'press flex w-10 items-center justify-center rounded-r-lg border-l border-on-scrim/20 bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50'
-        }
-      >
-        <ChevronDown
-          aria-hidden="true"
-          className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
-        />
-      </button>
-      {incomplete && incompleteReason && <Tooltip label={incompleteReason} />}
-      {softBlocked && incompleteReason && (
-        <span id={reasonId} className="sr-only">
-          {incompleteReason}
-        </span>
-      )}
-      {open && (
-        <div
-          ref={menuRef}
-          role="menu"
-          aria-label={tr('editor.chooseFormat')}
-          onKeyDown={onMenuKeyDown}
-          className="absolute right-0 bottom-full mb-2 w-56 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]"
-        >
-          <fieldset aria-labelledby={formatHeadingId} className="min-w-0">
-            <p
-              id={formatHeadingId}
-              className="px-3 pt-1 pb-0.5 text-[11px] font-medium text-fg-dim"
-            >
-              {tr('editor.menuFormat')}
-            </p>
-            {/* "Same as source" only means something over several files at once — a single
+        {open && (
+          <div
+            ref={menuRef}
+            role="menu"
+            aria-label={tr('editor.chooseFormat')}
+            onKeyDown={onMenuKeyDown}
+            className="absolute right-0 bottom-full mb-2 w-56 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]"
+          >
+            <fieldset aria-labelledby={formatHeadingId} className="min-w-0">
+              <p
+                id={formatHeadingId}
+                className="px-3 pt-1 pb-0.5 text-[11px] font-medium text-fg-dim"
+              >
+                {tr('editor.menuFormat')}
+              </p>
+              {/* "Same as source" only means something over several files at once — a single
               track's own format IS its own format, so resolving it there is equivalent
               and more informative. Offered only when converting a selection (count set). */}
-            {(count !== undefined ? FORMAT_SETTINGS : FORMATS).map((id) => (
-              <button
-                key={id}
-                type="button"
-                data-testid={`process-format-${id}`}
-                role="menuitemradio"
-                aria-checked={id === outputFormat}
-                onClick={() => pick(id)}
-                className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] ${
-                  id === outputFormat ? 'font-medium text-[var(--color-accent)]' : ''
-                }`}
+              {(count !== undefined ? FORMAT_SETTINGS : FORMATS).map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  data-testid={`process-format-${id}`}
+                  role="menuitemradio"
+                  aria-checked={id === outputFormat}
+                  onClick={() => pick(id)}
+                  className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] ${
+                    id === outputFormat ? 'font-medium text-[var(--color-accent)]' : ''
+                  }`}
+                >
+                  {tr(`settings.formats.${id}`)}
+                  {id === exportedFormat && (
+                    <Check className="h-3.5 w-3.5 text-good" strokeWidth={2.5} aria-hidden="true" />
+                  )}
+                </button>
+              ))}
+            </fieldset>
+            <fieldset aria-labelledby={destinationHeadingId} className="min-w-0">
+              <p
+                id={destinationHeadingId}
+                className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-[11px] font-medium text-fg-dim"
               >
-                {tr(`settings.formats.${id}`)}
-                {id === exportedFormat && (
-                  <Check className="h-3.5 w-3.5 text-good" strokeWidth={2.5} aria-hidden="true" />
-                )}
-              </button>
-            ))}
-          </fieldset>
-          <fieldset aria-labelledby={destinationHeadingId} className="min-w-0">
-            <p
-              id={destinationHeadingId}
-              className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-[11px] font-medium text-fg-dim"
-            >
-              {tr('editor.menuDestination')}
-            </p>
-            {destinations.map((d) => (
-              <button
-                key={d}
-                type="button"
-                data-testid={`process-destination-${d}`}
-                role="menuitemradio"
-                aria-checked={d === destination}
-                // Music can't ingest FLAC — the same pin the Settings radio applies.
-                disabled={d === 'appleMusic' && outputFormat === 'flac'}
-                onClick={() => pickDestination(d)}
-                className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent ${
-                  d === destination ? 'font-medium text-[var(--color-accent)]' : ''
-                }`}
-              >
-                {tr(`settings.destinations.${d}`)}
-              </button>
-            ))}
-          </fieldset>
-        </div>
-      )}
+                {tr('editor.menuDestination')}
+              </p>
+              {destinations.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  data-testid={`process-destination-${d}`}
+                  role="menuitemradio"
+                  aria-checked={d === destination}
+                  // Music can't ingest FLAC — the same pin the Settings radio applies.
+                  disabled={d === 'appleMusic' && outputFormat === 'flac'}
+                  onClick={() => pickDestination(d)}
+                  className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent ${
+                    d === destination ? 'font-medium text-[var(--color-accent)]' : ''
+                  }`}
+                >
+                  {tr(`settings.destinations.${d}`)}
+                </button>
+              ))}
+            </fieldset>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
