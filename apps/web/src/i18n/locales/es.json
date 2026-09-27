@@ -590,7 +590,7 @@
         "title": "Edita los metadatos",
         "body": [
           "Al seleccionar una pista, el editor de la derecha muestra todos sus campos: título, artista, álbum, año, género, sello, catálogo, BPM, tonalidad, grouping, compositor, ISRC, mezcla, remixer, comentario y más. Edita lo que quieras y verás sugerencias de tus géneros y groupings guardados como pastillas de un clic. Enter confirma el campo y salta al siguiente, así que puedes rellenar una ficha entera sin soltar el teclado.",
-          "Sus secciones se agrupan en tres fases (Archivo, Audio y Salida) para que veas de un vistazo si estás arreglando datos, limpiando sonido o decidiendo cómo sale la pista. Arriba está la carátula, con la valoración de estrellas debajo: súbela arrastrando (incluso desde el navegador), expórtala o pasa entre la del archivo y las de Discogs con las flechas. ¿La pista viene con el nombre bien puesto pero sin tags? Pulsa «Rellenar del nombre» y Surco deduce título y artista."
+          "Sus secciones se agrupan en tres fases (Archivo, Audio y Salida) para que veas de un vistazo si estás arreglando datos, limpiando sonido o decidiendo cómo sale la pista. Arriba está la carátula, con la valoración de estrellas debajo: súbela arrastrando (incluso desde el navegador), expórtala o pasa entre la del archivo y las del disco que hayas buscado con las flechas. ¿La pista viene con el nombre bien puesto pero sin tags? Pulsa «Rellenar del nombre» y Surco deduce título y artista."
         ],
         "points": [
           "Bajo BPM y tonalidad aparece el valor que Surco detecta del propio audio (en notación Camelot o musical, según Ajustes), listo para aplicar de un clic. Son sugerencias: nunca se escriben sin que tú lo confirmes.",
@@ -695,7 +695,7 @@
           "Busca por texto o pega un release id si ya sabes cuál es. Si el archivo ya trae uno, Surco abre directamente esa ficha.",
           "Si la primera búsqueda no da nada, Surco reintenta solo: quita el prefijo del DJ, prueba con el artista principal o busca por catálogo o por título.",
           "Con la opción activada (y tu token si Discogs es una de tus fuentes, o tu cuenta si lo es Beatport; con Bandcamp y Deezer no hace falta), Surco auto-empareja las pistas nada más importarlas.",
-          "Tu carátula se conserva si ya tienes una; la de Discogs queda como alternativa, y puedes activar que sustituya solo a las de baja resolución.",
+          "Tu carátula se conserva si ya tienes una; la del disco queda como alternativa, y puedes activar que sustituya solo a las de baja resolución.",
           "¿Firmas de rip o marcas de agua ensuciando tus títulos? Lístalas en Ajustes → Búsqueda, trae «vinyl» y «rip» de serie, y se ignoran al buscar y emparejar; tus tags no se tocan.",
           "Con varias fuentes activas, un filtro reduce la lista de resultados a una sola, y puedes limitar los de Discogs a vinilo, CD, archivo o casete.",
           "Elige el disco con las flechas del teclado; una banda te dice cuántas pistas tiene antes de desplegarlo.",
@@ -726,7 +726,7 @@
         "title": "Empareja un disco entero",
         "body": [
           "¿Importaste un álbum o un EP de varias pistas? Selecciónalas todas (⌘ + clic una a una, o Mayús + clic para un rango) y el editor pasa a modo varias pistas: la cabecera dice «Editando N pistas» y los campos que edites se aplican a toda la selección a la vez.",
-          "En la columna de Discogs busca el release una sola vez. Surco lo carga y monta una rejilla: a la izquierda cada uno de tus archivos, a la derecha un desplegable con el tracklist del disco. Asigna automáticamente cada archivo a su canción por duración, aunque todos tengan el mismo nombre, y tú reasignas a mano cualquiera que no haya acertado. Cuando esté, pulsa «Aplicar a N» y etiqueta todas a la vez."
+          "En la columna de búsqueda busca el release una sola vez. Surco lo carga y monta una rejilla: a la izquierda cada uno de tus archivos, a la derecha un desplegable con el tracklist del disco. Asigna automáticamente cada archivo a su canción por duración, aunque todos tengan el mismo nombre, y tú reasignas a mano cualquiera que no haya acertado. Cuando esté, pulsa «Aplicar a N» y etiqueta todas a la vez."
         ],
         "points": [
           "Cabecera «Editando N pistas»: edita título, artista, álbum o género una vez para todas.",
@@ -735,7 +735,7 @@
           "Un archivo que no encaje en ninguna se queda sin asignar en vez de colocarse a la fuerza en la canción equivocada.",
           "Se permiten duplicados: dos archivos pueden apuntar a la misma canción si hace falta.",
           "En modo varias pistas se ocultan el espectro y el nombre de archivo, porque son cosa de cada pista.",
-          "¿El disco no está en Discogs? Numera la selección en orden de lista con un solo comando."
+          "¿El disco no está en ninguna de tus fuentes? Numera la selección en orden de lista con un solo comando."
         ],
         "shot": "album-es.webp",
         "shotCaption": "Asignar cada archivo a su canción del disco y aplicar a todas."
@@ -801,13 +801,13 @@
         "title": "Convierte todas las pistas",
         "body": [
           "Cuando tengas la cola lista, «Convertir todas» (⌘⇧Enter) procesa de una todas las pistas convertibles y se salta las que ya están hechas. Verás el progreso en la barra de herramientas y, al final, un resumen de cuántas se convirtieron, se saltaron o dieron error.",
-          "Ojo: convertir todas solo convierte y renombra con los metadatos que ya tienen, nunca va a Discogs por su cuenta. Si quieres datos frescos antes, usa primero «Auto-emparejar» (⌘⇧D) en la barra de herramientas."
+          "Ojo: convertir todas solo convierte y renombra con los metadatos que ya tienen, nunca va a buscar a tus fuentes por su cuenta. Si quieres datos frescos antes, usa primero «Auto-emparejar» (⌘⇧D) en la barra de herramientas."
         ],
         "points": [
           "Convierte la cola entera de una; cancélala desde el progreso de la barra o con la paleta de comandos.",
           "Si has filtrado la lista, el lote convierte solo lo que ves.",
           "Las conversiones van en paralelo, aprovechando los núcleos del equipo; en el mismo formato son casi instantáneas.",
-          "Solo usa los metadatos actuales: no descarga nada de Discogs en el lote.",
+          "Solo usa los metadatos actuales: no descarga nada de tus fuentes en el lote.",
           "La flecha junto al botón de convertir cambia el formato y el destino solo para esa tanda, tus ajustes por defecto se quedan como estaban."
         ],
         "shot": "lote-es.webp",
@@ -853,7 +853,7 @@
         "id": "atajos",
         "title": "Vuela con el teclado",
         "body": [
-          "Surco está pensado para ir sin ratón. La paleta de comandos (⌘K) te da todo a un buscador (agrupado por temas, sin distinguir acentos y aprendiendo cuáles usas más), y casi cada acción tiene su atajo: añadir archivos (⌘O), convertir pista (⌘Enter), convertir todas (⌘⇧Enter), analizar calidad (⌘⇧A), auto-emparejar (⌘⇧D), buscar en Discogs (/) y navegar la lista con las flechas.",
+          "Surco está pensado para ir sin ratón. La paleta de comandos (⌘K) te da todo a un buscador (agrupado por temas, sin distinguir acentos y aprendiendo cuáles usas más), y casi cada acción tiene su atajo: añadir archivos (⌘O), convertir pista (⌘Enter), convertir todas (⌘⇧Enter), analizar calidad (⌘⇧A), auto-emparejar (⌘⇧D), buscar en tus fuentes (/) y navegar la lista con las flechas.",
           "Pulsa ? en cualquier momento para ver la lista completa, y reasigna los que quieras en Ajustes → Atajos. Cada acción enseña su atajo en el propio tooltip, así que se aprenden sobre la marcha."
         ],
         "points": [
