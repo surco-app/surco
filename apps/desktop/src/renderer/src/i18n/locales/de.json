@@ -787,7 +787,7 @@
     "cueWarningShort": "Kodiert das Audio neu · bei ALAC gehen die Cues verloren",
     "predictionEstimate": "(geschätzt)",
     "presetHint": {
-      "streaming": "So pegeln Spotify und Apple Music — der sichere Standard für eine Hörbibliothek.",
+      "streaming": "So pegeln Spotify und Apple Music: der sichere Standard für eine Hörbibliothek.",
       "club": "Heiß, für die Kanzel: die meisten Tracks brauchen dafür ein Peak-Limiting und verlieren etwas Punch.",
       "broadcast": "Der TV- und Radiopegel. Leiser als Streaming, mit viel Headroom.",
       "custom": "Dein eigenes Ziel. Die Vorschau unter der Wellenform zeigt, wo der Track landet."
@@ -942,7 +942,7 @@
     "tokenHelp": "Erstell kostenlos einen auf",
     "autoMatch": "Beim Import automatisch abgleichen",
     "autoMatchHint": "Durchsucht beim Import deine Quellen und übernimmt sichere Treffer. Discogs zuerst, deine übrigen Quellen als Rückfall. Standardmäßig aus.",
-    "autoMatchNeedsToken": "Discogs ist eine deiner Quellen — füg seinen Token hinzu, um automatisch abzugleichen.",
+    "autoMatchNeedsToken": "Discogs ist eine deiner Quellen: füg seinen Token hinzu, um automatisch abzugleichen.",
     "autoMatchNeedsSource": "Aktivier mindestens eine Suchquelle, um automatisch abzugleichen.",
     "discogsFormats": "Nur diese Formate zeigen",
     "discogsFormatsHint": "Beschränkt die Discogs-Ergebnisse auf diese Formate.",
@@ -997,7 +997,7 @@
       "source": "Wie die Quelle",
       "corrected": "Korrigiert"
     },
-    "bitDepthHint": "„Wie die Quelle“ behält die exakte Tiefe der Datei, samt Auffüllung. Die Reduktion auf 16 Bit wendet Dither an; eine Datei, die bereits im Ausgabeformat vorliegt, wird ohne Neucodierung kopiert. „Korrigiert“ schreibt eine Datei, deren 16-Bit-Audio nachweislich auf 24 Bit aufgefüllt ist, verlustfrei als echte 16 Bit; echtes 24-Bit-Audio behält seine Tiefe.",
+    "bitDepthHint": "„Wie die Quelle“ behält die exakte Tiefe der Datei, samt Auffüllung. Die Reduktion auf 16 Bit wendet Dither an. „Korrigiert“ schreibt eine Datei, deren 16-Bit-Audio nachweislich auf 24 Bit aufgefüllt ist, verlustfrei als echte 16 Bit; echtes 24-Bit-Audio behält seine Tiefe.",
     "bitDepthApplies": "Gilt beim Konvertieren nach AIFF, WAV, FLAC oder ALAC; MP3 hat keine Bittiefe.",
     "sampleRate": "Abtastrate",
     "sampleRates": {
@@ -1034,7 +1034,7 @@
     "traktorSync": "Traktor-Sammlung",
     "traktorNmlPath": "collection.nml",
     "traktorNmlPathHint": "Die Traktor-Sammlung, in die geschrieben wird. Du kannst sie jederzeit ändern.",
-    "traktorNmlPathDetectedHint": "Automatisch gefunden — wird erst übernommen, wenn du es auswählst.",
+    "traktorNmlPathDetectedHint": "Automatisch gefunden; wird erst übernommen, wenn du es auswählst.",
     "traktorNmlPathUseDetected": "Diesen verwenden",
     "traktorCueOffset": "Cue-Point-Korrektur",
     "traktorCueQuestion": "Wo landen in Traktor die Cues eines konvertierten Tracks?",
@@ -1050,7 +1050,7 @@
     "traktorCueOffsetHint": "Surco korrigiert den Codec-Versatz bei jeder Konvertierung automatisch, bei der ersten Antwort musst du also nichts tun. Ändere es nur, wenn deine Cues beim Hören in Traktor immer zu früh oder immer zu spät kommen. Es verschiebt den Startpunkt, nie die Länge deiner Loops.",
     "appleMusicFlacNote": "Apple Music kann FLAC nicht abspielen, deshalb bleiben konvertierte Tracks im Ausgabeordner, solange FLAC dein Format ist.",
     "filenameFormat": "Dateinamen-Format",
-    "titleFormatHint": "Baut den Titel aus anderen Feldern neu auf. Wird nur auf Wunsch angewendet — über das ⋯-Menü des Titelfelds oder die Befehlspalette — nie automatisch.",
+    "titleFormatHint": "Baut den Titel aus anderen Feldern neu auf. Wird nur auf Wunsch angewendet, über das ⋯-Menü des Titelfelds oder die Befehlspalette, nie automatisch.",
     "titleFormat": "Titelformat",
     "autoApplyFilename": "Muster automatisch anwenden",
     "autoApplyFilenameHint": "Erzeugt den Namen beim Export aus den Metadaten, ohne „Neu erzeugen“ zu drücken. Eine manuelle Änderung gewinnt immer.",
@@ -1075,7 +1075,7 @@
     "coverSquare": "Cover quadratisch zuschneiden",
     "coverHint": "Wird beim Einbetten angewendet: verkleinert große Cover und schneidet sie, falls aktiviert, mittig quadratisch zu.",
     "replaceLowRes": "Niedrig aufgelöste Cover beim Anwenden eines Releases ersetzen",
-    "replaceLowResHint": "Wenn aus, bleibt immer das Cover deiner Datei erhalten — ein niedrig aufgelöstes wird nur markiert, nie gegen das Release-Bild getauscht.",
+    "replaceLowResHint": "Wenn aus, bleibt immer das Cover deiner Datei erhalten; ein niedrig aufgelöstes wird nur markiert, nie gegen das Release-Bild getauscht.",
     "flacFinderCovers": "FLAC-Cover im Finder anzeigen",
     "flacFinderCoversHint": "Der Finder kann das Cover in FLAC-Dateien nicht lesen und zeigt deshalb ein generisches Symbol. Diese Option umgeht das bei konvertierten Dateien, die Wiedergabe bleibt unberührt — aber die FLAC-Datei ist dann nicht mehr normgerecht: Traktor akzeptiert solche Dateien nicht und entfernt sie aus seiner Sammlung. Lass sie aus, wenn du mit Traktor synchronisierst.",
     "flacFinderCoversTraktor": "Deaktiviert, solange du mit Traktor synchronisierst: Traktor akzeptiert kein FLAC, das mit diesem Header beginnt, und entfernt es aus seiner Sammlung.",
