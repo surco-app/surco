@@ -867,7 +867,7 @@
     },
     "stats": {
       "count": "conversions",
-      "milestone": "Next milestone: {{milestone}} conversions — {{remaining}} to go",
+      "milestone": "Next milestone: {{milestone}} conversions, {{remaining}} to go",
       "imported": "Tracks loaded",
       "listened": "Tracks played",
       "analyzed": "Tracks analyzed",
@@ -884,7 +884,7 @@
       "share": "Share image",
       "shareTitle": "My collection in numbers",
       "shareFooter": "Get your music ready · getsurco.app",
-      "roiDonate": "If Surco saves you time, support it — it costs money to build and run",
+      "roiDonate": "If Surco saves you time, support it. It costs money to build and run.",
       "shareHeroLabel": "tracks converted and tagged"
     },
     "theme": "Appearance",

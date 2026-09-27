@@ -867,7 +867,7 @@
     },
     "stats": {
       "count": "conversions",
-      "milestone": "Prochain jalon : {{milestone}} conversions — plus que {{remaining}}",
+      "milestone": "Prochain jalon : {{milestone}} conversions, plus que {{remaining}}",
       "imported": "Morceaux chargés",
       "listened": "Morceaux écoutés",
       "analyzed": "Morceaux analysés",
@@ -884,7 +884,7 @@
       "share": "Partager une image",
       "shareTitle": "Ma collection en chiffres",
       "shareFooter": "Prépare ta musique · getsurco.app",
-      "roiDonate": "Si Surco te fait gagner du temps, soutiens-le — le développer coûte de l'argent",
+      "roiDonate": "Si Surco te fait gagner du temps, soutiens-le. Le développer coûte de l'argent.",
       "shareHeroLabel": "morceaux convertis et étiquetés"
     },
     "theme": "Apparence",

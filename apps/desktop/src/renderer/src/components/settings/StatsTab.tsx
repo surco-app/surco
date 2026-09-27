@@ -64,9 +64,12 @@ function MatchSplit({
           />
         ))}
       </div>
-      <div className="mt-2 flex justify-between text-xs">
+      <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs">
         {sources.map((s) => (
-          <span key={s.key} className="inline-flex items-center gap-1.5 text-fg-muted">
+          <span
+            key={s.key}
+            className="inline-flex items-center gap-1.5 whitespace-nowrap text-fg-muted"
+          >
             <span className={`h-2 w-2 rounded-full ${s.swatch}`} aria-hidden="true" />
             {s.label}
             <span
@@ -176,25 +179,25 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
             sources={[
               {
                 key: 'discogs',
-                label: tr('settings.stats.discogsMatches'),
+                label: tr('settings.provider.discogs'),
                 count: stats.discogsMatches,
                 swatch: 'bg-[var(--color-accent)]',
               },
               {
                 key: 'bandcamp',
-                label: tr('settings.stats.bandcampMatches'),
+                label: tr('settings.provider.bandcamp'),
                 count: stats.bandcampMatches,
                 swatch: 'bg-[var(--color-fg-dim)]/70',
               },
               {
                 key: 'deezer',
-                label: tr('settings.stats.deezerMatches'),
+                label: tr('settings.provider.deezer'),
                 count: stats.deezerMatches,
                 swatch: 'bg-[var(--color-good)]',
               },
               {
                 key: 'beatport',
-                label: tr('settings.stats.beatportMatches'),
+                label: tr('settings.provider.beatport'),
                 count: stats.beatportMatches,
                 swatch: 'bg-[var(--color-warn)]',
               },
@@ -235,7 +238,7 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
           href={DONATE_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="press inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
+          className="press inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-panel-2)]"
         >
           <Heart size={14} />
           {tr('settings.stats.donateCta')}

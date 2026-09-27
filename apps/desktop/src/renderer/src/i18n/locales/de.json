@@ -867,7 +867,7 @@
     },
     "stats": {
       "count": "Konvertierungen",
-      "milestone": "Nächster Meilenstein: {{milestone}} Konvertierungen — noch {{remaining}}",
+      "milestone": "Nächster Meilenstein: {{milestone}} Konvertierungen, noch {{remaining}}",
       "imported": "Geladene Tracks",
       "listened": "Gehörte Tracks",
       "analyzed": "Analysierte Tracks",
@@ -884,7 +884,7 @@
       "share": "Bild teilen",
       "shareTitle": "Meine Sammlung in Zahlen",
       "shareFooter": "Mach deine Musik bereit · getsurco.app",
-      "roiDonate": "Wenn Surco dir Zeit spart, unterstütz es — die Entwicklung kostet Geld",
+      "roiDonate": "Wenn Surco dir Zeit spart, unterstütz es. Die Entwicklung kostet Geld.",
       "shareHeroLabel": "Tracks konvertiert und getaggt"
     },
     "theme": "Erscheinungsbild",

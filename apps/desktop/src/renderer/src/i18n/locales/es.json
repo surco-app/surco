@@ -867,7 +867,7 @@
     },
     "stats": {
       "count": "conversiones",
-      "milestone": "Próximo hito: {{milestone}} conversiones — faltan {{remaining}}",
+      "milestone": "Próximo hito: {{milestone}} conversiones, faltan {{remaining}}",
       "imported": "Pistas cargadas",
       "listened": "Pistas escuchadas",
       "analyzed": "Pistas analizadas",
@@ -884,7 +884,7 @@
       "share": "Compartir imagen",
       "shareTitle": "Mi colección en cifras",
       "shareFooter": "Prepara tu música · getsurco.app",
-      "roiDonate": "Si Surco te ahorra tiempo, apóyalo — construirlo y mantenerlo cuesta dinero",
+      "roiDonate": "Si Surco te ahorra tiempo, apóyalo. Construirlo y mantenerlo cuesta dinero.",
       "shareHeroLabel": "pistas convertidas y etiquetadas"
     },
     "theme": "Apariencia",
