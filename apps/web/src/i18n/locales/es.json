@@ -254,7 +254,7 @@
           },
           {
             "t": "Copias de seguridad",
-            "d": "Antes de reescribir un original guarda una copia que restauras desde la propia pista. Por defecto solo cuando cambia el audio, 7 días y hasta 2 GB, y siempre deja 5 GB libres en el disco."
+            "d": "Antes de reescribir un original guarda una copia que restauras desde la propia pista. Por defecto solo cuando cambia el audio, 7 días y hasta 2 GB. Si el disco se queda con menos de 5 GB libres, borra primero las copias más antiguas."
           },
           {
             "t": "Papelera, nunca borrado",
