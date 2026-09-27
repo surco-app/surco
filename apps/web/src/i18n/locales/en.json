@@ -590,7 +590,7 @@
         "title": "Edit the metadata",
         "body": [
           "Select a track and the editor on the right shows every field: title, artist, album, year, genre, label, catalog number, BPM, key, grouping, composer, ISRC, mix, remixer, comment and more. Edit whatever you like and you'll see your saved genres and groupings as one-click suggestions. Enter confirms a field and jumps to the next, so you can fill a whole record without leaving the keyboard.",
-          "Its sections are grouped into three phases (File, Audio and Output) so you can see at a glance whether you're fixing data, cleaning up sound or deciding how the track comes out. Up top sits the cover art, with the star rating under it: drop one in (straight from your browser, even), export it, or step between the file's own and the Discogs ones with the arrows. Track named properly but with no tags at all? Hit “Fill from filename” and Surco works out the title and artist."
+          "Its sections are grouped into three phases (File, Audio and Output) so you can see at a glance whether you're fixing data, cleaning up sound or deciding how the track comes out. Up top sits the cover art, with the star rating under it: drop one in (straight from your browser, even), export it, or step between the file's own and the ones from the release you searched with the arrows. Track named properly but with no tags at all? Hit “Fill from filename” and Surco works out the title and artist."
         ],
         "points": [
           "Under BPM and key you'll see what Surco detects from the audio itself (in Camelot or musical notation, your choice in Settings), ready to apply in one click. They're suggestions: nothing is written without you confirming it.",
@@ -695,7 +695,7 @@
           "Search by text or paste a release id if you already know which one it is. If the file already carries one, Surco opens that record directly.",
           "If the first search comes up empty, Surco retries on its own: dropping the DJ prefix, trying the main artist, or searching by catalog number or title alone.",
           "With the option on (plus your token if Discogs is one of your sources, or your account if Beatport is; Bandcamp and Deezer need none), Surco auto-matches tracks the moment you import them.",
-          "Your own cover art is kept if you already have one; the Discogs one stays as an alternative, and you can have it replace only the low-resolution ones.",
+          "Your own cover art is kept if you already have one; the release one stays as an alternative, and you can have it replace only the low-resolution ones.",
           "Rip signatures or watermarks dirtying your titles? List them in Settings → Search, “vinyl” and “rip” come as standard, and they're ignored when searching and matching; your tags aren't touched.",
           "With several sources on, a filter narrows the results down to just one, and you can limit the Discogs ones to vinyl, CD, file or cassette.",
           "Pick the release with the arrow keys; a band tells you how many tracks it has before you expand it.",
@@ -726,7 +726,7 @@
         "title": "Match a whole release",
         "body": [
           "Imported an album or a multi-track EP? Select them all (⌘ + click one by one, or Shift + click for a range) and the editor switches to multi-track mode: the header reads “Editing N tracks” and the fields you edit apply to the whole selection at once.",
-          "In the Discogs column, search the release just once. Surco loads it and builds a grid: your files on the left, a dropdown with the release's tracklist on the right. It assigns each file to its song by duration, even when they all share the same name, and you reassign by hand any it got wrong. When it looks right, hit “Apply to N” and tag them all at once."
+          "In the search column, search the release just once. Surco loads it and builds a grid: your files on the left, a dropdown with the release's tracklist on the right. It assigns each file to its song by duration, even when they all share the same name, and you reassign by hand any it got wrong. When it looks right, hit “Apply to N” and tag them all at once."
         ],
         "points": [
           "“Editing N tracks” header: edit title, artist, album or genre once for all of them.",
@@ -735,7 +735,7 @@
           "A file that fits nowhere is left unassigned rather than forced onto the wrong song.",
           "Duplicates are allowed: two files can point at the same song if that's what you need.",
           "In multi-track mode the spectrum and the filename are hidden, because they belong to individual tracks.",
-          "Release not on Discogs? Number the selection in list order with a single command."
+          "Release not in any of your sources? Number the selection in list order with a single command."
         ],
         "shot": "album-en.webp",
         "shotCaption": "Assigning each file to its song and applying to all."
@@ -801,13 +801,13 @@
         "title": "Convert every track",
         "body": [
           "When the queue is ready, “Convert all” (⌘⇧Enter) processes every convertible track in one go and skips the ones already done. You'll see the progress in the toolbar and, at the end, a summary of how many were converted, skipped or errored.",
-          "One thing to know: convert all only converts and renames with the metadata the tracks already have, it never goes to Discogs on its own. If you want fresh data first, run “Auto-match” (⌘⇧D) from the toolbar."
+          "One thing to know: convert all only converts and renames with the metadata the tracks already have, it never goes to your sources on its own. If you want fresh data first, run “Auto-match” (⌘⇧D) from the toolbar."
         ],
         "points": [
           "Converts the whole queue at once; cancel it from the toolbar progress or the command palette.",
           "If you've filtered the list, the batch converts only what you can see.",
           "Conversions run in parallel across your machine's cores; same-format ones are near-instant.",
-          "It only uses the current metadata: nothing is downloaded from Discogs during the batch.",
+          "It only uses the current metadata: nothing is downloaded from your sources during the batch.",
           "The arrow next to the convert button changes the format and destination for that run only, your defaults stay as they were."
         ],
         "shot": "lote-en.webp",
@@ -853,7 +853,7 @@
         "id": "atajos",
         "title": "Fly with the keyboard",
         "body": [
-          "Surco is built to work without a mouse. The command palette (⌘K) puts everything behind one search box (grouped by topic, accent-insensitive, and learning which ones you use most), and nearly every action has its shortcut: add files (⌘O), convert track (⌘Enter), convert all (⌘⇧Enter), analyze quality (⌘⇧A), auto-match (⌘⇧D), search Discogs (/) and arrow keys to move through the list.",
+          "Surco is built to work without a mouse. The command palette (⌘K) puts everything behind one search box (grouped by topic, accent-insensitive, and learning which ones you use most), and nearly every action has its shortcut: add files (⌘O), convert track (⌘Enter), convert all (⌘⇧Enter), analyze quality (⌘⇧A), auto-match (⌘⇧D), search your sources (/) and arrow keys to move through the list.",
           "Press ? at any time for the full list, and rebind whichever you like in Settings → Shortcuts. Every action shows its shortcut in its own tooltip, so you pick them up as you go."
         ],
         "points": [
