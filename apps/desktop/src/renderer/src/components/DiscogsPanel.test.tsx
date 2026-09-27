@@ -339,6 +339,15 @@ describe('pistas de una tarjeta plegada', () => {
   // sigue renderizando la última tracklist para que la animación de cierre no parpadee.
   // Sin `inert`, esas pistas invisibles siguen siendo paradas de tabulador: el Tab se mete
   // en pistas que el usuario no ve y no puede saber dónde está.
+  // Las pistas sangradas bajo la carátula ya dicen de qué disco son y cuántas hay: la
+  // franja "Elige la pista para aplicar · 2 pistas" repetía con palabras lo que se ve.
+  it('despliega las pistas sin una franja que las anuncie', () => {
+    renderPanel(browser({ results, openKey: 'discogs:1', release, loading: false }))
+    expect(screen.queryByText('Choose the track to apply')).toBeNull()
+    expect(screen.queryByText('2 tracks')).toBeNull()
+    expect(screen.getAllByTestId('discogs-track')).toHaveLength(2)
+  })
+
   it('siguen siendo tabulables mientras la tarjeta está desplegada', () => {
     renderPanel(browser({ results, openKey: 'discogs:1', release, loading: false }))
     expect(screen.getAllByTestId('discogs-track')[0].closest('[inert]')).toBeNull()
