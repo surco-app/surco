@@ -116,7 +116,7 @@
           },
           {
             "t": "Artwork",
-            "d": "From Discogs or your own, with square cropping and a size cap you set."
+            "d": "From Discogs, Bandcamp, Deezer, Beatport or your own, with square cropping and a size cap you set."
           },
           {
             "t": "ID3v2.3, not v2.4",
@@ -136,14 +136,14 @@
           },
           {
             "t": "The full date, if you want it",
-            "d": "Year as 2020-12-01 when the file or Discogs, Deezer or Bandcamp carry the whole date. File names and rekordbox still get the year alone."
+            "d": "Year as 2020-12-01 when the file or Discogs, Bandcamp, Deezer or Beatport carry the whole date. File names and rekordbox still get the year alone."
           },
           {
             "t": "Multi-tag genre and grouping",
             "d": "Each list picks its own separator: comma, semicolon, slash or one of yours. Editing several tracks, each tag says whether it is on all of them or some."
           },
           {
-            "t": "You decide what Discogs touches",
+            "t": "You decide what a match touches",
             "d": "A switch per field: the genre you set by hand survives applying a release."
           },
           {
@@ -264,7 +264,7 @@
       }
     ],
     "metaTitle": "Everything Surco does · Features",
-    "metaDescription": "Convert, tag from Discogs, analyse quality, repair clicks, trim silence and export to rekordbox, Engine DJ, Traktor or Serato. Free."
+    "metaDescription": "Convert, tag from Discogs, Bandcamp, Deezer or Beatport, analyse quality, repair clicks, trim silence and export to rekordbox, Engine DJ, Traktor or Serato. Free."
   },
   "stopwatch": {
     "kicker": "Measured, not promised",
