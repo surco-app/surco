@@ -116,7 +116,7 @@
           },
           {
             "t": "Carátulas",
-            "d": "De Discogs o la tuya, con recorte cuadrado y tamaño máximo configurables."
+            "d": "De Discogs, Bandcamp, Deezer, Beatport o la tuya, con recorte cuadrado y tamaño máximo configurables."
           },
           {
             "t": "ID3v2.3, no v2.4",
@@ -136,14 +136,14 @@
           },
           {
             "t": "Fecha completa, si la quieres",
-            "d": "El año como 2020-12-01 cuando el archivo o Discogs, Deezer o Bandcamp traen la fecha entera. En el nombre de archivo y en rekordbox sigue yendo solo el año."
+            "d": "El año como 2020-12-01 cuando el archivo o Discogs, Bandcamp, Deezer o Beatport traen la fecha entera. En el nombre de archivo y en rekordbox sigue yendo solo el año."
           },
           {
             "t": "Género y grouping con varias etiquetas",
             "d": "Cada lista elige su separador: coma, punto y coma, barra o el tuyo. Al editar varias pistas, cada etiqueta dice si está en todas o en algunas."
           },
           {
-            "t": "Tú decides qué toca Discogs",
+            "t": "Tú decides qué toca cada búsqueda",
             "d": "Un interruptor por campo: el género que pusiste a mano no se pierde al aplicar una edición."
           },
           {
@@ -264,7 +264,7 @@
       }
     ],
     "metaTitle": "Todo lo que hace Surco · Funciones",
-    "metaDescription": "Convertir, etiquetar desde Discogs, analizar la calidad, reparar clics, recortar silencios y exportar a rekordbox, Engine DJ, Traktor o Serato. Gratis."
+    "metaDescription": "Convertir, etiquetar desde Discogs, Bandcamp, Deezer o Beatport, analizar la calidad, reparar clics, recortar silencios y exportar a rekordbox, Engine DJ, Traktor o Serato. Gratis."
   },
   "stopwatch": {
     "kicker": "Medido, no prometido",
