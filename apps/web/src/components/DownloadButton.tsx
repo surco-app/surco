@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { type DownloadLocation, trackDownload } from '../lib/analytics'
-import { fetchInstallerReleasesCached, pickInstallerRelease } from '../lib/downloads'
 import { downloadState } from '../lib/downloadState'
+import { fetchInstallerReleasesCached, pickInstallerRelease } from '../lib/downloads'
 import { detectOS, installerSuffix, type OS } from '../lib/os'
 import { btnPrimary } from '../lib/ui'
 import { formatVersion } from '../lib/version'
@@ -33,6 +33,7 @@ export default function DownloadButton({
   location,
   showMeta = true,
   note,
+  center = false,
 }: {
   // Which of the eight placements this is, reported with the click. Several of them share
   // a page, so page_path alone cannot say which CTA earned the download.
@@ -43,6 +44,8 @@ export default function DownloadButton({
   // the reserved Intel line, so it reads as part of the offer and not as a stray
   // caption floating below the fold.
   note?: string
+  // A centred hero lines the button and its small print up on the page's axis.
+  center?: boolean
 }) {
   const { t } = useTranslation()
   // Starts 'unknown' in the prerender (no window) and resolves on mount, so the
@@ -100,7 +103,11 @@ export default function DownloadButton({
 
   return (
     <>
-      <div className="mt-7 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+      <div
+        className={`mt-7 flex flex-col gap-4 sm:flex-row sm:items-center ${
+          center ? 'items-center sm:justify-center' : 'items-start'
+        }`}
+      >
         {pending ? (
           <button
             type="button"
@@ -172,7 +179,62 @@ export default function DownloadButton({
           </button>
         )}
       </div>
-      {note && <p className="mt-3.5 text-sm text-muted">{note}</p>}
+      {/* Windows ships unsigned, so SmartScreen's blue "Windows protected your PC"
+          panel is systematic, not occasional — and it appears once the visitor has
+          left the site, where the FAQ that explains it can't reach them. The macOS
+          half of this reassurance ("notarised by Apple") is already on the page; this
+          is its missing counterpart, shown only to the platform that hits the wall. */}
+      {os === 'windows' && (
+        <p data-testid="download-smartscreen" className="mt-3 max-w-md text-sm text-muted">
+          {t('download.smartscreen')}
+        </p>
+      )}
+      {showMeta && (
+        // min-h reserves one line so the row doesn't grow from empty (prerender) to
+        // version+size once the releases fetch lands, which would shift the hero. The note
+        // leads the same line: price, platforms, version and size are one piece of small
+        // print, and on four lines they outweighed the button they qualify.
+        <div
+          className={`mt-3.5 flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-faint ${
+            center ? 'justify-center' : ''
+          }`}
+        >
+          {note && <span className="text-sm text-muted">{note}</span>}
+          {state === 'pending' ? null : state === 'unreachable' ? (
+            // The releases lookup broke — GitHub's REST listing has answered 504 for
+            // every repo at once before now, while /releases/latest stayed up. Saying
+            // "not available yet" here would blame the product for someone else's
+            // outage and leave the visitor stuck, so name it and hand over the link
+            // that still works.
+            <p data-testid="download-unreachable">
+              {t('download.unreachable')}{' '}
+              <a
+                href={RELEASES}
+                className="text-muted underline underline-offset-2 transition-colors hover:text-blue"
+                onClick={() => trackDownload({ href: RELEASES, os, location })}
+              >
+                {t('download.unreachableLink')}
+              </a>
+            </p>
+          ) : state === 'unsupported' ? (
+            <p data-testid="download-unsupported">{t('download.unsupported')}</p>
+          ) : (
+            <>
+              {version && (
+                <span data-testid="app-version" className="font-mono text-faint tabular-nums">
+                  {version}
+                </span>
+              )}
+              {size !== null && (
+                <span data-testid="download-size" className="font-mono text-faint tabular-nums">
+                  {Math.round(size / 1_000_000)} MB
+                </span>
+              )}
+              <DownloadCount />
+            </>
+          )}
+        </div>
+      )}
       {/* Always mounted (invisible until the Intel build resolves on a Mac) so the
           link occupies its line in the prerendered HTML and every client state
           alike. The page is statically prerendered with os='other', so gating this
@@ -194,69 +256,12 @@ export default function DownloadButton({
         // arm64 because the browser can't tell the two apart — so it reads at the
         // legible step above `faint` rather than in the page's quietest style. Same
         // line, same reserved height: the CLS reservation above is unaffected.
-        className={`mt-3 inline-block text-sm text-muted underline-offset-2 transition-colors hover:text-blue hover:underline ${
+        className={`mt-2 inline-block text-sm text-muted underline-offset-2 transition-colors hover:text-blue hover:underline ${
           os === 'mac' && intelHref ? '' : 'invisible'
         }`}
       >
         {t('download.intel')}
       </a>
-      {/* Windows ships unsigned, so SmartScreen's blue "Windows protected your PC"
-          panel is systematic, not occasional — and it appears once the visitor has
-          left the site, where the FAQ that explains it can't reach them. The macOS
-          half of this reassurance ("notarised by Apple") is already on the page; this
-          is its missing counterpart, shown only to the platform that hits the wall. */}
-      {os === 'windows' && (
-        <p data-testid="download-smartscreen" className="mt-3 max-w-md text-sm text-muted">
-          {t('download.smartscreen')}
-        </p>
-      )}
-      {showMeta && (
-        // min-h reserves one line so the row doesn't grow from empty (prerender) to
-        // count+version once the releases fetch lands, which would shift the hero.
-        <div className="mt-4 min-h-5 font-mono text-xs text-faint">
-          {state === 'pending' ? (
-            // The fetch is still in flight — a pulse placeholder rather than any
-            // verdict, which has to wait until we know which way it went.
-            <span
-              data-testid="download-meta-loading"
-              aria-hidden="true"
-              className="inline-block h-3 w-44 max-w-full animate-pulse rounded bg-line align-middle"
-            />
-          ) : state === 'unreachable' ? (
-            // The releases lookup broke — GitHub's REST listing has answered 504 for
-            // every repo at once before now, while /releases/latest stayed up. Saying
-            // "not available yet" here would blame the product for someone else's
-            // outage and leave the visitor stuck, so name it and hand over the link
-            // that still works.
-            <p data-testid="download-unreachable">
-              {t('download.unreachable')}{' '}
-              <a
-                href={RELEASES}
-                className="text-muted underline underline-offset-2 transition-colors hover:text-blue"
-                onClick={() => trackDownload({ href: RELEASES, os, location })}
-              >
-                {t('download.unreachableLink')}
-              </a>
-            </p>
-          ) : state === 'unsupported' ? (
-            <p data-testid="download-unsupported">{t('download.unsupported')}</p>
-          ) : (
-            <p className="flex flex-wrap items-center gap-x-2">
-              <DownloadCount />
-              {version && (
-                <span data-testid="app-version" className="text-faint tabular-nums">
-                  {version}
-                </span>
-              )}
-              {size !== null && (
-                <span data-testid="download-size" className="text-faint tabular-nums">
-                  {Math.round(size / 1_000_000)} MB
-                </span>
-              )}
-            </p>
-          )}
-        </div>
-      )}
     </>
   )
 }
