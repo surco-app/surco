@@ -40,71 +40,34 @@ export default function App() {
       <Header />
 
       <main id="main" className="relative overflow-x-clip">
-        {/* Headline and action on the left, the product itself on the right. The three
-            figures that used to hold this column said nothing the page doesn't say
-            better elsewhere: the price is already in the note under the button, the
-            "five apps" is the lede one line above, and the seven seconds are the whole
-            Velocidad section. What they did do was mark a band the copy left empty,
-            since the right column only ever grew to the width of a two-digit number.
-            The window takes that width now, and arrives above the fold instead of a
-            screen below it.
-
-            items-center, not items-end: with the window in this row, aligning to the
-            bottom left the headline floating against the top of a much taller
-            neighbour. The clip that keeps the overrun off the scrollbar lives on
-            <main>, not here — this section is max-w-6xl, so clipping it would cut the
-            window at the page measure, which is exactly the edge it needs to cross. */}
-        <section className="mx-auto grid max-w-6xl items-center gap-10 px-6 pt-10 pb-12 sm:pt-14 lg:grid-cols-[minmax(0,30rem)_minmax(0,1fr)] lg:gap-14 lg:pt-16 lg:pb-16">
-          <div>
-            <Reveal eager>
-              <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-[3rem] lg:leading-[1.05]">
-                {t('hero.h1a')}
-                <br />
-                <span className="text-grad text-grad-glow">{t('hero.h1b')}</span>
-              </h1>
-            </Reveal>
-            <Reveal eager delay={80}>
-              {/* One sentence between the headline and the button. Without it the visitor
-                  went straight from a four-word claim to a list of features, with nothing
-                  saying what the program actually is. */}
-              <p className="mt-5 max-w-md leading-relaxed text-pretty text-muted">
-                {t('home.heroLede')}
-              </p>
-            </Reveal>
-            <Reveal eager delay={150}>
-              {/* Free, the three platforms and "no account" ride with the CTA itself.
-                  The page never said any of it above the fold: the only mention of the
-                  price sat in the closing note, a full scroll of walkthrough away, so a
-                  visitor deciding whether to bother had to take the download on faith. */}
-              <DownloadButton location="hero" note={t('home.heroFree')} />
-            </Reveal>
-            {/* Below the button, not above it: these three lines confirm what Surco does
-                once the visitor has the offer, instead of standing between the headline
-                and the only action on the page. */}
-            <Reveal eager delay={220}>
-              <HeroAnchors />
-            </Reveal>
-          </div>
-          {/* Wider than the column that holds it, so the window runs past the right
-              edge of the page and gets cut by the viewport. Two things come out of
-              that: the interface is legible at this size (inside the grid it landed
-              at 575px, a texture of the product rather than a window), and the crop
-              reads as "there is more application here than fits".
-
-              The width has to be measured against the viewport, not fixed in rem: this
-              column starts wherever the centred 72rem page puts it, so any constant
-              either stops short of the edge on a wide screen (leaving the same dead
-              band the figures used to mark) or overruns a narrow one by a different
-              amount. 60vw clears the gap to the right edge at every lg width and the
-              surplus is what <main> clips.
-
-              Below lg it drops under the copy at plain full width — there is no
-              column to overrun, and a crop with nothing beside it is just a cut-off
-              picture. */}
-          <Reveal eager delay={280}>
-            <div className="lg:w-[60vw]">
+        {/* One column, centred: headline, one sentence, the download, then the product
+            whole underneath. The headline and the window used to share a row, with the window
+            running off the right edge; the crop cut the form and the convert button, the part
+            that shows what Surco does. The three anchors follow the window, where they
+            confirm what the picture just showed instead of queueing under the button. */}
+        <section className="mx-auto max-w-6xl px-6 pt-10 pb-12 text-center sm:pt-14 lg:pt-16 lg:pb-16">
+          <Reveal eager>
+            <h1 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-[3.5rem] lg:leading-[1.03]">
+              {t('hero.h1a')}
+              <br />
+              {t('hero.h1b')}
+            </h1>
+          </Reveal>
+          <Reveal eager delay={80}>
+            <p className="mx-auto mt-5 max-w-xl leading-relaxed text-pretty text-muted">
+              {t('home.heroLede')}
+            </p>
+          </Reveal>
+          <Reveal eager delay={150}>
+            <DownloadButton location="hero" note={t('home.heroFree')} center />
+          </Reveal>
+          <Reveal eager delay={220}>
+            <div className="mx-auto mt-12 max-w-5xl text-left">
               <HeroApp video />
             </div>
+          </Reveal>
+          <Reveal eager delay={280}>
+            <HeroAnchors />
           </Reveal>
         </section>
 
