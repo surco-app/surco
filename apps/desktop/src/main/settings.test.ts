@@ -86,6 +86,12 @@ describe('defaults for a fresh install', () => {
     expect(defaults.backupRetentionDays).toBe(7)
   })
 
+  // A week of copies from the conversions that re-encode fits in a couple of gigabytes;
+  // ten was room for a whole crate of AIFFs, disk the user saw spent on nothing.
+  it('caps originals at 2 GB, not 10', () => {
+    expect(defaults.backupMaxGb).toBe(2)
+  })
+
   // A copy of the whole file for every tag edit filled a DJ's disk past the 10 GB cap:
   // the audio in those passes through untouched, so the copy guards almost nothing. A
   // re-encode is where the original samples can be lost, and that is what stays covered.
