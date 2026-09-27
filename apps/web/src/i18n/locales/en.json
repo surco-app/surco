@@ -534,12 +534,12 @@
         "id": "instalar",
         "title": "Install and open Surco",
         "body": [
-          "Download Surco for your system from the home page, or install it with Homebrew on macOS. The first time you open it, a wizard gets you set up in a minute: pick your default output format, the folder to save to and, if you like, paste your Discogs token.",
+          "Download Surco for your system from the home page, or install it with Homebrew on macOS. The first time you open it, a wizard gets you set up in a minute: choose where to look for tags and whether to match on import, the output format and folder, and what you do with your tracks, so the editor only shows the sections you use.",
           "No account, no subscription. Surco updates itself, so you'll always have the latest version without downloading again, and it shows you what changed the next time you open it after an update."
         ],
         "points": [
           "Available for macOS (Apple Silicon and Intel, notarized by Apple), Windows and Linux (on Linux as an AppImage), in five languages.",
-          "The welcome wizard is just four steps; naming, genres and editor fields wait for you in Settings.",
+          "The welcome wizard is just four steps (five if Surco finds your rekordbox or Traktor collection); naming, genres and editor fields wait for you in Settings.",
           "Rushed through it? You can reopen it any time from the Help menu or ⌘K: it starts from your current settings and only changes what you touch.",
           "It ships with the useful things already on: quality analysis on import, and Discogs, Bandcamp and Deezer all searched without configuring anything.",
           "You can change any setting later in Settings (⌘ ,)."

@@ -534,12 +534,12 @@
         "id": "instalar",
         "title": "Instala y abre Surco",
         "body": [
-          "Descarga Surco para tu sistema desde la página principal o instálalo con Homebrew en macOS. La primera vez que lo abras, un asistente te deja a punto en un minuto: elige el formato de salida por defecto, la carpeta donde guardar y, si quieres, pega tu token de Discogs.",
+          "Descarga Surco para tu sistema desde la página principal o instálalo con Homebrew en macOS. La primera vez que lo abras, un asistente te deja a punto en un minuto: elige dónde buscar las etiquetas y si emparejar solo al importar, el formato y la carpeta de salida, y qué haces con tus pistas, para que el editor enseñe solo las secciones que usas.",
           "No hace falta crear cuenta ni suscribirte. Surco se actualiza solo, así que siempre tendrás la última versión sin volver a descargar, y al abrirlo después de una actualización te enseña qué ha cambiado."
         ],
         "points": [
           "Disponible para macOS (Apple Silicon e Intel, notarizado por Apple), Windows y Linux (en Linux como AppImage), en cinco idiomas.",
-          "El asistente de bienvenida son solo cuatro pasos; el nombrado, los géneros y los campos del editor te esperan en Ajustes.",
+          "El asistente de bienvenida son solo cuatro pasos (cinco si Surco encuentra tu colección de rekordbox o Traktor); el nombrado, los géneros y los campos del editor te esperan en Ajustes.",
           "¿Lo despachaste rápido? Puedes volver a abrirlo cuando quieras desde el menú Ayuda o ⌘K: arranca con tus ajustes actuales y solo cambia lo que toques.",
           "De serie ya viene con lo importante encendido: analiza la calidad al importar y busca en Discogs, Bandcamp y Deezer sin que configures nada.",
           "Puedes cambiar cualquier ajuste después en Ajustes (⌘ ,)."
