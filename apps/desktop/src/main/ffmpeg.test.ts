@@ -106,6 +106,18 @@ describe('convertArgs', () => {
     expect(args).toContain('title=Padded')
   })
 
+  it('drops a NUL from any field or custom field, which Node refuses in a spawn argument and would fail the whole conversion', () => {
+    const args = convertArgs(
+      '/in.wav',
+      '/o.aiff',
+      { codec: 'pcm_s16be' },
+      { ...meta, albumArtist: 'Tina Cousins\0', custom: { MOOD: 'Dark\0' } },
+    )
+    expect(args.filter((a) => a.includes('\0'))).toEqual([])
+    expect(args).toContain('album_artist=Tina Cousins')
+    expect(args).toContain('MOOD=Dark')
+  })
+
   it('inserts the normalization audio filter before the codec, ahead of -c:a', () => {
     const args = convertArgs(
       '/in.wav',

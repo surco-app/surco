@@ -819,6 +819,8 @@ function pcmCodec(depth: SampleDepth, endian: 'be' | 'le'): string {
 // Vorbis, TENC/TSSE en ID3, ITCH/ISFT en RIFF), así que basta nombrarlos una vez.
 const SOURCE_PROVENANCE = ['engineer', 'technician', 'software', 'originator', 'product', 'source']
 
+const argValue = (v: string | undefined): string => (v ?? '').replaceAll('\0', '').trim()
+
 function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
   // ffmpeg copies the source's global metadata into the re-encoded file by default,
   // so every managed field is written even when blank: an empty `-metadata name=`
@@ -835,8 +837,8 @@ function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
   const managed = TAG_FIELDS.flatMap((field) => {
     const name = vorbis ? (field.vorbis ?? field.id3) : field.id3
     if (!name) return []
-    const own = (meta[field.key] ?? '').trim()
-    const total = field.withTotal && !vorbis ? (meta[field.withTotal] ?? '').trim() : ''
+    const own = argValue(meta[field.key])
+    const total = field.withTotal && !vorbis ? argValue(meta[field.withTotal]) : ''
     const value = withTotal(own, total)
     // Extra spellings the same value is written under (Vorbis only): they must be excluded
     // from the clears below, or the alias sweep would erase what was just written.
@@ -856,7 +858,7 @@ function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
   // empty value clears the tag, like an emptied managed field.
   const custom = Object.entries(meta.custom ?? {}).flatMap(([key, value]) => [
     '-metadata',
-    `${customTagName(key)}=${value.trim()}`,
+    `${customTagName(key)}=${argValue(value)}`,
   ])
   return [...managed, ...custom]
 }
