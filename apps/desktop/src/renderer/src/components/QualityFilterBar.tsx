@@ -427,7 +427,7 @@ export function QualityFilterBar({
               <span className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${triggerDot}`} />
             )}
           </span>
-          <span className="min-w-0 flex-1 truncate text-left">{trigger.label}</span>
+          <span className="min-w-0 truncate text-left">{trigger.label}</span>
           <span className="shrink-0 tabular-nums opacity-70">{trigger.count}</span>
           <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
         </button>
