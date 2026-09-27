@@ -263,7 +263,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                       type="checkbox"
                       checked
                       disabled
-                      className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
                     />
                     <span className="text-sm">
                       {tr('onboarding.intent.metadata')}
@@ -279,7 +279,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                         type="checkbox"
                         checked={audioIntents.includes(intent)}
                         onChange={(e) => toggleIntent(intent, e.target.checked)}
-                        className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
                       />
                       <span className="text-sm">
                         {tr(`onboarding.intent.${intent}`)}
@@ -330,7 +330,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                           if (library.id === 'traktor' && e.target.checked && !local.traktorNmlPath)
                             patchLocal('traktorNmlPath', library.path)
                         }}
-                        className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
                       />
                       <span className="min-w-0 text-sm font-medium">
                         {tr(`onboarding.djLibrary.${library.id}`)}

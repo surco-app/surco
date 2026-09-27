@@ -209,7 +209,7 @@ export function NormalizeControls({
               type="checkbox"
               checked={value.peakPerChannel === true}
               onChange={(e) => onChange({ ...value, peakPerChannel: e.target.checked })}
-              className="h-4 w-4 accent-[var(--color-accent)]"
+              className="h-4 w-4 shrink-0 accent-[var(--color-accent)]"
             />
             <span className="text-sm">{tr('normalize.peakPerChannel')}</span>
           </label>
@@ -229,7 +229,7 @@ export function NormalizeControls({
             type="checkbox"
             checked={value.removeDcOffset === true}
             onChange={(e) => onChange({ ...value, removeDcOffset: e.target.checked })}
-            className="h-4 w-4 accent-[var(--color-accent)]"
+            className="h-4 w-4 shrink-0 accent-[var(--color-accent)]"
           />
           <span className="text-sm">{tr('normalize.removeDcOffset')}</span>
         </label>

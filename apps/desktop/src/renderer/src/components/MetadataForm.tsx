@@ -45,7 +45,7 @@ function renderField(
           }}
           checked={f.value === '1'}
           onChange={(e) => f.onChange(e.target.checked ? '1' : '')}
-          className="h-4 w-4 accent-[var(--color-accent)]"
+          className="h-4 w-4 shrink-0 accent-[var(--color-accent)]"
         />
         <span className="text-xs font-medium text-fg-dim">{f.label}</span>
       </label>

@@ -30,7 +30,7 @@ export function SearchProvidersControl({
             onChange={(e) =>
               onChange(e.target.checked ? [...value, p] : value.filter((x) => x !== p))
             }
-            className="h-4 w-4 accent-[var(--color-accent)]"
+            className="h-4 w-4 shrink-0 accent-[var(--color-accent)]"
           />
           <span className="text-sm">{tr(`settings.provider.${p}`)}</span>
         </label>

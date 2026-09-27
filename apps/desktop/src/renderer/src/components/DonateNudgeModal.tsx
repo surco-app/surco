@@ -82,7 +82,7 @@ export function DonateNudgeModal({ conversionCount, onClose }: Props): React.JSX
               type="checkbox"
               checked={dismiss}
               onChange={(e) => setDismiss(e.target.checked)}
-              className="h-4 w-4 accent-[var(--color-accent)]"
+              className="h-4 w-4 shrink-0 accent-[var(--color-accent)]"
             />
             {tr('donateNudge.dontShowAgain')}
           </label>
