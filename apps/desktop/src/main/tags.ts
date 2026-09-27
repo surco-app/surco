@@ -184,6 +184,15 @@ export function readTagLibExtras(file: string): Partial<TrackMetadata> {
 }
 
 export function tagLibExtrasOf(f: TagFile): Partial<TrackMetadata> {
+  return Object.fromEntries(
+    Object.entries(tagLibFieldsOf(f)).map(([k, v]) => [
+      k,
+      typeof v === 'string' ? v.replaceAll('\0', '').trim() : v,
+    ]),
+  )
+}
+
+function tagLibFieldsOf(f: TagFile): Partial<TrackMetadata> {
   const tag = f.tag
   const extras: Partial<TrackMetadata> = {
     title: tag.title?.trim() || '',

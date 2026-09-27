@@ -216,4 +216,27 @@ describe('readTagLibExtras', () => {
     expect(Object.values(extras).every((v) => v === '')).toBe(true)
     expect(extras.catalogNumber).toBeUndefined()
   })
+
+  it('drops the NUL a RIFF INFO string ends with, which ffmpeg refuses as an argument when the track converts', () => {
+    const file = join(dir, 'info.wav')
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=1',
+      '-metadata',
+      'artist=Tina Cousins',
+      '-metadata',
+      'album=Pray',
+      file,
+    ])
+    const extras = readTagLibExtras(file)
+    expect(Object.values(extras).filter((v) => typeof v === 'string' && v.includes('\0'))).toEqual(
+      [],
+    )
+    expect(extras.albumArtist).toBe('Tina Cousins')
+  })
 })
