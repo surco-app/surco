@@ -719,7 +719,7 @@
           "The Activity panel shows the background work and explains each verdict: which signals matched and which candidates were discarded. A button copies the whole log in case you need to report something."
         ],
         "shot": "automatch-en.webp",
-        "shotCaption": "The best match, flagged “Suggested” in the Discogs search."
+        "shotCaption": "The Activity panel with the lookups running in the background."
       },
       {
         "id": "album",
@@ -811,7 +811,7 @@
           "The arrow next to the convert button changes the format and destination for that run only, your defaults stay as they were."
         ],
         "shot": "lote-en.webp",
-        "shotCaption": "A batch conversion in progress."
+        "shotCaption": "Three tracks selected, ready to convert in one go."
       },
       {
         "id": "exportar",

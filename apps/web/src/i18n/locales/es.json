@@ -719,7 +719,7 @@
           "El panel de Actividad enseña el trabajo en segundo plano y explica cada veredicto: qué señales coincidieron y qué candidatos se descartaron. Un botón copia el registro entero por si tienes que reportar algo."
         ],
         "shot": "automatch-es.webp",
-        "shotCaption": "La mejor coincidencia, marcada como «Sugerida» en la búsqueda de Discogs."
+        "shotCaption": "El panel de Actividad con las búsquedas que se hacen en segundo plano."
       },
       {
         "id": "album",
@@ -811,7 +811,7 @@
           "La flecha junto al botón de convertir cambia el formato y el destino solo para esa tanda, tus ajustes por defecto se quedan como estaban."
         ],
         "shot": "lote-es.webp",
-        "shotCaption": "El progreso de una conversión por lotes."
+        "shotCaption": "Tres pistas seleccionadas, listas para convertirlas de una vez."
       },
       {
         "id": "exportar",
