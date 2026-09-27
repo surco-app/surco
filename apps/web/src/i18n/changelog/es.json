@@ -27,6 +27,10 @@
       {
         "text": "Si Beatport ya no tiene la carátula de un lanzamiento, la pista se convierte igual con el resto de datos y conserva su carátula. Y si Beatport no deja abrir un lanzamiento desde tu país, Surco te lo dice en vez de pedirte que lo intentes otra vez.",
         "in": "1.3.2"
+      },
+      {
+        "text": "Algunos WAV no se dejaban convertir por culpa de su artista del álbum. Ahora se convierten con normalidad.",
+        "in": "1.3.3"
       }
     ]
   },

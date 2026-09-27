@@ -27,6 +27,10 @@
       {
         "text": "If Beatport no longer has a release's artwork, the track still converts with everything else and keeps its own artwork. And if Beatport won't open a release in your country, Surco tells you so instead of asking you to try again.",
         "in": "1.3.2"
+      },
+      {
+        "text": "Some WAV files refused to convert because of their album artist. They now convert normally.",
+        "in": "1.3.3"
       }
     ]
   },
