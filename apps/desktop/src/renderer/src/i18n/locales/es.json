@@ -109,8 +109,8 @@
   "empty": {
     "title": "Suelta tus pistas aquí",
     "addTracks": "Añadir pistas",
-    "subtitle": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp y Deezer, y las manda a Apple Music o Engine DJ.",
-    "subtitleNoMusic": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp y Deezer, y las manda a Engine DJ.",
+    "subtitle": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp, Deezer y Beatport, y las manda a Apple Music o Engine DJ.",
+    "subtitleNoMusic": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp, Deezer y Beatport, y las manda a Engine DJ.",
     "or": "o",
     "importApplePlaylist": "Importar de Apple Music"
   },
@@ -1064,7 +1064,7 @@
     "trimWhitespace": "Recortar espacios sobrantes",
     "zeroPadTrack": "Nº de pista con cero delante (03)",
     "fullReleaseDate": "Año con fecha completa",
-    "fullReleaseDateHint": "Muestra y guarda 2020-12-01 en vez de 2020 cuando el archivo o Discogs, Deezer o Bandcamp tienen la fecha entera.",
+    "fullReleaseDateHint": "Muestra y guarda 2020-12-01 en vez de 2020 cuando el archivo o Discogs, Bandcamp, Deezer o Beatport tienen la fecha entera.",
     "asciiFileNames": "Nombres de archivo sin acentos",
     "asciiFileNamesHint": "Escribe «Royksopp» en vez de «Röyksopp». Útil para buscar en un NAS y para discos que fallan con las tildes.",
     "coverMaxSize": "Tamaño máximo de la carátula",
@@ -1192,7 +1192,7 @@
     "audioBody": "Surco muestra solo las secciones del editor que tu flujo necesita. Elige lo que encaje: puedes cambiarlo cuando quieras en Ajustes.",
     "intent": {
       "metadata": "Corregir los metadatos",
-      "metadataBody": "Etiquetas, carátula y el emparejamiento con Discogs, Bandcamp y Deezer. Siempre activo: es para lo que sirve Surco.",
+      "metadataBody": "Etiquetas, carátula y el emparejamiento con Discogs, Bandcamp, Deezer y Beatport. Siempre activo: es para lo que sirve Surco.",
       "restore": "Restaurar rips de vinilo",
       "restoreBody": "Recorta el silencio y repara clics y chasquidos en grabaciones de vinilo.",
       "level": "Nivelar el volumen",
@@ -1236,7 +1236,7 @@
       },
       "windows": {
         "q": "¿Hay algo distinto en Windows?",
-        "a": "Casi todo funciona exactamente igual: la conversión, el etiquetado, la búsqueda en Discogs, Bandcamp y Deezer, el análisis de calidad y la exportación a rekordbox, Traktor, Serato y Engine DJ.\n\nLo único que no existe en Windows es la integración con Apple Music. Surco controla la app Música de Apple mediante AppleScript, un puente de automatización que solo existe en macOS —la app de Apple Music para Windows no ofrece nada equivalente—, así que el destino, los botones y la insignia de biblioteca de Apple Music sencillamente no aparecen.\n\nUn detalle con los WAV que conviene saber: Surco guarda las etiquetas de los WAV en el chunk ID3 estándar, que las apps de DJ y editores como Mp3tag leen sin problema, pero el Explorador de Windows no puede mostrar; un WAV convertido puede parecer sin etiquetar en una carpeta aunque todas las etiquetas estén ahí. Con MP3 o FLAC el Explorador las muestra con normalidad."
+        "a": "Casi todo funciona exactamente igual: la conversión, el etiquetado, la búsqueda en Discogs, Bandcamp, Deezer y Beatport, el análisis de calidad y la exportación a rekordbox, Traktor, Serato y Engine DJ.\n\nLo único que no existe en Windows es la integración con Apple Music. Surco controla la app Música de Apple mediante AppleScript, un puente de automatización que solo existe en macOS —la app de Apple Music para Windows no ofrece nada equivalente—, así que el destino, los botones y la insignia de biblioteca de Apple Music sencillamente no aparecen.\n\nUn detalle con los WAV que conviene saber: Surco guarda las etiquetas de los WAV en el chunk ID3 estándar, que las apps de DJ y editores como Mp3tag leen sin problema, pero el Explorador de Windows no puede mostrar; un WAV convertido puede parecer sin etiquetar en una carpeta aunque todas las etiquetas estén ahí. Con MP3 o FLAC el Explorador las muestra con normalidad."
       }
     }
   },
