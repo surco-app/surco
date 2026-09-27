@@ -46,6 +46,7 @@
     "convertingCount": "Converting… {{done}}/{{total}}",
     "convertAll_one": "Convert 1 track",
     "convertAll_other": "Convert {{count}} tracks",
+    "convertNone": "Convert",
     "cancelConvert": "Cancel the conversion: queued tracks are skipped, the ones underway finish",
     "cancelImport": "Stop reading: files already read are kept, the rest are dropped",
     "autoMatch": "Auto-match all tracks",

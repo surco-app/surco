@@ -46,6 +46,7 @@
     "convertingCount": "Konvertiere… {{done}}/{{total}}",
     "convertAll_one": "1 Titel konvertieren",
     "convertAll_other": "{{count}} Titel konvertieren",
+    "convertNone": "Konvertieren",
     "cancelConvert": "Konvertierung abbrechen: Tracks in der Warteschlange werden übersprungen, laufende werden beendet",
     "cancelImport": "Einlesen stoppen: bereits Gelesenes bleibt, der Rest entfällt",
     "autoMatch": "Alle Tracks automatisch abgleichen",

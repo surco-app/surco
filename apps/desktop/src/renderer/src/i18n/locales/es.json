@@ -46,6 +46,7 @@
     "convertingCount": "Convirtiendo… {{done}}/{{total}}",
     "convertAll_one": "Convertir 1 pista",
     "convertAll_other": "Convertir {{count}} pistas",
+    "convertNone": "Convertir",
     "cancelConvert": "Cancelar la conversión: las pistas en cola se saltan, las que están en curso terminan",
     "cancelImport": "Dejar de leer: lo ya leído se queda, el resto se descarta",
     "autoMatch": "Auto-emparejar todas las pistas",
