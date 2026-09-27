@@ -818,7 +818,9 @@ describe('SettingsModal settings folder', () => {
       />,
     )
     fireEvent.click(screen.getByTestId('settings-config-dir-change'))
-    expect(await screen.findByDisplayValue('/iCloud/Surco')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getByTestId('settings-config-dir')).toHaveTextContent('/iCloud/Surco'),
+    )
     expect(api.setConfigDir).toHaveBeenCalledWith('/iCloud/Surco')
     expect(onSettingsReplaced).toHaveBeenCalledWith(
       expect.objectContaining({ keyNotation: 'musical' }),
@@ -840,10 +842,14 @@ describe('SettingsModal settings folder', () => {
         onSettingsReplaced={() => {}}
       />,
     )
-    expect(await screen.findByDisplayValue('/iCloud/Surco')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getByTestId('settings-config-dir')).toHaveTextContent('/iCloud/Surco'),
+    )
     fireEvent.click(screen.getByTestId('settings-config-dir-reset'))
     expect(api.setConfigDir).toHaveBeenCalledWith(null)
-    expect(await screen.findByTestId('settings-config-dir')).not.toHaveValue('/iCloud/Surco')
+    await waitFor(() =>
+      expect(screen.getByTestId('settings-config-dir')).not.toHaveTextContent('/iCloud/Surco'),
+    )
     expect(screen.queryByTestId('settings-config-dir-reset')).not.toBeInTheDocument()
   })
 })
@@ -868,10 +874,34 @@ describe('SettingsModal analysis cache', () => {
         onSettingsReplaced={() => {}}
       />,
     )
-    expect(await screen.findByDisplayValue('12 · 3.2 MB')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getByTestId('settings-cache-stats')).toHaveTextContent('12 files · 3.2 MB'),
+    )
     fireEvent.click(screen.getByTestId('settings-cache-clear'))
     expect(clearCache).toHaveBeenCalledTimes(1)
-    expect(await screen.findByDisplayValue('0 · 0 B')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getByTestId('settings-cache-stats')).toHaveTextContent('Nothing cached yet'),
+    )
+  })
+
+  // The size was shown twice, in a box that looked editable and again in the hint under
+  // it. It is said once, beside the section's name.
+  it('states the cache size once', async () => {
+    const api = window.api as unknown as Record<string, unknown>
+    api.cacheStats = vi.fn(async () => ({ files: 12, bytes: 3_400_000 }))
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    await waitFor(() =>
+      expect(screen.getByTestId('settings-cache-stats')).toHaveTextContent('3.2 MB'),
+    )
+    expect(screen.getAllByText(/3\.2 MB/)).toHaveLength(1)
   })
 
   // Without telemetry the log file is the only artifact a user can attach to a

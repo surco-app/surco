@@ -5,8 +5,15 @@ import type { LanguagePref, ThemePref } from '../../../../shared/types'
 import { formatFileSize } from '../../lib/properties'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchLocal, PatchSynced } from '../../lib/settingsTabs'
+import { PathField } from '../PathField'
 import { SegmentedControl } from '../SegmentedControl'
-import { SettingsCheckboxField, SettingsField, SettingsSection } from './SettingsPrimitives'
+import {
+  SettingsCheckboxField,
+  SettingsField,
+  SettingsHint,
+  SettingsLabel,
+  SettingsSection,
+} from './SettingsPrimitives'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR']
@@ -85,20 +92,13 @@ export function GeneralTab({
 
           <SettingsField label={tr('settings.configDir')} hint={tr('settings.configDirHint')}>
             <div className="flex gap-2">
-              <input
-                data-testid="settings-config-dir"
-                value={configDir ?? defaultDir ?? tr('settings.configDirDefault')}
-                readOnly
-                className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
-              />
-              <button
-                type="button"
-                data-testid="settings-config-dir-change"
-                onClick={onChangeConfigDir}
-                className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
-              >
-                {tr('common.change')}
-              </button>
+              <div className="min-w-0 flex-1">
+                <PathField
+                  value={configDir ?? defaultDir ?? tr('settings.configDirDefault')}
+                  onChange={onChangeConfigDir}
+                  testid="settings-config-dir"
+                />
+              </div>
               {configDir && (
                 <button
                   type="button"
@@ -135,39 +135,32 @@ export function GeneralTab({
             </div>
           </SettingsField>
 
-          <SettingsField
-            label={tr('settings.cache')}
-            hint={
-              cacheStats && cacheStats.files > 0
-                ? tr('settings.cacheHint', {
-                    count: cacheStats.files,
-                    size: formatFileSize(cacheStats.bytes),
-                  })
-                : tr('settings.cacheHintEmpty')
-            }
-          >
-            <div className="flex gap-2">
-              <input
-                data-testid="settings-cache-stats"
-                value={
-                  cacheStats
-                    ? `${cacheStats.files} · ${formatFileSize(cacheStats.bytes)}`
-                    : tr('settings.configDirDefault')
-                }
-                readOnly
-                className="min-w-0 flex-1 truncate rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg-muted"
-              />
-              <button
-                type="button"
-                data-testid="settings-cache-clear"
-                onClick={clearCache}
-                disabled={clearing || cacheStats?.files === 0}
-                className="press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {tr('settings.cacheClear')}
-              </button>
+          {/* The size is said once, beside the name: it used to sit in a box that looked
+              editable and again in the hint under it. */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-baseline justify-between gap-3">
+              <SettingsLabel>{tr('settings.cache')}</SettingsLabel>
+              <span data-testid="settings-cache-stats" className="text-xs tabular-nums text-fg-dim">
+                {cacheStats &&
+                  (cacheStats.files > 0
+                    ? tr('settings.cacheCount', {
+                        count: cacheStats.files,
+                        size: formatFileSize(cacheStats.bytes),
+                      })
+                    : tr('settings.cacheEmpty'))}
+              </span>
             </div>
-          </SettingsField>
+            <button
+              type="button"
+              data-testid="settings-cache-clear"
+              onClick={clearCache}
+              disabled={clearing || cacheStats?.files === 0}
+              className="press self-start rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {tr('settings.cacheClear')}
+            </button>
+            <SettingsHint>{tr('settings.cacheHint')}</SettingsHint>
+          </div>
 
           <SettingsField label={tr('settings.log')} hint={tr('settings.logHint')}>
             <button
