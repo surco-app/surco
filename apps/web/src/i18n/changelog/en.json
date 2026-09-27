@@ -31,6 +31,14 @@
       {
         "text": "Some WAV files refused to convert because of their album artist. They now convert normally.",
         "in": "1.3.3"
+      },
+      {
+        "text": "The backups Surco keeps before rewriting your files now take up to 2 GB and last 7 days, instead of 10 GB and 30 days, so they don't fill your system disk. If you already had Surco and never touched those limits, they move to the new ones on their own; if you changed them, they stay as you left them.",
+        "in": "1.3.4"
+      },
+      {
+        "text": "Settings, clearer: each part reads like the editor's sections, the window keeps its size as you switch tabs, and long options no longer squeeze their checkboxes.",
+        "in": "1.3.4"
       }
     ]
   },

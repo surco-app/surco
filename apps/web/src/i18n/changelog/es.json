@@ -31,6 +31,14 @@
       {
         "text": "Algunos WAV no se dejaban convertir por culpa de su artista del álbum. Ahora se convierten con normalidad.",
         "in": "1.3.3"
+      },
+      {
+        "text": "Las copias de seguridad que Surco guarda antes de reescribir tus archivos ocupan como mucho 2 GB y duran 7 días, en vez de 10 GB y 30 días, para no llenar el disco del sistema. Si ya tenías Surco y no habías tocado esos límites, pasan a los nuevos solos; si los cambiaste tú, se quedan como los dejaste.",
+        "in": "1.3.4"
+      },
+      {
+        "text": "Ajustes, más claro: cada apartado se lee como las secciones del editor, la ventana no cambia de tamaño al pasar de pestaña, y las opciones largas ya no aplastan sus casillas.",
+        "in": "1.3.4"
       }
     ]
   },
