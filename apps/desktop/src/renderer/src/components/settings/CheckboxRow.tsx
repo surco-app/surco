@@ -36,7 +36,7 @@ export function CheckboxRow({
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 accent-[var(--color-accent)]"
+        className="h-4 w-4 shrink-0 accent-[var(--color-accent)]"
       />
       <span className="text-sm">{label}</span>
     </label>

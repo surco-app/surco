@@ -58,7 +58,7 @@ export function DestinationPicker({
                   checked={value === d}
                   disabled={disabled}
                   onChange={() => onChange(d)}
-                  className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
                 />
                 <span className="text-sm">
                   {tr(`settings.destinations.${d}`)}
