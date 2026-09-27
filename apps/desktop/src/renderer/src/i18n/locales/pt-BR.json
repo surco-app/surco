@@ -143,6 +143,7 @@
     "beatportBadCredentials": "O Beatport não aceita esse usuário e senha. Conecte a conta de novo nos Ajustes.",
     "beatportUnavailable": "O Beatport não respondeu direito. Tente de novo daqui a pouco.",
     "beatportRateLimit": "O Beatport está limitando as buscas. Espere um pouco e tente de novo.",
+    "beatportTerritoryRestricted": "O Beatport não permite abrir este lançamento no seu país. Escolha outro resultado.",
     "beatportNoSecureStorage": "Este sistema não permite salvar a senha criptografada, então ela não foi salva.",
     "discogsUnavailable": "O Discogs não respondeu direito. Tente de novo daqui a pouco.",
     "pathNotAllowed": "O Surco não abriu esse arquivo: ele não é uma das faixas carregadas."

@@ -38,6 +38,7 @@ export const ERROR_KEYS = [
   'beatportBadCredentials',
   'beatportUnavailable',
   'beatportRateLimit',
+  'beatportTerritoryRestricted',
   'beatportNoSecureStorage',
 ] as const
 

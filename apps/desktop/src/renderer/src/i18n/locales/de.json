@@ -143,6 +143,7 @@
     "beatportBadCredentials": "Beatport akzeptiert diesen Benutzernamen und dieses Passwort nicht. Verbinde das Konto in den Einstellungen neu.",
     "beatportUnavailable": "Beatport hat nicht richtig geantwortet. Versuche es gleich noch einmal.",
     "beatportRateLimit": "Beatport begrenzt die Suchen. Warte einen Moment und versuche es erneut.",
+    "beatportTerritoryRestricted": "Beatport erlaubt diese Veröffentlichung in deinem Land nicht. Wähle ein anderes Ergebnis.",
     "beatportNoSecureStorage": "Dieses System kann das Passwort nicht verschlüsselt speichern, daher wurde es nicht gespeichert.",
     "discogsUnavailable": "Discogs hat nicht richtig geantwortet. Versuche es gleich noch einmal.",
     "pathNotAllowed": "Surco hat diese Datei nicht geöffnet: Sie gehört nicht zu den geladenen Titeln."

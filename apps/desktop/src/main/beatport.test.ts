@@ -157,4 +157,10 @@ describe('the Beatport API client', () => {
     expect(rel.tracklist).toHaveLength(4)
     expect(rel.labels?.[0].name).toBe('Columbia')
   })
+
+  it("a release Beatport blocks in the user's country says so, since retrying it never works", async () => {
+    setBeatportSession(fakeSession())
+    stubFetch(() => Response.json({ detail: 'Territory Restricted.' }, { status: 403 }))
+    expect(await keyOf(getRelease(1167829))).toBe('beatportTerritoryRestricted')
+  })
 })

@@ -78,6 +78,9 @@ async function api<T>(path: string, priority?: SearchPriority): Promise<T> {
       await sleep(Math.min(BASE_DELAY_MS * 2 ** attempt, MAX_DELAY_MS))
       continue
     }
+    if (res.status === 403 && (await res.text()).includes('Territory Restricted')) {
+      throw errorWithKey('beatportTerritoryRestricted', path)
+    }
     if (!res.ok) throw errorWithKey('beatportUnavailable', String(res.status))
     return (await res.json()) as T
   }

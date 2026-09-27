@@ -143,6 +143,7 @@
     "beatportBadCredentials": "Beatport n'accepte pas cet identifiant et ce mot de passe. Reconnecte le compte dans les Réglages.",
     "beatportUnavailable": "Beatport n'a pas répondu correctement. Réessaie dans un instant.",
     "beatportRateLimit": "Beatport limite les recherches. Attends un instant et réessaie.",
+    "beatportTerritoryRestricted": "Beatport ne permet pas d'ouvrir cette sortie depuis ton pays. Choisis un autre résultat.",
     "beatportNoSecureStorage": "Ce système ne permet pas d'enregistrer le mot de passe chiffré, il n'a donc pas été enregistré.",
     "discogsUnavailable": "Discogs n'a pas répondu correctement. Réessaie dans un instant.",
     "pathNotAllowed": "Surco n'a pas ouvert ce fichier : il ne fait pas partie des pistes chargées."
