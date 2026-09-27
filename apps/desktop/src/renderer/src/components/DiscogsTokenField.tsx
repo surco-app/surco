@@ -1,5 +1,6 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
+import { SettingsLabel } from './settings/SettingsPrimitives'
 
 // The Discogs personal-token field, shared by Settings and the onboarding wizard so the
 // label, placeholder and why/how hint stay one copy — the wizard used to drop the "why"
@@ -19,9 +20,9 @@ export function DiscogsTokenField({
   const { t: tr } = useTranslation()
   return (
     <div>
-      <label htmlFor={testid} className="mb-2 block text-sm font-medium text-fg-muted">
+      <SettingsLabel htmlFor={testid} className="mb-2">
         {tr('settings.discogsToken')}
-      </label>
+      </SettingsLabel>
       <input
         id={testid}
         data-testid={testid}
