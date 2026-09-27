@@ -680,7 +680,7 @@
   "declick": {
     "cueWarning": "ALAC ne conserve ni les cues ni le beatgrid de Traktor : la conversion les perd.",
     "title": "Réparation des clics de vinyle",
-    "hint": "Désactivé par défaut. Détecte les clics et craquements de la pointe et les interpole pendant la conversion.",
+    "hint": "Détecte les clics et craquements de la pointe et les interpole pendant la conversion.",
     "mode": {
       "off": "Non",
       "soft": "Doux",
@@ -761,7 +761,7 @@
   },
   "normalize": {
     "title": "Normalisation du loudness",
-    "hint": "Désactivée par défaut. Aligne chaque morceau sur un loudness ou un pic cible.",
+    "hint": "Aligne chaque morceau sur un loudness ou un pic cible.",
     "editorHint": "Aligne chaque morceau sur un loudness ou un pic cible.",
     "fadeValue": "Après à {{pct}} %",
     "mode": {
@@ -787,7 +787,7 @@
     "cueWarningShort": "Réencode l'audio · en ALAC les repères sont perdus",
     "predictionEstimate": "(estimation)",
     "presetHint": {
-      "streaming": "Comme nivellent Spotify et Apple Music — la valeur sûre pour une bibliothèque d'écoute.",
+      "streaming": "Comme nivellent Spotify et Apple Music : la valeur sûre pour une bibliothèque d'écoute.",
       "club": "Chaud, pour la cabine : la plupart des morceaux exigent un limiteur pour y arriver, au prix d'un peu de punch.",
       "broadcast": "Le niveau TV et radio. Plus bas que le streaming, avec beaucoup de marge.",
       "custom": "Ta propre cible. L'aperçu sous l'onde montre où le morceau atterrira."
@@ -867,7 +867,7 @@
     },
     "stats": {
       "count": "conversions",
-      "milestone": "Prochain jalon : {{milestone}} conversions — plus que {{remaining}}",
+      "milestone": "Prochain jalon : {{milestone}} conversions, plus que {{remaining}}",
       "imported": "Morceaux chargés",
       "listened": "Morceaux écoutés",
       "analyzed": "Morceaux analysés",
@@ -884,7 +884,7 @@
       "share": "Partager une image",
       "shareTitle": "Ma collection en chiffres",
       "shareFooter": "Prépare ta musique · getsurco.app",
-      "roiDonate": "Si Surco te fait gagner du temps, soutiens-le — le développer coûte de l'argent",
+      "roiDonate": "Si Surco te fait gagner du temps, soutiens-le. Le développer coûte de l'argent.",
       "shareHeroLabel": "morceaux convertis et étiquetés"
     },
     "theme": "Apparence",
@@ -916,8 +916,10 @@
     "importConfirm": "Cela remplacera toute ta configuration actuelle. Continuer ?",
     "cache": "Cache d'analyse",
     "cacheClear": "Vider le cache",
-    "cacheHint": "Toutes les analyses de chaque morceau sont enregistrées sur disque pour que rouvrir ta bibliothèque soit instantané. {{count}} fichiers · {{size}}. Le vider oblige juste la prochaine ouverture à les recalculer.",
-    "cacheHintEmpty": "Toutes les analyses de chaque morceau sont enregistrées sur disque pour que rouvrir ta bibliothèque soit instantané. Rien en cache pour l'instant.",
+    "cacheHint": "L'analyse de chaque piste reste sur le disque pour que ta bibliothèque se rouvre instantanément. La vider oblige juste à la recalculer à la prochaine ouverture.",
+    "cacheCount_one": "{{count}} fichier · {{size}}",
+    "cacheCount_other": "{{count}} fichiers · {{size}}",
+    "cacheEmpty": "Rien en cache pour l'instant",
     "log": "Journal d'erreurs",
     "logReveal": "Afficher le fichier",
     "logHint": "Si quelque chose échoue, les détails atterrissent dans ce fichier. Joins-le à ton rapport pour qu'il puisse être examiné.",
@@ -995,7 +997,7 @@
       "source": "Comme la source",
       "corrected": "Corrigé"
     },
-    "bitDepthHint": "« Comme la source » conserve la profondeur exacte du fichier, remplissage compris. Réduire à 16 bits applique un dither ; un fichier déjà au format de sortie est copié sans réencodage. « Corrigé » écrit en vrai 16 bits, sans perte, un fichier dont l'audio 16 bits rembourré en 24 est prouvé ; l'audio 24 bits authentique conserve sa profondeur.",
+    "bitDepthHint": "« Comme la source » conserve la profondeur exacte du fichier, remplissage compris. Réduire à 16 bits applique un dither. « Corrigé » écrit en vrai 16 bits, sans perte, un fichier dont l'audio 16 bits rembourré en 24 est prouvé ; l'audio 24 bits authentique conserve sa profondeur.",
     "bitDepthApplies": "S'applique à la conversion en AIFF, WAV, FLAC ou ALAC ; le MP3 n'a pas de profondeur de bits.",
     "sampleRate": "Fréquence d'échantillonnage",
     "sampleRates": {
@@ -1032,7 +1034,7 @@
     "traktorSync": "Collection Traktor",
     "traktorNmlPath": "collection.nml",
     "traktorNmlPathHint": "La collection Traktor dans laquelle écrire. Tu peux la changer quand tu veux.",
-    "traktorNmlPathDetectedHint": "Trouvé automatiquement — non appliqué tant que tu ne choisis pas de l'utiliser.",
+    "traktorNmlPathDetectedHint": "Trouvé automatiquement ; non appliqué tant que tu ne choisis pas de l'utiliser.",
     "traktorNmlPathUseDetected": "Utiliser celui-ci",
     "traktorCueOffset": "Ajustement des points de repère",
     "traktorCueQuestion": "Dans Traktor, où tombent les cues d’un morceau converti ?",
@@ -1048,7 +1050,7 @@
     "traktorCueOffsetHint": "Surco corrige automatiquement le décalage du codec à chaque conversion : avec la première réponse, vous n’avez rien à faire. Ne le changez que si, à l’écoute dans Traktor, vos cues arrivent toujours trop tôt ou toujours trop tard. Cela déplace le point de départ, jamais la durée de vos boucles.",
     "appleMusicFlacNote": "Apple Music ne lit pas le FLAC, donc les morceaux convertis restent dans le dossier de sortie tant que ton format est FLAC.",
     "filenameFormat": "Format du nom de fichier",
-    "titleFormatHint": "Reconstruit le titre à partir des autres champs. Appliqué uniquement à la demande — via le menu ⋯ du champ titre ou la palette de commandes — jamais automatiquement.",
+    "titleFormatHint": "Reconstruit le titre à partir des autres champs. Appliqué uniquement à la demande, via le menu ⋯ du champ titre ou la palette de commandes, jamais automatiquement.",
     "titleFormat": "Format du titre",
     "autoApplyFilename": "Appliquer le modèle automatiquement",
     "autoApplyFilenameHint": "Compose le nom depuis les métadonnées à l'export, sans appuyer sur « Régénérer ». Une modification manuelle gagne toujours.",
@@ -1073,7 +1075,7 @@
     "coverSquare": "Recadrer la pochette en carré",
     "coverHint": "Appliqué à l'intégration : réduit les grandes pochettes et, si activé, les recadre au centre pour les rendre carrées.",
     "replaceLowRes": "Remplacer les pochettes basse résolution en appliquant une release",
-    "replaceLowResHint": "Si désactivé, la pochette du fichier est toujours conservée — une basse résolution est seulement signalée, jamais remplacée par l'image de la release.",
+    "replaceLowResHint": "Si désactivé, la pochette du fichier est toujours conservée ; une basse résolution est seulement signalée, jamais remplacée par l'image de la release.",
     "flacFinderCovers": "Afficher les pochettes FLAC dans le Finder",
     "flacFinderCoversHint": "Le Finder ne sait pas lire la pochette contenue dans les FLAC, il leur met donc une icône générique. Cette option contourne le problème sur les fichiers convertis et la lecture n'est pas affectée, mais le FLAC devient non conforme : Traktor refuse ces fichiers et les retire de sa collection. Laisse-la désactivée si tu synchronises avec Traktor.",
     "flacFinderCoversTraktor": "Désactivée tant que tu synchronises avec Traktor : Traktor refuse un FLAC qui commence par cet en-tête et le retire de sa collection.",

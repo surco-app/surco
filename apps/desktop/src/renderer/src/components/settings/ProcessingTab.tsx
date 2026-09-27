@@ -20,9 +20,9 @@ export function ProcessingTab({ synced, patch }: Props): React.JSX.Element {
   return (
     <>
       <SettingsSection first>
-        <SettingsLabel>{tr('declick.title')}</SettingsLabel>
-        <SettingsHint className="mt-2 mb-3">{tr('declick.hint')}</SettingsHint>
+        <SettingsLabel className="mb-3">{tr('declick.title')}</SettingsLabel>
         <DeclickControls value={synced.declick} onChange={(d) => patch('declick', d)} />
+        <SettingsHint className="mt-2">{tr('declick.hint')}</SettingsHint>
       </SettingsSection>
 
       <SettingsSection>

@@ -99,6 +99,20 @@ describe('StatsTab', () => {
     expect(split).toHaveTextContent('10')
   })
 
+  // "Found on Discogs" wrapped onto two lines in each quarter of the legend, and the count
+  // ran into the next source's swatch ("11●"). The heading already says where the matches
+  // came from, so each entry is just the catalog's name and its count.
+  it('names each source in the legend by its catalog alone', () => {
+    render(
+      <StatsTab
+        settings={withStats({ conversionCount: 5, stats: { ...zeroStats, discogsMatches: 11 } })}
+      />,
+    )
+    const split = screen.getByTestId('stats-match-split')
+    expect(split).not.toHaveTextContent('Found on')
+    expect(split).toHaveTextContent('Discogs11')
+  })
+
   // The milestone bar gives the counter a goal — 385 of the way to 500 must read as
   // real progress toward a named target, the hook that keeps the tab worth reopening.
   it('shows progress toward the next conversion milestone', () => {

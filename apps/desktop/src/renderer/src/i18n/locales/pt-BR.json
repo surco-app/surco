@@ -680,7 +680,7 @@
   "declick": {
     "cueWarning": "ALAC não guarda os cues nem o beatgrid do Traktor: eles se perdem ao converter.",
     "title": "Reparo de clicks de vinil",
-    "hint": "Desativado por padrão. Detecta os clicks e estalos da agulha e os interpola durante a conversão.",
+    "hint": "Detecta os clicks e estalos da agulha e os interpola durante a conversão.",
     "mode": {
       "off": "Não",
       "soft": "Suave",
@@ -761,7 +761,7 @@
   },
   "normalize": {
     "title": "Normalização de volume",
-    "hint": "Desativada por padrão. Iguala cada faixa a um volume ou pico alvo.",
+    "hint": "Iguala cada faixa a um volume ou pico alvo.",
     "editorHint": "Iguala cada faixa a um volume ou pico alvo.",
     "fadeValue": "Depois em {{pct}}%",
     "mode": {
@@ -787,7 +787,7 @@
     "cueWarningShort": "Recodifica o áudio · em ALAC os cues se perdem",
     "predictionEstimate": "(estimado)",
     "presetHint": {
-      "streaming": "Como Spotify e Apple Music nivelam — o valor seguro para uma biblioteca de escuta.",
+      "streaming": "Como Spotify e Apple Music nivelam: o valor seguro para uma biblioteca de escuta.",
       "club": "Quente, para a cabine: a maioria das faixas precisa limitar picos para chegar lá, perdendo um pouco de pegada.",
       "broadcast": "O nível de TV e rádio. Mais baixo que streaming, com bastante margem.",
       "custom": "Seu próprio alvo. A prévia sob a onda mostra onde a faixa vai ficar."
@@ -867,7 +867,7 @@
     },
     "stats": {
       "count": "conversões",
-      "milestone": "Próximo marco: {{milestone}} conversões — faltam {{remaining}}",
+      "milestone": "Próximo marco: {{milestone}} conversões, faltam {{remaining}}",
       "imported": "Faixas carregadas",
       "listened": "Faixas ouvidas",
       "analyzed": "Faixas analisadas",
@@ -884,7 +884,7 @@
       "share": "Compartilhar imagem",
       "shareTitle": "Minha coleção em números",
       "shareFooter": "Prepare sua música · getsurco.app",
-      "roiDonate": "Se o Surco economiza seu tempo, apoie — desenvolvê-lo custa dinheiro",
+      "roiDonate": "Se o Surco economiza seu tempo, apoie. Desenvolvê-lo custa dinheiro.",
       "shareHeroLabel": "faixas convertidas e etiquetadas"
     },
     "theme": "Aparência",
@@ -916,8 +916,10 @@
     "importConfirm": "Isso vai substituir toda a sua configuração atual. Continuar?",
     "cache": "Cache de análise",
     "cacheClear": "Esvaziar cache",
-    "cacheHint": "Todas as análises de cada faixa são salvas em disco para reabrir sua biblioteca na hora. {{count}} arquivos · {{size}}. Esvaziar só faz a próxima abertura recalculá-los.",
-    "cacheHintEmpty": "Todas as análises de cada faixa são salvas em disco para reabrir sua biblioteca na hora. Nada em cache ainda.",
+    "cacheHint": "A análise de cada faixa fica no disco para a sua biblioteca reabrir na hora. Esvaziar só faz com que seja recalculada na próxima abertura.",
+    "cacheCount_one": "{{count}} arquivo · {{size}}",
+    "cacheCount_other": "{{count}} arquivos · {{size}}",
+    "cacheEmpty": "Nada em cache ainda",
     "log": "Registro de erros",
     "logReveal": "Mostrar arquivo",
     "logHint": "Se algo falhar, os detalhes ficam neste arquivo. Anexe-o ao seu relato para que possa ser investigado.",
@@ -974,7 +976,7 @@
     },
     "outputFormatHint": "“Igual à origem” mantém cada arquivo em seu próprio formato, então um lote misto nunca é recodificado. AIFF/WAV/FLAC são sem perdas (FLAC comprimido); MP3 ocupa menos. Um arquivo que já está no formato é copiado sem recodificar.",
     "keepMp3Sources": "Manter arquivos MP3 como MP3",
-    "keepMp3SourcesHint": "Converter um MP3 para um formato sem perdas não recupera qualidade — o arquivo só fica maior. Com isso ativo, os MP3 não são convertidos: as tags são atualizadas no arquivo original, onde ele está.",
+    "keepMp3SourcesHint": "Converter um MP3 para um formato sem perdas não recupera qualidade: o arquivo só fica maior. Com isso ativo, os MP3 não são convertidos: as tags são atualizadas no arquivo original, onde ele está.",
     "keepMp3SourcesOff": "Não é necessário com MP3 ou “Igual à origem”: os MP3 já continuam MP3.",
     "mp3Quality": "Qualidade do MP3",
     "mp3Qualities": {
@@ -995,7 +997,7 @@
       "source": "Igual à origem",
       "corrected": "Corrigido"
     },
-    "bitDepthHint": "“Igual à origem” mantém a profundidade exata do arquivo, incluindo o preenchimento. Reduzir para 16 bits aplica dither; um arquivo já no formato de saída é copiado sem reconverter. “Corrigido” grava como 16 bits reais, sem perdas, um arquivo com áudio de 16 bits comprovado e preenchido para 24; o áudio de 24 bits genuíno mantém sua profundidade.",
+    "bitDepthHint": "“Igual à origem” mantém a profundidade exata do arquivo, incluindo o preenchimento. Reduzir para 16 bits aplica dither. “Corrigido” grava como 16 bits reais, sem perdas, um arquivo com áudio de 16 bits comprovado e preenchido para 24; o áudio de 24 bits genuíno mantém sua profundidade.",
     "bitDepthApplies": "Usado ao converter para AIFF, WAV, FLAC ou ALAC; o MP3 não tem profundidade de bits.",
     "sampleRate": "Taxa de amostragem",
     "sampleRates": {
@@ -1032,7 +1034,7 @@
     "traktorSync": "Coleção do Traktor",
     "traktorNmlPath": "collection.nml",
     "traktorNmlPathHint": "A coleção do Traktor em que gravar. Você pode trocar quando quiser.",
-    "traktorNmlPathDetectedHint": "Encontrado automaticamente — não é aplicado até você escolher usá-lo.",
+    "traktorNmlPathDetectedHint": "Encontrado automaticamente; não é aplicado até você escolher usá-lo.",
     "traktorNmlPathUseDetected": "Usar este",
     "traktorCueOffset": "Ajuste dos cue points",
     "traktorCueQuestion": "No Traktor, onde caem os cues de uma faixa convertida?",
@@ -1048,7 +1050,7 @@
     "traktorCueOffsetHint": "O Surco corrige o deslocamento do códec automaticamente em cada conversão, então com a primeira resposta você não precisa fazer nada. Mude apenas se, ouvindo no Traktor, seus cues entram sempre cedo ou sempre tarde. Move o ponto de início, nunca a duração dos seus loops.",
     "appleMusicFlacNote": "O Apple Music não reproduz FLAC, então as faixas convertidas ficam na pasta de saída enquanto seu formato for FLAC.",
     "filenameFormat": "Formato do nome do arquivo",
-    "titleFormatHint": "Reconstrói o título a partir de outros campos. Aplicado só quando você pedir — no menu ⋯ do campo título ou na paleta de comandos — nunca automaticamente.",
+    "titleFormatHint": "Reconstrói o título a partir de outros campos. Aplicado só quando você pedir, no menu ⋯ do campo título ou na paleta de comandos, nunca automaticamente.",
     "titleFormat": "Formato do título",
     "autoApplyFilename": "Aplicar o padrão automaticamente",
     "autoApplyFilenameHint": "Gera o nome a partir dos metadados ao exportar, sem apertar “Regenerar”. Uma edição manual sempre prevalece.",
@@ -1073,7 +1075,7 @@
     "coverSquare": "Cortar a capa em quadrado",
     "coverHint": "Aplicado ao embutir: reduz capas grandes e, se ativado, corta pelo centro para deixá-las quadradas.",
     "replaceLowRes": "Substituir capas de baixa resolução ao aplicar um release",
-    "replaceLowResHint": "Quando desativado, a capa do próprio arquivo é sempre mantida — uma de baixa resolução só é sinalizada, nunca trocada pela imagem do release.",
+    "replaceLowResHint": "Quando desativado, a capa do próprio arquivo é sempre mantida; uma de baixa resolução só é sinalizada, nunca trocada pela imagem do release.",
     "flacFinderCovers": "Mostrar capas de FLAC no Finder",
     "flacFinderCoversHint": "O Finder não lê a capa dentro dos FLAC, então mostra um ícone genérico. Esta opção contorna isso nos arquivos convertidos e a reprodução não é afetada, mas deixa o FLAC fora do padrão: o Traktor não aceita esses arquivos e os remove da coleção. Deixe desligada se você sincroniza com o Traktor.",
     "flacFinderCoversTraktor": "Desativada enquanto você sincroniza com o Traktor: o Traktor não aceita um FLAC que comece com esse cabeçalho e o remove da coleção.",

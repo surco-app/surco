@@ -680,7 +680,7 @@
   "declick": {
     "cueWarning": "ALAC no guarda los cues ni el beatgrid de Traktor: se pierden al convertir.",
     "title": "Reparación de clicks de vinilo",
-    "hint": "Desactivado por defecto. Detecta los clicks y pops de la aguja y los interpola durante la conversión.",
+    "hint": "Detecta los clicks y pops de la aguja y los interpola durante la conversión.",
     "mode": {
       "off": "No",
       "soft": "Suave",
@@ -761,7 +761,7 @@
   },
   "normalize": {
     "title": "Igualar volumen",
-    "hint": "Desactivado por defecto. Iguala cada pista a un volumen o pico objetivo.",
+    "hint": "Iguala cada pista a un volumen o pico objetivo.",
     "editorHint": "Iguala cada pista a un volumen o pico objetivo.",
     "fadeValue": "Después al {{pct}} %",
     "mode": {
@@ -867,7 +867,7 @@
     },
     "stats": {
       "count": "conversiones",
-      "milestone": "Próximo hito: {{milestone}} conversiones — faltan {{remaining}}",
+      "milestone": "Próximo hito: {{milestone}} conversiones, faltan {{remaining}}",
       "imported": "Pistas cargadas",
       "listened": "Pistas escuchadas",
       "analyzed": "Pistas analizadas",
@@ -884,7 +884,7 @@
       "share": "Compartir imagen",
       "shareTitle": "Mi colección en cifras",
       "shareFooter": "Prepara tu música · getsurco.app",
-      "roiDonate": "Si Surco te ahorra tiempo, apóyalo — construirlo y mantenerlo cuesta dinero",
+      "roiDonate": "Si Surco te ahorra tiempo, apóyalo. Construirlo y mantenerlo cuesta dinero.",
       "shareHeroLabel": "pistas convertidas y etiquetadas"
     },
     "theme": "Apariencia",
@@ -916,8 +916,10 @@
     "importConfirm": "Esto reemplazará toda tu configuración actual. ¿Continuar?",
     "cache": "Caché de análisis",
     "cacheClear": "Vaciar caché",
-    "cacheHint": "Todos los análisis de cada pista se guardan en disco para que reabrir tu biblioteca sea instantáneo. {{count}} archivos · {{size}}. Vaciarla solo hace que la próxima apertura los recalcule.",
-    "cacheHintEmpty": "Todos los análisis de cada pista se guardan en disco para que reabrir tu biblioteca sea instantáneo. Aún no hay nada en caché.",
+    "cacheHint": "El análisis de cada pista se guarda en disco para que tu biblioteca se reabra al instante. Vaciarla solo hace que la próxima apertura los recalcule.",
+    "cacheCount_one": "{{count}} archivo · {{size}}",
+    "cacheCount_other": "{{count}} archivos · {{size}}",
+    "cacheEmpty": "Aún no hay nada en caché",
     "log": "Registro de errores",
     "logReveal": "Mostrar archivo",
     "logHint": "Si algo falla, los detalles quedan en este archivo. Adjúntalo a tu reporte para que se pueda investigar.",
@@ -995,7 +997,7 @@
       "source": "Igual que el origen",
       "corrected": "Corregido"
     },
-    "bitDepthHint": "«Igual que el origen» conserva la profundidad exacta del archivo, relleno incluido. Al reducir a 16 bits se aplica dither; un archivo ya en el formato de salida se copia sin reconvertir. «Corregido» escribe como 16 bits reales, sin pérdidas, un fichero con audio de 16 bits demostrado y rellenado a 24; el audio de 24 bits genuino conserva su profundidad.",
+    "bitDepthHint": "«Igual que el origen» conserva la profundidad exacta del archivo, relleno incluido. Al reducir a 16 bits se aplica dither. «Corregido» escribe como 16 bits reales, sin pérdidas, un fichero con audio de 16 bits demostrado y rellenado a 24; el audio de 24 bits genuino conserva su profundidad.",
     "bitDepthApplies": "Se usa al convertir a AIFF, WAV, FLAC o ALAC; el MP3 no tiene profundidad de bits.",
     "sampleRate": "Frecuencia de muestreo",
     "sampleRates": {
@@ -1032,7 +1034,7 @@
     "traktorSync": "Colección de Traktor",
     "traktorNmlPath": "collection.nml",
     "traktorNmlPathHint": "La colección de Traktor en la que escribir. Puedes cambiarla cuando quieras.",
-    "traktorNmlPathDetectedHint": "Encontrado automáticamente — no se aplica hasta que elijas usarlo.",
+    "traktorNmlPathDetectedHint": "Encontrado automáticamente; no se aplica hasta que elijas usarlo.",
     "traktorNmlPathUseDetected": "Usar este",
     "traktorCueOffset": "Ajuste de los cue points",
     "traktorCueQuestion": "En Traktor, ¿dónde te caen los cues de una pista convertida?",
@@ -1048,7 +1050,7 @@
     "traktorCueOffsetHint": "Surco corrige el desfase del códec automáticamente en cada conversión, así que con la primera respuesta no tienes que hacer nada. Cámbialo solo si, escuchando en Traktor, tus cues entran siempre pronto o siempre tarde. Mueve el punto de inicio, nunca la duración de los loops.",
     "appleMusicFlacNote": "Apple Music no reproduce FLAC, así que las pistas convertidas se quedan en la carpeta de salida mientras tu formato sea FLAC.",
     "filenameFormat": "Formato del nombre",
-    "titleFormatHint": "Reconstruye el título a partir de otros campos. Se aplica solo cuando tú lo pides — desde el menú ⋯ del campo título o la paleta de comandos — nunca automáticamente.",
+    "titleFormatHint": "Reconstruye el título a partir de otros campos. Se aplica solo cuando tú lo pides, desde el menú ⋯ del campo título o la paleta de comandos, nunca automáticamente.",
     "titleFormat": "Formato del título",
     "autoApplyFilename": "Aplicar el patrón automáticamente",
     "autoApplyFilenameHint": "Genera el nombre desde los metadatos al exportar, sin pulsar «Regenerar». Una edición manual siempre tiene prioridad.",

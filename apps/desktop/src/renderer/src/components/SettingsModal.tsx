@@ -213,7 +213,7 @@ export function SettingsModal({
       label={tr('header.settings')}
       align="top"
       onSubmit={save}
-      className="flex max-h-[84vh] w-[780px] overflow-hidden rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)]"
+      className="flex h-[min(84vh,760px)] w-[780px] overflow-hidden rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)]"
     >
       {/* A vertical nav down the side reads like macOS System Settings and scales past the
           point a single centred row of ten tabs starts to crowd — every label gets its

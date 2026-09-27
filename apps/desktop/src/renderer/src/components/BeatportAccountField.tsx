@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Settings } from '../../../shared/types'
 import { mainErrorMessage } from '../lib/ipcError'
+import { SettingsLabel } from './settings/SettingsPrimitives'
 
 const INPUT =
   'w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)] disabled:cursor-not-allowed'
@@ -59,14 +60,13 @@ export function BeatportAccountField({
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-3">
+      {/* Connect closes the same row as the two fields it acts on, instead of a row of
+          its own under them. */}
+      <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-3">
         <div>
-          <label
-            htmlFor="beatport-username"
-            className="mb-2 block text-sm font-medium text-fg-muted"
-          >
+          <SettingsLabel htmlFor="beatport-username" className="mb-2">
             {tr('settings.beatportUsername')}
-          </label>
+          </SettingsLabel>
           <input
             id="beatport-username"
             data-testid="beatport-username"
@@ -78,12 +78,9 @@ export function BeatportAccountField({
           />
         </div>
         <div>
-          <label
-            htmlFor="beatport-password"
-            className="mb-2 block text-sm font-medium text-fg-muted"
-          >
+          <SettingsLabel htmlFor="beatport-password" className="mb-2">
             {tr('settings.beatportPassword')}
-          </label>
+          </SettingsLabel>
           <input
             id="beatport-password"
             data-testid="beatport-password"
@@ -95,8 +92,6 @@ export function BeatportAccountField({
             className={INPUT}
           />
         </div>
-      </div>
-      <div className="mt-3 flex items-center gap-3">
         <button
           type="button"
           data-testid="beatport-connect"
@@ -106,16 +101,16 @@ export function BeatportAccountField({
         >
           {busy ? tr('settings.beatportConnecting') : tr('settings.beatportConnect')}
         </button>
-        {error && (
-          <p
-            data-testid="beatport-error"
-            role="alert"
-            className="text-xs text-[var(--color-danger)]"
-          >
-            {error}
-          </p>
-        )}
       </div>
+      {error && (
+        <p
+          data-testid="beatport-error"
+          role="alert"
+          className="mt-2 text-xs text-[var(--color-danger)]"
+        >
+          {error}
+        </p>
+      )}
     </div>
   )
 }
