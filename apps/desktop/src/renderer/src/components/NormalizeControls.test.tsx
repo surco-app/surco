@@ -148,6 +148,26 @@ describe('NormalizeControls field help', () => {
     )
     expect(screen.getByTestId('normalize-preset-hint')).toHaveTextContent(/TV and radio/)
   })
+
+  // The mode was a segmented control and the preset a row of pills shaped like the editor's
+  // genre suggestions: two looks for the same "pick one of these". The presets are a
+  // segmented control too, a group named after the mode it tunes.
+  it('picks a preset from a segmented group named after the mode', () => {
+    render(<Harness initial={loudness} />)
+    const group = screen.getByRole('group', { name: 'Loudness' })
+    expect(group).toContainElement(screen.getByTestId('normalize-preset-club'))
+    expect(group).toContainElement(screen.getByTestId('normalize-preset-custom'))
+    fireEvent.click(screen.getByTestId('normalize-preset-club'))
+    expect(screen.getByTestId('normalize-preset-club')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('normalize-target-lufs')).toHaveValue(-9)
+  })
+
+  // Custom has no numbers of its own: choosing it hands the caret to the target field.
+  it('sends Custom to the target field', () => {
+    render(<Harness initial={loudness} />)
+    fireEvent.click(screen.getByTestId('normalize-preset-custom'))
+    expect(screen.getByTestId('normalize-target-lufs')).toHaveFocus()
+  })
 })
 
 describe('NormalizeControls DC offset', () => {

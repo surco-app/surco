@@ -680,7 +680,7 @@
   "declick": {
     "cueWarning": "ALAC does not keep Traktor cues or the beatgrid: converting loses them.",
     "title": "Vinyl click repair",
-    "hint": "Off by default. Detects stylus clicks and pops and interpolates them away during conversion.",
+    "hint": "Detects stylus clicks and pops and interpolates them away during conversion.",
     "mode": {
       "off": "Off",
       "soft": "Gentle",
@@ -761,7 +761,7 @@
   },
   "normalize": {
     "title": "Loudness normalization",
-    "hint": "Off by default. Match every track to a target loudness or peak.",
+    "hint": "Match every track to a target loudness or peak.",
     "editorHint": "Match every track to a target loudness or peak.",
     "fadeValue": "After at {{pct}}%",
     "mode": {

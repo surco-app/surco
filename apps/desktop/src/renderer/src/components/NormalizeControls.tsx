@@ -104,16 +104,22 @@ export function NormalizeControls({
     if (value.mode !== 'none')
       detailRef.current?.scrollIntoView?.({ block: 'nearest', behavior: scrollBehavior() })
   }, [value.mode])
-  const loudnessIsCustom = !LOUDNESS_PRESETS.some(
-    (p) => p.lufs === value.targetLufs && p.tp === value.truePeakDb,
+  const loudnessPreset =
+    LOUDNESS_PRESETS.find((p) => p.lufs === value.targetLufs && p.tp === value.truePeakDb)?.id ??
+    'custom'
+  const peakPreset = PEAK_PRESETS.find((p) => p.peak === value.peakDb)?.id ?? 'custom'
+  // Custom carries no numbers of its own, so choosing it hands the caret to the field.
+  const toField = (ref: React.RefObject<HTMLInputElement | null>): void => {
+    ref.current?.focus()
+    ref.current?.select()
+  }
+  // The mode named by its effect on the batch, which is the only fact that picks between
+  // the two: same perceived loudness everywhere, or same loudest sample with the perceived
+  // loudness still varying. It sits under the presets, with the preset's own line, so the
+  // mode's choices read as one block instead of a line between two rows of buttons.
+  const modeLine = showHints && (
+    <span data-testid="normalize-mode-line">{tr(`normalize.modeLine.${value.mode}`)}</span>
   )
-  const peakIsCustom = !PEAK_PRESETS.some((p) => p.peak === value.peakDb)
-  const customChipClass = (active: boolean): string =>
-    `rounded-full border px-3 py-1 text-xs transition-colors ${
-      active
-        ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
-        : 'border-[var(--color-line-strong)] text-fg-muted hover:text-fg'
-    }`
   return (
     <div>
       <SegmentedControl
@@ -124,57 +130,26 @@ export function NormalizeControls({
         label={tr('normalize.title')}
         labelFor={(mode) => tr(`normalize.mode.${mode}`)}
       />
-      {/* The mode named by its effect on the batch, which is the only fact that picks
-          between the two: same perceived loudness everywhere, or same loudest sample
-          with the perceived loudness still varying. Mechanisms stay out of it. */}
-      {showHints && value.mode !== 'none' && (
-        <p data-testid="normalize-mode-line" className="mt-2 text-xs text-fg-dim">
-          {tr(`normalize.modeLine.${value.mode}`)}
-        </p>
-      )}
-
       {value.mode === 'loudness' && (
         <div ref={detailRef} className="mt-3 space-y-3">
-          <div className="flex flex-wrap gap-1.5">
-            {LOUDNESS_PRESETS.map((p) => {
-              const active = value.targetLufs === p.lufs && value.truePeakDb === p.tp
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  data-testid={`normalize-preset-${p.id}`}
-                  aria-pressed={active}
-                  onClick={() => onChange({ ...value, targetLufs: p.lufs, truePeakDb: p.tp })}
-                  className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                    active
-                      ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
-                      : 'border-[var(--color-line-strong)] text-fg-muted hover:text-fg'
-                  }`}
-                >
-                  {tr(`normalize.preset.${p.id}`)}
-                </button>
-              )
-            })}
-            <button
-              type="button"
-              data-testid="normalize-preset-custom"
-              aria-pressed={loudnessIsCustom}
-              onClick={() => lufsRef.current?.select()}
-              className={customChipClass(loudnessIsCustom)}
-            >
-              {tr('normalize.preset.custom')}
-            </button>
-          </div>
-          <p data-testid="normalize-preset-hint" className="text-xs text-fg-dim">
-            {tr(
-              `normalize.presetHint.${
-                loudnessIsCustom
-                  ? 'custom'
-                  : (LOUDNESS_PRESETS.find(
-                      (p) => p.lufs === value.targetLufs && p.tp === value.truePeakDb,
-                    )?.id ?? 'custom')
-              }`,
-            )}
+          <SegmentedControl
+            options={[...LOUDNESS_PRESETS.map((p) => p.id), 'custom']}
+            value={loudnessPreset}
+            onChange={(id) => {
+              const preset = LOUDNESS_PRESETS.find((p) => p.id === id)
+              if (preset) onChange({ ...value, targetLufs: preset.lufs, truePeakDb: preset.tp })
+              else toField(lufsRef)
+            }}
+            testidPrefix="normalize-preset"
+            label={tr('normalize.mode.loudness')}
+            labelFor={(id) => tr(`normalize.preset.${id}`)}
+          />
+          <p className="text-xs text-fg-dim">
+            {modeLine}
+            {modeLine && ' '}
+            <span data-testid="normalize-preset-hint">
+              {tr(`normalize.presetHint.${loudnessPreset}`)}
+            </span>
           </p>
           <div className="flex gap-4">
             <NumberField
@@ -208,33 +183,19 @@ export function NormalizeControls({
 
       {value.mode === 'peak' && (
         <div ref={detailRef} className="mt-3 space-y-3">
-          <div className="flex flex-wrap gap-1.5">
-            {PEAK_PRESETS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                data-testid={`normalize-preset-${p.id}`}
-                aria-pressed={value.peakDb === p.peak}
-                onClick={() => onChange({ ...value, peakDb: p.peak })}
-                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                  value.peakDb === p.peak
-                    ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
-                    : 'border-[var(--color-line-strong)] text-fg-muted hover:text-fg'
-                }`}
-              >
-                {tr(`normalize.preset.${p.id}`)}
-              </button>
-            ))}
-            <button
-              type="button"
-              data-testid="normalize-preset-custom"
-              aria-pressed={peakIsCustom}
-              onClick={() => peakRef.current?.select()}
-              className={customChipClass(peakIsCustom)}
-            >
-              {tr('normalize.preset.custom')}
-            </button>
-          </div>
+          <SegmentedControl
+            options={[...PEAK_PRESETS.map((p) => p.id), 'custom']}
+            value={peakPreset}
+            onChange={(id) => {
+              const preset = PEAK_PRESETS.find((p) => p.id === id)
+              if (preset) onChange({ ...value, peakDb: preset.peak })
+              else toField(peakRef)
+            }}
+            testidPrefix="normalize-preset"
+            label={tr('normalize.mode.peak')}
+            labelFor={(id) => tr(`normalize.preset.${id}`)}
+          />
+          {modeLine && <p className="text-xs text-fg-dim">{modeLine}</p>}
           <NumberField
             testid="normalize-peak"
             label={tr('normalize.peakDb')}

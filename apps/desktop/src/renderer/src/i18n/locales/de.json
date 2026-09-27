@@ -680,7 +680,7 @@
   "declick": {
     "cueWarning": "ALAC speichert keine Traktor-Cues und kein Beatgrid: Beim Konvertieren gehen sie verloren.",
     "title": "Vinyl-Klick-Reparatur",
-    "hint": "Standardmäßig aus. Erkennt Nadel-Klicks und -Knackser und interpoliert sie bei der Konvertierung weg.",
+    "hint": "Erkennt Nadel-Klicks und -Knackser und interpoliert sie bei der Konvertierung weg.",
     "mode": {
       "off": "Aus",
       "soft": "Sanft",
@@ -761,7 +761,7 @@
   },
   "normalize": {
     "title": "Lautheitsnormalisierung",
-    "hint": "Standardmäßig aus. Gleicht jeden Track an eine Ziel-Lautheit oder einen Ziel-Peak an.",
+    "hint": "Gleicht jeden Track an eine Ziel-Lautheit oder einen Ziel-Peak an.",
     "editorHint": "Gleicht jeden Track an eine Ziel-Lautheit oder einen Ziel-Peak an.",
     "fadeValue": "Nachher bei {{pct}} %",
     "mode": {

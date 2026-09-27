@@ -680,7 +680,7 @@
   "declick": {
     "cueWarning": "ALAC ne conserve ni les cues ni le beatgrid de Traktor : la conversion les perd.",
     "title": "Réparation des clics de vinyle",
-    "hint": "Désactivé par défaut. Détecte les clics et craquements de la pointe et les interpole pendant la conversion.",
+    "hint": "Détecte les clics et craquements de la pointe et les interpole pendant la conversion.",
     "mode": {
       "off": "Non",
       "soft": "Doux",
@@ -761,7 +761,7 @@
   },
   "normalize": {
     "title": "Normalisation du loudness",
-    "hint": "Désactivée par défaut. Aligne chaque morceau sur un loudness ou un pic cible.",
+    "hint": "Aligne chaque morceau sur un loudness ou un pic cible.",
     "editorHint": "Aligne chaque morceau sur un loudness ou un pic cible.",
     "fadeValue": "Après à {{pct}} %",
     "mode": {
