@@ -56,11 +56,10 @@ describe('ExportButton', () => {
     }
   })
 
-  // What blocks the convert is said on the button itself, not on a line above it: the
-  // button cannot run anyway, so its face is free, and the footer stays one control tall.
-  // The action it will run once unblocked stays in its name, after the visible words, so
-  // voice control still finds it by what is on screen.
-  it('shows what blocks it on its face and keeps the action in its name', () => {
+  // The button keeps saying what it does, and what blocks it sits beside it on the same
+  // row: with the reason on its face, the footer's one action read as a warning, and the
+  // field already carries the same amber dot.
+  it('keeps the action on its face and says what blocks it beside it', () => {
     render(
       <ExportButton
         {...baseProps}
@@ -70,8 +69,9 @@ describe('ExportButton', () => {
       />,
     )
     const btn = screen.getByTestId('process-btn')
-    expect(btn).toHaveTextContent('3 required fields missing')
-    expect(btn).toHaveAccessibleName(/^3 required fields missing · Convert/)
+    expect(btn).not.toHaveTextContent('3 required fields missing')
+    expect(btn).toHaveAccessibleName(/^Convert/)
+    expect(screen.getByTestId('process-blocked')).toHaveTextContent('3 required fields missing')
   })
 
   // A natively disabled button drops out of the Tab order, and the reason lived in a hover
