@@ -162,7 +162,16 @@ export function mapRelease(release: BeatportRelease, tracks: BeatportTrack[]): R
   }
 }
 
-const cacheStore = createLookupCacheStore<SearchResult[], Release>('beatport-lookup-cache')
+const cacheStore = createLookupCacheStore<SearchResult[], Release>('beatport-lookup-cache-v2')
+
+async function coverMissing(uri: string | undefined): Promise<boolean> {
+  if (!uri) return false
+  const res = await fetch(uri, {
+    headers: { 'User-Agent': USER_AGENT, Range: 'bytes=0-15' },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  }).catch(() => undefined)
+  return res !== undefined && res.status >= 400 && res.status < 500
+}
 
 async function searchOnce(text: string, priority?: SearchPriority): Promise<SearchResult[]> {
   const key = `q:${text.trim().toLowerCase()}`
@@ -209,11 +218,17 @@ export async function getRelease(id: number, priority?: SearchPriority): Promise
     'activity.loadBeatportRelease',
     async () => {
       const release = await api<BeatportRelease>(`/catalog/releases/${id}/`, priority)
-      const tracks = await api<{ results?: BeatportTrack[] }>(
-        `/catalog/releases/${id}/tracks/?per_page=100`,
-        priority,
+      const [tracks, missing] = await Promise.all([
+        api<{ results?: BeatportTrack[] }>(
+          `/catalog/releases/${id}/tracks/?per_page=100`,
+          priority,
+        ),
+        coverMissing(release.image?.uri),
+      ])
+      const mapped = mapRelease(
+        missing ? { ...release, image: undefined } : release,
+        tracks.results ?? [],
       )
-      const mapped = mapRelease(release, tracks.results ?? [])
       cacheStore.setRelease(cacheKey, mapped)
       return mapped
     },

@@ -163,4 +163,33 @@ describe('the Beatport API client', () => {
     stubFetch(() => Response.json({ detail: 'Territory Restricted.' }, { status: 403 }))
     expect(await keyOf(getRelease(1167829))).toBe('beatportTerritoryRestricted')
   })
+
+  it('drops a cover missing from the image CDN, since converting with it fails the whole track', async () => {
+    setBeatportSession(fakeSession())
+    stubFetch((url) =>
+      url.includes('geo-media.beatport.com')
+        ? new Response('', { status: 404 })
+        : url.includes('/tracks/')
+          ? Response.json({ results: despechaTracks })
+          : Response.json({ ...despechaRelease, id: 1110720 }),
+    )
+    const rel = await getRelease(1110720)
+    expect(rel.images).toBeUndefined()
+    expect(rel.tracklist).toHaveLength(4)
+  })
+
+  it('keeps the cover when the image check itself cannot connect, since that proves nothing', async () => {
+    setBeatportSession(fakeSession())
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (url.includes('geo-media.beatport.com')) throw new TypeError('fetch failed')
+        return url.includes('/tracks/')
+          ? Response.json({ results: despechaTracks })
+          : Response.json({ ...despechaRelease, id: 1110721 })
+      }),
+    )
+    const rel = await getRelease(1110721)
+    expect(rel.images?.[0].uri).toBe(despechaRelease.image?.uri)
+  })
 })
