@@ -3031,20 +3031,20 @@ describe('Editor Apple Music library badge', () => {
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       libraryIndex: owned,
     })
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In library')
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In Apple Music')
   })
 
-  // With Engine DJ as the destination the same badge reads the Engine library. Its text is
-  // the short "In library" (which library it means now rides the icon/tooltip, not the text),
-  // so the assertion checks the badge still shows for an Engine-owned track. Not macOS-gated:
-  // the Engine database is plain SQLite on every platform.
+  // With Engine DJ as the destination the same badge reads the Engine library, and names it:
+  // a green mark beside "Metadata" alone read as "the tags are fine", so the badge says which
+  // library the track is in. Not macOS-gated: the Engine database is plain SQLite on every
+  // platform.
   it('shows the library badge when Engine DJ is the destination library', () => {
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       addToAppleMusic: false,
       addToEngineDj: true,
       libraryIndex: owned,
     })
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In library')
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In Engine DJ')
   })
 
   // The complement: a song not found in the snapshot reassures the user it's safe to add.
@@ -3053,7 +3053,7 @@ describe('Editor Apple Music library badge', () => {
     renderEditor({ id: 'a', meta: { title: 'Unknown', artist: 'Nobody' } }, 'wav', {
       libraryIndex: owned,
     })
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in library')
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in Apple Music')
   })
 
   // A track Surco itself added carries its library copy's persistent ID, so it reads as
@@ -3065,7 +3065,7 @@ describe('Editor Apple Music library badge', () => {
       'wav',
       { libraryIndex: null },
     )
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In library')
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In Apple Music')
   })
 
   // Until the snapshot arrives there is no verdict to show, so the badge stays hidden
@@ -3157,7 +3157,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
       },
     )
     // The file's own artist tag isn't in the library, so the badge starts negative.
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in library')
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in Apple Music')
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     const result = await screen.findByTestId('discogs-result')
@@ -3165,7 +3165,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     await screen.findAllByTestId('discogs-track')
     // The release's canonical "The Artist — Track Two (Remix)" is owned, so the badge flips
     // even though the file tag never matched on its own.
-    expect(await screen.findByTestId('apple-music-status')).toHaveTextContent('In library')
+    expect(await screen.findByTestId('apple-music-status')).toHaveTextContent('In Apple Music')
   })
 
   // The suggestion must not manufacture a false positive: an owned-looking release whose
@@ -3185,7 +3185,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     const result = await screen.findByTestId('discogs-result')
     if (result.getAttribute('aria-expanded') !== 'true') fireEvent.click(result)
     await screen.findAllByTestId('discogs-track')
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in library')
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in Apple Music')
   })
 
   // Reported 25/09: the badge waited on the whole Discogs cascade (tens of seconds) before
@@ -3210,7 +3210,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     )
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     await waitFor(() => expect(window.api.search).toHaveBeenCalled())
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in library')
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in Apple Music')
     release_()
   })
 
@@ -3229,7 +3229,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     await screen.findByTestId('discogs-result')
     await waitFor(() =>
-      expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in library'),
+      expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in Apple Music'),
     )
   })
 })
