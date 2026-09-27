@@ -2,15 +2,17 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { SettingsSection } from './SettingsPrimitives'
+import { SettingsField, SettingsSection } from './SettingsPrimitives'
 
 afterEach(cleanup)
 
 // Reported 14/09 with a screenshot of the Output tab: "the Traktor and the rekordbox
 // section are practically indistinguishable". They were separated by a 10px label in dim
 // grey and a 1px rule at 9% opacity — the smallest type on the screen carrying the job of
-// saying where one collection ends and the next begins. Six tabs share this component,
-// and Search stacks eleven sections under it.
+// saying where one collection ends and the next begins. The fix then was a box per named
+// section; since 27/09 a named section is drawn like an editor section instead: a real
+// heading with a rule above it, so Settings and the editor share one grammar and the boxes
+// don't appear on two tabs only.
 
 describe('SettingsSection', () => {
   it('names the section it holds', () => {
@@ -24,30 +26,51 @@ describe('SettingsSection', () => {
     expect(screen.getByText('contenido')).toBeInTheDocument()
   })
 
-  // Containment is what makes two stacked sections read as two things: a surface of its
-  // own, with an edge that closes underneath. A rule between them only marks the seam, and
-  // at 9% opacity it barely does that.
-  it('gives a named section its own surface', () => {
+  // The name is a heading, so a screen reader can jump between Traktor and rekordbox the
+  // way a sighted user tells them apart.
+  it('names a section with a heading', () => {
     render(
       <SettingsSection eyebrow="Traktor">
         <p>uno</p>
       </SettingsSection>,
     )
 
-    const section = screen.getByTestId('settings-section')
-    expect(section.className).toMatch(/rounded/)
-    expect(section.className).toMatch(/border/)
+    expect(screen.getByRole('heading', { name: 'Traktor' })).toBeInTheDocument()
   })
 
-  // A section with no name is a plain grouping of controls, not a titled block — boxing it
-  // would draw a card around something that never asked to be one.
-  it('leaves an unnamed section unboxed', () => {
+  // A rule above the heading marks where one section ends, as between editor sections; a
+  // box around it is what only Search and Output had.
+  it('sets a named section apart with a rule, not a box', () => {
     render(
-      <SettingsSection>
-        <p>suelto</p>
+      <>
+        <SettingsSection eyebrow="Traktor" first>
+          <p>uno</p>
+        </SettingsSection>
+        <SettingsSection eyebrow="rekordbox">
+          <p>dos</p>
+        </SettingsSection>
+      </>,
+    )
+
+    const [, second] = screen.getAllByTestId('settings-section')
+    expect(second.className).toMatch(/border-t/)
+    expect(second.className).not.toMatch(/rounded/)
+  })
+
+  // Inside a named section a field's label is one step below the section's heading;
+  // at the same size, "Discogs" and "Discogs token" read as two sections.
+  it('keeps a field label inside a named section below its heading', () => {
+    render(
+      <SettingsSection eyebrow="Discogs">
+        <SettingsField label="Discogs token">
+          <input />
+        </SettingsField>
       </SettingsSection>,
     )
 
-    expect(screen.getByTestId('settings-section').className).not.toMatch(/rounded/)
+    const heading = screen.getByRole('heading', { name: 'Discogs' })
+    const label = screen.getByText('Discogs token')
+    expect(label.className).not.toBe(heading.className)
+    expect(label).not.toHaveClass('font-semibold')
   })
 })

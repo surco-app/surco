@@ -1,5 +1,5 @@
 import type React from 'react'
-import { SECTION_SUBHEAD } from '../SectionSubhead'
+import { createContext, useContext } from 'react'
 import { CheckboxRow } from './CheckboxRow'
 
 // The shared building blocks every settings tab draws from, so the panels read as one
@@ -11,9 +11,16 @@ import { CheckboxRow } from './CheckboxRow'
 //   label → control → hint : 8px  (the SettingsField stack's gap)
 //   between options in a group: 16px (SettingsGroup gap)
 //   between sections: a hairline with 24px above / 20px below (SettingsSection)
+//
+// One heading voice, the editor's section title: a named section's name, a tab's opening
+// subhead and a top-level field's label all wear HEADING. A field inside a named section
+// steps down to a small dim label, so "Discogs" and "Discogs token" never read as peers.
+const HEADING = 'text-[13px] font-semibold text-fg-muted'
+const NESTED_LABEL = 'text-xs font-medium text-fg-dim'
+const InNamedSection = createContext(false)
 
-// Opens a group WITHIN a tab (Search's "SEARCH SOURCES"/"DISCOGS"). Shares the editor's
-// SECTION_SUBHEAD so a subhead looks the same whether it's in the editor or in settings.
+// Opens a group WITHIN a tab (Search's "Search sources"), in the same heading voice as a
+// named section.
 export function SettingsEyebrow({
   children,
   className = '',
@@ -21,7 +28,7 @@ export function SettingsEyebrow({
   children: React.ReactNode
   className?: string
 }): React.JSX.Element {
-  return <p className={`${SECTION_SUBHEAD} ${className}`}>{children}</p>
+  return <p className={`${HEADING} ${className}`}>{children}</p>
 }
 
 // The name of a single control. Rendered as a <label> when it labels a specific input
@@ -35,7 +42,7 @@ export function SettingsLabel({
   htmlFor?: string
   className?: string
 }): React.JSX.Element {
-  const cls = `block text-sm font-medium text-fg-muted ${className}`
+  const cls = `block ${useContext(InNamedSection) ? NESTED_LABEL : HEADING} ${className}`
   return htmlFor ? (
     <label htmlFor={htmlFor} className={cls}>
       {children}
@@ -75,35 +82,18 @@ export function SettingsSection({
   first?: boolean
   children: React.ReactNode
 }): React.JSX.Element {
-  // A named section gets a surface of its own. Reported with a screenshot of the Output
-  // tab — "the Traktor and the rekordbox section are practically indistinguishable" —
-  // where the only separation was a 10px label in dim grey over a 1px rule at 9% opacity:
-  // the smallest type on the screen carrying the job of saying where one block ends. An
-  // edge that closes underneath is what makes two stacked blocks read as two things.
-  //
-  // Only when it is named: an unnamed section is a plain grouping of controls, and boxing
-  // it would draw a card around something that never asked to be one. Those keep the rule
-  // they had.
-  if (!eyebrow) {
-    return (
-      <section
-        data-testid="settings-section"
-        className={first ? '' : 'mt-6 border-t border-[var(--color-line)] pt-5'}
-      >
-        {children}
-      </section>
-    )
-  }
+  // Reported with a screenshot of the Output tab: "the Traktor and the rekordbox section
+  // are practically indistinguishable", when the only separation was a 10px dim label over
+  // a 1px rule. A box per named section fixed it, but only Search and Output had any, so
+  // the tabs spoke two ways. A named section is now an editor section: a real heading at
+  // the editor's title size with the same rule above it every section gets.
   return (
     <section
       data-testid="settings-section"
-      className={`rounded-xl border border-[var(--color-line)] bg-[var(--color-field)] px-4 py-3.5 ${
-        first ? '' : 'mt-3'
-      }`}
+      className={first ? '' : 'mt-6 border-t border-[var(--color-line)] pt-5'}
     >
-      {/* At reading size and full contrast: the block's name, not a caption above it. */}
-      <p className="mb-3 font-semibold text-[13px] text-fg">{eyebrow}</p>
-      {children}
+      {eyebrow && <h3 className={`mb-3 ${HEADING}`}>{eyebrow}</h3>}
+      <InNamedSection.Provider value={!!eyebrow}>{children}</InNamedSection.Provider>
     </section>
   )
 }
