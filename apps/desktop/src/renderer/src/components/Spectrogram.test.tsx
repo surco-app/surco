@@ -50,6 +50,20 @@ describe('Spectrogram cutoff label', () => {
     },
   )
 
+  // The cutoff line carries its own figure, so an axis mark sitting on it said the same
+  // frequency twice, one label stacked over the other.
+  it('drops the axis mark the cutoff line already names', () => {
+    render(<Spectrogram spectrum={{ ...base, cutoffHz: 19900, hasKnee: false }} />)
+    expect(screen.queryByText('20k')).toBeNull()
+    expect(screen.getByText('15k')).toBeInTheDocument()
+  })
+
+  it('keeps every axis mark away from the cutoff line', () => {
+    render(<Spectrogram spectrum={base} />)
+    expect(screen.getByText('20k')).toBeInTheDocument()
+    expect(screen.getByText('15k')).toBeInTheDocument()
+  })
+
   it('keeps the measured figure for a reach below the probed ceiling', () => {
     render(<Spectrogram spectrum={{ ...base, cutoffHz: 21000, hasKnee: false }} />)
     expect(screen.getByText(/highs to ~21\.0 kHz/)).toBeInTheDocument()

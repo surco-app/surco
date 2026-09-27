@@ -8,6 +8,8 @@ import { cutoffLabel, formatKHz } from '../lib/quality'
 import { freqAtFraction, spectrumTopHz } from '../lib/spectrumAxis'
 
 const FREQ_MARKS = [0, 5000, 10000, 15000, 20000]
+// Closer than this to the cutoff line, an axis mark would sit on the line's own figure.
+const MARK_CLEARANCE_HZ = 1000
 
 export function Spectrogram({
   spectrum,
@@ -85,7 +87,11 @@ export function Spectrogram({
         className={`block w-full object-fill ${tall ? 'h-full' : 'h-80'}`}
       />
       {topHz > 0 &&
-        FREQ_MARKS.filter((f) => f <= topHz).map((f) => (
+        FREQ_MARKS.filter(
+          (f) =>
+            f <= topHz &&
+            (spectrum.cutoffHz === null || Math.abs(f - spectrum.cutoffHz) >= MARK_CLEARANCE_HZ),
+        ).map((f) => (
           <span
             key={f}
             style={{ top: `${(1 - f / topHz) * 100}%` }}
