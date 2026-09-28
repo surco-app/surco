@@ -14,6 +14,8 @@ const OFFSET = 14
 // pointer is just passing over a control — the same restraint as a native macOS help
 // tag. Keyboard focus still surfaces it at once, where the wait would only get in the way.
 const HOVER_DELAY = 400
+const WARM_MS = 300
+let warmUntil = 0
 
 export function Tooltip({
   label,
@@ -33,6 +35,7 @@ export function Tooltip({
 }): React.JSX.Element {
   const markerRef = useRef<HTMLSpanElement>(null)
   const [pos, setPos] = useState<{ left: number; top: number; transform: string } | null>(null)
+  const [instant, setInstant] = useState(false)
   const id = useId()
   // The mount effect's own hide, so the document-level Escape below resets the same
   // closure state the trigger's listeners do instead of only clearing the position.
@@ -85,10 +88,18 @@ export function Tooltip({
         showAt(point.x, point.y)
         return
       }
+      if (Date.now() < warmUntil) {
+        clearTimer()
+        shown = true
+        setInstant(true)
+        showAt(point.x, point.y)
+        return
+      }
       if (timer === null) {
         timer = setTimeout(() => {
           timer = null
           shown = true
+          setInstant(false)
           showAt(last.x, last.y)
         }, HOVER_DELAY)
       }
@@ -102,14 +113,14 @@ export function Tooltip({
       if (!tracking) return
       tracking = false
       trigger.removeEventListener('pointermove', onMove)
-      trigger.removeEventListener('pointerleave', onLeave)
+      trigger.removeEventListener('pointerleave', onPointerLeave)
       trigger.removeEventListener('pointerdown', onLeave)
     }
     const onEnter = (e: PointerEvent): void => {
       if (!tracking) {
         tracking = true
         trigger.addEventListener('pointermove', onMove)
-        trigger.addEventListener('pointerleave', onLeave)
+        trigger.addEventListener('pointerleave', onPointerLeave)
         trigger.addEventListener('pointerdown', onLeave)
       }
       // Arm the delay from the entry point: a pointer that enters and holds perfectly still
@@ -121,6 +132,10 @@ export function Tooltip({
       shown = false
       stopTracking()
       setPos(null)
+    }
+    const onPointerLeave = (): void => {
+      if (shown) warmUntil = Date.now() + WARM_MS
+      onLeave()
     }
     // A click focuses the button it hit, which fires focusin just like a Tab would — but
     // the click's pointerdown already ran onLeave, so a plain focus reveal would re-open
@@ -143,6 +158,7 @@ export function Tooltip({
       if (pointerFocus) return
       clearTimer()
       shown = true
+      setInstant(false)
       const { x, y } = anchor()
       showAt(x, y)
     }
@@ -211,7 +227,7 @@ export function Tooltip({
             id={id}
             role="tooltip"
             style={{ left: pos.left, top: pos.top, transform: pos.transform, maxWidth: WIDTH }}
-            className="animate-overlay pointer-events-none fixed z-50 w-max rounded-md bg-[var(--color-panel-2)] px-2 py-1 text-left text-xs font-normal text-fg shadow-[var(--shadow-float)] ring-1 ring-[var(--color-line-strong)]"
+            className={`${instant ? '' : 'animate-overlay '}pointer-events-none fixed z-50 w-max rounded-md bg-[var(--color-panel-2)] px-2 py-1 text-left text-xs font-normal text-fg shadow-[var(--shadow-float)] ring-1 ring-[var(--color-line-strong)]`}
           >
             {label}
             {hint && <span className="ml-2 text-fg-dim">{hint}</span>}
