@@ -222,7 +222,7 @@ describe('search', () => {
       recordingSearch,
     ])
     const rows = await search('kings of tomorrow finally', 'high', {
-      artist: 'KOT!',
+      artist: 'Julie McKnight',
       title: 'Finally',
     })
     expect(rows.length).toBeGreaterThan(0)
@@ -329,7 +329,10 @@ describe('search by album first', () => {
       { count: 0, recordings: [] },
       recordingSearch,
     ])
-    await search('kot finally album off', 'high', { artist: 'KOT Off!', title: 'Finally Off' })
+    await search('kot finally album off', 'high', {
+      artist: 'Kings Of Tomorrow',
+      title: 'Finally Off',
+    })
     expect(fn.mock.calls.map(([url]) => pathOf(url))).toEqual([
       '/ws/2/recording',
       '/ws/2/recording',
