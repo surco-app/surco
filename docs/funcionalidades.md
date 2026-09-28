@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 26 de septiembre de 2026** (v1.3.0). Levantado por primera vez el
+**Última revisión: 28 de septiembre de 2026** (v1.4.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -828,15 +828,15 @@ v0.100.0, así que la tabla sigue en vigor.
 
 ## 9. Proveedores externos
 
-| | Discogs | Bandcamp | Deezer | Beatport |
-|---|---|---|---|---|
-| Sello y nº de catálogo | Sí | No | No | Sí |
-| Formato del lanzamiento | Sí | No | No | No |
-| Duraciones de pista | Sí | Sí | Sí | Sí |
-| Créditos de composición | Sí | No | No | No |
-| BPM, tonalidad, mix e ISRC | No | No | No | **Sí** |
-| Búsqueda por ISRC | No | No | **Sí** | No |
-| Requiere token | Opcional (obligatorio para auto-emparejar) | No | No | **Cuenta de Beatport** (gratuita vale) |
+| | Discogs | Bandcamp | Deezer | Beatport | MusicBrainz |
+|---|---|---|---|---|---|
+| Sello y nº de catálogo | Sí | No | No | Sí | Sí |
+| Formato del lanzamiento | Sí | No | No | No | Sí |
+| Duraciones de pista | Sí | Sí | Sí | Sí | Sí |
+| Créditos de composición | Sí | No | No | No | No |
+| BPM, tonalidad, mix e ISRC | No | No | No | **Sí** | No |
+| Búsqueda por ISRC | No | No | **Sí** | No | No |
+| Requiere token | Opcional (obligatorio para auto-emparejar) | No | No | **Cuenta de Beatport** (gratuita vale) | No |
 
 **Discogs** funciona sin configurar nada con una clave compartida (60 req/min
 entre todos los usuarios); un token propio da su propio cupo. Las credenciales
@@ -866,7 +866,20 @@ notación elegida, `providers/index.ts:102`), mix e ISRC (`beatport.ts:150-157`)
 campo fuera de la lista de importación no se toca. Entre versiones con el mismo
 título se preselecciona la que nombra el fichero, y el mix se añade al título
 salvo «Original Mix» (`lib/release.ts:225-229`). En la lista de resultados va
-detrás de Discogs, Bandcamp y Deezer (`release.ts:396-401`).
+detrás de Discogs, Bandcamp y Deezer (`release.ts:396-402`).
+
+**MusicBrainz** es el catálogo abierto de la comunidad. Sale **encendido** para todos:
+en instalaciones nuevas por defecto (`shared/defaults.ts:76`) y en las existentes con
+una migración de una sola vez; si el usuario lo desmarca no vuelve a aparecer
+(`settings.ts:507-513`). Su API pide una petición por segundo, así que cada búsqueda
+cuesta al menos un segundo por peldaño. Con artista y título en las etiquetas busca la
+grabación por esos campos, primero sin recopilatorios, porque un tema de baile sale en
+cientos y llenan la lista antes que el single original (`musicbrainz.ts:254`). El texto
+libre busca a la vez en título, artista y disco (`musicbrainz.ts:183-195`). Las carátulas
+vienen de Cover Art Archive: la miniatura es la del álbum, que existe en cuanto alguna
+edición tiene imagen (`musicbrainz.ts:160`), y una edición sin carátula propia toma la
+del álbum solo si responde (`musicbrainz.ts:338`). Va la última en la lista
+(`release.ts:401`).
 
 ### La escalera de búsqueda
 
@@ -874,6 +887,27 @@ Los nombres de ficheros descargados traen ruido que hunde la búsqueda. Surco
 construye una lista ordenada de consultas y se queda con la primera que devuelve
 algo: campos estructurados, luego búsqueda dentro de tracklists, luego recorte de
 palabras finales, luego texto libre (`discogs.ts:253-330`).
+
+**Solo cuenta un peldaño que nombra al artista.** En Bandcamp, Deezer, Beatport y el
+texto libre de MusicBrainz, cuando las etiquetas traen artista, un peldaño solo vale si
+alguna fila nombra a alguno de sus actos (una colaboración se parte por comas, «&»,
+«feat.» y demás; «Pro-Active» y «Proactive» cuentan igual); si ninguno lo nombra, esa
+fuente se queda vacía en vez de enseñar discos ajenos (`searchQuery.ts:111-177`). En un
+barrido de 120 pistas reales de la biblioteca, las respuestas que solo traían discos
+ajenos bajaron del 25-39 % al 0-11 % según la fuente, sin perder ninguna que nombrara
+al artista (`npm run search-sweep`, `searchSweep.test.ts`). Discogs y los peldaños por
+campos de MusicBrainz no pasan por esta regla: ya fijan el artista en la consulta.
+
+**Buscar primero por álbum** (Ajustes → Búsqueda, apagado por defecto). Con artista y
+álbum en las etiquetas, Discogs y MusicBrainz buscan primero ese disco por sus campos
+(`discogs.ts:295-296`, `musicbrainz.ts:245`), y el resto prueba «artista álbum» como
+primer peldaño (`searchQuery.ts:44`); si no aparece un disco del artista, sigue la
+búsqueda por pista de siempre. Un álbum igual al título o vacío se ignora.
+
+**Lo que escribes manda.** Si el usuario escribe en la caja una búsqueda que no nombra
+el artista y el título de la pista seleccionada, se busca sin sus etiquetas, para que
+no arrastren los resultados a su propio disco (`lib/autoMatch.ts:72-83`). La búsqueda
+automática sigue usando siempre las etiquetas.
 
 **Descargas de sello y promo.** Cuando la etiqueta pone el sello como artista y el
 título trae «Acto - Pista» («HH Traxx» / «Francesco Donadoni - Funky Roll»), tras las
