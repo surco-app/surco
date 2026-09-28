@@ -7,10 +7,10 @@
     "ogLocale": "en_US",
     "inLanguage": "en",
     "title": "Surco: Get your DJ tracks ready in seconds",
-    "description": "Surco automates DJ track prep: convert to lossless AIFF, WAV, FLAC or ALAC (or a lighter MP3), edit tags and metadata from Discogs, Bandcamp, Deezer and Beatport, and send to Apple Music or your Engine DJ (Denon) library in seconds. And catch re-encoded MP3s disguised as lossless.",
+    "description": "Surco automates DJ track prep: convert to lossless AIFF, WAV, FLAC or ALAC (or a lighter MP3), edit tags and metadata from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz, and send to Apple Music or your Engine DJ (Denon) library in seconds. And catch re-encoded MP3s disguised as lossless.",
     "ogTitle": "Surco: Get your DJ tracks ready in seconds",
-    "ogDescription": "Less prepping, more playing: convert to lossless AIFF, WAV, FLAC or ALAC (or a lighter MP3), tag from Discogs, Bandcamp, Deezer and Beatport, and organize in seconds. And catch MP3s disguised as lossless.",
-    "jsonLdDescription": "Audio track organizer for DJs: convert to lossless AIFF, WAV, FLAC or ALAC, tag from Discogs, Bandcamp, Deezer and Beatport, send to Apple Music or Engine DJ (Denon) and analyze the spectrum to detect re-encoded MP3s."
+    "ogDescription": "Less prepping, more playing: convert to lossless AIFF, WAV, FLAC or ALAC (or a lighter MP3), tag from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz, and organize in seconds. And catch MP3s disguised as lossless.",
+    "jsonLdDescription": "Audio track organizer for DJs: convert to lossless AIFF, WAV, FLAC or ALAC, tag from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz, send to Apple Music or Engine DJ (Denon) and analyze the spectrum to detect re-encoded MP3s."
   },
   "nav": {
     "velocidad": "Speed",
@@ -100,10 +100,10 @@
       {
         "kick": "tag",
         "title": "Tag",
-        "replaces": "instead of Discogs, Bandcamp, Deezer and Beatport in a browser plus a tag editor",
+        "replaces": "instead of Discogs, Bandcamp, Deezer, Beatport and MusicBrainz in a browser plus a tag editor",
         "items": [
           {
-            "t": "Discogs, Bandcamp, Deezer, Beatport",
+            "t": "Discogs, Bandcamp, Deezer, Beatport, MusicBrainz",
             "d": "Artist, album, year, BPM and key. Label and catalogue number come from Discogs and Beatport, and Beatport adds the mix and the ISRC."
           },
           {
@@ -116,7 +116,7 @@
           },
           {
             "t": "Artwork",
-            "d": "From Discogs, Bandcamp, Deezer, Beatport or your own, with square cropping and a size cap you set."
+            "d": "From Discogs, Bandcamp, Deezer, Beatport, MusicBrainz or your own, with square cropping and a size cap you set."
           },
           {
             "t": "ID3v2.3, not v2.4",
@@ -136,7 +136,7 @@
           },
           {
             "t": "The full date, if you want it",
-            "d": "Year as 2020-12-01 when the file or Discogs, Bandcamp, Deezer or Beatport carry the whole date. File names and rekordbox still get the year alone."
+            "d": "Year as 2020-12-01 when the file or Discogs, Bandcamp, Deezer, Beatport or MusicBrainz carry the whole date. File names and rekordbox still get the year alone."
           },
           {
             "t": "Multi-tag genre and grouping",
@@ -264,7 +264,7 @@
       }
     ],
     "metaTitle": "Everything Surco does · Features",
-    "metaDescription": "Convert, tag from Discogs, Bandcamp, Deezer or Beatport, analyse quality, repair clicks, trim silence and export to rekordbox, Engine DJ, Traktor or Serato. Free."
+    "metaDescription": "Convert, tag from Discogs, Bandcamp, Deezer, Beatport or MusicBrainz, analyse quality, repair clicks, trim silence and export to rekordbox, Engine DJ, Traktor or Serato. Free."
   },
   "stopwatch": {
     "kicker": "Measured, not promised",
@@ -395,7 +395,7 @@
       },
       {
         "title": "Pick the release",
-        "body": "Search Discogs, Bandcamp, Deezer or Beatport and apply artist, album, year, genre and cover art in one click."
+        "body": "Search Discogs, Bandcamp, Deezer, Beatport or MusicBrainz and apply artist, album, year, genre and cover art in one click."
       },
       {
         "title": "Export and you're done",
@@ -412,8 +412,8 @@
         "desc": "Your tracks, with a filter for what's already in your Apple Music or Engine DJ library."
       },
       "discogs": {
-        "title": "Discogs, Bandcamp, Deezer & Beatport match",
-        "desc": "Find the exact release on Discogs, Bandcamp, Deezer or Beatport, from club pressings to chart singles, and pick the right version."
+        "title": "Discogs, Bandcamp, Deezer, Beatport & MusicBrainz match",
+        "desc": "Find the exact release on Discogs, Bandcamp, Deezer, Beatport or MusicBrainz, from club pressings to chart singles, and pick the right version."
       },
       "metadata": {
         "title": "Metadata editor",
@@ -457,7 +457,7 @@
       },
       {
         "q": "Is it a tag and metadata editor?",
-        "a": "Yes, and more. Surco edits your music's tags and metadata (artist, title, album, year, artwork…) and fills them in from Discogs, Bandcamp, Deezer or Beatport. But it also converts between lossless formats, checks audio quality and organizes your library: what you'd do with a tag editor and three other apps, in one."
+        "a": "Yes, and more. Surco edits your music's tags and metadata (artist, title, album, year, artwork…) and fills them in from Discogs, Bandcamp, Deezer, Beatport or MusicBrainz. But it also converts between lossless formats, checks audio quality and organizes your library: what you'd do with a tag editor and three other apps, in one."
       },
       {
         "q": "Does it touch my original files?",
@@ -521,7 +521,7 @@
   },
   "guide": {
     "metaTitle": "How to use Surco: step-by-step guide",
-    "metaDescription": "The complete Surco guide: import tracks, tag from Discogs, Bandcamp, Deezer and Beatport, match a whole release, analyze the spectrum, convert and export to Apple Music, Engine DJ, rekordbox or Traktor.",
+    "metaDescription": "The complete Surco guide: import tracks, tag from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz, match a whole release, analyze the spectrum, convert and export to Apple Music, Engine DJ, rekordbox or Traktor.",
     "kicker": "Guide",
     "title": "How to use Surco",
     "lede": "From dropping your tracks to having them ready to play. This guide walks the whole flow, step by step. No rush, nothing skipped.",
@@ -541,7 +541,7 @@
           "Available for macOS (Apple Silicon and Intel, notarized by Apple), Windows and Linux (on Linux as an AppImage), in five languages.",
           "The welcome wizard is just four steps (five if Surco finds your rekordbox or Traktor collection); naming, genres and editor fields wait for you in Settings.",
           "Rushed through it? You can reopen it any time from the Help menu or ⌘K: it starts from your current settings and only changes what you touch.",
-          "It ships with the useful things already on: quality analysis on import, and Discogs, Bandcamp and Deezer all searched without configuring anything.",
+          "It ships with the useful things already on: quality analysis on import, and Discogs, Bandcamp, Deezer and MusicBrainz all searched without configuring anything.",
           "You can change any setting later in Settings (⌘ ,)."
         ],
         "shot": "instalar-en.webp",
@@ -685,16 +685,16 @@
       },
       {
         "id": "discogs",
-        "title": "Tag from Discogs, Bandcamp, Deezer and Beatport",
+        "title": "Tag from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz",
         "body": [
           "In the editor, search for the release by name or paste a Discogs release id directly and hit “Search” (or the / key). Surco lists the results with cover art, year, label, catalog number and format, so you can tell the exact pressing apart; expand one to see its tracklist.",
           "Click the matching track and Surco applies artist, album, year, genre, label, catalog number and cover art in one go. The closest one is flagged “Suggested”. Search works with nothing configured; add your own Discogs token in Settings and you get a higher, private and faster limit.",
-          "After self-released or exclusive material? Turn on Bandcamp too in Settings → Search: its results sit alongside the Discogs ones in the same list, each labelled with its source, and you pick them the same way. Bandcamp needs no account or token. And the commercial stuff (pop, urban, radio hits) that's on neither? That's what Deezer is on by default for: no account or token either, and it covers exactly the catalog Discogs and Bandcamp miss. And if you play what Beatport sells, connect your account in Settings → Search (a free one will do): each track brings its BPM, its key in your notation, the mix and the ISRC, and among versions with the same title Surco picks the one your file names."
+          "After self-released or exclusive material? Turn on Bandcamp too in Settings → Search: its results sit alongside the Discogs ones in the same list, each labelled with its source, and you pick them the same way. Bandcamp needs no account or token. And the commercial stuff (pop, urban, radio hits) that's on neither? That's what Deezer is on by default for: no account or token either, and it covers exactly the catalog Discogs and Bandcamp miss. And if you play what Beatport sells, connect your account in Settings → Search (a free one will do): each track brings its BPM, its key in your notation, the mix and the ISRC, and among versions with the same title Surco picks the one your file names. And MusicBrainz, the open catalog its community keeps, is on by default too, with no account or token: it fills in releases and credits the others lack, at one search per second as its rules require, so its results can arrive a little after the rest."
         ],
         "points": [
           "Search by text or paste a release id if you already know which one it is. If the file already carries one, Surco opens that record directly.",
           "If the first search comes up empty, Surco retries on its own: dropping the DJ prefix, trying the main artist, or searching by catalog number or title alone.",
-          "With the option on (plus your token if Discogs is one of your sources, or your account if Beatport is; Bandcamp and Deezer need none), Surco auto-matches tracks the moment you import them.",
+          "With the option on (plus your token if Discogs is one of your sources, or your account if Beatport is; Bandcamp, Deezer and MusicBrainz need none), Surco auto-matches tracks the moment you import them.",
           "Your own cover art is kept if you already have one; the release one stays as an alternative, and you can have it replace only the low-resolution ones.",
           "Rip signatures or watermarks dirtying your titles? List them in Settings → Search, “vinyl” and “rip” come as standard, and they're ignored when searching and matching; your tags aren't touched.",
           "With several sources on, a filter narrows the results down to just one, and you can limit the Discogs ones to vinyl, CD, file or cassette.",
@@ -708,7 +708,7 @@
         "id": "automatch",
         "title": "Auto-match: tagging without touching a thing",
         "body": [
-          "With “Auto-match on import” on in Settings, every file you drop is looked up on its own in the background across the sources you have enabled: Discogs first, with Bandcamp, Deezer and Beatport (once your account is connected) as backup. Surco compares title, duration, track number and artist against each candidate, and only applies the metadata for you when the match is reliable. Artist, album, year, genre, label and cover art, exactly as if you'd picked it by hand. If the file carries an ISRC in its tags (common on streaming downloads), Surco uses it to pin the exact recording on Deezer, so the original single doesn't get confused with similarly named remixes.",
+          "With “Auto-match on import” on in Settings, every file you drop is looked up on its own in the background across the sources you have enabled: Discogs first, with Bandcamp, Deezer, MusicBrainz and Beatport (once your account is connected) as backup. Surco compares title, duration, track number and artist against each candidate, and only applies the metadata for you when the match is reliable. Artist, album, year, genre, label and cover art, exactly as if you'd picked it by hand. If the file carries an ISRC in its tags (common on streaming downloads), Surco uses it to pin the exact recording on Deezer, so the original single doesn't get confused with similarly named remixes.",
           "An identical title isn't enough on its own: something else has to corroborate it (the duration, the artist or the catalog number) because a one-word title exists on dozens of completely unrelated records. When nothing confirms it, the track isn't tagged automatically: it's flagged “To confirm” with its confidence grade, and you accept it in one step from ⌘K without even opening the editor. With the switch off (that's how it ships) Surco suggests, but never updates on its own."
         ],
         "points": [
@@ -940,7 +940,7 @@
     "tag": {
       "step": "02 · tagged",
       "title": "The tags, from Discogs, in one click.",
-      "lede": "Discogs for labels, Bandcamp for self-released, Deezer for the charts, Beatport for the club. One click fills it all in: artist, label, year, BPM and artwork.",
+      "lede": "Discogs for labels, Bandcamp for self-released, Deezer for the charts, Beatport for the club, MusicBrainz for everything else. One click fills it all in: artist, label, year, BPM and artwork.",
       "pill": "12/40",
       "section": "Metadata",
       "titleField": "Title",
@@ -1014,9 +1014,9 @@
     "anchors": {
       "tag": {
         "title": "Every tag, in one click",
-        "note": "Discogs, Bandcamp, Deezer and Beatport. Artist, label, year, BPM and artwork.",
+        "note": "Discogs, Bandcamp, Deezer, Beatport and MusicBrainz. Artist, label, year, BPM and artwork.",
         "lead": "Every tag, in one click.",
-        "rest": "Discogs, Bandcamp, Deezer and Beatport."
+        "rest": "Discogs, Bandcamp, Deezer, Beatport and MusicBrainz."
       },
       "audio": {
         "title": "And better audio while it does",
@@ -1170,7 +1170,7 @@
     },
     "outro": {
       "title": "Convert your FLACs to AIFF",
-      "lede": "Surco also tags from Discogs, Bandcamp, Deezer and Beatport and files everything into your library."
+      "lede": "Surco also tags from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz and files everything into your library."
     }
   }
 }

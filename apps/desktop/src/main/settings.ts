@@ -126,6 +126,7 @@ export const defaults: Settings = {
   shortcutOverrides: {},
   hasSeenOnboarding: false,
   deezerProviderMigrated: false,
+  musicbrainzProviderMigrated: false,
   backupPolicyMigrated: false,
   backupLimitsMigrated: false,
   trackImportFieldsMigrated: false,
@@ -138,6 +139,7 @@ export const defaults: Settings = {
     bandcampMatches: 0,
     deezerMatches: 0,
     beatportMatches: 0,
+    musicbrainzMatches: 0,
   },
   commandUsage: {},
   donateNudgeDismissed: false,
@@ -496,17 +498,19 @@ export function recordStat(key: keyof Settings['stats'], by = 1): void {
   saveSettings({ stats: { ...cur.stats, [key]: cur.stats[key] + n } })
 }
 
-// Deezer shipped after existing installs persisted their searchProviders array, so
-// they would never see the new source without this one-shot addition at startup. The
-// marker (synced) keeps a later launch — or the user's other Mac — from re-adding the
-// source once it has run.
+// Deezer and later MusicBrainz shipped after existing installs persisted their
+// searchProviders array, so they would never see the new source without this one-shot
+// addition at startup. Each source has its own marker (synced), which keeps a later
+// launch — or the user's other Mac — from re-adding a source once its step has run.
 export function migrateProviderDefaults(): void {
   const cur = getSettings()
-  if (cur.deezerProviderMigrated) return
-  const searchProviders = cur.searchProviders.includes('deezer')
-    ? cur.searchProviders
-    : [...cur.searchProviders, 'deezer' as const]
-  saveSettings({ searchProviders, deezerProviderMigrated: true })
+  if (cur.deezerProviderMigrated && cur.musicbrainzProviderMigrated) return
+  const searchProviders = [...cur.searchProviders]
+  if (!cur.deezerProviderMigrated && !searchProviders.includes('deezer'))
+    searchProviders.push('deezer')
+  if (!cur.musicbrainzProviderMigrated && !searchProviders.includes('musicbrainz'))
+    searchProviders.push('musicbrainz')
+  saveSettings({ searchProviders, deezerProviderMigrated: true, musicbrainzProviderMigrated: true })
 }
 
 const TRACK_IMPORT_FIELDS = ['bpm', 'key', 'mixName', 'isrc']

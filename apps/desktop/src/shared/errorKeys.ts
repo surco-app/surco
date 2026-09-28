@@ -40,6 +40,8 @@ export const ERROR_KEYS = [
   'beatportRateLimit',
   'beatportTerritoryRestricted',
   'beatportNoSecureStorage',
+  'musicbrainzUnavailable',
+  'musicbrainzRateLimit',
 ] as const
 
 export type ErrorKey = (typeof ERROR_KEYS)[number]

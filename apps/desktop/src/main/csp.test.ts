@@ -17,6 +17,13 @@ const PROVIDER_IMAGE_HOSTS = [
   'https://*.bcbits.com',
   'https://*.dzcdn.net',
   'https://geo-media.beatport.com',
+  // MusicBrainz covers come from the Cover Art Archive, which redirects every image to
+  // archive.org and from there to a numbered mirror (dn720707.ca.archive.org). The CSP
+  // checks each hop, and `*.archive.org` does not cover the bare apex, so all three
+  // must be listed or the thumbnail breaks on the first redirect.
+  'https://coverartarchive.org',
+  'https://archive.org',
+  'https://*.archive.org',
 ]
 
 // Each extractor anchors on how its file quotes the directive (the HTML terminates it

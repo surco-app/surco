@@ -1,36 +1,47 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SearchProviderId } from '../../shared/types'
 
-const { search, getRelease, getSettings, bcSearch, dzSearch, bpSearch, bpGetRelease } = vi.hoisted(
-  () => ({
-    search: vi.fn(),
-    getRelease: vi.fn(),
-    getSettings: vi.fn(
-      (): {
-        discogsToken: string
-        discogsFormats: string[]
-        searchIgnoreWords: string[]
-        // Optional on purpose: an older settings.json predates the setting, and the seam
-        // has to cope with it missing.
-        discogsMaxResults?: number
-        searchByAlbumFirst?: boolean
-      } => ({
-        discogsToken: 'tok',
-        discogsFormats: [],
-        searchIgnoreWords: [],
-      }),
-    ),
-    bcSearch: vi.fn(),
-    dzSearch: vi.fn(),
-    bpSearch: vi.fn(),
-    bpGetRelease: vi.fn(),
-  }),
-)
+const {
+  search,
+  getRelease,
+  getSettings,
+  bcSearch,
+  dzSearch,
+  bpSearch,
+  bpGetRelease,
+  mbSearch,
+  mbGetRelease,
+} = vi.hoisted(() => ({
+  search: vi.fn(),
+  getRelease: vi.fn(),
+  getSettings: vi.fn(
+    (): {
+      discogsToken: string
+      discogsFormats: string[]
+      searchIgnoreWords: string[]
+      // Optional on purpose: an older settings.json predates the setting, and the seam
+      // has to cope with it missing.
+      discogsMaxResults?: number
+      searchByAlbumFirst?: boolean
+    } => ({
+      discogsToken: 'tok',
+      discogsFormats: [],
+      searchIgnoreWords: [],
+    }),
+  ),
+  bcSearch: vi.fn(),
+  dzSearch: vi.fn(),
+  bpSearch: vi.fn(),
+  bpGetRelease: vi.fn(),
+  mbSearch: vi.fn(),
+  mbGetRelease: vi.fn(),
+}))
 
 vi.mock('../discogs', () => ({ search, getRelease }))
 vi.mock('../bandcamp', () => ({ search: bcSearch, getRelease: vi.fn() }))
 vi.mock('../deezer', () => ({ search: dzSearch, getRelease: vi.fn() }))
 vi.mock('../beatport', () => ({ search: bpSearch, getRelease: bpGetRelease }))
+vi.mock('../musicbrainz', () => ({ search: mbSearch, getRelease: mbGetRelease }))
 vi.mock('../settings', () => ({ getSettings }))
 
 import { DEFAULT_PROVIDER, getProvider } from './index'
@@ -166,6 +177,21 @@ describe('getProvider', () => {
     expect(dzSearch.mock.calls[0][2]).toEqual({ artist: 'Moby', title: 'Porcelain', album: 'Play' })
   })
 
+  it('hands the album to MusicBrainz only when album-first search is on', async () => {
+    mbSearch.mockResolvedValue([])
+    const hints = { artist: 'Moby', title: 'Porcelain', album: 'Play' }
+    await getProvider('musicbrainz').search('moby porcelain', 'high', hints)
+    expect(mbSearch.mock.calls[0][2]).not.toHaveProperty('album')
+    getSettings.mockReturnValueOnce({
+      discogsToken: 'tok',
+      discogsFormats: [],
+      searchIgnoreWords: [],
+      searchByAlbumFirst: true,
+    })
+    await getProvider('musicbrainz').search('moby porcelain', 'high', hints)
+    expect(mbSearch.mock.calls[1][2]).toEqual(hints)
+  })
+
   // A single's album tag repeats its title, and an untagged album is blank: neither names
   // anything the track search does not already try, so neither may jump ahead of it.
   it.each([
@@ -211,6 +237,28 @@ describe('getProvider', () => {
       title: 'Song rip djotas good',
     })
     expect(dzSearch).toHaveBeenCalledWith('Song', 'low', { title: 'Song' })
+  })
+
+  it('strips the saved ignore words for MusicBrainz too', async () => {
+    getSettings.mockReturnValueOnce({
+      discogsToken: 'tok',
+      discogsFormats: [] as string[],
+      searchIgnoreWords: ['rip djotas good'],
+    })
+    mbSearch.mockResolvedValue([])
+    await getProvider('musicbrainz').search('Song rip djotas good', 'low', {
+      title: 'Song rip djotas good',
+    })
+    expect(mbSearch).toHaveBeenCalledWith('Song', 'low', { title: 'Song' })
+  })
+
+  // A MusicBrainz release is a UUID carried in the row's page URL; the seam must hand
+  // that string through untouched, not coerce it to the numeric id.
+  it('forwards the MusicBrainz release page URL to its client', async () => {
+    mbGetRelease.mockResolvedValue({ id: 1 })
+    const url = 'https://musicbrainz.org/release/4a27f230-ab38-4fae-8dd7-c5032fd4a4ee'
+    await getProvider('musicbrainz').getRelease(url, 'low')
+    expect(mbGetRelease).toHaveBeenCalledWith(url, 'low')
   })
 
   it('forwards getRelease to the Discogs client with the saved token and priority', async () => {

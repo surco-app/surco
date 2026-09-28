@@ -11,6 +11,7 @@ import * as beatport from '../beatport'
 import { beatportKey } from '../beatportKey'
 import * as deezer from '../deezer'
 import * as discogs from '../discogs'
+import * as musicbrainz from '../musicbrainz'
 import { getSettings } from '../settings'
 
 // The user's junk phrases (Settings → Search), stripped from the query and hints at
@@ -130,6 +131,20 @@ const providers: Record<SearchProviderId, SearchProvider> = {
         })),
       }
     },
+  },
+  musicbrainz: {
+    // No token and no format filter either; a release is addressed by the page URL its
+    // search row carries, since MusicBrainz ids are UUIDs.
+    search: (query, priority, hints) => {
+      const s = getSettings()
+      const words = ignoreWordsOf(s.searchIgnoreWords)
+      return musicbrainz.search(
+        cleanQuery(query, words),
+        priority,
+        cleanHints(hints, words, s.searchByAlbumFirst === true),
+      )
+    },
+    getRelease: (ref, priority) => musicbrainz.getRelease(ref as string, priority),
   },
 }
 

@@ -17,6 +17,7 @@ const zeroStats = {
   bandcampMatches: 0,
   deezerMatches: 0,
   beatportMatches: 0,
+  musicbrainzMatches: 0,
 }
 
 function withStats(over: Partial<Settings> = {}): Settings {
@@ -59,6 +60,7 @@ describe('StatsTab', () => {
             bandcampMatches: 17,
             deezerMatches: 44,
             beatportMatches: 0,
+            musicbrainzMatches: 9,
           },
         })}
       />,
@@ -69,6 +71,7 @@ describe('StatsTab', () => {
     expect(screen.getByTestId('stats-discogsMatches')).toHaveTextContent('301')
     expect(screen.getByTestId('stats-bandcampMatches')).toHaveTextContent('17')
     expect(screen.getByTestId('stats-deezerMatches')).toHaveTextContent('44')
+    expect(screen.getByTestId('stats-musicbrainzMatches')).toHaveTextContent('9')
   })
 
   // The match tallies aren't independent trivia — together they answer "where did my
@@ -83,8 +86,9 @@ describe('StatsTab', () => {
             ...zeroStats,
             discogsMatches: 30,
             bandcampMatches: 10,
-            deezerMatches: 10,
+            deezerMatches: 5,
             beatportMatches: 0,
+            musicbrainzMatches: 5,
           },
         })}
       />,
@@ -94,7 +98,9 @@ describe('StatsTab', () => {
     const discogs = screen.getByTestId('stats-match-discogs')
     expect(discogs).toHaveStyle({ width: '60%' })
     const deezer = screen.getByTestId('stats-match-deezer')
-    expect(deezer).toHaveStyle({ width: '20%' })
+    expect(deezer).toHaveStyle({ width: '10%' })
+    const musicbrainz = screen.getByTestId('stats-match-musicbrainz')
+    expect(musicbrainz).toHaveStyle({ width: '10%' })
     expect(split).toHaveTextContent('30')
     expect(split).toHaveTextContent('10')
   })

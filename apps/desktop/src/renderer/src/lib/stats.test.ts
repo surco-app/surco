@@ -67,4 +67,8 @@ describe('matchStatKey', () => {
   it('routes a Deezer match to its own tally', () => {
     expect(matchStatKey('deezer')).toBe('deezerMatches')
   })
+
+  it('routes a MusicBrainz match to its own tally instead of crediting Discogs', () => {
+    expect(matchStatKey('musicbrainz')).toBe('musicbrainzMatches')
+  })
 })

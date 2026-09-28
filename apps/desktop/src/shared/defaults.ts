@@ -73,6 +73,7 @@ export const SEARCH_PROVIDERS: readonly SearchProviderId[] = [
   'bandcamp',
   'deezer',
   'beatport',
+  'musicbrainz',
 ]
 
 // The Discogs release-format buckets the search filter can restrict to. These are the
