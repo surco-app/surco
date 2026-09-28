@@ -90,7 +90,7 @@ import {
 import { discardBackup, keepOriginal } from './originalKeeper'
 import { recordRekordboxRepoint } from './rekordboxBatch'
 import { rekordboxRepointFor } from './rekordboxRepointFor'
-import { renameWithRetry, rescuePath } from './renameRetry'
+import { removeTemp, renameWithRetry, rescuePath } from './renameRetry'
 import { getSettings } from './settings'
 import { createSharedScan } from './sharedScan'
 import { readTagFormats } from './tagFormats'
@@ -2231,11 +2231,9 @@ export async function convertAudio(
     // the temp parked in the user's music folder with nothing recording its existence,
     // which reads as "a file that never finished converting".
     // ENOENT means the temp was never created (the encode died before writing) or is
-    // already gone — nothing survived, so it must not be recorded as litter.
-    const survived = await unlink(tmp).then(
-      () => false,
-      (err: NodeJS.ErrnoException) => err?.code !== 'ENOENT',
-    )
+    // already gone, unless the folder still lists it under another spelling (see
+    // removeTemp): only then did something survive to record as litter.
+    const survived = await removeTemp(tmp)
     if (survived) {
       log.warn(`temp cleanup failed, left behind: ${tmp}`)
       Object.assign(e as object, { tmpSurvived: true })
