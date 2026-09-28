@@ -146,6 +146,8 @@
     "beatportRateLimit": "Beatport begrenzt die Suchen. Warte einen Moment und versuche es erneut.",
     "beatportTerritoryRestricted": "Beatport erlaubt diese Veröffentlichung in deinem Land nicht. Wähle ein anderes Ergebnis.",
     "beatportNoSecureStorage": "Dieses System kann das Passwort nicht verschlüsselt speichern, daher wurde es nicht gespeichert.",
+    "musicbrainzUnavailable": "MusicBrainz hat nicht richtig geantwortet. Versuche es gleich noch einmal.",
+    "musicbrainzRateLimit": "MusicBrainz drosselt die Suche. Warte einen Moment und versuche es erneut.",
     "discogsUnavailable": "Discogs hat nicht richtig geantwortet. Versuche es gleich noch einmal.",
     "pathNotAllowed": "Surco hat diese Datei nicht geöffnet: Sie gehört nicht zu den geladenen Titeln."
   },
@@ -953,12 +955,13 @@
     "searchByAlbumFirst": "Zuerst nach Album suchen",
     "searchByAlbumFirstHint": "Wenn die Tags ein Album enthalten, wird es mit dem Künstler vor dem Track gesucht. Findet sich nichts, wird der Track gesucht.",
     "searchProviders": "Suchquellen",
-    "searchProvidersHint": "Kataloge, die der Editor durchsucht. Discogs ist kuratiert, Bandcamp ergänzt selbstveröffentlichtes Material, Deezer deckt kommerzielle digitale Veröffentlichungen ab und Beatport liefert BPM, Tonart und Mix.",
+    "searchProvidersHint": "Kataloge, die der Editor durchsucht. Discogs ist kuratiert, Bandcamp ergänzt selbstveröffentlichtes Material, Deezer deckt kommerzielle digitale Veröffentlichungen ab, Beatport liefert BPM, Tonart und Mix, und MusicBrainz ist ein offener, von seiner Community gepflegter Katalog.",
     "provider": {
       "discogs": "Discogs",
       "bandcamp": "Bandcamp",
       "deezer": "Deezer",
-      "beatport": "Beatport"
+      "beatport": "Beatport",
+      "musicbrainz": "MusicBrainz"
     },
     "format": {
       "Vinyl": "Vinyl",
@@ -1348,6 +1351,8 @@
     "loadDeezerRelease": "Lade Deezer-Release",
     "searchBeatport": "Suche auf Beatport: {{query}}",
     "loadBeatportRelease": "Lade Beatport-Release",
+    "searchMusicbrainz": "Suche auf MusicBrainz: {{query}}",
+    "loadMusicbrainzRelease": "Lade MusicBrainz-Release",
     "downloadCover": "Lade Cover herunter",
     "convert": "Konvertiere {{track}}",
     "convertTagsChanged": "Tags: {{changed}} Felder geändert, {{kept}} unverändert · {{fields}}",

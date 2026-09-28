@@ -146,6 +146,8 @@
     "beatportRateLimit": "Beatport está limitando las búsquedas. Espera un momento y vuelve a intentarlo.",
     "beatportTerritoryRestricted": "Beatport no deja abrir este lanzamiento desde tu país. Elige otro resultado.",
     "beatportNoSecureStorage": "Este sistema no permite guardar la contraseña cifrada, así que no se ha guardado.",
+    "musicbrainzUnavailable": "MusicBrainz no ha respondido bien. Prueba otra vez en un momento.",
+    "musicbrainzRateLimit": "MusicBrainz está limitando las búsquedas. Espera un momento y vuelve a intentarlo.",
     "discogsUnavailable": "Discogs no ha respondido bien. Prueba otra vez en un momento.",
     "pathNotAllowed": "Surco no ha abierto ese archivo: no es una de las pistas que ha cargado."
   },
@@ -953,12 +955,13 @@
     "searchByAlbumFirst": "Buscar primero por álbum",
     "searchByAlbumFirstHint": "Si los tags tienen álbum, se busca con el artista antes que la pista. Si no sale nada, se busca la pista.",
     "searchProviders": "Fuentes de búsqueda",
-    "searchProvidersHint": "Catálogos donde busca el editor. Discogs está curado, Bandcamp añade material autoeditado, Deezer cubre los lanzamientos digitales comerciales y Beatport aporta BPM, tonalidad y mix.",
+    "searchProvidersHint": "Catálogos donde busca el editor. Discogs está curado, Bandcamp añade material autoeditado, Deezer cubre los lanzamientos digitales comerciales, Beatport aporta BPM, tonalidad y mix, y MusicBrainz es un catálogo abierto que mantiene su comunidad.",
     "provider": {
       "discogs": "Discogs",
       "bandcamp": "Bandcamp",
       "deezer": "Deezer",
-      "beatport": "Beatport"
+      "beatport": "Beatport",
+      "musicbrainz": "MusicBrainz"
     },
     "format": {
       "Vinyl": "Vinyl",
@@ -1348,6 +1351,8 @@
     "loadDeezerRelease": "Cargando release de Deezer",
     "searchBeatport": "Buscando en Beatport: {{query}}",
     "loadBeatportRelease": "Cargando release de Beatport",
+    "searchMusicbrainz": "Buscando en MusicBrainz: {{query}}",
+    "loadMusicbrainzRelease": "Cargando release de MusicBrainz",
     "downloadCover": "Descargando carátula",
     "convert": "Convirtiendo {{track}}",
     "convertTagsChanged": "Etiquetas: {{changed}} campos cambiados, {{kept}} intactos · {{fields}}",

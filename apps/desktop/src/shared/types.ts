@@ -47,7 +47,7 @@ export interface ConversionQuality {
   flacCompression: FlacCompression
 }
 
-export type SearchProviderId = 'discogs' | 'bandcamp' | 'deezer' | 'beatport'
+export type SearchProviderId = 'discogs' | 'bandcamp' | 'deezer' | 'beatport' | 'musicbrainz'
 
 // How a search request competes for the provider's rate-limited budget. 'high' is the track
 // the user is actively looking at (the editor's own search); 'low' is background work
@@ -787,6 +787,7 @@ export type ActivityKind =
   | 'bandcamp'
   | 'deezer'
   | 'beatport'
+  | 'musicbrainz'
   | 'cover'
   | 'convert'
   | 'analyze'

@@ -146,6 +146,8 @@
     "beatportRateLimit": "O Beatport está limitando as buscas. Espere um pouco e tente de novo.",
     "beatportTerritoryRestricted": "O Beatport não permite abrir este lançamento no seu país. Escolha outro resultado.",
     "beatportNoSecureStorage": "Este sistema não permite salvar a senha criptografada, então ela não foi salva.",
+    "musicbrainzUnavailable": "O MusicBrainz não respondeu direito. Tente de novo daqui a pouco.",
+    "musicbrainzRateLimit": "O MusicBrainz está limitando as buscas. Espere um momento e tente de novo.",
     "discogsUnavailable": "O Discogs não respondeu direito. Tente de novo daqui a pouco.",
     "pathNotAllowed": "O Surco não abriu esse arquivo: ele não é uma das faixas carregadas."
   },
@@ -953,12 +955,13 @@
     "searchByAlbumFirst": "Buscar primeiro pelo álbum",
     "searchByAlbumFirstHint": "Se as tags têm álbum, ele é buscado com o artista antes da faixa. Se nada aparecer, a faixa é buscada.",
     "searchProviders": "Fontes de busca",
-    "searchProvidersHint": "Catálogos onde o editor busca. O Discogs é curado, o Bandcamp adiciona material independente, o Deezer cobre os lançamentos digitais comerciais e o Beatport traz BPM, tom e mix.",
+    "searchProvidersHint": "Catálogos onde o editor busca. O Discogs é curado, o Bandcamp adiciona material independente, o Deezer cobre os lançamentos digitais comerciais, o Beatport traz BPM, tom e mix, e o MusicBrainz é um catálogo aberto mantido pela sua comunidade.",
     "provider": {
       "discogs": "Discogs",
       "bandcamp": "Bandcamp",
       "deezer": "Deezer",
-      "beatport": "Beatport"
+      "beatport": "Beatport",
+      "musicbrainz": "MusicBrainz"
     },
     "format": {
       "Vinyl": "Vinyl",
@@ -1348,6 +1351,8 @@
     "loadDeezerRelease": "Carregando release do Deezer",
     "searchBeatport": "Buscando no Beatport: {{query}}",
     "loadBeatportRelease": "Carregando release do Beatport",
+    "searchMusicbrainz": "Buscando no MusicBrainz: {{query}}",
+    "loadMusicbrainzRelease": "Carregando release do MusicBrainz",
     "downloadCover": "Baixando capa",
     "convert": "Convertendo {{track}}",
     "convertTagsChanged": "Tags: {{changed}} campos alterados, {{kept}} intactos · {{fields}}",

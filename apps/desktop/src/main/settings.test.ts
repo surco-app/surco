@@ -73,10 +73,11 @@ describe('defaults for a fresh install', () => {
   })
 
   // A fresh install searches every source so a DJ reaches pressings (Discogs),
-  // self-released / Bandcamp-exclusive material, and Deezer's commercial catalog in one
-  // query, without first knowing any of them is an opt-in under Settings.
-  it('searches Discogs, Bandcamp and Deezer by default, leaving Beatport off since it needs an account', () => {
-    expect(defaults.searchProviders).toEqual(['discogs', 'bandcamp', 'deezer'])
+  // self-released / Bandcamp-exclusive material, Deezer's commercial catalog and
+  // MusicBrainz' open one in one query, without first knowing any of them is an opt-in
+  // under Settings.
+  it('searches Discogs, Bandcamp, Deezer and MusicBrainz by default, leaving Beatport off since it needs an account', () => {
+    expect(defaults.searchProviders).toEqual(['discogs', 'bandcamp', 'deezer', 'musicbrainz'])
   })
 
   // Originals exist to undo a conversion you just noticed went wrong, which is a

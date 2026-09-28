@@ -146,6 +146,8 @@
     "beatportRateLimit": "Beatport limite les recherches. Attends un instant et réessaie.",
     "beatportTerritoryRestricted": "Beatport ne permet pas d'ouvrir cette sortie depuis ton pays. Choisis un autre résultat.",
     "beatportNoSecureStorage": "Ce système ne permet pas d'enregistrer le mot de passe chiffré, il n'a donc pas été enregistré.",
+    "musicbrainzUnavailable": "MusicBrainz n'a pas répondu correctement. Réessaie dans un instant.",
+    "musicbrainzRateLimit": "MusicBrainz limite les recherches. Patiente un instant et réessaie.",
     "discogsUnavailable": "Discogs n'a pas répondu correctement. Réessaie dans un instant.",
     "pathNotAllowed": "Surco n'a pas ouvert ce fichier : il ne fait pas partie des pistes chargées."
   },
@@ -953,12 +955,13 @@
     "searchByAlbumFirst": "Chercher d'abord par album",
     "searchByAlbumFirstHint": "Si les tags ont un album, il est cherché avec l'artiste avant le morceau. Si rien ne sort, le morceau est cherché.",
     "searchProviders": "Sources de recherche",
-    "searchProvidersHint": "Les catalogues où l'éditeur cherche. Discogs est un catalogue soigné, Bandcamp ajoute les sorties autoproduites, Deezer couvre les sorties numériques commerciales et Beatport apporte BPM, tonalité et mix.",
+    "searchProvidersHint": "Les catalogues où l'éditeur cherche. Discogs est un catalogue soigné, Bandcamp ajoute les sorties autoproduites, Deezer couvre les sorties numériques commerciales, Beatport apporte BPM, tonalité et mix, et MusicBrainz est un catalogue ouvert tenu par sa communauté.",
     "provider": {
       "discogs": "Discogs",
       "bandcamp": "Bandcamp",
       "deezer": "Deezer",
-      "beatport": "Beatport"
+      "beatport": "Beatport",
+      "musicbrainz": "MusicBrainz"
     },
     "format": {
       "Vinyl": "Vinyle",
@@ -1348,6 +1351,8 @@
     "loadDeezerRelease": "Chargement de la release Deezer",
     "searchBeatport": "Recherche Beatport : {{query}}",
     "loadBeatportRelease": "Chargement de la release Beatport",
+    "searchMusicbrainz": "Recherche MusicBrainz : {{query}}",
+    "loadMusicbrainzRelease": "Chargement de la release MusicBrainz",
     "downloadCover": "Téléchargement de la pochette",
     "convert": "Conversion de {{track}}",
     "convertTagsChanged": "Tags : {{changed}} champs modifiés, {{kept}} intacts · {{fields}}",
