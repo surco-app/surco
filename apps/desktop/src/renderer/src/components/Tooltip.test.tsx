@@ -232,3 +232,62 @@ describe('Tooltip semantics', () => {
     }
   })
 })
+
+describe('Tooltip warm-up', () => {
+  const pointer = (el: HTMLElement, type: string): void => {
+    el.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
+  }
+
+  function renderPair() {
+    return render(
+      <>
+        <button type="button" data-testid="first">
+          One
+          <Tooltip label="First hint" />
+        </button>
+        <button type="button" data-testid="second">
+          Two
+          <Tooltip label="Second hint" />
+        </button>
+      </>,
+    )
+  }
+
+  it('skips the hover delay when the pointer moves straight on from a showing tooltip, so sweeping a toolbar reads every hint without waiting on each', () => {
+    vi.useFakeTimers()
+    try {
+      renderPair()
+      const first = screen.getByTestId('first')
+      const second = screen.getByTestId('second')
+      pointer(first, 'pointerenter')
+      act(() => vi.advanceTimersByTime(400))
+      expect(screen.getByRole('tooltip')).toHaveTextContent('First hint')
+      act(() => pointer(first, 'pointerleave'))
+      act(() => pointer(second, 'pointerenter'))
+      expect(screen.getByRole('tooltip')).toHaveTextContent('Second hint')
+      act(() => pointer(second, 'pointerleave'))
+      act(() => vi.advanceTimersByTime(1000))
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('waits out the hover delay again once the pointer has rested away from any tooltip, so a pass across the window never flashes one', () => {
+    vi.useFakeTimers()
+    try {
+      renderPair()
+      const first = screen.getByTestId('first')
+      const second = screen.getByTestId('second')
+      pointer(first, 'pointerenter')
+      act(() => vi.advanceTimersByTime(400))
+      act(() => pointer(first, 'pointerleave'))
+      act(() => vi.advanceTimersByTime(1000))
+      act(() => pointer(second, 'pointerenter'))
+      expect(screen.queryByRole('tooltip')).toBeNull()
+      act(() => vi.advanceTimersByTime(400))
+      expect(screen.getByRole('tooltip')).toHaveTextContent('Second hint')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // HelpModal's tree reads window.api.platform at render, so stub it before import.
@@ -46,5 +46,16 @@ describe('HelpModal platform entries', () => {
         expect(screen.getByTestId(`help-q-${id}`)).toBeInTheDocument()
       }
     })
+  })
+})
+
+describe('HelpModal answers', () => {
+  it('keeps the answer being closed in the tree while it folds, so switching questions collapses one and grows the other instead of jumping', () => {
+    render(<HelpModal onClose={() => {}} />)
+    expect(screen.getByTestId('help-a-token')).toBeVisible()
+    fireEvent.click(screen.getByTestId('help-q-quality'))
+    expect(screen.getByTestId('help-a-quality')).toBeInTheDocument()
+    expect(screen.getByTestId('help-a-token')).toBeInTheDocument()
+    expect(screen.getByTestId('help-q-token')).toHaveAttribute('aria-expanded', 'false')
   })
 })

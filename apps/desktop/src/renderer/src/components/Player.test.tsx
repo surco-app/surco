@@ -510,6 +510,43 @@ describe('LivePlayer', () => {
     expect(screen.getByTestId('player-time')).toHaveTextContent('1:05 / 12:34')
   })
 
+  it('goes inert while it slides out, so a click aimed at the list behind never lands on a closing control', () => {
+    const ref = createRef<HTMLAudioElement>()
+    ;(ref as { current: HTMLAudioElement }).current = audioEl()
+    renderUI(
+      <LivePlayer
+        track={track()}
+        audioRef={ref}
+        continuous={false}
+        onToggleContinuous={vi.fn()}
+        showWaveform={true}
+        onToggleWaveform={vi.fn()}
+        onReveal={vi.fn()}
+        onClose={vi.fn()}
+        leaving
+      />,
+    )
+    expect(screen.getByTestId('player')).toHaveAttribute('inert')
+  })
+
+  it('stays interactive while it is showing', () => {
+    const ref = createRef<HTMLAudioElement>()
+    ;(ref as { current: HTMLAudioElement }).current = audioEl()
+    renderUI(
+      <LivePlayer
+        track={track()}
+        audioRef={ref}
+        continuous={false}
+        onToggleContinuous={vi.fn()}
+        showWaveform={true}
+        onToggleWaveform={vi.fn()}
+        onReveal={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('player')).not.toHaveAttribute('inert')
+  })
+
   it('mirrors the slider onto the element volume when dragged', () => {
     const audio = audioEl()
     Object.defineProperty(audio, 'volume', { value: 1, writable: true })

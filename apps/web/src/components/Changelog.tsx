@@ -62,7 +62,7 @@ export default function Changelog() {
 
       <main id="main" className="relative mx-auto max-w-3xl px-6">
         <section className="pt-12 pb-4 sm:pt-16">
-          <Reveal>
+          <Reveal eager>
             <p className="font-mono text-xs tracking-wider text-blue uppercase">
               {t('changelog.kicker')}
             </p>

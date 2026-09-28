@@ -190,10 +190,10 @@ export function Select({
       // Full-width: fixed and body-portaled, sized to content (min the trigger width) and
       // capped to the room on the side it opens toward so a long tracklist scrolls.
       // Otherwise: absolute, right-aligned and at least the trigger width.
-      className={`animate-pop z-50 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)] ${
+      className={`animate-pop-flat z-50 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)] ${
         fullWidth
-          ? 'fixed max-w-[calc(100vw-1rem)] overflow-auto'
-          : 'absolute right-0 mt-1 min-w-full'
+          ? `fixed max-w-[calc(100vw-1rem)] overflow-auto ${pos?.bottom !== undefined ? 'origin-bottom-left' : 'origin-top-left'}`
+          : 'absolute right-0 mt-1 min-w-full origin-top-right'
       }`}
       style={
         fullWidth && pos

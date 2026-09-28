@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { isMacOS, isWindows } from '../lib/platform'
 import { ModalShell } from './ModalShell'
+import { SectionBody } from './SectionBody'
 
 interface Props {
   onClose: () => void
@@ -61,11 +62,14 @@ export function HelpModal({ onClose }: Props): React.JSX.Element {
                   }`}
                 />
               </button>
-              {isOpen && (
-                <p className="whitespace-pre-line pb-4 text-sm leading-relaxed text-fg-dim">
+              <SectionBody open={isOpen}>
+                <p
+                  data-testid={`help-a-${id}`}
+                  className="whitespace-pre-line pb-4 text-sm leading-relaxed text-fg-dim"
+                >
                   {tr(`help.items.${id}.a`)}
                 </p>
-              )}
+              </SectionBody>
             </div>
           )
         })}

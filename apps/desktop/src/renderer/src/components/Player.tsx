@@ -37,6 +37,7 @@ export function LivePlayer({
   onToggleWaveform,
   onReveal,
   onClose,
+  leaving = false,
 }: {
   track: TrackItem
   audioRef: React.RefObject<HTMLAudioElement | null>
@@ -46,6 +47,7 @@ export function LivePlayer({
   onToggleWaveform: () => void
   onReveal: () => void
   onClose: () => void
+  leaving?: boolean
 }): React.JSX.Element {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -148,6 +150,7 @@ export function LivePlayer({
       onToggleWaveform={onToggleWaveform}
       onReveal={onReveal}
       onClose={onClose}
+      leaving={leaving}
     />
   )
 }
@@ -168,6 +171,7 @@ interface PlayerProps {
   onToggleWaveform: () => void
   onReveal: () => void
   onClose: () => void
+  leaving?: boolean
 }
 
 // Floats over the bottom of the track column and slides up on open. A small
@@ -188,6 +192,7 @@ export function Player({
   onToggleWaveform,
   onReveal,
   onClose,
+  leaving = false,
 }: PlayerProps): React.JSX.Element {
   const { t } = useTranslation()
   const sectionRef = useRef<HTMLDivElement>(null)
@@ -226,7 +231,8 @@ export function Player({
       // The sidebar's own ground with a hairline over it, not a lighter card with a drop
       // shadow: the player is the foot of the library column, and the lifted slab was the
       // heaviest thing in it. The wave is the one part that needs to stand out, and does.
-      className="group/player relative shrink-0 animate-player-in overflow-hidden border-t border-[var(--color-line)] bg-[var(--color-ink)]"
+      inert={leaving}
+      className={`group/player relative shrink-0 ${leaving ? 'animate-player-out' : 'animate-player-in'} overflow-hidden border-t border-[var(--color-line)] bg-[var(--color-ink)]`}
     >
       {/* Dismissal belongs to the card, so it sits in the card's own top-right corner the
           way any closable panel does — not in the transport, where an exit sat one stray
