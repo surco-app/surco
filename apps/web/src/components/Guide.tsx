@@ -100,7 +100,7 @@ export default function Guide() {
         {/* pb smaller than pt: each section below brings its own py-12, so the
             index used to sit in about 150px of empty background. */}
         <section className="pt-12 pb-4 sm:pt-16">
-          <Reveal>
+          <Reveal eager>
             <p className="font-mono text-xs tracking-wider text-blue uppercase">
               {t('guide.kicker')}
             </p>
@@ -110,7 +110,7 @@ export default function Guide() {
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">{t('guide.lede')}</p>
           </Reveal>
 
-          <Reveal delay={120}>
+          <Reveal eager delay={120}>
             <nav className="mt-10 rounded-2xl border border-line bg-surface2/40 p-6">
               <p className="font-mono text-xs tracking-wider text-faint uppercase">
                 {t('guide.tocLabel')}
