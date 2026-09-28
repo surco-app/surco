@@ -19,6 +19,10 @@
       {
         "text": "Lo que escribes en la caja de búsqueda es lo que se busca: si buscas otra canción, las etiquetas de la pista seleccionada ya no desvían los resultados hacia su propio disco. El filtro de fuentes cuenta solo los resultados que ves, y una carátula que no carga deja el hueco vacío en vez de una imagen rota.",
         "in": "1.4.0"
+      },
+      {
+        "text": "Convertir en un NAS pistas con tildes, eñes o diéresis en el nombre (Tiësto, Señorita, Café…) ya no falla ni deja copias ocultas en la carpeta. Y si una conversión no puede terminar, tu archivo original se queda donde estaba, en vez de acabar en Originales.",
+        "in": "1.4.1"
       }
     ]
   },

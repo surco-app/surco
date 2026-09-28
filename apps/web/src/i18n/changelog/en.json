@@ -19,6 +19,10 @@
       {
         "text": "What you type in the search box is what gets searched: when you look for another song, the selected track's tags no longer pull the results toward its own release. The source filter counts only the results you can see, and a cover that fails to load leaves the slot empty instead of a broken image.",
         "in": "1.4.0"
+      },
+      {
+        "text": "Converting tracks on a NAS whose names carry accents, tildes or umlauts (Tiësto, Señorita, Café…) no longer fails or leaves hidden copies in the folder. And if a conversion can't finish, your original file stays where it was instead of ending up in Originals.",
+        "in": "1.4.1"
       }
     ]
   },
