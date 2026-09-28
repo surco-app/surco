@@ -390,6 +390,15 @@ describe('namesArtist', () => {
     expect(namesArtist(row('X - Something'), 'Mr. X & Friends')).toBe(false)
   })
 
+  // A two-letter act split off a collaboration is named by chance: "Housecream Feat. Jo'"
+  // accepted a rung of another Jo's releases in the library sweep. Credited alone, a short
+  // act is still the whole credit and must keep matching.
+  it('needs three letters for an act split off a collaboration, not for a whole credit', () => {
+    expect(namesArtist(row('Jo Smith - Feel It'), "Housecream Feat. Jo'")).toBe(false)
+    expect(namesArtist(row('Housecream - Feel It'), "Housecream Feat. Jo'")).toBe(true)
+    expect(namesArtist(row('Jo - Feel It'), 'Jo')).toBe(true)
+  })
+
   it('turns a library-sorted "Name, The" back around', () => {
     expect(namesArtist(row('The Brown Brothers - Happy Groove'), 'Brown Brothers, The')).toBe(true)
   })

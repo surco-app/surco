@@ -105,14 +105,17 @@ const SORTED_ARTICLE = /^(.+),\s*(the|los|las|el|la|les|le|die)$/i
 // a collaboration split on commas, "&", "+", "/", " x ", "vs", "aka", "pres."/"presents"
 // and "feat."/"ft."/"featuring" (the catalog often files a release under the lead act
 // alone). "and" does not split: too many acts carry it in their name. A single letter, a
-// bare "DJ" or a lone article is no act, since nearly any row would name it.
+// bare "DJ" or a lone article is no act, since nearly any row would name it; an act split
+// off a collaboration needs three letters, since "Housecream Feat. Jo'" accepted another
+// Jo's releases in the library sweep, while a short act credited alone is the whole credit.
 export function actsOf(artist: string): string[] {
+  const letters = (a: string): number => a.replace(/[^\p{L}\p{N}]/gu, '').length
+  const isAct = (a: string, min: number): boolean =>
+    letters(a) >= min && !TOO_GENERIC.test(a.trim())
   const sorted = artist.match(SORTED_ARTICLE)
   const whole = [artist, dropDjPrefix(artist), ...(sorted ? [`${sorted[2]} ${sorted[1]}`] : [])]
   const split = artist.split(ACT_SEPARATOR).map((a) => dropDjPrefix(a.trim()))
-  return [...new Set([...whole, ...split])].filter(
-    (a) => a.replace(/[^\p{L}\p{N}]/gu, '').length >= 2 && !TOO_GENERIC.test(a.trim()),
-  )
+  return [...new Set([...whole.filter((a) => isAct(a, 2)), ...split.filter((a) => isAct(a, 3))])]
 }
 
 // An act spelled apart or together ("Pro-Active" and "Proactive", "D Sigual" and
