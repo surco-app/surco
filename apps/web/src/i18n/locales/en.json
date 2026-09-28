@@ -104,7 +104,7 @@
         "items": [
           {
             "t": "Discogs, Bandcamp, Deezer, Beatport, MusicBrainz",
-            "d": "Artist, album, year, BPM and key. Label and catalogue number come from Discogs and Beatport, and Beatport adds the mix and the ISRC."
+            "d": "Artist, album, year, BPM and key. Label and catalogue number come from Discogs, Beatport and MusicBrainz, and Beatport adds the mix and the ISRC."
           },
           {
             "t": "Matches a whole release",

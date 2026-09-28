@@ -104,7 +104,7 @@
         "items": [
           {
             "t": "Discogs, Bandcamp, Deezer, Beatport y MusicBrainz",
-            "d": "Artista, álbum, año, BPM y tono. El sello y el catálogo vienen de Discogs y Beatport, y Beatport añade el mix y el ISRC."
+            "d": "Artista, álbum, año, BPM y tono. El sello y el catálogo vienen de Discogs, Beatport y MusicBrainz, y Beatport añade el mix y el ISRC."
           },
           {
             "t": "Empareja el disco entero",
