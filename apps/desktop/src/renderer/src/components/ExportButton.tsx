@@ -38,6 +38,9 @@ interface ExportButtonProps {
   // A short form of that reason shown as the button's own text while it is blocked, so the
   // footer needs no second line to say it. The action stays in the button's name.
   blockedLabel?: string
+  // A press on the blocked button: the editor answers it by taking the user to the field
+  // the face names.
+  onBlockedPress?: () => void
   // True when the export writes over the original (the source's own format, or overwrite
   // mode) and renames it rather than writing a separate copy.
   inPlace: boolean
@@ -90,6 +93,7 @@ export function ExportButton({
   incomplete,
   incompleteReason,
   blockedLabel,
+  onBlockedPress,
   inPlace,
   tagsOnly = false,
   count,
@@ -191,6 +195,15 @@ export function ExportButton({
     ? tr(`trackList.stage.${liveStage}`, { format: formatLabel })
     : tr(labelSpec.key, labelSpec.options)
   const shownBlocked = softBlocked && blockedLabel ? blockedLabel : undefined
+  // The face keeps the last blocking text after it clears, so it can roll out of view
+  // instead of vanishing the instant the field is filled.
+  const [lastBlocked, setLastBlocked] = useState(blockedLabel)
+  if (blockedLabel && blockedLabel !== lastBlocked) setLastBlocked(blockedLabel)
+  const [shaking, setShaking] = useState(false)
+  // Only the prominent idle button swaps faces; the quiet re-export and the progress bar
+  // keep their own looks.
+  const swapsFace = !quiet && !liveStage
+  const faceBlocked = swapsFace && !!shownBlocked
   // The fill is decorative, and a button flattens any role nested in it, so how far the
   // export has come is spoken as part of the button's name instead of a progressbar.
   const progressText = liveStage
@@ -212,22 +225,31 @@ export function ExportButton({
     // pointer-events-none while blocked and this wrapper carries the hover — letting the
     // "why is this disabled" tooltip below appear over the greyed-out button.
     <div className={`flex items-center gap-3 ${quiet ? 'flex-1' : ''}`}>
-      {shownBlocked && (
-        <span
-          data-testid="process-blocked"
-          className="flex shrink-0 items-center gap-1.5 text-xs text-fg-dim"
-        >
-          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[var(--color-warn)]" />
-          {shownBlocked}
-        </span>
-      )}
-      <div data-testid="process-btn-wrap" ref={ref} className="group relative flex flex-1">
+      <div
+        data-testid="process-btn-wrap"
+        ref={ref}
+        data-blocked={faceBlocked || undefined}
+        onAnimationEnd={(e) => {
+          if (e.animationName === 'blocked-shake') setShaking(false)
+        }}
+        className={`group relative flex flex-1 ${swapsFace ? 'process-wrap' : ''} ${shaking ? 'animate-blocked-shake' : ''}`}
+      >
         <button
           type="button"
           data-testid="process-btn"
           // While converting, a click cancels (when cancellable) rather than firing a second
-          // convert; the same button is the progress bar and its own stop control.
-          onClick={cancellable ? onCancel : softBlocked ? undefined : () => onProcess(outputFormat)}
+          // convert; the same button is the progress bar and its own stop control. Blocked,
+          // a click shakes the button once and hands the press to the editor.
+          onClick={
+            cancellable
+              ? onCancel
+              : softBlocked
+                ? () => {
+                    setShaking(true)
+                    onBlockedPress?.()
+                  }
+                : () => onProcess(outputFormat)
+          }
           // Cancellable keeps the button live during the convert; a non-cancellable processing
           // state still disables it outright, and missing tags only mark it aria-disabled.
           disabled={processing && !cancellable}
@@ -238,7 +260,9 @@ export function ExportButton({
           aria-label={
             cancellable
               ? tr('export.cancelWhile', { stage: `${label} ${progressText}`.trim() })
-              : undefined
+              : faceBlocked
+                ? `${shownBlocked} · ${label}`
+                : undefined
           }
           className={
             quiet
@@ -247,9 +271,12 @@ export function ExportButton({
                 ? // The dimmed track + accent fill replace the usual disabled fade: the
                   // button reads as a progress bar, not as a greyed-out control.
                   'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 py-2.5 text-sm font-medium text-[var(--color-on-accent)] disabled:pointer-events-none'
-                : 'press flex-1 rounded-l-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50'
+                : `press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-panel-2)] py-2.5 text-sm font-medium disabled:pointer-events-none disabled:opacity-50 ${faceBlocked ? 'text-warn' : 'text-[var(--color-on-accent)] aria-disabled:pointer-events-none aria-disabled:opacity-50'}`
           }
         >
+          {swapsFace && (
+            <span aria-hidden="true" data-on={!faceBlocked || undefined} className="process-fill" />
+          )}
           {liveStage && (
             <span
               data-testid="process-progress"
@@ -261,11 +288,29 @@ export function ExportButton({
           {/* Converting: the stage names progress by default, and a hover or keyboard focus
             swaps in "Cancel" so the press's effect is legible before it's made. Without a
             cancel handler the stage label just stays. */}
-          <span
-            className={`relative ${cancellable ? 'group-hover:hidden group-focus-within:hidden' : ''}`}
-          >
-            {label}
-          </span>
+          {swapsFace ? (
+            <span className="process-face">
+              {lastBlocked && (
+                <span
+                  data-testid={faceBlocked ? 'process-blocked-face' : undefined}
+                  aria-hidden={!faceBlocked || undefined}
+                  className="process-face-blocked"
+                >
+                  <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-warn" />
+                  {lastBlocked}
+                </span>
+              )}
+              <span aria-hidden={faceBlocked || undefined} className="process-face-action">
+                {label}
+              </span>
+            </span>
+          ) : (
+            <span
+              className={`relative ${cancellable ? 'group-hover:hidden group-focus-within:hidden' : ''}`}
+            >
+              {label}
+            </span>
+          )}
           {progressText && <span className="sr-only">{progressText}</span>}
           {cancellable && (
             <span className="relative hidden group-hover:inline group-focus-within:inline">
@@ -289,12 +334,15 @@ export function ExportButton({
                 ? // Matches the body's progress-bar look, or the split button would read
                   // as half-faded while the fill keeps the body vivid.
                   'press flex w-10 items-center justify-center rounded-r-lg border-l border-on-scrim/20 bg-[var(--color-accent)]/40 text-[var(--color-on-accent)] disabled:pointer-events-none'
-                : 'press flex w-10 items-center justify-center rounded-r-lg border-l border-on-scrim/20 bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-50'
+                : `press relative flex w-10 items-center justify-center overflow-hidden rounded-r-lg border-l border-on-scrim/20 bg-[var(--color-panel-2)] disabled:pointer-events-none ${faceBlocked ? 'text-fg-faint' : 'text-[var(--color-on-accent)] disabled:opacity-50'}`
           }
         >
+          {swapsFace && (
+            <span aria-hidden="true" data-on={!faceBlocked || undefined} className="process-fill" />
+          )}
           <ChevronDown
             aria-hidden="true"
-            className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
+            className={`relative h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
           />
         </button>
         {incomplete && incompleteReason && <Tooltip label={incompleteReason} />}

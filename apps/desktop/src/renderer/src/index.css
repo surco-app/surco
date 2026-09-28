@@ -536,6 +536,121 @@ textarea {
   }
 }
 
+/* The convert button's two faces. Blocked, it names the missing field in amber on a
+   neutral ground; once the field is filled the accent sweeps in from the left and the
+   action rolls down into place. The sweep is asymmetric: it arrives unhurried and
+   leaves at once, since losing the ready state needs no ceremony. The two labels share
+   one grid cell and trade places with a short travel and a light blur, so they read as
+   one label changing rather than two crossing. */
+.process-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 0.5rem;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-warn) 35%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.process-wrap[data-blocked]::after {
+  opacity: 1;
+}
+
+.process-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--color-accent);
+  clip-path: inset(0 100% 0 0);
+  transition:
+    clip-path 0.18s ease-out,
+    background-color 0.15s ease;
+}
+.process-fill[data-on] {
+  clip-path: inset(0);
+  transition:
+    clip-path 0.48s cubic-bezier(0.25, 1, 0.5, 1),
+    background-color 0.15s ease;
+}
+button:hover > .process-fill {
+  background: var(--color-accent-hover);
+}
+
+.process-face {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.process-face > * {
+  grid-area: 1 / 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition:
+    transform 0.3s cubic-bezier(0.25, 1, 0.5, 1),
+    opacity 0.2s ease,
+    filter 0.2s ease;
+}
+.process-wrap:not([data-blocked]) .process-face-blocked,
+.process-wrap[data-blocked] .process-face-action {
+  opacity: 0;
+  filter: blur(2px);
+}
+.process-wrap:not([data-blocked]) .process-face-blocked {
+  transform: translateY(25px);
+}
+.process-wrap[data-blocked] .process-face-action {
+  transform: translateY(-25px);
+}
+
+/* A press on the blocked button: a sideways shake whose swings shrink to nothing, a
+   "not yet" that doesn't alarm. */
+@keyframes blocked-shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  14% {
+    transform: translateX(-6px);
+  }
+  28% {
+    transform: translateX(5px);
+  }
+  42% {
+    transform: translateX(-4px);
+  }
+  57% {
+    transform: translateX(3px);
+  }
+  71% {
+    transform: translateX(-2px);
+  }
+  85% {
+    transform: translateX(1px);
+  }
+}
+
+.animate-blocked-shake {
+  animation: blocked-shake 0.42s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .process-face > * {
+    transition: opacity 0.2s ease;
+  }
+  .process-wrap:not([data-blocked]) .process-face-blocked,
+  .process-wrap[data-blocked] .process-face-action {
+    transform: none;
+    filter: none;
+  }
+  .process-fill,
+  .process-fill[data-on] {
+    transition: background-color 0.15s ease;
+  }
+  .animate-blocked-shake {
+    animation: none;
+  }
+}
+
 @keyframes top-progress {
   0% {
     transform: translateX(-100%);

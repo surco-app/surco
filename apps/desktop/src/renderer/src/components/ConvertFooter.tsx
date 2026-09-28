@@ -31,6 +31,7 @@ interface ConvertFooterProps {
   // The same block said short enough for the main button's face (a count past two missing
   // fields), since the full reason can list every required field.
   incompleteSummary?: string
+  onBlockedPress?: () => void
   willEditInPlace: boolean
   tagsOnly: boolean
   addToAppleMusic: boolean
@@ -86,6 +87,7 @@ export function ConvertFooter({
   incomplete,
   incompleteReason,
   incompleteSummary,
+  onBlockedPress,
   willEditInPlace,
   tagsOnly,
   addToAppleMusic,
@@ -320,6 +322,7 @@ export function ConvertFooter({
             incomplete={incomplete}
             incompleteReason={incompleteReason}
             blockedLabel={incompleteSummary}
+            onBlockedPress={onBlockedPress}
             inPlace={!isMulti && willEditInPlace}
             tagsOnly={tagsOnly}
             destination={destination}

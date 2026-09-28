@@ -2349,6 +2349,17 @@ describe('Editor required-field gate', () => {
     expect(screen.getByTestId('process-format-toggle')).toBeDisabled()
   })
 
+  // The blocked button names the gap on its face, so pressing it is the obvious next
+  // move: it takes the user to that field instead of doing nothing.
+  it('takes a press on the blocked convert to the first empty required field', () => {
+    renderEditor({ id: 'a', meta: { artist: '' } }, 'wav', {
+      requiredFields: ['artist'],
+      visibleFields: ['artist'],
+    })
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(screen.getByTestId('field-artist')).toHaveFocus()
+  })
+
   it('enables the convert button once every required field has a value', () => {
     renderEditor({ id: 'a', meta: { artist: 'Alex Ponce' } }, 'wav', {
       requiredFields: ['artist'],

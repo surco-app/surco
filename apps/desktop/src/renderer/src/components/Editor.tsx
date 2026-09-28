@@ -1362,6 +1362,9 @@ export const Editor = memo(function Editor({
                 )
               : incompleteReason
           }
+          onBlockedPress={() =>
+            document.querySelector<HTMLElement>(`[data-testid="field-${missing[0]}"]`)?.focus()
+          }
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}
           addToAppleMusic={picked.addToAppleMusic}
