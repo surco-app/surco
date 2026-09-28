@@ -109,8 +109,8 @@
   "empty": {
     "title": "Dépose tes morceaux ici",
     "addTracks": "Ajouter des morceaux",
-    "subtitle": "Convertit tes morceaux en AIFF, WAV, FLAC, ALAC ou MP3, les tague depuis Discogs, Bandcamp, Deezer et Beatport, et les envoie dans Apple Music ou Engine DJ.",
-    "subtitleNoMusic": "Convertit tes morceaux en AIFF, WAV, FLAC, ALAC ou MP3, les tague depuis Discogs, Bandcamp, Deezer et Beatport, et les envoie dans Engine DJ.",
+    "subtitle": "Convertit tes morceaux en AIFF, WAV, FLAC, ALAC ou MP3, les tague depuis Discogs, Bandcamp, Deezer, Beatport et MusicBrainz, et les envoie dans Apple Music ou Engine DJ.",
+    "subtitleNoMusic": "Convertit tes morceaux en AIFF, WAV, FLAC, ALAC ou MP3, les tague depuis Discogs, Bandcamp, Deezer, Beatport et MusicBrainz, et les envoie dans Engine DJ.",
     "or": "ou",
     "importApplePlaylist": "Importer depuis Apple Music"
   },
@@ -1072,7 +1072,7 @@
     "trimWhitespace": "Supprimer les espaces superflus",
     "zeroPadTrack": "N° de piste avec zéro devant (03)",
     "fullReleaseDate": "Année avec date complète",
-    "fullReleaseDateHint": "Affiche et enregistre 2020-12-01 au lieu de 2020 quand le fichier ou Discogs, Bandcamp, Deezer ou Beatport a la date entière.",
+    "fullReleaseDateHint": "Affiche et enregistre 2020-12-01 au lieu de 2020 quand le fichier ou Discogs, Bandcamp, Deezer, Beatport ou MusicBrainz a la date entière.",
     "asciiFileNames": "Noms de fichier sans accents",
     "asciiFileNamesHint": "Écrit « Royksopp » au lieu de « Röyksopp ». Pratique pour chercher sur un NAS et pour les disques qui gèrent mal les accents.",
     "coverMaxSize": "Taille maximale de la pochette",
@@ -1200,7 +1200,7 @@
     "audioBody": "Surco n'affiche que les sections de l'éditeur dont ton flux a besoin. Choisis ce qui te convient — modifiable à tout moment dans les Réglages.",
     "intent": {
       "metadata": "Corriger les métadonnées",
-      "metadataBody": "Tags, pochette et l'appariement avec Discogs, Bandcamp, Deezer et Beatport. Toujours actif : c'est à ça que sert Surco.",
+      "metadataBody": "Tags, pochette et l'appariement avec Discogs, Bandcamp, Deezer, Beatport et MusicBrainz. Toujours actif : c'est à ça que sert Surco.",
       "restore": "Restaurer les rips de vinyle",
       "restoreBody": "Couper les silences et réparer les clics et craquements des enregistrements de vinyle.",
       "level": "Égaliser le loudness",
@@ -1244,7 +1244,7 @@
       },
       "windows": {
         "q": "Quelque chose change-t-il sous Windows ?",
-        "a": "Presque tout fonctionne exactement pareil : la conversion, le tagging, la recherche sur Discogs, Bandcamp, Deezer et Beatport, l'analyse de qualité et l'export vers rekordbox, Traktor, Serato et Engine DJ.\n\nLa seule chose qui n'existe pas sous Windows, c'est l'intégration Apple Music. Surco pilote l'app Musique d'Apple via AppleScript, un pont d'automatisation qui n'existe que sur macOS — l'app Apple Music pour Windows n'offre rien d'équivalent —, donc la destination, les boutons et le badge de bibliothèque Apple Music n'apparaissent tout simplement pas.\n\nUne particularité à connaître sur les WAV : Surco enregistre les tags des WAV dans le chunk ID3 standard, que les apps de DJ et les éditeurs de tags comme Mp3tag lisent sans problème, mais que l'Explorateur Windows ne peut pas afficher — un WAV converti peut sembler sans tags dans un dossier alors qu'ils sont tous là. Avec le MP3 ou le FLAC, l'Explorateur les affiche normalement."
+        "a": "Presque tout fonctionne exactement pareil : la conversion, le tagging, la recherche sur Discogs, Bandcamp, Deezer, Beatport et MusicBrainz, l'analyse de qualité et l'export vers rekordbox, Traktor, Serato et Engine DJ.\n\nLa seule chose qui n'existe pas sous Windows, c'est l'intégration Apple Music. Surco pilote l'app Musique d'Apple via AppleScript, un pont d'automatisation qui n'existe que sur macOS — l'app Apple Music pour Windows n'offre rien d'équivalent —, donc la destination, les boutons et le badge de bibliothèque Apple Music n'apparaissent tout simplement pas.\n\nUne particularité à connaître sur les WAV : Surco enregistre les tags des WAV dans le chunk ID3 standard, que les apps de DJ et les éditeurs de tags comme Mp3tag lisent sans problème, mais que l'Explorateur Windows ne peut pas afficher — un WAV converti peut sembler sans tags dans un dossier alors qu'ils sont tous là. Avec le MP3 ou le FLAC, l'Explorateur les affiche normalement."
       }
     }
   },

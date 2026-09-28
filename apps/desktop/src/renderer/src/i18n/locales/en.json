@@ -109,8 +109,8 @@
   "empty": {
     "title": "Drop your tracks here",
     "addTracks": "Add tracks",
-    "subtitle": "Converts your tracks to AIFF, WAV, FLAC, ALAC or MP3, tags them from Discogs, Bandcamp, Deezer and Beatport, and sends them to Apple Music or Engine DJ.",
-    "subtitleNoMusic": "Converts your tracks to AIFF, WAV, FLAC, ALAC or MP3, tags them from Discogs, Bandcamp, Deezer and Beatport, and sends them to Engine DJ.",
+    "subtitle": "Converts your tracks to AIFF, WAV, FLAC, ALAC or MP3, tags them from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz, and sends them to Apple Music or Engine DJ.",
+    "subtitleNoMusic": "Converts your tracks to AIFF, WAV, FLAC, ALAC or MP3, tags them from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz, and sends them to Engine DJ.",
     "or": "or",
     "importApplePlaylist": "Import from Apple Music"
   },
@@ -1072,7 +1072,7 @@
     "trimWhitespace": "Trim extra whitespace",
     "zeroPadTrack": "Zero-pad track number (03)",
     "fullReleaseDate": "Year with full date",
-    "fullReleaseDateHint": "Shows and saves 2020-12-01 instead of 2020 when the file or Discogs, Bandcamp, Deezer or Beatport has the whole date.",
+    "fullReleaseDateHint": "Shows and saves 2020-12-01 instead of 2020 when the file or Discogs, Bandcamp, Deezer, Beatport or MusicBrainz has the whole date.",
     "asciiFileNames": "File names without accents",
     "asciiFileNamesHint": "Writes “Royksopp” instead of “Röyksopp”. Handy for searching a NAS and for drives that trip over accented names.",
     "coverMaxSize": "Maximum artwork size",
@@ -1200,7 +1200,7 @@
     "audioBody": "Surco shows only the editor sections your workflow needs. Pick what fits — you can change it anytime in Settings.",
     "intent": {
       "metadata": "Get the metadata right",
-      "metadataBody": "Tags, artwork and matching against Discogs, Bandcamp, Deezer and Beatport. Always on: it's what Surco is for.",
+      "metadataBody": "Tags, artwork and matching against Discogs, Bandcamp, Deezer, Beatport and MusicBrainz. Always on: it's what Surco is for.",
       "restore": "Restore vinyl rips",
       "restoreBody": "Trim dead air and repair clicks and pops on recordings from vinyl.",
       "level": "Level the loudness",
@@ -1244,7 +1244,7 @@
       },
       "windows": {
         "q": "Is anything different on Windows?",
-        "a": "Almost everything works exactly the same: conversion, tagging, Discogs, Bandcamp, Deezer and Beatport search, quality analysis, and the rekordbox, Traktor, Serato and Engine DJ exports.\n\nThe one piece that doesn't exist on Windows is the Apple Music integration. Surco drives Apple's Music app through AppleScript, an automation bridge that only exists on macOS — the Apple Music app for Windows offers nothing equivalent — so the Apple Music destination, buttons and library badge simply don't appear.\n\nOne WAV quirk worth knowing: Surco stores WAV tags in the standard ID3 chunk, which DJ apps and tag editors like Mp3tag read fine, but Windows Explorer can't display — a converted WAV can look untagged in a folder even though every tag is there. With MP3 or FLAC, Explorer shows them normally."
+        "a": "Almost everything works exactly the same: conversion, tagging, Discogs, Bandcamp, Deezer, Beatport and MusicBrainz search, quality analysis, and the rekordbox, Traktor, Serato and Engine DJ exports.\n\nThe one piece that doesn't exist on Windows is the Apple Music integration. Surco drives Apple's Music app through AppleScript, an automation bridge that only exists on macOS — the Apple Music app for Windows offers nothing equivalent — so the Apple Music destination, buttons and library badge simply don't appear.\n\nOne WAV quirk worth knowing: Surco stores WAV tags in the standard ID3 chunk, which DJ apps and tag editors like Mp3tag read fine, but Windows Explorer can't display — a converted WAV can look untagged in a folder even though every tag is there. With MP3 or FLAC, Explorer shows them normally."
       }
     }
   },

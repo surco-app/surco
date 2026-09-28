@@ -109,8 +109,8 @@
   "empty": {
     "title": "Zieh deine Tracks hierher",
     "addTracks": "Tracks hinzufügen",
-    "subtitle": "Konvertiert deine Tracks in AIFF, WAV, FLAC, ALAC oder MP3, taggt sie mit Discogs, Bandcamp, Deezer und Beatport und schickt sie an Apple Music oder Engine DJ.",
-    "subtitleNoMusic": "Konvertiert deine Tracks in AIFF, WAV, FLAC, ALAC oder MP3, taggt sie mit Discogs, Bandcamp, Deezer und Beatport und schickt sie an Engine DJ.",
+    "subtitle": "Konvertiert deine Tracks in AIFF, WAV, FLAC, ALAC oder MP3, taggt sie mit Discogs, Bandcamp, Deezer, Beatport und MusicBrainz und schickt sie an Apple Music oder Engine DJ.",
+    "subtitleNoMusic": "Konvertiert deine Tracks in AIFF, WAV, FLAC, ALAC oder MP3, taggt sie mit Discogs, Bandcamp, Deezer, Beatport und MusicBrainz und schickt sie an Engine DJ.",
     "or": "oder",
     "importApplePlaylist": "Aus Apple Music importieren"
   },
@@ -1072,7 +1072,7 @@
     "trimWhitespace": "Überflüssige Leerzeichen entfernen",
     "zeroPadTrack": "Track-Nummer mit führender Null (03)",
     "fullReleaseDate": "Jahr mit vollständigem Datum",
-    "fullReleaseDateHint": "Zeigt und speichert 2020-12-01 statt 2020, wenn die Datei oder Discogs, Bandcamp, Deezer oder Beatport das ganze Datum hat.",
+    "fullReleaseDateHint": "Zeigt und speichert 2020-12-01 statt 2020, wenn die Datei oder Discogs, Bandcamp, Deezer, Beatport oder MusicBrainz das ganze Datum hat.",
     "asciiFileNames": "Dateinamen ohne Akzente",
     "asciiFileNamesHint": "Schreibt „Royksopp“ statt „Röyksopp“. Praktisch für die Suche auf einem NAS und für Laufwerke, die mit Akzenten Probleme haben.",
     "coverMaxSize": "Maximale Covergröße",
@@ -1200,7 +1200,7 @@
     "audioBody": "Surco zeigt nur die Editor-Bereiche, die dein Workflow braucht. Wähl, was passt — du kannst es jederzeit in den Einstellungen ändern.",
     "intent": {
       "metadata": "Metadaten richtig setzen",
-      "metadataBody": "Tags, Cover und der Abgleich mit Discogs, Bandcamp, Deezer und Beatport. Immer an: Dafür ist Surco da.",
+      "metadataBody": "Tags, Cover und der Abgleich mit Discogs, Bandcamp, Deezer, Beatport und MusicBrainz. Immer an: Dafür ist Surco da.",
       "restore": "Vinyl-Rips restaurieren",
       "restoreBody": "Stille abschneiden und Knackser und Klicks in Vinyl-Aufnahmen reparieren.",
       "level": "Lautheit angleichen",
@@ -1244,7 +1244,7 @@
       },
       "windows": {
         "q": "Gibt es Unterschiede unter Windows?",
-        "a": "Fast alles funktioniert genau gleich: Konvertierung, Tagging, die Suche auf Discogs, Bandcamp, Deezer und Beatport, die Qualitätsanalyse und der Export zu rekordbox, Traktor, Serato und Engine DJ.\n\nDas Einzige, was es unter Windows nicht gibt, ist die Apple Music-Integration. Surco steuert Apples Musik-App über AppleScript, eine Automatisierungsbrücke, die nur unter macOS existiert — die Apple Music-App für Windows bietet nichts Vergleichbares —, deshalb erscheinen das Apple Music-Ziel, die Buttons und das Bibliotheks-Abzeichen einfach nicht.\n\nEine WAV-Eigenheit, die man kennen sollte: Surco speichert WAV-Tags im standardmäßigen ID3-Chunk, den DJ-Apps und Tag-Editoren wie Mp3tag problemlos lesen, den der Windows-Explorer aber nicht anzeigen kann — eine konvertierte WAV kann in einem Ordner ungetaggt wirken, obwohl alle Tags da sind. Bei MP3 oder FLAC zeigt der Explorer sie ganz normal an."
+        "a": "Fast alles funktioniert genau gleich: Konvertierung, Tagging, die Suche auf Discogs, Bandcamp, Deezer, Beatport und MusicBrainz, die Qualitätsanalyse und der Export zu rekordbox, Traktor, Serato und Engine DJ.\n\nDas Einzige, was es unter Windows nicht gibt, ist die Apple Music-Integration. Surco steuert Apples Musik-App über AppleScript, eine Automatisierungsbrücke, die nur unter macOS existiert — die Apple Music-App für Windows bietet nichts Vergleichbares —, deshalb erscheinen das Apple Music-Ziel, die Buttons und das Bibliotheks-Abzeichen einfach nicht.\n\nEine WAV-Eigenheit, die man kennen sollte: Surco speichert WAV-Tags im standardmäßigen ID3-Chunk, den DJ-Apps und Tag-Editoren wie Mp3tag problemlos lesen, den der Windows-Explorer aber nicht anzeigen kann — eine konvertierte WAV kann in einem Ordner ungetaggt wirken, obwohl alle Tags da sind. Bei MP3 oder FLAC zeigt der Explorer sie ganz normal an."
       }
     }
   },
