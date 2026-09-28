@@ -91,8 +91,9 @@ describe('useDiscogsBrowser', () => {
   })
 
   // A broad query can return dozens of rows — a wall of noise. The displayed list is capped,
-  // but the per-provider counts still report the true total so the source chips stay honest.
-  it('caps the displayed list while the provider counts keep the true total', async () => {
+  // and the source filter counts what the list shows: "MusicBrainz (51)" over five rows
+  // promised results the user could never reach (reported 28/09 with a cap of 5).
+  it('caps the displayed list and counts only the rows it shows', async () => {
     const many = Array.from({ length: 40 }, (_, i) => ({
       provider: 'discogs' as const,
       id: i + 1,
@@ -105,7 +106,7 @@ describe('useDiscogsBrowser', () => {
     act(() => result.current.doSearch())
     await waitFor(() => expect(result.current.results.length).toBeGreaterThan(0))
     expect(result.current.results).toHaveLength(25)
-    expect(result.current.providerCounts).toEqual([{ provider: 'discogs', count: 40 }])
+    expect(result.current.providerCounts).toEqual([{ provider: 'discogs', count: 25 }])
   })
 
   // The cap must apply per provider, not to the merged list: Discogs is ranked ahead of
@@ -157,7 +158,7 @@ describe('useDiscogsBrowser', () => {
     act(() => result.current.doSearch())
     await waitFor(() => expect(result.current.results.length).toBeGreaterThan(0))
     expect(result.current.results).toHaveLength(10)
-    expect(result.current.providerCounts).toEqual([{ provider: 'discogs', count: 40 }])
+    expect(result.current.providerCounts).toEqual([{ provider: 'discogs', count: 10 }])
   })
 
   // The source filter narrows the merged list to one catalog without re-searching, and
