@@ -29,12 +29,14 @@ function song(name: string, bytes = 100): string {
 // the write path — four in one week — costs the user the file rather than a redo. The
 // trash keeps what was replaced for a while, so a bad write is a restore, not a loss.
 describe('stashing a replaced original', () => {
-  it('moves the file out of the way and records where it came from', async () => {
+  // The conversion's rename is what replaces it. Until that lands the source is the
+  // user's only copy, and a NAS where the rename failed could not take a moved one back.
+  it('copies the file and leaves the original on its path for the rename to replace', async () => {
     const original = song('Track.aiff')
     const entry = await trash.stash(original, 'replaced', join(music, 'Track.aiff'))
     expect(entry).not.toBeNull()
-    expect(existsSync(original)).toBe(false)
-    expect(existsSync(entry?.storedPath as string)).toBe(true)
+    expect(readFileSync(original).length).toBe(100)
+    expect(readFileSync(entry?.storedPath as string).length).toBe(100)
     expect(entry).toMatchObject({
       name: 'Track.aiff',
       originalPath: original,
@@ -61,7 +63,7 @@ describe('stashing a replaced original', () => {
 describe('restoring', () => {
   it('puts the file back where it was', async () => {
     const original = song('Track.aiff')
-    const entry = await trash.stash(original, 'replaced')
+    const entry = await trash.stash(original, 'deleted')
     const result = await trash.restore(entry?.id as string)
     expect(result.restoredTo).toBe(original)
     expect(readFileSync(original).length).toBe(100)

@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -7,16 +7,18 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
+const destinationAtRename: boolean[] = []
 vi.mock('./renameRetry', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./renameRetry')>()),
-  renameWithRetry: async () => {
+  renameWithRetry: async (_from: string, to: string) => {
+    destinationAtRename.push(existsSync(to))
     throw Object.assign(new Error('Unknown system error -83'), { code: 'Unknown system error -83' })
   },
 }))
 
 import type { TrackMetadata } from '../shared/types'
 import { convertAudio } from './ffmpeg'
-import { configureOriginalKeeper, configureOriginalRestorer } from './originalKeeper'
+import { configureBackupDiscarder, configureOriginalKeeper } from './originalKeeper'
 import { createSurcoTrash } from './surcoTrash'
 
 const FF = ffmpegStatic as unknown as string
@@ -60,11 +62,11 @@ function encode(name: string): string {
 
 beforeAll(() => {
   configureOriginalKeeper((path, reason, outputPath) => trash.stash(path, reason, outputPath))
-  configureOriginalRestorer((entry) => trash.restore(entry.id).then(() => {}))
+  configureBackupDiscarder((entry) => trash.remove(entry.id))
 })
 afterAll(() => {
   configureOriginalKeeper(null)
-  configureOriginalRestorer(null)
+  configureBackupDiscarder(null)
 })
 
 // Reported from an external disk: the final rename of a rewrite failed (-83, later EEXIST)
@@ -80,5 +82,17 @@ describe('a rewrite whose final rename fails', () => {
 
     expect(readFileSync(src).equals(originalBytes)).toBe(true)
     expect((await trash.list()).find((e) => e.originalPath === src)).toBeUndefined()
+  })
+
+  // On an SMB NAS the way back failed too: stat still saw a file on the source's path,
+  // the copy out of it said ENOENT, and the original stayed stranded in Originals. A
+  // backup that never moves the source needs no way back.
+  it('never takes the original off its path before the rename lands', async () => {
+    const src = encode('Marko Nastić - On The Right Track 2002.mp3')
+    destinationAtRename.length = 0
+
+    await expect(convertAudio(src, src, 'mp3', meta)).rejects.toThrow('-83')
+
+    expect(destinationAtRename).toEqual([true])
   })
 })

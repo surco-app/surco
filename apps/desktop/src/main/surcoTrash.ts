@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { constants, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { copyFile, mkdir, rename, stat, statfs, unlink } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { TRASH_MAX_BYTES, TRASH_MIN_FREE_BYTES, TRASH_RETENTION_DAYS } from '../shared/trash'
@@ -139,7 +139,12 @@ export function createSurcoTrash(
     await mkdir(items, { recursive: true })
     const id = randomUUID()
     const storedPath = join(items, `${id}-${basename(path)}`)
-    await move(path, storedPath)
+    // A replaced original stays on its path: the conversion's rename lands over it, and
+    // until then it is the user's only copy. Moving it out first meant a rename that
+    // failed needed a way back, and on an SMB NAS that way back failed too. A clone
+    // where the volume can make one, so a local disk pays nothing for the copy.
+    if (reason === 'replaced') await copyFile(path, storedPath, constants.COPYFILE_FICLONE)
+    else await move(path, storedPath)
     const entry: TrashEntry = {
       id,
       name: basename(path),
