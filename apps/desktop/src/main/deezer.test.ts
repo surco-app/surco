@@ -189,6 +189,85 @@ describe('search', () => {
     expect(results).toHaveLength(1)
     expect(results[0].id).toBe(10)
   })
+  // The album-first setting reaches Deezer as an album hint: "artist album" leads so the
+  // release the tags name is found before the track name's homonyms.
+  it('searches artist and album first when the hints carry an album', async () => {
+    const fetchMock = mockFetch([{ data: [] }])
+    await search('moby porcelain deezer', 'high', {
+      artist: 'Moby',
+      title: 'Porcelain',
+      album: 'Play Deezer',
+    })
+    const first = new URL(fetchMock.mock.calls[0][0] as string)
+    expect(first.searchParams.get('q')).toBe('Moby Play Deezer')
+  })
+
+  // Measured live 28/09: Deezer's fuzzy search answers "Moby Play" with Monoplay and Burna
+  // Boy's "Money Play". Taken as is, that junk would end the ladder and the track would
+  // never be searched; rows that don't name the file's artist mean the album was not found.
+  it('drops album results that do not name the artist and goes on to search the track', async () => {
+    const fetchMock = mockFetch([
+      {
+        data: [
+          {
+            id: 1,
+            title: 'Gotta Go',
+            artist: { name: 'Monoplay' },
+            album: { id: 101, title: 'Octopus' },
+          },
+          {
+            id: 2,
+            title: 'Money Play',
+            artist: { name: 'Burna Boy' },
+            album: { id: 102, title: 'Money Play' },
+          },
+        ],
+      },
+      {
+        data: [
+          {
+            id: 3,
+            title: 'Porcelain',
+            artist: { name: 'Moby' },
+            album: { id: 103, title: 'Play' },
+          },
+        ],
+      },
+    ])
+    const results = await search('moby porcelain', 'high', {
+      artist: 'Moby',
+      title: 'Porcelain',
+      album: 'Play',
+    })
+    expect(results.map((r) => r.id)).toEqual([103])
+    expect(new URL(fetchMock.mock.calls[1][0] as string).searchParams.get('q')).toBe(
+      'moby porcelain',
+    )
+  })
+
+  // The case the setting exists for: the album search names the artist, so it stands and
+  // the track name's homonyms are never asked for.
+  it('keeps album results that name the artist', async () => {
+    const fetchMock = mockFetch([
+      {
+        data: [
+          {
+            id: 4,
+            title: 'One More Time',
+            artist: { name: 'Daft Punk' },
+            album: { id: 104, title: 'Discovery' },
+          },
+        ],
+      },
+    ])
+    const results = await search('daft punk one more time', 'high', {
+      artist: 'Daft Punk',
+      title: 'One More Time',
+      album: 'Discovery',
+    })
+    expect(results.map((r) => r.id)).toEqual([104])
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('search with an ISRC hint', () => {

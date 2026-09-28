@@ -1,3 +1,4 @@
+import { foldAccents } from '../shared/foldAccents'
 import {
   cleanQuery,
   dropDjPrefix,
@@ -7,7 +8,7 @@ import {
   dropTrackNumberTail,
   stripParentheticals,
 } from '../shared/searchClean'
-import type { SearchHints } from '../shared/types'
+import type { SearchHints, SearchResult } from '../shared/types'
 
 // Re-exported so existing callers/tests keep importing it from here; the implementation
 // (and the rest of the cleaners) now lives in shared so the renderer's matcher reuses it.
@@ -24,7 +25,7 @@ export { cleanQuery }
 export function buildSearchCandidates(
   query: string,
   hints: SearchHints = {},
-  opts: { includeCatalog?: boolean } = {},
+  opts: { includeCatalog?: boolean; albumFirst?: boolean } = {},
 ): string[] {
   const cleaned = cleanQuery(query)
   const trimmed = dropTrackNumberTail(cleaned)
@@ -33,6 +34,15 @@ export function buildSearchCandidates(
     const t = candidate.trim()
     if (t && !out.includes(t)) out.push(t)
   }
+  // "Search by album first": the tagged album names the one release the track came from,
+  // where the track name alone drags in homonyms, so "artist album" leads and the track
+  // ladder below follows when it finds nothing. The album only reaches here while the
+  // setting is on (the provider seam drops it otherwise). Never without the artist: an
+  // album name alone ("Greatest Hits") matches anyone's release, and any hit ends the loop
+  // before the track is tried. Discogs runs its album search on the structured fields and
+  // leaves this off, so its free-text ladder is unchanged.
+  if (opts.albumFirst && hints.artist && hints.album)
+    add(albumCandidateOf(hints.artist, hints.album))
   // A "presents"/"pres." alias in the artist drags free-text search onto unrelated
   // compilations; the catalog files the release under the lead act. Lead with the lead
   // artist + title so this clean candidate is tried before the noisy full query, whose
@@ -70,4 +80,48 @@ export function buildSearchCandidates(
   if (hints.artist && hints.title) add(cleanQuery(`${hints.title} ${hints.artist}`))
   if (out.length === 0) add(query)
   return out
+}
+
+function albumCandidateOf(artist: string, album: string): string {
+  return cleanQuery(`${artist} ${album}`).trim()
+}
+
+// Whole words only, accents folded, so "Moby" is not found inside "Monoplay" and
+// "Rosalia" still matches "ROSALÍA".
+function wordsOf(text: string): string {
+  return ` ${foldAccents(text)
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim()} `
+}
+
+function namesArtist(result: SearchResult, artist: string): boolean {
+  return wordsOf(result.title).includes(wordsOf(artist))
+}
+
+// The free-text providers' shared loop (Bandcamp, Deezer, Beatport): each candidate in
+// turn, keeping the first that returns anything. The album candidate is held to a higher
+// bar, since fuzzy search always answers something ("Moby Play" brings Monoplay and Burna
+// Boy's "Money Play"): its rows stand only if one names the file's artist, otherwise the
+// album counts as not found and the track candidates follow as if it had never been tried.
+export async function searchCandidates(
+  query: string,
+  hints: SearchHints,
+  searchOnce: (candidate: string) => Promise<SearchResult[]>,
+): Promise<SearchResult[]> {
+  const artist = hints.artist ?? ''
+  const albumCandidate = artist && hints.album ? albumCandidateOf(artist, hints.album) : undefined
+  let results: SearchResult[] = []
+  for (const candidate of buildSearchCandidates(query, hints, {
+    includeCatalog: false,
+    albumFirst: true,
+  })) {
+    results = await searchOnce(candidate)
+    if (candidate === albumCandidate && !results.some((r) => namesArtist(r, artist))) {
+      results = []
+      continue
+    }
+    if (results.length) break
+  }
+  return results
 }

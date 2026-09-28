@@ -4,7 +4,7 @@ import { activity } from './activity'
 import { deezerLimiter } from './deezerLimiter'
 import { REQUEST_TIMEOUT_MS, USER_AGENT } from './http'
 import { cachedSearch, cacheIfUsable, createLookupCacheStore } from './lookupCacheStore'
-import { buildSearchCandidates } from './searchQuery'
+import { searchCandidates } from './searchQuery'
 
 const BASE = 'https://api.deezer.com'
 
@@ -145,11 +145,9 @@ export async function search(
       // the original release leads the pool, with the text results as alternatives.
       const isrc = hints.isrc?.trim()
       const exact = isrc ? await trackByIsrc(isrc, priority) : undefined
-      let results: SearchResult[] = []
-      for (const candidate of buildSearchCandidates(query, hints, { includeCatalog: false })) {
-        results = await searchOnce(candidate, priority)
-        if (results.length) break
-      }
+      const results = await searchCandidates(query, hints, (candidate) =>
+        searchOnce(candidate, priority),
+      )
       if (!exact) return results
       return [exact, ...results.filter((r) => r.id !== exact.id)]
     },

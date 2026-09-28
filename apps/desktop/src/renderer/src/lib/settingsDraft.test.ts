@@ -13,6 +13,7 @@ const settings: Settings = {
   discogsMaxResults: 10,
   searchProviders: ['discogs'],
   searchIgnoreWords: [],
+  searchByAlbumFirst: false,
   outputDir: '/out',
   outputFormat: 'aiff',
   keepMp3Sources: false,

@@ -122,6 +122,43 @@ describe('buildSearchCandidates', () => {
     ).toEqual(['Some Artist Some Title', 'Some Title', 'Some Title Some Artist'])
   })
 
+  // artexjay's request: the track name alone drags in homonyms, while the tagged album
+  // names the one release the track came from. Tried first, and the track ladder stays
+  // whole behind it for when the album finds nothing.
+  it('leads with artist and album when albumFirst is set, keeping the track ladder behind', () => {
+    const hints = { artist: 'Some Artist', title: 'Some Title', album: 'Some Album' }
+    expect(buildSearchCandidates('Some Artist Some Title', hints, { albumFirst: true })).toEqual([
+      'Some Artist Some Album',
+      'Some Artist Some Title',
+      'Some Title',
+      'Some Title Some Artist',
+    ])
+  })
+
+  // Discogs runs its album search on the structured fields, so its free-text ladder must
+  // not grow a second album rung: without the option the album hint changes nothing.
+  it('ignores the album hint unless albumFirst is set', () => {
+    const hints = { artist: 'Some Artist', title: 'Some Title', album: 'Some Album' }
+    expect(buildSearchCandidates('Some Artist Some Title', hints)).toEqual(
+      buildSearchCandidates('Some Artist Some Title', {
+        artist: 'Some Artist',
+        title: 'Some Title',
+      }),
+    )
+  })
+
+  // An album name alone ("Greatest Hits", "Remixes") matches anyone's release, and any
+  // non-empty answer ends the ladder before the track is ever searched.
+  it('skips the album candidate when there is no artist to pin it', () => {
+    expect(
+      buildSearchCandidates(
+        'Some Title',
+        { title: 'Some Title', album: 'Some Album' },
+        { albumFirst: true },
+      ),
+    ).toEqual(['Some Title'])
+  })
+
   // The reported case end-to-end: a file whose name leads with its catalog code must search
   // the clean "Artist Title" first, not the code-poisoned candidate that returns nothing.
   it('leads with the catalog-free query for a code-prefixed file name', () => {

@@ -85,6 +85,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     discogsMaxResults: 10,
     searchProviders: ['discogs'],
     searchIgnoreWords: [],
+    searchByAlbumFirst: false,
     outputDir: '',
     outputFormat: 'aiff',
     keepMp3Sources: false,

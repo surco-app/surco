@@ -631,6 +631,34 @@ describe('useDiscogsBrowser', () => {
     await waitFor(() => expect(result.current.results).toHaveLength(1))
   })
 
+  // Album-first search is applied in the main process, so the term the panel keys on does
+  // not change when the setting flips. Without the setting in the key, turning it on would
+  // keep serving the track search cached before it, and the setting would look dead.
+  it('re-runs the search when album-first search is toggled instead of serving the old answer', async () => {
+    const search = vi.fn().mockResolvedValueOnce([]).mockResolvedValue([searchResult])
+    setApi({ search })
+    const { result, rerender } = renderHook(
+      ({ albumFirst }: { albumFirst: boolean }) =>
+        useDiscogsBrowser(
+          { ...item({ query: 'moby porcelain' }), meta: { ...item().meta, album: 'Play' } },
+          tr,
+          undefined,
+          ['discogs'],
+          25,
+          {},
+          albumFirst,
+        ),
+      { wrapper: wrapper(), initialProps: { albumFirst: false } },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(search).toHaveBeenCalledTimes(1))
+    expect(result.current.results).toHaveLength(0)
+
+    rerender({ albumFirst: true })
+    await waitFor(() => expect(result.current.results).toHaveLength(1))
+    expect(search.mock.calls[1][3]).toEqual(expect.objectContaining({ album: 'Play' }))
+  })
+
   // A failed search (Discogs 429, a network blip) must be retryable from the button:
   // the term doesn't change, so the query key doesn't either, and without an explicit
   // refetch the error would stay on screen until the user edits the text.

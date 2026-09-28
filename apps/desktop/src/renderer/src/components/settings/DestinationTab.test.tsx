@@ -68,6 +68,7 @@ const synced: SyncedDraft = {
   discogsMaxResults: 10,
   searchProviders: ['discogs'],
   searchIgnoreWords: '',
+  searchByAlbumFirst: false,
 }
 
 const local: LocalDraft = {

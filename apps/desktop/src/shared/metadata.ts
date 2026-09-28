@@ -57,12 +57,14 @@ export function emptyMetadata(): TrackMetadata {
 }
 
 // The fields a track's metadata contributes to a provider search — artist and title bias
-// the ranking, the catalog number pins a specific pressing. Both the editor browser and
+// the ranking, the album leads it when "Search by album first" is on, the catalog number
+// pins a specific pressing. Both the editor browser and
 // the background sweep derive hints from the same fields, so they read them from here.
 export function searchHintsOf(meta: TrackMetadata): SearchHints {
   return {
     artist: meta.artist,
     title: meta.title,
+    album: meta.album,
     catalogNumber: meta.catalogNumber,
     isrc: meta.isrc,
   }

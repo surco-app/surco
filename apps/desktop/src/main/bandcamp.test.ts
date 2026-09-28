@@ -94,6 +94,62 @@ describe('search', () => {
     ])
   })
 
+  // The album-first setting reaches Bandcamp as an album hint: "artist album" leads so the
+  // release the tags name is found before the track name's homonyms.
+  it('searches artist and album first when the hints carry an album', async () => {
+    const fetchMock = mockSearch([])
+    await search('moby porcelain bandcamp', 'high', {
+      artist: 'Moby',
+      title: 'Porcelain',
+      album: 'Play Bandcamp',
+    })
+    const body = JSON.parse(
+      (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string,
+    )
+    expect(body.search_text).toBe('Moby Play Bandcamp')
+  })
+
+  // Same guard as every free-text provider: an album answer from other acts is junk,
+  // so the track is searched instead of the panel filling with strangers' releases.
+  it('drops album results that do not name the artist and goes on to search the track', async () => {
+    let call = 0
+    const fetchMock = vi.fn(async () => ({
+      status: 200,
+      ok: true,
+      json: async () => ({
+        auto: {
+          results:
+            call++ === 0
+              ? [
+                  {
+                    type: 'a',
+                    id: 31,
+                    band_name: 'Monoplay',
+                    album_name: 'Octopus',
+                    item_url_path: 'https://m.bandcamp.com/album/o',
+                  },
+                ]
+              : [
+                  {
+                    type: 'a',
+                    id: 32,
+                    band_name: 'Moby',
+                    album_name: 'Play',
+                    item_url_path: 'https://moby.bandcamp.com/album/play',
+                  },
+                ],
+        },
+      }),
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+    const out = await search('moby porcelain bc', 'high', {
+      artist: 'Moby',
+      title: 'Porcelain',
+      album: 'Play bc',
+    })
+    expect(out.map((r) => r.id)).toEqual([32])
+  })
+
   // Band/label hits ('b') have no release to fetch, so they must not pollute the list.
   it('drops band/label hits', async () => {
     mockSearch([

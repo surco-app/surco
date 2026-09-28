@@ -63,6 +63,7 @@ interface ResolvedSettings {
   discogsMaxResults: number
   searchProviders: SearchProviderId[]
   searchIgnoreWords: string[]
+  searchByAlbumFirst: boolean
   showSpectrum: boolean
   showLoudness: boolean
   showEditorHints: boolean
@@ -105,6 +106,7 @@ const DEFAULTS: ResolvedSettings = {
   discogsMaxResults: DEFAULT_DISCOGS_MAX_RESULTS,
   searchProviders: ['discogs'],
   searchIgnoreWords: ['vinyl', 'rip'],
+  searchByAlbumFirst: false,
   showSpectrum: true,
   showLoudness: true,
   showEditorHints: true,
@@ -145,6 +147,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     discogsMaxResults: settings.discogsMaxResults ?? DEFAULTS.discogsMaxResults,
     searchProviders: settings.searchProviders ?? DEFAULTS.searchProviders,
     searchIgnoreWords: settings.searchIgnoreWords ?? DEFAULTS.searchIgnoreWords,
+    searchByAlbumFirst: settings.searchByAlbumFirst ?? DEFAULTS.searchByAlbumFirst,
     showSpectrum: settings.showSpectrum ?? DEFAULTS.showSpectrum,
     showLoudness: settings.showLoudness ?? DEFAULTS.showLoudness,
     showEditorHints: settings.showEditorHints ?? DEFAULTS.showEditorHints,

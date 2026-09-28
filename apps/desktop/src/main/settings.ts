@@ -33,6 +33,7 @@ export const defaults: Settings = {
   // The classic rip stamps everyone's files carry; whole-word matching keeps "rip" from
   // biting into a real title word ("Tripping"), and the list is the user's to edit.
   searchIgnoreWords: ['vinyl', 'rip'],
+  searchByAlbumFirst: false,
   outputDir: join(app.getPath('music'), 'Surco'),
   outputFormat: 'aiff',
   // Off by default: exports honor the chosen format unless the user opts in.

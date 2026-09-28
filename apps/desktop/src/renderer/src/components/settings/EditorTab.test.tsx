@@ -62,6 +62,7 @@ const synced: SyncedDraft = {
   discogsMaxResults: 10,
   searchProviders: ['discogs'],
   searchIgnoreWords: '',
+  searchByAlbumFirst: false,
   editorSections: DEFAULT_EDITOR_SECTIONS,
 }
 

@@ -179,6 +179,50 @@ describe('search', () => {
     expect(first).not.toContain('&q=')
   })
 
+  // With the album-first setting on, the seam hands over the tagged album: the release
+  // it names is the precise target, so its structured query leads, ahead of the title's.
+  it('queries artist and the tagged album as release title first when an album hint is given', async () => {
+    const fetchMock = mockFetch([{ id: 71 }])
+    const out = await search('moby porcelain', 'tok', undefined, {
+      artist: 'Moby',
+      title: 'Porcelain',
+      album: 'Play',
+    })
+    expect(out).toEqual([{ id: 71, provider: 'discogs' }])
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const url = new URL(fetchMock.mock.calls[0][0] as string)
+    expect(url.searchParams.get('artist')).toBe('Moby')
+    expect(url.searchParams.get('release_title')).toBe('Play')
+  })
+
+  // A wrong or junk album tag must never cost the track its search: an empty album
+  // answer falls through to the exact ladder the track always had.
+  it('falls back to the title ladder when the album query finds nothing', async () => {
+    const fetchMock = mockSequence([res(200, { results: [] }), res(200, { results: [{ id: 72 }] })])
+    const out = await search('orbital chime', 'tok', undefined, {
+      artist: 'Orbital',
+      title: 'Chime',
+      album: 'Not A Real Album',
+    })
+    expect(out).toEqual([{ id: 72, provider: 'discogs' }])
+    const second = new URL(fetchMock.mock.calls[1][0] as string)
+    expect(second.searchParams.get('artist')).toBe('Orbital')
+    expect(second.searchParams.get('release_title')).toBe('Chime')
+  })
+
+  // An album name alone ("Greatest Hits") matches anyone's release, and any hit would end
+  // the search before the track is tried, so without an artist the album is not searched.
+  it('does not search the album without an artist to pin it', async () => {
+    const fetchMock = mockFetch([{ id: 73 }])
+    await search('lonely title', 'tok', undefined, {
+      title: 'Lonely Title',
+      album: 'Greatest Hits',
+    })
+    const url = new URL(fetchMock.mock.calls[0][0] as string)
+    expect(url.searchParams.get('release_title')).toBeNull()
+    expect(url.searchParams.get('q')).toBe('lonely title')
+  })
+
   // An album track's title is not the release's title, so the release_title query misses
   // it entirely; Discogs' `track` field searches inside tracklists and finds the album
   // that carries the cut — the case the free-text fallback used to fumble through noise.

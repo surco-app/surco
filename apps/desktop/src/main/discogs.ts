@@ -287,6 +287,16 @@ export async function search(
       // catalogs omit the "(Original Mix)" marker the file's title carries.
       const artist = dropPresentsAlias(hints?.artist?.trim() ?? '')
       const title = dropOriginalMarker(hints?.title?.trim() ?? '')
+      // "Search by album first": the tagged album is the release's own title, so it goes
+      // on the release_title field ahead of everything. The hint only arrives while the
+      // setting is on (the provider seam drops it otherwise), and never runs without the
+      // artist: an album name alone matches anyone's release, and a hit here ends the
+      // search. Nothing found falls through to the track ladder unchanged.
+      const album = hints?.album?.trim() ?? ''
+      if (artist && album) {
+        const byAlbum = keep(await searchStructured(artist, album, token, opts, priority))
+        if (byAlbum.length) return byAlbum
+      }
       if (artist && title) {
         const structured = keep(await searchStructured(artist, title, token, opts, priority))
         if (structured.length) return structured

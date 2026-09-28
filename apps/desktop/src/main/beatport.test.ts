@@ -137,6 +137,19 @@ describe('the Beatport API client', () => {
     expect(String(fetch.mock.calls[0][0])).toContain(encodeURIComponent('ROSALÍA DESPECHÁ'))
   })
 
+  // The album-first setting reaches Beatport as an album hint: "artist album" leads so the
+  // release the tags name is found before the track name's homonyms.
+  it('searches artist and album first when the hints carry an album', async () => {
+    setBeatportSession(fakeSession())
+    const fetch = stubFetch(() => Response.json({ tracks: [] }))
+    await search('moby porcelain beatport', 'high', {
+      artist: 'Moby',
+      title: 'Porcelain',
+      album: 'Play Beatport',
+    })
+    expect(String(fetch.mock.calls[0][0])).toContain(encodeURIComponent('Moby Play Beatport'))
+  })
+
   it('backs off on 429 and gives up with a rate-limit error', async () => {
     vi.useFakeTimers()
     setBeatportSession(fakeSession())

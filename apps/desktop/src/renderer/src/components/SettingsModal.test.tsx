@@ -35,6 +35,7 @@ const settings: Settings = {
   discogsMaxResults: 10,
   searchProviders: ['discogs'],
   searchIgnoreWords: [],
+  searchByAlbumFirst: false,
   outputDir: '/out',
   outputFormat: 'aiff',
   keepMp3Sources: false,
@@ -389,6 +390,30 @@ describe('SettingsModal auto-match', () => {
     fireEvent.click(screen.getByTestId('settings-format-Vinyl'))
     fireEvent.click(screen.getByTestId('settings-save'))
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ discogsFormats: ['Vinyl'] }))
+  })
+})
+
+describe('SettingsModal search by album first', () => {
+  // artexjay's request: a track name alone drags in homonyms where the tagged album names
+  // the right release. Off by default so nobody's search changes under them; ticking it
+  // must reach the saved settings, which the main process reads on every search.
+  it('starts off and saves album-first search once ticked', () => {
+    const onSave = vi.fn()
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={onSave}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+        initialTab="search"
+      />,
+    )
+    const toggle = screen.getByTestId('settings-search-album-first')
+    expect(toggle).not.toBeChecked()
+    fireEvent.click(toggle)
+    fireEvent.click(screen.getByTestId('settings-save'))
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ searchByAlbumFirst: true }))
   })
 })
 
