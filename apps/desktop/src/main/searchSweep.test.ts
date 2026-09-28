@@ -20,12 +20,7 @@ vi.mock('./settings', async (importOriginal) => {
 })
 
 import { foldAccents } from '../shared/foldAccents'
-import {
-  dropDjPrefix,
-  dropOriginalMarker,
-  stripIgnoredWords,
-  stripParentheticals,
-} from '../shared/searchClean'
+import { dropOriginalMarker, stripIgnoredWords, stripParentheticals } from '../shared/searchClean'
 import type { SearchHints, SearchProviderId, SearchResult, TrackMetadata } from '../shared/types'
 import * as bandcamp from './bandcamp'
 import * as beatport from './beatport'
@@ -34,7 +29,7 @@ import * as deezer from './deezer'
 import { readMeta } from './ffmpeg'
 import * as musicbrainz from './musicbrainz'
 import { cleanHints, getProvider } from './providers'
-import { buildSearchCandidates, namesArtist } from './searchQuery'
+import { actsOf, buildSearchCandidates, namesArtist } from './searchQuery'
 import { defaults } from './settings'
 
 // Not a test of the code: a sweep of a real library through every search provider, rung
@@ -393,27 +388,8 @@ it.skipIf(!root)(
   24 * 60 * 60 * 1000,
 )
 
-// Who the file says made it, as the acts a row may name: the whole credit, the credit
-// without a "DJ " prefix, a library-sorted "Brown Brothers, The" turned back around, and
-// each act of a collaboration split on commas, "&", "+", "/", " x ", "vs", "aka",
-// "pres."/"presents" and "feat."/"ft."/"featuring". Any one of them named counts, so a row
-// filed under the lead act alone ("Sola Brothers - …" for "Sola Brothers, Head Horny's")
-// stands. "and" does not split: too many acts carry it in their name. A single letter, a
-// bare "DJ" or a lone article is dropped, since nearly any row would name it; two letters
-// stay ("BK").
-const ACT_SEPARATOR =
-  /\s*(?:,|&|\+|\/|\sx\s|\b(?:vs|feat|ft|pres)\.?(?=\s)|\b(?:featuring|presents|aka)\b)\s*/i
-const TOO_GENERIC = /^(?:dj|the|a|an|el|la|los|las|le|les|de|di|der|die)$/i
-
-function actsOf(artist: string): string[] {
-  const sorted = artist.match(/^(.+),\s*(the|los|las|el|la|les|le|die)$/i)
-  const whole = [artist, dropDjPrefix(artist), ...(sorted ? [`${sorted[2]} ${sorted[1]}`] : [])]
-  const split = artist.split(ACT_SEPARATOR).map((a) => dropDjPrefix(a.trim()))
-  return [...new Set([...whole, ...split])].filter(
-    (a) => a.replace(/[^\p{L}\p{N}]/gu, '').length >= 2 && !TOO_GENERIC.test(a.trim()),
-  )
-}
-
+// The app's own reading of "this row names the file's artist", so the policies measured
+// here are the guard the app runs.
 const relevant = (row: Row, acts: string[]): boolean =>
   acts.some((a) => namesArtist(row as SearchResult, a))
 
@@ -429,12 +405,16 @@ const compact = (text: string): string =>
 const looselyRelevant = (row: Row, acts: string[]): boolean =>
   acts.some((a) => compact(a).length >= 4 && compact(row.title).includes(compact(a)))
 
+const stands = (rung: Rung, acts: string[]): boolean =>
+  rung.kind === 'fielded' ? rung.rows.length > 0 : rung.rows.some((row) => relevant(row, acts))
+
 type Policy = 'P0' | 'P1' | 'P1b'
 const POLICIES: Policy[] = ['P0', 'P1', 'P1b']
 
 // What the results column would show under each stopping rule. The ISRC rung is an exact
-// identity, so every policy keeps it on top as the app does; the guard only judges the
-// text and fielded rungs. With no artist on the file there is nothing to guard with, and
+// identity, so every policy keeps it on top as the app does; MusicBrainz' fielded rungs
+// already pin the artist, so they stand on anything under every policy; the guard only
+// judges the free-text rungs. With no artist on the file there is nothing to guard with, and
 // P1/P1b fall back to P0.
 function shown(line: Line, policy: Policy): Row[] {
   const exact = line.rungs.filter((r) => r.kind === 'isrc').flatMap((r) => r.rows)
@@ -443,7 +423,7 @@ function shown(line: Line, policy: Policy): Row[] {
   let rows: Row[] = []
   if (policy === 'P0' || acts.length === 0) rows = ladder.find((r) => r.rows.length)?.rows ?? []
   else {
-    const hit = ladder.find((r) => r.rows.some((row) => relevant(row, acts)))
+    const hit = ladder.find((r) => stands(r, acts))
     rows = hit ? hit.rows : []
     if (policy === 'P1b') rows = rows.filter((row) => relevant(row, acts))
   }
@@ -460,7 +440,7 @@ function rungsAsked(line: Line, policy: Policy): number {
   const stop =
     policy === 'P0' || acts.length === 0
       ? ladder.findIndex((r) => r.rows.length)
-      : ladder.findIndex((r) => r.rows.some((row) => relevant(row, acts)))
+      : ladder.findIndex((r) => stands(r, acts))
   return exact + (stop === -1 ? ladder.length : stop + 1)
 }
 
@@ -502,15 +482,15 @@ it.skipIf(!report)(
     const lines = readLines().filter((l) => !l.error && !l.rungs.some((r) => r.error))
     const providers = [...new Set(lines.map((l) => l.provider))]
     const text: string[] = [`${out}`, `${lines.length} (pista, proveedor) sin errores`, '']
-    const fidelity = lines.filter((l) => {
-      const exact = l.rungs.filter((r) => r.kind === 'isrc').flatMap((r) => r.rows)
-      const first = l.rungs.filter((r) => r.kind !== 'isrc').find((r) => r.rows.length)?.rows ?? []
-      const ids = new Set(exact.map((r) => r.id))
-      const p0 = [...exact, ...first.filter((r) => !ids.has(r.id))].map((r) => r.id)
-      return JSON.stringify(p0) !== JSON.stringify(l.app)
-    })
-    text.push(`P0 simulado distinto de la búsqueda real de la app: ${fidelity.length}`)
-    for (const l of fidelity.slice(0, 5)) text.push(`  ${l.provider} ${l.path}`)
+    const ids = (rows: Row[]): string => JSON.stringify(rows.map((r) => r.id))
+    const matches = (policy: Policy): Line[] =>
+      lines.filter((l) => ids(shown(l, policy)) === JSON.stringify(l.app?.slice(0, TOP)))
+    text.push(
+      `búsqueda real de la app igual a P0 (top ${TOP}): ${matches('P0').length} de ${lines.length}`,
+      `búsqueda real de la app igual a P1 (top ${TOP}): ${matches('P1').length} de ${lines.length}`,
+    )
+    for (const l of lines.filter((l) => !matches('P1').includes(l)).slice(0, 5))
+      text.push(`  distinta de P1: ${l.provider} ${l.path}`)
     text.push(
       `sin artista en la pista (P1 = P0): ${lines.filter((l) => actsOf(l.hints.artist ?? '').length === 0).length}`,
       '',
