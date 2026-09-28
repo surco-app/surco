@@ -50,6 +50,7 @@ import { type CleanupOffer, useConfirmFlows } from './hooks/useConfirmFlows'
 import { useDockPlayingIndicator } from './hooks/useDockPlayingIndicator'
 import { useEditorPicks } from './hooks/useEditorPicks'
 import { editorSectionOpen, useMaximizedSection } from './hooks/useEditorSections'
+import { useExitPresence } from './hooks/useExitPresence'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useLaunchModals } from './hooks/useLaunchModals'
 import { useListNavigation } from './hooks/useListNavigation'
@@ -127,6 +128,7 @@ import type { CopiedTags, TrackItem } from './types'
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
 // pointer across the list while scrolling doesn't fire a prefetch for every row.
 const PREFETCH_HOVER_MS = 150
+const PLAYER_LEAVE_MS = 200
 
 // Widths for the placeholder rows shown while a drag is over the window. Uneven on
 // purpose — equal bars read as a loading skeleton, ragged ones as track titles.
@@ -1038,6 +1040,10 @@ export default function App(): React.JSX.Element {
     selectedId,
   })
   releaseFileRef.current = releaseFile
+  const player = useExitPresence(playerVisible && !!playerTrack, PLAYER_LEAVE_MS)
+  const shownPlayerTrack = useRef(playerTrack)
+  if (playerTrack) shownPlayerTrack.current = playerTrack
+  const livePlayerTrack = playerTrack ?? shownPlayerTrack.current
   // While audio plays, the Dock icon's engraved wave animates (macOS only).
   useDockPlayingIndicator(audioRef)
 
@@ -1972,9 +1978,9 @@ export default function App(): React.JSX.Element {
                     </>
                   )}
                 </div>
-                {playerVisible && playerTrack && (
+                {player.mounted && livePlayerTrack && (
                   <LivePlayer
-                    track={playerTrack}
+                    track={livePlayerTrack}
                     audioRef={audioRef}
                     continuous={settings?.continuousPlayback ?? false}
                     onToggleContinuous={() =>
@@ -1984,8 +1990,9 @@ export default function App(): React.JSX.Element {
                     onToggleWaveform={() =>
                       saveSettings({ showWaveform: !(settings?.showWaveform ?? true) })
                     }
-                    onReveal={() => revealSelection(playerTrack.id)}
+                    onReveal={() => revealSelection(livePlayerTrack.id)}
                     onClose={closePlayer}
+                    leaving={player.leaving}
                   />
                 )}
 

@@ -344,6 +344,17 @@ textarea {
   animation: player-in 0.26s cubic-bezier(0.2, 0, 0, 1);
 }
 
+@keyframes player-out {
+  to {
+    transform: translateY(calc(100% + 0.75rem));
+    opacity: 0;
+  }
+}
+
+.animate-player-out {
+  animation: player-out 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+
 /* Carries the height tween when the player swaps its waveform strip for the slim
    transport row; Player.tsx drives the from/to heights inline. */
 .player-section {
@@ -772,7 +783,8 @@ textarea {
   /* The toast's exit still has to END invisible — it is the timer in ToastStack, not this
      animation, that unmounts the card, so a card that merely stopped moving would sit there
      fully opaque until its leave timer fired. Fade in place, same duration. */
-  .animate-toast-leave {
+  .animate-toast-leave,
+  .animate-player-out {
     animation: toast-fade-out 0.2s ease forwards;
   }
 
