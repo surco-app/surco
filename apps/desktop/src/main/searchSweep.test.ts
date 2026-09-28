@@ -19,6 +19,7 @@ vi.mock('./settings', async (importOriginal) => {
   return { ...actual, getSettings: () => actual.defaults }
 })
 
+import { foldAccents } from '../shared/foldAccents'
 import {
   dropDjPrefix,
   dropOriginalMarker,
@@ -393,23 +394,40 @@ it.skipIf(!root)(
 )
 
 // Who the file says made it, as the acts a row may name: the whole credit, the credit
-// without a "DJ " prefix, and each act of a collaboration split on commas, "&", "+", "/",
-// " x ", "vs" and "feat."/"ft."/"featuring". Any one of them named counts, so a row filed
-// under the lead act alone ("Sola Brothers - …" for "Sola Brothers, Head Horny's") stands.
-// "and" does not split: too many acts carry it in their name. A single letter or a bare
-// "DJ" is dropped, since nearly any row would name it; two letters stay ("BK").
+// without a "DJ " prefix, a library-sorted "Brown Brothers, The" turned back around, and
+// each act of a collaboration split on commas, "&", "+", "/", " x ", "vs", "aka",
+// "pres."/"presents" and "feat."/"ft."/"featuring". Any one of them named counts, so a row
+// filed under the lead act alone ("Sola Brothers - …" for "Sola Brothers, Head Horny's")
+// stands. "and" does not split: too many acts carry it in their name. A single letter, a
+// bare "DJ" or a lone article is dropped, since nearly any row would name it; two letters
+// stay ("BK").
+const ACT_SEPARATOR =
+  /\s*(?:,|&|\+|\/|\sx\s|\b(?:vs|feat|ft|pres)\.?(?=\s)|\b(?:featuring|presents|aka)\b)\s*/i
+const TOO_GENERIC = /^(?:dj|the|a|an|el|la|los|las|le|les|de|di|der|die)$/i
+
 function actsOf(artist: string): string[] {
-  const whole = [artist, dropDjPrefix(artist)]
-  const split = artist
-    .split(/\s*(?:,|&|\+|\/|\sx\s|\bvs\.?(?=\s)|\bfeat\.?(?=\s)|\bft\.?(?=\s)|\bfeaturing\b)\s*/i)
-    .map((a) => dropDjPrefix(a.trim()))
+  const sorted = artist.match(/^(.+),\s*(the|los|las|el|la|les|le|die)$/i)
+  const whole = [artist, dropDjPrefix(artist), ...(sorted ? [`${sorted[2]} ${sorted[1]}`] : [])]
+  const split = artist.split(ACT_SEPARATOR).map((a) => dropDjPrefix(a.trim()))
   return [...new Set([...whole, ...split])].filter(
-    (a) => a.replace(/[^\p{L}\p{N}]/gu, '').length >= 2 && !/^dj$/i.test(a.trim()),
+    (a) => a.replace(/[^\p{L}\p{N}]/gu, '').length >= 2 && !TOO_GENERIC.test(a.trim()),
   )
 }
 
 const relevant = (row: Row, acts: string[]): boolean =>
   acts.some((a) => namesArtist(row as SearchResult, a))
+
+// A looser reading used only to count what the guard would lose: letters and digits run
+// together, so "Pro-Active - Visions" names "Proactive" and "D Sigual Vol. 10" names
+// "Dsigual". Too loose to guard with (word boundaries are gone), so only acts of four or
+// more characters count.
+const compact = (text: string): string =>
+  foldAccents(text)
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu, '')
+
+const looselyRelevant = (row: Row, acts: string[]): boolean =>
+  acts.some((a) => compact(a).length >= 4 && compact(row.title).includes(compact(a)))
 
 type Policy = 'P0' | 'P1' | 'P1b'
 const POLICIES: Policy[] = ['P0', 'P1', 'P1b']
@@ -431,6 +449,19 @@ function shown(line: Line, policy: Policy): Row[] {
   }
   const ids = new Set(exact.map((r) => r.id))
   return [...exact, ...rows.filter((r) => !ids.has(r.id))].slice(0, TOP)
+}
+
+// How many rungs a policy asks before it stops: the requests it costs, which on
+// MusicBrainz are seconds. The ISRC rung is always asked.
+function rungsAsked(line: Line, policy: Policy): number {
+  const exact = line.rungs.filter((r) => r.kind === 'isrc').length
+  const ladder = line.rungs.filter((r) => r.kind !== 'isrc')
+  const acts = actsOf(line.hints.artist ?? '')
+  const stop =
+    policy === 'P0' || acts.length === 0
+      ? ladder.findIndex((r) => r.rows.length)
+      : ladder.findIndex((r) => r.rows.some((row) => relevant(row, acts)))
+  return exact + (stop === -1 ? ladder.length : stop + 1)
 }
 
 // A row that carries the track's title but not its artist: Chicane's "Autumn Tactics"
@@ -483,9 +514,15 @@ it.skipIf(!report)(
     text.push(
       `sin artista en la pista (P1 = P0): ${lines.filter((l) => actsOf(l.hints.artist ?? '').length === 0).length}`,
       '',
-      'proveedor    política  n    con relevante  precisión@5  solo basura  vacías',
+      'proveedor    política  n    con relevante  precisión@5  solo basura  vacías  peldaños/pista',
     )
-    const changes: Record<string, string[]> = { junkToEmpty: [], junkToHit: [], titleLost: [] }
+    const changes: Record<string, string[]> = {
+      junkToEmpty: [],
+      junkToHit: [],
+      titleLost: [],
+      bandcampTitleLost: [],
+      looseLost: [],
+    }
     const counts: Record<string, Record<string, number>> = {}
     for (const provider of providers) {
       const mine = lines.filter((l) => l.provider === provider)
@@ -495,7 +532,9 @@ it.skipIf(!report)(
         let empty = 0
         let rel = 0
         let total = 0
+        let asked = 0
         for (const l of mine) {
+          asked += rungsAsked(l, policy)
           const rows = shown(l, policy)
           const acts = actsOf(l.hints.artist ?? '')
           const n = rows.filter((r) => relevant(r, acts)).length
@@ -506,11 +545,12 @@ it.skipIf(!report)(
           else junk++
         }
         text.push(
-          `${provider.padEnd(12)} ${policy.padEnd(9)} ${String(mine.length).padEnd(4)} ${pctOf(hit, mine.length).padEnd(14)} ${pctOf(rel, total).padEnd(12)} ${pctOf(junk, mine.length).padEnd(12)} ${pctOf(empty, mine.length)}`,
+          `${provider.padEnd(12)} ${policy.padEnd(9)} ${String(mine.length).padEnd(4)} ${pctOf(hit, mine.length).padEnd(14)} ${pctOf(rel, total).padEnd(12)} ${pctOf(junk, mine.length).padEnd(12)} ${pctOf(empty, mine.length).padEnd(7)} ${(asked / Math.max(1, mine.length)).toFixed(2)}`,
         )
       }
       const c = {
         lostToEmpty: 0,
+        looseLost: 0,
         junkToEmpty: 0,
         junkToHit: 0,
         titleRowsLostP1: 0,
@@ -525,6 +565,11 @@ it.skipIf(!report)(
         const p1b = shown(l, 'P1b')
         const hits = (rows: Row[]): boolean => rows.some((r) => relevant(r, acts))
         if (hits(p0) && !p1.length) c.lostToEmpty++
+        const loose = (rows: Row[]): boolean => rows.some((r) => looselyRelevant(r, acts))
+        if (loose(p0) && !loose(p1)) {
+          c.looseLost++
+          changes.looseLost.push(example(l, 'P0', 'P1'))
+        }
         if (p0.length && !hits(p0) && !p1.length) {
           c.junkToEmpty++
           changes.junkToEmpty.push(example(l, 'P0', 'P1'))
@@ -539,6 +584,10 @@ it.skipIf(!report)(
         c.titleRowsLostP1 += lost1.length
         c.titleRowsLostP1b += lost1b.length
         if (lost1.length) c.titleTracksLostP1++
+        if (lost1.length && provider === 'bandcamp')
+          changes.bandcampTitleLost.push(
+            `${example(l, 'P0', 'P1')}\n    perdidas: ${lost1.map((r) => r.title).join(' | ')}`,
+          )
         if (lost1b.length) {
           c.titleTracksLostP1b++
           changes.titleLost.push(example(l, 'P0', 'P1b'))
@@ -549,7 +598,7 @@ it.skipIf(!report)(
     text.push('', 'cambios al pasar de P0 a P1 (pistas):')
     for (const [provider, c] of Object.entries(counts))
       text.push(
-        `  ${provider.padEnd(12)} relevante→vacío ${c.lostToEmpty}  basura→vacío ${c.junkToEmpty}  basura→relevante ${c.junkToHit}  filas solo-título perdidas P1 ${c.titleRowsLostP1} (${c.titleTracksLostP1} pistas), P1b ${c.titleRowsLostP1b} (${c.titleTracksLostP1b} pistas)`,
+        `  ${provider.padEnd(12)} relevante→vacío ${c.lostToEmpty}  relevante laxo perdido ${c.looseLost}  basura→vacío ${c.junkToEmpty}  basura→relevante ${c.junkToHit}  filas solo-título perdidas P1 ${c.titleRowsLostP1} (${c.titleTracksLostP1} pistas), P1b ${c.titleRowsLostP1b} (${c.titleTracksLostP1b} pistas)`,
       )
     const shuffled = (list: string[]): string[] => {
       const random = mulberry32(seed)
@@ -569,6 +618,16 @@ it.skipIf(!report)(
       '',
       '== filas solo-título que P1b quitaría (¿homónimo o subida de sello?) ==',
       ...shuffled(changes.titleLost),
+    )
+    text.push(
+      '',
+      '== pérdidas reales: P0 nombraba al artista con otra ortografía y P1 ya no ==',
+      ...shuffled(changes.looseLost),
+    )
+    text.push(
+      '',
+      '== Bandcamp: filas solo-título que P1 perdería (¿homónimo o subida de sello?) ==',
+      ...shuffled(changes.bandcampTitleLost),
     )
     writeFileSync(`${out}.report.txt`, `${text.join('\n')}\n`)
   },
