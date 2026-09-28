@@ -224,6 +224,27 @@ describe('search', () => {
     expect(queryOf(fn.mock.calls[2][0])).toBe('kings of tomorrow finally')
   })
 
+  // Plain Lucene text only searches the recording title, so "Kings Of Tomorrow Finally"
+  // brought songs titled "Kings of Tomorrow" by anyone (measured 28/09, the panel showed
+  // Jewel and Wild Honey). dismax spreads the text over title, artist and release; the
+  // fielded queries above name their own fields and must stay plain Lucene.
+  it('asks free text in dismax mode so the words also match artist and release', async () => {
+    const fn = mockFetch([
+      { count: 0, recordings: [] },
+      { count: 0, recordings: [] },
+      recordingSearch,
+    ])
+    await search('Kings Of Tomorrow Finally dismax', 'high', {
+      artist: 'K.O.T.',
+      title: 'Finally',
+    })
+    const dismaxOf = (url: unknown): string | null =>
+      new URL(String(url)).searchParams.get('dismax')
+    expect(dismaxOf(fn.mock.calls[0][0])).toBeNull()
+    expect(dismaxOf(fn.mock.calls[1][0])).toBeNull()
+    expect(dismaxOf(fn.mock.calls[2][0])).toBe('true')
+  })
+
   it('searches free text straight away when the tags name no artist', async () => {
     const fn = mockFetch([recordingSearch])
     await search('Finally (Kosmic dub)', 'high', {})

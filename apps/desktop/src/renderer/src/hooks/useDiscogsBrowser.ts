@@ -272,9 +272,15 @@ export function useDiscogsBrowser(
         : EMPTY_PROVIDERS,
     [directId, arrived, providers, fetching],
   )
+  // Each source counts the rows the list can show it, never more than the cap: a count
+  // past it names results the user has no way to reach.
   const providerCounts = useMemo(
-    () => providerCountsOf(allResults, providers),
-    [allResults, providers],
+    () =>
+      providerCountsOf(allResults, providers).map((p) => ({
+        ...p,
+        count: Math.min(p.count, maxResults),
+      })),
+    [allResults, providers, maxResults],
   )
   const results = useMemo(() => {
     if (providerFilter !== 'all')
