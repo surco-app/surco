@@ -1,6 +1,6 @@
 import { ChevronRight, ListFilter, SearchX, Sparkles } from 'lucide-react'
 import type React from 'react'
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type { ReleaseTrack, SearchProviderId } from '../../../shared/types'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
@@ -400,16 +400,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                       expanded ? '' : 'hover:bg-[var(--color-panel-2)]/85'
                     }`}
                   >
-                    {r.thumb ? (
-                      <img
-                        src={r.thumb}
-                        alt=""
-                        loading="lazy"
-                        className="h-[30px] w-[30px] shrink-0 rounded-md object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10"
-                      />
-                    ) : (
-                      <div className="h-[30px] w-[30px] shrink-0 rounded-md bg-[var(--color-panel-2)]" />
-                    )}
+                    <ResultThumb src={r.thumb} />
                     <span className="min-w-0 flex-1">
                       <span data-fit className="block truncate text-sm leading-snug">
                         {r.title}
@@ -594,6 +585,30 @@ export const DiscogsPanel = memo(function DiscogsPanel({
 // Placeholder rows shaped like a result row, for a search with rows still to come, so the
 // list never pops into an area that looked idle. The side padding adds up the card's own
 // (its wrapper and its button) so the placeholder thumbnail lines up with the real ones.
+// A thumbnail that fails to load (a MusicBrainz release without Cover Art Archive art
+// answers 404, archive.org sometimes 500s) falls back to the empty slot instead of the
+// browser's broken-image glyph, which reads as an app fault.
+function ResultThumb({ src }: { src: string | undefined }): React.JSX.Element {
+  const [failed, setFailed] = useState(false)
+  if (!src || failed)
+    return (
+      <div
+        data-testid="result-thumb-empty"
+        className="h-[30px] w-[30px] shrink-0 rounded-md bg-[var(--color-panel-2)]"
+      />
+    )
+  return (
+    <img
+      data-testid="result-thumb"
+      src={src}
+      alt=""
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className="h-[30px] w-[30px] shrink-0 rounded-md object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10"
+    />
+  )
+}
+
 function SkeletonRows({ testid, count }: { testid: string; count: number }): React.JSX.Element {
   return (
     <div data-testid={testid} aria-hidden="true">

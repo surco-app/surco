@@ -467,3 +467,28 @@ describe('DiscogsPanel progressive results', () => {
     )
   })
 })
+
+describe('DiscogsPanel result thumbnail', () => {
+  // A MusicBrainz thumbnail is a Cover Art Archive URL asked on faith: a release without
+  // art answers 404 and archive.org sometimes 500s. The browser then paints its broken-image
+  // glyph in the row, which reads as an app fault; the empty cover slot is the honest look.
+  it('falls back to the empty cover slot when the thumbnail fails to load', () => {
+    renderPanel(
+      browser({
+        results: [
+          {
+            provider: 'musicbrainz',
+            id: 1,
+            title: 'Jewel - La Morta!',
+            thumb: 'https://coverartarchive.org/release/ad66faf4/front-250',
+          },
+        ],
+      }),
+    )
+    const thumb = screen.getByTestId('result-thumb')
+    expect(screen.queryByTestId('result-thumb-empty')).toBeNull()
+    fireEvent.error(thumb)
+    expect(screen.queryByTestId('result-thumb')).toBeNull()
+    expect(screen.getByTestId('result-thumb-empty')).toBeInTheDocument()
+  })
+})
