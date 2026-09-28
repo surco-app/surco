@@ -172,12 +172,21 @@ export function groupByRelease(recordings: MbRecording[]): SearchResult[] {
 
 const cacheStore = createLookupCacheStore<SearchResult[], Release>('musicbrainz-lookup-cache')
 
-async function searchOnce(query: string, priority?: SearchPriority): Promise<SearchResult[]> {
-  const key = `q:${query.trim().toLowerCase()}`
+// Free text goes in dismax mode: plain Lucene text only searches the recording title, so
+// "Kings Of Tomorrow Finally" brought songs titled "Kings of Tomorrow" by anyone, while
+// dismax spreads the words over title, artist and release. The fielded queries name their
+// own fields and stay plain Lucene. The two modes answer differently, hence their own keys.
+async function searchOnce(
+  query: string,
+  priority?: SearchPriority,
+  dismax = false,
+): Promise<SearchResult[]> {
+  const key = `${dismax ? 'dx' : 'q'}:${query.trim().toLowerCase()}`
   const cached = cachedSearch(cacheStore, key)
   if (cached) return cached
+  const mode = dismax ? '&dismax=true' : ''
   const data = await api<MbRecordingSearch>(
-    `${BASE}/recording?query=${encodeURIComponent(query)}&fmt=json&limit=25`,
+    `${BASE}/recording?query=${encodeURIComponent(query)}${mode}&fmt=json&limit=25`,
     priority,
   )
   const results = groupByRelease(data.recordings ?? [])
@@ -242,7 +251,7 @@ export async function search(
       // The album was already asked on the release index above; as a free-text candidate
       // against recordings it would only match tracks that happen to share its name.
       return searchCandidates(query, { ...hints, album: undefined }, (candidate) =>
-        searchOnce(escapeLucene(candidate), priority),
+        searchOnce(escapeLucene(candidate), priority, true),
       )
     },
     {
