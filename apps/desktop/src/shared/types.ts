@@ -351,6 +351,7 @@ export interface LifetimeStats {
   bandcampMatches: number
   deezerMatches: number
   beatportMatches: number
+  musicbrainzMatches: number
 }
 
 // An entry in Surco's own trash (main/surcoTrash.ts): a file a conversion replaced or

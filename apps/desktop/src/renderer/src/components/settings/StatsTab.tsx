@@ -1,4 +1,14 @@
-import { AudioLines, Disc3, FolderDown, Headphones, Heart, Radio, Share, Store } from 'lucide-react'
+import {
+  AudioLines,
+  Database,
+  Disc3,
+  FolderDown,
+  Headphones,
+  Heart,
+  Radio,
+  Share,
+  Store,
+} from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -35,6 +45,7 @@ const CELLS: { key: keyof LifetimeStats; icon: typeof FolderDown }[] = [
   { key: 'bandcampMatches', icon: Store },
   { key: 'deezerMatches', icon: Radio },
   { key: 'beatportMatches', icon: AudioLines },
+  { key: 'musicbrainzMatches', icon: Database },
 ]
 
 // Matches by source as one proportional bar, a segment per source with the raw counts
@@ -200,6 +211,12 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
                 label: tr('settings.provider.beatport'),
                 count: stats.beatportMatches,
                 swatch: 'bg-[var(--color-warn)]',
+              },
+              {
+                key: 'musicbrainz',
+                label: tr('settings.provider.musicbrainz'),
+                count: stats.musicbrainzMatches,
+                swatch: 'bg-[var(--color-accent)]/40',
               },
             ]}
           />

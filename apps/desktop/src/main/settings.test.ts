@@ -261,6 +261,7 @@ describe('sanitizeSettingsPatch', () => {
       bandcampMatches: 999,
       deezerMatches: 999,
       beatportMatches: 999,
+      musicbrainzMatches: 999,
     }
     expect(
       sanitizeSettingsPatch({ theme: 'dark', stats: forgedStats, conversionCount: 999 }),
@@ -305,6 +306,14 @@ describe('nested settings from an older install', () => {
       }),
     )
     expect(getSettings().stats.deezerMatches).toBe(0)
+  })
+
+  it('fills musicbrainzMatches for a stats object written before the MusicBrainz source existed', () => {
+    writeFileSync(
+      localFile(),
+      JSON.stringify({ stats: { imported: 3, discogsMatches: 4, beatportMatches: 1 } }),
+    )
+    expect(getSettings().stats.musicbrainzMatches).toBe(0)
   })
 
   it('recordStat never produces NaN for a key a stale settings.json omitted', () => {

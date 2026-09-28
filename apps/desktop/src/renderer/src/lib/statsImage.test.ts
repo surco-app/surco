@@ -13,12 +13,31 @@ describe('statsImageCells', () => {
       bandcampMatches: 0,
       deezerMatches: 44,
       beatportMatches: 0,
+      musicbrainzMatches: 0,
     })
     expect(cells).toEqual([
       { key: 'imported', value: 812 },
       { key: 'analyzed', value: 512 },
       { key: 'discogsMatches', value: 301 },
       { key: 'deezerMatches', value: 44 },
+    ])
+  })
+
+  // The card and the Stats tab tell the story in the same order, MusicBrainz last.
+  it('includes MusicBrainz finds after the other sources', () => {
+    const cells = statsImageCells({
+      imported: 0,
+      listened: 0,
+      analyzed: 0,
+      discogsMatches: 0,
+      bandcampMatches: 0,
+      deezerMatches: 3,
+      beatportMatches: 0,
+      musicbrainzMatches: 7,
+    })
+    expect(cells).toEqual([
+      { key: 'deezerMatches', value: 3 },
+      { key: 'musicbrainzMatches', value: 7 },
     ])
   })
 
@@ -32,6 +51,7 @@ describe('statsImageCells', () => {
         bandcampMatches: 0,
         deezerMatches: 0,
         beatportMatches: 0,
+        musicbrainzMatches: 0,
       }),
     ).toEqual([])
   })
@@ -48,6 +68,7 @@ describe('statsImageCells', () => {
       bandcampMatches: 298,
       deezerMatches: 6,
       beatportMatches: 0,
+      musicbrainzMatches: 0,
     })
     expect(cells.map((c) => c.key)).toEqual([
       'imported',
@@ -70,6 +91,7 @@ describe('statsImageCells', () => {
       bandcampMatches: 20000,
       deezerMatches: 12,
       beatportMatches: 0,
+      musicbrainzMatches: 0,
     })
     expect(cells.map((c) => c.key)).toContain('deezerMatches')
   })
@@ -85,6 +107,7 @@ describe('statsImageCells', () => {
       bandcampMatches: 0,
       deezerMatches: 1,
       beatportMatches: 0,
+      musicbrainzMatches: 0,
     })
     expect(cells.map((c) => c.key)).toEqual(['imported', 'listened', 'analyzed', 'discogsMatches'])
   })
@@ -100,6 +123,7 @@ describe('statsImageCells', () => {
       bandcampMatches: 600,
       deezerMatches: 500,
       beatportMatches: 0,
+      musicbrainzMatches: 0,
     })
     expect(cells).toHaveLength(4)
     expect(cells.map((c) => c.key)).toEqual(['imported', 'listened', 'analyzed', 'discogsMatches'])

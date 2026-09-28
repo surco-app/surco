@@ -84,6 +84,7 @@ const settings: Settings = {
     bandcampMatches: 0,
     deezerMatches: 0,
     beatportMatches: 0,
+    musicbrainzMatches: 0,
   },
   donateNudgeDismissed: false,
   donateNudgeLastShown: '',

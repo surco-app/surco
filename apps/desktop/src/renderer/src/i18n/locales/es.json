@@ -877,6 +877,7 @@
       "bandcampMatches": "Encontradas en Bandcamp",
       "deezerMatches": "Encontradas en Deezer",
       "beatportMatches": "Encontradas en Beatport",
+      "musicbrainzMatches": "Encontradas en MusicBrainz",
       "matchSources": "De dónde vienen las coincidencias",
       "timeSaved": "Has ahorrado unos {{time}}",
       "perTrack": "≈ {{minutes}} min de trabajo manual por pista",
