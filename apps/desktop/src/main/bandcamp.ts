@@ -4,7 +4,7 @@ import { activity } from './activity'
 import { bandcampLimiter } from './bandcampLimiter'
 import { cachedSearch, cacheIfUsable, createLookupCacheStore } from './lookupCacheStore'
 import { isBlockedFetchUrl } from './navigation'
-import { buildSearchCandidates } from './searchQuery'
+import { searchCandidates } from './searchQuery'
 
 // Bandcamp has no public catalog API. Search rides the same autocomplete endpoint the
 // site's own search bar uses; a release is read by fetching its page and parsing the
@@ -91,15 +91,7 @@ export async function search(
     'bandcamp',
     'activity.searchBandcamp',
     async () => {
-      let results: SearchResult[] = []
-      for (const candidate of buildSearchCandidates(query, hints, {
-        includeCatalog: false,
-        albumFirst: true,
-      })) {
-        results = await searchOnce(candidate, priority)
-        if (results.length) break
-      }
-      return results
+      return searchCandidates(query, hints, (candidate) => searchOnce(candidate, priority))
     },
     {
       labelParams: { query },

@@ -5,7 +5,7 @@ import { beatportLimiter } from './beatportLimiter'
 import { BEATPORT_API, type BeatportSession, createBeatportSession } from './beatportSession'
 import { REQUEST_TIMEOUT_MS, USER_AGENT } from './http'
 import { cachedSearch, cacheIfUsable, createLookupCacheStore } from './lookupCacheStore'
-import { buildSearchCandidates } from './searchQuery'
+import { searchCandidates } from './searchQuery'
 
 const MAX_RETRIES = 3
 const BASE_DELAY_MS = 1000
@@ -195,15 +195,7 @@ export async function search(
     'beatport',
     'activity.searchBeatport',
     async () => {
-      let results: SearchResult[] = []
-      for (const candidate of buildSearchCandidates(query, hints, {
-        includeCatalog: false,
-        albumFirst: true,
-      })) {
-        results = await searchOnce(candidate, priority)
-        if (results.length) break
-      }
-      return results
+      return searchCandidates(query, hints, (candidate) => searchOnce(candidate, priority))
     },
     {
       labelParams: { query },
