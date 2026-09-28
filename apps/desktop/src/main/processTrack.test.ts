@@ -1292,3 +1292,41 @@ describe('runProcessTrack: file names without accents', () => {
     expect(result.outputPath).toBe('/out/Röyksopp - Fiësta.aiff')
   })
 })
+
+describe('runProcessTrack: accented file names on macOS', () => {
+  it('lands on the NFD spelling the source already has, since an SMB NAS treats the NFC one as a different file it refuses to overwrite', async () => {
+    const inputPath = '/Volumes/NAS/Junkie XL - Breezer (Tiësto Remix).mp3'.normalize('NFD')
+    const deps = makeDeps({
+      platform: 'darwin',
+      settings: settings({ overwriteOriginal: true }),
+      existsSync: vi.fn(() => true),
+      isSameFile: vi.fn(async (a: string, b: string) => a === b),
+    })
+    const result = await runProcessTrack(
+      job({
+        inputPath,
+        format: 'mp3',
+        outputName: 'Junkie XL - Breezer (Tiësto Remix)'.normalize('NFC'),
+      }),
+      deps,
+    )
+    expect(result.outputPath).toBe(inputPath)
+    expect(deps.confirmConflict).not.toHaveBeenCalled()
+  })
+
+  it('writes a new accented name in NFD, the form Finder writes and the NAS can find again', async () => {
+    const result = await runProcessTrack(
+      job({ outputName: 'Röyksopp - Fiësta'.normalize('NFC') }),
+      makeDeps({ platform: 'darwin' }),
+    )
+    expect(result.outputPath).toBe('/out/Röyksopp - Fiësta.aiff'.normalize('NFD'))
+  })
+
+  it('keeps NFC elsewhere, since Windows volumes compare names byte for byte and tag-derived names are NFC', async () => {
+    const result = await runProcessTrack(
+      job({ outputName: 'Röyksopp - Fiësta'.normalize('NFC') }),
+      makeDeps({ platform: 'win32' }),
+    )
+    expect(result.outputPath).toBe('/out/Röyksopp - Fiësta.aiff'.normalize('NFC'))
+  })
+})
