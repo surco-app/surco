@@ -9,6 +9,7 @@ import { searchCandidates } from './searchQuery'
 const BASE = 'https://musicbrainz.org/ws/2'
 const RELEASE_PAGE = 'https://musicbrainz.org/release/'
 const COVER_ART = 'https://coverartarchive.org/release/'
+const COVER_ART_GROUP = 'https://coverartarchive.org/release-group/'
 
 // MusicBrainz answers 503 when a client exceeds its one request per second. The limiter
 // already paces at that rate, so a 503 means someone else on the same IP is spending the
@@ -51,7 +52,7 @@ export interface MbReleaseSummary {
   title: string
   status?: string
   'artist-credit'?: MbCredit[]
-  'release-group'?: { 'primary-type'?: string | null; 'secondary-types'?: string[] }
+  'release-group'?: { id?: string; 'primary-type'?: string | null; 'secondary-types'?: string[] }
   date?: string
   country?: string
   media?: { position?: number; format?: string | null; 'track-count'?: number }[]
@@ -97,7 +98,7 @@ export interface MbRelease {
   'artist-credit'?: MbCredit[]
   'label-info'?: { 'catalog-number'?: string | null; label?: { name?: string } | null }[]
   genres?: MbGenre[]
-  'release-group'?: { 'primary-type'?: string | null; genres?: MbGenre[] }
+  'release-group'?: { id?: string; 'primary-type'?: string | null; genres?: MbGenre[] }
   'cover-art-archive'?: { front?: boolean }
   media?: { position: number; format?: string | null; tracks?: MbTrack[] }[]
 }
@@ -131,9 +132,15 @@ function coverUrl(mbid: string, size: 250 | 500): string {
   return `${COVER_ART}${mbid}/front-${size}`
 }
 
-// The search JSON says nothing about cover art, so the thumbnail is the Cover Art Archive
-// URL on faith: a release without art answers 404 and the row shows an empty thumbnail,
-// which costs less than a request per row to ask first.
+function groupCoverUrl(groupId: string, size: 250 | 500): string {
+  return `${COVER_ART_GROUP}${groupId}/front-${size}`
+}
+
+// The search JSON says nothing about cover art, so the thumbnail is a Cover Art Archive URL
+// on faith. The album's (release group's) cover rather than the edition's: many editions
+// have no art of their own (La Morta!'s 2006 CD answered 404 while its 2020 edition had
+// one), and the group's exists whenever any edition does. A miss still shows the empty
+// slot, which costs less than a request per row to ask first.
 function releaseRow(release: MbReleaseSummary, fallbackCredit?: MbCredit[]): SearchResult {
   const artist = creditText(release['artist-credit'] ?? fallbackCredit)
   const formats = [
@@ -142,6 +149,7 @@ function releaseRow(release: MbReleaseSummary, fallbackCredit?: MbCredit[]): Sea
   if (release['release-group']?.['secondary-types']?.includes('Compilation'))
     formats.push('Compilation')
   const year = release.date?.match(/^(\d{4})/)?.[1]
+  const group = release['release-group']?.id
   return {
     provider: 'musicbrainz',
     id: numericIdOf(release.id),
@@ -149,8 +157,8 @@ function releaseRow(release: MbReleaseSummary, fallbackCredit?: MbCredit[]): Sea
     ...(year ? { year } : {}),
     ...(release.country ? { country: release.country } : {}),
     ...(formats.length ? { format: formats } : {}),
-    thumb: coverUrl(release.id, 250),
-    cover_image: coverUrl(release.id, 500),
+    thumb: group ? groupCoverUrl(group, 250) : coverUrl(release.id, 250),
+    cover_image: group ? groupCoverUrl(group, 500) : coverUrl(release.id, 500),
     releaseUrl: `${RELEASE_PAGE}${release.id}`,
   }
 }
@@ -170,7 +178,7 @@ export function groupByRelease(recordings: MbRecording[]): SearchResult[] {
   return out
 }
 
-const cacheStore = createLookupCacheStore<SearchResult[], Release>('musicbrainz-lookup-cache')
+const cacheStore = createLookupCacheStore<SearchResult[], Release>('musicbrainz-lookup-cache-v2')
 
 // Free text goes in dismax mode: plain Lucene text only searches the recording title, so
 // "Kings Of Tomorrow Finally" brought songs titled "Kings of Tomorrow" by anyone, while
@@ -323,6 +331,18 @@ export function mapRelease(release: MbRelease): Release {
   }
 }
 
+// An edition without art of its own falls back to its album's cover, asked first with a
+// two-byte Range probe: offering a URL that answers 404 would make applying the match fail
+// its download. Anything but a success (a miss, archive.org's intermittent 500s, a timeout)
+// counts as no cover.
+async function coverExists(url: string): Promise<boolean> {
+  const res = await fetch(url, {
+    headers: { 'User-Agent': USER_AGENT, Range: 'bytes=0-1' },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  }).catch(() => undefined)
+  return res?.ok === true
+}
+
 const MBID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // The ref is the row's release page URL (or a bare MBID). It crosses IPC from the renderer,
@@ -346,6 +366,11 @@ export async function getRelease(ref: string, priority?: SearchPriority): Promis
         priority,
       )
       const release = mapRelease(data)
+      const group = data['release-group']?.id
+      if (!release.images && group && (await coverExists(groupCoverUrl(group, 500)))) {
+        const cover = groupCoverUrl(group, 500)
+        release.images = [{ uri: cover, type: 'primary', resource_url: cover }]
+      }
       cacheStore.setRelease(mbid, release)
       return release
     },

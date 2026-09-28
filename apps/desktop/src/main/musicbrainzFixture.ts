@@ -212,6 +212,7 @@ export const recordingSearch: MbRecordingSearch = {
             },
           ],
           'release-group': {
+            id: 'a07a80ad-20fb-3c74-a406-d6c2efb16856',
             'primary-type': 'Single',
           },
           date: '2001-04-02',
@@ -480,6 +481,7 @@ export const lifestyleDoubleCd: MbRelease = {
   ],
   genres: [],
   'release-group': {
+    id: '8c23b838-adc4-313f-afc5-95488680926f',
     'primary-type': 'Album',
     genres: [
       {
