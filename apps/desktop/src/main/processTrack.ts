@@ -186,9 +186,17 @@ export async function runProcessTrack(
     const besideOriginal =
       (job.convertBesideOriginal ?? settings.convertBesideOriginal ?? false) &&
       !(job.overwriteOriginal ?? settings.overwriteOriginal)
+    // macOS writes file names decomposed (NFD): Finder does, and an SMB NAS hands them
+    // back that way. The name built from the tags is composed (NFC), and on such a NAS
+    // the two spellings are different files: the rename over the source failed with
+    // EEXIST or -83, and a temp named in NFC could not be found again to rename or
+    // delete. APFS treats both as one name, so this changes nothing on a local disk.
+    const outputName = sanitizeOutputName(
+      settings.asciiFileNames ? foldAccents(job.outputName) : job.outputName,
+    )
     const resolved = resolveOutputTarget(
       job.inputPath,
-      sanitizeOutputName(settings.asciiFileNames ? foldAccents(job.outputName) : job.outputName),
+      deps.platform === 'darwin' ? outputName.normalize('NFD') : outputName,
       format,
       settings.outputDir,
       job.overwriteOriginal ?? settings.overwriteOriginal,

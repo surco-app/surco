@@ -87,10 +87,10 @@ import {
   volumedetectArgs,
   volumeFilter,
 } from './normalize'
-import { keepOriginal, restoreOriginal } from './originalKeeper'
+import { discardBackup, keepOriginal } from './originalKeeper'
 import { recordRekordboxRepoint } from './rekordboxBatch'
 import { rekordboxRepointFor } from './rekordboxRepointFor'
-import { renameWithRetry, rescuePath } from './renameRetry'
+import { removeTemp, renameWithRetry, rescuePath } from './renameRetry'
 import { getSettings } from './settings'
 import { createSharedScan } from './sharedScan'
 import { readTagFormats } from './tagFormats'
@@ -2163,7 +2163,7 @@ export async function convertAudio(
     // the rename's own comment below already claims to be true of it.
     await assertDecodable(tmp, copiedVerbatim ? input : undefined)
     // A rewrite lands on the source's own path, so the rename below would replace the
-    // user's file with no way back. The original goes to Surco's trash first (see
+    // user's file with no way back. A copy of the original goes to Surco's trash first (see
     // surcoTrash.ts); unconfigured — the unit tests — keepOriginal keeps nothing and
     // the rename overwrites as it always did. Whether it is worth keeping is the
     // keeper's call, not this one's: it owns the user's setting, and deciding here left
@@ -2207,12 +2207,11 @@ export async function convertAudio(
     const repoint = rekordboxRepointFor(input, output, { replaces: replacesPath })
     if (repoint) recordRekordboxRepoint(repoint)
   } catch (e) {
-    // The original was archived for a rename that never landed, so the user's path is
-    // empty: reported from an external disk as a track that vanished from its folder and
-    // lived on only in Originals, which empties itself. Put it back before anything else.
+    // The original was copied for a rename that never landed, so it is still on its own
+    // path and the copy in Originals is a duplicate of a file nothing replaced.
     if (archived)
-      await restoreOriginal(archived).catch((err) =>
-        log.warn(`original stayed in Originals after a failed rename: ${err}`),
+      await discardBackup(archived).catch((err) =>
+        log.warn(`backup of an unreplaced original stayed in Originals: ${err}`),
       )
     // A rescued temp is no longer at `tmp` — the rescue renamed it away — so the unlink
     // below finds nothing and the finished conversion survives on its own. Returning
@@ -2232,11 +2231,9 @@ export async function convertAudio(
     // the temp parked in the user's music folder with nothing recording its existence,
     // which reads as "a file that never finished converting".
     // ENOENT means the temp was never created (the encode died before writing) or is
-    // already gone — nothing survived, so it must not be recorded as litter.
-    const survived = await unlink(tmp).then(
-      () => false,
-      (err: NodeJS.ErrnoException) => err?.code !== 'ENOENT',
-    )
+    // already gone, unless the folder still lists it under another spelling (see
+    // removeTemp): only then did something survive to record as litter.
+    const survived = await removeTemp(tmp)
     if (survived) {
       log.warn(`temp cleanup failed, left behind: ${tmp}`)
       Object.assign(e as object, { tmpSurvived: true })

@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { rename as fsRename } from 'node:fs/promises'
+import { readdir as fsReaddir, rename as fsRename, unlink as fsUnlink } from 'node:fs/promises'
 import { basename, dirname, extname, join } from 'node:path'
 import { uniqueOutputPath } from './inplace'
 
@@ -121,4 +121,35 @@ export function rescuePath(output: string, exists: (p: string) => boolean = exis
   const ext = extname(output)
   const base = basename(output, ext)
   return uniqueOutputPath(join(dirname(output), `${base}${RESCUE_SUFFIX}${ext}`), exists)
+}
+
+interface RemoveDeps {
+  unlink?: (path: string) => Promise<void>
+  readdir?: (dir: string) => Promise<string[]>
+}
+
+// Deletes a conversion's temp and answers whether it is still on disk. ENOENT is not
+// proof it is gone: an SMB NAS lists names in NFD and did not always find the temp by
+// the NFC spelling it was created under, so every failed retry left another hidden copy
+// of the track in the user's folder. The folder's own listing is the tiebreaker, and
+// the spelling it gives is the one the NAS answers to, the same one Finder uses.
+export async function removeTemp(
+  path: string,
+  { unlink = fsUnlink, readdir = fsReaddir }: RemoveDeps = {},
+): Promise<boolean> {
+  const code = await unlink(path).then(
+    () => null,
+    (err: NodeJS.ErrnoException) => err?.code ?? 'unknown',
+  )
+  if (code === null) return false
+  if (code !== 'ENOENT') return true
+  const name = basename(path)
+  const listed = (await readdir(dirname(path)).catch(() => [])).find(
+    (entry) => entry !== name && entry.normalize('NFC') === name.normalize('NFC'),
+  )
+  if (!listed) return false
+  return unlink(join(dirname(path), listed)).then(
+    () => false,
+    () => true,
+  )
 }

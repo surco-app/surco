@@ -55,16 +55,16 @@ export async function keepOriginal(
   return keeper ? keeper(path, reason, outputPath, ctx) : null
 }
 
-// The way back for a write that archived the original and then failed: without it the
-// user's file is gone from its folder and survives only in Originals, which empties itself.
-export type OriginalRestorer = (entry: TrashEntry) => Promise<void>
+// A replaced original is backed up by copy and never leaves its path, so a write that
+// fails leaves the user's file untouched and the copy is just a duplicate to drop.
+export type BackupDiscarder = (entry: TrashEntry) => Promise<void>
 
-let restorer: OriginalRestorer | null = null
+let discarder: BackupDiscarder | null = null
 
-export function configureOriginalRestorer(next: OriginalRestorer | null): void {
-  restorer = next
+export function configureBackupDiscarder(next: BackupDiscarder | null): void {
+  discarder = next
 }
 
-export async function restoreOriginal(entry: TrashEntry): Promise<void> {
-  if (restorer) await restorer(entry)
+export async function discardBackup(entry: TrashEntry): Promise<void> {
+  if (discarder) await discarder(entry)
 }

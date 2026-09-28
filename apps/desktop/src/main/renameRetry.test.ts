@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
-import { FILE_IN_USE_MARKER, isFileInUseError, renameWithRetry, rescuePath } from './renameRetry'
+import {
+  FILE_IN_USE_MARKER,
+  isFileInUseError,
+  removeTemp,
+  renameWithRetry,
+  rescuePath,
+} from './renameRetry'
 
 const inUse = (code: string): NodeJS.ErrnoException =>
   Object.assign(new Error(`${code}: operation not permitted, rename`), { code })
@@ -246,5 +252,38 @@ describe('rescuePath', () => {
   // the real extension is the split point.
   it('keeps dots inside the name and only splits the extension', () => {
     expect(rescuePath('/music/Track 2.0.flac')).toBe('/music/Track 2.0~.flac')
+  })
+})
+
+// An SMB NAS lists names in NFD and does not always find a file by its NFC spelling: the
+// delete answered ENOENT for a temp still sitting in the folder, the cleanup took that as
+// "already gone", and every retry left one more hidden copy of the track behind.
+describe('removeTemp', () => {
+  const nfc = '/nas/.Tiësto.tmp-1a2b3c4d.mp3'.normalize('NFC')
+  const nfd = '/nas/.Tiësto.tmp-1a2b3c4d.mp3'.normalize('NFD')
+  const enoent = (): Promise<never> =>
+    Promise.reject(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }))
+  const nasUnlink = vi.fn((p: string) => (p === nfd ? Promise.resolve() : enoent()))
+
+  it('deletes the temp under the spelling the folder lists when its own spelling is not found', async () => {
+    nasUnlink.mockClear()
+    const survived = await removeTemp(nfc, {
+      unlink: nasUnlink,
+      readdir: async () => ['.Tiësto.tmp-1a2b3c4d.mp3'.normalize('NFD'), 'Other.mp3'],
+    })
+    expect(survived).toBe(false)
+    expect(nasUnlink).toHaveBeenLastCalledWith(nfd)
+  })
+
+  it('reports nothing left when the folder does not list it either', async () => {
+    const survived = await removeTemp(nfc, { unlink: enoent, readdir: async () => ['Other.mp3'] })
+    expect(survived).toBe(false)
+  })
+
+  it('reports the temp as left behind when the delete fails for another reason', async () => {
+    const busy = (): Promise<never> =>
+      Promise.reject(Object.assign(new Error('EBUSY'), { code: 'EBUSY' }))
+    const survived = await removeTemp(nfc, { unlink: busy, readdir: async () => [] })
+    expect(survived).toBe(true)
   })
 })
