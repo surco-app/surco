@@ -548,9 +548,11 @@ textarea {
 }
 
 /* The convert button's two faces. Blocked, it names the missing field in amber on a
-   neutral ground; once the field is filled the accent sweeps in from the left and the
-   action rolls down into place. The sweep is asymmetric: it arrives unhurried and
-   leaves at once, since losing the ready state needs no ceremony. The two labels share
+   neutral ground; once the field is filled the accent fades in and the action rolls
+   down into place. The fade has no direction on purpose: a left-to-right sweep read as
+   a percentage completing, on the same button that is the convert's progress bar. It
+   is asymmetric: it arrives unhurried and leaves at once, since losing the ready state
+   needs no ceremony. The two labels share
    one grid cell and trade places with a short travel and a light blur, so they read as
    one label changing rather than two crossing. */
 .process-wrap::after {
@@ -571,15 +573,15 @@ textarea {
   position: absolute;
   inset: 0;
   background: var(--color-accent);
-  clip-path: inset(0 100% 0 0);
+  opacity: 0;
   transition:
-    clip-path 0.18s ease-out,
+    opacity 0.12s ease-out,
     background-color 0.15s ease;
 }
 .process-fill[data-on] {
-  clip-path: inset(0);
+  opacity: 1;
   transition:
-    clip-path 0.48s cubic-bezier(0.25, 1, 0.5, 1),
+    opacity 0.25s cubic-bezier(0.2, 0, 0, 1),
     background-color 0.15s ease;
 }
 button:hover > .process-fill {
@@ -652,10 +654,6 @@ button:hover > .process-fill {
   .process-wrap[data-blocked] .process-face-action {
     transform: none;
     filter: none;
-  }
-  .process-fill,
-  .process-fill[data-on] {
-    transition: background-color 0.15s ease;
   }
   .animate-blocked-shake {
     animation: none;
