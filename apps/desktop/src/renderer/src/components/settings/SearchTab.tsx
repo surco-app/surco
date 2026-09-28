@@ -50,26 +50,7 @@ export function SearchTab({
         />
       </SettingsSection>
 
-      <SettingsSection
-        eyebrow={
-          <>
-            {tr('settings.beatportSection')}
-            <span
-              data-testid="beatport-status"
-              data-state={local.beatportUsername ? 'connected' : 'disconnected'}
-              role="img"
-              aria-label={
-                local.beatportUsername
-                  ? tr('settings.beatportConnected')
-                  : tr('settings.beatportNotConnected')
-              }
-              className={`ml-2 inline-block h-2 w-2 rounded-full align-middle ${
-                local.beatportUsername ? 'bg-[var(--color-good)]' : 'bg-[var(--color-danger)]'
-              }`}
-            />
-          </>
-        }
-      >
+      <SettingsSection eyebrow={tr('settings.beatportSection')}>
         {!beatportOn && (
           <SettingsHint data-testid="settings-beatport-disabled" className="mb-4">
             {tr('settings.beatportDisabledHint')}

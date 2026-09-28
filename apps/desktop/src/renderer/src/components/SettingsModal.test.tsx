@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // SettingsModal reads window.api.platform at module load, so stub it before the
@@ -1147,18 +1147,15 @@ describe('SettingsModal Beatport card state', () => {
     fireEvent.click(screen.getByTestId('settings-tab-search'))
   }
 
-  it('flags the card red while no account is connected, so a ticked box is not mistaken for ready', () => {
+  it('shows the login form without a red flag, since a missing account is not an error', () => {
     openSearch({ beatportUsername: '' })
-    const status = screen.getByTestId('beatport-status')
-    expect(status).toHaveAttribute('data-state', 'disconnected')
-    expect(status.textContent).toBe('')
-    expect(status.getAttribute('aria-label')).not.toMatch(/^settings\./)
+    expect(screen.getByTestId('beatport-connect')).toBeInTheDocument()
+    expect(screen.queryByTestId('beatport-status')).not.toBeInTheDocument()
   })
 
-  it('turns the flag green once an account is connected', () => {
+  it('puts the green dot beside the connected account, where it reads as its status', () => {
     openSearch({ beatportUsername: 'dj' })
-    const status = screen.getByTestId('beatport-status')
-    expect(status).toHaveAttribute('data-state', 'connected')
+    const status = within(screen.getByTestId('beatport-connected')).getByTestId('beatport-status')
     expect(status.textContent).toBe('')
     expect(status.getAttribute('aria-label')).not.toMatch(/^settings\./)
   })

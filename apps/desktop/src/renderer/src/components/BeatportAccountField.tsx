@@ -42,7 +42,13 @@ export function BeatportAccountField({
   if (username) {
     return (
       <div className="flex items-center justify-between gap-4">
-        <span data-testid="beatport-connected" className="text-sm">
+        <span data-testid="beatport-connected" className="flex items-center gap-2 text-sm">
+          <span
+            data-testid="beatport-status"
+            role="img"
+            aria-label={tr('settings.beatportConnected')}
+            className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-good)]"
+          />
           {tr('settings.beatportConnectedAs', { username })}
         </span>
         <button
