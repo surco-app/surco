@@ -34,6 +34,7 @@ export default function DownloadButton({
   showMeta = true,
   note,
   center = false,
+  showCount = true,
 }: {
   // Which of the eight placements this is, reported with the click. Several of them share
   // a page, so page_path alone cannot say which CTA earned the download.
@@ -46,6 +47,8 @@ export default function DownloadButton({
   note?: string
   // A centred hero lines the button and its small print up on the page's axis.
   center?: boolean
+  // The home hero shows the count in its own pill above the headline instead.
+  showCount?: boolean
 }) {
   const { t } = useTranslation()
   // Starts 'unknown' in the prerender (no window) and resolves on mount, so the
@@ -230,7 +233,7 @@ export default function DownloadButton({
                   {Math.round(size / 1_000_000)} MB
                 </span>
               )}
-              <DownloadCount />
+              {showCount && <DownloadCount />}
             </>
           )}
         </div>

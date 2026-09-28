@@ -39,7 +39,7 @@ function useCountUp(target: number | null) {
 // Stays hidden until at least one real download lands, so the page never shows
 // "0 descargas" before launch. The count is the highlight; a glowing dot reads
 // as "still climbing".
-export default function DownloadCount() {
+export default function DownloadCount({ pill = false }: { pill?: boolean }) {
   const { t, i18n } = useTranslation()
   const [count, setCount] = useState<number | null>(null)
   const [settled, setSettled] = useState(false)
@@ -65,6 +65,26 @@ export default function DownloadCount() {
   // as a broken progress bar, and the count sits last on its line, so landing late
   // shoves nothing aside.
   if (!settled || !count) return null
+
+  if (pill) {
+    return (
+      <span
+        data-testid="download-count"
+        className="inline-flex items-center gap-2 rounded-full bg-surface/70 py-1.5 pr-3.5 pl-3 text-[0.8125rem] text-muted ring-1 ring-line backdrop-blur-sm"
+      >
+        <span
+          className="h-1.5 w-1.5 rounded-full bg-blue"
+          style={{ animation: 'glow 2s ease-in-out infinite' }}
+        />
+        <span>
+          <span className="font-semibold text-fg tabular-nums">
+            {(shown ?? count).toLocaleString(i18n.language)}
+          </span>{' '}
+          {t('download.countSuffix')}
+        </span>
+      </span>
+    )
+  }
 
   return (
     <span data-testid="download-count" className="inline-flex items-center gap-1.5">

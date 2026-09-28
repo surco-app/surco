@@ -133,6 +133,15 @@ button:not(:disabled) {
   color: transparent;
 }
 
+/* Stage light behind the hero window: blue at the centre, purple and cyan to the sides,
+   so the product is what glows and the headline above stays on flat ground. */
+.hero-light {
+  background:
+    radial-gradient(ellipse 45% 50% at 50% 50%, rgba(122, 162, 247, 0.28), transparent 70%),
+    radial-gradient(ellipse 35% 40% at 28% 55%, rgba(187, 154, 247, 0.18), transparent 70%),
+    radial-gradient(ellipse 35% 40% at 72% 55%, rgba(125, 207, 255, 0.14), transparent 70%);
+}
+
 /* premium grain overlay */
 .grain {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");

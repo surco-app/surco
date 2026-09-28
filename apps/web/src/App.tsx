@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import BrewCommand from './components/BrewCommand'
 import DownloadButton from './components/DownloadButton'
+import DownloadCount from './components/DownloadCount'
 import Footer from './components/Footer'
 import Header from './components/Header'
 import HeroAnchors from './components/HeroAnchors'
@@ -47,6 +48,12 @@ export default function App() {
             confirm what the picture just showed instead of queueing under the button. */}
         <section className="mx-auto max-w-6xl px-6 pt-10 pb-12 text-center sm:pt-14 lg:pt-16 lg:pb-16">
           <Reveal eager>
+            {/* Fixed height so the pill landing after the releases fetch pushes nothing down. */}
+            <div className="mb-6 flex h-8 items-center justify-center">
+              <DownloadCount pill />
+            </div>
+          </Reveal>
+          <Reveal eager>
             <h1 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-[3.5rem] lg:leading-[1.03]">
               {t('hero.h1a')}
               <br />
@@ -59,10 +66,11 @@ export default function App() {
             </p>
           </Reveal>
           <Reveal eager delay={150}>
-            <DownloadButton location="hero" note={t('home.heroFree')} center />
+            <DownloadButton location="hero" note={t('home.heroFree')} center showCount={false} />
           </Reveal>
           <Reveal eager delay={220}>
-            <div className="mx-auto mt-12 max-w-5xl text-left">
+            <div className="relative isolate mx-auto mt-12 max-w-5xl text-left">
+              <div className="hero-light pointer-events-none absolute top-0 left-1/2 -z-10 h-[36rem] w-[140%] -translate-x-1/2 -translate-y-1/2" />
               <HeroApp video />
             </div>
           </Reveal>
