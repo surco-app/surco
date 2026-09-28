@@ -30,7 +30,7 @@ function cleanQuery(query: string, words: string[]): string {
 // setting off every provider receives exactly the hints it always did. Also dropped when
 // blank or when it just repeats the title (a single's album tag): the track search
 // already tries that, and it must not jump ahead of it.
-function cleanHints(
+export function cleanHints(
   hints: SearchHints | undefined,
   words: string[],
   albumFirst: boolean,

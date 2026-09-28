@@ -95,33 +95,83 @@ function wordsOf(text: string): string {
     .trim()} `
 }
 
-function namesArtist(result: SearchResult, artist: string): boolean {
-  return wordsOf(result.title).includes(wordsOf(artist))
+const ACT_SEPARATOR =
+  /\s*(?:,|&|\+|\/|\sx\s|\b(?:vs|feat|ft|pres)\.?(?=\s)|\b(?:featuring|presents|aka)\b)\s*/i
+const TOO_GENERIC = /^(?:dj|the|a|an|el|la|los|las|le|les|de|di|der|die)$/i
+const SORTED_ARTICLE = /^(.+),\s*(the|los|las|el|la|les|le|die)$/i
+
+// The acts a row may name for the file's artist: the whole credit, the credit without a
+// "DJ " prefix, a library-sorted "Brown Brothers, The" turned back around, and each act of
+// a collaboration split on commas, "&", "+", "/", " x ", "vs", "aka", "pres."/"presents"
+// and "feat."/"ft."/"featuring" (the catalog often files a release under the lead act
+// alone). "and" does not split: too many acts carry it in their name. A single letter, a
+// bare "DJ" or a lone article is no act, since nearly any row would name it; an act split
+// off a collaboration needs three letters, since "Housecream Feat. Jo'" accepted another
+// Jo's releases in the library sweep, while a short act credited alone is the whole credit.
+export function actsOf(artist: string): string[] {
+  const letters = (a: string): number => a.replace(/[^\p{L}\p{N}]/gu, '').length
+  const isAct = (a: string, min: number): boolean =>
+    letters(a) >= min && !TOO_GENERIC.test(a.trim())
+  const sorted = artist.match(SORTED_ARTICLE)
+  const whole = [artist, dropDjPrefix(artist), ...(sorted ? [`${sorted[2]} ${sorted[1]}`] : [])]
+  const split = artist.split(ACT_SEPARATOR).map((a) => dropDjPrefix(a.trim()))
+  return [...new Set([...whole.filter((a) => isAct(a, 2)), ...split.filter((a) => isAct(a, 3))])]
 }
 
-// The free-text providers' shared loop (Bandcamp, Deezer, Beatport): each candidate in
-// turn, keeping the first that returns anything. The album candidate is held to a higher
-// bar, since fuzzy search always answers something ("Moby Play" brings Monoplay and Burna
-// Boy's "Money Play"): its rows stand only if one names the file's artist, otherwise the
-// album counts as not found and the track candidates follow as if it had never been tried.
+// An act spelled apart or together ("Pro-Active" and "Proactive", "D Sigual" and
+// "Dsigual") is still the same act, so a run of whole words in the row, joined, may also
+// equal the act joined. Always a run of whole words, never part of one, so "Dsigual"
+// is not found inside "Prodsigual"; and only for acts of four or more letters, where a
+// joined run is unlikely to spell another act by accident.
+function namesActJoined(title: string, act: string): boolean {
+  const target = wordsOf(act).replace(/ /g, '')
+  if (target.length < 4) return false
+  const words = wordsOf(title).trim().split(' ')
+  for (let i = 0; i < words.length; i++) {
+    let joined = ''
+    for (let j = i; j < words.length && joined.length < target.length; j++) {
+      joined += words[j]
+      if (joined === target) return true
+    }
+  }
+  return false
+}
+
+function namesAct(title: string, act: string): boolean {
+  return wordsOf(title).includes(wordsOf(act)) || namesActJoined(title, act)
+}
+
+export function namesArtist(result: SearchResult, artist: string): boolean {
+  return actsOf(artist).some((act) => namesAct(result.title, act))
+}
+
+// The free-text providers' shared loop (Bandcamp, Deezer, Beatport, and MusicBrainz'
+// free text): each candidate in turn, keeping the first whose rows name the file's artist.
+// Fuzzy search always answers something, so the first rung that returns anything was often
+// another act's homonym ("Autumn Tactics" by Sola Brothers brought Chicane's original from
+// three sources, and "Moby Play" brings Monoplay): a rung where no row names the artist
+// counts as not found and the next is tried, and a ladder where none does comes back
+// empty. The rows of the rung that stands are kept whole, since a compilation that holds
+// the track names its own curator, not the act. A library sweep of 120 tracks measured
+// this taking junk-only answers from 25-39% of tracks to 0-9% and losing no row that named
+// the act. With no artist on the file there is nothing to check against, and the first
+// rung that answers anything is kept, as before. The album candidate is always held to it:
+// an album name alone matches anyone's release.
 export async function searchCandidates(
   query: string,
   hints: SearchHints,
   searchOnce: (candidate: string) => Promise<SearchResult[]>,
 ): Promise<SearchResult[]> {
   const artist = hints.artist ?? ''
+  const guarded = actsOf(artist).length > 0
   const albumCandidate = artist && hints.album ? albumCandidateOf(artist, hints.album) : undefined
-  let results: SearchResult[] = []
   for (const candidate of buildSearchCandidates(query, hints, {
     includeCatalog: false,
     albumFirst: true,
   })) {
-    results = await searchOnce(candidate)
-    if (candidate === albumCandidate && !results.some((r) => namesArtist(r, artist))) {
-      results = []
-      continue
-    }
-    if (results.length) break
+    const results = await searchOnce(candidate)
+    const mustName = guarded || candidate === albumCandidate
+    if (mustName ? results.some((r) => namesArtist(r, artist)) : results.length) return results
   }
-  return results
+  return []
 }

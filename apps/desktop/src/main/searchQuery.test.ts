@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { cleanMatchTitle } from '../shared/searchClean'
-import { buildSearchCandidates, cleanQuery } from './searchQuery'
+import type { SearchResult } from '../shared/types'
+import { buildSearchCandidates, cleanQuery, namesArtist, searchCandidates } from './searchQuery'
 
 describe('cleanMatchTitle', () => {
   it('strips a duplicated, track-numbered tail so the real track title can match', () => {
@@ -349,5 +350,96 @@ describe('buildSearchCandidates', () => {
       'Love (Love To Infinity Mix)',
     )
     expect(buildSearchCandidates('Rank 1 Airwave (Euro Mix)')[0]).toBe('Rank 1 Airwave (Euro Mix)')
+  })
+})
+
+const row = (title: string, id = 1): SearchResult => ({ provider: 'deezer', id, title })
+
+describe('namesArtist', () => {
+  it('reads whole words with accents folded, never a word inside another', () => {
+    expect(namesArtist(row('ROSALÍA - Motomami'), 'Rosalia')).toBe(true)
+    expect(namesArtist(row('Monoplay - Play'), 'Moby')).toBe(false)
+  })
+
+  // Any one act of a collaboration is enough: the catalog often files a release under the
+  // lead act alone, and "Sola Brothers, Head Horny's" is "Sola Brothers - …" on Bandcamp.
+  it('accepts a row that names any one act of a collaboration', () => {
+    expect(namesArtist(row('Sola Brothers - Autumn Tactics'), "Sola Brothers, Head Horny's")).toBe(
+      true,
+    )
+    expect(namesArtist(row('Lyen - Run Away'), 'Co.Ro. feat. Lyen')).toBe(true)
+    expect(namesArtist(row('Fat Synth - All I Want'), 'Brian Cross pres. Fat Synth')).toBe(true)
+    expect(namesArtist(row('Morlak - Pussy Pussy'), 'Dj Rulo & Dj Morlak')).toBe(true)
+  })
+
+  // Measured in the library sweep: the right release spelled the act apart or together.
+  it('matches an act spelled with or without separators', () => {
+    expect(namesArtist(row('Pro-Active - Visions'), 'Proactive')).toBe(true)
+    expect(namesArtist(row('D Sigual Vol. 10 - Silence (To Protect Us)'), 'Dsigual')).toBe(true)
+    expect(namesArtist(row('Proactive - Visions'), 'Pro-Active')).toBe(true)
+  })
+
+  it('does not read a spelled-together act inside a longer word', () => {
+    expect(namesArtist(row('Prodsigual - Silence'), 'Dsigual')).toBe(false)
+  })
+
+  // A bare "DJ", an article or a single letter would be named by nearly any row.
+  it('never counts a prefix, an article or a letter as the act', () => {
+    expect(namesArtist(row('DJ Paul Elstak - Beat the System'), 'Dj Lara')).toBe(false)
+    expect(namesArtist(row('The Police - Bring On The Night'), 'Brown Brothers, The')).toBe(false)
+    expect(namesArtist(row('X - Something'), 'Mr. X & Friends')).toBe(false)
+  })
+
+  // A two-letter act split off a collaboration is named by chance: "Housecream Feat. Jo'"
+  // accepted a rung of another Jo's releases in the library sweep. Credited alone, a short
+  // act is still the whole credit and must keep matching.
+  it('needs three letters for an act split off a collaboration, not for a whole credit', () => {
+    expect(namesArtist(row('Jo Smith - Feel It'), "Housecream Feat. Jo'")).toBe(false)
+    expect(namesArtist(row('Housecream - Feel It'), "Housecream Feat. Jo'")).toBe(true)
+    expect(namesArtist(row('Jo - Feel It'), 'Jo')).toBe(true)
+  })
+
+  it('turns a library-sorted "Name, The" back around', () => {
+    expect(namesArtist(row('The Brown Brothers - Happy Groove'), 'Brown Brothers, The')).toBe(true)
+  })
+})
+
+describe('searchCandidates', () => {
+  // The reported case: "Autumn Tactics" by Sola Brothers only exists on Bandcamp, and the
+  // free-text search answered every rung with Chicane's original. Junk that never names
+  // the file's act must not end the ladder as a match; with nothing better, nothing shows.
+  it('comes back empty when no rung names the artist', async () => {
+    const asked: string[] = []
+    const results = await searchCandidates(
+      "Sola Brothers, Head Horny's Autumn Tactics (Original Mix)",
+      { artist: "Sola Brothers, Head Horny's", title: 'Autumn Tactics (Original Mix)' },
+      async (candidate) => {
+        asked.push(candidate)
+        return [row('Chicane - Autumn Tactics'), row('Chicane - Behind the Sun', 2)]
+      },
+    )
+    expect(results).toEqual([])
+    expect(asked.length).toBeGreaterThan(1)
+  })
+
+  it('skips a rung of homonyms and keeps the first one that names the artist', async () => {
+    const results = await searchCandidates(
+      'Dj Rulo & Dj Morlak Pussy Pussy',
+      { artist: 'Dj Rulo & Dj Morlak', title: 'Pussy Pussy' },
+      async (candidate) =>
+        candidate === 'Pussy Pussy'
+          ? [row('Dj Rulo - Pussy Pussy', 3), row('The Pussycat Dolls - PCD', 4)]
+          : [row("The Pussycat Dolls - Don't Cha")],
+    )
+    expect(results.map((r) => r.id)).toEqual([3, 4])
+  })
+
+  it('keeps the first rung that answers anything when the file names no artist', async () => {
+    const results = await searchCandidates(
+      'Autumn Tactics',
+      { title: 'Autumn Tactics' },
+      async () => [row('Chicane - Autumn Tactics')],
+    )
+    expect(results.map((r) => r.title)).toEqual(['Chicane - Autumn Tactics'])
   })
 })

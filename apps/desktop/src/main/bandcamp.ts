@@ -58,7 +58,7 @@ function mapResult(r: AutoResult): SearchResult | undefined {
 // just within one running session.
 const cacheStore = createLookupCacheStore<SearchResult[], Release>('bandcamp-lookup-cache')
 
-async function searchOnce(text: string, priority?: SearchPriority): Promise<SearchResult[]> {
+export async function searchOnce(text: string, priority?: SearchPriority): Promise<SearchResult[]> {
   const key = text.trim().toLowerCase()
   const cached = cachedSearch(cacheStore, key)
   if (cached) return cached

@@ -184,7 +184,7 @@ const cacheStore = createLookupCacheStore<SearchResult[], Release>('musicbrainz-
 // "Kings Of Tomorrow Finally" brought songs titled "Kings of Tomorrow" by anyone, while
 // dismax spreads the words over title, artist and release. The fielded queries name their
 // own fields and stay plain Lucene. The two modes answer differently, hence their own keys.
-async function searchOnce(
+export async function searchOnce(
   query: string,
   priority?: SearchPriority,
   dismax = false,

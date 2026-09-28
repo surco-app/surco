@@ -173,7 +173,7 @@ async function coverMissing(uri: string | undefined): Promise<boolean> {
   return res !== undefined && res.status >= 400 && res.status < 500
 }
 
-async function searchOnce(text: string, priority?: SearchPriority): Promise<SearchResult[]> {
+export async function searchOnce(text: string, priority?: SearchPriority): Promise<SearchResult[]> {
   const key = `q:${text.trim().toLowerCase()}`
   const cached = cachedSearch(cacheStore, key)
   if (cached) return cached

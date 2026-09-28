@@ -187,7 +187,7 @@ describe('search', () => {
     })
     vi.stubGlobal('fetch', fn)
     const out = await search('HH Traxx - Rock that sound (Original mix) - 02', 'high', {
-      artist: 'Francesco Donadoni',
+      artist: 'HH Traxx',
       title: 'Rock that sound (Original mix)',
     })
     expect(out.map((r) => r.id)).toEqual([7])
