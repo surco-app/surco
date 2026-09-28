@@ -31,6 +31,8 @@ import {
 
 const SINGLE = '4a27f230-ab38-4fae-8dd7-c5032fd4a4ee'
 const DOUBLE_CD = '87fabea0-0056-462d-ac7d-9ba3150d6028'
+const SINGLE_GROUP = 'a07a80ad-20fb-3c74-a406-d6c2efb16856'
+const DOUBLE_CD_GROUP = '8c23b838-adc4-313f-afc5-95488680926f'
 const pageOf = (mbid: string): string => `https://musicbrainz.org/release/${mbid}`
 
 function mockFetch(bodies: unknown[], status = 200): ReturnType<typeof vi.fn> {
@@ -96,7 +98,11 @@ describe('groupByRelease', () => {
 
   // The row carries what separates two pressings of the same single at a glance (year,
   // country, medium) and the credit joined the way MusicBrainz writes it.
-  it('builds the row from the release credit, date, country, medium and cover art', () => {
+  // The thumbnail is the album's (release group's) cover, not this edition's: the search JSON
+  // cannot say whether an edition has its own art, and many do not (La Morta!'s 2006 CD
+  // answered 404 while its 2020 digital edition, same group, has one). The group's cover
+  // exists whenever any edition has art, at no extra request.
+  it('builds the row from the release credit, date, country, medium and album cover', () => {
     const row = groupByRelease(recordingSearch.recordings ?? []).find(
       (r) => r.releaseUrl === pageOf(SINGLE),
     )
@@ -108,8 +114,8 @@ describe('groupByRelease', () => {
       year: '2001',
       country: 'XW',
       format: ['Digital Media'],
-      thumb: `https://coverartarchive.org/release/${SINGLE}/front-250`,
-      cover_image: `https://coverartarchive.org/release/${SINGLE}/front-500`,
+      thumb: `https://coverartarchive.org/release-group/${SINGLE_GROUP}/front-250`,
+      cover_image: `https://coverartarchive.org/release-group/${SINGLE_GROUP}/front-500`,
       releaseUrl: pageOf(SINGLE),
     })
   })
@@ -357,11 +363,54 @@ describe('getRelease', () => {
     const fn = mockFetch([lifestyleDoubleCd])
     await getRelease(pageOf(DOUBLE_CD))
     await getRelease(pageOf(DOUBLE_CD))
-    expect(fn).toHaveBeenCalledTimes(1)
+    const lookups = fn.mock.calls.filter(([url]) =>
+      String(url).startsWith('https://musicbrainz.org/'),
+    )
+    expect(lookups).toHaveLength(1)
   })
 
   // The ref crosses IPC from the renderer; anything but a MusicBrainz release must not
   // be spliced into a request path.
+  // An edition without its own art still belongs to an album that may have one (the 2006
+  // CD of La Morta! showed no cover while its 2020 edition had it). The group's cover is
+  // asked with a two-byte Range probe so applying the match never downloads a 404.
+  it('takes the album cover when the release has no art of its own', async () => {
+    const fn = vi.fn(async (url: string) =>
+      url.startsWith('https://coverartarchive.org/')
+        ? { status: 206, ok: true, json: async () => ({}) }
+        : {
+            status: 200,
+            ok: true,
+            json: async () => ({
+              ...lifestyleDoubleCd,
+              id: '87fabea0-0056-462d-ac7d-9ba3150d6030',
+            }),
+          },
+    )
+    vi.stubGlobal('fetch', fn)
+    const rel = await getRelease(pageOf('87fabea0-0056-462d-ac7d-9ba3150d6030'), 'high')
+    const cover = `https://coverartarchive.org/release-group/${DOUBLE_CD_GROUP}/front-500`
+    expect(rel.images).toEqual([{ uri: cover, type: 'primary', resource_url: cover }])
+    const probe = fn.mock.calls.find(([url]) =>
+      String(url).startsWith('https://coverartarchive.org/'),
+    )
+    expect(probe?.[0]).toBe(cover)
+  })
+
+  it('offers no cover when neither the release nor its album has art', async () => {
+    const other = { ...lifestyleDoubleCd, id: '87fabea0-0056-462d-ac7d-9ba3150d6029' }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) =>
+        url.startsWith('https://coverartarchive.org/')
+          ? { status: 404, ok: false, json: async () => ({}) }
+          : { status: 200, ok: true, json: async () => other },
+      ),
+    )
+    const rel = await getRelease(pageOf(other.id), 'high')
+    expect(rel.images).toBeUndefined()
+  })
+
   it('refuses a ref that is not a MusicBrainz release without fetching', async () => {
     const fn = mockFetch([finallySingle])
     await expect(getRelease('https://evil.example/../../x')).rejects.toThrow(
