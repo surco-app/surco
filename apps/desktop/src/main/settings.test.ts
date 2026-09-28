@@ -707,7 +707,7 @@ describe('migrateProviderDefaults', () => {
     )
     migrateProviderDefaults()
     const s = getSettings()
-    expect(s.searchProviders).toEqual(['discogs', 'bandcamp', 'deezer'])
+    expect(s.searchProviders.slice(0, 3)).toEqual(['discogs', 'bandcamp', 'deezer'])
     expect(s.deezerProviderMigrated).toBe(true)
   })
 
@@ -719,7 +719,7 @@ describe('migrateProviderDefaults', () => {
       JSON.stringify({ searchProviders: ['discogs'], deezerProviderMigrated: true }),
     )
     migrateProviderDefaults()
-    expect(getSettings().searchProviders).toEqual(['discogs'])
+    expect(getSettings().searchProviders).not.toContain('deezer')
   })
 
   it('never duplicates deezer on a fresh install whose defaults already carry it', () => {
@@ -727,6 +727,66 @@ describe('migrateProviderDefaults', () => {
     const s = getSettings()
     expect(s.searchProviders.filter((p) => p === 'deezer')).toHaveLength(1)
     expect(s.deezerProviderMigrated).toBe(true)
+  })
+
+  // MusicBrainz arrived after Deezer, so installs that already ran the Deezer step
+  // would never see it without a second, independently marked addition.
+  it('adds musicbrainz once to an install that already ran the deezer migration', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({
+        searchProviders: ['discogs', 'bandcamp', 'deezer'],
+        deezerProviderMigrated: true,
+      }),
+    )
+    migrateProviderDefaults()
+    const s = getSettings()
+    expect(s.searchProviders).toEqual(['discogs', 'bandcamp', 'deezer', 'musicbrainz'])
+    expect(s.musicbrainzProviderMigrated).toBe(true)
+  })
+
+  // An install older than both sources gets both in the same launch.
+  it('adds deezer and musicbrainz together to a pre-deezer install', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ searchProviders: ['discogs'] }),
+    )
+    migrateProviderDefaults()
+    expect(getSettings().searchProviders).toEqual(['discogs', 'deezer', 'musicbrainz'])
+  })
+
+  // Each marker guards only its own source: unticking MusicBrainz must stick, and must
+  // not stop a later launch from respecting a deliberately unticked Deezer either.
+  it('does not re-add musicbrainz after the user unticked it post-migration', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({
+        searchProviders: ['discogs'],
+        deezerProviderMigrated: true,
+        musicbrainzProviderMigrated: true,
+      }),
+    )
+    migrateProviderDefaults()
+    expect(getSettings().searchProviders).toEqual(['discogs'])
+  })
+
+  it('never duplicates musicbrainz on a fresh install whose defaults already carry it', () => {
+    migrateProviderDefaults()
+    const s = getSettings()
+    expect(s.searchProviders.filter((p) => p === 'musicbrainz')).toHaveLength(1)
+    expect(s.musicbrainzProviderMigrated).toBe(true)
+  })
+
+  // The marker syncs with the settings folder, so the user's second Mac, which reads the
+  // same file, does not redo the addition after the user unticked the source on the first.
+  it('writes the musicbrainz marker to the synced folder', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
+    setConfigDir(dir)
+    migrateProviderDefaults()
+    const synced = JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf-8'))
+    expect(synced.musicbrainzProviderMigrated).toBe(true)
+    setConfigDir(null)
+    rmSync(dir, { recursive: true, force: true })
   })
 })
 

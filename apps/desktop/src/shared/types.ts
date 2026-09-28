@@ -318,6 +318,8 @@ export interface Settings {
   // Without it, "add if missing" would resurrect the source on every launch for a user
   // who deliberately unticked it. Synced, so a second Mac doesn't redo the migration.
   deezerProviderMigrated: boolean
+  // The same one-shot marker for the addition that introduced MusicBrainz.
+  musicbrainzProviderMigrated: boolean
   // One-shot marker for moving the old 'always' default onto 'audioChanges' (settings.ts).
   backupPolicyMigrated: boolean
   // One-shot marker for moving the old 30 days and 10 GB defaults onto 7 and 2 (settings.ts).

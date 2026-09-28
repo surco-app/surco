@@ -74,6 +74,7 @@ export const testSettings: Settings = {
   commandUsage: {},
   hasSeenOnboarding: false,
   deezerProviderMigrated: true,
+  musicbrainzProviderMigrated: true,
   backupPolicyMigrated: true,
   backupLimitsMigrated: true,
   trackImportFieldsMigrated: true,

@@ -142,6 +142,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     commandUsage: {},
     hasSeenOnboarding: true,
     deezerProviderMigrated: true,
+    musicbrainzProviderMigrated: true,
     backupPolicyMigrated: true,
     backupLimitsMigrated: true,
     trackImportFieldsMigrated: true,
