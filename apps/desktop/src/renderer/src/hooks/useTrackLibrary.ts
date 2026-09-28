@@ -430,6 +430,7 @@ export function useTrackLibrary({
       )
       const patch: Partial<TrackItem> = {
         query: s.query,
+        queryTyped: false,
         duration: duration ?? undefined,
         foreignTags,
         // The file's own art wins; Music's copy fills the gap for the files that carry

@@ -8,6 +8,7 @@ import {
   matchActivityReport,
   matchTargetOf,
   type ProbedCandidate,
+  searchHintsFor,
   type ProbeMatch,
   shouldAutoApplyMatch,
   tracksToAutoMatch,
@@ -605,6 +606,41 @@ describe('tracksToAutoMatch', () => {
     expect(tracksToAutoMatch([track({ meta: { title: '  ' } as TrackItem['meta'] })])).toHaveLength(
       0,
     )
+  })
+})
+
+describe('searchHintsFor', () => {
+  const jewel = {
+    query: 'Jewel Blacque Moon',
+    meta: { artist: 'Jewel', title: 'Blacque Moon', album: 'La Morta!', isrc: 'NLA010600001' },
+  } as TrackItem
+
+  it('carries the tags when the search is the one the tags built', () => {
+    expect(searchHintsFor(jewel)).toMatchObject({ artist: 'Jewel', title: 'Blacque Moon' })
+  })
+
+  // A hand-typed search for another song must search that song: the providers search the
+  // tags' fields first and keep only rows naming the tags' artist, so with a Jewel track
+  // selected, typing "Kings Of Tomorrow - Finally" brought back Jewel's La Morta! (28/09).
+  it('carries no tags when the typed search names another song', () => {
+    expect(searchHintsFor(jewel, {}, 'Kings Of Tomorrow - Finally')).toEqual({})
+  })
+
+  // Refining the tags' own search (a mix name, punctuation, case) is still that song.
+  it('keeps the tags for a refinement of their own search', () => {
+    expect(searchHintsFor(jewel, {}, 'jewel - blacque moon (original mix)')).toMatchObject({
+      artist: 'Jewel',
+      title: 'Blacque Moon',
+    })
+  })
+
+  // The query the app built can lag behind tags the user just corrected (it is set when
+  // the file is read); those corrected tags are what the search needs, so only a typed
+  // term can drop them.
+  it('keeps the tags when no typed term is given, even if the stored query is stale', () => {
+    expect(searchHintsFor({ ...jewel, query: 'Old Artist Blacque Moon' })).toMatchObject({
+      artist: 'Jewel',
+    })
   })
 })
 

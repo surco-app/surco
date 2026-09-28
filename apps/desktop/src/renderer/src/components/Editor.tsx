@@ -267,7 +267,7 @@ export const Editor = memo(function Editor({
   const browser = useDiscogsBrowser(
     item,
     tr,
-    (query) => onChange({ query }),
+    (query) => onChange({ query, queryTyped: true }),
     searchProviders,
     discogsMaxResults,
     matchCleanup,

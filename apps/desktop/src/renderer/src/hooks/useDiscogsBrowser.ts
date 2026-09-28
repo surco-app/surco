@@ -222,7 +222,12 @@ export function useDiscogsBrowser(
           const rel = await loadRelease({ provider: 'discogs', id: directId as number, title: '' })
           return [resultFromRelease(rel)]
         }
-        return window.api.search(searchTerm, source, 'high', searchHintsFor(item, cleanup))
+        // A term the user typed (this visit, or committed on an earlier one) is theirs to
+        // aim, and drops the file's tags when it names another song; the query the app
+        // built always carries them.
+        const typed = userDroveSearch.current || item.queryTyped === true
+        const hints = searchHintsFor(item, cleanup, typed ? searchTerm : undefined)
+        return window.api.search(searchTerm, source, 'high', hints)
       },
       enabled: searchTerm.trim() !== '',
     })),

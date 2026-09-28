@@ -12,6 +12,7 @@ import type {
 import type { TrackItem } from '../types'
 import type { LocalActivityReport } from './activityLog'
 import { keepCoverArg } from './coverSource'
+import { foldText } from './normalizeText'
 import { unformatTitle } from './outputName'
 import {
   bestMatch,
@@ -58,11 +59,28 @@ export interface MatchCleanup {
 // search and share its cache and its request in flight. The title is the undressed one the
 // scorer uses, so the precise artist+title searches see the bare track name, not the
 // Naming pattern's "(A2) …" dressing.
-export function searchHintsFor(track: TrackItem, cleanup: MatchCleanup = {}): SearchHints {
-  return {
+//
+// A search the user typed is theirs to aim: when it leaves out a word of the tags' artist
+// or title it names another song ("Kings Of Tomorrow - Finally" with a Jewel track
+// selected), and searching the file's fields first, or keeping only rows naming its artist,
+// would answer with the file's own album. So a typed term that does not name the tags
+// carries none. Only a typed term: the query the app built can lag behind tags the user
+// just corrected, and those corrected tags are exactly what the search needs.
+export function searchHintsFor(
+  track: TrackItem,
+  cleanup: MatchCleanup = {},
+  typedTerm?: string,
+): SearchHints {
+  const hints = {
     ...searchHintsOf(track.meta),
     title: matchTargetOf(track, cleanup).title || track.meta.title,
   }
+  if (typedTerm === undefined) return hints
+  const words = new Set(foldText(typedTerm).split(' '))
+  const named = foldText(`${hints.artist ?? ''} ${hints.title ?? ''}`)
+    .split(' ')
+    .every((w) => w === '' || words.has(w))
+  return named ? hints : {}
 }
 
 // What the sweep reads off a track to score release candidates against it.

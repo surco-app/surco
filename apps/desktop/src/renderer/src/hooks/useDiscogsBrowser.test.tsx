@@ -597,6 +597,49 @@ describe('useDiscogsBrowser', () => {
     expect(onQueryCommitted).toHaveBeenCalledWith('refined term')
   })
 
+  // What the user types is what gets searched: with a Jewel track selected, typing
+  // "Kings Of Tomorrow - Finally" sent Jewel's tags along, and the providers answered
+  // with Jewel's La Morta! (28/09). The tags ride along only while the term is about them.
+  it('searches a typed song without the selected track’s tags', async () => {
+    const search = vi.fn().mockResolvedValue([searchResult])
+    setApi({ search })
+    const jewel = item({ query: 'Jewel Blacque Moon', title: 'Blacque Moon' })
+    jewel.meta.artist = 'Jewel'
+    const { result } = renderHook(() => useDiscogsBrowser(jewel, tr), { wrapper: wrapper() })
+    await waitFor(() => expect(search).toHaveBeenCalled())
+    expect(search.mock.calls[0][3]).toMatchObject({ artist: 'Jewel', title: 'Blacque Moon' })
+    act(() => result.current.setQuery('Kings Of Tomorrow - Finally'))
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(search).toHaveBeenCalledTimes(2))
+    expect(search.mock.calls[1][0]).toBe('Kings Of Tomorrow - Finally')
+    expect(search.mock.calls[1][3]).toEqual({})
+  })
+
+  // Flipping away and back remounts the panel on the typed query the track stored; it is
+  // still the user's search and must not pick the tags back up.
+  it('keeps searching a typed song without tags after a flip back to the track', async () => {
+    const search = vi.fn().mockResolvedValue([searchResult])
+    setApi({ search })
+    const jewel = item({ query: 'Kings Of Tomorrow - Finally', title: 'Blacque Moon' })
+    jewel.meta.artist = 'Jewel'
+    jewel.queryTyped = true
+    renderHook(() => useDiscogsBrowser(jewel, tr), { wrapper: wrapper() })
+    await waitFor(() => expect(search).toHaveBeenCalled())
+    expect(search.mock.calls[0][3]).toEqual({})
+  })
+
+  // The query the app built is set when the file is read and lags behind tags the user
+  // corrects in the form; the corrected tags must still reach the search.
+  it('sends the corrected tags when the app-built query is stale', async () => {
+    const search = vi.fn().mockResolvedValue([searchResult])
+    setApi({ search })
+    const fixed = item({ query: 'Jewel Autumn Tactics', title: 'Autumn Tactics' })
+    fixed.meta.artist = "Sola Brothers, Head Horny's"
+    renderHook(() => useDiscogsBrowser(fixed, tr), { wrapper: wrapper() })
+    await waitFor(() => expect(search).toHaveBeenCalled())
+    expect(search.mock.calls[0][3]).toMatchObject({ artist: "Sola Brothers, Head Horny's" })
+  })
+
   it('does not report the track’s own query committing on mount', async () => {
     setApi()
     const onQueryCommitted = vi.fn()

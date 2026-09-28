@@ -28,6 +28,10 @@ export interface TrackItem {
   inputPath: string
   fileName: string
   query: string
+  // The query is one the user typed and committed in the search box, not the one the app
+  // built from the tags or file name: a typed search that names another song searches
+  // without the file's tags (see searchHintsFor).
+  queryTyped?: boolean
   meta: TrackMetadata
   // The name shown in the track list. Frozen to the title (or file name) the file
   // had when it was imported and never changed afterward, so the list stays a stable
