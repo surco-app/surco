@@ -56,10 +56,10 @@ describe('ExportButton', () => {
     }
   })
 
-  // The button keeps saying what it does, and what blocks it sits beside it on the same
-  // row: with the reason on its face, the footer's one action read as a warning, and the
-  // field already carries the same amber dot.
-  it('keeps the action on its face and says what blocks it beside it', () => {
+  // What blocks the convert is said on the button's own face, so it never takes width from
+  // the button beside it. The action stays in the name, voiced after the visible words so
+  // voice control still finds the button by what it shows.
+  it('says what blocks it on its face and keeps the action in its name', () => {
     render(
       <ExportButton
         {...baseProps}
@@ -69,9 +69,36 @@ describe('ExportButton', () => {
       />,
     )
     const btn = screen.getByTestId('process-btn')
-    expect(btn).not.toHaveTextContent('3 required fields missing')
-    expect(btn).toHaveAccessibleName(/^Convert/)
-    expect(screen.getByTestId('process-blocked')).toHaveTextContent('3 required fields missing')
+    expect(screen.getByTestId('process-blocked-face')).toHaveTextContent(
+      '3 required fields missing',
+    )
+    expect(btn).toContainElement(screen.getByTestId('process-blocked-face'))
+    expect(btn).toHaveAccessibleName(/^3 required fields missing · Convert/)
+  })
+
+  it('shows the action on its face once nothing blocks it', () => {
+    render(<ExportButton {...baseProps} incomplete={false} />)
+    expect(screen.queryByTestId('process-blocked-face')).toBeNull()
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName(/^Convert/)
+  })
+
+  // Pressing the blocked button is the user asking "what now?": it reports the press so
+  // the editor can lead them to the field, and still never converts.
+  it('reports a press on the blocked button without converting', () => {
+    const onProcess = vi.fn()
+    const onBlockedPress = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete
+        blockedLabel="Missing Grouping"
+        onProcess={onProcess}
+        onBlockedPress={onBlockedPress}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onBlockedPress).toHaveBeenCalledOnce()
+    expect(onProcess).not.toHaveBeenCalled()
   })
 
   // A natively disabled button drops out of the Tab order, and the reason lived in a hover
