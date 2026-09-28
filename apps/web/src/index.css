@@ -69,26 +69,6 @@ button:not(:disabled) {
   outline-offset: 2px;
 }
 
-@keyframes fill {
-  0% {
-    width: 0;
-  }
-  60% {
-    width: 72%;
-  }
-  100% {
-    width: 72%;
-  }
-}
-@keyframes eq {
-  0%,
-  100% {
-    transform: scaleY(0.35);
-  }
-  50% {
-    transform: scaleY(1);
-  }
-}
 @keyframes glow {
   0%,
   100% {
