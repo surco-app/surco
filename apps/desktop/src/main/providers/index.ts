@@ -136,8 +136,13 @@ const providers: Record<SearchProviderId, SearchProvider> = {
     // No token and no format filter either; a release is addressed by the page URL its
     // search row carries, since MusicBrainz ids are UUIDs.
     search: (query, priority, hints) => {
-      const words = ignoreWordsOf(getSettings().searchIgnoreWords)
-      return musicbrainz.search(cleanQuery(query, words), priority, cleanHints(hints, words, false))
+      const s = getSettings()
+      const words = ignoreWordsOf(s.searchIgnoreWords)
+      return musicbrainz.search(
+        cleanQuery(query, words),
+        priority,
+        cleanHints(hints, words, s.searchByAlbumFirst === true),
+      )
     },
     getRelease: (ref, priority) => musicbrainz.getRelease(ref as string, priority),
   },

@@ -28,4 +28,13 @@ describe.skipIf(!live)('MusicBrainz against the real API', () => {
     const res = await fetch(cover)
     expect(res.ok).toBe(true)
   }, 30_000)
+
+  it('finds the tagged album first when album-first search hands over the album', async () => {
+    const rows = await search('Kings Of Tomorrow - Finally', 'high', {
+      artist: 'Kings Of Tomorrow',
+      title: 'Finally',
+      album: 'It’s in the Lifestyle',
+    })
+    expect(rows[0].title).toBe('Kings of Tomorrow - It’s in the Lifestyle')
+  }, 30_000)
 })

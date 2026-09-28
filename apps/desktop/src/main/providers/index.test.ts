@@ -177,6 +177,21 @@ describe('getProvider', () => {
     expect(dzSearch.mock.calls[0][2]).toEqual({ artist: 'Moby', title: 'Porcelain', album: 'Play' })
   })
 
+  it('hands the album to MusicBrainz only when album-first search is on', async () => {
+    mbSearch.mockResolvedValue([])
+    const hints = { artist: 'Moby', title: 'Porcelain', album: 'Play' }
+    await getProvider('musicbrainz').search('moby porcelain', 'high', hints)
+    expect(mbSearch.mock.calls[0][2]).not.toHaveProperty('album')
+    getSettings.mockReturnValueOnce({
+      discogsToken: 'tok',
+      discogsFormats: [],
+      searchIgnoreWords: [],
+      searchByAlbumFirst: true,
+    })
+    await getProvider('musicbrainz').search('moby porcelain', 'high', hints)
+    expect(mbSearch.mock.calls[1][2]).toEqual(hints)
+  })
+
   // A single's album tag repeats its title, and an untagged album is blank: neither names
   // anything the track search does not already try, so neither may jump ahead of it.
   it.each([

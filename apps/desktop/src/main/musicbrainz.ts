@@ -4,7 +4,7 @@ import { activity } from './activity'
 import { REQUEST_TIMEOUT_MS, USER_AGENT } from './http'
 import { cachedSearch, cacheIfUsable, createLookupCacheStore } from './lookupCacheStore'
 import { musicbrainzLimiter } from './musicbrainzLimiter'
-import { buildSearchCandidates } from './searchQuery'
+import { searchCandidates } from './searchQuery'
 
 const BASE = 'https://musicbrainz.org/ws/2'
 const RELEASE_PAGE = 'https://musicbrainz.org/release/'
@@ -71,6 +71,11 @@ export interface MbRecordingSearch {
   recordings?: MbRecording[]
 }
 
+export interface MbReleaseSearch {
+  count?: number
+  releases?: MbReleaseSummary[]
+}
+
 interface MbTrack {
   position: number
   number?: string
@@ -129,8 +134,8 @@ function coverUrl(mbid: string, size: 250 | 500): string {
 // The search JSON says nothing about cover art, so the thumbnail is the Cover Art Archive
 // URL on faith: a release without art answers 404 and the row shows an empty thumbnail,
 // which costs less than a request per row to ask first.
-function releaseRow(release: MbReleaseSummary, recording: MbRecording): SearchResult {
-  const artist = creditText(release['artist-credit'] ?? recording['artist-credit'])
+function releaseRow(release: MbReleaseSummary, fallbackCredit?: MbCredit[]): SearchResult {
+  const artist = creditText(release['artist-credit'] ?? fallbackCredit)
   const formats = [
     ...new Set((release.media ?? []).map((m) => m.format).filter((f): f is string => !!f)),
   ]
@@ -159,7 +164,7 @@ export function groupByRelease(recordings: MbRecording[]): SearchResult[] {
     for (const release of recording.releases ?? []) {
       if (seen.has(release.id)) continue
       seen.add(release.id)
-      out.push(releaseRow(release, recording))
+      out.push(releaseRow(release, recording['artist-credit']))
     }
   }
   return out
@@ -180,6 +185,26 @@ async function searchOnce(query: string, priority?: SearchPriority): Promise<Sea
   return results
 }
 
+// The release index, asked only for "Search by album first". Cached under its own `rel:`
+// prefix so a release query and a recording query of the same text never share an entry.
+async function searchReleases(query: string, priority?: SearchPriority): Promise<SearchResult[]> {
+  const key = `rel:${query.trim().toLowerCase()}`
+  const cached = cachedSearch(cacheStore, key)
+  if (cached) return cached
+  const data = await api<MbReleaseSearch>(
+    `${BASE}/release?query=${encodeURIComponent(query)}&fmt=json&limit=25`,
+    priority,
+  )
+  const results = (data.releases ?? []).map((release) => releaseRow(release))
+  cacheIfUsable(cacheStore, key, results)
+  return results
+}
+
+// "Search by album first" comes before everything, like on Discogs: the tagged album is the
+// release's own title, so it goes on the release index's title field, pinned to the artist
+// (an album name alone matches anyone's release, and a hit here ends the search). The album
+// hint only arrives while the setting is on; nothing found falls through unchanged.
+//
 // With artist and title from the tags, a fielded recording query is far more precise than
 // free text. Compilations are excluded on the first try because a dance track sits on
 // hundreds of them and they fill every slot before the original single; they come back on
@@ -197,21 +222,28 @@ export async function search(
     'musicbrainz',
     'activity.searchMusicbrainz',
     async () => {
-      const queries: string[] = []
       const artist = hints.artist?.trim()
       const title = hints.title?.trim()
+      const album = hints.album?.trim()
+      if (artist && album) {
+        const byAlbum = await searchReleases(
+          `release:"${escapeLucene(album)}" AND artist:"${escapeLucene(artist)}"`,
+          priority,
+        )
+        if (byAlbum.length) return byAlbum
+      }
       if (artist && title) {
         const fielded = `recording:"${escapeLucene(title)}" AND artist:"${escapeLucene(artist)}"`
-        queries.push(`${fielded} AND NOT secondarytype:compilation`, fielded)
+        for (const q of [`${fielded} AND NOT secondarytype:compilation`, fielded]) {
+          const results = await searchOnce(q, priority)
+          if (results.length) return results
+        }
       }
-      for (const candidate of buildSearchCandidates(query, hints, { includeCatalog: false }))
-        queries.push(escapeLucene(candidate))
-      let results: SearchResult[] = []
-      for (const q of queries) {
-        results = await searchOnce(q, priority)
-        if (results.length) break
-      }
-      return results
+      // The album was already asked on the release index above; as a free-text candidate
+      // against recordings it would only match tracks that happen to share its name.
+      return searchCandidates(query, { ...hints, album: undefined }, (candidate) =>
+        searchOnce(escapeLucene(candidate), priority),
+      )
     },
     {
       labelParams: { query },

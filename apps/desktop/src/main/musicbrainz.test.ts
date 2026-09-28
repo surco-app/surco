@@ -22,6 +22,7 @@ import {
   search,
 } from './musicbrainz'
 import {
+  albumReleaseSearch,
   compilationHits,
   finallySingle,
   lifestyleDoubleCd,
@@ -240,6 +241,80 @@ describe('search', () => {
     const rows = await search('nada de nada xyz', 'high', {})
     expect(second).toHaveBeenCalled()
     expect(rows.length).toBeGreaterThan(0)
+  })
+})
+
+describe('search by album first', () => {
+  const LIFESTYLE = 'It’s in the Lifestyle'
+  const pathOf = (url: unknown): string => new URL(String(url)).pathname
+
+  // The tagged album is the release's own title, so with the setting on (the only time the
+  // album hint arrives) the release index is asked first, on its title and artist fields:
+  // the file's own album leads instead of every single and DJ mix that carries the track.
+  it('asks the release index for the tagged album and artist before any recording query', async () => {
+    const fn = mockFetch([albumReleaseSearch])
+    const rows = await search('Kings Of Tomorrow - Finally', 'high', {
+      artist: 'Kings Of Tomorrow',
+      title: 'Finally',
+      album: LIFESTYLE,
+    })
+    expect(fn).toHaveBeenCalledTimes(1)
+    expect(pathOf(fn.mock.calls[0][0])).toBe('/ws/2/release')
+    expect(queryOf(fn.mock.calls[0][0])).toBe(
+      `release:"${LIFESTYLE}" AND artist:"Kings Of Tomorrow"`,
+    )
+    expect(rows.map((r) => r.releaseUrl)).toEqual([
+      pageOf('2e84bec2-c062-411f-bec2-c0aefc0073b2'),
+      pageOf(DOUBLE_CD),
+      pageOf('64ceaf0c-4c94-4811-a01c-bbf066172f0e'),
+    ])
+    expect(rows[1]).toMatchObject({
+      provider: 'musicbrainz',
+      id: numericIdOf(DOUBLE_CD),
+      title: `Kings of Tomorrow - ${LIFESTYLE}`,
+      year: '2001',
+      country: 'XE',
+      format: ['CD'],
+    })
+  })
+
+  // A mistyped or foreign album tag finds nothing; the track search must then run exactly
+  // as it does with the setting off.
+  it('falls back to the recording ladder when the album is not found', async () => {
+    const fn = mockFetch([{ count: 0, releases: [] }, recordingSearch])
+    const rows = await search('Kings Of Tomorrow - Finally Again', 'high', {
+      artist: 'Kings Of Tomorrow',
+      title: 'Finally Again',
+      album: 'Album que no existe',
+    })
+    expect(rows.length).toBeGreaterThan(0)
+    expect(pathOf(fn.mock.calls[1][0])).toBe('/ws/2/recording')
+    expect(queryOf(fn.mock.calls[1][0])).toBe(
+      'recording:"Finally Again" AND artist:"Kings Of Tomorrow" AND NOT secondarytype:compilation',
+    )
+  })
+
+  // Off by default: without the album hint no release query is spent, so every request
+  // (each one a second of MusicBrainz' rate limit) is the same as before the setting.
+  it('never asks the release index when no album hint arrives', async () => {
+    const fn = mockFetch([
+      { count: 0, recordings: [] },
+      { count: 0, recordings: [] },
+      recordingSearch,
+    ])
+    await search('kot finally album off', 'high', { artist: 'KOT Off!', title: 'Finally Off' })
+    expect(fn.mock.calls.map(([url]) => pathOf(url))).toEqual([
+      '/ws/2/recording',
+      '/ws/2/recording',
+      '/ws/2/recording',
+    ])
+  })
+
+  // An album name alone matches anyone's release, and a hit ends the search.
+  it('skips the album query when the tags name no artist', async () => {
+    const fn = mockFetch([recordingSearch])
+    await search('lifestyle no artist', 'high', { title: 'Finally Lone', album: LIFESTYLE })
+    expect(pathOf(fn.mock.calls[0][0])).toBe('/ws/2/recording')
   })
 })
 

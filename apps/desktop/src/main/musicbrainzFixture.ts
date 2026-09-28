@@ -1,4 +1,4 @@
-import type { MbRecording, MbRecordingSearch, MbRelease } from './musicbrainz'
+import type { MbRecording, MbRecordingSearch, MbRelease, MbReleaseSearch } from './musicbrainz'
 
 // Real MusicBrainz responses captured on 2026-09-28 for Kings of Tomorrow "Finally",
 // trimmed to the fields the client reads: a recording search that excluded compilations,
@@ -561,6 +561,81 @@ export const lifestyleDoubleCd: MbRelease = {
               joinphrase: '',
             },
           ],
+        },
+      ],
+    },
+  ],
+}
+
+// The same artist's album looked up by release title and artist on /ws/2/release, the
+// "Search by album first" query (first three of six releases kept).
+export const albumReleaseSearch: MbReleaseSearch = {
+  count: 6,
+  releases: [
+    {
+      id: '2e84bec2-c062-411f-bec2-c0aefc0073b2',
+      title: 'It’s in the Lifestyle',
+      status: 'Official',
+      'artist-credit': [
+        {
+          name: 'Kings of Tomorrow',
+        },
+      ],
+      'release-group': {
+        'primary-type': 'Album',
+      },
+      date: '2000-06-12',
+      country: 'FR',
+      media: [
+        {
+          format: 'CD',
+          'track-count': 13,
+        },
+      ],
+    },
+    {
+      id: '87fabea0-0056-462d-ac7d-9ba3150d6028',
+      title: 'It’s in the Lifestyle',
+      status: 'Official',
+      'artist-credit': [
+        {
+          name: 'Kings of Tomorrow',
+        },
+      ],
+      'release-group': {
+        'primary-type': 'Album',
+      },
+      date: '2001-04-23',
+      country: 'XE',
+      media: [
+        {
+          format: 'CD',
+          'track-count': 13,
+        },
+        {
+          format: 'CD',
+          'track-count': 8,
+        },
+      ],
+    },
+    {
+      id: '64ceaf0c-4c94-4811-a01c-bbf066172f0e',
+      title: 'It’s in the Lifestyle',
+      status: 'Official',
+      'artist-credit': [
+        {
+          name: 'Kings of Tomorrow',
+        },
+      ],
+      'release-group': {
+        'primary-type': 'Album',
+      },
+      date: '2007-10-19',
+      country: 'XW',
+      media: [
+        {
+          format: 'Digital Media',
+          'track-count': 13,
         },
       ],
     },
