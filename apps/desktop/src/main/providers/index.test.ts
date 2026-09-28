@@ -13,6 +13,7 @@ const { search, getRelease, getSettings, bcSearch, dzSearch, bpSearch, bpGetRele
         // Optional on purpose: an older settings.json predates the setting, and the seam
         // has to cope with it missing.
         discogsMaxResults?: number
+        searchByAlbumFirst?: boolean
       } => ({
         discogsToken: 'tok',
         discogsFormats: [],
@@ -134,6 +135,56 @@ describe('getProvider', () => {
     search.mockResolvedValue([])
     await getProvider('discogs').search('fifty please', 'high')
     expect(search).toHaveBeenCalledWith('fifty please', 'tok', 'high', undefined, [], 50)
+  })
+
+  // The renderer always sends the tagged album; the setting decides here whether any
+  // provider sees it. Off (the default, and any settings.json that predates it) must
+  // leave every request exactly as it was before the setting existed.
+  it('drops the album hint for every provider while album-first search is off', async () => {
+    search.mockResolvedValue([])
+    bcSearch.mockResolvedValue([])
+    const hints = { artist: 'Moby', title: 'Porcelain', album: 'Play' }
+    await getProvider('discogs').search('moby porcelain', 'high', hints)
+    await getProvider('bandcamp').search('moby porcelain', 'high', hints)
+    expect(search.mock.calls[0][3]).not.toHaveProperty('album')
+    expect(bcSearch.mock.calls[0][2]).not.toHaveProperty('album')
+  })
+
+  it('hands the album over, cleaned like the title, when album-first search is on', async () => {
+    getSettings.mockReturnValueOnce({
+      discogsToken: 'tok',
+      discogsFormats: [],
+      searchIgnoreWords: ['vinyl'],
+      searchByAlbumFirst: true,
+    })
+    dzSearch.mockResolvedValue([])
+    await getProvider('deezer').search('moby porcelain', 'high', {
+      artist: 'Moby',
+      title: 'Porcelain',
+      album: 'Play vinyl',
+    })
+    expect(dzSearch.mock.calls[0][2]).toEqual({ artist: 'Moby', title: 'Porcelain', album: 'Play' })
+  })
+
+  // A single's album tag repeats its title, and an untagged album is blank: neither names
+  // anything the track search does not already try, so neither may jump ahead of it.
+  it.each([
+    ['repeats the title', 'porcelain'],
+    ['is blank', '  '],
+  ])('drops an album that %s even when album-first search is on', async (_why, album) => {
+    getSettings.mockReturnValueOnce({
+      discogsToken: 'tok',
+      discogsFormats: [],
+      searchIgnoreWords: [],
+      searchByAlbumFirst: true,
+    })
+    search.mockResolvedValue([])
+    await getProvider('discogs').search('moby porcelain', 'high', {
+      artist: 'Moby',
+      title: 'Porcelain',
+      album,
+    })
+    expect(search.mock.calls[0][3]).not.toHaveProperty('album')
   })
 
   it('strips the saved ignore words for Bandcamp too', async () => {

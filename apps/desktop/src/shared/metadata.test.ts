@@ -61,11 +61,13 @@ describe('emptyMetadata', () => {
 
 describe('searchHintsOf', () => {
   // A provider search is biased by artist/title and pinned by the catalog number; the
-  // other tags would only add noise, so the hints carry exactly these three fields.
-  it('carries artist, title and catalog number from the metadata', () => {
+  // album rides along for the album-first setting, which the main process applies. The
+  // other tags would only add noise, so the hints carry exactly these fields.
+  it('carries artist, title, album and catalog number from the metadata', () => {
     expect(searchHintsOf(FULLY_TAGGED)).toEqual({
       artist: 'Artist',
       title: 'Track',
+      album: 'Album',
       catalogNumber: 'CAT001',
       isrc: 'USRC17607839',
     })

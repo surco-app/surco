@@ -61,6 +61,10 @@ export type SearchPriority = 'high' | 'low'
 export interface SearchHints {
   artist?: string
   title?: string
+  // The file's album tag. Always sent by the renderer; the main process keeps it only
+  // while "Search by album first" is on, so providers can try the release it names
+  // before the track.
+  album?: string
   catalogNumber?: string
   // The recording's ISRC from the file's own tags (streaming rips carry it). Only the
   // Deezer provider consumes it: an exact-identity lookup that puts the original
@@ -144,6 +148,10 @@ export interface Settings {
   // before searching and scoring — no release ever carries them, so left in they sink
   // both. User-curated in Settings → Search, edited as comma-separated text.
   searchIgnoreWords: string[]
+  // Search the tagged album (with the artist) before the track, falling back to the
+  // track when it finds nothing. Off by default: a single's album tag is often junk,
+  // and the track search is what every user had before.
+  searchByAlbumFirst: boolean
   outputDir: string
   outputFormat: FormatSetting
   // When the export format is lossless, keep .mp3 sources as MP3 instead of

@@ -196,7 +196,10 @@ export async function search(
     'activity.searchBeatport',
     async () => {
       let results: SearchResult[] = []
-      for (const candidate of buildSearchCandidates(query, hints, { includeCatalog: false })) {
+      for (const candidate of buildSearchCandidates(query, hints, {
+        includeCatalog: false,
+        albumFirst: true,
+      })) {
         results = await searchOnce(candidate, priority)
         if (results.length) break
       }

@@ -94,6 +94,21 @@ describe('search', () => {
     ])
   })
 
+  // The album-first setting reaches Bandcamp as an album hint: "artist album" leads so the
+  // release the tags name is found before the track name's homonyms.
+  it('searches artist and album first when the hints carry an album', async () => {
+    const fetchMock = mockSearch([])
+    await search('moby porcelain bandcamp', 'high', {
+      artist: 'Moby',
+      title: 'Porcelain',
+      album: 'Play Bandcamp',
+    })
+    const body = JSON.parse(
+      (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string,
+    )
+    expect(body.search_text).toBe('Moby Play Bandcamp')
+  })
+
   // Band/label hits ('b') have no release to fetch, so they must not pollute the list.
   it('drops band/label hits', async () => {
     mockSearch([

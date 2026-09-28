@@ -25,13 +25,25 @@ function cleanQuery(query: string, words: string[]): string {
   return stripIgnoredWords(query.normalize('NFC'), words)
 }
 
-function cleanHints(hints: SearchHints | undefined, words: string[]): SearchHints | undefined {
+// The album hint is dropped here unless "Search by album first" is on, so with the
+// setting off every provider receives exactly the hints it always did. Also dropped when
+// blank or when it just repeats the title (a single's album tag): the track search
+// already tries that, and it must not jump ahead of it.
+function cleanHints(
+  hints: SearchHints | undefined,
+  words: string[],
+  albumFirst: boolean,
+): SearchHints | undefined {
   if (!hints) return hints
-  return {
-    ...hints,
+  const { album, ...rest } = hints
+  const cleaned: SearchHints = {
+    ...rest,
     title: hints.title === undefined ? undefined : cleanQuery(hints.title, words),
     artist: hints.artist === undefined ? undefined : cleanQuery(hints.artist, words),
   }
+  const albumText = albumFirst && album ? cleanQuery(album, words).trim() : ''
+  const repeatsTitle = albumText.toLowerCase() === cleaned.title?.trim().toLowerCase()
+  return albumText && !repeatsTitle ? { ...cleaned, album: albumText } : cleaned
 }
 
 // Search dispatch seam: the IPC layer talks to a provider by id instead of calling a
@@ -58,7 +70,7 @@ const providers: Record<SearchProviderId, SearchProvider> = {
         cleanQuery(query, words),
         s.discogsToken,
         priority,
-        cleanHints(hints, words),
+        cleanHints(hints, words, s.searchByAlbumFirst === true),
         formats,
         // How many the panel will show, so the page is never smaller than the list it
         // has to fill. Defensive like formats above: a hand-edited settings.json must
@@ -73,8 +85,13 @@ const providers: Record<SearchProviderId, SearchProvider> = {
     // Bandcamp's autocomplete takes no token and no format filter, so only the ignore
     // words are threaded here; the formats the Discogs path uses are not.
     search: (query, priority, hints) => {
-      const words = ignoreWordsOf(getSettings().searchIgnoreWords)
-      return bandcamp.search(cleanQuery(query, words), priority, cleanHints(hints, words))
+      const s = getSettings()
+      const words = ignoreWordsOf(s.searchIgnoreWords)
+      return bandcamp.search(
+        cleanQuery(query, words),
+        priority,
+        cleanHints(hints, words, s.searchByAlbumFirst === true),
+      )
     },
     getRelease: (ref, priority) => bandcamp.getRelease(ref as string, priority),
   },
@@ -82,15 +99,25 @@ const providers: Record<SearchProviderId, SearchProvider> = {
     // Deezer takes no token and no format filter — like Bandcamp, only the ignore
     // words are threaded here.
     search: (query, priority, hints) => {
-      const words = ignoreWordsOf(getSettings().searchIgnoreWords)
-      return deezer.search(cleanQuery(query, words), priority, cleanHints(hints, words))
+      const s = getSettings()
+      const words = ignoreWordsOf(s.searchIgnoreWords)
+      return deezer.search(
+        cleanQuery(query, words),
+        priority,
+        cleanHints(hints, words, s.searchByAlbumFirst === true),
+      )
     },
     getRelease: (ref, priority) => deezer.getRelease(ref as number, priority),
   },
   beatport: {
     search: (query, priority, hints) => {
-      const words = ignoreWordsOf(getSettings().searchIgnoreWords)
-      return beatport.search(cleanQuery(query, words), priority, cleanHints(hints, words))
+      const s = getSettings()
+      const words = ignoreWordsOf(s.searchIgnoreWords)
+      return beatport.search(
+        cleanQuery(query, words),
+        priority,
+        cleanHints(hints, words, s.searchByAlbumFirst === true),
+      )
     },
     getRelease: async (ref, priority) => {
       const release = await beatport.getRelease(ref as number, priority)

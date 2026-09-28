@@ -189,6 +189,18 @@ describe('search', () => {
     expect(results).toHaveLength(1)
     expect(results[0].id).toBe(10)
   })
+  // The album-first setting reaches Deezer as an album hint: "artist album" leads so the
+  // release the tags name is found before the track name's homonyms.
+  it('searches artist and album first when the hints carry an album', async () => {
+    const fetchMock = mockFetch([{ data: [] }])
+    await search('moby porcelain deezer', 'high', {
+      artist: 'Moby',
+      title: 'Porcelain',
+      album: 'Play Deezer',
+    })
+    const first = new URL(fetchMock.mock.calls[0][0] as string)
+    expect(first.searchParams.get('q')).toBe('Moby Play Deezer')
+  })
 })
 
 describe('search with an ISRC hint', () => {

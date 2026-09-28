@@ -24,7 +24,7 @@ export { cleanQuery }
 export function buildSearchCandidates(
   query: string,
   hints: SearchHints = {},
-  opts: { includeCatalog?: boolean } = {},
+  opts: { includeCatalog?: boolean; albumFirst?: boolean } = {},
 ): string[] {
   const cleaned = cleanQuery(query)
   const trimmed = dropTrackNumberTail(cleaned)
@@ -33,6 +33,15 @@ export function buildSearchCandidates(
     const t = candidate.trim()
     if (t && !out.includes(t)) out.push(t)
   }
+  // "Search by album first": the tagged album names the one release the track came from,
+  // where the track name alone drags in homonyms, so "artist album" leads and the track
+  // ladder below follows when it finds nothing. The album only reaches here while the
+  // setting is on (the provider seam drops it otherwise). Never without the artist: an
+  // album name alone ("Greatest Hits") matches anyone's release, and any hit ends the loop
+  // before the track is tried. Discogs runs its album search on the structured fields and
+  // leaves this off, so its free-text ladder is unchanged.
+  if (opts.albumFirst && hints.artist && hints.album)
+    add(cleanQuery(`${hints.artist} ${hints.album}`))
   // A "presents"/"pres." alias in the artist drags free-text search onto unrelated
   // compilations; the catalog files the release under the lead act. Lead with the lead
   // artist + title so this clean candidate is tried before the noisy full query, whose
