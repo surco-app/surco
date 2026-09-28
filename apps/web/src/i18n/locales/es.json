@@ -689,7 +689,7 @@
         "body": [
           "En el editor, busca el disco por nombre o pega directamente un release id de Discogs y pulsa «Buscar» (o la tecla /). Surco lista los resultados con carátula, año, sello, número de catálogo y formato, para que distingas la edición exacta; despliega uno para ver su tracklist.",
           "Haz clic en la pista que corresponda y Surco aplica artista, álbum, año, género, sello, catálogo y carátula de un golpe. La más parecida aparece marcada como «Sugerida». La búsqueda funciona sin configurar nada; si añades tu propio token de Discogs en Ajustes, tendrás un límite mayor, privado y más rápido.",
-          "¿Buscas autoeditados o exclusivos? Activa también Bandcamp en Ajustes → Búsqueda: sus resultados aparecen junto a los de Discogs en la misma lista, cada uno con una etiqueta de su origen, y lo eliges igual. Bandcamp no necesita cuenta ni token. ¿Y la música comercial (pop, urbano, éxitos de radio) que no está en ninguno de los dos? Para eso viene Deezer activado de serie: tampoco pide cuenta ni token, y cubre justo el catálogo que a Discogs y Bandcamp se les escapa. Y si pinchas lo que vende Beatport, conecta tu cuenta en Ajustes → Búsqueda (una gratuita vale): cada pista trae su BPM, su tonalidad en tu notación, el mix y el ISRC, y entre versiones con el mismo título Surco elige la que nombra tu archivo."
+          "¿Buscas autoeditados o exclusivos? Activa también Bandcamp en Ajustes → Búsqueda: sus resultados aparecen junto a los de Discogs en la misma lista, cada uno con una etiqueta de su origen, y lo eliges igual. Bandcamp no necesita cuenta ni token. ¿Y la música comercial (pop, urbano, éxitos de radio) que no está en ninguno de los dos? Para eso viene Deezer activado de serie: tampoco pide cuenta ni token, y cubre justo el catálogo que a Discogs y Bandcamp se les escapa. Y si pinchas lo que vende Beatport, conecta tu cuenta en Ajustes → Búsqueda (una gratuita vale): cada pista trae su BPM, su tonalidad en tu notación, el mix y el ISRC, y entre versiones con el mismo título Surco elige la que nombra tu archivo. Y MusicBrainz, el catálogo abierto que mantiene su comunidad, también viene activado de serie y sin cuenta ni token: completa con lanzamientos y créditos que a los demás les faltan, a una búsqueda por segundo como piden sus normas, así que sus resultados pueden llegar un poco después que el resto."
         ],
         "points": [
           "Busca por texto o pega un release id si ya sabes cuál es. Si el archivo ya trae uno, Surco abre directamente esa ficha.",
@@ -940,7 +940,7 @@
     "tag": {
       "step": "02 · se etiqueta",
       "title": "Las etiquetas, de Discogs, en un clic.",
-      "lede": "Discogs para sellos, Bandcamp para autoeditados, Deezer para lo comercial y Beatport para lo que suena en club. Un clic y entra todo: artista, sello, año, BPM y carátula.",
+      "lede": "Discogs para sellos, Bandcamp para autoeditados, Deezer para lo comercial, Beatport para lo que suena en club y MusicBrainz para todo lo demás. Un clic y entra todo: artista, sello, año, BPM y carátula.",
       "pill": "12/40",
       "section": "Metadatos",
       "titleField": "Título",

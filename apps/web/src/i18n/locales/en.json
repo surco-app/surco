@@ -689,7 +689,7 @@
         "body": [
           "In the editor, search for the release by name or paste a Discogs release id directly and hit “Search” (or the / key). Surco lists the results with cover art, year, label, catalog number and format, so you can tell the exact pressing apart; expand one to see its tracklist.",
           "Click the matching track and Surco applies artist, album, year, genre, label, catalog number and cover art in one go. The closest one is flagged “Suggested”. Search works with nothing configured; add your own Discogs token in Settings and you get a higher, private and faster limit.",
-          "After self-released or exclusive material? Turn on Bandcamp too in Settings → Search: its results sit alongside the Discogs ones in the same list, each labelled with its source, and you pick them the same way. Bandcamp needs no account or token. And the commercial stuff (pop, urban, radio hits) that's on neither? That's what Deezer is on by default for: no account or token either, and it covers exactly the catalog Discogs and Bandcamp miss. And if you play what Beatport sells, connect your account in Settings → Search (a free one will do): each track brings its BPM, its key in your notation, the mix and the ISRC, and among versions with the same title Surco picks the one your file names."
+          "After self-released or exclusive material? Turn on Bandcamp too in Settings → Search: its results sit alongside the Discogs ones in the same list, each labelled with its source, and you pick them the same way. Bandcamp needs no account or token. And the commercial stuff (pop, urban, radio hits) that's on neither? That's what Deezer is on by default for: no account or token either, and it covers exactly the catalog Discogs and Bandcamp miss. And if you play what Beatport sells, connect your account in Settings → Search (a free one will do): each track brings its BPM, its key in your notation, the mix and the ISRC, and among versions with the same title Surco picks the one your file names. And MusicBrainz, the open catalog its community keeps, is on by default too, with no account or token: it fills in releases and credits the others lack, at one search per second as its rules require, so its results can arrive a little after the rest."
         ],
         "points": [
           "Search by text or paste a release id if you already know which one it is. If the file already carries one, Surco opens that record directly.",
@@ -940,7 +940,7 @@
     "tag": {
       "step": "02 · tagged",
       "title": "The tags, from Discogs, in one click.",
-      "lede": "Discogs for labels, Bandcamp for self-released, Deezer for the charts, Beatport for the club. One click fills it all in: artist, label, year, BPM and artwork.",
+      "lede": "Discogs for labels, Bandcamp for self-released, Deezer for the charts, Beatport for the club, MusicBrainz for everything else. One click fills it all in: artist, label, year, BPM and artwork.",
       "pill": "12/40",
       "section": "Metadata",
       "titleField": "Title",
