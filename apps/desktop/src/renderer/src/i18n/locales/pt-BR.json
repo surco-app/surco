@@ -950,6 +950,8 @@
     "maxResultsHint": "Quantos resultados de busca mostrar. Menos mantém o release certo na tela em vez de uma fila longa de coletâneas e reedições.",
     "searchIgnoreWords": "Palavras a ignorar nas buscas",
     "searchIgnoreWordsHint": "Palavras ou frases separadas por vírgulas (assinaturas de rip, marcas d'água) removidas dos títulos ao buscar e emparelhar. Suas tags nunca são alteradas.",
+    "searchByAlbumFirst": "Buscar primeiro pelo álbum",
+    "searchByAlbumFirstHint": "Se as tags têm álbum, ele é buscado com o artista antes da faixa. Se nada aparecer, a faixa é buscada.",
     "searchProviders": "Fontes de busca",
     "searchProvidersHint": "Catálogos onde o editor busca. O Discogs é curado, o Bandcamp adiciona material independente, o Deezer cobre os lançamentos digitais comerciais e o Beatport traz BPM, tom e mix.",
     "provider": {

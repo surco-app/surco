@@ -9,7 +9,13 @@ import { BeatportAccountField } from '../BeatportAccountField'
 import { DiscogsTokenField } from '../DiscogsTokenField'
 import { SearchProvidersControl } from '../SearchProvidersControl'
 import { Select } from '../Select'
-import { SettingsEyebrow, SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
+import {
+  SettingsCheckboxField,
+  SettingsEyebrow,
+  SettingsHint,
+  SettingsLabel,
+  SettingsSection,
+} from './SettingsPrimitives'
 
 interface Props {
   synced: SyncedDraft
@@ -176,6 +182,16 @@ export function SearchTab({
           onChange={(e) => patch('searchIgnoreWords', e.target.value)}
           placeholder="vinyl, rip"
           className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+        />
+      </SettingsSection>
+
+      <SettingsSection>
+        <SettingsCheckboxField
+          testid="settings-search-album-first"
+          checked={synced.searchByAlbumFirst}
+          onChange={(v) => patch('searchByAlbumFirst', v)}
+          label={tr('settings.searchByAlbumFirst')}
+          hint={tr('settings.searchByAlbumFirstHint')}
         />
       </SettingsSection>
     </>

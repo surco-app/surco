@@ -107,6 +107,9 @@ export function useDiscogsBrowser(
   // Title-cleanup settings (the Naming pattern), so the panel's ranking, hints and
   // auto-probe score against the undressed title exactly like the sweep does.
   cleanup: MatchCleanup = {},
+  // "Search by album first", from Settings. Only its place in the search key lives here:
+  // the main process applies it to the album hint every search already carries.
+  searchByAlbumFirst = false,
 ): DiscogsBrowser {
   const queryClient = useQueryClient()
   const [query, setQuery] = useState(item.query)
@@ -206,12 +209,14 @@ export function useDiscogsBrowser(
   // query, so a fast source fills the list while a slow one is still walking its ladder.
   // The ignore words belong in every key even though the stripping happens in the main
   // process: the term the user sees doesn't change when they add a word in Settings, and
-  // with staleTime Infinity the same key would keep serving the pre-setting miss.
+  // with staleTime Infinity the same key would keep serving the pre-setting miss. The
+  // album-first setting joins them for the same reason. The album itself stays out, like
+  // the artist and title: typing in the Album field would fire a search per keystroke.
   const directId = parseReleaseId(searchTerm)
   const sources: (SearchProviderId | 'direct')[] = directId !== null ? ['direct'] : providers
   const searchQueries = useQueries({
     queries: sources.map((source) => ({
-      queryKey: ['search', searchTerm, source, cleanup.ignoreWords ?? []],
+      queryKey: ['search', searchTerm, source, cleanup.ignoreWords ?? [], searchByAlbumFirst],
       queryFn: async (): Promise<SearchResult[]> => {
         if (source === 'direct') {
           const rel = await loadRelease({ provider: 'discogs', id: directId as number, title: '' })

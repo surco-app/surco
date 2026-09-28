@@ -62,6 +62,7 @@ export interface SyncedDraft {
   discogsMaxResults: number
   searchProviders: Settings['searchProviders']
   searchIgnoreWords: string
+  searchByAlbumFirst: boolean
 }
 
 // Machine-local staged fields. A config-dir switch may adopt another machine's synced
@@ -103,6 +104,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     discogsMaxResults: s.discogsMaxResults,
     searchProviders: s.searchProviders,
     searchIgnoreWords: s.searchIgnoreWords.join(', '),
+    searchByAlbumFirst: s.searchByAlbumFirst,
     addToAppleMusic: s.addToAppleMusic,
     keepOutputCopy: s.keepOutputCopy,
     overwriteOriginal: s.overwriteOriginal,
