@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.4",
+    "date": "28 de septiembre de 2026",
+    "title": "MusicBrainz y búsquedas más fiables",
+    "items": [
+      {
+        "text": "MusicBrainz se suma a las fuentes de búsqueda: el catálogo abierto que usan TagScanner y Mp3tag, sin cuenta y activado para todos. Si una edición no tiene carátula propia, Surco usa la del álbum. Si prefieres no usarlo, desmárcalo en Ajustes → Búsqueda y no vuelve a aparecer.",
+        "in": "1.4.0"
+      },
+      {
+        "text": "Nuevo ajuste «Buscar primero por álbum» en Ajustes → Búsqueda: si tus archivos traen el álbum, Surco lo busca antes que la pista, y si no lo encuentra vuelve a buscar la pista como siempre. Viene apagado.",
+        "in": "1.4.0"
+      },
+      {
+        "text": "Cuando una fuente no tiene tu pista, ya no te enseña discos de otros artistas con un título parecido: su lista se queda vacía y te fijas en las que sí la tienen. En un barrido de 120 pistas reales, las respuestas que solo traían discos ajenos bajaron de entre un cuarto y un tercio a menos de una de cada diez, sin perder ningún resultado del artista.",
+        "in": "1.4.0"
+      },
+      {
+        "text": "Lo que escribes en la caja de búsqueda es lo que se busca: si buscas otra canción, las etiquetas de la pista seleccionada ya no desvían los resultados hacia su propio disco. El filtro de fuentes cuenta solo los resultados que ves, y una carátula que no carga deja el hueco vacío en vez de una imagen rota.",
+        "in": "1.4.0"
+      }
+    ]
+  },
+  {
     "version": "1.3",
     "date": "26 de septiembre de 2026",
     "title": "Beatport en la búsqueda",

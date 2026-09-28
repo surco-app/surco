@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.4",
+    "date": "September 28, 2026",
+    "title": "MusicBrainz and more reliable searches",
+    "items": [
+      {
+        "text": "MusicBrainz joins the search sources: the open catalog TagScanner and Mp3tag use, with no account and on for everyone. When an edition has no cover of its own, Surco uses the album's. If you'd rather not use it, untick it in Settings → Search and it stays off.",
+        "in": "1.4.0"
+      },
+      {
+        "text": "New “Search by album first” setting in Settings → Search: when your files carry the album, Surco looks for it before the track, and if it isn't found it searches for the track as always. It's off by default.",
+        "in": "1.4.0"
+      },
+      {
+        "text": "When a source doesn't have your track, it no longer shows you other artists' releases with a similar title: its list stays empty and you can focus on the sources that do have it. In a sweep of 120 real tracks, answers holding nothing but other artists' releases dropped from between a quarter and a third to fewer than one in ten, without losing a single result by the artist.",
+        "in": "1.4.0"
+      },
+      {
+        "text": "What you type in the search box is what gets searched: when you look for another song, the selected track's tags no longer pull the results toward its own release. The source filter counts only the results you can see, and a cover that fails to load leaves the slot empty instead of a broken image.",
+        "in": "1.4.0"
+      }
+    ]
+  },
+  {
     "version": "1.3",
     "date": "September 26, 2026",
     "title": "Beatport in search",
