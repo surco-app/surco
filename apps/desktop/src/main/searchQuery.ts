@@ -95,7 +95,7 @@ function wordsOf(text: string): string {
     .trim()} `
 }
 
-function namesArtist(result: SearchResult, artist: string): boolean {
+export function namesArtist(result: SearchResult, artist: string): boolean {
   return wordsOf(result.title).includes(wordsOf(artist))
 }
 

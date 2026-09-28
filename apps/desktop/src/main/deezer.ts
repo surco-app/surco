@@ -88,7 +88,7 @@ export function groupByAlbum(hits: DeezerTrackHit[]): SearchResult[] {
 // the Bandcamp client).
 const cacheStore = createLookupCacheStore<SearchResult[], Release>('deezer-lookup-cache')
 
-async function searchOnce(text: string, priority?: SearchPriority): Promise<SearchResult[]> {
+export async function searchOnce(text: string, priority?: SearchPriority): Promise<SearchResult[]> {
   const key = `q:${text.trim().toLowerCase()}`
   const cached = cachedSearch(cacheStore, key)
   if (cached) return cached
@@ -110,7 +110,7 @@ async function searchOnce(text: string, priority?: SearchPriority): Promise<Sear
 // an ISRC is an exact identifier, so "Deezer does not have this recording" is a stable
 // fact worth remembering, not the ambiguous empty a fuzzy text query returns. The reason
 // that one must not be pinned is that it cannot be told apart from a failure.
-async function trackByIsrc(
+export async function trackByIsrc(
   isrc: string,
   priority?: SearchPriority,
 ): Promise<SearchResult | undefined> {
