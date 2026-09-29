@@ -181,7 +181,7 @@ export default function Speed() {
         </Reveal>
 
         <Reveal delay={120}>
-          <div className="inset-shadow-edge relative h-full overflow-hidden rounded-2xl border border-blue/40 bg-surface2/40 p-6 transition duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue/5">
+          <div className="inset-shadow-edge relative h-full overflow-hidden rounded-2xl border border-blue/40 bg-surface2/40 p-6">
             {/* Static bloom. It used to pulse on a 4s loop, which put a 192px blur-2xl layer
                 on a permanent repaint for an effect nobody watches — the small blue dots
                 elsewhere pulse because they report live status, whereas this is scenery, and
