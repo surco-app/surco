@@ -718,7 +718,7 @@ button:hover > .process-fill {
   transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1);
 }
 .press:active:not(:disabled) {
-  transform: scale(0.96);
+  transform: scale(0.97);
 }
 
 /* Text laid directly over the waveform — the zoom ruler's time labels. The wave is a
@@ -1002,7 +1002,7 @@ button:hover > .process-fill {
    travel to register at all (the smaller the element, the more bounce it takes to read the
    same amount). The dip to 0.9 first is what makes it land like a press being answered
    rather than the icon simply inflating.
-   Starts AFTER .press has let go — pressing scales the button to 0.96, and running both at
+   Starts AFTER .press has let go — pressing scales the button to 0.97, and running both at
    once just averages into a shrug. */
 @keyframes star-punch {
   0% {
