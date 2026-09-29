@@ -621,8 +621,9 @@ describe('TrackList', () => {
     const { onSelect, onSwipeRemove } = renderList([track({ id: 'a' }), track({ id: 'b' })])
     fireEvent.wheel(screen.getAllByTestId('track-row')[0].parentElement as Element, { deltaX: 70 })
     act(() => vi.advanceTimersByTime(500))
-    vi.useRealTimers()
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }))
+    act(() => vi.advanceTimersByTime(200))
+    vi.useRealTimers()
     expect(onSwipeRemove).toHaveBeenCalledWith('a')
     expect(onSelect).not.toHaveBeenCalled()
   })
@@ -990,6 +991,7 @@ describe('TrackList swipe to remove', () => {
     const remove = screen.getByRole('button', { name: i18n.t('trackList.remove') })
     expect(remove).toHaveAttribute('tabindex', '-1')
     fireEvent.click(remove)
+    act(() => vi.advanceTimersByTime(200))
     expect(onSwipeRemove).toHaveBeenCalledWith('a')
   })
 
@@ -1050,13 +1052,31 @@ describe('TrackList swipe to remove', () => {
 
   // Waiting for the wheel to go quiet meant waiting out the trackpad's momentum, close to a
   // second after the fingers lifted (Vicent 29/09: "tarda en quitarla"). Everything in Surco
-  // updates optimistically, so the row goes the moment the swipe crosses the threshold.
-  it('removes the track the moment the swipe crosses the threshold', () => {
+  // updates optimistically, so the track goes as soon as the swipe crosses the threshold, but
+  // not in the same frame: vanishing on the spot read as abrupt (Vicent 29/09: "muy rápido y
+  // brusco"). The row finishes its travel to the edge, eased, and then it goes.
+  it('slides the row off to the edge before removing the track', () => {
     vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(300)
     const { onSwipeRemove } = renderList([track({ id: 'a' })])
     swipeWithoutLetting(1000)
+    expect(onSwipeRemove).not.toHaveBeenCalled()
+    expect(slidBy()).toBe(300)
+    expect(screen.getByTestId('track-row').style.transition).not.toBe('none')
+    act(() => vi.advanceTimersByTime(200))
     expect(onSwipeRemove).toHaveBeenCalledTimes(1)
     expect(onSwipeRemove).toHaveBeenCalledWith('a')
+  })
+
+  // The row is held back past Remove, so it travels far less than the fingers do. Deciding on
+  // the fingers' travel removed it while the row still looked a third of the way across
+  // (Vicent 29/09: "sucede casi al llegar a la mitad"). It decides on what the user sees:
+  // the row has to have visibly crossed half of the list before letting go of it.
+  it('keeps the track until the row itself has crossed half the list', () => {
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(400)
+    const { onSwipeRemove } = renderList([track({ id: 'a' })])
+    swipeWithoutLetting(300)
+    act(() => vi.advanceTimersByTime(500))
+    expect(onSwipeRemove).not.toHaveBeenCalled()
   })
 
   // Removed mid-gesture, the next row slides up under the pointer while the trackpad is still
@@ -1075,6 +1095,7 @@ describe('TrackList swipe to remove', () => {
     expect(rowB.style.transform).toBe('')
     act(() => vi.advanceTimersByTime(500))
     for (let i = 0; i < 8; i++) fireEvent.wheel(rowB.parentElement as Element, { deltaX: 50 })
+    act(() => vi.advanceTimersByTime(200))
     expect(onSwipeRemove).toHaveBeenCalledWith('b')
   })
 
