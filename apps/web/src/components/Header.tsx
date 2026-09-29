@@ -106,7 +106,7 @@ export default function Header({ page }: { page?: Page }) {
         className="mx-auto flex h-20 max-w-5xl items-center justify-between px-6 transition-transform duration-300"
         style={{ transform: scrolled ? 'scale(0.92)' : 'scale(1)' }}
       >
-        <a href={page ? home : '#top'} className="flex items-center gap-3">
+        <a href={page ? home : '#top'} className="flex items-center gap-2">
           {/* 128px source for a mark that never paints above 56: the 1024px PNG it replaced
               was 313 KB on the critical path of every route, for ~80x the pixels drawn. */}
           <img
@@ -114,9 +114,7 @@ export default function Header({ page }: { page?: Page }) {
             alt="Surco"
             width={128}
             height={128}
-            className={`h-9 w-9 origin-left transition-transform duration-300 sm:h-10 sm:w-10 ${
-              scrolled ? 'sm:scale-90' : ''
-            }`}
+            className="h-10 w-10 sm:h-12 sm:w-12"
           />
           <span className="text-xl font-semibold leading-none tracking-tight">Surco</span>
         </a>
