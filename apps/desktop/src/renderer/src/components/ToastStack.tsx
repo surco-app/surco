@@ -91,8 +91,9 @@ export function ToastStack({
         // stack settles smoothly; a transition, so a mid-collapse re-push retargets.
         <div
           key={toast.key ?? toast.id}
+          data-testid="toast-slot"
           className={`grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none ${
-            leaving ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'
+            leaving ? 'grid-rows-[0fr]' : 'grid-rows-[1fr] starting:grid-rows-[0fr]'
           }`}
         >
           {/* overflow-hidden only while collapsing — kept on, it would clip the

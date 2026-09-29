@@ -287,6 +287,18 @@ describe('ToastStack', () => {
       )
     })
 
+    // Entry has to mirror the exit: a new row born at 1fr pushed every card above it up a
+    // full height in one frame. @starting-style opens the row from 0fr on mount (jsdom
+    // cannot evaluate it, so this only guards the variant). A leaving row must not carry it.
+    it('opens a new card’s row from zero so the cards above rise, not jump', () => {
+      const two = [toast({ id: 'a', testid: 'a-toast' }), toast({ id: 'b', testid: 'b-toast' })]
+      const { rerender } = render(<ToastStack toasts={two} onExpire={vi.fn()} onClose={vi.fn()} />)
+      rerender(<ToastStack toasts={[two[1]]} onExpire={vi.fn()} onClose={vi.fn()} />)
+      const [leavingSlot, liveSlot] = screen.getAllByTestId('toast-slot')
+      expect(liveSlot.className).toContain('starting:grid-rows-[0fr]')
+      expect(leavingSlot.className).not.toContain('starting:grid-rows-[0fr]')
+    })
+
     // A dismissed card must not blink out of existence — it lingers just long enough
     // for its leave animation, then unmounts. Now that several toasts expire on their
     // own, an instant unmount reads as a rendering glitch, not a dismissal.
