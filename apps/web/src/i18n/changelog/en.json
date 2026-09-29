@@ -23,6 +23,14 @@
       {
         "text": "Converting tracks on a NAS whose names carry accents, tildes or umlauts (Tiësto, Señorita, Café…) no longer fails or leaves hidden copies in the folder. And if a conversion can't finish, your original file stays where it was instead of ending up in Originals.",
         "in": "1.4.1"
+      },
+      {
+        "text": "Some perfectly sound FLACs were rejected on conversion with a warning that the result was shorter than the original. They now convert normally.",
+        "in": "1.4.2"
+      },
+      {
+        "text": "When something is missing before you can convert, the button says so on its own face and a press takes you to the missing field. When it finishes, the outcome and the next steps fit on a single line. Menus, notices and dialogs move more calmly, and removing a track with a swipe now needs it dragged halfway across the list, so it no longer goes by accident.",
+        "in": "1.4.2"
       }
     ]
   },
@@ -165,7 +173,7 @@
         "in": "1.0.0"
       },
       {
-        "text": "The Quality section only says what it measures. Red is kept for files that come from a lossy source or have bad quality; anything that is only a suspicion shows in amber and says “possible”; padded bits and upsampled audio are no longer flagged as a defect, because they sound the same. The lines are shorter, and with \u201cInline explanations” off there is one line per finding.",
+        "text": "The Quality section only says what it measures. Red is kept for files that come from a lossy source or have bad quality; anything that is only a suspicion shows in amber and says “possible”; padded bits and upsampled audio are no longer flagged as a defect, because they sound the same. The lines are shorter, and with “Inline explanations” off there is one line per finding.",
         "in": "1.0.0"
       },
       {

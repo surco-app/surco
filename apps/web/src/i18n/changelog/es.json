@@ -23,6 +23,14 @@
       {
         "text": "Convertir en un NAS pistas con tildes, eñes o diéresis en el nombre (Tiësto, Señorita, Café…) ya no falla ni deja copias ocultas en la carpeta. Y si una conversión no puede terminar, tu archivo original se queda donde estaba, en vez de acabar en Originales.",
         "in": "1.4.1"
+      },
+      {
+        "text": "Algunos FLAC en perfecto estado se rechazaban al convertir con el aviso de que el resultado era más corto que el original. Ahora se convierten con normalidad.",
+        "in": "1.4.2"
+      },
+      {
+        "text": "Si falta algo para convertir, el botón lo dice en su propia cara y, al pulsarlo, te lleva al campo que falta. Al terminar, el resultado y los siguientes pasos caben en una sola línea. Menús, avisos y diálogos se mueven con más calma, y para quitar una pista deslizando hay que llevarla hasta la mitad de la lista, así que ya no se va sin querer.",
+        "in": "1.4.2"
       }
     ]
   },
