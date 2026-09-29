@@ -30,8 +30,9 @@ export function ToastStack({
   // Dismissed cards linger briefly in a leaving state so the exit can animate — an
   // instant unmount reads as a rendering glitch now that toasts expire on their own.
   // A keyed re-push (the new-tracks count updating in place) swaps ids in the queue,
-  // so a fresh card's key evicts its leaving twin at once: a count update must never
-  // flash two cards.
+  // so a fresh card's key evicts its leaving twin at once and takes over the same
+  // React key: the card stays mounted, only its text and countdown restart, so a
+  // count update never flashes two cards nor replays the entrance.
   const [cards, setCards] = useState<{ toast: Toast; leaving: boolean }[]>([])
   useEffect(() => {
     setCards((prev) => {
@@ -89,7 +90,7 @@ export function ToastStack({
         // tweens 1fr→0fr alongside the fade (same 200ms as TOAST_LEAVE_MS), so the
         // stack settles smoothly; a transition, so a mid-collapse re-push retargets.
         <div
-          key={toast.id}
+          key={toast.key ?? toast.id}
           className={`grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none ${
             leaving ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'
           }`}
@@ -138,6 +139,10 @@ function ToastCard({
   const [focused, setFocused] = useState(false)
   const paused = hovered || focused
   const remaining = useRef(toast.duration ?? 0)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a keyed re-push keeps this card mounted under a new id, and that new id is a fresh deadline, so the clock must restart on it.
+  useEffect(() => {
+    remaining.current = toast.duration ?? 0
+  }, [toast.id, toast.duration])
 
   // A duration arms a one-shot timer for whatever time is left; re-running only when the id
   // or the pause changes keeps a re-render (e.g. a language switch) from restarting the
@@ -215,6 +220,7 @@ function ToastCard({
       </button>
       {toast.duration && (
         <span
+          key={toast.id}
           aria-hidden="true"
           data-testid={toast.testid ? `${toast.testid}-countdown` : undefined}
           className="animate-toast-countdown absolute inset-x-0 bottom-0 h-0.5 bg-[var(--color-accent)]/60"

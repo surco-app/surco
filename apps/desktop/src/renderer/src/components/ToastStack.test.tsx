@@ -148,9 +148,56 @@ describe('ToastStack', () => {
     expect(screen.queryByTestId('app-notice-copy')).toBeNull()
   })
 
+  // A fresh node replays the pop-in entrance on every update of the new-tracks count, so
+  // the notice flickers and slides up again each time a file lands in the watched folder.
+  it('keeps the same card node when a keyed toast is re-pushed with a new id', () => {
+    const { rerender } = render(
+      <ToastStack
+        toasts={[toast({ id: 't1', key: 'new-tracks', testid: 'new-tracks', message: '3 new' })]}
+        onExpire={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    const before = screen.getByTestId('new-tracks')
+    rerender(
+      <ToastStack
+        toasts={[toast({ id: 't2', key: 'new-tracks', testid: 'new-tracks', message: '5 new' })]}
+        onExpire={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('new-tracks')).toBe(before)
+    expect(screen.getByTestId('new-tracks-message')).toHaveTextContent('5 new')
+  })
+
   describe('with fake timers', () => {
     beforeEach(() => vi.useFakeTimers())
     afterEach(() => vi.useRealTimers())
+
+    // The re-push brings a fresh deadline, so the clock starts over even though the card
+    // stays mounted: a count that just grew must not expire on the old toast's leftover time.
+    it('restarts the auto-dismiss clock when a keyed toast is re-pushed', () => {
+      const onExpire = vi.fn()
+      const { rerender } = render(
+        <ToastStack
+          toasts={[toast({ id: 't1', key: 'new-tracks', duration: 1000 })]}
+          onExpire={onExpire}
+          onClose={vi.fn()}
+        />,
+      )
+      act(() => vi.advanceTimersByTime(800))
+      rerender(
+        <ToastStack
+          toasts={[toast({ id: 't2', key: 'new-tracks', duration: 1000 })]}
+          onExpire={onExpire}
+          onClose={vi.fn()}
+        />,
+      )
+      act(() => vi.advanceTimersByTime(800))
+      expect(onExpire).not.toHaveBeenCalled()
+      act(() => vi.advanceTimersByTime(300))
+      expect(onExpire).toHaveBeenCalledWith('t2')
+    })
 
     it('auto-expires a toast that carries a duration, via onExpire not onClose', () => {
       // A transient notice clears itself without side effects; that is the onExpire path.
