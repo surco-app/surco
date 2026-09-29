@@ -16,6 +16,7 @@ import type { OutputFormat } from '../../../shared/types'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { isStale } from '../lib/dirty'
 import { formatTime } from '../lib/duration'
+import { prefersReducedMotion } from '../lib/motion'
 import { isMacOS } from '../lib/platform'
 import { STAGE_PROGRESS } from '../lib/progress'
 import type { ClickMods } from '../lib/selection'
@@ -83,6 +84,9 @@ const SWIPE_ACTION_PX = 84 + SWIPE_GAP_PX
 const SWIPE_REMOVE_MIN_PX = SWIPE_ACTION_PX * 2
 const SWIPE_SETTLE_MS = 160
 const SWIPE_RESISTANCE = 0.35
+// The exit: the row slides off to the edge while its gap closes, both over these 200 ms, so
+// the rows below rise instead of jumping up in one frame. The same ease-out as a toast's
+// collapse, so the app always closes a gap the same way.
 const SWIPE_EXIT_MS = 200
 
 // A hollow ring, not a filled dot: the conversion state shares the amber/red palette with
@@ -281,6 +285,9 @@ interface RowProps {
   onSelect: (id: string, mods: ClickMods) => void
   onActivate: (track: TrackItem) => void
   onSwipeRemove: (id: string) => void
+  // The row has decided to go and starts its exit: the list starts swallowing the swipe's
+  // tail now, not when the track is let go, since the row below rises into it.
+  onSwipeRemoveStart: () => void
   // Applies the row's pending review-tier suggestion — the mouse half of the
   // accept-review command. The sweep stored the release for one-action acceptance
   // (useAutoMatch: "shortcut or click"), but the click never existed: the amber
@@ -320,6 +327,7 @@ const TrackRow = memo(function TrackRow({
   onSelect,
   onActivate,
   onSwipeRemove,
+  onSwipeRemoveStart,
   onAcceptReview,
   onRemoveKey,
   onExtendKey,
@@ -358,6 +366,23 @@ const TrackRow = memo(function TrackRow({
   const swipeRef = useRef(0)
   const settleRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(settleRef.current), [])
+  const [removing, setRemoving] = useState(false)
+  const removingRef = useRef(false)
+  const exitRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  useEffect(() => () => clearTimeout(exitRef.current), [])
+  // A timer, not transitionend, lets the track go once the exit is over, as in ToastStack:
+  // jsdom never fires transition events and a cut-short transition would leave the row hung.
+  const startRemove = (): void => {
+    if (removingRef.current) return
+    removingRef.current = true
+    onSwipeRemoveStart()
+    if (prefersReducedMotion()) {
+      onSwipeRemove(t.id)
+      return
+    }
+    setRemoving(true)
+    exitRef.current = setTimeout(() => onSwipeRemove(t.id), SWIPE_EXIT_MS)
+  }
   const swipeBounds = (): { width: number; shown: number; removeAt: number } => {
     const width = rowRef.current?.offsetWidth ?? 0
     const shown = Math.max(SWIPE_REMOVE_MIN_PX, width / 2)
@@ -379,13 +404,13 @@ const TrackRow = memo(function TrackRow({
     )
   }
   const onSwipeWheel = (e: React.WheelEvent): void => {
-    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
+    if (removingRef.current || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
     setTracking(true)
     moveSwipe(Math.max(swipeRef.current + e.deltaX, 0))
     clearTimeout(settleRef.current)
     if (swipeRef.current >= swipeBounds().removeAt) {
       setTracking(false)
-      onSwipeRemove(t.id)
+      startRemove()
       return
     }
     settleRef.current = setTimeout(() => {
@@ -394,6 +419,7 @@ const TrackRow = memo(function TrackRow({
     }, SWIPE_SETTLE_MS)
   }
   const closeSwipe = (): void => {
+    if (removingRef.current) return
     clearTimeout(settleRef.current)
     setTracking(false)
     moveSwipe(0)
@@ -420,385 +446,405 @@ const TrackRow = memo(function TrackRow({
   // Every selected row gets the soft fill; only the primary (the one in the editor)
   // wears the accent bar, so a multi-selection still shows which track is being edited.
   return (
-    // Drag lives on the row wrapper, not the button: Chromium won't reliably start a native
-    // drag from a <button> (its press state swallows the dragstart), so the row could
-    // not be picked up at all. The img-based cover never hit this, hence the divergence.
-    // biome-ignore lint/a11y/noStaticElementInteractions: the drag must live on the row wrapper (Chromium won't start a native drag from a button); the row's interactive semantics are on the inner role="option" button
+    // The slot around the row closes its gap while the row slides off: its grid row tweens
+    // 1fr to 0fr, the ToastStack collapse, and fades along, so no 0px grey strip is left
+    // behind. content-visibility stays on the row wrapper inside, the node rowRef, the
+    // shared observer and the drag all already point at.
     <div
-      ref={rowRef}
-      // Presentational: the listbox semantics live on the button below (role="option"),
-      // so the drag-hosting wrapper drops out of the accessibility tree.
-      role="presentation"
-      // content-visibility lets the browser skip layout, paint and style for rows
-      // scrolled out of the pane, so a 500-track crate doesn't pay that cost for the
-      // ~490 rows off screen. The row stays in the DOM — unlike windowing — so keyboard
-      // focus, the shared visibility observer and the rowEls measuring all keep working
-      // untouched. contain-intrinsic-size feeds the scrollbar a height estimate for the
-      // skipped rows; `auto` then remembers each row's real size once it has rendered.
-      // Only worth it past DEFER_PAINT_MIN_ROWS: below that, deferring paint moves the
-      // first-paint cost of each row into the scroll itself and reads as jank, while
-      // painting the whole small list once keeps scrolling on already-rasterized content.
-      className={`group relative ${
-        deferPaint ? '[content-visibility:auto] [contain-intrinsic-size:auto_52px]' : ''
+      data-testid="track-row-slot"
+      data-removing={removing || undefined}
+      className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
+        removing ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr]'
       }`}
-      draggable
-      onWheel={onSwipeWheel}
-      onMouseLeave={closeSwipe}
-      onDragStart={(e) => {
-        // Hand the OS the untouched source file(s) so the row can be dropped onto Spek
-        // or any app. An actual drag suppresses the click, so select and drag-out
-        // don't fight (same arrangement the cover uses). The cover rides along so the
-        // OS drag thumbnail is the track's own art, not a generic app icon.
-        e.preventDefault()
-        onDragOut(t)
-      }}
     >
-      <button
-        type="button"
-        ref={(el) => {
-          if (!rowRegistry) return
-          if (el) rowRegistry.current.set(t.id, el)
-          else rowRegistry.current.delete(t.id)
-        }}
-        data-testid="track-row"
-        style={
-          swipe > 0
-            ? { transform: `translateX(-${swipe}px)`, ...(tracking ? { transition: 'none' } : {}) }
-            : undefined
-        }
-        // El ámbito vive en la fila y no en un contenedor de la lista porque solo aquí se
-        // maneja esta tecla: capturarla sobre el resto de controles la dejaría muerta en
-        // vez de caer a su comando global.
-        data-shortcut-scope="track-list"
-        role="option"
-        aria-selected={selected}
-        // Several rows can be selected; this marks the one open in the editor, the fact
-        // the solid fill carries for sighted users.
-        aria-current={primary || undefined}
-        // aria-setsize/aria-posinset are written by TrackList, not here: see its layout effect.
-        // Roving tabindex: only the tab-stop row is reachable by Tab; the rest are driven
-        // by the global ↑/↓ (and j/k) handler that focuses them as the selection moves.
-        tabIndex={tabbable ? 0 : -1}
-        onClick={(e) => {
-          // The backup mark is part of the row (a button can't hold another), so its click
-          // is told apart here: it opens the backup instead of only selecting the track.
-          if (onOpenBackup && (e.target as Element).closest('[data-backup-mark]')) {
-            onOpenBackup(t)
-            return
-          }
-          onSelect(t.id, { meta: e.metaKey || e.ctrlKey, shift: e.shiftKey })
-        }}
-        onKeyDown={(e) => {
-          const chord = eventToChord(e, isMac)
-          if (chord && matchChord(bindings, chord, false, 'track-list') === 'track-menu') {
-            e.preventDefault()
-            // The menu is positioned in pixels because it's normally born from a right
-            // click; from the keyboard there are none, so anchor it to the row's own
-            // bottom-left corner.
-            const r = e.currentTarget.getBoundingClientRect()
-            if (!selected) onSelect(t.id, {})
-            onOpenMenu(t, r.left, r.bottom)
-            return
-          }
-          // Shift+↑/↓ grows the range from the anchor, the keyboard twin of a Shift-click.
-          // Claimed here even at the list's ends, or the global ↑/↓ would run "next"/"prev"
-          // and collapse the range the user is building.
-          const plainShift = e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey
-          if (plainShift && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
-            e.preventDefault()
-            onExtendKey(t.id, e.key === 'ArrowDown' ? 1 : -1)
-            return
-          }
-          // Plain Space plays, so ⌘Space / Ctrl+Space toggles the focused row in or out of
-          // the selection without dropping the rest, like a ⌘-click.
-          if (e.key === ' ' && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
-            e.preventDefault()
-            onSelect(t.id, { meta: true })
-            return
-          }
-          // Bare key only: ⌘⌫ belongs to the global remove command, and the list is a
-          // no-typing surface so plain ⌫/Supr is unambiguous here.
-          if (e.key !== 'Backspace' && e.key !== 'Delete') return
-          if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
+      {/* Drag lives on the row wrapper, not the button: Chromium won't reliably start a native
+          drag from a <button> (its press state swallows the dragstart), so the row could
+          not be picked up at all. The img-based cover never hit this, hence the divergence. */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: the drag must live on the row wrapper (Chromium won't start a native drag from a button); the row's interactive semantics are on the inner role="option" button */}
+      <div
+        ref={rowRef}
+        // Presentational: the listbox semantics live on the button below (role="option"),
+        // so the drag-hosting wrapper drops out of the accessibility tree.
+        role="presentation"
+        // content-visibility lets the browser skip layout, paint and style for rows
+        // scrolled out of the pane, so a 500-track crate doesn't pay that cost for the
+        // ~490 rows off screen. The row stays in the DOM — unlike windowing — so keyboard
+        // focus, the shared visibility observer and the rowEls measuring all keep working
+        // untouched. contain-intrinsic-size feeds the scrollbar a height estimate for the
+        // skipped rows; `auto` then remembers each row's real size once it has rendered.
+        // Only worth it past DEFER_PAINT_MIN_ROWS: below that, deferring paint moves the
+        // first-paint cost of each row into the scroll itself and reads as jank, while
+        // painting the whole small list once keeps scrolling on already-rasterized content.
+        // min-h-0 lets the slot's grid row actually shrink; overflow-hidden only while
+        // collapsing, so it never clips the row the rest of its life.
+        className={`group relative min-h-0 ${removing ? 'overflow-hidden' : ''} ${
+          deferPaint ? '[content-visibility:auto] [contain-intrinsic-size:auto_52px]' : ''
+        }`}
+        draggable
+        onWheel={onSwipeWheel}
+        onMouseLeave={closeSwipe}
+        onDragStart={(e) => {
+          // Hand the OS the untouched source file(s) so the row can be dropped onto Spek
+          // or any app. An actual drag suppresses the click, so select and drag-out
+          // don't fight (same arrangement the cover uses). The cover rides along so the
+          // OS drag thumbnail is the track's own art, not a generic app icon.
           e.preventDefault()
-          onRemoveKey(t.id)
+          onDragOut(t)
         }}
-        onDoubleClick={() => onActivate(t)}
-        onContextMenu={(e) => {
-          e.preventDefault()
-          // Make the right-clicked row the editor's track unless it's already part of
-          // the current selection, so the menu's single-track actions are unambiguous.
-          if (!selected) onSelect(t.id, {})
-          onOpenMenu(t, e.clientX, e.clientY)
-        }}
-        onMouseEnter={() => onPrefetch(t.id)}
-        onFocus={() => onPrefetch(t.id)}
-        // No colour transition, selected or not: ↑/↓ and j/k run through this list
-        // constantly, and a fill easing in lags the cursor while one easing out on the row
-        // just left trails behind a held key. Only the swipe position eases, and only the
-        // settle to Remove or back to 0: while a swipe's wheel events arrive the row follows
-        // the fingers with no easing (inline transition: none).
-        className={`group/row relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-[transform] duration-200 ease-out ${
-          // The primary row (the one open in the editor) takes the selection fill, the way
-          // Finder/Mail fill the active row. A multi-selected-but-not-primary row gets the
-          // quieter accent tint. Everything else is bare: no outline and no fill of its own,
-          // like the lists in Music or Mail, so the page of rows reads as one list instead of
-          // a stack of cards, and only the hover tints it.
-          primary
-            ? 'is-primary bg-[var(--color-row-selected)]'
-            : selected
-              ? 'bg-[var(--color-accent-soft)]/85'
-              : 'hover:bg-[var(--color-panel-2)]/85'
-        } focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-[var(--color-accent)]`}
       >
-        {/* Severity stripe at the left edge: ambient, scannable — a page of rows shows which
-            ones want attention before you read a single glyph. Hidden on the primary row,
-            whose solid-accent fill already owns that edge. */}
-        {!primary && quality !== 'unanalyzed' && qualityTone[quality] !== 'good' && (
-          <span
-            aria-hidden="true"
-            data-testid="track-quality-stripe"
-            data-tone={qualityTone[quality]}
-            className={`absolute top-1/2 left-0 h-6 w-[3px] -translate-y-1/2 rounded-r-full ${stripeClass[qualityTone[quality] as Exclude<RowTone, 'good'>]}`}
-          />
-        )}
-        {/* The cover doubles as the scan target — DJs recognise a track by its art faster
-            than by its name — so the leading slot shows the artwork with the processing
-            status demoted to a small ringed dot on its corner. While a conversion runs the
-            cover rounds into a disc and a ring closes round it phase by phase, the way the
-            App Store draws a download, instead of a bar under the stage text. */}
-        <span data-testid="track-status" className="group/dot relative shrink-0">
-          {converting && (
+        <button
+          type="button"
+          ref={(el) => {
+            if (!rowRegistry) return
+            if (el) rowRegistry.current.set(t.id, el)
+            else rowRegistry.current.delete(t.id)
+          }}
+          data-testid="track-row"
+          style={
+            swipe > 0
+              ? {
+                  transform: `translateX(-${swipe}px)`,
+                  ...(tracking ? { transition: 'none' } : {}),
+                }
+              : undefined
+          }
+          // El ámbito vive en la fila y no en un contenedor de la lista porque solo aquí se
+          // maneja esta tecla: capturarla sobre el resto de controles la dejaría muerta en
+          // vez de caer a su comando global.
+          data-shortcut-scope="track-list"
+          role="option"
+          aria-selected={selected}
+          // Several rows can be selected; this marks the one open in the editor, the fact
+          // the solid fill carries for sighted users.
+          aria-current={primary || undefined}
+          // aria-setsize/aria-posinset are written by TrackList, not here: see its layout effect.
+          // Roving tabindex: only the tab-stop row is reachable by Tab; the rest are driven
+          // by the global ↑/↓ (and j/k) handler that focuses them as the selection moves.
+          tabIndex={tabbable ? 0 : -1}
+          onClick={(e) => {
+            // The backup mark is part of the row (a button can't hold another), so its click
+            // is told apart here: it opens the backup instead of only selecting the track.
+            if (onOpenBackup && (e.target as Element).closest('[data-backup-mark]')) {
+              onOpenBackup(t)
+              return
+            }
+            onSelect(t.id, { meta: e.metaKey || e.ctrlKey, shift: e.shiftKey })
+          }}
+          onKeyDown={(e) => {
+            const chord = eventToChord(e, isMac)
+            if (chord && matchChord(bindings, chord, false, 'track-list') === 'track-menu') {
+              e.preventDefault()
+              // The menu is positioned in pixels because it's normally born from a right
+              // click; from the keyboard there are none, so anchor it to the row's own
+              // bottom-left corner.
+              const r = e.currentTarget.getBoundingClientRect()
+              if (!selected) onSelect(t.id, {})
+              onOpenMenu(t, r.left, r.bottom)
+              return
+            }
+            // Shift+↑/↓ grows the range from the anchor, the keyboard twin of a Shift-click.
+            // Claimed here even at the list's ends, or the global ↑/↓ would run "next"/"prev"
+            // and collapse the range the user is building.
+            const plainShift = e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey
+            if (plainShift && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+              e.preventDefault()
+              onExtendKey(t.id, e.key === 'ArrowDown' ? 1 : -1)
+              return
+            }
+            // Plain Space plays, so ⌘Space / Ctrl+Space toggles the focused row in or out of
+            // the selection without dropping the rest, like a ⌘-click.
+            if (e.key === ' ' && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
+              e.preventDefault()
+              onSelect(t.id, { meta: true })
+              return
+            }
+            // Bare key only: ⌘⌫ belongs to the global remove command, and the list is a
+            // no-typing surface so plain ⌫/Supr is unambiguous here.
+            if (e.key !== 'Backspace' && e.key !== 'Delete') return
+            if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
+            e.preventDefault()
+            onRemoveKey(t.id)
+          }}
+          onDoubleClick={() => onActivate(t)}
+          onContextMenu={(e) => {
+            e.preventDefault()
+            // Make the right-clicked row the editor's track unless it's already part of
+            // the current selection, so the menu's single-track actions are unambiguous.
+            if (!selected) onSelect(t.id, {})
+            onOpenMenu(t, e.clientX, e.clientY)
+          }}
+          onMouseEnter={() => onPrefetch(t.id)}
+          onFocus={() => onPrefetch(t.id)}
+          // No colour transition, selected or not: ↑/↓ and j/k run through this list
+          // constantly, and a fill easing in lags the cursor while one easing out on the row
+          // just left trails behind a held key. Only the swipe position eases, and only the
+          // settle to Remove or back to 0: while a swipe's wheel events arrive the row follows
+          // the fingers with no easing (inline transition: none).
+          className={`group/row relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-[transform] duration-200 ease-out ${
+            // The primary row (the one open in the editor) takes the selection fill, the way
+            // Finder/Mail fill the active row. A multi-selected-but-not-primary row gets the
+            // quieter accent tint. Everything else is bare: no outline and no fill of its own,
+            // like the lists in Music or Mail, so the page of rows reads as one list instead of
+            // a stack of cards, and only the hover tints it.
+            primary
+              ? 'is-primary bg-[var(--color-row-selected)]'
+              : selected
+                ? 'bg-[var(--color-accent-soft)]/85'
+                : 'hover:bg-[var(--color-panel-2)]/85'
+          } focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-[var(--color-accent)]`}
+        >
+          {/* Severity stripe at the left edge: ambient, scannable — a page of rows shows which
+              ones want attention before you read a single glyph. Hidden on the primary row,
+              whose solid-accent fill already owns that edge. */}
+          {!primary && quality !== 'unanalyzed' && qualityTone[quality] !== 'good' && (
             <span
-              data-testid="track-progress-ring"
               aria-hidden="true"
-              className="progress-ring"
-              style={{ '--progress': STAGE_PROGRESS[stage] } as React.CSSProperties}
+              data-testid="track-quality-stripe"
+              data-tone={qualityTone[quality]}
+              className={`absolute top-1/2 left-0 h-6 w-[3px] -translate-y-1/2 rounded-r-full ${stripeClass[qualityTone[quality] as Exclude<RowTone, 'good'>]}`}
             />
           )}
-          {t.embeddedCover ? (
-            <img
-              data-testid="track-cover"
-              src={t.embeddedCover}
-              alt=""
-              // Covers are base64 JPEGs; without these two the browser decodes each one
-              // synchronously on the main thread the moment its row is first painted —
-              // which, combined with content-visibility below, lands mid-scroll and janks.
-              loading="lazy"
-              decoding="async"
-              className={`h-8 w-8 object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-300 ${
-                converting ? 'rounded-full' : 'rounded-md'
-              }`}
-            />
-          ) : (
-            <span
-              data-testid="track-cover-placeholder"
-              className={`flex h-8 w-8 items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-300 ${
-                converting ? 'rounded-full' : 'rounded-md'
-              }`}
-            >
-              <Music className="h-3.5 w-3.5 text-fg-faint" aria-hidden="true" />
-            </span>
-          )}
-          {!converting && <StatusBadge track={t} stale={stale} />}
-          <Tooltip label={statusLabel} align="start" scope="dot" />
-          {/* The badge is an unlabelled shape and the tooltip only shows on hover, so the
-              state is spoken from here. Idle draws no badge and stays silent too. */}
-          {(stale || t.status !== 'idle') && <span className="sr-only">{statusLabel}</span>}
-        </span>
-        {/* The row tooltip (frozen listLabel — not the editable meta.title — so it matches
-            what the row shows) is scoped to the text itself, not this flex-1 layout slot:
-            anchored to the slot, it fired across the whole empty tail to the right of a
-            short title. Each text line carries its own copy, each width-fit to its words, so
-            hovering the gap beside the text raises nothing. The two never double up — a fit
-            title and a fit artist don't overlap, and the vertical gap between the stacked
-            lines belongs to neither. */}
-        <span data-fit className="relative min-w-0 flex-1">
-          {/* The duration rides the title line, the way Mail puts the time beside the
-              sender: on the artist line it was one of six fixed columns that left the
-              artist a few letters. */}
-          <span data-testid="track-title-line" className="flex items-center gap-2">
-            <span className="relative block min-w-0 flex-1 truncate">
-              <span className="relative block w-fit max-w-full truncate text-sm font-medium text-fg">
-                <Tooltip label={rowTooltip(t, tr)} />
-                {t.listLabel}
+          {/* The cover doubles as the scan target — DJs recognise a track by its art faster
+              than by its name — so the leading slot shows the artwork with the processing
+              status demoted to a small ringed dot on its corner. While a conversion runs the
+              cover rounds into a disc and a ring closes round it phase by phase, the way the
+              App Store draws a download, instead of a bar under the stage text. */}
+          <span data-testid="track-status" className="group/dot relative shrink-0">
+            {converting && (
+              <span
+                data-testid="track-progress-ring"
+                aria-hidden="true"
+                className="progress-ring"
+                style={{ '--progress': STAGE_PROGRESS[stage] } as React.CSSProperties}
+              />
+            )}
+            {t.embeddedCover ? (
+              <img
+                data-testid="track-cover"
+                src={t.embeddedCover}
+                alt=""
+                // Covers are base64 JPEGs; without these two the browser decodes each one
+                // synchronously on the main thread the moment its row is first painted —
+                // which, combined with content-visibility below, lands mid-scroll and janks.
+                loading="lazy"
+                decoding="async"
+                className={`h-8 w-8 object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-300 ${
+                  converting ? 'rounded-full' : 'rounded-md'
+                }`}
+              />
+            ) : (
+              <span
+                data-testid="track-cover-placeholder"
+                className={`flex h-8 w-8 items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-300 ${
+                  converting ? 'rounded-full' : 'rounded-md'
+                }`}
+              >
+                <Music className="h-3.5 w-3.5 text-fg-faint" aria-hidden="true" />
               </span>
-            </span>
-            <span
-              data-testid="track-duration-slot"
-              className="w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim"
-            >
-              {t.duration !== undefined && (
-                <span data-testid="track-duration">{formatTime(t.duration)}</span>
-              )}
-            </span>
+            )}
+            {!converting && <StatusBadge track={t} stale={stale} />}
+            <Tooltip label={statusLabel} align="start" scope="dot" />
+            {/* The badge is an unlabelled shape and the tooltip only shows on hover, so the
+                state is spoken from here. Idle draws no badge and stays silent too. */}
+            {(stale || t.status !== 'idle') && <span className="sr-only">{statusLabel}</span>}
           </span>
-          {t.loadingMeta ? (
-            <span
-              data-testid="track-loading"
-              className="skeleton-sweep mt-2 block h-2.5 w-28 rounded bg-[var(--color-panel-2)]"
-            />
-          ) : converting ? (
-            <span data-testid="track-stage" className="mt-0.5 block">
-              <span className="block truncate text-xs text-[var(--color-accent)]">
-                {tr(`trackList.stage.${stage}`, {
-                  format: (t.format ?? outputFormat).toUpperCase(),
-                })}
-              </span>
-              {/* Text, not role="progressbar": an option's children are presentational,
-                  so a nested role would be flattened away and the amount never spoken. */}
-              <span className="sr-only">
-                {tr('trackList.progress', { percent: Math.round(STAGE_PROGRESS[stage] * 100) })}
-              </span>
-            </span>
-          ) : (
-            <span data-testid="track-detail-line" className="flex items-center gap-2">
-              <span className="relative block min-w-0 flex-1 truncate text-xs text-fg-dim">
-                <span className="relative block w-fit max-w-full truncate">
+          {/* The row tooltip (frozen listLabel — not the editable meta.title — so it matches
+              what the row shows) is scoped to the text itself, not this flex-1 layout slot:
+              anchored to the slot, it fired across the whole empty tail to the right of a
+              short title. Each text line carries its own copy, each width-fit to its words, so
+              hovering the gap beside the text raises nothing. The two never double up — a fit
+              title and a fit artist don't overlap, and the vertical gap between the stacked
+              lines belongs to neither. */}
+          <span data-fit className="relative min-w-0 flex-1">
+            {/* The duration rides the title line, the way Mail puts the time beside the
+                sender: on the artist line it was one of six fixed columns that left the
+                artist a few letters. */}
+            <span data-testid="track-title-line" className="flex items-center gap-2">
+              <span className="relative block min-w-0 flex-1 truncate">
+                <span className="relative block w-fit max-w-full truncate text-sm font-medium text-fg">
                   <Tooltip label={rowTooltip(t, tr)} />
-                  {t.meta.artist || tr('trackList.noArtist')}
+                  {t.listLabel}
                 </span>
               </span>
-              {/* A failed tag read leaves the row showing only its file-name parse; the mark
-                  tells that apart from a file that genuinely carries no tags. */}
-              {t.metaReadFailed && (
-                <span
-                  data-testid="track-meta-failed"
-                  className="group/dot relative flex shrink-0 items-center text-warn"
-                >
-                  <TriangleAlert className="h-3 w-3" aria-hidden="true" />
-                  <Tooltip label={tr('trackList.metaReadFailed')} align="end" scope="dot" />
-                  <span className="sr-only">{tr('trackList.metaReadFailed')}</span>
-                </span>
-              )}
-              {backupAt !== undefined && (
-                <span
-                  data-testid="track-backup"
-                  data-backup-mark
-                  className="group/dot relative flex shrink-0 items-center text-fg-faint"
-                >
-                  <Undo2 className="h-3 w-3" aria-hidden="true" />
-                  <Tooltip label={backupLabel} align="end" scope="dot" />
-                  <span className="sr-only">{backupLabel}</span>
-                </span>
-              )}
-              {t.autoMatched ? (
-                <span
-                  data-testid="track-automatched"
-                  data-confidence="high"
-                  className="group/dot relative flex shrink-0 items-center text-fg-dim"
-                >
-                  <Spark />
-                  <Tooltip label={autoMatchLabel} align="end" scope="dot" />
-                  <span className="sr-only">{autoMatchLabel}</span>
-                </span>
-              ) : (
-                reviewPending && <span className="w-3 shrink-0" />
-              )}
-              {/* A fixed slot, right-aligned under the duration, so the two read as one
-                  trailing column and the review sparkle's place never moves. Wide enough for
-                  the pill with its shape, so a tinted FLAC and a bare MP3 end on the same edge. */}
-              <span data-testid="track-format-slot" className="flex w-[46px] shrink-0 justify-end">
-                {quality !== 'unanalyzed' ? (
-                  <QualityPill
-                    verdict={quality}
-                    format={format}
-                    label={tr(qualityLabel[quality])}
-                  />
-                ) : t.analyzing ? (
-                  <span
-                    data-testid="track-quality-loading"
-                    className="group/dot relative flex h-4 animate-pulse items-center rounded px-[5px] text-fg-faint ring-1 ring-current ring-inset"
-                  >
-                    {format ? (
-                      <span className="text-[10px] font-semibold leading-4">{format}</span>
-                    ) : (
-                      <span className="h-2 w-2 rounded-full ring-[1.5px] ring-current ring-inset" />
-                    )}
-                    <Tooltip label={tr('editor.analyzing')} align="end" scope="dot" />
-                  </span>
-                ) : (
-                  format && (
-                    <span
-                      data-testid="track-format"
-                      className="text-[10px] font-medium leading-4 text-fg-dim"
-                    >
-                      {format}
-                    </span>
-                  )
+              <span
+                data-testid="track-duration-slot"
+                className="w-[34px] shrink-0 text-right text-xs tabular-nums text-fg-dim"
+              >
+                {t.duration !== undefined && (
+                  <span data-testid="track-duration">{formatTime(t.duration)}</span>
                 )}
               </span>
             </span>
-          )}
-        </span>
-      </button>
-      {/* A review-tier suggestion the user hasn't acted on yet: amber, distinct from the
-          applied accent sparkle, and gone the moment the track is actually matched. A
-          sibling of the row button, not a child, since a button inside the option button
-          is invalid and folds the action into the row's name. It is placed over the empty
-          slot the artist line keeps for it before the pill: that slot ends 64px from the
-          right edge (the row padding, the 46px pill slot and its gap), and its centre sits
-          17px up from the bottom. The button is a 24px target (WCAG 2.5.8) centred there,
-          so the 12px glyph lands where the slot would have drawn it. Shown under the same
-          conditions as that line. */}
-      {!t.loadingMeta && !converting && reviewPending && swipe === 0 && (
-        <button
-          type="button"
-          data-testid="track-match-review"
-          data-confidence="review"
-          aria-label={tr('commands.acceptReview')}
-          onClick={() => onAcceptReview(t.id)}
-          className="group/dot press absolute right-[58px] bottom-[5px] flex h-6 w-6 items-center justify-center text-warn"
-        >
-          <Spark />
-          <Tooltip
-            label={matchTooltip(tr('commands.acceptReview'), t.matchConfidence)}
-            align="end"
-            scope="dot"
-          />
+            {t.loadingMeta ? (
+              <span
+                data-testid="track-loading"
+                className="skeleton-sweep mt-2 block h-2.5 w-28 rounded bg-[var(--color-panel-2)]"
+              />
+            ) : converting ? (
+              <span data-testid="track-stage" className="mt-0.5 block">
+                <span className="block truncate text-xs text-[var(--color-accent)]">
+                  {tr(`trackList.stage.${stage}`, {
+                    format: (t.format ?? outputFormat).toUpperCase(),
+                  })}
+                </span>
+                {/* Text, not role="progressbar": an option's children are presentational,
+                    so a nested role would be flattened away and the amount never spoken. */}
+                <span className="sr-only">
+                  {tr('trackList.progress', { percent: Math.round(STAGE_PROGRESS[stage] * 100) })}
+                </span>
+              </span>
+            ) : (
+              <span data-testid="track-detail-line" className="flex items-center gap-2">
+                <span className="relative block min-w-0 flex-1 truncate text-xs text-fg-dim">
+                  <span className="relative block w-fit max-w-full truncate">
+                    <Tooltip label={rowTooltip(t, tr)} />
+                    {t.meta.artist || tr('trackList.noArtist')}
+                  </span>
+                </span>
+                {/* A failed tag read leaves the row showing only its file-name parse; the mark
+                    tells that apart from a file that genuinely carries no tags. */}
+                {t.metaReadFailed && (
+                  <span
+                    data-testid="track-meta-failed"
+                    className="group/dot relative flex shrink-0 items-center text-warn"
+                  >
+                    <TriangleAlert className="h-3 w-3" aria-hidden="true" />
+                    <Tooltip label={tr('trackList.metaReadFailed')} align="end" scope="dot" />
+                    <span className="sr-only">{tr('trackList.metaReadFailed')}</span>
+                  </span>
+                )}
+                {backupAt !== undefined && (
+                  <span
+                    data-testid="track-backup"
+                    data-backup-mark
+                    className="group/dot relative flex shrink-0 items-center text-fg-faint"
+                  >
+                    <Undo2 className="h-3 w-3" aria-hidden="true" />
+                    <Tooltip label={backupLabel} align="end" scope="dot" />
+                    <span className="sr-only">{backupLabel}</span>
+                  </span>
+                )}
+                {t.autoMatched ? (
+                  <span
+                    data-testid="track-automatched"
+                    data-confidence="high"
+                    className="group/dot relative flex shrink-0 items-center text-fg-dim"
+                  >
+                    <Spark />
+                    <Tooltip label={autoMatchLabel} align="end" scope="dot" />
+                    <span className="sr-only">{autoMatchLabel}</span>
+                  </span>
+                ) : (
+                  reviewPending && <span className="w-3 shrink-0" />
+                )}
+                {/* A fixed slot, right-aligned under the duration, so the two read as one
+                    trailing column and the review sparkle's place never moves. Wide enough for
+                    the pill with its shape, so a tinted FLAC and a bare MP3 end on the same edge. */}
+                <span
+                  data-testid="track-format-slot"
+                  className="flex w-[46px] shrink-0 justify-end"
+                >
+                  {quality !== 'unanalyzed' ? (
+                    <QualityPill
+                      verdict={quality}
+                      format={format}
+                      label={tr(qualityLabel[quality])}
+                    />
+                  ) : t.analyzing ? (
+                    <span
+                      data-testid="track-quality-loading"
+                      className="group/dot relative flex h-4 animate-pulse items-center rounded px-[5px] text-fg-faint ring-1 ring-current ring-inset"
+                    >
+                      {format ? (
+                        <span className="text-[10px] font-semibold leading-4">{format}</span>
+                      ) : (
+                        <span className="h-2 w-2 rounded-full ring-[1.5px] ring-current ring-inset" />
+                      )}
+                      <Tooltip label={tr('editor.analyzing')} align="end" scope="dot" />
+                    </span>
+                  ) : (
+                    format && (
+                      <span
+                        data-testid="track-format"
+                        className="text-[10px] font-medium leading-4 text-fg-dim"
+                      >
+                        {format}
+                      </span>
+                    )
+                  )}
+                </span>
+              </span>
+            )}
+          </span>
         </button>
-      )}
-      {/* A ▶ overlay over the cover makes play discoverable — double-click and Space are
-          the only other ways in, and neither shows itself. A sibling of the row button
-          (not a child) so it stays a valid nested-button-free control, like Remove.
-          Not a Tab stop: it is invisible until hovered, and the row itself already
-          answers Space. Gone while the row is swiped aside, since the cover moved. */}
-      {swipe === 0 && (
-        <button
-          type="button"
-          aria-label={tr('player.play')}
-          tabIndex={-1}
-          onClick={() => onActivate(t)}
-          // No backdrop-blur here: with one of these per row, Chromium promotes every
-          // overlay to a render surface even at opacity-0, and dozens of backdrop-filter
-          // layers inside the scroller are a known compositor jank source. A slightly
-          // denser plain fill keeps the glyph readable over any cover.
-          className="absolute top-1/2 left-3 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md bg-scrim/65 text-on-scrim opacity-0 transition-opacity pointer-events-none hover:bg-scrim/75 group-hover:pointer-events-auto group-hover:opacity-100"
-        >
-          <Play className="h-4 w-4 fill-current" aria-hidden="true" />
-        </button>
-      )}
-      {/* What the swipe uncovers, in the strip the row slid out of. Grey, not Mail's red:
-          it takes the track off the list and leaves the file alone. Not a Tab stop, like
-          play: ⌫/Supr on the row is the keyboard's way to the same thing. */}
-      {swipe > 0 && (
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={() => {
-            moveSwipe(swipeBounds().removeAt)
-            onSwipeRemove(t.id)
-          }}
-          style={{
-            width: Math.max(swipe - SWIPE_GAP_PX, 0),
-            ...(tracking ? { transition: 'none' } : {}),
-          }}
-          className="absolute inset-y-1 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-swipe-action)] transition-[width] duration-200 ease-out text-[11px] font-semibold whitespace-nowrap text-[var(--color-on-swipe-action)]"
-        >
-          <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          {tr('trackList.remove')}
-        </button>
-      )}
+        {/* A review-tier suggestion the user hasn't acted on yet: amber, distinct from the
+            applied accent sparkle, and gone the moment the track is actually matched. A
+            sibling of the row button, not a child, since a button inside the option button
+            is invalid and folds the action into the row's name. It is placed over the empty
+            slot the artist line keeps for it before the pill: that slot ends 64px from the
+            right edge (the row padding, the 46px pill slot and its gap), and its centre sits
+            17px up from the bottom. The button is a 24px target (WCAG 2.5.8) centred there,
+            so the 12px glyph lands where the slot would have drawn it. Shown under the same
+            conditions as that line. */}
+        {!t.loadingMeta && !converting && reviewPending && swipe === 0 && (
+          <button
+            type="button"
+            data-testid="track-match-review"
+            data-confidence="review"
+            aria-label={tr('commands.acceptReview')}
+            onClick={() => onAcceptReview(t.id)}
+            className="group/dot press absolute right-[58px] bottom-[5px] flex h-6 w-6 items-center justify-center text-warn"
+          >
+            <Spark />
+            <Tooltip
+              label={matchTooltip(tr('commands.acceptReview'), t.matchConfidence)}
+              align="end"
+              scope="dot"
+            />
+          </button>
+        )}
+        {/* A ▶ overlay over the cover makes play discoverable — double-click and Space are
+            the only other ways in, and neither shows itself. A sibling of the row button
+            (not a child) so it stays a valid nested-button-free control, like Remove.
+            Not a Tab stop: it is invisible until hovered, and the row itself already
+            answers Space. Gone while the row is swiped aside, since the cover moved. */}
+        {swipe === 0 && (
+          <button
+            type="button"
+            aria-label={tr('player.play')}
+            tabIndex={-1}
+            onClick={() => onActivate(t)}
+            // No backdrop-blur here: with one of these per row, Chromium promotes every
+            // overlay to a render surface even at opacity-0, and dozens of backdrop-filter
+            // layers inside the scroller are a known compositor jank source. A slightly
+            // denser plain fill keeps the glyph readable over any cover.
+            className="absolute top-1/2 left-3 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md bg-scrim/65 text-on-scrim opacity-0 transition-opacity pointer-events-none hover:bg-scrim/75 group-hover:pointer-events-auto group-hover:opacity-100"
+          >
+            <Play className="h-4 w-4 fill-current" aria-hidden="true" />
+          </button>
+        )}
+        {/* What the swipe uncovers, in the strip the row slid out of. Grey, not Mail's red:
+            it takes the track off the list and leaves the file alone. Not a Tab stop, like
+            play: ⌫/Supr on the row is the keyboard's way to the same thing. */}
+        {swipe > 0 && (
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => {
+              moveSwipe(swipeBounds().removeAt)
+              startRemove()
+            }}
+            style={{
+              width: Math.max(swipe - SWIPE_GAP_PX, 0),
+              ...(tracking ? { transition: 'none' } : {}),
+            }}
+            className="absolute inset-y-1 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-swipe-action)] transition-[width] duration-200 ease-out text-[11px] font-semibold whitespace-nowrap text-[var(--color-on-swipe-action)]"
+          >
+            <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            {tr('trackList.remove')}
+          </button>
+        )}
+      </div>
     </div>
   )
 })
@@ -909,8 +955,8 @@ export const TrackList = memo(function TrackList({
   useEffect(() => () => rowObserver.current?.disconnect(), [])
   // A swipe removes its row mid-gesture, and the row below slides up under the pointer while
   // the trackpad is still sending that swipe's momentum. The list swallows that tail until the
-  // wheel goes quiet, so it can't swipe the next row away too. The track itself goes once the
-  // row has finished sliding off, not in the frame the swipe decided.
+  // wheel goes quiet, so it can't swipe the next row away too. The row starts that the moment it
+  // decides to go (onSwipeRemoveStart) and hands the track over once its exit is over.
   const swipeTailRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const swallowingSwipeTail = useRef(false)
   const waitOutSwipeTail = (): void => {
@@ -921,9 +967,10 @@ export const TrackList = memo(function TrackList({
     }, SWIPE_SETTLE_MS)
   }
   useEffect(() => () => clearTimeout(swipeTailRef.current), [])
+  const startSwipeRemove = useStableCallback((): void => waitOutSwipeTail())
   const removeBySwipe = useStableCallback((id: string): void => {
     waitOutSwipeTail()
-    setTimeout(() => onSwipeRemove(id), SWIPE_EXIT_MS)
+    onSwipeRemove(id)
   })
   // The rows are real DOM (content-visibility, not windowing), but a screen reader still
   // benefits from an explicit "row 12 of 500" as filters shrink the set. Written straight
@@ -967,6 +1014,7 @@ export const TrackList = memo(function TrackList({
             onSelect={onSelect}
             onActivate={onActivate}
             onSwipeRemove={removeBySwipe}
+            onSwipeRemoveStart={startSwipeRemove}
             onAcceptReview={onAcceptReview}
             onRemoveKey={removeViaKeyboard}
             onExtendKey={extendViaKeyboard}
