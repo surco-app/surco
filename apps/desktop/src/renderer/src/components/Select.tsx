@@ -223,7 +223,7 @@ export function Select({
           aria-selected={o.value === value}
           data-testid={`${testid}-option-${o.value}`}
           onClick={() => choose(o.value)}
-          className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-panel-2)]"
+          className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg hover:bg-[var(--color-panel-2)]"
         >
           {o.icon && <o.icon aria-hidden="true" className="h-4 w-4 shrink-0" />}
           {hinted ? (
