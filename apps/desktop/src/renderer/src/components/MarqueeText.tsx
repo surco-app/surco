@@ -7,7 +7,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 // show the rest, then eases back. A title that already fits never moves.
 //
 // The scroll distance (how far past the box the text runs) can't be known in CSS, so it's
-// measured here and handed to the animation as a custom property; the keyframe and the
+// measured here and handed to the transition as a custom property; the transition and the
 // `group-hover` trigger live in index.css (.player-marquee).
 export function MarqueeText({
   children,
@@ -44,9 +44,7 @@ export function MarqueeText({
           overflowPx > 0 ? 'player-marquee' : ''
         }`}
         style={
-          overflowPx > 0
-            ? ({ '--marquee-px': `${overflowPx}px` } as React.CSSProperties)
-            : undefined
+          overflowPx > 0 ? ({ '--marquee-dist': overflowPx } as React.CSSProperties) : undefined
         }
       >
         {children}

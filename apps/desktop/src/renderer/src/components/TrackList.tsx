@@ -526,17 +526,12 @@ const TrackRow = memo(function TrackRow({
         }}
         onMouseEnter={() => onPrefetch(t.id)}
         onFocus={() => onPrefetch(t.id)}
-        className={`group/row relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left ${
-          // A selected row paints its fill on the keystroke: ↑/↓ and j/k run through this
-          // list constantly, and easing the fill in leaves the highlight a step behind the
-          // cursor. Only the unselected rows animate their colours, where the transition
-          // belongs to the hover tint and its mouse pace suits it. While a swipe's wheel events
-          // arrive the row follows the fingers with no easing (inline transition: none); this
-          // class only eases the settle, to Remove or back to 0, once they lift.
-          selected
-            ? 'transition-[transform] ease-out'
-            : 'transition-[color,background-color,border-color,outline-color,transform] ease-out'
-        } ${
+        // No colour transition, selected or not: ↑/↓ and j/k run through this list
+        // constantly, and a fill easing in lags the cursor while one easing out on the row
+        // just left trails behind a held key. Only the swipe position eases, and only the
+        // settle to Remove or back to 0: while a swipe's wheel events arrive the row follows
+        // the fingers with no easing (inline transition: none).
+        className={`group/row relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-[transform] ease-out ${
           // The primary row (the one open in the editor) takes the selection fill, the way
           // Finder/Mail fill the active row. A multi-selected-but-not-primary row gets the
           // quieter accent tint. Everything else is bare: no outline and no fill of its own,
@@ -634,7 +629,7 @@ const TrackRow = memo(function TrackRow({
           {t.loadingMeta ? (
             <span
               data-testid="track-loading"
-              className="mt-2 block h-2.5 w-28 animate-pulse rounded bg-[var(--color-panel-2)]"
+              className="skeleton-sweep mt-2 block h-2.5 w-28 rounded bg-[var(--color-panel-2)]"
             />
           ) : converting ? (
             <span data-testid="track-stage" className="mt-0.5 block">

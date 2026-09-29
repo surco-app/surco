@@ -1,6 +1,7 @@
 import type React from 'react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { lastInputWasKeyboard } from '../lib/inputModality'
 import { useFocusTrap } from './useFocusTrap'
 
 interface Props {
@@ -19,7 +20,8 @@ interface Props {
   onSubmit?: () => void
   // Skips the entrance animation (dialog pop and backdrop fade). For surfaces opened
   // many times a day — the command palette — where paying an entrance on every open
-  // makes the app feel slower than it is. Card dialogs keep the default.
+  // makes the app feel slower than it is. Card dialogs keep the default, except when a
+  // key opened them: a keystroke expects its answer on the next frame.
   instant?: boolean
   children: React.ReactNode
 }
@@ -43,6 +45,8 @@ export function ModalShell({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const dialogRef = useRef<HTMLDivElement>(null)
+  const [keyed] = useState(lastInputWasKeyboard)
+  const bare = instant || keyed
   useFocusTrap(dialogRef)
   const body = onSubmit ? (
     <form
@@ -68,7 +72,7 @@ export function ModalShell({
         data-testid={backdropTestId}
         aria-label={tr('common.close')}
         onClick={onClose}
-        className={`${instant ? '' : 'animate-overlay '}absolute inset-0 bg-scrim/60 backdrop-blur-sm`}
+        className={`${bare ? '' : 'animate-overlay '}absolute inset-0 bg-scrim/60 backdrop-blur-sm`}
       />
       <div
         ref={dialogRef}
@@ -77,7 +81,7 @@ export function ModalShell({
         data-testid={dialogTestId}
         aria-labelledby={labelledBy}
         aria-label={label}
-        className={`${instant ? '' : 'animate-pop '}relative z-10 ${className}`}
+        className={`${bare ? '' : 'animate-pop '}relative z-10 ${className}`}
       >
         {body}
       </div>

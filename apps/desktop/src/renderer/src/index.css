@@ -363,27 +363,29 @@ textarea {
 
 /* A clipped player title scrolls to reveal its tail while the card is hovered, then eases
    back when the pointer leaves — the no-widen way to read a long title. MarqueeText only
-   adds .player-marquee (and the --marquee-px distance) when the text actually overflows,
-   so a title that fits never animates. Pace is tied to the distance so a long title isn't
-   left crawling; the ease-out return is quick. Honor reduced-motion by holding still. */
-@keyframes player-marquee {
-  0%,
-  15% {
-    transform: translateX(0);
-  }
-  85%,
-  100% {
-    transform: translateX(calc(-1 * var(--marquee-px)));
-  }
+   adds .player-marquee (and the --marquee-dist distance) when the text actually overflows,
+   so a title that fits never animates. A transition rather than a loop, so leaving mid-scroll
+   turns it around from where it is instead of snapping. The ellipsis has to go while it
+   scrolls, or the travel slides the truncated box away and the tail never shows; on the way
+   back it returns only once the title is home. The distance is a plain number because CSS
+   cannot multiply a length by a time, and the pace is tied to it so a long title isn't left
+   crawling. Honor reduced-motion by holding still. */
+.player-marquee {
+  transition:
+    transform 0.2s cubic-bezier(0.2, 0, 0, 1),
+    max-width 0s 0.2s allow-discrete;
 }
 
 .group\/player:hover .player-marquee {
-  animation: player-marquee calc(2s + var(--marquee-px) * 0.02s) ease-in-out infinite alternate;
+  max-width: none;
+  transform: translateX(calc(var(--marquee-dist) * -1px));
+  transition: transform calc(1s + var(--marquee-dist) * 15ms) cubic-bezier(0.45, 0, 0.55, 1) 0.3s;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .group\/player:hover .player-marquee {
-    animation: none;
+    max-width: 100%;
+    transform: none;
   }
 }
 
@@ -716,7 +718,7 @@ button:hover > .process-fill {
   transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1);
 }
 .press:active:not(:disabled) {
-  transform: scale(0.96);
+  transform: scale(0.97);
 }
 
 /* Text laid directly over the waveform — the zoom ruler's time labels. The wave is a
@@ -1000,7 +1002,7 @@ button:hover > .process-fill {
    travel to register at all (the smaller the element, the more bounce it takes to read the
    same amount). The dip to 0.9 first is what makes it land like a press being answered
    rather than the icon simply inflating.
-   Starts AFTER .press has let go — pressing scales the button to 0.96, and running both at
+   Starts AFTER .press has let go — pressing scales the button to 0.97, and running both at
    once just averages into a shrug. */
 @keyframes star-punch {
   0% {

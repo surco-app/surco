@@ -374,7 +374,7 @@ export function Player({
               }}
               className="group/seek relative flex h-4 min-w-0 flex-1 cursor-pointer items-center"
             >
-              <span className="relative h-1 w-full overflow-hidden rounded-full bg-[var(--color-panel)] transition-[height] group-hover/seek:h-1.5">
+              <span className="relative h-1 w-full overflow-hidden rounded-full bg-[var(--color-panel)] transition-transform group-hover/seek:scale-y-150">
                 <span
                   className="absolute inset-y-0 left-0 rounded-full bg-[var(--color-accent)]"
                   style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}

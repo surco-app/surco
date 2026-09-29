@@ -46,7 +46,7 @@ function MenuItem({
       tabIndex={-1}
       data-testid={testid}
       onClick={onClick}
-      className={`block w-full rounded-md px-3 py-1.5 text-left text-sm transition-colors hover:bg-[var(--color-panel-2)] ${
+      className={`block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-panel-2)] ${
         danger ? 'text-danger' : 'text-fg'
       }`}
     >
@@ -168,7 +168,7 @@ export function TrackContextMenu({
         data-testid="track-menu"
         onKeyDown={onMenuKeyDown}
         style={{ top: pos.y, left: pos.x }}
-        className="animate-pop-flat absolute origin-top-left min-w-[210px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
+        className="absolute min-w-[210px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
       >
         <MenuItem
           testid="track-menu-search"

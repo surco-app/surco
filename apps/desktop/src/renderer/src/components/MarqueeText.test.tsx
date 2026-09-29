@@ -45,4 +45,13 @@ describe('MarqueeText', () => {
     render(<MarqueeText className="x">Hard and Fast (Extended Mix)</MarqueeText>)
     expect(screen.getByTestId('marquee').dataset.overflow).toBe('true')
   })
+
+  // The scroll's duration grows with the distance, and CSS cannot multiply a length by a
+  // time: handed over in px, the whole transition was dropped and the title never moved.
+  it('hands the scroll distance over as a plain number', () => {
+    setWidths(249, 100)
+    render(<MarqueeText className="x">Hard and Fast (Extended Mix)</MarqueeText>)
+    const inner = screen.getByText('Hard and Fast (Extended Mix)')
+    expect(inner.style.getPropertyValue('--marquee-dist')).toBe('149')
+  })
 })
