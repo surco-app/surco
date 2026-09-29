@@ -1089,9 +1089,9 @@ describe('TrackList swipe to remove', () => {
     expect(remove.className).toMatch(/\binset-y-1\b/)
   })
 
-  // Crossing the threshold moves the row from half way to the edge in one event, which read
-  // as a jump (Vicent 24/09: "da un salto hasta el final, no va fino"). The row's position and
-  // the grey's width ease into place, on the selected row too, whose fill must not ease.
+  // A settle moves the row in one step, to Remove or back to 0, which read as a jump (Vicent
+  // 24/09: "da un salto hasta el final, no va fino"). The row's position and the grey's width
+  // ease into place, on the selected row too, whose fill must not ease.
   it('eases the row and the grey into place instead of jumping', () => {
     renderList([track({ id: 'a' }), track({ id: 'b' })], 'b')
     fireEvent.wheel(screen.getAllByTestId('track-row')[0].parentElement as Element, { deltaX: 70 })
@@ -1102,6 +1102,27 @@ describe('TrackList swipe to remove', () => {
     expect(screen.getByRole('button', { name: i18n.t('trackList.remove') }).className).toMatch(
       /transition-\[width\]/,
     )
+  })
+
+  // The trackpad sends a wheel event every 8-16 ms, and an easing that restarts on each one
+  // leaves the row a step behind the fingers. While the swipe is arriving it follows them 1:1.
+  it('follows the fingers with no easing while the swipe is still arriving', () => {
+    renderList([track({ id: 'a' })])
+    swipeWithoutLetting(60)
+    expect(screen.getByTestId('track-row').style.transition).toBe('none')
+    expect(screen.getByRole('button', { name: i18n.t('trackList.remove') }).style.transition).toBe(
+      'none',
+    )
+  })
+
+  // Once the fingers lift the row moves on its own, to Remove or back to 0; that step is
+  // the one the easing is for, so the transition class takes over again.
+  it('eases into place once the fingers lift', () => {
+    renderList([track({ id: 'a' })])
+    swipeWithoutLetting(60)
+    act(() => vi.advanceTimersByTime(500))
+    expect(screen.getByTestId('track-row').style.transition).toBe('')
+    expect(slidBy()).toBe(90)
   })
 
   // A trackpad scroll is never perfectly vertical; the list must not start sliding rows

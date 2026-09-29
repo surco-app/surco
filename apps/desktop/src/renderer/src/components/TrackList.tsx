@@ -353,6 +353,7 @@ const TrackRow = memo(function TrackRow({
         })
   const rowRef = useRef<HTMLDivElement>(null)
   const [swipe, setSwipe] = useState(0)
+  const [tracking, setTracking] = useState(false)
   const swipeRef = useRef(0)
   const settleRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(settleRef.current), [])
@@ -373,6 +374,7 @@ const TrackRow = memo(function TrackRow({
   }
   const onSwipeWheel = (e: React.WheelEvent): void => {
     if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
+    setTracking(true)
     moveSwipe(Math.max(swipeRef.current + e.deltaX, 0))
     clearTimeout(settleRef.current)
     if (swipeRef.current >= swipeBounds().removeAt) {
@@ -380,11 +382,13 @@ const TrackRow = memo(function TrackRow({
       return
     }
     settleRef.current = setTimeout(() => {
+      setTracking(false)
       moveSwipe(swipeRef.current < SWIPE_ACTION_PX / 2 ? 0 : SWIPE_ACTION_PX)
     }, SWIPE_SETTLE_MS)
   }
   const closeSwipe = (): void => {
     clearTimeout(settleRef.current)
+    setTracking(false)
     moveSwipe(0)
   }
   const reviewPending = !t.autoMatched && t.matchReview && !t.matched
@@ -450,7 +454,11 @@ const TrackRow = memo(function TrackRow({
           else rowRegistry.current.delete(t.id)
         }}
         data-testid="track-row"
-        style={swipe > 0 ? { transform: `translateX(-${swipe}px)` } : undefined}
+        style={
+          swipe > 0
+            ? { transform: `translateX(-${swipe}px)`, ...(tracking ? { transition: 'none' } : {}) }
+            : undefined
+        }
         // El ámbito vive en la fila y no en un contenedor de la lista porque solo aquí se
         // maneja esta tecla: capturarla sobre el resto de controles la dejaría muerta en
         // vez de caer a su comando global.
@@ -522,8 +530,9 @@ const TrackRow = memo(function TrackRow({
           // A selected row paints its fill on the keystroke: ↑/↓ and j/k run through this
           // list constantly, and easing the fill in leaves the highlight a step behind the
           // cursor. Only the unselected rows animate their colours, where the transition
-          // belongs to the hover tint and its mouse pace suits it. Every row eases its swipe
-          // position, so crossing the remove threshold slides to the edge instead of jumping.
+          // belongs to the hover tint and its mouse pace suits it. While a swipe's wheel events
+          // arrive the row follows the fingers with no easing (inline transition: none); this
+          // class only eases the settle, to Remove or back to 0, once they lift.
           selected
             ? 'transition-[transform] ease-out'
             : 'transition-[color,background-color,border-color,outline-color,transform] ease-out'
@@ -775,7 +784,10 @@ const TrackRow = memo(function TrackRow({
           type="button"
           tabIndex={-1}
           onClick={() => onSwipeRemove(t.id)}
-          style={{ width: Math.max(swipe - SWIPE_GAP_PX, 0) }}
+          style={{
+            width: Math.max(swipe - SWIPE_GAP_PX, 0),
+            ...(tracking ? { transition: 'none' } : {}),
+          }}
           className="absolute inset-y-1 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-swipe-action)] transition-[width] ease-out text-[11px] font-semibold whitespace-nowrap text-[var(--color-on-swipe-action)]"
         >
           <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
