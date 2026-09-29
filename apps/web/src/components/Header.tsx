@@ -114,8 +114,8 @@ export default function Header({ page }: { page?: Page }) {
             alt="Surco"
             width={128}
             height={128}
-            className={`transition-all duration-300 ${
-              scrolled ? 'h-9 w-9' : 'h-9 w-9 sm:h-10 sm:w-10'
+            className={`h-9 w-9 origin-left transition-transform duration-300 sm:h-10 sm:w-10 ${
+              scrolled ? 'sm:scale-90' : ''
             }`}
           />
           <span className="text-xl font-semibold leading-none tracking-tight">Surco</span>

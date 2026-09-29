@@ -104,7 +104,7 @@ export default function TagScene() {
             return (
               <div
                 key={r.src}
-                className={`min-w-0 rounded-lg border p-2 font-mono text-[11px] transition-all duration-300 ${
+                className={`min-w-0 rounded-lg border p-2 font-mono text-[11px] transition-[opacity,translate,border-color,background-color] duration-300 ${
                   shown
                     ? 'translate-y-0 opacity-100'
                     : 'pointer-events-none translate-y-1 opacity-0'
