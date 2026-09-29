@@ -625,7 +625,7 @@ const TrackRow = memo(function TrackRow({
           {t.loadingMeta ? (
             <span
               data-testid="track-loading"
-              className="mt-2 block h-2.5 w-28 animate-pulse rounded bg-[var(--color-panel-2)]"
+              className="skeleton-sweep mt-2 block h-2.5 w-28 rounded bg-[var(--color-panel-2)]"
             />
           ) : converting ? (
             <span data-testid="track-stage" className="mt-0.5 block">
