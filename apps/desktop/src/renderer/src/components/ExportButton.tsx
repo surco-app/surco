@@ -271,7 +271,7 @@ export function ExportButton({
                 ? // The dimmed track + accent fill replace the usual disabled fade: the
                   // button reads as a progress bar, not as a greyed-out control.
                   'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 py-2.5 text-sm font-medium text-[var(--color-on-accent)] disabled:pointer-events-none'
-                : `press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-panel-2)] py-2.5 text-sm font-medium disabled:pointer-events-none disabled:opacity-50 ${faceBlocked ? 'text-warn' : 'text-[var(--color-on-accent)] aria-disabled:pointer-events-none aria-disabled:opacity-50'}`
+                : `press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-panel-2)] py-2.5 text-sm font-medium disabled:pointer-events-none disabled:opacity-50 ${faceBlocked ? 'text-fg-muted' : 'text-[var(--color-on-accent)] aria-disabled:pointer-events-none aria-disabled:opacity-50'}`
           }
         >
           {swapsFace && (
@@ -334,7 +334,7 @@ export function ExportButton({
                 ? // Matches the body's progress-bar look, or the split button would read
                   // as half-faded while the fill keeps the body vivid.
                   'press flex w-10 items-center justify-center rounded-r-lg border-l border-on-scrim/20 bg-[var(--color-accent)]/40 text-[var(--color-on-accent)] disabled:pointer-events-none'
-                : `press relative flex w-10 items-center justify-center overflow-hidden rounded-r-lg border-l border-on-scrim/20 bg-[var(--color-panel-2)] disabled:pointer-events-none ${faceBlocked ? 'text-fg-faint' : 'text-[var(--color-on-accent)] disabled:opacity-50'}`
+                : `press relative flex w-10 items-center justify-center overflow-hidden rounded-r-lg border-l bg-[var(--color-panel-2)] disabled:pointer-events-none ${faceBlocked ? 'border-[var(--color-line-strong)] text-fg-faint' : 'border-on-scrim/20 text-[var(--color-on-accent)] disabled:opacity-50'}`
           }
         >
           {swapsFace && (

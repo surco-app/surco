@@ -221,9 +221,7 @@ export const Toolbar = memo(function Toolbar({
               className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-medium hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
                 matching
                   ? 'min-w-[3.25rem] text-[var(--color-accent)]'
-                  : needsToken
-                    ? 'text-[var(--color-warn)]'
-                    : 'text-fg-muted hover:text-fg'
+                  : 'text-fg-muted hover:text-fg'
               }`}
             >
               <Sparkles
@@ -237,7 +235,12 @@ export const Toolbar = memo(function Toolbar({
               )}
               {/* Auto-match on, token missing: name the gap inline so it reads without a
                   hover — the tooltip alone was the invisible dead end this fixes. */}
-              {!matching && needsToken && <span>{tr('header.addToken')}</span>}
+              {!matching && needsToken && (
+                <>
+                  <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-warn" />
+                  <span>{tr('header.addToken')}</span>
+                </>
+              )}
               {!matching && !needsToken && <span>{tr('header.autoMatchLabel')}</span>}
               <Tooltip
                 label={

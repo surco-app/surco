@@ -549,28 +549,14 @@ textarea {
   }
 }
 
-/* The convert button's two faces. Blocked, it names the missing field in amber on a
-   neutral ground; once the field is filled the accent fades in and the action rolls
-   down into place. The fade has no direction on purpose: a left-to-right sweep read as
+/* The convert button's two faces. Blocked, it names the missing field on a neutral
+   ground, with the amber dot as the only warning; once the field is filled the accent
+   fades in and the action rolls down into place. The fade has no direction on purpose: a left-to-right sweep read as
    a percentage completing, on the same button that is the convert's progress bar. It
    is asymmetric: it arrives unhurried and leaves at once, since losing the ready state
    needs no ceremony. The two labels share
    one grid cell and trade places with a short travel and a light blur, so they read as
    one label changing rather than two crossing. */
-.process-wrap::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 0.5rem;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-warn) 35%, transparent);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-.process-wrap[data-blocked]::after {
-  opacity: 1;
-}
-
 .process-fill {
   position: absolute;
   inset: 0;
