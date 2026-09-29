@@ -72,17 +72,18 @@ export type MenuState = { track: TrackItem; x: number; y: number }
 const DEFER_PAINT_MIN_ROWS = 150
 
 // Two-finger swipe to remove, the way Mail deletes. A trackpad sends the swipe as wheel
-// events with deltaX and keeps sending momentum after the fingers lift. Past half the row's
-// width (never under two actions' width) it is removed on the spot, without waiting for that
-// momentum to die down; short of it, the row settles once the events stop: past half the
-// action it stays open on Remove, anything less springs back. Until then it resists past the
-// action, so the travel says the swipe is still undecided. The thresholds read the swipe
-// itself, not how far the row moved.
+// events with deltaX and keeps sending momentum after the fingers lift. Once the row has
+// visibly crossed half its width (never under two actions' width) it slides off to the edge
+// and goes, without waiting for that momentum to die down; short of it, the row settles once
+// the events stop: past half the action it stays open on Remove, anything less springs back.
+// Until then it resists past the action, so the travel says the swipe is still undecided.
+// The removal reads where the row is, since the resistance leaves it well behind the fingers.
 const SWIPE_GAP_PX = 6
 const SWIPE_ACTION_PX = 84 + SWIPE_GAP_PX
 const SWIPE_REMOVE_MIN_PX = SWIPE_ACTION_PX * 2
 const SWIPE_SETTLE_MS = 160
 const SWIPE_RESISTANCE = 0.35
+const SWIPE_EXIT_MS = 200
 
 // A hollow ring, not a filled dot: the conversion state shares the amber/red palette with
 // the quality stripe/glyph on the same row, so a solid coin read as a second alarm. As a
@@ -357,16 +358,21 @@ const TrackRow = memo(function TrackRow({
   const swipeRef = useRef(0)
   const settleRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(settleRef.current), [])
-  const swipeBounds = (): { width: number; removeAt: number } => {
+  const swipeBounds = (): { width: number; shown: number; removeAt: number } => {
     const width = rowRef.current?.offsetWidth ?? 0
-    return { width, removeAt: Math.max(SWIPE_REMOVE_MIN_PX, width / 2) }
+    const shown = Math.max(SWIPE_REMOVE_MIN_PX, width / 2)
+    return {
+      width,
+      shown,
+      removeAt: SWIPE_ACTION_PX + (shown - SWIPE_ACTION_PX) / SWIPE_RESISTANCE,
+    }
   }
   const moveSwipe = (px: number): void => {
     swipeRef.current = px
-    const { width, removeAt } = swipeBounds()
+    const { width, shown, removeAt } = swipeBounds()
     setSwipe(
       px >= removeAt
-        ? Math.max(width, removeAt)
+        ? Math.max(width, shown)
         : px <= SWIPE_ACTION_PX
           ? px
           : SWIPE_ACTION_PX + (px - SWIPE_ACTION_PX) * SWIPE_RESISTANCE,
@@ -378,6 +384,7 @@ const TrackRow = memo(function TrackRow({
     moveSwipe(Math.max(swipeRef.current + e.deltaX, 0))
     clearTimeout(settleRef.current)
     if (swipeRef.current >= swipeBounds().removeAt) {
+      setTracking(false)
       onSwipeRemove(t.id)
       return
     }
@@ -531,7 +538,7 @@ const TrackRow = memo(function TrackRow({
         // just left trails behind a held key. Only the swipe position eases, and only the
         // settle to Remove or back to 0: while a swipe's wheel events arrive the row follows
         // the fingers with no easing (inline transition: none).
-        className={`group/row relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-[transform] ease-out ${
+        className={`group/row relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-[transform] duration-200 ease-out ${
           // The primary row (the one open in the editor) takes the selection fill, the way
           // Finder/Mail fill the active row. A multi-selected-but-not-primary row gets the
           // quieter accent tint. Everything else is bare: no outline and no fill of its own,
@@ -778,12 +785,15 @@ const TrackRow = memo(function TrackRow({
         <button
           type="button"
           tabIndex={-1}
-          onClick={() => onSwipeRemove(t.id)}
+          onClick={() => {
+            moveSwipe(swipeBounds().removeAt)
+            onSwipeRemove(t.id)
+          }}
           style={{
             width: Math.max(swipe - SWIPE_GAP_PX, 0),
             ...(tracking ? { transition: 'none' } : {}),
           }}
-          className="absolute inset-y-1 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-swipe-action)] transition-[width] ease-out text-[11px] font-semibold whitespace-nowrap text-[var(--color-on-swipe-action)]"
+          className="absolute inset-y-1 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-swipe-action)] transition-[width] duration-200 ease-out text-[11px] font-semibold whitespace-nowrap text-[var(--color-on-swipe-action)]"
         >
           <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           {tr('trackList.remove')}
@@ -899,7 +909,8 @@ export const TrackList = memo(function TrackList({
   useEffect(() => () => rowObserver.current?.disconnect(), [])
   // A swipe removes its row mid-gesture, and the row below slides up under the pointer while
   // the trackpad is still sending that swipe's momentum. The list swallows that tail until the
-  // wheel goes quiet, so it can't swipe the next row away too.
+  // wheel goes quiet, so it can't swipe the next row away too. The track itself goes once the
+  // row has finished sliding off, not in the frame the swipe decided.
   const swipeTailRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const swallowingSwipeTail = useRef(false)
   const waitOutSwipeTail = (): void => {
@@ -912,7 +923,7 @@ export const TrackList = memo(function TrackList({
   useEffect(() => () => clearTimeout(swipeTailRef.current), [])
   const removeBySwipe = useStableCallback((id: string): void => {
     waitOutSwipeTail()
-    onSwipeRemove(id)
+    setTimeout(() => onSwipeRemove(id), SWIPE_EXIT_MS)
   })
   // The rows are real DOM (content-visibility, not windowing), but a screen reader still
   // benefits from an explicit "row 12 of 500" as filters shrink the set. Written straight
