@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SelectionStatus } from '../lib/selectionStatus'
 import type { TrackItem } from '../types'
@@ -217,13 +217,20 @@ describe('ConvertFooter done layout', () => {
     expect(within(screen.getByTestId('done-actions')).queryByTestId('add-apple-music')).toBeNull()
   })
 
-  // "Added to Apple Music · Show in Apple Music" says the library twice in one line; with the
-  // confirmation already naming it, the link only needs the verb.
-  it('shortens the reveal to its verb when the confirmation already names Apple Music', () => {
+  // "Added to Apple Music · Show ↗" still spent two items on one fact: where the track now
+  // lives. When the confirmation already names the library, the confirmation is the way there.
+  it('makes the confirmation itself the reveal when it already names Apple Music', () => {
+    const revealAppleMusic = vi.fn().mockResolvedValue(undefined)
+    ;(window as unknown as { api: Record<string, unknown> }).api = {
+      platform: 'darwin',
+      revealAppleMusic,
+    }
     render(inMusic(true, true))
-    const reveal = screen.getByTestId('add-apple-music')
-    expect(reveal).toHaveTextContent(/^Show$/)
-    expect(reveal).toHaveAccessibleName('Show in Apple Music')
+    const reveal = within(screen.getByRole('status')).getByTestId('add-apple-music')
+    expect(reveal).toHaveAccessibleName('✓ Added to Apple Music · Show in Apple Music')
+    expect(screen.getByTestId('done-outcome').textContent?.match(/Apple Music/g)).toHaveLength(1)
+    fireEvent.click(reveal)
+    expect(revealAppleMusic).toHaveBeenCalledWith('ABCD1234')
   })
 
   it('keeps an update that is still pending among the actions', () => {

@@ -552,7 +552,6 @@
     "appleMusicUpdate": "Update in Apple Music",
     "appleMusicUpdating": "Updating in Apple Music…",
     "appleMusicShow": "Show in Apple Music",
-    "appleMusicShowShort": "Show",
     "appleMusicError": "Could not add to Apple Music",
     "oldCopyRemoved": "Old copy removed from Apple Music; its file is in the Trash",
     "removeOldCopyError": "Could not remove the old Apple Music copy",

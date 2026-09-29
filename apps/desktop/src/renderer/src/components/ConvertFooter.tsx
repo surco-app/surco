@@ -128,6 +128,10 @@ export function ConvertFooter({
   const hasMusicCopy = !isMulti && !!item.musicPersistentId
   const showInMusic = hasMusicCopy && musicAdded
   const musicCopyId = item.musicPersistentId
+  const revealsInMusic = isMacOS() && showInMusic && !!musicCopyId
+  const revealInMusic = (): void => {
+    if (musicCopyId) void window.api.revealAppleMusic(musicCopyId)
+  }
   const cleanup: CleanupOffer = {
     originalPath: canDeleteOriginal ? item.inputPath : null,
     superseded: isMulti
@@ -218,25 +222,37 @@ export function ConvertFooter({
                   role="status"
                   className="text-xs font-medium text-good"
                 >
-                  {inMusicLibraryOnly
-                    ? isMulti
-                      ? tr('editor.addedToAppleMusicCount', { count: selectedCount })
-                      : tr('editor.addedToAppleMusic')
-                    : isMulti
-                      ? tr('editor.exportedCount', { count: selectedCount })
-                      : tr('editor.exportedAs', { format: (exportedFormat ?? '').toUpperCase() })}
+                  {revealsInMusic && inMusicLibraryOnly ? (
+                    <button
+                      type="button"
+                      data-testid="add-apple-music"
+                      onClick={revealInMusic}
+                      aria-label={`${tr('editor.addedToAppleMusic')} · ${tr('editor.appleMusicShow')}`}
+                      className="press inline-flex items-center gap-1 hover:underline"
+                    >
+                      {tr('editor.addedToAppleMusic')}
+                      <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
+                    </button>
+                  ) : inMusicLibraryOnly ? (
+                    isMulti ? (
+                      tr('editor.addedToAppleMusicCount', { count: selectedCount })
+                    ) : (
+                      tr('editor.addedToAppleMusic')
+                    )
+                  ) : isMulti ? (
+                    tr('editor.exportedCount', { count: selectedCount })
+                  ) : (
+                    tr('editor.exportedAs', { format: (exportedFormat ?? '').toUpperCase() })
+                  )}
                 </p>
-                {isMacOS() && showInMusic && musicCopyId && (
+                {revealsInMusic && !inMusicLibraryOnly && (
                   <button
                     type="button"
                     data-testid="add-apple-music"
-                    onClick={() => void window.api.revealAppleMusic(musicCopyId)}
-                    aria-label={inMusicLibraryOnly ? tr('editor.appleMusicShow') : undefined}
+                    onClick={revealInMusic}
                     className="press inline-flex items-center gap-1 text-xs text-fg-dim hover:text-fg"
                   >
-                    {inMusicLibraryOnly
-                      ? tr('editor.appleMusicShowShort')
-                      : tr('editor.appleMusicShow')}
+                    {tr('editor.appleMusicShow')}
                     <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
                   </button>
                 )}
