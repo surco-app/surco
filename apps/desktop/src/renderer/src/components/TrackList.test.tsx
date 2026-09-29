@@ -1042,13 +1042,41 @@ describe('TrackList swipe to remove', () => {
     expect(slidBy()).toBeLessThan(150)
   })
 
-  it('fills the row to its edge and no further once letting go would remove', () => {
+  it('fills the row to its edge and no further once the swipe removes', () => {
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(300)
+    renderList([track({ id: 'a' })])
+    swipeWithoutLetting(1000)
+    expect(slidBy()).toBe(300)
+  })
+
+  // Waiting for the wheel to go quiet meant waiting out the trackpad's momentum, close to a
+  // second after the fingers lifted (Vicent 29/09: "tarda en quitarla"). Everything in Surco
+  // updates optimistically, so the row goes the moment the swipe crosses the threshold.
+  it('removes the track the moment the swipe crosses the threshold', () => {
     vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(300)
     const { onSwipeRemove } = renderList([track({ id: 'a' })])
     swipeWithoutLetting(1000)
-    expect(slidBy()).toBe(300)
-    act(() => vi.advanceTimersByTime(500))
+    expect(onSwipeRemove).toHaveBeenCalledTimes(1)
     expect(onSwipeRemove).toHaveBeenCalledWith('a')
+  })
+
+  // Removed mid-gesture, the next row slides up under the pointer while the trackpad is still
+  // sending that same swipe's momentum. It must not take that tail as a swipe of its own and
+  // go too; a fresh swipe once the wheel has gone quiet still works.
+  it('does not let the tail of a removing swipe move the row that takes its place', () => {
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(300)
+    const { onSwipeRemove } = renderList([track({ id: 'a' }), track({ id: 'b' })])
+    const [rowA, rowB] = screen.getAllByTestId('track-row')
+    for (let i = 0; i < 8; i++) fireEvent.wheel(rowA.parentElement as Element, { deltaX: 50 })
+    for (let i = 0; i < 20; i++) {
+      fireEvent.wheel(rowB.parentElement as Element, { deltaX: 40 })
+      act(() => vi.advanceTimersByTime(16))
+    }
+    expect(onSwipeRemove).not.toHaveBeenCalledWith('b')
+    expect(rowB.style.transform).toBe('')
+    act(() => vi.advanceTimersByTime(500))
+    for (let i = 0; i < 8; i++) fireEvent.wheel(rowB.parentElement as Element, { deltaX: 50 })
+    expect(onSwipeRemove).toHaveBeenCalledWith('b')
   })
 
   // Full height, the grey touched the rows above and below and read as glued to them (seen
