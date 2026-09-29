@@ -119,6 +119,52 @@ describe('StatsTab', () => {
     expect(split).toHaveTextContent('Discogs11')
   })
 
+  // Reported 29/09 with a screenshot: the legend listed the catalogs in a fixed order, so
+  // MusicBrainz (3) sat after Beatport (2). Read left to right, the bar and the legend have
+  // to rank where the matches came from.
+  it('orders the bar and the legend from the most matches to the fewest', () => {
+    render(
+      <StatsTab
+        settings={withStats({
+          conversionCount: 5,
+          stats: {
+            ...zeroStats,
+            discogsMatches: 213,
+            bandcampMatches: 185,
+            deezerMatches: 92,
+            beatportMatches: 2,
+            musicbrainzMatches: 3,
+          },
+        })}
+      />,
+    )
+    const split = screen.getByTestId('stats-match-split')
+    const order = (prefix: string): string[] =>
+      Array.from(split.querySelectorAll<HTMLElement>(`[data-testid^="${prefix}"]`)).map(
+        (el) => el.dataset.testid?.slice(prefix.length) ?? '',
+      )
+    expect(order('stats-match-')).toEqual([
+      'discogs',
+      'bandcamp',
+      'deezer',
+      'musicbrainz',
+      'beatport',
+    ])
+    expect(split.textContent).toMatch(/Discogs213.*Bandcamp185.*Deezer92.*MusicBrainz3.*Beatport2/)
+  })
+
+  // A shortened count must not cost the exact figure: it stays one hover away.
+  it('shortens a four-digit count and keeps the exact one on hover', () => {
+    render(
+      <StatsTab
+        settings={withStats({ conversionCount: 5, stats: { ...zeroStats, discogsMatches: 1234 } })}
+      />,
+    )
+    const count = screen.getByTestId('stats-discogsMatches')
+    expect(count).toHaveTextContent('1.2K')
+    expect(count).toHaveAttribute('title', '1234')
+  })
+
   // The milestone bar gives the counter a goal — 385 of the way to 500 must read as
   // real progress toward a named target, the hook that keeps the tab worth reopening.
   it('shows progress toward the next conversion milestone', () => {

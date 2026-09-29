@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  formatMatchCount,
   formatTimeSaved,
   MANUAL_SECONDS_PER_CONVERSION,
   matchStatKey,
@@ -19,6 +20,30 @@ describe('timeSavedSeconds', () => {
     expect(timeSavedSeconds(0)).toBe(0)
     expect(timeSavedSeconds(-3)).toBe(0)
     expect(timeSavedSeconds(2.7)).toBe(2 * MANUAL_SECONDS_PER_CONVERSION)
+  })
+})
+
+// The match legend holds five sources on one line; a four-digit tally would push it onto a
+// second one, so counts from a thousand up shrink to a short "K" form.
+describe('formatMatchCount', () => {
+  it('keeps counts under a thousand whole', () => {
+    expect(formatMatchCount(999, 'en')).toBe('999')
+  })
+
+  it('shortens thousands to one decimal in K', () => {
+    expect(formatMatchCount(1234, 'en')).toBe('1.2K')
+  })
+
+  // Intl's own compact form is no use here: Spanish writes "1,2 mil" (longer than the
+  // number) and German does not shorten thousands at all. Only the decimal mark follows
+  // the language.
+  it('uses the language decimal mark with the same K in every language', () => {
+    expect(formatMatchCount(1234, 'es')).toBe('1,2K')
+    expect(formatMatchCount(1234, 'de')).toBe('1,2K')
+  })
+
+  it('drops the decimal from ten thousand up', () => {
+    expect(formatMatchCount(12345, 'en')).toBe('12K')
   })
 })
 
