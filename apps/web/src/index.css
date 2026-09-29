@@ -154,7 +154,8 @@ button:not(:disabled) {
     animation-duration: 0.001ms !important;
     animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
+    transition-property: opacity, visibility, color, background-color, border-color,
+      outline-color, text-decoration-color, fill, stroke, box-shadow !important;
   }
   /* Deliberately shows the section outright instead of fading it in. Elsewhere reduced
      motion should keep the fade and drop only the travel, but a reveal is invisible until

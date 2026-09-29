@@ -96,7 +96,7 @@ function Verdict({
 }) {
   return (
     <span
-      className={`mb-2.5 inline-flex rounded-full px-2.5 py-0.5 font-mono text-[11px] transition-all duration-500 ${className} ${
+      className={`mb-2.5 inline-flex rounded-full px-2.5 py-0.5 font-mono text-[11px] transition-[opacity,translate] duration-500 ${className} ${
         shown ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0'
       }`}
     >
