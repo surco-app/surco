@@ -32,6 +32,7 @@ const shortLyrics3 = join(dir, 'short-lyrics3.mp3')
 const cutLyrics3 = join(dir, 'cut-lyrics3.mp3')
 const longCut = join(dir, 'long-cut.mp3')
 const estimatedDuration = join(dir, 'estimated-duration.mp3')
+const strayFrame = join(dir, 'stray-frame.flac')
 
 const meta: TrackMetadata = {
   title: 'T',
@@ -59,6 +60,15 @@ const meta: TrackMetadata = {
 const MPEG1_BITRATES_KBPS = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320]
 const MPEG1_SAMPLE_RATES = [44100, 48000, 32000]
 
+function flacFrames(bytes: Buffer): Buffer {
+  let pos = 4
+  for (;;) {
+    const last = (bytes[pos] ?? 0x80) & 0x80
+    pos += 4 + bytes.readUIntBE(pos + 1, 3)
+    if (last) return bytes.subarray(pos)
+  }
+}
+
 function withoutXingHeader(bytes: Buffer): Buffer {
   let at = 0
   if (bytes.subarray(0, 3).toString('latin1') === 'ID3')
@@ -84,6 +94,29 @@ beforeAll(() => {
     src,
   ])
   writeFileSync(garbage, Buffer.from('ID3'.repeat(4).concat('x'.repeat(65536))))
+  const flacWhole = join(dir, 'flac-whole.flac')
+  const flacOneFrame = join(dir, 'flac-one-frame.flac')
+  for (const [out, limit] of [
+    [flacWhole, []],
+    [flacOneFrame, ['-frames:a', '1']],
+  ] as const)
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=10',
+      ...limit,
+      '-c:a',
+      'flac',
+      out,
+    ])
+  writeFileSync(
+    strayFrame,
+    Buffer.concat([readFileSync(flacWhole), flacFrames(readFileSync(flacOneFrame))]),
+  )
   // A real MP3 whose middle was overwritten: the header and opening frames are intact,
   // so ffmpeg opens it and prints a full banner, and only the decode hits the damage.
   // That is what makes it the fixture for "the failure is not the first stderr line" —
@@ -344,6 +377,17 @@ describe('a complete file with junk after its last frame', () => {
 
   it('still fails when the junk sits in the middle of the audio', async () => {
     await expect(assertDecodable(midCorrupt)).rejects.toThrow()
+  })
+})
+
+// Two of a user's FLACs (29/09/2026) ended in a stray frame whose header numbers it back
+// near the start. A stream copy carries it across, every sample still decodes, but the
+// decoder's clock jumps back with it and the last timestamp read 191.84 s of a 405 s
+// file: the conversion was discarded as "shorter than the original". The check has to
+// count the audio the decode delivered, not trust where its clock ended.
+describe('a complete FLAC whose last frame is numbered out of order', () => {
+  it('is accepted because every second of its audio decodes', async () => {
+    await expect(assertDecodable(strayFrame)).resolves.toBeUndefined()
   })
 })
 

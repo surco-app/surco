@@ -1391,6 +1391,7 @@ async function deliveredDurationSec(file: string): Promise<number | null> {
         file,
         '-map',
         '0:a',
+        ...COUNT_DELIVERED_SAMPLES,
         '-progress',
         '-',
         '-f',
@@ -1404,6 +1405,14 @@ async function deliveredDurationSec(file: string): Promise<number | null> {
     return null
   }
 }
+
+// -progress reports where the decoder's clock ended, and that clock comes from the
+// file's own timestamps, not from the audio delivered. Two of a user's FLACs (29/09/2026)
+// ended in a stray frame header numbered out of sequence; a stream copy carried it
+// across, every sample still decoded, and the clock jumped back to 191.84 s of a 405 s
+// file, so the conversion was thrown away as truncated. Restamping each frame by the
+// samples before it makes out_time_us the length of audio actually delivered.
+const COUNT_DELIVERED_SAMPLES = ['-af', 'asetpts=N/SR/TB']
 
 type DecodeForCheck =
   | { ok: true; stderr: string; stdout: string }
@@ -1422,6 +1431,7 @@ async function decodeForCheck(file: string, untilSec?: number): Promise<DecodeFo
         file,
         '-map',
         '0:a',
+        ...COUNT_DELIVERED_SAMPLES,
         ...(untilSec === undefined ? [] : ['-t', untilSec.toFixed(3)]),
         '-progress',
         '-',
