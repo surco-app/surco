@@ -2009,7 +2009,7 @@ export default function App(): React.JSX.Element {
                     {GHOST_ROWS.map((width, i) => (
                       <div
                         key={width}
-                        style={{ width: `${width}%`, animationDelay: `${i * 0.09}s` }}
+                        style={{ width: `${width}%`, animationDelay: `${i * 0.06}s` }}
                         className="h-6 rounded-md border border-dashed border-[var(--color-accent)]/45 bg-[var(--color-accent)]/5"
                       />
                     ))}
