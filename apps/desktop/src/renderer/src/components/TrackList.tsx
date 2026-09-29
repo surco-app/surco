@@ -518,16 +518,11 @@ const TrackRow = memo(function TrackRow({
         }}
         onMouseEnter={() => onPrefetch(t.id)}
         onFocus={() => onPrefetch(t.id)}
-        className={`group/row relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left ${
-          // A selected row paints its fill on the keystroke: ↑/↓ and j/k run through this
-          // list constantly, and easing the fill in leaves the highlight a step behind the
-          // cursor. Only the unselected rows animate their colours, where the transition
-          // belongs to the hover tint and its mouse pace suits it. Every row eases its swipe
-          // position, so crossing the remove threshold slides to the edge instead of jumping.
-          selected
-            ? 'transition-[transform] ease-out'
-            : 'transition-[color,background-color,border-color,outline-color,transform] ease-out'
-        } ${
+        // No colour transition, selected or not: ↑/↓ and j/k run through this list
+        // constantly, and a fill easing in lags the cursor while one easing out on the row
+        // just left trails behind a held key. Only the swipe position eases, so crossing the
+        // remove threshold slides to the edge instead of jumping.
+        className={`group/row relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-[transform] ease-out ${
           // The primary row (the one open in the editor) takes the selection fill, the way
           // Finder/Mail fill the active row. A multi-selected-but-not-primary row gets the
           // quieter accent tint. Everything else is bare: no outline and no fill of its own,

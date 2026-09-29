@@ -206,10 +206,9 @@ describe('CommandPalette', () => {
   })
 
   // The palette is opened and arrowed through hundreds of times a day, so the highlight
-  // has to land the instant the key does. A colour transition on the active option makes
-  // it fade in one step BEHIND the cursor: hold ↓ and the blue lags the selection all the
-  // way down the list. Hovering is the slow, mouse-paced case that keeps its fade, so the
-  // transition rides the inactive rows only.
+  // has to move the instant the key does, both ways. A colour transition on the active
+  // option makes it fade in one step BEHIND the cursor; one on the option just left makes
+  // it fade out behind it, so a held ↓ drags a trail of half-lit rows down the list.
   it('moves the active highlight with no colour transition', () => {
     render(
       <CommandPalette
@@ -218,12 +217,12 @@ describe('CommandPalette', () => {
       />,
     )
     const [first, second] = screen.getAllByTestId('palette-item')
-    expect(first.className).toContain('transition-none')
-    expect(second.className).toContain('transition-colors')
+    expect(first.className).not.toContain('transition-colors')
+    expect(second.className).not.toContain('transition-colors')
     fireEvent.keyDown(screen.getByTestId('palette-input'), { key: 'ArrowDown' })
     const [afterFirst, afterSecond] = screen.getAllByTestId('palette-item')
-    expect(afterSecond.className).toContain('transition-none')
-    expect(afterFirst.className).toContain('transition-colors')
+    expect(afterSecond.className).not.toContain('transition-colors')
+    expect(afterFirst.className).not.toContain('transition-colors')
   })
 
   // Typing re-filters the list underneath the highlight: after arrowing down, a new
