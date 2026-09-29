@@ -1054,7 +1054,10 @@ describe('TrackList swipe to remove', () => {
   // second after the fingers lifted (Vicent 29/09: "tarda en quitarla"). Everything in Surco
   // updates optimistically, so the track goes as soon as the swipe crosses the threshold, but
   // not in the same frame: vanishing on the spot read as abrupt (Vicent 29/09: "muy rápido y
-  // brusco"). The row finishes its travel to the edge, eased, and then it goes.
+  // brusco"). The row finishes its travel to the edge, eased, and then it goes. Unmounting
+  // it then jumped every row below a full row height in one frame, so the gap closes over
+  // the same 200 ms as the slide, from the same event: one exit, not a slide and then a
+  // collapse.
   it('slides the row off to the edge before removing the track', () => {
     vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(300)
     const { onSwipeRemove } = renderList([track({ id: 'a' })])
@@ -1062,9 +1065,59 @@ describe('TrackList swipe to remove', () => {
     expect(onSwipeRemove).not.toHaveBeenCalled()
     expect(slidBy()).toBe(300)
     expect(screen.getByTestId('track-row').style.transition).not.toBe('none')
+    expect(screen.getByTestId('track-row-slot')).toHaveAttribute('data-removing')
     act(() => vi.advanceTimersByTime(200))
     expect(onSwipeRemove).toHaveBeenCalledTimes(1)
     expect(onSwipeRemove).toHaveBeenCalledWith('a')
+  })
+
+  // A user who asked the OS to cut motion gets no slide or collapse to sit through: the
+  // track goes in the same event that decides it.
+  it('removes the track at once, without collapsing, when motion is reduced', () => {
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(300)
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({ matches: true, media: '', addEventListener() {}, removeEventListener() {} })),
+    )
+    try {
+      const { onSwipeRemove } = renderList([track({ id: 'a' })])
+      swipeWithoutLetting(1000)
+      expect(onSwipeRemove).toHaveBeenCalledTimes(1)
+      expect(onSwipeRemove).toHaveBeenCalledWith('a')
+      expect(screen.getByTestId('track-row-slot')).not.toHaveAttribute('data-removing')
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  // The Remove button is the same removal as the full swipe, so it slides the row off and
+  // closes the gap together, the same way, instead of snapping the rows below up.
+  it('closes the gap from the Remove button too', () => {
+    const { onSwipeRemove } = renderList([track({ id: 'a' })])
+    swipe(70)
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('trackList.remove') }))
+    expect(screen.getByTestId('track-row-slot')).toHaveAttribute('data-removing')
+    expect(onSwipeRemove).not.toHaveBeenCalled()
+    act(() => vi.advanceTimersByTime(200))
+    expect(onSwipeRemove).toHaveBeenCalledTimes(1)
+    expect(onSwipeRemove).toHaveBeenCalledWith('a')
+  })
+
+  // Once the row is going it is decided: late momentum swinging back, or the pointer leaving
+  // mid-exit, must not slide it back into view or remove the track a second time.
+  it('holds a removing row where it is until the gap has closed', () => {
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(300)
+    const { onSwipeRemove } = renderList([track({ id: 'a' })])
+    swipeWithoutLetting(1000)
+    const slid = slidBy()
+    act(() => vi.advanceTimersByTime(180))
+    const wrapper = screen.getByTestId('track-row').parentElement as Element
+    fireEvent.wheel(wrapper, { deltaX: 400 })
+    for (let i = 0; i < 4; i++) fireEvent.wheel(wrapper, { deltaX: -200 })
+    fireEvent.mouseLeave(wrapper)
+    expect(slidBy()).toBe(slid)
+    act(() => vi.advanceTimersByTime(500))
+    expect(onSwipeRemove).toHaveBeenCalledTimes(1)
   })
 
   // The row is held back past Remove, so it travels far less than the fingers do. Deciding on
