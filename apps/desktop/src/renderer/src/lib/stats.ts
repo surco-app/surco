@@ -20,6 +20,17 @@ export function formatTimeSaved(seconds: number): string {
   return `${m} min`
 }
 
+// A match tally short enough for the one-line source legend: whole below a thousand, then
+// "1.2K" / "12K". Intl's compact notation is no use here (Spanish "1,2 mil" is longer than
+// the number, German leaves thousands alone), so only the decimal mark follows the language.
+export function formatMatchCount(count: number, language: string): string {
+  if (count < 1000) return String(count)
+  const thousands = new Intl.NumberFormat(language, {
+    maximumFractionDigits: count < 10000 ? 1 : 0,
+  }).format(count / 1000)
+  return `${thousands}K`
+}
+
 // The conversion-count goals the Stats tab's progress bar aims at. Sparse on purpose:
 // a target that moves every session stops feeling like a milestone.
 const MILESTONES = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000]

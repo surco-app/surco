@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next'
 import type { LifetimeStats, Settings } from '../../../../shared/types'
 import { DONATE_URL, PAYPAL_ME_LABEL, PAYPAL_ME_URL } from '../../lib/donate'
 import {
+  formatMatchCount,
   formatTimeSaved,
   MANUAL_SECONDS_PER_CONVERSION,
   nextMilestone,
@@ -49,8 +50,8 @@ const CELLS: { key: keyof LifetimeStats; icon: typeof FolderDown }[] = [
 ]
 
 // Matches by source as one proportional bar, a segment per source with the raw counts
-// beside their swatches. When no match has landed yet the bar stays flat and empty
-// rather than dividing by zero.
+// beside their swatches, both ranked from the most matches to the fewest. When no match
+// has landed yet the bar stays flat and empty rather than dividing by zero.
 function MatchSplit({
   heading,
   sources,
@@ -58,7 +59,9 @@ function MatchSplit({
   heading: string
   sources: { key: string; label: string; count: number; swatch: string }[]
 }): React.JSX.Element {
+  const { i18n } = useTranslation()
   const total = sources.reduce((sum, s) => sum + s.count, 0)
+  const ranked = [...sources].sort((a, b) => b.count - a.count)
   return (
     <div
       data-testid="stats-match-split"
@@ -66,7 +69,7 @@ function MatchSplit({
     >
       <p className="text-xs font-medium text-fg-muted">{heading}</p>
       <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-[var(--color-field)]">
-        {sources.map((s) => (
+        {ranked.map((s) => (
           <div
             key={s.key}
             data-testid={`stats-match-${s.key}`}
@@ -75,19 +78,20 @@ function MatchSplit({
           />
         ))}
       </div>
-      <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs">
-        {sources.map((s) => (
+      <div className="mt-2 flex flex-wrap justify-between gap-x-2 gap-y-1 text-xs">
+        {ranked.map((s) => (
           <span
             key={s.key}
-            className="inline-flex items-center gap-1.5 whitespace-nowrap text-fg-muted"
+            className="inline-flex items-center gap-1 whitespace-nowrap text-fg-muted"
           >
             <span className={`h-2 w-2 rounded-full ${s.swatch}`} aria-hidden="true" />
             {s.label}
             <span
               data-testid={`stats-${s.key}Matches`}
+              title={s.count >= 1000 ? String(s.count) : undefined}
               className="font-semibold tabular-nums text-fg"
             >
-              {s.count}
+              {formatMatchCount(s.count, i18n.language)}
             </span>
           </span>
         ))}
