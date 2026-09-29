@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SelectionStatus } from '../lib/selectionStatus'
 import type { TrackItem } from '../types'
@@ -177,5 +177,59 @@ describe('ConvertFooter blocked by missing fields', () => {
   it('keeps the action on the button when the track is ready to convert', () => {
     render(footer(false))
     expect(screen.getByTestId('process-btn')).not.toHaveTextContent('missing')
+  })
+})
+
+// Reported 29/09 with a screenshot: once converted, the footer spent two rows on "Added to
+// Apple Music" plus three equal buttons, and the first of them, "Show in Apple Music", only
+// restated the green line above it. Revealing a copy that is already in sync is a look at
+// the result, not a next step, so it rides the outcome line; the action row keeps only what
+// still changes something.
+describe('ConvertFooter done layout', () => {
+  function inMusic(libraryOnly: boolean, added: boolean): React.JSX.Element {
+    return (
+      <ConvertFooter
+        {...footer(true).props}
+        item={
+          {
+            id: 't1',
+            status: 'done',
+            inputPath: '/a.wav',
+            meta: {},
+            musicPersistentId: 'ABCD1234',
+          } as TrackItem
+        }
+        status={{ ...status(true), inMusicLibraryOnly: libraryOnly, musicAdded: added }}
+      />
+    )
+  }
+
+  beforeEach(() => {
+    ;(window as unknown as { api: Record<string, unknown> }).api = { platform: 'darwin' }
+  })
+
+  it('puts the reveal of a synced Apple Music copy on the outcome line', () => {
+    render(inMusic(false, true))
+    const outcome = screen.getByTestId('done-outcome')
+    expect(within(outcome).getByTestId('add-apple-music')).toHaveAccessibleName(
+      'Show in Apple Music',
+    )
+    expect(within(screen.getByTestId('done-actions')).queryByTestId('add-apple-music')).toBeNull()
+  })
+
+  // "Added to Apple Music · Show in Apple Music" says the library twice in one line; with the
+  // confirmation already naming it, the link only needs the verb.
+  it('shortens the reveal to its verb when the confirmation already names Apple Music', () => {
+    render(inMusic(true, true))
+    const reveal = screen.getByTestId('add-apple-music')
+    expect(reveal).toHaveTextContent(/^Show$/)
+    expect(reveal).toHaveAccessibleName('Show in Apple Music')
+  })
+
+  it('keeps an update that is still pending among the actions', () => {
+    render(inMusic(false, false))
+    expect(
+      within(screen.getByTestId('done-actions')).getByTestId('add-apple-music'),
+    ).toHaveTextContent('Update in Apple Music')
   })
 })

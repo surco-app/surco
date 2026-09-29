@@ -1,4 +1,4 @@
-import { Check, ChevronDown } from 'lucide-react'
+import { Check, ChevronDown, RotateCw } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -57,7 +57,7 @@ interface ExportButtonProps {
   // Absent until the first progress event lands (and always in multi/quiet uses).
   stage?: ProcessStage
   // The demoted variant shown after a successful export: a bordered, muted control
-  // that sits in the secondary row labelled "Convert again", rather than the prominent
+  // that sits among the done footer's actions labelled "Convert again", rather than the prominent
   // accent button used to convert.
   quiet?: boolean
   // The destination this conversion goes to and the picks on offer — the editor
@@ -224,7 +224,7 @@ export function ExportButton({
     // A disabled control fires no pointer events of its own, so the buttons go
     // pointer-events-none while blocked and this wrapper carries the hover — letting the
     // "why is this disabled" tooltip below appear over the greyed-out button.
-    <div className={`flex items-center gap-3 ${quiet ? 'flex-1' : ''}`}>
+    <div className="flex items-center gap-3">
       <div
         data-testid="process-btn-wrap"
         ref={ref}
@@ -266,7 +266,7 @@ export function ExportButton({
           }
           className={
             quiet
-              ? 'press flex-1 rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50'
+              ? 'press flex-1 whitespace-nowrap rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50'
               : liveStage
                 ? // The dimmed track + accent fill replace the usual disabled fade: the
                   // button reads as a progress bar, not as a greyed-out control.
@@ -308,6 +308,9 @@ export function ExportButton({
             <span
               className={`relative ${cancellable ? 'group-hover:hidden group-focus-within:hidden' : ''}`}
             >
+              {quiet && (
+                <RotateCw aria-hidden="true" className="mr-1.5 inline h-3 w-3 align-[-2px]" />
+              )}
               {label}
             </span>
           )}

@@ -1,4 +1,4 @@
-import { SlidersVertical } from 'lucide-react'
+import { ArrowUpRight, SlidersVertical } from 'lucide-react'
 import type React from 'react'
 import { useLayoutEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -74,8 +74,8 @@ interface ConvertFooterProps {
 }
 
 // The editor's bottom bar: the error row, the normalization note, and either the
-// convert split-button or — once everything selected is done — the outcome line with
-// its inline file links (reveal/re-export/clean up) and the Apple-Music/DJ-app row.
+// convert split-button or — once everything selected is done — the outcome with its
+// inline links (reveal/clean up) beside the next steps (Apple Music, DJ app, re-export).
 export function ConvertFooter({
   item,
   isMulti,
@@ -127,6 +127,7 @@ export function ConvertFooter({
   // keeps the plain add semantics: the sweep resolves add-vs-update per track.
   const hasMusicCopy = !isMulti && !!item.musicPersistentId
   const showInMusic = hasMusicCopy && musicAdded
+  const musicCopyId = item.musicPersistentId
   const cleanup: CleanupOffer = {
     originalPath: canDeleteOriginal ? item.inputPath : null,
     superseded: isMulti
@@ -200,107 +201,124 @@ export function ConvertFooter({
           </button>
         )}
         {showDone ? (
-          // Two lines, ordered by what matters after an export. The first is
-          // about the file just written: the confirmation plus its low-stakes
-          // housekeeping (reveal, trash the source) as inline links. The
-          // second holds the actions as equal quiet buttons: the destinations
-          // (Apple Music, DJ-app export) and the re-export split-button, whose
-          // chevron re-picks the format without converting on the spot.
+          // One line when it fits, ordered by what matters after an export. On the left, the
+          // outcome: the confirmation plus its low-stakes look-and-tidy links (reveal the file
+          // or the synced library copy, trash what was left behind). On the right, what can
+          // still come next: a pending Apple Music add or update (the only tinted one), the
+          // DJ-app export and the re-export split-button, whose chevron re-picks the format
+          // without converting on the spot.
           <>
-            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-              <p
-                data-testid="export-success"
-                role="status"
-                className="text-xs font-medium text-good"
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <div
+                data-testid="done-outcome"
+                className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1"
               >
-                {inMusicLibraryOnly
-                  ? isMulti
-                    ? tr('editor.addedToAppleMusicCount', { count: selectedCount })
-                    : tr('editor.addedToAppleMusic')
-                  : isMulti
-                    ? tr('editor.exportedCount', { count: selectedCount })
-                    : tr('editor.exportedAs', { format: (exportedFormat ?? '').toUpperCase() })}
-              </p>
-              {revealPath && (
-                <button
-                  type="button"
-                  data-testid="show-file"
-                  onClick={() => window.api.reveal(revealPath)}
-                  className="press text-xs text-fg-dim hover:text-fg"
+                <p
+                  data-testid="export-success"
+                  role="status"
+                  className="text-xs font-medium text-good"
                 >
-                  {tr('editor.showFile')}
-                </button>
-              )}
-              {cleanupFiles > 0 && (
-                <button
-                  type="button"
-                  data-testid="clean-up-previous"
-                  onClick={() => onCleanUp?.(cleanup)}
-                  className="press text-xs text-fg-dim hover:text-danger"
-                >
-                  {tr('editor.cleanUpPrevious', { count: cleanupFiles })}
-                </button>
-              )}
-            </div>
-            <div className="flex gap-2">
-              {isMacOS() &&
-                (musicExt !== 'flac' || hasMusicCopy) &&
-                (!inMusicLibraryOnly || hasMusicCopy) && (
+                  {inMusicLibraryOnly
+                    ? isMulti
+                      ? tr('editor.addedToAppleMusicCount', { count: selectedCount })
+                      : tr('editor.addedToAppleMusic')
+                    : isMulti
+                      ? tr('editor.exportedCount', { count: selectedCount })
+                      : tr('editor.exportedAs', { format: (exportedFormat ?? '').toUpperCase() })}
+                </p>
+                {isMacOS() && showInMusic && musicCopyId && (
                   <button
                     type="button"
                     data-testid="add-apple-music"
-                    onClick={() => {
-                      if (showInMusic && item.musicPersistentId)
-                        void window.api.revealAppleMusic(item.musicPersistentId)
-                      else onAddToAppleMusic?.()
-                    }}
-                    disabled={musicAdding || (musicAdded && !showInMusic)}
-                    className="press min-w-0 flex-1 truncate whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2 py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:opacity-60 disabled:hover:bg-[var(--color-panel-2)]"
+                    onClick={() => void window.api.revealAppleMusic(musicCopyId)}
+                    aria-label={inMusicLibraryOnly ? tr('editor.appleMusicShow') : undefined}
+                    className="press inline-flex items-center gap-1 text-xs text-fg-dim hover:text-fg"
                   >
-                    {musicAdding
-                      ? hasMusicCopy
-                        ? tr('editor.appleMusicUpdating')
-                        : tr('editor.appleMusicAdding')
-                      : musicAdded
-                        ? showInMusic
-                          ? tr('editor.appleMusicShow')
-                          : tr('editor.appleMusicAdded')
-                        : hasMusicCopy
-                          ? tr('editor.appleMusicUpdate')
-                          : tr('editor.appleMusicAdd')}
+                    {inMusicLibraryOnly
+                      ? tr('editor.appleMusicShowShort')
+                      : tr('editor.appleMusicShow')}
+                    <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
                   </button>
                 )}
-              <button
-                type="button"
-                data-testid="export-collection"
-                onClick={onExportCollection}
-                className="press min-w-0 flex-1 truncate whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2 py-2 text-xs font-medium hover:bg-[var(--color-line-strong)]"
-                title={tr('editor.exportCollection')}
+                {revealPath && (
+                  <button
+                    type="button"
+                    data-testid="show-file"
+                    onClick={() => window.api.reveal(revealPath)}
+                    className="press text-xs text-fg-dim hover:text-fg"
+                  >
+                    {tr('editor.showFile')}
+                  </button>
+                )}
+                {cleanupFiles > 0 && (
+                  <button
+                    type="button"
+                    data-testid="clean-up-previous"
+                    onClick={() => onCleanUp?.(cleanup)}
+                    className="press text-xs text-fg-dim hover:text-danger"
+                  >
+                    {tr('editor.cleanUpPrevious', { count: cleanupFiles })}
+                  </button>
+                )}
+              </div>
+              <div
+                data-testid="done-actions"
+                className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2"
               >
-                {tr('editor.exportCollection')}
-              </button>
-              <ExportButton
-                quiet
-                status={isMulti ? 'idle' : item.status}
-                stale={false}
-                done={false}
-                outputFormat={format}
-                exportedFormat={isMulti ? null : exportedFormat}
-                withAppleMusic={false}
-                withEngineDj={false}
-                // A field emptied (or made required) after converting would send the
-                // re-export into the same silently-empty batch the main button gates
-                // against, so the quiet variant carries the identical block.
-                incomplete={incomplete}
-                incompleteReason={incompleteReason}
-                inPlace={false}
-                destination={destination}
-                destinations={destinations}
-                count={isMulti ? selectedCount : undefined}
-                onProcess={onProcess}
-                onSelectFormat={onSelectFormat}
-                onSelectDestination={onSelectDestination}
-              />
+                {isMacOS() &&
+                  !showInMusic &&
+                  (musicExt !== 'flac' || hasMusicCopy) &&
+                  (!inMusicLibraryOnly || hasMusicCopy) && (
+                    <button
+                      type="button"
+                      data-testid="add-apple-music"
+                      onClick={onAddToAppleMusic}
+                      disabled={musicAdding || musicAdded}
+                      className="press min-w-0 truncate whitespace-nowrap rounded-lg bg-[var(--color-accent-soft)] px-3 py-2 text-xs font-medium text-[var(--color-accent)] hover:bg-[var(--color-row-selected)] disabled:opacity-60 disabled:hover:bg-[var(--color-accent-soft)]"
+                    >
+                      {musicAdding
+                        ? hasMusicCopy
+                          ? tr('editor.appleMusicUpdating')
+                          : tr('editor.appleMusicAdding')
+                        : musicAdded
+                          ? tr('editor.appleMusicAdded')
+                          : hasMusicCopy
+                            ? tr('editor.appleMusicUpdate')
+                            : tr('editor.appleMusicAdd')}
+                    </button>
+                  )}
+                <button
+                  type="button"
+                  data-testid="export-collection"
+                  onClick={onExportCollection}
+                  className="press min-w-0 truncate whitespace-nowrap rounded-lg px-3 py-2 text-xs font-medium text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+                  title={tr('editor.exportCollection')}
+                >
+                  {tr('editor.exportCollection')}
+                </button>
+                <ExportButton
+                  quiet
+                  status={isMulti ? 'idle' : item.status}
+                  stale={false}
+                  done={false}
+                  outputFormat={format}
+                  exportedFormat={isMulti ? null : exportedFormat}
+                  withAppleMusic={false}
+                  withEngineDj={false}
+                  // A field emptied (or made required) after converting would send the
+                  // re-export into the same silently-empty batch the main button gates
+                  // against, so the quiet variant carries the identical block.
+                  incomplete={incomplete}
+                  incompleteReason={incompleteReason}
+                  inPlace={false}
+                  destination={destination}
+                  destinations={destinations}
+                  count={isMulti ? selectedCount : undefined}
+                  onProcess={onProcess}
+                  onSelectFormat={onSelectFormat}
+                  onSelectDestination={onSelectDestination}
+                />
+              </div>
             </div>
             {musicError && (
               <p role="alert" className="text-xs text-danger">
