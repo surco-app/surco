@@ -1103,6 +1103,19 @@ describe('TrackList swipe to remove', () => {
     )
   })
 
+  // While the fingers are still on the trackpad the row has to sit where they put it, event
+  // by event: easing each step leaves it trailing the gesture by the transition's length, and
+  // the swipe feels disconnected from the hand. The easing is for what the fingers don't
+  // drive, the settle and the jump past the threshold.
+  it('follows the fingers without easing while the swipe is live', () => {
+    renderList([track({ id: 'a' })])
+    fireEvent.wheel(screen.getByTestId('track-row').parentElement as Element, { deltaX: 40 })
+    expect(screen.getByTestId('track-row').className).not.toMatch(/transition-\[[^\]]*transform/)
+    expect(screen.getByRole('button', { name: i18n.t('trackList.remove') }).className).not.toMatch(
+      /transition-\[width\]/,
+    )
+  })
+
   // A trackpad scroll is never perfectly vertical; the list must not start sliding rows
   // sideways while the user is just scrolling it.
   it('ignores a mostly vertical scroll', () => {

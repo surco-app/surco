@@ -353,6 +353,7 @@ const TrackRow = memo(function TrackRow({
         })
   const rowRef = useRef<HTMLDivElement>(null)
   const [swipe, setSwipe] = useState(0)
+  const [swipeLive, setSwipeLive] = useState(false)
   const swipeRef = useRef(0)
   const settleRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(settleRef.current), [])
@@ -376,15 +377,19 @@ const TrackRow = memo(function TrackRow({
     moveSwipe(Math.max(swipeRef.current + e.deltaX, 0))
     clearTimeout(settleRef.current)
     if (swipeRef.current >= swipeBounds().removeAt) {
+      setSwipeLive(false)
       onSwipeRemove(t.id)
       return
     }
+    setSwipeLive(true)
     settleRef.current = setTimeout(() => {
+      setSwipeLive(false)
       moveSwipe(swipeRef.current < SWIPE_ACTION_PX / 2 ? 0 : SWIPE_ACTION_PX)
     }, SWIPE_SETTLE_MS)
   }
   const closeSwipe = (): void => {
     clearTimeout(settleRef.current)
+    setSwipeLive(false)
     moveSwipe(0)
   }
   const reviewPending = !t.autoMatched && t.matchReview && !t.matched
@@ -521,8 +526,9 @@ const TrackRow = memo(function TrackRow({
         // No colour transition, selected or not: ↑/↓ and j/k run through this list
         // constantly, and a fill easing in lags the cursor while one easing out on the row
         // just left trails behind a held key. Only the swipe position eases, so crossing the
-        // remove threshold slides to the edge instead of jumping.
-        className={`group/row relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-[transform] ease-out ${
+        // remove threshold slides to the edge instead of jumping, and not while the fingers
+        // are driving it, where each eased step would trail the gesture.
+        className={`group/row relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left ${swipeLive ? '' : 'transition-[transform] ease-out'} ${
           // The primary row (the one open in the editor) takes the selection fill, the way
           // Finder/Mail fill the active row. A multi-selected-but-not-primary row gets the
           // quieter accent tint. Everything else is bare: no outline and no fill of its own,
@@ -771,7 +777,7 @@ const TrackRow = memo(function TrackRow({
           tabIndex={-1}
           onClick={() => onSwipeRemove(t.id)}
           style={{ width: Math.max(swipe - SWIPE_GAP_PX, 0) }}
-          className="absolute inset-y-1 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-swipe-action)] transition-[width] ease-out text-[11px] font-semibold whitespace-nowrap text-[var(--color-on-swipe-action)]"
+          className={`absolute inset-y-1 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-swipe-action)] ${swipeLive ? '' : 'transition-[width] ease-out'} text-[11px] font-semibold whitespace-nowrap text-[var(--color-on-swipe-action)]`}
         >
           <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           {tr('trackList.remove')}
