@@ -72,12 +72,12 @@ export type MenuState = { track: TrackItem; x: number; y: number }
 const DEFER_PAINT_MIN_ROWS = 150
 
 // Two-finger swipe to remove, the way Mail deletes. A trackpad sends the swipe as wheel
-// events with deltaX and keeps sending momentum after the fingers lift, so the row settles
-// once the events stop: past half its width (never under two actions' width) it is removed,
-// past half the action it stays open on Remove, anything less springs back. What the row does
-// on screen says which of those letting go will do: past the action it resists while the swipe
-// is undecided, and once it would remove, the grey fills the row to its edge and no further.
-// The thresholds read the swipe itself, not how far the row moved.
+// events with deltaX and keeps sending momentum after the fingers lift. Past half the row's
+// width (never under two actions' width) it is removed on the spot, without waiting for that
+// momentum to die down; short of it, the row settles once the events stop: past half the
+// action it stays open on Remove, anything less springs back. Until then it resists past the
+// action, so the travel says the swipe is still undecided. The thresholds read the swipe
+// itself, not how far the row moved.
 const SWIPE_GAP_PX = 6
 const SWIPE_ACTION_PX = 84 + SWIPE_GAP_PX
 const SWIPE_REMOVE_MIN_PX = SWIPE_ACTION_PX * 2
@@ -373,13 +373,14 @@ const TrackRow = memo(function TrackRow({
   }
   const onSwipeWheel = (e: React.WheelEvent): void => {
     if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
-    const { removeAt } = swipeBounds()
-    moveSwipe(Math.min(Math.max(swipeRef.current + e.deltaX, 0), removeAt * 1.5))
+    moveSwipe(Math.max(swipeRef.current + e.deltaX, 0))
     clearTimeout(settleRef.current)
+    if (swipeRef.current >= swipeBounds().removeAt) {
+      onSwipeRemove(t.id)
+      return
+    }
     settleRef.current = setTimeout(() => {
-      const reached = swipeRef.current
-      moveSwipe(reached >= removeAt || reached < SWIPE_ACTION_PX / 2 ? 0 : SWIPE_ACTION_PX)
-      if (reached >= removeAt) onSwipeRemove(t.id)
+      moveSwipe(swipeRef.current < SWIPE_ACTION_PX / 2 ? 0 : SWIPE_ACTION_PX)
     }, SWIPE_SETTLE_MS)
   }
   const closeSwipe = (): void => {
@@ -889,6 +890,23 @@ export const TrackList = memo(function TrackList({
     [scrollRootRef],
   )
   useEffect(() => () => rowObserver.current?.disconnect(), [])
+  // A swipe removes its row mid-gesture, and the row below slides up under the pointer while
+  // the trackpad is still sending that swipe's momentum. The list swallows that tail until the
+  // wheel goes quiet, so it can't swipe the next row away too.
+  const swipeTailRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const swallowingSwipeTail = useRef(false)
+  const waitOutSwipeTail = (): void => {
+    swallowingSwipeTail.current = true
+    clearTimeout(swipeTailRef.current)
+    swipeTailRef.current = setTimeout(() => {
+      swallowingSwipeTail.current = false
+    }, SWIPE_SETTLE_MS)
+  }
+  useEffect(() => () => clearTimeout(swipeTailRef.current), [])
+  const removeBySwipe = useStableCallback((id: string): void => {
+    waitOutSwipeTail()
+    onSwipeRemove(id)
+  })
   // The rows are real DOM (content-visibility, not windowing), but a screen reader still
   // benefits from an explicit "row 12 of 500" as filters shrink the set. Written straight
   // onto the options rather than passed as props: the size changes with every import batch,
@@ -910,6 +928,11 @@ export const TrackList = memo(function TrackList({
         aria-label={tr('trackList.label')}
         aria-multiselectable="true"
         className="flex flex-col gap-0.5 p-2"
+        onWheelCapture={(e) => {
+          if (!swallowingSwipeTail.current || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
+          e.stopPropagation()
+          waitOutSwipeTail()
+        }}
       >
         {tracks.map((t, i) => (
           <TrackRow
@@ -925,7 +948,7 @@ export const TrackList = memo(function TrackList({
             outputFormat={outputFormat}
             onSelect={onSelect}
             onActivate={onActivate}
-            onSwipeRemove={onSwipeRemove}
+            onSwipeRemove={removeBySwipe}
             onAcceptReview={onAcceptReview}
             onRemoveKey={removeViaKeyboard}
             onExtendKey={extendViaKeyboard}
