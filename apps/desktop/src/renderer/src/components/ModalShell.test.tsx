@@ -102,3 +102,31 @@ describe('ModalShell', () => {
     expect(screen.getByTestId('ok').closest('form')).toBeNull()
   })
 })
+
+describe('ModalShell entrance', () => {
+  function open(): void {
+    render(
+      <ModalShell onClose={() => {}} backdropTestId="shell-backdrop" className="w-80">
+        <p>body</p>
+      </ModalShell>,
+    )
+  }
+
+  // ⌘, ⌘⇧R, ⌘F, ⌘I and ? open their dialogs from the keyboard, and a keystroke expects its
+  // answer on the next frame: an entrance there reads as input latency, the same reason the
+  // palette opens bare. The pop stays for the click, where it shows where the dialog came from.
+  it('opens without the entrance when a key opened it', () => {
+    fireEvent.keyDown(window, { key: ',', metaKey: true })
+    open()
+    expect(screen.getByRole('dialog').className).not.toContain('animate-pop')
+    expect(screen.getByTestId('shell-backdrop').className).not.toContain('animate-overlay')
+  })
+
+  it('keeps the entrance when a click opened it', () => {
+    fireEvent.keyDown(window, { key: ',', metaKey: true })
+    fireEvent.pointerDown(window)
+    open()
+    expect(screen.getByRole('dialog').className).toContain('animate-pop')
+    expect(screen.getByTestId('shell-backdrop').className).toContain('animate-overlay')
+  })
+})
