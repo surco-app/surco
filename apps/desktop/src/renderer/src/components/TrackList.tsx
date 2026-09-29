@@ -453,7 +453,7 @@ const TrackRow = memo(function TrackRow({
     <div
       data-testid="track-row-slot"
       data-removing={removing || undefined}
-      className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
+      className={`grid grid-cols-[minmax(0,1fr)] transition-[grid-template-rows,opacity] duration-200 ease-out ${
         removing ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr]'
       }`}
     >
