@@ -71,6 +71,14 @@ describe('FieldInsertMenu', () => {
     expect(screen.getByTestId('field-insert-option-artist')).toHaveTextContent('DJ Pepito')
   })
 
+  // The menu hangs below the button's right edge, so it has to scale out of that corner;
+  // growing from its centre makes it look detached from the button that opened it.
+  it('grows the menu out of the corner that touches its trigger', () => {
+    render(<Harness />)
+    openMenu()
+    expect(screen.getByTestId('field-insert-menu')).toHaveClass('origin-top-right')
+  })
+
   // Inserting at the caret (not always appending) is what lets users build
   // "Pepito 2025 de los palotes"-style values; focus must come back to the
   // input with the caret after the insertion so they can keep typing.
