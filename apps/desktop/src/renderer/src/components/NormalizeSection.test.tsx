@@ -37,6 +37,7 @@ function renderSection(
   ;(window as unknown as { api: unknown }).api = {
     waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], rms: [0.2, 0.4], durationSec: 10 }),
     loudness: vi.fn().mockResolvedValue(loudness),
+    cancelAnalysis: vi.fn(),
     peekAnalysis: vi.fn().mockResolvedValue(null),
   }
   const client = createQueryClient()
@@ -103,7 +104,7 @@ describe('NormalizeSection before/after waveforms', () => {
     expect(await screen.findByTestId('waveform-solo')).toBeInTheDocument()
   })
 
-  it('previews the gain off a wave and loudness already on disk without waiting for the selection to settle', async () => {
+  it('previews the gain off a wave and loudness already on disk before its live probe answers', async () => {
     const onDisk: Record<string, unknown> = {
       waveform: { peaks: [0.5, 1], rms: [0.2, 0.4], durationSec: 10 },
       loudness: {
@@ -158,6 +159,7 @@ describe('NormalizeSection before/after waveforms', () => {
     const scroll = vi.fn()
     Element.prototype.scrollIntoView = scroll
     ;(window as unknown as { api: unknown }).api = {
+      cancelAnalysis: vi.fn(),
       peekAnalysis: vi.fn().mockResolvedValue(null),
       waveform: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
@@ -191,6 +193,7 @@ describe('NormalizeSection before/after waveforms', () => {
     const scroll = vi.fn()
     Element.prototype.scrollIntoView = scroll
     ;(window as unknown as { api: unknown }).api = {
+      cancelAnalysis: vi.fn(),
       peekAnalysis: vi.fn().mockResolvedValue(null),
       waveform: vi.fn().mockResolvedValue(null),
       loudness: vi.fn().mockResolvedValue(null),
@@ -238,6 +241,7 @@ describe('NormalizeSection layout', () => {
     } = {},
   ): ReturnType<typeof render> {
     ;(window as unknown as { api: unknown }).api = {
+      cancelAnalysis: vi.fn(),
       peekAnalysis: vi.fn().mockResolvedValue(null),
       waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], rms: [0.2, 0.4], durationSec: 10 }),
       loudness: vi.fn().mockResolvedValue(over.loudness ?? null),

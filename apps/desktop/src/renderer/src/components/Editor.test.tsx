@@ -608,16 +608,11 @@ describe('Editor loudness pills', () => {
     noiseFloorDb: -55,
   }
 
-  // Like the tempo probe, the ffmpeg loudness pass waits for the selection to rest
-  // instead of measuring every row a j/k sweep passes through.
-  it('does not measure loudness until the selection rests on the track', async () => {
+  it('measures loudness as soon as the track opens, without a fixed wait', async () => {
     const loudness = vi.fn().mockResolvedValue(healthy)
     ;(window as unknown as { api: { loudness: unknown } }).api.loudness = loudness
     renderEditor({ id: 'a' }, 'wav', { showLoudness: true, editorSections: NORMALIZE_OPEN })
-    await new Promise((r) => setTimeout(r, 0))
-    expect(loudness).not.toHaveBeenCalled()
-    await screen.findByTestId('loudness-pill-lufs')
-    expect(loudness).toHaveBeenCalledTimes(1)
+    await vi.waitFor(() => expect(loudness).toHaveBeenCalledTimes(1), { timeout: 150 })
   })
 
   // The figures come from the main-process measure (window.api.loudness) the readout
@@ -1149,16 +1144,11 @@ describe('Editor embedded cover size', () => {
 })
 
 describe('Editor bpm suggestion', () => {
-  // Browsing a crate with j/k must not enqueue a serial DSP job for every row the
-  // user merely passed through: the probe waits until the selection rests.
-  it('does not probe the tempo until the selection rests on the track', async () => {
+  it('probes the tempo as soon as the track opens, without a fixed wait', async () => {
     const bpm = vi.fn().mockResolvedValue({ bpm: 124, confidence: 0.8 })
     ;(window as unknown as { api: { bpm: unknown } }).api.bpm = bpm
     renderEditor({ id: 'a' }, 'wav', { visibleFields: ['bpm'] })
-    await screen.findByTestId('field-bpm')
-    expect(bpm).not.toHaveBeenCalled()
-    await screen.findByTestId('chip-124')
-    expect(bpm).toHaveBeenCalledTimes(1)
+    await vi.waitFor(() => expect(bpm).toHaveBeenCalledTimes(1), { timeout: 150 })
   })
 
   // Tempo detection can land on the wrong half/double-time octave, so the
@@ -1177,7 +1167,7 @@ describe('Editor bpm suggestion', () => {
     )
   })
 
-  it('offers a tempo already detected on disk without waiting for the selection to settle', async () => {
+  it('offers a tempo already detected on disk before its live probe answers', async () => {
     const api = window as unknown as { api: { bpm: unknown; peekAnalysis: unknown } }
     api.api.bpm = vi.fn(() => new Promise(() => {}))
     api.api.peekAnalysis = vi.fn(async (family: string) =>
@@ -1198,7 +1188,7 @@ describe('Editor bpm suggestion', () => {
 })
 
 describe('Editor key suggestion', () => {
-  it('offers a key already detected on disk without waiting for the selection to settle', async () => {
+  it('offers a key already detected on disk before its live probe answers', async () => {
     const api = window as unknown as { api: { key: unknown; peekAnalysis: unknown } }
     api.api.key = vi.fn(() => new Promise(() => {}))
     api.api.peekAnalysis = vi.fn(async (family: string) =>

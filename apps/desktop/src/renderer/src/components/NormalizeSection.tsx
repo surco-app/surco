@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 import { losesTraktorCues } from '../../../shared/outputFormats'
 import type { NormalizeConfig, OutputFormat } from '../../../shared/types'
 import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
-import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 
 import { scrollBehavior } from '../lib/motion'
@@ -48,9 +47,6 @@ export function NormalizeSection({
   onHideHints,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  // The waveform is the one full-length decode, so it waits for the selection to
-  // rest before analyzing — same pacing as the quality section's loudness pass.
-  const settled = useSettled(SELECTION_SETTLE_MS)
   // The before/after pair proves what these controls did, so it lives under them —
   // but only once there IS an after, never for an in-place export (the rewritten
   // source leaves no honest "before" to draw), and never in multi-select, where
@@ -88,7 +84,7 @@ export function NormalizeSection({
   // anchor's figures would masquerade as the batch's.
   const { data: planLoudness } = useTrackLoudness(
     item.inputPath,
-    settled && !isMulti && showHints && value.mode !== 'none',
+    !isMulti && showHints && value.mode !== 'none',
   )
   const compareRef = useRef<HTMLDivElement>(null)
   const mounted = useRef(false)
@@ -164,7 +160,7 @@ export function NormalizeSection({
           {!isMulti && !compare && (
             <WaveformSolo
               inputPath={item.inputPath}
-              enabled={settled}
+              enabled
               clipDb={clipDb}
               normalize={value}
               trimShade={trimShade}
@@ -175,7 +171,7 @@ export function NormalizeSection({
               <WaveformCompare
                 inputPath={item.inputPath}
                 outputPath={item.outputPath}
-                enabled={settled}
+                enabled
                 clipDb={clipDb}
               />
             </div>

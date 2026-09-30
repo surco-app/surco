@@ -226,7 +226,7 @@ describe('DeclickSection', () => {
     expect(screen.queryByTestId('declick-scope')).not.toBeInTheDocument()
   })
 
-  it('marks clicks already found on disk without waiting for the selection to settle', async () => {
+  it('marks clicks already found on disk before its live probe answers', async () => {
     const api = window.api as unknown as Record<string, unknown>
     api.clicks = vi.fn(() => new Promise(() => {}))
     api.waveform = vi.fn(() => new Promise(() => {}))

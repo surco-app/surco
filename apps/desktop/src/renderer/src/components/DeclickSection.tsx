@@ -7,7 +7,6 @@ import type { DeclickMode, OutputFormat, TrimRange } from '../../../shared/types
 import { useClicks } from '../hooks/useClicks'
 import { useDeclickAb } from '../hooks/useDeclickAb'
 import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
-import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
 import { clickMarks, nextClick } from '../lib/clickMarks'
 import { claimKeys } from '../lib/spaceClaim'
@@ -63,16 +62,12 @@ export function DeclickSection({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const waveColor = useWaveColors().after
-  const settled = useSettled(SELECTION_SETTLE_MS)
   const isMulti = selectedCount > 1
-  const solo = open && !isMulti && settled
+  const solo = open && !isMulti
   useDiskCacheSeed('clicks', inputPath, open && !isMulti)
   useDiskCacheSeed('waveform', inputPath, open && !isMulti)
   const { data: clicks } = useClicks(inputPath, solo)
   const { data: wave } = useWaveform(inputPath, solo)
-  // The strip loads from the moment the section opens (single-track), not only once the
-  // query is fetching: the decode is gated behind the ~400ms settle, so it shows its
-  // skeleton through that window instead of a blank strip. Multi-select has no strip.
   const waveLoading = open && !isMulti && !wave
   // Off the wave the strip already loads, like the trim section — no extra probe.
   const durationSec = wave?.durationSec ?? 0

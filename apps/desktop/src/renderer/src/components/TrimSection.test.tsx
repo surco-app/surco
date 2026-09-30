@@ -67,6 +67,7 @@ beforeEach(() => {
   client = createQueryClient()
   ;(window as unknown as { api: unknown }).api = {
     waveform: vi.fn().mockResolvedValue(noisyEndsWave()),
+    cancelAnalysis: vi.fn(),
     peekAnalysis: vi.fn().mockResolvedValue(null),
     // The magnet's precision pass; null keeps tests on the coarse onsets.
     waveformWindow: vi.fn().mockResolvedValue(null),
@@ -90,7 +91,7 @@ function section(over: Partial<React.ComponentProps<typeof TrimSection>> = {}): 
 }
 
 describe('TrimSection', () => {
-  it('draws a wave already decoded on disk without waiting for the selection to settle', async () => {
+  it('draws a wave already decoded on disk before its live probe answers', async () => {
     const api = window as unknown as {
       api: { waveform: unknown; peekAnalysis: unknown; cancelAnalysis: unknown }
     }
@@ -116,9 +117,6 @@ describe('TrimSection', () => {
     expect(screen.queryByTestId('trim-lane-start')).not.toBeNull()
   })
 
-  // The decode is gated behind a ~400ms settle, so the query isn't fetching yet for that
-  // window. The section must still show its loading skeleton the instant it opens — before
-  // this it rendered an empty body during the settle and looked like it hadn't opened.
   it('shows the loading skeleton immediately on open, before the wave decodes', () => {
     // A waveform that never resolves, so the only thing that can be on screen is the
     // pre-decode loading state.

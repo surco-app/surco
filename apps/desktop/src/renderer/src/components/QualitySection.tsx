@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 import { CODEC_WALL_FINE_STEP_DB } from '../../../shared/spectrum'
 import type { NormalizeConfig, OutputSampleRate } from '../../../shared/types'
 import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
-import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useSpectrogram } from '../hooks/useSpectrogram'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { cleanIpcError, errorKeyOf } from '../lib/ipcError'
@@ -100,19 +99,10 @@ export function QualitySection({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { reportError } = useToast()
-  // Keyed by input path, so it measures once per file and reads the right figures on
-  // a track switch. The ffmpeg pass waits for the selection to rest (this section
-  // remounts with the per-track editor). A failed measure resolves null and the
-  // readout hides.
-  const settled = useSettled(SELECTION_SETTLE_MS)
   // Gated on the feature setting AND the section being open: folding Quality away stops
   // the (heavy) decode until the user reopens it. A failed analysis surfaces as analyzeError.
-  // Also waits for the selection to rest, like every other heavy probe: this is the most
-  // expensive one in the app (full decode + FFT), and arrowing down a crate with Quality
-  // open used to queue a decode for every row merely passed through. A track already in
-  // the cache still renders instantly — a disabled query keeps returning its cached data.
   useDiskCacheSeed('spectrogram', item.inputPath, showSpectrum && open)
-  const spectrumQuery = useSpectrogram(item.inputPath, settled && showSpectrum && open)
+  const spectrumQuery = useSpectrogram(item.inputPath, showSpectrum && open)
   const spectrum = spectrumQuery.data
   const analyzeFailed = spectrumQuery.isError
   // Show the scanning frame the instant the section opens, not only once the query reports
@@ -132,7 +122,7 @@ export function QualitySection({
       ? errorKeyOf(cleanIpcError(spectrumQuery.error.message))
       : null
   useDiskCacheSeed('loudness', item.inputPath, showLoudness && open)
-  const { data: loudness } = useTrackLoudness(item.inputPath, settled && showLoudness && open)
+  const { data: loudness } = useTrackLoudness(item.inputPath, showLoudness && open)
   // The container decides which scale the cutoff is read on, so it is resolved before the
   // verdict: lossy files are exempt (their lowpass is the format), lossless ones are graded.
   const ext = item.inputPath.split('.').pop()?.toLowerCase() ?? ''
@@ -483,7 +473,7 @@ export function QualitySection({
               // into empty space. A failed measure resolves null, and the skeleton hides —
               // the readout is simply absent, as before. Gated on the same conditions the
               // measure is, so a closed/multi section shows nothing.
-              open && settled && loudness === undefined && <LoudnessSkeleton />
+              open && loudness === undefined && <LoudnessSkeleton />
             ))}
         </div>
       </SectionBody>
