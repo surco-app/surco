@@ -20,6 +20,7 @@ import type {
 import { useBpm } from '../hooks/useBpm'
 import type { CleanupOffer } from '../hooks/useConfirmFlows'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
+import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
 import { useEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
 import { useKey } from '../hooks/useKey'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
@@ -452,6 +453,8 @@ export const Editor = memo(function Editor({
   // The DSP probes wait for the selection to rest on this track (the editor remounts
   // per track), so j/k browsing doesn't enqueue a serial worker job per row passed.
   const probesSettled = useSettled(SELECTION_SETTLE_MS)
+  useDiskCacheSeed('bpm', item.inputPath, !isMulti && visibleFields.includes('bpm') && formOpen)
+  useDiskCacheSeed('key', item.inputPath, !isMulti && visibleFields.includes('key') && formOpen)
   const { data: detectedBpm } = useBpm(
     item.inputPath,
     probesSettled && !isMulti && visibleFields.includes('bpm') && formOpen,

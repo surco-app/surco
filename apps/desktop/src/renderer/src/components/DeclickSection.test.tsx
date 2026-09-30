@@ -120,6 +120,8 @@ beforeEach(() => {
     waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 0.5], durationSec: 240 }),
     waveformWindow: vi.fn().mockResolvedValue(null),
     loudness: vi.fn().mockResolvedValue(null),
+    peekAnalysis: vi.fn().mockResolvedValue(null),
+    cancelAnalysis: vi.fn(),
   }
 })
 
@@ -222,6 +224,19 @@ describe('DeclickSection', () => {
   it('says nothing about scope for a single track', () => {
     render(section({ selectedCount: 1 }))
     expect(screen.queryByTestId('declick-scope')).not.toBeInTheDocument()
+  })
+
+  it('marks clicks already found on disk without waiting for the selection to settle', async () => {
+    const api = window.api as unknown as Record<string, unknown>
+    api.clicks = vi.fn(() => new Promise(() => {}))
+    api.waveform = vi.fn(() => new Promise(() => {}))
+    const onDisk: Record<string, unknown> = {
+      clicks: { count: 3, marks: [10, 20, 30], scannedSec: 240 },
+      waveform: { peaks: [0.5, 0.5], durationSec: 240 },
+    }
+    api.peekAnalysis = vi.fn(async (family: string) => onDisk[family] ?? null)
+    render(section())
+    expect(await screen.findAllByTestId('declick-mark')).toHaveLength(3)
   })
 
   it('states a clean track outright instead of showing a bare zero', async () => {

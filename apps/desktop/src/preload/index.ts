@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { AudioAnalysisIpc } from '../shared/audioIpcContract'
+import type { AudioAnalysisIpc, PeekableAnalyses } from '../shared/audioIpcContract'
 import type {
   ActivityEvent,
   AppleMusicLookupCandidate,
@@ -153,6 +153,8 @@ const api: Api = {
     paths: string[],
   ): Promise<Record<string, { spectrogram?: SpectrumVerdict; scanVerdict?: ScanVerdict }>> =>
     invokeAudio('audio:cached-batch', paths),
+  peekAnalysis: <F extends keyof PeekableAnalyses>(family: F, path: string) =>
+    invokeAudio('audio:peek', family, path) as Promise<PeekableAnalyses[F] | null>,
   loudness: (path: string, priority: 'high' | 'low' = 'low'): Promise<LoudnessResult | null> =>
     invokeAudio('audio:loudness', path, priority),
   properties: (path: string): Promise<TrackProperties | null> =>

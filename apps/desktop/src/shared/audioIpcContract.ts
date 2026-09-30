@@ -20,6 +20,15 @@ import type {
 // projection typecheck — exactly how the spectrogram handler once stranded the
 // evidence and bits fields on the fresh route. The dual-route and passthrough
 // tests in audioIpc.test.ts guard that half; this table guards the rest.
+export interface PeekableAnalyses {
+  spectrogram: SpectrumResult
+  loudness: LoudnessResult
+  clicks: { count: number; marks: number[]; scannedSec: number }
+  bpm: BpmResult
+  key: KeyResult
+  waveform: WaveformResult
+}
+
 export interface AudioAnalysisIpc {
   'audio:spectrogram': {
     args: [inputPath: string, priority?: 'high' | 'low']
@@ -28,6 +37,10 @@ export interface AudioAnalysisIpc {
   'audio:cached-batch': {
     args: [paths: string[]]
     result: Record<string, { spectrogram?: SpectrumVerdict; scanVerdict?: ScanVerdict }>
+  }
+  'audio:peek': {
+    args: [family: keyof PeekableAnalyses, inputPath: string]
+    result: PeekableAnalyses[keyof PeekableAnalyses] | null
   }
   'audio:loudness': {
     args: [inputPath: string, priority?: 'high' | 'low']

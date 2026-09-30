@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { losesTraktorCues } from '../../../shared/outputFormats'
 import type { NormalizeConfig, OutputFormat } from '../../../shared/types'
+import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 
@@ -56,6 +57,8 @@ export function NormalizeSection({
   // `item` is just the anchor of the selection.
   const isMulti = selectedCount > 1
   const compare = !isMulti && item.outputPath && item.outputPath !== item.inputPath
+  useDiskCacheSeed('waveform', item.inputPath, open && !isMulti && !compare)
+  useDiskCacheSeed('loudness', item.inputPath, open && !isMulti)
   // The staged trim as head/tail fractions, to dim the dropped audio over the
   // wave. Off item.duration (the read-once track length) — WaveformSolo decodes
   // its own wave, so there is no strip duration to reach here.

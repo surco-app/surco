@@ -264,6 +264,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     getRelease: vi.fn<Api['getRelease']>().mockRejectedValue(new Error('no release in this test')),
     spectrogram: vi.fn().mockResolvedValue(spectrum),
     loadCachedAnalyses: vi.fn<Api['loadCachedAnalyses']>().mockResolvedValue({}),
+    peekAnalysis: vi.fn<Api['peekAnalysis']>().mockResolvedValue(null),
     waveform: vi.fn().mockResolvedValue(wave),
     cancelAnalysis: vi.fn().mockResolvedValue(undefined),
     clicks: vi.fn().mockResolvedValue(null),
