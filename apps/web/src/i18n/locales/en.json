@@ -152,7 +152,7 @@
           },
           {
             "t": "Bring in an Apple Music playlist",
-            "d": "Load the playlist and work on its files. It keeps their format and fills in what only lives in Music, like the grouping. macOS only."
+            "d": "Load the playlist and work on its files. It keeps their format and fills in what only lives in Music, like the grouping, also on tracks you open on their own. macOS only."
           },
           {
             "t": "Tags other programs left",

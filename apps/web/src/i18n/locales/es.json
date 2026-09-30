@@ -152,7 +152,7 @@
           },
           {
             "t": "Traer una lista de Apple Music",
-            "d": "Cargas la lista y trabajas sobre sus ficheros. Conserva su formato y rellena lo que solo vive en Music, como el grouping. Solo en macOS."
+            "d": "Cargas la lista y trabajas sobre sus ficheros. Conserva su formato y rellena lo que solo vive en Music, como el grouping, también en las pistas que abres sueltas. Solo en macOS."
           },
           {
             "t": "Tags de otros programas",
