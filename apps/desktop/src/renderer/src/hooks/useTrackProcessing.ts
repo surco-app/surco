@@ -53,7 +53,7 @@ interface Params {
   // confirmation that the pass did real work. Not fired on a clean track (0 repaired).
   onDeclicked?: (name: string, count: number) => void
   // Surfaced when 'source' skipped a track for having no output format equivalent
-  // (.opus/.ogg/.oga/.aac/.m4a/.mp4). A batch run shows this through batchSummary's "N
+  // (.opus/.ogg/.oga/.aac/.mp4). A batch run shows this through batchSummary's "N
   // skipped" count, but a single-track convert has no summary to show it in — without
   // this the row just falls back to idle and the convert reads as if it did nothing.
   onFormatSkipped?: (name: string) => void
@@ -213,7 +213,7 @@ export function useTrackProcessing({
       }
       const pickedFormat = formatOverride ?? settings?.outputFormat ?? 'aiff'
       // 'source' promises to keep each file in its own format; a file whose format
-      // resolveJobFormat can't express (Surco imports .opus/.ogg/.oga/.aac/.m4a/.mp4,
+      // resolveJobFormat can't express (Surco imports .opus/.ogg/.oga/.aac/.mp4,
       // none of which have an OutputFormat) has nothing to keep it as. Converting it
       // anyway would fall back to a fixed format and, under overwrite, delete the
       // original once the fallback landed in its place — the opposite of what 'source'

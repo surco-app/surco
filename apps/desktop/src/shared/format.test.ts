@@ -21,11 +21,12 @@ describe('formatExtension', () => {
 })
 
 describe('formatMatchesInput', () => {
-  // An .m4a source may hold lossy AAC, not ALAC; calling it "already ALAC" would
-  // rewrite the user's original in place with a re-encode. ALAC therefore never
-  // matches its input, so the export always renders a fresh file.
-  it('never treats an .m4a source as already being ALAC', () => {
-    expect(formatMatchesInput('alac', '/music/song.m4a')).toBe(false)
+  // ALAC is the output that shares the .m4a container, so an .m4a source is "already in
+  // it" the way an .mp3 is already MP3 — whether it holds AAC or ALAC. Not matching sent
+  // every m4a through a lossless decode: an 11 MB AAC came back as a 44 MB AIFF.
+  it('treats an .m4a source as already in the ALAC container', () => {
+    expect(formatMatchesInput('alac', '/music/song.m4a')).toBe(true)
+    expect(formatMatchesInput('alac', '/music/song.M4A')).toBe(true)
     expect(formatMatchesInput('alac', '/music/song.alac')).toBe(false)
   })
 
@@ -45,11 +46,10 @@ describe('editsInPlace', () => {
     expect(editsInPlace('aiff', '/music/song.wav', true)).toBe(true)
   })
 
-  // ALAC keeps its never-in-place invariant even under overwrite: the .m4a source may
-  // hold lossy AAC, and replacing it would destroy the only true copy while presenting
-  // a lossy re-encode as lossless. An ALAC export always renders a fresh file.
-  it('never lets overwrite mode force ALAC in place', () => {
-    expect(editsInPlace('alac', '/music/song.m4a', true)).toBe(false)
+  // An .m4a kept in its own container is a tag update, edited where it lives like any
+  // same-format export. Overwrite still never forces ALAC over another format's file.
+  it('edits an .m4a in place and never lets overwrite force ALAC over another format', () => {
+    expect(editsInPlace('alac', '/music/song.m4a')).toBe(true)
     expect(editsInPlace('alac', '/music/song.wav', true)).toBe(false)
   })
 })
@@ -71,10 +71,10 @@ describe('resolveJobFormat', () => {
     expect(resolveJobFormat('source', '/music/song.aif', 'mp3')).toBe('aiff')
   })
 
-  // An .m4a may hold lossy AAC, not ALAC. Calling it "already ALAC" would let an
-  // overwrite re-encode the user's only copy and present it as lossless.
-  it('never resolves .m4a to alac', () => {
-    expect(resolveJobFormat('source', '/music/song.m4a', 'aiff')).toBe('aiff')
+  // "Same as source" keeps an .m4a in its container: the ALAC target is the one that
+  // stream-copies it, AAC included, instead of decoding it to a fallback lossless file.
+  it('resolves .m4a to its own container', () => {
+    expect(resolveJobFormat('source', '/music/song.m4a', 'aiff')).toBe('alac')
   })
 
   // Surco imports more extensions than it can export; these always transcoded and
@@ -108,12 +108,17 @@ describe('resolveJobFormat', () => {
     expect(resolveJobFormat('aiff', '/music/song.mp3', 'aiff', false)).toBe('aiff')
   })
 
-  // La regla es solo para mp3: el resto de fuentes (incluido el .m4a ambiguo) no
-  // cambia — un AAC dentro de .m4a seguiría sin poder "conservarse" con seguridad.
-  it('leaves non-mp3 sources untouched when keepMp3 is on', () => {
+  // Un .m4a suele ser AAC: pasarlo a lossless tampoco recupera nada y el fichero crece
+  // cuatro veces (djotas, 30/09: de 11 a 44 MB). El ajuste lo conserva como al mp3.
+  it('keeps an m4a source in its container under a lossless setting when keepMp3 is on', () => {
+    expect(resolveJobFormat('aiff', '/music/song.m4a', 'aiff', true)).toBe('alac')
+    expect(resolveJobFormat('flac', '/music/song.m4a', 'aiff', true)).toBe('alac')
+    expect(resolveJobFormat('aiff', '/music/song.m4a', 'aiff', false)).toBe('aiff')
+  })
+
+  it('leaves the lossless sources untouched when keepMp3 is on', () => {
     expect(resolveJobFormat('aiff', '/music/song.flac', 'aiff', true)).toBe('aiff')
     expect(resolveJobFormat('aiff', '/music/song.wav', 'aiff', true)).toBe('aiff')
-    expect(resolveJobFormat('aiff', '/music/song.m4a', 'aiff', true)).toBe('aiff')
     expect(resolveJobFormat('aiff', '/music/song.ogg', 'aiff', true)).toBe('aiff')
   })
 })
@@ -191,6 +196,12 @@ describe('resolveJobFormat con una pista importada de Apple Music', () => {
     expect(resolveJobFormat('source', '/music/song.wav', 'aiff', false, true)).toBe('wav')
     expect(resolveJobFormat('source', '/music/song.flac', 'aiff', false, true)).toBe('flac')
     expect(resolveJobFormat('source', '/music/song.mp3', 'aiff', false, true)).toBe('mp3')
+  })
+
+  // La biblioteca de Music es sobre todo .m4a: convertirlos a AIFF al tocar las
+  // etiquetas cuadruplicaba cada pista sin ganar nada.
+  it('no convierte un m4a importado por el destino por defecto de la app', () => {
+    expect(resolveJobFormat('aiff', '/music/song.m4a', 'aiff', false, true)).toBe('alac')
   })
 
   // El caso que lo motivó: un WAV importado ofrecía "Convertir a AIFF" sin que nadie lo

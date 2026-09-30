@@ -45,12 +45,20 @@ describe('sanitizeOutputName', () => {
 })
 
 describe('resolveOutputTarget', () => {
-  // ALAC's extension is its container: the output must land as .m4a, and never in
-  // place — a same-extension .m4a source might be lossy AAC the re-encode would replace.
+  // ALAC's extension is its container: a conversion into it lands as a fresh .m4a.
   it('renders an ALAC target as a fresh .m4a in the output folder', () => {
-    expect(resolveOutputTarget('/music/song.m4a', 'Artist - Title', 'alac', '/out')).toEqual({
+    expect(resolveOutputTarget('/music/song.flac', 'Artist - Title', 'alac', '/out')).toEqual({
       outputPath: '/out/Artist - Title.m4a',
       inPlace: false,
+    })
+  })
+
+  // An .m4a kept in its container is a tag update, AAC or ALAC: it is edited where the
+  // user keeps it, like any same-format export, instead of copied to the output folder.
+  it('edits an .m4a source in its own folder when the target is its container', () => {
+    expect(resolveOutputTarget('/music/song.m4a', 'Artist - Title', 'alac', '/out')).toEqual({
+      outputPath: '/music/Artist - Title.m4a',
+      inPlace: true,
     })
   })
 
@@ -82,12 +90,10 @@ describe('resolveOutputTarget', () => {
     })
   })
 
-  // Overwrite mode must not break ALAC's never-in-place invariant: an .m4a source may
-  // hold lossy AAC, and forcing in place would re-encode it over itself — the original
-  // destroyed and a lossy encode presented as lossless. ALAC always renders a fresh
-  // file in the output folder and the source is kept.
-  it('never overwrites in place for ALAC, even with overwrite on', () => {
-    expect(resolveOutputTarget('/music/song.m4a', 'song', 'alac', '/out', true)).toEqual({
+  // Overwrite mode never forces an ALAC conversion over another format's file: it
+  // renders a fresh file in the output folder and the source is kept.
+  it('never overwrites another format in place for ALAC, even with overwrite on', () => {
+    expect(resolveOutputTarget('/music/song.wav', 'song', 'alac', '/out', true)).toEqual({
       outputPath: '/out/song.m4a',
       inPlace: false,
     })

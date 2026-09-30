@@ -220,3 +220,31 @@ describe('convertAudio beside the original, matching format', () => {
     expect(titleOf(out)).toBe('Copied')
   }, 30000)
 })
+
+// djotas, 30/09: updating the tags of an 11 MB .m4a left a 44 MB file. The AAC stream was
+// decoded to lossless PCM, which only makes it bigger. Kept in its container, it is a tag
+// update: same codec, same audio, the size of the file it came from.
+describe('convertAudio on an AAC .m4a kept in its container', () => {
+  it('copies the AAC stream and writes the tags instead of decoding it to lossless', async () => {
+    const m4a = join(dir, 'aac-in.m4a')
+    execFileSync(FF, [
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=4',
+      '-c:a',
+      'aac',
+      '-b:a',
+      '256k',
+      m4a,
+    ])
+    const out = join(dir, 'aac-out.m4a')
+    await convertAudio(m4a, out, resolveJobFormat('source', m4a, 'aiff'), meta('Retagged'))
+
+    expect(probe(out).codec).toBe('aac')
+    expect(probe(out).duration).toBeCloseTo(probe(m4a).duration, 1)
+    expect(statSync(out).size).toBeLessThan(statSync(m4a).size * 1.2)
+    expect(titleOf(out)).toBe('Retagged')
+  }, 30000)
+})

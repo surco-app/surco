@@ -518,7 +518,7 @@
     "outputNameHintInPlace": "Même format que la source : le fichier original est mis à jour sur place et renommé — aucune copie n'est écrite dans le dossier de sortie.",
     "overwriteTitle": "Écrase l'original",
     "overwriteHint": "Réécrit le fichier source sur place, en gardant son nom. Aucune copie dans le dossier de sortie. Désactive-le dans Réglages → Sortie.",
-    "overwriteAlacHint": "ALAC ne remplace jamais l'original : la source peut contenir de l'audio avec perte, donc un nouveau fichier est écrit dans le dossier de sortie et l'original est conservé.",
+    "overwriteAlacHint": "ALAC ne remplace pas l'original : un nouveau fichier est écrit dans le dossier de sortie et l'original est conservé.",
     "overwriteLossyHint": "Remplace l'original sans perte par un MP3 320 kbps sur place — le master est perdu et irrécupérable. Désactive-le dans Réglages → Sortie.",
     "regenerate": "Régénérer le nom du fichier depuis les métadonnées",
     "regenerateAll_other": "Régénérer {{count}} noms de fichiers depuis les métadonnées",
@@ -980,8 +980,8 @@
       "flac": "FLAC"
     },
     "outputFormatHint": "« Comme la source » garde chaque fichier dans son propre format, donc un lot mixte n'est jamais ré-encodé. AIFF/WAV/FLAC sont sans perte (FLAC compressé) ; le MP3 est plus léger. Un fichier déjà dans le format est copié sans ré-encodage.",
-    "keepMp3Sources": "Conserver les MP3 en MP3",
-    "keepMp3SourcesHint": "Convertir un MP3 vers un format sans perte ne restaure aucune qualité : le fichier devient seulement plus volumineux. Avec cette option, les MP3 ne sont pas convertis : les tags sont mis à jour sur le fichier d'origine, là où il se trouve.",
+    "keepMp3Sources": "Conserver les MP3 et M4A tels quels",
+    "keepMp3SourcesHint": "Convertir un MP3 ou un M4A vers un format sans perte ne restaure aucune qualité : le fichier devient seulement plus volumineux. Avec cette option, les MP3 et M4A ne sont pas convertis : les tags sont mis à jour sur le fichier d'origine, là où il se trouve.",
     "keepMp3SourcesOff": "Inutile avec MP3 ou « Comme la source » : les MP3 restent déjà en MP3.",
     "mp3Quality": "Qualité MP3",
     "mp3Qualities": {

@@ -518,7 +518,7 @@
     "outputNameHintInPlace": "Same format as the source: this updates the original file in place and renames it — no copy is written to the output folder.",
     "overwriteTitle": "Overwrites the original",
     "overwriteHint": "This rewrites the source file in place, keeping its name. No copy goes to the output folder. Turn this off in Settings → Output.",
-    "overwriteAlacHint": "ALAC never replaces the original: the source may hold lossy audio, so a new file is written to the output folder and the original is kept.",
+    "overwriteAlacHint": "ALAC doesn't replace the original: a new file is written to the output folder and the original is kept.",
     "overwriteLossyHint": "This replaces the lossless original with a 320 kbps MP3 in place — the master is lost and can't be recovered. Turn this off in Settings → Output.",
     "regenerate": "Regenerate filename from metadata",
     "regenerateAll_other": "Regenerate {{count}} file names from metadata",
@@ -980,8 +980,8 @@
       "flac": "FLAC"
     },
     "outputFormatHint": "“Same as source” keeps each file in its own format, so a mixed batch is never re-encoded. AIFF/WAV/FLAC are lossless (FLAC compressed); MP3 is smaller. A file already in the format is copied without re-encoding.",
-    "keepMp3Sources": "Keep MP3 files as MP3",
-    "keepMp3SourcesHint": "Converting an MP3 to a lossless format can't restore quality: the file only gets bigger. With this on, MP3s skip the conversion: tags are updated on the original file, right where it lives.",
+    "keepMp3Sources": "Keep MP3 and M4A files as they are",
+    "keepMp3SourcesHint": "Converting an MP3 or an M4A to a lossless format can't restore quality: the file only gets bigger. With this on, MP3s and M4As skip the conversion: tags are updated on the original file, right where it lives.",
     "keepMp3SourcesOff": "Not needed with MP3 or “Same as source”: MP3s already stay MP3.",
     "mp3Quality": "MP3 quality",
     "mp3Qualities": {

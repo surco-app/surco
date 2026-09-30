@@ -180,20 +180,19 @@ describe('runProcessTrack — overwrite end-to-end', () => {
 })
 
 describe('runProcessTrack — overwrite x ALAC', () => {
-  // ALAC's never-in-place invariant holds even under overwrite (see editsInPlace):
-  // the .m4a source it would replace may hold lossy AAC, so overwrite must still land
-  // in outputDir, leave the original .m4a untouched, and never call removeRenamedOriginal
-  // (that helper only runs when inPlace is true).
+  // Overwrite never forces an ALAC conversion over another format's file (see
+  // editsInPlace): it must still land in outputDir, leave the original untouched, and
+  // never call removeRenamedOriginal (that helper only runs when inPlace is true).
   it('writes to outputDir, leaves the original untouched and never calls removeRenamedOriginal', async () => {
     const deps = makeDeps({
       settings: settings({ outputFormat: 'alac', overwriteOriginal: true, outputDir: '/out' }),
     })
-    const result = await runProcessTrack(job({ inputPath: '/in/song.m4a', format: 'alac' }), deps)
+    const result = await runProcessTrack(job({ inputPath: '/in/song.flac', format: 'alac' }), deps)
 
     expect(result.inPlace).toBe(false)
     expect(result.outputPath).toBe('/out/Artist - Title.m4a')
     expect(deps.convertAudio).toHaveBeenCalledWith(
-      '/in/song.m4a',
+      '/in/song.flac',
       '/out/Artist - Title.m4a',
       'alac',
       {},

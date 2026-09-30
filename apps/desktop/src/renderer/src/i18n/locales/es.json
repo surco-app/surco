@@ -518,7 +518,7 @@
     "outputNameHintInPlace": "Mismo formato que el original: actualiza el archivo original y lo renombra — no se crea ninguna copia en la carpeta de salida.",
     "overwriteTitle": "Sobrescribe el original",
     "overwriteHint": "Reescribe el archivo de origen en su sitio, conservando el nombre. No deja copia en la carpeta de salida. Desactívalo en Ajustes → Destino.",
-    "overwriteAlacHint": "ALAC nunca reemplaza el original: el archivo de origen puede contener audio con pérdida, así que se crea un archivo nuevo en la carpeta de salida y el original se conserva.",
+    "overwriteAlacHint": "ALAC no reemplaza el original: se crea un archivo nuevo en la carpeta de salida y el original se conserva.",
     "overwriteLossyHint": "Sustituye el original sin pérdida por un MP3 de 320 kbps en su sitio — el máster se pierde y no se puede recuperar. Desactívalo en Ajustes → Destino.",
     "regenerate": "Regenerar nombre del archivo con los metadatos",
     "regenerateAll_other": "Regenerar {{count}} nombres de archivo con los metadatos",
@@ -980,8 +980,8 @@
       "flac": "FLAC"
     },
     "outputFormatHint": "«Igual que el origen» mantiene cada archivo en su propio formato, así que un lote mixto nunca se reconvierte. AIFF/WAV/FLAC sin pérdida (FLAC comprimido); MP3 ocupa menos. Un archivo ya en ese formato se copia sin reconvertir.",
-    "keepMp3Sources": "Mantener los MP3 como MP3",
-    "keepMp3SourcesHint": "Convertir un MP3 a un formato sin pérdida no recupera calidad: el archivo solo ocupa más. Con esto activo, los MP3 no se convierten: las etiquetas se actualizan sobre el archivo original, allí donde está.",
+    "keepMp3Sources": "Mantener MP3 y M4A como están",
+    "keepMp3SourcesHint": "Convertir un MP3 o un M4A a un formato sin pérdida no recupera calidad: el archivo solo ocupa más. Con esto activo, los MP3 y M4A no se convierten: las etiquetas se actualizan sobre el archivo original, allí donde está.",
     "keepMp3SourcesOff": "No hace falta con MP3 o «Igual que el origen»: los MP3 ya se quedan como MP3.",
     "mp3Quality": "Calidad MP3",
     "mp3Qualities": {

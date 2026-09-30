@@ -867,6 +867,7 @@ const AIFF_INPUT = /\.aiff?$/i
 const MP3_INPUT = /\.mp3$/i
 const WAV_INPUT = /\.wav$/i
 const FLAC_INPUT = /\.flac$/i
+const M4A_INPUT = /\.m4a$/i
 const M4A_OUTPUT = /\.m4a$/i
 
 // The LAME flags each MP3 quality choice maps onto: a fixed CBR bitrate, or a VBR
@@ -1147,10 +1148,15 @@ export async function planConversion(
     }
   }
   if (format === 'alac') {
-    // No stream-copy shortcut: an .m4a source may hold lossy AAC, and telling it apart
-    // from ALAC needs a codec probe — while an ALAC re-encode is lossless regardless,
-    // so always encoding is correct, just slower.
-    const { depth, ...rest } = await losslessPlan()
+    // An .m4a is already in ALAC's container. Holding AAC it copies whatever the pins
+    // say, like an MP3: decoding a lossy stream to ALAC only makes the file bigger (an
+    // 11 MB AAC came back at 44 MB). Holding ALAC it is lossless like the rest.
+    const same = M4A_INPUT.test(input) && copyOk
+    if (same && (await probeOnce()).codecName !== 'alac') return { codec: 'copy', ext: '.m4a' }
+    if (same && !pinned) return { codec: 'copy', ext: '.m4a' }
+    const plan = await losslessPlan()
+    if (same && (await keepsSource(plan))) return { codec: 'copy', ext: '.m4a' }
+    const { depth, ...rest } = plan
     return {
       codec: 'alac',
       sampleFmt: !depth.float && depth.bits <= 16 ? 's16p' : 's32p',
