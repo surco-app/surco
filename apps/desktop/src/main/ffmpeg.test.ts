@@ -534,16 +534,58 @@ describe('planConversion', () => {
     expect(probe).not.toHaveBeenCalled()
   })
 
-  // ALAC never stream-copies even from an .m4a source: the container can hold lossy
-  // AAC, and telling the two apart would need a codec probe — while an ALAC re-encode
-  // is lossless regardless. The probe pins the encoder to the source width so a float
-  // decode (or filter) can never widen it.
-  it('always encodes an ALAC target, even from an .m4a source, pinned to the source width', async () => {
-    expect(await planConversion('/in.m4a', 'alac', probe)).toEqual({
-      codec: 'alac',
+  // An .m4a is already in the ALAC target's container. Holding AAC it copies whatever the
+  // quality pins say, like an MP3: decoding the lossy stream to ALAC only makes the file
+  // four times bigger (djotas, 30/09: 11 MB in, 44 MB out). Holding ALAC it follows the
+  // other lossless formats: copied unless the pins would change its audio.
+  it('stream-copies an AAC .m4a into the ALAC target whatever the pins say', async () => {
+    const aac = vi.fn(async () => ({
+      codecName: 'aac',
+      sampleFmt: 'fltp',
+      bitsPerRawSample: 0,
+      sampleRate: '44100',
+      channels: 2,
+    }))
+    expect(await planConversion('/in.m4a', 'alac', aac)).toEqual({ codec: 'copy', ext: '.m4a' })
+    expect(
+      await planConversion('/in.m4a', 'alac', aac, false, { bitDepth: '16', sampleRate: '48000' }),
+    ).toEqual({ codec: 'copy', ext: '.m4a' })
+  })
+
+  it('re-encodes an AAC .m4a to ALAC when a filter changes the samples', async () => {
+    const aac = vi.fn(async () => ({
+      codecName: 'aac',
+      sampleFmt: 'fltp',
+      bitsPerRawSample: 0,
+      sampleRate: '44100',
+      channels: 2,
+    }))
+    expect(await planConversion('/in.m4a', 'alac', aac, true)).toMatchObject({ codec: 'alac' })
+  })
+
+  it('copies an ALAC .m4a unless the pins would change its audio', async () => {
+    const alac16 = vi.fn(async () => ({
+      codecName: 'alac',
+      sampleFmt: 's16p',
+      bitsPerRawSample: 16,
+      sampleRate: '44100',
+      channels: 2,
+    }))
+    const alac24 = vi.fn(async () => ({
+      codecName: 'alac',
       sampleFmt: 's32p',
-      ext: '.m4a',
-    })
+      bitsPerRawSample: 24,
+      sampleRate: '44100',
+      channels: 2,
+    }))
+    const notPadded = vi.fn(async () => null)
+    expect(await planConversion('/in.m4a', 'alac', alac16)).toEqual({ codec: 'copy', ext: '.m4a' })
+    expect(
+      await planConversion('/in.m4a', 'alac', alac24, false, { bitDepth: '16' }, notPadded),
+    ).toEqual({ codec: 'alac', sampleFmt: 's16p', dither: true, ext: '.m4a' })
+  })
+
+  it('encodes an ALAC target from another format, pinned to the source width', async () => {
     expect(await planConversion('/in.flac', 'alac', probe16)).toEqual({
       codec: 'alac',
       sampleFmt: 's16p',

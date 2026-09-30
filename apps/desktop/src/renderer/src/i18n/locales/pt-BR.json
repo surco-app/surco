@@ -518,7 +518,7 @@
     "outputNameHintInPlace": "Mesmo formato do original: atualiza o arquivo original no lugar e o renomeia — nenhuma cópia é criada na pasta de saída.",
     "overwriteTitle": "Sobrescreve o original",
     "overwriteHint": "Reescreve o arquivo de origem no lugar, mantendo o nome. Nenhuma cópia vai para a pasta de saída. Desative em Ajustes → Saída.",
-    "overwriteAlacHint": "ALAC nunca substitui o original: o arquivo de origem pode conter áudio com perdas, então um arquivo novo é criado na pasta de saída e o original é mantido.",
+    "overwriteAlacHint": "ALAC não substitui o original: um arquivo novo é criado na pasta de saída e o original é mantido.",
     "overwriteLossyHint": "Substitui o original sem perdas por um MP3 de 320 kbps no lugar — o master se perde e não pode ser recuperado. Desative em Ajustes → Saída.",
     "regenerate": "Regenerar nome do arquivo com os metadados",
     "regenerateAll_other": "Regenerar {{count}} nomes de arquivo com os metadados",
@@ -980,8 +980,8 @@
       "flac": "FLAC"
     },
     "outputFormatHint": "“Igual à origem” mantém cada arquivo em seu próprio formato, então um lote misto nunca é recodificado. AIFF/WAV/FLAC são sem perdas (FLAC comprimido); MP3 ocupa menos. Um arquivo que já está no formato é copiado sem recodificar.",
-    "keepMp3Sources": "Manter arquivos MP3 como MP3",
-    "keepMp3SourcesHint": "Converter um MP3 para um formato sem perdas não recupera qualidade: o arquivo só fica maior. Com isso ativo, os MP3 não são convertidos: as tags são atualizadas no arquivo original, onde ele está.",
+    "keepMp3Sources": "Manter arquivos MP3 e M4A como estão",
+    "keepMp3SourcesHint": "Converter um MP3 ou M4A para um formato sem perdas não recupera qualidade: o arquivo só fica maior. Com isso ativo, os MP3 e M4A não são convertidos: as tags são atualizadas no arquivo original, onde ele está.",
     "keepMp3SourcesOff": "Não é necessário com MP3 ou “Igual à origem”: os MP3 já continuam MP3.",
     "mp3Quality": "Qualidade do MP3",
     "mp3Qualities": {

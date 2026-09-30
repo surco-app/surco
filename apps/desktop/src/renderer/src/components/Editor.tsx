@@ -777,8 +777,8 @@ export const Editor = memo(function Editor({
   // Exporting to the source's own format edits the original file in place (and
   // renames it on disk) rather than writing a copy to the output folder — warn the
   // user before they hit the button so the rename isn't a surprise. Overwrite mode
-  // forces this for every format except ALAC, which always renders a fresh file
-  // (see editsInPlace) — the shared helper keeps this warning honest against what
+  // forces this for every format except ALAC, which renders a fresh file unless the
+  // source is already an .m4a (see editsInPlace) — the shared helper keeps this warning honest against what
   // resolveOutputTarget actually does. Beside-original never edits in place (a
   // same-format export lands as a fresh "(n)" copy next to the source), so its rows
   // must not carry the in-place rename warning.

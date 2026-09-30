@@ -1553,8 +1553,8 @@ describe('useTrackProcessing', () => {
     })
 
     // The same skip applies to every extension Surco imports but can't export: .ogg,
-    // .oga, .aac, .m4a and .mp4 all fall back the same way .opus does.
-    it.each(['ogg', 'oga', 'aac', 'm4a', 'mp4'])(
+    // .oga, .aac and .mp4 all fall back the same way .opus does.
+    it.each(['ogg', 'oga', 'aac', 'mp4'])(
       'skips a .%s file under source for the same reason',
       async (ext) => {
         const processTrack = vi.fn()

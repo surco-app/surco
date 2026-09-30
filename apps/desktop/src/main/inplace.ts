@@ -42,7 +42,7 @@ export interface OutputTarget {
 // file right where it lives (rewrite tags, rename if the name changed); a real
 // conversion (e.g. WAV→MP3) → a fresh file in the output folder, original kept.
 // `overwriteOriginal` forces the in-place path regardless of format — except ALAC,
-// which always renders fresh (see editsInPlace): the converted file replaces the
+// which renders fresh unless the source is already an .m4a (see editsInPlace): the converted file replaces the
 // source in its own folder, and removeRenamedOriginal drops the old-extension
 // original afterwards. `besideOriginal` is the non-destructive sibling: a fresh
 // file in the source's own folder, NEVER in place — inPlace false is what keeps

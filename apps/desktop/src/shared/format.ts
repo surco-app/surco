@@ -7,10 +7,9 @@ const INPUT_EXT: Record<OutputFormat, RegExp> = {
   wav: /\.wav$/i,
   flac: /\.flac$/i,
   aiff: /\.aiff?$/i,
-  // Deliberately never matches: an .m4a source may hold lossy AAC, not ALAC — telling
-  // them apart needs a codec probe, and calling it "already ALAC" would rewrite the
-  // user's original in place. ALAC exports always render a fresh file instead.
-  alac: /(?!)/,
+  // ALAC's container. An .m4a may hold lossy AAC instead, which planConversion copies
+  // untouched rather than decoding it: the container is what the file is kept in.
+  alac: /\.m4a$/i,
 }
 
 // True when the chosen export format is the one the file is already in. The main
@@ -29,10 +28,9 @@ export function formatExtension(format: OutputFormat): string {
 
 // Whether an export edits the source file in place (rewrite/rename where it lives)
 // instead of writing a fresh copy to the output folder: the target format is the one
-// the file is already in, or overwrite mode forces it. ALAC keeps its never-in-place
-// invariant even under overwrite — the .m4a source it would replace may hold lossy
-// AAC, and re-encoding it over itself destroys the only true copy while presenting a
-// lossy encode as lossless. The main process and the editor's warnings both decide
+// the file is already in, or overwrite mode forces it. Overwrite never forces ALAC over
+// another format's file: an .m4a is only rewritten in place as its own container, where
+// planConversion keeps an AAC stream as AAC. The main process and the editor's warnings both decide
 // through here so what the UI promises is what resolveOutputTarget does.
 export function editsInPlace(
   format: OutputFormat,
@@ -43,7 +41,7 @@ export function editsInPlace(
 }
 
 // Whether 'source' has a real OutputFormat to keep a file in. Surco imports .opus,
-// .ogg, .oga, .aac, .m4a and .mp4, none of which INPUT_EXT maps to — resolveJobFormat
+// .ogg, .oga, .aac and .mp4, none of which INPUT_EXT maps to — resolveJobFormat
 // would fall back and transcode those, which the renderer's 'source' skip (see
 // useTrackProcessing.processOne) uses this to catch before that fallback ever fires.
 export function hasFormatEquivalent(inputPath: string): boolean {
@@ -55,11 +53,11 @@ export function hasFormatEquivalent(inputPath: string): boolean {
 // batch be tagged without re-encoding — planConversion stream-copies when input and
 // output formats agree. Inputs with no matching output format (Surco imports .opus,
 // .ogg, .aac and .mp4, which no OutputFormat represents) fall back and transcode, the
-// same as they do today. ALAC is never resolved from an .m4a source: INPUT_EXT.alac
-// deliberately matches nothing, since the container may hold lossy AAC.
-// Upconverting an mp3 to lossless can't restore what the lossy encoder discarded —
-// the file only grows. With the Keep MP3 setting the source keeps its format, which
-// routes the job into the same stream-copy path a same-format export already takes.
+// same as they do today. An .m4a resolves to ALAC, its container, AAC or not.
+// Upconverting an mp3 or an AAC m4a to lossless can't restore what the lossy encoder
+// discarded — the file only grows. With the Keep MP3 setting the source keeps its
+// format, which routes the job into the same stream-copy path a same-format export
+// already takes.
 export function resolveJobFormat(
   setting: FormatSetting,
   inputPath: string,
@@ -76,6 +74,7 @@ export function resolveJobFormat(
   formatChosen = false,
 ): OutputFormat {
   if (keepMp3 && formatMatchesInput('mp3', inputPath)) return 'mp3'
+  if (keepMp3 && formatMatchesInput('alac', inputPath)) return 'alac'
   if (fromAppleMusic && !formatChosen) {
     const own = (Object.keys(INPUT_EXT) as OutputFormat[]).find((f) =>
       formatMatchesInput(f, inputPath),
