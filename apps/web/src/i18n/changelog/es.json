@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.5",
+    "date": "30 de septiembre de 2026",
+    "title": "Apple Music también para lo que arrastras",
+    "items": [
+      {
+        "text": "Una pista que está en tu biblioteca de Apple Music recibe lo que Music sabe de ella aunque la arrastres o la abras desde una carpeta, igual que al importar una lista: si el archivo no trae grouping, año, comentario, BPM, número de pista o de disco, estrellas o carátula, Surco los toma de Music. Manda siempre lo que ya lleva el archivo, solo se usa la entrada de ese mismo archivo y no la de otra copia de la canción, y una carátula que quitaste a mano no vuelve. Solo en macOS.",
+        "in": "1.5.0"
+      },
+      {
+        "text": "Al abrir una pista, los análisis que ya se hicieron (la onda, la calidad, el volumen, los clics, el BPM y la tonalidad) aparecen al instante, y los que faltan empiezan en ese momento en vez de esperar un rato.",
+        "in": "1.5.0"
+      }
+    ]
+  },
+  {
     "version": "1.4",
     "date": "28 de septiembre de 2026",
     "title": "MusicBrainz y búsquedas más fiables",

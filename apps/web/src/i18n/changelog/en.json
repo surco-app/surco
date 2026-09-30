@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.5",
+    "date": "September 30, 2026",
+    "title": "Apple Music for the tracks you drag in too",
+    "items": [
+      {
+        "text": "A track that lives in your Apple Music library now gets what Music knows about it even when you drag it in or open it from a folder, just like importing a playlist: if the file lacks the grouping, year, comment, BPM, track or disc number, stars or artwork, Surco takes them from Music. What the file already carries always wins, only that very file's Music entry is used, never another copy of the song, and artwork you removed by hand stays removed. macOS only.",
+        "in": "1.5.0"
+      },
+      {
+        "text": "When you open a track, analyses already done (waveform, quality, loudness, clicks, BPM and key) show up instantly, and the missing ones start right away instead of after a short wait.",
+        "in": "1.5.0"
+      }
+    ]
+  },
+  {
     "version": "1.4",
     "date": "September 28, 2026",
     "title": "MusicBrainz and more reliable searches",
