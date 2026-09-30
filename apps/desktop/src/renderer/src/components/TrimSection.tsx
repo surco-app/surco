@@ -14,7 +14,6 @@ import { mediaUrl } from '../../../shared/media'
 import { losesTraktorCues } from '../../../shared/outputFormats'
 import type { OutputFormat, TrimRange, WaveformResult } from '../../../shared/types'
 import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
-import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
 import { useWaveformWindow } from '../hooks/useWaveformWindow'
 import { formatTime } from '../lib/duration'
@@ -564,15 +563,8 @@ export function TrimSection({
   durationSec: trackDurationSec,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  // The waveform decodes the full file, so it waits for the selection to rest and
-  // for the section to actually be open — same gating as the loudness strip.
-  const settled = useSettled(SELECTION_SETTLE_MS)
   useDiskCacheSeed('waveform', inputPath, open)
-  const { data: wave } = useWaveform(inputPath, open && settled)
-  // Show the loading skeleton the instant the section opens, not only once the query is
-  // fetching: the decode is gated behind a ~400ms settle, so `isFetching` stays false for
-  // that window and the body used to render nothing — the section looked like it hadn't
-  // opened at all. While it's open and the wave hasn't landed, it's loading.
+  const { data: wave } = useWaveform(inputPath, open)
   const loading = open && !wave
   const durationSec = wave?.durationSec ?? 0
   // One gate for everything in this section: the suggestion, the drag magnet
@@ -592,14 +584,14 @@ export function TrimSection({
     inputPath,
     Number(startWinStart.toFixed(3)),
     1,
-    open && settled && onsets?.startSec !== undefined,
+    open && onsets?.startSec !== undefined,
   )
   const endWinStart = Math.max(0, (onsets?.endSec ?? 0) - 0.5)
   const { data: endWin } = useWaveformWindow(
     inputPath,
     Number(endWinStart.toFixed(3)),
     1,
-    open && settled && onsets?.endSec !== undefined,
+    open && onsets?.endSec !== undefined,
   )
   const snapTargets = useMemo(
     () => ({
@@ -1024,7 +1016,7 @@ export function TrimSection({
       toSec: lane.to,
       durationSec,
       inputPath,
-      enabled: open && settled && durationSec > 0,
+      enabled: open && durationSec > 0,
       cutSec: which === 'start' ? shown?.startSec : shown?.endSec,
       suggestionSec: which === 'start' ? suggestion?.startSec : suggestion?.endSec,
       snapped: snapped && dragging.current === which,

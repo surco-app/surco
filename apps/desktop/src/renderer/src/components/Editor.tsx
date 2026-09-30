@@ -25,7 +25,6 @@ import { useEditorSections, useMaximizedSection } from '../hooks/useEditorSectio
 import { useKey } from '../hooks/useKey'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
-import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useStableCallback } from '../hooks/useStableCallback'
 import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
 import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
@@ -450,14 +449,11 @@ export const Editor = memo(function Editor({
   // can octave-fold (70 vs 140), so it stays a suggestion the user clicks to accept,
   // never a silent write. Disabled when the field is hidden and in multi-select,
   // where there is nowhere to suggest it.
-  // The DSP probes wait for the selection to rest on this track (the editor remounts
-  // per track), so j/k browsing doesn't enqueue a serial worker job per row passed.
-  const probesSettled = useSettled(SELECTION_SETTLE_MS)
   useDiskCacheSeed('bpm', item.inputPath, !isMulti && visibleFields.includes('bpm') && formOpen)
   useDiskCacheSeed('key', item.inputPath, !isMulti && visibleFields.includes('key') && formOpen)
   const { data: detectedBpm } = useBpm(
     item.inputPath,
-    probesSettled && !isMulti && visibleFields.includes('bpm') && formOpen,
+    !isMulti && visibleFields.includes('bpm') && formOpen,
   )
 
   // Key detected from the audio, offered like the BPM above. It is the least
@@ -465,7 +461,7 @@ export const Editor = memo(function Editor({
   // neighbouring key), which is exactly why it is a chip and never a write.
   const { data: detectedKey } = useKey(
     item.inputPath,
-    probesSettled && !isMulti && visibleFields.includes('key') && formOpen,
+    !isMulti && visibleFields.includes('key') && formOpen,
   )
 
   // Which tracklist entry of the open release best matches the file. Shared by the

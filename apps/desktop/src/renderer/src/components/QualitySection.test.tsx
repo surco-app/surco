@@ -64,6 +64,7 @@ function renderSection(
   outputSampleRate: 'source' | '44100' | '48000' | 'corrected' = 'source',
 ): void {
   ;(window as unknown as { api: unknown }).api = {
+    cancelAnalysis: vi.fn(),
     peekAnalysis: async () => null,
     spectrogram: vi.fn().mockResolvedValue(spectrum),
   }
@@ -96,7 +97,11 @@ describe('QualitySection analysis gating', () => {
     const spectrogram = vi
       .fn()
       .mockResolvedValue({ image: '', cutoffHz: 21000, sampleRateHz: 44100, processed: false })
-    ;(window as unknown as { api: unknown }).api = { spectrogram, peekAnalysis: async () => null }
+    ;(window as unknown as { api: unknown }).api = {
+      spectrogram,
+      cancelAnalysis: vi.fn(),
+      peekAnalysis: async () => null,
+    }
     const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
@@ -115,7 +120,7 @@ describe('QualitySection analysis gating', () => {
     expect(spectrogram).not.toHaveBeenCalled()
   })
 
-  it('shows a spectrum already analysed on disk without waiting for the selection to settle', async () => {
+  it('shows a spectrum already analysed on disk before its live probe answers', async () => {
     const onDisk = {
       image: 'data:image/png;base64,AAAA',
       cutoffHz: 21000,
@@ -124,6 +129,7 @@ describe('QualitySection analysis gating', () => {
     }
     ;(window as unknown as { api: unknown }).api = {
       spectrogram: vi.fn(() => new Promise(() => {})),
+      cancelAnalysis: vi.fn(),
       peekAnalysis: vi.fn(async (family: string) => (family === 'spectrogram' ? onDisk : null)),
     }
     const client = createQueryClient()
@@ -144,7 +150,7 @@ describe('QualitySection analysis gating', () => {
     expect(await screen.findByTestId('spectrogram')).toBeInTheDocument()
   })
 
-  it('shows a loudness already measured on disk without waiting for the selection to settle', async () => {
+  it('shows a loudness already measured on disk before its live probe answers', async () => {
     const onDisk = {
       integratedLufs: -9.2,
       truePeakDb: -0.4,
@@ -186,7 +192,11 @@ describe('QualitySection analysis gating', () => {
     const spectrogram = vi
       .fn()
       .mockResolvedValue({ image: '', cutoffHz: 21000, sampleRateHz: 44100, processed: false })
-    ;(window as unknown as { api: unknown }).api = { spectrogram, peekAnalysis: async () => null }
+    ;(window as unknown as { api: unknown }).api = {
+      spectrogram,
+      cancelAnalysis: vi.fn(),
+      peekAnalysis: async () => null,
+    }
     const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
@@ -205,16 +215,14 @@ describe('QualitySection analysis gating', () => {
     expect(spectrogram).toHaveBeenCalledWith('/music/a.flac', 'high')
   })
 
-  // Arrowing down a crate with Quality open remounts this section per row. The spectrum
-  // is the heaviest probe in the app (a full decode plus an FFT), and it was the only
-  // one firing without waiting for the selection to rest — so passing over ten rows
-  // queued ten decodes for tracks the user never stopped on. Every other heavy probe
-  // here (loudness, bpm, key, trim, declick) already waits; this one now does too.
-  it('waits for the selection to rest before decoding a track just passed over', async () => {
-    const spectrogram = vi
-      .fn()
-      .mockResolvedValue({ image: '', cutoffHz: 21000, sampleRateHz: 44100, processed: false })
-    ;(window as unknown as { api: unknown }).api = { spectrogram, peekAnalysis: async () => null }
+  it('decodes the selected track at once and cancels it when the selection moves past', async () => {
+    const spectrogram = vi.fn(() => new Promise(() => {}))
+    const cancelAnalysis = vi.fn()
+    ;(window as unknown as { api: unknown }).api = {
+      spectrogram,
+      cancelAnalysis,
+      peekAnalysis: async () => null,
+    }
     const client = createQueryClient()
     const { unmount } = render(
       <QueryClientProvider client={client}>
@@ -229,12 +237,9 @@ describe('QualitySection analysis gating', () => {
         />
       </QueryClientProvider>,
     )
-    // Unmount well inside the settle window, the way the editor remounts when the
-    // selection moves on: the row was passed over, so it must never have decoded.
     await new Promise((r) => setTimeout(r, 50))
     unmount()
-    await new Promise((r) => setTimeout(r, 500))
-    expect(spectrogram).not.toHaveBeenCalled()
+    await vi.waitFor(() => expect(cancelAnalysis).toHaveBeenCalledWith('/music/a.flac'))
   })
 })
 
@@ -325,6 +330,7 @@ describe('QualitySection verdict caption', () => {
     const reportError = vi.fn()
     vi.spyOn(console, 'error').mockImplementation(() => {})
     ;(window as unknown as { api: unknown }).api = {
+      cancelAnalysis: vi.fn(),
       peekAnalysis: async () => null,
       spectrogram: vi
         .fn()
@@ -563,6 +569,7 @@ describe('QualitySection analysis failure', () => {
     // never that wall of text.
     const raw = 'Command failed: /Applications/Surco.app/.../ffmpeg ... Cannot determine format'
     ;(window as unknown as { api: unknown }).api = {
+      cancelAnalysis: vi.fn(),
       peekAnalysis: async () => null,
       spectrogram: vi.fn().mockRejectedValue(new Error(raw)),
     }
@@ -592,6 +599,7 @@ describe('QualitySection analysis failure', () => {
     const raw =
       "Error invoking remote method 'audio:spectrogram': Error: SURCO_ERR:fileMissing: /Users/dj/Track.flac: No such file or directory"
     ;(window as unknown as { api: unknown }).api = {
+      cancelAnalysis: vi.fn(),
       peekAnalysis: async () => null,
       spectrogram: vi.fn().mockRejectedValue(new Error(raw)),
     }
