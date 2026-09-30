@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { AppleMusicTrackMeta, TrackMetadata } from '../../../shared/types'
-import { fillFromAppleMusic } from './appleMusicFill'
+import type { TrackItem } from '../types'
+import { appleMusicFillPatch, fillFromAppleMusic } from './appleMusicFill'
 
 function meta(over: Partial<TrackMetadata> = {}): TrackMetadata {
   return { ...emptyMetadata(), ...over }
@@ -59,5 +60,53 @@ describe('filling a track with what Music knows', () => {
   it('returns the same object when there is nothing to add, so an import does not churn state', () => {
     const before = meta({ grouping: 'Bases' })
     expect(fillFromAppleMusic(before, { grouping: 'Otra cosa' })).toBe(before)
+  })
+})
+
+function track(over: Partial<TrackItem> = {}): TrackItem {
+  return {
+    id: 't1',
+    inputPath: '/m/Weekend (Extended).wav',
+    fileName: 'Weekend (Extended).wav',
+    listLabel: 'Weekend (Extended)',
+    query: '',
+    status: 'idle',
+    meta: meta({ title: 'Weekend (Extended)', artist: 'Tantra', genre: 'Electronic' }),
+    ...over,
+  }
+}
+
+const cover = { coverPath: '/art/PID.jpg', coverUrl: 'data:image/jpeg;base64,ART' }
+
+describe('filling a loaded file with what Music holds for it', () => {
+  it('fills the grouping the WAV cannot carry and keeps what the file has', () => {
+    // Reported 30/09 with a Tantra WAV: Music showed "Cantaditas, Rockola, Yesterday"
+    // while Surco showed an empty grouping, because the file itself holds only RIFF INFO.
+    const patch = appleMusicFillPatch(track(), { grouping: 'Cantaditas, Rockola, Yesterday' })
+    expect(patch?.meta?.grouping).toBe('Cantaditas, Rockola, Yesterday')
+    expect(patch?.meta?.genre).toBe('Electronic')
+  })
+
+  it("gives the row and the editor Music's artwork when the file carries none", () => {
+    const patch = appleMusicFillPatch(track(), cover)
+    expect(patch).toMatchObject({
+      coverPath: '/art/PID.jpg',
+      coverUrl: 'data:image/jpeg;base64,ART',
+      embeddedCover: 'data:image/jpeg;base64,ART',
+    })
+  })
+
+  it('never replaces a cover already shown', () => {
+    const patch = appleMusicFillPatch(track({ coverUrl: 'data:own' }), cover)
+    expect(patch).toBeNull()
+  })
+
+  it('does not bring back a cover the user removed by hand', () => {
+    expect(appleMusicFillPatch(track({ coverRemoved: true }), cover)).toBeNull()
+  })
+
+  it('returns null when Music has nothing the file lacks, so opening a track stages no change', () => {
+    const full = track({ meta: meta({ grouping: 'Bases' }) })
+    expect(appleMusicFillPatch(full, { grouping: 'Otra' })).toBeNull()
   })
 })

@@ -18,9 +18,11 @@ vi.mock('electron-log/main', () => ({
 
 const dumpAppleMusicPlaylists = vi.fn()
 const readAppleMusicPlaylist = vi.fn()
+const readAppleMusicEntry = vi.fn()
 vi.mock('./appleMusicPlaylists', () => ({
   dumpAppleMusicPlaylists: (...a: unknown[]) => dumpAppleMusicPlaylists(...a),
   readAppleMusicPlaylist: (...a: unknown[]) => readAppleMusicPlaylist(...a),
+  readAppleMusicEntry: (...a: unknown[]) => readAppleMusicEntry(...a),
 }))
 
 vi.mock('./applemusic', () => ({
@@ -63,6 +65,7 @@ async function register(): Promise<void> {
 beforeEach(() => {
   dumpAppleMusicPlaylists.mockReset()
   readAppleMusicPlaylist.mockReset()
+  readAppleMusicEntry.mockReset()
   setPlatform('darwin')
 })
 
@@ -112,5 +115,33 @@ describe('applemusic:playlistTracks', () => {
     const out = await handlers.get('applemusic:playlistTracks')?.({}, 'A1B2C3D4E5F60718')
     expect(out).toEqual({ paths: [], missing: 0 })
     expect(readAppleMusicPlaylist).not.toHaveBeenCalled()
+  })
+})
+
+describe('applemusic:entryMeta', () => {
+  it('returns what Music holds for the loaded file', async () => {
+    readAppleMusicEntry.mockResolvedValue({
+      paths: ['/m/a.wav'],
+      persistentIds: { '/m/a.wav': 'A1B2C3D4E5F60718' },
+      meta: { '/m/a.wav': { grouping: 'Cantaditas, Rockola' } },
+      missing: 0,
+    })
+    await register()
+    const out = await handlers.get('applemusic:entryMeta')?.({}, '/m/a.wav', ['A1B2C3D4E5F60718'])
+    expect(readAppleMusicEntry).toHaveBeenCalledWith('/m/a.wav', ['A1B2C3D4E5F60718'])
+    expect(out).toMatchObject({ grouping: 'Cantaditas, Rockola' })
+  })
+
+  it('returns null when no candidate entry is this file', async () => {
+    readAppleMusicEntry.mockResolvedValue({ paths: [], persistentIds: {}, meta: {}, missing: 0 })
+    await register()
+    expect(await handlers.get('applemusic:entryMeta')?.({}, '/m/a.wav', ['X'])).toBeNull()
+  })
+
+  it('returns null off macOS without spawning osascript', async () => {
+    setPlatform('win32')
+    await register()
+    expect(await handlers.get('applemusic:entryMeta')?.({}, '/m/a.wav', ['X'])).toBeNull()
+    expect(readAppleMusicEntry).not.toHaveBeenCalled()
   })
 })

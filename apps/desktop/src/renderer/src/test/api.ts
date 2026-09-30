@@ -144,6 +144,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     detectTraktorNmlPath: async () => null,
     rekordboxCollection: async () => '',
     appleMusicEntryLocation: async () => '',
+    appleMusicEntryMeta: async () => null,
     search: async () => [],
     getRelease: async () => {
       throw new Error('stubApi: this test needs its own getRelease')

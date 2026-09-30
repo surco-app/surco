@@ -17,6 +17,7 @@ import type {
   SearchProviderId,
   TrackMetadata,
 } from '../../../shared/types'
+import { useAppleMusicFill } from '../hooks/useAppleMusicFill'
 import { useBpm } from '../hooks/useBpm'
 import type { CleanupOffer } from '../hooks/useConfirmFlows'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
@@ -528,6 +529,19 @@ export const Editor = memo(function Editor({
     libraryIndex,
     librarySource,
     suggestedMeta,
+    onChange,
+  })
+  // What Music holds for this file when it is in the library: grouping and artwork, which
+  // a WAV cannot carry. The entry to ask is the track's own copy or the one it matched.
+  useAppleMusicFill({
+    item,
+    candidates: item.musicPersistentId
+      ? [item.musicPersistentId]
+      : !replaceTarget
+        ? []
+        : isAmbiguousCandidate(replaceTarget)
+          ? replaceTarget.ambiguous
+          : [replaceTarget.persistentId],
     onChange,
   })
 

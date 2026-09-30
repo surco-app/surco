@@ -9,6 +9,7 @@ import type {
   AppleMusicLookupCandidate,
   AppleMusicPlaylist,
   AppleMusicPlaylistTracks,
+  AppleMusicTrackMeta,
   AppleMusicUpdateJob,
   BpmResult,
   CoverExportJob,
@@ -86,6 +87,13 @@ export interface Api {
   // Where a library copy's file lives, so a replacement can tell rekordbox which path it
   // supersedes. Empty off macOS or when Music holds no reachable file.
   appleMusicEntryLocation: (persistentId: string) => Promise<string>
+  // What Music holds for a file loaded on its own: grouping, year and the rest, plus its
+  // artwork when the file carries none. Null off macOS or when no candidate entry is this
+  // very file.
+  appleMusicEntryMeta: (
+    path: string,
+    persistentIds: string[],
+  ) => Promise<AppleMusicTrackMeta | null>
   search: (
     query: string,
     provider?: SearchProviderId,

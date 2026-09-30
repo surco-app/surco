@@ -95,6 +95,7 @@ beforeEach(() => {
     // The library verdict reads where an offered replacement's file lives the moment the
     // copy is offered, so this effect mounts wherever a library index is handed in.
     appleMusicEntryLocation: vi.fn().mockResolvedValue(''),
+    appleMusicEntryMeta: vi.fn().mockResolvedValue(null),
     // CoverPicker preloads a draggable file whenever the track has artwork, so any test
     // that gives one a cover mounts this effect.
     prepareCoverDrag: vi.fn().mockResolvedValue(null),
@@ -3040,6 +3041,7 @@ describe('Editor Apple Music library badge', () => {
       properties: vi.fn().mockResolvedValue(null),
       hasClipboardImage: vi.fn().mockResolvedValue(false),
       onWindowFocus: vi.fn(() => () => {}),
+      appleMusicEntryMeta: vi.fn().mockResolvedValue(null),
     }
   }
 
