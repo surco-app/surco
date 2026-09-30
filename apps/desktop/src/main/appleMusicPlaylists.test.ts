@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  buildEntriesScript,
   buildPlaylistDumpScript,
   buildPlaylistTracksScript,
+  entryForFile,
   parsePlaylistDump,
   parsePlaylistTracks,
 } from './appleMusicPlaylists'
@@ -242,5 +244,98 @@ describe('carrying each track back to its library entry', () => {
     )
     expect(out.paths).toHaveLength(1)
     expect(out.missing).toBe(1)
+  })
+})
+
+describe('buildEntriesScript', () => {
+  it('looks up every candidate entry by persistent ID, each in its own try so a vanished one costs only itself', () => {
+    const script = buildEntriesScript(['A1B2C3D4E5F60718', 'FFEEDDCCBBAA9988'])
+    expect(script).toContain('whose persistent ID is "A1B2C3D4E5F60718"')
+    expect(script).toContain('whose persistent ID is "FFEEDDCCBBAA9988"')
+    expect(script.match(/^ {2}try$/gm)).toHaveLength(2)
+  })
+
+  it('escapes a quote in an ID rather than letting it close the string and run the rest as code', () => {
+    expect(buildEntriesScript(['A"B'])).toContain('whose persistent ID is "A\\"B"')
+  })
+
+  it('converts the alias to a POSIX path outside the Music tell block, where that coercion exists', () => {
+    let depth = 0
+    let posixDepth: number | null = null
+    for (const line of buildEntriesScript(['A1B2C3D4E5F60718']).split('\n')) {
+      const t = line.trim()
+      if (t.startsWith('tell application')) depth += 1
+      if (t === 'end tell') depth -= 1
+      if (t.includes('POSIX path')) posixDepth = depth
+    }
+    expect(posixDepth).toBe(0)
+  })
+
+  it('emits the playlist row shape, so one parser reads both and a field can never drift between them', () => {
+    const out = parsePlaylistTracks(
+      [
+        '/m/a.wav',
+        'A1B2C3D4E5F60718',
+        'Cantaditas, Rockola',
+        '2000',
+        '',
+        '0',
+        '0',
+        '0',
+        '0',
+        'computed',
+      ].join(US),
+    )
+    expect(out.meta['/m/a.wav']).toEqual({ grouping: 'Cantaditas, Rockola', year: '2000' })
+    const script = buildEntriesScript(['A1B2C3D4E5F60718'])
+    for (const field of [
+      'grouping',
+      'year',
+      'comment',
+      'track number',
+      'disc number',
+      'bpm',
+      'rating kind',
+    ]) {
+      expect(script).toContain(`${field} of theTrack`)
+    }
+  })
+})
+
+describe('entryForFile', () => {
+  const read = (...rows: string[]) => parsePlaylistTracks(rows.join(RS))
+  const row = (path: string, pid: string, grouping: string) =>
+    [path, pid, grouping, '0', '', '0', '0', '0', '0', 'computed'].join(US)
+
+  it('keeps the entry whose file IS the one loaded, keyed by the loaded path', () => {
+    const out = entryForFile(
+      read(
+        row('/m/other.mp3', 'FFEEDDCCBBAA9988', 'Otro'),
+        row('/m/a.wav', 'A1B2C3D4E5F60718', 'Bases'),
+      ),
+      '/m/a.wav',
+    )
+    expect(out.paths).toEqual(['/m/a.wav'])
+    expect(out.persistentIds).toEqual({ '/m/a.wav': 'A1B2C3D4E5F60718' })
+    expect(out.meta['/m/a.wav']).toEqual({ grouping: 'Bases' })
+  })
+
+  it('gives nothing when the matching entry points at another copy, whose grouping and art belong to that file', () => {
+    // The library match is by title, artist and length: another rip of the same song
+    // matches it too, and its tags describe a file the user did not load.
+    const out = entryForFile(read(row('/m/old-rip.mp3', 'A1B2C3D4E5F60718', 'Bases')), '/m/a.wav')
+    expect(out.paths).toEqual([])
+    expect(out.meta).toEqual({})
+  })
+
+  it('matches a path Music spells decomposed against the same path read composed', () => {
+    // Measured 28/09 on the NAS: the files are NFD on disk while Surco works in NFC, so a
+    // byte compare would miss every accented name.
+    const composed = '/m/Canción.wav'
+    const out = entryForFile(
+      read(row(composed.normalize('NFD'), 'A1B2C3D4E5F60718', 'Bases')),
+      composed,
+    )
+    expect(out.meta[composed]).toEqual({ grouping: 'Bases' })
   })
 })

@@ -1,4 +1,5 @@
 import type { AppleMusicTrackMeta, MetaTextKey, TrackMetadata } from '../../../shared/types'
+import type { TrackItem } from '../types'
 
 // The fields Music supplies verbatim. The rating is handled apart, below: Music scales
 // stars 0-100 while the tag holds "1"-"5", so carrying its number through would write an
@@ -44,4 +45,23 @@ export function fillFromAppleMusic(meta: TrackMetadata, from: AppleMusicTrackMet
     filled.rating = ratingToStarsTag(from.rating)
   }
   return filled ?? meta
+}
+
+// The same fill for a file loaded on its own, applied to a row that already exists: its
+// tags, plus Music's artwork where the row shows none. Like the import, the row's own
+// cover wins, and a cover the user removed by hand stays removed. Null when Music adds
+// nothing, so opening a track stages no change.
+export function appleMusicFillPatch(
+  item: TrackItem,
+  from: AppleMusicTrackMeta,
+): Partial<TrackItem> | null {
+  const patch: Partial<TrackItem> = {}
+  const meta = fillFromAppleMusic(item.meta, from)
+  if (meta !== item.meta) patch.meta = meta
+  if (from.coverUrl && !item.coverUrl && !item.coverRemoved) {
+    patch.coverUrl = from.coverUrl
+    patch.coverPath = from.coverPath
+    if (!item.embeddedCover) patch.embeddedCover = from.coverUrl
+  }
+  return Object.keys(patch).length > 0 ? patch : null
 }

@@ -215,3 +215,69 @@ export async function readAppleMusicPlaylist(
   })
   return parsePlaylistTracks(stdout)
 }
+
+// The same row shape as buildPlaylistTracksScript, for a handful of library entries named
+// by persistent ID rather than a whole playlist: a file loaded on its own, not imported from
+// Music, still gets what Music knows about it. Measured on a real library: its WAVs carry
+// title/artist/album/year/genre only, while Music holds the grouping and the artwork.
+//
+// One track at a time, each in its own try, like buildArtworkScript: an entry deleted since
+// the library snapshot costs only itself. The locations leave the tell block before POSIX
+// path touches them, for the reason buildPlaylistTracksScript gives.
+export function buildEntriesScript(persistentIds: string[]): string {
+  const lookups = persistentIds.flatMap((persistentId) => [
+    '  try',
+    `    set theMatches to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(persistentId)})`,
+    '    if (count of theMatches) > 0 then',
+    '      set theTrack to item 1 of theMatches',
+    '      set end of found to {location of theTrack, persistent ID of theTrack, grouping of theTrack, year of theTrack, comment of theTrack, track number of theTrack, disc number of theTrack, bpm of theTrack, rating of theTrack, rating kind of theTrack}',
+    '    end if',
+    '  end try',
+  ])
+  return [
+    'set found to {}',
+    'tell application "Music"',
+    ...lookups,
+    'end tell',
+    'set out to {}',
+    'repeat with theRow in found',
+    '  set loc to item 1 of theRow',
+    '  set p to ""',
+    '  if loc is not missing value then',
+    '    try',
+    '      set p to POSIX path of loc',
+    '    end try',
+    '  end if',
+    '  set end of out to p & (ASCII character 31) & (item 2 of theRow) & (ASCII character 31) & (item 3 of theRow) & (ASCII character 31) & (item 4 of theRow) & (ASCII character 31) & (item 5 of theRow) & (ASCII character 31) & (item 6 of theRow) & (ASCII character 31) & (item 7 of theRow) & (ASCII character 31) & (item 8 of theRow) & (ASCII character 31) & (item 9 of theRow) & (ASCII character 31) & (item 10 of theRow)',
+    'end repeat',
+    "set AppleScript's text item delimiters to (ASCII character 30)",
+    'return out as text',
+  ].join('\n')
+}
+
+// The entry whose file IS the one loaded, keyed by the loaded path. The library match that
+// names the candidates is by title, artist and length, so another rip of the same song
+// matches too, and its grouping and art describe a file the user did not load. Compared
+// composed: the NAS stores names decomposed while Surco works composed.
+export function entryForFile(
+  tracks: AppleMusicPlaylistTracks,
+  path: string,
+): AppleMusicPlaylistTracks {
+  const target = path.normalize('NFC')
+  const own = tracks.paths.find((p) => p.normalize('NFC') === target)
+  if (!own) return { paths: [], persistentIds: {}, meta: {}, missing: 0 }
+  return {
+    paths: [path],
+    persistentIds: tracks.persistentIds[own] ? { [path]: tracks.persistentIds[own] } : {},
+    meta: { [path]: tracks.meta[own] ?? {} },
+    missing: 0,
+  }
+}
+
+export async function readAppleMusicEntry(
+  path: string,
+  persistentIds: string[],
+): Promise<AppleMusicPlaylistTracks> {
+  const stdout = await runOsascript(buildEntriesScript(persistentIds))
+  return entryForFile(parsePlaylistTracks(stdout), path)
+}

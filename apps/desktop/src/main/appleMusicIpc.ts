@@ -5,7 +5,11 @@ import { activity } from './activity'
 import { artworkDir, fetchAppleMusicArtwork } from './appleMusicArtwork'
 import { loadLibraryCache, saveLibraryCache } from './appleMusicLibraryCache'
 import { attachMissingArtwork } from './appleMusicPlaylistArt'
-import { dumpAppleMusicPlaylists, readAppleMusicPlaylist } from './appleMusicPlaylists'
+import {
+  dumpAppleMusicPlaylists,
+  readAppleMusicEntry,
+  readAppleMusicPlaylist,
+} from './appleMusicPlaylists'
 import {
   addToAppleMusic,
   appleMusicEntryLocation,
@@ -111,6 +115,19 @@ export function registerAppleMusicIpc(): void {
         )
       : { paths: [], missing: 0 },
   )
+
+  // What Music holds for a file loaded on its own rather than imported from a playlist:
+  // the same fill and the same missing artwork the import gives, for the candidate entries
+  // the renderer matched it to. Null when none of them is this very file.
+  ipcMain.handle('applemusic:entryMeta', async (_e, path: string, persistentIds: string[]) => {
+    if (process.platform !== 'darwin') return null
+    const tracks = await attachMissingArtwork(await readAppleMusicEntry(path, persistentIds), {
+      hasEmbedded: async (file) => Boolean((await readMeta(file)).cover),
+      fetchArtwork: fetchAppleMusicArtwork,
+      outDir: artworkDir,
+    })
+    return tracks.meta[path] ?? null
+  })
 
   // Adds an already-converted track to Apple Music on demand — the tail of
   // process:track, but invoked by hand from the editor/palette/menu when the

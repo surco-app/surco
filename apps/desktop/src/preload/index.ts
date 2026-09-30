@@ -5,6 +5,7 @@ import type {
   AppleMusicLookupCandidate,
   AppleMusicPlaylist,
   AppleMusicPlaylistTracks,
+  AppleMusicTrackMeta,
   BpmResult,
   DockIconFrames,
   KeyResult,
@@ -81,6 +82,11 @@ const api: Api = {
   rekordboxCollection: () => ipcRenderer.invoke('rekordbox:collection'),
   appleMusicEntryLocation: (persistentId: string): Promise<string> =>
     ipcRenderer.invoke('applemusic:entryLocation', persistentId),
+  appleMusicEntryMeta: (
+    path: string,
+    persistentIds: string[],
+  ): Promise<AppleMusicTrackMeta | null> =>
+    ipcRenderer.invoke('applemusic:entryMeta', path, persistentIds),
   exportRekordbox: (xml: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:exportRekordbox', xml),
   exportTraktor: (nml: string): Promise<string | null> =>
