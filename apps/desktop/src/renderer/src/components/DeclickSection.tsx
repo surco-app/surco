@@ -6,6 +6,7 @@ import { losesTraktorCues } from '../../../shared/outputFormats'
 import type { DeclickMode, OutputFormat, TrimRange } from '../../../shared/types'
 import { useClicks } from '../hooks/useClicks'
 import { useDeclickAb } from '../hooks/useDeclickAb'
+import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
 import { clickMarks, nextClick } from '../lib/clickMarks'
@@ -65,6 +66,8 @@ export function DeclickSection({
   const settled = useSettled(SELECTION_SETTLE_MS)
   const isMulti = selectedCount > 1
   const solo = open && !isMulti && settled
+  useDiskCacheSeed('clicks', inputPath, open && !isMulti)
+  useDiskCacheSeed('waveform', inputPath, open && !isMulti)
   const { data: clicks } = useClicks(inputPath, solo)
   const { data: wave } = useWaveform(inputPath, solo)
   // The strip loads from the moment the section opens (single-track), not only once the

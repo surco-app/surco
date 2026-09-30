@@ -2,6 +2,7 @@
 // index.ts is declared `const api: Api`, so a wrapper whose signature drifts from
 // this contract fails the main-side build instead of surfacing as a runtime IPC
 // mismatch — and the renderer (via index.d.ts) reads the very same shape.
+import type { PeekableAnalyses } from '../shared/audioIpcContract'
 import type {
   ActivityEvent,
   AppleMusicAddJob,
@@ -200,6 +201,10 @@ export interface Api {
   loadCachedAnalyses: (
     paths: string[],
   ) => Promise<Record<string, { spectrogram?: SpectrumVerdict; scanVerdict?: ScanVerdict }>>
+  peekAnalysis: <F extends keyof PeekableAnalyses>(
+    family: F,
+    path: string,
+  ) => Promise<PeekableAnalyses[F] | null>
   loudness: (path: string, priority?: 'high' | 'low') => Promise<LoudnessResult | null>
   properties: (path: string) => Promise<TrackProperties | null>
   bpm: (path: string, priority?: 'high' | 'low') => Promise<BpmResult | null>

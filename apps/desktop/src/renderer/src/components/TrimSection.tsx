@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { mediaUrl } from '../../../shared/media'
 import { losesTraktorCues } from '../../../shared/outputFormats'
 import type { OutputFormat, TrimRange, WaveformResult } from '../../../shared/types'
+import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useWaveform } from '../hooks/useWaveform'
 import { useWaveformWindow } from '../hooks/useWaveformWindow'
@@ -566,6 +567,7 @@ export function TrimSection({
   // The waveform decodes the full file, so it waits for the selection to rest and
   // for the section to actually be open — same gating as the loudness strip.
   const settled = useSettled(SELECTION_SETTLE_MS)
+  useDiskCacheSeed('waveform', inputPath, open)
   const { data: wave } = useWaveform(inputPath, open && settled)
   // Show the loading skeleton the instant the section opens, not only once the query is
   // fetching: the decode is gated behind a ~400ms settle, so `isFetching` stays false for

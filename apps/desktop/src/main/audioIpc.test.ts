@@ -290,6 +290,62 @@ describe('audio:cached-batch', () => {
   })
 })
 
+describe('audio:peek hands the editor what the disk already knows, before the selection settles', () => {
+  it.each([
+    ['loudness', 'audio:loudness', measureLoudness],
+    ['clicks', 'audio:clicks', detectTrackClicks],
+    ['bpm', 'audio:bpm', measureBpm],
+    ['key', 'audio:key', measureKey],
+    ['waveform', 'audio:waveform', measureWaveform],
+  ] as const)(
+    'serves a warm %s exactly as its live probe does, computing nothing',
+    async (family, channel, producer) => {
+      const file = await makeFile()
+      vi.mocked(producer).mockResolvedValue({ measured: family } as never)
+      const live = await handlerFor(channel)({}, file)
+      vi.mocked(producer).mockClear()
+
+      const peeked = await handlerFor('audio:peek')({}, family, file)
+
+      expect(peeked).toEqual(live)
+      expect(producer).not.toHaveBeenCalled()
+    },
+  )
+
+  it('serves a warm spectrogram in the live shape, without the cache bookkeeping flag', async () => {
+    const file = await makeFile()
+    vi.mocked(buildSpectrum).mockResolvedValue({
+      image: 'data:image/png;base64,CCCC',
+      cutoffHz: 19000,
+      sampleRateHz: 44100,
+      imageTopHz: 24000,
+      processed: false,
+      hasKnee: false,
+      upsampled: false,
+      resolution: 'native',
+    } as Awaited<ReturnType<typeof buildSpectrum>>)
+    vi.mocked(cacheableSpectrum).mockImplementation(
+      (b) => ({ ...b, cutoffFailed: false }) as ReturnType<typeof cacheableSpectrum>,
+    )
+    const live = await handlerFor('audio:spectrogram')({}, file)
+    vi.mocked(buildSpectrum).mockClear()
+
+    const peeked = await handlerFor('audio:peek')({}, 'spectrogram', file)
+
+    expect(peeked).toEqual(live)
+    expect(buildSpectrum).not.toHaveBeenCalled()
+  })
+
+  it('answers a cold track with null and starts no analysis', async () => {
+    const file = await makeFile()
+
+    const peeked = await handlerFor('audio:peek')({}, 'loudness', file)
+
+    expect(peeked).toBeNull()
+    expect(measureLoudness).not.toHaveBeenCalled()
+  })
+})
+
 // The import reads every track's embedded cover, and the thumbnail used to cross IPC and
 // sit in the renderer's state as a base64 data URL (~30 KB each). It now crosses as a
 // short URL to the copy on disk, which the list and the editor load like any image.

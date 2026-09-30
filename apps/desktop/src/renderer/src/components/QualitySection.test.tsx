@@ -64,6 +64,7 @@ function renderSection(
   outputSampleRate: 'source' | '44100' | '48000' | 'corrected' = 'source',
 ): void {
   ;(window as unknown as { api: unknown }).api = {
+    peekAnalysis: async () => null,
     spectrogram: vi.fn().mockResolvedValue(spectrum),
   }
   const client = createQueryClient()
@@ -95,7 +96,7 @@ describe('QualitySection analysis gating', () => {
     const spectrogram = vi
       .fn()
       .mockResolvedValue({ image: '', cutoffHz: 21000, sampleRateHz: 44100, processed: false })
-    ;(window as unknown as { api: unknown }).api = { spectrogram }
+    ;(window as unknown as { api: unknown }).api = { spectrogram, peekAnalysis: async () => null }
     const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
@@ -114,6 +115,69 @@ describe('QualitySection analysis gating', () => {
     expect(spectrogram).not.toHaveBeenCalled()
   })
 
+  it('shows a spectrum already analysed on disk without waiting for the selection to settle', async () => {
+    const onDisk = {
+      image: 'data:image/png;base64,AAAA',
+      cutoffHz: 21000,
+      sampleRateHz: 44100,
+      processed: false,
+    }
+    ;(window as unknown as { api: unknown }).api = {
+      spectrogram: vi.fn(() => new Promise(() => {})),
+      peekAnalysis: vi.fn(async (family: string) => (family === 'spectrogram' ? onDisk : null)),
+    }
+    const client = createQueryClient()
+    render(
+      <QueryClientProvider client={client}>
+        <QualitySection
+          item={track()}
+          showSpectrum
+          showLoudness={false}
+          normalize={OFF}
+          open
+          onToggle={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
+        />
+      </QueryClientProvider>,
+    )
+
+    expect(await screen.findByTestId('spectrogram')).toBeInTheDocument()
+  })
+
+  it('shows a loudness already measured on disk without waiting for the selection to settle', async () => {
+    const onDisk = {
+      integratedLufs: -9.2,
+      truePeakDb: -0.4,
+      lra: 5,
+      channelBalanceDb: null,
+      dcOffset: null,
+      crestDb: null,
+      noiseFloorDb: null,
+    }
+    ;(window as unknown as { api: unknown }).api = {
+      spectrogram: vi.fn(() => new Promise(() => {})),
+      loudness: vi.fn(() => new Promise(() => {})),
+      cancelAnalysis: vi.fn(),
+      peekAnalysis: vi.fn(async (family: string) => (family === 'loudness' ? onDisk : null)),
+    }
+    const client = createQueryClient()
+    render(
+      <QueryClientProvider client={client}>
+        <QualitySection
+          item={track()}
+          showSpectrum={false}
+          showLoudness
+          normalize={OFF}
+          open
+          onToggle={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
+        />
+      </QueryClientProvider>,
+    )
+
+    expect(await screen.findByTestId('loudness-readout')).toBeInTheDocument()
+  })
+
   // The editor only mounts this for the selected track — the one the user is waiting on.
   // During an auto-match sweep the background floods the analysis limiter with 'low'
   // decodes, so the selected track's spectrum must ask for 'high' to jump the queue,
@@ -122,7 +186,7 @@ describe('QualitySection analysis gating', () => {
     const spectrogram = vi
       .fn()
       .mockResolvedValue({ image: '', cutoffHz: 21000, sampleRateHz: 44100, processed: false })
-    ;(window as unknown as { api: unknown }).api = { spectrogram }
+    ;(window as unknown as { api: unknown }).api = { spectrogram, peekAnalysis: async () => null }
     const client = createQueryClient()
     render(
       <QueryClientProvider client={client}>
@@ -150,7 +214,7 @@ describe('QualitySection analysis gating', () => {
     const spectrogram = vi
       .fn()
       .mockResolvedValue({ image: '', cutoffHz: 21000, sampleRateHz: 44100, processed: false })
-    ;(window as unknown as { api: unknown }).api = { spectrogram }
+    ;(window as unknown as { api: unknown }).api = { spectrogram, peekAnalysis: async () => null }
     const client = createQueryClient()
     const { unmount } = render(
       <QueryClientProvider client={client}>
@@ -261,6 +325,7 @@ describe('QualitySection verdict caption', () => {
     const reportError = vi.fn()
     vi.spyOn(console, 'error').mockImplementation(() => {})
     ;(window as unknown as { api: unknown }).api = {
+      peekAnalysis: async () => null,
       spectrogram: vi
         .fn()
         .mockResolvedValue({ image: 'x', cutoffHz: 21000, sampleRateHz: 44100, processed: false }),
@@ -498,6 +563,7 @@ describe('QualitySection analysis failure', () => {
     // never that wall of text.
     const raw = 'Command failed: /Applications/Surco.app/.../ffmpeg ... Cannot determine format'
     ;(window as unknown as { api: unknown }).api = {
+      peekAnalysis: async () => null,
       spectrogram: vi.fn().mockRejectedValue(new Error(raw)),
     }
     const client = createQueryClient()
@@ -526,6 +592,7 @@ describe('QualitySection analysis failure', () => {
     const raw =
       "Error invoking remote method 'audio:spectrogram': Error: SURCO_ERR:fileMissing: /Users/dj/Track.flac: No such file or directory"
     ;(window as unknown as { api: unknown }).api = {
+      peekAnalysis: async () => null,
       spectrogram: vi.fn().mockRejectedValue(new Error(raw)),
     }
     const client = createQueryClient()

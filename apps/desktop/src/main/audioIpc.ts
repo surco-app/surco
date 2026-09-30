@@ -2,7 +2,7 @@ import { basename } from 'node:path'
 import type { IpcMainInvokeEvent } from 'electron'
 import { ipcMain } from 'electron'
 import log from 'electron-log/main'
-import type { AudioAnalysisIpc } from '../shared/audioIpcContract'
+import type { AudioAnalysisIpc, PeekableAnalyses } from '../shared/audioIpcContract'
 import { yearFromDate } from '../shared/tagFields'
 import type {
   DeclickMode,
@@ -81,6 +81,15 @@ const BPM_NAMESPACE = 'bpm'
 const KEY_NAMESPACE = 'key'
 const WAVEFORM_NAMESPACE = 'waveform-v6'
 const CHANNELSCAN_NAMESPACE = 'channelscan-v1'
+
+const PEEK_NAMESPACES: Record<keyof PeekableAnalyses, string> = {
+  spectrogram: SPECTROGRAM_NAMESPACE,
+  loudness: LOUDNESS_NAMESPACE,
+  clicks: CLICKS_NAMESPACE,
+  bpm: BPM_NAMESPACE,
+  key: KEY_NAMESPACE,
+  waveform: WAVEFORM_NAMESPACE,
+}
 
 // The read-only audio analysis IPC: tags, duration, cover and the cached quality probes
 // (spectrogram, loudness, properties, bpm, key, waveform). Self-contained — these handlers
@@ -253,6 +262,16 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       }
     },
   )
+
+  handleAudio('audio:peek', async (_e, family, inputPath) => {
+    const hit = await peekAnalysis<PeekableAnalyses[typeof family] & { cutoffFailed?: boolean }>(
+      PEEK_NAMESPACES[family],
+      inputPath,
+    )
+    if (!hit) return null
+    const { cutoffFailed: _cutoffFailed, ...entry } = hit
+    return entry
+  })
 
   handleAudio('audio:loudness', async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
     try {

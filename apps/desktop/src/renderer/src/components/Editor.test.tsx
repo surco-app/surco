@@ -84,6 +84,7 @@ function renderWithQuery(
 beforeEach(() => {
   ;(window as unknown as { api: unknown }).api = {
     platform: 'win32',
+    peekAnalysis: vi.fn().mockResolvedValue(null),
     clicks: vi.fn().mockResolvedValue(null),
     // The repair section subscribes to render progress on mount, so the bridge
     // must hand back an unsubscribe even in tests that never open it.
@@ -1176,6 +1177,16 @@ describe('Editor bpm suggestion', () => {
     )
   })
 
+  it('offers a tempo already detected on disk without waiting for the selection to settle', async () => {
+    const api = window as unknown as { api: { bpm: unknown; peekAnalysis: unknown } }
+    api.api.bpm = vi.fn(() => new Promise(() => {}))
+    api.api.peekAnalysis = vi.fn(async (family: string) =>
+      family === 'bpm' ? { bpm: 128, confidence: 0.9 } : null,
+    )
+    renderEditor({ id: 'a' }, 'wav', { visibleFields: ['bpm'] })
+    expect(await screen.findByTestId('chip-128')).toBeInTheDocument()
+  })
+
   // A beatless track measures null; suggesting a made-up tempo would be worse
   // than no suggestion, so no chip renders.
   it('shows no chip when no tempo was detected', async () => {
@@ -1187,6 +1198,16 @@ describe('Editor bpm suggestion', () => {
 })
 
 describe('Editor key suggestion', () => {
+  it('offers a key already detected on disk without waiting for the selection to settle', async () => {
+    const api = window as unknown as { api: { key: unknown; peekAnalysis: unknown } }
+    api.api.key = vi.fn(() => new Promise(() => {}))
+    api.api.peekAnalysis = vi.fn(async (family: string) =>
+      family === 'key' ? { camelot: '5A', name: 'Cm', confidence: 0.8 } : null,
+    )
+    renderEditor({ id: 'a' }, 'wav', { visibleFields: ['key'] })
+    expect(await screen.findByTestId('chip-5A')).toBeInTheDocument()
+  })
+
   // Key detection is the least reliable analysis Surco runs, so the detected
   // value must stay a suggestion the user confirms — the chip click is that
   // confirmation; nothing writes the field unattended.

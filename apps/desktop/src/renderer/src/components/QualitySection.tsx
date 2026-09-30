@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CODEC_WALL_FINE_STEP_DB } from '../../../shared/spectrum'
 import type { NormalizeConfig, OutputSampleRate } from '../../../shared/types'
+import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
 import { SELECTION_SETTLE_MS, useSettled } from '../hooks/useSettled'
 import { useSpectrogram } from '../hooks/useSpectrogram'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
@@ -110,6 +111,7 @@ export function QualitySection({
   // expensive one in the app (full decode + FFT), and arrowing down a crate with Quality
   // open used to queue a decode for every row merely passed through. A track already in
   // the cache still renders instantly — a disabled query keeps returning its cached data.
+  useDiskCacheSeed('spectrogram', item.inputPath, showSpectrum && open)
   const spectrumQuery = useSpectrogram(item.inputPath, settled && showSpectrum && open)
   const spectrum = spectrumQuery.data
   const analyzeFailed = spectrumQuery.isError
@@ -129,6 +131,7 @@ export function QualitySection({
     spectrumQuery.error instanceof Error
       ? errorKeyOf(cleanIpcError(spectrumQuery.error.message))
       : null
+  useDiskCacheSeed('loudness', item.inputPath, showLoudness && open)
   const { data: loudness } = useTrackLoudness(item.inputPath, settled && showLoudness && open)
   // The container decides which scale the cutoff is read on, so it is resolved before the
   // verdict: lossy files are exempt (their lowpass is the format), lossless ones are graded.

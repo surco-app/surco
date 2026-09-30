@@ -67,6 +67,7 @@ beforeEach(() => {
   client = createQueryClient()
   ;(window as unknown as { api: unknown }).api = {
     waveform: vi.fn().mockResolvedValue(noisyEndsWave()),
+    peekAnalysis: vi.fn().mockResolvedValue(null),
     // The magnet's precision pass; null keeps tests on the coarse onsets.
     waveformWindow: vi.fn().mockResolvedValue(null),
   }
@@ -89,6 +90,19 @@ function section(over: Partial<React.ComponentProps<typeof TrimSection>> = {}): 
 }
 
 describe('TrimSection', () => {
+  it('draws a wave already decoded on disk without waiting for the selection to settle', async () => {
+    const api = window as unknown as {
+      api: { waveform: unknown; peekAnalysis: unknown; cancelAnalysis: unknown }
+    }
+    api.api.waveform = vi.fn(() => new Promise(() => {}))
+    api.api.cancelAnalysis = vi.fn()
+    api.api.peekAnalysis = vi.fn(async (family: string) =>
+      family === 'waveform' ? noisyEndsWave() : null,
+    )
+    render(section())
+    expect(await screen.findByTestId('trim-lane-start')).toBeInTheDocument()
+  })
+
   // Every other editor section folds through SectionBody, which tweens the height over
   // 240 ms and keeps the children mounted through the collapse. This one used to render
   // its body inline, so it was the one section that snapped open and shut — jarring

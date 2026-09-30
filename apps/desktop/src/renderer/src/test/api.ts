@@ -210,6 +210,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
       processed: false,
     }),
     loadCachedAnalyses: async () => ({}),
+    peekAnalysis: async () => null,
     loudness: async () => null,
     properties: async () => null,
     bpm: async () => null,
