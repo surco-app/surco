@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 28 de septiembre de 2026** (v1.4.0). Levantado por primera vez el
+**Última revisión: 30 de septiembre de 2026** (v1.5.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -993,9 +993,18 @@ un formato a mano (`format.ts:79`).
 
 **Se rellena lo que el fichero no trae.** Grouping, año, comentario, nº de pista y
 disco, BPM y rating se leen también de Music y llenan los campos vacíos
-(`appleMusicFill.ts:31`). **Manda siempre el fichero**: es lo que leen los demás
+(`appleMusicFill.ts:32`). **Manda siempre el fichero**: es lo que leen los demás
 programas del usuario. Medido sobre una biblioteca real: un WAV sin etiquetar lleva
 título, artista, álbum, año y género, mientras Music guarda además el grouping.
+
+**También sin importar la lista.** Un fichero arrastrado o abierto desde una carpeta
+que está en la biblioteca de Music recibe el mismo relleno, carátula incluida, al
+abrirlo en el editor (`useAppleMusicFill.ts:22`, `appleMusicFill.ts:54`). Solo vale
+la entrada cuyo fichero es ese mismo: la coincidencia con la biblioteca es por título,
+artista y duración, así que otro rip de la canción también coincide y su grouping y su
+arte describirían un fichero que el usuario no cargó (`appleMusicPlaylists.ts:262`).
+Una carátula quitada a mano no vuelve, y si Music no añade nada la pista no queda con
+cambios pendientes.
 
 **El rating solo viaja si lo puso el usuario.** Music calcula uno propio y lo reporta
 igual (`rating kind: computed`); en una lista real de 400 pistas, ninguna tenía rating
@@ -1338,7 +1347,10 @@ comparación»* (`useDeclickAb.ts:60-67`).
   esperando era la que más sufría (`analysisLimiter.ts:4-9`).
 - **Caché de análisis** por ruta+mtime, con una garantía: cualquier fallo recae en
   cálculo en vivo, así que la caché solo puede acelerar, nunca cambiar un
-  resultado (`analysisCache.ts:30-37`).
+  resultado (`analysisCache.ts:38-45`). Al abrir una pista, lo que ya está en
+  caché (onda, espectro, loudness, clics, BPM y clave) se pinta sin esperar turno
+  (`audio:peek`, `useDiskCacheSeed.ts`), y lo que falta arranca en el acto, sin
+  la espera fija de antes.
 
 ### Otros
 
