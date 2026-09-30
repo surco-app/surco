@@ -357,6 +357,7 @@ export default function App(): React.JSX.Element {
   // see it (see useAutoMatch's editingRef).
   const editingRef = useRef<string | null>(null)
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const prefetchedPath = useRef<string | null>(null)
   const queryClient = useQueryClient()
   // The latest spectrum-merged view of the tracks, so the hover-prefetch and analyze
   // callbacks (which read refs to stay stable) can see each track's cached spectrum
@@ -692,18 +693,30 @@ export default function App(): React.JSX.Element {
       hoverTimer.current = setTimeout(() => {
         const track = tracksRef.current.find((t) => t.id === id)
         if (!track) return
+        const previous = prefetchedPath.current
+        if (previous && previous !== track.inputPath) {
+          const inUse = queryClient
+            .getQueryCache()
+            .findAll({ predicate: (q) => q.queryKey[1] === previous })
+            .some((q) => q.getObserversCount() > 0)
+          if (!inUse) {
+            void queryClient.cancelQueries({ queryKey: ['waveform', previous], exact: true })
+            void queryClient.cancelQueries({ queryKey: ['spectrogram', previous], exact: true })
+          }
+        }
+        prefetchedPath.current = track.inputPath
         // The player shows the waveform the moment playback opens it, and it is the heaviest
         // decode (whole file), so warm it for every rested hover — unless the user collapsed
         // the strip, in which case the player won't show it and warming would waste the very
         // decode the toggle exists to avoid.
         if (showWaveformRef.current) {
-          void queryClient.prefetchQuery(waveformOptions(track.inputPath))
+          void queryClient.prefetchQuery(waveformOptions(track.inputPath, 'high'))
         }
         // Skip the spectrogram when the quality section is folded away: warming it would
         // run the heavy ffmpeg decode the user folded the section to avoid, and the
         // editor wouldn't show it anyway. Reopening the section runs the analysis then.
         if (showSpectrumRef.current && editorSectionOpen('quality')) {
-          void queryClient.prefetchQuery(spectrogramOptions(track.inputPath))
+          void queryClient.prefetchQuery(spectrogramOptions(track.inputPath, 'high'))
         }
         if (
           needsDiscogsPrefetch(track, hasTokenRef.current) &&

@@ -430,10 +430,34 @@ describe('App quality triage', () => {
     // The waveform prefetch always runs on hover, so its call marks the moment the
     // (debounced) prefetch body executed — at which point the spectrogram must be untouched.
     fireEvent.mouseEnter(rows[1])
-    // Hover warming is background work, so it decodes at 'low' — the selected track's own
-    // player/editor decodes ask 'high' and still preempt it.
-    await waitFor(() => expect(waveform).toHaveBeenCalledWith('/music/b.wav', 'low'))
+    await waitFor(() => expect(waveform).toHaveBeenCalledWith('/music/b.wav', 'high'))
     expect(spectrogram).not.toHaveBeenCalledWith('/music/b.wav')
+  })
+
+  it('stops warming a row once the cursor or focus moves on to another', async () => {
+    const waveform = vi.fn(() => new Promise(() => {}))
+    const cancelAnalysis = vi.fn().mockResolvedValue(undefined)
+    setApi({ waveform, cancelAnalysis })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.mouseEnter(rows[1])
+    await waitFor(() => expect(waveform).toHaveBeenCalledWith('/music/b.wav', 'high'))
+    fireEvent.mouseEnter(rows[0])
+    await waitFor(() => expect(cancelAnalysis).toHaveBeenCalledWith('/music/b.wav'))
+  })
+
+  it('never stops the analysis of the selected track when the cursor moves off it', async () => {
+    const waveform = vi.fn(() => new Promise(() => {}))
+    const cancelAnalysis = vi.fn().mockResolvedValue(undefined)
+    setApi({ waveform, cancelAnalysis })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[1])
+    fireEvent.mouseEnter(rows[1])
+    await waitFor(() => expect(waveform).toHaveBeenCalledWith('/music/b.wav', 'high'))
+    fireEvent.mouseEnter(rows[0])
+    await waitFor(() => expect(waveform).toHaveBeenCalledWith('/music/a.wav', 'high'))
+    expect(cancelAnalysis).not.toHaveBeenCalledWith('/music/b.wav')
   })
 
   // The player's waveform is the slowest decode (it reads the whole file) and only
@@ -445,9 +469,7 @@ describe('App quality triage', () => {
     const client = await renderApp()
     const rows = await addTwoTracks()
     fireEvent.mouseEnter(rows[1])
-    // Hover warming is background work, so it decodes at 'low'; the fill lands under the same
-    // path key regardless, so opening the player later serves this warmed entry.
-    await waitFor(() => expect(waveform).toHaveBeenCalledWith('/music/b.wav', 'low'))
+    await waitFor(() => expect(waveform).toHaveBeenCalledWith('/music/b.wav', 'high'))
     expect(client.getQueryData(['waveform', '/music/b.wav'])).toEqual(wave)
   })
 
