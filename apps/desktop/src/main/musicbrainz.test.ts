@@ -18,6 +18,7 @@ import {
   getRelease,
   groupByRelease,
   mapRelease,
+  matchesMbFormats,
   numericIdOf,
   search,
 } from './musicbrainz'
@@ -345,6 +346,145 @@ describe('search by album first', () => {
     const fn = mockFetch([recordingSearch])
     await search('lifestyle no artist', 'high', { title: 'Finally Lone', album: LIFESTYLE })
     expect(pathOf(fn.mock.calls[0][0])).toBe('/ws/2/recording')
+  })
+})
+
+describe('matchesMbFormats', () => {
+  const rowOf = (...format: string[]) =>
+    groupByRelease([
+      {
+        id: 'r',
+        title: 't',
+        releases: [{ id: 'x', title: 't', media: format.map((f) => ({ format: f })) }],
+      },
+    ])[0]
+
+  // The Settings filter speaks Discogs' four buckets while MusicBrainz names every medium
+  // precisely ('12" Vinyl', '8cm CD', 'Digital Media'), so each name has to land in the
+  // bucket a user means: a 7" is vinyl, an SHM-CD is a CD, a "Digital Media" is a file.
+  it.each([
+    ['Vinyl', '12" Vinyl'],
+    ['Vinyl', '7" Vinyl'],
+    ['Vinyl', 'Vinyl'],
+    ['CD', 'CD'],
+    ['CD', '8cm CD'],
+    ['CD', 'SHM-CD'],
+    ['CD', 'HDCD'],
+    ['CD', 'Enhanced CD'],
+    ['CD', 'CD-R'],
+    ['File', 'Digital Media'],
+    ['Cassette', 'Cassette'],
+  ])('puts %s around a %s release', (bucket, format) => {
+    expect(matchesMbFormats(rowOf(format), [bucket])).toBe(true)
+  })
+
+  // Look-alike names that are other media: an SACD or a VCD will not play as the CD the
+  // user asked for, and a microcassette is not a cassette deck's tape.
+  it.each([
+    ['CD', 'SACD'],
+    ['CD', 'VCD'],
+    ['Cassette', 'Microcassette'],
+    ['Vinyl', 'Digital Media'],
+  ])('keeps %s away from a %s release', (bucket, format) => {
+    expect(matchesMbFormats(rowOf(format), [bucket])).toBe(false)
+  })
+
+  // A vinyl + CD box answers either choice; a release with no medium named answers none,
+  // as on Discogs, since nothing says it is the format asked for.
+  it('accepts a release when any medium fits and rejects one with no medium named', () => {
+    expect(matchesMbFormats(rowOf('CD', '12" Vinyl'), ['Vinyl'])).toBe(true)
+    expect(matchesMbFormats(rowOf(), ['Vinyl'])).toBe(false)
+    expect(matchesMbFormats(rowOf(), [])).toBe(true)
+  })
+})
+
+describe('search with a format filter', () => {
+  const VINYL = 'b7dd461f-feba-4006-b976-724c7b7fb8a8'
+
+  // The recording index matches a format on any release of a recording, so asking for it
+  // picks recordings that came out on vinyl (measured 01/10: "Finally" showed no vinyl in
+  // its first 28 releases unfiltered, 6 with format:*vinyl). The field is one lowercase
+  // keyword ('12" vinyl'), hence the leading wildcard. Each recording still lists all its
+  // releases, so the rows are thinned to the chosen formats as well.
+  it('asks the recording index for the formats and keeps only releases in them', async () => {
+    const fn = mockFetch([recordingSearch])
+    const rows = await search(
+      'Kings Of Tomorrow - Finally vinyl',
+      'high',
+      {
+        artist: 'Kings Of Tomorrow',
+        title: 'Finally vinyl',
+      },
+      ['Vinyl', 'File'],
+    )
+    expect(queryOf(fn.mock.calls[0][0])).toBe(
+      'recording:"Finally vinyl" AND artist:"Kings Of Tomorrow" AND NOT secondarytype:compilation AND format:(*vinyl OR "digital media")',
+    )
+    expect(rows.map((r) => r.format)).toEqual([
+      ['Digital Media'],
+      ['Digital Media'],
+      ['Digital Media'],
+      ['12" Vinyl'],
+    ])
+    expect(rows.at(-1)?.releaseUrl).toBe(pageOf(VINYL))
+  })
+
+  // A rung whose releases all fall outside the filter found nothing the user can use, so
+  // the ladder goes on to the next rung exactly as after an empty answer.
+  it('moves to the next rung when no release of a rung is in the chosen formats', async () => {
+    const fn = mockFetch([recordingSearch, { count: 1, recordings: compilationHits }])
+    const rows = await search(
+      'Kings Of Tomorrow - Finally cassette',
+      'high',
+      {
+        artist: 'Kings Of Tomorrow',
+        title: 'Finally cassette',
+      },
+      ['CD'],
+    )
+    expect(fn).toHaveBeenCalledTimes(1)
+    expect(rows.every((r) => r.format?.includes('CD'))).toBe(true)
+    const fn2 = mockFetch([recordingSearch, { count: 1, recordings: compilationHits }])
+    await search(
+      'Kings Of Tomorrow - Finally tape',
+      'high',
+      {
+        artist: 'Kings Of Tomorrow',
+        title: 'Finally tape',
+      },
+      ['Cassette'],
+    )
+    expect(queryOf(fn2.mock.calls[1][0])).toBe(
+      'recording:"Finally tape" AND artist:"Kings Of Tomorrow" AND format:(cassette)',
+    )
+  })
+
+  // "Search by album first" asks the release index, which has the same format field.
+  it('asks the release index for the formats when searching by album', async () => {
+    const fn = mockFetch([albumReleaseSearch])
+    const rows = await search(
+      'Kings Of Tomorrow - Finally',
+      'high',
+      {
+        artist: 'Kings Of Tomorrow',
+        title: 'Finally',
+        album: 'Lifestyle by format',
+      },
+      ['File'],
+    )
+    expect(queryOf(fn.mock.calls[0][0])).toBe(
+      'release:"Lifestyle by format" AND artist:"Kings Of Tomorrow" AND format:("digital media")',
+    )
+    expect(rows.map((r) => r.releaseUrl)).toEqual([pageOf('64ceaf0c-4c94-4811-a01c-bbf066172f0e')])
+  })
+
+  // Free text runs in dismax mode, which reads no Lucene fields, so the filter there can
+  // only thin the rows.
+  it('thins the free-text rows without adding a field the dismax query cannot read', async () => {
+    const fn = mockFetch([recordingSearch])
+    const rows = await search('Finally free vinyl', 'high', {}, ['Vinyl'])
+    expect(queryOf(fn.mock.calls[0][0])).toBe('Finally free vinyl')
+    expect(rows.map((r) => r.releaseUrl)).toEqual([pageOf(VINYL)])
   })
 })
 

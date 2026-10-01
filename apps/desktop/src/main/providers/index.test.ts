@@ -249,7 +249,20 @@ describe('getProvider', () => {
     await getProvider('musicbrainz').search('Song rip djotas good', 'low', {
       title: 'Song rip djotas good',
     })
-    expect(mbSearch).toHaveBeenCalledWith('Song', 'low', { title: 'Song' })
+    expect(mbSearch).toHaveBeenCalledWith('Song', 'low', { title: 'Song' }, [])
+  })
+
+  // One format filter for every source that knows a release's medium: a user who only
+  // buys vinyl wants MusicBrainz trimmed the same way as Discogs, not a second setting.
+  it('forwards the saved format filter to MusicBrainz too', async () => {
+    getSettings.mockReturnValueOnce({
+      discogsToken: 'tok',
+      discogsFormats: ['Vinyl', 'Cassette'],
+      searchIgnoreWords: [],
+    })
+    mbSearch.mockResolvedValue([])
+    await getProvider('musicbrainz').search('only vinyl', 'high')
+    expect(mbSearch).toHaveBeenCalledWith('only vinyl', 'high', undefined, ['Vinyl', 'Cassette'])
   })
 
   // A MusicBrainz release is a UUID carried in the row's page URL; the seam must hand

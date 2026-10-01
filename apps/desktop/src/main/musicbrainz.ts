@@ -178,6 +178,27 @@ export function groupByRelease(recordings: MbRecording[]): SearchResult[] {
   return out
 }
 
+// The Settings filter speaks Discogs' four buckets; MusicBrainz names each medium
+// precisely. `name` sorts its media names into a bucket, `field` is the bucket on the
+// index's format field: one lowercase keyword per medium ('12" vinyl', '8cm cd'), so a
+// suffix wildcard reaches every size and variant.
+const FORMAT_BUCKETS: Record<string, { name: RegExp; field: string }> = {
+  Vinyl: { name: /vinyl/i, field: '*vinyl' },
+  CD: { name: /\b(HD)?CD\b/, field: '*cd' },
+  File: { name: /^Digital Media$/, field: '"digital media"' },
+  Cassette: { name: /^Cassette$/, field: 'cassette' },
+}
+
+export function matchesMbFormats(row: SearchResult, formats: string[]): boolean {
+  if (formats.length === 0) return true
+  return formats.some((f) => row.format?.some((name) => FORMAT_BUCKETS[f]?.name.test(name)))
+}
+
+function formatClause(formats: string[]): string {
+  const fields = formats.flatMap((f) => FORMAT_BUCKETS[f]?.field ?? [])
+  return fields.length ? ` AND format:(${fields.join(' OR ')})` : ''
+}
+
 const cacheStore = createLookupCacheStore<SearchResult[], Release>('musicbrainz-lookup-cache-v2')
 
 // Free text goes in dismax mode: plain Lucene text only searches the recording title, so
@@ -229,12 +250,16 @@ async function searchReleases(query: string, priority?: SearchPriority): Promise
 // free-text candidate ladder the other sources walk is the last resort, over the recording
 // index too: a file is a recording, and release titles only name the track on a single.
 // Every rung is one second of the rate limit, which is why the ladder stops at the first
-// rung that finds anything.
+// rung that finds anything in the chosen formats.
 export async function search(
   query: string,
   priority?: SearchPriority,
   hints: SearchHints = {},
+  formats: string[] = [],
 ): Promise<SearchResult[]> {
+  const wanted = (rows: SearchResult[]): SearchResult[] =>
+    rows.filter((row) => matchesMbFormats(row, formats))
+  const clause = formatClause(formats)
   return activity.track(
     'musicbrainz',
     'activity.searchMusicbrainz',
@@ -243,23 +268,25 @@ export async function search(
       const title = hints.title?.trim()
       const album = hints.album?.trim()
       if (artist && album) {
-        const byAlbum = await searchReleases(
-          `release:"${escapeLucene(album)}" AND artist:"${escapeLucene(artist)}"`,
-          priority,
+        const byAlbum = wanted(
+          await searchReleases(
+            `release:"${escapeLucene(album)}" AND artist:"${escapeLucene(artist)}"${clause}`,
+            priority,
+          ),
         )
         if (byAlbum.length) return byAlbum
       }
       if (artist && title) {
         const fielded = `recording:"${escapeLucene(title)}" AND artist:"${escapeLucene(artist)}"`
         for (const q of [`${fielded} AND NOT secondarytype:compilation`, fielded]) {
-          const results = await searchOnce(q, priority)
+          const results = wanted(await searchOnce(`${q}${clause}`, priority))
           if (results.length) return results
         }
       }
       // The album was already asked on the release index above; as a free-text candidate
       // against recordings it would only match tracks that happen to share its name.
-      return searchCandidates(query, { ...hints, album: undefined }, (candidate) =>
-        searchOnce(escapeLucene(candidate), priority, true),
+      return searchCandidates(query, { ...hints, album: undefined }, async (candidate) =>
+        wanted(await searchOnce(escapeLucene(candidate), priority, true)),
       )
     },
     {

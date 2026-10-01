@@ -33,9 +33,11 @@ export function SearchTab({
   onBeatportChange,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  // The token and format filter only act on Discogs results, so they're grouped under a
-  // Discogs heading and disabled when Discogs isn't a chosen source.
+  // The token only acts on Discogs results, so it's grouped under a Discogs heading and
+  // disabled when Discogs isn't a chosen source. The format filter trims every source whose
+  // rows name a release's medium: Discogs and MusicBrainz.
   const discogsOn = synced.searchProviders.includes('discogs')
+  const formatsOn = discogsOn || synced.searchProviders.includes('musicbrainz')
   const beatportOn = synced.searchProviders.includes('beatport')
   return (
     <>
@@ -81,20 +83,29 @@ export function SearchTab({
               disabled={!discogsOn}
             />
           </div>
+        </div>
+      </SettingsSection>
 
+      <SettingsSection>
+        {!formatsOn && (
+          <SettingsHint data-testid="settings-formats-disabled" className="mb-4">
+            {tr('settings.discogsFormatsDisabledHint')}
+          </SettingsHint>
+        )}
+        <div className={formatsOn ? '' : 'opacity-50'}>
           <SettingsLabel className="mb-2">{tr('settings.discogsFormats')}</SettingsLabel>
           <SettingsHint className="mb-3">{tr('settings.discogsFormatsHint')}</SettingsHint>
           <div className="flex flex-wrap gap-x-5 gap-y-2" data-testid="settings-discogs-formats">
             {DISCOGS_FORMATS.map((f) => (
               <label
                 key={f}
-                className={`flex items-center gap-2 ${discogsOn ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                className={`flex items-center gap-2 ${formatsOn ? 'cursor-pointer' : 'cursor-not-allowed'}`}
               >
                 <input
                   data-testid={`settings-format-${f}`}
                   type="checkbox"
                   checked={synced.discogsFormats.includes(f)}
-                  disabled={!discogsOn}
+                  disabled={!formatsOn}
                   onChange={(e) =>
                     patch(
                       'discogsFormats',
