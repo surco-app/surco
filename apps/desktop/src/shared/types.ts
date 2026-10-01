@@ -869,6 +869,10 @@ export interface ProcessResult {
   // True when the conversion registered the track in the Engine DJ library, so the
   // renderer can mark it owned there without waiting for a library snapshot refresh.
   addedToEngineDj?: boolean
+  // Set when the conversion replaced a library copy and the new entry went in but the old
+  // one could not be retired, so Music holds both. 'mismatch' means Music refused because
+  // the live entry no longer carries the offered name; 'error' that the delete failed.
+  oldMusicCopyKept?: 'mismatch' | 'error'
 }
 
 // A fixed-length envelope of max-abs peaks (each 0..1) for drawing the track's

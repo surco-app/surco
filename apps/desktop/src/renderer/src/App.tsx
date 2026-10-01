@@ -862,6 +862,19 @@ export default function App(): React.JSX.Element {
     setSelection({ ids: visible.map((t) => t.id), anchor: visible[0].id })
   }
 
+  // A mismatch means the script refused to delete: the live Music track no longer
+  // matched the confirmed label, so the snapshot that named it is stale/misaligned —
+  // refresh it so the footer link recomputes from reality.
+  const reportOldCopyRemoveFailure = (mismatch: boolean): void => {
+    if (mismatch) void queryClient.invalidateQueries({ queryKey: ['library-membership'] })
+    pushToast(store, {
+      key: 'old-copy-error',
+      tone: 'danger',
+      message: tr(mismatch ? 'editor.removeOldCopyMismatch' : 'editor.removeOldCopyError'),
+      testid: 'old-copy-error',
+    })
+  }
+
   const {
     processOne,
     processAll,
@@ -887,6 +900,7 @@ export default function App(): React.JSX.Element {
     // Only when the repair actually touched samples: a clean track reporting "0
     // clicks" on every convert would train the user to ignore the notice.
     onDeclicked: (name, count) => setNotice(tr('notices.declicked', { name, count })),
+    onOldMusicCopyKept: (reason) => reportOldCopyRemoveFailure(reason === 'mismatch'),
     // A batch run shows this skip through batchSummary's "N skipped" count, but a
     // single-track convert (the editor button, ⌘⏎) has no summary to show it in.
     onFormatSkipped: (name) => setNotice(tr('notices.formatSkipped', { name })),
@@ -981,18 +995,7 @@ export default function App(): React.JSX.Element {
         testid: 'old-copy-removed',
       })
     },
-    // A mismatch means the script refused to delete: the live Music track no longer
-    // matched the confirmed label, so the snapshot that named it is stale/misaligned —
-    // refresh it so the footer link recomputes from reality.
-    reportOldCopyRemoveFailure: (mismatch) => {
-      if (mismatch) void queryClient.invalidateQueries({ queryKey: ['library-membership'] })
-      pushToast(store, {
-        key: 'old-copy-error',
-        tone: 'danger',
-        message: tr(mismatch ? 'editor.removeOldCopyMismatch' : 'editor.removeOldCopyError'),
-        testid: 'old-copy-error',
-      })
-    },
+    reportOldCopyRemoveFailure,
     tracksRef,
   })
 

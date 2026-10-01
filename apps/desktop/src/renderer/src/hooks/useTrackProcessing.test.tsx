@@ -246,6 +246,31 @@ describe('useTrackProcessing', () => {
     expect(onNormalizeSkipped).toHaveBeenCalledWith('a.wav')
   })
 
+  // The conversion succeeded and Music now holds two copies of the song. Without a word
+  // the user only finds the duplicate later, browsing the library.
+  it('tells the user when the replaced copy stayed in Apple Music', async () => {
+    setApi({
+      processTrack: vi
+        .fn()
+        .mockResolvedValue({ outputPath: '/out/a.aiff', oldMusicCopyKept: 'mismatch' }),
+    })
+    const onOldMusicCopyKept = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack: vi.fn(),
+          onOldMusicCopyKept,
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(onOldMusicCopyKept).toHaveBeenCalledWith('mismatch')
+  })
+
   // The convert gate must hold here too: a track missing a required tag never reaches
   // ffmpeg — it's flagged in error instead, so the shortcut can't start a doomed run.
   it('refuses a track missing a required field without converting', async () => {

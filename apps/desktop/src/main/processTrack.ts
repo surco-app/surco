@@ -128,17 +128,25 @@ export interface ProcessTrackDeps {
 //
 // Add first and delete last, so an add that fails destroys nothing. Deleting removes the
 // library row only, never the file: the superseded MP3 stays on disk for the user's own
-// "trash original" to decide.
+// "trash original" to decide. A delete that fails after the add leaves a duplicate, not a
+// failed conversion: the file is already converted and in Music.
 async function replaceAppleMusicCopy(
   job: ProcessJob,
   target: string,
   coverPath: string | undefined,
   deps: ProcessTrackDeps,
-): Promise<string> {
+): Promise<{ added: string; oldCopyKept?: 'mismatch' | 'error' }> {
   const added = await deps.addToAppleMusic(target, job.meta, coverPath)
-  if (job.musicPersistentId)
+  if (!job.musicPersistentId) return { added }
+  try {
     await deps.deleteAppleMusic(job.musicPersistentId, job.replacesLabel ?? metaLabel(job))
-  return added
+    return { added }
+  } catch (e) {
+    return {
+      added,
+      oldCopyKept: String(e).includes('applemusic-delete-mismatch') ? 'mismatch' : 'error',
+    }
+  }
 }
 
 function metaLabel(job: ProcessJob): string {
@@ -335,6 +343,7 @@ export async function runProcessTrack(
     // Music. Only when the user deleted the copy from the library does the fresh
     // file get imported, which also re-establishes the persistent ID.
     let musicPersistentId: string | undefined
+    let oldMusicCopyKept: ProcessResult['oldMusicCopyKept']
     if (shouldAddToAppleMusic(addToAppleMusic, deps.platform, format)) {
       stage('appleMusic')
       // Replacing a DIFFERENT file, not re-converting our own earlier output. Updating an
@@ -344,12 +353,16 @@ export async function runProcessTrack(
       //
       // Add first and delete last: a failing add then destroys nothing, and the crates are
       // replayed in between so the successor is equivalent before anything is retired.
-      musicPersistentId = job.replacesPath
-        ? await replaceAppleMusicCopy(job, target, coverPath, deps)
-        : job.musicPersistentId
+      if (job.replacesPath) {
+        const replaced = await replaceAppleMusicCopy(job, target, coverPath, deps)
+        musicPersistentId = replaced.added
+        oldMusicCopyKept = replaced.oldCopyKept
+      } else {
+        musicPersistentId = job.musicPersistentId
           ? ((await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)) ??
             (await deps.addToAppleMusic(target, job.meta, coverPath)))
           : await deps.addToAppleMusic(target, job.meta, coverPath)
+      }
       // "Apple Music only" removes the temp conversion in the finally below — safe only
       // when Music COPIED the file into its Media folder. With "Copy files to the Media
       // folder when adding" off, the fresh entry still references the temp path, and
@@ -411,6 +424,7 @@ export async function runProcessTrack(
         musicPersistentId,
         normalizeSkipped,
         declickedSamples,
+        oldMusicCopyKept,
       }
 
     // The conversion wrote a real file the renderer may play next — directly, or
@@ -427,6 +441,7 @@ export async function runProcessTrack(
       normalizeSkipped,
       declickedSamples,
       addedToEngineDj,
+      oldMusicCopyKept,
     }
   } catch (e) {
     // The toast is all the user sees and it is gone once dismissed; the log is what a

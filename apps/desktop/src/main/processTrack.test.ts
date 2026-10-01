@@ -1244,6 +1244,41 @@ describe('runProcessTrack — replacing a library copy', () => {
     )
   })
 
+  // By the time the old entry is retired the file is converted and already in Music, so
+  // failing the job reported "Couldn't convert" for a track sitting in the library. The
+  // leftover duplicate is the only thing that went wrong, and that is what the user must
+  // hear about.
+  it('keeps the conversion when Music refuses to retire the old entry', async () => {
+    const deps = replacing({
+      deleteAppleMusic: vi.fn(async () => {
+        throw new Error('applemusic-delete-mismatch')
+      }),
+    })
+
+    const result = await runProcessTrack(job(replaceJob), deps)
+
+    expect(result.musicPersistentId).toBe('added-id')
+    expect(result.oldMusicCopyKept).toBe('mismatch')
+  })
+
+  it('tells a refused delete apart from one that failed', async () => {
+    const deps = replacing({
+      deleteAppleMusic: vi.fn(async () => {
+        throw new Error('osascript timed out')
+      }),
+    })
+
+    const result = await runProcessTrack(job(replaceJob), deps)
+
+    expect(result.oldMusicCopyKept).toBe('error')
+  })
+
+  it('reports nothing kept when the old entry was retired', async () => {
+    const result = await runProcessTrack(job(replaceJob), replacing())
+
+    expect(result.oldMusicCopyKept).toBeUndefined()
+  })
+
   // Order is the safety property: if the delete ran first, a failing add would lose the
   // track from the library entirely, with the playlists already gone.
   it('adds before it deletes', async () => {

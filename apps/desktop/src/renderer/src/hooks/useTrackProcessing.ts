@@ -52,6 +52,9 @@ interface Params {
   // Surfaced when the click repair interpolated samples, with the count — the user's
   // confirmation that the pass did real work. Not fired on a clean track (0 repaired).
   onDeclicked?: (name: string, count: number) => void
+  // Surfaced when a replacement converted and went into Music but the copy it superseded
+  // could not be retired, so the library now holds both.
+  onOldMusicCopyKept?: (reason: 'mismatch' | 'error') => void
   // Surfaced when 'source' skipped a track for having no output format equivalent
   // (.opus/.ogg/.oga/.aac/.mp4). A batch run shows this through batchSummary's "N
   // skipped" count, but a single-track convert has no summary to show it in — without
@@ -121,6 +124,7 @@ export function useTrackProcessing({
   refreshTrackFromDisk,
   onNormalizeSkipped,
   onDeclicked,
+  onOldMusicCopyKept,
   onFormatSkipped,
   rereadTrackMeta,
   onConversion,
@@ -336,6 +340,7 @@ export function useTrackProcessing({
         // Repaired clicks are the feature's visible proof-of-work, so the count is
         // surfaced; a clean track stays quiet (see onDeclicked's contract).
         if (result.declickedSamples) onDeclicked?.(track.listLabel, result.declickedSamples)
+        if (result.oldMusicCopyKept) onOldMusicCopyKept?.(result.oldMusicCopyKept)
         // Record the config main actually applied — same fallback processTrack uses
         // when the job carries none — so the stale check compares against reality.
         updateTrack(
