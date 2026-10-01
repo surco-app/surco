@@ -233,13 +233,13 @@ export function SettingsModal({
         aria-label={tr('header.settings')}
         // relative z-0 fences a stacking context so the pill's -z-10 stays above this
         // column's own background instead of escaping behind it.
-        className="relative z-0 flex w-[188px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-panel-2)] p-3"
+        className="relative z-0 flex w-[188px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-ink)] p-3"
       >
         {pill && (
           <div
             data-testid="settings-tab-indicator"
             aria-hidden="true"
-            className="pointer-events-none absolute top-0 right-3 left-3 -z-10 rounded-lg bg-[var(--color-accent-soft)] transition-[transform,height] duration-200 ease-[cubic-bezier(0.645,0.045,0.355,1)] motion-reduce:transition-none"
+            className="pointer-events-none absolute top-0 right-3 left-3 -z-10 rounded-lg bg-[var(--color-row-selected)] transition-[transform,height] duration-200 ease-[cubic-bezier(0.645,0.045,0.355,1)] motion-reduce:transition-none"
             style={{ transform: `translateY(${pill.top}px)`, height: pill.height }}
           />
         )}
@@ -277,13 +277,13 @@ export function SettingsModal({
                   onClick={() => setTab(id)}
                   onKeyDown={(e) => onTabKeyDown(e, idx)}
                   // The button paints no background of its own — the sliding pill behind
-                  // it does (accent-soft, not field, so it reads against the panel-2
-                  // sidebar in light too). Text color shares the pill's 200ms so the two
-                  // arrive together.
+                  // it does, in the same ink sidebar and selected-row fill as the track
+                  // list, so Settings reads like the window it opens over. Text color
+                  // shares the pill's 200ms so the two arrive together.
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors duration-200 ${
                     tab === id
-                      ? 'font-medium text-[var(--color-accent)]'
-                      : 'text-fg-muted hover:bg-[var(--color-panel)] hover:text-fg'
+                      ? 'font-medium text-[var(--color-on-row-selected)]'
+                      : 'text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg'
                   }`}
                 >
                   <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
