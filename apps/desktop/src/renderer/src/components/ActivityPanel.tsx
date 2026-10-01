@@ -379,10 +379,12 @@ export function ActivityPanel({
 
   return (
     // A named <section> is a region landmark, so a screen reader can jump to the card.
+    // z-[45]: above the z-40 click-catchers of an open menu, under the z-50 modals, menus
+    // and toasts, so a dialog covers the card instead of the card floating over its blur.
     <section
       data-testid="activity-panel"
       aria-label={tr('activity.title')}
-      className="fixed z-50 flex flex-col overflow-hidden rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-[var(--shadow-float)]"
+      className="fixed z-[45] flex flex-col overflow-hidden rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-[var(--shadow-float)]"
       style={{ left: pos.x, top: pos.y, width: size.width, height: size.height }}
     >
       <header

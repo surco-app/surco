@@ -6,6 +6,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
 import type { PanelGeometry } from '../lib/panelGeometry'
 import { ActivityPanel } from './ActivityPanel'
+import { ModalShell } from './ModalShell'
 
 // jsdom implements neither PointerEvent nor pointer capture. Aliasing PointerEvent to
 // MouseEvent lets fireEvent carry clientX/clientY (MouseEvent fields) into the handlers —
@@ -215,5 +216,24 @@ describe('ActivityPanel accessibility', () => {
     const open = screen.getByTestId('activity-open-url')
     expect(open.className).toContain('focus-visible:opacity-100')
     expect(open.className).toContain('group-focus-within:opacity-100')
+  })
+})
+
+// Opening Settings with the panel up left it floating sharp over the blurred backdrop, on
+// top of the dialog it couldn't even be clicked through (the modal makes it inert). It is a
+// tool window like the macOS ones: a modal covers it, while menus and toasts still open
+// over it.
+describe('ActivityPanel stacking', () => {
+  const layer = (el: Element): number => Number(/\bz-\[?(\d+)\]?/.exec(el.className)?.[1])
+
+  it('sits under a modal and its backdrop', () => {
+    render(
+      <ModalShell onClose={vi.fn()} backdropTestId="shell-backdrop" className="w-80">
+        <p>dialog</p>
+      </ModalShell>,
+    )
+    const overlay = screen.getByTestId('shell-backdrop').parentElement as Element
+    renderPanel({ pos: { x: 0, y: 0 }, size: { width: 300, height: 300 } })
+    expect(layer(screen.getByTestId('activity-panel'))).toBeLessThan(layer(overlay))
   })
 })
