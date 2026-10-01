@@ -33,6 +33,7 @@ function renderSection(
   showHints?: boolean,
   onHideHints?: () => void,
   format: OutputFormat = 'aiff',
+  open = true,
 ): void {
   ;(window as unknown as { api: unknown }).api = {
     waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 1], rms: [0.2, 0.4], durationSec: 10 }),
@@ -45,7 +46,7 @@ function renderSection(
     <QueryClientProvider client={client}>
       <NormalizeSection
         value={value}
-        open
+        open={open}
         onToggle={vi.fn()}
         onChange={vi.fn()}
         item={item}
@@ -607,6 +608,30 @@ describe('NormalizeSection plan overshoot', () => {
     expect(plan.dataset.plan).toBe('limited')
     expect(plan.textContent).not.toContain('by 0.0 dB')
     expect(plan.textContent).toContain('less than 0.1 dB')
+  })
+
+  // The section's one-line summary repeated the target and ceiling as raw numbers, so a
+  // decimal target typed in Settings read "-14.5" in a Spanish UI.
+  it('writes a decimal target and ceiling in the app language', async () => {
+    await i18n.changeLanguage('es')
+    try {
+      renderSection(
+        track(),
+        1,
+        measuredLoud,
+        { ...cfg, mode: 'loudness', targetLufs: -14.5, truePeakDb: -1.5 },
+        undefined,
+        undefined,
+        'aiff',
+        false,
+      )
+      const summary = await screen.findByTestId('normalize-row-sentence')
+      expect(summary.textContent).toContain('-14,5')
+      expect(summary.textContent).toContain('-1,5 dBTP')
+      expect(summary.textContent).not.toMatch(/\d\.\d/)
+    } finally {
+      await i18n.changeLanguage('en')
+    }
   })
 
   // The brush was detected by comparing the formatted figure with "0.0", which a Spanish

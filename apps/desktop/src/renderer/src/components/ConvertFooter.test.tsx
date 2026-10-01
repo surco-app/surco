@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cloneElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import i18n from '../i18n'
+import type { Destination } from '../lib/destination'
 import type { SelectionStatus } from '../lib/selectionStatus'
 import type { TrackItem } from '../types'
-import '../i18n'
-import type { Destination } from '../lib/destination'
 import { ConvertFooter } from './ConvertFooter'
 
 afterEach(cleanup)
@@ -238,5 +239,23 @@ describe('ConvertFooter done layout', () => {
     expect(
       within(screen.getByTestId('done-actions')).getByTestId('add-apple-music'),
     ).toHaveTextContent('Update in Apple Music')
+  })
+})
+
+// A target typed with a decimal (-14.5 LUFS) went into the note above the button as the
+// raw number, so a Spanish UI read "-14.5 LUFS" beside copy that writes "-14,5".
+describe('ConvertFooter normalize note', () => {
+  it('writes a decimal target with the mark of the app language', async () => {
+    await i18n.changeLanguage('es')
+    try {
+      render(
+        cloneElement(footer(false), {
+          normalizeCfg: { mode: 'loudness', targetLufs: -14.5, truePeakDb: -1, peakDb: -1 },
+        }),
+      )
+      expect(screen.getByTestId('convert-normalize-note')).toHaveTextContent('-14,5 LUFS')
+    } finally {
+      await i18n.changeLanguage('en')
+    }
   })
 })

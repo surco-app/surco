@@ -7,6 +7,7 @@ import { type CleanupOffer, cleanupCount } from '../hooks/useConfirmFlows'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import type { Destination } from '../lib/destination'
 import { openFeedback } from '../lib/feedback'
+import { formatUpTo } from '../lib/numberFormat'
 import { isMacOS } from '../lib/platform'
 import type { SelectionStatus } from '../lib/selectionStatus'
 import type { TrackItem } from '../types'
@@ -109,7 +110,7 @@ export function ConvertFooter({
   onCleanUp,
   onExportCollection,
 }: ConvertFooterProps): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const {
     showDone,
     revealPath,
@@ -199,8 +200,8 @@ export function ConvertFooter({
             <SlidersVertical className="h-3.5 w-3.5" aria-hidden="true" />
             {tr(`normalize.mode.${normalizeCfg.mode}`)} ·{' '}
             {normalizeCfg.mode === 'loudness'
-              ? `${normalizeCfg.targetLufs} LUFS`
-              : `${normalizeCfg.peakDb} dBFS`}
+              ? `${formatUpTo(normalizeCfg.targetLufs, 1, i18n.language)} LUFS`
+              : `${formatUpTo(normalizeCfg.peakDb, 1, i18n.language)} dBFS`}
             <Tooltip label={tr('normalize.title')} />
           </button>
         )}

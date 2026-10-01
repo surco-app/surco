@@ -8,6 +8,7 @@ import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 
 import { scrollBehavior } from '../lib/motion'
+import { formatUpTo } from '../lib/numberFormat'
 import { formatDb } from '../lib/quality'
 import type { TrackItem } from '../types'
 import { NormalizeControls } from './NormalizeControls'
@@ -114,12 +115,14 @@ export function NormalizeSection({
                 !isMulti && planLoudness
                   ? tr('normalize.row.measured', {
                       now: formatDb(planLoudness.integratedLufs, i18n.language),
-                      target: value.targetLufs,
+                      target: formatUpTo(value.targetLufs, 1, i18n.language),
                     })
-                  : tr('normalize.row.target', { target: value.targetLufs })
-              } · ${value.truePeakDb} dBTP`
+                  : tr('normalize.row.target', {
+                      target: formatUpTo(value.targetLufs, 1, i18n.language),
+                    })
+              } · ${formatUpTo(value.truePeakDb, 1, i18n.language)} dBTP`
             : value.mode === 'peak'
-              ? tr('normalize.row.peak', { db: value.peakDb })
+              ? tr('normalize.row.peak', { db: formatUpTo(value.peakDb, 1, i18n.language) })
               : tr('normalize.row.none')
         }
         summaryTestId="normalize-row-sentence"
