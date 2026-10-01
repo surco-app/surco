@@ -53,7 +53,7 @@
         "items": [
           {
             "t": "Any format to any",
-            "d": "AIFF, WAV, FLAC, ALAC or MP3. It also reads M4A, AAC, OGG and OPUS, which always transcode."
+            "d": "AIFF, WAV, FLAC, ALAC or MP3. It also reads M4A, AAC, OGG and OPUS. An M4A can stay as it is; the other three always transcode."
           },
           {
             "t": "No re-encode when it isn't needed",

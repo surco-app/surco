@@ -53,7 +53,7 @@
         "items": [
           {
             "t": "Cualquier formato a cualquiera",
-            "d": "AIFF, WAV, FLAC, ALAC o MP3. Lee además M4A, AAC, OGG y OPUS, que siempre se transcodifican."
+            "d": "AIFF, WAV, FLAC, ALAC o MP3. Lee además M4A, AAC, OGG y OPUS. Un M4A puede quedarse como está; los otros tres siempre se transcodifican."
           },
           {
             "t": "Sin recodificar si no hace falta",

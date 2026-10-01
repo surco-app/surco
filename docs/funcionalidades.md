@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 30 de septiembre de 2026** (v1.5.0). Levantado por primera vez el
+**Última revisión: 1 de octubre de 2026** (v1.6.0). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -24,31 +24,36 @@ funcionalidades que sí existen, que es la forma más cara de equivocarse aquí.
 
 **Salida (5):** AIFF, WAV, FLAC, ALAC (.m4a), MP3 — de cualquiera a cualquiera,
 más el modo «igual que el origen», que resuelve el formato por fichero y no por
-lote (`shared/outputFormats.ts:6-12`, `shared/format.ts:66-79`).
+lote (`shared/outputFormats.ts:6-12`, `shared/format.ts:61-89`).
 
-AAC, ALAC, Ogg Vorbis y Opus **siempre se transcodifican**: no tienen formato de
-salida equivalente (`ffmpeg.test.ts:678-713`).
+Ogg Vorbis, Opus y los `.aac`/`.mp4` **siempre se transcodifican**: no tienen formato
+de salida equivalente (`ffmpeg.test.ts:867`). Un `.m4a` sí lo tiene, su propio
+contenedor: con destino ALAC o «igual que el origen» se queda en `.m4a`, lleve ALAC o
+AAC (`shared/format.ts:10-12`). A cualquier otro destino se transcodifica.
 
 ### Copia sin recodificar
 
 Si el fichero ya está en el formato de destino, no hay filtros activos y los
 ajustes de calidad no cambiarían su audio, el audio no se toca: se copian los
-bytes y solo se reescriben las etiquetas (`planConversion`, `ffmpeg.ts:1003-1151`).
+bytes y solo se reescriben las etiquetas (`planConversion`, `ffmpeg.ts:1031-1173`).
 En APFS es un clon copy-on-write, instantáneo a cualquier tamaño.
 
 **En WAV, FLAC y AIFF los ajustes de calidad sí se aplican si cambian el audio.**
 Una profundidad o frecuencia fijada que el fichero no cumple, o «Corregido» sobre
 un relleno 16-en-24 probado, recodifican; si el resultado sería idéntico al
-origen, se copia (`keepsSource`, `ffmpeg.ts:1096-1107`). **Un MP3 a MP3 se copia
+origen, se copia (`keepsSource`, `ffmpeg.ts:1116-1124`). **Un MP3 a MP3 se copia
 siempre**, diga lo que diga el bitrate: recodificar con pérdidas solo degrada
-(`ffmpeg.ts:1044-1046`).
+(`ffmpeg.ts:1063`). **Un `.m4a` con AAC a ALAC también se copia**, diga lo que
+digan los ajustes de calidad, salvo que un filtro cambie el audio. Pasar un AAC a ALAC no recupera nada y el fichero crecía hasta cuatro veces
+(11 MB a 44 MB). Con ALAC dentro sigue la regla de WAV, FLAC y AIFF
+(`ffmpeg.ts:1151-1158`; tests `ffmpeg.test.ts:541`, `:566`).
 
 La misma regla decide la etiqueta del botón: «Actualizar etiquetas» solo cuando la
 exportación va a copiar el audio; si algo lo cambia, dice «Convertir»
 (`shared/audioProcessing.ts:11-21`, compartida por main y renderer).
 
 Fuerzan recodificación: normalizar, declick, recorte, los ajustes de calidad que
-cambian el audio, y cualquier salida ALAC.
+cambian el audio, y una salida ALAC desde cualquier fichero que no sea `.m4a`.
 
 ### «Convertir todo» respeta el formato de cada pista
 
@@ -66,13 +71,18 @@ reservó otra tarea de la tanda y su renombrado caería encima del primero
 (`processTrack.ts:248-263`). El diálogo de conflicto distingue ese caso del de un
 fichero que ya existe en disco.
 
-### ALAC nunca sobrescribe el original
+### ALAC solo sobrescribe un `.m4a`
 
-Un `.m4a` puede contener AAC con pérdida en vez de ALAC, y distinguirlos exige
-sondear el códec. Llamarlo «ya es ALAC» reescribiría el original del usuario
-presentando una codificación con pérdida como lossless. Por eso ALAC siempre
-renderiza un fichero nuevo, incluso en modo sobrescribir
-(`shared/format.ts:11-14`, `:32-40`; test `inplace.test.ts:102`).
+Un `.m4a` con destino ALAC se edita en su sitio, como un MP3 a MP3: es su propio
+contenedor, y si lleva AAC se queda en AAC (ver «Copia sin recodificar»). Lo que
+ALAC nunca hace es sustituir un fichero de otro formato, ni siquiera en modo
+sobrescribir: renderiza un `.m4a` nuevo en la carpeta de salida y el original se
+conserva (`shared/format.ts:35-41`; tests `inplace.test.ts:58`, `:95`).
+
+**«Mantener MP3 y M4A como están»** (Ajustes → Formato) cubre los dos formatos con
+pérdida: con el ajuste activo, un MP3 sigue en MP3 y un `.m4a` en `.m4a` aunque el
+destino por defecto sea sin pérdida, y solo se actualizan sus etiquetas
+(`shared/format.ts:76-77`; test `format.test.ts:113`).
 
 ---
 
@@ -904,6 +914,12 @@ campos de MusicBrainz no pasan por esta regla: ya fijan el artista en la consult
 primer peldaño (`searchQuery.ts:44`); si no aparece un disco del artista, sigue la
 búsqueda por pista de siempre. Un álbum igual al título o vacío se ignora.
 
+**Filtro de formatos** (Ajustes → Búsqueda, «Mostrar solo estos formatos»: vinilo,
+CD, digital, casete). Limita a la vez los resultados de Discogs y de MusicBrainz
+(`discogs.ts:79-82`, `musicbrainz.ts:185-199`); las demás fuentes no saben el formato
+del lanzamiento y no se filtran. Con las dos fuentes apagadas el control queda
+deshabilitado y lo dice.
+
 **Lo que escribes manda.** Si el usuario escribe en la caja una búsqueda que no nombra
 el artista y el título de la pista seleccionada, se busca sin sus etiquetas, para que
 no arrastren los resultados a su propio disco (`lib/autoMatch.ts:72-83`). La búsqueda
@@ -1433,7 +1449,8 @@ Recopilado de los cinco informes. Cada punto está verificado.
 14. **En el mismo formato, los ajustes de calidad solo recodifican si cambian el
     audio** (WAV, FLAC, AIFF); si el resultado sería idéntico, solo se actualizan
     las etiquetas. Un MP3 nunca se recodifica a MP3 salvo por un filtro (volumen,
-    clics, recorte), y ALAC siempre se recodifica.
+    clics, recorte). Un `.m4a` con AAC tampoco se recodifica a ALAC salvo por un filtro; con ALAC
+    dentro sigue la regla de WAV, FLAC y AIFF.
 15. **El limitador no es transparente por encima de 3 dB de overshoot.** Por
     debajo no se oye; por encima la pérdida de pegada es real y la app lo dice.
 16. **El muro poco profundo sobre un suelo ruidoso no se acusa**: se reporta el
