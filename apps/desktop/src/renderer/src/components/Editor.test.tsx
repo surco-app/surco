@@ -2018,6 +2018,27 @@ describe('Editor export control', () => {
     expect(button).not.toHaveTextContent('Update tags')
   })
 
+  // Reported 01/10: a FLAC converted to AIFF and added to Music, then given another cover,
+  // offered "Convert to AIFF + Apple Music", which reads as a second add. The click syncs
+  // the edit onto the library copy the first add stored, and the button says so.
+  it('offers to update the library copy when a track already in Music is edited', () => {
+    ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
+    renderEditor(
+      {
+        id: 'a',
+        inputPath: '/music/a.flac',
+        status: 'done',
+        outputPath: '/out/a.aiff',
+        musicStatus: 'added',
+        musicPersistentId: 'ABCD1234',
+        processedSignature: 'before the cover changed',
+      },
+      'aiff',
+      { addToAppleMusic: true },
+    )
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update in Apple Music')
+  })
+
   // Picking a format from the dropdown used to convert on the spot, so a misclick
   // wrote a file. The dropdown now only chooses the format; conversion waits for a
   // deliberate click on the main button.

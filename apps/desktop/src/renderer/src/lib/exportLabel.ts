@@ -20,6 +20,9 @@ export interface ExportLabelState {
   // audio. Only then can an in-place or stale export be a tag update; otherwise it is a
   // real conversion.
   tagsOnly?: boolean
+  // The track already has a copy Surco added to Music, which converting an edit syncs
+  // instead of adding a second one.
+  inMusic?: boolean
 }
 
 // Which label the convert split-button wears, as an i18n key plus its params. The
@@ -55,6 +58,8 @@ export function exportButtonLabel(state: ExportLabelState): {
   if (state.inPlace && state.tagsOnly)
     return { key: state.withAppleMusic ? 'editor.updateMusic' : 'editor.update' }
   if (state.stale && state.tagsOnly) return { key: 'editor.update' }
+  if (state.stale && state.withAppleMusic && state.inMusic)
+    return { key: 'editor.appleMusicUpdate' }
   if (state.done) return { key: 'editor.exportAgain' }
   if (state.replaces) return { key: 'editor.replaceMusic', options: { format: state.format } }
   return {

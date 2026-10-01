@@ -360,6 +360,7 @@ export function ConvertFooter({
             onBlockedPress={onBlockedPress}
             inPlace={!isMulti && willEditInPlace}
             tagsOnly={tagsOnly}
+            inMusic={hasMusicCopy}
             destination={destination}
             destinations={destinations}
             count={isMulti ? selectedCount : undefined}

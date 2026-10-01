@@ -48,6 +48,9 @@ interface ExportButtonProps {
   // Only then is an in-place or stale export a tag update, so the button offers "Update
   // tags" instead of a conversion.
   tagsOnly?: boolean
+  // True when the track already has a copy Surco added to Music, so converting an edit
+  // offers to update that copy rather than reading as a second add.
+  inMusic?: boolean
   // When set, the button converts the whole selection in the chosen format and labels
   // itself "Convert all (N)" instead of the single-track convert; the format menu works
   // the same, it just applies to every selected track.
@@ -96,6 +99,7 @@ export function ExportButton({
   onBlockedPress,
   inPlace,
   tagsOnly = false,
+  inMusic,
   count,
   quiet,
   destination,
@@ -174,6 +178,7 @@ export function ExportButton({
     count,
     inPlace,
     tagsOnly,
+    inMusic,
     stale,
     replaces,
     done,

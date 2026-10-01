@@ -118,4 +118,28 @@ describe('exportButtonLabel', () => {
   ])('labels %o as a conversion, not a tag update', (state, key) => {
     expect(exportButtonLabel(state)).toEqual({ key, options: { format: 'AIFF' } })
   })
+
+  // Reported 01/10: a FLAC converted to AIFF and added to Music, then given another cover,
+  // offered "Convert to AIFF + Apple Music", which reads as a second add. The click syncs
+  // the edit onto the copy already in the library, so the label says that instead.
+  it('offers to update the library copy of an edited track Surco already added', () => {
+    expect(
+      exportButtonLabel({
+        ...base,
+        stale: true,
+        tagsOnly: false,
+        withAppleMusic: true,
+        inMusic: true,
+      }),
+    ).toEqual({ key: 'editor.appleMusicUpdate' })
+  })
+
+  // Without Music as the destination the click never touches the library copy, so the
+  // update offer would promise a sync that does not happen.
+  it('keeps the convert label for an edited track when Music is not the destination', () => {
+    expect(exportButtonLabel({ ...base, stale: true, tagsOnly: false, inMusic: true })).toEqual({
+      key: 'editor.convertNoMusic',
+      options: { format: 'AIFF' },
+    })
+  })
 })
