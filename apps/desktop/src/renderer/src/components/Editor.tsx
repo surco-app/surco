@@ -273,6 +273,7 @@ export const Editor = memo(function Editor({
     discogsMaxResults,
     matchCleanup,
     searchByAlbumFirst,
+    discogsFormats,
   )
   const { release } = browser
   // Section fold state lives in a module-level store (not per-track useState), so folding

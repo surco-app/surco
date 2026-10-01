@@ -703,6 +703,34 @@ describe('useDiscogsBrowser', () => {
     expect(search.mock.calls[1][3]).toEqual(expect.objectContaining({ album: 'Play' }))
   })
 
+  // The format filter is applied in the main process too, so ticking Vinyl in Settings
+  // leaves the term unchanged. Without the formats in the key, the track the user goes
+  // back to keeps its unfiltered rows and the filter looks like it does nothing.
+  it('re-runs the search when the format filter changes instead of serving the old rows', async () => {
+    const search = vi.fn().mockResolvedValueOnce([]).mockResolvedValue([searchResult])
+    setApi({ search })
+    const { result, rerender } = renderHook(
+      ({ formats }: { formats: string[] }) =>
+        useDiscogsBrowser(
+          item({ query: 'kings of tomorrow finally' }),
+          tr,
+          undefined,
+          ['musicbrainz'],
+          25,
+          {},
+          false,
+          formats,
+        ),
+      { wrapper: wrapper(), initialProps: { formats: [] as string[] } },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(search).toHaveBeenCalledTimes(1))
+    expect(result.current.results).toHaveLength(0)
+
+    rerender({ formats: ['Vinyl'] })
+    await waitFor(() => expect(result.current.results).toHaveLength(1))
+  })
+
   // A failed search (Discogs 429, a network blip) must be retryable from the button:
   // the term doesn't change, so the query key doesn't either, and without an explicit
   // refetch the error would stay on screen until the user edits the text.
