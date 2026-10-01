@@ -1838,7 +1838,7 @@ export default function App(): React.JSX.Element {
           keyboard-accessible path to the same action. */}
           {/* biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control */}
           <div
-            className="flex h-screen flex-col"
+            className="relative flex h-screen flex-col overflow-clip"
             onDragEnterCapture={() => setDragging(dragDepth.current.enter())}
             onDragOver={(e) => {
               // Only to keep the drop allowed; the hint is driven by enter/leave counting.
