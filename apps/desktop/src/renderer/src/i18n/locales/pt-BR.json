@@ -803,6 +803,7 @@
     "plan": {
       "head": "O que vai acontecer com esta faixa",
       "limited": "Vai mover {{gain}} dB até {{lufs}} LUFS. Seus picos passariam do teto em {{over}} dB, então o limitador vai segurá-los em {{peak}} dBTP.",
+      "limitedTouch": "Vai mover {{gain}} dB até {{lufs}} LUFS. Seus picos ficariam bem no teto de {{peak}} dBTP, menos de 0.1 dB acima, então o limitador mal encosta neles.",
       "limitedSub": "Só os picos excedentes são aparados, mas com tanto limitador espere um pouco menos de punch nas batidas mais fortes.",
       "limitedSubLight": "Só as pontas dos transientes mais afiados são aparadas; um toque tão leve não se ouve.",
       "gain": "Vai mover {{gain}} dB até {{lufs}} LUFS com ganho constante. Seus picos ficarão em {{peak}} dBTP: o teto nem chega a agir.",
