@@ -11,7 +11,6 @@ import { SearchProvidersControl } from '../SearchProvidersControl'
 import { Select } from '../Select'
 import {
   SettingsCheckboxField,
-  SettingsEyebrow,
   SettingsHint,
   SettingsLabel,
   SettingsSection,
@@ -33,60 +32,45 @@ export function SearchTab({
   onBeatportChange,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  // The token only acts on Discogs results, so it's grouped under a Discogs heading and
-  // disabled when Discogs isn't a chosen source. The format filter trims every source whose
-  // rows name a release's medium: Discogs and MusicBrainz.
+  // The format filter trims every source whose rows name a release's medium: Discogs and
+  // MusicBrainz. The token and the Beatport account sit in their source's row instead.
   const discogsOn = synced.searchProviders.includes('discogs')
   const formatsOn = discogsOn || synced.searchProviders.includes('musicbrainz')
   const beatportOn = synced.searchProviders.includes('beatport')
   return (
     <>
-      <SettingsSection first>
-        <SettingsEyebrow className="mb-1.5">{tr('settings.searchProviders')}</SettingsEyebrow>
-        <SettingsHint className="mb-3">{tr('settings.searchProvidersHint')}</SettingsHint>
+      <SettingsSection first eyebrow={tr('settings.searchProviders')}>
+        <SettingsHint className="-mt-1.5 mb-3">{tr('settings.searchSourcesIntro')}</SettingsHint>
         <SearchProvidersControl
           value={synced.searchProviders}
           onChange={(value) => patch('searchProviders', value)}
           testid="settings-search-providers"
           testidPrefix="settings-provider"
+          details={{
+            discogs: (
+              <DiscogsTokenField
+                value={local.token}
+                onChange={(value) => patchLocal('token', value)}
+                testid="settings-token"
+                disabled={!discogsOn}
+              />
+            ),
+            beatport: (
+              <>
+                <SettingsHint className="mb-3">{tr('settings.beatportHint')}</SettingsHint>
+                <BeatportAccountField
+                  username={local.beatportUsername}
+                  disabled={!beatportOn}
+                  onChange={onBeatportChange}
+                />
+              </>
+            ),
+          }}
         />
       </SettingsSection>
 
-      <SettingsSection eyebrow={tr('settings.beatportSection')}>
-        {!beatportOn && (
-          <SettingsHint data-testid="settings-beatport-disabled" className="mb-4">
-            {tr('settings.beatportDisabledHint')}
-          </SettingsHint>
-        )}
-        <div className={beatportOn ? '' : 'opacity-50'}>
-          <SettingsHint className="mb-3">{tr('settings.beatportHint')}</SettingsHint>
-          <BeatportAccountField
-            username={local.beatportUsername}
-            disabled={!beatportOn}
-            onChange={onBeatportChange}
-          />
-        </div>
-      </SettingsSection>
-
-      <SettingsSection eyebrow={tr('settings.discogsSection')}>
-        {!discogsOn && (
-          <SettingsHint data-testid="settings-discogs-disabled" className="mb-4">
-            {tr('settings.discogsDisabledHint')}
-          </SettingsHint>
-        )}
-        <div className={discogsOn ? '' : 'opacity-50'}>
-          <div className="mb-5">
-            <DiscogsTokenField
-              value={local.token}
-              onChange={(value) => patchLocal('token', value)}
-              testid="settings-token"
-              disabled={!discogsOn}
-            />
-          </div>
-        </div>
-      </SettingsSection>
-
-      <SettingsSection>
+      {/* What the result list shows: which formats and how many rows. */}
+      <SettingsSection eyebrow={tr('settings.searchResultsSection')}>
         {!formatsOn && (
           <SettingsHint data-testid="settings-formats-disabled" className="mb-4">
             {tr('settings.discogsFormatsDisabledHint')}
@@ -121,25 +105,10 @@ export function SearchTab({
             ))}
           </div>
         </div>
-      </SettingsSection>
 
-      {/* Auto-match is a behaviour (when matches get applied), not a source, so it sits in
-          its own section apart from the Discogs/Bandcamp source checkboxes. */}
-      <SettingsSection>
-        <AutoMatchControl
-          checked={local.autoMatch}
-          onChange={(checked) => patchLocal('autoMatch', checked)}
-          searchProviders={synced.searchProviders}
-          discogsToken={local.token}
-          beatportUsername={local.beatportUsername}
-          testid="settings-auto-match"
-        />
-      </SettingsSection>
-
-      {/* A one-value select doesn't need a full-width stacked block: the label and hint
-          take the left, the control sits on the right, one row instead of three. */}
-      <SettingsSection>
-        <div className="flex items-center justify-between gap-6">
+        {/* A one-value select doesn't need a full-width stacked block: the label and hint
+            take the left, the control sits on the right, one row instead of three. */}
+        <div className="mt-5 flex items-center justify-between gap-6">
           {/* The text side wraps (min-w-0) and the control side never shrinks: squeezed by
             justify-between, the select used to give up 2px and poke past the panel,
             summoning a horizontal scrollbar over the whole tab. */}
@@ -162,29 +131,40 @@ export function SearchTab({
         </div>
       </SettingsSection>
 
-      <SettingsSection>
-        <SettingsLabel htmlFor="settings-ignore-words" className="mb-2">
-          {tr('settings.searchIgnoreWords')}
-        </SettingsLabel>
-        <SettingsHint className="mb-2.5">{tr('settings.searchIgnoreWordsHint')}</SettingsHint>
-        <input
-          id="settings-ignore-words"
-          data-testid="settings-ignore-words"
-          value={synced.searchIgnoreWords}
-          onChange={(e) => patch('searchIgnoreWords', e.target.value)}
-          placeholder="vinyl, rip"
-          className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
-        />
-      </SettingsSection>
-
-      <SettingsSection>
-        <SettingsCheckboxField
-          testid="settings-search-album-first"
-          checked={synced.searchByAlbumFirst}
-          onChange={(v) => patch('searchByAlbumFirst', v)}
-          label={tr('settings.searchByAlbumFirst')}
-          hint={tr('settings.searchByAlbumFirstHint')}
-        />
+      {/* How the search runs and what it does on its own: the album-first order, the words
+          it strips, and auto-match, a behaviour (when matches get applied) not a source. */}
+      <SettingsSection eyebrow={tr('settings.searchMatchingSection')}>
+        <div className="flex flex-col gap-5">
+          <SettingsCheckboxField
+            testid="settings-search-album-first"
+            checked={synced.searchByAlbumFirst}
+            onChange={(v) => patch('searchByAlbumFirst', v)}
+            label={tr('settings.searchByAlbumFirst')}
+            hint={tr('settings.searchByAlbumFirstHint')}
+          />
+          <div>
+            <SettingsLabel htmlFor="settings-ignore-words" className="mb-2">
+              {tr('settings.searchIgnoreWords')}
+            </SettingsLabel>
+            <SettingsHint className="mb-2.5">{tr('settings.searchIgnoreWordsHint')}</SettingsHint>
+            <input
+              id="settings-ignore-words"
+              data-testid="settings-ignore-words"
+              value={synced.searchIgnoreWords}
+              onChange={(e) => patch('searchIgnoreWords', e.target.value)}
+              placeholder="vinyl, rip"
+              className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+            />
+          </div>
+          <AutoMatchControl
+            checked={local.autoMatch}
+            onChange={(checked) => patchLocal('autoMatch', checked)}
+            searchProviders={synced.searchProviders}
+            discogsToken={local.token}
+            beatportUsername={local.beatportUsername}
+            testid="settings-auto-match"
+          />
+        </div>
       </SettingsSection>
     </>
   )

@@ -17,9 +17,9 @@ vi.hoisted(() => {
   }
 })
 
-import '../i18n'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import type { Settings } from '../../../shared/types'
+import i18n from '../i18n'
 import { FIELD_DEFS } from '../lib/fields'
 import { DONATE_URL, SettingsModal } from './SettingsModal'
 
@@ -360,7 +360,6 @@ describe('SettingsModal auto-match', () => {
     fireEvent.click(screen.getByTestId('settings-provider-discogs'))
     expect(screen.getByTestId('settings-token')).toBeDisabled()
     expect(screen.getByTestId('settings-auto-match')).toBeDisabled()
-    expect(screen.getByTestId('settings-discogs-disabled')).toBeInTheDocument()
   })
 
   // artexjay's request: MusicBrainz rows name their medium too, so the same filter trims
@@ -1126,11 +1125,11 @@ describe('SettingsModal Beatport account', () => {
   })
 })
 
-describe('SettingsModal search tab order', () => {
-  it('puts the account sections right under the sources, so ticking Beatport shows where to connect without scrolling', () => {
+describe('SettingsModal search tab layout', () => {
+  function openSearch(searchProviders: Settings['searchProviders']) {
     render(
       <SettingsModal
-        settings={{ ...settings, searchProviders: ['discogs', 'beatport'] }}
+        settings={{ ...settings, searchProviders }}
         onClose={() => {}}
         onSave={() => {}}
         onPreviewTheme={() => {}}
@@ -1138,17 +1137,50 @@ describe('SettingsModal search tab order', () => {
       />,
     )
     fireEvent.click(screen.getByTestId('settings-tab-search'))
-    const order = [
-      'settings-search-providers',
-      'beatport-username',
-      'settings-token',
-      'settings-auto-match',
-    ].map((id) => screen.getByTestId(id))
-    for (let i = 1; i < order.length; i++) {
-      expect(
-        order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy()
+  }
+
+  // Each source's setup used to sit in its own section two screens below its checkbox, so
+  // ticking Beatport left the user scrolling to find where to log in. It now lives in the
+  // source's own row, right under the box that turns it on.
+  it("puts each source's setup inside its own row, under its checkbox", () => {
+    openSearch(['discogs', 'beatport'])
+    const discogs = screen.getByTestId('settings-provider-row-discogs')
+    expect(within(discogs).getByTestId('settings-provider-discogs')).toBeInTheDocument()
+    expect(within(discogs).getByTestId('settings-token')).toBeInTheDocument()
+    const beatport = screen.getByTestId('settings-provider-row-beatport')
+    expect(within(beatport).getByTestId('settings-provider-beatport')).toBeInTheDocument()
+    expect(within(beatport).getByTestId('beatport-username')).toBeInTheDocument()
+  })
+
+  // The long paragraph naming what every catalog brings is split into one line per row,
+  // so what a source adds is read where it is switched on.
+  it('describes what each source brings in its own row', () => {
+    openSearch(['discogs'])
+    for (const p of ['discogs', 'bandcamp', 'deezer', 'beatport', 'musicbrainz'] as const) {
+      expect(screen.getByTestId(`settings-provider-row-${p}`)).toHaveTextContent(
+        i18n.t(`settings.providerDescription.${p}`),
+      )
     }
+  })
+
+  // Setup stays visible while its source is off, dimmed and inert like the row it belongs
+  // to: a field that vanished would leave the user unsure the option exists at all.
+  it("keeps a source's setup visible but disabled while the source is off", () => {
+    openSearch(['musicbrainz'])
+    expect(screen.getByTestId('settings-token')).toBeDisabled()
+    expect(screen.getByTestId('beatport-username')).toBeDisabled()
+  })
+
+  // What the list shows (formats, how many) and how the search runs (album first, ignored
+  // words, auto-match) each read as one group, instead of auto-match splitting the first.
+  it('groups what results show apart from how the search matches', () => {
+    openSearch(['discogs'])
+    const sectionOf = (id: string) => screen.getByTestId(id).closest('section')
+    expect(sectionOf('settings-format-Vinyl')).toBe(sectionOf('settings-max-results'))
+    const matching = sectionOf('settings-auto-match')
+    expect(sectionOf('settings-search-album-first')).toBe(matching)
+    expect(sectionOf('settings-ignore-words')).toBe(matching)
+    expect(matching).not.toBe(sectionOf('settings-max-results'))
   })
 })
 
