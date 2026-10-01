@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.6",
+    "date": "October 1, 2026",
+    "title": "Your M4As stay M4A",
+    "items": [
+      {
+        "text": "Updating the tags of an M4A holding lossy audio no longer turns it into a lossless file up to four times bigger that sounds no better. Surco leaves the audio as it is and only changes the tags. The “Keep MP3 and M4A files as they are” setting now covers M4As too.",
+        "in": "1.6.0"
+      },
+      {
+        "text": "The format filter in Settings → Search (vinyl, CD, digital or cassette) now applies to MusicBrainz too, not just Discogs. And the tab is grouped into sources, results and matching, with each source in its own row, a line saying what it is good for and its own settings right below it.",
+        "in": "1.6.0"
+      }
+    ]
+  },
+  {
     "version": "1.5",
     "date": "September 30, 2026",
     "title": "Apple Music for the tracks you drag in too",

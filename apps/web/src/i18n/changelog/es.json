@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.6",
+    "date": "1 de octubre de 2026",
+    "title": "Tus M4A se quedan en M4A",
+    "items": [
+      {
+        "text": "Actualizar las etiquetas de un M4A con audio con pérdida ya no lo convierte en un archivo sin pérdida hasta cuatro veces más grande que no suena mejor. Surco deja el audio como está y solo cambia las etiquetas. El ajuste «Mantener MP3 y M4A como están» cubre ahora también los M4A.",
+        "in": "1.6.0"
+      },
+      {
+        "text": "El filtro de formatos de Ajustes → Búsqueda (vinilo, CD, digital o casete) se aplica ahora también a MusicBrainz, no solo a Discogs. Y la pestaña está ordenada en fuentes, resultados y coincidencias, con cada fuente en su fila, una línea que dice para qué sirve y lo que se configura de ella justo debajo.",
+        "in": "1.6.0"
+      }
+    ]
+  },
+  {
     "version": "1.5",
     "date": "30 de septiembre de 2026",
     "title": "Apple Music también para lo que arrastras",
