@@ -45,7 +45,7 @@ export function GeneralTab({
   onExportSettings,
   onImportSettings,
 }: Props): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
 
   // The cache lives on disk independently of Settings, so the tab loads its own size
   // on mount and re-reads it after a clear — no need to thread it through the modal.
@@ -145,7 +145,7 @@ export function GeneralTab({
                   (cacheStats.files > 0
                     ? tr('settings.cacheCount', {
                         count: cacheStats.files,
-                        size: formatFileSize(cacheStats.bytes),
+                        size: formatFileSize(cacheStats.bytes, i18n.language),
                       })
                     : tr('settings.cacheEmpty'))}
               </span>

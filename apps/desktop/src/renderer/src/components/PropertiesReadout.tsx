@@ -29,7 +29,7 @@ export function PropertiesReadout({
   inputPath,
   duration,
 }: Props): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   // The extension comes from the real source path, not the parsed fileName: the name has
   // dropped its extension and a "20. Title" prefix would otherwise print the title as caps.
   const ext = fileExtension(inputPath)
@@ -97,7 +97,7 @@ export function PropertiesReadout({
       // the shorts would leave a half-empty cell whenever the shorts fell odd.
       rows: [
         row('extension', tr('editor.propExtension'), ext),
-        row('size', tr('editor.propSize'), formatFileSize(p.sizeBytes)),
+        row('size', tr('editor.propSize'), formatFileSize(p.sizeBytes, i18n.language)),
         row('created', tr('editor.propCreated'), fmtDate(p.createdMs)),
         row('modified', tr('editor.propModified'), fmtDate(p.modifiedMs)),
         row('fileName', tr('editor.propFileName'), fileName, undefined, true),

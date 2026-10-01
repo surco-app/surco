@@ -19,7 +19,7 @@ interface Props {
 // editor only mounts this in single-track mode, where there is one source to inspect.
 // A failed probe renders as "unavailable".
 export function PropertiesSection({ item, open, onToggle }: Props): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   // Probe regardless of fold state: the header itself shows a one-line digest of the
   // facts (container · kHz · bit · mode · size), so a folded panel still needs them.
   // The query is cached per path, so this is one cheap probe per file either way.
@@ -27,7 +27,7 @@ export function PropertiesSection({ item, open, onToggle }: Props): React.JSX.El
   const summary = properties
     ? [
         ...audioSummaryParts(properties, item.inputPath, tr),
-        formatFileSize(properties.sizeBytes),
+        formatFileSize(properties.sizeBytes, i18n.language),
       ].join(' · ')
     : ''
   return (

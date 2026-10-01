@@ -24,28 +24,37 @@ describe('fileExtension', () => {
 
 describe('formatFileSize', () => {
   it('keeps raw bytes below a kilobyte', () => {
-    expect(formatFileSize(0)).toBe('0 B')
-    expect(formatFileSize(512)).toBe('512 B')
+    expect(formatFileSize(0, 'en')).toBe('0 B')
+    expect(formatFileSize(512, 'en')).toBe('512 B')
   })
 
   it('rounds to whole kilobytes up to a megabyte', () => {
-    expect(formatFileSize(1024)).toBe('1 KB')
+    expect(formatFileSize(1024, 'en')).toBe('1 KB')
     // The 321 KB tag Meta shows for a stripped WAV header
-    expect(formatFileSize(328_704)).toBe('321 KB')
+    expect(formatFileSize(328_704, 'en')).toBe('321 KB')
   })
 
   it('shows one decimal for megabytes', () => {
-    expect(formatFileSize(58_400_000)).toBe('55.7 MB')
+    expect(formatFileSize(58_400_000, 'en')).toBe('55.7 MB')
   })
 
   it('shows two decimals for gigabytes', () => {
-    expect(formatFileSize(2_000_000_000)).toBe('1.86 GB')
+    expect(formatFileSize(2_000_000_000, 'en')).toBe('1.86 GB')
+  })
+
+  it('writes the decimal mark of the app language, so Spanish reads 165,8 MB and not 165.8', () => {
+    expect(formatFileSize(173_853_491, 'es')).toBe('165,8 MB')
+    expect(formatFileSize(2_000_000_000, 'de')).toBe('1,86 GB')
+  })
+
+  it('keeps the trailing zero so sizes in a column stay the same width', () => {
+    expect(formatFileSize(1024 * 1024, 'es')).toBe('1,0 MB')
   })
 
   it('returns an empty string for an unreadable size', () => {
     // A failed stat leaves the row blank rather than printing "NaN B".
-    expect(formatFileSize(Number.NaN)).toBe('')
-    expect(formatFileSize(-1)).toBe('')
+    expect(formatFileSize(Number.NaN, 'en')).toBe('')
+    expect(formatFileSize(-1, 'en')).toBe('')
   })
 })
 

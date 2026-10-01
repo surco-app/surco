@@ -13,16 +13,22 @@ export function fileExtension(inputPath: string): string {
 
 // Human-readable file size from a byte count, in the Finder-style steps (whole KB
 // up to a megabyte, then one-decimal MB / two-decimal GB) shown in the Properties
-// panel. Returns an empty string for an unreadable size so a failed stat leaves the
-// row blank instead of printing "NaN B".
-export function formatFileSize(bytes: number): string {
+// panel, with the decimal mark of the app language. Returns an empty string for an
+// unreadable size so a failed stat leaves the row blank instead of printing "NaN B".
+export function formatFileSize(bytes: number, language: string): string {
   if (!Number.isFinite(bytes) || bytes < 0) return ''
   if (bytes < 1024) return `${bytes} B`
   const kb = bytes / 1024
   if (kb < 1024) return `${Math.round(kb)} KB`
+  const decimals = (value: number, digits: number): string =>
+    new Intl.NumberFormat(language, {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+      useGrouping: false,
+    }).format(value)
   const mb = kb / 1024
-  if (mb < 1024) return `${mb.toFixed(1)} MB`
-  return `${(mb / 1024).toFixed(2)} GB`
+  if (mb < 1024) return `${decimals(mb, 1)} MB`
+  return `${decimals(mb / 1024, 2)} GB`
 }
 
 // A glanceable digest of the rip's shape (format · kHz · bits · channel mode); each
