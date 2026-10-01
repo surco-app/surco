@@ -82,6 +82,14 @@ export function SettingsModal({
     ro.observe(list)
     return () => ro.disconnect()
   }, [tab])
+  // The pill already says which tab is active, so the opening focus lands there without
+  // the ring, as macOS Settings opens; the ring comes back on the first arrow key. A layout
+  // effect so it runs before ModalShell's focus trap, which would focus the tab plainly.
+  useLayoutEffect(() => {
+    tablistRef.current
+      ?.querySelector<HTMLElement>('[role="tab"][tabindex="0"]')
+      ?.focus({ focusVisible: false })
+  }, [])
   function onTabKeyDown(e: React.KeyboardEvent, idx: number): void {
     const last = SETTINGS_TABS.length - 1
     let next = -1

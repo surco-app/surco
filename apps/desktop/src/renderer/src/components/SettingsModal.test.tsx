@@ -204,6 +204,22 @@ describe('SettingsModal tablist', () => {
   // The tabs are a vertical ARIA tablist down the side, so Up/Down move between them
   // (Home/End jump to the ends) the way a native macOS Settings sidebar behaves — not by
   // Tabbing through ten separate buttons.
+  // Opening Settings with ⌘, used to land on the sidebar with the focus ring drawn over
+  // the selection pill, two marks on one row. macOS opens its Settings with the selection
+  // alone, and the ring only shows once the user starts moving with the keyboard.
+  it('opens with focus on the active tab but without the keyboard ring', () => {
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+    open()
+    const general = screen.getByTestId('settings-tab-general')
+    expect(general).toHaveFocus()
+    const onGeneral = focus.mock.contexts.indexOf(general)
+    expect(focus.mock.calls[onGeneral]).toEqual([{ focusVisible: false }])
+    focus.mockClear()
+    fireEvent.keyDown(general, { key: 'ArrowDown' })
+    expect(focus.mock.calls[0]).toEqual([])
+    focus.mockRestore()
+  })
+
   it('moves between tabs with the up/down and Home/End keys, wrapping around', () => {
     open()
     const list = screen.getByRole('tablist')
