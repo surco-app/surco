@@ -591,6 +591,23 @@ describe('NormalizeSection plan overshoot', () => {
     const plan = await screen.findByTestId('normalize-plan')
     expect(plan.textContent).toContain('by 1.0 dB')
   })
+
+  // A user emailed a screenshot reading "pass the ceiling by 0.0 dB": the gained peak
+  // was a few hundredths over, enough for the limiter to engage, but the rounded figure
+  // read as if nothing passed at all. -14.95 / -0.92 to -15 lands the peak at -0.97,
+  // 0.03 dB over the -1 ceiling: the card must say it brushes the ceiling, not "0.0".
+  it('says the peaks barely touch the ceiling when the overshoot rounds to zero', async () => {
+    renderSection(
+      track(),
+      1,
+      { ...measuredLoud, integratedLufs: -14.95, truePeakDb: -0.92 },
+      { ...cfg, mode: 'loudness', targetLufs: -15 },
+    )
+    const plan = await screen.findByTestId('normalize-plan')
+    expect(plan.dataset.plan).toBe('limited')
+    expect(plan.textContent).not.toContain('by 0.0 dB')
+    expect(plan.textContent).toContain('less than 0.1 dB')
+  })
 })
 
 // A user asked what the limiter does to the peaks it holds, worried it might squash

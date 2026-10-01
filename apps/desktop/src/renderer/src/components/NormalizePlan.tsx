@@ -50,6 +50,7 @@ export function NormalizePlan({
   // is real, and the card says so instead of promising transparency it cannot keep.
   const LIGHT_TRIM_DB = 3
   const subKey = kind === 'limited' && overshoot <= LIGHT_TRIM_DB ? 'limitedSubLight' : `${kind}Sub`
+  const headKey = kind === 'limited' && values.over === '0.0' ? 'limitedTouch' : kind
   return (
     <div
       data-testid="normalize-plan"
@@ -74,7 +75,7 @@ export function NormalizePlan({
         )}
       </div>
       <p className="mt-1 text-xs leading-relaxed text-fg tabular-nums">
-        {tr(`normalize.plan.${kind}`, values)}
+        {tr(`normalize.plan.${headKey}`, values)}
       </p>
       <p className="mt-0.5 text-[11px] text-fg-muted tabular-nums">
         {tr(`normalize.plan.${subKey}`, values)}
