@@ -283,7 +283,7 @@ export function SettingsModal({
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors duration-200 ${
                     tab === id
                       ? 'font-medium text-[var(--color-on-row-selected)]'
-                      : 'text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg'
+                      : 'text-fg-muted hover:text-fg'
                   }`}
                 >
                   <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
