@@ -590,7 +590,7 @@ const TrackRow = memo(function TrackRow({
               ? 'is-primary bg-[var(--color-row-selected)]'
               : selected
                 ? 'bg-[var(--color-accent-soft)]/85'
-                : 'hover:bg-[var(--color-panel-2)]/85'
+                : 'hover:bg-[var(--color-hover)]/85'
           } focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-[var(--color-accent)]`}
         >
           {/* Severity stripe at the left edge: ambient, scannable — a page of rows shows which

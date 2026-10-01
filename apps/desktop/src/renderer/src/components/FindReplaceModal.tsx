@@ -248,7 +248,7 @@ export function FindReplaceModal({
           type="button"
           data-testid="find-replace-cancel"
           onClick={onClose}
-          className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-panel-2)]"
+          className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)]"
         >
           {applied ? tr('common.close') : tr('common.cancel')}
         </button>

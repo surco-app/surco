@@ -397,7 +397,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                     className={`press result-in ${freshKeys.has(rk) ? 'result-new' : ''} group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors focus-visible:bg-[var(--color-accent-soft)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:outline-none ${
                       // The open card takes no fill: the tracklist unfolding under it already
                       // says which one is open, and the applied track keeps the column's only fill.
-                      expanded ? '' : 'hover:bg-[var(--color-panel-2)]/85'
+                      expanded ? '' : 'hover:bg-[var(--color-hover)]/85'
                     }`}
                   >
                     <ResultThumb src={r.thumb} />
@@ -511,7 +511,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                                 // tint that looked second-class next to the filled library row).
                                 t === appliedTrack || t === matchedTrack
                                   ? 'is-applied bg-[var(--color-row-selected)]'
-                                  : 'hover:bg-[var(--color-panel-2)]'
+                                  : 'hover:bg-[var(--color-hover)]'
                               }`}
                             >
                               <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">

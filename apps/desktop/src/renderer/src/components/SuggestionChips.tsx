@@ -70,8 +70,8 @@ export function SuggestionChips({
                 : state === 'some'
                   ? 'border-dashed border-[color-mix(in_srgb,var(--color-accent)_60%,transparent)] text-[var(--color-accent)]'
                   : dim
-                    ? 'border-[var(--color-line)] text-fg-faint hover:bg-[var(--color-panel-2)]'
-                    : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-panel-2)]'
+                    ? 'border-[var(--color-line)] text-fg-faint hover:bg-[var(--color-hover)]'
+                    : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-hover)]'
             }`}
           >
             {s}
@@ -89,7 +89,7 @@ export function SuggestionChips({
           aria-label={tr('fields.suggestionsMore', {
             count: suggestions.length - visibleCount,
           })}
-          className="press shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] px-2 py-0.5 text-[10px] text-[var(--color-accent)] transition-colors hover:bg-[var(--color-panel-2)]"
+          className="press shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] px-2 py-0.5 text-[10px] text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)]"
         >
           +{suggestions.length - visibleCount}
         </button>

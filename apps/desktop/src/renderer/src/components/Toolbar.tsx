@@ -191,7 +191,7 @@ export const Toolbar = memo(function Toolbar({
             data-testid="import-progress"
             onClick={onCancelImport}
             aria-label={tr('header.cancelImport')}
-            className="press group relative flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium tabular-nums text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]"
+            className="press group relative flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium tabular-nums text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
           >
             {/* FilePlus, not the shared Loader2: mid-conversion, a dropped folder painted
                 two identical spinning capsules. The other sweeps identify themselves by
@@ -224,7 +224,7 @@ export const Toolbar = memo(function Toolbar({
                     ? tr('header.autoMatchNoToken')
                     : tr('header.autoMatch')
               }
-              className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-medium hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
+              className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-medium hover:bg-[var(--color-hover)] disabled:opacity-40 ${
                 matching
                   ? 'min-w-[3.25rem] text-[var(--color-accent)]'
                   : 'text-fg-muted hover:text-fg'
@@ -266,7 +266,7 @@ export const Toolbar = memo(function Toolbar({
               onClick={analysis ? onCancelAnalyze : onAnalyzeAll}
               disabled={!analysis && allAnalyzed}
               aria-label={analysis ? tr('header.cancelAnalyze') : tr('header.analyzeQuality')}
-              className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2 hover:bg-[var(--color-panel-2)] disabled:opacity-40 ${
+              className={`press group relative flex h-8 items-center justify-center gap-1.5 rounded-lg px-2 hover:bg-[var(--color-hover)] disabled:opacity-40 ${
                 analysis
                   ? 'min-w-[3.25rem] text-[var(--color-accent)]'
                   : 'w-8 text-fg-muted hover:text-fg'
@@ -298,7 +298,7 @@ export const Toolbar = memo(function Toolbar({
           type="button"
           data-testid="open-palette"
           onClick={onPalette}
-          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
           aria-label={tr('header.palette')}
         >
           <Search className="h-4 w-4" aria-hidden="true" />
@@ -313,7 +313,7 @@ export const Toolbar = memo(function Toolbar({
           type="button"
           data-testid="open-stats"
           onClick={onStats}
-          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
           aria-label={tr('header.stats')}
         >
           <ChartColumn className="h-4 w-4" aria-hidden="true" />
@@ -323,7 +323,7 @@ export const Toolbar = memo(function Toolbar({
           type="button"
           data-testid="open-activity"
           onClick={onActivity}
-          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
           aria-label={tr('header.activity')}
         >
           <Radio className="h-4 w-4" aria-hidden="true" />
@@ -340,7 +340,7 @@ export const Toolbar = memo(function Toolbar({
           data-testid="open-settings"
           // Call with no args so React's click event can't reach the opener as its tab.
           onClick={() => onSettings()}
-          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
           aria-label={tr('header.settings')}
         >
           <SettingsIcon className="h-4 w-4" aria-hidden="true" />
@@ -362,7 +362,7 @@ export const Toolbar = memo(function Toolbar({
               aria-label={batching ? tr('header.cancelConvert') : convertLabel}
               className={`press group relative flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium disabled:opacity-40 ${
                 batching
-                  ? 'text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]'
+                  ? 'text-[var(--color-accent)] hover:bg-[var(--color-hover)]'
                   : canConvertAll
                     ? 'bg-[var(--color-accent-soft)] text-fg hover:bg-[var(--color-row-selected)] hover:text-[var(--color-on-row-selected)]'
                     : 'text-fg-muted'

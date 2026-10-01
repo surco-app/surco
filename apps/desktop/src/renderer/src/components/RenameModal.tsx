@@ -92,7 +92,7 @@ export function RenameModal({
             type="button"
             data-testid={`rename-token-${f.key}`}
             onClick={() => addToken(f.key)}
-            className="press group relative rounded-full border border-[var(--color-line-strong)] px-2.5 py-0.5 text-[11px] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+            className="press group relative rounded-full border border-[var(--color-line-strong)] px-2.5 py-0.5 text-[11px] text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
           >
             {f.label}
             <Tooltip label={`{${f.key}}`} />
@@ -111,7 +111,7 @@ export function RenameModal({
           type="button"
           data-testid="rename-cancel"
           onClick={onClose}
-          className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-panel-2)]"
+          className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)]"
         >
           {tr('common.cancel')}
         </button>

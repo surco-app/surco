@@ -169,7 +169,7 @@ export function TrackListHeader({
             aria-pressed={sortDir === 'desc'}
             aria-label={tr('sidebar.sort.descending')}
             onClick={toggleSortDir}
-            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-dim outline-none hover:bg-[var(--color-panel-2)] hover:text-fg"
+            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-dim outline-none hover:bg-[var(--color-hover)] hover:text-fg"
           >
             {sortDir === 'asc' ? (
               <ArrowDownNarrowWide className="h-4 w-4" aria-hidden="true" />
@@ -196,7 +196,7 @@ export function TrackListHeader({
           data-testid="add-files"
           onClick={onAdd}
           aria-label={tr('header.add')}
-          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
         >
           <FilePlus className="h-3.5 w-3.5" aria-hidden="true" />
           <Tooltip label={tr('header.add')} hint={hintFor('add')} />
@@ -209,7 +209,7 @@ export function TrackListHeader({
             data-testid="import-apple-playlist"
             onClick={onImportApplePlaylist}
             aria-label={tr('commands.importApplePlaylist')}
-            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
           >
             <ListMusic className="h-3.5 w-3.5" aria-hidden="true" />
             <Tooltip label={tr('commands.importApplePlaylist')} />
@@ -226,7 +226,7 @@ export function TrackListHeader({
               data-testid="select-all"
               onClick={onSelectAllTracks}
               aria-label={tr('header.selectAll')}
-              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
             >
               <SquareCheckBig className="h-3.5 w-3.5" aria-hidden="true" />
               <Tooltip label={tr('header.selectAll')} hint={hintFor('select-all')} />
@@ -237,7 +237,7 @@ export function TrackListHeader({
                 data-testid="reveal-selected"
                 onClick={scrollToSelected}
                 aria-label={tr('header.revealSelected')}
-                className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+                className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
               >
                 <Crosshair className="h-3.5 w-3.5" aria-hidden="true" />
                 <Tooltip label={tr('header.revealSelected')} />
@@ -248,7 +248,7 @@ export function TrackListHeader({
               data-testid="fill-all"
               onClick={onFillAll}
               aria-label={tr('header.fillFromName')}
-              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
             >
               <Tag className="h-3.5 w-3.5" aria-hidden="true" />
               <Tooltip label={tr('header.fillFromName')} hint={hintFor('fill-all')} />
@@ -258,7 +258,7 @@ export function TrackListHeader({
               data-testid="open-find-replace"
               onClick={onFindReplace}
               aria-label={tr('commands.findReplace')}
-              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
             >
               <Replace className="h-3.5 w-3.5" aria-hidden="true" />
               <Tooltip label={tr('commands.findReplace')} hint={hintFor('find-replace')} />
@@ -272,7 +272,7 @@ export function TrackListHeader({
               data-testid="clear-all"
               onClick={onClearAll}
               aria-label={tr('header.clearAll')}
-              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-danger"
+              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-danger"
             >
               <ListX className="h-3.5 w-3.5" aria-hidden="true" />
               <Tooltip label={tr('header.clearAll')} />
@@ -283,7 +283,7 @@ export function TrackListHeader({
               onClick={onTrashSelected}
               disabled={!selectedId && selectedIds.length === 0}
               aria-label={tr('commands.trashSelected')}
-              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-panel-2)] hover:text-danger disabled:opacity-40"
+              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-danger disabled:opacity-40"
             >
               <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
               <Tooltip label={tr('commands.trashSelected')} />

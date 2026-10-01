@@ -91,7 +91,7 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
                 .then(onClose)
                 .catch((e: unknown) => setError(mainErrorMessage(e, tr, String(e))))
             }}
-            className="press block rounded-lg border border-[var(--color-line)] px-4 py-3 text-left hover:bg-[var(--color-panel-2)]"
+            className="press block rounded-lg border border-[var(--color-line)] px-4 py-3 text-left hover:bg-[var(--color-hover)]"
           >
             <span className="flex items-center justify-between">
               <span className="text-sm font-medium">{t.label}</span>
@@ -111,7 +111,7 @@ export function ExportModal({ tracks, onClose }: Props): React.JSX.Element {
           type="button"
           data-testid="export-cancel"
           onClick={onClose}
-          className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-panel-2)]"
+          className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)]"
         >
           {tr('common.cancel')}
         </button>

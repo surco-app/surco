@@ -99,7 +99,7 @@ export function ApplePlaylistModal({ onPick, onClose }: Props): React.JSX.Elemen
         className={`flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm ${
           picked === p.persistentId
             ? 'bg-[var(--color-row-selected)] text-[var(--color-on-row-selected)]'
-            : 'text-fg hover:bg-panel-2'
+            : 'text-fg hover:bg-[var(--color-hover)]'
         }`}
       >
         <ListMusic className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden="true" />
@@ -175,7 +175,7 @@ export function ApplePlaylistModal({ onPick, onClose }: Props): React.JSX.Elemen
                     data-testid="apple-playlist-folder"
                     onClick={() => toggleFolder(folder)}
                     aria-expanded={open}
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-fg-muted text-sm hover:bg-panel-2"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-fg-muted text-sm hover:bg-[var(--color-hover)]"
                   >
                     <ChevronRight
                       className={`h-3.5 w-3.5 shrink-0 opacity-60 transition-transform ${
@@ -209,7 +209,7 @@ export function ApplePlaylistModal({ onPick, onClose }: Props): React.JSX.Elemen
           type="button"
           data-testid="apple-playlist-cancel"
           onClick={onClose}
-          className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-panel-2)]"
+          className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)]"
         >
           {tr('common.cancel')}
         </button>

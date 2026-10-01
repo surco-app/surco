@@ -307,7 +307,7 @@ export function ConvertFooter({
                   type="button"
                   data-testid="export-collection"
                   onClick={onExportCollection}
-                  className="press min-w-0 truncate whitespace-nowrap rounded-lg px-3 py-2 text-xs font-medium text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+                  className="press min-w-0 truncate whitespace-nowrap rounded-lg px-3 py-2 text-xs font-medium text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
                   title={tr('editor.exportCollection')}
                 >
                   {tr('editor.exportCollection')}

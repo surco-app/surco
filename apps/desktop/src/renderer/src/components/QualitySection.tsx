@@ -334,7 +334,7 @@ export function QualitySection({
                 aria-label={tr('editor.saveQualityReport')}
                 onClick={() => void saveReport()}
                 disabled={savingReport}
-                className="press group relative flex h-6 w-6 items-center justify-center rounded text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-60"
+                className="press group relative flex h-6 w-6 items-center justify-center rounded text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-60"
               >
                 <ImageDown className="h-3.5 w-3.5" aria-hidden="true" />
                 <Tooltip label={tr('editor.saveQualityReport')} align="end" />

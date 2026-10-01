@@ -52,7 +52,7 @@ export function ZoomStepper({
   // toolbar jumps the moment you hit a zoom limit. Disabled fades the ink, never
   // the box.
   const chrome =
-    'press relative flex shrink-0 items-center justify-center border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-fg-muted'
+    'press relative flex shrink-0 items-center justify-center border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-fg-muted'
   return (
     // One segmented control, not three loose buttons: the three parts are one
     // decision (how close am I looking), so they share an outline and the rounding

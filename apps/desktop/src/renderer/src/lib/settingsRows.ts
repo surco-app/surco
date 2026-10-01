@@ -12,8 +12,8 @@
 // word itself lives in the column heading rather than in every row.
 export const TOGGLE_BOX =
   'mx-auto flex h-6 w-6 items-center justify-center rounded disabled:opacity-25'
-export const TOGGLE_ON = 'text-[var(--color-accent)] hover:bg-[var(--color-panel-2)]'
-export const TOGGLE_OFF = 'text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg-muted'
+export const TOGGLE_ON = 'text-[var(--color-accent)] hover:bg-[var(--color-hover)]'
+export const TOGGLE_OFF = 'text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg-muted'
 
 // The column headings strip above a list: same grid as its rows (passed in by the caller,
 // since the two lists differ), sized and coloured to sit quietly above them.

@@ -33,7 +33,7 @@ export function LoudnessHelpModal({ onClose }: Props): React.JSX.Element {
           data-testid="loudness-help-close"
           onClick={onClose}
           aria-label={tr('common.close')}
-          className="press flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="press flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
         >
           <X className="h-4 w-4" aria-hidden="true" />
         </button>

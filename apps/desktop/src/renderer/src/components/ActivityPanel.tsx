@@ -158,7 +158,7 @@ function ChildRow({ row }: { row: ActivityRow }): React.JSX.Element {
         disabled={!expandable}
         aria-expanded={expandable ? open : undefined}
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 py-1 pl-9 text-left enabled:hover:bg-[var(--color-panel-2)] disabled:cursor-default"
+        className="flex w-full items-center gap-2 py-1 pl-9 text-left enabled:hover:bg-[var(--color-hover)] disabled:cursor-default"
       >
         <StatusIcon status={row.status} />
         <span className="min-w-0 flex-1 truncate text-[11px] text-fg-muted">
@@ -201,7 +201,7 @@ function Row({ row }: { row: ActivityRow }): React.JSX.Element {
   const expandable = grouped || Boolean(detail)
   return (
     <li className="border-b border-[var(--color-line)] last:border-0">
-      <div className="group flex items-center hover:bg-[var(--color-panel-2)]">
+      <div className="group flex items-center hover:bg-[var(--color-hover)]">
         <button
           type="button"
           data-testid="activity-row"
@@ -402,7 +402,7 @@ export function ActivityPanel({
           aria-label={tr('activity.copy')}
           disabled={rows.length === 0}
           onClick={() => onCopy(activityFeedText(rows, tr))}
-          className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-muted enabled:hover:bg-[var(--color-panel-2)] enabled:hover:text-fg disabled:opacity-40"
+          className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-muted enabled:hover:bg-[var(--color-hover)] enabled:hover:text-fg disabled:opacity-40"
         >
           <Copy className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
@@ -411,7 +411,7 @@ export function ActivityPanel({
           data-testid="activity-clear"
           aria-label={tr('activity.clear')}
           onClick={onClear}
-          className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
         >
           <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
@@ -420,7 +420,7 @@ export function ActivityPanel({
           data-testid="activity-close"
           aria-label={tr('common.close')}
           onClick={onClose}
-          className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
         >
           <X className="h-3.5 w-3.5" aria-hidden="true" />
         </button>

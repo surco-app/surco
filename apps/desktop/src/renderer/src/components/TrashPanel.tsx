@@ -148,7 +148,7 @@ export function TrashPanel({
             type="button"
             onClick={onClose}
             aria-label={tr('trash.close')}
-            className="press ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg"
+            className="press ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -263,7 +263,7 @@ export function TrashPanel({
                       onClick={() => onRemove(entry)}
                       data-testid="trash-remove"
                       aria-label={tr('trash.remove')}
-                      className="press flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-faint hover:bg-[var(--color-panel-2)] hover:text-danger"
+                      className="press flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-faint hover:bg-[var(--color-hover)] hover:text-danger"
                     >
                       <X className="h-4 w-4" aria-hidden="true" />
                     </button>

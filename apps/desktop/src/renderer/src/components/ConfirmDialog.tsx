@@ -72,7 +72,7 @@ export function ConfirmDialog({
           type="button"
           data-testid="confirm-cancel"
           onClick={onClose}
-          className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-panel-2)]"
+          className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)]"
         >
           {tr('common.cancel')}
         </button>

@@ -46,7 +46,7 @@ function MenuItem({
       tabIndex={-1}
       data-testid={testid}
       onClick={onClick}
-      className={`block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-panel-2)] ${
+      className={`block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)] ${
         danger ? 'text-danger' : 'text-fg'
       }`}
     >

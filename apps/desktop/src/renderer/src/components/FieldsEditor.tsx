@@ -129,7 +129,7 @@ export function FieldsEditor({
         data-testid={`field-delete-${key}`}
         aria-label={tr('settings.customFieldDeleteLabel', { name: labelOf(key) })}
         onClick={() => deleteCustom(key)}
-        className="ml-auto rounded px-1.5 py-0.5 text-xs text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+        className="ml-auto rounded px-1.5 py-0.5 text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
       >
         {tr('settings.customFieldDelete')}
       </button>
@@ -270,7 +270,7 @@ export function FieldsEditor({
             className={`flex items-center gap-1 rounded px-2 py-0.5 text-xs transition-colors ${
               organized
                 ? 'text-[var(--color-accent)]'
-                : 'text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg'
+                : 'text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg'
             }`}
           >
             {organized ? (

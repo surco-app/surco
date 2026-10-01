@@ -468,7 +468,7 @@ export function CoverPicker({
               data-testid="cover-prev"
               aria-label={tr('editor.coverPrev')}
               onClick={() => pickCoverImage(-1)}
-              className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+              className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
             >
               <ChevronLeft className="h-3 w-3" aria-hidden="true" />
             </button>
@@ -500,7 +500,7 @@ export function CoverPicker({
               data-testid="cover-next"
               aria-label={tr('editor.coverNext')}
               onClick={() => pickCoverImage(1)}
-              className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+              className="press flex h-6 w-6 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
             >
               <ChevronRight className="h-3 w-3" aria-hidden="true" />
             </button>

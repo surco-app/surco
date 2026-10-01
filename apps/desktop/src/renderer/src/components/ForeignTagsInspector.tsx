@@ -91,7 +91,7 @@ export function ForeignTagsInspector({
                     name: tag.name,
                   })}
                   onClick={() => onToggleRemove(tag.name)}
-                  className={`press flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-fg-muted transition-opacity hover:bg-[var(--color-panel-2)] hover:text-fg focus-visible:opacity-100 ${
+                  className={`press flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-fg-muted transition-opacity hover:bg-[var(--color-hover)] hover:text-fg focus-visible:opacity-100 ${
                     removed ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                   }`}
                 >

@@ -223,7 +223,7 @@ export function FieldInsertMenu({
                 role="menuitem"
                 data-testid={`field-insert-option-${s.key}`}
                 onClick={() => pick(s.value)}
-                className="flex w-full items-baseline justify-between gap-3 rounded-md px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-[var(--color-panel-2)]"
+                className="flex w-full items-baseline justify-between gap-3 rounded-md px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-[var(--color-hover)]"
               >
                 <span className="shrink-0 text-fg">{s.label}</span>
                 <span className="max-w-[11rem] truncate text-fg-faint">{s.value}</span>
@@ -239,7 +239,7 @@ export function FieldInsertMenu({
                 role="menuitem"
                 data-testid={`field-insert-option-${t.key}`}
                 onClick={() => applyTransform(t.result)}
-                className="flex w-full items-baseline justify-between gap-3 rounded-md px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-[var(--color-panel-2)]"
+                className="flex w-full items-baseline justify-between gap-3 rounded-md px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-[var(--color-hover)]"
               >
                 <span className="shrink-0 text-fg">{t.label}</span>
                 <span className="max-w-[11rem] truncate text-fg-faint">{t.result}</span>

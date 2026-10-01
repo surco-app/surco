@@ -67,7 +67,7 @@ export function NormalizePlan({
             data-testid="normalize-plan-dismiss"
             aria-label={tr('normalize.hideHints')}
             onClick={onDismiss}
-            className="press group relative -mt-1 -mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+            className="press group relative -mt-1 -mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
           >
             <X className="h-3 w-3" aria-hidden="true" />
             <Tooltip label={tr('normalize.hideHints')} />

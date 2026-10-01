@@ -182,7 +182,7 @@ export function LoudnessReadout({
           data-testid="loudness-help-toggle"
           aria-label={tr('editor.loudnessHelpTitle')}
           onClick={onShowHelp}
-          className="press group relative flex h-5 w-5 items-center justify-center rounded-full text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="press group relative flex h-5 w-5 items-center justify-center rounded-full text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
         >
           <Info className="h-3.5 w-3.5" aria-hidden="true" />
           <Tooltip label={tr('editor.loudnessHelpTitle')} align="start" />

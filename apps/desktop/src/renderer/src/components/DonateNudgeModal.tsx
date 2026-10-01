@@ -90,7 +90,7 @@ export function DonateNudgeModal({ conversionCount, onClose }: Props): React.JSX
             type="button"
             data-testid="donate-nudge-close"
             onClick={() => onClose(dismiss)}
-            className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-panel-2)]"
+            className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)]"
           >
             {tr('donateNudge.later')}
           </button>

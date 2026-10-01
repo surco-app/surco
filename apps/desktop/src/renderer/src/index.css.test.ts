@@ -487,3 +487,46 @@ describe('flat surfaces, one floating shadow', () => {
     })
   }
 })
+
+// The fill under the pointer. Dark lifts a surface toward the light, but the light palette's
+// panel-2 is its BRIGHTEST tone, so borrowing it for hover lit rows and Settings tabs up as
+// white cards that outshone the selected one (Vicent 01/10: "arregla todo en claro"). macOS
+// darkens what the pointer is over in light, and only the selection carries real colour.
+describe('hover fill', () => {
+  const lightHover =
+    /\[data-theme="light"\][\s\S]*--color-hover:\s*rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/.exec(
+      css,
+    )
+  const over = (bg: string): string => {
+    if (!lightHover) throw new Error('no light --color-hover')
+    const [, r, g, b, a] = lightHover
+    const fg = `#${[r, g, b].map((v) => Number(v).toString(16).padStart(2, '0')).join('')}`
+    return blend(fg, bg, Number(a))
+  }
+
+  it('lifts a dark surface the way panel-2 always did', () => {
+    expect(dark['color-hover']).toBe(dark['color-panel-2'])
+  })
+
+  for (const surface of ['color-ink', 'color-panel', 'color-panel-2']) {
+    it(`darkens the light ${surface} instead of turning it white`, () => {
+      expect(luminance(over(light[surface]))).toBeLessThan(luminance(light[surface]))
+    })
+  }
+
+  it('stays quieter on the light list than the selected row', () => {
+    const ink = light['color-ink']
+    expect(contrast(over(ink), ink)).toBeLessThan(contrast(light['color-row-selected'], ink))
+  })
+
+  const root = fileURLToPath(new URL('.', import.meta.url))
+  const sources = (readdirSync(root, { recursive: true }) as string[]).filter(
+    (f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f),
+  )
+  for (const file of sources) {
+    const code = readFileSync(join(root, file), 'utf8')
+    it(`${file} hovers with the hover token, not the white panel-2`, () => {
+      expect(code.match(/hover:bg-(?:\[var\(--color-panel-2\)\]|panel-2\b)/g) ?? []).toEqual([])
+    })
+  }
+})

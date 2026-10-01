@@ -223,7 +223,7 @@ export function Select({
           aria-selected={o.value === value}
           data-testid={`${testid}-option-${o.value}`}
           onClick={() => choose(o.value)}
-          className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg hover:bg-[var(--color-panel-2)]"
+          className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg hover:bg-[var(--color-hover)]"
         >
           {o.icon && <o.icon aria-hidden="true" className="h-4 w-4 shrink-0" />}
           {hinted ? (
@@ -255,7 +255,7 @@ export function Select({
         // both, so this one does too.
         aria-label={selected ? `${label}: ${selected.label}` : label}
         onClick={toggle}
-        className={`flex min-w-0 items-center gap-1.5 rounded-md pr-1.5 pl-2 text-xs text-fg-dim outline-none ${bare ? 'hover:bg-[var(--color-panel-2)] hover:text-fg' : 'border border-[var(--color-line)] bg-[var(--color-field)] focus:border-[var(--color-accent)]'} ${compact ? 'h-6' : 'h-8'} ${fullWidth ? 'w-full' : ''}`}
+        className={`flex min-w-0 items-center gap-1.5 rounded-md pr-1.5 pl-2 text-xs text-fg-dim outline-none ${bare ? 'hover:bg-[var(--color-hover)] hover:text-fg' : 'border border-[var(--color-line)] bg-[var(--color-field)] focus:border-[var(--color-accent)]'} ${compact ? 'h-6' : 'h-8'} ${fullWidth ? 'w-full' : ''}`}
       >
         {selected?.icon && <selected.icon aria-hidden="true" className="size-3.5 shrink-0" />}
         {(selected?.short ?? selected?.label) && (

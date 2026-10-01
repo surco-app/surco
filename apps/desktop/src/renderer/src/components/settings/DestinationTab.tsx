@@ -344,7 +344,7 @@ export function DestinationTab({
                 // focusable, so the ring still follows the keyboard.
                 <label
                   key={id}
-                  className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 hover:bg-[var(--color-panel-2)]/30 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--color-accent)]"
+                  className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 hover:bg-[var(--color-hover)]/30 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--color-accent)]"
                 >
                   <input
                     type="radio"
@@ -388,7 +388,7 @@ export function DestinationTab({
               aria-label={tr('settings.traktorCueAmountDown')}
               disabled={direction === 'none' || magnitude <= 1}
               onClick={() => patch('traktorCueOffsetMs', String(stored - Math.sign(stored)))}
-              className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-panel-2)]/40 disabled:cursor-not-allowed disabled:opacity-40"
+              className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-hover)]/40 disabled:cursor-not-allowed disabled:opacity-40"
             >
               −
             </button>
@@ -404,7 +404,7 @@ export function DestinationTab({
               aria-label={tr('settings.traktorCueAmountUp')}
               disabled={direction === 'none' || magnitude >= CUE_MAX_MS}
               onClick={() => patch('traktorCueOffsetMs', String(stored + Math.sign(stored)))}
-              className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-panel-2)]/40 disabled:cursor-not-allowed disabled:opacity-40"
+              className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-hover)]/40 disabled:cursor-not-allowed disabled:opacity-40"
             >
               +
             </button>

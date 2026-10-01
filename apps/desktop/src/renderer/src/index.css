@@ -8,6 +8,10 @@
   --color-ink: #16161e;
   --color-panel: #1a1b26;
   --color-panel-2: #292e42;
+  /* The fill under the pointer. Dark lifts toward the light with panel-2; the light palette
+     overrides it with a tint of fg, because there panel-2 is the brightest tone and hovering
+     with it turned rows into white cards brighter than the selected one. */
+  --color-hover: #292e42;
   --color-field: #14141b;
   --color-line: rgba(192, 202, 245, 0.09);
   --color-line-strong: rgba(192, 202, 245, 0.16);
@@ -66,6 +70,7 @@
   --color-ink: #d6d8df;
   --color-panel: #e6e7ed;
   --color-panel-2: #f0f1f5;
+  --color-hover: rgba(52, 59, 88, 0.07);
   --color-field: #f4f5f8;
   --color-line: rgba(52, 59, 88, 0.12);
   --color-line-strong: rgba(52, 59, 88, 0.22);

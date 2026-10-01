@@ -341,7 +341,7 @@ export function QualityFilterBar({
       : null) ?? (tally.suspect > 0 ? 'bg-warn' : null)
 
   const rowClass =
-    'flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-panel-2)]'
+    'flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-hover)]'
   const divider = (
     // A hidden div, not an <hr>: a listbox may own only options, and the divider is
     // decoration, so it stays out of the accessibility tree.
@@ -419,7 +419,7 @@ export function QualityFilterBar({
           // is in and didn't match the words on screen.
           aria-label={tr('sidebar.filter.current', { filter: trigger.label, count: trigger.count })}
           onClick={() => setOpen((v) => !v)}
-          className="flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md pr-1.5 pl-2 text-xs font-medium text-fg-dim outline-none hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md pr-1.5 pl-2 text-xs font-medium text-fg-dim outline-none hover:bg-[var(--color-hover)] hover:text-fg"
         >
           <span className="relative shrink-0">
             <trigger.Icon className="h-4 w-4" aria-hidden="true" />
@@ -483,7 +483,7 @@ export function QualityFilterBar({
           data-testid="trash-suspects"
           aria-label={tr('sidebar.filter.trashSuspects', { count: tally.suspect })}
           onClick={onTrashSuspects}
-          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-dim outline-none hover:bg-[var(--color-panel-2)] hover:text-warn"
+          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-dim outline-none hover:bg-[var(--color-hover)] hover:text-warn"
         >
           <Trash2 className="h-4 w-4" aria-hidden="true" />
           <Tooltip label={tr('sidebar.filter.trashSuspects', { count: tally.suspect })} />

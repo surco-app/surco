@@ -313,7 +313,7 @@ function Lane({
             aria-label={tr('trim.nudgeBack')}
             disabled={cutSec === undefined}
             onClick={() => onKeyStep(-fineStepSec)}
-            className="press relative flex h-7 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
+            className="press relative flex h-7 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
           >
             <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
             <Tooltip label={tr('trim.nudgeBack')} />
@@ -351,7 +351,7 @@ function Lane({
             aria-label={tr('trim.nudgeForward')}
             disabled={cutSec === undefined}
             onClick={() => onKeyStep(fineStepSec)}
-            className="press relative flex h-7 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
+            className="press relative flex h-7 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
           >
             <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
             <Tooltip label={tr('trim.nudgeForward')} />
@@ -367,7 +367,7 @@ function Lane({
             aria-label={tr(side === 'start' ? 'trim.auditionStart' : 'trim.auditionEnd')}
             disabled={cutSec === undefined}
             onClick={onAudition}
-            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
+            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
           >
             {auditing ? (
               <Square className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
@@ -382,7 +382,7 @@ function Lane({
             aria-label={tr('trim.clearSide')}
             disabled={cutSec === undefined}
             onClick={onClear}
-            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-panel-2)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
+            className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--color-line)] text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-fg-muted"
           >
             <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
             <Tooltip label={tr('trim.clearSide')} />

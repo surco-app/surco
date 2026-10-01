@@ -904,7 +904,7 @@ export const Editor = memo(function Editor({
       data-testid="clear-meta-btn"
       aria-label={tr('editor.clearMeta')}
       onClick={clearAllMeta}
-      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
     >
       <Eraser className="h-3.5 w-3.5" aria-hidden="true" />
       <Tooltip label={tr('editor.clearMetaHint')} align="end" />
@@ -919,7 +919,7 @@ export const Editor = memo(function Editor({
       data-testid="derive-btn"
       aria-label={tr('editor.deriveFromName')}
       onClick={deriveFromNames}
-      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
     >
       <Tag className="h-3.5 w-3.5" aria-hidden="true" />
       <Tooltip label={tr('editor.deriveFromNameHint')} align="end" />
@@ -935,7 +935,7 @@ export const Editor = memo(function Editor({
         data-testid="apply-title-format-btn"
         aria-label={tr('editor.applyTitleFormat')}
         onClick={onApplyTitleFormat}
-        className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+        className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
       >
         <Type className="h-3.5 w-3.5" aria-hidden="true" />
         <Tooltip label={tr('editor.applyTitleFormatHint')} align="end" />
@@ -950,7 +950,7 @@ export const Editor = memo(function Editor({
       data-testid="copy-filename-btn"
       aria-label={tr('editor.copyFilename')}
       onClick={onCopyFilename}
-      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
     >
       <Copy className="h-3.5 w-3.5" aria-hidden="true" />
       <Tooltip label={tr('editor.copyFilenameHint')} align="end" />
@@ -965,7 +965,7 @@ export const Editor = memo(function Editor({
       data-testid="search-web-btn"
       aria-label={tr('editor.searchWeb')}
       onClick={onSearchWeb}
-      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-panel-2)] hover:text-fg"
+      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
     >
       <Globe className="h-3.5 w-3.5" aria-hidden="true" />
       <Tooltip label={tr('editor.searchWebHint')} align="end" />

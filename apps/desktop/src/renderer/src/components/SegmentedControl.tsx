@@ -109,7 +109,7 @@ export function SegmentedControl<T extends string>({
           // The buttons themselves all stay quiet — the overlay below paints the
           // raised state — so a segment the highlight is leaving fades back to muted
           // exactly as the clip uncovers it. Hover previews the fill without relief.
-          className="rounded-md px-4 py-1.5 text-sm text-fg-muted transition-colors hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="rounded-md px-4 py-1.5 text-sm text-fg-muted transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
         >
           {labelFor(id)}
         </button>

@@ -201,7 +201,7 @@ function ToastCard({
           data-testid={toast.testid ? `${toast.testid}-copy` : undefined}
           aria-label={tr('common.copy')}
           onClick={onCopy}
-          className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-panel-2)] hover:text-fg"
+          className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
         >
           {copied ? (
             <Check className="h-4 w-4 text-good" aria-hidden="true" />
@@ -215,7 +215,7 @@ function ToastCard({
         data-testid={toast.testid ? `${toast.testid}-dismiss` : undefined}
         aria-label={tr('common.close')}
         onClick={() => onClose(toast.id)}
-        className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-panel-2)] hover:text-fg"
+        className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
       >
         <X className="h-4 w-4" aria-hidden="true" />
       </button>
