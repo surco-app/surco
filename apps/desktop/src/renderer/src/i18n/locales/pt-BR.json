@@ -927,11 +927,7 @@
     "log": "Registro de erros",
     "logReveal": "Mostrar arquivo",
     "logHint": "Se algo falhar, os detalhes ficam neste arquivo. Anexe-o ao seu relato para que possa ser investigado.",
-    "discogsSection": "Discogs",
-    "discogsDisabledHint": "Ative o Discogs acima para configurar isto.",
-    "beatportSection": "Beatport",
     "beatportConnected": "conectado",
-    "beatportDisabledHint": "Ative o Beatport acima para conectar sua conta.",
     "beatportHint": "O Beatport não tem API aberta: o Surco busca com a sua conta (uma gratuita serve). A senha é salva criptografada e só neste computador.",
     "beatportUsername": "Usuário ou e-mail",
     "beatportPassword": "Senha",
@@ -958,6 +954,16 @@
     "searchByAlbumFirstHint": "Se as tags têm álbum, ele é buscado com o artista antes da faixa. Se nada aparecer, a faixa é buscada.",
     "searchProviders": "Fontes de busca",
     "searchProvidersHint": "Catálogos onde o editor busca. O Discogs é curado, o Bandcamp adiciona material independente, o Deezer cobre os lançamentos digitais comerciais, o Beatport traz BPM, tom e mix, e o MusicBrainz é um catálogo aberto mantido pela sua comunidade.",
+    "searchSourcesIntro": "Catálogos em que o editor pesquisa.",
+    "searchResultsSection": "Resultados",
+    "searchMatchingSection": "Correspondência",
+    "providerDescription": {
+      "discogs": "Curado, cada prensagem",
+      "bandcamp": "Material independente",
+      "deezer": "Lançamentos digitais comerciais",
+      "beatport": "BPM, tom e mix",
+      "musicbrainz": "Catálogo aberto mantido pela comunidade"
+    },
     "provider": {
       "discogs": "Discogs",
       "bandcamp": "Bandcamp",

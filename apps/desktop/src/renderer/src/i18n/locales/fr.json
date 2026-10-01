@@ -927,11 +927,7 @@
     "log": "Journal d'erreurs",
     "logReveal": "Afficher le fichier",
     "logHint": "Si quelque chose échoue, les détails atterrissent dans ce fichier. Joins-le à ton rapport pour qu'il puisse être examiné.",
-    "discogsSection": "Discogs",
-    "discogsDisabledHint": "Active Discogs ci-dessus pour configurer ces options.",
-    "beatportSection": "Beatport",
     "beatportConnected": "connecté",
-    "beatportDisabledHint": "Active Beatport ci-dessus pour connecter ton compte.",
     "beatportHint": "Beatport n'a pas d'API ouverte : Surco cherche avec ton compte (un compte gratuit suffit). Le mot de passe est enregistré chiffré et uniquement sur cet ordinateur.",
     "beatportUsername": "Identifiant ou e-mail",
     "beatportPassword": "Mot de passe",
@@ -958,6 +954,16 @@
     "searchByAlbumFirstHint": "Si les tags ont un album, il est cherché avec l'artiste avant le morceau. Si rien ne sort, le morceau est cherché.",
     "searchProviders": "Sources de recherche",
     "searchProvidersHint": "Les catalogues où l'éditeur cherche. Discogs est un catalogue soigné, Bandcamp ajoute les sorties autoproduites, Deezer couvre les sorties numériques commerciales, Beatport apporte BPM, tonalité et mix, et MusicBrainz est un catalogue ouvert tenu par sa communauté.",
+    "searchSourcesIntro": "Catalogues dans lesquels l'éditeur cherche.",
+    "searchResultsSection": "Résultats",
+    "searchMatchingSection": "Correspondance",
+    "providerDescription": {
+      "discogs": "Organisé, chaque pressage",
+      "bandcamp": "Sorties autoproduites",
+      "deezer": "Sorties numériques commerciales",
+      "beatport": "BPM, tonalité et mix",
+      "musicbrainz": "Catalogue ouvert tenu par sa communauté"
+    },
     "provider": {
       "discogs": "Discogs",
       "bandcamp": "Bandcamp",

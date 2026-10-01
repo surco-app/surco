@@ -927,11 +927,7 @@
     "log": "Fehlerprotokoll",
     "logReveal": "Datei anzeigen",
     "logHint": "Wenn etwas fehlschlägt, landen die Details in dieser Datei. Häng sie an deine Meldung an, damit der Fehler untersucht werden kann.",
-    "discogsSection": "Discogs",
-    "discogsDisabledHint": "Aktivier Discogs oben, um das hier einzustellen.",
-    "beatportSection": "Beatport",
     "beatportConnected": "verbunden",
-    "beatportDisabledHint": "Aktiviere Beatport oben, um dein Konto zu verbinden.",
     "beatportHint": "Beatport hat keine offene API: Surco sucht mit deinem Konto (ein kostenloses reicht). Das Passwort wird verschlüsselt und nur auf diesem Computer gespeichert.",
     "beatportUsername": "Benutzername oder E-Mail",
     "beatportPassword": "Passwort",
@@ -958,6 +954,16 @@
     "searchByAlbumFirstHint": "Wenn die Tags ein Album enthalten, wird es mit dem Künstler vor dem Track gesucht. Findet sich nichts, wird der Track gesucht.",
     "searchProviders": "Suchquellen",
     "searchProvidersHint": "Kataloge, die der Editor durchsucht. Discogs ist kuratiert, Bandcamp ergänzt selbstveröffentlichtes Material, Deezer deckt kommerzielle digitale Veröffentlichungen ab, Beatport liefert BPM, Tonart und Mix, und MusicBrainz ist ein offener, von seiner Community gepflegter Katalog.",
+    "searchSourcesIntro": "Kataloge, die der Editor durchsucht.",
+    "searchResultsSection": "Ergebnisse",
+    "searchMatchingSection": "Abgleich",
+    "providerDescription": {
+      "discogs": "Kuratiert, jede Pressung",
+      "bandcamp": "Selbstveröffentlichtes",
+      "deezer": "Kommerzielle Digital-Releases",
+      "beatport": "BPM, Tonart und Mix",
+      "musicbrainz": "Offener Katalog seiner Community"
+    },
     "provider": {
       "discogs": "Discogs",
       "bandcamp": "Bandcamp",
