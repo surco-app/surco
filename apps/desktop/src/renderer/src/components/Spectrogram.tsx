@@ -21,7 +21,7 @@ export function Spectrogram({
   // the container + knee, so the picture reuses that verdict rather than recomputing it.
   transcoded?: boolean
 }): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const ramp = useSpectrumDuotone()
   const { maximized } = useMaximizedSection()
   // Per-instance, because `url(#id)` resolves to the FIRST matching filter in the
@@ -44,7 +44,9 @@ export function Spectrogram({
   // at the wrong row. Everything that reads the axis scales against this one number.
   const topHz = spectrumTopHz(spectrum.sampleRateHz, spectrum.imageTopHz)
   const chip =
-    spectrum.cutoffHz !== null ? cutoffLabel({ ...spectrum, cutoffHz: spectrum.cutoffHz }) : null
+    spectrum.cutoffHz !== null
+      ? cutoffLabel({ ...spectrum, cutoffHz: spectrum.cutoffHz }, i18n.language)
+      : null
   // The hover crosshair: where the cursor sits as a percent from the top, and the frequency
   // that row maps to. Null while the cursor is outside, so the line shows only when reading.
   const [hover, setHover] = useState<{ topPct: number; hz: number } | null>(null)
@@ -141,7 +143,7 @@ export function Spectrogram({
           className="pointer-events-none absolute inset-x-0 border-t border-[var(--color-fg)]/40"
         >
           <span className="absolute right-1 -top-2 rounded border border-[var(--color-line)] bg-[var(--color-panel)]/90 px-1 text-[10px] font-medium tabular-nums text-[var(--color-fg)]">
-            {formatKHz(hover.hz)}
+            {formatKHz(hover.hz, i18n.language)}
           </span>
         </div>
       )}

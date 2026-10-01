@@ -17,6 +17,7 @@ import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
 import { useWaveform } from '../hooks/useWaveform'
 import { useWaveformWindow } from '../hooks/useWaveformWindow'
 import { formatTime } from '../lib/duration'
+import { formatFixed } from '../lib/numberFormat'
 import { claimKeys } from '../lib/spaceClaim'
 import { detectOnsets, detectTrim, refineOnset, trimThresholdDb } from '../lib/trim'
 import { drawWaveform } from '../lib/waveform'
@@ -81,8 +82,8 @@ interface Props {
   durationSec?: number
 }
 
-function cutSeconds(seconds: number): string {
-  return `${seconds.toFixed(1)} s`
+function cutSeconds(seconds: number, language: string): string {
+  return `${formatFixed(seconds, 1, language)} s`
 }
 
 function cutAmounts(
@@ -106,7 +107,7 @@ function TrimPlan({
   value: TrimRange
   durationSec: number
 }): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const { start: startCut, end: endCut, side } = cutAmounts(value, durationSec)
   return (
     <div
@@ -116,8 +117,8 @@ function TrimPlan({
       <p className="text-[11px] font-medium text-fg-dim">{tr('trim.planHead')}</p>
       <p className="mt-1 text-xs leading-relaxed text-fg tabular-nums">
         {tr(`trim.plan${side ?? 'Start'}`, {
-          start: cutSeconds(startCut),
-          end: cutSeconds(endCut),
+          start: cutSeconds(startCut, i18n.language),
+          end: cutSeconds(endCut, i18n.language),
           from: formatTime(durationSec),
           to: formatTime(Math.max(0, durationSec - startCut - endCut)),
         })}
@@ -193,6 +194,7 @@ function Lane({
   overlayRef: React.RefObject<HTMLDivElement | null>
   tr: (key: string, opts?: Record<string, unknown>) => string
 }): React.JSX.Element {
+  const { i18n } = useTranslation()
   const waveColor = useWaveColors().after
   const spanSec = Math.max(0.001, toSec - fromSec)
   // Edits as text and commits on blur/Enter, so a half-typed "40" never becomes a
@@ -460,7 +462,7 @@ function Lane({
               aria-valuemin={0}
               aria-valuemax={Number(durationSec.toFixed(2))}
               aria-valuenow={Number(cut.toFixed(2))}
-              aria-valuetext={`${cut.toFixed(3)} s`}
+              aria-valuetext={`${formatFixed(cut, 3, i18n.language)} s`}
               tabIndex={0}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
@@ -528,6 +530,7 @@ function Lane({
                 aria-label={tr(side === 'start' ? 'trim.applyStart' : 'trim.applyEnd', {
                   seconds: cutSeconds(
                     side === 'start' ? suggestionSec : durationSec - suggestionSec,
+                    i18n.language,
                   ),
                 })}
                 onPointerDown={(e) => e.stopPropagation()}
@@ -562,7 +565,7 @@ export function TrimSection({
   showHints = true,
   durationSec: trackDurationSec,
 }: Props): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   useDiskCacheSeed('waveform', inputPath, open)
   const { data: wave } = useWaveform(inputPath, open)
   const loading = open && !wave
@@ -974,8 +977,10 @@ export function TrimSection({
   }, [open])
 
   const cuts = [
-    cutStart ? tr('trim.cutStart', { seconds: cutSeconds(startSec) }) : undefined,
-    cutEnd ? tr('trim.cutEnd', { seconds: cutSeconds(durationSec - endSec) }) : undefined,
+    cutStart ? tr('trim.cutStart', { seconds: cutSeconds(startSec, i18n.language) }) : undefined,
+    cutEnd
+      ? tr('trim.cutEnd', { seconds: cutSeconds(durationSec - endSec, i18n.language) })
+      : undefined,
   ].filter(Boolean)
   // The detection's finding, worn on the header like the quality section's verdict
   // pill: the one convention for analysis results, readable without opening the
@@ -984,10 +989,10 @@ export function TrimSection({
   const detected = detectedCut
     ? [
         detectedCut.start > 0
-          ? tr('trim.cutStart', { seconds: cutSeconds(detectedCut.start) })
+          ? tr('trim.cutStart', { seconds: cutSeconds(detectedCut.start, i18n.language) })
           : undefined,
         detectedCut.end > 0
-          ? tr('trim.cutEnd', { seconds: cutSeconds(detectedCut.end) })
+          ? tr('trim.cutEnd', { seconds: cutSeconds(detectedCut.end, i18n.language) })
           : undefined,
       ]
         .filter(Boolean)
@@ -1002,7 +1007,10 @@ export function TrimSection({
   } = cutAmounts(value ?? suggestion ?? {}, rowDurationSec)
   const rowKind = value ? 'remove' : 'found'
   const rowSentence = rowSide
-    ? tr(`trim.row.${rowKind}${rowSide}`, { start: cutSeconds(rowStart), end: cutSeconds(rowEnd) })
+    ? tr(`trim.row.${rowKind}${rowSide}`, {
+        start: cutSeconds(rowStart, i18n.language),
+        end: cutSeconds(rowEnd, i18n.language),
+      })
     : wave
       ? tr('trim.row.nothing')
       : tr('trim.row.unknown')
@@ -1071,7 +1079,7 @@ export function TrimSection({
           value ? (
             !open ? (
               <SectionPill tone="accent" testid="trim-active-badge">
-                {`−${cutSeconds(rowStart + rowEnd)}`}
+                {`−${cutSeconds(rowStart + rowEnd, i18n.language)}`}
               </SectionPill>
             ) : undefined
           ) : detected ? (

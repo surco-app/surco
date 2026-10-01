@@ -26,7 +26,7 @@ export function PropertiesSection({ item, open, onToggle }: Props): React.JSX.El
   const { data: properties, isError: propertiesError } = useTrackProperties(item.inputPath, true)
   const summary = properties
     ? [
-        ...audioSummaryParts(properties, item.inputPath, tr),
+        ...audioSummaryParts(properties, item.inputPath, tr, i18n.language),
         formatFileSize(properties.sizeBytes, i18n.language),
       ].join(' · ')
     : ''

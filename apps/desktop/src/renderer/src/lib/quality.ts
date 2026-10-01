@@ -1,5 +1,6 @@
 import { PROBED_CEILING_HZ } from '../../../shared/spectrum'
 import type { NormalizeConfig } from '../../../shared/types'
+import { formatFixed, formatUpTo } from './numberFormat'
 
 // Three-step lossless verdict (green/amber/red), banded on the absolute cutoff
 // because codec lowpasses are absolute: ~20.5 kHz is a full 320 kbps / lossless,
@@ -79,22 +80,31 @@ export function isTranscode(
   return cutoffHz < GOOD_CUTOFF_HZ
 }
 
-export function formatKHz(hz: number): string {
-  return `${(hz / 1000).toFixed(1)} kHz`
+// A sample rate as its nominal name, "44,1 kHz" or "96 kHz", rather than a measured
+// frequency's one fixed decimal.
+export function formatSampleRate(hz: number, language: string): string {
+  return `${formatUpTo(hz / 1000, 1, language)} kHz`
 }
 
-export function cutoffLabel(spectrum: {
-  cutoffHz: number
-  sampleRateHz: number
-  hasKnee?: boolean
-  processed: boolean
-}): { key: string; cutoff: string } {
+export function formatKHz(hz: number, language: string): string {
+  return `${formatFixed(hz / 1000, 1, language)} kHz`
+}
+
+export function cutoffLabel(
+  spectrum: {
+    cutoffHz: number
+    sampleRateHz: number
+    hasKnee?: boolean
+    processed: boolean
+  },
+  language: string,
+): { key: string; cutoff: string } {
   if (spectrum.hasKnee !== false || spectrum.processed)
-    return { key: 'editor.spectrumCutoff', cutoff: formatKHz(spectrum.cutoffHz) }
+    return { key: 'editor.spectrumCutoff', cutoff: formatKHz(spectrum.cutoffHz, language) }
   const ceiling = Math.min(spectrum.sampleRateHz / 2, PROBED_CEILING_HZ)
   if (spectrum.sampleRateHz > 0 && spectrum.cutoffHz >= ceiling)
     return { key: 'editor.spectrumHighsCap', cutoff: `${Math.floor(ceiling / 1000)} kHz` }
-  return { key: 'editor.spectrumHighs', cutoff: formatKHz(spectrum.cutoffHz) }
+  return { key: 'editor.spectrumHighs', cutoff: formatKHz(spectrum.cutoffHz, language) }
 }
 
 // DJ artwork should be reasonably sharp; Discogs usually serves 600px but some
@@ -109,9 +119,9 @@ export function isLowResCover(width: number, height: number): boolean {
 
 // One-decimal label for a loudness figure (LUFS / dBTP / LU). A silent track
 // measures -Infinity, which would print "-Infinity"; show the ∞ glyph instead.
-export function formatDb(value: number): string {
+export function formatDb(value: number, language: string): string {
   if (!Number.isFinite(value)) return '-∞'
-  return value.toFixed(1)
+  return formatFixed(value, 1, language)
 }
 
 // Three-step quality grade behind the loudness pills' colour (green/amber/red),
@@ -181,8 +191,8 @@ export function gradeNoiseFloor(floorDb: number): Grade {
 }
 
 // Renders a 0..1 fraction as a one-decimal percentage for the DC offset pill.
-export function formatPercent(fraction: number): string {
-  return `${(fraction * 100).toFixed(1)}%`
+export function formatPercent(fraction: number, language: string): string {
+  return `${formatFixed(fraction * 100, 1, language)}%`
 }
 
 // Where the track lands after normalization, without converting it. A user was

@@ -76,6 +76,10 @@ describe('audioSummaryParts', () => {
   // ffprobe names the container family, so an ALAC .m4a read as "MOV" beside a verdict
   // that calls the same file M4A. The format is the file's extension everywhere.
   it('names the format by the file extension, not the probed container family', () => {
-    expect(audioSummaryParts(alac, '/music/Track.m4a', tr)[0]).toBe('M4A')
+    expect(audioSummaryParts(alac, '/music/Track.m4a', tr, 'en')[0]).toBe('M4A')
+  })
+
+  it('writes the sample rate with the decimal mark of the app language', () => {
+    expect(audioSummaryParts(alac, '/music/Track.m4a', tr, 'es')[1]).toBe('44,1 kHz')
   })
 })

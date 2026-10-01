@@ -5,6 +5,7 @@ import {
   formatDb,
   formatKHz,
   formatPercent,
+  formatSampleRate,
   gradeBalance,
   gradeCrest,
   gradeDcOffset,
@@ -166,27 +167,27 @@ describe('isTranscode', () => {
 describe('cutoffLabel', () => {
   it('states a reach at the probed ceiling as a lower bound', () => {
     expect(
-      cutoffLabel({ cutoffHz: 22050, sampleRateHz: 44100, hasKnee: false, processed: false }),
+      cutoffLabel({ cutoffHz: 22050, sampleRateHz: 44100, hasKnee: false, processed: false }, 'en'),
     ).toEqual({ key: 'editor.spectrumHighsCap', cutoff: '22 kHz' })
     expect(
-      cutoffLabel({ cutoffHz: 16000, sampleRateHz: 32000, hasKnee: false, processed: false }),
+      cutoffLabel({ cutoffHz: 16000, sampleRateHz: 32000, hasKnee: false, processed: false }, 'en'),
     ).toEqual({ key: 'editor.spectrumHighsCap', cutoff: '16 kHz' })
   })
 
   it('keeps the measured reach below the ceiling, and a knee as a cutoff', () => {
     expect(
-      cutoffLabel({ cutoffHz: 21000, sampleRateHz: 44100, hasKnee: false, processed: false }),
+      cutoffLabel({ cutoffHz: 21000, sampleRateHz: 44100, hasKnee: false, processed: false }, 'en'),
     ).toEqual({ key: 'editor.spectrumHighs', cutoff: '21.0 kHz' })
     expect(
-      cutoffLabel({ cutoffHz: 16000, sampleRateHz: 44100, hasKnee: true, processed: false }),
+      cutoffLabel({ cutoffHz: 16000, sampleRateHz: 44100, hasKnee: true, processed: false }, 'en'),
     ).toEqual({ key: 'editor.spectrumCutoff', cutoff: '16.0 kHz' })
   })
 })
 
 describe('formatKHz', () => {
   it('renders hertz as a one-decimal kHz label for the UI', () => {
-    expect(formatKHz(19961)).toBe('20.0 kHz')
-    expect(formatKHz(16000)).toBe('16.0 kHz')
+    expect(formatKHz(19961, 'en')).toBe('20.0 kHz')
+    expect(formatKHz(16000, 'en')).toBe('16.0 kHz')
   })
 })
 
@@ -211,12 +212,12 @@ describe('isLowResCover', () => {
 
 describe('formatDb', () => {
   it('renders a loudness figure to one decimal for the readout', () => {
-    expect(formatDb(-14.73)).toBe('-14.7')
-    expect(formatDb(7.6)).toBe('7.6')
+    expect(formatDb(-14.73, 'en')).toBe('-14.7')
+    expect(formatDb(7.6, 'en')).toBe('7.6')
   })
 
   it('shows digital silence (-Infinity) as the minus-infinity glyph instead of "-Infinity"', () => {
-    expect(formatDb(-Infinity)).toBe('-∞')
+    expect(formatDb(-Infinity, 'en')).toBe('-∞')
   })
 })
 
@@ -320,10 +321,36 @@ describe('gradeNoiseFloor', () => {
   })
 })
 
+// The quality and loudness readouts sat in a Spanish UI as "-23.4 LUFS" and "44.1 kHz":
+// every figure has to carry the decimal mark of the app language, like the rest of the copy.
+describe('figures in the app language', () => {
+  it('writes the Spanish decimal comma in kHz, dB and percent', () => {
+    expect(formatKHz(44100, 'es')).toBe('44,1 kHz')
+    expect(formatDb(-23.44, 'es')).toBe('-23,4')
+    expect(formatPercent(0.032, 'es')).toBe('3,2%')
+  })
+
+  it('names the cutoff with the same mark', () => {
+    expect(
+      cutoffLabel({ cutoffHz: 16000, sampleRateHz: 44100, hasKnee: true, processed: false }, 'de'),
+    ).toEqual({ key: 'editor.spectrumCutoff', cutoff: '16,0 kHz' })
+  })
+
+  it('names a sample rate without a trailing zero, in the app language', () => {
+    expect(formatSampleRate(44100, 'es')).toBe('44,1 kHz')
+    expect(formatSampleRate(96000, 'es')).toBe('96 kHz')
+    expect(formatSampleRate(88200, 'en')).toBe('88.2 kHz')
+  })
+
+  it('keeps the minus-infinity glyph for silence in every language', () => {
+    expect(formatDb(-Infinity, 'es')).toBe('-∞')
+  })
+})
+
 describe('formatPercent', () => {
   it('renders a 0..1 fraction as a one-decimal percentage for the DC offset pill', () => {
-    expect(formatPercent(0.00004)).toBe('0.0%')
-    expect(formatPercent(0.032)).toBe('3.2%')
+    expect(formatPercent(0.00004, 'en')).toBe('0.0%')
+    expect(formatPercent(0.032, 'en')).toBe('3.2%')
   })
 })
 

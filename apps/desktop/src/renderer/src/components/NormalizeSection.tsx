@@ -8,6 +8,7 @@ import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
 import { useTrackLoudness } from '../hooks/useTrackLoudness'
 
 import { scrollBehavior } from '../lib/motion'
+import { formatDb } from '../lib/quality'
 import type { TrackItem } from '../types'
 import { NormalizeControls } from './NormalizeControls'
 import { NormalizePlan } from './NormalizePlan'
@@ -46,7 +47,7 @@ export function NormalizeSection({
   showHints = true,
   onHideHints,
 }: Props): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   // The before/after pair proves what these controls did, so it lives under them —
   // but only once there IS an after, never for an in-place export (the rewritten
   // source leaves no honest "before" to draw), and never in multi-select, where
@@ -112,7 +113,7 @@ export function NormalizeSection({
             ? `${
                 !isMulti && planLoudness
                   ? tr('normalize.row.measured', {
-                      now: planLoudness.integratedLufs.toFixed(1),
+                      now: formatDb(planLoudness.integratedLufs, i18n.language),
                       target: value.targetLufs,
                     })
                   : tr('normalize.row.target', { target: value.targetLufs })

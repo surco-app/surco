@@ -608,6 +608,25 @@ describe('NormalizeSection plan overshoot', () => {
     expect(plan.textContent).not.toContain('by 0.0 dB')
     expect(plan.textContent).toContain('less than 0.1 dB')
   })
+
+  // The brush was detected by comparing the formatted figure with "0.0", which a Spanish
+  // UI writes "0,0": there the card went back to "por encima en 0,0 dB".
+  it('says the peaks barely touch the ceiling in a language with a decimal comma', async () => {
+    await i18n.changeLanguage('es')
+    try {
+      renderSection(
+        track(),
+        1,
+        { ...measuredLoud, integratedLufs: -14.95, truePeakDb: -0.92 },
+        { ...cfg, mode: 'loudness', targetLufs: -15 },
+      )
+      const plan = await screen.findByTestId('normalize-plan')
+      expect(plan.textContent).toContain('apenas los roza')
+      expect(document.body.textContent).not.toMatch(/\d\.\d/)
+    } finally {
+      await i18n.changeLanguage('en')
+    }
+  })
 })
 
 // A user asked what the limiter does to the peaks it holds, worried it might squash

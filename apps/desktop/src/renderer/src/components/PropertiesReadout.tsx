@@ -63,7 +63,7 @@ export function PropertiesReadout({
         row(
           'sampleRate',
           tr('editor.propSampleRate'),
-          p.sampleRateHz ? formatKHz(p.sampleRateHz) : '',
+          p.sampleRateHz ? formatKHz(p.sampleRateHz, i18n.language) : '',
         ),
         row(
           'bitDepth',

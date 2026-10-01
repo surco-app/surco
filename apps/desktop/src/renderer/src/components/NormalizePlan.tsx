@@ -26,14 +26,14 @@ export function NormalizePlan({
   format,
   onDismiss,
 }: Props): React.JSX.Element | null {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const predicted = loudness ? predictNormalized(normalize, loudness) : null
   if (!loudness || !predicted) return null
   // The nominal gain is what the conversion applies in every branch — the limited one
   // applies it in full and then holds the overs — so the sentence can always name it,
   // even where gainDb is null because no single figure describes the loud passages.
   const gainDb = predicted.gainDb ?? predicted.lufs - loudness.integratedLufs
-  const gain = `${gainDb >= 0 ? '+' : ''}${gainDb.toFixed(1)}`
+  const gain = `${gainDb >= 0 ? '+' : ''}${formatDb(gainDb, i18n.language)}`
   const kind = predicted.limited ? 'limited' : normalize.mode === 'peak' ? 'peak' : 'gain'
   // How far the gained peaks would have flown past the ceiling had nothing held them:
   // the limiter's workload on this track, and the honest measure of the punch a loud
@@ -41,16 +41,17 @@ export function NormalizePlan({
   const overshoot = loudness.truePeakDb + gainDb - predicted.truePeakDb
   const values = {
     gain,
-    lufs: formatDb(predicted.lufs),
-    peak: formatDb(predicted.truePeakDb),
-    over: formatDb(Math.max(0, overshoot)),
+    lufs: formatDb(predicted.lufs, i18n.language),
+    peak: formatDb(predicted.truePeakDb, i18n.language),
+    over: formatDb(Math.max(0, overshoot), i18n.language),
   }
   // Below this much overshoot the limiter only shaves transient tips, which no ear
   // picks out; past it the trade the club preset's hint concedes ("a little punch")
   // is real, and the card says so instead of promising transparency it cannot keep.
   const LIGHT_TRIM_DB = 3
   const subKey = kind === 'limited' && overshoot <= LIGHT_TRIM_DB ? 'limitedSubLight' : `${kind}Sub`
-  const headKey = kind === 'limited' && values.over === '0.0' ? 'limitedTouch' : kind
+  const roundsToZero = Math.round(Math.max(0, overshoot) * 10) === 0
+  const headKey = kind === 'limited' && roundsToZero ? 'limitedTouch' : kind
   return (
     <div
       data-testid="normalize-plan"
@@ -86,7 +87,7 @@ export function NormalizePlan({
           className="mt-0.5 text-[11px] text-fg-muted tabular-nums"
         >
           {tr('normalize.plan.mp3Ceiling', {
-            ceiling: formatDb(Math.min(0, Math.max(-9, normalize.truePeakDb))),
+            ceiling: formatDb(Math.min(0, Math.max(-9, normalize.truePeakDb)), i18n.language),
             lufs: values.lufs,
           })}
         </p>
@@ -97,7 +98,7 @@ export function NormalizePlan({
           className="mt-0.5 text-[11px] text-fg-muted tabular-nums"
         >
           {tr('normalize.plan.limiterCeiling', {
-            ceiling: formatDb(Math.min(0, Math.max(-9, normalize.truePeakDb))),
+            ceiling: formatDb(Math.min(0, Math.max(-9, normalize.truePeakDb)), i18n.language),
             lufs: values.lufs,
           })}
         </p>

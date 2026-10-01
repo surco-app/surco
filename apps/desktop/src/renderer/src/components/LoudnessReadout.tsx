@@ -56,7 +56,7 @@ export function LoudnessReadout({
   normalize,
   onShowHelp,
 }: Props): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const cell = (
     id: string,
     label: string,
@@ -97,9 +97,9 @@ export function LoudnessReadout({
   const balanceEstimate = perChannel ? null : limitedEstimate
   const dcEstimate = (dc: number): string | null => {
     if (!predicted) return null
-    if (normalize.removeDcOffset) return formatPercent(0)
+    if (normalize.removeDcOffset) return formatPercent(0, i18n.language)
     if (predicted.gainDb === null || perChannel) return null
-    return formatPercent(dc * 10 ** (predicted.gainDb / 20))
+    return formatPercent(dc * 10 ** (predicted.gainDb / 20), i18n.language)
   }
   // One flat list — Loudness and Signal used to be separate labelled groups stacked in two
   // grids; merged, they fill one two-column table, each row dropping out when its figure is
@@ -108,25 +108,25 @@ export function LoudnessReadout({
     cell(
       'lufs',
       tr('editor.loudnessLufsLabel'),
-      `${formatDb(loud.integratedLufs)} LUFS`,
+      `${formatDb(loud.integratedLufs, i18n.language)} LUFS`,
       gradeLufs(loud.integratedLufs),
       tr('editor.loudnessLufsHint'),
       // No unit on the estimates: it sits beside the measured figure that already carries
       // one, and repeating it pushed the longest label ("Loudness") into an ellipsis.
-      predicted ? formatDb(predicted.lufs) : null,
+      predicted ? formatDb(predicted.lufs, i18n.language) : null,
     ),
     cell(
       'peak',
       tr('editor.loudnessPeakLabel'),
-      `${formatDb(loud.truePeakDb)} dBTP`,
+      `${formatDb(loud.truePeakDb, i18n.language)} dBTP`,
       gradeTruePeak(loud.truePeakDb),
       tr('editor.loudnessPeakHint'),
-      predicted ? formatDb(predicted.truePeakDb) : null,
+      predicted ? formatDb(predicted.truePeakDb, i18n.language) : null,
     ),
     cell(
       'range',
       tr('editor.loudnessRangeLabel'),
-      `${formatDb(loud.lra)} LU`,
+      `${formatDb(loud.lra, i18n.language)} LU`,
       gradeLra(loud.lra),
       tr('editor.loudnessRangeHint'),
       limitedEstimate,
@@ -135,7 +135,7 @@ export function LoudnessReadout({
       cell(
         'crest',
         tr('editor.loudnessCrestLabel'),
-        `${formatDb(loud.crestDb)} dB`,
+        `${formatDb(loud.crestDb, i18n.language)} dB`,
         gradeCrest(loud.crestDb),
         tr('editor.loudnessCrestHint'),
         limitedEstimate,
@@ -144,7 +144,7 @@ export function LoudnessReadout({
       cell(
         'balance',
         tr('editor.loudnessBalanceLabel'),
-        `${formatDb(loud.channelBalanceDb)} dB`,
+        `${formatDb(loud.channelBalanceDb, i18n.language)} dB`,
         gradeBalance(loud.channelBalanceDb),
         tr('editor.loudnessBalanceHint'),
         balanceEstimate,
@@ -153,7 +153,7 @@ export function LoudnessReadout({
       cell(
         'dc',
         tr('editor.loudnessDcLabel'),
-        formatPercent(loud.dcOffset),
+        formatPercent(loud.dcOffset, i18n.language),
         gradeDcOffset(loud.dcOffset),
         tr('editor.loudnessDcHint'),
         dcEstimate(loud.dcOffset),
@@ -162,13 +162,15 @@ export function LoudnessReadout({
       cell(
         'noise',
         tr('editor.loudnessNoiseLabel'),
-        `${formatDb(loud.noiseFloorDb)} dB`,
+        `${formatDb(loud.noiseFloorDb, i18n.language)} dB`,
         gradeNoiseFloor(loud.noiseFloorDb),
         tr('editor.loudnessNoiseHint'),
         // The floor rides the gain, so it only has an estimate while the gain IS one
         // constant. Under the limiter the loud passages are held back while the quiet
         // ones still take the full gain, and no single shift describes the floor.
-        predicted?.gainDb != null ? formatDb(loud.noiseFloorDb + predicted.gainDb) : null,
+        predicted?.gainDb != null
+          ? formatDb(loud.noiseFloorDb + predicted.gainDb, i18n.language)
+          : null,
       ),
   ].filter((c) => c !== false)
   return (

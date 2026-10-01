@@ -9,6 +9,7 @@ import { useDeclickAb } from '../hooks/useDeclickAb'
 import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
 import { useWaveform } from '../hooks/useWaveform'
 import { clickMarks, nextClick } from '../lib/clickMarks'
+import { formatFixed } from '../lib/numberFormat'
 import { claimKeys } from '../lib/spaceClaim'
 import { DeclickControls } from './DeclickControls'
 import { SectionBody } from './SectionBody'
@@ -60,7 +61,7 @@ export function DeclickSection({
   format,
   trim,
 }: Props): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const waveColor = useWaveColors().after
   const isMulti = selectedCount > 1
   const solo = open && !isMulti
@@ -228,7 +229,7 @@ export function DeclickSection({
               <div className="mb-1.5 flex items-center justify-between gap-2">
                 <SectionSubhead>{tr('declick.waveTitle')}</SectionSubhead>
                 <ZoomStepper
-                  label={zoomLabel(zoom)}
+                  label={zoomLabel(zoom, i18n.language)}
                   onOut={() => setZoom((z) => Math.max(1, z / 2))}
                   onIn={() => setZoom((z) => Math.min(ZOOM_MAX, z * 2))}
                   onReset={() => setZoom(1)}
@@ -276,7 +277,7 @@ export function DeclickSection({
                   aria-valuemin={0}
                   aria-valuemax={Number(durationSec.toFixed(2))}
                   aria-valuenow={Number(ab.at.toFixed(2))}
-                  aria-valuetext={`${ab.at.toFixed(2)} s`}
+                  aria-valuetext={`${formatFixed(ab.at, 2, i18n.language)} s`}
                   onPointerDown={(e) => {
                     e.currentTarget.setPointerCapture?.(e.pointerId)
                     scrubFrom(e.clientX, e.currentTarget)
@@ -305,7 +306,9 @@ export function DeclickSection({
                       key={m.sec}
                       type="button"
                       data-testid="declick-mark"
-                      aria-label={tr('declick.markLabel', { sec: m.sec.toFixed(2) })}
+                      aria-label={tr('declick.markLabel', {
+                        sec: formatFixed(m.sec, 2, i18n.language),
+                      })}
                       // A mark, unlike bare wave, DOES audition on click: a click lasts
                       // milliseconds, so "put the cursor near it" would be useless — the
                       // whole point of marking one is to hear that exact click.

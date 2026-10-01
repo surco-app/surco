@@ -13,6 +13,7 @@ import { useTrackLoudness } from '../hooks/useTrackLoudness'
 import { useWaveform, useWaveformScan } from '../hooks/useWaveform'
 import { useWaveformWindow, windowFor } from '../hooks/useWaveformWindow'
 import { formatTime, timeTicks } from '../lib/duration'
+import { formatUpTo } from '../lib/numberFormat'
 import { formatDb, predictNormalized } from '../lib/quality'
 import { clippedCount, drawWaveform, previewPeaks } from '../lib/waveform'
 import { Tooltip } from './Tooltip'
@@ -50,8 +51,8 @@ const BASE_RASTER_HIRES_CAP = 4096
 
 // The ×N chip's text: pinch zoom makes the factor continuous, so round to what
 // the eye needs — tenths under ×10, whole steps above ("×3.4", "×27").
-export function zoomLabel(zoom: number): string {
-  return `×${zoom >= 10 ? Math.round(zoom) : Number(zoom.toFixed(1))}`
+export function zoomLabel(zoom: number, language: string): string {
+  return `×${zoom >= 10 ? Math.round(zoom) : formatUpTo(zoom, 1, language)}`
 }
 
 // The colour key the legends' dots repeat: the converted file keeps the player's
@@ -108,6 +109,7 @@ function Legend({
   label: string
   loudness: LoudnessResult | null | undefined
 }): React.JSX.Element {
+  const { i18n } = useTranslation()
   return (
     <span
       data-testid={testid}
@@ -121,7 +123,7 @@ function Legend({
       <span className="whitespace-nowrap font-medium text-fg-dim">{label}</span>
       {loudness && (
         <span className="whitespace-nowrap tabular-nums text-fg-dim">
-          {`${formatDb(loudness.integratedLufs)} LUFS · ${formatDb(loudness.truePeakDb)} dBTP`}
+          {`${formatDb(loudness.integratedLufs, i18n.language)} LUFS · ${formatDb(loudness.truePeakDb, i18n.language)} dBTP`}
         </span>
       )}
     </span>
@@ -185,6 +187,7 @@ export function Strip({
   // (the trim section's shades and handles) track the wave through zoom and scroll.
   children?: React.ReactNode
 }): React.JSX.Element {
+  const { i18n } = useTranslation()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const hiResRef = useRef<HTMLCanvasElement>(null)
   const backgroundColor = useWaveColors().before
@@ -468,7 +471,7 @@ export function Strip({
     const shown = limitDb !== undefined ? Math.min(amp, 10 ** (limitDb / 20)) : amp
     return {
       time: formatTime(hover.ratio * wave.durationSec),
-      db: formatDb(shown > 0 ? 20 * Math.log10(shown) : Number.NEGATIVE_INFINITY),
+      db: formatDb(shown > 0 ? 20 * Math.log10(shown) : Number.NEGATIVE_INFINITY, i18n.language),
       over:
         markDb !== undefined ? amp > 10 ** (markDb / 20) : marks && wave.clipped?.[idx] === true,
     }
@@ -625,7 +628,7 @@ function ClippedFlag({
   active: boolean
   onToggle: () => void
 }): React.JSX.Element | null {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   // Memoized for the same reason the preview envelopes above are: both branches walk all
   // 8192 buckets (and allocate an intermediate array doing it), and this renders inside
   // the strip, which re-renders on every pointer move across the wave and on every
@@ -661,7 +664,7 @@ function ClippedFlag({
             -0.0 dB" says nothing. A real ceiling keeps its dB figure. */}
         {clipDb === undefined || clipDb >= 0
           ? tr('editor.waveformClipping')
-          : tr('editor.waveformClipped', { db: formatDb(clipDb) })}
+          : tr('editor.waveformClipped', { db: formatDb(clipDb, i18n.language) })}
       </span>
     </button>
   )
@@ -756,7 +759,7 @@ export function WaveformSolo({
   // sections) so the loudness view shows which audio the export leaves out.
   trimShade?: { startFrac?: number; endFrac?: number }
 }): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const colors = useWaveColors()
   const source = useStripData(inputPath, enabled)
   // Where the conversion will actually land, from the measurement already fetched
@@ -833,10 +836,10 @@ export function WaveformSolo({
               </span>
               <span className="whitespace-nowrap tabular-nums text-fg-dim">
                 {predicted
-                  ? `${formatDb(predicted.lufs)} LUFS · ${formatDb(predicted.truePeakDb)} dBTP`
+                  ? `${formatDb(predicted.lufs, i18n.language)} LUFS · ${formatDb(predicted.truePeakDb, i18n.language)} dBTP`
                   : normalize.mode === 'loudness'
-                    ? `${formatDb(normalize.targetLufs)} LUFS · ${formatDb(normalize.truePeakDb)} dBTP`
-                    : `${formatDb(normalize.peakDb)} dBFS`}
+                    ? `${formatDb(normalize.targetLufs, i18n.language)} LUFS · ${formatDb(normalize.truePeakDb, i18n.language)} dBTP`
+                    : `${formatDb(normalize.peakDb, i18n.language)} dBFS`}
               </span>
               {predicted && (
                 <span className="shrink-0 text-fg-faint">{tr('normalize.predictionEstimate')}</span>
@@ -853,7 +856,7 @@ export function WaveformSolo({
                     : 'bg-[var(--color-panel-2)] text-fg-muted'
                 }`}
               >
-                {`${preview.gainDb >= 0 ? '+' : ''}${formatDb(preview.gainDb)} dB`}
+                {`${preview.gainDb >= 0 ? '+' : ''}${formatDb(preview.gainDb, i18n.language)} dB`}
               </span>
               {/* The same switch as the plain view, counting on the PREDICTED wave: it
                   appears while the dialed values push peaks over the mode's red line
@@ -902,7 +905,7 @@ export function WaveformSolo({
             </button>
           )}
           <ZoomStepper
-            label={zoomLabel(zoom)}
+            label={zoomLabel(zoom, i18n.language)}
             onOut={() => setZoom((z) => Math.max(1, z / 2))}
             onIn={() => setZoom((z) => Math.min(ZOOM_MAX, z * 2))}
             onReset={() => setZoom(1)}

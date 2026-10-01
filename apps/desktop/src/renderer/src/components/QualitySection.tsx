@@ -11,6 +11,7 @@ import { cleanIpcError, errorKeyOf } from '../lib/ipcError'
 import {
   cutoffLabel,
   formatKHz,
+  formatSampleRate,
   GOOD_CUTOFF_HZ,
   isLossyContainer,
   isTranscode,
@@ -97,7 +98,7 @@ export function QualitySection({
   showHints = true,
   outputSampleRate = 'source',
 }: Props): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const { reportError } = useToast()
   // Gated on the feature setting AND the section being open: folding Quality away stops
   // the (heavy) decode until the user reopens it. A failed analysis surfaces as analyzeError.
@@ -175,7 +176,7 @@ export function QualitySection({
   // captions below.
   const evidence = (() => {
     if (!spectrum || spectrum.cutoffHz === null) return null
-    const cutoff = formatKHz(spectrum.cutoffHz)
+    const cutoff = formatKHz(spectrum.cutoffHz, i18n.language)
     if (
       spectrum.teethCount !== undefined &&
       spectrum.teethFromHz !== undefined &&
@@ -186,15 +187,15 @@ export function QualitySection({
         tone: 'warn' as const,
         params: {
           teeth: spectrum.teethCount,
-          from: formatKHz(spectrum.teethFromHz),
-          to: formatKHz(spectrum.teethToHz),
+          from: formatKHz(spectrum.teethFromHz, i18n.language),
+          to: formatKHz(spectrum.teethToHz, i18n.language),
         },
       }
     if (spectrum.humpPeakHz !== undefined)
       return {
         key: 'editor.qualityEvidenceHump',
         tone: 'warn' as const,
-        params: { cutoff, peak: formatKHz(spectrum.humpPeakHz) },
+        params: { cutoff, peak: formatKHz(spectrum.humpPeakHz, i18n.language) },
       }
     if (spectrum.flatShelf)
       return {
@@ -237,7 +238,7 @@ export function QualitySection({
   const caption = evidence
     ? tr(evidence.key, evidence.params)
     : spectrum?.cutoffHz != null && captionKey && captionKey !== 'editor.qualityCaptionGood'
-      ? tr(captionKey, { cutoff: formatKHz(spectrum.cutoffHz) })
+      ? tr(captionKey, { cutoff: formatKHz(spectrum.cutoffHz, i18n.language) })
       : null
   const resolutionKey: keyof typeof RESOLUTION_TESTID | null = !spectrum
     ? null
@@ -250,7 +251,7 @@ export function QualitySection({
           : null
   const resolutionText =
     resolutionKey && spectrum
-      ? tr(resolutionKey, { rate: `${spectrum.sampleRateHz / 1000} kHz` })
+      ? tr(resolutionKey, { rate: formatSampleRate(spectrum.sampleRateHz, i18n.language) })
       : null
   // Composes the shareable PNG (the verdict's proof for a "is this file fake?" thread)
   // and hands it to the save dialog. Guarded against double-clicks while composing.
@@ -263,12 +264,12 @@ export function QualitySection({
         [item.meta.artist, item.meta.title].filter(Boolean).join(' — ') || item.fileName
       const chip =
         spectrum.cutoffHz !== null
-          ? cutoffLabel({ ...spectrum, cutoffHz: spectrum.cutoffHz })
+          ? cutoffLabel({ ...spectrum, cutoffHz: spectrum.cutoffHz }, i18n.language)
           : null
       const png = await renderQualityReport({
         spectrum,
         heading,
-        facts: `${ext.toUpperCase()} · ${spectrum.sampleRateHz / 1000} kHz`,
+        facts: `${ext.toUpperCase()} · ${formatSampleRate(spectrum.sampleRateHz, i18n.language)}`,
         verdict: transcoded ? 'bad' : verdict,
         verdictLabel: tr(transcoded ? 'editor.qualityTranscode' : qualityBadge[verdict].label),
         cutoffLabel: chip ? tr(chip.key, { cutoff: chip.cutoff }) : null,
@@ -299,7 +300,9 @@ export function QualitySection({
     ? tr(transcoded ? 'editor.qualityTranscode' : qualityBadge[verdict].label)
     : null
   const cutoffChip =
-    spectrum?.cutoffHz != null ? cutoffLabel({ ...spectrum, cutoffHz: spectrum.cutoffHz }) : null
+    spectrum?.cutoffHz != null
+      ? cutoffLabel({ ...spectrum, cutoffHz: spectrum.cutoffHz }, i18n.language)
+      : null
   const announcement = analyzing
     ? tr('editor.analyzing')
     : analyzeFailed
@@ -450,8 +453,8 @@ export function QualitySection({
                       </p>
                       <p className="mt-1 text-xs leading-relaxed text-fg tabular-nums">
                         {tr('editor.qualityConvertRate', {
-                          from: `${spectrum.sampleRateHz / 1000} kHz`,
-                          to: '44.1 kHz',
+                          from: formatSampleRate(spectrum.sampleRateHz, i18n.language),
+                          to: formatSampleRate(44100, i18n.language),
                         })}
                       </p>
                       <p className="mt-0.5 text-[11px] text-fg-muted">

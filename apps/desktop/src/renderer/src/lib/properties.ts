@@ -1,4 +1,5 @@
 import type { TrackProperties } from '../../../shared/types'
+import { formatFixed } from './numberFormat'
 import { formatKHz } from './quality'
 
 // The source container, read off the input PATH's last extension and uppercased (FLAC,
@@ -20,15 +21,9 @@ export function formatFileSize(bytes: number, language: string): string {
   if (bytes < 1024) return `${bytes} B`
   const kb = bytes / 1024
   if (kb < 1024) return `${Math.round(kb)} KB`
-  const decimals = (value: number, digits: number): string =>
-    new Intl.NumberFormat(language, {
-      minimumFractionDigits: digits,
-      maximumFractionDigits: digits,
-      useGrouping: false,
-    }).format(value)
   const mb = kb / 1024
-  if (mb < 1024) return `${decimals(mb, 1)} MB`
-  return `${decimals(mb / 1024, 2)} GB`
+  if (mb < 1024) return `${formatFixed(mb, 1, language)} MB`
+  return `${formatFixed(mb / 1024, 2, language)} GB`
 }
 
 // A glanceable digest of the rip's shape (format · kHz · bits · channel mode); each
@@ -39,10 +34,11 @@ export function audioSummaryParts(
   p: TrackProperties,
   inputPath: string,
   tr: (key: string, params?: Record<string, unknown>) => string,
+  language: string,
 ): string[] {
   return [
     fileExtension(inputPath),
-    p.sampleRateHz ? formatKHz(p.sampleRateHz) : '',
+    p.sampleRateHz ? formatKHz(p.sampleRateHz, language) : '',
     p.bitDepth !== null ? tr('editor.propBitDepthValue', { bits: p.bitDepth }) : '',
     p.channels
       ? tr(`editor.channelMode${p.channels <= 1 ? 'Mono' : p.channels === 2 ? 'Stereo' : 'Multi'}`)

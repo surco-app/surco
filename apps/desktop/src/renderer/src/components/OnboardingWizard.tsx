@@ -405,7 +405,7 @@ const PREVIEW_STREAKS = Array.from({ length: 64 }, (_, i) => ({
 // yellow at the loud end, like the app's spectrogram; the labels sit on the dark image, so
 // it reads in both themes.
 function SpectrumPreview(): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const cutoffTop = (1 - PREVIEW_CUTOFF / PREVIEW_NYQUIST) * 100
   return (
     <div
@@ -464,7 +464,7 @@ function SpectrumPreview(): React.JSX.Element {
         className="pointer-events-none absolute inset-x-0 border-t border-dashed border-on-scrim/70"
       >
         <span className="absolute right-1 top-0.5 rounded bg-scrim/65 px-1 text-[10px] font-medium text-on-scrim">
-          {tr('editor.spectrumCutoff', { cutoff: formatKHz(PREVIEW_CUTOFF) })}
+          {tr('editor.spectrumCutoff', { cutoff: formatKHz(PREVIEW_CUTOFF, i18n.language) })}
         </span>
       </div>
     </div>
