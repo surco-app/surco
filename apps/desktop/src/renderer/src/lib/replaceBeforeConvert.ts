@@ -17,6 +17,10 @@ export function replacePatch(target: ReplaceCandidate | null): Partial<TrackItem
   // the user was shown, and Music's answer changes the moment an earlier replacement
   // repoints that entry (see StaleLibraryCopy.path).
   return target.path
-    ? { musicPersistentId: target.persistentId, replacesPath: target.path }
+    ? {
+        musicPersistentId: target.persistentId,
+        replacesPath: target.path,
+        replacesLabel: target.label,
+      }
     : { musicPersistentId: target.persistentId }
 }

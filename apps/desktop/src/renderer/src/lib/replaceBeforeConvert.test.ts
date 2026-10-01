@@ -37,7 +37,11 @@ describe('replacePatch', () => {
   it('stamps the path of the copy that was offered', () => {
     expect(
       replacePatch({ persistentId: 'PID1', label: 'Transfer - Possession', path: '/m/old.mp3' }),
-    ).toEqual({ musicPersistentId: 'PID1', replacesPath: '/m/old.mp3' })
+    ).toEqual({
+      musicPersistentId: 'PID1',
+      replacesPath: '/m/old.mp3',
+      replacesLabel: 'Transfer - Possession',
+    })
   })
 
   // A copy whose file Music could not report (a dead reference, an unmounted volume) still

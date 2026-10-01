@@ -668,6 +668,10 @@ export interface ProcessJob {
   // folder has never been in the collection, so without this the entry stayed on the old
   // MP3 while the library got a second copy.
   replacesPath?: string
+  // The "artist - title" Music showed for that copy when it was offered. Retiring it is
+  // checked against this name, never against the new tags: the copy was matched by score,
+  // so the two rarely spell the same.
+  replacesLabel?: string
 }
 
 export interface CoverExportJob {

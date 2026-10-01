@@ -819,8 +819,10 @@ describe('runProcessTrack — Apple Music only copy verification', () => {
   it('rolls back the add and fails when Music referenced the temp file instead of copying it', async () => {
     const deps = musicOnly()
     deps.appleMusicEntryLocation = vi.fn(async () => '/tmp/surco-abc/Artist - Title.aiff')
-    await expect(runProcessTrack(job(), deps)).rejects.toThrow()
-    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('added-id')
+    await expect(
+      runProcessTrack(job({ meta: { artist: 'Artist', title: 'Title' } as TrackMetadata }), deps),
+    ).rejects.toThrow()
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('added-id', 'Artist - Title')
     expect(deps.rm).toHaveBeenCalled()
   })
 
@@ -1153,6 +1155,7 @@ describe('runProcessTrack — replacing a library copy', () => {
     addToAppleMusic: true,
     musicPersistentId: 'old-id',
     replacesPath: '/m/old.mp3',
+    replacesLabel: 'Old Artist - Old Title',
   }
 
   // Measured from the user's log 15/09:
@@ -1211,7 +1214,34 @@ describe('runProcessTrack — replacing a library copy', () => {
 
     await runProcessTrack(job(replaceJob), deps)
 
-    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('old-id')
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('old-id', 'Old Artist - Old Title')
+  })
+
+  // Reported 01/10 with "Jamaican (Bam Bam)": the offered copy was "HUGEL, SOLTO (FR) -
+  // Jamaican (Bam Bam) (Extended Mix)" and the conversion carried the matched tags "Hugel,
+  // DJ Solto - Jamaican (Bam Bam) (Extended Version)". The candidate is chosen by a fuzzy
+  // score, so the new tags almost never spell the old entry's name; checking the delete
+  // against them refused it every time the user had improved the tags, which is exactly
+  // when a replacement happens.
+  it('verifies the old entry against its own name, not the tags just written', async () => {
+    const deps = replacing()
+
+    await runProcessTrack(
+      job({
+        ...replaceJob,
+        meta: {
+          artist: 'Hugel, DJ Solto',
+          title: 'Jamaican (Bam Bam) (Extended Version)',
+        } as TrackMetadata,
+        replacesLabel: 'HUGEL, SOLTO (FR) - Jamaican (Bam Bam) (Extended Mix)',
+      }),
+      deps,
+    )
+
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith(
+      'old-id',
+      'HUGEL, SOLTO (FR) - Jamaican (Bam Bam) (Extended Mix)',
+    )
   })
 
   // Order is the safety property: if the delete ran first, a failing add would lose the

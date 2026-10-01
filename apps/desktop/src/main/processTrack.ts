@@ -108,7 +108,7 @@ export interface ProcessTrackDeps {
   // Where a fresh library entry's file lives, and the rollback for an add that must
   // not stand — both only exercised by the "Apple Music only" copy verification below.
   appleMusicEntryLocation: (persistentId: string) => Promise<string>
-  deleteAppleMusic: (persistentId: string) => Promise<unknown>
+  deleteAppleMusic: (persistentId: string, expectedLabel: string) => Promise<unknown>
   // Corrects the recorded repoint once Music has copied the file into its Media folder.
   // The conversion only knows the temp path it wrote, which no longer exists when the
   // flush runs — the collection would be told to follow a file that is already gone.
@@ -130,15 +130,19 @@ export interface ProcessTrackDeps {
 // library row only, never the file: the superseded MP3 stays on disk for the user's own
 // "trash original" to decide.
 async function replaceAppleMusicCopy(
-  oldPersistentId: string | undefined,
+  job: ProcessJob,
   target: string,
-  meta: ProcessJob['meta'],
   coverPath: string | undefined,
   deps: ProcessTrackDeps,
 ): Promise<string> {
-  const added = await deps.addToAppleMusic(target, meta, coverPath)
-  if (oldPersistentId) await deps.deleteAppleMusic(oldPersistentId)
+  const added = await deps.addToAppleMusic(target, job.meta, coverPath)
+  if (job.musicPersistentId)
+    await deps.deleteAppleMusic(job.musicPersistentId, job.replacesLabel ?? metaLabel(job))
   return added
+}
+
+function metaLabel(job: ProcessJob): string {
+  return `${job.meta.artist} - ${job.meta.title}`
 }
 
 export async function runProcessTrack(
@@ -341,7 +345,7 @@ export async function runProcessTrack(
       // Add first and delete last: a failing add then destroys nothing, and the crates are
       // replayed in between so the successor is equivalent before anything is retired.
       musicPersistentId = job.replacesPath
-        ? await replaceAppleMusicCopy(job.musicPersistentId, target, job.meta, coverPath, deps)
+        ? await replaceAppleMusicCopy(job, target, coverPath, deps)
         : job.musicPersistentId
           ? ((await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)) ??
             (await deps.addToAppleMusic(target, job.meta, coverPath)))
@@ -354,7 +358,7 @@ export async function runProcessTrack(
       if (tmpDir && musicPersistentId) {
         const entryPath = await deps.appleMusicEntryLocation(musicPersistentId)
         if (entryPath.startsWith(tmpDir)) {
-          await deps.deleteAppleMusic(musicPersistentId)
+          await deps.deleteAppleMusic(musicPersistentId, metaLabel(job))
           throw errorWithKey('appleMusicNoMediaCopy', entryPath)
         }
         // Music copied the file out of the temp dir, so this is where it actually lives.
