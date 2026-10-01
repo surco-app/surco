@@ -8,7 +8,7 @@ const { liveCacheDir } = vi.hoisted(() => {
 })
 vi.mock('electron', () => ({ app: { getPath: () => liveCacheDir, on: () => {} } }))
 
-import { getRelease, search } from './musicbrainz'
+import { getRelease, matchesMbFormats, search } from './musicbrainz'
 
 const live = process.env.SURCO_MUSICBRAINZ_LIVE === '1'
 
@@ -36,5 +36,18 @@ describe.skipIf(!live)('MusicBrainz against the real API', () => {
       album: 'It’s in the Lifestyle',
     })
     expect(rows[0].title).toBe('Kings of Tomorrow - It’s in the Lifestyle')
+  }, 30_000)
+
+  // artexjay's vinyl-only search: unfiltered, "Finally" showed no vinyl among its first 28
+  // releases (measured 01/10), so the filter has to reach the query, not just thin rows.
+  it('finds vinyl pressings of Finally when only vinyl is wanted', async () => {
+    const rows = await search(
+      'Kings Of Tomorrow - Finally',
+      'high',
+      { artist: 'Kings Of Tomorrow', title: 'Finally' },
+      ['Vinyl'],
+    )
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows.every((r) => matchesMbFormats(r, ['Vinyl']))).toBe(true)
   }, 30_000)
 })

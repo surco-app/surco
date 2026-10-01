@@ -353,15 +353,34 @@ describe('SettingsModal auto-match', () => {
     )
   })
 
-  // The token, auto-match and format filter only act on Discogs results, so they're
-  // disabled (and flagged) when Discogs isn't a chosen source — no inert, confusing controls.
+  // The token and auto-match only act on Discogs results, so they're disabled (and
+  // flagged) when Discogs isn't a chosen source — no inert, confusing controls.
   it('disables the Discogs-only settings when Discogs is not a search source', () => {
     openSearch()
     fireEvent.click(screen.getByTestId('settings-provider-discogs'))
     expect(screen.getByTestId('settings-token')).toBeDisabled()
     expect(screen.getByTestId('settings-auto-match')).toBeDisabled()
-    expect(screen.getByTestId('settings-format-Vinyl')).toBeDisabled()
     expect(screen.getByTestId('settings-discogs-disabled')).toBeInTheDocument()
+  })
+
+  // artexjay's request: MusicBrainz rows name their medium too, so the same filter trims
+  // them. Turning Discogs off must not take it away while MusicBrainz still searches.
+  it('keeps the format filter usable while MusicBrainz is a search source', () => {
+    openSearch()
+    fireEvent.click(screen.getByTestId('settings-provider-discogs'))
+    fireEvent.click(screen.getByTestId('settings-provider-musicbrainz'))
+    expect(screen.getByTestId('settings-format-Vinyl')).toBeEnabled()
+    expect(screen.queryByTestId('settings-formats-disabled')).not.toBeInTheDocument()
+  })
+
+  // Bandcamp, Deezer and Beatport rows carry no medium, so with only them the filter
+  // would do nothing; it stays in place, disabled and flagged.
+  it('disables the format filter when no source names a release format', () => {
+    openSearch()
+    fireEvent.click(screen.getByTestId('settings-provider-discogs'))
+    fireEvent.click(screen.getByTestId('settings-provider-bandcamp'))
+    expect(screen.getByTestId('settings-format-Vinyl')).toBeDisabled()
+    expect(screen.getByTestId('settings-formats-disabled')).toBeInTheDocument()
   })
 
   // Auto-match is a global search setting now: with only Bandcamp as a source it needs no
@@ -384,9 +403,9 @@ describe('SettingsModal auto-match', () => {
     )
   })
 
-  // The format filter lets the user see only certain Discogs release formats (e.g. only
-  // vinyl). Checking a box and saving must persist that choice.
-  it('saves the chosen Discogs format filter', () => {
+  // The format filter lets the user see only certain release formats (e.g. only vinyl).
+  // Checking a box and saving must persist that choice.
+  it('saves the chosen format filter', () => {
     const onSave = vi.fn()
     openSearch(onSave)
     fireEvent.click(screen.getByTestId('settings-format-Vinyl'))
