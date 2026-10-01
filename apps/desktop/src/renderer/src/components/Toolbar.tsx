@@ -26,6 +26,9 @@ interface Props {
   // last saw it). The count is named in the label on purpose: the editor footer carries a
   // "Convert to AIFF" for the open track, and without a count the two read as one action.
   convertibleCount: number
+  // The tracks the batch covers (the selection, or the visible list), so a count below it
+  // reads "1 of 3" and can't be taken for the open track when that one isn't ready.
+  batchSize: number
   canConvertAll: boolean
   onConvertAll: () => void
   // Metadata-read progress of an in-flight import (null when idle), shown as a "212/319"
@@ -79,6 +82,7 @@ export const Toolbar = memo(function Toolbar({
   hintFor,
   trackCount,
   convertibleCount,
+  batchSize,
   canConvertAll,
   onConvertAll,
   importing,
@@ -107,9 +111,11 @@ export const Toolbar = memo(function Toolbar({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const convertLabel =
-    convertibleCount > 0
-      ? tr('header.convertAll', { count: convertibleCount })
-      : tr('header.convertNone')
+    convertibleCount === 0
+      ? tr('header.convertNone')
+      : convertibleCount < batchSize
+        ? tr('header.convertSome', { ready: convertibleCount, total: batchSize })
+        : tr('header.convertAll', { count: convertibleCount })
   return (
     <header
       className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-20"

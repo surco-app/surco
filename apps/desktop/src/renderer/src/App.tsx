@@ -1863,6 +1863,7 @@ export default function App(): React.JSX.Element {
                 hintFor={hintFor}
                 trackCount={tracks.length}
                 convertibleCount={eligibleCount}
+                batchSize={bulkTracks.length}
                 canConvertAll={canProcessAll}
                 onConvertAll={onConvertAllTracks}
                 importing={importProgress}

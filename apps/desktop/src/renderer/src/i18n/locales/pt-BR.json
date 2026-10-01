@@ -47,6 +47,7 @@
     "convertAll_one": "Converter 1 faixa",
     "convertAll_other": "Converter {{count}} faixas",
     "convertNone": "Converter",
+    "convertSome": "Converter {{ready}} de {{total}}",
     "cancelConvert": "Cancelar a conversão: as faixas na fila são puladas, as que estão em andamento terminam",
     "cancelImport": "Parar a leitura: o que já foi lido fica, o resto é descartado",
     "autoMatch": "Auto-associar todas as faixas",

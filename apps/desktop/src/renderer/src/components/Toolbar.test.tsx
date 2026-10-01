@@ -15,6 +15,7 @@ function renderBar(over: Partial<Props> = {}): Props {
     hintFor: () => '',
     trackCount: 3,
     convertibleCount: 3,
+    batchSize: 3,
     canConvertAll: true,
     onConvertAll: vi.fn(),
     importing: null,
@@ -200,10 +201,27 @@ describe('Toolbar', () => {
     expect(screen.getByTestId('convert-all')).toHaveTextContent('12')
   })
 
+  // With the open track missing a field, its footer says so while this button still
+  // offers to convert "1 track": that one is another row, and unless the label says out
+  // of how many, the two read as a contradiction about the same track.
+  it('says out of how many tracks it converts when some are not ready', () => {
+    renderBar({ convertibleCount: 1, batchSize: 3 })
+    expect(screen.getByTestId('convert-all')).toHaveAccessibleName(
+      i18n.t('header.convertSome', { ready: 1, total: 3 }),
+    )
+  })
+
+  it('keeps the plain count when every track in the batch is ready', () => {
+    renderBar({ convertibleCount: 3, batchSize: 3 })
+    expect(screen.getByTestId('convert-all')).toHaveAccessibleName(
+      i18n.t('header.convertAll', { count: 3 }),
+    )
+  })
+
   // The main action has to be where the user expects it however many tracks are loaded:
   // hiding it on a one-track crate made the button come and go as tracks were added.
   it('offers to convert a single-track crate, named for one track', () => {
-    renderBar({ trackCount: 1, convertibleCount: 1 })
+    renderBar({ trackCount: 1, convertibleCount: 1, batchSize: 1 })
     expect(screen.getByTestId('convert-all')).toHaveTextContent(
       i18n.t('header.convertAll', { count: 1 }),
     )
