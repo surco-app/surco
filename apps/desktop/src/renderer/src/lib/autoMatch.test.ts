@@ -8,8 +8,8 @@ import {
   matchActivityReport,
   matchTargetOf,
   type ProbedCandidate,
-  searchHintsFor,
   type ProbeMatch,
+  searchHintsFor,
   shouldAutoApplyMatch,
   tracksToAutoMatch,
 } from './autoMatch'
