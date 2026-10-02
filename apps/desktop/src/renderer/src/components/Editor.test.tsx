@@ -1640,19 +1640,25 @@ describe('Editor export control', () => {
   })
 
   // Once the library copy is in sync, a disabled "Added ✓" is a dead end — the slot
-  // becomes the reveal, jumping to this exact track in the Music window.
+  // becomes the reveal, jumping to this exact track in the Music window. A folder export
+  // the user then added by hand: with Apple Music as the destination the confirmation
+  // itself is the reveal (ConvertFooter's done layout).
   it('turns the synced state into a "Show in Apple Music" action that reveals the library copy', () => {
     const revealAppleMusic = vi.fn().mockResolvedValue(undefined)
     const api = (window as unknown as { api: { platform: string; revealAppleMusic: unknown } }).api
     api.platform = 'darwin'
     api.revealAppleMusic = revealAppleMusic
-    renderEditor({
-      id: 'a',
-      status: 'done',
-      outputPath: '/out/a.wav',
-      musicStatus: 'added',
-      musicPersistentId: 'ABCD1234',
-    })
+    renderEditor(
+      {
+        id: 'a',
+        status: 'done',
+        outputPath: '/out/a.wav',
+        musicStatus: 'added',
+        musicPersistentId: 'ABCD1234',
+      },
+      'wav',
+      { addToAppleMusic: false },
+    )
     const btn = screen.getByTestId('add-apple-music')
     expect(btn).toHaveTextContent('Show in Apple Music')
     expect(btn).not.toBeDisabled()

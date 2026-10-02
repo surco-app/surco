@@ -130,6 +130,9 @@ export function ConvertFooter({
   const showInMusic = hasMusicCopy && musicAdded
   const musicCopyId = item.musicPersistentId
   const revealsInMusic = isMacOS() && showInMusic && !!musicCopyId
+  // Sent to Apple Music, the track went to the library even when an in-place export left
+  // the rewritten source behind: the folder is where it came from, so it is not offered.
+  const addedToMusic = inMusicLibraryOnly || (destination === 'appleMusic' && musicAdded)
   const revealInMusic = (): void => {
     if (musicCopyId) void window.api.revealAppleMusic(musicCopyId)
   }
@@ -223,7 +226,7 @@ export function ConvertFooter({
                   role="status"
                   className="text-xs font-medium text-good"
                 >
-                  {revealsInMusic && inMusicLibraryOnly ? (
+                  {revealsInMusic && addedToMusic ? (
                     <button
                       type="button"
                       data-testid="add-apple-music"
@@ -234,7 +237,7 @@ export function ConvertFooter({
                       {tr('editor.addedToAppleMusic')}
                       <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
                     </button>
-                  ) : inMusicLibraryOnly ? (
+                  ) : addedToMusic ? (
                     isMulti ? (
                       tr('editor.addedToAppleMusicCount', { count: selectedCount })
                     ) : (
@@ -246,7 +249,7 @@ export function ConvertFooter({
                     tr('editor.exportedAs', { format: (exportedFormat ?? '').toUpperCase() })
                   )}
                 </p>
-                {revealsInMusic && !inMusicLibraryOnly && (
+                {revealsInMusic && !addedToMusic && (
                   <button
                     type="button"
                     data-testid="add-apple-music"
@@ -257,7 +260,7 @@ export function ConvertFooter({
                     <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
                   </button>
                 )}
-                {revealPath && (
+                {revealPath && !addedToMusic && (
                   <button
                     type="button"
                     data-testid="show-file"

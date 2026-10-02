@@ -234,6 +234,45 @@ describe('ConvertFooter done layout', () => {
     expect(revealAppleMusic).toHaveBeenCalledWith('ABCD1234')
   })
 
+  // Reported 02/10 with two screenshots: the same "send to Apple Music" read "Added to Apple
+  // Music ↗" on one track and "Exported as AIFF · Show in Apple Music · Show file" over two
+  // rows on another. The second was an AIFF updated in place, so a file stayed behind, but
+  // the user sent it to their library: the folder is where it came from, not where it went.
+  function sentToMusic(destination: Destination, isMulti = false): React.JSX.Element {
+    return (
+      <ConvertFooter
+        {...inMusic(false, true).props}
+        isMulti={isMulti}
+        selectedCount={isMulti ? 9 : 1}
+        destination={destination}
+        status={{
+          ...status(true),
+          revealPath: '/crate/a.aiff',
+          musicAdded: true,
+          superseded: [],
+        }}
+      />
+    )
+  }
+
+  it('reads an in-place export sent to Apple Music as added there, with no file to show', () => {
+    render(sentToMusic('appleMusic'))
+    expect(screen.getByRole('status')).toHaveTextContent('✓ Added to Apple Music')
+    expect(screen.queryByTestId('show-file')).toBeNull()
+  })
+
+  it('counts a batch sent to Apple Music as added there, with no file to show', () => {
+    render(sentToMusic('appleMusic', true))
+    expect(screen.getByRole('status')).toHaveTextContent('✓ 9 tracks added to Apple Music')
+    expect(screen.queryByTestId('show-file')).toBeNull()
+  })
+
+  it('still shows the file when the destination is a folder', () => {
+    render(sentToMusic('folder'))
+    expect(screen.getByRole('status')).toHaveTextContent('Exported as AIFF')
+    expect(screen.getByTestId('show-file')).toBeInTheDocument()
+  })
+
   it('keeps an update that is still pending among the actions', () => {
     render(inMusic(false, false))
     expect(
