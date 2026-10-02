@@ -69,3 +69,11 @@ export function macInstallers(arch: MacArch | undefined): { primary: string; sec
     ? { primary: 'x64.dmg', secondary: 'arm64.dmg' }
     : { primary: 'arm64.dmg', secondary: 'x64.dmg' }
 }
+
+// Surco 1.3.0 moved to Electron 44, which needs macOS 13. 1.2.3 is the last build that
+// opens on macOS 12 (Monterey), so it stays reachable for those Macs.
+const MONTEREY_VERSION = '1.2.3'
+
+export function montereyInstallerUrl(arch: MacArch): string {
+  return `https://github.com/surco-app/surco-releases/releases/download/v${MONTEREY_VERSION}/Surco-${MONTEREY_VERSION}-${arch}.dmg`
+}

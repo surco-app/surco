@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { detectMacArch, detectOS, installerSuffix, macInstallers } from './os'
+import { detectMacArch, detectOS, installerSuffix, macInstallers, montereyInstallerUrl } from './os'
 
 describe('detectOS', () => {
   afterEach(() => {
@@ -129,5 +129,18 @@ describe('macInstallers', () => {
   it('leads with Apple Silicon when the Mac is Apple Silicon or unknown', () => {
     expect(macInstallers('arm64')).toEqual({ primary: 'arm64.dmg', secondary: 'x64.dmg' })
     expect(macInstallers(undefined)).toEqual({ primary: 'arm64.dmg', secondary: 'x64.dmg' })
+  })
+})
+
+describe('montereyInstallerUrl', () => {
+  // From 1.3.0 Surco runs on Electron 44, which needs macOS 13. 1.2.3 is the last build
+  // that opens on macOS 12, so the link must name that exact asset for each CPU.
+  it('points at the last build that runs on macOS 12', () => {
+    expect(montereyInstallerUrl('x64')).toBe(
+      'https://github.com/surco-app/surco-releases/releases/download/v1.2.3/Surco-1.2.3-x64.dmg',
+    )
+    expect(montereyInstallerUrl('arm64')).toBe(
+      'https://github.com/surco-app/surco-releases/releases/download/v1.2.3/Surco-1.2.3-arm64.dmg',
+    )
   })
 })

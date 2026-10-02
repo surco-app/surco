@@ -9,6 +9,7 @@ import {
   installerSuffix,
   type MacArch,
   macInstallers,
+  montereyInstallerUrl,
   type OS,
 } from '../lib/os'
 import { btnPrimary } from '../lib/ui'
@@ -114,6 +115,7 @@ export default function DownloadButton({
   // Before detection runs (the prerender) the CTA can't name a platform, so it shows the
   // same pending spinner as an in-flight fetch rather than the 'other' fallback link.
   const pending = os === 'unknown'
+  const showMonterey = os === 'mac' && href !== null
 
   return (
     <>
@@ -276,6 +278,38 @@ export default function DownloadButton({
       >
         {t(macArch === 'x64' ? 'download.appleSilicon' : 'download.intel')}
       </a>
+      {/* Small print for Macs stuck on macOS 12, which the current build refuses to open.
+          Reserved like the line above so it costs no layout shift, and shown on the same
+          signal (the Mac installer resolved) because the OS is already known in the first
+          client render, which hydration never patches onto the prerendered attributes. With
+          a known CPU it offers only that build. */}
+      <p
+        data-testid="download-monterey"
+        aria-hidden={showMonterey ? undefined : true}
+        className={`mt-1.5 text-xs text-faint ${showMonterey ? '' : 'invisible'}`}
+      >
+        {t('download.montereyLead')}{' '}
+        {(macArch ? [macArch] : (['arm64', 'x64'] as const)).map((arch, i) => {
+          const montereyHref = montereyInstallerUrl(arch)
+          return (
+            <span key={arch}>
+              {i > 0 && ` ${t('download.montereyOr')} `}
+              <a
+                href={showMonterey ? montereyHref : undefined}
+                tabIndex={showMonterey ? undefined : -1}
+                data-testid={`download-monterey-${arch}`}
+                className="underline underline-offset-2 transition-colors hover:text-blue"
+                onClick={() => {
+                  if (showMonterey)
+                    trackDownload({ href: montereyHref, os, location, version: 'v1.2.3' })
+                }}
+              >
+                {t(arch === 'x64' ? 'download.archIntel' : 'download.archAppleSilicon')}
+              </a>
+            </span>
+          )
+        })}
+      </p>
     </>
   )
 }
