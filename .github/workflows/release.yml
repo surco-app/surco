@@ -252,6 +252,21 @@ jobs:
             dist/Surco-"$version"-*.dmg dist/Surco-"$version"-*.dmg.blockmap \
             dist/Surco-"$version"-*.zip dist/Surco-"$version"-*.zip.blockmap
 
+      # Electron 44 made the app refuse to open below macOS 13, but electron-builder leaves
+      # that floor out of the feed, so a Monterey install on 1.2.x took the update and
+      # never launched again. electron-updater skips a release whose minimumSystemVersion
+      # is above os.release(), which on a Mac is the Darwin version (macOS N >= 11 is
+      # Darwin N + 9), so the floor is read from the packaged app and written in Darwin
+      # terms: "13.0" becomes 22.0.0. The merge job keeps it, since it builds on this file.
+      - name: Write the minimum macOS into the update feed
+        if: runner.os == 'macOS'
+        working-directory: apps/desktop
+        shell: bash
+        run: |
+          min=$(plutil -extract LSMinimumSystemVersion raw dist/mac*/Surco.app/Contents/Info.plist)
+          echo "minimumSystemVersion: $(( ${min%%.*} + 9 )).0.0" >> dist/latest-mac.yml
+          cat dist/latest-mac.yml
+
       # Both macOS runners publish a file literally named latest-mac.yml, so on the
       # shared release the second upload clobbers the first and one arch loses its
       # update feed. Stash each arch's copy so a later job can merge them.
