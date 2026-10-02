@@ -74,6 +74,11 @@ export function macInstallers(arch: MacArch | undefined): { primary: string; sec
 // opens on macOS 12 (Monterey), so it stays reachable for those Macs.
 const MONTEREY_VERSION = '1.2.3'
 
-export function montereyInstallerUrl(arch: MacArch): string {
+const MONTEREY_RELEASE = `https://github.com/surco-app/surco-releases/releases/tag/v${MONTEREY_VERSION}`
+
+// With an unknown CPU there is no installer to pick: a Monterey Mac is as likely Intel as
+// Apple Silicon, so the release page, which lists both, is the safe answer.
+export function montereyUrl(arch: MacArch | undefined): string {
+  if (!arch) return MONTEREY_RELEASE
   return `https://github.com/surco-app/surco-releases/releases/download/v${MONTEREY_VERSION}/Surco-${MONTEREY_VERSION}-${arch}.dmg`
 }

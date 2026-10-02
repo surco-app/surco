@@ -50,6 +50,19 @@ describe('downloadEvent', () => {
     expect(event.file_extension).toBe('')
   })
 
+  // The macOS 12 link opens the v1.2.3 release page when the browser can't tell the CPU.
+  // Its last path segment "v1.2.3" has a dot, and reading "3" as a file extension counted
+  // a page visit as an installer download.
+  it('marks a tagged release page as a listing, not an installer', () => {
+    const event = downloadEvent({
+      href: 'https://github.com/surco-app/surco-releases/releases/tag/v1.2.3',
+      os: 'mac',
+      location: 'hero',
+    })
+    expect(event.surco_kind).toBe('releases_page')
+    expect(event.file_extension).toBe('')
+  })
+
   it('marks a real installer as an installer', () => {
     expect(downloadEvent({ href: DMG, os: 'mac', location: 'hero' }).surco_kind).toBe('installer')
   })

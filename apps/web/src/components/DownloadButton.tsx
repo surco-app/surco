@@ -9,7 +9,7 @@ import {
   installerSuffix,
   type MacArch,
   macInstallers,
-  montereyInstallerUrl,
+  montereyUrl,
   type OS,
 } from '../lib/os'
 import { btnPrimary } from '../lib/ui'
@@ -20,7 +20,7 @@ const REPO = 'surco-app/surco-releases'
 const RELEASES = `https://github.com/${REPO}/releases/latest`
 
 const LABEL: Record<OS, string> = {
-  mac: 'macOS',
+  mac: 'Mac',
   windows: 'Windows',
   linux: 'Linux',
   other: '',
@@ -28,6 +28,8 @@ const LABEL: Record<OS, string> = {
 }
 
 const primary = `inline-flex ${btnPrimary} px-7 py-3 text-sm`
+const altLink =
+  'text-muted underline decoration-muted/35 underline-offset-[3px] transition-colors hover:text-blue hover:decoration-current'
 
 // Resolves the installer for the visitor's OS from the newest published release that
 // actually carries it. A brand-new release shows up before CI finishes uploading its 12
@@ -115,7 +117,19 @@ export default function DownloadButton({
   // Before detection runs (the prerender) the CTA can't name a platform, so it shows the
   // same pending spinner as an in-flight fetch rather than the 'other' fallback link.
   const pending = os === 'unknown'
-  const showMonterey = os === 'mac' && href !== null
+  // Shown once the other Mac build resolves, never on the OS check alone: the OS is already
+  // known in the first client render, and hydration never patches that onto the attributes
+  // of the prerendered HTML, so a line gated on it alone stayed invisible.
+  const showAlternatives = os === 'mac' && otherMacHref !== null
+  const chip = t(macArch === 'x64' ? 'download.archIntel' : 'download.archAppleSilicon')
+  const otherChip = t(macArch === 'x64' ? 'download.archAppleSilicon' : 'download.archIntel')
+  const montereyHref = montereyUrl(macArch)
+  const facts = [
+    version,
+    os === 'mac' && href ? chip : null,
+    size !== null ? `${Math.round(size / 1_000_000)} MB` : null,
+    os === 'mac' && href ? t('download.macRequirement') : null,
+  ].filter((fact): fact is string => fact !== null)
 
   return (
     <>
@@ -149,7 +163,7 @@ export default function DownloadButton({
                 strokeLinecap="round"
               />
             </svg>
-            {t('download.cta', { os: 'macOS' })}
+            {t('download.cta', { os: 'Mac' })}
           </button>
         ) : os === 'other' ? (
           <a
@@ -191,7 +205,7 @@ export default function DownloadButton({
                 strokeLinecap="round"
               />
             </svg>
-            {t('download.cta', { os: LABEL[os] || 'macOS' })}
+            {t('download.cta', { os: LABEL[os] || 'Mac' })}
           </button>
         )}
       </div>
@@ -208,107 +222,85 @@ export default function DownloadButton({
       {showMeta && (
         // min-h reserves one line so the row doesn't grow from empty (prerender) to
         // version+size once the releases fetch lands, which would shift the hero. The note
-        // leads the same line: price, platforms, version and size are one piece of small
-        // print, and on four lines they outweighed the button they qualify.
-        <div
-          className={`mt-3.5 flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-faint ${
-            center ? 'justify-center' : ''
-          }`}
-        >
-          {note && <span className="text-sm text-muted">{note}</span>}
-          {state === 'pending' ? null : state === 'unreachable' ? (
-            // The releases lookup broke — GitHub's REST listing has answered 504 for
-            // every repo at once before now, while /releases/latest stayed up. Saying
-            // "not available yet" here would blame the product for someone else's
-            // outage and leave the visitor stuck, so name it and hand over the link
-            // that still works.
-            <p data-testid="download-unreachable">
-              {t('download.unreachable')}{' '}
-              <a
-                href={RELEASES}
-                className="text-muted underline underline-offset-2 transition-colors hover:text-blue"
-                onClick={() => trackDownload({ href: RELEASES, os, location })}
-              >
-                {t('download.unreachableLink')}
-              </a>
-            </p>
-          ) : state === 'unsupported' ? (
-            <p data-testid="download-unsupported">{t('download.unsupported')}</p>
-          ) : (
-            <>
-              {version && (
-                <span data-testid="app-version" className="font-mono text-faint tabular-nums">
-                  {version}
-                </span>
-              )}
-              {size !== null && (
-                <span data-testid="download-size" className="font-mono text-faint tabular-nums">
-                  {Math.round(size / 1_000_000)} MB
-                </span>
-              )}
-              {showCount && <DownloadCount />}
-            </>
+        // sits on its own line above, and the facts below it name what the button downloads
+        // and what it needs, so a Mac on macOS 12 learns it before the installer refuses.
+        <>
+          {note && (
+            <p className={`mt-3.5 text-sm text-muted ${center ? 'text-center' : ''}`}>{note}</p>
           )}
-        </div>
+          <div
+            className={`${note ? 'mt-1.5' : 'mt-3.5'} flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-faint ${
+              center ? 'justify-center' : ''
+            }`}
+          >
+            {state === 'pending' ? null : state === 'unreachable' ? (
+              // The releases lookup broke — GitHub's REST listing has answered 504 for
+              // every repo at once before now, while /releases/latest stayed up. Saying
+              // "not available yet" here would blame the product for someone else's
+              // outage and leave the visitor stuck, so name it and hand over the link
+              // that still works.
+              <p data-testid="download-unreachable">
+                {t('download.unreachable')}{' '}
+                <a
+                  href={RELEASES}
+                  className="text-muted underline underline-offset-2 transition-colors hover:text-blue"
+                  onClick={() => trackDownload({ href: RELEASES, os, location })}
+                >
+                  {t('download.unreachableLink')}
+                </a>
+              </p>
+            ) : state === 'unsupported' ? (
+              <p data-testid="download-unsupported">{t('download.unsupported')}</p>
+            ) : (
+              <>
+                {facts.length > 0 && (
+                  <span data-testid="download-facts" className="font-mono text-faint tabular-nums">
+                    {facts.join(' · ')}
+                  </span>
+                )}
+                {showCount && <DownloadCount />}
+              </>
+            )}
+          </div>
+        </>
       )}
-      {/* Always mounted (invisible until the other Mac build resolves) so the
-          link occupies its line in the prerendered HTML and every client state
-          alike. The page is statically prerendered with os='other', so gating this
-          on the OS check or the releases fetch would insert the line only after
-          hydration — shoving the hero screenshot and decorative waves down and
-          spiking CLS. The reserved line costs non-Mac visitors a blank row. */}
-      {/* biome-ignore lint/a11y/useAnchorContent: intentionally aria-hidden when there's no Intel link to show — it's a CLS-reserving placeholder (see above), not a real link for assistive tech */}
-      <a
-        href={os === 'mac' && otherMacHref ? otherMacHref : undefined}
-        // The link stays mounted with no href when there is no Intel build (it reserves
-        // its line against CLS), so the click only counts when it points somewhere.
-        onClick={() => {
-          if (os === 'mac' && otherMacHref)
-            trackDownload({ href: otherMacHref, os, location, ...(version ? { version } : {}) })
-        }}
-        aria-hidden={os === 'mac' && otherMacHref ? undefined : true}
-        tabIndex={os === 'mac' && otherMacHref ? undefined : -1}
-        // Where the browser can't tell the CPU, this link IS the working download for an
-        // Intel Mac, so it reads at the legible step above `faint` rather than in the
-        // page's quietest style. Same line, same reserved height: the CLS reservation
-        // above is unaffected.
-        className={`mt-2 inline-block text-sm text-muted underline-offset-2 transition-colors hover:text-blue hover:underline ${
-          os === 'mac' && otherMacHref ? '' : 'invisible'
-        }`}
-      >
-        {t(macArch === 'x64' ? 'download.appleSilicon' : 'download.intel')}
-      </a>
-      {/* Small print for Macs stuck on macOS 12, which the current build refuses to open.
-          Reserved like the line above so it costs no layout shift, and shown on the same
-          signal (the Mac installer resolved) because the OS is already known in the first
-          client render, which hydration never patches onto the prerendered attributes. With
-          a known CPU it offers only that build. */}
+      {/* Always mounted, invisible until the other Mac build resolves, so the line occupies
+          its place in the prerendered HTML and every client state alike. The page is
+          statically prerendered with no OS, so inserting the line only after hydration would
+          shove the hero screenshot and decorative waves down and spike CLS. The reserved
+          line costs non-Mac visitors a blank row. Both alternatives share one line so the
+          exceptions stop outweighing the button. */}
       <p
-        data-testid="download-monterey"
-        aria-hidden={showMonterey ? undefined : true}
-        className={`mt-1.5 text-xs text-faint ${showMonterey ? '' : 'invisible'}`}
+        data-testid="download-alternatives"
+        aria-hidden={showAlternatives ? undefined : true}
+        className={`mt-2 text-sm text-faint ${showAlternatives ? '' : 'invisible'}`}
       >
-        {t('download.montereyLead')}{' '}
-        {(macArch ? [macArch] : (['arm64', 'x64'] as const)).map((arch, i) => {
-          const montereyHref = montereyInstallerUrl(arch)
-          return (
-            <span key={arch}>
-              {i > 0 && ` ${t('download.montereyOr')} `}
-              <a
-                href={showMonterey ? montereyHref : undefined}
-                tabIndex={showMonterey ? undefined : -1}
-                data-testid={`download-monterey-${arch}`}
-                className="underline underline-offset-2 transition-colors hover:text-blue"
-                onClick={() => {
-                  if (showMonterey)
-                    trackDownload({ href: montereyHref, os, location, version: 'v1.2.3' })
-                }}
-              >
-                {t(arch === 'x64' ? 'download.archIntel' : 'download.archAppleSilicon')}
-              </a>
-            </span>
-          )
-        })}
+        {t('download.alsoFor')}{' '}
+        <a
+          href={showAlternatives && otherMacHref ? otherMacHref : undefined}
+          tabIndex={showAlternatives ? undefined : -1}
+          data-testid="download-other-mac"
+          className={altLink}
+          onClick={() => {
+            if (showAlternatives && otherMacHref)
+              trackDownload({ href: otherMacHref, os, location, ...(version ? { version } : {}) })
+          }}
+        >
+          {t('download.macWith', { chip: otherChip })}
+        </a>
+        <span aria-hidden="true"> · </span>
+        <a
+          href={showAlternatives ? montereyHref : undefined}
+          tabIndex={showAlternatives ? undefined : -1}
+          data-testid="download-monterey"
+          className={altLink}
+          onClick={() => {
+            if (showAlternatives)
+              trackDownload({ href: montereyHref, os, location, version: 'v1.2.3' })
+          }}
+        >
+          {t('download.monterey')}
+        </a>
       </p>
     </>
   )

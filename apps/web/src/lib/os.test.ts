@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { detectMacArch, detectOS, installerSuffix, macInstallers, montereyInstallerUrl } from './os'
+import { detectMacArch, detectOS, installerSuffix, macInstallers, montereyUrl } from './os'
 
 describe('detectOS', () => {
   afterEach(() => {
@@ -132,15 +132,24 @@ describe('macInstallers', () => {
   })
 })
 
-describe('montereyInstallerUrl', () => {
+describe('montereyUrl', () => {
   // From 1.3.0 Surco runs on Electron 44, which needs macOS 13. 1.2.3 is the last build
-  // that opens on macOS 12, so the link must name that exact asset for each CPU.
+  // that opens on macOS 12, so with a known CPU the link is that exact installer.
   it('points at the last build that runs on macOS 12', () => {
-    expect(montereyInstallerUrl('x64')).toBe(
+    expect(montereyUrl('x64')).toBe(
       'https://github.com/surco-app/surco-releases/releases/download/v1.2.3/Surco-1.2.3-x64.dmg',
     )
-    expect(montereyInstallerUrl('arm64')).toBe(
+    expect(montereyUrl('arm64')).toBe(
       'https://github.com/surco-app/surco-releases/releases/download/v1.2.3/Surco-1.2.3-arm64.dmg',
+    )
+  })
+
+  // Safari can't tell the CPU, and a Monterey Mac is as likely Intel as Apple Silicon.
+  // Guessing one installer would hand half of them a build that won't open, so the link
+  // opens the release, where both are listed.
+  it('opens the release with both builds when the CPU is unknown', () => {
+    expect(montereyUrl(undefined)).toBe(
+      'https://github.com/surco-app/surco-releases/releases/tag/v1.2.3',
     )
   })
 })

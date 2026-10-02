@@ -49,7 +49,7 @@ export type DownloadClick = {
 export function downloadEvent({ href, os, location, version }: DownloadClick): DownloadEvent {
   const name = href.split('/').pop() ?? ''
   const dot = name.lastIndexOf('.')
-  const extension = dot > 0 ? name.slice(dot + 1) : ''
+  const extension = href.includes('/releases/download/') && dot > 0 ? name.slice(dot + 1) : ''
   return {
     file_name: name,
     file_extension: extension,
