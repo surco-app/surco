@@ -11,6 +11,14 @@
       {
         "text": "El filtro de formatos de Ajustes → Búsqueda (vinilo, CD, digital o casete) se aplica ahora también a MusicBrainz, no solo a Discogs. Y la pestaña está ordenada en fuentes, resultados y coincidencias, con cada fuente en su fila, una línea que dice para qué sirve y lo que se configura de ella justo debajo.",
         "in": "1.6.0"
+      },
+      {
+        "text": "Si editas una pista que ya está en Apple Music, el botón ofrece «Actualizar en Apple Music» y lleva el cambio a la copia que ya tienes, en vez de dar a entender que añadirá otra. Y al sustituir una copia de Music, si Music no deja quitar la antigua, la conversión no se pierde y Surco te avisa de que la copia antigua sigue ahí.",
+        "in": "1.6.1"
+      },
+      {
+        "text": "Las cifras de calidad, loudness, recorte, declick y tamaño de archivo se escriben con la coma decimal del idioma de la app, también el objetivo de loudness.",
+        "in": "1.6.1"
       }
     ]
   },

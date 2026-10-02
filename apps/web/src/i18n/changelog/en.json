@@ -11,6 +11,14 @@
       {
         "text": "The format filter in Settings → Search (vinyl, CD, digital or cassette) now applies to MusicBrainz too, not just Discogs. And the tab is grouped into sources, results and matching, with each source in its own row, a line saying what it is good for and its own settings right below it.",
         "in": "1.6.0"
+      },
+      {
+        "text": "Edit a track that is already in Apple Music and the button now offers “Update in Apple Music” and brings the change to the copy you already have, instead of reading like it would add a second one. And when you replace a copy in Music and Music won't let the old one go, the conversion is no longer lost and Surco tells you the old copy is still there.",
+        "in": "1.6.1"
+      },
+      {
+        "text": "Quality, loudness, trim, declick and file size figures are written with the decimal mark of the app's language, the loudness target included.",
+        "in": "1.6.1"
       }
     ]
   },
