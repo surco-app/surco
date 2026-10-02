@@ -27,8 +27,8 @@ export function detectOS(): OS {
 }
 
 // What the OS's primary installer asset ends with, for matching against a release's
-// asset names. macOS resolves to arm64 because the browser cannot distinguish Apple
-// Silicon from Intel (Safari calls both "Intel Mac"); the Intel .dmg gets its own link.
+// asset names. macOS resolves to arm64 because most browsers cannot distinguish Apple
+// Silicon from Intel (Safari calls both "Intel Mac"); see macInstallers for the Mac that can.
 // Linux is x86_64, not x64 — electron-builder renames the arch for AppImage.
 const SUFFIX: Record<Exclude<OS, 'other' | 'unknown'>, string> = {
   mac: 'arm64.dmg',
@@ -38,4 +38,34 @@ const SUFFIX: Record<Exclude<OS, 'other' | 'unknown'>, string> = {
 
 export function installerSuffix(os: Exclude<OS, 'other' | 'unknown'>): string {
   return SUFFIX[os]
+}
+
+export type MacArch = 'arm64' | 'x64'
+
+// Every Mac browser reports "Intel Mac OS X" in its user agent, so the CPU only shows
+// through Chromium's client hints (Chrome, Brave, Edge). Safari and Firefox have none, and
+// a browser may refuse the request; both stay unknown rather than guessing.
+export async function detectMacArch(): Promise<MacArch | undefined> {
+  const data = (
+    navigator as {
+      userAgentData?: {
+        getHighEntropyValues: (hints: string[]) => Promise<{ architecture?: string }>
+      }
+    }
+  ).userAgentData
+  if (!data) return undefined
+  try {
+    const { architecture } = await data.getHighEntropyValues(['architecture'])
+    if (architecture === 'x86') return 'x64'
+    if (architecture === 'arm') return 'arm64'
+    return undefined
+  } catch {
+    return undefined
+  }
+}
+
+export function macInstallers(arch: MacArch | undefined): { primary: string; secondary: string } {
+  return arch === 'x64'
+    ? { primary: 'x64.dmg', secondary: 'arm64.dmg' }
+    : { primary: 'arm64.dmg', secondary: 'x64.dmg' }
 }

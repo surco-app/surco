@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { detectOS, installerSuffix } from './os'
+import { detectMacArch, detectOS, installerSuffix, macInstallers } from './os'
 
 describe('detectOS', () => {
   afterEach(() => {
@@ -70,5 +70,64 @@ describe('installerSuffix', () => {
     expect(installerSuffix('mac')).toBe('arm64.dmg')
     expect(installerSuffix('windows')).toBe('.exe')
     expect(installerSuffix('linux')).toBe('.AppImage')
+  })
+})
+
+describe('detectMacArch', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  const withHints = (getHighEntropyValues?: () => Promise<{ architecture?: string }>) => {
+    vi.stubGlobal('window', {})
+    vi.stubGlobal('navigator', {
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+      ...(getHighEntropyValues ? { userAgentData: { getHighEntropyValues } } : {}),
+    })
+  }
+
+  // Every Mac browser says "Intel Mac OS X", so an Intel owner was handed the arm64 build
+  // by the big button and got "not supported on this Mac". Chromium's client hints are the
+  // one place the real CPU shows through.
+  it('reads an Intel Mac from the client hints', async () => {
+    withHints(async () => ({ architecture: 'x86' }))
+    expect(await detectMacArch()).toBe('x64')
+  })
+
+  it('reads an Apple Silicon Mac from the client hints', async () => {
+    withHints(async () => ({ architecture: 'arm' }))
+    expect(await detectMacArch()).toBe('arm64')
+  })
+
+  // Safari and Firefox expose no client hints. Guessing there would be a coin toss, so the
+  // answer is "unknown" and the page keeps offering both builds.
+  it('reports unknown when the browser has no client hints', async () => {
+    withHints()
+    expect(await detectMacArch()).toBeUndefined()
+  })
+
+  it('reports unknown when the browser refuses the hints', async () => {
+    withHints(async () => {
+      throw new Error('NotAllowedError')
+    })
+    expect(await detectMacArch()).toBeUndefined()
+  })
+
+  it('reports unknown for an architecture with no Mac build', async () => {
+    withHints(async () => ({ architecture: '' }))
+    expect(await detectMacArch()).toBeUndefined()
+  })
+})
+
+describe('macInstallers', () => {
+  // The big button carries the build that runs on this Mac and the small link the other
+  // one, so a wrong guess is still one click from the right file.
+  it('leads with the Intel build on a Mac known to be Intel', () => {
+    expect(macInstallers('x64')).toEqual({ primary: 'x64.dmg', secondary: 'arm64.dmg' })
+  })
+
+  it('leads with Apple Silicon when the Mac is Apple Silicon or unknown', () => {
+    expect(macInstallers('arm64')).toEqual({ primary: 'arm64.dmg', secondary: 'x64.dmg' })
+    expect(macInstallers(undefined)).toEqual({ primary: 'arm64.dmg', secondary: 'x64.dmg' })
   })
 })

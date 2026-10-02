@@ -3,7 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { type DownloadLocation, trackDownload } from '../lib/analytics'
 import { downloadState } from '../lib/downloadState'
 import { fetchInstallerReleasesCached, pickInstallerRelease } from '../lib/downloads'
-import { detectOS, installerSuffix, type OS } from '../lib/os'
+import {
+  detectMacArch,
+  detectOS,
+  installerSuffix,
+  type MacArch,
+  macInstallers,
+  type OS,
+} from '../lib/os'
 import { btnPrimary } from '../lib/ui'
 import { formatVersion } from '../lib/version'
 import DownloadCount from './DownloadCount'
@@ -26,9 +33,9 @@ const primary = `inline-flex ${btnPrimary} px-7 py-3 text-sm`
 // assets, so picking from the releases list (not just /releases/latest) keeps the previous
 // build's working download instead of flashing an apology during a release.
 //
-// macOS ships two builds. The browser can't tell Apple Silicon from Intel (Safari
-// reports both as "Intel Mac"), so the big button defaults to arm64 — the vast
-// majority of Macs — and a discreet link below covers Intel.
+// macOS ships two builds. Chromium browsers say which CPU the Mac has and get its build
+// on the big button; Safari and Firefox can't tell (both report "Intel Mac"), so there it
+// defaults to arm64, the vast majority of Macs. A discreet link below offers the other.
 export default function DownloadButton({
   location,
   showMeta = true,
@@ -58,7 +65,8 @@ export default function DownloadButton({
     setOs(detectOS())
   }, [])
   const [href, setHref] = useState<string | null>(null)
-  const [intelHref, setIntelHref] = useState<string | null>(null)
+  const [otherMacHref, setOtherMacHref] = useState<string | null>(null)
+  const [macArch, setMacArch] = useState<MacArch | undefined>(undefined)
   const [version, setVersion] = useState<string | null>(null)
   // The installer weighs ~160-200 MB. Saying so before the click is the difference
   // between a considered download and a surprise on a metered or slow connection —
@@ -73,18 +81,21 @@ export default function DownloadButton({
   useEffect(() => {
     if (os === 'other' || os === 'unknown') return
     let cancelled = false
-    fetchInstallerReleasesCached(REPO)
-      .then((releases) => {
+    const arch = os === 'mac' ? detectMacArch() : Promise.resolve(undefined)
+    Promise.all([arch, fetchInstallerReleasesCached(REPO)])
+      .then(([arch, releases]) => {
         if (cancelled) return
-        const suffix = installerSuffix(os)
+        const mac = macInstallers(arch)
+        const suffix = os === 'mac' ? mac.primary : installerSuffix(os)
         const rel = pickInstallerRelease(releases, suffix)
         if (!rel) return
+        setMacArch(arch)
         setVersion(formatVersion(rel.tag_name))
         const url = (s: string) =>
           rel.assets?.find((a) => a.name.endsWith(s))?.browser_download_url ?? null
         setHref(url(suffix))
         setSize(rel.assets?.find((a) => a.name.endsWith(suffix))?.size ?? null)
-        if (os === 'mac') setIntelHref(url('x64.dmg'))
+        if (os === 'mac') setOtherMacHref(url(mac.secondary))
       })
       .catch(() => {
         if (!cancelled) setFailed(true)
@@ -238,7 +249,7 @@ export default function DownloadButton({
           )}
         </div>
       )}
-      {/* Always mounted (invisible until the Intel build resolves on a Mac) so the
+      {/* Always mounted (invisible until the other Mac build resolves) so the
           link occupies its line in the prerendered HTML and every client state
           alike. The page is statically prerendered with os='other', so gating this
           on the OS check or the releases fetch would insert the line only after
@@ -246,24 +257,24 @@ export default function DownloadButton({
           spiking CLS. The reserved line costs non-Mac visitors a blank row. */}
       {/* biome-ignore lint/a11y/useAnchorContent: intentionally aria-hidden when there's no Intel link to show — it's a CLS-reserving placeholder (see above), not a real link for assistive tech */}
       <a
-        href={os === 'mac' && intelHref ? intelHref : undefined}
+        href={os === 'mac' && otherMacHref ? otherMacHref : undefined}
         // The link stays mounted with no href when there is no Intel build (it reserves
         // its line against CLS), so the click only counts when it points somewhere.
         onClick={() => {
-          if (os === 'mac' && intelHref)
-            trackDownload({ href: intelHref, os, location, ...(version ? { version } : {}) })
+          if (os === 'mac' && otherMacHref)
+            trackDownload({ href: otherMacHref, os, location, ...(version ? { version } : {}) })
         }}
-        aria-hidden={os === 'mac' && intelHref ? undefined : true}
-        tabIndex={os === 'mac' && intelHref ? undefined : -1}
-        // On an Intel Mac this link IS the working download — the big button offers
-        // arm64 because the browser can't tell the two apart — so it reads at the
-        // legible step above `faint` rather than in the page's quietest style. Same
-        // line, same reserved height: the CLS reservation above is unaffected.
+        aria-hidden={os === 'mac' && otherMacHref ? undefined : true}
+        tabIndex={os === 'mac' && otherMacHref ? undefined : -1}
+        // Where the browser can't tell the CPU, this link IS the working download for an
+        // Intel Mac, so it reads at the legible step above `faint` rather than in the
+        // page's quietest style. Same line, same reserved height: the CLS reservation
+        // above is unaffected.
         className={`mt-2 inline-block text-sm text-muted underline-offset-2 transition-colors hover:text-blue hover:underline ${
-          os === 'mac' && intelHref ? '' : 'invisible'
+          os === 'mac' && otherMacHref ? '' : 'invisible'
         }`}
       >
-        {t('download.intel')}
+        {t(macArch === 'x64' ? 'download.appleSilicon' : 'download.intel')}
       </a>
     </>
   )
