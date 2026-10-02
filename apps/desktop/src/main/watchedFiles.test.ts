@@ -12,7 +12,7 @@ describe('onWatchedFilesChanged', () => {
     const send = vi.fn()
     const files = ['/music/new1.flac', '/music/new2.wav']
 
-    onWatchedFilesChanged(media, send, '/music', files)
+    onWatchedFilesChanged(media, () => false, send, '/music', files)
 
     expect(media.isAllowed('/music/new1.flac')).toBe(true)
     expect(media.isAllowed('/music/new2.wav')).toBe(true)
@@ -23,7 +23,7 @@ describe('onWatchedFilesChanged', () => {
     const send = vi.fn()
     const files = ['/music/new1.flac']
 
-    onWatchedFilesChanged(media, send, '/music', files)
+    onWatchedFilesChanged(media, () => false, send, '/music', files)
 
     expect(send).toHaveBeenCalledWith('/music', files)
   })
@@ -42,8 +42,26 @@ describe('onWatchedFilesChanged', () => {
     }
     const send = vi.fn(() => order.push('notify'))
 
-    onWatchedFilesChanged(trackingMedia, send, '/music', ['/music/x.flac'])
+    onWatchedFilesChanged(trackingMedia, () => false, send, '/music', ['/music/x.flac'])
 
     expect(order).toEqual(['grant', 'notify'])
+  })
+
+  // An export rewrites the track in its own folder under its new name, then keeps the job
+  // open while Apple Music imports or syncs it — seconds per track. The watcher saw the
+  // renamed file land, but the row still pointed at the old name, so updating the tags of
+  // nine AIFFs offered the same nine back as "9 new tracks". A path a running job claimed
+  // is Surco's own write, never a newcomer.
+  it('leaves out the files a running conversion is still writing', () => {
+    const media = createMediaAccess()
+    const send = vi.fn()
+    const writing = '/music/Artist - Title.aiff'
+
+    onWatchedFilesChanged(media, (p) => p === writing, send, '/music', [
+      writing,
+      '/music/dropped.flac',
+    ])
+
+    expect(send).toHaveBeenCalledWith('/music', ['/music/dropped.flac'])
   })
 })

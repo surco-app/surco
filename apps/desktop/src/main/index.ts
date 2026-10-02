@@ -486,6 +486,7 @@ function watcherFor(win: BrowserWindow): FolderWatcher {
       // would 403 a play on a watched track — it'd appear in the list and player but stay mute.
       onWatchedFilesChanged(
         mediaAccess,
+        outputReservations.isReserved,
         (r, f) => win.webContents.send('folders:changed', r, f),
         root,
         files,
