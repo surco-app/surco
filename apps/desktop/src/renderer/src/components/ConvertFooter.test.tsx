@@ -281,6 +281,48 @@ describe('ConvertFooter done layout', () => {
   })
 })
 
+// Reported 04/10 with a screenshot: a track sent to Apple Music and then converted to MP3 in
+// the same folder gained "Clean up the previous file", the row no longer fit, and it broke
+// into a left-hugging outcome line over a right-hugging action line, aligned to nothing. On
+// one line the outcome/actions split reads well; on two, each line stands alone and centres.
+describe('ConvertFooter done layout when it breaks into two lines', () => {
+  function actionsOnRow(row: number): () => void {
+    const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop')
+    Object.defineProperty(HTMLElement.prototype, 'offsetTop', {
+      configurable: true,
+      get(this: HTMLElement) {
+        return this.dataset.testid === 'done-actions' ? row * 40 : 0
+      },
+    })
+    return () => {
+      if (original) Object.defineProperty(HTMLElement.prototype, 'offsetTop', original)
+      else delete (HTMLElement.prototype as { offsetTop?: number }).offsetTop
+    }
+  }
+
+  it('centres both lines once the actions drop below the outcome', () => {
+    const restore = actionsOnRow(1)
+    try {
+      render(footer(true))
+      expect(screen.getByTestId('done-row').className).toContain('justify-center')
+      expect(screen.getByTestId('done-actions').className).not.toContain('ml-auto')
+    } finally {
+      restore()
+    }
+  })
+
+  it('keeps the outcome left and the actions right while they share a line', () => {
+    const restore = actionsOnRow(0)
+    try {
+      render(footer(true))
+      expect(screen.getByTestId('done-row').className).not.toContain('justify-center')
+      expect(screen.getByTestId('done-actions').className).toContain('ml-auto')
+    } finally {
+      restore()
+    }
+  })
+})
+
 // A target typed with a decimal (-14.5 LUFS) went into the note above the button as the
 // raw number, so a Spanish UI read "-14.5 LUFS" beside copy that writes "-14,5".
 describe('ConvertFooter normalize note', () => {
