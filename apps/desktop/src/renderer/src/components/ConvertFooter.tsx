@@ -1,6 +1,6 @@
 import { ArrowUpRight, SlidersVertical } from 'lucide-react'
 import type React from 'react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { FormatSetting, NormalizeConfig, OutputFormat } from '../../../shared/types'
 import { type CleanupOffer, cleanupCount } from '../hooks/useConfirmFlows'
@@ -168,21 +168,6 @@ export function ConvertFooter({
     refocus.current = false
     footerRef.current?.querySelector<HTMLButtonElement>('[data-testid="process-btn"]')?.focus()
   })
-  const outcomeRef = useRef<HTMLDivElement>(null)
-  const actionsRef = useRef<HTMLDivElement>(null)
-  const [doneWrapped, setDoneWrapped] = useState(false)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the outcome and action rows only mount once showDone flips, so the observer has to attach again on that swap.
-  useLayoutEffect(() => {
-    const outcome = outcomeRef.current
-    const actions = actionsRef.current
-    if (!outcome || !actions) return
-    const measure = (): void => setDoneWrapped(actions.offsetTop > outcome.offsetTop)
-    measure()
-    if (typeof ResizeObserver === 'undefined') return
-    const ro = new ResizeObserver(measure)
-    ro.observe(outcome.parentElement ?? outcome)
-    return () => ro.disconnect()
-  }, [showDone])
   return (
     <div
       ref={footerRef}
@@ -224,21 +209,17 @@ export function ConvertFooter({
           </button>
         )}
         {showDone ? (
-          // One line when it fits (two centred lines when it does not), ordered by what matters after an export. On the left, the
+          // One line when it fits, ordered by what matters after an export. On the left, the
           // outcome: the confirmation plus its low-stakes look-and-tidy links (reveal the file
           // or the synced library copy, trash what was left behind). On the right, what can
           // still come next: a pending Apple Music add or update (the only tinted one), the
           // DJ-app export and the re-export split-button, whose chevron re-picks the format
           // without converting on the spot.
           <>
-            <div
-              data-testid="done-row"
-              className={`flex flex-wrap items-center gap-x-3 gap-y-2${doneWrapped ? ' justify-center' : ''}`}
-            >
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <div
-                ref={outcomeRef}
                 data-testid="done-outcome"
-                className={`flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1${doneWrapped ? ' justify-center' : ''}`}
+                className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1"
               >
                 <p
                   data-testid="export-success"
@@ -301,9 +282,8 @@ export function ConvertFooter({
                 )}
               </div>
               <div
-                ref={actionsRef}
                 data-testid="done-actions"
-                className={`flex min-w-0 flex-wrap items-center gap-2 ${doneWrapped ? 'justify-center' : 'ml-auto justify-end'}`}
+                className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2"
               >
                 {isMacOS() &&
                   !showInMusic &&
