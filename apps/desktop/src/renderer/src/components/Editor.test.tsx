@@ -1636,7 +1636,7 @@ describe('Editor export control', () => {
       outputPath: '/out/a.wav',
       musicPersistentId: 'ABCD1234',
     })
-    expect(screen.getByTestId('add-apple-music')).toHaveTextContent('Update in Apple Music')
+    expect(screen.getByTestId('add-apple-music')).toHaveAccessibleName('Update in Apple Music')
   })
 
   // Once the library copy is in sync, a disabled "Added ✓" is a dead end — the slot
@@ -1660,7 +1660,7 @@ describe('Editor export control', () => {
       { addToAppleMusic: false },
     )
     const btn = screen.getByTestId('add-apple-music')
-    expect(btn).toHaveTextContent('Show in Apple Music')
+    expect(btn).toHaveAccessibleName('Show in Apple Music')
     expect(btn).not.toBeDisabled()
     fireEvent.click(btn)
     expect(revealAppleMusic).toHaveBeenCalledWith('ABCD1234')
@@ -2124,7 +2124,7 @@ describe('Editor clean up previous files', () => {
       inputPath: '/music/a.wav',
       outputPath: '/out/a.aiff',
     })
-    expect(screen.getByTestId('clean-up-previous')).toHaveTextContent('previous file')
+    expect(screen.getByTestId('clean-up-previous')).toHaveAccessibleName(/previous file/)
     fireEvent.click(screen.getByTestId('clean-up-previous'))
     expect(onCleanUp).toHaveBeenCalledWith({
       originalPath: '/music/a.wav',
@@ -2144,7 +2144,7 @@ describe('Editor clean up previous files', () => {
       replacesPath: '/old/a.mp3',
     })
     expect(screen.getAllByTestId('clean-up-previous')).toHaveLength(1)
-    expect(screen.getByTestId('clean-up-previous')).toHaveTextContent('2')
+    expect(screen.getByTestId('clean-up-previous')).toHaveAccessibleName(/2/)
     fireEvent.click(screen.getByTestId('clean-up-previous'))
     expect(onCleanUp).toHaveBeenCalledWith({
       originalPath: '/music/a.wav',

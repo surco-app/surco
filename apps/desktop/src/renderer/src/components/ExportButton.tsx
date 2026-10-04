@@ -267,11 +267,13 @@ export function ExportButton({
               ? tr('export.cancelWhile', { stage: `${label} ${progressText}`.trim() })
               : faceBlocked
                 ? `${shownBlocked} · ${label}`
-                : undefined
+                : quiet
+                  ? label
+                  : undefined
           }
           className={
             quiet
-              ? 'press flex-1 whitespace-nowrap rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-xs font-medium hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50'
+              ? 'press flex h-8 w-8 items-center justify-center rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50'
               : liveStage
                 ? // The dimmed track + accent fill replace the usual disabled fade: the
                   // button reads as a progress bar, not as a greyed-out control.
@@ -309,13 +311,15 @@ export function ExportButton({
                 {label}
               </span>
             </span>
+          ) : quiet ? (
+            <>
+              <RotateCw aria-hidden="true" className="h-3.5 w-3.5" />
+              <Tooltip label={label} />
+            </>
           ) : (
             <span
               className={`relative ${cancellable ? 'group-hover:hidden group-focus-within:hidden' : ''}`}
             >
-              {quiet && (
-                <RotateCw aria-hidden="true" className="mr-1.5 inline h-3 w-3 align-[-2px]" />
-              )}
               {label}
             </span>
           )}
@@ -337,7 +341,7 @@ export function ExportButton({
           disabled={blocked}
           className={
             quiet
-              ? 'press flex w-9 items-center justify-center rounded-r-lg border border-l-0 border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50'
+              ? 'press flex h-8 w-6 items-center justify-center rounded-r-lg border border-l-0 border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50'
               : liveStage
                 ? // Matches the body's progress-bar look, or the split button would read
                   // as half-faded while the fill keeps the body vivid.

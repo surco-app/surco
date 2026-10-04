@@ -143,21 +143,37 @@ describe('ConvertFooter announcements', () => {
   })
 })
 
-// Reported 14/09 with a screenshot in French: the row of footer buttons shares its width
-// evenly (flex-1), so a label longer than its share wrapped and the button grew to two
-// lines while its neighbours stayed at one — a ragged row. The labels are translated, so
-// no length is safe; the row has to hold one line whatever the language puts in it.
-describe('ConvertFooter buttons stay on one line', () => {
-  it('never wraps the export label', () => {
+// Reported 14/09 with a screenshot in French: a translated label longer than its share
+// wrapped and left a ragged row. Reported again 04/10: with "Clean up the previous file" the
+// converted footer broke into two misaligned lines, and centring each line was no better.
+// The user wants it on one line, always, so everything past the outcome is an icon named by
+// its tooltip and accessible label: no translation can push it onto a second line.
+describe('ConvertFooter done footer stays on one line', () => {
+  it('never lets the row wrap', () => {
     render(footer(true))
-    expect(screen.getByTestId('export-collection').className).toContain('whitespace-nowrap')
+    expect(screen.getByTestId('done-row').className).not.toContain('flex-wrap')
   })
 
-  // Not wrapping alone would push the button wider than its share and squeeze the others;
-  // the overflow has to resolve as an ellipsis inside the button.
-  it('truncates the export label rather than widening the row', () => {
+  it('names the follow-up actions without spending width on their text', () => {
     render(footer(true))
-    expect(screen.getByTestId('export-collection').className).toContain('truncate')
+    for (const [id, name] of [
+      ['export-collection', 'Export to DJ app…'],
+      ['process-btn', 'Convert again'],
+    ]) {
+      expect(screen.getByTestId(id)).toHaveAccessibleName(name)
+      expect(screen.getByTestId(id)).toHaveTextContent(/^$/)
+    }
+  })
+
+  it('names the file links without spending width on their text', () => {
+    render(
+      <ConvertFooter
+        {...footer(true).props}
+        status={{ ...status(true), revealPath: '/crate/a.aiff' }}
+      />,
+    )
+    expect(screen.getByTestId('show-file')).toHaveAccessibleName('Show file')
+    expect(screen.getByTestId('show-file')).toHaveTextContent(/^$/)
   })
 })
 
@@ -277,7 +293,7 @@ describe('ConvertFooter done layout', () => {
     render(inMusic(false, false))
     expect(
       within(screen.getByTestId('done-actions')).getByTestId('add-apple-music'),
-    ).toHaveTextContent('Update in Apple Music')
+    ).toHaveAccessibleName('Update in Apple Music')
   })
 })
 
