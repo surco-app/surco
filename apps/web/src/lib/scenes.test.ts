@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   BATCH_QUEUE,
+  BATCH_TOTAL,
   batchFrame,
   DROP_TOTAL,
   DROP_TRACKS,
@@ -184,41 +185,46 @@ describe('trimFrame', () => {
 })
 
 describe('batchFrame', () => {
+  const frames = Array.from({ length: 121 }, (_, i) => batchFrame(i / 120))
+  const firstAt = (pred: (f: (typeof frames)[number]) => boolean) => frames.findIndex(pred)
+
   it('walks the queue from untouched to every track done', () => {
     expect(batchFrame(0).states.every((s) => s === 'idle')).toBe(true)
     expect(batchFrame(1).states.every((s) => s === 'done')).toBe(true)
   })
 
-  // One track converts at a time in the mock, mirroring what the row states show.
+  // Nothing converts until the button is pressed: the scene sells one press for the
+  // whole folder, so the press has to be on screen before the first ring turns.
+  it('presses convert before any track starts', () => {
+    const pressed = firstAt((f) => f.pressed)
+    expect(pressed).toBeGreaterThan(0)
+    expect(pressed).toBeLessThan(firstAt((f) => f.states.some((s) => s !== 'idle')))
+  })
+
   it('never has more than one track working at once', () => {
-    for (let i = 0; i <= 40; i++) {
-      const working = batchFrame(i / 40).states.filter((s) => s === 'working')
-      expect(working.length).toBeLessThanOrEqual(1)
-    }
+    for (const f of frames)
+      expect(f.states.filter((s) => s === 'working').length).toBeLessThanOrEqual(1)
   })
 
   it('leaves no track behind the one that is working', () => {
-    const { states } = batchFrame(0.5)
-    const workingAt = states.indexOf('working')
-    if (workingAt > 0) {
-      expect(states.slice(0, workingAt).every((s) => s === 'done')).toBe(true)
+    for (const { states } of frames) {
+      const workingAt = states.indexOf('working')
+      if (workingAt > 0) expect(states.slice(0, workingAt).every((s) => s === 'done')).toBe(true)
     }
   })
 
-  // Destinations are only reachable once files exist to send, which is the order
-  // the real app works in — lighting them early would misdescribe the product.
-  // Checking only t=0 and t=1 let a "lit from the very start" version through, so
-  // this pins the middle of the run too: nothing lights while the queue is young.
-  it('lights the destinations only after conversions are under way', () => {
-    expect(batchFrame(0).destinationsLit).toBe(0)
-    expect(batchFrame(0.25).destinationsLit).toBe(0)
-    expect(batchFrame(0.5).destinationsLit).toBe(0)
-    expect(batchFrame(1).destinationsLit).toBe(4)
+  it('counts the converted tracks up to the whole selection, never backwards', () => {
+    const done = frames.map((f) => f.done)
+    for (let i = 1; i < done.length; i++) expect(done[i]).toBeGreaterThanOrEqual(done[i - 1])
+    expect(batchFrame(0).done).toBe(0)
+    expect(batchFrame(1).done).toBe(BATCH_TOTAL)
   })
 
-  it('brings the destinations in one at a time, not all at once', () => {
-    const counts = Array.from({ length: 40 }, (_, i) => batchFrame(i / 40).destinationsLit)
-    expect(new Set(counts).size).toBeGreaterThan(2)
+  // The footer only says the tracks are in Apple Music once all of them are, as the
+  // app's converted footer does.
+  it('reports the tracks added only once every one is converted', () => {
+    for (const f of frames) if (f.finished) expect(f.done).toBe(BATCH_TOTAL)
+    expect(batchFrame(1).finished).toBe(true)
   })
 
   it('covers the whole queue', () => {

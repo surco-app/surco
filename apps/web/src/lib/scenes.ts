@@ -279,47 +279,49 @@ export function normalizeFrame(t: number): NormalizeFrame {
 /* ------------------------------------------------------------------ 07 · batch */
 
 export const BATCH_QUEUE = [
-  { name: 'Jill Dreski — Let Me Know', format: 'AIFF' },
-  { name: 'Jo-Ann — Always', format: 'AIFF' },
-  { name: 'Ken Laszlo — When I Fall In Love', format: 'AIFF' },
-  { name: 'Kim Sanders — Ride', format: 'WAV' },
-  { name: 'Kriss — Tonight', format: 'FLAC' },
+  CRATE.sash,
+  CRATE.milk,
+  CRATE.sylver,
+  CRATE.lasgo,
+  CRATE.ivd,
+  CRATE.tukan,
+  CRATE.bullet,
 ] as const
 
 export const BATCH_TOTAL = 40
-const BATCH_FROM = 3
-const DESTINATIONS = 4
+
+const BATCH_PRESS = 0.12
+const BATCH_START = 0.16
+const BATCH_ENDS = 0.9
 
 export type BatchState = 'idle' | 'working' | 'done'
 
 export interface BatchFrame {
+  cursor: boolean
+  pressed: boolean
   states: BatchState[]
   rowProgress: number
   done: number
-  fill: number
-  destinationsLit: number
   finished: boolean
 }
 
+// The whole selection converted with one press: each row's ring turns in order while
+// the toolbar counts, and the footer reports the tracks in Apple Music once all are.
 export function batchFrame(t: number): BatchFrame {
   const p = clamp(t)
-  const pos = p * BATCH_QUEUE.length
+  const run = clamp((p - BATCH_START) / (BATCH_ENDS - BATCH_START))
+  const pos = run * BATCH_QUEUE.length
   return {
-    // >= on the upper bound, or the last track sits at "working" forever once the
-    // run completes — the queue would end mid-convert with nothing left to convert.
+    cursor: p >= 0.03 && p < BATCH_START + 0.03,
+    pressed: p >= BATCH_PRESS && p < BATCH_START,
+    // >= on the upper bound, or the last track sits at "working" forever once the run
+    // completes and the queue ends mid-convert with nothing left to convert.
     states: BATCH_QUEUE.map((_, i) => (pos >= i + 1 ? 'done' : pos > i ? 'working' : 'idle')),
     rowProgress: pos % 1,
-    done: Math.round(BATCH_FROM + p * (BATCH_TOTAL - BATCH_FROM)),
-    fill: p,
-    // Destinations only light once there are files to send: that is the order the
-    // real app works in, and lighting them early would misdescribe the product.
-    destinationsLit: Array.from({ length: DESTINATIONS }, (_, k) => 0.55 + k * 0.07).filter(
-      (threshold) => p > threshold,
-    ).length,
-    finished: p >= 1,
+    done: Math.round(run * BATCH_TOTAL),
+    finished: run >= 1,
   }
 }
-
 /* --------------------------------------------------------------- 08 · replace */
 
 // Crate names a DJ would recognise as their own. Ten of them, because the scene is

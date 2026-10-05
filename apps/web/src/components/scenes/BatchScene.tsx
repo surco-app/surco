@@ -1,108 +1,150 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BATCH_QUEUE, BATCH_TOTAL, batchFrame } from '../../lib/scenes'
 import { useSceneProgress } from '../../lib/useSceneProgress'
-import AppFrame from './AppFrame'
-import TrackRows, { type Row } from './TrackRows'
+import {
+  AppField,
+  AppRow,
+  AppWindow,
+  ConvertButton,
+  EASE,
+  EditorFooter,
+  Glyph,
+  ICONS,
+  SceneCursor,
+  SearchBox,
+  SectionTitle,
+  Spinner,
+  ToolbarButton,
+} from './AppChrome'
 
-const LIBRARY_DESTINATIONS = ['Apple Music', 'Engine DJ']
-const EXPORT_DESTINATIONS = ['rekordbox', 'Traktor', 'Serato', 'M3U8']
+const GENRES = ['Euro House', 'Trance', 'Electronic']
 
-// Kim Sanders keeps the red stripe the quality pass puts on a flagged track: the
-// queue is also saying "this one has a problem", and a batch where every row sails
-// through would drop that half of the story.
-const FLAGGED = 'Kim Sanders — Ride'
-
-// The queue converts track by track — amber ring while working, blue coin when done
-// — and the destinations light only once there are files to send, which is the order
-// the app really works in. The static version showed a queue already half converted
-// with every destination lit, i.e. the end state of work nobody watched happen.
+// The whole selection in the multi-track editor, converted with one press: each row's
+// ring turns in order while the toolbar counts, and the footer reports the tracks in
+// Apple Music once every one has landed there.
 export default function BatchScene() {
   const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
-  const frame = batchFrame(useSceneProgress(ref, 6000))
+  const win = useRef<HTMLDivElement>(null)
+  const button = useRef<HTMLDivElement>(null)
+  const [target] = useState(() => button)
+  const frame = batchFrame(useSceneProgress(ref, 7500))
+  const running = frame.states.some((s) => s !== 'idle') && !frame.finished
 
-  const rows: Row[] = BATCH_QUEUE.map((track, i) => {
-    const state = frame.states[i]
-    if (track.name === FLAGGED && state !== 'working') {
-      return { name: track.name, state: 'flagged', format: track.format }
-    }
-    if (state === 'working') {
-      return {
-        name: track.name,
-        state: 'working',
-        stage: t('home.batch.stage'),
-        progress: Math.round(frame.rowProgress * 100),
-        selected: true,
-      }
-    }
-    return { name: track.name, state, format: track.format }
-  })
-
-  // Owns its window chrome so the toolbar counter tracks the queue instead of
-  // sitting frozen at "Converting 11/40".
   return (
-    <AppFrame
-      pill={
-        frame.finished
-          ? t('home.batch.pillDone', { total: BATCH_TOTAL })
-          : t('home.batch.pillRunning', { done: frame.done, total: BATCH_TOTAL })
-      }
-      busy={!frame.finished}
-      progress={(frame.done / BATCH_TOTAL) * 100}
-    >
-      <div ref={ref} className="grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-        <TrackRows rows={rows} />
-        <div className="border-t border-line p-5 lg:border-t-0 lg:border-l">
-          <div className="relative overflow-hidden rounded-lg bg-blue/20 px-3 py-2 font-mono text-[11px]">
-            <span
-              aria-hidden="true"
-              className="absolute inset-y-0 left-0 bg-blue/30 transition-[width] duration-200 ease-linear"
-              style={{ width: `${frame.fill * 100}%` }}
-            />
-            <span className="relative flex justify-between">
-              <span className="text-fg">
-                {frame.finished ? t('home.batch.ready') : t('home.batch.stage')}
+    <div ref={ref}>
+      <AppWindow
+        windowRef={win}
+        action={
+          running ? (
+            <ToolbarButton>
+              <Spinner size={13} />
+              <span className="tabular-nums">
+                {t('home.batch.converting', { done: frame.done, total: BATCH_TOTAL })}
               </span>
-              <span className="text-faint">{t('home.batch.cancel')}</span>
-            </span>
+            </ToolbarButton>
+          ) : (
+            <ToolbarButton quiet={frame.finished}>
+              <Glyph size={14}>{ICONS.convert}</Glyph>
+              {frame.finished
+                ? t('home.batch.converted', { count: BATCH_TOTAL })
+                : t('home.app.convertCount', { count: BATCH_TOTAL })}
+            </ToolbarButton>
+          )
+        }
+      >
+        <div className="grid h-[440px] grid-cols-[minmax(0,1fr)] sm:grid-cols-[minmax(0,15.5rem)_minmax(0,1fr)]">
+          <div className="hidden overflow-hidden border-r border-line px-2 py-2.5 sm:block">
+            <div className="mb-2.5">
+              <SearchBox>{t('home.app.search')}</SearchBox>
+            </div>
+            {BATCH_QUEUE.map((track, i) => {
+              const state = frame.states[i]
+              return (
+                <AppRow
+                  key={track.title}
+                  {...track}
+                  format="AIFF"
+                  selected="multi"
+                  stage={state === 'working' ? t('home.batch.stage') : null}
+                  ring={state === 'working' ? Math.round(frame.rowProgress * 100) : null}
+                  done={state === 'done'}
+                />
+              )
+            })}
           </div>
-          <p className="mt-4 font-mono text-[9px] tracking-wider text-faint uppercase">
-            {t('home.batch.toLibrary')}
-          </p>
-          <div className="mt-1.5 grid grid-cols-2 gap-2">
-            {LIBRARY_DESTINATIONS.map((d, i) => (
-              <span
-                key={d}
-                className={`rounded border px-2 py-1.5 text-center font-mono text-[11px] transition-colors duration-500 ${
-                  i < frame.destinationsLit
-                    ? 'border-blue/45 bg-blue/10 text-blue'
-                    : 'border-line text-muted'
-                }`}
+
+          <div className="flex min-h-0 min-w-0 flex-col">
+            <div className="min-h-0 flex-1 overflow-hidden px-6 pt-[18px]">
+              <p className="flex items-center gap-2.5 text-xs text-muted">
+                {t('home.app.file')}
+                <span className="h-px flex-1 bg-line" />
+              </p>
+              <div className="mt-4">
+                <SectionTitle>{t('home.batch.editing', { count: BATCH_TOTAL })}</SectionTitle>
+              </div>
+              <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-[18px] sm:grid-cols-[96px_minmax(0,1fr)]">
+                <span className="hidden size-24 place-items-center rounded-lg bg-[#292e42] text-faint sm:grid">
+                  <Glyph size={22}>{ICONS.image}</Glyph>
+                </span>
+                <div>
+                  <AppField label={t('home.app.fieldArtist')}>
+                    <span className="text-muted">{t('home.batch.mixed')}</span>
+                  </AppField>
+                  <AppField label={t('home.app.fieldAlbum')}>
+                    <span className="text-muted">{t('home.batch.mixed')}</span>
+                  </AppField>
+                  <p className="mb-1.5 text-[12.5px] text-muted">{t('home.batch.genreAll')}</p>
+                  <p className="flex flex-wrap gap-1.5">
+                    {GENRES.map((genre, i) => (
+                      <span
+                        key={genre}
+                        className={`rounded-full border px-2 py-0.5 text-[11px] ${
+                          i === 0
+                            ? 'border-blue bg-blue/15 text-blue'
+                            : 'border-line text-[#a9b1d6]'
+                        }`}
+                      >
+                        {genre}
+                      </span>
+                    ))}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <EditorFooter>
+              <div
+                className="absolute inset-0 flex items-center px-[22px]"
+                style={{
+                  opacity: frame.finished ? 0 : 1,
+                  transform: frame.finished ? 'translateY(8px)' : 'none',
+                  transition: `opacity 0.3s ease, transform 0.45s ${EASE}`,
+                }}
               >
-                {d}
-              </span>
-            ))}
-          </div>
-          <p className="mt-3 font-mono text-[9px] tracking-wider text-faint uppercase">
-            {t('home.batch.toFile')}
-          </p>
-          <div className="mt-1.5 grid grid-cols-4 gap-1.5">
-            {EXPORT_DESTINATIONS.map((d) => (
-              <span
-                key={d}
-                className="rounded border border-line px-1.5 py-1 text-center font-mono text-[9px] text-muted"
+                <ConvertButton
+                  buttonRef={button}
+                  pressed={frame.pressed}
+                  progress={running ? (frame.done / BATCH_TOTAL) * 100 : null}
+                  label={t('home.batch.button', { count: BATCH_TOTAL })}
+                />
+              </div>
+              <p
+                className="absolute inset-0 flex items-center px-[22px] text-xs font-medium text-green"
+                style={{
+                  opacity: frame.finished ? 1 : 0,
+                  transform: frame.finished ? 'none' : 'translateY(-8px)',
+                  transition: `opacity 0.3s ease, transform 0.45s ${EASE}`,
+                }}
               >
-                {d}
-              </span>
-            ))}
+                {t('home.batch.added', { count: BATCH_TOTAL })}
+              </p>
+            </EditorFooter>
           </div>
-          <p className="mt-5 font-mono text-[11px] text-green">{t('home.batch.cues')}</p>
-          <p className="mt-2 min-h-4 font-mono text-[11px] text-faint">
-            {frame.finished ? t('home.batch.summary') : ''}
-          </p>
         </div>
-      </div>
-    </AppFrame>
+        <SceneCursor container={win} target={frame.cursor ? target : null} />
+      </AppWindow>
+    </div>
   )
 }
