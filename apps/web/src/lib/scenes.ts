@@ -155,33 +155,36 @@ export function tagFrame(t: number): TagFrame {
 
 /* ---------------------------------------------------------------- 03 · quality */
 
-// Where the fake's codec wall sits, as a fraction of the image height from the top —
-// the 16 kHz edge on a linear scale. The sweep has to travel past it before the
-// verdict can appear, because that edge is the evidence for the verdict.
+// Where the fake's codec wall sits, as a fraction of the image height from the top:
+// the 16 kHz edge on a linear scale. The scan has to travel past it before the verdict
+// can appear, because that edge is the evidence for the verdict.
 export const SPECTRUM_WALL = 0.273
 
-export interface SpectrumFrame {
-  sweep: number
+const QUALITY_POINT = 0.12
+const QUALITY_SWITCH = 0.3
+const QUALITY_SCAN_ENDS = 0.78
+
+export interface QualityFrame {
+  selected: 'genuine' | 'fake'
+  cursor: boolean
+  scan: number
   wall: number
-  goodVerdict: boolean
-  fakeVerdict: boolean
+  verdict: 'good' | 'analyzing' | 'bad'
 }
 
-// A scan line crosses both spectra and the verdicts land behind it. The previous
-// version drew both images with their badges already attached, which states two
-// conclusions without showing Surco reach either — the one step whose whole claim is
-// that it inspects the audio for you.
-export function spectrumFrame(t: number): SpectrumFrame {
+// Two FLACs in the list, as the app shows them: the genuine one selected with its good
+// verdict, then a click on the other, whose spectrum is scanned until the codec wall
+// shows and the verdict turns.
+export function qualityFrame(t: number): QualityFrame {
   const p = clamp(t)
-  const sweep = Math.min(1, p / 0.72)
-
+  const fake = p >= QUALITY_SWITCH
+  const scan = fake ? clamp((p - QUALITY_SWITCH) / (QUALITY_SCAN_ENDS - QUALITY_SWITCH)) : 0
   return {
-    sweep,
-    // The wall draws in as the sweep passes it, so the picture never makes the claim
-    // ahead of the analysis.
-    wall: Math.max(0, Math.min(1, (sweep - SPECTRUM_WALL) / 0.18)),
-    goodVerdict: sweep >= 1,
-    fakeVerdict: sweep > SPECTRUM_WALL + 0.18,
+    selected: fake ? 'fake' : 'genuine',
+    cursor: p >= QUALITY_POINT && p < QUALITY_SWITCH + 0.06,
+    scan,
+    wall: clamp((scan - SPECTRUM_WALL) / 0.18),
+    verdict: !fake ? 'good' : scan < 1 ? 'analyzing' : 'bad',
   }
 }
 

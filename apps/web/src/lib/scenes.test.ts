@@ -9,9 +9,10 @@ import {
   NORMALIZE_TARGET,
   NORMALIZE_TRACKS,
   normalizeFrame,
+  qualityFrame,
   REPLACE_PLAYLISTS,
   replaceFrame,
-  spectrumFrame,
+  SPECTRUM_WALL,
   TAG_ARTIST,
   TAG_FIELDS,
   TAG_JUNK_ARTIST,
@@ -274,38 +275,46 @@ describe('dropFrame', () => {
   })
 })
 
-describe('spectrumFrame', () => {
-  // The verdict is the product of a scan, so the scan has to happen: a sweep crosses
-  // the spectrum and the verdict only lands once it has passed the cutoff it is
-  // judging. Showing both badges from frame one states conclusions nobody watched
-  // Surco reach.
-  it('sweeps across the spectrum and settles at the end', () => {
-    expect(spectrumFrame(0).sweep).toBe(0)
-    expect(spectrumFrame(1).sweep).toBe(1)
+describe('qualityFrame', () => {
+  const frames = Array.from({ length: 121 }, (_, i) => qualityFrame(i / 120))
+  const firstAt = (pred: (f: (typeof frames)[number]) => boolean) => frames.findIndex(pred)
 
-    let prev = -1
-    for (let i = 0; i <= 20; i++) {
-      const { sweep } = spectrumFrame(i / 20)
-      expect(sweep).toBeGreaterThanOrEqual(prev)
-      prev = sweep
-    }
+  // The fake only reads as fake next to a genuine file, so the scene opens on one.
+  it('opens on the genuine file with its good verdict', () => {
+    expect(qualityFrame(0).selected).toBe('genuine')
+    expect(qualityFrame(0).verdict).toBe('good')
   })
 
-  it('withholds both verdicts until the sweep has passed them', () => {
-    expect(spectrumFrame(0).goodVerdict).toBe(false)
-    expect(spectrumFrame(0).fakeVerdict).toBe(false)
-    expect(spectrumFrame(1).goodVerdict).toBe(true)
-    expect(spectrumFrame(1).fakeVerdict).toBe(true)
+  it('moves to the fake only once the pointer has reached its row', () => {
+    const pointed = firstAt((f) => f.cursor)
+    expect(pointed).toBeGreaterThan(0)
+    expect(pointed).toBeLessThan(firstAt((f) => f.selected === 'fake'))
   })
 
-  // The wall is the evidence for the fake verdict, so it cannot be drawn before the
-  // sweep reaches it — the picture would be making the claim ahead of the analysis.
-  it('draws the wall only once the sweep has reached the cutoff', () => {
-    for (let i = 0; i <= 40; i++) {
-      const f = spectrumFrame(i / 40)
-      if (f.wall > 0) expect(f.sweep).toBeGreaterThan(0)
+  // The verdict is the product of the analysis, so it waits for the scan to cross the
+  // whole spectrum: showing it on selection states a conclusion nobody watched Surco reach.
+  it('analyses the fake before judging it', () => {
+    for (const f of frames) {
+      if (f.selected === 'fake' && f.scan < 1) expect(f.verdict).toBe('analyzing')
+      if (f.verdict === 'bad') expect(f.scan).toBe(1)
     }
-    expect(spectrumFrame(1).wall).toBe(1)
+    expect(firstAt((f) => f.verdict === 'analyzing')).toBeGreaterThan(-1)
+  })
+
+  // The wall is the evidence, so it cannot be drawn before the scan reaches it.
+  it('draws the wall only once the scan has reached the cutoff', () => {
+    for (const f of frames) if (f.wall > 0) expect(f.scan).toBeGreaterThan(SPECTRUM_WALL)
+    expect(qualityFrame(1).wall).toBe(1)
+  })
+
+  it('never scans backwards', () => {
+    const scans = frames.map((f) => f.scan)
+    for (let i = 1; i < scans.length; i++) expect(scans[i]).toBeGreaterThanOrEqual(scans[i - 1])
+  })
+
+  it('ends on the bad verdict, with the pointer gone', () => {
+    expect(qualityFrame(1).verdict).toBe('bad')
+    expect(qualityFrame(1).cursor).toBe(false)
   })
 })
 

@@ -7,8 +7,8 @@ import BatchScene from './scenes/BatchScene'
 import DeclickScene from './scenes/DeclickScene'
 import DropScene from './scenes/DropScene'
 import NormalizeScene from './scenes/NormalizeScene'
+import QualityScene from './scenes/QualityScene'
 import SceneLayout from './scenes/SceneLayout'
-import SpectrumPair from './scenes/SpectrumPair'
 import TagScene from './scenes/TagScene'
 import TrimScene from './scenes/TrimScene'
 
@@ -61,11 +61,7 @@ export default function Walkthrough() {
         wide
         step={t('home.quality.step')}
         title={t('home.quality.title')}
-        app={
-          <AppFrame pill={t('home.quality.pill')}>
-            <SpectrumPair />
-          </AppFrame>
-        }
+        app={<QualityScene />}
       >
         {t('home.quality.lede')}
       </SceneLayout>
