@@ -1047,7 +1047,6 @@
       "fieldTitle": "Título",
       "fieldArtist": "Artista",
       "fieldAlbum": "Álbum",
-      "fieldLabel": "Sello",
       "button": "Sustituir por AIFF + Apple Music",
       "converting": "Convirtiendo a AIFF…",
       "appleMusic": "Añadiendo a Apple Music…",
@@ -1063,7 +1062,8 @@
       "intact": "sin tocar",
       "inPlace": "en su sitio",
       "before": "10 playlists a mano",
-      "after": "un clic"
+      "after": "un clic",
+      "fieldYear": "Año"
     }
   },
   "flacToAiff": {
