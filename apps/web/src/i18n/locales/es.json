@@ -111,6 +111,10 @@
             "d": "Por duración de pista, que es lo que distingue dos cortes cuando el título no ayuda."
           },
           {
+            "t": "Auto-emparejado",
+            "d": "Recorre la lista entera, aplica solo lo que tiene alta confianza y deja lo dudoso por confirmar. Si aplicaste el disco equivocado, ⌘Z devuelve las etiquetas de todas sus pistas."
+          },
+          {
             "t": "Edición en bloque",
             "d": "Los campos que comparte un disco, más buscar y reemplazar con regex."
           },
@@ -233,6 +237,10 @@
             "d": "Carátula, rating y playlist en tu biblioteca. Copia de seguridad antes, y no la toca si Engine está abierto."
           },
           {
+            "t": "Sustituye lo que ya tienes",
+            "d": "Cargas el AIFF o el FLAC de un tema que tienes en MP3 y ocupa su sitio en Apple Music y en rekordbox, en vez de acabar con dos. La marca de Apple Music dice en qué formato está tu copia, para que sepas si merece la pena."
+          },
+          {
             "t": "Carátula dentro de un WAV",
             "d": "Que por sí solo no admite ni carátula ni metadatos."
           },
@@ -241,12 +249,28 @@
             "d": "Intactos entre MP3, AIFF, FLAC y WAV, en cualquier combinación. Si recortas, la rejilla se reancla por fase."
           },
           {
+            "t": "Cues de Mixed In Key, y el desfase del MP3",
+            "d": "Los de Mixed In Key se traducen a Traktor al convertir. Y al pasar de MP3 a otro formato, o al revés, Surco compensa el desfase del códec para que caigan donde los ves."
+          },
+          {
             "t": "Tu colección de Traktor",
             "d": "Actualiza el .nml con copia de seguridad y una escritura por tanda. Necesita Traktor cerrado."
           },
           {
-            "t": "rekordbox, Serato y M3U8",
-            "d": "Ficheros puente: llevan rutas y metadatos. El crate de Serato, solo rutas. Ni cues ni rating."
+            "t": "Tu colección de rekordbox",
+            "d": "Al convertir, la pista sigue siendo la misma en rekordbox, con sus playlists, sus cue points y su historial. Se activa en Ajustes, hace copia de seguridad antes y necesita rekordbox cerrado."
+          },
+          {
+            "t": "Ficheros para rekordbox, Serato y M3U8",
+            "d": "Llevan rutas y metadatos, sin cues ni rating. El crate de Serato, solo rutas."
+          },
+          {
+            "t": "Tus descargas, al día",
+            "d": "Las carpetas que cargas quedan vigiladas, y cuando cae una pista nueva Surco te la ofrece sin volver a arrastrar nada."
+          },
+          {
+            "t": "Lo que queda por hacer",
+            "d": "Filtra las duplicadas (la misma canción en FLAC y en MP3), las que fallaron al convertir y los emparejados por confirmar."
           },
           {
             "t": "Plantillas de nombre",

@@ -111,6 +111,10 @@
             "d": "By track length, which tells two cuts apart when the title cannot."
           },
           {
+            "t": "Auto-match",
+            "d": "Works through the whole list, applies only high-confidence matches and leaves the doubtful ones for you to confirm. If you applied the wrong release, ⌘Z brings back the tags of every track in it."
+          },
+          {
             "t": "Bulk editing",
             "d": "The fields a release shares, plus find and replace with regex."
           },
@@ -233,6 +237,10 @@
             "d": "Artwork, rating and playlist in your library. It backs it up first, and won't touch it while Engine is open."
           },
           {
+            "t": "Replaces what you already have",
+            "d": "Load the AIFF or FLAC of a track you own as an MP3 and it takes the old one's place in Apple Music and rekordbox, instead of leaving you with two. The Apple Music badge shows what format your copy is in, so you know whether it's worth it."
+          },
+          {
             "t": "Artwork inside a WAV",
             "d": "Which on its own holds neither artwork nor metadata."
           },
@@ -241,12 +249,28 @@
             "d": "Intact across MP3, AIFF, FLAC and WAV, in any combination. Trim and the grid re-anchors by phase."
           },
           {
+            "t": "Mixed In Key cues, and the MP3 offset",
+            "d": "Mixed In Key's cues are translated to Traktor's on conversion. And going from MP3 to another format, or the other way round, Surco makes up for the codec's offset so they land where you see them."
+          },
+          {
             "t": "Your Traktor collection",
             "d": "Updates the .nml with a backup and one write per batch. Needs Traktor closed."
           },
           {
-            "t": "rekordbox, Serato, M3U8",
-            "d": "Bridge files: paths and metadata. Serato's crate, paths only. No cues, no ratings."
+            "t": "Your rekordbox collection",
+            "d": "After converting, the track is still the same track in rekordbox, with its playlists, cue points and history. Turn it on in Settings. It backs up first and needs rekordbox closed."
+          },
+          {
+            "t": "Files for rekordbox, Serato, M3U8",
+            "d": "Paths and metadata, no cues, no ratings. Serato's crate, paths only."
+          },
+          {
+            "t": "Your downloads, kept current",
+            "d": "The folders you load stay watched, and when a new track lands Surco offers it to you without dragging anything again."
+          },
+          {
+            "t": "What's left to do",
+            "d": "Filter the duplicates (the same song as a FLAC and an MP3), the ones that failed to convert and the matches waiting for you to confirm."
           },
           {
             "t": "Name templates",
