@@ -164,7 +164,7 @@ export function AppWindow({
     <div
       ref={windowRef}
       aria-hidden="true"
-      className="inset-shadow-edge relative min-w-0 overflow-hidden rounded-xl border border-line bg-bg text-left shadow-2xl shadow-black/40"
+      className="inset-shadow-edge relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-line bg-bg text-left shadow-2xl shadow-black/40"
     >
       <div className="flex h-11 items-center gap-1 border-b border-line bg-bg2 pr-2.5 pl-3.5">
         <span className="mr-auto flex gap-[7px]">

@@ -63,7 +63,7 @@ export default function ReplaceScene() {
           </ToolbarButton>
         }
       >
-        <div className="grid grid-cols-[minmax(0,1fr)] sm:h-[440px] sm:grid-cols-[minmax(0,15.5rem)_minmax(0,1fr)]">
+        <div className="grid flex-1 grid-cols-[minmax(0,1fr)] sm:min-h-[440px] sm:grid-cols-[minmax(0,15.5rem)_minmax(0,1fr)]">
           <div className="hidden overflow-hidden border-r border-line px-2 py-2.5 sm:block">
             <div className="mb-2.5">
               <SearchBox>{t('home.replace.search')}</SearchBox>
