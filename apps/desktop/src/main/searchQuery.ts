@@ -64,11 +64,15 @@ export function buildSearchCandidates(
   // prefix, then with the lead act alone (a comma-separated credit often lists acts the
   // catalog doesn't), before the bare title whose homonym noise would end the candidate
   // loop on the wrong releases. An act genuinely carrying the prefix (DJ Tieum) is
-  // unaffected: its full query already resolves, so the loop never reaches these. Only
-  // commas split acts — "&" joins duos the catalog files whole ("Simon & Garfunkel").
+  // unaffected: its full query already resolves, so the loop never reaches these. An "&"
+  // is one more term to match, and "Miguel Serna & Álex Cervera" is filed "Miguel Serna,
+  // Alex Cervera", so the acts are retried without it. Only commas split acts — "&" joins
+  // duos the catalog files whole ("Simon & Garfunkel").
   if (hints.artist && hints.title) {
     const bare = dropDjPrefix(hints.artist)
     if (bare !== hints.artist) add(cleanQuery(`${bare} ${hints.title}`))
+    const unjoined = bare.replace(/\s*&\s*/g, ' ')
+    if (unjoined !== bare) add(cleanQuery(`${unjoined} ${hints.title}`))
     const lead = bare.split(',')[0].trim()
     if (lead && lead !== bare) add(cleanQuery(`${lead} ${hints.title}`))
   }

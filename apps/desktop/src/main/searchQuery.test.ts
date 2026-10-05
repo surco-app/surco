@@ -312,7 +312,31 @@ describe('buildSearchCandidates', () => {
         artist: 'Simon & Garfunkel',
         title: 'Some Title',
       }),
-    ).toEqual(['Simon & Garfunkel Some Title', 'Some Title', 'Some Title Simon & Garfunkel'])
+    ).toEqual([
+      'Simon & Garfunkel Some Title',
+      'Simon Garfunkel Some Title',
+      'Some Title',
+      'Some Title Simon & Garfunkel',
+    ])
+  })
+
+  // The reported case: "Miguel Serna & Álex Cervera - Konga", which Bandcamp files as
+  // "Miguel Serna, Alex Cervera". Its autocomplete counts the "&" as a term every row must
+  // match, so the full credit returns nothing and the loop fell to the bare "Konga", where
+  // only other acts' Kongas answer. Searching both acts without the "&" finds it, and still
+  // finds a duo filed with it ("Simon Garfunkel Mrs Robinson" brings Simon & Garfunkel).
+  it('retries a credit joined by "&" without it, before the bare title', () => {
+    expect(
+      buildSearchCandidates('Miguel Serna & Álex Cervera Konga', {
+        artist: 'Miguel Serna & Álex Cervera',
+        title: 'Konga',
+      }),
+    ).toEqual([
+      'Miguel Serna & Álex Cervera Konga',
+      'Miguel Serna Álex Cervera Konga',
+      'Konga',
+      'Konga Miguel Serna & Álex Cervera',
+    ])
   })
 
   // An act genuinely named "DJ" gets no variant: dropping the word would search a
