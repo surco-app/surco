@@ -353,7 +353,7 @@ async function resolveTrack(libraryDir: string, add: PendingAdd): Promise<Engine
   }
 }
 
-async function assertEngineClosed(dbPath: string): Promise<void> {
+export async function assertEngineClosed(dbPath: string): Promise<void> {
   if (
     (await isEngineDjRunning()) ||
     (await fileSize(`${dbPath}-wal`)) > 0 ||
