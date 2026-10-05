@@ -19,6 +19,18 @@
       {
         "text": "Las cifras de calidad, loudness, recorte, declick y tamaño de archivo se escriben con la coma decimal del idioma de la app, también el objetivo de loudness.",
         "in": "1.6.1"
+      },
+      {
+        "text": "Cuando una pista ya está en Apple Music, su marca de biblioteca dice en qué formato está la copia que tienes allí (por ejemplo MP3 320 o AIFF 16/44,1), para que sepas si merece la pena sustituirla. Y al enviar una pista a Apple Music, Surco confirma que se ha añadido a tu biblioteca en vez de ofrecerte la carpeta de origen.",
+        "in": "1.6.2"
+      },
+      {
+        "text": "La búsqueda encuentra más lanzamientos firmados a dúo. Una pista acreditada como «Miguel Serna & Álex Cervera» da con el disco aunque el catálogo lo tenga como «Miguel Serna, Alex Cervera».",
+        "in": "1.6.2"
+      },
+      {
+        "text": "Una pista que Surco está convirtiendo dentro de una carpeta vigilada ya no aparece en la lista como pista nueva.",
+        "in": "1.6.2"
       }
     ]
   },

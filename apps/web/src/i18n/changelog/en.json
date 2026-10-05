@@ -19,6 +19,18 @@
       {
         "text": "Quality, loudness, trim, declick and file size figures are written with the decimal mark of the app's language, the loudness target included.",
         "in": "1.6.1"
+      },
+      {
+        "text": "When a track is already in Apple Music, its library badge now says what format the copy there is in (MP3 320 or AIFF 16/44.1, for example), so you can tell whether it is worth replacing. And once you send a track to Apple Music, Surco confirms it was added to your library instead of pointing you to the source folder.",
+        "in": "1.6.2"
+      },
+      {
+        "text": "Search finds more releases credited to two acts. A track credited to “Miguel Serna & Álex Cervera” now finds the release even when the catalog lists it as “Miguel Serna, Alex Cervera”.",
+        "in": "1.6.2"
+      },
+      {
+        "text": "A track Surco is converting inside a watched folder no longer shows up in the list as a new track.",
+        "in": "1.6.2"
       }
     ]
   },
