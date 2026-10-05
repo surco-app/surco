@@ -47,7 +47,7 @@ export default function ReplaceScene() {
   return (
     <div
       ref={ref}
-      className="mt-10 grid grid-cols-[minmax(0,1fr)] items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,19rem)]"
+      className="grid grid-cols-[minmax(0,1fr)] items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,19rem)]"
     >
       <AppWindow
         windowRef={win}

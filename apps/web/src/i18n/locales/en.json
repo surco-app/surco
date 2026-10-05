@@ -1034,7 +1034,6 @@
       }
     },
     "replace": {
-      "kicker": "Replace",
       "title": "Upgrade the file. Your playlists never notice.",
       "lede": "If the track is already in Apple Music as an MP3, the button reads “Replace with AIFF + Apple Music”. Apple Music and rekordbox move to the AIFF, and the track stays in the ten playlists you had it in, cues included.",
       "convertAll": "Convert 1 track",
@@ -1060,7 +1059,8 @@
       "inPlace": "in place",
       "before": "10 playlists by hand",
       "after": "one click",
-      "fieldYear": "Year"
+      "fieldYear": "Year",
+      "step": "and later · replaced"
     },
     "app": {
       "search": "Search tracks",

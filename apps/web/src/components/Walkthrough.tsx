@@ -7,6 +7,7 @@ import DeclickScene from './scenes/DeclickScene'
 import DropScene from './scenes/DropScene'
 import NormalizeScene from './scenes/NormalizeScene'
 import QualityScene from './scenes/QualityScene'
+import ReplaceScene from './scenes/ReplaceScene'
 import SceneLayout from './scenes/SceneLayout'
 import TagScene from './scenes/TagScene'
 import TrimScene from './scenes/TrimScene'
@@ -118,6 +119,17 @@ export default function Walkthrough() {
         app={<BatchScene />}
       >
         {t('home.batch.lede')}
+      </SceneLayout>
+
+      {/* After the flow, because it comes after it in the work: the track is already in
+          the library when a better file turns up. */}
+      <SceneLayout
+        wide
+        step={t('home.replace.step')}
+        title={t('home.replace.title')}
+        app={<ReplaceScene />}
+      >
+        {t('home.replace.lede')}
       </SceneLayout>
 
       <Reveal>

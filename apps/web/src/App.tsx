@@ -6,11 +6,9 @@ import Footer from './components/Footer'
 import Header from './components/Header'
 import HeroAnchors from './components/HeroAnchors'
 import HeroApp from './components/HeroApp'
-import Kicker from './components/Kicker'
 import Reveal from './components/Reveal'
 import ScrollProgress from './components/ScrollProgress'
 import SectionView from './components/SectionView'
-import ReplaceScene from './components/scenes/ReplaceScene'
 import Walkthrough from './components/Walkthrough'
 import { PAGES } from './lib/nav'
 
@@ -101,25 +99,6 @@ export default function App() {
             </div>
           </section>
         </Reveal>
-
-        {/* Replacing a track already in Apple Music and rekordbox, right under the hero.
-            Few users know it exists, and it saves the job DJs dread most: re-adding a
-            better copy of a track to every playlist it was in. At the end of the
-            walkthrough it read as a footnote. */}
-        <section className="mx-auto max-w-6xl px-6 pt-20 sm:pt-24">
-          <Reveal>
-            <Kicker>{t('home.replace.kicker')}</Kicker>
-            <h2 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              {t('home.replace.title')}
-            </h2>
-            <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">
-              {t('home.replace.lede')}
-            </p>
-          </Reveal>
-          <Reveal delay={120}>
-            <ReplaceScene />
-          </Reveal>
-        </section>
 
         {/* One measure from the hero down through the walkthrough. The page used to
             step from a 1152px hero to a 1024px body, and the seam landed exactly on
