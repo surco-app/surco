@@ -946,18 +946,7 @@
       "step": "02 · tagged",
       "title": "The tags, from Discogs, in one click.",
       "lede": "Discogs for labels, Bandcamp for self-released, Deezer for the charts, Beatport for the club, MusicBrainz for everything else. One click fills it all in: artist, label, year, BPM and artwork.",
-      "pill": "12/40",
-      "section": "Metadata",
-      "titleField": "Title",
-      "artistField": "Artist",
-      "catalogField": "Cat. number",
-      "applied": "applied",
-      "fields": {
-        "label": "Label",
-        "bpm": "BPM",
-        "key": "Key",
-        "year": "Year"
-      }
+      "all": "All ({{count}})"
     },
     "declick": {
       "step": "04 · cleaned",

@@ -29,9 +29,8 @@ import { DECLICK_MARKS } from './waveforms'
 // bug the animation exists to fix.
 
 describe('tagFrame', () => {
-  // One field, overwritten — which is what the app does. A before panel and an after
-  // panel explain the swap; a single field being rewritten in place *is* the swap,
-  // and it is the whole argument of the step.
+  // One field, overwritten, which is what the app does. A before panel and an after
+  // panel explain the swap; a single field being rewritten in place *is* the swap.
   it('starts on the junk name and ends on the real one', () => {
     expect(tagFrame(0).artist).toBe(TAG_JUNK_ARTIST)
     expect(tagFrame(1).artist).toBe(TAG_ARTIST)
@@ -48,8 +47,6 @@ describe('tagFrame', () => {
     }
   })
 
-  // The name types in rather than appearing: a cut that lands in one frame reads as
-  // a page glitch instead of as a field being rewritten.
   it('types the name in progressively', () => {
     const partials = Array.from({ length: 60 }, (_, i) => tagFrame(i / 60).artist).filter(
       (a) => a.length > 0 && a.length < TAG_ARTIST.length && TAG_ARTIST.startsWith(a),
@@ -57,8 +54,6 @@ describe('tagFrame', () => {
     expect(partials.length).toBeGreaterThan(0)
   })
 
-  // Nothing is overwritten until a release is picked: the field still holds its
-  // original value while the visitor is choosing.
   it('holds the junk name until the release is applied', () => {
     for (let i = 0; i <= 60; i++) {
       const f = tagFrame(i / 60)
@@ -71,17 +66,14 @@ describe('tagFrame', () => {
     expect(tagFrame(1).fields).toEqual(TAG_FIELDS)
   })
 
-  // The section claims tags arrive "in one click", so the scene has to show the
-  // search that precedes the click. Starting with results already on screen states
-  // the outcome and skips the act the copy is selling.
+  // The section claims tags arrive "in one click", so the scene has to show the search
+  // that precedes the click.
   it('types the query in before any result arrives', () => {
     expect(tagFrame(0).query).toBe('')
     expect(tagFrame(0).results).toBe(0)
-
     const early = tagFrame(0.1)
     expect(early.query.length).toBeGreaterThan(0)
     expect(TAG_QUERY.startsWith(early.query)).toBe(true)
-
     expect(tagFrame(1).query).toBe(TAG_QUERY)
   })
 
@@ -91,15 +83,19 @@ describe('tagFrame', () => {
     expect(tagFrame(1).results).toBe(TAG_MATCHES.length)
   })
 
-  // Nothing is applied until a release is picked: the artwork and the fields are the
-  // consequence of the click, and showing them land before it would misdescribe how
-  // the app works.
-  it('picks a release only once the results are in, and applies nothing before', () => {
-    expect(tagFrame(0.2).picked).toBe(false)
-    const atPick = Array.from({ length: 40 }, (_, i) => tagFrame(i / 40)).find((f) => f.picked)
-    expect(atPick).toBeDefined()
-    expect(atPick?.results).toBe(TAG_MATCHES.length)
+  // In the app a release opens to list its tracks, and the click that applies the tags
+  // lands on one of them. Picking before the tracks are on screen skips that step.
+  it('opens the release to its tracks before one is picked', () => {
+    const frames = Array.from({ length: 81 }, (_, i) => tagFrame(i / 80))
+    const opened = frames.findIndex((f) => f.open)
+    const picked = frames.findIndex((f) => f.picked)
+    expect(opened).toBeGreaterThan(frames.findIndex((f) => f.results === TAG_MATCHES.length) - 1)
+    expect(opened).toBeLessThan(picked)
+  })
 
+  // Nothing is applied until a release is picked: the artwork and the fields are the
+  // consequence of the click.
+  it('applies nothing before the pick', () => {
     for (let i = 0; i <= 40; i++) {
       const f = tagFrame(i / 40)
       if (!f.picked) {
@@ -110,26 +106,13 @@ describe('tagFrame', () => {
   })
 
   it('drops the artwork in after the pick and settles it', () => {
-    expect(tagFrame(0).artwork).toBe(0)
     expect(tagFrame(1).artwork).toBe(1)
-
     let prev = -1
     for (let i = 0; i <= 40; i++) {
       const { artwork } = tagFrame(i / 40)
       expect(artwork).toBeGreaterThanOrEqual(prev)
-      expect(artwork).toBeLessThanOrEqual(1)
       prev = artwork
     }
-  })
-
-  it('counts up without ever going backwards', () => {
-    let prev = -1
-    for (let i = 0; i <= 20; i++) {
-      const { done } = tagFrame(i / 20)
-      expect(done).toBeGreaterThanOrEqual(prev)
-      prev = done
-    }
-    expect(tagFrame(1).done).toBe(40)
   })
 })
 

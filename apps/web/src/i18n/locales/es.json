@@ -946,18 +946,7 @@
       "step": "02 · se etiqueta",
       "title": "Las etiquetas, de Discogs, en un clic.",
       "lede": "Discogs para sellos, Bandcamp para autoeditados, Deezer para lo comercial, Beatport para lo que suena en club y MusicBrainz para todo lo demás. Un clic y entra todo: artista, sello, año, BPM y carátula.",
-      "pill": "12/40",
-      "section": "Metadatos",
-      "titleField": "Título",
-      "artistField": "Artista",
-      "catalogField": "Nº catálogo",
-      "applied": "aplicado",
-      "fields": {
-        "label": "Sello / Editora",
-        "bpm": "BPM",
-        "key": "Tonalidad",
-        "year": "Año"
-      }
+      "all": "Todos ({{count}})"
     },
     "declick": {
       "step": "04 · se limpia",

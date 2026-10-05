@@ -73,39 +73,39 @@ export function dropFrame(t: number): DropFrame {
 }
 /* ---------------------------------------------------------------- 02 · tagging */
 
-export const TAG_TOTAL = 40
-const TAG_FROM = 8
-export const TAG_ARTIST = 'Ken Laszlo'
-export const TAG_TITLE = 'When I Fall In Love (Euro Club Mix)'
+export const TAG_TRACK = CRATE.karen
+export const TAG_ARTIST = TAG_TRACK.artist
 
-// What the file carried before Discogs was applied — the kind of string a badly
+// What the file carried before the release was applied: the kind of string a badly
 // ripped download leaves in the artist tag.
 export const TAG_JUNK_ARTIST = '2-2-2c-2e-1-2c-2e-1-2y4c-EF'
-export const TAG_FIELDS = ['Factory Team', '135', 'Fm · 9A', '1995'] as const
-export const TAG_QUERY = 'when i fall in love'
+export const TAG_FIELDS = [TAG_TRACK.album, TAG_TRACK.year, TAG_TRACK.genre] as const
+export const TAG_QUERY = 'Karen B Natural Woman'
 
 export const TAG_MATCHES = [
-  { title: 'When I Fall In Love', meta: '1995 · Factory Team · FT-012', src: 'Discogs' },
-  { title: 'Euro Club Vol. 3', meta: '1995 · Rise', src: 'Deezer' },
-  { title: 'When I Fall In Love', meta: '1996 · self-released', src: 'Bandcamp' },
+  {
+    title: 'Karen B - Natural Woman',
+    src: 'Discogs',
+    meta: '1995 · Flarenasch',
+    cover: TAG_TRACK.cover,
+  },
+  { title: 'Karen B - Natural Woman', src: 'Deezer', meta: '1995', cover: TAG_TRACK.cover },
+  { title: 'Karen B - Natural Woman', src: 'MusicBrainz', meta: '1995', cover: '' },
 ] as const
 
 // The act the section sells is "tags, in one click", so the scene has to contain the
-// click — and everything that makes it meaningful either side. It runs in four beats:
-// the query types in, the releases arrive one by one, one gets picked, and only then
-// does the artwork drop and the fields fill. An earlier version opened with the
-// results already listed and the panels already resolved, which showed the outcome of
-// an act the visitor never saw, and left the before/after floating with no file
-// attached to it.
+// click and what makes it meaningful either side, in the app's order: the query types
+// in, the releases arrive one by one, the first opens to its tracks, one track gets
+// picked, and only then does the artwork drop and the fields fill.
 const TAG_TYPING_ENDS = 0.22
-const TAG_RESULTS_END = 0.48
-const TAG_PICK = 0.52
+const TAG_RESULTS_END = 0.44
+const TAG_OPEN = 0.47
+const TAG_PICK = 0.55
 
 export interface TagFrame {
-  done: number
   query: string
   results: number
-  activeRow: number
+  open: boolean
   picked: boolean
   artwork: number
   artist: string
@@ -117,8 +117,6 @@ export function tagFrame(t: number): TagFrame {
 
   const typed = Math.round(Math.min(1, p / TAG_TYPING_ENDS) * TAG_QUERY.length)
 
-  // Results only start landing once there is a query to match, and arrive staggered
-  // rather than as a block: a list that appears whole reads as a static mockup.
   const searching = (p - TAG_TYPING_ENDS) / (TAG_RESULTS_END - TAG_TYPING_ENDS)
   const results = Math.max(
     0,
@@ -129,36 +127,29 @@ export function tagFrame(t: number): TagFrame {
   )
 
   const picked = p >= TAG_PICK
-
-  // Artwork drops in first and the text follows it, which is the order that reads as
-  // "the release was applied" rather than as fields being typed by hand.
   const artwork = picked ? Math.min(1, (p - TAG_PICK) / 0.14) : 0
 
   // One field, rewritten in place: the junk name deletes itself and the real one is
-  // typed over it. Two panels showing before and after would explain the swap; the
-  // field being overwritten is the swap, and it is what the app actually does.
-  const rewriting = picked ? (p - TAG_PICK - 0.06) / 0.3 : -1
+  // typed over it, which is what the app does to the field.
+  const rewriting = picked ? (p - TAG_PICK - 0.04) / 0.26 : -1
   const artist =
     rewriting < 0
       ? TAG_JUNK_ARTIST
       : rewriting < 0.45
-        ? // Clearing: the junk shortens from the end.
-          TAG_JUNK_ARTIST.slice(0, Math.ceil((1 - rewriting / 0.45) * TAG_JUNK_ARTIST.length))
-        : // Typing: the real name goes in over the now-empty field.
-          TAG_ARTIST.slice(
+        ? TAG_JUNK_ARTIST.slice(0, Math.ceil((1 - rewriting / 0.45) * TAG_JUNK_ARTIST.length))
+        : TAG_ARTIST.slice(
             0,
             Math.round(Math.min(1, (rewriting - 0.45) / 0.55) * TAG_ARTIST.length),
           )
 
   return {
-    done: Math.round(TAG_FROM + p * (TAG_TOTAL - TAG_FROM)),
     query: TAG_QUERY.slice(0, Math.min(TAG_QUERY.length, typed)),
     results,
-    activeRow: picked ? 0 : Math.max(0, results - 1),
+    open: p >= TAG_OPEN,
     picked,
     artwork,
     artist,
-    fields: TAG_FIELDS.map((v, i) => (picked && p > TAG_PICK + 0.16 + i * 0.07 ? v : '')),
+    fields: TAG_FIELDS.map((v, i) => (picked && p > TAG_PICK + 0.3 + i * 0.07 ? v : '')),
   }
 }
 

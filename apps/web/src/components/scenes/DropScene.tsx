@@ -69,8 +69,8 @@ export default function DropScene() {
             ))}
           </div>
 
-          <div className="flex min-w-0 flex-col" style={{ opacity: dropped ? 1 : 0 }}>
-            <div className="flex-1 overflow-hidden px-6 pt-[18px]">
+          <div className="flex min-h-0 min-w-0 flex-col" style={{ opacity: dropped ? 1 : 0 }}>
+            <div className="min-h-0 flex-1 overflow-hidden px-6 pt-[18px]">
               <p className="flex items-center gap-2.5 text-xs text-muted">
                 {t('home.app.file')}
                 <span className="h-px flex-1 bg-line" />

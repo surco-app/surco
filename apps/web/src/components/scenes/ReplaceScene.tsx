@@ -87,8 +87,8 @@ export default function ReplaceScene() {
             })}
           </div>
 
-          <div className="flex min-w-0 flex-col">
-            <div className="flex-1 overflow-hidden px-6 pt-[18px] pb-5">
+          <div className="flex min-h-0 min-w-0 flex-col">
+            <div className="min-h-0 flex-1 overflow-hidden px-6 pt-[18px] pb-5">
               <p className="flex items-center gap-2.5 text-xs text-muted">
                 {t('home.replace.file')}
                 <span className="h-px flex-1 bg-line" />

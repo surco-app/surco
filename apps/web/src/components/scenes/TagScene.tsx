@@ -1,164 +1,199 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { TAG_ARTIST, TAG_MATCHES, TAG_TITLE, TAG_TOTAL, tagFrame } from '../../lib/scenes'
+import { CRATE } from '../../lib/crate'
+import { TAG_JUNK_ARTIST, TAG_MATCHES, TAG_QUERY, TAG_TRACK, tagFrame } from '../../lib/scenes'
 import { useSceneProgress } from '../../lib/useSceneProgress'
-import AppFrame from './AppFrame'
+import {
+  AppField,
+  AppRow,
+  AppWindow,
+  ConvertButton,
+  Cover,
+  EASE,
+  EditorFooter,
+  Glyph,
+  ICONS,
+  SceneCursor,
+  SearchBox,
+  SectionTitle,
+  ToolbarButton,
+} from './AppChrome'
 
-// One input as the app draws it: a plain sentence-case label beside a filled box that
-// holds its height whether or not it has a value. Empty ones stay on screen — a form
-// that only renders the fields this release happens to fill reads as a summary, not
-// as the editor the visitor will actually meet.
-//
-// The label sits to the LEFT of the box, not above it. Stacked, each field needed its
-// own two rows, so fitting them meant two narrow columns and every value — "Factory
-// Team", the title, even "Ken Laszlo" — was truncated to two characters and an
-// ellipsis. A row per field spends the width on the value instead.
-function Field({
-  label,
-  children,
-  accent,
-  caret,
-}: {
-  label: string
-  children: React.ReactNode
-  accent?: 'green' | 'red'
-  caret?: boolean
-}) {
-  const value = accent === 'green' ? 'text-green' : accent === 'red' ? 'text-red' : 'text-fg/90'
-  // The label sits above the box on a phone and beside it from `sm` up. Pinned to the
-  // side at every width it took 64px off a 342px column and pushed every value right,
-  // so the form read as right-aligned on the one screen where it had least room.
-  return (
-    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
-      <span className="text-[10px] text-muted sm:w-16 sm:shrink-0 sm:text-right">{label}</span>
-      <div
-        className={`min-w-0 flex-1 rounded border bg-bg/60 px-2 py-1 transition-colors duration-500 ${
-          accent === 'green' ? 'border-green/45' : 'border-line'
-        }`}
-      >
-        <span className={`block min-h-[1.05rem] truncate font-mono ${value}`}>
-          {children}
-          {caret && (
-            <span
-              aria-hidden="true"
-              className="ml-px inline-block h-3 w-px translate-y-0.5 bg-green"
-            />
-          )}
-        </span>
-      </div>
-    </div>
-  )
-}
-
-// The whole act, in order: the query types itself, releases arrive one by one, one
-// gets picked, and the fields land as its consequence. The previous version opened on
-// results already listed and panels already resolved — the outcome of a click the
-// visitor never saw, with a before/after floating free of any file.
-//
-// Results on top, the form below, both full width: side by side inside a 648px frame
-// left each column near 300px, which is narrower than the values it had to show.
+// The app's three columns: the list with the badly tagged track selected, the search
+// column where the query types in and the releases arrive, and the editor whose fields
+// fill from the release once one of its tracks is clicked.
 export default function TagScene() {
   const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
-  const progress = useSceneProgress(ref, 6400)
-  const frame = tagFrame(progress)
-  const done = progress >= 1
+  const win = useRef<HTMLDivElement>(null)
+  const trackA = useRef<HTMLDivElement>(null)
+  const [target] = useState(() => trackA)
+  const frame = tagFrame(useSceneProgress(ref, 9000))
+  const [album, year, genre] = frame.fields
+  const fixed = frame.artist === TAG_TRACK.artist
 
   return (
-    <AppFrame
-      pill={`${frame.done}/${TAG_TOTAL}`}
-      busy={!done}
-      progress={(frame.done / TAG_TOTAL) * 100}
-    >
-      <div ref={ref} className="space-y-3 p-4">
-        {/* The search field, typing itself. Without it the results are a list that
-            was always there, and "in one click" has no click to point at. */}
-        <div className="flex items-center gap-2 rounded-lg border border-line bg-bg/60 px-2.5 py-1.5 font-mono text-[11px]">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
-            className="size-3 shrink-0 text-faint"
-          >
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" strokeLinecap="round" />
-          </svg>
-          <span className="min-w-0 flex-1 truncate text-fg/90">
-            {frame.query}
-            {!frame.picked && (
-              <span
-                aria-hidden="true"
-                className="ml-px inline-block h-3 w-px translate-y-0.5 bg-blue"
-                style={{ animation: 'glow 1s steps(2) infinite' }}
-              />
-            )}
-          </span>
-        </div>
-
-        <div className="grid gap-1.5 sm:grid-cols-3">
-          {TAG_MATCHES.map((r, i) => {
-            const shown = i < frame.results
-            const active = frame.picked ? i === 0 : frame.activeRow === i
-            return (
-              <div
-                key={r.src}
-                className={`min-w-0 rounded-lg border p-2 font-mono text-[11px] transition-[opacity,translate,border-color,background-color] duration-300 ${
-                  shown
-                    ? 'translate-y-0 opacity-100'
-                    : 'pointer-events-none translate-y-1 opacity-0'
-                } ${active ? 'border-blue/45 bg-blue/10' : 'border-line'}`}
-              >
-                <span className="block truncate text-fg/90">{r.title}</span>
-                <span className="mt-0.5 flex items-center justify-between gap-2">
-                  <span className="min-w-0 truncate text-[10px] text-faint">{r.meta}</span>
-                  {frame.picked && i === 0 ? (
-                    <span className="shrink-0 rounded-full bg-blue px-1.5 text-[9px] text-bg">
-                      {t('home.tag.applied')}
-                    </span>
-                  ) : (
-                    <span className="shrink-0 rounded-full border border-line px-1.5 text-[9px] text-faint">
-                      {r.src}
-                    </span>
-                  )}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* The editor panel as the app lays it out: a METADATOS heading and labelled
-            inputs, one per row, including the ones this release leaves empty. Six free
-            floating cards were a diagram of a form rather than the form. */}
-        <div className="text-[11px]">
-          <p className="border-b border-line pb-1.5 font-mono text-[9px] tracking-[0.14em] text-faint uppercase">
-            {t('home.tag.section')}
-          </p>
-
-          {/* The title spans both columns — it is the longest value on the form and the
-              one a DJ scans first. The rest pair up. */}
-          <div className="mt-2.5 grid gap-x-6 gap-y-2 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <Field label={t('home.tag.titleField')}>{TAG_TITLE}</Field>
+    <div ref={ref}>
+      <AppWindow
+        windowRef={win}
+        action={
+          <ToolbarButton>
+            <Glyph size={14}>{ICONS.convert}</Glyph>
+            {t('home.app.convertCount', { count: 40 })}
+          </ToolbarButton>
+        }
+      >
+        <div className="grid h-[510px] grid-cols-[minmax(0,1fr)] md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_minmax(0,1.1fr)]">
+          <div className="hidden overflow-hidden border-r border-line px-2 py-2.5 lg:block">
+            <div className="mb-2.5">
+              <SearchBox>{t('home.app.search')}</SearchBox>
             </div>
+            <AppRow {...CRATE.lasgo} format="AIFF" />
+            <AppRow
+              title={TAG_TRACK.title}
+              artist={fixed ? TAG_TRACK.artist : TAG_JUNK_ARTIST}
+              duration={TAG_TRACK.duration}
+              format="FLAC"
+              cover={frame.artwork >= 1 ? TAG_TRACK.cover : undefined}
+              selected="primary"
+            />
+            <AppRow {...CRATE.ivd} format="FLAC" />
+          </div>
 
-            {/* One field, overwritten in place — the same single Artista input the
-                app has. A before box and an after box explain the swap; watching
-                the value be rewritten is the swap. */}
-            <Field
-              label={t('home.tag.artistField')}
-              accent={frame.picked ? 'green' : 'red'}
-              caret={frame.picked && frame.artist !== TAG_ARTIST}
-            >
-              {frame.artist}
-            </Field>
-            <Field label={t('home.tag.fields.label')}>{frame.fields[0]}</Field>
-            <Field label={t('home.tag.fields.year')}>{frame.fields[3]}</Field>
-            <Field label={t('home.tag.fields.bpm')}>{frame.fields[1]}</Field>
+          <div className="hidden min-w-0 flex-col overflow-hidden border-r border-line md:flex">
+            <div className="border-b border-line px-2.5 pt-2.5 pb-2">
+              <SearchBox>
+                <span className="text-fg">{frame.query}</span>
+                {frame.query.length < TAG_QUERY.length && (
+                  <i
+                    className="-ml-1.5 block h-3.5 w-px bg-blue"
+                    style={{ animation: 'glow 1s steps(1) infinite' }}
+                  />
+                )}
+              </SearchBox>
+              <p className="mt-1.5 flex h-4 items-center gap-1 text-xs text-muted">
+                {frame.results > 0 && (
+                  <>
+                    {t('home.tag.all', {
+                      count: frame.results === TAG_MATCHES.length ? 23 : frame.results,
+                    })}
+                    <Glyph size={12}>{ICONS.chevron}</Glyph>
+                  </>
+                )}
+              </p>
+            </div>
+            <div className="p-1.5">
+              {TAG_MATCHES.slice(0, frame.results).map((m, i) => (
+                <div key={m.src} style={{ animation: `labelPop 0.3s ${EASE}` }}>
+                  <div className="flex gap-2.5 rounded-lg p-2">
+                    <span className="size-[30px] flex-none overflow-hidden rounded">
+                      <Cover src={m.cover || undefined} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[13px] text-fg">{m.title}</span>
+                      <span className="mt-0.5 flex items-center gap-1 text-[11px] text-muted">
+                        <b className="font-semibold text-[#a9b1d6]">{m.src}</b>
+                        {i === 0 && frame.picked && (
+                          <span className="text-blue">
+                            <Glyph size={11}>{ICONS.sparkle}</Glyph>
+                          </span>
+                        )}
+                        {m.meta}
+                      </span>
+                    </span>
+                  </div>
+                  {i === 0 && frame.open && (
+                    <div
+                      ref={trackA}
+                      className={`ml-2 flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13px] transition-colors duration-300 ${
+                        frame.picked ? 'bg-blue/30' : ''
+                      }`}
+                      style={{ animation: `labelPop 0.3s ${EASE}` }}
+                    >
+                      <span className="w-[18px] text-xs text-faint">A</span>
+                      <span className="min-w-0 flex-1 truncate text-fg">{TAG_TRACK.title}</span>
+                      {frame.picked && (
+                        <span className="text-blue">
+                          <Glyph size={13}>{ICONS.sparkle}</Glyph>
+                        </span>
+                      )}
+                      <span className="text-xs text-muted tabular-nums">{TAG_TRACK.duration}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex min-h-0 min-w-0 flex-col">
+            <div className="min-h-0 flex-1 overflow-hidden px-6 pt-[18px]">
+              <p className="flex items-center gap-2.5 text-xs text-muted">
+                {t('home.app.file')}
+                <span className="h-px flex-1 bg-line" />
+              </p>
+              <div className="mt-4">
+                <SectionTitle
+                  aside={
+                    <>
+                      <Glyph size={13}>{ICONS.note}</Glyph>
+                      {t('home.app.notInLibrary')}
+                    </>
+                  }
+                >
+                  {t('home.app.metadata')}
+                </SectionTitle>
+              </div>
+              <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-[18px] sm:grid-cols-[96px_minmax(0,1fr)]">
+                <div className="hidden sm:block">
+                  <span className="relative block size-24 overflow-hidden rounded-lg bg-[#292e42]">
+                    <span className="absolute inset-0 grid place-items-center text-faint">
+                      <Glyph size={22}>{ICONS.image}</Glyph>
+                    </span>
+                    <span
+                      className="absolute inset-0"
+                      style={{
+                        opacity: frame.artwork,
+                        transform: `scale(${0.94 + 0.06 * frame.artwork})`,
+                      }}
+                    >
+                      <Cover src={TAG_TRACK.cover} />
+                    </span>
+                  </span>
+                  <p className="mt-2 text-center text-[11px] text-muted tabular-nums">
+                    {frame.artwork >= 1 ? '1/2' : '0/0'}
+                  </p>
+                  {frame.artwork >= 1 && (
+                    <p className="mt-0.5 flex items-center justify-center gap-1.5 text-[11px] text-muted tabular-nums">
+                      <i className="block size-1.5 rounded-full bg-green" />
+                      600 × 600 px
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <AppField label={t('home.app.fieldTitle')}>{TAG_TRACK.title}</AppField>
+                  <AppField label={t('home.app.fieldArtist')} flash={frame.picked && !fixed}>
+                    <span className={frame.picked ? 'text-fg' : 'text-muted'}>{frame.artist}</span>
+                  </AppField>
+                  <AppField label={t('home.app.fieldAlbum')} flash={!!album && !year}>
+                    {album}
+                  </AppField>
+                  <AppField label={t('home.app.fieldYear')} short flash={!!year && !genre}>
+                    {year}
+                  </AppField>
+                  <AppField label={t('home.app.fieldGenre')}>{genre}</AppField>
+                </div>
+              </div>
+            </div>
+            <EditorFooter>
+              <ConvertButton label={t('home.app.convertTo')} />
+            </EditorFooter>
           </div>
         </div>
-      </div>
-    </AppFrame>
+        <SceneCursor
+          container={win}
+          target={frame.open && !(frame.picked && fixed) ? target : null}
+        />
+      </AppWindow>
+    </div>
   )
 }
