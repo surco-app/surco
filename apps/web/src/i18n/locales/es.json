@@ -918,10 +918,10 @@
       "step": "01 · entra",
       "title": "Suéltalas y ya están dentro.",
       "lede": "Carpetas enteras. Surco lee etiquetas, duración y carátula al vuelo, y la misma pista nunca entra dos veces.",
-      "pill": "Leyendo {{read}}/{{total}}",
-      "pillDone": "{{total}} pistas",
-      "caption": "{{total}} pistas leídas en 4 s",
-      "captionBusy": "leyendo etiquetas, duración y carátula…"
+      "emptyTitle": "Suelta tus pistas aquí",
+      "emptySubtitle": "Convierte tus pistas a AIFF, WAV, FLAC, ALAC o MP3, las etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, y las manda a Apple Music o Engine DJ.",
+      "addTracks": "Añadir pistas",
+      "reading": "Leyendo {{read}}/{{total}}"
     },
     "quality": {
       "step": "03 · se comprueba",
@@ -1064,6 +1064,21 @@
       "before": "10 playlists a mano",
       "after": "un clic",
       "fieldYear": "Año"
+    },
+    "app": {
+      "search": "Buscar pistas",
+      "file": "Archivo",
+      "metadata": "Metadatos",
+      "notInLibrary": "No en Apple Music",
+      "fieldTitle": "Título",
+      "fieldArtist": "Artista",
+      "fieldAlbum": "Álbum",
+      "fieldYear": "Año",
+      "fieldGenre": "Género",
+      "convert": "Convertir",
+      "convertCount": "Convertir {{count}} pistas",
+      "convertTo": "Convertir a AIFF",
+      "missingArtist": "Falta Artista"
     }
   },
   "flacToAiff": {

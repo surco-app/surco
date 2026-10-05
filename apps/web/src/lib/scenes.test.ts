@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   BATCH_QUEUE,
   batchFrame,
+  DROP_TOTAL,
   DROP_TRACKS,
   declickFrame,
   dropFrame,
@@ -238,62 +239,55 @@ describe('batchFrame', () => {
 })
 
 describe('dropFrame', () => {
-  // The step is called "drop them in and they're there". A queue that starts full
-  // shows the aftermath of an import, not an import — the tracks have to arrive.
-  it('starts empty and ends with the whole crate in', () => {
+  const frames = Array.from({ length: 121 }, (_, i) => dropFrame(i / 120))
+  const firstAt = (pred: (f: (typeof frames)[number]) => boolean) => frames.findIndex(pred)
+
+  // The step is called "drop them in and they're there". It has to open on the window
+  // the app shows with nothing loaded, or it shows the aftermath of an import.
+  it('opens on the empty window, with no tracks in it', () => {
+    expect(dropFrame(0).stage).toBe('empty')
     expect(dropFrame(0).rows).toHaveLength(0)
-    expect(dropFrame(1).rows).toHaveLength(DROP_TRACKS.length)
   })
 
-  it('lands the tracks one after another, never losing one', () => {
-    let prev = -1
-    for (let i = 0; i <= 40; i++) {
-      const n = dropFrame(i / 40).rows.length
-      expect(n).toBeGreaterThanOrEqual(prev)
-      prev = n
+  it('drags the files in before any track appears', () => {
+    const dragging = firstAt((f) => f.stage === 'dragging')
+    expect(dragging).toBeGreaterThan(0)
+    expect(dragging).toBeLessThan(firstAt((f) => f.rows.length > 0))
+  })
+
+  // The app lists the whole drop at once with placeholder rows, then reads each file.
+  it('lists the whole crate on the drop and reads the tracks one after another', () => {
+    const dropped = frames[firstAt((f) => f.rows.length > 0)]
+    expect(dropped.rows).toHaveLength(DROP_TRACKS.length)
+    expect(dropped.rows.every((r) => r.state === 'loading')).toBe(true)
+
+    const done = frames.map((f) => f.rows.filter((r) => r.state === 'done').length)
+    for (let i = 1; i < done.length; i++) {
+      expect(done[i]).toBeGreaterThanOrEqual(done[i - 1])
+      expect(done[i] - done[i - 1]).toBeLessThanOrEqual(1)
     }
-  })
-
-  // Each row reads its tags after it lands, so the queue shows work in flight rather
-  // than a list that was complete the moment it appeared.
-  it('reads each track after it arrives, and finishes them all', () => {
-    const mid = dropFrame(0.5).rows
-    expect(mid.some((r) => r.state === 'loading')).toBe(true)
     expect(dropFrame(1).rows.every((r) => r.state === 'done')).toBe(true)
   })
 
-  it('counts only what has actually landed', () => {
-    for (let i = 0; i <= 20; i++) {
-      const f = dropFrame(i / 20)
-      expect(f.read).toBeLessThanOrEqual(f.total)
-    }
-    expect(dropFrame(1).read).toBe(dropFrame(1).total)
+  it('counts the files it reads up to the whole folder, never backwards', () => {
+    const reads = frames.map((f) => f.read)
+    for (let i = 1; i < reads.length; i++) expect(reads[i]).toBeGreaterThanOrEqual(reads[i - 1])
+    expect(dropFrame(1).read).toBe(DROP_TOTAL)
+    for (const f of frames) if (f.rows.length === 0) expect(f.read).toBe(0)
   })
 
-  // A real crate is not seven identical FLACs — it is whatever the shops and the rips
-  // left behind. A single-format queue reads as placeholder data and undersells the
-  // one thing this step does: take the folder exactly as it is.
+  // The convert button only offers the whole folder once every file has been read, as
+  // the toolbar does in the app.
+  it('finishes only when every track has been read', () => {
+    for (const f of frames)
+      if (f.stage === 'done') expect(f.rows.every((r) => r.state === 'done')).toBe(true)
+    expect(dropFrame(1).stage).toBe('done')
+  })
+
+  // A real crate is not seven identical FLACs. A single-format queue reads as
+  // placeholder data and undersells taking the folder exactly as it is.
   it('carries a mix of formats, not one repeated', () => {
-    const formats = new Set(DROP_TRACKS.map((tr) => tr.format))
-    expect(formats.size).toBeGreaterThan(2)
-  })
-
-  // The lede promises Surco reads length as it goes, so the length has to arrive with
-  // the row rather than being absent from the thing the copy points at.
-  it('reads a length for every track it finishes', () => {
-    for (const row of dropFrame(1).rows) {
-      expect(row.duration).toMatch(/^\d+:\d{2}$/)
-    }
-  })
-
-  // Lengths are only known once the file has been read, so a row still loading cannot
-  // already display one.
-  it('shows no length on a track it is still reading', () => {
-    for (let i = 0; i <= 40; i++) {
-      for (const row of dropFrame(i / 40).rows) {
-        if (row.state === 'loading') expect(row.duration).toBe('')
-      }
-    }
+    expect(new Set(DROP_TRACKS.map((tr) => tr.format)).size).toBeGreaterThan(2)
   })
 })
 

@@ -918,10 +918,10 @@
       "step": "01 · in",
       "title": "Drop them and they're in.",
       "lede": "Whole folders. Surco reads tags, length and artwork on the fly, and never adds the same track twice.",
-      "pill": "Reading {{read}}/{{total}}",
-      "pillDone": "{{total}} tracks",
-      "caption": "{{total}} tracks read in 4s",
-      "captionBusy": "reading tags, length and artwork…"
+      "emptyTitle": "Drop your tracks here",
+      "emptySubtitle": "Converts your tracks to AIFF, WAV, FLAC, ALAC or MP3, tags them from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz, and sends them to Apple Music or Engine DJ.",
+      "addTracks": "Add tracks",
+      "reading": "Reading {{read}}/{{total}}"
     },
     "quality": {
       "step": "03 · checked",
@@ -1064,6 +1064,21 @@
       "before": "10 playlists by hand",
       "after": "one click",
       "fieldYear": "Year"
+    },
+    "app": {
+      "search": "Search tracks",
+      "file": "File",
+      "metadata": "Metadata",
+      "notInLibrary": "Not in Apple Music",
+      "fieldTitle": "Title",
+      "fieldArtist": "Artist",
+      "fieldAlbum": "Album",
+      "fieldYear": "Year",
+      "fieldGenre": "Genre",
+      "convert": "Convert",
+      "convertCount": "Convert {{count}} tracks",
+      "convertTo": "Convert to AIFF",
+      "missingArtist": "Missing Artist"
     }
   },
   "flacToAiff": {

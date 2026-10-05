@@ -4,73 +4,73 @@
 // Keeping the state in one frame function per scene means replay, the end state and
 // the reduced-motion jump are all the same code path with a different t.
 
+import { CRATE } from './crate'
 import { DECLICK_MARKS, TAIL_CUT } from './waveforms'
 
 const clamp = (t: number) => Math.min(Math.max(t, 0), 1)
 
 /* ------------------------------------------------------------------- 01 · drop */
 
-// A crate of real 90s eurodance filenames — "Artist 01 - Track 01" is the fastest
-// way to tell a DJ he is looking at a mockup. The formats are mixed on purpose: a
-// folder that has been collected over years holds shop downloads, vinyl rips and
-// whatever a friend sent, and a column of identical FLAC badges reads as filler.
-// Lengths are the 12" runtimes the genre actually has, not round numbers.
+// Real tracks with their real covers. The formats are mixed on purpose: a folder
+// collected over years holds shop downloads, vinyl rips and whatever a friend sent, and
+// a column of identical badges reads as filler.
 export const DROP_TRACKS = [
-  { name: 'Kaleidos - Take Me To The Limit', format: 'FLAC', duration: '6:12' },
-  { name: 'Kalura - Pay For Love', format: 'MP3', duration: '5:48' },
-  { name: 'Karen B - Natural Woman', format: 'WAV', duration: '7:03' },
-  { name: 'Ken Laszlo - When I Fall In Love', format: 'FLAC', duration: '6:41' },
-  { name: 'Kim Sanders - Ride', format: 'AIFF', duration: '5:22' },
-  { name: 'Kriss - Tonight', format: 'MP3', duration: '4:57' },
-  { name: 'Lia - Private Fantasy', format: 'FLAC', duration: '6:35' },
+  { ...CRATE.sash, format: 'FLAC' },
+  { ...CRATE.milk, format: 'WAV' },
+  { ...CRATE.sylver, format: 'MP3' },
+  { ...CRATE.lasgo, format: 'AIFF' },
+  { ...CRATE.ivd, format: 'FLAC' },
+  { ...CRATE.tukan, format: 'WAV' },
+  { ...CRATE.bullet, format: 'MP3' },
 ] as const
 
-// What the whole folder holds, against which the counter runs: the queue shows seven
+// What the whole folder holds, against which the counter runs: the list shows seven
 // rows, but the step is about dropping a crate in, not seven files.
 export const DROP_TOTAL = 319
 
+const DROP_DRAG = 0.12
+const DROP_LANDS = 0.3
+const DROP_READ_ENDS = 0.86
+
 export interface DropRow {
-  name: string
-  format: string
+  title: string
+  artist: string
   duration: string
+  cover: string
+  format: string
   state: 'loading' | 'done'
 }
 
 export interface DropFrame {
+  stage: 'empty' | 'dragging' | 'reading' | 'done'
   rows: DropRow[]
   read: number
   total: number
 }
 
-// Tracks land one after another and each reads its tags a beat after landing, so the
-// queue is visibly filling rather than sitting complete. The previous version passed
-// seven rows frozen on "loading" from the outside: the step that promises "drop them
-// in and they're there" never showed a single file arriving or finishing.
+// The empty window, the files dragged onto it, then the app's own import: every row
+// listed at once as a placeholder and each one read in turn while the toolbar counts.
 export function dropFrame(t: number): DropFrame {
   const p = clamp(t)
-  const landed = Math.min(DROP_TRACKS.length, Math.floor(p * 1.25 * DROP_TRACKS.length))
-
-  const rows = DROP_TRACKS.slice(0, landed).map(({ name, format, duration }, i) => {
-    // Each row needs a moment reading before it settles, which is what makes the
-    // queue look like work in flight instead of a list that appeared finished.
-    const read = p > (i + 1) / (DROP_TRACKS.length * 1.25) + 0.12
-    return {
-      name,
-      format,
-      // The length comes off the file, so it cannot be on screen before the read
-      // finishes — that is the difference between showing work and asserting it.
-      duration: read ? duration : '',
-      state: (read ? 'done' : 'loading') as DropRow['state'],
-    }
-  })
-
+  const reading = clamp((p - DROP_LANDS) / (DROP_READ_ENDS - DROP_LANDS))
+  const landed = p >= DROP_LANDS
+  const read = landed ? Math.floor(reading * DROP_TRACKS.length) : 0
   return {
-    rows,
-    read: Math.round((landed / DROP_TRACKS.length) * DROP_TOTAL),
+    stage: !landed ? (p < DROP_DRAG ? 'empty' : 'dragging') : reading < 1 ? 'reading' : 'done',
+    rows: landed
+      ? DROP_TRACKS.map(({ title, artist, duration, cover, format }, i) => ({
+          title,
+          artist,
+          duration,
+          cover,
+          format,
+          state: i < read ? 'done' : 'loading',
+        }))
+      : [],
+    read: landed ? Math.round(reading * DROP_TOTAL) : 0,
     total: DROP_TOTAL,
   }
 }
-
 /* ---------------------------------------------------------------- 02 · tagging */
 
 export const TAG_TOTAL = 40
