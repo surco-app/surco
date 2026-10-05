@@ -238,7 +238,7 @@
           },
           {
             "t": "Sustituye lo que ya tienes",
-            "d": "Cargas el AIFF o el FLAC de un tema que tienes en MP3 y ocupa su sitio en Apple Music y en rekordbox, en vez de acabar con dos. La marca de Apple Music dice en qué formato está tu copia, para que sepas si merece la pena."
+            "d": "Cargas otra copia de un tema que ya tienes, en cualquier formato y también en el mismo, y ocupa su sitio en Apple Music y en rekordbox, en vez de acabar con dos. La pista sigue en sus playlists, sin volver a meterla a mano en cada una. La marca de Apple Music dice en qué formato está tu copia, para que sepas si merece la pena."
           },
           {
             "t": "Carátula dentro de un WAV",
@@ -855,7 +855,7 @@
           "Engine DJ y Traktor tienen que estar cerrados para escribir en su biblioteca; Surco se ofrece a cerrarlos y hace copia de seguridad antes de tocar nada.",
           "Surco te avisa si una pista ya está en tu biblioteca, mirando la que corresponda a tu destino. Es un indicio muy afinado, no una garantía.",
           "Si editas una pista después, Surco actualiza su copia de Apple Music en vez de duplicarla, y si ya había una copia antigua te ofrece eliminarla.",
-          "Puedes sustituir una pista que ya tengas: carga un AIFF o un FLAC de un tema que esté en tu biblioteca como MP3 y el botón pasa a decir «Sustituir». La entrada de Apple Music y la ficha de rekordbox pasan a apuntar al archivo nuevo, con sus playlists y sus cue points. rekordbox puede recalcular el beatgrid al ver un archivo distinto, así que revisa la rejilla. Al terminar, Surco te ofrece mandar el archivo viejo a la papelera.",
+          "Puedes sustituir una pista que ya tengas: carga otra copia de un tema que esté en tu biblioteca, en cualquier formato y también en el mismo (de un MP3 a un AIFF, o de un MP3 de 128 a uno de 320), y el botón pasa a decir «Sustituir». La entrada de Apple Music y la ficha de rekordbox pasan a apuntar al archivo nuevo, con sus playlists y sus cue points. rekordbox puede recalcular el beatgrid al ver un archivo distinto, así que revisa la rejilla. Al terminar, Surco te ofrece mandar el archivo viejo a la papelera.",
           "A Apple Music no llegan la tonalidad, el sello, el catálogo ni el remixer (solo viven en el tag del archivo) y los FLAC no se envían nunca, porque Music no puede con ellos."
         ],
         "shot": "exportar-es.webp",

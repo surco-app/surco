@@ -238,7 +238,7 @@
           },
           {
             "t": "Replaces what you already have",
-            "d": "Load the AIFF or FLAC of a track you own as an MP3 and it takes the old one's place in Apple Music and rekordbox, instead of leaving you with two. The Apple Music badge shows what format your copy is in, so you know whether it's worth it."
+            "d": "Load another copy of a track you own, in any format including the same one, and it takes the old one's place in Apple Music and rekordbox, instead of leaving you with two. The track stays in its playlists, with no adding it back to each one by hand. The Apple Music badge shows what format your copy is in, so you know whether it's worth it."
           },
           {
             "t": "Artwork inside a WAV",
@@ -855,7 +855,7 @@
           "Engine DJ and Traktor have to be closed to write to their library; Surco offers to close them and backs up before touching anything.",
           "Surco tells you when a track is already in your library, checking whichever one matches your destination. It's a well-tuned hint, not a guarantee.",
           "Edit a track later and Surco updates its Apple Music copy instead of duplicating it, and if an older copy was already there it offers to remove it.",
-          "You can replace a track you already own: load an AIFF or FLAC of something your library holds as an MP3 and the button turns into “Replace”. The Apple Music entry and the rekordbox row both follow the new file, keeping their playlists and cue points. rekordbox may recalculate the beatgrid when it sees a different file, so check the grid. When it finishes, Surco offers to send the old file to the Trash.",
+          "You can replace a track you already own: load another copy of something in your library, in any format including the same one (an MP3 to an AIFF, or a 128 MP3 to a 320), and the button turns into “Replace”. The Apple Music entry and the rekordbox row both follow the new file, keeping their playlists and cue points. rekordbox may recalculate the beatgrid when it sees a different file, so check the grid. When it finishes, Surco offers to send the old file to the Trash.",
           "Key, label, catalog number and remixer don't reach Apple Music (they only live in the file's tags) and FLAC is never sent, because Music can't handle it."
         ],
         "shot": "exportar-en.webp",
