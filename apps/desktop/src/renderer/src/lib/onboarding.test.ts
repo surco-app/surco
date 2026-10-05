@@ -45,6 +45,7 @@ const settings: Settings = {
   rekordboxDbPath: '',
   syncTraktor: false,
   syncRekordbox: false,
+  syncEngineDj: false,
   betaUpdates: false,
   traktorCueOffsetMs: 0,
   engineDjPlaylist: 'Surco',

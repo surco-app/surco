@@ -440,6 +440,18 @@ export function DestinationTab({
         </div>
         <SettingsHint className="mt-2">{tr('settings.rekordboxDbPathHint')}</SettingsHint>
       </SettingsSection>
+      {/* Engine DJ's library is the one its destination already writes to, so the
+          toggle is the whole setup: it keeps rows that point at a converted file's
+          original moving onto the new file. */}
+      <SettingsSection eyebrow={tr('settings.engineSync')}>
+        <CheckboxRow
+          testid="settings-sync-engine"
+          checked={synced.syncEngineDj}
+          onChange={(v) => patch('syncEngineDj', v)}
+          label={tr('settings.syncEngineDj')}
+        />
+        <SettingsHint className="mt-2">{tr('settings.syncEngineDjHint')}</SettingsHint>
+      </SettingsSection>
     </>
   )
 }

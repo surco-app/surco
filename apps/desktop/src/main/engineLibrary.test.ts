@@ -243,6 +243,43 @@ describe('addToEngineLibrary', () => {
     db.close()
   })
 
+  // A conversion that replaces a file the library already has (an MP3 upgraded to AIFF)
+  // must move that row onto the new file, not add a second one: the old row holds the
+  // playlists and cues, and a twin without them is the duplicate the user then has to sort
+  // out by hand.
+  it('moves the row of the file a conversion replaces instead of adding a second one', async () => {
+    const lib = join(root, 'replace', 'Engine Library')
+    const old = await makeFile(root, 'replaced.mp3')
+    await addToEngineLibrary(lib, old, meta({ title: 'Old' }), 'Surco')
+    const dbPath = join(lib, 'Database2', 'm.db')
+    const before = await open(dbPath)
+    before.run("UPDATE Track SET isAnalyzed = 1, quickCues = X'01020304', bitrate = 320")
+    await writeFile(dbPath, before.export())
+    before.close()
+
+    const file = await makeFile(root, 'replaced.aiff')
+    await addToEngineLibrary(lib, file, meta({ title: 'New' }), 'Surco', undefined, old)
+
+    const db = await open(dbPath)
+    const tracks = rows(
+      db,
+      'SELECT id, path, filename, fileType, bitrate, title, isAnalyzed, quickCues FROM Track',
+    )
+    expect(tracks).toEqual([
+      {
+        id: 1,
+        path: '../../replaced.aiff',
+        filename: 'replaced.aiff',
+        fileType: 'aiff',
+        bitrate: null,
+        title: 'New',
+        isAnalyzed: 1,
+        quickCues: new Uint8Array([1, 2, 3, 4]),
+      },
+    ])
+    db.close()
+  })
+
   // Engine fills Track.length (and the analyzed BPM) when IT analyzes the file; Surco
   // never knows the duration at convert time. A re-convert used to write length = NULL
   // (and null BPM columns when the tag carried none) while leaving isAnalyzed = 1 — the

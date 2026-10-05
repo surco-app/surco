@@ -102,6 +102,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     rekordboxDbPath: '',
     syncTraktor: false,
     syncRekordbox: false,
+    syncEngineDj: false,
     betaUpdates: false,
     traktorCueOffsetMs: 0,
     engineDjPlaylist: 'Surco',
@@ -224,6 +225,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     onUpdateDownloaded: () => () => {},
     onUpdateError: () => () => {},
     onRekordboxSyncIssue: () => () => {},
+    onEngineSyncIssue: () => () => {},
     onUpdateCheckFailed: () => () => {},
     checkForUpdates: vi.fn().mockResolvedValue(undefined),
     onOpenFiles: () => () => {},
@@ -2530,6 +2532,33 @@ describe('App rekordbox sync notice', () => {
   })
 
   it('names the track the collection holds under more than one entry', async () => {
+    const toast = await raise({ ambiguous: ['/music/Artist - Title.wav'] })
+    expect(toast.textContent).toContain('Artist - Title.wav')
+  })
+})
+
+// The same for the Engine DJ library: a row left on the old file loads nothing at the gig.
+describe('App Engine DJ sync notice', () => {
+  async function raise(issue: RekordboxSyncIssue): Promise<HTMLElement> {
+    let send: ((issue: RekordboxSyncIssue) => void) | undefined
+    setApi({
+      onEngineSyncIssue: (cb: (issue: RekordboxSyncIssue) => void) => {
+        send = cb
+        return () => {}
+      },
+    })
+    await renderApp()
+    act(() => send?.(issue))
+    return screen.findByTestId('engine-sync-issue')
+  }
+
+  it('says the library was left alone because it could not be backed up', async () => {
+    const toast = await raise({ blocked: 'backup-failed', ambiguous: [] })
+    expect(toast.textContent).toContain('Engine DJ')
+    expect(toast.textContent).toContain('back it up')
+  })
+
+  it('names the track the library holds under more than one entry', async () => {
     const toast = await raise({ ambiguous: ['/music/Artist - Title.wav'] })
     expect(toast.textContent).toContain('Artist - Title.wav')
   })

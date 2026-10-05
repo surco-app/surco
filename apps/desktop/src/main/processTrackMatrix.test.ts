@@ -135,7 +135,12 @@ describe('runProcessTrack — in-place x Engine DJ', () => {
     })
     await runProcessTrack(job({ inputPath: '/in/song.aiff', format: 'aiff' }), deps)
 
-    expect(deps.addToEngineDj).toHaveBeenCalledWith('/in/Artist - Title.aiff', {}, undefined)
+    expect(deps.addToEngineDj).toHaveBeenCalledWith(
+      '/in/Artist - Title.aiff',
+      {},
+      undefined,
+      '/in/song.aiff',
+    )
   })
 })
 

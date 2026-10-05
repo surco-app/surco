@@ -887,7 +887,12 @@ describe('runProcessTrack — per-job destination', () => {
       prepareProcessedCover: vi.fn(async () => undefined),
     })
     await runProcessTrack(job({ addToEngineDj: true }), deps)
-    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, undefined)
+    expect(deps.addToEngineDj).toHaveBeenCalledWith(
+      '/out/Artist - Title.aiff',
+      {},
+      undefined,
+      '/in/song.wav',
+    )
   })
 
   it('adds to Apple Music when only the job asks for it', async () => {
@@ -975,9 +980,31 @@ describe('runProcessTrack — Engine DJ', () => {
     })
     const result = await runProcessTrack(job(), deps)
 
-    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, undefined)
+    expect(deps.addToEngineDj).toHaveBeenCalledWith(
+      '/out/Artist - Title.aiff',
+      {},
+      undefined,
+      '/in/song.wav',
+    )
     expect(deps.sendProgress).toHaveBeenCalledWith('engineDj')
     expect(result.outputPath).toBe('/out/Artist - Title.aiff')
+  })
+
+  // The library row to move onto the new file is the one of the file this conversion
+  // supersedes: the Apple Music copy being replaced when there is one, else the source.
+  it('names the replaced library copy as the file the Engine row should move from', async () => {
+    const deps = makeDeps({
+      settings: settings({ addToEngineDj: true }),
+      prepareProcessedCover: vi.fn(async () => undefined),
+    })
+    await runProcessTrack(job({ replacesPath: '/m/old.mp3' }), deps)
+
+    expect(deps.addToEngineDj).toHaveBeenCalledWith(
+      '/out/Artist - Title.aiff',
+      {},
+      undefined,
+      '/m/old.mp3',
+    )
   })
 
   // Engine only renders art stored in its own database, so the processed cover the
@@ -990,6 +1017,7 @@ describe('runProcessTrack — Engine DJ', () => {
       '/out/Artist - Title.aiff',
       {},
       '/tmp/cover.jpg',
+      '/in/song.wav',
     )
     // The job's own cover preparation is the only one — no second extraction pass.
     expect(deps.prepareProcessedCover).toHaveBeenCalledTimes(1)
@@ -1015,6 +1043,7 @@ describe('runProcessTrack — Engine DJ', () => {
       '/out/Artist - Title.aiff',
       {},
       '/tmp/extracted.jpg',
+      '/in/song.wav',
     )
     expect(cleanup).toHaveBeenCalled()
   })
@@ -1028,7 +1057,12 @@ describe('runProcessTrack — Engine DJ', () => {
       }),
     })
     await runProcessTrack(job(), deps)
-    expect(deps.addToEngineDj).toHaveBeenCalledWith('/out/Artist - Title.aiff', {}, undefined)
+    expect(deps.addToEngineDj).toHaveBeenCalledWith(
+      '/out/Artist - Title.aiff',
+      {},
+      undefined,
+      '/in/song.wav',
+    )
   })
 
   it('leaves the Engine library alone when the setting is off', async () => {
@@ -1063,6 +1097,7 @@ describe('runProcessTrack — Apple Music and Engine DJ together', () => {
       '/out/Artist - Title.aiff',
       {},
       '/tmp/cover.jpg',
+      '/in/song.wav',
     )
     expect(deps.rm).not.toHaveBeenCalled()
     expect(result.outputPath).toBe('/out/Artist - Title.aiff')
@@ -1081,6 +1116,7 @@ describe('runProcessTrack — Apple Music and Engine DJ together', () => {
       '/out/Artist - Title.aiff',
       {},
       '/tmp/cover.jpg',
+      '/in/song.wav',
     )
     expect(result.outputPath).toBe('/out/Artist - Title.aiff')
     expect(result.addedToMusicOnly).toBeUndefined()

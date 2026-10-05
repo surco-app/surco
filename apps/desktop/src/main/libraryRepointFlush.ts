@@ -1,12 +1,15 @@
 import type { RekordboxSyncIssue } from '../shared/types'
 import type { Activity } from './activity'
 import type { RekordboxRepoint } from './rekordboxBatch'
-import type { RepointResult } from './rekordboxLibrary'
 
 // Applies a run's accumulated repoints to a DJ library, lifted out of the IPC handler so
 // it can be tested without booting Electron — the same shape traktorSyncFlush.ts uses.
 // This only sequences the outcomes; every collaborator that touches the disk arrives
 // through deps, and the wording through keys, so rekordbox and Engine DJ share it.
+
+// What a library's writer says about one track: the shape rekordbox's and Engine DJ's
+// writers share, with each free to name its own reasons.
+export type LibraryRepointResult = { written: true } | { written: false; reason: string }
 
 export interface SkippedRepoint {
   track: string
@@ -44,7 +47,10 @@ export interface FlushLibraryDeps {
   endBatch: () => RekordboxRepoint[]
   // The whole run in one pass over the library, with an outcome per track in the order
   // given.
-  repointTracks: (collectionPath: string, repoints: RekordboxRepoint[]) => Promise<RepointResult[]>
+  repointTracks: (
+    collectionPath: string,
+    repoints: RekordboxRepoint[],
+  ) => Promise<LibraryRepointResult[]>
   // Puts the repoint in the Activity panel as its own step. Reported 15/09: the panel
   // showed the conversion and the Apple Music add and said nothing about rekordbox, so a
   // collection that was never updated looked exactly like one that was.

@@ -66,6 +66,7 @@ export const defaults: Settings = {
   // syncToggleMigration.ts.
   syncTraktor: false,
   syncRekordbox: false,
+  syncEngineDj: false,
   // Empty means "look where rekordbox keeps it", which is one fixed place per platform —
   // unlike Traktor's collection, whose folder varies by version and user preference and
   // so has to be pointed at by hand. This is only an override for a collection kept

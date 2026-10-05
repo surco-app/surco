@@ -268,6 +268,8 @@ export interface Api {
   onUpdateError: (cb: (message: string) => void) => () => void
   // What a run's rekordbox repoint could not do, sent once after the run ends.
   onRekordboxSyncIssue: (cb: (issue: RekordboxSyncIssue) => void) => () => void
+  // The same for the Engine DJ library, which shares the issue shape.
+  onEngineSyncIssue: (cb: (issue: RekordboxSyncIssue) => void) => () => void
   checkForUpdates: () => Promise<void>
   onUpdateCheckFailed: (cb: (status: number | null) => void) => () => void
   onWindowFocus: (cb: (focused: boolean) => void) => () => void

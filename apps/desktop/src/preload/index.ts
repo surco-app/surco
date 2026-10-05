@@ -226,6 +226,11 @@ const api: Api = {
     ipcRenderer.on('rekordbox:sync-issue', listener)
     return () => ipcRenderer.removeListener('rekordbox:sync-issue', listener)
   },
+  onEngineSyncIssue: (cb: (issue: RekordboxSyncIssue) => void) => {
+    const listener = (_e: unknown, issue: RekordboxSyncIssue): void => cb(issue)
+    ipcRenderer.on('engine:sync-issue', listener)
+    return () => ipcRenderer.removeListener('engine:sync-issue', listener)
+  },
   onUpdateError: (cb: (message: string) => void) => {
     const listener = (_e: unknown, message: string): void => cb(message)
     ipcRenderer.on('update:error', listener)

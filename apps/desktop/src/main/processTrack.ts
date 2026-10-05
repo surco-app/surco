@@ -82,7 +82,14 @@ export interface ProcessTrackDeps {
   ) => Promise<string | null>
   // Registers the written file in the user's Engine DJ library database, storing the
   // cover (when there is one) as the row's artwork.
-  addToEngineDj: (target: string, meta: TrackMetadata, coverPath?: string) => Promise<void>
+  // `replaces` is the file this conversion supersedes (the replaced Apple Music copy, else
+  // the source), whose library row the add may move onto the new file.
+  addToEngineDj: (
+    target: string,
+    meta: TrackMetadata,
+    coverPath: string | undefined,
+    replaces: string,
+  ) => Promise<void>
   // Marks a written file as streamable through surco://.
   allowMedia: (path: string) => void
   existsSync: (path: string) => boolean
@@ -406,7 +413,12 @@ export async function runProcessTrack(
           .catch(() => undefined)
       }
       try {
-        await deps.addToEngineDj(target, job.meta, coverPath ?? extracted?.path)
+        await deps.addToEngineDj(
+          target,
+          job.meta,
+          coverPath ?? extracted?.path,
+          job.replacesPath ?? job.inputPath,
+        )
         addedToEngineDj = true
       } finally {
         if (extracted) await extracted.cleanup()

@@ -1176,7 +1176,10 @@
     "originalBackupDaysUnit": "jours",
     "originalBackupSize": "Jusqu'à",
     "originalBackupLimitsHint": "Au-delà de l'un ou l'autre, les plus anciens sont supprimés.",
-    "originalBackupLimitsKept": "Les limites régissent toujours ce qui est déjà conservé."
+    "originalBackupLimitsKept": "Les limites régissent toujours ce qui est déjà conservé.",
+    "engineSync": "Bibliothèque Engine DJ",
+    "syncEngineDj": "Mettre à jour la bibliothèque Engine DJ à la conversion",
+    "syncEngineDjHint": "Quand tu convertis un morceau présent dans ta bibliothèque Engine DJ, son entrée suit le nouveau fichier et conserve ses playlists et ses cue points. C'est la bibliothèque choisie pour la destination Engine DJ qui est utilisée. Avant d'écrire, Surco enregistre à côté de la bibliothèque une sauvegarde de toute la série, plus une par écriture, et n'écrit jamais quand Engine DJ est ouvert."
   },
   "errorBoundary": {
     "title": "Quelque chose n'a pas pu s'afficher",
@@ -1423,7 +1426,17 @@
     "playlistCount_other": "{{count}} playlists",
     "statusRunning": "En cours",
     "statusDone": "Terminé",
-    "statusError": "Échec"
+    "statusError": "Échec",
+    "engineSync": "Mise à jour de la bibliothèque Engine DJ",
+    "engineSyncWritten_one": "{{count}} piste pointe désormais vers le nouveau fichier",
+    "engineSyncWritten_other": "{{count}} pistes pointent désormais vers le nouveau fichier",
+    "engineSyncNothing": "Aucune de ces pistes n'est dans la bibliothèque",
+    "engineSyncRunning": "Ignoré : Engine DJ était ouvert",
+    "engineSyncBackupFailed": "Ignoré : impossible de sauvegarder la bibliothèque",
+    "engineSyncUnreadable": "Ignoré : impossible de lire la bibliothèque",
+    "engineSyncWriteFailed": "Ignoré : impossible d'écrire la bibliothèque",
+    "engineSyncSkipped_one": "{{count}} piste ignorée",
+    "engineSyncSkipped_other": "{{count}} pistes ignorées"
   },
   "applePlaylist": {
     "title": "Importer depuis Apple Music",
@@ -1437,5 +1450,12 @@
     "missing_one": "{{count}} sans fichier",
     "missing_other": "{{count}} sans fichier",
     "reading": "Lecture de la playlist…"
+  },
+  "engineIssue": {
+    "unreadable": "La bibliothèque Engine DJ n'a pas été mise à jour : Surco n'a pas pu la lire.",
+    "write-failed": "La bibliothèque Engine DJ n'a pas été mise à jour : l'écriture a échoué, elle est restée telle quelle.",
+    "backup-failed": "La bibliothèque Engine DJ n'a pas été mise à jour : Surco n'a pas pu en faire une sauvegarde avant.",
+    "ambiguous_one": "Engine DJ pointe toujours vers l'ancien fichier de {{name}} : plus d'une entrée de sa bibliothèque y correspond.",
+    "ambiguous_other": "Engine DJ pointe toujours vers les anciens fichiers de {{count}} morceaux, dont {{name}} : plus d'une entrée de sa bibliothèque correspond à chacun."
   }
 }

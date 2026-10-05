@@ -29,6 +29,7 @@ const synced: SyncedDraft = {
   addToEngineDj: false,
   syncTraktor: false,
   syncRekordbox: false,
+  syncEngineDj: false,
   engineDjPlaylist: 'Surco',
   filenameFormat: '{artist} - {title}',
   titleFormat: '',
@@ -383,6 +384,30 @@ describe('DestinationTab Traktor collection', () => {
 
     fireEvent.click(screen.getByTestId('settings-sync-rekordbox'))
     expect(patch).toHaveBeenCalledWith('syncRekordbox', true)
+  })
+
+  // Keeping Engine DJ's rows on converted files writes into a library the user cannot
+  // rebuild, so it is its own opt-in, separate from merely adding tracks to Engine.
+  it('turns on Engine DJ library updates from its own toggle', () => {
+    const patch = vi.fn()
+    render(
+      <DestinationTab
+        synced={{ ...synced, syncEngineDj: false }}
+        local={local}
+        patch={patch}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByTestId('settings-sync-engine'))
+    expect(patch).toHaveBeenCalledWith('syncEngineDj', true)
+    expect(patch).not.toHaveBeenCalledWith('addToEngineDj', expect.anything())
   })
 
   // Someone who does not run rekordbox still sees the setting, dimmed, with the hint

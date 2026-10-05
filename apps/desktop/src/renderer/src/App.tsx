@@ -639,6 +639,27 @@ export default function App(): React.JSX.Element {
       ),
     [store],
   )
+  // The same for the Engine DJ library.
+  useEffect(
+    () =>
+      window.api.onEngineSyncIssue((issue) =>
+        pushToast(store, {
+          key: 'engine-sync-issue',
+          tone: 'danger',
+          testid: 'engine-sync-issue',
+          message: issue.blocked
+            ? { key: `engineIssue.${issue.blocked}` }
+            : {
+                key: 'engineIssue.ambiguous',
+                values: {
+                  count: issue.ambiguous.length,
+                  name: baseName(issue.ambiguous[0] ?? ''),
+                },
+              },
+        }),
+      ),
+    [store],
+  )
   useEffect(
     () =>
       window.api.onUpdateError((error) =>

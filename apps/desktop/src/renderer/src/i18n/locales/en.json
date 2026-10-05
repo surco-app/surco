@@ -1176,7 +1176,10 @@
     "originalBackupDaysUnit": "days",
     "originalBackupSize": "Up to",
     "originalBackupLimitsHint": "Past either one, the oldest are deleted first.",
-    "originalBackupLimitsKept": "The limits still govern what is already kept."
+    "originalBackupLimitsKept": "The limits still govern what is already kept.",
+    "engineSync": "Engine DJ library",
+    "syncEngineDj": "Update the Engine DJ library when converting",
+    "syncEngineDjHint": "When you convert a track that is in your Engine DJ library, its entry follows the new file and keeps its playlists and cue points. It uses the library chosen under the Engine DJ destination. Before writing, Surco saves a backup of the whole run next to the library, plus one of each write, and it never writes while Engine DJ is open."
   },
   "errorBoundary": {
     "title": "Something failed to render",
@@ -1423,7 +1426,17 @@
     "playlistCount_other": "{{count}} playlists",
     "statusRunning": "Running",
     "statusDone": "Done",
-    "statusError": "Failed"
+    "statusError": "Failed",
+    "engineSync": "Updating Engine DJ's library",
+    "engineSyncWritten_one": "{{count}} track now points at the new file",
+    "engineSyncWritten_other": "{{count}} tracks now point at the new file",
+    "engineSyncNothing": "None of these tracks are in the library",
+    "engineSyncRunning": "Skipped: Engine DJ was open",
+    "engineSyncBackupFailed": "Skipped: couldn't back up the library",
+    "engineSyncUnreadable": "Skipped: couldn't read the library",
+    "engineSyncWriteFailed": "Skipped: couldn't write the library",
+    "engineSyncSkipped_one": "{{count}} track skipped",
+    "engineSyncSkipped_other": "{{count}} tracks skipped"
   },
   "applePlaylist": {
     "title": "Import from Apple Music",
@@ -1437,5 +1450,12 @@
     "missing_one": "{{count}} with no file",
     "missing_other": "{{count}} with no file",
     "reading": "Reading the playlist…"
+  },
+  "engineIssue": {
+    "unreadable": "Engine DJ's library wasn't updated: Surco couldn't read it.",
+    "write-failed": "Engine DJ's library wasn't updated: writing it failed, so it was left as it was.",
+    "backup-failed": "Engine DJ's library wasn't updated: Surco couldn't back it up first.",
+    "ambiguous_one": "Engine DJ still points at the old file for {{name}}: more than one entry in its library matches it.",
+    "ambiguous_other": "Engine DJ still points at the old files for {{count}} tracks, among them {{name}}: more than one entry in its library matches each."
   }
 }

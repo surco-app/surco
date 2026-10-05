@@ -60,6 +60,8 @@ import { installCrashGuards, wireRendererRecovery } from './crashGuards'
 import { parseDockFrames } from './dockFrames'
 import { addToEngineLibrary, dumpEngineLibrary } from './engineLibrary'
 import { isEngineDjRunning, quitEngineDj } from './engineProcess'
+import { repointEngineTracks } from './engineRepoint'
+import { flushEngineSync } from './engineSyncFlush'
 import { expandPaths } from './expand'
 import { registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
@@ -156,6 +158,8 @@ const stickyConflict = createStickyConflict()
 // write. Module-scoped for the same reason as stickyConflict: a run fans out into separate
 // process:track calls, and they all have to agree that the copy is already taken.
 const rekordboxSessionBackup = createSessionBackup({})
+// The same for the Engine DJ library, which a run can repoint as well.
+const engineSessionBackup = createSessionBackup({})
 // A batch adding N tracks that share one album cover used to re-run the ffmpeg encode N
 // times. Shares one prepareProcessedCover per distinct (source, opts) across the
 // concurrent process:track calls a batch fans out into — same module-scoped-per-run
@@ -838,6 +842,7 @@ function registerIpc(): void {
     // A new run gets a new pre-run copy; without this the stored one would describe the
     // collection before the FIRST run since launch, not before the run in progress.
     rekordboxSessionBackup.reset()
+    engineSessionBackup.reset()
   })
 
   // A convert-all run ends (however it ended — finished, cancelled, or failed, the
@@ -863,6 +868,9 @@ function registerIpc(): void {
       syncCollection,
       track: activity.track.bind(activity),
     })
+    // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to
+    // their own library, and closing the batch twice would hand the second one nothing.
+    const repoints = endRekordboxBatch()
     // rekordbox next, and independently: the two collections are separate libraries, so
     // one being open or unwritable must not stop the other from being updated.
     const result = await flushRekordboxSync({
@@ -871,7 +879,7 @@ function registerIpc(): void {
       collectionPath: getSettings().syncRekordbox
         ? findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
         : '',
-      endBatch: endRekordboxBatch,
+      endBatch: () => repoints,
       ensureClosed: () => ensureRekordboxClosed(win),
       track: activity.track.bind(activity),
       repointTracks: (collectionPath, repoints) =>
@@ -900,6 +908,40 @@ function registerIpc(): void {
           // reason is the whole diagnosis — an ambiguous match, a missing output and a
           // track the collection never had are different problems with different fixes.
           `${result.skipped.length > 0 ? `, skipped ${result.skipped.map((s) => `${s.reason} (${s.track})`).join('; ')}` : ''}`,
+      )
+    }
+    // Engine DJ last, again independently. Its library is the one the Engine destination
+    // writes to; with no m.db there yet there is nothing to repoint.
+    const engineDir = getSettings().engineLibraryDir
+    const engineResult = await flushEngineSync({
+      collectionPath:
+        getSettings().syncEngineDj && existsSync(join(engineDir, 'Database2', 'm.db'))
+          ? engineDir
+          : '',
+      endBatch: () => repoints,
+      ensureClosed: () => ensureEngineDjClosed(win),
+      track: activity.track.bind(activity),
+      repointTracks: (libraryDir, list) =>
+        repointEngineTracks(
+          libraryDir,
+          list.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
+          { sessionBackup: (path) => engineSessionBackup.ensure(path) },
+        ),
+      showBlockedDialog: () => {
+        const t = createMenuT(menuLocale())
+        const opts = { type: 'warning' as const, message: t('engineSyncBlocked') }
+        if (win) dialog.showMessageBox(win, opts)
+        else dialog.showMessageBox(opts)
+      },
+      reportIssue: (issue) => {
+        if (!e.sender.isDestroyed()) e.sender.send('engine:sync-issue', issue)
+      },
+    })
+    if (engineResult.written > 0 || engineResult.blocked || engineResult.skipped.length > 0) {
+      log.info(
+        `Engine DJ repoint: ${engineResult.written} written` +
+          `${engineResult.blocked ? `, stopped by ${engineResult.blocked}` : ''}` +
+          `${engineResult.skipped.length > 0 ? `, skipped ${engineResult.skipped.map((s) => `${s.reason} (${s.track})`).join('; ')}` : ''}`,
       )
     }
   })
@@ -1042,7 +1084,7 @@ function registerIpc(): void {
       // The library folder is read at add time (not captured with the job) so a queue of
       // conversions follows a mid-run settings change; addToEngineLibrary serializes the
       // database writes itself, so no limiter is needed here.
-      addToEngineDj: async (target, meta, coverPath) => {
+      addToEngineDj: async (target, meta, coverPath, replaces) => {
         const win = BrowserWindow.fromWebContents(e.sender)
         if (!(await ensureEngineDjClosed(win))) {
           throw new Error(createMenuT(menuLocale())('engineOpenError'))
@@ -1059,6 +1101,9 @@ function registerIpc(): void {
               meta,
               s.engineDjPlaylist,
               coverPath,
+              // Only with the toggle on: moving a row is keeping the library in step with
+              // converted files, which the user opted into, not just adding new ones.
+              s.syncEngineDj ? replaces : undefined,
             )
           },
           { labelParams: { track } },

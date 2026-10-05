@@ -23,6 +23,7 @@ export interface SyncedDraft {
   addToEngineDj: boolean
   syncTraktor: boolean
   syncRekordbox: boolean
+  syncEngineDj: boolean
   engineDjPlaylist: string
   filenameFormat: string
   titleFormat: string
@@ -115,6 +116,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     addToEngineDj: s.addToEngineDj,
     syncTraktor: s.syncTraktor,
     syncRekordbox: s.syncRekordbox,
+    syncEngineDj: s.syncEngineDj,
     engineDjPlaylist: s.engineDjPlaylist,
     filenameFormat: s.filenameFormat,
     titleFormat: s.titleFormat,

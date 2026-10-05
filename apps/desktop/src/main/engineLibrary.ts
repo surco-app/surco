@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
+import { realpathSync } from 'node:fs'
 import { copyFile, mkdir, readFile, stat, unlink, writeFile } from 'node:fs/promises'
-import { basename, extname, join, relative } from 'node:path'
+import { basename, extname, join, relative, resolve as resolvePath } from 'node:path'
 import type { Database } from 'sql.js'
 import { errorWithKey } from '../shared/errorKeys'
 import { starsTagToEngineRating } from '../shared/rating'
@@ -14,6 +15,7 @@ import {
   trackRow,
 } from './engine'
 import { isEngineDjRunning } from './engineProcess'
+import { pathKey } from './libraryPathKey'
 import { renameWithRetry } from './renameRetry'
 
 // Registers converted files in the user's own Engine DJ library (the "Engine DJ"
@@ -111,6 +113,9 @@ interface PendingAdd {
   meta: TrackMetadata
   playlist: string
   coverPath?: string
+  // The file this conversion supersedes, when the user asked Surco to keep the library
+  // pointing at converted files: its row moves onto the new file instead of a second row.
+  replaces?: string
   resolve: () => void
   reject: (e: unknown) => void
 }
@@ -139,9 +144,10 @@ export function addToEngineLibrary(
   meta: TrackMetadata,
   playlist: string,
   coverPath?: string,
+  replaces?: string,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    pending.push({ libraryDir, filePath, meta, playlist, coverPath, resolve, reject })
+    pending.push({ libraryDir, filePath, meta, playlist, coverPath, replaces, resolve, reject })
     if (!draining) void drain()
   })
 }
@@ -216,7 +222,12 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
     for (const add of adds) {
       const track = await resolveTrack(libraryDir, add)
       const row = new Map(TRACK_COLUMNS.map((c, i) => [c, trackRow(track, epoch)[i]]))
-      const existingId = existingByPath.get(track.relativePath.normalize('NFC'))
+      let existingId = existingByPath.get(track.relativePath.normalize('NFC'))
+      let moved = false
+      if (existingId === undefined && add.replaces) {
+        existingId = rowOfReplaced(libraryDir, existingByPath, add.replaces)
+        moved = existingId !== undefined
+      }
       let trackId: number
       if (existingId !== undefined) {
         trackId = existingId
@@ -227,6 +238,16 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
           ...cols.map((c) => row.get(c) ?? null),
           trackId,
         ])
+        if (moved) {
+          // The row now describes another file: point it there, and clear the bitrate the
+          // old file left, as Surco's own inserts do, for Engine to fill when it analyzes.
+          db.run('UPDATE Track SET path = ?, bitrate = NULL WHERE id = ?', [
+            track.relativePath,
+            trackId,
+          ])
+          for (const [p, id] of existingByPath) if (id === trackId) existingByPath.delete(p)
+          existingByPath.set(track.relativePath.normalize('NFC'), trackId)
+        }
       } else {
         const cols = TRACK_COLUMNS.filter((c) => live.has(c))
         db.run(
@@ -322,6 +343,23 @@ function addToPlaylist(db: Database, title: string, trackId: number, uuid: strin
     'UPDATE PlaylistEntity SET nextEntityId = ? WHERE listId = ? AND nextEntityId = 0 AND id <> ?',
     [entityId, listId, entityId],
   )
+}
+
+// The row of the file a conversion replaces, matched on the resolved path the way
+// engineRepoint.ts matches (a library stores whatever spelling the file was imported
+// under). Two rows for one file match nothing: guessing would split the track's playlists,
+// so the conversion then adds a row of its own as it always did.
+function rowOfReplaced(
+  libraryDir: string,
+  existingByPath: Map<string, number>,
+  replaces: string,
+): number | undefined {
+  const key = pathKey({ realPath: realpathSync })
+  const target = key(replaces.normalize('NFC'))
+  const ids = [...existingByPath]
+    .filter(([p]) => key(resolvePath(libraryDir, p).normalize('NFC')) === target)
+    .map(([, id]) => id)
+  return ids.length === 1 ? ids[0] : undefined
 }
 
 async function resolveTrack(libraryDir: string, add: PendingAdd): Promise<EngineTrack> {

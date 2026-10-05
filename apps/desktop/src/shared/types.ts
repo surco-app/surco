@@ -198,6 +198,7 @@ export interface Settings {
   // below: a path says WHERE the collection is, never whether to touch it.
   syncTraktor: boolean
   syncRekordbox: boolean
+  syncEngineDj: boolean
   // Override for the rekordbox collection; empty means the standard location is used.
   rekordboxDbPath: string
   // Milliseconds every carried cue is nudged by, on top of the route calibration
