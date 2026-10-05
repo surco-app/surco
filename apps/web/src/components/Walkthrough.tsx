@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next'
 import { PAGES } from '../lib/nav'
 import Kicker from './Kicker'
 import Reveal from './Reveal'
-import AppFrame from './scenes/AppFrame'
 import BatchScene from './scenes/BatchScene'
 import DeclickScene from './scenes/DeclickScene'
 import DropScene from './scenes/DropScene'
@@ -85,25 +84,25 @@ export default function Walkthrough() {
         <Reveal delay={120} className="mt-7">
           <div className="grid gap-5 lg:grid-cols-3">
             <div>
-              <AppFrame pill={t('home.declick.pill')}>
+              <div className="lg:h-[350px]">
                 <DeclickScene />
-              </AppFrame>
+              </div>
               <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.declick.short')}
               </p>
             </div>
             <div>
-              <AppFrame pill={t('home.trim.pill')}>
+              <div className="lg:h-[350px]">
                 <TrimScene />
-              </AppFrame>
+              </div>
               <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.trim.short')}
               </p>
             </div>
             <div>
-              <AppFrame pill={t('home.normalize.pill')}>
+              <div className="lg:h-[350px]">
                 <NormalizeScene />
-              </AppFrame>
+              </div>
               <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
                 {t('home.normalize.short')}
               </p>

@@ -6,8 +6,7 @@ import {
   DROP_TRACKS,
   declickFrame,
   dropFrame,
-  NORMALIZE_TARGET,
-  NORMALIZE_TRACKS,
+  NORMALIZE_GAIN,
   normalizeFrame,
   qualityFrame,
   REPLACE_PLAYLISTS,
@@ -118,32 +117,37 @@ describe('tagFrame', () => {
 })
 
 describe('declickFrame', () => {
-  // A click only counts as "found" once the playhead has reached it, and it stays
-  // found — the scene claims Surco located them, so they must accumulate rather
-  // than blink out behind the playhead.
-  it('finds each click as the playhead passes it, and keeps it', () => {
-    expect(declickFrame(0).found).toBe(0)
-    const firstMark = DECLICK_MARKS[0]
-    expect(declickFrame(firstMark - 0.01).found).toBe(0)
-    expect(declickFrame(firstMark + 0.01).found).toBe(1)
-    expect(declickFrame(1).found).toBe(DECLICK_MARKS.length)
+  const frames = Array.from({ length: 121 }, (_, i) => declickFrame(i / 120))
+  const firstAt = (pred: (f: (typeof frames)[number]) => boolean) => frames.findIndex(pred)
+
+  // The section opens off, as the app ships it: repair is a choice the visitor sees made.
+  it('opens with repair off and turns it on with a click', () => {
+    expect(declickFrame(0).mode).toBe('off')
+    expect(declickFrame(1).mode).toBe('standard')
+    const pointing = firstAt((f) => f.cursor === 'standard')
+    expect(pointing).toBeGreaterThan(-1)
+    expect(pointing).toBeLessThan(firstAt((f) => f.mode === 'standard'))
   })
 
-  it('never un-finds a click', () => {
-    let prev = -1
-    for (let i = 0; i <= 40; i++) {
-      const { found } = declickFrame(i / 40)
-      expect(found).toBeGreaterThanOrEqual(prev)
-      prev = found
-    }
+  // "Listen to the result" only exists once a strength is chosen, and the copy promises
+  // you can hear it, so the scene presses it and plays.
+  it('offers the result only once repair is on, then plays it', () => {
+    for (const f of frames) if (f.mode === 'off') expect(f.listen).toBe(false)
+    const playing = firstAt((f) => f.playhead > 0)
+    expect(playing).toBeGreaterThan(firstAt((f) => f.listen))
+    expect(firstAt((f) => f.cursor === 'listen')).toBeLessThan(playing)
   })
 
-  // The copy promises you can hear both versions, so the toggle has to actually
-  // move at some point instead of sitting on one side.
-  it('switches to the original at least once mid-run', () => {
-    const states = Array.from({ length: 40 }, (_, i) => declickFrame(i / 40).hearingOriginal)
-    expect(states).toContain(true)
-    expect(states).toContain(false)
+  it('plays forward to the end of the strip', () => {
+    const heads = frames.map((f) => f.playhead)
+    for (let i = 1; i < heads.length; i++) expect(heads[i]).toBeGreaterThanOrEqual(heads[i - 1])
+    expect(declickFrame(1).playhead).toBe(1)
+  })
+
+  // The clicks are what Surco found before anything was chosen, so they are on the strip
+  // from the first frame and never disappear.
+  it('marks every click from the start', () => {
+    for (const f of frames) expect(f.marks).toBe(DECLICK_MARKS.length)
   })
 })
 
@@ -319,52 +323,36 @@ describe('qualityFrame', () => {
 })
 
 describe('normalizeFrame', () => {
-  // The scene sells one idea: three tracks that arrive at different volumes and
-  // leave matched. If they start level there is nothing to show, and if they end
-  // ragged the section is lying about what normalization does.
-  it('starts with tracks at their own levels and ends with them matched', () => {
-    const start = normalizeFrame(0).bars.map((b) => b.level)
-    expect(new Set(start).size).toBe(NORMALIZE_TRACKS.length)
+  const frames = Array.from({ length: 121 }, (_, i) => normalizeFrame(i / 120))
+  const firstAt = (pred: (f: (typeof frames)[number]) => boolean) => frames.findIndex(pred)
 
-    const end = normalizeFrame(1).bars.map((b) => Math.round(b.level * 1000))
-    expect(new Set(end).size).toBe(1)
+  it('opens untouched and switches to volume with a click', () => {
+    expect(normalizeFrame(0).mode).toBe('none')
+    expect(normalizeFrame(0).gain).toBe(0)
+    const pointing = firstAt((f) => f.cursor)
+    expect(pointing).toBeGreaterThan(-1)
+    expect(pointing).toBeLessThan(firstAt((f) => f.mode === 'volume'))
   })
 
-  // Each track carries its own gain, positive or negative: the quiet one comes up
-  // and the loud one comes down. A frame where every bar moved the same direction
-  // would describe a volume knob, not normalization.
-  it('moves the quiet track up and the loud one down', () => {
-    const [quiet, , loud] = NORMALIZE_TRACKS
-    expect(quiet.lufs).toBeLessThan(NORMALIZE_TARGET)
-    expect(loud.lufs).toBeGreaterThan(NORMALIZE_TARGET)
-
-    const bars = normalizeFrame(1).bars
-    expect(bars[0].gain).toBeGreaterThan(0)
-    expect(bars[2].gain).toBeLessThan(0)
-  })
-
-  it('never overshoots the target on the way there', () => {
-    const settled = normalizeFrame(1).bars
-    for (let i = 0; i <= 20; i++) {
-      const { bars } = normalizeFrame(i / 20)
-      expect(bars[0].level).toBeLessThanOrEqual(settled[0].level + 1e-9)
-      expect(bars[2].level).toBeGreaterThanOrEqual(settled[2].level - 1e-9)
+  // A constant gain glides to its value and stays there: overshooting would read as the
+  // gain hunting, which is not what Surco does to the track.
+  it('brings the preview down to the target without overshooting it', () => {
+    for (const f of frames) {
+      expect(f.gain).toBeLessThanOrEqual(0)
+      expect(f.gain).toBeGreaterThanOrEqual(NORMALIZE_GAIN)
     }
+    expect(normalizeFrame(1).gain).toBe(NORMALIZE_GAIN)
+    for (const f of frames) if (f.mode === 'none') expect(f.gain).toBe(0)
   })
 
-  it('holds every bar inside the meter', () => {
-    for (let i = 0; i <= 20; i++) {
-      for (const bar of normalizeFrame(i / 20).bars) {
-        expect(bar.level).toBeGreaterThan(0)
-        expect(bar.level).toBeLessThanOrEqual(1)
-      }
-    }
+  // The section tells you what will happen before anything is converted, and that
+  // explanation describes the settled preview, so it waits for it.
+  it('explains the change once the preview has settled', () => {
+    for (const f of frames) if (f.explained) expect(f.gain).toBe(NORMALIZE_GAIN)
+    expect(normalizeFrame(1).explained).toBe(true)
   })
 })
 
-// The replace flow as the app runs it: the button, its stages, the converted footer,
-// then rekordbox. A visitor who later opens Surco should meet the same steps in the
-// same order, so the scene is checked against the app's order, not only for motion.
 describe('replaceFrame', () => {
   const frames = Array.from({ length: 201 }, (_, i) => replaceFrame(i / 200))
   const STAGES = ['idle', 'converting', 'appleMusic', 'done'] as const

@@ -1,45 +1,82 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { NORMALIZE_TARGET, normalizeFrame } from '../../lib/scenes'
+import { normalizeFrame } from '../../lib/scenes'
 import { useSceneProgress } from '../../lib/useSceneProgress'
+import { HERO_ENVELOPE } from '../../lib/waveforms'
+import { AppWave, EASE, EditorPanel, SceneCursor, Segmented } from './AppChrome'
 
-// Three tracks bought at three different masters, sliding into line on one target.
-// The bars carry the argument — a static list of LUFS figures states that they differ,
-// where watching them level says what normalization is for without a sentence.
+// What the editor measured for the track: integrated loudness and true peak.
+const LUFS = -9.7
+const PEAK = 0.9
+
+// The app's volume matching section: "Volume" chosen on the Streaming -14 preset, the
+// preview waveform settling under the original, and the editor's own explanation of
+// what will happen to the track once it has.
 export default function NormalizeScene() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
-  const { bars, matched } = normalizeFrame(useSceneProgress(ref, 3200))
+  const panel = useRef<HTMLDivElement>(null)
+  const volume = useRef<HTMLSpanElement>(null)
+  const [target] = useState(() => volume)
+  const frame = normalizeFrame(useSceneProgress(ref, 5500))
+  const on = frame.mode === 'volume'
+  const num = (v: number) =>
+    v.toLocaleString(i18n.language, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
   return (
-    <div ref={ref} className="p-5">
-      <div className="flex flex-col gap-4">
-        {bars.map(({ title, lufs, gain, level }) => (
-          <div key={title}>
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="truncate text-xs text-muted">{title}</span>
-              <span className="flex-none font-mono text-[10px] tabular-nums text-faint">
-                {gain > 0 ? '+' : ''}
-                {gain.toFixed(1)} dB
-              </span>
-            </div>
-            <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-surface2">
-              <div
-                className={`h-full rounded-full transition-colors duration-500 ${
-                  matched ? 'bg-green' : 'bg-blue'
-                }`}
-                style={{ width: `${level * 100}%` }}
-              />
-            </div>
-            <p className="mt-1 font-mono text-[10px] tabular-nums text-faint">
-              {lufs.toFixed(1)} LUFS
-            </p>
-          </div>
-        ))}
-      </div>
-      <p className="mt-5 border-t border-line pt-3.5 font-mono text-[10px] text-faint">
-        {t('home.normalize.target', { target: NORMALIZE_TARGET })}
-      </p>
+    <div ref={ref} className="h-full">
+      <EditorPanel panelRef={panel} title={t('home.normalize.section')}>
+        <Segmented
+          options={[t('home.normalize.none'), t('home.normalize.volume'), t('home.normalize.peak')]}
+          active={on ? 1 : 0}
+          refs={{ 1: volume }}
+        />
+        <div
+          className="mt-2 flex w-fit max-w-full flex-wrap rounded-[9px] border border-line p-0.5 text-xs transition-opacity duration-300"
+          style={{ opacity: on ? 1 : 0 }}
+        >
+          {['Streaming −14', 'Club −9', 'Broadcast −23'].map((preset, i) => (
+            <span
+              key={preset}
+              className={`rounded-[7px] px-2 py-1 whitespace-nowrap ${i === 0 ? 'bg-[#292e42] text-fg' : 'text-[#a9b1d6]'}`}
+            >
+              {preset}
+            </span>
+          ))}
+        </div>
+        <p className="mt-3 flex items-center gap-1.5 text-[11.5px] text-muted">
+          <i className="block size-1.5 rounded-full bg-faint" />
+          {t('home.normalize.original', { lufs: num(LUFS), peak: num(PEAK) })}
+        </p>
+        <p
+          className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-muted transition-opacity duration-300"
+          style={{ opacity: on ? 1 : 0 }}
+        >
+          <i className="block size-1.5 rounded-full bg-blue" />
+          {t('home.normalize.preview', {
+            lufs: num(LUFS + frame.gain),
+            peak: num(PEAK + frame.gain),
+          })}
+          <span className="rounded bg-[#292e42] px-1.5 py-px text-[10.5px] font-semibold text-fg tabular-nums">
+            {num(frame.gain)} dB
+          </span>
+        </p>
+        <div className="relative mt-1.5 h-24 overflow-hidden rounded-md bg-bg2">
+          <AppWave values={HERO_ENVELOPE} className="fill-faint/45" />
+          {on && <AppWave values={HERO_ENVELOPE} scale={10 ** (frame.gain / 20)} />}
+        </div>
+        <p
+          className="mt-2.5 min-h-8 text-xs leading-snug text-pretty text-muted"
+          style={{
+            opacity: frame.explained ? 1 : 0,
+            transform: frame.explained ? 'none' : 'translateY(4px)',
+            transition: `opacity 0.3s ease, transform 0.4s ${EASE}`,
+          }}
+        >
+          {t('home.normalize.explain', { gain: num(frame.gain), target: num(LUFS + frame.gain) })}
+        </p>
+        <SceneCursor container={panel} target={frame.cursor ? target : null} />
+      </EditorPanel>
     </div>
   )
 }

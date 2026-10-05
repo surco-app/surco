@@ -190,25 +190,34 @@ export function qualityFrame(t: number): QualityFrame {
 
 /* ---------------------------------------------------------------- 04 · declick */
 
+const DECLICK_CLICK = 0.2
+const DECLICK_LISTEN = 0.42
+const DECLICK_PLAY_ENDS = 0.95
+
 export interface DeclickFrame {
+  mode: 'off' | 'standard'
+  cursor: 'standard' | 'listen' | null
+  listen: boolean
   playhead: number
-  found: number
-  hitIndex: number | null
-  hearingOriginal: boolean
+  marks: number
 }
 
+// The app's vinyl click repair section: the clicks it found are marked on the strip,
+// "Standard" gets chosen, and "Listen to the result" plays the repaired strip through.
 export function declickFrame(t: number): DeclickFrame {
   const p = clamp(t)
-  const hit = DECLICK_MARKS.findIndex((m) => Math.abs(p - m) < 0.025)
+  const on = p >= DECLICK_CLICK
   return {
-    playhead: p,
-    // Passed clicks stay counted: the scene claims Surco *found* them, so they have
-    // to accumulate rather than blink out behind the playhead.
-    found: DECLICK_MARKS.filter((m) => m <= p).length,
-    hitIndex: hit === -1 ? null : hit,
-    // The copy promises you can hear the repair against the original, so the toggle
-    // flips on its own instead of sitting on one side claiming it is possible.
-    hearingOriginal: (p > 0.35 && p < 0.55) || (p > 0.75 && p < 0.9),
+    mode: on ? 'standard' : 'off',
+    cursor:
+      p >= 0.06 && p < DECLICK_CLICK + 0.04
+        ? 'standard'
+        : p >= DECLICK_CLICK + 0.1 && p < DECLICK_LISTEN + 0.04
+          ? 'listen'
+          : null,
+    listen: on,
+    playhead: clamp((p - DECLICK_LISTEN) / (DECLICK_PLAY_ENDS - DECLICK_LISTEN)),
+    marks: DECLICK_MARKS.length,
   }
 }
 
@@ -239,57 +248,31 @@ export function trimFrame(t: number): TrimFrame {
 
 /* -------------------------------------------------------------- 06 · normalize */
 
-// Three tracks bought at three different masters, and the target they all land on.
-// Streaming −14 LUFS is the app's own default preset, so the numbers on the page are
-// the numbers a visitor will meet in the editor. The quiet one has to rise and the
-// hot one has to fall: a set that only moved one way would describe a volume knob.
-export const NORMALIZE_TARGET = -14
+// A track measured at -9.7 LUFS brought to Streaming -14, the app's default preset: the
+// gain and the numbers are the ones the editor shows for it.
+export const NORMALIZE_GAIN = -4.3
 
-export const NORMALIZE_TRACKS = [
-  { title: 'Kim Sanders - Ride', lufs: -16.4 },
-  { title: 'Kriss - Tonight', lufs: -13.1 },
-  { title: 'Lia - Private Fantasy', lufs: -7.8 },
-] as const
-
-// Where the quietest track sits on the meter, so even the softest bar reads as audio
-// rather than an empty track. The rest scale against it by their real dB distance.
-const METER_FLOOR = 0.34
-const METER_PER_DB = 0.035
-
-const meterLevel = (lufs: number) =>
-  Math.min(1, METER_FLOOR + (lufs - NORMALIZE_TRACKS[0].lufs) * METER_PER_DB)
-
-export interface NormalizeBar {
-  title: string
-  lufs: number
-  gain: number
-  level: number
-}
+const NORMALIZE_CLICK = 0.24
+const NORMALIZE_SETTLED = 0.7
 
 export interface NormalizeFrame {
-  bars: NormalizeBar[]
-  matched: boolean
+  mode: 'none' | 'volume'
+  cursor: boolean
+  gain: number
+  explained: boolean
 }
 
 export function normalizeFrame(t: number): NormalizeFrame {
   const p = clamp(t)
-  // Eased so the bars glide into line instead of snapping; monotonic, so no bar ever
-  // passes the target and comes back — an overshoot here would read as the gain
-  // hunting, which is not what a constant-gain normalization does.
-  const eased = 1 - (1 - p) ** 3
-  const target = meterLevel(NORMALIZE_TARGET)
-
+  const on = p >= NORMALIZE_CLICK
+  const glide = clamp((p - NORMALIZE_CLICK - 0.06) / (NORMALIZE_SETTLED - NORMALIZE_CLICK - 0.06))
+  // Eased and monotonic, so the preview settles on the gain without passing it.
+  const gain = on ? Math.round(NORMALIZE_GAIN * (1 - (1 - glide) ** 3) * 10) / 10 : 0
   return {
-    bars: NORMALIZE_TRACKS.map(({ title, lufs }) => {
-      const from = meterLevel(lufs)
-      return {
-        title,
-        lufs,
-        gain: NORMALIZE_TARGET - lufs,
-        level: from + (target - from) * eased,
-      }
-    }),
-    matched: p >= 1,
+    mode: on ? 'volume' : 'none',
+    cursor: p >= 0.06 && p < NORMALIZE_CLICK + 0.04,
+    gain,
+    explained: on && glide >= 1,
   }
 }
 

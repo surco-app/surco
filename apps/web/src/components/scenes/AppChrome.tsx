@@ -5,6 +5,7 @@ import {
   useLayoutEffect,
   useState,
 } from 'react'
+import { barsPath } from '../../lib/envelope'
 
 // The pieces of the desktop app's window the walkthrough scenes are drawn from: the
 // toolbar, the track row, an editor field, the split convert button and a pointer.
@@ -492,6 +493,92 @@ export function SceneCursor({
         stroke="var(--color-bg2)"
         strokeWidth="1.5"
         strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+// One editor section lifted out of the window, for the steps that live entirely inside
+// it: the same panel ground, title row and padding as the section in the app.
+export function EditorPanel({
+  panelRef,
+  title,
+  aside,
+  children,
+}: {
+  panelRef?: RefObject<HTMLDivElement | null>
+  title: string
+  aside?: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <div
+      ref={panelRef}
+      aria-hidden="true"
+      className="inset-shadow-edge relative h-full min-w-0 overflow-hidden rounded-xl border border-line bg-bg p-4 text-left shadow-2xl shadow-black/40"
+    >
+      <SectionTitle aside={aside}>{title}</SectionTitle>
+      {children}
+    </div>
+  )
+}
+
+export function Segmented({
+  options,
+  active,
+  refs,
+}: {
+  options: string[]
+  active: number
+  refs?: Record<number, RefObject<HTMLSpanElement | null>>
+}) {
+  return (
+    <span className="mt-3 inline-flex max-w-full rounded-[9px] border border-line bg-bg2 p-0.5">
+      {options.map((label, i) => (
+        <span
+          key={label}
+          ref={refs?.[i]}
+          className={`rounded-[7px] px-2.5 py-1 text-[12.5px] whitespace-nowrap transition-colors duration-200 ${
+            i === active
+              ? 'bg-[#292e42] text-fg shadow-[inset_0_0_0_1px_rgb(192_202_245_/_0.16)]'
+              : 'text-[#a9b1d6]'
+          }`}
+        >
+          {label}
+        </span>
+      ))}
+    </span>
+  )
+}
+
+export function AppWave({
+  values,
+  className = 'fill-blue/80',
+  amp = 44,
+  gap = 0.25,
+  scale = 1,
+}: {
+  values: readonly number[]
+  className?: string
+  amp?: number
+  gap?: number
+  scale?: number
+}) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 1000 100"
+      preserveAspectRatio="none"
+      className="absolute inset-0 size-full"
+    >
+      <path
+        d={barsPath([...values], amp, gap)}
+        className={className}
+        style={{
+          transform: `scaleY(${scale})`,
+          transformOrigin: '50% 50%',
+          transition: `transform 0.6s ${EASE}`,
+        }}
       />
     </svg>
   )
