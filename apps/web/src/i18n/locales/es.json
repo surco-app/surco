@@ -1059,7 +1059,7 @@
     },
     "replace": {
       "title": "Mejora el archivo. Tus playlists ni se enteran.",
-      "lede": "Si el tema ya está en Apple Music como MP3, el botón pasa a decir «Sustituir por AIFF + Apple Music». Apple Music y rekordbox se quedan con el AIFF, y la pista sigue en las diez playlists donde la tenías, con sus cues.",
+      "lede": "Si el tema ya está en tu Apple Music, el botón pasa a decir «Sustituir». Vale cualquier formato, también el mismo, de un MP3 a un AIFF o de un MP3 de 128 a uno de 320. Apple Music y rekordbox se quedan con el archivo nuevo y la pista sigue en las diez playlists donde la tenías, con sus cues. Te ahorras volver a meterla a mano en cada una.",
       "convertAll": "Convertir 1 pista",
       "search": "Buscar pistas",
       "file": "Archivo",
