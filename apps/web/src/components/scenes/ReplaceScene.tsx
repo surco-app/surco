@@ -300,7 +300,7 @@ export default function ReplaceScene() {
                       <circle cx="18" cy="16" r="3" />
                     </Glyph>
                   </span>
-                  Apple Music
+                  Apple Music <span>· MP3 320</span>
                 </span>
               </p>
               <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-[18px] sm:grid-cols-[112px_minmax(0,1fr)]">
