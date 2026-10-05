@@ -345,33 +345,61 @@ export function batchFrame(t: number): BatchFrame {
 
 /* --------------------------------------------------------------- 08 · replace */
 
-// The row's crates and its cues, held constant through the whole swap. These are the
-// two numbers a DJ is afraid of losing when a track changes format, so the scene shows
-// them not moving while the path underneath them does.
-export const REPLACE_PLAYLISTS = 2
-export const REPLACE_CUES = 13
+// Crate names a DJ would recognise as their own. Ten of them, because the scene is
+// about the job of re-adding one track to every crate by hand, and one or two crates
+// would make that job look like nothing.
+export const REPLACE_PLAYLISTS = [
+  'Warm up',
+  'Peak time',
+  'Italo',
+  'Progressive',
+  'Closing',
+  'Afterhours',
+  'Classics',
+  'Vinyl rips',
+  'Favourites',
+  'Room 2',
+] as const
+export const REPLACE_CUES = 15
+
+// The scene's clock in seconds: the conversion is compressed into a few of them, and
+// the rest is rekordbox and the crates, where the argument is.
+export const REPLACE_SECONDS = 10
+
+export type ReplaceStage = 'idle' | 'converting' | 'appleMusic' | 'done'
 
 export interface ReplaceFrame {
-  swapped: boolean
-  oldOpacity: number
-  newOpacity: number
-  playlists: number
-  cues: number
+  cursor: 'button' | 'rest' | 'activity' | 'hidden'
+  pressed: boolean
+  stage: ReplaceStage
+  progress: number
+  activity: 'hidden' | 'running' | 'done'
+  activityOpen: boolean
+  repointed: boolean
+  playlistsConfirmed: number
+  stats: boolean
+  saved: boolean
 }
 
-// The old path fades out as the new one fades in, overlapping in the middle. A hard
-// cut would read as a row that was always an AIFF, which states the outcome instead of
-// showing the change — and the change is the whole point: same row, new file.
+// The same steps the app runs, in its order: the press, "Converting to AIFF…" filling
+// the button to the app's own stage marks (20 and 55), "Adding to Apple Music…" at 85,
+// the converted footer, and only then the rekordbox write reported in Activity.
 export function replaceFrame(t: number): ReplaceFrame {
-  const p = clamp(t)
-  // The crossover sits in the middle third, so the row reads as settled MP3 before it
-  // and as settled AIFF after it.
-  const cross = clamp((p - 0.35) / 0.3)
+  const s = clamp(t) * REPLACE_SECONDS
+  const stage: ReplaceStage =
+    s < 1.5 ? 'idle' : s < 3.1 ? 'converting' : s < 4.4 ? 'appleMusic' : 'done'
+  const progress = stage === 'idle' || stage === 'done' ? 0 : s < 2.2 ? 20 : s < 3.1 ? 55 : 85
+  const confirming = clamp((s - 7.2) / 1.2)
   return {
-    swapped: cross >= 1,
-    oldOpacity: 1 - cross,
-    newOpacity: cross,
-    playlists: REPLACE_PLAYLISTS,
-    cues: REPLACE_CUES,
+    cursor: s < 0.2 || s >= 6.2 ? 'hidden' : s < 1.6 ? 'button' : s < 5 ? 'rest' : 'activity',
+    pressed: s >= 1.25 && s < 1.45,
+    stage,
+    progress,
+    activity: s < 4.6 ? 'hidden' : s < 6.6 ? 'running' : 'done',
+    activityOpen: s >= 5.8,
+    repointed: s >= 6.8,
+    playlistsConfirmed: Math.floor(confirming * REPLACE_PLAYLISTS.length),
+    stats: s >= 8.6,
+    saved: s >= 9,
   }
 }

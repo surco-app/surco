@@ -79,6 +79,16 @@ button:not(:disabled) {
   }
 }
 
+/* The sheen across the replace scene's progress fill, as the app's progress-sweep. */
+@keyframes sheen {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
 /* scroll-triggered reveal. Directional variants are declared before .reveal-in
    so the shown state wins the transform at equal specificity. */
 .reveal-init {

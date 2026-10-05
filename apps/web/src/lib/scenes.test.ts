@@ -8,7 +8,6 @@ import {
   NORMALIZE_TARGET,
   NORMALIZE_TRACKS,
   normalizeFrame,
-  REPLACE_CUES,
   REPLACE_PLAYLISTS,
   replaceFrame,
   spectrumFrame,
@@ -377,35 +376,69 @@ describe('normalizeFrame', () => {
   })
 })
 
-// The rekordbox row following the new file. What a DJ fears losing is the work that
-// isn't in the audio — the crates a track sits in and the cues placed on it — so the
-// scene has to show the path change while those two numbers never move. A version
-// that animated the counts would show exactly the loss the feature prevents.
+// The replace flow as the app runs it: the button, its stages, the converted footer,
+// then rekordbox. A visitor who later opens Surco should meet the same steps in the
+// same order, so the scene is checked against the app's order, not only for motion.
 describe('replaceFrame', () => {
-  it('starts on the MP3 and ends on the new file', () => {
-    expect(replaceFrame(0).swapped).toBe(false)
-    expect(replaceFrame(1).swapped).toBe(true)
+  const frames = Array.from({ length: 201 }, (_, i) => replaceFrame(i / 200))
+  const STAGES = ['idle', 'converting', 'appleMusic', 'done'] as const
+  const firstAt = (pred: (f: (typeof frames)[number]) => boolean) => frames.findIndex(pred)
+
+  it('opens on the replace button, before anything has run', () => {
+    const start = replaceFrame(0)
+    expect(start.stage).toBe('idle')
+    expect(start.repointed).toBe(false)
+    expect(start.playlistsConfirmed).toBe(0)
   })
 
-  it('never moves the playlists or the cues', () => {
-    for (let i = 0; i <= 20; i++) {
-      const frame = replaceFrame(i / 20)
-      expect(frame.playlists).toBe(REPLACE_PLAYLISTS)
-      expect(frame.cues).toBe(REPLACE_CUES)
+  it('presses the button before the conversion starts', () => {
+    expect(firstAt((f) => f.pressed)).toBeGreaterThan(0)
+    expect(firstAt((f) => f.pressed)).toBeLessThan(firstAt((f) => f.stage !== 'idle'))
+  })
+
+  it('runs the stages in the order the app shows them, never going back', () => {
+    const order = frames.map((f) => STAGES.indexOf(f.stage))
+    for (let i = 1; i < order.length; i++) expect(order[i]).toBeGreaterThanOrEqual(order[i - 1])
+    expect(new Set(order)).toEqual(new Set([0, 1, 2, 3]))
+  })
+
+  // The bar fills to the app's own stage marks, so the fill means what it means there.
+  it('fills the button to the app stage marks and never empties it mid-run', () => {
+    const busy = frames.filter((f) => f.stage === 'converting' || f.stage === 'appleMusic')
+    for (let i = 1; i < busy.length; i++)
+      expect(busy[i].progress).toBeGreaterThanOrEqual(busy[i - 1].progress)
+    expect(new Set(busy.map((f) => f.progress))).toEqual(new Set([20, 55, 85]))
+  })
+
+  // Surco writes rekordbox once the conversion is over, and the Activity row is where it
+  // says so. Repointing earlier would show the collection changing before the file exists.
+  it('repoints rekordbox only after the track is in Apple Music and Activity reports it', () => {
+    const done = firstAt((f) => f.stage === 'done')
+    const reported = firstAt((f) => f.activity === 'done')
+    expect(firstAt((f) => f.activity !== 'hidden')).toBeGreaterThan(done)
+    expect(reported).toBeGreaterThan(done)
+    expect(firstAt((f) => f.repointed)).toBeGreaterThanOrEqual(reported)
+  })
+
+  // The playlists are the point: confirmed after the path changes, one at a time, and
+  // never taken back.
+  it('confirms every playlist one by one after the repoint', () => {
+    const counts = frames.map((f) => f.playlistsConfirmed)
+    for (let i = 1; i < counts.length; i++) {
+      expect(counts[i]).toBeGreaterThanOrEqual(counts[i - 1])
+      expect(counts[i] - counts[i - 1]).toBeLessThanOrEqual(1)
     }
+    expect(firstAt((f) => f.playlistsConfirmed > 0)).toBeGreaterThan(firstAt((f) => f.repointed))
   })
 
-  // The old path has to still be readable while the new one arrives, or the swap reads
-  // as a row that was always an AIFF — which states the outcome instead of showing the
-  // change.
-  it('crosses the two paths over rather than cutting', () => {
-    const midway = replaceFrame(0.5)
-    expect(midway.oldOpacity).toBeGreaterThan(0)
-    expect(midway.newOpacity).toBeGreaterThan(0)
-  })
-
-  it('ends with only the new path showing', () => {
-    expect(replaceFrame(1).oldOpacity).toBe(0)
-    expect(replaceFrame(1).newOpacity).toBe(1)
+  // Reduced motion jumps straight to t = 1, so the last frame has to tell the whole story.
+  it('ends with everything done and the cursor gone', () => {
+    const end = replaceFrame(1)
+    expect(end.stage).toBe('done')
+    expect(end.activity).toBe('done')
+    expect(end.repointed).toBe(true)
+    expect(end.playlistsConfirmed).toBe(REPLACE_PLAYLISTS.length)
+    expect(end.saved).toBe(true)
+    expect(end.cursor).toBe('hidden')
   })
 })
