@@ -3072,6 +3072,21 @@ describe('Editor Apple Music library badge', () => {
   }
 
   const owned: AppleMusicIndex = buildLibraryIndex([{ title: 'Strobe', artist: 'deadmau5' }])
+  const ownedWithId: AppleMusicIndex = buildLibraryIndex([
+    { title: 'Strobe', artist: 'deadmau5', persistentId: '0123456789ABCDEF' },
+  ])
+  const mp3Copy: TrackProperties = {
+    container: 'mp3',
+    codec: 'mp3',
+    sampleRateHz: 44100,
+    bitDepth: null,
+    channels: 2,
+    bitrateKbps: 320,
+    sizeBytes: 9_000_000,
+    createdMs: null,
+    modifiedMs: null,
+    tagFormats: [],
+  }
 
   // The badge exists so a DJ doesn't re-import a song they already own; on macOS it
   // checks the live title/artist against the same library snapshot the list and filter
@@ -3151,6 +3166,36 @@ describe('Editor Apple Music library badge', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Metadata' }))
     const headerRow = screen.getByRole('button', { name: 'Metadata' }).closest('h3')?.parentElement
     expect(headerRow).toContainElement(screen.getByTestId('apple-music-status'))
+  })
+
+  // A track already in the library offers to replace that copy, and whether that is worth it
+  // depends on what the copy is: an MP3 at 128 begs replacing, an AIFF may not. The badge
+  // names the copy's format so the decision doesn't need a trip to Music.
+  it('names the format of the library copy the track would replace', async () => {
+    setApi('darwin')
+    const api = window.api as unknown as Record<string, unknown>
+    api.appleMusicEntryLocation = vi.fn().mockResolvedValue('/Music/Strobe.mp3')
+    api.properties = vi.fn(async (path: string) => (path === '/Music/Strobe.mp3' ? mp3Copy : null))
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
+      libraryIndex: ownedWithId,
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId('apple-music-copy-format')).toHaveTextContent('MP3 320'),
+    )
+  })
+
+  // A copy that lives only in iCloud has no file to read, so there is no format to name;
+  // the badge stays as it was rather than guessing.
+  it('names no format when the library copy has no file on disk', async () => {
+    setApi('darwin')
+    const api = window.api as unknown as Record<string, unknown>
+    api.appleMusicEntryLocation = vi.fn().mockResolvedValue('')
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
+      libraryIndex: ownedWithId,
+    })
+    await waitFor(() => expect(api.appleMusicEntryLocation).toHaveBeenCalled())
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In Apple Music')
+    expect(screen.queryByTestId('apple-music-copy-format')).toBeNull()
   })
 
   // Off macOS there is no Apple Music library, so the badge stays hidden rather than

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackProperties } from '../../../shared/types'
-import { audioSummaryParts, fileExtension, formatFileSize } from './properties'
+import { audioSummaryParts, fileExtension, formatFileSize, libraryCopyFormat } from './properties'
 
 describe('fileExtension', () => {
   it('reads the real extension off the source path, uppercased', () => {
@@ -81,5 +81,59 @@ describe('audioSummaryParts', () => {
 
   it('writes the sample rate with the decimal mark of the app language', () => {
     expect(audioSummaryParts(alac, '/music/Track.m4a', tr, 'es')[1]).toBe('44,1 kHz')
+  })
+})
+
+describe('libraryCopyFormat', () => {
+  const probe = (over: Partial<TrackProperties>): TrackProperties => ({
+    container: '',
+    codec: '',
+    sampleRateHz: 44100,
+    bitDepth: null,
+    channels: 2,
+    bitrateKbps: null,
+    sizeBytes: 0,
+    createdMs: null,
+    modifiedMs: null,
+    tagFormats: [],
+    ...over,
+  })
+
+  // Whether to replace a library copy with a better rip hinges on how good the copy is: an
+  // MP3 at 128 is worth replacing, one at 320 maybe not. A lossy file's quality is its bitrate.
+  it('names a lossy copy by format and bitrate', () => {
+    expect(libraryCopyFormat(probe({ codec: 'mp3', bitrateKbps: 320 }), '/m/a.mp3', 'en')).toBe(
+      'MP3 320',
+    )
+  })
+
+  // An .m4a holds AAC or ALAC and the extension cannot say which, yet that is the whole
+  // difference between a lossy copy and a lossless one. The probed codec decides.
+  it('tells AAC from ALAC inside an .m4a by the probed codec', () => {
+    expect(libraryCopyFormat(probe({ codec: 'aac', bitrateKbps: 256 }), '/m/a.m4a', 'en')).toBe(
+      'AAC 256',
+    )
+    expect(
+      libraryCopyFormat(probe({ codec: 'alac', bitDepth: 16, bitrateKbps: 900 }), '/m/a.m4a', 'en'),
+    ).toBe('ALAC 16/44.1')
+  })
+
+  // A lossless copy's bitrate only measures how well it compressed; its resolution is what
+  // a better rip could beat.
+  it('names a lossless copy by bit depth and sample rate', () => {
+    expect(
+      libraryCopyFormat(
+        probe({ codec: 'pcm_s24be', bitDepth: 24, sampleRateHz: 96000, bitrateKbps: 4608 }),
+        '/m/a.aiff',
+        'es',
+      ),
+    ).toBe('AIFF 24/96')
+    expect(libraryCopyFormat(probe({ codec: 'pcm_s16le', bitDepth: 16 }), '/m/a.wav', 'es')).toBe(
+      'WAV 16/44,1',
+    )
+  })
+
+  it('falls back to the bare format when the probe read no quality figure', () => {
+    expect(libraryCopyFormat(probe({ codec: 'mp3' }), '/m/a.mp3', 'en')).toBe('MP3')
   })
 })

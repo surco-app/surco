@@ -1,5 +1,5 @@
 import type { TrackProperties } from '../../../shared/types'
-import { formatFixed } from './numberFormat'
+import { formatFixed, formatUpTo } from './numberFormat'
 import { formatKHz } from './quality'
 
 // The source container, read off the input PATH's last extension and uppercased (FLAC,
@@ -44,4 +44,18 @@ export function audioSummaryParts(
       ? tr(`editor.channelMode${p.channels <= 1 ? 'Mono' : p.channels === 2 ? 'Stereo' : 'Multi'}`)
       : '',
   ].filter(Boolean)
+}
+
+// The library copy's format as one glance, so the user can weigh replacing it: a lossy file
+// by its bitrate ("MP3 320"), a lossless one by its resolution ("AIFF 24/96"). The codec
+// names an .m4a, whose extension cannot tell AAC from ALAC; everything else goes by the
+// extension, the name the rest of the app uses.
+export function libraryCopyFormat(p: TrackProperties, path: string, language: string): string {
+  const name = p.codec === 'aac' || p.codec === 'alac' ? p.codec.toUpperCase() : fileExtension(path)
+  const lossless = /^(pcm_|flac$|alac$)/.test(p.codec)
+  if (lossless && p.bitDepth !== null && p.sampleRateHz) {
+    return `${name} ${p.bitDepth}/${formatUpTo(p.sampleRateHz / 1000, 1, language)}`
+  }
+  if (!lossless && p.bitrateKbps !== null) return `${name} ${p.bitrateKbps}`
+  return name
 }

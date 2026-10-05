@@ -27,6 +27,7 @@ import { useKey } from '../hooks/useKey'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
 import { useStableCallback } from '../hooks/useStableCallback'
+import { useTrackProperties } from '../hooks/useTrackProperties'
 import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
 import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
@@ -42,6 +43,7 @@ import { missingSummary } from '../lib/missingSummary'
 import { renderOutputName, titleFormatPatches } from '../lib/outputName'
 import { isMacOS } from '../lib/platform'
 import { splitPosition } from '../lib/position'
+import { libraryCopyFormat } from '../lib/properties'
 import { isLowResCover } from '../lib/quality'
 import { jobAudio } from '../lib/reapply'
 import {
@@ -257,7 +259,7 @@ export const Editor = memo(function Editor({
   } = useAppSettings()
   const showTokenTip = discogsToken === '' && searchProviders.includes('discogs')
   const isMulti = (selectedTracks?.length ?? 0) > 1
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   // A refined search is persisted on the track, so flipping away and back re-seeds
   // the box (and its cached results) instead of reverting to the filename guess.
   // Memoized so the browser's probe closures don't churn identity on unrelated renders.
@@ -532,6 +534,14 @@ export const Editor = memo(function Editor({
     suggestedMeta,
     onChange,
   })
+  // The format of the copy a replacement would supersede, so the user can tell whether the
+  // file in hand is worth swapping in. Only a single, located copy has a file to read.
+  const replacedCopyPath =
+    replaceTarget && !isAmbiguousCandidate(replaceTarget) ? (replaceTarget.path ?? '') : ''
+  const { data: replacedCopyProps } = useTrackProperties(replacedCopyPath, !!replacedCopyPath)
+  const replacedCopyFormat = replacedCopyProps
+    ? libraryCopyFormat(replacedCopyProps, replacedCopyPath, i18n.language)
+    : ''
   // What Music holds for this file when it is in the library: grouping and artwork, which
   // a WAV cannot carry. The entry to ask is the track's own copy or the one it matched.
   useAppleMusicFill({
@@ -990,6 +1000,9 @@ export const Editor = memo(function Editor({
           <span className="sr-only">
             {tr(librarySource === 'engineDj' ? 'editor.inLibraryEngine' : 'editor.inLibrary')}
           </span>
+          {replacedCopyFormat && (
+            <span data-testid="apple-music-copy-format">· {replacedCopyFormat}</span>
+          )}
         </SectionPill>
       )}
       {!isMulti && inLibrary === 'no' && (
