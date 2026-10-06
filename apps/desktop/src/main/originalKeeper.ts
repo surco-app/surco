@@ -46,6 +46,13 @@ export function policyKeeper(policy: () => BackupPolicy, stash: OriginalKeeper):
   }
 }
 
+// Whether a null from keepOriginal means "refused" rather than "nothing to keep with".
+// A write that promises a backup has to stop on a refusal, and still run in the unit
+// tests that never configure a store.
+export function hasOriginalKeeper(): boolean {
+  return keeper !== null
+}
+
 export async function keepOriginal(
   path: string,
   reason: TrashReason,

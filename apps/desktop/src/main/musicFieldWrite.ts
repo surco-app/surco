@@ -4,7 +4,7 @@ import { extname } from 'node:path'
 import log from 'electron-log/main'
 import type { TrashEntry } from '../shared/types'
 import { assertDecodable, convertTmpPath } from './ffmpeg'
-import { discardBackup, keepOriginal } from './originalKeeper'
+import { discardBackup, hasOriginalKeeper, keepOriginal } from './originalKeeper'
 import { removeTemp, renameWithRetry } from './renameRetry'
 import { type FieldWrite, setTagFields, type TagFieldChange } from './tagFieldSet'
 import { runInWorker } from './worker'
@@ -36,6 +36,7 @@ export async function rewriteTagFields(
     }
     await assertDecodable(tmp, file)
     archived = await keepOriginal(file, 'replaced', file, { reencodes: false })
+    if (!archived && hasOriginalKeeper()) throw new Error('no-backup')
     await renameWithRetry(tmp, file)
     tracking?.untrack(tmp)
     return { outcomes, backup: archived ?? undefined }

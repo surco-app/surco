@@ -415,6 +415,44 @@ describe('useMusicReview', () => {
     expect(result.current.status).toBe('ready')
   })
 
+  // Without its backup the file cannot go back; setting Music and the libraries back
+  // anyway would leave them saying one thing and the file another.
+  it('leaves a written file with no backup as it is and counts it as not undone', async () => {
+    const noBackup = { ...twoOutcomes[0], backupId: undefined }
+    const api = setApi({
+      applyMusicFixes: vi.fn().mockResolvedValue([noBackup, twoOutcomes[1]]),
+    })
+    const { result } = await ready()
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    await act(() => result.current.undo())
+    expect(api.setMusicField).toHaveBeenCalledTimes(1)
+    expect(api.setMusicField).toHaveBeenCalledWith('D', 'artist', 'DJ Lara', 'dj lara')
+    expect(api.syncLibraryTags).toHaveBeenLastCalledWith([
+      { path: '/m/d.mp3', fields: { artist: { from: 'DJ Lara', to: 'dj lara' } } },
+    ])
+    expect(result.current.lastRun).toMatchObject({ undoFailures: 1 })
+    expect(result.current.lastRun?.outcomes.map((o) => o.persistentId)).toEqual(['C'])
+  })
+
+  // The file is already back after the first try; a second Undo still owes Music its value.
+  it('retries setting Music back on a second undo once the file was restored', async () => {
+    const setMusicField = vi
+      .fn<Api['setMusicField']>()
+      .mockRejectedValueOnce(new Error('busy'))
+      .mockResolvedValue('set')
+    const api = setApi({ setMusicField })
+    const { result } = await ready()
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    await act(() => result.current.undo())
+    expect(result.current.lastRun).toMatchObject({ undoFailures: 1 })
+    await act(() => result.current.undo())
+    expect(setMusicField).toHaveBeenCalledTimes(2)
+    expect(api.trashRestore).toHaveBeenCalledTimes(1)
+    expect(result.current.lastRun).toBeNull()
+  })
+
   it('keeps the run and reports the files when the reread fails', async () => {
     const loadMusicReview = vi
       .fn<Api['loadMusicReview']>()

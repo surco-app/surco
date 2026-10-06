@@ -315,6 +315,10 @@ export function useMusicReview({
       const reverted: MusicFixOutcome[] = []
       const failed: MusicFixOutcome[] = []
       for (const o of lastRun.outcomes) {
+        if (o.file === 'written' && !o.backupId) {
+          failed.push(o)
+          continue
+        }
         let ok = true
         if (o.backupId) {
           try {
@@ -331,7 +335,8 @@ export function useMusicReview({
               ok = false
             })
         if (ok) reverted.push(o)
-        else failed.push({ ...o, backupId: undefined })
+        // The file is back already: a retry only owes Music its value.
+        else failed.push({ ...o, backupId: undefined, file: 'unchanged' })
       }
       const updates = tagUpdatesOf(reverted, 'undo')
       let librarySync: ReviewRun['librarySync'] = 'none'

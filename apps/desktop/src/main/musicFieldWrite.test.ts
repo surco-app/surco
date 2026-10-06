@@ -383,4 +383,23 @@ describe('rewriteTagFields', () => {
     expect(keeper).toHaveBeenCalledWith(file, 'replaced', file, { reencodes: false })
     expect(backup).toEqual({ id: 'b1' })
   }, 60000)
+
+  // The Originals budget can refuse a file. Writing anyway would leave a change with no
+  // way back, while the review promises a backup of every file it touches.
+  it('leaves the file untouched and fails when the backup was refused', async () => {
+    const file = make('mp3', ['-c:a', 'libmp3lame'], 'Dj Lara')
+    const before = snapshotTags(file)
+    const track = vi.fn()
+    const untrack = vi.fn()
+    configureOriginalKeeper(vi.fn().mockResolvedValue(null))
+    await expect(
+      rewriteTagFields(file, [{ field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }], {
+        track,
+        untrack,
+      }),
+    ).rejects.toThrow('no-backup')
+    expect(snapshotTags(file)).toEqual(before)
+    expect(untrack).toHaveBeenCalledWith(track.mock.calls[0][0])
+    expect(existsSync(track.mock.calls[0][0])).toBe(false)
+  }, 60000)
 })
