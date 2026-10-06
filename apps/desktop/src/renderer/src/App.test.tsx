@@ -3512,6 +3512,22 @@ describe('App Music review', () => {
     expect(screen.getByTestId('editor-trim')).toBeInTheDocument()
   })
 
+  it('does not convert the hidden selected track on the process shortcut', async () => {
+    vi.resetModules()
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    reviewApi({ processTrack })
+    await renderApp()
+    const [row] = await addOneTrack()
+    fireEvent.click(row)
+    await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    runMenu('music-review')
+    await screen.findByTestId('music-review-empty')
+    fireEvent.keyDown(window, { key: 'Enter', metaKey: true })
+    fireEvent.keyDown(window, { key: 'Enter', metaKey: true, shiftKey: true })
+    await act(async () => {})
+    expect(processTrack).not.toHaveBeenCalled()
+  })
+
   it('switches the filter when a Music command runs while the review is open', async () => {
     vi.resetModules()
     reviewApi()
