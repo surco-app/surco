@@ -165,4 +165,71 @@ describe('MusicReview', () => {
     )
     expect(screen.queryByTestId('music-review-done')).toBeNull()
   })
+
+  // The sheet stands between the user and a write to their library: it must be
+  // dismissible from the keyboard and announced by its title.
+  it('names the confirmation by its title, focuses Apply and cancels on Escape', () => {
+    const r = review({
+      staged: new Set([group.key]),
+      summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
+    })
+    render(<MusicReview review={r} onClose={vi.fn()} />)
+    fireEvent.click(screen.getByTestId('music-review-tray-apply'))
+    expect(screen.getByRole('dialog', { name: "You're about to change 1 track" })).toBeVisible()
+    expect(screen.getByTestId('music-review-confirm-apply')).toHaveFocus()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByTestId('music-review-confirm')).toBeNull()
+    expect(r.apply).not.toHaveBeenCalled()
+  })
+
+  it('names the done sheet by its title and Escape keeps reviewing', () => {
+    render(<MusicReview review={done(run())} onClose={vi.fn()} />)
+    expect(screen.getByRole('dialog', { name: 'Library reviewed' })).toBeVisible()
+    expect(screen.getByTestId('music-review-continue')).toHaveFocus()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByTestId('music-review-done')).toBeNull()
+  })
+
+  // Closing mid-run would unmount the view that is still writing.
+  it('locks every control that changes state while a run is going', () => {
+    const dup = {
+      group: { key: 'k#1', kind: 'duplicate' as const, ids: ['1', '2'] },
+      entries: [
+        { persistentId: '1', artist: 'A', title: 'T', durationSec: 60 },
+        { persistentId: '2', artist: 'A', title: 'T', durationSec: 60 },
+      ],
+      formats: {},
+    }
+    render(
+      <MusicReview
+        review={review({
+          status: 'applying',
+          lastRun: run(),
+          duplicates: [dup as unknown as Review['duplicates'][number]],
+          progress: { done: 1, total: 2 },
+        })}
+        onClose={vi.fn()}
+      />,
+    )
+    const locked = [
+      ...screen.getAllByTestId('music-review-stage'),
+      ...screen.getAllByTestId('music-review-ignore'),
+      ...screen.getAllByRole('radio'),
+      screen.getByTestId('music-review-filter-all'),
+      screen.getByTestId('music-review-filter-spelling'),
+      screen.getByTestId('music-review-filter-duplicates'),
+      screen.getByTestId('music-review-close'),
+    ]
+    expect(locked).toHaveLength(2 + 2 + 4 + 3 + 1)
+    for (const el of locked) expect(el).toBeDisabled()
+    expect(screen.getByTestId('music-review-stop')).toBeEnabled()
+  })
+
+  it('groups the radios under a name and announces the loading state', () => {
+    const { unmount } = render(<MusicReview review={review()} onClose={vi.fn()} />)
+    expect(screen.getByRole('radiogroup', { name: 'Artist DJ Lara' })).toBeVisible()
+    unmount()
+    render(<MusicReview review={review({ status: 'loading', spelling: [] })} onClose={vi.fn()} />)
+    expect(screen.getByTestId('music-review-loading')).toHaveTextContent('Reading the library')
+  })
 })

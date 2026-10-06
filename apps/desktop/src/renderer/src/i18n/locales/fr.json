@@ -1537,6 +1537,7 @@
     },
     "empty": "Ta bibliothèque Apple Music est vide.",
     "clean": "Rien à vérifier.",
-    "error": "Impossible de lire la bibliothèque Apple Music."
+    "error": "Impossible de lire la bibliothèque Apple Music.",
+    "loading": "Lecture de la bibliothèque…"
   }
 }

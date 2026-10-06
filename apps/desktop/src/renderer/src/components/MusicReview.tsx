@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import type React from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { DuplicateCard, MusicReview as Review, ReviewFilter } from '../hooks/useMusicReview'
 import { SAFE_KINDS, type SpellingGroup } from '../lib/musicSpelling'
+import { ModalShell } from './ModalShell'
 
 const BTN = 'press rounded-md px-2.5 py-1 text-xs outline-none disabled:opacity-40'
 const PRIMARY = `${BTN} bg-[var(--color-accent)] text-[var(--color-on-accent)]`
@@ -24,6 +26,7 @@ function Dot({ safe }: { safe: boolean }) {
 
 function SpellingCard({ group, review }: { group: SpellingGroup; review: Review }) {
   const { t } = useTranslation()
+  const busy = review.status === 'applying'
   const chosen = review.choice(group.key)
   const staged = review.staged.has(group.key)
   return (
@@ -39,6 +42,7 @@ function SpellingCard({ group, review }: { group: SpellingGroup; review: Review 
             type="button"
             data-testid="music-review-ignore"
             className={GHOST}
+            disabled={busy}
             onClick={() => review.ignore(group.key)}
           >
             {t(group.kind === 'typo' ? 'musicReview.notSame' : 'musicReview.ignore')}
@@ -47,14 +51,18 @@ function SpellingCard({ group, review }: { group: SpellingGroup; review: Review 
             type="button"
             data-testid="music-review-stage"
             className={PRIMARY}
-            disabled={chosen === null}
+            disabled={busy || chosen === null}
             onClick={() => review.toggleStaged(group.key)}
           >
             {t(staged ? 'musicReview.staged' : 'musicReview.unify')}
           </button>
         </div>
       </div>
-      <div className="grid gap-0.5">
+      <div
+        role="radiogroup"
+        aria-label={`${t(`musicReview.field.${group.field}`)} ${chosen ?? group.variants[0].value}`}
+        className="grid gap-0.5"
+      >
         {group.variants.map((v) => (
           <label
             key={v.value}
@@ -64,6 +72,7 @@ function SpellingCard({ group, review }: { group: SpellingGroup; review: Review 
               type="radio"
               name={group.key}
               checked={chosen === v.value}
+              disabled={busy}
               onChange={() => review.choose(group.key, v.value)}
               className="accent-[var(--color-accent)]"
             />
@@ -82,6 +91,7 @@ function SpellingCard({ group, review }: { group: SpellingGroup; review: Review 
 function DuplicateCardView({ card, review }: { card: DuplicateCard; review: Review }) {
   const { t } = useTranslation()
   const { group, entries, formats } = card
+  const busy = review.status === 'applying'
   const keep = review.choice(group.key)
   const staged = review.staged.has(group.key)
   const version = group.kind === 'version'
@@ -106,6 +116,7 @@ function DuplicateCardView({ card, review }: { card: DuplicateCard; review: Revi
             type="button"
             data-testid="music-review-ignore"
             className={GHOST}
+            disabled={busy}
             onClick={() => review.ignore(group.key)}
           >
             {t(version ? 'musicReview.different' : 'musicReview.ignore')}
@@ -114,6 +125,7 @@ function DuplicateCardView({ card, review }: { card: DuplicateCard; review: Revi
             type="button"
             data-testid="music-review-stage"
             className={version ? GHOST : PRIMARY}
+            disabled={busy}
             onClick={() => review.toggleStaged(group.key)}
           >
             {staged
@@ -122,7 +134,11 @@ function DuplicateCardView({ card, review }: { card: DuplicateCard; review: Revi
           </button>
         </div>
       </div>
-      <div className="grid gap-0.5">
+      <div
+        role="radiogroup"
+        aria-label={`${first?.artist} · ${first?.title}`}
+        className="grid gap-0.5"
+      >
         {entries.map((e) => (
           <label
             key={e.persistentId}
@@ -132,6 +148,7 @@ function DuplicateCardView({ card, review }: { card: DuplicateCard; review: Revi
               type="radio"
               name={group.key}
               checked={keep === e.persistentId}
+              disabled={busy}
               onChange={() => review.choose(group.key, e.persistentId)}
               className="accent-[var(--color-accent)]"
             />
@@ -156,75 +173,110 @@ function DuplicateCardView({ card, review }: { card: DuplicateCard; review: Revi
   )
 }
 
+function Sheet({
+  testId,
+  titleId,
+  onClose,
+  primaryRef,
+  children,
+}: {
+  testId: string
+  titleId: string
+  onClose: () => void
+  primaryRef: React.RefObject<HTMLButtonElement | null>
+  children: React.ReactNode
+}) {
+  useEffect(() => {
+    primaryRef.current?.focus()
+  }, [primaryRef])
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+  return (
+    <ModalShell
+      onClose={onClose}
+      backdropTestId={`${testId}-backdrop`}
+      dialogTestId={testId}
+      labelledBy={titleId}
+      className="grid w-full max-w-sm gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-4"
+    >
+      {children}
+    </ModalShell>
+  )
+}
+
 function Confirm({ review, onCancel }: { review: Review; onCancel: () => void }) {
   const { t } = useTranslation()
   const { tracks, byField, duplicates } = review.summary
+  const applyRef = useRef<HTMLButtonElement>(null)
   return (
-    <div className="absolute inset-0 grid place-items-center bg-[color-mix(in_srgb,var(--color-scrim)_55%,transparent)] p-4">
-      <div
-        data-testid="music-review-confirm"
-        role="dialog"
-        aria-modal="true"
-        className="grid w-full max-w-sm gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-4"
-      >
-        <h3 className="text-sm font-semibold">
-          {t('musicReview.confirm.title', { count: tracks + duplicates })}
-        </h3>
-        <dl className="grid gap-1 text-sm">
-          {Object.entries(byField).map(([field, n]) => (
-            <div
-              key={field}
-              className="flex justify-between border-b border-[var(--color-line)] py-1"
-            >
-              <dt>{t(`musicReview.field.${field}`)}</dt>
-              <dd className="tabular-nums">{n}</dd>
-            </div>
-          ))}
-          {duplicates > 0 && (
-            <div className="flex justify-between border-b border-[var(--color-line)] py-1">
-              <dt>{t('musicReview.confirm.removed')}</dt>
-              <dd className="tabular-nums">{duplicates}</dd>
-            </div>
-          )}
-        </dl>
+    <Sheet
+      testId="music-review-confirm"
+      titleId="music-review-confirm-title"
+      onClose={onCancel}
+      primaryRef={applyRef}
+    >
+      <h3 id="music-review-confirm-title" className="text-sm font-semibold">
+        {t('musicReview.confirm.title', { count: tracks + duplicates })}
+      </h3>
+      <dl className="grid gap-1 text-sm">
+        {Object.entries(byField).map(([field, n]) => (
+          <div
+            key={field}
+            className="flex justify-between border-b border-[var(--color-line)] py-1"
+          >
+            <dt>{t(`musicReview.field.${field}`)}</dt>
+            <dd className="tabular-nums">{n}</dd>
+          </div>
+        ))}
         {duplicates > 0 && (
-          <p className="text-xs text-fg-dim">
-            {t('musicReview.confirm.playlists')}. {t('musicReview.confirm.trash')}.
-          </p>
+          <div className="flex justify-between border-b border-[var(--color-line)] py-1">
+            <dt>{t('musicReview.confirm.removed')}</dt>
+            <dd className="tabular-nums">{duplicates}</dd>
+          </div>
         )}
-        <p className="text-xs text-fg-dim">{t('musicReview.confirm.untouched')}</p>
-        <p className="text-xs text-fg-dim">{t('musicReview.confirm.libraries')}</p>
-        <label className="flex items-center gap-2 text-xs text-fg-dim">
-          <input type="checkbox" checked disabled readOnly /> {t('musicReview.confirm.backup')}
-        </label>
-        <div className="flex justify-end gap-1.5">
-          <button
-            type="button"
-            data-testid="music-review-confirm-cancel"
-            className={GHOST}
-            onClick={onCancel}
-          >
-            {t('musicReview.confirm.cancel')}
-          </button>
-          <button
-            type="button"
-            data-testid="music-review-confirm-apply"
-            className={PRIMARY}
-            onClick={() => {
-              onCancel()
-              void review.apply()
-            }}
-          >
-            {t('musicReview.confirm.apply')}
-          </button>
-        </div>
+      </dl>
+      {duplicates > 0 && (
+        <p className="text-xs text-fg-dim">
+          {t('musicReview.confirm.playlists')}. {t('musicReview.confirm.trash')}.
+        </p>
+      )}
+      <p className="text-xs text-fg-dim">{t('musicReview.confirm.untouched')}</p>
+      <p className="text-xs text-fg-dim">{t('musicReview.confirm.libraries')}</p>
+      <label className="flex items-center gap-2 text-xs text-fg-dim">
+        <input type="checkbox" checked disabled readOnly /> {t('musicReview.confirm.backup')}
+      </label>
+      <div className="flex justify-end gap-1.5">
+        <button
+          type="button"
+          data-testid="music-review-confirm-cancel"
+          className={GHOST}
+          onClick={onCancel}
+        >
+          {t('musicReview.confirm.cancel')}
+        </button>
+        <button
+          type="button"
+          data-testid="music-review-confirm-apply"
+          ref={applyRef}
+          className={PRIMARY}
+          onClick={() => {
+            onCancel()
+            void review.apply()
+          }}
+        >
+          {t('musicReview.confirm.apply')}
+        </button>
       </div>
-    </div>
+    </Sheet>
   )
 }
 
 function Done({ review, onContinue }: { review: Review; onContinue: () => void }) {
   const { t } = useTranslation()
+  const continueRef = useRef<HTMLButtonElement>(null)
   const run = review.lastRun
   if (!run) return null
   const undone = run.undoFailures !== undefined
@@ -241,62 +293,63 @@ function Done({ review, onContinue }: { review: Review; onContinue: () => void }
       (o) => o.file === 'failed' || o.music.some((m) => m === 'failed' || m === 'mismatch'),
     ).length + failedRemovals
   return (
-    <div className="absolute inset-0 grid place-items-center bg-[color-mix(in_srgb,var(--color-scrim)_55%,transparent)] p-4">
-      <div
-        data-testid="music-review-done"
-        role="dialog"
-        aria-modal="true"
-        className="grid w-full max-w-sm gap-2 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-4 text-sm"
-      >
-        <h3 className="font-semibold">{t('musicReview.done.title')}</h3>
-        {undone ? (
-          <p className="text-[var(--color-danger)]">
-            {t('musicReview.done.undoFailed', { count: run.undoFailures })}
-          </p>
-        ) : (
-          <>
-            <p>{t('musicReview.done.updated', { count: updated })}</p>
-            {musicOnly > 0 && (
-              <p className="text-fg-dim">{t('musicReview.done.musicOnly', { count: musicOnly })}</p>
-            )}
-            {failed > 0 && (
-              <p className="text-[var(--color-danger)]">
-                {t('musicReview.done.failed', { count: failed })}
-              </p>
-            )}
-            {run.applyError !== undefined && (
-              <p className="text-[var(--color-danger)]">{t('musicReview.done.applyError')}</p>
-            )}
-          </>
-        )}
-        {run.librarySync === 'failed' && (
-          <p className="text-[var(--color-danger)]">{t('musicReview.done.libraryFailed')}</p>
-        )}
-        {!undone && run.after !== null && (
-          <p className="text-fg-dim tabular-nums">
-            {t('musicReview.done.left', { count: run.after })}
-          </p>
-        )}
-        <div className="flex justify-end gap-1.5">
-          <button
-            type="button"
-            data-testid="music-review-undo"
-            className={GHOST}
-            onClick={() => void review.undo()}
-          >
-            {t('musicReview.done.undo')}
-          </button>
-          <button
-            type="button"
-            data-testid="music-review-continue"
-            className={PRIMARY}
-            onClick={onContinue}
-          >
-            {t('musicReview.done.continue')}
-          </button>
-        </div>
+    <Sheet
+      testId="music-review-done"
+      titleId="music-review-done-title"
+      onClose={onContinue}
+      primaryRef={continueRef}
+    >
+      <h3 id="music-review-done-title" className="text-sm font-semibold">
+        {t('musicReview.done.title')}
+      </h3>
+      {undone ? (
+        <p className="text-[var(--color-danger)]">
+          {t('musicReview.done.undoFailed', { count: run.undoFailures })}
+        </p>
+      ) : (
+        <>
+          <p>{t('musicReview.done.updated', { count: updated })}</p>
+          {musicOnly > 0 && (
+            <p className="text-fg-dim">{t('musicReview.done.musicOnly', { count: musicOnly })}</p>
+          )}
+          {failed > 0 && (
+            <p className="text-[var(--color-danger)]">
+              {t('musicReview.done.failed', { count: failed })}
+            </p>
+          )}
+          {run.applyError !== undefined && (
+            <p className="text-[var(--color-danger)]">{t('musicReview.done.applyError')}</p>
+          )}
+        </>
+      )}
+      {run.librarySync === 'failed' && (
+        <p className="text-[var(--color-danger)]">{t('musicReview.done.libraryFailed')}</p>
+      )}
+      {!undone && run.after !== null && (
+        <p className="text-fg-dim tabular-nums">
+          {t('musicReview.done.left', { count: run.after })}
+        </p>
+      )}
+      <div className="flex justify-end gap-1.5">
+        <button
+          type="button"
+          data-testid="music-review-undo"
+          className={GHOST}
+          onClick={() => void review.undo()}
+        >
+          {t('musicReview.done.undo')}
+        </button>
+        <button
+          type="button"
+          data-testid="music-review-continue"
+          ref={continueRef}
+          className={PRIMARY}
+          onClick={onContinue}
+        >
+          {t('musicReview.done.continue')}
+        </button>
       </div>
-    </div>
+    </Sheet>
   )
 }
 
@@ -304,6 +357,7 @@ const FILTERS: ReviewFilter[] = ['all', 'spelling', 'duplicates']
 
 export function MusicReview({ review, onClose }: { review: Review; onClose: () => void }) {
   const { t } = useTranslation()
+  const applying = review.status === 'applying'
   const [confirming, setConfirming] = useState(false)
   const [doneSeen, setDoneSeen] = useState<object | null>(null)
   const counts = {
@@ -324,6 +378,7 @@ export function MusicReview({ review, onClose }: { review: Review; onClose: () =
             type="button"
             data-testid="music-review-close"
             className={`${GHOST} ml-auto`}
+            disabled={applying}
             onClick={onClose}
           >
             {t('musicReview.close')}
@@ -336,8 +391,9 @@ export function MusicReview({ review, onClose }: { review: Review; onClose: () =
               type="button"
               data-testid={`music-review-filter-${f}`}
               aria-pressed={review.filter === f}
+              disabled={applying}
               onClick={() => review.setFilter(f)}
-              className="press rounded-full border border-[var(--color-line-strong)] px-2.5 py-0.5 text-xs text-fg-dim outline-none aria-pressed:border-transparent aria-pressed:bg-[var(--color-accent-soft)] aria-pressed:text-fg"
+              className="press rounded-full border border-[var(--color-line-strong)] px-2.5 py-0.5 text-xs text-fg-dim outline-none disabled:opacity-40 aria-pressed:border-transparent aria-pressed:bg-[var(--color-accent-soft)] aria-pressed:text-fg"
             >
               {t(`musicReview.filter.${f}`)}{' '}
               <span className="tabular-nums text-fg-faint">{counts[f]}</span>
@@ -346,7 +402,15 @@ export function MusicReview({ review, onClose }: { review: Review; onClose: () =
         </div>
       </div>
       <div className="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto p-3 pb-24">
-        {review.status === 'loading' && <p className="text-xs text-fg-faint">…</p>}
+        {review.status === 'loading' && (
+          <p
+            data-testid="music-review-loading"
+            aria-live="polite"
+            className="text-xs text-fg-faint"
+          >
+            {t('musicReview.loading')}
+          </p>
+        )}
         {review.status === 'empty' && (
           <p data-testid="music-review-empty" className="text-xs text-fg-faint">
             {t('musicReview.empty')}
