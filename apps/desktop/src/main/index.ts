@@ -22,6 +22,7 @@ import {
   protocol,
   session,
   shell,
+  type WebContents,
 } from 'electron'
 import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
@@ -35,7 +36,13 @@ import {
 } from '../shared/media'
 import { resolveBindings } from '../shared/shortcutDefaults'
 import { chordToAccelerator } from '../shared/shortcuts'
-import type { CoverExportJob, ProcessJob, SessionEdit, Settings } from '../shared/types'
+import type {
+  CoverExportJob,
+  ProcessJob,
+  RekordboxSyncIssue,
+  SessionEdit,
+  Settings,
+} from '../shared/types'
 import { createActiveConversions } from './activeConversions'
 import { activity } from './activity'
 import { analysisCacheStats, clearAnalysisCache, pruneAnalysisCache } from './analysisCache'
@@ -79,7 +86,7 @@ import { runProcessTrack } from './processTrack'
 import { getProvider } from './providers'
 import { createQuitGuard } from './quitGuard'
 import { beginRekordboxBatch, endRekordboxBatch, redirectRekordboxRepoint } from './rekordboxBatch'
-import { flushRekordboxSync } from './rekordboxFlush'
+import { type FlushResult, flushRekordboxSync } from './rekordboxFlush'
 import { repointTracks } from './rekordboxLibrary'
 import { findRekordboxCollection } from './rekordboxPath'
 import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
@@ -850,59 +857,67 @@ function registerIpc(): void {
   // batch recorded into collection.nml in one write. A failure here must never surface as
   // a conversion failure — the audio is already correct on disk by this point — so every
   // branch below only logs and returns, never throws back at the renderer.
-  ipcMain.on('process:batch-end', async (e) => {
-    const win = BrowserWindow.fromWebContents(e.sender)
-    await flushTraktorSync({
-      // Same rule as rekordbox below: the toggle grants permission, the path only says
-      // where. Before these toggles a filled-in path meant both, which is why anyone
-      // already syncing is migrated to syncTraktor: true (see syncToggleMigration.ts).
-      traktorNmlPath: getSettings().syncTraktor ? getSettings().traktorNmlPath : '',
-      endNmlBatch,
-      ensureTraktorClosed: () => ensureTraktorClosed(win),
-      showBlockedDialog: () => {
-        const t = createMenuT(menuLocale())
-        const opts = { type: 'warning' as const, message: t('traktorSyncBlocked') }
-        if (win) dialog.showMessageBox(win, opts)
-        else dialog.showMessageBox(opts)
-      },
-      syncCollection,
+  // The collaborators every library flush shares, whatever it is flushing: the conversion
+  // run's repoints and the names a review fixed both close the app, warn and report the
+  // same way. What differs (the list and the writer) is passed by each caller.
+  const showSyncBlockedDialog = (
+    win: BrowserWindow | null,
+    messageKey: Parameters<ReturnType<typeof createMenuT>>[0],
+  ) => {
+    const t = createMenuT(menuLocale())
+    const opts = { type: 'warning' as const, message: t(messageKey) }
+    if (win) dialog.showMessageBox(win, opts)
+    else dialog.showMessageBox(opts)
+  }
+
+  const traktorFlushDeps = (win: BrowserWindow | null) => ({
+    // Same rule as rekordbox below: the toggle grants permission, the path only says
+    // where. Before these toggles a filled-in path meant both, which is why anyone
+    // already syncing is migrated to syncTraktor: true (see syncToggleMigration.ts).
+    traktorNmlPath: getSettings().syncTraktor ? getSettings().traktorNmlPath : '',
+    ensureTraktorClosed: () => ensureTraktorClosed(win),
+    showBlockedDialog: () => showSyncBlockedDialog(win, 'traktorSyncBlocked'),
+    syncCollection,
+    track: activity.track.bind(activity),
+  })
+
+  const rekordboxFlushDeps = (win: BrowserWindow | null, sender: WebContents) => ({
+    // The toggle decides, not the path: a collection sitting in its standard location is
+    // not permission to write to it. An empty path here skips the flush entirely.
+    collectionPath: getSettings().syncRekordbox
+      ? findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
+      : '',
+    ensureClosed: () => ensureRekordboxClosed(win),
+    track: activity.track.bind(activity),
+    showBlockedDialog: () => showSyncBlockedDialog(win, 'rekordboxSyncBlocked'),
+    reportIssue: (issue: RekordboxSyncIssue) => {
+      if (!sender.isDestroyed()) sender.send('rekordbox:sync-issue', issue)
+    },
+  })
+
+  const engineFlushDeps = (win: BrowserWindow | null, sender: WebContents) => {
+    // With no m.db there yet there is nothing to write to.
+    const engineDir = getSettings().engineLibraryDir
+    return {
+      collectionPath:
+        getSettings().syncEngineDj && existsSync(join(engineDir, 'Database2', 'm.db'))
+          ? engineDir
+          : '',
+      ensureClosed: () => ensureEngineDjClosed(win),
       track: activity.track.bind(activity),
-    })
-    // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to
-    // their own library, and closing the batch twice would hand the second one nothing.
-    const repoints = endRekordboxBatch()
-    // rekordbox next, and independently: the two collections are separate libraries, so
-    // one being open or unwritable must not stop the other from being updated.
-    const result = await flushRekordboxSync({
-      // The toggle decides, not the path: a collection sitting in its standard location is
-      // not permission to write to it. An empty path here skips the flush entirely.
-      collectionPath: getSettings().syncRekordbox
-        ? findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
-        : '',
-      endBatch: () => repoints,
-      ensureClosed: () => ensureRekordboxClosed(win),
-      track: activity.track.bind(activity),
-      repointTracks: (collectionPath, repoints) =>
-        repointTracks(
-          collectionPath,
-          repoints.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
-          { sessionBackup: (path) => rekordboxSessionBackup.ensure(path) },
-        ),
-      showBlockedDialog: () => {
-        const t = createMenuT(menuLocale())
-        const opts = { type: 'warning' as const, message: t('rekordboxSyncBlocked') }
-        if (win) dialog.showMessageBox(win, opts)
-        else dialog.showMessageBox(opts)
+      showBlockedDialog: () => showSyncBlockedDialog(win, 'engineSyncBlocked'),
+      reportIssue: (issue: RekordboxSyncIssue) => {
+        if (!sender.isDestroyed()) sender.send('engine:sync-issue', issue)
       },
-      reportIssue: (issue) => {
-        if (!e.sender.isDestroyed()) e.sender.send('rekordbox:sync-issue', issue)
-      },
-    })
-    // Logged in every case, on top of the dialog for rekordbox being open and the notice
-    // for everything else the run could not do (see flushRekordboxSync).
+    }
+  }
+
+  // Logged in every case, on top of the dialog for the app being open and the notice
+  // for everything else the run could not do (see flushLibraryRepoints).
+  const logLibraryFlush = (label: string, result: FlushResult) => {
     if (result.written > 0 || result.blocked || result.skipped.length > 0) {
       log.info(
-        `rekordbox repoint: ${result.written} written` +
+        `${label}: ${result.written} written` +
           `${result.blocked ? `, stopped by ${result.blocked}` : ''}` +
           // Named, not counted: three runs of "1 skipped" said nothing about WHY, and the
           // reason is the whole diagnosis — an ambiguous match, a missing output and a
@@ -910,40 +925,45 @@ function registerIpc(): void {
           `${result.skipped.length > 0 ? `, skipped ${result.skipped.map((s) => `${s.reason} (${s.track})`).join('; ')}` : ''}`,
       )
     }
-    // Engine DJ last, again independently. Its library is the one the Engine destination
-    // writes to; with no m.db there yet there is nothing to repoint.
-    const engineDir = getSettings().engineLibraryDir
-    const engineResult = await flushEngineSync({
-      collectionPath:
-        getSettings().syncEngineDj && existsSync(join(engineDir, 'Database2', 'm.db'))
-          ? engineDir
-          : '',
+  }
+
+  // A convert-all run ends (however it ended — finished, cancelled, or failed, the
+  // renderer calls this from its finally block): flush whatever Traktor cue patches the
+  // batch recorded into collection.nml in one write. A failure here must never surface as
+  // a conversion failure — the audio is already correct on disk by this point — so every
+  // branch below only logs and returns, never throws back at the renderer.
+  ipcMain.on('process:batch-end', async (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    await flushTraktorSync({ ...traktorFlushDeps(win), endNmlBatch })
+    // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to
+    // their own library, and closing the batch twice would hand the second one nothing.
+    const repoints = endRekordboxBatch()
+    // rekordbox next, and independently: the two collections are separate libraries, so
+    // one being open or unwritable must not stop the other from being updated.
+    const result = await flushRekordboxSync({
+      ...rekordboxFlushDeps(win, e.sender),
       endBatch: () => repoints,
-      ensureClosed: () => ensureEngineDjClosed(win),
-      track: activity.track.bind(activity),
+      repointTracks: (collectionPath, repoints) =>
+        repointTracks(
+          collectionPath,
+          repoints.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
+          { sessionBackup: (path) => rekordboxSessionBackup.ensure(path) },
+        ),
+    })
+    logLibraryFlush('rekordbox repoint', result)
+    // Engine DJ last, again independently. Its library is the one the Engine destination
+    // writes to.
+    const engineResult = await flushEngineSync({
+      ...engineFlushDeps(win, e.sender),
+      endBatch: () => repoints,
       repointTracks: (libraryDir, list) =>
         repointEngineTracks(
           libraryDir,
           list.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
           { sessionBackup: (path) => engineSessionBackup.ensure(path) },
         ),
-      showBlockedDialog: () => {
-        const t = createMenuT(menuLocale())
-        const opts = { type: 'warning' as const, message: t('engineSyncBlocked') }
-        if (win) dialog.showMessageBox(win, opts)
-        else dialog.showMessageBox(opts)
-      },
-      reportIssue: (issue) => {
-        if (!e.sender.isDestroyed()) e.sender.send('engine:sync-issue', issue)
-      },
     })
-    if (engineResult.written > 0 || engineResult.blocked || engineResult.skipped.length > 0) {
-      log.info(
-        `Engine DJ repoint: ${engineResult.written} written` +
-          `${engineResult.blocked ? `, stopped by ${engineResult.blocked}` : ''}` +
-          `${engineResult.skipped.length > 0 ? `, skipped ${engineResult.skipped.map((s) => `${s.reason} (${s.track})`).join('; ')}` : ''}`,
-      )
-    }
+    logLibraryFlush('Engine DJ repoint', engineResult)
   })
 
   // Awaited by the renderer before it starts an in-place export: the surco:// stream
