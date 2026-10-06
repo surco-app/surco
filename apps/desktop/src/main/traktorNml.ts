@@ -459,7 +459,14 @@ const outputKey = (patch: NmlPatch): string | undefined =>
 // own cues, since that audio did not change.
 function patchFor(entries: NmlEntry[], patch: NmlPatch, entry: NmlEntry): NmlPatch {
   const repoints = patch.newFile !== undefined && !pathTaken(entries, patch, entry)
-  const safe = repoints ? patch : { ...patch, newFile: undefined }
+  // The names are the file's own; a same-stem sibling is another file the review never read.
+  const exact =
+    key(entry.volume, entry.dir, entry.file) === key(patch.volume, patch.dir, patch.file)
+  const safe = {
+    ...patch,
+    newFile: repoints ? patch.newFile : undefined,
+    tags: exact ? patch.tags : undefined,
+  }
   const output = outputKey(patch)
   if (repoints || output === undefined || output === key(entry.volume, entry.dir, entry.file))
     return safe

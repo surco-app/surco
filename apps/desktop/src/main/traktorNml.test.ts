@@ -8,8 +8,8 @@ import {
   detachedOutputPaths,
   findEntries,
   matchedPatchCount,
-  refreshedCoverIds,
   type NmlPatch,
+  refreshedCoverIds,
 } from './traktorNml'
 
 const NML = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -1028,5 +1028,15 @@ describe('applyPatches with tags', () => {
     const rich = `<NML><COLLECTION ENTRIES="1"><ENTRY TITLE="Bleeding Love" ARTIST="Dj Lara"><LOCATION DIR="/:m/:" FILE="c.mp3" VOLUME="Mac"></LOCATION><ALBUM TITLE="Need You"></ALBUM><INFO GENRE="electronic" RANKING="102"></INFO><CUE_V2 NAME="Drop" START="79672.640000" TYPE="0"></CUE_V2></ENTRY></COLLECTION></NML>`
     const out = applyPatches(rich, [patch({ artist: { from: 'Dj Lara', to: 'DJ Lara' } })])
     expect(out).toBe(rich.replace('ARTIST="Dj Lara"', 'ARTIST="DJ Lara"'))
+  })
+
+  // The same-stem match exists for a conversion's AIFF to FLAC repoint. A sibling file is
+  // another track whose names the review never read, so it keeps its own.
+  it('rewrites only the entry at the exact location, not a sibling with the same stem', () => {
+    const flac = `<ENTRY TITLE="Bleeding Love" ARTIST="Dj Lara"><LOCATION DIR="/:m/:" FILE="c.flac" VOLUME="Mac"></LOCATION></ENTRY>`
+    const both = `<NML><COLLECTION ENTRIES="1">${flac}</COLLECTION></NML>`
+    const out = applyPatches(both, [patch({ artist: { from: 'Dj Lara', to: 'DJ Lara' } })])
+    expect(out).toBe(both)
+    expect(matchedPatchCount(both, [patch({ artist: { from: 'Dj Lara', to: 'DJ Lara' } })])).toBe(0)
   })
 })
