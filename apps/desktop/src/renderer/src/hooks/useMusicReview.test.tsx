@@ -339,6 +339,30 @@ describe('useMusicReview', () => {
     expect(result.current.lastRun).toMatchObject({ removed: [], applyError: 'boom' })
   })
 
+  // The removed copy is gone from Music by the end of the run; fixing its spelling first
+  // would only write a backup and a file for an entry about to disappear.
+  it('plans no spelling fix on a copy the same run removes', async () => {
+    const lib = [
+      e('A', 'DJ Lara'),
+      e('B', 'DJ Lara'),
+      e('C', 'Dj Lara', { title: 'Song', durationSec: 200 }),
+      e('D', 'Dj Lara', { title: 'Song', durationSec: 201 }),
+    ]
+    const api = setApi({ loadMusicReview: vi.fn().mockResolvedValue(lib) })
+    const { result } = await ready()
+    const dup = result.current.duplicates[0].group.key
+    act(() => result.current.choose(dup, 'C'))
+    act(() => result.current.toggleStaged(dup))
+    const spelling = result.current.spelling[0].key
+    act(() => result.current.choose(spelling, 'DJ Lara'))
+    act(() => result.current.toggleStaged(spelling))
+    expect(result.current.summary).toMatchObject({ tracks: 1, duplicates: 1 })
+    await act(() => result.current.apply())
+    expect(api.applyMusicFixes).toHaveBeenCalledWith([
+      { persistentId: 'C', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' },
+    ])
+  })
+
   const twoOutcomes = [
     {
       persistentId: 'C',

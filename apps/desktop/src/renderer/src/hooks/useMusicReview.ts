@@ -216,17 +216,6 @@ export function useMusicReview({
     [hidden, saveIgnored],
   )
 
-  const fixes = useMemo(
-    () =>
-      planFixes(
-        entries,
-        spelling
-          .filter((g) => staged.has(g.key))
-          .map((group) => ({ group, to: choice(group.key) as string })),
-      ),
-    [entries, spelling, staged, choice],
-  )
-
   const removals = useMemo(
     () =>
       dupGroups
@@ -243,6 +232,16 @@ export function useMusicReview({
         }),
     [dupGroups, staged, choice, byPid],
   )
+
+  const fixes = useMemo(() => {
+    const removing = new Set(removals.map((r) => r.removePid))
+    return planFixes(
+      entries.filter((e) => !removing.has(e.persistentId)),
+      spelling
+        .filter((g) => staged.has(g.key))
+        .map((group) => ({ group, to: choice(group.key) as string })),
+    )
+  }, [entries, removals, spelling, staged, choice])
 
   const summary = useMemo(
     () => ({ ...summarizeFixes(fixes), duplicates: removals.length }),
