@@ -47,10 +47,7 @@ export interface FlushLibraryDeps<T = RekordboxRepoint> {
   endBatch: () => T[]
   // The whole run in one pass over the library, with an outcome per track in the order
   // given.
-  repointTracks: (
-    collectionPath: string,
-    repoints: T[],
-  ) => Promise<LibraryRepointResult[]>
+  repointTracks: (collectionPath: string, repoints: T[]) => Promise<LibraryRepointResult[]>
   // Puts the repoint in the Activity panel as its own step. Reported 15/09: the panel
   // showed the conversion and the Apple Music add and said nothing about rekordbox, so a
   // collection that was never updated looked exactly like one that was.

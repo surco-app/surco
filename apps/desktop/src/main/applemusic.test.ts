@@ -503,7 +503,9 @@ describe('buildSetFieldScript', () => {
   it('maps the field onto the Music property and guards on the value the review read', () => {
     const script = buildSetFieldScript('6E592CFE07A6246A', 'albumArtist', 'Dj Lara', 'DJ Lara')
     expect(script).toContain('whose persistent ID is "6E592CFE07A6246A"')
-    expect(script).toContain('if (album artist of theTrack) is not "Dj Lara" then return "mismatch"')
+    expect(script).toContain(
+      'if (album artist of theTrack) is not "Dj Lara" then return "mismatch"',
+    )
     expect(script).toContain('set album artist of theTrack to "DJ Lara"')
   })
 
@@ -523,7 +525,12 @@ describe('buildSetFieldScript', () => {
 
 describe('buildPlaylistTransferScript', () => {
   it('adds the kept copy to plain playlists only and checks the label first', () => {
-    const s = buildPlaylistTransferScript('OLD0000000000000', 'KEEP000000000000', 'A - B', 'A - B (X)')
+    const s = buildPlaylistTransferScript(
+      'OLD0000000000000',
+      'KEEP000000000000',
+      'A - B',
+      'A - B (X)',
+    )
     expect(s).toContain(
       'if (artist of src) & " - " & (name of src) is not "A - B" then return "mismatch"',
     )

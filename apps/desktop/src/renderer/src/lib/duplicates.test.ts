@@ -65,7 +65,9 @@ describe('duplicateIds', () => {
 
 describe('recordingKey', () => {
   it('reads "(Original Mix)" as the plain title', () => {
-    expect(recordingKey('DJ Ter', 'This Rap (Original Mix)')).toBe(recordingKey('Dj Ter', 'This Rap'))
+    expect(recordingKey('DJ Ter', 'This Rap (Original Mix)')).toBe(
+      recordingKey('Dj Ter', 'This Rap'),
+    )
   })
 
   it('ignores a featuring credit in the title and the order of the acts', () => {
@@ -82,18 +84,27 @@ describe('recordingKey', () => {
 })
 
 describe('duplicateGroups', () => {
-  const item = (id: string, title: string, durationSec?: number) => ({ id, artist: 'Transfer', title, durationSec })
+  const item = (id: string, title: string, durationSec?: number) => ({
+    id,
+    artist: 'Transfer',
+    title,
+    durationSec,
+  })
 
   it('groups copies that last the same', () => {
     expect(
-      duplicateGroups([item('a', 'Possession', 323), item('b', 'Possession', 323), item('c', 'Possession', 325)]),
+      duplicateGroups([
+        item('a', 'Possession', 323),
+        item('b', 'Possession', 323),
+        item('c', 'Possession', 325),
+      ]),
     ).toEqual([expect.objectContaining({ kind: 'duplicate', ids: ['a', 'b', 'c'] })])
   })
 
   it('calls the same title with a different length another version, not a duplicate', () => {
-    expect(duplicateGroups([item('a', 'Make My Body Move', 417), item('b', 'Make My Body Move', 307)])).toEqual([
-      expect.objectContaining({ kind: 'version', ids: ['a', 'b'] }),
-    ])
+    expect(
+      duplicateGroups([item('a', 'Make My Body Move', 417), item('b', 'Make My Body Move', 307)]),
+    ).toEqual([expect.objectContaining({ kind: 'version', ids: ['a', 'b'] })])
   })
 
   it('treats copies 5 s apart as one recording and 6 s apart as another version', () => {
@@ -106,9 +117,9 @@ describe('duplicateGroups', () => {
   })
 
   it('chains copies each within the limit of the next into one duplicate group', () => {
-    expect(duplicateGroups([item('a', 'X', 320), item('b', 'X', 324), item('c', 'X', 328)])).toEqual([
-      expect.objectContaining({ kind: 'duplicate', ids: ['a', 'b', 'c'] }),
-    ])
+    expect(
+      duplicateGroups([item('a', 'X', 320), item('b', 'X', 324), item('c', 'X', 328)]),
+    ).toEqual([expect.objectContaining({ kind: 'duplicate', ids: ['a', 'b', 'c'] })])
   })
 
   it('never lets a copy of unknown length join a known one as a duplicate', () => {

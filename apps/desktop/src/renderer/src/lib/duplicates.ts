@@ -25,7 +25,13 @@ const ORIGINAL = /[([]\s*original(?:\s+(?:mix|version))?\s*[)\]]/gi
 // a fresh drop's untagged rows would otherwise read as one giant duplicate set. foldText
 // turns "&" into "and", so a spelled-out "and" splits the acts the same way.
 export function recordingKey(artist: string, title: string): string | null {
-  const acts = [...new Set(splitActs(artist).flatMap((act) => foldText(act).split(' and ')).filter(Boolean))].sort()
+  const acts = [
+    ...new Set(
+      splitActs(artist)
+        .flatMap((act) => foldText(act).split(' and '))
+        .filter(Boolean),
+    ),
+  ].sort()
   const core = foldText(title.replace(FEATURING, '').replace(ORIGINAL, ''))
   if (acts.length === 0 || !core) return null
   return `${acts.join('+')}|${core}`
@@ -38,7 +44,11 @@ function byLength(items: RecordingItem[]): RecordingItem[][] {
   for (const item of sorted) {
     const last = clusters.at(-1)
     const prev = last?.at(-1)
-    if (last && prev && Math.abs((item.durationSec ?? 0) - (prev.durationSec ?? 0)) <= SAME_RECORDING_SEC)
+    if (
+      last &&
+      prev &&
+      Math.abs((item.durationSec ?? 0) - (prev.durationSec ?? 0)) <= SAME_RECORDING_SEC
+    )
       last.push(item)
     else clusters.push([item])
   }
@@ -60,7 +70,8 @@ export function duplicateGroups(items: RecordingItem[]): DuplicateGroup[] {
       continue
     }
     const clusters = byLength(known)
-    for (const c of clusters) if (c.length > 1) groups.push({ key, kind: 'duplicate', ids: c.map((m) => m.id) })
+    for (const c of clusters)
+      if (c.length > 1) groups.push({ key, kind: 'duplicate', ids: c.map((m) => m.id) })
     if (clusters.length > 1 || known.length < members.length)
       groups.push({ key: `${key}|version`, kind: 'version', ids: members.map((m) => m.id) })
   }
