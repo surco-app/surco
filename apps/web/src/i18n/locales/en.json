@@ -1318,6 +1318,81 @@
             "anchor": "lote"
           }
         ]
+      },
+      {
+        "id": "replace",
+        "title": "Swap a track in your library for a better copy",
+        "body": [
+          "You have a track as an MP3 in your library and you get hold of the AIFF or the WAV. You want the new copy to take the old one's place, without ending up with two and without adding it to every playlist again.",
+          "It only works on a Mac, because the swap goes through Apple Music. The old track has to be in your Apple Music library."
+        ],
+        "settings": [
+          {
+            "tab": "Output",
+            "setting": "Where converted tracks go",
+            "value": "Apple Music",
+            "note": "That way Surco checks whether the track is already in your library."
+          },
+          {
+            "tab": "Format",
+            "setting": "Default format",
+            "value": "AIFF",
+            "note": "Apple Music doesn't take FLAC. AIFF sounds the same as WAV and keeps the artwork too."
+          },
+          {
+            "tab": "Format",
+            "setting": "Keep MP3 and M4A files as they are",
+            "optional": true,
+            "note": "If the new copy is a better MP3 (320 instead of 128), it stays an MP3 instead of becoming an AIFF."
+          },
+          {
+            "tab": "Output",
+            "section": "rekordbox collection",
+            "setting": "Update the rekordbox collection when converting",
+            "optional": true,
+            "note": "If you use rekordbox. The track stays in its playlists and keeps its cue points."
+          },
+          {
+            "tab": "Output",
+            "section": "Engine DJ library",
+            "setting": "Update the Engine DJ library when converting",
+            "optional": true,
+            "note": "If you use Engine DJ. The track stays in its playlists and keeps its cue points."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Close rekordbox and Engine DJ",
+            "text": "Only if you use them. While they are open Surco can't touch their libraries, and it offers to close them."
+          },
+          {
+            "title": "Drag the new copies into Surco",
+            "text": "The better ones, for example the AIFF of a track you have as an MP3."
+          },
+          {
+            "title": "Check that the button says “Replace”",
+            "text": "That tells you Surco found the track in your Apple Music. If the new copy is worse than the one you have, it warns you."
+          },
+          {
+            "title": "Click “Replace”",
+            "text": "When it's done, Surco offers to move the old file to the Trash."
+          }
+        ],
+        "points": [
+          "In rekordbox and Engine DJ the track stays in its playlists and keeps its cue points.",
+          "In Apple Music, smart playlists pick it up on their own. If it was in a regular playlist, you'll need to add it again.",
+          "In rekordbox, check the beatgrid the first time you load the track. Seeing a different file can make it recalculate."
+        ],
+        "related": [
+          {
+            "label": "Take it to your decks",
+            "anchor": "exportar"
+          },
+          {
+            "label": "Convert the track",
+            "anchor": "convertir"
+          }
+        ]
       }
     ]
   }

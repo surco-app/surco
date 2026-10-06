@@ -1318,6 +1318,81 @@
             "anchor": "lote"
           }
         ]
+      },
+      {
+        "id": "replace",
+        "title": "Cambia una pista de tu biblioteca por una copia mejor",
+        "body": [
+          "Tienes un tema en MP3 en tu biblioteca y consigues el AIFF o el WAV. Quieres que la copia nueva ocupe el sitio de la vieja, sin acabar con dos y sin volver a meterla en cada playlist.",
+          "Solo funciona en Mac, porque la sustitución pasa por Apple Music. La pista vieja tiene que estar en tu biblioteca de Apple Music."
+        ],
+        "settings": [
+          {
+            "tab": "Destino",
+            "setting": "Destino de los archivos convertidos",
+            "value": "Apple Music",
+            "note": "Así Surco mira si el tema ya está en tu biblioteca."
+          },
+          {
+            "tab": "Formato",
+            "setting": "Formato por defecto",
+            "value": "AIFF",
+            "note": "Apple Music no admite FLAC. AIFF suena igual que el WAV y además guarda la carátula."
+          },
+          {
+            "tab": "Formato",
+            "setting": "Mantener MP3 y M4A como están",
+            "optional": true,
+            "note": "Si la copia nueva es un MP3 mejor (de 320 en vez de 128), se queda como MP3 en vez de pasar a AIFF."
+          },
+          {
+            "tab": "Destino",
+            "section": "Colección de rekordbox",
+            "setting": "Actualizar la colección de rekordbox al convertir",
+            "optional": true,
+            "note": "Si usas rekordbox. La pista sigue en sus playlists y con sus cue points."
+          },
+          {
+            "tab": "Destino",
+            "section": "Biblioteca de Engine DJ",
+            "setting": "Actualizar la biblioteca de Engine DJ al convertir",
+            "optional": true,
+            "note": "Si usas Engine DJ. La pista sigue en sus playlists y con sus cue points."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Cierra rekordbox y Engine DJ",
+            "text": "Solo si los usas. Con ellos abiertos Surco no puede tocar sus bibliotecas, y se ofrece a cerrarlos."
+          },
+          {
+            "title": "Arrastra las copias nuevas a Surco",
+            "text": "Las de mejor calidad, por ejemplo el AIFF de un tema que tienes en MP3."
+          },
+          {
+            "title": "Comprueba que el botón dice «Sustituir»",
+            "text": "Así sabes que Surco ha encontrado el tema en tu Apple Music. Si la copia nueva es peor que la que tienes, te avisa."
+          },
+          {
+            "title": "Pulsa «Sustituir»",
+            "text": "Al acabar, Surco te ofrece mandar el archivo viejo a la papelera."
+          }
+        ],
+        "points": [
+          "En rekordbox y Engine DJ la pista sigue en sus playlists y con sus cue points.",
+          "En Apple Music, las listas inteligentes la recogen solas. Si estaba en una lista normal, tendrás que volver a añadirla.",
+          "En rekordbox, revisa la rejilla la primera vez que cargues la pista. Al ver un archivo distinto puede recalcularla."
+        ],
+        "related": [
+          {
+            "label": "Llévala a tus platos",
+            "anchor": "exportar"
+          },
+          {
+            "label": "Convierte la pista",
+            "anchor": "convertir"
+          }
+        ]
       }
     ]
   }
