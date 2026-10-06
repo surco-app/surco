@@ -857,6 +857,7 @@
           "Surco te avisa si una pista ya está en tu biblioteca, mirando la que corresponda a tu destino. Es un indicio muy afinado, no una garantía.",
           "Si editas una pista después, Surco actualiza su copia de Apple Music en vez de duplicarla, y si ya había una copia antigua te ofrece eliminarla.",
           "Puedes sustituir una pista que ya tengas: carga otra copia de un tema que esté en tu biblioteca, en cualquier formato y también en el mismo (de un MP3 a un AIFF, o de un MP3 de 128 a uno de 320), y el botón pasa a decir «Sustituir». La entrada de Apple Music y la ficha de rekordbox pasan a apuntar al archivo nuevo, con sus playlists y sus cue points. rekordbox puede recalcular el beatgrid al ver un archivo distinto, así que revisa la rejilla. Al terminar, Surco te ofrece mandar el archivo viejo a la papelera.",
+          "Con «Actualizar la colección de rekordbox al convertir» activado (Ajustes › Destino), la ficha de rekordbox recibe también el título, el artista, el álbum, el género, el sello, el remixer, el comentario, el año y los números de pista y disco, tanto al convertir como al actualizar solo las etiquetas. El BPM, la tonalidad, los cue points y la carátula se quedan como los tenga rekordbox, y un campo que dejas vacío en Surco no borra el suyo. rekordbox tiene que estar cerrado, y Surco se ofrece a cerrarlo.",
           "A Apple Music no llegan la tonalidad, el sello, el catálogo ni el remixer (solo viven en el tag del archivo) y los FLAC no se envían nunca, porque Music no puede con ellos."
         ],
         "shot": "exportar-es.webp",
@@ -1391,6 +1392,73 @@
           {
             "label": "Convierte la pista",
             "anchor": "convertir"
+          }
+        ]
+      },
+      {
+        "id": "apple-music-rekordbox",
+        "title": "Tienes la música en Apple Music y organizas en rekordbox",
+        "body": [
+          "Pasas tu música a Apple Music y desde rekordbox la importas para hacer tus playlists. Quieres que, cuando mejoras una pista o corriges sus datos en Surco, rekordbox se entere solo, sin volver a importar y sin perder playlists ni cue points.",
+          "Solo funciona en Mac, porque pasa por Apple Music."
+        ],
+        "settings": [
+          {
+            "tab": "Destino",
+            "setting": "Destino de los archivos convertidos",
+            "value": "Apple Music",
+            "note": "Las pistas van a tu biblioteca de Apple Music, igual que haces ahora."
+          },
+          {
+            "tab": "Formato",
+            "setting": "Formato por defecto",
+            "value": "AIFF",
+            "note": "Apple Music no admite FLAC. AIFF suena igual que el WAV y además guarda la carátula."
+          },
+          {
+            "tab": "Destino",
+            "section": "Colección de rekordbox",
+            "setting": "Actualizar la colección de rekordbox al convertir",
+            "note": "Es lo que mantiene rekordbox al día. Sin esto, rekordbox seguiría con los datos y el archivo de antes."
+          },
+          {
+            "tab": "Formato",
+            "setting": "Mantener MP3 y M4A como están",
+            "optional": true,
+            "note": "Si una pista es MP3, se queda como MP3 en vez de pasar a AIFF."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Cierra rekordbox",
+            "text": "Surco no escribe en tu colección con rekordbox abierto. Si se te olvida, se ofrece a cerrarlo."
+          },
+          {
+            "title": "Arrastra las pistas a Surco",
+            "text": "Las que quieres mejorar o corregir. Si una ya está en tu Apple Music, Surco la reconoce."
+          },
+          {
+            "title": "Corrige lo que haga falta",
+            "text": "Título, artista, género, lo que sea. A mano o con el auto-emparejado."
+          },
+          {
+            "title": "Pulsa el botón de convertir",
+            "text": "Es el botón de abajo del editor. Apple Music y rekordbox se ponen al día a la vez."
+          }
+        ],
+        "points": [
+          "En rekordbox la pista sigue en sus playlists, con sus cue points, su BPM y su tonalidad.",
+          "rekordbox recibe el título, el artista, el álbum, el género, el sello, el remixer, el comentario, el año y los números de pista y disco. La carátula no cambia en rekordbox.",
+          "Un campo que dejas vacío en Surco no borra lo que tengas en rekordbox."
+        ],
+        "related": [
+          {
+            "label": "Llévala a tus platos",
+            "anchor": "exportar"
+          },
+          {
+            "label": "Edita los metadatos",
+            "anchor": "editor"
           }
         ]
       }
