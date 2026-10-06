@@ -79,6 +79,7 @@ import { createMenuT, resolveMenuLocale } from './i18n'
 import { isSameFile, removeRenamedOriginal } from './inplace'
 import { flushLibraryRepoints } from './libraryRepointFlush'
 import { nmlTagPatches } from './libraryTagPatches'
+import { syncLibraryTags } from './libraryTagSync'
 import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { isInternalNavigation, isWebUrl } from './navigation'
@@ -857,11 +858,6 @@ function registerIpc(): void {
     engineSessionBackup.reset()
   })
 
-  // A convert-all run ends (however it ended — finished, cancelled, or failed, the
-  // renderer calls this from its finally block): flush whatever Traktor cue patches the
-  // batch recorded into collection.nml in one write. A failure here must never surface as
-  // a conversion failure — the audio is already correct on disk by this point — so every
-  // branch below only logs and returns, never throws back at the renderer.
   // The collaborators every library flush shares, whatever it is flushing: the conversion
   // run's repoints and the names a review fixed both close the app, warn and report the
   // same way. What differs (the list and the writer) is passed by each caller.
@@ -975,41 +971,53 @@ function registerIpc(): void {
   // an Update's do: same toggles, same prompt to close the app, same dialogs and Activity
   // rows as the end of a conversion run. Each library only hears about the fields that
   // reached the file, which the renderer already narrowed.
+  // Session backups stay the ones a conversion run uses and are NOT reset here: both share
+  // the .surco-session suffix, so a reset would overwrite a running conversion's pre-run
+  // copy. The guarantee for this flow is the fresh .surco-backup that updateRekordboxTags
+  // and updateEngineTags take right before each write.
   ipcMain.handle('library:syncTags', async (e, updates: LibraryTagUpdate[]) => {
     if (updates.length === 0) return
     const win = BrowserWindow.fromWebContents(e.sender)
-    await flushTraktorSync({
-      ...traktorFlushDeps(win),
-      endNmlBatch: () => nmlTagPatches(updates, toNmlLocation),
-    })
     const withRealPath = updates.map((u) => ({ ...u, realPath: (p: string) => realpathSync(p) }))
-    const rekordboxResult = await flushLibraryRepoints(
-      {
-        ...rekordboxFlushDeps(win, e.sender),
-        endBatch: () => updates,
-        labelOf: (u) => u.path,
-        repointTracks: (collectionPath, list) =>
-          updateRekordboxTags(collectionPath, list, {
-            realPath: (p: string) => realpathSync(p),
-            sessionBackup: (path) => rekordboxSessionBackup.ensure(path),
-          }),
+    await syncLibraryTags({
+      traktor: () =>
+        flushTraktorSync({
+          ...traktorFlushDeps(win),
+          endNmlBatch: () => nmlTagPatches(updates, toNmlLocation),
+        }),
+      rekordbox: async () => {
+        const result = await flushLibraryRepoints(
+          {
+            ...rekordboxFlushDeps(win, e.sender),
+            endBatch: () => updates,
+            labelOf: (u) => u.path,
+            repointTracks: (collectionPath, list) =>
+              updateRekordboxTags(collectionPath, list, {
+                realPath: (p: string) => realpathSync(p),
+                sessionBackup: (path) => rekordboxSessionBackup.ensure(path),
+              }),
+          },
+          { ...REKORDBOX_KEYS, written: 'activity.rekordboxTagsWritten' },
+        )
+        logLibraryFlush('rekordbox tags', result)
       },
-      { ...REKORDBOX_KEYS, written: 'activity.rekordboxTagsWritten' },
-    )
-    logLibraryFlush('rekordbox tags', rekordboxResult)
-    const engineResult = await flushLibraryRepoints(
-      {
-        ...engineFlushDeps(win, e.sender),
-        endBatch: () => withRealPath,
-        labelOf: (u) => u.path,
-        repointTracks: (libraryDir, list) =>
-          updateEngineTags(libraryDir, list, {
-            sessionBackup: (path) => engineSessionBackup.ensure(path),
-          }),
+      engine: async () => {
+        const result = await flushLibraryRepoints(
+          {
+            ...engineFlushDeps(win, e.sender),
+            endBatch: () => withRealPath,
+            labelOf: (u) => u.path,
+            repointTracks: (libraryDir, list) =>
+              updateEngineTags(libraryDir, list, {
+                sessionBackup: (path) => engineSessionBackup.ensure(path),
+              }),
+          },
+          { ...ENGINE_KEYS, written: 'activity.engineTagsWritten' },
+        )
+        logLibraryFlush('Engine DJ tags', result)
       },
-      { ...ENGINE_KEYS, written: 'activity.engineTagsWritten' },
-    )
-    logLibraryFlush('Engine DJ tags', engineResult)
+      warn: (library, error) => log.warn(`library:syncTags ${library} failed`, error),
+    })
   })
 
   // Awaited by the renderer before it starts an in-place export: the surco:// stream
