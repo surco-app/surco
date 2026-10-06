@@ -2,6 +2,7 @@
 // normaliza comillas, entidades y espaciado del documento entero, y convertiría un
 // cambio de tres atributos en un diff de toda la colección del usuario. Aquí cada
 // ENTRY se localiza por posición y sólo se sustituyen los tramos que cambian.
+import type { TagChange } from '../shared/types'
 import { readTraktorMarkers, shiftCueStart, type TraktorMarker } from './traktor4'
 
 export interface NmlEntry {
@@ -73,6 +74,10 @@ export interface NmlPatch {
   // a real value that clears them.
   ranking?: number
   newFile?: string
+  // Names fixed in the file's tags. Each applies only while the entry still says what the
+  // review read, so a name the DJ edited in Traktor is left alone. Traktor keeps no album
+  // artist.
+  tags?: Partial<Record<'title' | 'artist' | 'album' | 'genre', TagChange>>
   // Asks for this track's cached thumbnails to be rewritten after the collection is
   // saved. It does NOT change the ENTRY: the COVERARTID stays exactly as Traktor wrote
   // it, which is the whole point (see refreshedCoverIds).
@@ -398,6 +403,29 @@ function patchEntry(block: string, patch: NmlPatch): string {
   }
   if (patch.ranking !== undefined) {
     out = replaceRanking(out, patch.ranking)
+  }
+  if (patch.tags) out = replaceTags(out, patch.tags)
+  return out
+}
+
+// The whitespace before the name is what keeps TITLE from matching inside another
+// attribute, and [^>]* keeps each spot inside its own opening tag (the album's TITLE is
+// not the entry's). An attribute the entry does not carry stays absent.
+const TAG_SPOTS: Record<'title' | 'artist' | 'album' | 'genre', RegExp> = {
+  title: /(<ENTRY\b[^>]*\sTITLE=")([^"]*)(")/,
+  artist: /(<ENTRY\b[^>]*\sARTIST=")([^"]*)(")/,
+  album: /(<ALBUM\b[^>]*\sTITLE=")([^"]*)(")/,
+  genre: /(<INFO\b[^>]*\sGENRE=")([^"]*)(")/,
+}
+
+function replaceTags(block: string, tags: NonNullable<NmlPatch['tags']>): string {
+  let out = block
+  for (const [field, change] of Object.entries(tags) as [keyof typeof TAG_SPOTS, TagChange][]) {
+    out = out.replace(TAG_SPOTS[field], (whole, open, value, close) =>
+      unescapeAttr(value).normalize('NFC') === change.from.normalize('NFC')
+        ? `${open}${escapeAttr(change.to)}${close}`
+        : whole,
+    )
   }
   return out
 }

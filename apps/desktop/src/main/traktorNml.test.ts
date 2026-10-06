@@ -9,6 +9,7 @@ import {
   findEntries,
   matchedPatchCount,
   refreshedCoverIds,
+  type NmlPatch,
 } from './traktorNml'
 
 const NML = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -952,5 +953,80 @@ describe('matchedPatchCount', () => {
     ])
 
     expect(count).toBe(1)
+  })
+})
+
+describe('applyPatches with tags', () => {
+  const entry = (artist: string) =>
+    `<ENTRY TITLE="Bleeding Love" ARTIST="${artist}"><LOCATION DIR="/:m/:" FILE="c.mp3" VOLUME="Mac"></LOCATION><ALBUM TITLE="Need You"></ALBUM><INFO GENRE="electronic"></INFO></ENTRY>`
+  const nml = (artist: string) => `<NML><COLLECTION ENTRIES="1">${entry(artist)}</COLLECTION></NML>`
+  const patch = (tags: NmlPatch['tags']): NmlPatch => ({
+    volume: 'Mac',
+    dir: '/:m/:',
+    file: 'c.mp3',
+    tags,
+  })
+
+  it('rewrites the artist, album and genre of the entry', () => {
+    const out = applyPatches(nml('Dj Lara'), [
+      patch({
+        artist: { from: 'Dj Lara', to: 'DJ Lara' },
+        album: { from: 'Need You', to: 'NEED YOU' },
+        genre: { from: 'electronic', to: 'Electronic' },
+      }),
+    ])
+    expect(out).toContain('ARTIST="DJ Lara"')
+    expect(out).toContain('<ALBUM TITLE="NEED YOU">')
+    expect(out).toContain('GENRE="Electronic"')
+  })
+
+  it('escapes what it writes', () => {
+    const out = applyPatches(nml('Dj Lara'), [
+      patch({ artist: { from: 'Dj Lara', to: 'A & "B"' } }),
+    ])
+    expect(out).toContain('ARTIST="A &amp; &quot;B&quot;"')
+  })
+
+  // Traktor may already spell it otherwise (the DJ edited it there); that is theirs.
+  it('leaves a field Traktor already spells otherwise', () => {
+    const out = applyPatches(nml('DJ LARA'), [
+      patch({ artist: { from: 'Dj Lara', to: 'DJ Lara' } }),
+    ])
+    expect(out).toContain('ARTIST="DJ LARA"')
+  })
+
+  it('reads the current value unescaped, so an ampersand in the name still matches', () => {
+    const out = applyPatches(nml('A &amp; B'), [
+      patch({ artist: { from: 'A & B', to: 'A and B' } }),
+    ])
+    expect(out).toContain('ARTIST="A and B"')
+  })
+
+  it('does not mistake the album title for the entry title, nor the reverse', () => {
+    const titleOnly = applyPatches(nml('Dj Lara'), [
+      patch({ title: { from: 'Bleeding Love', to: 'Bleeding Love (Live)' } }),
+    ])
+    expect(titleOnly).toContain('<ENTRY TITLE="Bleeding Love (Live)"')
+    expect(titleOnly).toContain('<ALBUM TITLE="Need You">')
+
+    const albumOnly = applyPatches(nml('Dj Lara'), [
+      patch({ album: { from: 'Need You', to: 'Need You Now' } }),
+    ])
+    expect(albumOnly).toContain('<ENTRY TITLE="Bleeding Love"')
+    expect(albumOnly).toContain('<ALBUM TITLE="Need You Now">')
+  })
+
+  it('leaves an absent attribute absent instead of inserting it', () => {
+    const bare = `<NML><COLLECTION ENTRIES="1"><ENTRY TITLE="X"><LOCATION DIR="/:m/:" FILE="c.mp3" VOLUME="Mac"></LOCATION></ENTRY></COLLECTION></NML>`
+    const out = applyPatches(bare, [
+      patch({ album: { from: '', to: 'New' }, genre: { from: '', to: 'House' } }),
+    ])
+    expect(out).toBe(bare)
+  })
+
+  it('changes nothing but the attribute when the patch carries only tags', () => {
+    const rich = `<NML><COLLECTION ENTRIES="1"><ENTRY TITLE="Bleeding Love" ARTIST="Dj Lara"><LOCATION DIR="/:m/:" FILE="c.mp3" VOLUME="Mac"></LOCATION><ALBUM TITLE="Need You"></ALBUM><INFO GENRE="electronic" RANKING="102"></INFO><CUE_V2 NAME="Drop" START="79672.640000" TYPE="0"></CUE_V2></ENTRY></COLLECTION></NML>`
+    const out = applyPatches(rich, [patch({ artist: { from: 'Dj Lara', to: 'DJ Lara' } })])
+    expect(out).toBe(rich.replace('ARTIST="Dj Lara"', 'ARTIST="DJ Lara"'))
   })
 })
