@@ -55,12 +55,14 @@ function assign(tag: Tag, field: MusicReviewField, to: string): void {
 
 // The combined view answers with the first tag that has a value, so a WAV whose ID3 chunk
 // says one thing and whose INFO list says another would pass on the ID3 alone and then
-// have both overwritten. Every tag actually on disk has to agree with what the review saw.
+// have both overwritten. Every tag actually on disk has to agree with what the review saw,
+// except ID3v1: a Latin-1 mirror cut to 30 characters, it can never match a long title or an
+// accent, and comparing it would skip most MP3s. It is still rewritten when it exists.
 function onDiskTags(f: TagFile): Tag[] {
   const tags: Tag[] = []
   for (let bit = 0; bit < 31; bit++) {
     const type = 1 << bit
-    if (!(f.tagTypesOnDisk & type)) continue
+    if (!(f.tagTypesOnDisk & type) || type === TagTypes.Id3v1) continue
     const tag = f.getTag(type, false)
     if (tag) tags.push(tag)
   }

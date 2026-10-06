@@ -222,6 +222,49 @@ describe('rewriteTagFields', () => {
     }
   }, 60000)
 
+  // ID3v1 is a lossy Latin-1 mirror cut to 30 characters; judging the file by it would skip
+  // most MP3s that TagLib itself tagged. The ID3v2 value is the one Music read.
+  it.each([
+    [
+      'composed in the file, decomposed in Music',
+      'Christian Mill\u00e1n',
+      'Christian Milla\u0301n',
+    ],
+    [
+      'decomposed in the file, composed in Music',
+      'Christian Milla\u0301n',
+      'Christian Mill\u00e1n',
+    ],
+  ])(
+    'writes an MP3 with an ID3v1 mirror when the accent is %s',
+    async (_name, inFile, inMusic) => {
+      const file = make('mp3', ['-c:a', 'libmp3lame'], inFile)
+      expect(diskTypes(file) & TagTypes.Id3v1).not.toBe(0)
+      const { outcomes } = await rewriteTagFields(file, [
+        { field: 'artist', from: inMusic, to: 'Cristian Millan' },
+      ])
+      expect(outcomes).toEqual(['written'])
+      expect(diskTypes(file) & TagTypes.Id3v1).not.toBe(0)
+    },
+    60000,
+  )
+
+  it('writes an MP3 whose long title ID3v1 only holds truncated', async () => {
+    const longTitle = 'A Very Long Title That Runs Well Past Thirty Characters'
+    const file = make('mp3', ['-c:a', 'libmp3lame'], 'Dj Lara')
+    const f = TagFile.createFromPath(file)
+    try {
+      f.tag.title = longTitle
+      f.save()
+    } finally {
+      f.dispose()
+    }
+    const { outcomes } = await rewriteTagFields(file, [
+      { field: 'title', from: longTitle, to: 'Short' },
+    ])
+    expect(outcomes).toEqual(['written'])
+  }, 60000)
+
   // A tag the file never had must not appear: TagLib's combined setter creates every type
   // the format could carry. An ID3v1 ghost on an MP3 was the v0.99.6 bug. No TagLib in the
   // fixture, so what is on disk is exactly what ffmpeg wrote.
