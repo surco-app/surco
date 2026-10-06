@@ -1461,5 +1461,82 @@
     "backup-failed": "Die Engine-DJ-Bibliothek wurde nicht aktualisiert: Surco konnte vorher keine Sicherung anlegen.",
     "ambiguous_one": "Engine DJ zeigt für {{name}} weiter auf die alte Datei: Mehr als ein Eintrag der Bibliothek passt dazu.",
     "ambiguous_other": "Engine DJ zeigt für {{count}} Tracks weiter auf die alten Dateien, darunter {{name}}: Zu jedem passt mehr als ein Eintrag der Bibliothek."
+  },
+  "musicReview": {
+    "title": "Metadaten prüfen",
+    "close": "Schließen",
+    "filter": {
+      "all": "Alle",
+      "spelling": "Schreibweisen",
+      "duplicates": "Duplikate"
+    },
+    "field": {
+      "artist": "Künstler",
+      "albumArtist": "Albumkünstler",
+      "album": "Album",
+      "genre": "Genre",
+      "title": "Titel"
+    },
+    "kind": {
+      "invisible": "zusätzliche Leerzeichen oder unsichtbare Zeichen",
+      "case": "Groß-/Kleinschreibung oder Akzente",
+      "punctuation": "Leerzeichen oder Satzzeichen",
+      "typo": "möglicher Tippfehler",
+      "duplicate": "{{count}} Kopien",
+      "version": "andere Version"
+    },
+    "safe": "Sicher",
+    "review": "Prüfen",
+    "tie": "Gleichstand. Wähle, welche bleibt.",
+    "unify": "Vereinheitlichen",
+    "remove_one": "{{count}} entfernen",
+    "remove_other": "{{count}} entfernen",
+    "staged": "Rückgängig",
+    "ignore": "Ignorieren",
+    "notSame": "Nicht derselbe",
+    "different": "Sind verschieden",
+    "keeps": "Bleibt",
+    "tracks_one": "{{count}} Titel",
+    "tracks_other": "{{count}} Titel",
+    "tray": {
+      "empty": "Wähle in jeder Gruppe und wende am Ende an",
+      "count_one": "{{count}} Änderung",
+      "count_other": "{{count}} Änderungen",
+      "apply": "Prüfen und anwenden"
+    },
+    "confirm": {
+      "title_one": "Du änderst {{count}} Titel",
+      "title_other": "Du änderst {{count}} Titel",
+      "removed": "Aus Apple Music entfernte Kopien",
+      "playlists": "Die verbleibende Kopie wird ans Ende der Playlists der anderen gesetzt",
+      "trash": "Die Dateien der entfernten Kopien kommen in den Papierkorb",
+      "untouched": "BPM, Tonart, Cues und Bewertung bleiben unverändert",
+      "libraries": "rekordbox, Engine DJ und Traktor ziehen nach wie bei einem Aktualisieren, wenn ihr Abgleich aktiv ist",
+      "backup": "Sicherung jeder Datei",
+      "cancel": "Abbrechen",
+      "apply": "Anwenden"
+    },
+    "applying": "Wende {{done}} von {{total}} an",
+    "stop": "Stoppen",
+    "done": {
+      "title": "Bibliothek geprüft",
+      "updated_one": "{{count}} Titel aktualisiert",
+      "updated_other": "{{count}} Titel aktualisiert",
+      "musicOnly_one": "{{count}} nur in Apple Music, die Datei sagt etwas anderes",
+      "musicOnly_other": "{{count}} nur in Apple Music, die Dateien sagen etwas anderes",
+      "failed_one": "{{count}} konnte nicht geändert werden",
+      "failed_other": "{{count}} konnten nicht geändert werden",
+      "left_one": "{{count}} Gruppe noch zu prüfen",
+      "left_other": "{{count}} Gruppen noch zu prüfen",
+      "libraryFailed": "rekordbox, Engine DJ oder Traktor wurden nicht aktualisiert. Sieh in Aktivität nach.",
+      "applyError": "In Apple Music konnte nichts angewendet werden.",
+      "undoFailed_one": "{{count}} Änderung konnte nicht rückgängig gemacht werden",
+      "undoFailed_other": "{{count}} Änderungen konnten nicht rückgängig gemacht werden",
+      "undo": "Rückgängig",
+      "continue": "Weiter prüfen"
+    },
+    "empty": "Deine Apple-Music-Bibliothek ist leer.",
+    "clean": "Nichts zu prüfen.",
+    "error": "Die Apple-Music-Bibliothek konnte nicht gelesen werden."
   }
 }

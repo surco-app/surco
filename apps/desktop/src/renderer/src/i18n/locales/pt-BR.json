@@ -1461,5 +1461,82 @@
     "backup-failed": "A biblioteca do Engine DJ não foi atualizada: o Surco não conseguiu fazer um backup antes.",
     "ambiguous_one": "O Engine DJ continua apontando para o arquivo antigo de {{name}}: mais de uma entrada da biblioteca corresponde a ele.",
     "ambiguous_other": "O Engine DJ continua apontando para os arquivos antigos de {{count}} faixas, entre elas {{name}}: mais de uma entrada da biblioteca corresponde a cada uma."
+  },
+  "musicReview": {
+    "title": "Revisar metadados",
+    "close": "Fechar",
+    "filter": {
+      "all": "Tudo",
+      "spelling": "Grafias",
+      "duplicates": "Duplicados"
+    },
+    "field": {
+      "artist": "Artista",
+      "albumArtist": "Artista do álbum",
+      "album": "Álbum",
+      "genre": "Gênero",
+      "title": "Título"
+    },
+    "kind": {
+      "invisible": "espaços extras ou caracteres invisíveis",
+      "case": "maiúsculas ou acentos",
+      "punctuation": "espaços ou sinais",
+      "typo": "possível erro",
+      "duplicate": "{{count}} cópias",
+      "version": "outra versão"
+    },
+    "safe": "Seguro",
+    "review": "Revisar",
+    "tie": "Empate. Escolha qual fica.",
+    "unify": "Unificar",
+    "remove_one": "Remover {{count}}",
+    "remove_other": "Remover {{count}}",
+    "staged": "Desfazer",
+    "ignore": "Ignorar",
+    "notSame": "Não é o mesmo",
+    "different": "São diferentes",
+    "keeps": "Fica",
+    "tracks_one": "{{count}} faixa",
+    "tracks_other": "{{count}} faixas",
+    "tray": {
+      "empty": "Escolha em cada grupo e aplique no final",
+      "count_one": "{{count}} alteração",
+      "count_other": "{{count}} alterações",
+      "apply": "Revisar e aplicar"
+    },
+    "confirm": {
+      "title_one": "Você vai alterar {{count}} faixa",
+      "title_other": "Você vai alterar {{count}} faixas",
+      "removed": "Cópias removidas do Apple Music",
+      "playlists": "A cópia que fica entra no fim das playlists da outra",
+      "trash": "Os arquivos das cópias removidas vão para a Lixeira",
+      "untouched": "BPM, tom, cues e avaliação não são alterados",
+      "libraries": "rekordbox, Engine DJ e Traktor se atualizam como em um Atualizar, se a sincronização estiver ativa",
+      "backup": "Backup de cada arquivo",
+      "cancel": "Cancelar",
+      "apply": "Aplicar"
+    },
+    "applying": "Aplicando {{done}} de {{total}}",
+    "stop": "Parar",
+    "done": {
+      "title": "Biblioteca revisada",
+      "updated_one": "{{count}} faixa atualizada",
+      "updated_other": "{{count}} faixas atualizadas",
+      "musicOnly_one": "{{count}} só no Apple Music, o arquivo diz outra coisa",
+      "musicOnly_other": "{{count}} só no Apple Music, os arquivos dizem outra coisa",
+      "failed_one": "{{count}} não pôde ser alterada",
+      "failed_other": "{{count}} não puderam ser alteradas",
+      "left_one": "Falta {{count}} grupo para revisar",
+      "left_other": "Faltam {{count}} grupos para revisar",
+      "libraryFailed": "rekordbox, Engine DJ ou Traktor não foram atualizados. Veja Atividade.",
+      "applyError": "Não foi possível aplicar no Apple Music.",
+      "undoFailed_one": "{{count}} alteração não pôde ser desfeita",
+      "undoFailed_other": "{{count}} alterações não puderam ser desfeitas",
+      "undo": "Desfazer",
+      "continue": "Continuar revisando"
+    },
+    "empty": "Sua biblioteca do Apple Music está vazia.",
+    "clean": "Nada para revisar.",
+    "error": "Não foi possível ler a biblioteca do Apple Music."
   }
 }

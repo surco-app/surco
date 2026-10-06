@@ -1461,5 +1461,82 @@
     "backup-failed": "Engine DJ's library wasn't updated: Surco couldn't back it up first.",
     "ambiguous_one": "Engine DJ still points at the old file for {{name}}: more than one entry in its library matches it.",
     "ambiguous_other": "Engine DJ still points at the old files for {{count}} tracks, among them {{name}}: more than one entry in its library matches each."
+  },
+  "musicReview": {
+    "title": "Review metadata",
+    "close": "Close",
+    "filter": {
+      "all": "All",
+      "spelling": "Spellings",
+      "duplicates": "Duplicates"
+    },
+    "field": {
+      "artist": "Artist",
+      "albumArtist": "Album artist",
+      "album": "Album",
+      "genre": "Genre",
+      "title": "Title"
+    },
+    "kind": {
+      "invisible": "extra spaces or invisible characters",
+      "case": "capitals or accents",
+      "punctuation": "spaces or punctuation",
+      "typo": "possible typo",
+      "duplicate": "{{count}} copies",
+      "version": "another version"
+    },
+    "safe": "Safe",
+    "review": "Review",
+    "tie": "Tied. Pick the one to keep.",
+    "unify": "Unify",
+    "remove_one": "Remove {{count}}",
+    "remove_other": "Remove {{count}}",
+    "staged": "Undo",
+    "ignore": "Ignore",
+    "notSame": "Not the same",
+    "different": "They differ",
+    "keeps": "Kept",
+    "tracks_one": "{{count}} track",
+    "tracks_other": "{{count}} tracks",
+    "tray": {
+      "empty": "Choose in each group and apply at the end",
+      "count_one": "{{count}} change",
+      "count_other": "{{count}} changes",
+      "apply": "Review and apply"
+    },
+    "confirm": {
+      "title_one": "You're about to change {{count}} track",
+      "title_other": "You're about to change {{count}} tracks",
+      "removed": "Copies removed from Apple Music",
+      "playlists": "The kept copy joins the end of the other copy's playlists",
+      "trash": "Removed copies' files go to the Trash",
+      "untouched": "BPM, key, cues and rating stay as they are",
+      "libraries": "rekordbox, Engine DJ and Traktor follow like on an Update, when their sync is on",
+      "backup": "Backup of every file",
+      "cancel": "Cancel",
+      "apply": "Apply"
+    },
+    "applying": "Applying {{done}} of {{total}}",
+    "stop": "Stop",
+    "done": {
+      "title": "Library reviewed",
+      "updated_one": "{{count}} track updated",
+      "updated_other": "{{count}} tracks updated",
+      "musicOnly_one": "{{count}} in Apple Music only, its file says something else",
+      "musicOnly_other": "{{count}} in Apple Music only, their files say something else",
+      "failed_one": "{{count}} could not be changed",
+      "failed_other": "{{count}} could not be changed",
+      "left_one": "{{count}} group left to review",
+      "left_other": "{{count}} groups left to review",
+      "libraryFailed": "rekordbox, Engine DJ or Traktor weren't updated. Check Activity.",
+      "applyError": "Couldn't apply in Apple Music.",
+      "undoFailed_one": "{{count}} change could not be undone",
+      "undoFailed_other": "{{count}} changes could not be undone",
+      "undo": "Undo",
+      "continue": "Keep reviewing"
+    },
+    "empty": "Your Apple Music library is empty.",
+    "clean": "Nothing to review.",
+    "error": "Couldn't read your Apple Music library."
   }
 }
