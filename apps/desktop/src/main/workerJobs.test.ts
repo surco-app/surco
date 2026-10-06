@@ -12,6 +12,7 @@ vi.mock('./musicalKey', () => ({ detectKey: vi.fn(() => ({ key: 'Am', confidence
 vi.mock('./clickDetect', () => ({ detectClicks: vi.fn(() => [1.5, 3.2]) }))
 vi.mock('./waveform', () => ({ computePeaks: vi.fn(() => [0.1, 0.9]) }))
 vi.mock('./tags', () => ({ writeTags: vi.fn(), copyCueFrames: vi.fn() }))
+vi.mock('./tagFieldSet', () => ({ setTagFields: vi.fn(() => ['written']) }))
 vi.mock('./channelScan', () => ({
   runChannelScan: vi.fn(async () => ({ clipped: [false, true], channels: [] })),
 }))
@@ -19,6 +20,7 @@ vi.mock('./channelScan', () => ({
 import { runChannelScan } from './channelScan'
 import { detectClicks } from './clickDetect'
 import { detectKey } from './musicalKey'
+import { setTagFields } from './tagFieldSet'
 import { copyCueFrames, writeTags } from './tags'
 import { detectBpm } from './tempo'
 import { computePeaks } from './waveform'
@@ -50,6 +52,13 @@ describe('runWorkerJob', () => {
     const out = runWorkerJob({ type: 'waveformPeaks', pcm, buckets: 2048 })
     expect(computePeaks).toHaveBeenCalledWith(pcm, 2048)
     expect(out).toEqual([0.1, 0.9])
+  })
+
+  it('routes field writes to setTagFields with the file and the changes', () => {
+    const changes = [{ field: 'artist' as const, from: 'Dj Lara', to: 'DJ Lara' }]
+    const out = runWorkerJob({ type: 'setTagFields', file: '/out/a.mp3', changes })
+    expect(setTagFields).toHaveBeenCalledWith('/out/a.mp3', changes)
+    expect(out).toEqual(['written'])
   })
 
   it('routes tag writes with the full file/meta/cover arguments', () => {

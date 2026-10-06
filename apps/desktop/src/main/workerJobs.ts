@@ -4,6 +4,7 @@ import { detectClicks } from './clickDetect'
 import { prependFlacId3 } from './flacFinderCover'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
+import { type FieldWrite, setTagFields, type TagFieldChange } from './tagFieldSet'
 import {
   type CueShift,
   copyCueFrames,
@@ -73,11 +74,13 @@ export type WorkerJob =
   // completion holding a limiter slot. A job rather than a signal because an AbortSignal
   // does not survive the structured clone into the worker.
   | { type: 'killChannelScan'; input: string }
+  | { type: 'setTagFields'; file: string; changes: TagFieldChange[] }
 
 export type WorkerJobResult =
   | BpmResult
   | KeyResult
   | number[]
+  | FieldWrite[]
   | { peaks: number[]; rms: number[] }
   | FullScan
   | null
@@ -126,6 +129,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
     case 'copyCuesFromFlac':
       copyCuesFromFlac(job.source, job.dest, job.shift)
       return null
+    case 'setTagFields':
+      return setTagFields(job.file, job.changes)
     case 'prependFlacId3':
       prependFlacId3(job.file, job.meta, job.coverPath)
       return null
