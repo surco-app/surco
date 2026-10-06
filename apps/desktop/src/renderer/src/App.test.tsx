@@ -3544,6 +3544,21 @@ describe('App Music review', () => {
     expect(processTrack).not.toHaveBeenCalled()
   })
 
+  it('holds the review Apply while a conversion is running', async () => {
+    vi.resetModules()
+    const processTrack = vi.fn(() => new Promise(() => {}))
+    reviewApi({ processTrack, ...spellingFixture() })
+    await renderApp()
+    const [row] = await addOneTrack()
+    fireEvent.click(row)
+    await screen.findByTestId('editor-trim', undefined, { timeout: 3000 })
+    fireEvent.keyDown(window, { key: 'Enter', metaKey: true })
+    await waitFor(() => expect(processTrack).toHaveBeenCalled())
+    runMenu('music-review')
+    fireEvent.click(await screen.findByTestId('music-review-stage'))
+    expect(screen.getByTestId('music-review-tray-apply')).toBeDisabled()
+  })
+
   it('switches the filter when a Music command runs while the review is open', async () => {
     vi.resetModules()
     reviewApi()

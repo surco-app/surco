@@ -9,15 +9,17 @@ export function MusicReviewColumn({
   saveIgnored,
   onFilesChanged,
   onClose,
+  busy,
 }: {
   filter: ReviewFilter
   ignored: string[]
   saveIgnored: (keys: string[]) => void
   onFilesChanged: (updates: LibraryTagUpdate[]) => void
   onClose: () => void
+  busy: boolean
 }) {
   const review = useMusicReview({ initialFilter: filter, ignored, saveIgnored, onFilesChanged })
   const { setFilter } = review
   useEffect(() => setFilter(filter), [filter, setFilter])
-  return <MusicReview review={review} onClose={onClose} />
+  return <MusicReview review={review} onClose={onClose} busy={busy} />
 }

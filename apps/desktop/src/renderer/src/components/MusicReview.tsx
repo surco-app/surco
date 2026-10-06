@@ -213,7 +213,15 @@ function Sheet({
   )
 }
 
-function Confirm({ review, onCancel }: { review: Review; onCancel: () => void }) {
+function Confirm({
+  review,
+  busy,
+  onCancel,
+}: {
+  review: Review
+  busy: boolean
+  onCancel: () => void
+}) {
   const { t } = useTranslation()
   const { tracks, byField, duplicates } = review.summary
   const applyRef = useRef<HTMLButtonElement>(null)
@@ -268,6 +276,7 @@ function Confirm({ review, onCancel }: { review: Review; onCancel: () => void })
           data-testid="music-review-confirm-apply"
           ref={applyRef}
           className={PRIMARY}
+          disabled={busy}
           onClick={() => {
             onCancel()
             void review.apply()
@@ -280,7 +289,15 @@ function Confirm({ review, onCancel }: { review: Review; onCancel: () => void })
   )
 }
 
-function Done({ review, onContinue }: { review: Review; onContinue: () => void }) {
+function Done({
+  review,
+  busy,
+  onContinue,
+}: {
+  review: Review
+  busy: boolean
+  onContinue: () => void
+}) {
   const { t } = useTranslation()
   const continueRef = useRef<HTMLButtonElement>(null)
   const run = review.lastRun
@@ -341,6 +358,7 @@ function Done({ review, onContinue }: { review: Review; onContinue: () => void }
           type="button"
           data-testid="music-review-undo"
           className={GHOST}
+          disabled={busy}
           onClick={() => void review.undo()}
         >
           {t('musicReview.done.undo')}
@@ -361,7 +379,17 @@ function Done({ review, onContinue }: { review: Review; onContinue: () => void }
 
 const FILTERS: ReviewFilter[] = ['all', 'spelling', 'duplicates']
 
-export function MusicReview({ review, onClose }: { review: Review; onClose: () => void }) {
+// `busy` is a conversion running elsewhere in the app: it writes the same files and the
+// same library databases, so nothing here may start a write until it ends.
+export function MusicReview({
+  review,
+  onClose,
+  busy = false,
+}: {
+  review: Review
+  onClose: () => void
+  busy?: boolean
+}) {
   const { t } = useTranslation()
   const applying = review.status === 'applying'
   const [confirming, setConfirming] = useState(false)
@@ -471,7 +499,7 @@ export function MusicReview({ review, onClose }: { review: Review; onClose: () =
               type="button"
               data-testid="music-review-tray-apply"
               className={`${PRIMARY} ml-auto shrink-0`}
-              disabled={review.staged.size === 0}
+              disabled={busy || review.staged.size === 0}
               onClick={() => setConfirming(true)}
             >
               {t('musicReview.tray.apply')}
@@ -479,11 +507,11 @@ export function MusicReview({ review, onClose }: { review: Review; onClose: () =
           </>
         )}
       </div>
-      {confirming && <Confirm review={review} onCancel={() => setConfirming(false)} />}
+      {confirming && <Confirm review={review} busy={busy} onCancel={() => setConfirming(false)} />}
       {(review.status === 'done' || review.status === 'ready') &&
         review.lastRun &&
         doneSeen !== review.lastRun && (
-          <Done review={review} onContinue={() => setDoneSeen(review.lastRun)} />
+          <Done review={review} busy={busy} onContinue={() => setDoneSeen(review.lastRun)} />
         )}
     </div>
   )

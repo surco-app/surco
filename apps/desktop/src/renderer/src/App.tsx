@@ -1956,6 +1956,7 @@ export default function App(): React.JSX.Element {
                       saveIgnored={(keys) => void saveSettings({ musicReviewIgnored: keys })}
                       onFilesChanged={onReviewFilesChanged}
                       onClose={() => setMusicReview(null)}
+                      busy={batching || tracks.some((t) => t.status === 'processing')}
                     />
                   ) : tracks.length === 0 ? (
                     // Deliberately empty. The way in lives in the centre panel now: a button here

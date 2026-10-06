@@ -90,6 +90,20 @@ describe('MusicReview', () => {
     expect(r.apply).toHaveBeenCalled()
   })
 
+  // A conversion writes the same files and library databases; applying or undoing on top
+  // of it would race those writes.
+  it('holds Apply and Undo while a conversion is running', () => {
+    const staged = review({
+      staged: new Set([group.key]),
+      summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0 },
+    })
+    const { unmount } = render(<MusicReview review={staged} onClose={vi.fn()} busy />)
+    expect(screen.getByTestId('music-review-tray-apply')).toBeDisabled()
+    unmount()
+    render(<MusicReview review={done(run())} onClose={vi.fn()} busy />)
+    expect(screen.getByTestId('music-review-undo')).toBeDisabled()
+  })
+
   it('disables the tray while nothing is staged', () => {
     render(<MusicReview review={review()} onClose={vi.fn()} />)
     expect(screen.getByTestId('music-review-tray-apply')).toBeDisabled()
