@@ -7,6 +7,7 @@ import {
   buildLocationScript,
   buildRevealScript,
   buildReviewDumpScript,
+  buildSetFieldScript,
   buildUpdateScript,
   isAppleMusicOnly,
   parseLibraryDump,
@@ -494,5 +495,27 @@ describe('buildReviewDumpScript', () => {
     expect(script).toContain('if (count of file tracks of library playlist 1) is 0 then return ""')
     expect(script).toContain('album artist of every file track of library playlist 1')
     expect(script).not.toMatch(/of every track of/)
+  })
+})
+
+describe('buildSetFieldScript', () => {
+  it('maps the field onto the Music property and guards on the value the review read', () => {
+    const script = buildSetFieldScript('6E592CFE07A6246A', 'albumArtist', 'Dj Lara', 'DJ Lara')
+    expect(script).toContain('whose persistent ID is "6E592CFE07A6246A"')
+    expect(script).toContain('if (album artist of theTrack) is not "Dj Lara" then return "mismatch"')
+    expect(script).toContain('set album artist of theTrack to "DJ Lara"')
+  })
+
+  // AppleScript compares text ignoring case by default, so "Dj Lara" would pass a guard
+  // reading "DJ Lara". The review's whole job is the case, so the guard must not ignore it.
+  it('compares the current value exactly, case and accents included', () => {
+    const script = buildSetFieldScript('6E592CFE07A6246A', 'artist', 'Dj Lara', 'DJ Lara')
+    expect(script).toContain('considering case, diacriticals, hyphens, punctuation and white space')
+  })
+
+  it('writes the title through the name property', () => {
+    expect(buildSetFieldScript('6E592CFE07A6246A', 'title', 'a', 'b')).toContain(
+      'set name of theTrack to "b"',
+    )
   })
 })

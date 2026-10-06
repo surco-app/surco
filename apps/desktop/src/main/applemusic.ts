@@ -4,6 +4,7 @@ import log from 'electron-log/main'
 import type {
   AppleMusicLookupCandidate,
   MusicReviewEntry,
+  MusicReviewField,
   OutputFormat,
   TrackMetadata,
 } from '../shared/types'
@@ -471,6 +472,48 @@ export function parseReviewDump(stdout: string): MusicReviewEntry[] {
 export async function dumpMusicReview(): Promise<MusicReviewEntry[]> {
   const stdout = await runOsascript(buildReviewDumpScript(), { maxBuffer: 64 * 1024 * 1024 })
   return parseReviewDump(stdout)
+}
+
+export type MusicSetResult = 'set' | 'missing' | 'mismatch'
+
+const MUSIC_PROPERTY: Record<MusicReviewField, string> = {
+  title: 'name',
+  artist: 'artist',
+  albumArtist: 'album artist',
+  album: 'album',
+  genre: 'genre',
+}
+
+export function buildSetFieldScript(
+  persistentId: string,
+  field: MusicReviewField,
+  from: string,
+  to: string,
+): string {
+  const prop = MUSIC_PROPERTY[field]
+  return [
+    'tell application "Music"',
+    `  set theMatches to (every track of library playlist 1 whose persistent ID is ${JSON.stringify(persistentId)})`,
+    '  if (count of theMatches) is 0 then return "missing"',
+    '  set theTrack to item 1 of theMatches',
+    '  considering case, diacriticals, hyphens, punctuation and white space',
+    `    if (${prop} of theTrack) is not ${JSON.stringify(from)} then return "mismatch"`,
+    '  end considering',
+    `  set ${prop} of theTrack to ${JSON.stringify(to)}`,
+    '  return "set"',
+    'end tell',
+  ].join('\n')
+}
+
+export async function setAppleMusicField(
+  persistentId: string,
+  field: MusicReviewField,
+  from: string,
+  to: string,
+): Promise<MusicSetResult> {
+  const result = (await runOsascript(buildSetFieldScript(persistentId, field, from, to))).trim()
+  if (result === 'set' || result === 'missing' || result === 'mismatch') return result
+  throw new Error(`unexpected Music answer: ${result}`)
 }
 
 export async function addToAppleMusic(
