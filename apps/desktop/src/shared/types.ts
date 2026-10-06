@@ -721,6 +721,13 @@ export interface MusicReviewEntry {
   durationSec?: number
 }
 
+export interface MusicFieldFix {
+  persistentId: string
+  field: MusicReviewField
+  from: string
+  to: string
+}
+
 // One artist/title pair to probe for in the Apple Music library. The lookup takes
 // several — the live tags plus the Discogs-suggested track — so a song whose tags
 // still hold the filename's rough spelling is found under its canonical name too.
